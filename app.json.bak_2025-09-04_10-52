@@ -33,15 +33,14 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ],
-      "expo-secure-store"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_SUPABASE_URL": "https://YOURPROJECTID.supabase.co",
-      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      "EXPO_PUBLIC_SUPABASE_URL": "https://ykqrruipzmrrvjcvwfgp.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcXJydWlwem1ycnZqY3Z3ZmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODM4MTMsImV4cCI6MjA2ODY1OTgxM30.UIhV1z7bSAcL1Yr7USB1uQUHF3KDgq0Remt3qa3UYiA"
     }
   }
 }
