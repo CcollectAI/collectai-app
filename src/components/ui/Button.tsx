@@ -1,29 +1,16 @@
 import React from "react";
 import { Pressable, Text, ViewStyle } from "react-native";
-
-type Props = {
-  title: string;
-  onPress?: () => void;
-  disabled?: boolean;
-  style?: ViewStyle;
-};
-export default function Button({ title, onPress, disabled, style }: Props) {
+import { color, radius, space, text as T } from "../../theme/tokens";
+export default function Button({ title, onPress, disabled, style }:{
+  title:string; onPress?:()=>void; disabled?:boolean; style?:ViewStyle
+}) {
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={[
-        {
-          paddingVertical: 14,
-          paddingHorizontal: 16,
-          borderRadius: 12,
-          backgroundColor: disabled ? "#d1d5db" : "#111827",
-          alignItems: "center",
-        },
-        style,
-      ]}
-    >
-      <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>{title}</Text>
+    <Pressable onPress={onPress} disabled={disabled} style={[{
+      backgroundColor: disabled ? "#d1d5db" : color.primary,
+      paddingVertical: space.md, paddingHorizontal: space.lg,
+      borderRadius: radius.md, alignItems: "center",
+    }, style]}>
+      <Text style={{ color: "#fff", fontWeight: "700", fontSize: T.lg }}>{title}</Text>
     </Pressable>
   );
 }

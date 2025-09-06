@@ -1,31 +1,77 @@
-import { Tabs, Redirect } from "expo-router";
-import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
-import type { Session } from "@supabase/supabase-js";
+import React from "react";
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
+import { theme } from "../../src/theme";
 
 export default function TabsLayout() {
-  const [ready, setReady] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null);
-      setReady(true);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
-  if (!ready) return null;
-  if (!session) return <Redirect href="/(auth)" />;
+  const router = useRouter();
 
   return (
-    <Tabs screenOptions={{ headerShown: true }}>
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
-      <Tabs.Screen name="categories/index" options={{ title: "Categories" }} />
-      <Tabs.Screen name="collection/index" options={{ title: "My Collection" }} />
-      <Tabs.Screen name="listings/index" options={{ title: "Sell" }} />
-      <Tabs.Screen name="settings" options={{ title: "Settings" }} />
+    <Tabs
+      screenOptions={{
+        headerTitleAlign: "left",
+        headerStyle: { backgroundColor: theme.colors.bg },
+        headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
+        tabBarActiveTintColor: theme.colors.brand.base,
+        tabBarInactiveTintColor: theme.colors.muted,
+        tabBarStyle: {
+          backgroundColor: "#fff",
+          borderTopColor: theme.colors.border,
+          height: 64,
+          paddingTop: 6,
+        },
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => router.push("/settings")}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{
+              marginRight: 14,
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#fff",
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              ...theme.shadow.card,
+            }}
+          >
+            <Ionicons name="settings-outline" size={20} color="#0F172A" />
+          </TouchableOpacity>
+        ),
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="categories/index"
+        options={{
+          title: "Categories",
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="collection/index"
+        options={{
+          title: "Collection",
+          tabBarIcon: ({ color, size }) => <Ionicons name="albums-outline" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="listings/index"
+        options={{
+          title: "Listings",
+          tabBarIcon: ({ color, size }) => <Ionicons name="pricetags-outline" color={color} size={size} />,
+        }}
+      />
     </Tabs>
   );
 }

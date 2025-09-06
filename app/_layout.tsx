@@ -1,13 +1,32 @@
-import { Slot } from "expo-router";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useSession } from "../src/auth/useSession";
+import { ActivityIndicator, View } from "react-native";
+// ...
 
 export default function RootLayout() {
+  const { ready, signedIn } = useSession();
+
+  if (!ready) {
+    return (
+      <View style={{ flex:1, alignItems:"center", justifyContent:"center" }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <Slot />
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <Stack
+      // (keep your existing screenOptions + headerRight gear)
+    >
+      {signedIn ? (
+        <>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ title: "Settings" }} />
+        </>
+      ) : (
+        <>
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        </>
+      )}
+    </Stack>
   );
 }

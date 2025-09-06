@@ -1,0 +1,57 @@
+import React from "react";
+import { View, Text, ScrollView } from "react-native";
+import Header from "../components/Header";
+import Badge from "../components/Badge";
+import Tile from "../components/Tile";
+import ActionTile from "../components/ActionTile";
+import PortfolioChart from "../components/PortfolioChart";
+import usePortfolioSeries from "../hooks/usePortfolioSeries";
+
+export default function Home() {
+  const { series, current, deltaPct } = usePortfolioSeries();
+
+  const deltaText =
+    typeof deltaPct === "number"
+      ? `${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%`
+      : "—";
+
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: "#fff" }} contentContainerStyle={{ paddingBottom: 24 }}>
+      <Header title="Your Portfolio" subtitle="Track • Value • Predict" />
+      <View style={{ paddingHorizontal: 16, gap: 16, marginTop: 12 }}>
+        {/* Portfolio Card */}
+        <View
+          style={{
+            borderWidth: 1,
+            borderColor: "#eee",
+            borderRadius: 16,
+            padding: 16,
+            backgroundColor: "#fff",
+            gap: 10,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Text style={{ fontSize: 18, fontWeight: "700" }}>Portfolio</Text>
+            <Badge variant={typeof deltaPct === "number" && deltaPct >= 0 ? "success" : "danger"}>
+              {deltaText}
+            </Badge>
+          </View>
+          <Text style={{ color: "#6b7280" }}>
+            Current value{current != null ? `: ${current}` : "" }
+          </Text>
+          <PortfolioChart data={series} label="" width={340} height={120} />
+        </View>
+
+        {/* Quick Actions */}
+        <View style={{ gap: 10 }}>
+          <ActionTile title="Add Item" subtitle="Add to your collection" href="/(tabs)/collection" />
+          <ActionTile title="Browse Marketplace" subtitle="See latest listings" href="/(tabs)/listings" />
+          <ActionTile title="Categories" subtitle="Explore by category" href="/(tabs)/categories" />
+        </View>
+
+        {/* Spotlight / Featured */}
+        <Tile title="Spotlight" subtitle="Hand-picked items for you" />
+      </View>
+    </ScrollView>
+  );
+}

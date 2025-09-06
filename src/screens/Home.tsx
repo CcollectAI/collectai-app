@@ -1,54 +1,43 @@
-import { View, Text, ActivityIndicator } from 'react-native';
-import Header from '../components/Header';
-import ActionTile from '../components/ActionTile';
-import Tile from '../components/Tile';
-import Badge from '../components/Badge';
-import PortfolioChart from '../components/PortfolioChart';
-import usePortfolio from '../hooks/usePortfolio';
-import usePortfolioSeries from '../hooks/usePortfolioSeries';
-import { colors, spacing } from '../theme/tokens';
-import { useNavigation } from '@react-navigation/native';
+import React from "react";
+import { View, Text, ScrollView } from "react-native";
+import Header from "../components/Header";
+import Badge from "../components/Badge";
+import Tile from "../components/Tile";
+import ActionTile from "../components/ActionTile";
+import PortfolioChart from "../components/PortfolioChart";
+import usePortfolioSeries from "../hooks/usePortfolioSeries";
+import Card from "../components/ui/Card";
+import { space, color, text as T } from "../theme/tokens";
 
-export default function Home(){
-  const { data, loading, error } = usePortfolio();
-  const { series, loading: loadingSeries } = usePortfolioSeries();
-  const nav = useNavigation<any>();
-
-  if (loading || loadingSeries) {
-    return (
-      <View style={{flex:1,justifyContent:'center',alignItems:'center'}}>
-        <ActivityIndicator/>
-      </View>
-    );
-  }
-  if (error) return <View style={{padding:24}}><Text>{error}</Text></View>;
-
-  const delta = (Number(data?.total_value||0) - Number(data?.total_spent||0));
-  const tone = (delta >= 0 ? 'pos' : 'neg') as 'pos'|'neg';
-  const deltaText = `${delta >= 0 ? '+' : ''}$${delta.toFixed(2)}`;
+export default function Home() {
+  const { series, current, deltaPct } = usePortfolioSeries();
+  const deltaText = typeof deltaPct === "number" ? `${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%` : "—";
 
   return (
-    <View style={{ flex:1, backgroundColor: colors.bg }}>
-      <Header title="Your Portfolio" subtitle="Track, value, predict" />
+    <ScrollView style={{ flex: 1, backgroundColor: color.bg }} contentContainerStyle={{ paddingBottom: space.xxl }}>
+      <Header title="Your Portfolio" subtitle="Track • Value • Predict" />
+      <View style={{ paddingHorizontal: space.lg, gap: space.lg, marginTop: space.sm }}>
+        <Card>
+          <View style={{ flexDirection:"row", alignItems:"center", justifyContent:"space-between" }}>
+            <Text style={{ fontSize: T.xl, fontWeight:"800" }}>Portfolio</Text>
+            <Badge variant={typeof deltaPct === "number" && deltaPct >= 0 ? "success" : "danger"}>{deltaText}</Badge>
+          </View>
+          <Text style={{ color: color.textMuted, marginTop: 4 }}>
+            Current value{current != null ? `: ${current}` : ""}
+          </Text>
+          <View style={{ marginTop: space.md }}>
+            <PortfolioChart data={series} width={340} height={120} />
+          </View>
+        </Card>
 
-      <View style={{ paddingHorizontal: spacing(2), gap: spacing(1) }}>
-        <Tile
-          value={`$${Number(data?.total_value||0).toFixed(2)}`}
-          label="Total value"
-          right={<Badge text={deltaText} tone={tone} />}
-        />
-        <Tile value={`${data?.total_items||0}`} label="Items" />
-      </View>
+        <View style={{ gap: space.sm }}>
+          <ActionTile title="Add Item" subtitle="Add to your collection" href="/(tabs)/collection" />
+          <ActionTile title="Browse Marketplace" subtitle="See latest listings" href="/(tabs)/listings" />
+          <ActionTile title="Categories" subtitle="Explore by category" href="/(tabs)/categories" />
+        </View>
 
-      <View style={{ padding: spacing(2), gap: spacing(1) }}>
-        <PortfolioChart data={series} />
-        <ActionTile
-          title="Open Marketplace"
-          subtitle="Browse listings, make offers"
-          icon="pricetags-outline"
-          onPress={() => nav.navigate('Marketplace')}
-        />
+        <Tile title="Spotlight" subtitle="Hand-picked items for you" />
       </View>
-    </View>
+    </ScrollView>
   );
 }

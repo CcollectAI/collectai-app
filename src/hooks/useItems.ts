@@ -1,33 +1,38 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import supabase from "../../lib/supabaseClient";
+import { useSWR } from "../cache/useSWR";
 
-type Item = { id: string|number; title?: string; name?: string; category?: string|null; created_at?: string|null };
+export type ItemRow = {
+  id: string;
+  title: string;
+  image_url?: string;
+  category?: string;
+  value?: number;
+  updated_at?: string;
+};
 
-export default function useItems(limit = 100) {
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string|null>(null);
+async function fetchItems(): Promise<ItemRow[]> {
+  if (!supabase) return demo();
+  const { data, error } = await supabase
+    .from("items")
+    .select("id,title,image_url,category,value,updated_at")
+    .order("updated_at", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []) as ItemRow[];
+}
 
-  useEffect(() => {
-    let on = true;
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from("items")
-          .select("id, title, name, category, created_at")
-          .order("created_at", { ascending: false })
-          .limit(limit);
-        if (error) throw error;
-        on && setItems((data as Item[]) ?? []);
-      } catch (e:any) {
-        on && setError(e?.message ?? "Failed to load items");
-        on && setItems([]);
-      } finally {
-        on && setLoading(false);
-      }
-    })();
-    return () => { on = false; };
-  }, [limit]);
+export default function useItems() {
+  const { data, loading, refresh } = useSWR<ItemRow[]>("items:list", fetchItems, { staleMs: 120_000 });
+  return { items: data ?? demo(), loading, refresh };
+}
 
-  return { items, loading, error };
+function demo(): ItemRow[] {
+  return Array.from({ length: 24 }).map((_, i) => ({
+    id: `demo-${i}`,
+    title: `Demo Item #${i + 1}`,
+    image_url: undefined,
+    category: i % 2 ? "pokemon" : "funko",
+    value: 80 + i * 4,
+    updated_at: new Date().toISOString(),
+  }));
 }

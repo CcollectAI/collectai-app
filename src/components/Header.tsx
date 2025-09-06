@@ -1,38 +1,41 @@
 import React from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { theme } from "../theme";
 
-type Props = {
-  title: string;
-  subtitle?: string;
-  back?: boolean;
-  right?: React.ReactNode;
-};
-
-export default function Header({ title, subtitle, back=false, right }: Props) {
+export default function Header({ title = "Collectors" }: { title?: string }) {
   const router = useRouter();
   return (
-    <View style={{
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderColor: "#eee",
-      backgroundColor: "#fff"
-    }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          {back ? (
-            <Pressable onPress={() => router.back()} hitSlop={10}>
-              <Text style={{ fontSize: 16 }}>‹ Back</Text>
-            </Pressable>
-          ) : null}
-          <Text style={{ fontSize: 20, fontWeight: "700" }}>{title}</Text>
-        </View>
-        <View>{right ?? null}</View>
-      </View>
-      {subtitle ? (
-        <Text style={{ marginTop: 4, color: "#666" }}>{subtitle}</Text>
-      ) : null}
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+        paddingBottom: theme.spacing.sm,
+        backgroundColor: theme.colors.bg,
+      }}
+    >
+      <Text style={{ fontSize: 22, fontWeight: "800", color: theme.colors.text }}>{title}</Text>
+      <TouchableOpacity
+        onPress={() => router.push("/settings")}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: "#fff",
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+          ...theme.shadow.card,
+        }}
+      >
+        <Ionicons name="settings-outline" size={20} color="#0F172A" />
+      </TouchableOpacity>
     </View>
   );
 }

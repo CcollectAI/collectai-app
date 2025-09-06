@@ -1,84 +1,45 @@
 import React from "react";
-import { View, Text, Pressable } from "react-native";
-import { Link, useRouter } from "expo-router";
-
-type Props = {
-  title: string;
-  subtitle?: string;
-  href?: string;                 // use this to navigate with Expo Router
-  onPress?: () => void;          // fallback action if no href
-  left?: React.ReactNode;        // optional icon/avatar on the left
-  right?: React.ReactNode;       // optional element on the right (badge, chevron, etc.)
-  disabled?: boolean;
-  testID?: string;
-};
+import { View, Text, TouchableOpacity } from "react-native";
+import { theme } from "../theme";
 
 export default function ActionTile({
-  title,
-  subtitle,
-  href,
+  label,
+  emoji = "⭐",
   onPress,
-  left,
-  right,
-  disabled,
-  testID,
-}: Props) {
-  const router = useRouter();
-
-  const content = (
-    <View
-      style={{
-        padding: 14,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#e5e7eb",
-        backgroundColor: disabled ? "#f9fafb" : "#ffffff",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-      }}
-    >
-      {left ? <View style={{ width: 28, alignItems: "center" }}>{left}</View> : null}
-
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 16, fontWeight: "600" }}>{title}</Text>
-        {subtitle ? (
-          <Text style={{ color: "#6b7280", marginTop: 2 }}>{subtitle}</Text>
-        ) : null}
-      </View>
-
-      {right ? <View style={{ marginLeft: 8 }}>{right}</View> : null}
-    </View>
-  );
-
-  if (href && !disabled) {
-    // Link preserves web accessibility & native navigation
-    return (
-      <Link
-        href={href}
-        asChild
-        testID={testID}
-        // NOTE: Link handles press internally when asChild is used
-      >
-        <Pressable accessibilityRole="button">{content}</Pressable>
-      </Link>
-    );
-  }
-
+}: {
+  label: string;
+  emoji?: string;
+  onPress?: () => void;
+}) {
   return (
-    <Pressable
-      onPress={() => {
-        if (disabled) return;
-        if (onPress) return onPress();
-        // graceful fallback: if no onPress but href exists
-        if (href) router.push(href);
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={{
+        width: "48%",
+        backgroundColor: "#fff",
+        borderRadius: theme.radius["2xl"],
+        padding: theme.spacing.lg,
+        margin: "1%",
+        alignItems: "flex-start",
+        justifyContent: "flex-start",
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        ...theme.shadow.card,
       }}
-      disabled={disabled}
-      accessibilityRole="button"
-      testID={testID}
     >
-      {content}
-    </Pressable>
+      <View
+        style={{
+          backgroundColor: theme.colors.brand.light,
+          borderRadius: 12,
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+          marginBottom: 10,
+        }}
+      >
+        <Text style={{ fontWeight: "800", color: "#0F172A" }}>{emoji}</Text>
+      </View>
+      <Text style={{ fontWeight: "800", color: theme.colors.text }}>{label}</Text>
+    </TouchableOpacity>
   );
 }
