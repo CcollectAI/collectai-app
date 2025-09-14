@@ -54,6 +54,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@expo/schema-utils": "^0.1.7",
     "@expo/vector-icons": "^15.0.2",
     "@types/react": "~19.0.10",
     "babel-plugin-module-resolver": "^5.0.2",
