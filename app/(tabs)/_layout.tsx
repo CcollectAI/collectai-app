@@ -1,50 +1,70 @@
 import React from "react";
-import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Tabs, useRouter } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Pressable, View } from "react-native";
 import { theme } from "@/theme";
 
 export default function TabsLayout() {
+  const router = useRouter();
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: theme.colors.brand.base,
-        tabBarInactiveTintColor: theme.colors.subtext,
+        headerTitle: "",
+        headerStyle: { backgroundColor: theme.colors.bg },
+        headerShadowVisible: false,
         tabBarStyle: {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
           borderTopWidth: 1,
-          height: 64,
+          height: 58,
         },
-        tabBarLabelStyle: { fontSize: 11, marginBottom: 6 },
+        tabBarActiveTintColor: theme.colors.brand.base,
+        tabBarInactiveTintColor: theme.colors.subtext,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Portfolio",
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
+          tabBarLabel: "Portfolio",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "home" : "home-outline"} size={22} color={color} />
+          ),
+          headerRight: () => (
+            <Pressable onPress={() => router.push("/settings")} hitSlop={8} style={{ paddingRight: 16 }}>
+              <Ionicons name="settings-outline" size={22} color={theme.colors.text} />
+            </Pressable>
+          ),
         }}
       />
       <Tabs.Screen
         name="items"
         options={{
           title: "Items",
-          tabBarIcon: ({ color, size }) => <Ionicons name="albums" color={color} size={size} />,
+          tabBarLabel: "Items",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "albums" : "albums-outline"} size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="add"
         options={{
           title: "Add",
-          tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" color={color} size={size + 2} />,
+          tabBarLabel: "Add",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "add-circle" : "add-circle-outline"} size={26} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="marketplace"
         options={{
           title: "Marketplace",
-          tabBarIcon: ({ color, size }) => <Ionicons name="pricetags-outline" color={color} size={size} />,
+          tabBarLabel: "Marketplace",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "cart" : "cart-outline"} size={22} color={color} />
+          ),
         }}
       />
     </Tabs>

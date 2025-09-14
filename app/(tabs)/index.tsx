@@ -1,86 +1,176 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, View, Text, Pressable, ScrollView } from "react-native";
 import { theme } from "@/theme";
-import PortfolioChart, { Pt } from "@/components/PortfolioChart";
-import ItemRow from "@/components/ItemRow";
-import { fmtMoney } from "@/utils/format";
 
-type Item = { id: string; title: string; value: number; changePct: number };
-const ITEMS: Item[] = [
-  { id: "1", title: "Charizard Holo 1999", value: 1240, changePct: +3.1 },
-  { id: "2", title: "LEGO Falcon 75192", value: 680, changePct: -1.4 },
-  { id: "3", title: "Funko Pop Pikachu", value: 22, changePct: 0.0 },
-  { id: "4", title: "PSA 10 Mewtwo", value: 810, changePct: +0.8 },
-];
+type Point = { t: number; v: number };
+const MOCK_1D: Point[] = [ {t:0,v:2700},{t:1,v:2710},{t:2,v:2705},{t:3,v:2725},{t:4,v:2718},{t:5,v:2729},{t:6,v:2725} ];
+const MOCK_7D: Point[] = [ {t:0,v:2650},{t:1,v:2675},{t:2,v:2690},{t:3,v:2708},{t:4,v:2715},{t:5,v:2722},{t:6,v:2725} ];
+const MOCK_30D: Point[] = Array.from({length: 30}, (_,i)=>({t:i,v:2600 + Math.sin(i/3)*20 + i}));
 
-const S1: Pt[] = Array.from({ length: 24 }, (_, i) => ({ t: i, v: 4000 + Math.sin(i / 3) * 120 + i * 4 }));
-const S7: Pt[] = Array.from({ length: 7 },  (_, i) => ({ t: i, v: 3800 + Math.sin(i) * 220 + i * 50 }));
-const S30: Pt[] = Array.from({ length: 30 },(_, i) => ({ t: i, v: 3000 + Math.sin(i/2) * 260 + i * 35 }));
+function fmtMoney(n:number){ return new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(n); }
+function pct(oldV:number,newV:number){ if(!oldV) return 0; return ((newV-oldV)/oldV)*100; }
 
-export default function PortfolioScreen() {
-  const [range, setRange] = useState<"1D" | "7D" | "30D">("1D");
-  const series = range === "1D" ? S1 : range === "7D" ? S7 : S30;
-  const total = useMemo(() => ITEMS.reduce((s, x) => s + x.value, 0), []);
+function GridLine({ topPct }: { topPct: number }) {
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: `${topPct}%`,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border,
+      }}
+    />
+  );
+}
+
+function SimpleLine({ data, height=160 }:{ data:Point[]; height?:number }) {
+  // No external libs; emulate a thicker line using small segments/dots + overlay.
+  const padding = 12;
+  const h = height, w = 320; // chart area width; ScrollView parent will center it
+  const min = Math.min(...data.map(d=>d.v));
+  const max = Math.max(...data.map(d=>d.v));
+  const span = Math.max(1, max - min);
+
+  const pts = data.map((d,i)=>{
+    const x = padding + ( (w - padding*2) * (i / Math.max(1, (data.length-1))) );
+    const y = padding + ( (h - padding*2) * (1 - (d.v - min)/span) );
+    return {x,y,v:d.v};
+  });
+
+  return (
+    <View style={{ width: w, height: h, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border }}>
+      {/* Grid */}
+      <GridLine topPct={25} />
+      <GridLine topPct={50} />
+      <GridLine topPct={75} />
+
+      {/* Min/Max labels */}
+      <View style={{ position: "absolute", left: 8, top: 8 }}>
+        <Text style={{ color: theme.colors.subtext, fontSize: theme.font.small }}>€{fmtMoney(max)}</Text>
+      </View>
+      <View style={{ position: "absolute", left: 8, bottom: 8 }}>
+        <Text style={{ color: theme.colors.subtext, fontSize: theme.font.small }}>€{fmtMoney(min)}</Text>
+      </View>
+
+      {/* "Line" – dot segments for a thicker, sharper look */}
+      {pts.map((p,i)=>(
+        <View key={i} style={{
+          position: "absolute",
+          left: p.x-1,
+          top: p.y-1,
+          width: 2,
+          height: 2,
+          backgroundColor: theme.colors.brand.base
+        }}/>
+      ))}
+      {pts.slice(1).map((p,i)=>{
+        const p0 = pts[i];
+        const dx = p.x - p0.x;
+        const dy = p.y - p0.y;
+        const len = Math.hypot(dx,dy) || 1;
+        const angle = Math.atan2(dy,dx) * 180/Math.PI;
+        return (
+          <View
+            key={`seg-${i}`}
+            style={{
+              position: "absolute",
+              left: p0.x,
+              top: p0.y,
+              width: len,
+              height: 2,
+              backgroundColor: theme.colors.brand.base,
+              transform: [{ rotateZ: `${angle}deg` }],
+              transformOrigin: "left center" as any,
+            }}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
+export default function PortfolioScreen(){
+  const [range, setRange] = useState<"1D"|"7D"|"30D">("1D");
+  const data = range==="1D"?MOCK_1D:range==="7D"?MOCK_7D:MOCK_30D;
+  const latest = data[data.length-1]?.v ?? 0;
+  const first = data[0]?.v ?? 0;
+  const change = pct(first, latest);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}>
-        {/* Settings top-right */}
-        <Pressable
-          onPress={() => {}}
-          style={{ alignSelf: "flex-end", padding: 6, marginTop: 4 }}
-        >
-          <Ionicons name="settings-outline" size={22} color={theme.colors.text} />
-        </Pressable>
-
+      <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
         {/* Title & value */}
-        <Text style={{ ...theme.font.title, fontSize: 28, marginTop: 4 }}>Collection Value</Text>
-        <Text style={{ ...theme.font.h1, fontSize: 24, marginTop: 2, marginBottom: 12 }}>€{fmtMoney(total)}</Text>
+        <View style={{ gap: 6 }}>
+          <Text style={{ fontSize: theme.font.title, fontWeight: "800", color: theme.colors.brand.base }}>
+            Collection Value
+          </Text>
+          <Text style={{ fontSize: 28, fontWeight: "800", color: theme.colors.text }}>
+            €{fmtMoney(latest)}
+          </Text>
+          <Text style={{ fontSize: theme.font.small, fontWeight: "600", color: change>=0?theme.colors.success:theme.colors.danger }}>
+            {change>=0?"+":""}{change.toFixed(2)}% today
+          </Text>
+        </View>
 
-        {/* Range buttons aligned right */}
-        <View style={{ alignItems: "flex-end", marginBottom: 10 }}>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            {(["1D","7D","30D"] as const).map(label => (
+        {/* Chart + range selector */}
+        <View style={{ alignItems: "center", gap: theme.spacing.sm }}>
+          <SimpleLine data={data} height={180} />
+          <View style={{ flexDirection: "row", gap: 8, alignSelf: "flex-end" }}>
+            {(["1D","7D","30D"] as const).map(r => (
               <Pressable
-                key={label}
-                onPress={() => setRange(label)}
+                key={r}
+                onPress={()=>setRange(r)}
                 style={{
                   paddingHorizontal: 10, paddingVertical: 6,
-                  borderWidth: 1, borderColor: theme.colors.border,
-                  backgroundColor: label === range ? theme.colors.card : "transparent"
+                  borderWidth: 1, borderColor: r===range?theme.colors.brand.base:theme.colors.border,
+                  backgroundColor: r===range?theme.colors.brand.soft:theme.colors.card
                 }}
               >
-                <Text style={{ color: theme.colors.text, fontSize: 12 }}>{label}</Text>
+                <Text style={{ fontWeight: "700", color: r===range?theme.colors.brand.base:theme.colors.text }}>{r}</Text>
               </Pressable>
             ))}
           </View>
         </View>
 
-        {/* Chart block */}
-        <PortfolioChart data={series} />
+        {/* Collection list (tightened spacing & padding around boxes) */}
+        <View style={{ gap: theme.spacing.sm }}>
+          <Text style={{ fontSize: theme.font.h2, fontWeight: "800", color: theme.colors.brand.base }}>
+            Collection
+          </Text>
 
-        {/* Collection list with more inner padding */}
-        <Text style={{ ...theme.font.h1, marginTop: 16, marginBottom: 8, color: theme.colors.brand.base }}>Collection</Text>
-        <View style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card, paddingHorizontal: 8 }}>
-          {ITEMS
-            .slice()
-            .sort((a, b) => b.value - a.value)
-            .map(it => (<ItemRow key={it.id} title={it.title} value={it.value} changePct={it.changePct} />))}
-        </View>
+          {[
+            { name:"Charizard Holo 1999", value:1240.00, delta:+3.10 },
+            { name:"Lego Millennium Falcon 75192", value:680.00, delta:-1.40 },
+            { name:"PSA 10 Mewtwo", value:810.00, delta:+0.80 },
+          ].map((row, i)=>(
+            <View key={i} style={{
+              backgroundColor: theme.colors.card,
+              borderWidth: 1, borderColor: theme.colors.border,
+              paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm,
+            }}>
+              <Text style={{ fontWeight: "700", color: theme.colors.text }}>{row.name}</Text>
+              <View style={{ flexDirection:"row", justifyContent:"space-between", marginTop: 4 }}>
+                <Text style={{ color: row.delta>=0?theme.colors.success:theme.colors.danger, fontSize: theme.font.small }}>
+                  {row.delta>=0?"+":""}{row.delta.toFixed(2)}%
+                </Text>
+                <Text style={{ fontWeight:"700", color: theme.colors.text }}>€{fmtMoney(row.value)}</Text>
+              </View>
+            </View>
+          ))}
 
-        {/* Watchlist */}
-        <Text style={{ ...theme.font.h1, marginTop: 24, marginBottom: 8, color: theme.colors.brand.base }}>Watchlist</Text>
-        <View style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card, paddingHorizontal: 8 }}>
-          <ItemRow title="Pokémon Booster Box (Base Set)" value={127.0} changePct={+1.2} />
-        </View>
-
-        {/* Centered Add to watchlist */}
-        <View style={{ alignItems: "center", marginTop: 14 }}>
-          <Pressable style={{ paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: theme.colors.brand.base, backgroundColor: theme.colors.card }}>
-            <Text style={{ fontWeight: "700", color: theme.colors.brand.base }}>+ Add to watchlist</Text>
-          </Pressable>
+          {/* Watchlist call-to-action centered at bottom */}
+          <View style={{ alignItems:"center", marginTop: theme.spacing.md }}>
+            <Pressable style={{
+              paddingHorizontal: 14, paddingVertical: 10,
+              borderWidth: 1, borderColor: theme.colors.brand.base,
+              backgroundColor: theme.colors.brand.soft
+            }}>
+              <Text style={{ fontWeight: "800", color: theme.colors.brand.base }}>+ Add to watchlist</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
