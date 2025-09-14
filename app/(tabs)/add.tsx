@@ -2,23 +2,28 @@ import React, { useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { theme } from "@/theme";
 
-type Cat = "Pokémon" | "LEGO" | "Funko" | "";
+type Cat = "Pokémon" | "LEGO" | "Funko" | "Cards" | "";
 
 export default function AddScreen() {
   const [category, setCategory] = useState<Cat>("");
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
-  // detail fields
-  const [setName, setSetName] = useState("");       // Pokémon
-  const [cardNo, setCardNo] = useState("");         // Pokémon
-  const [grade, setGrade] = useState("");           // Pokémon
-  const [year, setYear] = useState("");             // Pokémon
-  const [legoSetNo, setLegoSetNo] = useState("");   // LEGO
-  const [condition, setCondition] = useState("");   // LEGO/Funko
-  const [sealed, setSealed] = useState("");         // LEGO
-  const [funkoEdition, setFunkoEdition] = useState(""); // Funko
-  const [funkoNo, setFunkoNo] = useState("");       // Funko
-  const [boxCondition, setBoxCondition] = useState(""); // Funko
+
+  // Pokémon
+  const [setName, setSetName] = useState("");
+  const [cardNo, setCardNo] = useState("");
+  const [grade, setGrade] = useState("");
+  const [year, setYear] = useState("");
+
+  // LEGO
+  const [legoSetNo, setLegoSetNo] = useState("");
+  const [condition, setCondition] = useState("");
+  const [sealed, setSealed] = useState("");
+
+  // Funko
+  const [funkoEdition, setFunkoEdition] = useState("");
+  const [funkoNo, setFunkoNo] = useState("");
+  const [boxCondition, setBoxCondition] = useState("");
 
   const scanMock = () => {
     setCategory("Pokémon");
@@ -38,7 +43,7 @@ export default function AddScreen() {
     </View>
   );
 
-  const CatButton = ({ label }: { label: Cat extends "" ? never : Cat }) => (
+  const CatButton = ({ label }: { label: Exclude<Cat,""> }) => (
     <Pressable
       onPress={() => setCategory(label)}
       style={{
@@ -56,7 +61,7 @@ export default function AddScreen() {
     <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: 16 }}>
       <Text style={{ ...theme.font.title, marginBottom: 12 }}>Add Item</Text>
 
-      <Pressable onPress={scanMock} style={{ padding: 12, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card, marginBottom: 12 }}>
+      <Pressable onPress={scanMock} style={{ padding: 12, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card, marginBottom: 12, alignSelf: "flex-start" }}>
         <Text style={{ fontWeight: "700", color: theme.colors.brand.base }}>Scan item (mock)</Text>
       </Pressable>
 
@@ -66,6 +71,7 @@ export default function AddScreen() {
         <CatButton label="Pokémon" />
         <CatButton label="LEGO" />
         <CatButton label="Funko" />
+        <CatButton label="Cards" />
       </View>
 
       {/* Title next */}

@@ -7,7 +7,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // hide "(tabs)" titles everywhere
+        headerShown: false,
         tabBarActiveTintColor: theme.colors.brand.base,
         tabBarInactiveTintColor: theme.colors.subtext,
         tabBarStyle: {
@@ -44,7 +44,7 @@ export default function TabsLayout() {
         name="marketplace"
         options={{
           title: "Marketplace",
-          tabBarIcon: ({ color, size }) => <Ionicons name="storefront" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="pricetags-outline" color={color} size={size} />,
         }}
       />
     </Tabs>
