@@ -3,9 +3,7 @@ import { View, Text, ScrollView, Pressable, TextInput } from "react-native";
 import { theme } from "@/theme";
 
 type Msg = { id: string; who: "me" | "peer"; text: string };
-const START: Msg[] = [
-  { id: "m1", who: "peer", text: "Welcome to Marketplace! 👋 Looking for anything?" },
-];
+const START: Msg[] = [{ id: "m1", who: "peer", text: "Welcome to Marketplace! 👋 Looking for anything?" }];
 
 const MOCK_HITS = [
   { id: "h1", title: "Charizard Holo 1999", marketplace: "eBay", price: 1210 },

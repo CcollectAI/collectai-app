@@ -1,73 +1,50 @@
 import React from "react";
-import { Tabs, Link } from "expo-router";
-import { Pressable } from "react-native";
+import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/theme";
-
-const NAVY = theme.colors.brand.base;
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.card },
-        headerTitleStyle: { color: NAVY, fontWeight: "800" },
-        headerTintColor: NAVY,
+        headerShown: false, // hide "(tabs)" titles everywhere
+        tabBarActiveTintColor: theme.colors.brand.base,
+        tabBarInactiveTintColor: theme.colors.subtext,
         tabBarStyle: {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
           borderTopWidth: 1,
-          height: 62
+          height: 64,
         },
-        tabBarActiveTintColor: NAVY,
-        tabBarInactiveTintColor: "#94A3B8"
+        tabBarLabelStyle: { fontSize: 11, marginBottom: 6 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "CollectAI",
-          headerRight: () => (
-            <Link href="/settings" asChild>
-              <Pressable style={{ paddingHorizontal: 12 }}>
-                <Ionicons name="settings-outline" size={22} color={NAVY} />
-              </Pressable>
-            </Link>
-          ),
-          tabBarLabel: "Portfolio",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          )
+          title: "Portfolio",
+          tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="items"
         options={{
           title: "Items",
-          tabBarLabel: "Items",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="albums-outline" size={size} color={color} />
-          )
+          tabBarIcon: ({ color, size }) => <Ionicons name="albums" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="add"
         options={{
           title: "Add",
-          tabBarLabel: "Add",
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="add-circle" size={28} color={color} />
-          )
+          tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" color={color} size={size + 2} />,
         }}
       />
       <Tabs.Screen
         name="marketplace"
         options={{
           title: "Marketplace",
-          tabBarLabel: "Marketplace",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="storefront-outline" size={size} color={color} />
-          )
+          tabBarIcon: ({ color, size }) => <Ionicons name="storefront" color={color} size={size} />,
         }}
       />
     </Tabs>

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
 import { theme } from "@/theme";
 import ItemRow from "@/components/ItemRow";
 import BadgeIcon from "@/components/BadgeIcon";
@@ -22,14 +22,19 @@ export default function ItemsScreen() {
       items: items.sort((a, b) => b.value - a.value),
       total: items.reduce((s, x) => s + x.value, 0),
     }));
-    // stable order: by total desc
     return arr.sort((a, b) => b.total - a.total);
   }, []);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <View style={{ padding: 16 }}>
-        <Text style={{ ...theme.font.title }}>Items</Text>
+        {/* Title + Share top-right */}
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+          <Text style={{ ...theme.font.title, fontSize: 28, flex: 1 }}>Items</Text>
+          <Pressable onPress={() => {}} style={{ paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card }}>
+            <Text style={{ fontWeight: "700", color: theme.colors.brand.base }}>Share</Text>
+          </Pressable>
+        </View>
 
         {groups.map(g => (
           <View key={g.category} style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card, marginTop: 12 }}>
@@ -42,21 +47,17 @@ export default function ItemsScreen() {
                 <ItemRow key={it.id} title={it.title} value={it.value} changePct={it.changePct} />
               ))}
               <View style={{ paddingVertical: 10, alignItems: "flex-end" }}>
-                <Text style={{ color: theme.colors.subtext }}>Category total: €{fmtMoney(g.total)}</Text>
+                <Text style={{ color: theme.colors.subtext }}>Total: €{fmtMoney(g.total)}</Text>
               </View>
             </View>
           </View>
         ))}
 
-        <View style={{ alignItems: "flex-end", marginTop: 16 }}>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card }}>
-              <Text style={{ fontWeight: "700", color: theme.colors.brand.base }}>Share</Text>
-            </View>
-            <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card }}>
-              <Text style={{ fontWeight: "700", color: theme.colors.brand.base }}>Download overview</Text>
-            </View>
-          </View>
+        {/* Download bottom-center */}
+        <View style={{ alignItems: "center", marginTop: 20, marginBottom: 40 }}>
+          <Pressable onPress={() => {}} style={{ paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card }}>
+            <Text style={{ fontWeight: "700", color: theme.colors.brand.base }}>Download overview</Text>
+          </Pressable>
         </View>
       </View>
     </ScrollView>
