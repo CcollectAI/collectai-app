@@ -10,7 +10,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "precheck": "node scripts/precheck.mjs",
-    "dev": "bash scripts/safe-start.sh",
+    "dev": "bash scripts/dev.sh",
     "test": "echo \"(no tests)\" && exit 0",
     "postinstall": "node scripts/postinstall-fixes.js"
   },
