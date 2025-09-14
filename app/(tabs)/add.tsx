@@ -1,14 +1,14 @@
 import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text } from "react-native";
 import { theme } from "@/theme";
 
 export default function AddScreen() {
   return (
-    <ScrollView style={{ flex:1, backgroundColor: theme.colors.background }} contentContainerStyle={{ padding: 16 }}>
-      <Text style={{ fontSize: 22, fontWeight: "800", color: theme.colors.text, marginBottom: 12 }}>Add Item</Text>
-      <View style={{ backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, padding: 12 }}>
-        <Text style={{ color: theme.colors.subtext }}>Camera & AI intake coming next.</Text>
-      </View>
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: 16 }}>
+      <Text style={{ ...theme.font.title }}>Add Item</Text>
+      <Text style={{ ...theme.font.body, marginTop: 8 }}>
+        Camera + AI recognition + form will be implemented here.
+      </Text>
+    </View>
   );
 }

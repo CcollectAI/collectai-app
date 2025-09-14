@@ -1,2 +1,2 @@
-export const store = { getState: () => ({}), setState: (_:unknown)=>{} };
+const store = { getState: () => ({}), setState: (_: any) => {} };
 export default store;

@@ -1,5 +1,5 @@
 export type SessionState = { ready: boolean; signedIn: boolean };
 export function useSession(): SessionState {
-  return { ready: true, signedIn: true };
+  // Non-blocking stub until real auth is wired
+  return { ready: true, signedIn: false };
 }
-export default useSession;

@@ -5,10 +5,8 @@ module.exports = function (api) {
     plugins: [
       ['module-resolver', {
         root: ['./'],
-        alias: { '@': './src' },
-        extensions: ['.tsx', '.ts', '.js', '.json']
-      }],
-      require.resolve("expo-router/babel")
+        alias: { '@': './src' }
+      }]
     ],
   };
 };

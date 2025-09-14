@@ -1,38 +1,43 @@
 import React from "react";
-import { Tabs } from "expo-router";
-import { View, Text } from "react-native";
+import { Tabs, Link } from "expo-router";
+import { Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/theme";
 
-const TabIcon = ({ label, active }: { label: string; active?: boolean }) => (
-  <View style={{ alignItems:"center", paddingTop: 6 }}>
-    <Text style={{ fontSize: 10, color: active ? theme.colors.text : theme.colors.subtext }}>{label}</Text>
-  </View>
-);
+const NAVY = theme.colors.brand.base;
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.background },
-        headerTintColor: theme.colors.text,
+        headerStyle: { backgroundColor: theme.colors.card },
+        headerTitleStyle: { color: NAVY, fontWeight: "800" },
+        headerTintColor: NAVY,
         tabBarStyle: {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
           borderTopWidth: 1,
-          height: 60
+          height: 62
         },
-        tabBarActiveTintColor: theme.colors.text,
-        tabBarInactiveTintColor: theme.colors.subtext,
-        headerTitle: "CollectAI",
-        headerTitleStyle: { color: theme.colors.text }
+        tabBarActiveTintColor: NAVY,
+        tabBarInactiveTintColor: "#94A3B8"
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Portfolio",
+          title: "CollectAI",
+          headerRight: () => (
+            <Link href="/settings" asChild>
+              <Pressable style={{ paddingHorizontal: 12 }}>
+                <Ionicons name="settings-outline" size={22} color={NAVY} />
+              </Pressable>
+            </Link>
+          ),
           tabBarLabel: "Portfolio",
-          tabBarIcon: ({ focused }) => <TabIcon label="📊" active={focused} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          )
         }}
       />
       <Tabs.Screen
@@ -40,7 +45,9 @@ export default function TabsLayout() {
         options={{
           title: "Items",
           tabBarLabel: "Items",
-          tabBarIcon: ({ focused }) => <TabIcon label="📦" active={focused} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="albums-outline" size={size} color={color} />
+          )
         }}
       />
       <Tabs.Screen
@@ -48,7 +55,9 @@ export default function TabsLayout() {
         options={{
           title: "Add",
           tabBarLabel: "Add",
-          tabBarIcon: ({ focused }) => <TabIcon label="＋" active={focused} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="add-circle" size={28} color={color} />
+          )
         }}
       />
       <Tabs.Screen
@@ -56,7 +65,9 @@ export default function TabsLayout() {
         options={{
           title: "Marketplace",
           tabBarLabel: "Marketplace",
-          tabBarIcon: ({ focused }) => <TabIcon label="🏪" active={focused} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="storefront-outline" size={size} color={color} />
+          )
         }}
       />
     </Tabs>
