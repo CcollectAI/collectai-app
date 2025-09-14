@@ -1,58 +1,62 @@
-import fs from "fs";
-import path from "path";
-
+import fs from "fs"; import path from "path";
 const ROOT = process.cwd();
-const IGNORE_DIRS = [path.join(ROOT, "app/_shelf"), path.join(ROOT, "components")];
-const SCAN_DIRS = [path.join(ROOT, "app"), path.join(ROOT, "src")];
-
+const SCAN = ["app","src"];
+const EXCLUDE = [path.join("app","_shelf")];
+const EXT = [".tsx",".ts",".js",".jsx"];
 const problems = [];
-const add = (t,f,d)=>problems.push({t,f,d});
-const isIgnored = (fp) => IGNORE_DIRS.some(d => fp.startsWith(d));
 
-const read = (fp)=> fs.readFileSync(fp,"utf8");
-const exists = (p)=> {
-  const exts = ["", ".tsx", ".ts", ".js", ".jsx", "/index.tsx", "/index.ts", "/index.js", "/index.jsx"];
-  for (const e of exts) { try { if (fs.statSync(p+e).isFile()) return true; } catch {} }
-  return false;
+const isExcluded = (p)=> EXCLUDE.some(x => p === x || p.startsWith(x + path.sep));
+const list = (dir)=> {
+  const out=[]; for (const e of fs.readdirSync(dir)) {
+    const p=path.join(dir,e); const st=fs.statSync(p);
+    if (st.isDirectory()) { if (!isExcluded(p)) out.push(...list(p)); }
+    else if (EXT.some(x=>p.endsWith(x))) out.push(p);
+  } return out;
 };
+const files = SCAN.flatMap(d => fs.existsSync(d) ? list(d) : []);
 
-const files = [];
-(function walk(dir){
-  for (const name of fs.readdirSync(dir)) {
-    const fp = path.join(dir, name);
-    if (isIgnored(fp)) continue;
-    const st = fs.statSync(fp);
-    if (st.isDirectory()) walk(fp);
-    else if (/\.(tsx?|jsx?)$/.test(name)) files.push(fp);
-  }
-})(ROOT);
+function note(t,f,d){problems.push({t,f,d});}
 
-for (const fp of files) {
-  const s = read(fp);
+function checkImports(fp){
+  const s=fs.readFileSync(fp,"utf8");
+  if (/\.\.\/(?:\.\.\/)*src\//.test(s)) note("imports",fp,"Use '@/...' not '../../src/...'");
+  if (/from\s+['"]@\/src\//.test(s)) note("imports",fp,"Use '@/...' not '@/src/...'");
 
-  // Import hygiene: '../../src/...'
-  if (/\.\.\/(?:\.\.\/)*src\//.test(s)) add("imports", fp, "Use '@/...' not '../../src/...'");
-  if (/@\/src\//.test(s)) add("imports", fp, "Use '@/...' not '@/src/...'");
+  const specs=[]; const re=/\bimport(?:["'\s]*([\w*{}\n, ]+)from\s*)?["']([^"']+)["'];?/g;
+  let m; while ((m=re.exec(s))) specs.push(m[2]);
 
-  // Unresolved '@/...' modules (skip assets)
-  const specs = [];
-  const re = /\bimport(?:["'\s]*([\w*{}\n, ]+)from\s*)?["']([^"']+)["'];?/g;
-  let m; while ((m = re.exec(s))) specs.push(m[2]);
-  for (const spec of specs) {
-    if (!spec.startsWith("@/")) continue;
-    if (spec.includes("/assets/")) continue;
-    const local = path.join(ROOT, "src", spec.slice(2));
-    if (!exists(local)) add("missing", fp, `Module not found '${spec}' (tried '${local}')`);
-  }
+  const tryResolve=(spec)=>{
+    if (spec.startsWith("@/")) {
+      const base = path.join(ROOT,"src",spec.slice(2));
+      const cand = [base,...EXT.map(e=>base+e),...EXT.map(e=>path.join(base,"index"+e))];
+      for (const c of cand){ if (fs.existsSync(c)) return true; }
+      note("missing",fp,`Module not found '${spec}' -> tried '${base}'`);
+      return false;
+    }
+    if (spec.startsWith(".") || spec.startsWith("/")) {
+      const base = path.resolve(path.dirname(fp),spec);
+      const cand = [base,...EXT.map(e=>base+e),...EXT.map(e=>path.join(base,"index"+e))];
+      for (const c of cand){ if (fs.existsSync(c)) return true; }
+      note("missing",fp,`Module not found '${spec}' -> tried '${base}'`);
+      return false;
+    }
+    return true; // package import → ignore
+  };
+  specs.forEach(tryResolve);
 }
 
-const group = problems.reduce((acc,p)=>(acc[p.t]=(acc[p.t]||[]).concat(p),acc),{});
-const order = ["imports","missing"];
+files.forEach(checkImports);
+
 if (problems.length) {
-  for (const k of order) if (group[k]) {
-    const title = k==="imports" ? "Import hygiene issues" : "Unresolved modules";
-    console.log(`\n❌ ${title}`);
-    for (const p of group[k]) console.log(`  - ${p.f}: ${p.d}`);
+  const by = {};
+  for (const p of problems) { (by[p.t]=by[p.t]||[]).push(p); }
+  if (by["imports"]) {
+    console.log("\n❌ Import hygiene issues");
+    for (const p of by["imports"]) console.log(`  - ${p.f}: ${p.d}`);
+  }
+  if (by["missing"]) {
+    console.log("\n❌ Unresolved modules");
+    for (const p of by["missing"]) console.log(`  - ${p.f}: ${p.d}`);
   }
   console.log(`\n✖ Precheck failed (${problems.length} issues). Fix & re-run.`);
   process.exit(1);

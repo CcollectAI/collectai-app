@@ -1,3 +1,2 @@
-// Minimal placeholder so legacy imports resolve
-export const store = {};
+export const store = { getState: () => ({}), setState: (_:unknown)=>{} };
 export default store;

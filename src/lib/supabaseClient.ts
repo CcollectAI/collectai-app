@@ -1,13 +1,5 @@
 export const supabase = {
-  auth: {
-    signInWithOtp: async (_: { email: string }) => ({ data: null, error: null }),
-    signOut: async () => ({ error: null }),
-  },
-  from: (_table: string) => ({
-    select: async () => ({ data: [], error: null }),
-    insert: async () => ({ data: [], error: null }),
-    update: async () => ({ data: [], error: null }),
-    delete: async () => ({ data: [], error: null }),
-  }),
+  from() { return { select(){return this}, insert(){return this}, update(){return this}, eq(){return this} }; },
+  auth: { getUser: async () => ({ data: null }), onAuthStateChange: () => ({ data: null, subscription: { unsubscribe(){} }}) }
 };
 export default supabase;

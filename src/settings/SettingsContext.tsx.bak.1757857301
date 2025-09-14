@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Appearance } from 'react-native';
-import { get, put } from '@/lib/store';
+import { get, put } from '../../lib/store';
 import type { Category } from '../../types/category';
 
 type Settings = {

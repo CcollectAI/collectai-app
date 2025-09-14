@@ -1,75 +1,62 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
-import { theme } from "../../src/theme";
+import { View, Text } from "react-native";
+import { theme } from "@/theme";
+
+const TabIcon = ({ label, active }: { label: string; active?: boolean }) => (
+  <View style={{ alignItems:"center", paddingTop: 6 }}>
+    <Text style={{ fontSize: 10, color: active ? theme.colors.text : theme.colors.subtext }}>{label}</Text>
+  </View>
+);
 
 export default function TabsLayout() {
-  const router = useRouter();
-
   return (
     <Tabs
       screenOptions={{
-        headerTitleAlign: "left",
-        headerStyle: { backgroundColor: theme.colors.bg },
-        headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
-        tabBarActiveTintColor: theme.colors.brand.base,
-        tabBarInactiveTintColor: theme.colors.muted,
+        headerStyle: { backgroundColor: theme.colors.background },
+        headerTintColor: theme.colors.text,
         tabBarStyle: {
-          backgroundColor: "#fff",
+          backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
-          height: 64,
-          paddingTop: 6,
+          borderTopWidth: 1,
+          height: 60
         },
-        headerRight: () => (
-          <TouchableOpacity
-            onPress={() => router.push("/settings")}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={{
-              marginRight: 14,
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              backgroundColor: "#fff",
-              alignItems: "center",
-              justifyContent: "center",
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-              ...theme.shadow.card,
-            }}
-          >
-            <Ionicons name="settings-outline" size={20} color="#0F172A" />
-          </TouchableOpacity>
-        ),
+        tabBarActiveTintColor: theme.colors.text,
+        tabBarInactiveTintColor: theme.colors.subtext,
+        headerTitle: "CollectAI",
+        headerTitleStyle: { color: theme.colors.text }
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} />,
+          title: "Portfolio",
+          tabBarLabel: "Portfolio",
+          tabBarIcon: ({ focused }) => <TabIcon label="📊" active={focused} />
         }}
       />
       <Tabs.Screen
-        name="categories/index"
+        name="items"
         options={{
-          title: "Categories",
-          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" color={color} size={size} />,
+          title: "Items",
+          tabBarLabel: "Items",
+          tabBarIcon: ({ focused }) => <TabIcon label="📦" active={focused} />
         }}
       />
       <Tabs.Screen
-        name="collection/index"
+        name="add"
         options={{
-          title: "Collection",
-          tabBarIcon: ({ color, size }) => <Ionicons name="albums-outline" color={color} size={size} />,
+          title: "Add",
+          tabBarLabel: "Add",
+          tabBarIcon: ({ focused }) => <TabIcon label="＋" active={focused} />
         }}
       />
       <Tabs.Screen
-        name="listings/index"
+        name="marketplace"
         options={{
-          title: "Listings",
-          tabBarIcon: ({ color, size }) => <Ionicons name="pricetags-outline" color={color} size={size} />,
+          title: "Marketplace",
+          tabBarLabel: "Marketplace",
+          tabBarIcon: ({ focused }) => <TabIcon label="🏪" active={focused} />
         }}
       />
     </Tabs>

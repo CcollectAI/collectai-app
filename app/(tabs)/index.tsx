@@ -1,29 +1,38 @@
 import React from "react";
-import { View } from "react-native";
-import Header from "../../src/components/Header";
-import PortfolioChart from "../../src/components/PortfolioChart";
-import ActionTile from "../../src/components/ActionTile";
-import { theme } from "../../src/theme";
-import { useRouter } from "expo-router";
+import { View, Text, ScrollView, Pressable, Alert } from "react-native";
+import { theme } from "@/theme";
 
-export default function Home() {
-  const router = useRouter();
-
+export default function PortfolioScreen() {
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      {/* Visual brand header (the gear is also in headerRight from Tabs layout) */}
-      <Header title="Collectors" />
-
-      {/* Portfolio card with chart + delta badge */}
-      <PortfolioChart />
-
-      {/* 2×2 quick actions */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", paddingHorizontal: theme.spacing.lg }}>
-        <ActionTile label="New Listing"   emoji="🧾" onPress={() => router.push("/listings/new")} />
-        <ActionTile label="Categories"    emoji="🗂️" onPress={() => router.push("/categories")} />
-        <ActionTile label="My Collection" emoji="📦" onPress={() => router.push("/collection")} />
-        <ActionTile label="Marketplace"   emoji="🛒" onPress={() => router.push("/listings")} />
+    <ScrollView style={{ flex: 1, backgroundColor: theme.colors.background }} contentContainerStyle={{ padding: 16 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <Text style={{ fontSize: 28, fontWeight: "800", color: theme.colors.text }}>CollectAI</Text>
+        <Pressable onPress={() => Alert.alert("Settings")} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 18, color: theme.colors.text }}>⚙️</Text>
+        </Pressable>
       </View>
-    </View>
+
+      <Text style={{ color: theme.colors.subtext, marginBottom: 8 }}>Today</Text>
+      <View style={{ backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, padding: 12 }}>
+        <Text style={{ color: theme.colors.text }}>Line chart placeholder (1D/7D/30D)</Text>
+      </View>
+
+      <View style={{ height: 16 }} />
+
+      <Text style={{ fontSize: 16, fontWeight: "700", color: theme.colors.text, marginBottom: 8 }}>Collection</Text>
+      <View style={{ backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border }}>
+        {[
+          { title: "Charizard Holo 1999", value: 1240.0, changePct: +3.1 },
+          { title: "LEGO Falcon 75192", value: 680.0, changePct: -1.4 }
+        ].map((it, idx) => (
+          <View key={idx} style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: idx === 1 ? 0 : 1, borderBottomColor: theme.colors.border }}>
+            <Text style={{ fontWeight: "700", color: theme.colors.text }}>{it.title}</Text>
+            <Text style={{ color: it.changePct >= 0 ? theme.colors.positive : theme.colors.negative }}>
+              {it.changePct >= 0 ? "+" : ""}{it.changePct.toFixed(2)}%
+            </Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }

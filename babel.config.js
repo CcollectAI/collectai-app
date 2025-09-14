@@ -1,10 +1,14 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ["babel-preset-expo"],
+    presets: ['babel-preset-expo'],
     plugins: [
-      ["module-resolver", { alias: { "@": "./src" } }],
-      "expo-router/babel"
+      ['module-resolver', {
+        root: ['./'],
+        alias: { '@': './src' },
+        extensions: ['.tsx', '.ts', '.js', '.json']
+      }],
+      require.resolve("expo-router/babel")
     ],
   };
 };
