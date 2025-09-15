@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, Image, ScrollView, Alert } from 'react-native';
 import { fonts, colors, spacing } from '../theme/tokens';
 import useValuations from '../hooks/useValuations';
-import Button from '../components/Button';
+import Button from '@/components/Button';
 import { supabase } from "@/lib/supabaseClient";
 import { format } from 'date-fns';
 import { useLayoutEffect } from 'react';

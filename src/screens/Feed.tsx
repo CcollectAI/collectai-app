@@ -1,10 +1,10 @@
 import { View, Text, ActivityIndicator, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import useFeed from '../hooks/useFeed';
-import PostCard from '../components/PostCard';
+import PostCard from '@/components/PostCard';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { useEffect } from 'react';
-import ActionTile from '../components/ActionTile';
+import ActionTile from '@/components/ActionTile';
 import { useNavigation } from '@react-navigation/native';
 
 export default function Feed(){

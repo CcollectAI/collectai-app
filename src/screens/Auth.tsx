@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { View, Alert } from 'react-native';
 import { supabase } from "@/lib/supabaseClient";
-import Input from '../components/Input';
-import Button from '../components/Button';
+import Input from '@/components/Input';
+import Button from '@/components/Button';
 import { colors } from '../theme/tokens';
 
 export default function Auth(){

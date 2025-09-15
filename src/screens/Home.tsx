@@ -1,12 +1,12 @@
 import React from "react";
 import { View, Text, ScrollView } from "react-native";
-import Header from "../components/Header";
-import Badge from "../components/Badge";
-import Tile from "../components/Tile";
-import ActionTile from "../components/ActionTile";
-import PortfolioChart from "../components/PortfolioChart";
+import Header from '@/components/Header";
+import Badge from '@/components/Badge";
+import Tile from '@/components/Tile";
+import ActionTile from '@/components/ActionTile";
+import PortfolioChart from '@/components/PortfolioChart";
 import usePortfolioSeries from "../hooks/usePortfolioSeries";
-import Card from "../components/ui/Card";
+import Card from '@/components/ui/Card";
 import { space, color, text as T } from "../theme/tokens";
 
 export default function Home() {

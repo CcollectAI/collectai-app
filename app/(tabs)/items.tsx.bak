@@ -1,0 +1,105 @@
+import { View, Text, ScrollView, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Card from '@/components/Card';
+import ShieldBadge, { Tier } from '@/components/ShieldBadge';
+import { theme } from '@/theme';
+import { useItems, groupByCategory } from '@/store/items';
+
+type Item = { name: string; pct?: number; price: number };
+type Group = { category: string; tier: Tier; items: Item[] };
+
+const fmtEUR0_US = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+
+const SEED: Group[] = [
+  { category: 'Pokémon', tier: 'platinum', items: [
+    { name: 'PSA 9 Charizard', pct: 2.4, price: 1820 },
+    { name: 'Pikachu VMAX', pct: -0.8, price: 210 },
+  ]},
+  { category: 'Funko', tier: 'gold', items: [
+    { name: 'Freddy Funko LE', pct: 1.1, price: 320 },
+  ]},
+];
+
+export default function Items() {
+  const userItems = useItems();
+  const userGroups = groupByCategory(userItems).map(g => ({
+    category: g.category,
+    tier: g.tier,
+    items: g.items.map(i => ({ name: i.name, pct: i.pct, price: i.price })),
+  }));
+
+  const merged: Group[] = (() => {
+    const byCat = new Map<string, Group>();
+    for (const g of SEED) byCat.set(g.category, { ...g, items: [...g.items] });
+    for (const g of userGroups) {
+      const existing = byCat.get(g.category);
+      if (existing) existing.items.push(...g.items);
+      else byCat.set(g.category, g);
+    }
+    return Array.from(byCat.values());
+  })();
+
+  const onDownload = () => {};
+
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: theme.colors.bg }} contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ color: theme.colors.navy, fontWeight: '800', fontSize: 16, backgroundColor: theme.colors.card, paddingHorizontal: 8, paddingVertical: 4 }}>
+          Items
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs }}>
+          <Ionicons name="share-outline" size={18} color={theme.colors.navy} />
+          <Text style={{ color: theme.colors.navy, fontWeight: '700' }}>Share</Text>
+        </View>
+      </View>
+
+      {merged.map((g) => {
+        const total = g.items.reduce((s, it) => s + it.price, 0);
+        return (
+          <View key={g.category} style={{ gap: theme.spacing.xs }}>
+            <Card style={{ gap: theme.spacing.sm, padding: theme.spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: theme.spacing.xs, borderBottomWidth: 1, borderColor: theme.colors.border }}>
+                <Text style={{ color: theme.colors.navy, fontWeight: '800', fontSize: 16 }}>{g.category}</Text>
+                <ShieldBadge tier={g.tier} />
+              </View>
+
+              <View style={{ flexDirection: 'row', paddingVertical: theme.spacing.xs, borderBottomWidth: 1, borderColor: theme.colors.border, alignItems: 'center' }}>
+                <Text style={{ flex: 1, color: theme.colors.subtext, fontWeight: '700' }}>Name</Text>
+                <Text style={{ width: 100, textAlign: 'right', color: theme.colors.subtext, fontWeight: '700' }}>Price</Text>
+              </View>
+
+              {g.items.map((it, idx) => (
+                <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: theme.spacing.sm, borderBottomWidth: idx < g.items.length - 1 ? 1 : 0, borderColor: theme.colors.border }}>
+                  <View style={{ flex: 1, paddingRight: theme.spacing.md }}>
+                    <Text style={{ color: theme.colors.navy, fontWeight: '600' }}>{it.name}</Text>
+                    {typeof it.pct === 'number' && (
+                      <Text style={{ fontSize: 12, marginTop: 2, color: it.pct >= 0 ? theme.colors.up : theme.colors.down }}>
+                        {(it.pct >= 0 ? '+' : '') + it.pct.toFixed(2)}%
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={{ width: 100, textAlign: 'right', color: theme.colors.navy, fontWeight: '700' }}>
+                    {fmtEUR0_US(it.price)}
+                  </Text>
+                </View>
+              ))}
+            </Card>
+
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ color: theme.colors.subtext, fontWeight: '700' }}>
+                Total {fmtEUR0_US(total)}
+              </Text>
+            </View>
+          </View>
+        );
+      })}
+
+      <View style={{ alignItems: 'center', marginTop: theme.spacing.sm, marginBottom: theme.spacing.xl }}>
+        <Pressable onPress={onDownload} style={{ borderWidth: 1, borderColor: theme.colors.navy, paddingVertical: theme.spacing.sm, paddingHorizontal: theme.spacing.xl }}>
+          <Text style={{ color: theme.colors.navy, fontWeight: '700' }}>Download overview</Text>
+        </Pressable>
+      </View>
+    </ScrollView>
+  );
+}

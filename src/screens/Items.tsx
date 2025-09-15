@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import { View, Text, ActivityIndicator, Pressable, Dimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import SearchBar from '../components/SearchBar';
-import CategoryChips from '../components/CategoryChips';
-import ItemCard from '../components/ItemCard';
-import SkeletonCard from '../components/SkeletonCard';
+import SearchBar from '@/components/SearchBar';
+import CategoryChips from '@/components/CategoryChips';
+import ItemCard from '@/components/ItemCard';
+import SkeletonCard from '@/components/SkeletonCard';
 import { fonts, colors, spacing } from '../theme/tokens';
 import useItems from '../hooks/useItems';
 import { useNavigation } from '@react-navigation/native';
-import ActionTile from '../components/ActionTile';
+import ActionTile from '@/components/ActionTile';
 
 export default function Items(){
   const [search, setSearch] = useState('');

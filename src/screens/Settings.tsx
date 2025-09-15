@@ -1,7 +1,7 @@
 import { View, Alert } from 'react-native';
 import { colors } from '../theme/tokens';
 import { supabase } from "@/lib/supabaseClient";
-import ActionTile from '../components/ActionTile';
+import ActionTile from '@/components/ActionTile';
 
 export default function Settings(){
   const signOut = async ()=>{

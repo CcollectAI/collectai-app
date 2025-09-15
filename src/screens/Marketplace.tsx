@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { View, Text, ActivityIndicator, Pressable, Dimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import SearchBar from '../components/SearchBar';
-import ItemCard from '../components/ItemCard';
+import SearchBar from '@/components/SearchBar';
+import ItemCard from '@/components/ItemCard';
 import { colors, fonts, spacing } from '../theme/tokens';
 import useMarketplace from '../hooks/useMarketplace';
 import { useNavigation } from '@react-navigation/native';

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Image, ScrollView, Alert } from 'react-native';
-import Input from '../components/Input';
-import Button from '../components/Button';
+import Input from '@/components/Input';
+import Button from '@/components/Button';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { supabase } from "@/lib/supabaseClient";
 import useOffers from '../hooks/useOffers';

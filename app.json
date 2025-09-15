@@ -3,7 +3,10 @@
     "name": "collectorsapp",
     "slug": "collectorsapp",
     "scheme": "collectorsapp",
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
     "experiments": {
       "typedRoutes": true
     }

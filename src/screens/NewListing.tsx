@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { View, Image, Alert, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import Input from '../components/Input';
-import Button from '../components/Button';
+import Input from '@/components/Input';
+import Button from '@/components/Button';
 import { colors, spacing } from '../theme/tokens';
 import { supabase } from "@/lib/supabaseClient";
 import { uploadListingImage } from '../utils/uploadListingImage';

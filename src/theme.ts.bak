@@ -1,0 +1,14 @@
+export const theme = {
+  colors: {
+    brand: { base: "#1ABC9C" },
+    navy: "#0B3D91",
+    bg: "#E6F7F8",
+    card: "#FFFFFF",
+    text: "#0B3D91",
+    subtext: "#64748B",
+    up: "#10B981",
+    down: "#EF4444",
+    border: "#E5E7EB",
+  },
+  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 },
+};

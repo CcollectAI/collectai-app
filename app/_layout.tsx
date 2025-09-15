@@ -1,10 +1,36 @@
-import React from "react";
-import { Stack } from "expo-router";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
+import { theme } from '@/theme';
+import { loadVectorFonts } from '@/lib/loadFonts';
+
+SplashScreen.preventAutoHideAsync().catch(()=>{});
+
 export default function RootLayout() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      await loadVectorFonts();  // force-load Ionicons from local asset
+      setReady(true);
+      SplashScreen.hideAsync().catch(()=>{});
+    })();
+  }, []);
+
+  if (!ready) return null;
+
   return (
-    <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }} />
-    </SafeAreaProvider>
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.colors.card }, // white header
+        headerTintColor: theme.colors.navy,
+        headerTitleStyle: { fontWeight: '800' },
+        contentStyle: { backgroundColor: theme.colors.bg },
+      }}
+    >
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="_shelf/icon-test" options={{ title: 'Icon test' }} />
+      <Stack.Screen name="_shelf/settings" options={{ title: 'Settings' }} />
+    </Stack>
   );
 }

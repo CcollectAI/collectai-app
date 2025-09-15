@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { View, Text, Alert, ActivityIndicator } from "react-native";
 import { supabase } from "../../lib/supabaseClient";
 import { router } from "expo-router";
-import Input from "../components/ui/Input";
-import Button from "../components/ui/Button";
+import Input from '@/components/ui/Input";
+import Button from '@/components/ui/Button";
 
 export default function SignUp() {
   const [username, setUsername] = useState("");

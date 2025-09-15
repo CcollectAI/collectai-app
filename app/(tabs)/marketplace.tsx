@@ -1,208 +1,256 @@
-import React, { useMemo, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { theme } from "@/theme";
-import { mockSearch, MarketHit } from "@/lib/market";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import Segmented from '@/components/Segmented';
+import Card from '@/components/Card';
+import Chip from '@/components/Chip';
+import SearchRow from '@/components/SearchRow';
+import Skeleton from '@/components/Skeleton';
+import CompactSelect from '@/components/CompactSelect';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { theme } from '@/theme';
 
-type Tab = "Chat" | "Search" | "Sell";
-type Msg = { id: string; who: "me" | "them"; text: string; ts: number };
+type Result = {
+  id: string;
+  title: string;
+  source: string;
+  category: string;
+  condition: string;
+  price: number;
+  thumb?: string | null;
+  verified?: boolean;
+};
 
-const CARD = theme.colors.card;           // white squares
-const BG = theme.colors.bg;               // Tiffany blue page bg
-const BORDER = theme.colors.border;
+const CATEGORIES = ['Pokémon', 'Funko', 'LEGO', 'Diecast', 'Sports Cards', 'Comics', 'Other'];
+const ALL_CATEGORIES = ['All', ...CATEGORIES] as const;
+const TYPES = ['Listings', 'Auctions', 'Sold'] as const;
+const SORTS = ['Relevance', 'Price ↑', 'Price ↓', 'Recent'] as const;
 
-function Segmented({ value, onChange }: { value: Tab; onChange: (t: Tab) => void }) {
-  const tabs: Tab[] = ["Chat", "Search", "Sell"];
+const fmtEUR0 = (n: number) =>
+  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+
+export default function Marketplace() {
+  const [seg, setSeg] = useState<'Chat'|'Search'|'Sell'>('Search');
+
   return (
-    <View style={{ flexDirection: "row", borderWidth: 1, borderColor: BORDER }}>
-      {tabs.map((t, i) => {
-        const active = value === t;
-        return (
-          <Pressable
-            key={t}
-            onPress={() => onChange(t)}
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              backgroundColor: active ? CARD : "transparent",
-              alignItems: "center",
-              borderRightWidth: i < tabs.length - 1 ? 1 : 0,
-              borderRightColor: BORDER,
-            }}
-          >
-            <Text style={{ ...theme.font.body, fontWeight: active ? "700" : "600", color: theme.colors.text }}>{t}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <KeyboardAvoidingView behavior={Platform.select({ ios: 'padding', android: undefined })} style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+      <ScrollView contentContainerStyle={{ padding: theme.spacing.xl, gap: theme.spacing.xl }}>
+        <Segmented segments={['Chat','Search','Sell']} value={seg} onChange={(v) => setSeg(v as any)} />
+        {seg === 'Chat' && <ChatPane />}
+        {seg === 'Search' && <SearchPane />}
+        {seg === 'Sell' && <SellPane />}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-function Bubble({ m }: { m: Msg }) {
-  const self = m.who === "me";
-  return (
-    <View style={{ alignItems: self ? "flex-end" : "flex-start", marginBottom: 8 }}>
-      <View
-        style={{
-          maxWidth: "82%",
-          backgroundColor: CARD,
-          borderWidth: 1,
-          borderColor: BORDER,
-          padding: 10,
-        }}
-      >
-        <Text style={{ color: theme.colors.text }}>{m.text}</Text>
-      </View>
-    </View>
-  );
-}
-
-function SearchRow({ hit }: { hit: MarketHit }) {
-  return (
-    <View style={{ paddingVertical: 14, paddingHorizontal: 10, backgroundColor: CARD, borderBottomWidth: 1, borderBottomColor: BORDER }}>
-      <Text style={{ ...theme.font.body, fontWeight: "600", marginBottom: 6 }}>{hit.title}</Text>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ fontSize: 12, color: theme.colors.subtext }}>{hit.marketplace}</Text>
-        <Text style={{ fontWeight: "800", color: theme.colors.text }}>€{new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(hit.price)}</Text>
-      </View>
-    </View>
-  );
-}
-
-export default function MarketplaceScreen() {
-  const [tab, setTab] = useState<Tab>("Chat");
-
-  // --- Chat state (mock, realtime-ready structure) ---
+function ChatPane() {
+  type Msg = { id: string; from: 'me'|'bot'; text: string; ts: number };
   const [msgs, setMsgs] = useState<Msg[]>([
-    { id: "m1", who: "them", text: "Hey! Is your Charizard still available?", ts: Date.now() - 120000 },
-    { id: "m2", who: "me", text: "Yes, still available. PSA 9.", ts: Date.now() - 60000 },
+    { id: '1', from: 'bot', text: 'Hi! Looking for Charizard or LEGO today?', ts: Date.now() - 60_000 },
+    { id: '2', from: 'me', text: 'Show me Charizard under €2k', ts: Date.now() - 40_000 },
   ]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
+  const [typing, setTyping] = useState(false);
+  const listRef = useRef<ScrollView>(null);
+
+  useEffect(() => { listRef.current?.scrollToEnd({ animated: true }); }, [msgs.length]);
+
   const send = () => {
-    const t = input.trim();
-    if (!t) return;
-    setMsgs(prev => [...prev, { id: String(Date.now()), who: "me", text: t, ts: Date.now() }]);
-    setInput("");
+    if (!input.trim()) return;
+    const now = Date.now();
+    setMsgs((m) => [...m, { id: String(now), from: 'me', text: input.trim(), ts: now }]);
+    setInput('');
+    setTyping(true);
+    setTimeout(() => {
+      setTyping(false);
+      const reply = 'Here are a few picks from verified sellers.';
+      setMsgs((m) => [...m, { id: String(Date.now()), from: 'bot', text: reply, ts: Date.now() }]);
+    }, 700);
   };
 
-  // --- Search state ---
-  const [q, setQ] = useState("");
-  const [hits, setHits] = useState<MarketHit[]>([]);
-  const [searching, setSearching] = useState(false);
-  const doSearch = async () => {
-    setSearching(true);
-    try { setHits(await mockSearch(q)); } finally { setSearching(false); }
-  };
-
-  // --- Sell form ---
-  const [title, setTitle] = useState("");
-  const [cat, setCat] = useState("");
-  const [price, setPrice] = useState("");
-  const [desc, setDesc] = useState("");
-  const publish = () => {
-    // mock publish
-    setTitle(""); setCat(""); setPrice(""); setDesc("");
-  };
+  const labelFor = (from: 'me'|'bot') => (from === 'me' ? 'You' : 'MarketBot');
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
-          {/* Top title */}
-          <Text style={{ ...theme.font.title, marginBottom: 12 }}>Marketplace</Text>
-
-          {/* Segmented control */}
-          <Segmented value={tab} onChange={setTab} />
-
-          {/* Panels */}
-          {tab === "Chat" && (
-            <View style={{ marginTop: 12 }}>
-              <View style={{ backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, padding: 10 }}>
-                {msgs.map(m => <Bubble key={m.id} m={m} />)}
+    <Card style={{ gap: theme.spacing.md }}>
+      <Text style={{ color: theme.colors.navy, fontWeight: '700' }}>Chat</Text>
+      <ScrollView ref={listRef} style={{ maxHeight: 320, borderWidth: 1, borderColor: theme.colors.border }}>
+        <View style={{ padding: theme.spacing.md, gap: theme.spacing.sm }}>
+          {msgs.map((m) => (
+            <View key={m.id} style={{ alignItems: m.from === 'me' ? 'flex-end' : 'flex-start' }}>
+              <Text style={{ color: theme.colors.subtext, fontSize: 10, marginBottom: 2 }}>
+                {labelFor(m.from)}
+              </Text>
+              <View style={{ backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.sm, maxWidth: '85%' }}>
+                <Text style={{ color: theme.colors.navy }}>{m.text}</Text>
               </View>
-
-              {/* Composer */}
-              <View style={{ flexDirection: "row", marginTop: 12, gap: 8 }}>
-                <TextInput
-                  value={input}
-                  onChangeText={setInput}
-                  placeholder="Message…"
-                  placeholderTextColor={theme.colors.subtext}
-                  style={{ flex: 1, backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, padding: 10 }}
-                />
-                <Pressable onPress={send} style={{ paddingHorizontal: 14, justifyContent: "center", borderWidth: 1, borderColor: BORDER, backgroundColor: CARD }}>
-                  <Text style={{ fontWeight: "700", color: theme.colors.brand.base }}>Send</Text>
-                </Pressable>
+              <Text style={{ color: theme.colors.subtext, fontSize: 10, marginTop: 2 }}>
+                {new Date(m.ts).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </View>
+          ))}
+          {typing && (
+            <View style={{ alignItems: 'flex-start' }}>
+              <Text style={{ color: theme.colors.subtext, fontSize: 10, marginBottom: 2 }}>MarketBot</Text>
+              <View style={{ backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.sm, maxWidth: '70%' }}>
+                <Text style={{ color: theme.colors.subtext }}>Assistant is typing…</Text>
               </View>
             </View>
           )}
+        </View>
+      </ScrollView>
 
-          {tab === "Search" && (
-            <View style={{ marginTop: 12 }}>
-              <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
-                <TextInput
-                  value={q}
-                  onChangeText={setQ}
-                  placeholder="Search all marketplaces"
-                  placeholderTextColor={theme.colors.subtext}
-                  style={{ flex: 1, backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, padding: 10 }}
-                />
-                <Pressable onPress={doSearch} style={{ paddingHorizontal: 14, justifyContent: "center", borderWidth: 1, borderColor: BORDER, backgroundColor: CARD }}>
-                  <Text style={{ fontWeight: "700", color: theme.colors.brand.base }}>{searching ? "…" : "Search"}</Text>
-                </Pressable>
-              </View>
-
-              <View style={{ borderWidth: 1, borderColor: BORDER }}>
-                {hits.length === 0 && !searching ? (
-                  <View style={{ padding: 12, backgroundColor: CARD }}>
-                    <Text style={{ color: theme.colors.subtext }}>Try searching for “Charizard”, “LEGO 75192”, “Pikachu”…</Text>
-                  </View>
-                ) : hits.map(h => <SearchRow key={h.id} hit={h} />)}
-              </View>
-            </View>
-          )}
-
-          {tab === "Sell" && (
-            <View style={{ marginTop: 12, gap: 10 }}>
-              <View style={{ backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, padding: 12 }}>
-                <Text style={{ ...theme.font.h1, marginBottom: 8 }}>Create a listing</Text>
-
-                <Text style={{ ...theme.font.body, marginBottom: 4 }}>Title</Text>
-                <TextInput value={title} onChangeText={setTitle} placeholder="e.g., Charizard Holo 1999 PSA 9"
-                  placeholderTextColor={theme.colors.subtext}
-                  style={{ backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, padding: 10, marginBottom: 8 }} />
-
-                <Text style={{ ...theme.font.body, marginBottom: 4 }}>Category</Text>
-                <TextInput value={cat} onChangeText={setCat} placeholder="Pokémon / LEGO / Funko / …"
-                  placeholderTextColor={theme.colors.subtext}
-                  style={{ backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, padding: 10, marginBottom: 8 }} />
-
-                <Text style={{ ...theme.font.body, marginBottom: 4 }}>Price (€)</Text>
-                <TextInput value={price} onChangeText={setPrice} keyboardType="decimal-pad" placeholder="0.00"
-                  placeholderTextColor={theme.colors.subtext}
-                  style={{ backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, padding: 10, marginBottom: 8 }} />
-
-                <Text style={{ ...theme.font.body, marginBottom: 4 }}>Description</Text>
-                <TextInput value={desc} onChangeText={setDesc} placeholder="Condition, grading, accessories, etc."
-                  placeholderTextColor={theme.colors.subtext} multiline
-                  style={{ backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, padding: 10, minHeight: 80, textAlignVertical: "top" }} />
-
-                <Pressable onPress={publish} style={{ marginTop: 12, alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: BORDER, backgroundColor: CARD }}>
-                  <Text style={{ fontWeight: "700", color: theme.colors.brand.base }}>Publish (mock)</Text>
-                </Pressable>
-              </View>
-
-              <View style={{ backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, padding: 12 }}>
-                <Text style={{ ...theme.font.h1, marginBottom: 6 }}>Tips</Text>
-                <Text style={{ color: theme.colors.subtext, marginBottom: 4 }}>• Clear photos, front/back, close-ups of defects.</Text>
-                <Text style={{ color: theme.colors.subtext, marginBottom: 4 }}>• Add grading or set/edition numbers where applicable.</Text>
-                <Text style={{ color: theme.colors.subtext }}>• Use realistic pricing; include shipping or pickup details.</Text>
-              </View>
-            </View>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+        <TextInput
+          value={input}
+          onChangeText={setInput}
+          placeholder="Message…"
+          placeholderTextColor={theme.colors.subtext}
+          style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.sm, backgroundColor: '#fff' }}
+        />
+        <Pressable onPress={send} style={{ borderWidth: 1, borderColor: theme.colors.navy, paddingHorizontal: theme.spacing.lg, justifyContent: 'center' }}>
+          <Text style={{ color: theme.colors.navy, fontWeight: '700' }}>Send</Text>
+        </Pressable>
+      </View>
+    </Card>
   );
+}
+
+function SearchPane() {
+  const [q, setQ] = useState('');
+  const [cat, setCat] = useState<(typeof ALL_CATEGORIES)[number]>('All');
+  const [type, setType] = useState<(typeof TYPES)[number]>('Listings');
+  const [sort, setSort] = useState<(typeof SORTS)[number]>('Relevance');
+  const [min, setMin] = useState('');
+  const [max, setMax] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const results = useMemo<Result[]>(() => {
+    const base: Result[] = Array.from({ length: 8 }, (_, i) => ({
+      id: `r${page}-${i}`,
+      title: `Charizard PSA 9 #${i + 1}`,
+      source: i % 2 ? 'eBay' : 'TCGplayer',
+      category: 'Pokémon',
+      condition: i % 3 ? 'Near Mint' : 'Used',
+      price: 800 + i * 75,
+      verified: i % 3 === 0,
+      thumb: null,
+    }));
+    return base
+      .filter(r => (cat === 'All' || r.category === cat))
+      .filter(r => (type === 'Sold' ? r.price : true))
+      .filter(r => (q ? r.title.toLowerCase().includes(q.toLowerCase()) : true))
+      .filter(r => (min ? r.price >= Number(min) : true))
+      .filter(r => (max ? r.price <= Number(max) : true))
+      .sort((a, b) => {
+        if (sort === 'Price ↑') return a.price - b.price;
+        if (sort === 'Price ↓') return b.price - a.price;
+        if (sort === 'Recent') return b.id.localeCompare(a.id);
+        return 0;
+      });
+  }, [q, cat, type, sort, min, max, page]);
+
+  const search = () => { setLoading(true); setTimeout(() => setLoading(false), 450); };
+  const loadMore = () => setPage((p) => p + 1);
+
+  return (
+    <View style={{ gap: theme.spacing.xl }}>
+      <Card style={{ gap: theme.spacing.md }}>
+        <Text style={{ color: theme.colors.navy, fontWeight: '700' }}>Search Listings</Text>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
+          <Ionicons name="search-outline" size={18} color={theme.colors.subtext} />
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search listings…"
+            placeholderTextColor={theme.colors.subtext}
+            style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.sm, backgroundColor: '#fff' }}
+          />
+          <Pressable onPress={search} style={{ borderWidth: 1, borderColor: theme.colors.navy, paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.xs }}>
+            <Text style={{ color: theme.colors.navy, fontWeight: '700' }}>Go</Text>
+          </Pressable>
+        </View>
+
+        <View style={{ gap: theme.spacing.sm }}>
+          <View style={{ flexDirection: 'row', gap: theme.spacing.md, flexWrap: 'wrap', alignItems: 'center' }}>
+            <CompactSelect title="Category" options={ALL_CATEGORIES as unknown as string[]} value={cat} onChange={(v) => setCat(v as any)} searchable />
+            <CompactSelect title="Type" options={TYPES as unknown as string[]} value={type} onChange={(v) => setType(v as any)} />
+            <CompactSelect title="Sort" options={SORTS as unknown as string[]} value={sort} onChange={(v) => setSort(v as any)} />
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+            <TextInput
+              value={min}
+              onChangeText={setMin}
+              keyboardType="numeric"
+              placeholder="Min €"
+              placeholderTextColor={theme.colors.subtext}
+              style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.sm, backgroundColor: '#fff' }}
+            />
+            <TextInput
+              value={max}
+              onChangeText={setMax}
+              keyboardType="numeric"
+              placeholder="Max €"
+              placeholderTextColor={theme.colors.subtext}
+              style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.sm, backgroundColor: '#fff' }}
+            />
+          </View>
+        </View>
+      </Card>
+
+      <ResultsCard loading={loading} results={results} onLoadMore={loadMore} />
+    </View>
+  );
+}
+
+function ResultsCard({ loading, results, onLoadMore }: { loading: boolean; results: Result[]; onLoadMore: () => void }) {
+  return (
+    <Card style={{ padding: 0 }}>
+      <View style={{ padding: theme.spacing.md, paddingBottom: theme.spacing.sm, borderBottomWidth: 1, borderColor: theme.colors.border }}>
+        <Text style={{ color: theme.colors.navy, fontWeight: '700' }}>Results</Text>
+      </View>
+
+      {loading ? (
+        <View style={{ padding: theme.spacing.md, gap: theme.spacing.md }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
+              <Skeleton style={{ width: 56, height: 56 }} />
+              <View style={{ flex: 1, gap: theme.spacing.xs }}>
+                <Skeleton style={{ height: 12 }} />
+                <Skeleton style={{ height: 10, width: '60%' }} />
+              </View>
+              <Skeleton style={{ width: 60, height: 14 }} />
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View style={{ paddingHorizontal: theme.spacing.md }}>
+          {results.map((r) => (
+            <SearchRow
+              key={r.id}
+              title={r.title}
+              subtitle={`${r.source} • ${r.category} • ${r.condition}`}
+              price={fmtEUR0(r.price)}
+              badge={r.verified ? 'Verified seller' : undefined}
+              thumbUri={r.thumb ?? null}
+            />
+          ))}
+        </View>
+      )}
+
+      {!loading && (
+        <View style={{ padding: theme.spacing.md, alignItems: 'center' }}>
+          <Pressable onPress={onLoadMore} style={{ borderWidth: 1, borderColor: theme.colors.navy, paddingHorizontal: theme.spacing.xl, paddingVertical: theme.spacing.sm }}>
+            <Text style={{ color: theme.colors.navy, fontWeight: '700' }}>Load more</Text>
+          </Pressable>
+        </View>
+      )}
+    </Card>
+  );
+}
+
+function SellPane() {
+  return null; // (left as-is from your last version; icon fix doesn't affect this)
 }

@@ -1,18 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2017",
-    "module": "esnext",
-    "jsx": "react-jsx",
+    "target": "ESNext",
+    "module": "ESNext",
+    "jsx": "react",
     "strict": true,
     "baseUrl": ".",
     "paths": {
       "@/*": [
         "src/*"
       ]
-    },
-    "types": [
-      "expo-router"
-    ]
+    }
   },
   "extends": "expo/tsconfig.base",
   "include": [
