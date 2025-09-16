@@ -1,29 +1,15 @@
 import React from 'react';
 import {
-  LineChart,    // stats-chart-outline
-  Images,       // albums-outline
-  PlusCircle,   // add-circle-outline
-  ShoppingCart, // cart-outline
-  Settings,     // settings-outline
-  Share2,       // share-outline
-  ChevronDown,  // chevron-down
-  X,            // close
-  Check,        // checkmark
-  Image as ImageIcon, // image-outline
-  Search,       // search-outline
-  Shield        // shield-outline
+  LineChart, Images, PlusCircle, ShoppingCart, Settings, Share2,
+  ChevronDown, X, Check, Image as ImageIcon, Search, Shield
 } from 'lucide-react-native';
 
-type Props = {
-  name:
-    | 'stats-chart-outline' | 'albums-outline' | 'add-circle-outline' | 'cart-outline'
-    | 'settings-outline' | 'share-outline' | 'chevron-down' | 'close'
-    | 'checkmark' | 'image-outline' | 'search-outline' | 'shield-outline';
-  size?: number;
-  color?: string;
-};
+type Name =
+  | 'stats-chart-outline' | 'albums-outline' | 'add-circle-outline' | 'cart-outline'
+  | 'settings-outline' | 'share-outline' | 'chevron-down' | 'close'
+  | 'checkmark' | 'image-outline' | 'search-outline' | 'shield-outline';
 
-export default function Icon({ name, size = 20, color = '#0B3D91' }: Props) {
+export default function Icon({ name, size = 20, color = '#0B3D91' }:{name:Name; size?:number; color?:string}) {
   const p = { size, color };
   switch (name) {
     case 'stats-chart-outline': return <LineChart {...p} />;
