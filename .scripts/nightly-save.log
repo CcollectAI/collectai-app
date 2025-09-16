@@ -16,3 +16,4 @@ After doing this, you may fix the identity used for this commit with:
  create mode 100644 .scripts/nightly-save.log
 Updated tag 'autosave-latest' (was 6a7b9a1)
 Nightly autosave completed → branch:autosave tag:autosave-20250915-023001
+Reinitialized existing Git repository in /home/ubuntu/collectors-merge/.git/
