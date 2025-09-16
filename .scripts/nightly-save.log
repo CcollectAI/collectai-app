@@ -17,3 +17,19 @@ After doing this, you may fix the identity used for this commit with:
 Updated tag 'autosave-latest' (was 6a7b9a1)
 Nightly autosave completed → branch:autosave tag:autosave-20250915-023001
 Reinitialized existing Git repository in /home/ubuntu/collectors-merge/.git/
+[restore-20250914-114329 a0f7e0e] autosave: snapshot 20250916-023001
+ Committer: Ubuntu <ubuntu@ip-172-31-28-32.ec2.internal>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 1 file changed, 1 insertion(+)
+Updated tag 'autosave-latest' (was dbe0865)
+Nightly autosave completed → branch:autosave tag:autosave-20250916-023001
