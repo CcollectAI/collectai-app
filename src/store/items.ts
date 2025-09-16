@@ -1,47 +1,32 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { getJSON, setJSON } from '@/lib/storage';
 
-export type NewItem = {
-  category: string;
-  name: string;
-  price: number;      // estimated value shown in Items
-  pct?: number;       // optional % vs purchase price
-  notes?: string;
-};
-export type Item = NewItem & { id: string };
+export type Item = { id: string; category: string; name: string; price: number; pct?: number; tier?: 'silver'|'gold'|'platinum'; };
+const KEY = 'items.v1';
 
-const state: { items: Item[] } = { items: [] };
-const subs = new Set<() => void>();
-const emit = () => subs.forEach((f) => f());
-
-function subscribe(cb: () => void) { subs.add(cb); return () => subs.delete(cb); }
-function getSnapshot() { return state.items; }
-
-export function useItems() {
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+export async function addItem(it: Omit<Item,'id'>): Promise<Item[]> {
+  const curr = await getJSON<Item[]>(KEY, []);
+  const next: Item[] = [...curr, { ...it, id: String(Date.now()) }];
+  await setJSON(KEY, next);
+  return next;
 }
-export function addItem(input: NewItem) {
-  const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-  state.items.push({ id, ...input });
-  emit();
-}
+export async function listItems(): Promise<Item[]> { return getJSON<Item[]>(KEY, []); }
 
-// compute a simple tier by category total (no extra deps)
-export type Tier = 'silver' | 'gold' | 'platinum';
-export function tierFromTotal(total: number): Tier {
-  if (total >= 1500) return 'platinum';
-  if (total >= 500) return 'gold';
-  return 'silver';
+export function useItems(): Item[] {
+  const [items, setItems] = useState<Item[]>([]);
+  useEffect(() => { listItems().then(setItems); }, []);
+  return items;
 }
-
+export function useItemsWithSeed(seed: Item[]): Item[] {
+  const user = useItems();
+  return useMemo(() => [...seed, ...user], [user, seed]);
+}
 export function groupByCategory(items: Item[]) {
   const map = new Map<string, Item[]>();
-  for (const it of items) {
-    const arr = map.get(it.category) || [];
-    arr.push(it);
-    map.set(it.category, arr);
-  }
+  for (const it of items) map.set(it.category, [...(map.get(it.category)||[]), it]);
   return Array.from(map.entries()).map(([category, items]) => {
-    const total = items.reduce((s, it) => s + (it.price || 0), 0);
-    return { category, items, total, tier: tierFromTotal(total) as Tier };
+    const tier: Item['tier'] = (items.some(i => i.price > 1500) ? 'platinum'
+                         : items.some(i => i.price > 400) ? 'gold' : 'silver');
+    return { category, items, tier };
   });
 }
