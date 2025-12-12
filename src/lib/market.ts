@@ -1,20 +1,12 @@
-export type MarketHit = {
-  id: string;
-  title: string;
-  marketplace: string;
-  price: number;
-};
+import { callEdge } from './api'
 
-const CATALOG: MarketHit[] = [
-  { id: "h1", title: "Charizard Holo 1999 PSA 9", marketplace: "eBay", price: 1225 },
-  { id: "h2", title: "LEGO 75192 Millennium Falcon (New)", marketplace: "Bricklink", price: 690 },
-  { id: "h3", title: "Funko Pop Pikachu Flocked", marketplace: "StockX", price: 28 },
-  { id: "h4", title: "PSA 10 Mewtwo 1999", marketplace: "TCGplayer", price: 840 },
-];
+export type MarketHit = { id: string; title: string; price_eur: number; url: string; image: string; ts: string }
 
-export async function mockSearch(query: string): Promise<MarketHit[]> {
-  const q = (query || "").trim().toLowerCase();
-  if (!q) return [];
-  await new Promise(r => setTimeout(r, 300)); // simulate latency
-  return CATALOG.filter(x => x.title.toLowerCase().includes(q));
+export async function searchEbay(jwt: string, anonKey: string, query: string, opts?: { category?: string; limit?: number }) {
+  return callEdge<{ ok: true; provider: string; hits: MarketHit[] }>(
+    'market-search-ebay',
+    jwt,
+    anonKey,
+    { query, category: opts?.category, limit: opts?.limit ?? 8 }
+  )
 }

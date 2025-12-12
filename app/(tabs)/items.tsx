@@ -1,52 +1,992 @@
-import { View, Text, ScrollView, Pressable, Share, Alert } from 'react-native';
-import Icon from '@/components/Icon'; import ShieldBadge from '@/components/ShieldBadge'; import Card from '@/components/Card';
-import { theme } from '@/theme'; import { useItemsWithSeed, groupByCategory } from '@/store/items'; import { rowsToCSV, saveCSVAndShare } from '@/export/csv';
-const SEED = [{category:'Pokémon',name:'PSA 9 Charizard',pct:2.4,price:1820,tier:'platinum'},{category:'Pokémon',name:'Pikachu VMAX',pct:-0.8,price:210,tier:'platinum'},{category:'Funko',name:'Freddy Funko LE',pct:1.1,price:320,tier:'gold'}] as const;
-const fmt=(n:number)=> new Intl.NumberFormat('en-US',{style:'currency',currency:'EUR',minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
-export default function Items(){
-  const userPlusSeed = useItemsWithSeed(SEED.map(s=>({id:'seed-'+s.name,category:s.category,name:s.name,price:s.price,pct:s.pct,tier:s.tier as any})));
-  const groups = groupByCategory(userPlusSeed as any);
-  const onShare = async ()=>{ try{ await Share.share({message:'Items overview from Collect AI'});}catch{} };
-  const onDownload = async ()=>{ try{
-    const rows=(groups as any[]).flatMap(g=>(g.items as any[]).map((it:any)=>({category:g.category,name:it.name,priceEUR:it.price,pct:it.pct})));
-    const csv=rowsToCSV(rows);
-    const p=await saveCSVAndShare('collectai-items.csv',csv);
-    if(p==='unavailable') Alert.alert('Export unavailable','Install FileSystem/Sharing later.');
-  }catch(e:any){ Alert.alert('Export error', String(e?.message||e)); } };
+import React, { useEffect, useMemo, useState } from 'react';
+import { useAppTheme } from '@/hooks/useAppTheme';
+import { Link } from 'expo-router';
+import { CategoryPill } from '@/components/CategoryPill';
+import {
+  SafeAreaView,
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { fetchCollectionItems } from "@/store/collectionStore";
+
+type Item = {
+  id: string;
+  name: string;
+  category: string;        // e.g. Pokémon, LEGO
+  collectionName: string;  // e.g. "151 Base Set"
+  value: number;
+  condition?: string;
+  notes?: string;
+};
+
+const MOCK_ITEMS: Item[] = [
+  {
+    id: "1",
+    name: "Charizard GX (Alt Art)",
+    category: "Pokémon",
+    collectionName: "Sun & Moon – Burning Shadows",
+    value: 420,
+    condition: "PSA 9",
+  },
+  {
+    id: "2",
+    name: "Pikachu Illustrator (Proxy)",
+    category: "Pokémon",
+    collectionName: "Promo / Special",
+    value: 999,
+    condition: "Proxy",
+  },
+  {
+    id: "3",
+    name: "Lego UCS X-Wing",
+    category: "LEGO",
+    collectionName: "Ultimate Collector Series",
+    value: 320,
+    condition: "New, sealed",
+  },
+  {
+    id: "4",
+    name: "Hot Wheels RLC Skyline",
+    category: "Diecast",
+    collectionName: "RLC Exclusives",
+    value: 160,
+    condition: "Loose, mint",
+  },
+  {
+    id: "5",
+    name: "Luffy – NYCC Exclusive",
+    category: "Funko Pop",
+    collectionName: "Convention Exclusives",
+    value: 190,
+    condition: "Boxed",
+  },
+];
+
+const LIGHT_COLORS = {
+  background: "#FFFFFF",
+  text: "#0F172A",
+  muted: "#64748B",
+  border: "#E2E8F0",
+  card: "#F8FAFC",
+  accent: "#40C9C6", // Tiffany-ish
+};
+
+const DARK_COLORS = {
+  background: "#020617",
+  text: "#F9FAFB",
+  muted: "#9CA3AF",
+  border: "#1F2937",
+  card: "#020617",
+  accent: "#40C9C6",
+};
+
+
+const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "http://127.0.0.1:8080";
+
+
+type SortKey = "value_desc" | "value_asc" | "title";
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const ItemsScreen: React.FC = () => {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ category?: string; collectionName?: string }>();
+
+  const [isDark, setIsDark] = useState(false);
+  const colors = isDark ? DARK_COLORS : LIGHT_COLORS;
+
+  const [query, setQuery] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("value_desc");
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [backendItems, setBackendItems] = useState<Item[]>([]);
+  const [supaItems, setSupaItems] = useState<Item[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const res = await fetch(`${API_URL}/items`, {
+          method: "GET",
+        });
+        if (!res.ok) {
+          console.log("[Items] backend responded with", res.status);
+          return;
+        }
+
+        const data: any[] = await res.json();
+        if (!Array.isArray(data) || cancelled) return;
+
+        const mapped: Item[] = data
+          .map((it: any) => {
+            if (!it || typeof it.id !== "string" || typeof it.name !== "string") {
+              return null;
+            }
+
+            const value =
+              typeof it.estimated_value === "number"
+                ? it.estimated_value
+                : typeof it.value === "number"
+                ? it.value
+                : 0;
+
+            const category =
+              typeof it.category === "string" && it.category
+                ? it.category
+                : "Uncategorized";
+
+            const collectionName =
+              typeof it.collection_name === "string"
+                ? it.collection_name
+                : "";
+
+            const condition =
+              typeof it.condition === "string"
+                ? it.condition
+                : undefined;
+
+            const notes =
+              typeof it.notes === "string"
+                ? it.notes
+                : undefined;
+
+            const item: Item = {
+              id: it.id,
+              name: it.name,
+              category,
+              collectionName,
+              value,
+              condition,
+              notes,
+            };
+            return item;
+          })
+          .filter(Boolean) as Item[];
+
+        setBackendItems(mapped);
+      } catch (e) {
+        console.log("[Items] backend fetch failed", e);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFromSupabase = async () => {
+      try {
+        const items = await fetchCollectionItems();
+        if (!cancelled) {
+          setSupaItems(items);
+        }
+      } catch (e) {
+        console.log("[Items] supabase fetch failed", e);
+      }
+    };
+
+    loadFromSupabase();
+    return () => {
+      cancelled = false;
+    };
+  }, []);
+
+  const categoryParam =
+    typeof params.category === "string" ? params.category : undefined;
+  const collectionParam =
+    typeof params.collectionName === "string" ? params.collectionName : undefined;
+
+  const allCategories = useMemo(
+    () => Array.from(new Set(MOCK_ITEMS.map((i) => i.category))).sort(),
+    []
+  );
+
+  const filteredAndSortedByCategory = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const source = supaItems.length ? supaItems : (backendItems.length ? backendItems : MOCK_ITEMS);
+    let base = [...source];
+
+    if (categoryParam) {
+      base = base.filter((item) => item.category === categoryParam);
+    }
+
+    if (filterCategory) {
+      base = base.filter((item) => item.category === filterCategory);
+    }
+
+    if (collectionParam) {
+      base = base.filter((item) => item.collectionName === collectionParam);
+    }
+
+    if (q) {
+      base = base.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          item.collectionName.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q)
+      );
+    }
+
+    base.sort((a, b) => {
+      switch (sortKey) {
+        case "value_asc":
+          return a.value - b.value;
+        case "value_desc":
+          return b.value - a.value;
+        case "title":
+          return a.name.localeCompare(b.name);
+        default:
+          return 0;
+      }
+    });
+
+    const groups: { category: string; items: Item[]; total: number }[] = [];
+    for (const item of base) {
+      let group = groups.find((g) => g.category === item.category);
+      if (!group) {
+        group = { category: item.category, items: [], total: 0 };
+        groups.push(group);
+      }
+      group.items.push(item);
+      group.total += item.value;
+    }
+
+    groups.sort((a, b) => a.category.localeCompare(b.category));
+
+    return groups;
+  }, [query, filterCategory, sortKey, categoryParam, collectionParam]);
+
+  const portfolioTotal = useMemo(
+    () => MOCK_ITEMS.reduce((sum, item) => sum + item.value, 0),
+    []
+  );
+
+  const handleOpenItem = (item: Item) => {
+    router.push({
+      pathname: "/item/[id]",
+      params: {
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        collectionName: item.collectionName,
+        value: String(item.value),
+        condition: item.condition ?? "",
+        notes: item.notes ?? "",
+      },
+    });
+  };
+
+  const handleAddForCategory = (category: string) => {
+    router.push({
+      pathname: "/add",
+      params: { categoryHint: category },
+    });
+  };
+
+  const currentFilterLabel = filterCategory ?? "All categories";
+  const currentSortLabel =
+    sortKey === "value_desc"
+      ? "Value (high → low)"
+      : sortKey === "value_asc"
+      ? "Value (low → high)"
+      : "Title (A → Z)";
+
+  const hasAnyFilter =
+    !!categoryParam ||
+    !!collectionParam ||
+    !!filterCategory ||
+    query.trim().length > 0;
+
+  const clearFilters = () => {
+    setFilterCategory(null);
+    setQuery("");
+    try {
+      router.setParams({ category: undefined, collectionName: undefined });
+    } catch {
+      // ignore if not supported
+    }
+  };
+
   return (
-  <ScrollView style={{flex:1, backgroundColor: theme.colors.bg}} contentContainerStyle={{padding:theme.spacing.lg,gap:theme.spacing.lg}}>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-      <Text style={{color:theme.colors.navy,fontWeight:'800',fontSize:16,backgroundColor:'#fff',paddingHorizontal:8,paddingVertical:4}}>Items</Text>
-      <Pressable onPress={onShare} style={{flexDirection:'row',alignItems:'center',gap:6}}><Icon name="share-outline"/><Text style={{color:theme.colors.navy,fontWeight:'700'}}>Share</Text></Pressable>
-    </View>
-    {groups.map((g:any)=>{ const total=g.items.reduce((s:number,it:any)=>s+it.price,0); return(
-      <View key={g.category} style={{gap:theme.spacing.xs}}>
-        <Card style={{padding:theme.spacing.md,gap:theme.spacing.sm}}>
-          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingBottom:theme.spacing.xs,borderBottomWidth:1,borderColor:theme.colors.border}}>
-            <Text style={{color:theme.colors.navy,fontWeight:'800',fontSize:16}}>{g.category}</Text>
-            <ShieldBadge tier={g.tier}/>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          { backgroundColor: colors.background },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header row */}
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Items
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>
+              Browse and organize your collection.
+            </Text>
           </View>
-          <View style={{flexDirection:'row',alignItems:'center',paddingVertical:theme.spacing.xs,borderBottomWidth:1,borderColor:theme.colors.border}}>
-            <Text style={{flex:1,color:theme.colors.subtext,fontWeight:'700'}}>Name</Text>
-            <Text style={{width:100,textAlign:'right',color:theme.colors.subtext,fontWeight:'700'}}>Price</Text>
-          </View>
-          {g.items.map((it:any,idx:number)=>(
-            <View key={idx} style={{flexDirection:'row',alignItems:'center',paddingVertical:theme.spacing.sm,borderBottomWidth:idx<g.items.length-1?1:0,borderColor:theme.colors.border}}>
-              <View style={{flex:1,paddingRight:theme.spacing.md}}>
-                <Text style={{color:theme.colors.navy,fontWeight:'600'}}>{it.name}</Text>
-                {typeof it.pct==='number' && (<Text style={{fontSize:12,marginTop:2,color:it.pct>=0?theme.colors.up:theme.colors.down}}>{(it.pct>=0?'+':'')+it.pct.toFixed(2)}%</Text>)}
-              </View>
-              <Text style={{width:100,textAlign:'right',color:theme.colors.navy,fontWeight:'700'}}>{fmt(it.price)}</Text>
+
+          <View style={styles.headerRight}>
+            <View style={{ alignItems: "flex-end", marginRight: 8 }}>
+              <Text
+                style={[styles.portfolioLabel, { color: colors.muted }]}
+              >
+                Portfolio total
+              </Text>
+              <Text
+                style={[styles.portfolioValue, { color: colors.text }]}
+              >
+                {formatCurrency(portfolioTotal)}
+              </Text>
             </View>
-          ))}
-        </Card>
-        <View style={{alignItems:'flex-end'}}><Text style={{color:theme.colors.subtext,fontWeight:'700'}}>Total {fmt(total)}</Text></View>
-      </View>
-    );})}
-    <View style={{alignItems:'center',marginTop:theme.spacing.sm,marginBottom:theme.spacing.xl}}>
-      <Pressable onPress={onDownload} style={{borderWidth:1,borderColor:theme.colors.navy,paddingVertical:theme.spacing.sm,paddingHorizontal:theme.spacing.xl}}>
-        <Text style={{color:theme.colors.navy,fontWeight:'700'}}>Download overview</Text>
-      </Pressable>
-    </View>
-  </ScrollView>);
-}
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => setIsDark((prev) => !prev)}
+            >
+              <Ionicons
+                name={isDark ? "sunny-outline" : "moon-outline"}
+                size={18}
+                color={colors.muted}
+              />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Search input */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search items"
+            placeholderTextColor={colors.muted}
+            style={[
+              styles.searchInput,
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.card,
+                color: colors.text,
+              },
+            ]}
+          />
+        </View>
+
+        {/* Filter / Sort dropdown row */}
+        <View style={styles.controlsRow}>
+          <View style={styles.dropdownWrapper}>
+            <Pressable
+              style={[
+                styles.dropdownButton,
+                { borderColor: colors.border, backgroundColor: colors.card },
+              ]}
+              onPress={() => {
+                setFilterOpen((o) => !o);
+                setSortOpen(false);
+              }}
+            >
+              <Text
+                style={[styles.dropdownLabel, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                {currentFilterLabel}
+              </Text>
+              <Ionicons
+                name={filterOpen ? "chevron-up-outline" : "chevron-down-outline"}
+                size={16}
+                color={colors.muted}
+              />
+            </Pressable>
+            {filterOpen && (
+              <View
+                style={[
+                  styles.dropdownMenu,
+                  { borderColor: colors.border, backgroundColor: colors.card },
+                ]}
+              >
+                <Pressable
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setFilterCategory(null);
+                    setFilterOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    All categories
+                  </Text>
+                </Pressable>
+                {allCategories.map((cat) => (
+                  <Pressable
+                    key={cat}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setFilterCategory(cat);
+                      setFilterOpen(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownItemText,
+                        { color: colors.text },
+                      ]}
+                    >
+                      {cat}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+
+          <View style={styles.dropdownWrapper}>
+            <Pressable
+              style={[
+                styles.dropdownButton,
+                { borderColor: colors.border, backgroundColor: colors.card },
+              ]}
+              onPress={() => {
+                setSortOpen((o) => !o);
+                setFilterOpen(false);
+              }}
+            >
+              <Text
+                style={[styles.dropdownLabel, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                {currentSortLabel}
+              </Text>
+              <Ionicons
+                name={sortOpen ? "chevron-up-outline" : "chevron-down-outline"}
+                size={16}
+                color={colors.muted}
+              />
+            </Pressable>
+            {sortOpen && (
+              <View
+                style={[
+                  styles.dropdownMenu,
+                  { borderColor: colors.border, backgroundColor: colors.card },
+                ]}
+              >
+                <Pressable
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setSortKey("value_desc");
+                    setSortOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    Value (high → low)
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setSortKey("value_asc");
+                    setSortOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    Value (low → high)
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setSortKey("title");
+                    setSortOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    Title (A → Z)
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Active filter summary */}
+        {hasAnyFilter && (
+          <View style={styles.filterSummaryRow}>
+            <Text style={[styles.filterSummaryText, { color: colors.muted }]}>
+              Filtered by:
+            </Text>
+            <View style={styles.filterChipsRow}>
+              {categoryParam && (
+                <View style={styles.filterChip}>
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    Category: {categoryParam}
+                  </Text>
+                </View>
+              )}
+              {collectionParam && (
+                <View style={styles.filterChip}>
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    Collection: {collectionParam}
+                  </Text>
+                </View>
+              )}
+              {filterCategory && !categoryParam && (
+                <View style={styles.filterChip}>
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    Category: {filterCategory}
+                  </Text>
+                </View>
+              )}
+              {query.trim().length > 0 && (
+                <View style={styles.filterChip}>
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    Search: "{query.trim()}"
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Pressable
+              onPress={clearFilters}
+              style={styles.filterClearButton}
+            >
+              <Text
+                style={[styles.filterClearText, { color: colors.muted }]}
+              >
+                Clear
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Grouped list by category */}
+        {filteredAndSortedByCategory.length === 0 ? (
+          <Text style={[styles.emptyText, { color: colors.muted }]}>
+            No items match your filters yet.
+          </Text>
+        ) : (
+          filteredAndSortedByCategory.map((group) => (
+            <View key={group.category} style={styles.categoryBlock}>
+              {/* Category header with inline add button */}
+              <View style={styles.categoryHeaderRow}>
+                <Text
+                  style={[
+                    styles.categoryTitle,
+                    { color: colors.text },
+                  ]}
+                >
+                  {group.category}
+                </Text>
+                <Pressable
+                  style={[
+                    styles.categoryAddButton,
+                    { borderColor: colors.accent },
+                  ]}
+                  onPress={() => handleAddForCategory(group.category)}
+                >
+                  <Ionicons
+                    name="add-outline"
+                    size={14}
+                    color={colors.accent}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text
+                    style={[
+                      styles.categoryAddText,
+                      { color: colors.accent },
+                    ]}
+                  >
+                    Add
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Items in category */}
+              {group.items.map((item) => (
+                <Pressable
+                  key={item.id}
+                  style={[
+                    styles.itemRow,
+                    { borderColor: colors.border },
+                  ]}
+                  onPress={() => handleOpenItem(item)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.itemName,
+                        { color: colors.text },
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.itemMeta,
+                        { color: colors.muted },
+                      ]}
+                    >
+                      <CategoryPill id={item.category} label={item.category} /> – {item.collectionName}
+                    </Text>
+                    {item.condition ? (
+                      <Text
+                        style={[
+                          styles.itemCondition,
+                          { color: colors.muted },
+                        ]}
+                      >
+                        {item.condition}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.itemRight}>
+                    <Text
+                      style={[
+                        styles.itemValue,
+                        { color: colors.text },
+                      ]}
+                    >
+                      {formatCurrency(item.value)}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+
+              {/* Category total bottom-right */}
+              <View style={styles.categoryFooterRow}>
+                <View style={{ flex: 1 }} />
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text
+                    style={[
+                      styles.categoryTotalLabel,
+                      { color: colors.muted },
+                    ]}
+                  >
+                    Collection total
+                  </Text>
+                  <Text
+                    style={[
+                      styles.categoryTotalValue,
+                      { color: colors.text },
+                    ]}
+                  >
+                    {formatCurrency(group.total)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))
+        )}
+      
+        {/* Supabase-backed items view (beta) */}
+        <View
+          style={{
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: "#D6E4EC",
+            backgroundColor: "#FFFFFF",
+            padding: 14,
+            marginTop: 12,
+            marginBottom: 24,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: "600",
+              color: "#0C2233",
+              marginBottom: 4,
+            }}
+          >
+            
+          </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#647589",
+              marginBottom: 8,
+            }}
+          >
+            Open a simple view backed directly by your Supabase items table.
+          </Text>
+
+          <Link href="/items-supabase-demo">
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: "#19A7AE",
+              }}
+            >
+              Open Supabase items →
+            </Text>
+          </Link>
+        </View>
+
+</ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 32,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  subtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  portfolioLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  portfolioValue: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  iconButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  searchContainer: {
+    marginBottom: 10,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    fontSize: 13,
+  },
+  controlsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 8,
+  },
+  dropdownWrapper: {
+    flex: 1,
+    position: "relative",
+  },
+  dropdownButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  dropdownLabel: {
+    fontSize: 12,
+    maxWidth: "80%",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 38,
+    left: 0,
+    right: 0,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 4,
+    zIndex: 20,
+  },
+  dropdownItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  dropdownItemText: {
+    fontSize: 12,
+  },
+  filterSummaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+    marginBottom: 6,
+  },
+  filterSummaryText: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  filterChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  filterChip: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#CBD5F5",
+    backgroundColor: "#EFF6FF",
+  },
+  filterChipText: {
+    fontSize: 10,
+  },
+  filterClearButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  filterClearText: {
+    fontSize: 11,
+    textDecorationLine: "underline",
+  },
+  emptyText: {
+    fontSize: 13,
+    marginTop: 16,
+  },
+  categoryBlock: {
+    marginTop: 10,
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#E2E8F0",
+  },
+  categoryHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  categoryAddButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  categoryAddText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 6,
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  itemMeta: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  itemCondition: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  itemRight: {
+    marginLeft: 12,
+    alignItems: "flex-end",
+  },
+  itemValue: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  categoryFooterRow: {
+    flexDirection: "row",
+    marginTop: 6,
+  },
+  categoryTotalLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  categoryTotalValue: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+});
+
+export default ItemsScreen;

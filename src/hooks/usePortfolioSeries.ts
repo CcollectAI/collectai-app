@@ -1,46 +1,76 @@
-import supabase from "../../lib/supabaseClient";
-import { useSWR } from "../cache/useSWR";
+/* Shared portfolio analytics hook
+ *
+ * Uses the unified analytics engine (portfolioAnalyticsStore.ts) to expose:
+ * - snapshot: full PortfolioSnapshot (pl, series, allocations, items, tierSummary)
+ * - series: TimeSeriesPoint[] (value over time, sorted ascending by t)
+ * - pl: portfolio P/L summary (start/current/deltaAbs/deltaPct/maxDrawdownPct)
+ *
+ * This should be used by:
+ * - app/(tabs)/portfolio.tsx  (Robinhood-style chart & header card)
+ * - app/analytics.tsx         (inventory / investor overview)
+ */
 
-export type Pt = { t: string; v: number };
+import { useEffect, useMemo, useState } from 'react';
+import {
+  fetchPortfolioSnapshot,
+} from '@/store/portfolioAnalyticsStore';
+import type {
+  PortfolioSnapshot,
+  TimeSeriesPoint,
+} from '@/analytics/portfolioMetrics';
 
-async function fetchSeries(): Promise<Pt[]> {
-  // expects a table:
-  //   portfolio_values(at timestamptz, value numeric)
-  // with some data in the last ~30 days
-  if (!supabase) return demoSeries();
-  const { data, error } = await supabase
-    .from("portfolio_values")
-    .select("at,value")
-    .order("at", { ascending: true })
-    .limit(365);
-  if (error) throw error;
-  const rows = (data ?? []) as { at: string; value: number }[];
-  if (!rows.length) return demoSeries();
-  return rows.map((r) => ({ t: r.at, v: Number(r.value) }));
-}
+type UsePortfolioSeriesState = {
+  loading: boolean;
+  error: string | null;
+  snapshot: PortfolioSnapshot | null;
+  series: TimeSeriesPoint[];
+  pl: PortfolioSnapshot['pl'] | null;
+};
 
-export default function usePortfolioSeries() {
-  const { data, loading, refresh } = useSWR<Pt[]>("portfolio:series", fetchSeries, { staleMs: 120_000 });
-  const points = data ?? demoSeries();
+export function usePortfolioSeries(): UsePortfolioSeriesState {
+  const [snapshot, setSnapshot] = useState<PortfolioSnapshot | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const deltaPct = (() => {
-    if (points.length < 2) return 0;
-    const first = points[0].v;
-    const last = points[points.length - 1].v;
-    return first ? ((last - first) / first) * 100 : 0;
-  })();
+  useEffect(() => {
+    let active = true;
 
-  const total = points.length ? points[points.length - 1].v : 0;
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        const snap = await fetchPortfolioSnapshot();
+        if (!active) return;
+        setSnapshot(snap);
+      } catch (err: any) {
+        console.warn('[usePortfolioSeries] failed to load snapshot', err);
+        if (!active) return;
+        setError('Could not load portfolio analytics.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
 
-  return { data: points, total, deltaPct, loading, refresh };
-}
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
-function demoSeries(): Pt[] {
-  // 30 points with a gentle uptrend + noise
-  const base = 100;
-  return Array.from({ length: 30 }).map((_, i) => {
-    const v = base + i * 1.6 + (Math.sin(i / 2) * 3);
-    const t = new Date(Date.now() - (29 - i) * 24 * 3600 * 1000).toISOString();
-    return { t, v: Math.round(v * 10) / 10 };
-  });
+  const sortedSeries: TimeSeriesPoint[] = useMemo(() => {
+    if (!snapshot?.series?.length) return [];
+    return [...snapshot.series].sort(
+      (a, b) => new Date(a.t).getTime() - new Date(b.t).getTime(),
+    );
+  }, [snapshot]);
+
+  const pl = snapshot?.pl ?? null;
+
+  return {
+    loading,
+    error,
+    snapshot,
+    series: sortedSeries,
+    pl,
+  };
 }

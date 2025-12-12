@@ -1,12 +1,12 @@
 import React from "react";
 import { View, Text, ScrollView } from "react-native";
-import Header from '@/components/Header";
-import Badge from '@/components/Badge";
-import Tile from '@/components/Tile";
-import ActionTile from '@/components/ActionTile";
-import PortfolioChart from '@/components/PortfolioChart";
+import Header from "@/components/Header";
+import Badge from "@/components/Badge";
+import Tile from "@/components/Tile";
+import ActionTile from "@/components/ActionTile";
+import PortfolioChart from "@/components/PortfolioChart";
 import usePortfolioSeries from "../hooks/usePortfolioSeries";
-import Card from '@/components/ui/Card";
+import Card from "@/components/ui/Card";
 import { space, color, text as T } from "../theme/tokens";
 
 export default function Home() {
@@ -31,9 +31,9 @@ export default function Home() {
         </Card>
 
         <View style={{ gap: space.sm }}>
-          <ActionTile title="Add Item" subtitle="Add to your collection" href="/(tabs)/collection" />
-          <ActionTile title="Browse Marketplace" subtitle="See latest listings" href="/(tabs)/listings" />
-          <ActionTile title="Categories" subtitle="Explore by category" href="/(tabs)/categories" />
+	  <ActionTile title="Add Item" subtitle="Add to your collection" href="/portfolio" />
+	  <ActionTile title="Browse Marketplace" subtitle="See latest listings" href="/marketplace/listings" />
+	  <ActionTile title="Categories" subtitle="Explore by category" href="/categories" />
         </View>
 
         <Tile title="Spotlight" subtitle="Hand-picked items for you" />

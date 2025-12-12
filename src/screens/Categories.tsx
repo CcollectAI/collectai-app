@@ -58,7 +58,7 @@ export default function Categories() {
 
   function openCategory(cat: Category) {
     const slug = cat.slug || String(cat.id || cat.name || cat.title || "").toLowerCase().replace(/\s+/g, "-");
-    router.push(`/ (tabs)/categories/${encodeURIComponent(slug)}`.replace(" (tabs)", "(tabs)"));
+    router.push(`/categories/${encodeURIComponent(slug)}`);
   }
 
   if (loading) {

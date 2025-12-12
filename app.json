@@ -4,8 +4,16 @@
     "slug": "collectorsapp",
     "scheme": "collectorsapp",
     "plugins": [
-      "expo-router",
-      "expo-font"
+      [
+        "expo-router",
+        {
+          "root": "./app"
+        }
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

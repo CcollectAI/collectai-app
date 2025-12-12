@@ -1,60 +1,16 @@
-import { Tabs, Link } from 'expo-router';
-import Icon from '@/components/Icon';
-import { Pressable, Share, Text, View } from 'react-native';
-import { theme } from '@/theme';
-
-function SettingsButton() {
-  return (
-    <Link href="/_shelf/settings" asChild>
-      <Pressable style={{ paddingHorizontal: 12 }}>
-        <Icon name="settings-outline" />
-      </Pressable>
-    </Link>
-  );
-}
-function ShareButton() {
-  const onShare = async () => { try { await Share.share({ message: 'Shared from Collect AI' }); } catch {} };
-  return (
-    <Pressable onPress={onShare} style={{ paddingHorizontal: 12 }}>
-      <Icon name="share-outline" />
-    </Pressable>
-  );
-}
-function DevIconTestButton() {
-  if (!__DEV__) return null as any;
-  return (
-    <Link href="/_shelf/icon-test" asChild>
-      <Pressable style={{ paddingHorizontal: 12 }}>
-        <Text style={{ color: theme.colors.navy, fontWeight: '800' }}>Icon Test</Text>
-      </Pressable>
-    </Link>
-  );
-}
+import React from 'react';
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: theme.colors.navy,
-        tabBarInactiveTintColor: theme.colors.subtext,
-        tabBarStyle: { backgroundColor: theme.colors.card, borderTopColor: theme.colors.border },
-        headerStyle: { backgroundColor: theme.colors.card },
-        headerTitleStyle: { color: theme.colors.navy, fontWeight: '800' },
-        headerTintColor: theme.colors.navy,
-        sceneStyle: { backgroundColor: theme.colors.bg },
-      }}
-    >
+    <Tabs screenOptions={{ headerShown: true, tabBarShowLabel: false }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Portfolio',
-          tabBarLabel: 'Portfolio',
-          tabBarIcon: () => <Icon name="stats-chart-outline" />,
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <DevIconTestButton />
-              <SettingsButton />
-            </View>
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
@@ -62,23 +18,27 @@ export default function TabsLayout() {
         name="items"
         options={{
           title: 'Items',
-          tabBarLabel: 'Items',
-          tabBarIcon: () => <Icon name="albums-outline" />,
-          headerRight: () => <ShareButton />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="list-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="add"
         options={{
           title: 'Add',
-          tabBarIcon: () => <Icon name="add-circle-outline" />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={size + 6} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="marketplace"
         options={{
           title: 'Marketplace',
-          tabBarIcon: () => <Icon name="cart-outline" />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>
