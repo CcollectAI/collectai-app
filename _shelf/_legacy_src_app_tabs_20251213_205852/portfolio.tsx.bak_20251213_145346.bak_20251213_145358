@@ -1,0 +1,23 @@
+import React from "react";
+import { View, Text } from "react-native";
+
+import { PortfolioChartV2 as PortfolioChart } from "@/components/PortfolioChartV2";
+import { useAppTheme } from "@/theme";
+
+export default function PortfolioTab() {
+  const t = useAppTheme();
+  const colors = (t as any)?.colors ?? (t as any);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors?.tiffany ?? "#e7fbff", padding: 16 }}>
+      <Text style={{ fontSize: 18, fontWeight: "700", color: colors?.navy ?? "#0b1f3a" }}>
+        Portfolio
+      </Text>
+
+      {/* If you have data, wire it here. For now keep it harmless so bundling succeeds. */}
+      <View style={{ marginTop: 12 }}>
+        <PortfolioChart data={[]} />
+      </View>
+    </View>
+  );
+}

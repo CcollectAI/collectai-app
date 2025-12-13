@@ -1,0 +1,15 @@
+pokemon:
+  mae_max: 6.0
+  mape_max: 0.20
+  r2_min:  0.00
+  min_eval_rows: 20
+diecast:
+  mae_max: 7.0
+  mape_max: 0.25
+  r2_min: -0.10
+  min_eval_rows: 20
+lego:
+  mae_max: 8.0
+  mape_max: 0.28
+  r2_min: -0.10
+  min_eval_rows: 20

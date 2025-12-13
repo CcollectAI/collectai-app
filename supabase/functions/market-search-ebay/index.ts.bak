@@ -1,0 +1,47 @@
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { z } from 'npm:zod@3.23.8'
+
+const BodySchema = z.object({
+  query: z.string().min(2),
+  category: z.string().optional(),
+  limit: z.number().int().min(1).max(20).default(8),
+})
+
+export const handler = async (req: Request) => {
+  const apikey = req.headers.get('apikey') ?? ''
+  const auth = req.headers.get('authorization') ?? ''
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? apikey
+  const supa = createClient(supabaseUrl, supabaseKey, { global: { headers: { Authorization: auth, apikey } } })
+
+  try {
+    const raw = await req.json().catch(() => ({}))
+    const body = BodySchema.parse(raw)
+    const enabled = (Deno.env.get('EBAY_SEARCH_ENABLED') ?? 'off').toLowerCase() === 'on'
+
+    if (!enabled) {
+      // return mocked hits so app flow is unblocked in dev
+      const hits = Array.from({ length: body.limit }).map((_, i) => ({
+        id: `mock-${i+1}`,
+        title: `${body.query} – Mock Hit #${i+1}`,
+        price_eur: 19.99 + i,
+        url: 'https://www.ebay.com/itm/mock',
+        image: 'https://via.placeholder.com/200',
+        ts: new Date().toISOString()
+      }))
+      return new Response(JSON.stringify({ ok: true, provider: 'mock', hits }), { status: 200 })
+    }
+
+    // TODO: real call to eBay (via API key or RapidAPI). Keep it server-side only.
+    // const EBAY_KEY = Deno.env.get('EBAY_APP_ID')!
+    // … fetch …
+    return new Response(JSON.stringify({ ok: true, provider: 'ebay', hits: [] }), { status: 200 })
+  } catch (e: any) {
+    if (e?.issues) {
+      return new Response(JSON.stringify({ ok: false, error: 'Invalid payload', issues: e.issues }), { status: 400 })
+    }
+    return new Response(JSON.stringify({ ok: false, error: String(e?.message || e) }), { status: 400 })
+  }
+}
+Deno.serve(handler)

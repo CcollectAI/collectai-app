@@ -1,0 +1,131 @@
+import { useSyncExternalStore } from 'react';
+import type { PortfolioItem } from '@/services/collectorsClient';
+
+export type ItemAlertDirection = 'below' | 'above';
+
+export interface ItemAlert {
+  itemId: string;
+  threshold: number;
+  currency: string;
+  direction: ItemAlertDirection;
+}
+
+type WatchlistState = {
+  items: Record<string, PortfolioItem>;
+  alerts: Record<string, ItemAlert>;
+};
+
+let state: WatchlistState = {
+  items: {},
+  alerts: {},
+};
+
+type Listener = () => void;
+let listeners: Listener[] = [];
+
+function emit() {
+  for (const l of listeners) l();
+}
+
+function subscribe(listener: Listener) {
+  listeners.push(listener);
+  return () => {
+    listeners = listeners.filter((l) => l !== listener);
+  };
+}
+
+function getSnapshot(): WatchlistState {
+  return state;
+}
+
+function getServerSnapshot(): WatchlistState {
+  return state;
+}
+
+/**
+ * Hook used by screens/components to read and update the watchlist and alerts.
+ * Pure client-side for now (no backend persistence).
+ */
+export function useWatchlist() {
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
+
+  const itemsArray = Object.values(snapshot.items);
+  const alertsArray = Object.values(snapshot.alerts);
+  const ids = new Set(itemsArray.map((it) => it.id));
+
+  const isInWatchlist = (id?: string | null) => {
+    if (!id) return false;
+    return ids.has(id);
+  };
+
+  const toggleItem = (item: PortfolioItem) => {
+    if (!item.id) return;
+
+    const next: WatchlistState = {
+      items: { ...state.items },
+      alerts: { ...state.alerts },
+    };
+
+    if (next.items[item.id]) {
+      delete next.items[item.id];
+      // We *optionally* keep the alert for now. If you prefer to clear alert
+      // when removing from watchlist, uncomment the next line:
+      // delete next.alerts[item.id];
+    } else {
+      next.items[item.id] = item;
+    }
+
+    state = next;
+    emit();
+  };
+
+  const clear = () => {
+    state = { items: {}, alerts: {} };
+    emit();
+  };
+
+  const getAlert = (itemId?: string | null): ItemAlert | undefined => {
+    if (!itemId) return undefined;
+    return state.alerts[itemId];
+  };
+
+  const setAlert = (alert: ItemAlert) => {
+    if (!alert.itemId) return;
+    state = {
+      ...state,
+      alerts: {
+        ...state.alerts,
+        [alert.itemId]: alert,
+      },
+    };
+    emit();
+  };
+
+  const clearAlert = (itemId: string) => {
+    if (!itemId) return;
+    const nextAlerts = { ...state.alerts };
+    delete nextAlerts[itemId];
+    state = {
+      ...state,
+      alerts: nextAlerts,
+    };
+    emit();
+  };
+
+  return {
+    // watchlist
+    items: itemsArray,
+    isInWatchlist,
+    toggleItem,
+    clear,
+    // alerts
+    alerts: alertsArray,
+    getAlert,
+    setAlert,
+    clearAlert,
+  };
+}

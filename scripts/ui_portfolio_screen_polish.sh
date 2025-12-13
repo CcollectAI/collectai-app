@@ -1,0 +1,446 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FILE="app/(tabs)/index.tsx"
+[ -f "$FILE" ] || { echo "❌ Missing $FILE"; exit 1; }
+
+TS="$(date +%Y%m%d_%H%M%S)"
+cp "$FILE" "$FILE.bak_polish_$TS"
+echo "✅ Backup: $FILE.bak_polish_$TS"
+
+cat > "$FILE" <<'TSX'
+import React, { useMemo, useState } from "react";
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { PortfolioLineChart } from "@/components/PortfolioLineChart";
+
+type RangeKey = "1D" | "7D" | "30D";
+
+const SERIES_30D = [
+  { t: "2024-11-01", v: 17250 },
+  { t: "2024-11-05", v: 17510 },
+  { t: "2024-11-10", v: 18120 },
+  { t: "2024-11-15", v: 17980 },
+  { t: "2024-11-20", v: 18940 },
+  { t: "2024-11-25", v: 19510 },
+  { t: "2024-12-06", v: 20121 },
+];
+
+const SERIES_7D = [
+  { t: "2024-11-30", v: 19410 },
+  { t: "2024-12-01", v: 19620 },
+  { t: "2024-12-02", v: 19580 },
+  { t: "2024-12-03", v: 19840 },
+  { t: "2024-12-04", v: 19920 },
+  { t: "2024-12-05", v: 20010 },
+  { t: "2024-12-06", v: 20121 },
+];
+
+const SERIES_1D = [
+  { t: "2024-12-06T09:00:00Z", v: 19980 },
+  { t: "2024-12-06T11:00:00Z", v: 20040 },
+  { t: "2024-12-06T13:00:00Z", v: 20110 },
+  { t: "2024-12-06T15:00:00Z", v: 20070 },
+  { t: "2024-12-06T17:00:00Z", v: 20121 },
+];
+
+type PortfolioItem = {
+  id: string;
+  name: string;
+  category: string;
+  collectionName: string;
+  value: number;
+  changePct: number; // -0.12 .. +0.12
+  condition: string;
+  lastUpdated: string;
+};
+
+const MOCK_ITEMS: PortfolioItem[] = [
+  {
+    id: "1",
+    name: "Pikachu Illustrator (Proxy)",
+    category: "Pokémon",
+    collectionName: "Promo / Special",
+    value: 999,
+    changePct: 0.034,
+    condition: "NM",
+    lastUpdated: "Updated today",
+  },
+  {
+    id: "2",
+    name: "Charizard GX (Alt Art)",
+    category: "Pokémon",
+    collectionName: "Burning Shadows",
+    value: 420,
+    changePct: -0.012,
+    condition: "LP",
+    lastUpdated: "Updated 2d ago",
+  },
+  {
+    id: "3",
+    name: "LEGO UCS X-Wing",
+    category: "LEGO",
+    collectionName: "UCS",
+    value: 320,
+    changePct: 0.019,
+    condition: "Sealed",
+    lastUpdated: "Updated 5d ago",
+  },
+  {
+    id: "4",
+    name: "Hot Wheels RLC Skyline",
+    category: "Diecast",
+    collectionName: "RLC Exclusives",
+    value: 160,
+    changePct: 0.006,
+    condition: "MIB",
+    lastUpdated: "Updated 1w ago",
+  },
+  {
+    id: "5",
+    name: "Luffy – NYCC Exclusive",
+    category: "Funko Pop",
+    collectionName: "Convention Exclusives",
+    value: 190,
+    changePct: -0.021,
+    condition: "Box 8/10",
+    lastUpdated: "Updated 3d ago",
+  },
+];
+
+type EventDrop = {
+  id: string;
+  title: string;
+  dateISO: string;
+  source: string;
+};
+
+const UPCOMING: EventDrop[] = [
+  { id: "e1", title: "Pokémon drop: special promo window", dateISO: "2025-12-16", source: "Official" },
+  { id: "e2", title: "LEGO: rumored retirement list update", dateISO: "2025-12-20", source: "Community" },
+  { id: "e3", title: "Whatnot: creator auction weekend", dateISO: "2025-12-22", source: "Platform" },
+];
+
+const formatEUR0 = (v: number) =>
+  new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(v);
+
+const formatPct = (p: number) => `${p >= 0 ? "+" : ""}${(p * 100).toFixed(1)}%`;
+
+const byValueDesc = (a: PortfolioItem, b: PortfolioItem) => b.value - a.value;
+
+export default function PortfolioScreen() {
+  const router = useRouter();
+  const [range, setRange] = useState<RangeKey>("30D");
+
+  const series = useMemo(() => {
+    if (range === "1D") return SERIES_1D;
+    if (range === "7D") return SERIES_7D;
+    return SERIES_30D;
+  }, [range]);
+
+  const latest = series.length ? series[series.length - 1].v : 0;
+
+  const topItems = useMemo(() => {
+    // “Top items by value” – keep it simple for now
+    return [...MOCK_ITEMS].sort(byValueDesc).slice(0, 5);
+  }, []);
+
+  const upcoming = useMemo(() => {
+    return [...UPCOMING].sort((a, b) => +new Date(a.dateISO) - +new Date(b.dateISO)).slice(0, 3);
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* TOP HALF: integrated graph area */}
+        <View style={styles.graphArea}>
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.kicker}>Collection Value</Text>
+              <Text style={styles.total}>{formatEUR0(latest)}</Text>
+            </View>
+
+            {/* Replace settings with Twitch icon */}
+            <Pressable
+              onPress={() => router.push("/twitch")}
+              hitSlop={12}
+              style={styles.iconBtn}
+            >
+              <Ionicons name="logo-twitch" size={20} color="#0b1f3a" />
+            </Pressable>
+          </View>
+
+          <View style={styles.rangeRow}>
+            {(["1D", "7D", "30D"] as RangeKey[]).map((k) => {
+              const active = k === range;
+              return (
+                <Pressable
+                  key={k}
+                  onPress={() => setRange(k)}
+                  style={[styles.pill, active && styles.pillActive]}
+                >
+                  <Text style={[styles.pillText, active && styles.pillTextActive]}>{k}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.chartWrap}>
+            <PortfolioLineChart
+              series={series}
+              accentColor="#14b8a6"
+              showValueHeader={false}
+              showAxisLabels={true}
+              axisLabelColor="#94a3b8"
+            />
+          </View>
+        </View>
+
+        {/* Items list */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Top items</Text>
+            <Pressable onPress={() => router.push("/items")} hitSlop={10}>
+              <Text style={styles.sectionAction}>View all</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.card}>
+            {topItems.map((it, idx) => {
+              const pos = it.changePct >= 0;
+              return (
+                <Pressable
+                  key={it.id}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/item/[id]",
+                      params: {
+                        id: it.id,
+                        name: it.name,
+                        category: it.category,
+                        collectionName: it.collectionName,
+                        value: String(it.value),
+                      },
+                    })
+                  }
+                  style={[styles.row, idx !== topItems.length - 1 && styles.rowDivider]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowTitle} numberOfLines={1}>{it.name}</Text>
+                    <Text style={styles.rowMeta} numberOfLines={1}>
+                      {it.category} • {it.collectionName}
+                    </Text>
+                    <Text style={styles.rowMeta2} numberOfLines={1}>
+                      {it.condition} • {it.lastUpdated}
+                    </Text>
+                  </View>
+
+                  <View style={styles.rowRight}>
+                    <Text style={styles.rowValue}>{formatEUR0(it.value)}</Text>
+                    <Text style={[styles.rowChange, pos ? styles.pos : styles.neg]}>
+                      {formatPct(it.changePct)}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Events / Drops */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Upcoming events & drops</Text>
+            <Pressable onPress={() => router.push("/events")} hitSlop={10}>
+              <Text style={styles.sectionAction}>View all</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.card}>
+            {upcoming.map((ev, idx) => (
+              <Pressable
+                key={ev.id}
+                onPress={() => router.push("/events")}
+                style={[styles.row, idx !== upcoming.length - 1 && styles.rowDivider]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowTitle} numberOfLines={1}>{ev.title}</Text>
+                  <Text style={styles.rowMeta} numberOfLines={1}>
+                    {new Date(ev.dateISO).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} • {ev.source}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View style={{ height: 18 }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  content: {
+    paddingBottom: 24,
+  },
+
+  graphArea: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 6,
+  },
+
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+
+  kicker: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#0b1f3a",
+    opacity: 0.7,
+  },
+  total: {
+    marginTop: 6,
+    fontSize: 34,
+    fontWeight: "900",
+    color: "#0b1f3a",
+    letterSpacing: -0.5,
+  },
+
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20, // round button
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(11,31,58,0.06)",
+  },
+
+  rangeRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 8,
+  },
+  pill: {
+    borderRadius: 999, // ROUND (you asked)
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: "rgba(11,31,58,0.06)",
+  },
+  pillActive: {
+    backgroundColor: "rgba(20,184,166,0.18)",
+  },
+  pillText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#0b1f3a",
+    opacity: 0.7,
+  },
+  pillTextActive: {
+    opacity: 1,
+  },
+
+  chartWrap: {
+    marginTop: 6,
+  },
+
+  section: {
+    marginTop: 14,
+    paddingHorizontal: 16,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#0b1f3a",
+  },
+  sectionAction: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#14b8a6",
+  },
+
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(11,31,58,0.08)",
+    overflow: "hidden",
+  },
+
+  row: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  rowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(11,31,58,0.06)",
+  },
+
+  rowTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#0b1f3a",
+  },
+  rowMeta: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748b",
+  },
+  rowMeta2: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#94a3b8",
+  },
+
+  rowRight: {
+    alignItems: "flex-end",
+  },
+  rowValue: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#0b1f3a",
+  },
+  rowChange: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  pos: { color: "#16a34a" },
+  neg: { color: "#dc2626" },
+});
+TSX
+
+echo "✅ Portfolio screen polished: round buttons, Twitch icon, richer items, events section, chart axis."
+echo "🛑 SANITY CHECK: npx expo start --tunnel"

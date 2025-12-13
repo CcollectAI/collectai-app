@@ -1,0 +1,172 @@
+from app.features import insights_router
+from app.features import screenshot_intel_router
+from app.features import quickscan_advanced_router
+from app.features import watchlist_router
+from app.features import marketplace_trust_router
+from app.features import provenance_router
+from app.features import trends_and_deepdive_router
+from app.features import alerts_feature_router
+import os
+import httpx
+from app.routers.vision_commit import router as vision_commit_router
+from app.routers.vision_predict_log import router as vision_predict_log_router
+from fastapi import FastAPI, Depends, Header, HTTPException
+from app.middleware_stack import install_middlewares
+from app.db import connect_pool, close_pool, db_configured
+from app.metrics import metrics_middleware, ensure_metrics_once
+from app.logging_mw import logging_middleware
+from app.limit_body import limit_body_middleware
+from app.rate_limit import rate_limit_middleware
+from app.routes.agent import router as agent_router
+from app.routes.spool import router as ops_router
+from app.routes.spool_ui import router as spool_ui_router
+from app.routes.webhook import router as webhook_router
+from app.routes.vision_debug import router as vision_debug_router
+from app.routes.vision_predict import router as vision_predict_router
+from app.routes.vision_ops import router as vision_ops_router
+from app.routes.vision_ingest import router as vision_ingest_router
+from app.routes.vision_search import router as vision_search_router
+from app.routes.spool_ops import router as spool_ops_router
+from app.routes.manifests import router as manifests_router
+from app.routes.ops import router as ops_router
+from app.routes.marketplace import router as marketplace_router
+
+app = FastAPI(title="Collectors Merge Service", version=os.getenv("SERVICE_VERSION","0.1.0"))
+API_SHARED_SECRET = os.environ.get("API_SHARED_SECRET")
+SIGNALS_BASE_URL = "http://127.0.0.1:8082"
+
+
+async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
+    if not API_SHARED_SECRET:
+        raise HTTPException(status_code=500, detail="API key not configured")
+    if x_api_key != API_SHARED_SECRET:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    return True
+
+
+@app.get("/debug-ping")
+async def debug_ping():
+    return {"ok": True}
+
+
+@app.get("/portfolio/overview")
+async def portfolio_overview(_: bool = Depends(require_api_key)):
+    async with httpx.AsyncClient() as client:
+        r = await client.get(
+            f"{SIGNALS_BASE_URL}/portfolio/overview",
+            headers={"X-API-Key": API_SHARED_SECRET},
+            timeout=10.0,
+        )
+    r.raise_for_status()
+    return r.json()
+
+
+@app.get("/portfolio/items")
+async def portfolio_items(_: bool = Depends(require_api_key)):
+    async with httpx.AsyncClient() as client:
+        r = await client.get(
+            f"{SIGNALS_BASE_URL}/portfolio/items",
+            headers={"X-API-Key": API_SHARED_SECRET},
+            timeout=10.0,
+        )
+    r.raise_for_status()
+    return r.json()
+
+
+@app.get("/portfolio/timeseries")
+async def portfolio_timeseries(_: bool = Depends(require_api_key)):
+    async with httpx.AsyncClient() as client:
+        r = await client.get(
+            f"{SIGNALS_BASE_URL}/portfolio/timeseries",
+            headers={"X-API-Key": API_SHARED_SECRET},
+            timeout=10.0,
+        )
+    r.raise_for_status()
+    return r.json()
+
+app.include_router(vision_commit_router)
+app.include_router(vision_predict_log_router)
+app.include_router(marketplace_router)
+
+# Core middlewares
+install_middlewares(app)
+app.middleware("http")(rate_limit_middleware)
+app.middleware("http")(metrics_middleware)
+app.middleware("http")(logging_middleware)
+
+# Routers
+app.include_router(agent_router)
+app.include_router(ops_router)
+app.include_router(spool_ui_router)
+app.include_router(webhook_router)
+app.include_router(vision_debug_router)
+app.include_router(vision_predict_router)
+app.include_router(vision_ops_router)
+app.include_router(vision_ingest_router)
+app.include_router(vision_search_router)
+app.include_router(spool_ops_router)
+app.include_router(manifests_router)
+app.include_router(ops_router)
+app.include_router(spool_ui_router)
+
+@app.get("/healthz")
+async def healthz():
+    return {
+        "ok": True,
+        "db_configured": db_configured(),
+        "db_enabled": os.getenv("DB_ENABLED","true"),
+        "db_optional": os.getenv("DB_OPTIONAL","0"),
+    }
+
+@app.get("/version")
+async def version():
+    return {"version": os.getenv("SERVICE_VERSION","0.1.0")}
+
+@app.on_event("startup")
+async def _startup():
+    import os, logging
+    # Offline mode: skip DB connect entirely
+    if os.getenv("DB_ENABLED", "false").lower() in ("0","false","no"):
+        logging.getLogger("uvicorn").info("[startup] DB disabled; skipping pool connect.")
+        return
+    try:
+        from app.db import connect_pool
+        await connect_pool()
+    except Exception as e:
+        # Optional mode: continue even if DB connect fails/missing DSN
+        if os.getenv("DB_OPTIONAL", "0").lower() in ("1","true","yes"):
+            logging.getLogger("uvicorn").warning(f"[startup] DB optional; continuing without pool. Reason: {e}")
+            return
+        raise
+@app.on_event("shutdown")
+async def _shutdown():
+    await close_pool()
+
+@app.get("/debug-ping")
+async def debug_ping():
+    return {"ok": True}
+
+# Auto-wired alerts router
+app.include_router(alerts_feature_router.router)
+
+# Auto-wired trends/deep-dive router
+app.include_router(trends_and_deepdive_router.router)
+
+# Auto-wired provenance router
+app.include_router(provenance_router.router)
+
+# Auto-wired marketplace trust router
+app.include_router(marketplace_trust_router.router)
+
+
+# Watchlist, QuickScan advanced, Insights routers
+app.include_router(watchlist_router.router)
+app.include_router(quickscan_advanced_router.router)
+app.include_router(insights_router.router)
+
+# Screenshot intel router
+app.include_router(screenshot_intel_router.router)
+
+from app.features import items_export_router
+
+app.include_router(items_export_router.router)

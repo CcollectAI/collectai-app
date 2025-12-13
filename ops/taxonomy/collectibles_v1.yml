@@ -1,0 +1,49 @@
+# v1 collectibles taxonomy (lean, global, niche-but-liquid)
+labels:
+  - id: slabbed_tcg_card
+    name: Slabbed TCG Card (PSA/BGS/CGC)
+    prompt: "photo of a graded trading card in a plastic slab (PSA or BGS or CGC), label visible, single card centered"
+
+  - id: raw_tcg_card
+    name: Raw TCG Card
+    prompt: "photo of a single trading card outside a slab, often in penny sleeve or top loader, card artwork visible"
+
+  - id: sealed_tcg_booster
+    name: Sealed TCG Booster/Box
+    prompt: "photo of sealed trading card game booster pack or sealed display/booster box, shrink wrap, logos visible"
+
+  - id: diecast_1_64
+    name: Diecast 1:64 (Hot Wheels/Matchbox)
+    prompt: "photo of 1:64 scale diecast car in blister or loose, metallic paint, small car on cardback or loose on desk"
+
+  - id: premium_diecast
+    name: Premium Diecast (RLC/LE/M2)
+    prompt: "photo of premium diecast model car with detailed wheels and rubber tires, sometimes acrylic display case"
+
+  - id: lego_retired_box
+    name: LEGO Retired Set (Boxed)
+    prompt: "photo of a boxed LEGO set, front box art visible, set number and theme, might show shelf wear"
+
+  - id: lego_minifig_lot
+    name: LEGO Minifig Lot
+    prompt: "photo of multiple LEGO minifigures arranged together, small plastic figures with accessories"
+
+  - id: gunpla_model_kit
+    name: Gunpla / Model Kit
+    prompt: "photo of plastic model kit box or built mecha figure (Gundam), runners or posed model on stand"
+
+  - id: vintage_console_box
+    name: Retro Console/Game Box
+    prompt: "photo of vintage video game console or game box (NES/SNES/SEGA/PS1), cardboard box art, age wear"
+
+  - id: sports_card_slab
+    name: Slabbed Sports Card
+    prompt: "photo of a graded sports card in a plastic slab (PSA/BGS/SGC), athlete photo, team logos"
+
+  - id: lorcana_card_or_box
+    name: Lorcana Card/Sealed
+    prompt: "photo of Disney Lorcana trading card or sealed product, Disney artwork, modern TCG styling"
+
+  - id: minifig_collectible_figures
+    name: Collectible Figures (Designer/Vinyl)
+    prompt: "photo of a small designer toy or vinyl figure (Kidrobot/BE@RBRICK/Funko), standalone or in box"

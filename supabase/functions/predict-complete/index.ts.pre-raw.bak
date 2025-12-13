@@ -1,0 +1,84 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
+import { z } from "https://esm.sh/zod@3.23.8"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.46.1"
+
+const URL = Deno.env.get("SUPABASE_URL")!
+const SRK = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+
+const baseHeaders = { "Accept-Profile": "public", "Content-Profile": "public" }
+const admin = createClient(URL, SRK, { db: { schema: "public" }, global: { headers: baseHeaders } })
+
+const Body = z.object({ session_id: z.union([z.string(), z.number()]), mock_seed: z.number().optional() })
+const toNum = (v: string | number) => (typeof v === "number" ? v : /^\d+$/.test(v) ? Number(v) : v)
+
+serve(async (req) => {
+  try {
+    if (!(req.headers.get("content-type") || "").includes("application/json")) {
+      return new Response(JSON.stringify({ error: "Content-Type must be application/json" }), { status: 415 })
+    }
+    const json = await req.json()
+    const parsed = Body.safeParse(json)
+    if (!parsed.success) {
+      console.error("zod invalid payload:", parsed.error.issues)
+      return new Response(JSON.stringify({ error: "Invalid payload", issues: parsed.error.issues }), { status: 400 })
+    }
+
+    const sid = toNum(parsed.data.session_id)
+
+    // Load session
+    const sel = await admin.from("predict_sessions").select("*").eq("id", sid).maybeSingle()
+    if (sel.error) return new Response(JSON.stringify({ error: sel.error.message }), { status: 400 })
+    if (!sel.data) return new Response(JSON.stringify({ error: "Session not found", session_id: sid }), { status: 404 })
+    let row = sel.data
+
+    // (Placeholder model outputs)
+    const raw_title: string | null = null
+    const raw_condition: string | null = null
+    const raw_price_eur: number | null = null
+
+    // Mark done
+    const upd = await admin.from("predict_sessions").update({ status: "done" }).eq("id", sid).select("*").single()
+    if (!upd.error && upd.data) row = upd.data
+
+    const session_uuid: string | null = (row as any).uuid_id ?? null
+    const user_id: string | null = row.user_id ?? null
+    const category: string = row.category
+
+    // ✅ Always upsert when we have a session_uuid; user_id may be null in early data and that's OK
+    if (session_uuid) {
+      const up = await admin
+        .from("training_items")
+        .upsert([{
+          session_uuid,
+          user_id,     // may be null; fine for service-role write
+          category,
+          raw_title,
+          raw_condition,
+          raw_price_eur
+        }], { onConflict: "session_uuid" })
+        .select("*")
+        .single()
+      if (up.error) console.error("training_items upsert(raw_*) failed:", up.error)
+    }
+
+    return new Response(JSON.stringify({
+      session: {
+        id: row.id,
+        session_uuid,
+        user_id,
+        status: row.status ?? "done",
+        confidence: (row as any).confidence ?? null,
+        price_low_eur: (row as any).price_low_eur ?? null,
+        price_mid_eur: (row as any).price_mid_eur ?? null,
+        price_high_eur: (row as any).price_high_eur ?? null,
+        features: (row as any).features ?? null,
+        comps: (row as any).comps ?? null,
+        created_at: row.created_at ?? null,
+        updated_at: row.updated_at ?? null,
+      }
+    }), { status: 200 })
+  } catch (e) {
+    console.error("predict-complete unhandled:", e)
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500 })
+  }
+})

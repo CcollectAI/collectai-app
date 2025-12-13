@@ -1,0 +1,56 @@
+from __future__ import annotations
+
+import json
+import os
+
+import psycopg2
+
+from services.collectors_merge.core.market_models import MarketHit
+from services.collectors_merge.providers.bricklink.price_guide import price_guide
+
+
+def db():
+    return psycopg2.connect(os.environ["DATABASE_URL"])
+
+
+def upsert_market_hits(conn, hits: list[MarketHit]):
+    cur = conn.cursor()
+    for h in hits:
+        cur.execute(
+            """
+            insert into public.market_hits(provider, listing_id, title, price, currency, shipping, condition, graded, ended_at, url, seller_score, features_json, normalized_key)
+            values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s)
+            on conflict do nothing;
+        """,
+            (
+                h.provider,
+                h.listing_id,
+                h.title,
+                h.price,
+                h.currency,
+                h.shipping,
+                h.condition,
+                h.graded,
+                h.ended_at,
+                h.url,
+                h.seller_score,
+                json.dumps(h.features_json),
+                h.normalized_key,
+            ),
+        )
+    conn.commit()
+
+
+def main(set_no: str):
+    # TODO: convert BrickLink price guide rows -> MarketHit list
+    js = price_guide(set_no)
+    print("bricklink response:", js)
+    # parse js into hits...
+    # upsert_market_hits(db(), hits)
+    print("bricklink ingest scaffold complete")
+
+
+if __name__ == "__main__":
+    import sys
+
+    main(sys.argv[1] if len(sys.argv) > 1 else "10240")

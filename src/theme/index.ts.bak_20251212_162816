@@ -1,0 +1,12 @@
+export * from "./colors";
+export * from "./tokens";
+
+import { colors, radius, spacing, shadow } from "./tokens";
+
+/** Simple theme object (non-hook) */
+export const theme = { colors, radius, spacing, shadow };
+
+export { useAppTheme } from "./useAppTheme";
+
+/** Back-compat alias */
+export { useAppTheme as useTheme } from "./useAppTheme";

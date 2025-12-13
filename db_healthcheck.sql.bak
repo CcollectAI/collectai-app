@@ -1,0 +1,8 @@
+-- Non-destructive checks for expected objects
+select 'predict_sessions' as table, to_regclass('public.predict_sessions') is not null ok;
+select 'label_events' as table, to_regclass('public.label_events') is not null ok;
+
+-- Example column presence checks (adjust as needed)
+select column_name from information_schema.columns
+ where table_schema='public' and table_name='label_events'
+   and column_name in ('session_id','created_at');

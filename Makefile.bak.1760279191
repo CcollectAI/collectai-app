@@ -1,0 +1,16 @@
+.PHONY: fmt lint typecheck test
+
+fmt:
+	@echo "Formatting with black and ruff..."
+	black .
+	ruff check . --fix
+
+lint:
+	ruff check .
+	black --check .
+
+typecheck:
+	mypy app
+
+test:
+	pytest -q || echo "pytest not yet configured"

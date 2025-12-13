@@ -1,0 +1,20 @@
+name: Nightly Eval + Gate
+on:
+  schedule: [{ cron: "19 1 * * *" }]
+  workflow_dispatch: {}
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Install deps
+        run: pip install requests
+      - name: Run evaluator
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          EVAL_WINDOW_DAYS:          7
+          MAE_DELTA_THRESHOLD:       1.0
+        run: python scripts/eval_mae_and_gate.py

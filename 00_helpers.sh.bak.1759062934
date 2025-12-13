@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+APP_DIR="${APP_DIR:-$HOME/collectai}"
+VENV_DIR="${VENV_DIR:-$APP_DIR/.venv}"
+LOG_DIR="${LOG_DIR:-$HOME/collectai/logs}"
+SYSTEM_USER="${SYSTEM_USER:-$USER}"
+API_PORT="${API_PORT:-8080}"
+TZ_SET="${TZ_SET:-Europe/Paris}"
+ARTIFACT_BUCKET="${ARTIFACT_BUCKET:-collectai-models}"
+DATASET_BUCKET="${DATASET_BUCKET:-collectai-datasets}"
+EVAL_DATASET_KEY="${EVAL_DATASET_KEY:-eval/heldout.csv}"
+AWS_REGION="${AWS_REGION:-eu-west-1}"
+mkdir -p "$APP_DIR" "$LOG_DIR"
+write_file(){ local t="$1"; local tag="$2"; local p="$3"; mkdir -p "$(dirname "$t")"; [ -f "$t" ] && cp -f "$t" "$t.bak.$(date +%s)" || true; cat > "$t" <<"$tag"
+$p
+$tag
+}

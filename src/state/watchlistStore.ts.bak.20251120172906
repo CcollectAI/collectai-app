@@ -1,0 +1,81 @@
+import { useSyncExternalStore } from 'react';
+import type { PortfolioItem } from '@/services/collectorsClient';
+
+type WatchlistState = {
+  items: Record<string, PortfolioItem>;
+};
+
+let state: WatchlistState = {
+  items: {},
+};
+
+type Listener = () => void;
+let listeners: Listener[] = [];
+
+function emit() {
+  for (const l of listeners) l();
+}
+
+function subscribe(listener: Listener) {
+  listeners.push(listener);
+  return () => {
+    listeners = listeners.filter((l) => l !== listener);
+  };
+}
+
+function getSnapshot(): WatchlistState {
+  return state;
+}
+
+function getServerSnapshot(): WatchlistState {
+  return state;
+}
+
+/**
+ * Hook used by screens/components to read and update the watchlist.
+ * Pure client-side for now (no backend persistence).
+ */
+export function useWatchlist() {
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
+
+  const itemsArray = Object.values(snapshot.items);
+  const ids = new Set(itemsArray.map((it) => it.id));
+
+  const isInWatchlist = (id?: string | null) => {
+    if (!id) return false;
+    return ids.has(id);
+  };
+
+  const toggleItem = (item: PortfolioItem) => {
+    if (!item.id) return;
+
+    const next: WatchlistState = {
+      items: { ...state.items },
+    };
+
+    if (next.items[item.id]) {
+      delete next.items[item.id];
+    } else {
+      next.items[item.id] = item;
+    }
+
+    state = next;
+    emit();
+  };
+
+  const clear = () => {
+    state = { items: {} };
+    emit();
+  };
+
+  return {
+    items: itemsArray,
+    isInWatchlist,
+    toggleItem,
+    clear,
+  };
+}

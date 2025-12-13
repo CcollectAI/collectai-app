@@ -1,0 +1,51 @@
+{"category": "mtg", "features": {"set": "mom", "finish": "foil", "rarity": "mythic"}, "y": 12.5, "source": "ui", "ts": 1759264000}
+{"category": "mtg", "features": {"set": "mom", "finish": "foil", "rarity": "mythic"}, "y": 12.5, "source": "ui", "ts": 1759264065}
+{"category": "mtg", "features": {"name": null, "set": "mom", "finish": "foil", "rarity": "mythic", "language": "en", "condition": "near_mint", "graded": null}, "y": 12.5, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "mtg", "features": {"set": "mom", "rarity": "mythic", "finish": "foil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "fab", "features": {"set": "1ed", "rarity": "legendary", "finish": "nonfoil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "fab", "features": {"set": "1ed", "rarity": "legendary", "finish": "nonfoil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "lorcana", "features": {"set": "tfc", "rarity": "legendary", "finish": "foil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "lorcana", "features": {"set": "tfc", "rarity": "legendary", "finish": "foil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "gunpla", "features": {"grade": "mg", "limited": false, "sealed": true, "release_year": 0, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "gunpla", "features": {"grade": "mg", "limited": false, "sealed": true, "release_year": 0, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "diecast", "features": {"scale": null, "brand": null, "model": null, "year": 0, "nib": false, "limited": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "diecast", "features": {"scale": null, "brand": null, "model": null, "year": 0, "nib": false, "limited": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "lego", "features": {"set_num": null, "theme": null, "piece_count": 0, "sealed": true, "condition": "new"}, "y": 35.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "lego", "features": {"set_num": null, "theme": null, "piece_count": 0, "sealed": true, "condition": "new"}, "y": 35.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "designer_toys", "features": {"series": null, "artist": null, "size": null, "edition_size": 0, "box": false, "coa": false, "limited": true, "condition": "new"}, "y": 45.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "designer_toys", "features": {"series": null, "artist": null, "size": null, "edition_size": 0, "box": false, "coa": false, "limited": true, "condition": "new"}, "y": 45.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "warhammer", "features": {"faction": null, "kit": null, "completeness": "unknown", "painted": "none", "oop": true, "sealed": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "warhammer", "features": {"faction": null, "kit": null, "completeness": "unknown", "painted": "none", "oop": true, "sealed": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305811}
+{"category": "mtg", "features": {"name": null, "set": "mom", "finish": "foil", "rarity": "mythic", "language": "en", "condition": "near_mint", "graded": null}, "y": 12.5, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "mtg", "features": {"set": "mom", "rarity": "mythic", "finish": "foil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "fab", "features": {"set": "1ed", "rarity": "legendary", "finish": "nonfoil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "fab", "features": {"set": "1ed", "rarity": "legendary", "finish": "nonfoil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "lorcana", "features": {"set": "tfc", "rarity": "legendary", "finish": "foil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "lorcana", "features": {"set": "tfc", "rarity": "legendary", "finish": "foil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "gunpla", "features": {"grade": "mg", "limited": false, "sealed": true, "release_year": 0, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "gunpla", "features": {"grade": "mg", "limited": false, "sealed": true, "release_year": 0, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "diecast", "features": {"scale": null, "brand": null, "model": null, "year": 0, "nib": false, "limited": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "diecast", "features": {"scale": null, "brand": null, "model": null, "year": 0, "nib": false, "limited": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "lego", "features": {"set_num": null, "theme": null, "piece_count": 0, "sealed": true, "condition": "new"}, "y": 35.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "lego", "features": {"set_num": null, "theme": null, "piece_count": 0, "sealed": true, "condition": "new"}, "y": 35.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "designer_toys", "features": {"series": null, "artist": null, "size": null, "edition_size": 0, "box": false, "coa": false, "limited": true, "condition": "new"}, "y": 45.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "designer_toys", "features": {"series": null, "artist": null, "size": null, "edition_size": 0, "box": false, "coa": false, "limited": true, "condition": "new"}, "y": 45.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "warhammer", "features": {"faction": null, "kit": null, "completeness": "unknown", "painted": "none", "oop": true, "sealed": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "warhammer", "features": {"faction": null, "kit": null, "completeness": "unknown", "painted": "none", "oop": true, "sealed": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759305865}
+{"category": "mtg", "features": {"name": null, "set": "mom", "finish": "foil", "rarity": "mythic", "language": "en", "condition": "near_mint", "graded": null}, "y": 12.5, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "mtg", "features": {"name": null, "set": "mom", "finish": "foil", "rarity": "mythic", "language": "en", "condition": "near_mint", "graded": null}, "y": 12.5, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "mtg", "features": {"set": "mom", "rarity": "mythic", "finish": "foil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "fab", "features": {"set": "1ed", "rarity": "legendary", "finish": "nonfoil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "fab", "features": {"set": "1ed", "rarity": "legendary", "finish": "nonfoil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "lorcana", "features": {"set": "tfc", "rarity": "legendary", "finish": "foil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "lorcana", "features": {"set": "tfc", "rarity": "legendary", "finish": "foil", "language": "en", "condition": "nm", "graded": false}, "y": 30.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "gunpla", "features": {"grade": "mg", "limited": false, "sealed": true, "release_year": 0, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "gunpla", "features": {"grade": "mg", "limited": false, "sealed": true, "release_year": 0, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "diecast", "features": {"scale": null, "brand": null, "model": null, "year": 0, "nib": false, "limited": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "diecast", "features": {"scale": null, "brand": null, "model": null, "year": 0, "nib": false, "limited": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "lego", "features": {"set_num": null, "theme": null, "piece_count": 0, "sealed": true, "condition": "new"}, "y": 35.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "lego", "features": {"set_num": null, "theme": null, "piece_count": 0, "sealed": true, "condition": "new"}, "y": 35.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "designer_toys", "features": {"series": null, "artist": null, "size": null, "edition_size": 0, "box": false, "coa": false, "limited": true, "condition": "new"}, "y": 45.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "designer_toys", "features": {"series": null, "artist": null, "size": null, "edition_size": 0, "box": false, "coa": false, "limited": true, "condition": "new"}, "y": 45.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "warhammer", "features": {"faction": null, "kit": null, "completeness": "unknown", "painted": "none", "oop": true, "sealed": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759334776}
+{"category": "warhammer", "features": {"faction": null, "kit": null, "completeness": "unknown", "painted": "none", "oop": true, "sealed": true, "condition": "new"}, "y": 55.0, "source": "seed_from_preds", "ts": 1759334776}

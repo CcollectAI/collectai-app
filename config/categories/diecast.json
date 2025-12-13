@@ -1,0 +1,9 @@
+{
+  "numeric": {
+    "year":         { "transform": ["clip:1950:2026", "zscore"] },
+    "scale_1_64":   { "transform": ["identity"] },
+    "brand_score":  { "transform": ["clip:0:1"] },
+    "condition":    { "transform": ["clip:0:10"] }
+  },
+  "required": ["year", "brand_score"]
+}

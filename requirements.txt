@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+asyncpg
+# ask for the extra here (allowed)
+httpx[http2]
+# supabase stack
+storage3
+postgrest
+supabase
+supafunc
+imagehash
+pillow

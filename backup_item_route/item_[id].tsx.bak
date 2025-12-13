@@ -1,0 +1,357 @@
+import React, { useMemo } from "react";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+
+type Tier = "Silver" | "Gold" | "Platinum";
+
+type DetailItem = {
+  id: string;
+  name: string;
+  category: string;
+  value: number;
+  tier: Tier;
+  notes?: string;
+  purchasedFor?: number;
+};
+
+const MOCK_ITEMS: DetailItem[] = [
+  {
+    id: "p1",
+    name: "Charizard GX (Alt Art)",
+    category: "Pokémon",
+    value: 420,
+    tier: "Gold",
+    notes: "Pulled from booster, later graded. Strong centering.",
+    purchasedFor: 120,
+  },
+  {
+    id: "p2",
+    name: "Pikachu VMAX (Rainbow)",
+    category: "Pokémon",
+    value: 220,
+    tier: "Silver",
+    notes: "Raw card, slight edge wear.",
+    purchasedFor: 80,
+  },
+  {
+    id: "p3",
+    name: "Umbreon V (Alt Art)",
+    category: "Pokémon",
+    value: 200,
+    tier: "Silver",
+    notes: "Binder-kept since release.",
+    purchasedFor: 60,
+  },
+  {
+    id: "f1",
+    name: "Luffy – NYCC Exclusive",
+    category: "Funko Pop",
+    value: 190,
+    tier: "Gold",
+    notes: "Con sticker, minor box dent on back.",
+    purchasedFor: 75,
+  },
+  {
+    id: "f2",
+    name: "Spider-Man – Target",
+    category: "Funko Pop",
+    value: 90,
+    tier: "Silver",
+    notes: "Retail purchase, near mint box.",
+    purchasedFor: 30,
+  },
+  {
+    id: "d1",
+    name: "Hot Wheels RLC Skyline",
+    category: "Diecast",
+    value: 160,
+    tier: "Platinum",
+    notes: "RLC release, unopened blister.",
+    purchasedFor: 50,
+  },
+];
+
+const formatCurrency = (value: number | undefined) =>
+  value == null
+    ? "-"
+    : `€${value.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })}`;
+
+const ItemDetailScreen: React.FC = () => {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const router = useRouter();
+
+  const item = useMemo(
+    () => MOCK_ITEMS.find((it) => it.id === id),
+    [id]
+  );
+
+  if (!item) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.notFoundContainer}>
+          <Text style={styles.notFoundTitle}>Item not found</Text>
+          <Text style={styles.notFoundText}>
+            This ID doesn&apos;t match any mock item yet.
+          </Text>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+            <Text style={styles.backButtonText}>Back to items</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const gain = item.purchasedFor != null ? item.value - item.purchasedFor : 0;
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.headerRow}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.iconButton}
+          >
+            <Ionicons name="arrow-back" size={20} color="#0C2233" />
+          </Pressable>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {item.name}
+          </Text>
+        </View>
+
+        {/* Value card */}
+        <View style={styles.card}>
+          <Text style={styles.labelText}>Estimated value</Text>
+          <View style={styles.valueRow}>
+            <Text style={styles.valueText}>{formatCurrency(item.value)}</Text>
+            <View style={styles.tierPill}>
+              <Ionicons name="shield" size={14} color="#19A7AE" />
+              <Text style={styles.tierPillText}>{item.tier}</Text>
+            </View>
+          </View>
+          <Text style={styles.subText}>{item.category}</Text>
+        </View>
+
+        {/* P&L card */}
+        <View style={styles.card}>
+          <Text style={styles.labelText}>P&amp;L snapshot</Text>
+          <View style={styles.plRow}>
+            <View style={styles.plCol}>
+              <Text style={styles.plLabel}>Bought for</Text>
+              <Text style={styles.plValue}>
+                {formatCurrency(item.purchasedFor)}
+              </Text>
+            </View>
+            <View style={styles.plCol}>
+              <Text style={styles.plLabel}>Unrealized gain</Text>
+              <Text
+                style={[
+                  styles.plValue,
+                  { color: gain >= 0 ? "#0BA86C" : "#D64545" },
+                ]}
+              >
+                {gain >= 0 ? "+" : ""}
+                {formatCurrency(Math.abs(gain))}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Actions */}
+        <View style={styles.actionsRow}>
+          <Pressable style={styles.actionButton}>
+            <Ionicons name="eye-outline" size={18} color="#0C2233" />
+            <Text style={styles.actionText}>Move to watchlist</Text>
+          </Pressable>
+          <Pressable style={styles.actionButton}>
+            <Ionicons name="notifications-outline" size={18} color="#0C2233" />
+            <Text style={styles.actionText}>Set price alert</Text>
+          </Pressable>
+        </View>
+
+        {/* Notes */}
+        <View style={[styles.card, { marginBottom: 24 }]}>
+          <Text style={styles.labelText}>Notes</Text>
+          <Text style={styles.notesText}>
+            {item.notes || "No notes added yet."}
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#E7F6F8",
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  iconButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    marginRight: 8,
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0C2233",
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#D6E4EC",
+  },
+  labelText: {
+    fontSize: 13,
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    color: "#647589",
+  },
+  valueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  valueText: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#0C2233",
+  },
+  tierPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "#E7F6F8",
+    marginLeft: 10,
+  },
+  tierPillText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#19A7AE",
+    marginLeft: 4,
+  },
+  subText: {
+    fontSize: 13,
+    color: "#647589",
+  },
+  plRow: {
+    flexDirection: "row",
+    marginTop: 8,
+  },
+  plCol: {
+    flex: 1,
+  },
+  plLabel: {
+    fontSize: 12,
+    color: "#647589",
+  },
+  plValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 2,
+    color: "#0C2233",
+  },
+  actionsRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+    gap: 8,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D6E4EC",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#0C2233",
+    marginLeft: 6,
+  },
+  notesText: {
+    fontSize: 14,
+    color: "#0C2233",
+    marginTop: 6,
+  },
+  notFoundContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  notFoundTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0C2233",
+    marginBottom: 4,
+  },
+  notFoundText: {
+    fontSize: 14,
+    color: "#647589",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    backgroundColor: "#19A7AE",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 6,
+  },
+});
+
+export default ItemDetailScreen;

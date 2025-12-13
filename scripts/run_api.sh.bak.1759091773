@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+APP_DIR="$(cd "$(dirname "$0")/.."; pwd)"
+
+# venv + env
+. "$APP_DIR/.venv/bin/activate"
+set -a; [ -f "$APP_DIR/env/.env" ] && . "$APP_DIR/env/.env"; set +a
+
+IMPORT="${APP_IMPORT:-}"   # allow operator override (e.g., app:app or app.main:app)
+
+resolve_import() {
+  if [ -n "$IMPORT" ]; then
+    echo "$IMPORT"; return 0
+  fi
+  python - <<'PY'
+import importlib.util
+candidates=["app:app","app.main:app","app_placeholder:app"]
+for imp in candidates:
+    mod,_,attr=imp.partition(":")
+    spec=importlib.util.find_spec(mod)
+    if spec is not None:
+        print(imp); break
+PY
+}
+
+TARGET="$(resolve_import)"
+if [ -z "$TARGET" ]; then
+  echo "FATAL: ASGI app not found. Tried: app:app, app.main:app, app_placeholder:app" >&2
+  echo "TIP: export APP_IMPORT=app:app (or correct path) and retry." >&2
+  exit 2
+fi
+
+HOST="${HOST:-0.0.0.0}"
+PORT="${PORT:-8080}"
+WORKERS="${WORKERS:-2}"
+
+echo "[launcher] using TARGET=$TARGET on ${HOST}:${PORT} (workers=${WORKERS})"
+exec uvicorn "$TARGET" --host "$HOST" --port "$PORT" --workers "$WORKERS"

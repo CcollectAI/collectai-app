@@ -1,0 +1,18 @@
+[Unit]
+Description=Collectors Merge API
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/collectors
+Environment=LOG_LEVEL=INFO
+Environment=FLAG_MARKET_EBAY=1
+Environment=FLAG_PHOTO_FASTPASS=1
+ExecStart=/opt/collectors/deploy/run_uvicorn.sh
+Restart=always
+RestartSec=3
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

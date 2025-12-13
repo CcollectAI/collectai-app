@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PredictHistoryV1",
+  "type": "object",
+  "required": ["nk","rows"],
+  "properties": {
+    "nk": {"type":"string"},
+    "rows": {
+      "type":"array",
+      "items": {
+        "type":"object",
+        "required":["ts","q50"],
+        "properties": {
+          "ts":{"type":"string"},
+          "q10":{"type":"number"},
+          "q50":{"type":"number"},
+          "q90":{"type":"number"},
+          "confidence":{"type":"number"},
+          "comps_count":{"type":"integer"},
+          "model_version":{"type":"string"},
+          "source":{"type":"string"}
+        }
+      }
+    }
+  }
+}

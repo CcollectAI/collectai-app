@@ -1,0 +1,28 @@
+{
+  "category": "diecast",
+  "created_utc": "2025-09-29T09:09:26.557353Z",
+  "n_samples": 200,
+  "n_features": 19,
+  "feature_keys": [
+    "maker_autoart",
+    "maker_greenlight",
+    "maker_hot wheels",
+    "maker_maisto",
+    "maker_matchbox",
+    "maker_other",
+    "maker_tomica",
+    "material_diecast",
+    "material_metal",
+    "material_plastic",
+    "pkg_cond_score",
+    "rarity_proxy",
+    "recent_sale_z",
+    "scale_1:18",
+    "scale_1:24",
+    "scale_1:32",
+    "scale_1:43",
+    "scale_1:64",
+    "year_norm"
+  ],
+  "bootstrap": true
+}

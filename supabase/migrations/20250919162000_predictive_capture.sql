@@ -1,0 +1,1 @@
+-- paste the SQL migration we wrote earlier (tables + indexes + RLS + policies)

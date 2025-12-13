@@ -1,0 +1,11 @@
+name: Nightly Prune
+on:
+  schedule: [{ cron: "29 1 * * *" }]
+  workflow_dispatch: {}
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call prune via SQL over REST RPC (define function if exposed)
+        run: |
+          echo 'If you expose RPC, call it here. Otherwise rely on short TTL in queries.'

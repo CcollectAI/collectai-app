@@ -1,0 +1,147 @@
+import React, { useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  PanResponder,
+  GestureResponderEvent,
+  PanResponderGestureState,
+} from "react-native";
+import Svg, { Path, Circle } from "react-native-svg";
+
+type Props = {
+  data: number[];
+  width: number;
+  height: number;
+  color: string;
+  textColor: string;
+  /**
+   * Optional callback when the hovered index/value changes.
+   * Used by the Portfolio screen to update the big number like Robinhood.
+   */
+  onHoverChange?: (index: number, value: number) => void;
+};
+
+type Point = { x: number; y: number; value: number };
+
+function clamp(v: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, v));
+}
+
+export default function InteractiveLineChart({
+  data,
+  width,
+  height,
+  color,
+  textColor,
+  onHoverChange,
+}: Props) {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(
+    data.length ? data.length - 1 : null
+  );
+
+  const points: Point[] = useMemo(() => {
+    if (!data.length || width <= 0 || height <= 0) return [];
+
+    const minY = Math.min(...data);
+    const maxY = Math.max(...data);
+    const spanY = maxY - minY || 1;
+
+    const stepX = data.length > 1 ? width / (data.length - 1) : 0;
+
+    return data.map((value, index) => {
+      const x = stepX * index;
+      const normalized = (value - minY) / spanY;
+      const y = height - normalized * height;
+      return { x, y, value };
+    });
+  }, [data, width, height]);
+
+  const path = useMemo(() => {
+    if (!points.length) return "";
+    const [first, ...rest] = points;
+    const segments = rest.map((p) => `L ${p.x} ${p.y}`);
+    return `M ${first.x} ${first.y} ${segments.join(" ")}`;
+  }, [points]);
+
+  const updateHover = (index: number) => {
+    if (!data.length) return;
+    const clampedIndex = clamp(index, 0, data.length - 1);
+    const value = data[clampedIndex];
+    setHoverIndex(clampedIndex);
+    if (onHoverChange) {
+      onHoverChange(clampedIndex, value);
+    }
+  };
+
+  const handleTouch = (evt: GestureResponderEvent, _gs: PanResponderGestureState) => {
+    if (!points.length || width <= 0) return;
+    const x = clamp(evt.nativeEvent.locationX, 0, width);
+    const idxFloat = (x / width) * (data.length - 1);
+    const idx = Math.round(idxFloat);
+    updateHover(idx);
+  };
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: handleTouch,
+        onPanResponderMove: handleTouch,
+        onPanResponderRelease: () => {
+          // keep last hovered value instead of clearing
+        },
+        onPanResponderTerminate: () => {
+          // keep last hovered value
+        },
+      }),
+    [handleTouch]
+  );
+
+  const activePoint =
+    hoverIndex != null && points[hoverIndex] ? points[hoverIndex] : null;
+
+  return (
+    <View>
+      {activePoint && (
+        <View style={{ alignItems: "center", paddingBottom: 4 }}>
+          <Text
+            style={{
+              color: textColor,
+              fontSize: 14,
+              fontWeight: "600",
+            }}
+          >
+            €{activePoint.value.toFixed(2)}
+          </Text>
+        </View>
+      )}
+
+      <View {...panResponder.panHandlers}>
+        <Svg width={width} height={height}>
+          {path ? (
+            <Path
+              d={path}
+              stroke={color}
+              strokeWidth={2.5}
+              fill="none"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          ) : null}
+
+          {activePoint && (
+            <Circle
+              cx={activePoint.x}
+              cy={activePoint.y}
+              r={5}
+              stroke={color}
+              strokeWidth={2}
+              fill="#ffffff"
+            />
+          )}
+        </Svg>
+      </View>
+    </View>
+  );
+}

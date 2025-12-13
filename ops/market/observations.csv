@@ -1,0 +1,4 @@
+item_ref,category,price,currency,source,observed_at
+curated/pokemon_cards/pokemon_1.jpg,pokemon_cards,24.99,USD,tcgplayer,2025-10-12T12:30:00Z
+curated/pokemon_cards/pokemon_2.jpg,pokemon_cards,18.50,USD,ebay,2025-10-14T09:15:00Z
+curated/funko_pops/funko_1.jpg,funko_pops,12.00,USD,ebay,2025-10-15T18:45:00Z

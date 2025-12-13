@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+TARGET="app/(tabs)/items.tsx"
+
+if [ -f "$TARGET" ]; then
+  echo "Backing up $TARGET"
+  cp "$TARGET" "$TARGET.bak.ui_items_expandable.$(date +%s)"
+else
+  echo "Creating new Items screen at $TARGET"
+  mkdir -p "app/(tabs)"
+fi
+
+cat <<'EOF' > "$TARGET"
+import React, { useState } from "react";
+import { View, Text, ScrollView, Pressable } from "react-native";
+
+const MOCK_ITEMS = [
+  { id: "p1", name: "Demo Charizard", category: "pokemon", value: 124.0, currency: "EUR" },
+  { id: "p2", name: "Pikachu EX", category: "pokemon", value: 60.0, currency: "EUR" },
+  { id: "f1", name: "Grail Funko Pop", category: "funko", value: 45.0, currency: "EUR" },
+  { id: "g1", name: "Wave 1 RX-78 (Launch)", category: "gunpla", value: 220.0, currency: "EUR" },
+  { id: "m1", name: "MTG Demo Mythic", category: "mtg", value: 80.0, currency: "EUR" },
+];
+
+const MOCK_CATEGORIES = [
+  { id: "pokemon", label: "Pokémon" },
+  { id: "funko", label: "Funko Pops" },
+  { id: "gunpla", label: "Gunpla & model kits" },
+  { id: "mtg", label: "Magic: The Gathering" },
+];
+
+const MOCK_WATCHLIST = [
+  { id: "w1", name: "Demo Charizard", category: "pokemon", value: 124.0, currency: "EUR" },
+  { id: "w2", name: "Grail Funko Pop", category: "funko", value: 45.0, currency: "EUR" },
+];
+
+export default function ItemsScreen() {
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [watchlistExpanded, setWatchlistExpanded] = useState<boolean>(false);
+
+  const toggleCategory = function (catId: string) {
+    if (expandedCategory === catId) {
+      setExpandedCategory(null);
+    } else {
+      setExpandedCategory(catId);
+    }
+  };
+
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: "#e6f7fb" }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 32, paddingBottom: 32 }}
+    >
+      <Text style={{ fontSize: 26, fontWeight: "700", marginBottom: 16, color: "#103b5c" }}>
+        Items
+      </Text>
+
+      {/* Categories overview with expandable rows */}
+      <Text
+        style={{ fontSize: 18, fontWeight: "600", marginBottom: 8, color: "#103b5c" }}
+      >
+        Categories
+      </Text>
+      <View
+        style={{
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: "#dde6ee",
+          backgroundColor: "#ffffff",
+          marginBottom: 16,
+        }}
+      >
+        {MOCK_CATEGORIES.map(function (cat, idx) {
+          const isLast = idx === MOCK_CATEGORIES.length - 1;
+          const isExpanded = expandedCategory === cat.id;
+          const itemsInCat = MOCK_ITEMS.filter(function (item) {
+            return item.category === cat.id;
+          });
+
+          return (
+            <View
+              key={cat.id}
+              style={{
+                borderBottomWidth: isLast ? 0 : 1,
+                borderBottomColor: "#f0f3f7",
+              }}
+            >
+              <Pressable
+                onPress={function () {
+                  toggleCategory(cat.id);
+                }}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "#103b5c", fontWeight: "500" }}>{cat.label}</Text>
+                <Text style={{ color: "#4a647a", fontSize: 12 }}>
+                  {isExpanded ? "Hide" : "Show"} items ({itemsInCat.length})
+                </Text>
+              </Pressable>
+
+              {isExpanded && itemsInCat.length > 0 && (
+                <View
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingBottom: 8,
+                  }}
+                >
+                  {itemsInCat.map(function (item) {
+                    return (
+                      <View
+                        key={item.id}
+                        style={{
+                          paddingVertical: 4,
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Text style={{ color: "#103b5c" }}>{item.name}</Text>
+                        <Text style={{ color: "#4a647a" }}>
+                          {item.value} {item.currency}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Watchlist in the same expandable pattern */}
+      <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 8, color: "#103b5c" }}>
+        Watchlist
+      </Text>
+      <View
+        style={{
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: "#dde6ee",
+          backgroundColor: "#ffffff",
+        }}
+      >
+        <Pressable
+          onPress={function () {
+            setWatchlistExpanded(!watchlistExpanded);
+          }}
+          style={{
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: "#103b5c", fontWeight: "500" }}>My watchlist</Text>
+          <Text style={{ color: "#4a647a", fontSize: 12 }}>
+            {watchlistExpanded ? "Hide" : "Show"} items ({MOCK_WATCHLIST.length})
+          </Text>
+        </Pressable>
+
+        {watchlistExpanded && (
+          <View
+            style={{
+              paddingHorizontal: 12,
+              paddingBottom: 8,
+            }}
+          >
+            {MOCK_WATCHLIST.map(function (item) {
+              return (
+                <View
+                  key={item.id}
+                  style={{
+                    paddingVertical: 4,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={{ color: "#103b5c" }}>{item.name}</Text>
+                  <Text style={{ color: "#4a647a" }}>
+                    {item.value} {item.currency}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
+
+      <Text style={{ marginTop: 16, color: "#7a8b9a", fontSize: 12 }}>
+        Demo mode: categories and watchlist are static. Later, each category and item opens a detail / seller screen.
+      </Text>
+    </ScrollView>
+  );
+}
+EOF
+
+echo "Items tab updated: expandable categories + watchlist."

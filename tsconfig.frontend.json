@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "app/**/*",
+    "src/theme/**/*"
+  ],
+  "exclude": [
+    "src/screens/**/*",
+    "src/hooks/**/*",
+    "src/services/**/*",
+    "src/utils/**/*",
+    "types/**/*"
+  ]
+}

@@ -1,0 +1,20 @@
+alter table public.label_events enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname='public' and tablename='label_events' and policyname='label_events_insert_auth'
+  ) then
+    create policy label_events_insert_auth
+      on public.label_events for insert to authenticated
+      using (true) with check (true);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies where schemaname='public' and tablename='label_events' and policyname='label_events_select_auth'
+  ) then
+    create policy label_events_select_auth
+      on public.label_events for select to authenticated
+      using (true);
+  end if;
+end$$;

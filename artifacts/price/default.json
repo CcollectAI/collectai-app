@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "type": "local",
+  "loader": "joblib",
+  "path": "/home/ubuntu/collectors-merge-recovered/artifacts/diecast/20250929_091226/model.pkl"
+}

@@ -1,0 +1,8 @@
+[Unit]
+Description=Collectors Merge calibration gate
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/opt/collectors
+ExecStart=/usr/bin/env python services/collectors_merge/workers/calibration_job.py calibration.jsonl calibration_report.json

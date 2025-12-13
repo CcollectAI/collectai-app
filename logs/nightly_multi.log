@@ -1,0 +1,1100 @@
+[2025-10-12T02:45:01+02:00] nightly-multi start
+[2025-10-12T02:45:01+02:00] build datasets
+[2025-10-12T02:45:06+02:00] datasets=[{"category": "pokemon", "s3": "s3://collectai-datasets/datasets/pokemon/feedback_20251012T004505Z.csv", "rows": 12}, {"category": "diecast", "s3": "s3://collectai-datasets/datasets/diecast/feedback_20251012T004505Z.csv", "rows": 1}, {"category": "lego", "s3": "s3://collectai-datasets/datasets/lego/feedback_20251012T004505Z.csv", "rows": 1}]
+[2025-10-12T02:45:06+02:00] train grid ver=v2025.10.12.024506
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-13T02:45:01+02:00] nightly-multi start
+[2025-10-13T02:45:01+02:00] build datasets
+[2025-10-13T02:45:06+02:00] datasets=[{"category": "pokemon", "s3": "s3://collectai-datasets/datasets/pokemon/feedback_20251013T004505Z.csv", "rows": 12}, {"category": "diecast", "s3": "s3://collectai-datasets/datasets/diecast/feedback_20251013T004505Z.csv", "rows": 1}, {"category": "lego", "s3": "s3://collectai-datasets/datasets/lego/feedback_20251013T004505Z.csv", "rows": 1}]
+[2025-10-13T02:45:06+02:00] train grid ver=v2025.10.13.024506
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-14T02:45:01+02:00] nightly-multi start
+[2025-10-14T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251014T004504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-14T02:45:05+02:00] datasets=
+[2025-10-14T02:45:05+02:00] train grid ver=v2025.10.14.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-15T02:45:02+02:00] nightly-multi start
+[2025-10-15T02:45:02+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251015T004504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-15T02:45:05+02:00] datasets=
+[2025-10-15T02:45:05+02:00] train grid ver=v2025.10.15.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-16T02:45:01+02:00] nightly-multi start
+[2025-10-16T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251016T004504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-16T02:45:05+02:00] datasets=
+[2025-10-16T02:45:05+02:00] train grid ver=v2025.10.16.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-17T02:45:01+02:00] nightly-multi start
+[2025-10-17T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 72, in map_httpcore_exceptions
+    yield
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 236, in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 101, in handle_request
+    raise exc
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 78, in handle_request
+    stream = self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 124, in _connect
+    stream = self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpcore/_backends/sync.py", line 207, in connect_tcp
+    with map_exceptions(exc_map):
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 20, in main
+    rows = sb.table("feedback").select("*").execute().data or []
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py", line 58, in execute
+    r = self.session.request(
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpx/_client.py", line 837, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpx/_client.py", line 926, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpx/_client.py", line 954, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpx/_client.py", line 991, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1027, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 235, in handle_request
+    with map_httpcore_exceptions():
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 89, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno -3] Temporary failure in name resolution
+[2025-10-17T02:45:04+02:00] datasets=
+[2025-10-17T02:45:04+02:00] train grid ver=v2025.10.17.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-18T02:45:01+02:00] nightly-multi start
+[2025-10-18T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251018T004505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-18T02:45:05+02:00] datasets=
+[2025-10-18T02:45:05+02:00] train grid ver=v2025.10.18.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-19T02:45:01+02:00] nightly-multi start
+[2025-10-19T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251019T004505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-19T02:45:05+02:00] datasets=
+[2025-10-19T02:45:05+02:00] train grid ver=v2025.10.19.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-20T02:45:01+02:00] nightly-multi start
+[2025-10-20T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251020T004505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-20T02:45:06+02:00] datasets=
+[2025-10-20T02:45:06+02:00] train grid ver=v2025.10.20.024506
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-21T02:45:01+02:00] nightly-multi start
+[2025-10-21T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251021T004505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-21T02:45:06+02:00] datasets=
+[2025-10-21T02:45:06+02:00] train grid ver=v2025.10.21.024506
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-22T02:45:01+02:00] nightly-multi start
+[2025-10-22T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251022T004504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-22T02:45:05+02:00] datasets=
+[2025-10-22T02:45:05+02:00] train grid ver=v2025.10.22.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-23T02:45:02+02:00] nightly-multi start
+[2025-10-23T02:45:02+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251023T004505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-23T02:45:05+02:00] datasets=
+[2025-10-23T02:45:05+02:00] train grid ver=v2025.10.23.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-24T02:45:02+02:00] nightly-multi start
+[2025-10-24T02:45:02+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251024T004505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-24T02:45:05+02:00] datasets=
+[2025-10-24T02:45:05+02:00] train grid ver=v2025.10.24.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-25T02:45:01+02:00] nightly-multi start
+[2025-10-25T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251025T004505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-25T02:45:05+02:00] datasets=
+[2025-10-25T02:45:05+02:00] train grid ver=v2025.10.25.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-26T02:45:01+02:00] nightly-multi start
+[2025-10-26T02:45:01+02:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251026T004504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-26T02:45:05+02:00] datasets=
+[2025-10-26T02:45:05+02:00] train grid ver=v2025.10.26.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-27T02:45:01+01:00] nightly-multi start
+[2025-10-27T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251027T014504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-27T02:45:05+01:00] datasets=
+[2025-10-27T02:45:05+01:00] train grid ver=v2025.10.27.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-28T02:45:01+01:00] nightly-multi start
+[2025-10-28T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251028T014505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-28T02:45:06+01:00] datasets=
+[2025-10-28T02:45:06+01:00] train grid ver=v2025.10.28.024506
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-29T02:45:01+01:00] nightly-multi start
+[2025-10-29T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251029T014505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-29T02:45:05+01:00] datasets=
+[2025-10-29T02:45:05+01:00] train grid ver=v2025.10.29.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-30T02:45:01+01:00] nightly-multi start
+[2025-10-30T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251030T014505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-30T02:45:05+01:00] datasets=
+[2025-10-30T02:45:05+01:00] train grid ver=v2025.10.30.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-10-31T02:45:01+01:00] nightly-multi start
+[2025-10-31T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251031T014505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-10-31T02:45:05+01:00] datasets=
+[2025-10-31T02:45:05+01:00] train grid ver=v2025.10.31.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-01T02:45:01+01:00] nightly-multi start
+[2025-11-01T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251101T014504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-11-01T02:45:05+01:00] datasets=
+[2025-11-01T02:45:05+01:00] train grid ver=v2025.11.01.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-02T02:45:01+01:00] nightly-multi start
+[2025-11-02T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251102T014504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-11-02T02:45:05+01:00] datasets=
+[2025-11-02T02:45:05+01:00] train grid ver=v2025.11.02.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-03T02:45:02+01:00] nightly-multi start
+[2025-11-03T02:45:02+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251103T014505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-11-03T02:45:05+01:00] datasets=
+[2025-11-03T02:45:05+01:00] train grid ver=v2025.11.03.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-04T02:45:01+01:00] nightly-multi start
+[2025-11-04T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251104T014504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-11-04T02:45:04+01:00] datasets=
+[2025-11-04T02:45:04+01:00] train grid ver=v2025.11.04.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-05T02:45:01+01:00] nightly-multi start
+[2025-11-05T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251105T014504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-11-05T02:45:05+01:00] datasets=
+[2025-11-05T02:45:05+01:00] train grid ver=v2025.11.05.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-06T02:45:01+01:00] nightly-multi start
+[2025-11-06T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251106T014505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-11-06T02:45:06+01:00] datasets=
+[2025-11-06T02:45:06+01:00] train grid ver=v2025.11.06.024506
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-07T02:45:02+01:00] nightly-multi start
+[2025-11-07T02:45:02+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251107T014505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-11-07T02:45:05+01:00] datasets=
+[2025-11-07T02:45:05+01:00] train grid ver=v2025.11.07.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-08T02:45:01+01:00] nightly-multi start
+[2025-11-08T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251108T014505Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-11-08T02:45:06+01:00] datasets=
+[2025-11-08T02:45:06+01:00] train grid ver=v2025.11.08.024506
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-09T02:45:01+01:00] nightly-multi start
+[2025-11-09T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 53, in <module>
+    main()
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 47, in main
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/botocore/client.py", line 1017, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::425295131811:assumed-role/ec2-collectors-merge/i-09e4eeb2998aa0e5b is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::collectai-datasets/datasets/pokemon/feedback_20251109T014504Z.csv" because no identity-based policy allows the s3:PutObject action
+[2025-11-09T02:45:05+01:00] datasets=
+[2025-11-09T02:45:05+01:00] train grid ver=v2025.11.09.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-14T02:45:01+01:00] nightly-multi start
+[2025-11-14T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-14T02:45:02+01:00] datasets=
+[2025-11-14T02:45:02+01:00] train grid ver=v2025.11.14.024502
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-15T02:45:01+01:00] nightly-multi start
+[2025-11-15T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-15T02:45:03+01:00] datasets=
+[2025-11-15T02:45:03+01:00] train grid ver=v2025.11.15.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-16T02:45:01+01:00] nightly-multi start
+[2025-11-16T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-16T02:45:03+01:00] datasets=
+[2025-11-16T02:45:03+01:00] train grid ver=v2025.11.16.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-17T02:45:01+01:00] nightly-multi start
+[2025-11-17T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-17T02:45:03+01:00] datasets=
+[2025-11-17T02:45:03+01:00] train grid ver=v2025.11.17.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-18T02:45:01+01:00] nightly-multi start
+[2025-11-18T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-18T02:45:05+01:00] datasets=
+[2025-11-18T02:45:05+01:00] train grid ver=v2025.11.18.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-19T02:45:02+01:00] nightly-multi start
+[2025-11-19T02:45:02+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-19T02:45:05+01:00] datasets=
+[2025-11-19T02:45:05+01:00] train grid ver=v2025.11.19.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-20T02:45:01+01:00] nightly-multi start
+[2025-11-20T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-20T02:45:04+01:00] datasets=
+[2025-11-20T02:45:04+01:00] train grid ver=v2025.11.20.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-21T02:45:01+01:00] nightly-multi start
+[2025-11-21T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-21T02:45:05+01:00] datasets=
+[2025-11-21T02:45:05+01:00] train grid ver=v2025.11.21.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-22T02:45:01+01:00] nightly-multi start
+[2025-11-22T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-22T02:45:03+01:00] datasets=
+[2025-11-22T02:45:03+01:00] train grid ver=v2025.11.22.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-23T02:45:01+01:00] nightly-multi start
+[2025-11-23T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-23T02:45:03+01:00] datasets=
+[2025-11-23T02:45:03+01:00] train grid ver=v2025.11.23.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-24T02:45:01+01:00] nightly-multi start
+[2025-11-24T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-24T02:45:04+01:00] datasets=
+[2025-11-24T02:45:04+01:00] train grid ver=v2025.11.24.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-25T02:45:01+01:00] nightly-multi start
+[2025-11-25T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-25T02:45:04+01:00] datasets=
+[2025-11-25T02:45:04+01:00] train grid ver=v2025.11.25.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-26T02:45:01+01:00] nightly-multi start
+[2025-11-26T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-26T02:45:04+01:00] datasets=
+[2025-11-26T02:45:04+01:00] train grid ver=v2025.11.26.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-27T02:45:01+01:00] nightly-multi start
+[2025-11-27T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-27T02:45:03+01:00] datasets=
+[2025-11-27T02:45:03+01:00] train grid ver=v2025.11.27.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-28T02:45:01+01:00] nightly-multi start
+[2025-11-28T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-28T02:45:04+01:00] datasets=
+[2025-11-28T02:45:04+01:00] train grid ver=v2025.11.28.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-29T02:45:01+01:00] nightly-multi start
+[2025-11-29T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-29T02:45:04+01:00] datasets=
+[2025-11-29T02:45:04+01:00] train grid ver=v2025.11.29.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-11-30T02:45:01+01:00] nightly-multi start
+[2025-11-30T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-11-30T02:45:04+01:00] datasets=
+[2025-11-30T02:45:04+01:00] train grid ver=v2025.11.30.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-01T02:45:01+01:00] nightly-multi start
+[2025-12-01T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-01T02:45:04+01:00] datasets=
+[2025-12-01T02:45:04+01:00] train grid ver=v2025.12.01.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-02T02:45:01+01:00] nightly-multi start
+[2025-12-02T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-02T02:45:04+01:00] datasets=
+[2025-12-02T02:45:04+01:00] train grid ver=v2025.12.02.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-03T02:45:01+01:00] nightly-multi start
+[2025-12-03T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-03T02:45:03+01:00] datasets=
+[2025-12-03T02:45:03+01:00] train grid ver=v2025.12.03.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-04T02:45:01+01:00] nightly-multi start
+[2025-12-04T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-04T02:45:03+01:00] datasets=
+[2025-12-04T02:45:03+01:00] train grid ver=v2025.12.04.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-05T02:45:01+01:00] nightly-multi start
+[2025-12-05T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-05T02:45:05+01:00] datasets=
+[2025-12-05T02:45:05+01:00] train grid ver=v2025.12.05.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-06T02:45:01+01:00] nightly-multi start
+[2025-12-06T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-06T02:45:03+01:00] datasets=
+[2025-12-06T02:45:03+01:00] train grid ver=v2025.12.06.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-07T02:45:01+01:00] nightly-multi start
+[2025-12-07T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-07T02:45:03+01:00] datasets=
+[2025-12-07T02:45:03+01:00] train grid ver=v2025.12.07.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-08T02:45:01+01:00] nightly-multi start
+[2025-12-08T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-08T02:45:04+01:00] datasets=
+[2025-12-08T02:45:04+01:00] train grid ver=v2025.12.08.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-09T02:45:01+01:00] nightly-multi start
+[2025-12-09T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-09T02:45:04+01:00] datasets=
+[2025-12-09T02:45:04+01:00] train grid ver=v2025.12.09.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-10T02:45:01+01:00] nightly-multi start
+[2025-12-10T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-10T02:45:03+01:00] datasets=
+[2025-12-10T02:45:03+01:00] train grid ver=v2025.12.10.024503
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-11T02:45:02+01:00] nightly-multi start
+[2025-12-11T02:45:02+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-11T02:45:04+01:00] datasets=
+[2025-12-11T02:45:04+01:00] train grid ver=v2025.12.11.024504
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'
+[2025-12-12T02:45:01+01:00] nightly-multi start
+[2025-12-12T02:45:01+01:00] build datasets
+Traceback (most recent call last):
+  File "/home/ubuntu/collectors-merge-recovered/scripts/build_dataset_from_feedback.py", line 11, in <module>
+    from supabase import create_client
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/supabase/__init__.py", line 3, in <module>
+    from realtime import AuthorizationError, NotConnectedError
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/__init__.py", line 9, in <module>
+    from ._async.client import AsyncRealtimeClient
+  File "/home/ubuntu/collectors-merge-recovered/.venv/lib/python3.12/site-packages/realtime/_async/client.py", line 12, in <module>
+    from websockets.asyncio.client import ClientConnection
+ModuleNotFoundError: No module named 'websockets.asyncio'
+[2025-12-12T02:45:05+01:00] datasets=
+[2025-12-12T02:45:05+01:00] train grid ver=v2025.12.12.024505
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "<frozen os>", line 685, in __getitem__
+KeyError: 'VER'

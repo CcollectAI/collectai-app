@@ -1,0 +1,8 @@
+{
+  "numeric": {
+    "release_year": { "transform": ["clip:1970:2026", "zscore"] },
+    "piece_count":  { "transform": ["log1p", "zscore"] },
+    "sealed":       { "transform": ["identity"] }
+  },
+  "required": ["release_year", "piece_count"]
+}

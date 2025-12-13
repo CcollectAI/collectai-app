@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://collectors.local/contracts/fastpass.v1.schema.json",
+  "title": "FastPassResponseV1",
+  "type": "object",
+  "required": ["id","nk","ingest","ocr","guide","predict"],
+  "properties": {
+    "id": { "type":"string" },
+    "nk": { "type":"string" },
+    "ingest": { "type":"object", "required":["status"], "properties":{
+      "status": { "type":"string", "enum":["ok","error"] },
+      "error": { "type":"string" }
+    }},
+    "ocr": { "type":"object", "required":["status"], "properties":{
+      "status": { "type":"string", "enum":["ok","error"] },
+      "hints": { "type":"object" },
+      "error": { "type":"string" }
+    }},
+    "guide": { "type":"object", "required":["status"], "properties":{
+      "status": { "type":"string", "enum":["ok","error"] },
+      "bands": { "type":"object", "properties":{
+        "p25":{"type":"number"},"p50":{"type":"number"},"p75":{"type":"number"}
+      }},
+      "count": {"type":"integer"},
+      "error": { "type":"string" }
+    }},
+    "predict": { "type":"object", "required":["status"], "properties":{
+      "status": { "type":"string", "enum":["ok","error"] },
+      "q10":{"type":"number"},"q50":{"type":"number"},"q90":{"type":"number"},
+      "confidence":{"type":"number","minimum":0,"maximum":1},
+      "comps_count":{"type":"integer","minimum":0},
+      "model_version":{"type":"string"},
+      "source":{"type":"string","enum":["baseline","comps"]},
+      "training_data_asof":{"type":"string"},
+      "error": { "type":"string" }
+    }},
+    "watchlist":{"type":"object","properties":{
+      "added":{"type":"boolean"},"id":{"type":"string"}
+    }}
+  }
+}

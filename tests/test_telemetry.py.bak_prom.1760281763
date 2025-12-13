@@ -1,0 +1,6 @@
+def test_telemetry_endpoint(client):
+    resp = client.get("/ops/telemetry")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "metrics" in data
+    assert "collectors_uptime_seconds_total" in data["metrics"]

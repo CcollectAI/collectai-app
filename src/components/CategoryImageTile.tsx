@@ -1,0 +1,89 @@
+import React from "react";
+import { View, Text, Image, StyleSheet, ImageSourcePropType } from "react-native";
+
+type Props = {
+  label: string;
+  image: ImageSourcePropType;
+  subtitle?: string;
+};
+
+export const CategoryImageTile: React.FC<Props> = ({
+
+  const theme = {
+    colors: {
+      card: "#FFFFFF",
+      text: "#1A202C",
+      muted: "#4A5568",
+      primary: "#02B5C4",
+    },
+  }; label, image, subtitle }) => {
+
+  return (
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.colors.card,
+        },
+      ]}
+    >
+      <Image source={image} style={styles.image} resizeMode="cover" />
+      <View style={styles.textWrap}>
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.label,
+            {
+              color: theme.colors.text,
+            },
+          ]}
+        >
+          {label}
+        </Text>
+        {!!subtitle && (
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.subtitle,
+              {
+                color: theme.colors.muted,
+              },
+            ]}
+          >
+            {subtitle}
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    width: 140,
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+    marginRight: 12,
+  },
+  image: {
+    width: "100%",
+    height: 90,
+  },
+  textWrap: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  subtitle: {
+    marginTop: 2,
+    fontSize: 11,
+  },
+});

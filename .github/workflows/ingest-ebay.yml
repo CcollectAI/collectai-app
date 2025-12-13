@@ -1,0 +1,21 @@
+name: Ingest eBay
+on:
+  schedule: [{ cron: "*/30 * * * *" }]
+  workflow_dispatch: {}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install requests
+      - env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RAPIDAPI_KEY:              ${{ secrets.RAPIDAPI_KEY }}   # or EBAY_OAUTH_TOKEN
+          INGEST_CATEGORY:           Pokemon
+          EBAY_QUERY:                Pikachu VMAX
+          EBAY_LIMIT:                30
+          EUR_RATE:                  0.92
+        run: python scripts/ingest/ebay_ingest.py

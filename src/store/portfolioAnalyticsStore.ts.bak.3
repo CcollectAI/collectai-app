@@ -1,0 +1,102 @@
+import {
+  PortfolioItem,
+  CollectionDefinition,
+  PortfolioSnapshot,
+  buildPortfolioSnapshotDemo,
+} from '@/analytics/portfolioMetrics';
+
+/**
+ * Public type used by screens that want analytics data.
+ */
+export type PortfolioAnalyticsSnapshot = PortfolioSnapshot;
+
+/**
+ * Demo items & collections – replace with live data wiring later.
+ * This is safe, self-contained, and does NOT depend on zustand.
+ */
+const demoItems: PortfolioItem[] = [
+  {
+    id: '1',
+    title: 'Pokémon Charizard Holo',
+    category: 'Pokémon TCG',
+    costBasis: 200,
+    currentValue: 450,
+    rarityScore: 0.9,
+    collectionKey: 'pokemon-base-set',
+    inTrackedSet: true,
+  },
+  {
+    id: '2',
+    title: 'Pokémon Blastoise Holo',
+    category: 'Pokémon TCG',
+    costBasis: 150,
+    currentValue: 280,
+    rarityScore: 0.8,
+    collectionKey: 'pokemon-base-set',
+    inTrackedSet: true,
+  },
+  {
+    id: '3',
+    title: 'Funko Iron Man',
+    category: 'Funko Pops',
+    costBasis: 25,
+    currentValue: 40,
+    rarityScore: 0.5,
+    collectionKey: 'funko-marvel',
+    inTrackedSet: true,
+  },
+  {
+    id: '4',
+    title: 'Diecast Porsche 911',
+    category: 'Diecast',
+    costBasis: 40,
+    currentValue: 60,
+    rarityScore: 0.6,
+    inTrackedSet: false,
+  },
+];
+
+const demoCollections: CollectionDefinition[] = [
+  {
+    key: 'pokemon-base-set',
+    label: 'Pokémon Base Set (Demo)',
+    requiredItemCount: 15,
+  },
+  {
+    key: 'funko-marvel',
+    label: 'Funko Marvel (Demo)',
+    requiredItemCount: 10,
+  },
+];
+
+/**
+ * Synchronous helper used by debug screens or Portfolio:
+ * returns a full analytics snapshot (P/L card, series, allocations,
+ * winners/losers, completeness/rarity, status tier).
+ *
+ * Later you can swap this to fetch Supabase / backend data and still
+ * keep the same return shape.
+ */
+export function getPortfolioAnalyticsDemo(): PortfolioAnalyticsSnapshot {
+  return buildPortfolioSnapshotDemo(demoItems, demoCollections);
+}
+
+// --- Analytics API expected by existing Analytics screen ---
+
+/**
+ * Returns the 12-point series the Analytics tab expects.
+ * Currently backed by demo data. Later you can swap this to
+ * call Supabase/backend and keep the same function name.
+ */
+export async function fetchPortfolioSeries() {
+  const snapshot = getPortfolioAnalyticsDemo();
+  return snapshot.series;
+}
+
+/**
+ * Optional helper: full snapshot for any screen that wants
+ * P/L card, series, allocations, winners/losers, status.
+ */
+export async function fetchPortfolioSnapshot() {
+  return getPortfolioAnalyticsDemo();
+}

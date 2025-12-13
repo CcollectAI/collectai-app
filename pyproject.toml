@@ -1,0 +1,3 @@
+[tool.pytest.ini_options]
+addopts = "-q --cov=app --cov=main --cov-report=term-missing --maxfail=1"
+asyncio_mode = "auto"

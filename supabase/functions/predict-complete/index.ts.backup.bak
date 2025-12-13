@@ -1,0 +1,116 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
+import { z } from "https://esm.sh/zod@3.23.8"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.46.1"
+
+const URL = Deno.env.get("SUPABASE_URL")!
+const SRK = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+
+const baseHeaders = { "Accept-Profile": "public", "Content-Profile": "public" }
+const admin = createClient(URL, SRK, { db: { schema: "public" }, global: { headers: baseHeaders } })
+
+const Body = z.object({ session_id: z.union([z.string(), z.number()]), mock_seed: z.number().optional() })
+const toNum = (v: string | number) => (typeof v === "number" ? v : /^\d+$/.test(v) ? Number(v) : v)
+
+// Tiny helper so we can compute a mock price if no comps set yet.
+function mockPrice(seed = 0.5) {
+  const base = 150; // €
+  const span = 400; // €
+  return Math.round((base + span * Math.max(0, Math.min(1, seed))) * 100) / 100;
+}
+function pick<T>(arr: T[], idx = 0) { return arr[Math.max(0, Math.min(arr.length - 1, idx))] }
+
+serve(async (req) => {
+  try {
+    if (!(req.headers.get("content-type") || "").includes("application/json")) {
+      return new Response(JSON.stringify({ error: "Content-Type must be application/json" }), { status: 415 })
+    }
+    const json = await req.json()
+    const parsed = Body.safeParse(json)
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: "Invalid payload", issues: parsed.error.issues }), { status: 400 })
+    }
+
+    const sid = toNum(parsed.data.session_id)
+
+    // 1) load the session
+    const sel = await admin.from("predict_sessions").select("*").eq("id", sid).maybeSingle()
+    if (sel.error) return new Response(JSON.stringify({ error: sel.error.message }), { status: 400 })
+    if (!sel.data) return new Response(JSON.stringify({ error: "Session not found", session_id: sid }), { status: 404 })
+    let row = sel.data
+    const session_uuid: string | null = (row as any).uuid_id ?? null
+    const category: string = row.category
+
+    // 2) simple “model” (replace this block with your real predictor)
+    const seed = typeof parsed.data.mock_seed === "number" ? parsed.data.mock_seed : 0.5
+    const candidatesByCat: Record<string, { title: string[], cond: string[] }> = {
+      "pokemon": {
+        title: ["Pikachu", "Charizard", "Bulbasaur", "Squirtle", "Eevee"],
+        cond: ["Near Mint", "Good", "Fair", "Mint", "Poor"],
+      },
+      "LEGO": {
+        title: ["LEGO Set", "LEGO Exclusive", "LEGO UCS", "LEGO Ideas", "LEGO Minifig"],
+        cond: ["New", "Like New", "Used", "Good", "Poor"],
+      },
+      "default": {
+        title: ["Collectible", "Trading Card", "Figure", "Comic", "Toy"],
+        cond: ["Near Mint", "Good", "Fair", "Mint", "Poor"],
+      }
+    }
+    const bank = candidatesByCat[category] ?? candidatesByCat["default"]
+    const idx = Math.floor(seed * 4.999) // 0..4
+    const raw_title = pick(bank.title, idx)
+    const raw_condition = pick(bank.cond, (4 - idx))
+    const raw_price_eur = mockPrice(seed)
+
+    // 3) mark done (+ stash coarse price bands)
+    const price_low_eur  = Math.max(1, Math.round(raw_price_eur * 0.8))
+    const price_mid_eur  = Math.round(raw_price_eur)
+    const price_high_eur = Math.round(raw_price_eur * 1.25)
+
+    const upd = await admin.from("predict_sessions").update({
+      status: "done",
+      confidence: 0.5 + (seed * 0.5),  // 0.5..1.0 mock
+      price_low_eur, price_mid_eur, price_high_eur,
+      features: { mock: true, seed },
+      comps: [{ source: "mock", price: price_mid_eur }]
+    }).eq("id", sid).select("*").single()
+    if (!upd.error && upd.data) row = upd.data
+
+    // 4) dual-write raw_* into training_items (always if we have a uuid)
+    if (session_uuid) {
+      const up = await admin
+        .from("training_items")
+        .upsert([{
+          session_uuid,
+          user_id: row.user_id ?? null,
+          category,
+          raw_title,
+          raw_condition,
+          raw_price_eur
+        }], { onConflict: "session_uuid" })
+        .select("*").single()
+      if (up.error) console.error("training_items upsert(raw_*) failed:", up.error)
+    }
+
+    // 5) response
+    return new Response(JSON.stringify({
+      session: {
+        id: row.id,
+        session_uuid,
+        user_id: row.user_id ?? null,
+        status: row.status ?? "done",
+        confidence: (row as any).confidence ?? null,
+        price_low_eur: (row as any).price_low_eur ?? null,
+        price_mid_eur: (row as any).price_mid_eur ?? null,
+        price_high_eur: (row as any).price_high_eur ?? null,
+        features: (row as any).features ?? null,
+        comps: (row as any).comps ?? null,
+        created_at: row.created_at ?? null,
+        updated_at: row.updated_at ?? null
+      }
+    }), { status: 200 })
+  } catch (e) {
+    console.error("predict-complete unhandled:", e)
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500 })
+  }
+})

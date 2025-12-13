@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProvenanceCard",
+  "type": "object",
+  "properties": {
+    "strength_badge": { "type": "string", "enum": ["weak","medium","strong"] },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string" },
+          "at": { "type": "string", "format": "date-time" },
+          "evidence": { "type": "string" },
+          "meta": { "type": "object" }
+        },
+        "required": ["kind","at"]
+      }
+    }
+  },
+  "required": ["strength_badge","events"]
+}

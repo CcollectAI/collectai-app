@@ -1,0 +1,71 @@
+import React, { useState } from 'react'
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Linking } from 'react-native'
+import { useSession } from '@/hooks/useSession'
+import { searchEbay, MarketHit } from '@/lib/market'
+
+type Tab = 'Chat'|'Search'|'Sell'
+
+export default function MarketplaceScreen() {
+  const [tab, setTab] = useState<Tab>('Search')
+  const { jwt, anonKey } = useSession()
+
+  const [query, setQuery] = useState('Pikachu VMAX')
+  const [category, setCategory] = useState('Pokemon')
+  const [loading, setLoading] = useState(false)
+  const [hits, setHits] = useState<MarketHit[]>([])
+  const [provider, setProvider] = useState('mock')
+
+  const onSearch = async () => {
+    if (!jwt || !anonKey) return
+    setLoading(true)
+    const res = await searchEbay(jwt, anonKey, query, { category, limit: 8 })
+    setLoading(false)
+    if (!res.ok) {
+      console.warn(res.error)
+      setHits([]); return
+    }
+    setProvider((res.data as any).provider || 'mock')
+    setHits((res.data as any).hits || [])
+  }
+
+  const Seg = ({label}:{label:Tab}) => (
+    <TouchableOpacity onPress={() => setTab(label)} style={{ padding: 8, borderBottomWidth: tab===label?2:0 }}>
+      <Text style={{ fontWeight: tab===label?'700':'400' }}>{label}</Text>
+    </TouchableOpacity>
+  )
+
+  const Card = ({ item }: { item: MarketHit }) => (
+    <TouchableOpacity onPress={() => Linking.openURL(item.url)} style={{
+      backgroundColor: 'white', padding: 12, marginBottom: 8, borderWidth: 1
+    }}>
+      <Text style={{ fontWeight: '600' }}>{item.title}</Text>
+      <Text>€ {item.price_eur.toFixed(2)}</Text>
+      <Text style={{ color: '#666' }}>{new Date(item.ts).toLocaleString()}</Text>
+      <Text numberOfLines={1} style={{ color:'#1e40af' }}>{item.url}</Text>
+    </TouchableOpacity>
+  )
+
+  return (
+    <View style={{ flex:1, padding:16 }}>
+      <View style={{ flexDirection:'row', gap:16, marginBottom:12 }}>
+        <Seg label="Chat" /><Seg label="Search" /><Seg label="Sell" />
+      </View>
+
+      {tab==='Search' && (
+        <View>
+          <TextInput value={query} onChangeText={setQuery} placeholder="Search eBay"
+            style={{ borderWidth:1, padding:8, marginBottom:8 }} />
+          <TextInput value={category} onChangeText={setCategory} placeholder="Category"
+            style={{ borderWidth:1, padding:8, marginBottom:8 }} />
+          <Button title={loading?'Searching…':'Search'} onPress={onSearch} />
+          <View style={{ height:8 }} />
+          <Text style={{ color:'#666' }}>Provider: {provider}</Text>
+          <FlatList data={hits} keyExtractor={i=>i.id} renderItem={Card} style={{ marginTop:8 }} />
+        </View>
+      )}
+
+      {tab==='Chat' && <Text>Chat (mock)</Text>}
+      {tab==='Sell' && <Text>Sell (mock)</Text>}
+    </View>
+  )
+}

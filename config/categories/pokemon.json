@@ -1,0 +1,8 @@
+{
+  "numeric": {
+    "year":         { "transform": ["clip:1970:2026", "zscore"] },
+    "rarity_score": { "transform": ["clip:0:1"] },
+    "graded":       { "transform": ["identity"] }
+  },
+  "required": ["year", "rarity_score"]
+}

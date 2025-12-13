@@ -1,0 +1,18 @@
+import { useMemo } from "react";
+import { colors, radius, spacing, shadow } from "./tokens";
+
+/**
+ * Minimal stable theme hook.
+ * Always returns same object shape.
+ */
+export function useAppTheme() {
+  return useMemo(() => {
+    return {
+      colors,
+      spacing,
+      radius,
+      radii: radius, // back-compat
+      shadow,
+    };
+  }, []);
+}

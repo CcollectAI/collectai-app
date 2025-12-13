@@ -1,0 +1,7 @@
+{
+  "version": "v1",
+  "waves": {
+    "wave1": ["pokemon_cards", "funko_pops", "diecast_cars"],
+    "wave2": ["mtg", "lorcana", "flesh_and_blood", "warhammer_minis", "gunpla_model_kits", "designer_art_toys"]
+  }
+}

@@ -1,0 +1,12 @@
+import { useMemo } from "react";
+import { colors, radius, spacing, shadow } from "@/theme/tokens";
+
+/**
+ * Canonical theme hook (IMPLEMENTED here).
+ * Do NOT re-export from "@/theme" to avoid Metro runtime undefined issues.
+ */
+export function useAppTheme() {
+  return useMemo(() => ({ colors, radius, spacing, shadow }), []);
+}
+
+export type AppTheme = ReturnType<typeof useAppTheme>;

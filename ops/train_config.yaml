@@ -1,0 +1,8 @@
+taxonomy_version: v1
+data_uri: s3://collectai-datasets/train/
+model_base: openai/clip-vit-base-patch32
+freeze_vision_backbone: true
+epochs: 5
+batch_size: 32
+learning_rate: 5.0e-5
+output_s3: s3://collectai-models/clip/clip-v1.0.0/

@@ -1,0 +1,253 @@
+.PHONY: setup run fmt lint test calib export-pdf export-tax \
+        ingest-ebay backfill-nk fts-rebuild search-fts normalize \
+        portfolio-series portfolio-aggregate top-movers price-guide alerts diag \
+        cal-metrics snapshot-json snapshot-csv ingest-bricklink ingest-tcg \
+        sanity-ready sanity-e2e sanity-sql
+
+setup:
+	python -m pip install -U pip
+	pip install -r requirements.txt
+
+run:
+	./deploy/run_uvicorn.sh
+
+fmt:
+	python -m black services || true
+
+lint:
+	python -m ruff services || true
+
+test:
+	pytest -q
+
+calib:
+	python services/collectors_merge/workers/calibration_job.py
+
+export-pdf:
+	python services/collectors_merge/scripts/export_insurance_pdf.py portfolio_export.json portfolio_insurance.pdf
+	@echo "PDF -> portfolio_insurance.pdf"
+
+export-tax:
+	python services/collectors_merge/scripts/export_tax_csv.py realized.jsonl tax_export.csv
+	@echo "CSV -> tax_export.csv"
+
+ingest-ebay:
+	python services/collectors_merge/workers/ingest_ebay_sold.py ebay_sold.jsonl
+
+backfill-nk:
+	python services/collectors_merge/workers/backfill_normalized_key.py
+
+fts-rebuild:
+	python services/collectors_merge/workers/build_fts_index.py
+
+search-fts:
+	curl -s "http://localhost:8080/market/search_fts?q=charizard psa 10" | jq .
+
+normalize:
+	curl -s "http://localhost:8080/market/normalize?text=LEGO%2010240%20X-Wing%20Starfighter&category=lego" | jq .
+
+portfolio-series:
+	curl -s "http://localhost:8080/portfolio/series?user_id=00000000-0000-0000-0000-000000000001" | jq .
+
+portfolio-aggregate:
+	curl -s "http://localhost:8080/portfolio/aggregate?user_id=00000000-0000-0000-0000-000000000001" | jq .
+
+top-movers:
+	curl -s "http://localhost:8080/portfolio/top-movers?user_id=00000000-0000-0000-0000-000000000001&days=7&limit=10" | jq .
+
+price-guide:
+	curl -s "http://localhost:8080/market/price-guide?normalized_key=lego|10240|pcs:1559|ret:1|s:1" | jq .
+
+alerts:
+	python services/collectors_merge/workers/alerts_watchlist.py && python services/collectors_merge/workers/notify_drain.py
+
+diag:
+	curl -s "http://localhost:8080/health/diag" | jq .
+
+cal-metrics:
+	curl -s -X POST "http://localhost:8080/metrics/calibration/load" -H 'content-type: application/json' -d '{"path":"calibration_report.json","category":"all"}' | jq .
+
+snapshot-json:
+	curl -s "http://localhost:8080/portfolio/snapshot?user_id=00000000-0000-0000-0000-000000000001&fmt=json" | jq .
+
+snapshot-csv:
+	curl -s "http://localhost:8080/portfolio/snapshot?user_id=00000000-0000-0000-0000-000000000001&fmt=csv"
+
+ingest-bricklink:
+	python services/collectors_merge/workers/ingest_bricklink.py 10240
+
+ingest-tcg:
+	python services/collectors_merge/workers/ingest_tcgplayer.py 12345
+
+sanity-ready:
+	curl -s "http://localhost:8080/sanity/ready" | jq .
+
+sanity-e2e:
+	BASE="http://localhost:8080" USER_ID="00000000-0000-0000-0000-000000000001" ./deploy/sanity/smoke_e2e.sh
+
+sanity-sql:
+	psql "$$DATABASE_URL" -f supabase/sanity/checks.sql
+
+# --- env loader for local dev ---
+ENVLOAD = set -a; [ -f ./.env ] && . ./.env; set +a
+
+.PHONY: alerts-eval
+alerts-eval:
+	$(ENVLOAD); python services/collectors_merge/workers/alerts_evaluator.py
+
+.PHONY: hits-dedupe
+hits-dedupe:
+	$(ENVLOAD); python services/collectors_merge/workers/dedupe_hits.py
+
+.PHONY: sanity-predict
+sanity-predict:
+	@echo 'curl -s -X POST http://localhost:8080/predict/baseline_v1 -H content-type:application/json -d '\''{"item_id":"<ITEM_ID>","attributes":{"grade":"PSA 10","sealed":true}}'\'' | jq .'
+
+.PHONY: sanity-guide
+sanity-guide:
+	@echo 'curl -s "http://localhost:8080/market/price_guide_v2?normalized_key=lego|10240|pcs:1559|ret:1|s:1" | jq .'
+
+.PHONY: sanity-predict-baseline
+sanity-predict-baseline:
+	@echo "ITEM_ID must be set, e.g. make sanity-predict-baseline ITEM_ID=123"
+	curl -s $${AUTH:+-H "Authorization: Bearer $$TOKEN"} \
+	  -X POST http://localhost:8080/predict/baseline_v1 \
+	  -H 'Content-Type: application/json' \
+	  -d '{"item_id":"'"$${ITEM_ID}"'","attributes":{"grade":"PSA 10","sealed":true}}' | jq .
+
+.PHONY: sanity-guide
+sanity-guide:
+	@echo "Run: NK='lego|10240|pcs:1559|ret:1|s:1' make sanity-guide"
+	curl -s "http://localhost:8080/market/price_guide_v2?normalized_key=$${NK}&horizon_days=90&iqr_k=1.5" | jq .
+
+.PHONY: sanity-hybrid
+sanity-hybrid:
+	@echo "Usage: make sanity-hybrid ITEM_ID=<id>"
+	curl -s -X POST http://localhost:8080/predict/hybrid_v1 \
+	  -H 'content-type: application/json' \
+	  -d '{"item_id":"'"$${ITEM_ID}"'","attributes":{"grade":"PSA 10","sealed":true}}' | jq .
+
+.PHONY: sanity-nk-suggest
+sanity-nk-suggest:
+	curl -s "http://localhost:8080/market/suggest_nk?text=LEGO%2010240%20X-Wing&category=lego" | jq .
+
+.PHONY: ensure-item
+ensure-item:
+	@USER_ID=$${USER_ID:-00000000-0000-0000-0000-000000000001}; \
+	CATEGORY=$${CATEGORY:-lego}; \
+	NK=$${NK:-lego|10240|pcs:1559|ret:1|s:1}; \
+	ID=$$(curl -s "http://localhost:8080/items/list?user_id=$$USER_ID&category=$$CATEGORY&limit=1" | jq -r '.items[0].id // empty'); \
+	if [ -z "$$ID" ]; then \
+	  ID=$$(curl -s -X POST "http://localhost:8080/items/upsert" -H 'content-type: application/json' \
+	    -d "{\"user_id\":\"$$USER_ID\",\"category\":\"$$CATEGORY\",\"title\":\"X-Wing test\",\"normalized_key\":\"$$NK\",\"sealed\":true}" \
+	    | jq -r '.item_id // .id // empty'); \
+	fi; \
+	echo $$ID
+
+.PHONY: sanity-hybrid
+sanity-hybrid:
+	@ITEM_ID=$${ITEM_ID:-}; \
+	if [ -z "$$ITEM_ID" ]; then ITEM_ID=$$( $(MAKE) -s ensure-item ); fi; \
+	curl -s -X POST http://localhost:8080/predict/hybrid_safe_v1 \
+	  -H 'content-type: application/json' \
+	  -d '{"item_id":"'"$$ITEM_ID"'","attributes":{"grade":"PSA 10","sealed":true}}' | jq .
+
+.PHONY: sanity-guide
+sanity-guide:
+	@NK=$${NK:-lego|10240|pcs:1559|ret:1|s:1}; \
+	curl -s "http://localhost:8080/market/price_guide_v2?normalized_key=$$NK&horizon_days=90&iqr_k=1.5" | jq .
+
+.PHONY: ensure-item
+ensure-item:
+	@USER_ID=$${USER_ID:-00000000-0000-0000-0000-000000000001}; \
+	CATEGORY=$${CATEGORY:-lego}; \
+	NK=$${NK:-lego|10240|pcs:1559|ret:1|s:1}; \
+	ID=$$(curl -s "http://localhost:8080/items/list?user_id=$$USER_ID&category=$$CATEGORY&limit=1" | jq -r '.items[0].id // empty'); \
+	if [ -z "$$ID" ]; then \
+	  ID=$$(curl -s -X POST "http://localhost:8080/items/upsert" -H 'content-type: application/json' \
+	    -d "{\"user_id\":\"$$USER_ID\",\"category\":\"$$CATEGORY\",\"title\":\"X-Wing test\",\"normalized_key\":\"$$NK\",\"sealed\":true}" \
+	    | jq -r '.item_id // .id // empty'); \
+	fi; \
+	echo $$ID
+
+.PHONY: sanity-hybrid
+sanity-hybrid:
+	@ITEM_ID=$${ITEM_ID:-}; \
+	if [ -z "$$ITEM_ID" ]; then ITEM_ID=$$( $(MAKE) -s ensure-item ); fi; \
+	curl -s -X POST http://localhost:8080/predict/hybrid_safe_v1 \
+	  -H 'content-type: application/json' \
+	  -d '{"item_id":"'"$$ITEM_ID"'","attributes":{"grade":"PSA 10","sealed":true}}' | jq .
+
+.PHONY: sanity-guide
+sanity-guide:
+	@NK=$${NK:-lego|10240|pcs:1559|ret:1|s:1}; \
+	curl -s "http://localhost:8080/market/price_guide_v2?normalized_key=$$NK&horizon_days=90&iqr_k=1.5" | jq .
+
+.PHONY: sanity-fastpass-v2
+sanity-fastpass-v2:
+	@echo "Using /tmp/p.jpg (override with IMG=/path/to.jpg)"; \
+	IMG=$${IMG:-/tmp/p.jpg}; \
+	[ -f "$$IMG" ] || echo pix > "$$IMG"; \
+	curl -s -F "user_id=$${USER_ID:-00000000-0000-0000-0000-000000000001}" \
+	       -F "category=$${CATEGORY:-lego}" \
+	       -F "watchlist=1" \
+	       -F "guide_recent_days=90" \
+	       -F "guide_min_seller_score=0.98" \
+	       -F "guide_iqr_k=1.5" \
+	       -F "image=@$$IMG" \
+	       http://localhost:8080/ingest/fastpass_v2 | jq .
+
+.PHONY: sanity-fastpass-21
+sanity-fastpass-21:
+	@IMG=$${IMG:-/tmp/p.jpg}; echo "pix" > $$IMG; \
+	curl -s -F "user_id=$${USER_ID:-00000000-0000-0000-0000-000000000001}" \
+	       -F "category=$${CATEGORY:-lego}" -F "watchlist=1" \
+	       -F "guide_recent_days=90" -F "guide_min_seller_score=0.98" -F "guide_iqr_k=1.5" \
+	       -F "image=@$$IMG" http://localhost:8080/ingest/fastpass_v2 | jq .
+
+.PHONY: sanity-refresh
+sanity-refresh:
+	@USER_ID=$${USER_ID:-00000000-0000-0000-0000-000000000001}; \
+	curl -s -X POST "http://localhost:8080/predict/refresh_watchlist?user_id=$$USER_ID&days=1" | jq .
+
+.PHONY: sanity-dedupe
+sanity-dedupe:
+	@curl -s -X POST http://localhost:8080/market/dedupe | jq .
+
+.PHONY: sanity-export
+sanity-export:
+	@USER_ID=$${USER_ID:-00000000-0000-0000-0000-000000000001}; \
+	echo "== items.csv (first lines) =="; \
+	curl -s "http://localhost:8080/ops/export_items_csv?user_id=$$USER_ID" | head; \
+	echo "== watchlist.csv (first lines) =="; \
+	curl -s "http://localhost:8080/ops/export_watchlist_csv?user_id=$$USER_ID" | head
+
+.PHONY: sanity-fastpass-23
+sanity-fastpass-23:
+	@IMG=$${IMG:-/tmp/p.jpg}; echo "pix" > $$IMG; \
+	curl -s -F "user_id=$${USER_ID:-00000000-0000-0000-0000-000000000001}" \
+	       -F "category=$${CATEGORY:-lego}" -F "watchlist=1" \
+	       -F "guide_recent_days=90" -F "guide_min_seller_score=0.98" -F "guide_iqr_k=1.5" \
+	       -F "image=@$$IMG" http://localhost:8080/ingest/fastpass_v3 | jq .
+
+.PHONY: sanity-fastpass
+sanity-fastpass:
+	@BASE="http://localhost:8080" ./deploy/sanity/fastpass_smoke.sh
+
+.PHONY: up
+up:
+	@pkill -f "uvicorn .*services.collectors_merge.api.main:app" >/dev/null 2>&1 || true; \
+	pkill -f uvicorn >/dev/null 2>&1 || true; \
+	nohup ./deploy/run_uvicorn.sh >/tmp/collectors-merge.out 2>&1 & sleep 1; \
+	tail -n 5 /tmp/collectors-merge.out || true; \
+	curl -s http://localhost:8080/health | jq . || true
+
+.PHONY: logs
+logs:
+	@tail -n 200 /tmp/collectors-merge.out
+
+
+.PHONY: seed-demo
+seed-demo:
+	@python services/collectors_merge/workers/seed_demo_hits.py
+

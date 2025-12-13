@@ -1,0 +1,22 @@
+import React
+import { PortfolioChartV2 as PortfolioChart } from "@/components/PortfolioChartV2";
+ from "react";
+import { View, Text } from "react-native";
+
+export default function PortfolioScreen() {
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#e0f2fe",
+      }}
+    >
+      <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 8 }}>
+        Portfolio
+      </Text>
+      <Text>This is a minimal placeholder screen. Router is working.</Text>
+    </View>
+  );
+}

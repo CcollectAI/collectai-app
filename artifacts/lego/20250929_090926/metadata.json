@@ -1,0 +1,16 @@
+{
+  "category": "lego",
+  "created_utc": "2025-09-29T09:09:26.561307Z",
+  "n_samples": 200,
+  "n_features": 7,
+  "feature_keys": [
+    "box_cond_score",
+    "piece_count_log",
+    "recent_sale_z",
+    "sealed",
+    "sealed_x_box",
+    "theme_popularity",
+    "year_norm"
+  ],
+  "bootstrap": true
+}

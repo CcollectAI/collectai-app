@@ -1,0 +1,92 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
+import { z } from "https://esm.sh/zod@3.23.8"
+import { createClient, PostgrestError } from "https://esm.sh/@supabase/supabase-js@2.46.1"
+import { logMetric } from "../_shared/metrics.ts"
+
+const URL = Deno.env.get("SUPABASE_URL")!
+const SRK = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+const ANON = Deno.env.get("SUPABASE_ANON_KEY")!
+
+// 🔒 Force public schema + public profiles on ALL requests
+const baseHeaders = {
+  "Accept-Profile": "public",
+  "Content-Profile": "public",
+}
+
+const admin = createClient(URL, SRK, {
+  db: { schema: "public" },
+  global: { headers: baseHeaders },
+})
+
+const pubFor = (req: Request) =>
+  createClient(URL, ANON, {
+    db: { schema: "public" },
+    global: {
+      headers: {
+        ...baseHeaders,
+        Authorization: req.headers.get("Authorization") ?? "",
+      },
+    },
+  })
+
+const Body = z.object({ category: z.string().min(1).max(80) })
+
+serve(async (req) => {
+  try {
+    if (!(req.headers.get("content-type") || "").includes("application/json")) {
+      return new Response(JSON.stringify({ error: "Content-Type must be application/json" }), { status: 415 })
+    }
+
+    const pub = pubFor(req)
+    const { data: u, error: uerr } = await pub.auth.getUser()
+    if (uerr) {
+      console.error("auth.getUser error:", uerr)
+      return new Response(JSON.stringify({ error: "Auth getUser failed", details: uerr.message }), { status: 401 })
+    }
+    const user_id = u?.user?.id ?? null
+
+    const body = await req.json()
+    const parsed = Body.safeParse(body)
+    if (!parsed.success) {
+      console.error("zod invalid payload:", parsed.error.issues)
+      return new Response(JSON.stringify({ error: "Invalid payload", issues: parsed.error.issues }), { status: 400 })
+    }
+
+    const toInsert = { user_id, category: parsed.data.category, status: "pending" }
+    const { data, error, status, statusText } = await admin
+      .from("predict_sessions")
+      .insert([toInsert])
+      .select("*")
+      .single()
+
+    if (error) {
+      const e = error as PostgrestError
+      console.error("insert predict_sessions failed:", e)
+      return new Response(
+        JSON.stringify({ error: e.message, code: e.code, details: e.details, hint: e.hint, httpStatus: status, httpStatusText: statusText }),
+        { status: 400 }
+      )
+    }
+
+    return new Response(JSON.stringify({
+      session: {
+        id: (data as any).id,
+        session_uuid: (data as any).uuid_id ?? null,
+        user_id: (data as any).user_id ?? user_id,
+        category: (data as any).category,
+        status: (data as any).status,
+        confidence: (data as any).confidence ?? null,
+        price_low_eur: (data as any).price_low_eur ?? null,
+        price_mid_eur: (data as any).price_mid_eur ?? null,
+        price_high_eur: (data as any).price_high_eur ?? null,
+        features: (data as any).features ?? null,
+        comps: (data as any).comps ?? null,
+        created_at: (data as any).created_at ?? null,
+        updated_at: (data as any).updated_at ?? null,
+      }
+    }), { status: 200 })
+  } catch (e) {
+    console.error("predict-sessions unhandled:", e)
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500 })
+  }
+})

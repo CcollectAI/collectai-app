@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+import os, asyncio, logging
+import asyncpg
+import base64
+from datetime import datetime
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [vision_ingest] %(levelname)s: %(message)s")
+
+DSN = os.getenv("DB_DSN")
+
+async def run_once():
+    if not DSN:
+        logging.error("DB_DSN not set")
+        return
+
+    conn = await asyncpg.connect(DSN)
+
+    rows = await conn.fetch("""
+        SELECT id, image_path
+        FROM public.vision_predict_log
+        WHERE embedding IS NULL
+        ORDER BY created_at ASC
+        LIMIT 15
+    """)
+
+    if not rows:
+        logging.info("No pending vision logs")
+        await conn.close()
+        return
+
+    logging.info("Processing %d vision logs", len(rows))
+
+    for r in rows:
+        vid = r["id"]
+        path = r["image_path"]
+
+        # placeholder embedding + label for now (Stage B will replace)
+        dummy_embedding = [0.0] * 1536
+        dummy_label = "unknown"
+        dummy_score = 0.0
+
+        await conn.execute("""
+            UPDATE public.vision_predict_log
+            SET embedding = $1,
+                predicted_label = $2,
+                score = $3
+            WHERE id = $4
+        """, dummy_embedding, dummy_label, dummy_score, vid)
+
+        logging.info("vision %s updated", vid)
+
+    await conn.close()
+
+async def main():
+    try:
+        await run_once()
+    except Exception as e:
+        logging.exception("vision_ingest_worker crashed: %r", e)
+
+if __name__ == "__main__":
+    asyncio.run(main())

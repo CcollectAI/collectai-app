@@ -1,0 +1,43 @@
+import React from "react";
+import { View, Text } from "react-native";
+
+/**
+ * Top-of-screen banner on Items to visually frame the portfolio total
+ * and list below. Uses same style as the other banners.
+ *
+ * NOTE: It does NOT move existing total into the banner automatically,
+ * but sits directly above it to make that section pop more.
+ */
+export default function ItemsOverviewBanner() {
+  return (
+    <View
+      style={{
+        marginBottom: 12,
+        padding: 16,
+        borderRadius: 12,
+        backgroundColor: "#E5F4F8",
+        borderWidth: 1,
+        borderColor: "#B4DDE7",
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: "600",
+          marginBottom: 4,
+        }}
+      >
+        Collection items overview
+      </Text>
+      <Text
+        style={{
+          fontSize: 12,
+          opacity: 0.85,
+        }}
+      >
+        Your portfolio total and item breakdown are shown just below. Use this
+        view to drill into categories, value, and individual pieces.
+      </Text>
+    </View>
+  );
+}

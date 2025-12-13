@@ -1,0 +1,22 @@
+import json
+import sys
+from pathlib import Path
+
+from joblib import dump, load
+
+p = Path(sys.argv[1] if len(sys.argv) > 1 else "artifacts/diecast/active/model.pkl")
+o = load(p)
+if not isinstance(o, dict):
+    print(json.dumps({"ok": True, "action": "noop"}))
+    raise SystemExit(0)
+for k in ("model", "pipeline", "estimator", "clf", "regressor", "sk_model"):
+    if k in o and o[k] is not None:
+        dump(o[k], p)
+        print(
+            json.dumps(
+                {"ok": True, "action": "unwrapped", "key": k, "size": p.stat().st_size}
+            )
+        )
+        raise SystemExit(0)
+print(json.dumps({"ok": False, "error": "no_model_key", "keys": list(o.keys())}))
+raise SystemExit(2)

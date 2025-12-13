@@ -1,0 +1,33 @@
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { logMetric } from '../_shared/metrics.ts'
+
+export const handler = async (req: Request) => {
+  const t0 = Date.now()
+  const apikey = req.headers.get('apikey') ?? ''
+  const auth = req.headers.get('authorization') ?? ''
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? apikey
+  const supa = createClient(supabaseUrl, supabaseKey, { global: { headers: { Authorization: auth, apikey } } })
+
+  try {
+    const body = await req.json().catch(() => ({}))
+    const { category, image_url } = body
+    if (!category) throw new Error('category required')
+
+    // TODO: call your model / heuristic to prefill fields
+    const prefill = {
+      title: null,
+      category,
+      guess_confidence: 0.0,
+      attrs: {}
+    }
+
+    await logMetric(supa, { fn: 'add-prefill', status: 'ok', latency_ms: Date.now()-t0, payload: { category, image_url } })
+    return new Response(JSON.stringify({ ok: true, prefill }), { status: 200 })
+  } catch (e) {
+    await logMetric(supa, { fn: 'add-prefill', status: 'error', latency_ms: Date.now()-t0, payload: { error: String(e) } })
+    return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 400 })
+  }
+}
+Deno.serve(handler)

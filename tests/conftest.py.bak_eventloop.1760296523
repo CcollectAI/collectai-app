@@ -1,0 +1,14 @@
+import os
+import pytest
+
+# Force mock DB mode in tests
+os.environ.setdefault("DB_ENABLED", "false")
+os.environ.setdefault("DATABASE_URL", "mock://localhost")
+
+from app.main import app
+from starlette.testclient import TestClient
+
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as c:
+        yield c

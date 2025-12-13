@@ -1,0 +1,22 @@
+=== 2025-09-21T08:48:34+00:00 start ===
+=== 2025-09-21T08:57:30+00:00 start ===
+Failed to fetch JWT (check creds)
+=== 2025-09-21T09:00:23+00:00 start ===
+Failed to fetch JWT (check creds)
+=== 2025-09-21T09:22:10+00:00 start ===
+Failed to fetch JWT (check creds)
+=== 2025-09-21T11:08:42+00:00 start ===
+Failed to fetch JWT (check creds)
+=== 2025-09-21T11:10:15+00:00 start ===
+[error] login failed; raw response:
+{"code":400,"error_code":"invalid_credentials","msg":"Invalid login credentials"}
+=== 2025-09-21T11:14:31+00:00 start ===
+[login] tester@example.com
+Wrote .jwt
+Session resp: {"error":"Invalid payload","issues":[{"code":"invalid_type","expected":"string","received":"undefined","path":["category"],"message":"Required"}]}
+No session_id returned
+=== 2025-09-21T11:15:25+00:00 start ===
+[login] tester@example.com
+Wrote .jwt
+Session resp: {"session":{"id":27,"session_uuid":"3b59f625-3c3c-4412-b880-f987d7ab703a","user_id":"a5824675-9699-4a0a-b1ac-1ebd38265468","category":"Pokemon","status":"pending","confidence":null,"price_low_eur":null,"price_mid_eur":null,"price_high_eur":null,"features":null,"comps":null,"created_at":"2025-09-21T11:15:26.056384+00:00","updated_at":"2025-09-21T11:15:26.056384+00:00"}}
+Session: 27

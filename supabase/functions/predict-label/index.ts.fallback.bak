@@ -1,0 +1,70 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
+import { z } from "https://esm.sh/zod@3.23.8"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.46.1"
+
+const URL = Deno.env.get("SUPABASE_URL")!
+const SRK = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+const ANON = Deno.env.get("SUPABASE_ANON_KEY")!
+
+const baseHeaders = { "Accept-Profile": "public", "Content-Profile": "public" }
+const admin = createClient(URL, SRK, { db: { schema: "public" }, global: { headers: baseHeaders } })
+const pubFor = (req: Request) =>
+  createClient(URL, ANON, { db: { schema: "public" }, global: { headers: { ...baseHeaders, Authorization: req.headers.get("Authorization") ?? "" } } })
+
+const Body = z.object({
+  session_uuid: z.string().uuid(),
+  corrected_title: z.string().min(1),
+  corrected_condition: z.string().min(1),
+  corrected_price_eur: z.number().nonnegative()
+})
+
+serve(async (req) => {
+  try {
+    if (!(req.headers.get("content-type") || "").includes("application/json")) {
+      return new Response(JSON.stringify({ error: "Content-Type must be application/json" }), { status: 415 })
+    }
+
+    const pub = pubFor(req)
+    const { data: u, error: uerr } = await pub.auth.getUser()
+    if (uerr) return new Response(JSON.stringify({ error: "Auth getUser failed", details: uerr.message }), { status: 401 })
+    const user_id = u?.user?.id ?? null
+
+    const json = await req.json()
+    const parsed = Body.safeParse(json)
+    if (!parsed.success) return new Response(JSON.stringify({ error: "Invalid payload", issues: parsed.error.issues }), { status: 400 })
+
+    // Ensure we know the category for metrics
+    const sess = await admin.from("predict_sessions").select("uuid_id,user_id,category").eq("uuid_id", parsed.data.session_uuid).maybeSingle()
+    const category = sess.data?.category ?? null
+
+    // Write label event
+    const ins = await admin.from("label_events").insert([{
+      user_id,
+      session_uuid: parsed.data.session_uuid,
+      corrected_title: parsed.data.corrected_title,
+      corrected_condition: parsed.data.corrected_condition,
+      corrected_price_eur: parsed.data.corrected_price_eur,
+      action: "label"
+    }]).select("*").single()
+    if (ins.error) return new Response(JSON.stringify({ error: ins.error.message, details: ins.error.details ?? null }), { status: 400 })
+
+    // ✅ Always upsert training row with corrected_* (fills category if we have it)
+    const up = await admin
+      .from("training_items")
+      .upsert([{
+        session_uuid: parsed.data.session_uuid,
+        user_id,
+        category: category ?? undefined,
+        corrected_title: parsed.data.corrected_title,
+        corrected_condition: parsed.data.corrected_condition,
+        corrected_price_eur: parsed.data.corrected_price_eur
+      }], { onConflict: "session_uuid" })
+      .select("*").single()
+    if (up.error) console.error("training_items upsert(corrected_*) failed:", up.error)
+
+    return new Response(JSON.stringify({ label: ins.data }), { status: 200 })
+  } catch (e) {
+    console.error("predict-label unhandled:", e)
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500 })
+  }
+})

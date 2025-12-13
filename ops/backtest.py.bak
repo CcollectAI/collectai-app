@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+import argparse, json, os, sys
+from datetime import datetime, timezone
+# Minimal scaffold: reads predictions JSONL from S3 or local and computes dummy metrics.
+# Extend later to join with real market_hits/DB.
+
+def read_jsonl(path):
+    with (open(path, "rb") if path.startswith("ops/") or path.endswith(".jsonl") else sys.stdin) as fh:
+        for line in fh:
+            line = line.decode("utf-8") if isinstance(line, (bytes, bytearray)) else line
+            line=line.strip()
+            if not line: continue
+            yield json.loads(line)
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--predictions", default="ops/vision", help="Directory to scan for predictions-*.jsonl")
+    ap.add_argument("--out", default="ops/metrics/model_metrics.jsonl")
+    args = ap.parse_args()
+
+    import glob, statistics
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    files = sorted(glob.glob(os.path.join(args.predictions, "predictions-*.jsonl")))
+    if not files:
+        print("No prediction files found; exiting 0.")
+        return 0
+
+    # Dummy metric: count per file, median score if present
+    for f in files[-5:]:
+        n=0; scores=[]
+        for rec in read_jsonl(f):
+            # adjust to your schema; expecting something like {"prediction": {"results":[{"score":...}]}}
+            try:
+                r = rec.get("prediction", {})
+                if isinstance(r, dict):
+                    arr = r.get("results") or r.get("neighbors") or []
+                    if arr and isinstance(arr, list) and isinstance(arr[0], dict):
+                        s = arr[0].get("score")
+                        if isinstance(s, (int,float)): scores.append(float(s))
+                n+=1
+            except Exception:
+                continue
+        ts = datetime.now(timezone.utc).isoformat()
+        payload = {
+            "ts": ts,
+            "file": os.path.basename(f),
+            "pred_count": n,
+            "median_score": (sorted(scores)[len(scores)//2] if scores else None),
+            "note": "stub metric; replace with MAE/MAPE join against market_hits"
+        }
+        with open(args.out, "a", encoding="utf-8") as w:
+            w.write(json.dumps(payload, ensure_ascii=False)+"\n")
+        print("wrote metric:", payload)
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,99 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Canonical training table
+CREATE TABLE IF NOT EXISTS public.training_items (
+  id                  bigserial PRIMARY KEY,
+  session_uuid        uuid NOT NULL,
+  user_id             uuid NOT NULL,
+  category            text NOT NULL,
+
+  -- what the system thought at completion-time
+  raw_title           text,
+  raw_condition       text,
+  raw_price_eur       numeric(12,2),
+
+  -- what the user corrected later
+  corrected_title     text,
+  corrected_condition text,
+  corrected_price_eur numeric(12,2),
+
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now()
+);
+
+-- Fast lookups
+CREATE INDEX IF NOT EXISTS idx_training_items_session_uuid ON public.training_items(session_uuid);
+CREATE INDEX IF NOT EXISTS idx_training_items_user ON public.training_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_training_items_category ON public.training_items(category);
+
+-- FK to sessions by UUID (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname='training_items_session_uuid_fkey'
+  ) THEN
+    ALTER TABLE public.training_items
+      ADD CONSTRAINT training_items_session_uuid_fkey
+      FOREIGN KEY (session_uuid)
+      REFERENCES public.predict_sessions (uuid_id)
+      ON DELETE CASCADE;
+  END IF;
+END$$;
+
+-- updated_at trigger
+CREATE OR REPLACE FUNCTION public.trg_touch_updated_at()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='training_items_touch_updated_at') THEN
+    CREATE TRIGGER training_items_touch_updated_at
+      BEFORE UPDATE ON public.training_items
+      FOR EACH ROW EXECUTE FUNCTION public.trg_touch_updated_at();
+  END IF;
+END$$;
+
+-- RLS: owner-only
+ALTER TABLE public.training_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS training_items_select_own ON public.training_items;
+DROP POLICY IF EXISTS training_items_insert_own ON public.training_items;
+DROP POLICY IF EXISTS training_items_update_own ON public.training_items;
+
+CREATE POLICY training_items_select_own
+  ON public.training_items
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY training_items_insert_own
+  ON public.training_items
+  FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY training_items_update_own
+  ON public.training_items
+  FOR UPDATE TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- Simple metrics view (owner-scoped)
+CREATE OR REPLACE VIEW public.v_predict_metrics AS
+SELECT
+  ti.user_id,
+  ti.category,
+  count(*)                                         AS n_samples,
+  avg( (ti.raw_price_eur - ti.corrected_price_eur)::numeric )      AS price_bias,       -- signed error
+  avg( abs(ti.raw_price_eur - ti.corrected_price_eur)::numeric )   AS price_mae,        -- mean abs error
+  sqrt(avg( (ti.raw_price_eur - ti.corrected_price_eur)^2 ))       AS price_rmse,       -- RMSE
+  (sum( CASE WHEN ti.raw_condition IS NOT NULL AND ti.corrected_condition IS NOT NULL AND ti.raw_condition = ti.corrected_condition THEN 1 ELSE 0 END )::numeric
+     / NULLIF(sum( CASE WHEN ti.raw_condition IS NOT NULL AND ti.corrected_condition IS NOT NULL THEN 1 ELSE 0 END ),0)) AS condition_accuracy
+FROM public.training_items ti
+GROUP BY ti.user_id, ti.category;
+
+GRANT SELECT ON public.v_predict_metrics TO authenticated;
+
+NOTIFY pgrst, 'reload schema';

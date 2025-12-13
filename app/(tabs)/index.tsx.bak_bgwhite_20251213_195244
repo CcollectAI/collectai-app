@@ -1,0 +1,155 @@
+import React, { useMemo, useState } from "react";
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+} from "react-native";
+import { PortfolioLineChart } from "@/components/PortfolioLineChart";
+
+type RangeKey = "1D" | "7D" | "30D";
+
+const SERIES_30D = [
+  { t: "2024-11-01", v: 17250 },
+  { t: "2024-11-05", v: 17510 },
+  { t: "2024-11-10", v: 18120 },
+  { t: "2024-11-15", v: 17980 },
+  { t: "2024-11-20", v: 18940 },
+  { t: "2024-11-25", v: 19510 },
+  { t: "2024-12-06", v: 20121 },
+];
+
+const SERIES_7D = [
+  { t: "2024-11-30", v: 19410 },
+  { t: "2024-12-01", v: 19620 },
+  { t: "2024-12-02", v: 19580 },
+  { t: "2024-12-03", v: 19840 },
+  { t: "2024-12-04", v: 19920 },
+  { t: "2024-12-05", v: 20010 },
+  { t: "2024-12-06", v: 20121 },
+];
+
+const SERIES_1D = [
+  { t: "2024-12-06T09:00:00Z", v: 19980 },
+  { t: "2024-12-06T11:00:00Z", v: 20040 },
+  { t: "2024-12-06T13:00:00Z", v: 20110 },
+  { t: "2024-12-06T15:00:00Z", v: 20070 },
+  { t: "2024-12-06T17:00:00Z", v: 20121 },
+];
+
+const formatUSD0 = (v: number) =>
+  `$${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+
+export default function PortfolioScreen() {
+  const [range, setRange] = useState<RangeKey>("30D");
+
+  const series = useMemo(() => {
+    if (range === "1D") return SERIES_1D;
+    if (range === "7D") return SERIES_7D;
+    return SERIES_30D;
+  }, [range]);
+
+  const latest = series.length ? series[series.length - 1].v : 0;
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header (no nav title banner; this is inside screen) */}
+        <View style={styles.header}>
+          <Text style={styles.kicker}>Collection Value</Text>
+          <Text style={styles.total}>{formatUSD0(latest)}</Text>
+
+          <View style={styles.rangeRow}>
+            {(["1D", "7D", "30D"] as RangeKey[]).map((k) => {
+              const active = k === range;
+              return (
+                <Pressable
+                  key={k}
+                  onPress={() => setRange(k)}
+                  style={[styles.rangePill, active && styles.rangePillActive]}
+                >
+                  <Text
+                    style={[
+                      styles.rangeText,
+                      active && styles.rangeTextActive,
+                    ]}
+                  >
+                    {k}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Chart */}
+        <View style={styles.chartWrap}>
+          <PortfolioLineChart series={series} accentColor="#14b8a6" />
+        </View>
+
+        {/* (Items / events come later — we are fixing chart UX first) */}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: "#f3f4f6", // light gray base
+  },
+  content: {
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 8,
+  },
+  kicker: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#0b1f3a",
+    opacity: 0.75,
+  },
+  total: {
+    marginTop: 6,
+    fontSize: 34,
+    fontWeight: "800",
+    color: "#0b1f3a",
+    letterSpacing: -0.5,
+  },
+  rangeRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 8,
+  },
+  rangePill: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(11,31,58,0.06)",
+  },
+  rangePillActive: {
+    backgroundColor: "rgba(20,184,166,0.18)",
+  },
+  rangeText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#0b1f3a",
+    opacity: 0.7,
+  },
+  rangeTextActive: {
+    opacity: 1,
+  },
+  chartWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+  },
+});

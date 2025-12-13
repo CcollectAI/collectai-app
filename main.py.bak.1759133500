@@ -1,0 +1,110 @@
+import os, json
+from typing import Optional, Dict, Any, List
+from fastapi import FastAPI, HTTPException, Request, Header, Depends
+from pydantic import BaseModel, Field, conlist
+import boto3
+
+# --- observability & rate limit ---
+from app.observability import setup_structlog, metrics_endpoint, prometheus_middleware, SUGG_PRICE, SERVICE_UP
+from app.ratelimit import limiter_middleware
+from app.model_resolver import resolve_version
+from app.supabase_logs import log_suggestion
+
+# --- bootstrap logging first ---
+setup_structlog()
+
+# --- create app FIRST, then add middleware ---
+app = FastAPI()
+app.add_middleware(prometheus_middleware(app))
+app.add_middleware(limiter_middleware(app))
+
+# --- env / clients ---
+REGION = os.environ.get("AWS_REGION","eu-north-1")
+ART_BUCKET = os.environ.get("ARTIFACT_BUCKET")
+_s3 = boto3.client("s3", region_name=REGION)
+
+# --- models ---
+class SuggestIn(BaseModel):
+    id: str
+    title: Optional[str] = None
+    condition: Optional[dict | str] = None
+    category: str = Field(default="pokemon", min_length=1, max_length=64)
+    features: Dict[str, Any] = Field(default_factory=dict)
+    request_id: Optional[str] = None
+
+class SuggestOut(BaseModel):
+    id: str
+    price: float
+    model_version: str
+    debug: Optional[dict] = None
+
+class SuggestBatchIn(BaseModel):
+    requests: conlist(SuggestIn, min_items=1, max_items=100)
+
+# --- helpers ---
+def _load_model(category: str, version: str) -> dict:
+    key = f"artifacts/price/{category}/{version}/model.json"
+    body = _s3.get_object(Bucket=ART_BUCKET, Key=key)["Body"].read().decode()
+    return json.loads(body)
+
+def _infer(meta: dict, features: dict) -> float:
+    feats = meta.get("features", [])
+    ridge = meta.get("ridge", {}) or {}
+    coef = ridge.get("coef", [0.0]*len(feats))
+    intercept = float(ridge.get("intercept", 0.0))
+    x = []
+    for f in feats:
+        v = features.get(f, 0.0)
+        try: v = float(v)
+        except Exception: v = 0.0
+        x.append(v)
+    return float(sum(c*v for c,v in zip(coef, x)) + intercept)
+
+def _auth(req: Request):
+    tok = os.getenv("API_AUTH_KEY","")
+    hdr = req.headers.get("authorization","")
+    if not tok or hdr != f"Bearer {tok}":
+        raise HTTPException(401, "unauthorized")
+    return True
+
+# --- routes ---
+@app.get("/health")
+def health():
+    SERVICE_UP.set(1)
+    return {"ok": True}
+
+@app.get("/metrics")
+def metrics():
+    return metrics_endpoint()
+
+@app.post("/suggest", response_model=SuggestOut)
+def suggest(req: SuggestIn, request: Request, x_model_version: Optional[str] = Header(default=None)):
+    cat = (req.category or "pokemon").strip().lower()
+    ver, src = resolve_version(cat, request_id=req.request_id, explicit_version=x_model_version)
+    if not ver:
+        raise HTTPException(404, f"No active model for {cat}")
+    try:
+        meta = _load_model(cat, ver)
+    except Exception:
+        try:
+            meta = _load_model("pokemon", ver)
+        except Exception:
+            raise HTTPException(500, "Model load failed")
+    price = _infer(meta, req.features)
+    SUGG_PRICE.observe(price)
+    out = SuggestOut(id=req.id, price=price, model_version=ver, debug={"route":src})
+    log_suggestion({"id":req.id,"category":cat,"features":req.features,"request_id":req.request_id,"price":price,"model_version":ver,"context":{"route":src}})
+    return out
+
+@app.post("/suggest_batch", response_model=List[SuggestOut])
+def suggest_batch(req: SuggestBatchIn, request: Request, x_model_version: Optional[str] = Header(default=None)):
+    outs=[]
+    for r in req.requests:
+        outs.append(suggest(r, request, x_model_version))
+    return outs
+
+@app.post("/admin/promote/{category}/{version}")
+def admin_promote(category: str, version: str, _=Depends(_auth)):
+    ptr = json.dumps({"version":version})
+    _s3.put_object(Bucket=ART_BUCKET, Key=f"artifacts/price/{category}/ACTIVE.json", Body=ptr.encode())
+    return {"ok": True, "category": category, "active": version}

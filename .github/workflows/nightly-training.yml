@@ -1,0 +1,28 @@
+name: Nightly Training Export + Trigger
+on:
+  schedule: [{ cron: "07 1 * * *" }]
+  workflow_dispatch: {}
+jobs:
+  export-train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Install deps
+        run: pip install requests
+      - name: AWS CLI
+        uses: aws-actions/setup-cli@v2
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Run exporter
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          S3_DATA_BUCKET:            ${{ secrets.S3_DATA_BUCKET }}   # e.g., s3://collectai-datasets
+          AWS_REGION:                ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID:         ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY:     ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TRAIN_LAMBDA_URL:          ${{ secrets.TRAIN_LAMBDA_URL }}  # optional
+          MODEL_NAME:                price
+        run: python scripts/export_training_and_trigger.py

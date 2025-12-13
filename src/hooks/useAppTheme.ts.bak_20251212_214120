@@ -1,0 +1,11 @@
+import { useMemo } from "react";
+import { colors, radius, spacing, shadow } from "../theme/tokens";
+
+/**
+ * Canonical theme hook (do not re-export from "@/theme" to avoid circular/broken barrels).
+ */
+export function useAppTheme() {
+  return useMemo(() => ({ colors, radius, spacing, shadow }), []);
+}
+
+export type AppTheme = ReturnType<typeof useAppTheme>;

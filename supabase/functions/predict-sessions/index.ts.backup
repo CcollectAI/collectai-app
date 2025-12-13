@@ -1,0 +1,55 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
+import { z } from "https://esm.sh/zod@3.23.8"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.46.1"
+
+const url = Deno.env.get("SUPABASE_URL")!
+const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+const anon = Deno.env.get("SUPABASE_ANON_KEY")!
+
+// write in predictive_capture schema
+const db = createClient(url, service, { db: { schema: "predictive_capture" } })
+// read caller with anon (for user_id)
+const pub = createClient(url, anon)
+
+const Body = z.object({ category: z.string().min(1).max(80) })
+
+serve(async (req) => {
+  try {
+    if (!(req.headers.get("content-type") || "").includes("application/json")) {
+      return new Response(JSON.stringify({ error: "Content-Type must be application/json" }), { status: 415 })
+    }
+
+    // caller id from JWT
+    const { data: u } = await pub.auth.getUser(req.headers.get("Authorization") ?? undefined)
+    const userId = u?.user?.id ?? null
+
+    const json = await req.json()
+    const parsed = Body.safeParse(json)
+    if (!parsed.success) return new Response(JSON.stringify({ error: "Invalid payload", issues: parsed.error.issues }), { status: 400 })
+
+    const insertRow: any = { user_id: userId, category: parsed.data.category, status: 'pending' }
+    const { data, error } = await db.from('sessions').insert([insertRow]).select('*').single()
+    if (error) return new Response(JSON.stringify({ error: error.message, details: error.details ?? null }), { status: 400 })
+
+    const session = {
+      id: data.id,
+      session_uuid: (data as any).uuid_id ?? null,
+      user_id: data.user_id ?? userId,
+      category: data.category,
+      status: data.status,
+      confidence: (data as any).confidence ?? null,
+      price_low_eur: (data as any).price_low_eur ?? null,
+      price_mid_eur: (data as any).price_mid_eur ?? null,
+      price_high_eur: (data as any).price_high_eur ?? null,
+      features: (data as any).features ?? null,
+      comps: (data as any).comps ?? null,
+      created_at: data.created_at ?? null,
+      updated_at: data.updated_at ?? null,
+    }
+
+    return new Response(JSON.stringify({ session }), { status: 200 })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return new Response(JSON.stringify({ error: msg }), { status: 500 })
+  }
+})

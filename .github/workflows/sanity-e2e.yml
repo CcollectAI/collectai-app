@@ -1,0 +1,128 @@
+name: Sanity E2E (Supabase)
+
+on:
+  push:
+    branches: [ "**" ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: sanity-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare scripts dir (if needed)
+        run: mkdir -p logs
+
+      - name: Create supa_test.env from secrets
+        run: |
+          cat > supa_test.env <<ENV
+          SUPA_REF=${{ secrets.SUPA_REF }}
+          ANON_KEY=${{ secrets.ANON_KEY }}
+          SERVICE_ROLE_KEY=${{ secrets.SERVICE_ROLE_KEY }}
+          TEST_EMAIL=${{ secrets.TEST_EMAIL }}
+          TEST_PASSWORD=${{ secrets.TEST_PASSWORD }}
+          ENV
+          nl -ba supa_test.env | sed 's/.*/[masked]/' >/dev/null # noop; ensure file exists
+
+      - name: Add auth doctor (hard fix) script
+        run: |
+          cat > auth_hard_fix_and_run.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          if [[ -f ./supa_test.env ]]; then set -a; . ./supa_test.env; set +a; else echo "missing env"; exit 1; fi
+          : "${SUPA_REF:?}"; : "${ANON_KEY:?}"; : "${SERVICE_ROLE_KEY:?}"; : "${TEST_EMAIL:?}"; : "${TEST_PASSWORD:?}"
+          AUTH_URL="https://${SUPA_REF}.supabase.co/auth/v1"
+          ADMIN_HDR=(-H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" -H "Content-Type: application/json")
+          urlenc(){ printf '%s' "$1" | sed -e 's/%/%25/g' -e 's/@/%40/g' -e 's/+/%2B/g'; }
+          ENC_EMAIL="$(urlenc "$TEST_EMAIL")"
+          get_user_json(){ curl -sS "${AUTH_URL}/admin/users?email=${ENC_EMAIL}" "${ADMIN_HDR[@]}"; }
+          get_user_id(){ get_user_json | sed -n 's/.*"id":"\([0-9a-fA-F-]\{36\}\)".*/\1/p' | head -n1; }
+
+          echo "→ Admin check"
+          curl -sS -o /dev/null -w "%{http_code}\n" "${AUTH_URL}/admin/users?per_page=1" "${ADMIN_HDR[@]}" | grep -q '^200$'
+
+          USER_ID="$(get_user_id || true)"
+          if [[ -n "${USER_ID:-}" ]]; then
+            echo "→ Hard delete ${USER_ID}"
+            curl -sS -o /dev/null -w "%{http_code}\n" -X DELETE "${AUTH_URL}/admin/users/${USER_ID}?should_soft_delete=false" "${ADMIN_HDR[@]}" | grep -q '^200$'
+            for i in $(seq 1 30); do sleep 1; USER_ID="$(get_user_id || true)"; [[ -z "${USER_ID:-}" ]] && break; done
+          fi
+
+          echo "→ Create (or fallback patch)"
+          CREATE_JSON=$(printf '{"email":"%s","password":"%s","email_confirm":true}' "$TEST_EMAIL" "$TEST_PASSWORD")
+          CREATE_RESP=$(curl -sS -w '\n%{http_code}\n' -X POST "${AUTH_URL}/admin/users" "${ADMIN_HDR[@]}" --data-raw "$CREATE_JSON")
+          CR_CODE="${CREATE_RESP##*$'\n'}"; CR_BODY="${CREATE_RESP%$'\n'"$CR_CODE"}"
+          if [[ "$CR_CODE" =~ ^2 ]]; then
+            USER_ID=$(printf '%s' "$CR_BODY" | sed -n 's/.*"id":"\([0-9a-fA-F-]\{36\}\)".*/\1/p' | head -n1)
+          else
+            USER_ID="$(get_user_id || true)"
+          fi
+          [[ -n "${USER_ID:-}" ]] || { echo "cannot resolve user id"; exit 1; }
+
+          echo "→ Ensure password"
+          PATCH_JSON=$(printf '{"password":"%s","email_confirm":true}' "$TEST_PASSWORD")
+          PATCH_CODE=$(curl -sS -o /dev/null -w "%{http_code}\n" -X PATCH "${AUTH_URL}/admin/users/${USER_ID}" "${ADMIN_HDR[@]}" --data-raw "$PATCH_JSON")
+          if [[ "$PATCH_CODE" = "405" ]]; then
+            curl -sS -o /dev/null -w "%{http_code}\n" -X PUT "${AUTH_URL}/admin/users/${USER_ID}" "${ADMIN_HDR[@]}" --data-raw "$PATCH_JSON" | grep -q '^2'
+          else
+            [[ "$PATCH_CODE" =~ ^2 ]] || exit 1
+          fi
+
+          echo "→ Login"
+          rm -f ./.jwt || true
+          LOGIN=$(curl -sS -X POST "${AUTH_URL}/token?grant_type=password" -H "apikey: ${ANON_KEY}" -H "Content-Type: application/json" --data-raw "$(printf '{"email":"%s","password":"%s"}' "$TEST_EMAIL" "$TEST_PASSWORD")")
+          ACCESS=$(printf '%s' "$LOGIN" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p' | head -n1)
+          [[ -n "$ACCESS" ]] || { echo "$LOGIN"; exit 1; }
+          printf '%s' "$ACCESS" > ./.jwt
+          BASH
+          chmod +x auth_hard_fix_and_run.sh
+
+      - name: Add minimal check_jwt.sh and sanity_e2e_strict.sh if missing
+        run: |
+          [[ -f check_jwt.sh ]] || cat > check_jwt.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          set -a; . ./supa_test.env; set +a
+          : "${SUPA_REF:?}"; : "${ANON_KEY:?}"
+          JWT=$(cat ./.jwt 2>/dev/null || true)
+          [[ -n "$JWT" ]] || { echo "no .jwt"; exit 1; }
+          URL="https://${SUPA_REF}.supabase.co/auth/v1/user"
+          curl -sS -w '\n%{http_code}\n' -H "apikey: ${ANON_KEY}" -H "Authorization: Bearer ${JWT}" "$URL"
+          BASH
+          chmod +x check_jwt.sh
+
+          [[ -f sanity_e2e_strict.sh ]] || cat > sanity_e2e_strict.sh <<'BASH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          if [[ -f ./supa_test.env ]]; then set -a; . ./supa_test.env; set +a; fi
+          : "${SUPA_REF:?}"; : "${ANON_KEY:?}"
+          JWT=$(cat ./.jwt 2>/dev/null || true); [[ -n "$JWT" ]] || { echo "Missing .jwt"; exit 1; }
+          FN="https://${SUPA_REF}.functions.supabase.co"
+          call(){ local url="$1" data="$2"; echo "→ POST $url"; curl -sS -w '\nHTTP %{http_code}\n' -X POST "$url" -H "Content-Type: application/json" -H "apikey: ${ANON_KEY}" -H "Authorization: Bearer ${JWT}" --data-raw "$data"; }
+          echo "=== 1) create ==="; C=$(call "${FN}/predict-sessions" '{"category":"pokemon"}'); echo "$C"; echo "$C" | grep -q 'HTTP 200' || exit 1; SID=$(printf '%s' "$C" | sed -n 's/.*"id":\s*\([0-9]\+\).*/\1/p' | head -n1)
+          echo; echo "=== 2) complete ==="; P=$(call "${FN}/predict-complete" "{\"session_id\": ${SID}, \"mock_seed\": 0.72}"); echo "$P"; echo "$P" | grep -q 'HTTP 200' || exit 1
+          echo; echo "=== 3) label ==="; L=$(call "${FN}/predict-label" "{\"session_id\": ${SID}, \"corrected_title\": \"Pikachu Holo\", \"corrected_condition\": \"Near Mint\", \"corrected_price_eur\": 189}"); echo "$L"; echo "$L" | grep -q 'HTTP 200' || exit 1
+          BASH
+          chmod +x sanity_e2e_strict.sh
+
+      - name: Run doctor + E2E
+        run: |
+          set -e
+          ./auth_hard_fix_and_run.sh
+          ./check_jwt.sh
+          ./sanity_e2e_strict.sh | tee logs/sanity_${{ github.run_id }}.log
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanity-e2e-logs
+          path: logs/*.log

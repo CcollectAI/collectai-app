@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+: "${SUPA_REF:?} ${ANON_KEY:?}"
+JWT=$(cat .jwt 2>/dev/null || true)
+[ -n "$JWT" ] || { echo "❌ Missing ./.jwt — run login_and_get_jwt.sh"; exit 1; }
+
+BASE="https://${SUPA_REF}.supabase.co"
+curl -i -sS -X GET "${BASE}/auth/v1/user" \
+  -H "apikey: ${ANON_KEY}" \
+  -H "Authorization: Bearer ${JWT}" \
+  -H "Content-Type: application/json" | sed -n '1,80p'

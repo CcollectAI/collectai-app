@@ -1,0 +1,431 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import SafeTextInput from '@/components/common/SafeTextInput';
+import { useAppTheme } from '@/theme';
+
+type BuildStatus = 'planning' | 'in_progress' | 'blocked' | 'finished';
+
+type BuildProject = {
+  id: string;
+  title: string;
+  category: string;
+  itemName: string;
+  status: BuildStatus;
+  progressPercent: number;
+  notes: string;
+  lastUpdated: string;
+};
+
+const DEMO_PROJECTS: BuildProject[] = [
+  {
+    id: 'demo-1',
+    title: 'Gunpla HG Barbatos Weathered Build',
+    category: 'Gunpla & Model Kits',
+    itemName: 'HG 1/144 Gundam Barbatos',
+    status: 'in_progress',
+    progressPercent: 42,
+    notes: 'Panel lining mid-way, next session: chipping + light weathering.',
+    lastUpdated: '2025-12-09T18:30:00Z',
+  },
+  {
+    id: 'demo-2',
+    title: 'Warhammer 40k Death Guard Squad',
+    category: 'Warhammer Minis',
+    itemName: 'Plague Marines (10x)',
+    status: 'planning',
+    progressPercent: 5,
+    notes: 'Primed and basing sand applied. Decide on plague-rust recipe.',
+    lastUpdated: '2025-12-08T21:10:00Z',
+  },
+];
+
+const statusLabel: Record<BuildStatus, string> = {
+  planning: 'Planning',
+  in_progress: 'In progress',
+  blocked: 'Blocked',
+  finished: 'Finished',
+};
+
+const statusAccent: Record<BuildStatus, string> = {
+  planning: '#7c7cff',
+  in_progress: '#10b981',
+  blocked: '#f97316',
+  finished: '#06b6d4',
+};
+
+const apiUrl =
+  process.env.EXPO_PUBLIC_API_URL?.trim() ||
+  process.env.EXPO_PUBLIC_API_URL_BASE?.trim() ||
+  'http://127.0.0.1:8081';
+
+async function fetchProjectsSafe(): Promise<BuildProject[]> {
+  // If API is unreachable, just return demo projects.
+  try {
+    const url = `${apiUrl.replace(/\/$/, '')}/projects/overview`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!res.ok) {
+      console.log('[Projects] backend responded non-200', res.status);
+      return DEMO_PROJECTS;
+    }
+
+    const json = await res.json();
+    if (!Array.isArray(json?.projects)) {
+      console.log('[Projects] backend payload unexpected, falling back to demo');
+      return DEMO_PROJECTS;
+    }
+
+    // Map backend payload → BuildProject
+    return json.projects.map((p: any, idx: number): BuildProject => ({
+      id: String(p.id ?? `backend-${idx}`),
+      title: String(p.title ?? 'Unnamed project'),
+      category: String(p.category ?? 'Uncategorized'),
+      itemName: String(p.item_name ?? 'Unknown item'),
+      status: (p.status as BuildStatus) ?? 'in_progress',
+      progressPercent: Number.isFinite(p.progress_percent)
+        ? Number(p.progress_percent)
+        : 0,
+      notes: String(p.notes ?? ''),
+      lastUpdated: String(p.updated_at ?? new Date().toISOString()),
+    }));
+  } catch (err) {
+    console.log('[Projects] backend fetch failed', err);
+    return DEMO_PROJECTS;
+  }
+}
+
+const ProjectProgressBar: React.FC<{ value: number; status: BuildStatus }> = ({
+  value,
+  status,
+}) => {
+  const clamped = Math.max(0, Math.min(100, value));
+  return (
+    <View style={{ marginTop: 8, height: 8, borderRadius: 4, backgroundColor: '#e5e7eb' }}>
+      <View
+        style={{
+          width: `${clamped}%`,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: statusAccent[status],
+        }}
+      />
+    </View>
+  );
+};
+
+const BuildPaintProjectsScreen: React.FC = () => {
+  const router = useRouter();
+  const theme = useAppTheme();
+  const [projects, setProjects] = useState<BuildProject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<BuildProject | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
+
+  const loadProjects = useCallback(async () => {
+    setLoading(true);
+    const data = await fetchProjectsSafe();
+    setProjects(data);
+    setLoading(false);
+    if (!selectedProject && data.length > 0) {
+      setSelectedProject(data[0]);
+      setNoteDraft(data[0].notes ?? '');
+    }
+  }, [selectedProject]);
+
+  useEffect(() => {
+    void loadProjects();
+  }, [loadProjects]);
+
+  const handleSelectProject = (project: BuildProject) => {
+    setSelectedProject(project);
+    setNoteDraft(project.notes ?? '');
+  };
+
+  const handleSaveNotesLocal = () => {
+    if (!selectedProject) return;
+    const updated = projects.map((p) =>
+      p.id === selectedProject.id ? { ...p, notes: noteDraft } : p,
+    );
+    setProjects(updated);
+    setSelectedProject({ ...selectedProject, notes: noteDraft });
+    // Future: POST /projects/:id/notes here (wrapped in try/catch).
+  };
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.background,
+        paddingTop: 48,
+        paddingHorizontal: 16,
+      }}
+    >
+      <View
+        style={{
+          marginBottom: 16,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <View>
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: '700',
+              color: theme.colors.text,
+            }}
+          >
+            Build & Paint Projects
+          </Text>
+          <Text
+            style={{
+              marginTop: 4,
+              fontSize: 13,
+              color: theme.colors.mutedText,
+            }}
+          >
+            Track hobby time like an investment in your collection’s value.
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            borderRadius: 999,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '500',
+              color: theme.colors.mutedText,
+            }}
+          >
+            Back
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ActivityIndicator />
+          <Text
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              color: theme.colors.mutedText,
+            }}
+          >
+            Loading projects…
+          </Text>
+        </View>
+      ) : (
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          {/* Left column: project list */}
+          <ScrollView
+            style={{ flex: 1, marginRight: 12 }}
+            contentContainerStyle={{ paddingBottom: 32 }}
+          >
+            {projects.map((project) => (
+              <TouchableOpacity
+                key={project.id}
+                onPress={() => handleSelectProject(project)}
+                style={{
+                  borderRadius: 16,
+                  padding: 12,
+                  marginBottom: 10,
+                  borderWidth: selectedProject?.id === project.id ? 1.5 : 1,
+                  borderColor:
+                    selectedProject?.id === project.id
+                      ? theme.colors.primary
+                      : theme.colors.border,
+                  backgroundColor: theme.colors.card,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: '600',
+                    color: theme.colors.text,
+                  }}
+                >
+                  {project.title}
+                </Text>
+                <Text
+                  style={{
+                    marginTop: 2,
+                    fontSize: 12,
+                    color: theme.colors.mutedText,
+                  }}
+                >
+                  {project.category} • {project.itemName}
+                </Text>
+                <View
+                  style={{
+                    marginTop: 6,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <View
+                    style={{
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 999,
+                      backgroundColor: '#f3f4ff',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: '500',
+                        color: statusAccent[project.status],
+                      }}
+                    >
+                      {statusLabel[project.status]}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      color: theme.colors.mutedText,
+                    }}
+                  >
+                    {project.progressPercent}% complete
+                  </Text>
+                </View>
+                <ProjectProgressBar
+                  value={project.progressPercent}
+                  status={project.status}
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Right column: selected project notes */}
+          <View
+            style={{
+              flex: 1,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              padding: 12,
+              backgroundColor: theme.colors.card,
+            }}
+          >
+            {selectedProject ? (
+              <>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: theme.colors.text,
+                    marginBottom: 4,
+                  }}
+                >
+                  Session notes — {selectedProject.title}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: theme.colors.mutedText,
+                    marginBottom: 8,
+                  }}
+                >
+                  Use this like a build log. Later, we can turn this into a true
+                  provenance trail for your collection (proof you built/painted it).
+                </Text>
+
+                <SafeTextInput
+                  multiline
+                  value={noteDraft}
+                  onChangeText={setNoteDraft}
+                  placeholder="What did you do this session? Which paints, techniques, or steps did you complete?"
+                  style={{
+                    minHeight: 160,
+                    maxHeight: 260,
+                    textAlignVertical: 'top',
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: theme.colors.border,
+                    paddingHorizontal: 10,
+                    paddingVertical: 8,
+                    fontSize: 13,
+                    color: theme.colors.text,
+                  }}
+                />
+
+                <TouchableOpacity
+                  onPress={handleSaveNotesLocal}
+                  style={{
+                    marginTop: 10,
+                    paddingVertical: 10,
+                    borderRadius: 999,
+                    alignItems: 'center',
+                    backgroundColor: theme.colors.primary,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: '600',
+                      color: theme.colors.onPrimary,
+                    }}
+                  >
+                    Save notes (local for now)
+                  </Text>
+                </TouchableOpacity>
+
+                <Text
+                  style={{
+                    marginTop: 8,
+                    fontSize: 11,
+                    color: theme.colors.mutedText,
+                  }}
+                >
+                  Later: this will sync to your backend and show up as build-time value in Analytics
+                  and in your provenance log for this item.
+                </Text>
+              </>
+            ) : (
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: theme.colors.mutedText,
+                    textAlign: 'center',
+                  }}
+                >
+                  Select a project on the left to edit notes and track progress.
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+    </View>
+  );
+};
+
+export default BuildPaintProjectsScreen;

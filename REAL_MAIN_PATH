@@ -1,0 +1,101 @@
+
+# --- Item Detail demo endpoint (no DB required) ---
+
+from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel
+
+
+class ItemPredictionBand(BaseModel):
+    low: Optional[float] = None
+    mid: Optional[float] = None
+    high: Optional[float] = None
+    currency: str = "EUR"
+    model_name: Optional[str] = None
+    as_of: Optional[datetime] = None
+
+
+class ItemSignal(BaseModel):
+    name: str
+    value: str
+    unit: Optional[str] = None
+
+
+class ItemCategoryMeta(BaseModel):
+    slug: str
+    label: str
+    wave: Optional[str] = None
+    avg_value: Optional[float] = None
+    item_count: Optional[int] = None
+    active: Optional[bool] = None
+
+
+class ItemDetail(BaseModel):
+    id: str
+    name: str
+    category_slug: str
+    estimated_value: float
+    currency: str = "EUR"
+    change_1d_pct: Optional[float] = None
+
+    prediction: Optional[ItemPredictionBand] = None
+    category_meta: Optional[ItemCategoryMeta] = None
+    signals: List[ItemSignal] = []
+
+    condition_text: Optional[str] = None
+    edition_text: Optional[str] = None
+    series_text: Optional[str] = None
+    acquisition_price: Optional[float] = None
+    acquisition_currency: Optional[str] = None
+    acquisition_date: Optional[datetime] = None
+
+
+@app.get("/items/{item_id}/detail", response_model=ItemDetail)
+async def get_item_detail_demo(item_id: str) -> ItemDetail:
+    """
+    Demo implementation of item detail.
+
+    This does NOT use the database yet. It returns rich demo data
+    so the Expo Item Detail screen can render all sections.
+
+    Later, when DB is enabled, we will replace this with a real
+    query to v_item_detail_full.
+    """
+    demo_name = f"Demo collectible #{item_id[:6]}"
+
+    return ItemDetail(
+        id=item_id,
+        name=demo_name,
+        category_slug="funko",
+        estimated_value=125.0,
+        currency="EUR",
+        change_1d_pct=7.5,
+        prediction=ItemPredictionBand(
+            low=100.0,
+            mid=125.0,
+            high=160.0,
+            currency="EUR",
+            model_name="demo-valuation-model",
+            as_of=datetime.utcnow(),
+        ),
+        category_meta=ItemCategoryMeta(
+            slug="funko",
+            label="Funko Pops",
+            wave="wave1",
+            avg_value=80.0,
+            item_count=42,
+            active=True,
+        ),
+        signals=[
+            ItemSignal(name="Recent sales", value="Up", unit=None),
+            ItemSignal(name="Scarcity", value="High", unit=None),
+            ItemSignal(name="Collector interest", value="Strong", unit=None),
+        ],
+        condition_text="Near mint",
+        edition_text="Special edition",
+        series_text="Wave 1 – Launch",
+        acquisition_price=60.0,
+        acquisition_currency="EUR",
+        acquisition_date=datetime(2024, 1, 15),
+    )

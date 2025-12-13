@@ -1,0 +1,43 @@
+name: sanity
+on: [push, pull_request]
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Install system deps
+        run: sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib jq
+      - name: Setup Postgres
+        run: |
+          sudo -u postgres psql -c "CREATE USER collectors WITH PASSWORD 'collectors' SUPERUSER;"
+          sudo -u postgres createdb -O collectors collectors
+      - name: Install Python deps
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements.txt
+      - name: Write .env
+        run: |
+          cat > .env <<EOF
+          DATABASE_URL=postgresql://collectors:collectors@localhost:5432/collectors
+          API_KEY=dev-key
+          EOF
+      - name: Apply migrations
+        run: |
+          psql "$DATABASE_URL" -f supabase/migrations/2025-10-01_collectors_core.sql
+          psql "$DATABASE_URL" -f supabase/migrations/2025-10-02_alert_rules_fix.sql || true
+      - name: Seed demo sales + FTS
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE EXTENSION IF NOT EXISTS pg_trgm;
+          INSERT INTO public.market_hits (provider, listing_id, title, price, currency, shipping, condition, graded, ended_at, url, seller_score, features_json, normalized_key)
+          VALUES
+          ('ebay','ci-1','LEGO 10240 X-Wing Starfighter (NEW, SEALED)',255,'EUR',10,'new',false, NOW() - interval '2 days','https://example/a',0.99,'{}','lego|10240|pcs:1559|ret:1|s:1')
+          ON CONFLICT DO NOTHING;
+          SQL
+          python services/collectors_merge/workers/build_fts_index.py
+      - name: Run sanity check
+        env:
+          USER_ID: "00000000-0000-0000-0000-000000000001"
+        run: ./deploy/sanity/sanity_check.sh

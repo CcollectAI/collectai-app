@@ -1,0 +1,8 @@
+[Unit]
+Description=Collectors Merge - Notifications Drain
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/opt/collectors
+ExecStart=/usr/bin/env python services/collectors_merge/workers/notify_drain.py

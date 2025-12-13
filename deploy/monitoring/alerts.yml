@@ -1,0 +1,26 @@
+groups:
+- name: collectors-merge-slo
+  rules:
+  - alert: HighErrorRate
+    expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.02
+    for: 10m
+    labels: {severity: page}
+    annotations:
+      summary: "Error rate > 2% for 10m"
+      description: "Investigate logs and recent deploys."
+
+  - alert: HighLatencyP95
+    expr: histogram_quantile(0.95, sum by (le, path, method) (rate(http_request_seconds_bucket[5m]))) > 0.9
+    for: 10m
+    labels: {severity: page}
+    annotations:
+      summary: "p95 latency > 900ms"
+      description: "Endpoints {{ $labels.path }} {{ $labels.method }} breaching."
+
+  - alert: CalibrationCoverageDrift
+    expr: (service_health == 1) and on() (max_over_time(service_health[10m]) == 1) and 0 # placeholder; wire to coverage gauge if you export one
+    for: 5m
+    labels: {severity: ticket}
+    annotations:
+      summary: "Calibration coverage drifted"
+      description: "Hook this rule to PICP coverage gauge when exposed."

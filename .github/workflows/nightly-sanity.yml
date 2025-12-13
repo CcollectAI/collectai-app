@@ -1,0 +1,26 @@
+name: Nightly Sanity
+on:
+  schedule: [{ cron: "17 2 * * *" }]
+  workflow_dispatch: {}
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Set env
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> $GITHUB_ENV
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_ENV
+          echo "TEST_EMAIL=${{ secrets.TEST_EMAIL }}" >> $GITHUB_ENV
+          echo "TEST_PASSWORD=${{ secrets.TEST_PASSWORD }}" >> $GITHUB_ENV
+      - name: Install jq & curl
+        run: sudo apt-get update && sudo apt-get install -y jq curl
+      - name: Run sanity
+        run: |
+          ./scripts/force_jwt_refresh.sh
+          ./scripts/run_predict_with_image.sh
+          ./scripts/verify_dualwrite.sh
