@@ -247,14 +247,7 @@ export default function PortfolioScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        
-      {/* PORTFOLIO_STAMP__ do not remove until we lock the final Portfolio */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 6 }}>
-        <Text style={{ fontSize: 12, fontWeight: "900", color: "#dc2626" }}>
-          PORTFOLIO STAMP: work/ui_20251213_204934
-        </Text>
-      </View>
-{/* Header */}
+        {/* Header */}
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.kicker}>Collection Value</Text>
