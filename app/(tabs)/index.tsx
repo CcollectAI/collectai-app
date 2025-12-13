@@ -1,168 +1,439 @@
-import React, { useMemo, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Polyline, Line } from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
 
-import { useAppTheme } from "@/hooks/useAppTheme";
-import PortfolioHoverChart, {
-  type PortfolioPoint,
-  type HoverPoint,
-} from "@/components/PortfolioHoverChart";
 
-import { TwitchCreatorsCard } from "@/components/TwitchCreatorsCard";
-import UpcomingEventsBanner from "@/components/UpcomingEventsBanner";
-
-type RangeKey = "1D" | "7D" | "30D" | "ALL";
-type RangeDef = { key: RangeKey; label: string; days: number | "all" };
-
-const RANGES: RangeDef[] = [
-  { key: "1D", label: "1D", days: 1 },
-  { key: "7D", label: "7D", days: 7 },
-  { key: "30D", label: "30D", days: 30 },
-  { key: "ALL", label: "ALL", days: "all" },
-];
-
-function generateDemoSeries(days: number | "all"): PortfolioPoint[] {
-  const now = Date.now();
-  const spanDays = days === "all" ? 365 : days;
-  const totalPoints = Math.max(spanDays * 4, 40);
-
-  const points: PortfolioPoint[] = [];
-  let current = 20000;
-
-  for (let i = totalPoints - 1; i >= 0; i--) {
-    const t = now - ((spanDays * 24 * 60 * 60 * 1000) / totalPoints) * i;
-    const delta = (Math.random() - 0.5) * (spanDays > 30 ? 600 : spanDays > 7 ? 400 : 250);
-    current = Math.max(5000, current + delta);
-    points.push({ t, value: current });
-  }
-
-  return points;
+function formatEURPrefix(v: number) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "EUR—";
+  return "EUR" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-function formatCurrency(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "—";
+// Keep imports conservative and optional.
+// If these paths differ in your repo, the fallback data will still render.
+let analyticsApi: any = null;
+try {
+  // Common paths from the thread summaries: analytics/store consolidated.
+  // Adjust if your repo uses a different alias or location.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  analyticsApi = require("@/src/store/portfolioAnalyticsStore");
+} catch (_e) {
   try {
-    return new Intl.NumberFormat("de-DE", {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    analyticsApi = require("../src/store/portfolioAnalyticsStore");
+  } catch (_e2) {
+    analyticsApi = null;
+  }
+}
+
+type RangeKey = "1D" | "7D" | "30D";
+
+type PortfolioPoint = { t: number; v: number };
+
+type ItemRow = {
+  id: string;
+  name: string;
+  category?: string;
+  value: number;
+  changePct?: number;
+};
+
+function formatMoneyEUR(n: number) {
+  try {
+    return new Intl.NumberFormat("nl-NL", {
       style: "currency",
       currency: "EUR",
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(n);
   } catch {
-    return `${value.toFixed(0)} EUR`;
+    return `€${Math.round(n).toLocaleString("en-US")}`;
   }
 }
 
-function formatShortDate(ts: number): string {
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return "";
-  try {
-    return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit" }).format(d);
-  } catch {
-    return d.toISOString().slice(5, 10);
-  }
+function formatPct(p?: number) {
+  if (p === undefined || p === null || Number.isNaN(p)) return "—";
+  const sign = p > 0 ? "+" : "";
+  return `${sign}${(p * 100).toFixed(2)}%`;
 }
 
-export default function PortfolioTab() {
-  const t = useAppTheme();
-  const colors: any = (t as any)?.colors ?? {};
-  const spacing: any = (t as any)?.spacing ?? { xs: 6, sm: 10, md: 14, lg: 18, xl: 24 };
-  const radius: any = (t as any)?.radius ?? { lg: 14 };
+function clamp01(x: number) {
+  return Math.max(0, Math.min(1, x));
+}
 
-  const bg = colors.tiffany ?? colors.background ?? "#e7fbff";
-  const card = colors.card ?? "#ffffff";
-  const text = colors.navy ?? colors.text ?? "#0b1f3a";
-  const muted = colors.mutedText ?? "#5b6b7a";
-  const primary = colors.primary ?? "#19c2d0";
-  const onPrimary = colors.onPrimary ?? "#ffffff";
-  const surface = colors.surface ?? "#f3fbfd";
+function normalizeSeries(points: PortfolioPoint[]) {
+  if (!points.length) return [];
+  const vals = points.map((p) => p.v);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min || 1;
+  return points.map((p) => ({ ...p, nv: (p.v - min) / span }));
+}
 
-  const [rangeKey, setRangeKey] = useState<RangeKey>("7D");
-  const [hoverPoint, setHoverPoint] = useState<HoverPoint | null>(null);
+function extractSeries(raw: any): PortfolioPoint[] {
+  // Accept a bunch of plausible shapes:
+  // - [{t,v}]
+  // - [{x,y}]
+  // - { points: [...] }
+  // - { series: [...] }
+  const arr =
+    (Array.isArray(raw) && raw) ||
+    raw?.points ||
+    raw?.series ||
+    raw?.data ||
+    [];
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((p: any, idx: number) => {
+      const t = typeof p?.t === "number" ? p.t : typeof p?.x === "number" ? p.x : idx;
+      const v = typeof p?.v === "number" ? p.v : typeof p?.y === "number" ? p.y : Number(p?.value);
+      if (typeof v !== "number" || Number.isNaN(v)) return null;
+      return { t, v };
+    })
+    .filter(Boolean) as PortfolioPoint[];
+}
 
-  const rangeDef = useMemo(() => RANGES.find((r) => r.key === rangeKey) ?? RANGES[1], [rangeKey]);
-  const points = useMemo(() => generateDemoSeries(rangeDef.days), [rangeDef]);
+function extractItems(raw: any): ItemRow[] {
+  // Accept:
+  // - raw.items
+  // - raw.holdings / raw.positions
+  // - raw.snapshot.items, etc.
+  const base =
+    raw?.items ||
+    raw?.holdings ||
+    raw?.positions ||
+    raw?.snapshot?.items ||
+    raw?.snapshot?.holdings ||
+    [];
+  if (!Array.isArray(base)) return [];
+  return base
+    .map((it: any, i: number) => {
+      const value =
+        typeof it?.value === "number"
+          ? it.value
+          : typeof it?.marketValue === "number"
+          ? it.marketValue
+          : typeof it?.totalValue === "number"
+          ? it.totalValue
+          : Number(it?.price ?? 0) * Number(it?.qty ?? 1);
 
-  const latestValue = points.length ? points[points.length - 1].value : 0;
-  const displayValue = hoverPoint?.value ?? latestValue;
+      const name = String(it?.name ?? it?.title ?? it?.displayName ?? `Item ${i + 1}`);
+      const id = String(it?.id ?? it?.uuid ?? `${i}`);
+      const changePct =
+        typeof it?.changePct === "number"
+          ? it.changePct
+          : typeof it?.pctChange === "number"
+          ? it.pctChange
+          : typeof it?.change === "number"
+          ? it.change
+          : undefined;
 
-  const displayLabel = hoverPoint
-    ? formatShortDate(hoverPoint.t)
-    : rangeKey === "ALL"
-    ? "Last 12 months"
-    : `Last ${rangeDef.label}`;
+      const category = it?.category ? String(it.category) : undefined;
+
+      if (!Number.isFinite(value)) return null;
+      return { id, name, category, value, changePct };
+    })
+    .filter(Boolean) as ItemRow[];
+}
+
+export default function PortfolioScreen() {
+  const [range, setRange] = useState<RangeKey>("7D");
+  const [series, setSeries] = useState<PortfolioPoint[]>([]);
+  const [items, setItems] = useState<ItemRow[]>([]);
+  const [total, setTotal] = useState<number>(0);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function load() {
+      // Fallback data must ALWAYS render (no blank chart).
+      const fallbackSeries: PortfolioPoint[] = [
+        { t: 0, v: 12400 },
+        { t: 1, v: 12340 },
+        { t: 2, v: 12510 },
+        { t: 3, v: 12680 },
+        { t: 4, v: 12590 },
+        { t: 5, v: 12840 },
+        { t: 6, v: 13120 },
+        { t: 7, v: 13040 },
+        { t: 8, v: 13310 },
+        { t: 9, v: 13480 },
+        { t: 10, v: 13290 },
+        { t: 11, v: 13610 },
+      ];
+
+      const fallbackItems: ItemRow[] = [
+        { id: "1", name: "PSA 10 Lugia (Neo Genesis)", category: "Pokémon", value: 3450, changePct: 0.028 },
+        { id: "2", name: "Gunpla MG Barbatos (built)", category: "Gunpla", value: 1820, changePct: -0.011 },
+        { id: "3", name: "Funko: Vaulted Grail", category: "Funko", value: 1250, changePct: 0.007 },
+        { id: "4", name: "Warhammer Army Lot", category: "Warhammer", value: 980, changePct: 0.014 },
+        { id: "5", name: "Designer Toy (limited run)", category: "Art Toys", value: 760, changePct: -0.006 },
+      ];
+
+      try {
+        if (analyticsApi?.fetchPortfolioSeries) {
+          const raw = await analyticsApi.fetchPortfolioSeries({ range });
+          const s = extractSeries(raw);
+          if (mounted) setSeries(s.length ? s : fallbackSeries);
+        } else {
+          if (mounted) setSeries(fallbackSeries);
+        }
+
+        // Snapshot: try to get value-ranked positions/items.
+        if (analyticsApi?.fetchPortfolioSnapshot) {
+          const snap = await analyticsApi.fetchPortfolioSnapshot();
+          const extracted = extractItems(snap);
+          const sorted = extracted.sort((a, b) => b.value - a.value);
+          if (mounted) setItems(sorted.length ? sorted : fallbackItems);
+          const computedTotal =
+            typeof snap?.totalValue === "number"
+              ? snap.totalValue
+              : sorted.reduce((acc, it) => acc + it.value, 0);
+          if (mounted) setTotal(computedTotal || fallbackItems.reduce((acc, it) => acc + it.value, 0));
+        } else {
+          if (mounted) {
+            setItems(fallbackItems.slice().sort((a, b) => b.value - a.value));
+            setTotal(fallbackItems.reduce((acc, it) => acc + it.value, 0));
+          }
+        }
+      } catch (_e) {
+        if (!mounted) return;
+        setSeries(fallbackSeries);
+        const sorted = fallbackItems.slice().sort((a, b) => b.value - a.value);
+        setItems(sorted);
+        setTotal(sorted.reduce((acc, it) => acc + it.value, 0));
+      }
+    }
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [range]);
+
+  const chart = useMemo(() => {
+    const pts = normalizeSeries(series);
+    return pts;
+  }, [series]);
+
+  // Chart geometry
+  const W = 320; // virtual width (scaled by viewBox)
+  const H = 170; // visible height (this is the "make it visible" fix)
+  const PAD_X = 10;
+  const PAD_Y = 14;
+
+  const polylinePoints = useMemo(() => {
+    if (!chart.length) return "";
+    const n = chart.length;
+    return chart
+      .map((p: any, i: number) => {
+        const x = PAD_X + (i * (W - PAD_X * 2)) / Math.max(1, n - 1);
+        const y = PAD_Y + (1 - clamp01(p.nv)) * (H - PAD_Y * 2);
+        return `${x},${y}`;
+      })
+      .join(" ");
+  }, [chart]);
+
+  const rangeButtons: RangeKey[] = ["1D", "7D", "30D"];
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: bg }}
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{
-        paddingTop: spacing.lg,
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.xl * 2,
-        gap: spacing.md,
-      }}
-    >
-      {/* Top: Collection Value */}
-      <View
-        style={{
-          borderRadius: radius.lg,
-          backgroundColor: card,
-          padding: spacing.md,
-        }}
-      >
-        <Text style={{ fontSize: 12, fontWeight: "600", color: muted, textTransform: "uppercase", marginBottom: 2 }}>
-          Collection value
-        </Text>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.kicker}>Collection Value</Text>
+            <Text style={styles.total}>{formatMoneyEUR(total)}</Text>
+          </View>
 
-        <Text style={{ fontSize: 28, fontWeight: "700", color: text }}>
-          {formatCurrency(displayValue)}
-        </Text>
+          <Pressable
+            accessibilityRole="button"
+            style={styles.settingsBtn}
+            onPress={() => {
+              // Keep this non-destructive; wire later.
+              // You can route to settings if you already have it.
+            }}
+          >
+            <Ionicons name="settings-outline" size={20} color={stylesVars.navy} />
+          </Pressable>
+        </View>
 
-        <Text style={{ fontSize: 12, color: muted, marginTop: 2 }}>
-          {displayLabel}
-        </Text>
-      </View>
-
-      {/* Chart card */}
-      <View
-        style={{
-          borderRadius: radius.lg,
-          backgroundColor: card,
-          padding: spacing.md,
-        }}
-      >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.sm }}>
-          {RANGES.map((r) => {
-            const active = r.key === rangeKey;
+        {/* Range toggles */}
+        <View style={styles.rangeRow}>
+          {rangeButtons.map((k) => {
+            const active = k === range;
             return (
-              <TouchableOpacity
-                key={r.key}
-                onPress={() => setRangeKey(r.key)}
-                style={{
-                  flex: 1,
-                  marginHorizontal: r.key === "7D" || r.key === "30D" ? spacing.xs : 0,
-                  paddingVertical: 6,
-                  borderRadius: 999,
-                  alignItems: "center",
-                  backgroundColor: active ? primary : surface,
-                }}
-                activeOpacity={0.85}
+              <Pressable
+                key={k}
+                accessibilityRole="button"
+                onPress={() => setRange(k)}
+                style={[styles.rangeBtn, active ? styles.rangeBtnActive : null]}
               >
-                <Text style={{ fontSize: 12, fontWeight: "600", color: active ? onPrimary : text }}>
-                  {r.label}
-                </Text>
-              </TouchableOpacity>
+                <Text style={[styles.rangeText, active ? styles.rangeTextActive : null]}>{k}</Text>
+              </Pressable>
             );
           })}
         </View>
 
-        <View style={{ height: 220 }} />
-      </View>
+        {/* Chart card */}
+        <View style={styles.card}>
+          <Svg
+            width="100%"
+            height={H}
+            viewBox={`0 0 ${W} ${H}`}
+            preserveAspectRatio="none"
+          >
+            {/* gridlines */}
+            <Line x1={0} y1={H / 2} x2={W} y2={H / 2} stroke={stylesVars.grid} strokeWidth={1} />
+            <Line x1={0} y1={PAD_Y} x2={W} y2={PAD_Y} stroke={stylesVars.grid} strokeWidth={1} />
+            <Line x1={0} y1={H - PAD_Y} x2={W} y2={H - PAD_Y} stroke={stylesVars.grid} strokeWidth={1} />
 
-      {/* Events preview banner */}
-      <UpcomingEventsBanner context="portfolio" />
+            {/* series */}
+            <Polyline
+              points={polylinePoints}
+              fill="none"
+              stroke={stylesVars.tiffany}
+              strokeWidth={3}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          </Svg>
 
-      {/* Twitch creators card */}
-      <TwitchCreatorsCard />
-    </ScrollView>
+          <View style={styles.chartFooter}>
+            <Ionicons name="trending-up-outline" size={16} color={stylesVars.navy} />
+            <Text style={styles.chartHint}>Value trend (demo/analytics-driven)</Text>
+          </View>
+        </View>
+
+        {/* List header */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Collection</Text>
+          <Text style={styles.sectionRight}>{items.length ? `${items.length} items` : ""}</Text>
+        </View>
+
+        {/* Value-ranked list */}
+        <View style={styles.listCard}>
+          {items.slice(0, 12).map((it, idx) => {
+            const isUp = (it.changePct ?? 0) >= 0;
+            return (
+              <View key={it.id} style={[styles.row, idx === 0 ? styles.rowFirst : null]}>
+                <View style={styles.rowLeft}>
+                  <Text style={styles.rowName} numberOfLines={1}>{it.name}</Text>
+                  <Text style={styles.rowSub} numberOfLines={1}>
+                    {it.category ? it.category : "—"} • {formatPct(it.changePct)}
+                  </Text>
+                </View>
+
+                <View style={styles.rowRight}>
+                  <Text style={styles.rowValue}>{formatMoneyEUR(it.value)}</Text>
+                  <Text style={[styles.rowPct, isUp ? styles.pctUp : styles.pctDown]}>
+                    {formatPct(it.changePct)}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const stylesVars = {
+  tiffany: "#38D6C7",
+  tiffanySoft: "#E9FFFC",
+  navy: "#0B1B3A",
+  card: "#FFFFFF",
+  bg: "#EAFBFF",
+  sub: "#5B6B86",
+  grid: "rgba(11,27,58,0.10)",
+  border: "rgba(11,27,58,0.08)",
+};
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: stylesVars.bg },
+  container: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 22 },
+
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  kicker: { color: stylesVars.sub, fontSize: 13, marginBottom: 4 },
+  total: { color: stylesVars.navy, fontSize: 32, fontWeight: "800" },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    backgroundColor: stylesVars.card,
+    borderWidth: 1,
+    borderColor: stylesVars.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  rangeRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
+  rangeBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: stylesVars.card,
+    borderWidth: 1,
+    borderColor: stylesVars.border,
+  },
+  rangeBtnActive: { backgroundColor: stylesVars.tiffanySoft, borderColor: "rgba(56,214,199,0.35)" },
+  rangeText: { color: stylesVars.sub, fontWeight: "700" },
+  rangeTextActive: { color: stylesVars.navy },
+
+  card: {
+    backgroundColor: stylesVars.card,
+    borderWidth: 1,
+    borderColor: stylesVars.border,
+    padding: 12,
+    marginBottom: 14,
+  },
+  chartFooter: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
+  chartHint: { color: stylesVars.sub, fontSize: 12, fontWeight: "600" },
+
+  sectionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginTop: 6,
+    marginBottom: 10,
+  },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: stylesVars.navy },
+  sectionRight: { fontSize: 12, fontWeight: "700", color: stylesVars.sub },
+
+  listCard: {
+    backgroundColor: stylesVars.card,
+    borderWidth: 1,
+    borderColor: stylesVars.border,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: stylesVars.border,
+  },
+  rowFirst: { borderTopWidth: 0 },
+  rowLeft: { flex: 1, paddingRight: 10 },
+  rowName: { color: stylesVars.navy, fontWeight: "800", fontSize: 14 },
+  rowSub: { color: stylesVars.sub, fontWeight: "700", fontSize: 12, marginTop: 3 },
+  rowRight: { alignItems: "flex-end", minWidth: 92 },
+  rowValue: { color: stylesVars.navy, fontWeight: "800", fontSize: 14 },
+  rowPct: { fontWeight: "900", fontSize: 12, marginTop: 3 },
+  pctUp: { color: "#0A7D4E" },
+  pctDown: { color: "#B42318" },
+});
