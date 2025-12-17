@@ -1,9 +1,11 @@
 import React from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function TabsLayout() {
-  return (
+  const insets = useSafeAreaInsets();
+return (
     <Tabs
       screenOptions={{
         headerShown: false,                 // remove title banner
@@ -12,9 +14,9 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
         tabBarIconStyle: { marginTop: 2 },
         tabBarStyle: {
-          height: 70,
+          height: 58 + Math.max(insets.bottom, 10),
           paddingTop: 8,
-          paddingBottom: 10,
+          paddingBottom: Math.max(insets.bottom, 10),
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "rgba(11,31,58,0.10)",

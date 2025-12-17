@@ -1,34 +1,51 @@
-import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { useAppTheme } from '@/theme';
+import React from "react";
+import { SafeAreaView, View, Text, StyleSheet, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 export default function TwitchScreen() {
-  const theme = useAppTheme();
-  const colors = (theme as any)?.colors ?? (theme as any);
+  const router = useRouter();
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        padding: 16,
-        backgroundColor: colors?.tiffany ?? colors?.background ?? '#e7fbff',
-        flexGrow: 1,
-      }}
-    >
-      <View
-        style={{
-          backgroundColor: colors?.card ?? '#fff',
-          padding: 16,
-          borderRadius: 0,
-        }}
-      >
-        <Text style={{ fontSize: 18, fontWeight: '700', color: colors?.navy ?? '#0b1f3a' }}>
-          Twitch Overview (Mock)
-        </Text>
-        <Text style={{ marginTop: 8, fontSize: 14, color: colors?.navy ?? '#0b1f3a' }}>
-          Next: show your Twitch handle, live status, follower count, and recent clips.
-          We’ll wire real data later.
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Twitch Overview</Text>
+        <Pressable onPress={() => router.back()} style={styles.iconBtn} accessibilityLabel="Back">
+          <Ionicons name="chevron-back" size={18} color="#0b1f3a" />
+        </Pressable>
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <Ionicons name="logo-twitch" size={18} color="#14b8a6" />
+          <Text style={styles.cardTitle}>Creator & Drops Hub</Text>
+        </View>
+        <Text style={styles.cardText}>
+          This is the Twitch landing page. We’ll move the “Twitch creators” banner here and keep Portfolio clean.
         </Text>
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: "#f6f7f9", padding: 16 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
+  title: { fontSize: 18, fontWeight: "900", color: "#0b1f3a" },
+  iconBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "#ffffff",
+    borderWidth: 1, borderColor: "rgba(11,31,58,0.08)",
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "rgba(11,31,58,0.08)",
+  },
+  row: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  cardTitle: { fontSize: 14, fontWeight: "900", color: "#0b1f3a" },
+  cardText: { fontSize: 13, fontWeight: "700", color: "rgba(11,31,58,0.72)", lineHeight: 18 },
+});

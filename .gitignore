@@ -1,39 +1,24 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Logs
+logs/
+ops/logs/
+*.log
+*.gz
 
-# dependencies
-node_modules/
+# Artifacts / generated
+artifacts/**/active
+artifacts/**/[0-9]*/
 
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+# Backups & restores
+*.bak*
+*.pre_*
+autosave*
+backup-*
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+# Scripts (temporary)
+scripts/hotfix_*.sh
+scripts/ui_*.sh
+scripts/portfolio_*.sh
+scripts/restore_*.sh
 
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
+# OS / tooling
 .DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-app-example
