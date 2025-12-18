@@ -26,3 +26,8 @@ ios/build/
 
 # misc
 .DS_Store
+
+# python venvs (never commit)
+.venv/
+venv/
+lib/python*/
