@@ -1,24 +1,28 @@
-# Logs
-logs/
-ops/logs/
+# dependencies
+node_modules/
+
+# Expo / React Native
+.expo/
+.expo-shared/
 *.log
-*.gz
 
-# Artifacts / generated
-artifacts/**/active
-artifacts/**/[0-9]*/
+# build output
+dist/
+build/
+out/
+.next/
 
-# Backups & restores
-*.bak*
-*.pre_*
-autosave*
-backup-*
+# native builds
+android/.gradle/
+android/app/build/
+ios/Pods/
+ios/build/
 
-# Scripts (temporary)
-scripts/hotfix_*.sh
-scripts/ui_*.sh
-scripts/portfolio_*.sh
-scripts/restore_*.sh
+# local env
+.env
+.env.*
+*.keystore
+*.jks
 
-# OS / tooling
+# misc
 .DS_Store
