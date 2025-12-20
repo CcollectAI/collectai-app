@@ -1,3 +1,4 @@
+import { TextInput } from "react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   SafeAreaView,
@@ -255,111 +256,16 @@ const BuildPaintProjectsScreen: React.FC = () => {
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      <ScrollView>
-        {/* Simple local build & paint tracker card */}
-        <View
-          style={{
-            marginTop: 16,
-            marginBottom: 16,
-            padding: 16,
-            borderRadius: 16,
-            backgroundColor: "#FFFFFF",
-            shadowColor: "#000000",
-            shadowOpacity: 0.04,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 3 },
-            elevation: 2,
-          }}
-        >
-          <Text
-            style={{ fontSize: 16, fontWeight: "600", color: "#1A202C", marginBottom: 4 }}
-          >
-            Build & paint tracker (DEBUG)
-          </Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-          <Text
-            style={{ fontSize: 13, color: "#4A5568", marginBottom: 12 }}
-          >
-            Use this to track a single active project – a Warhammer unit, Gunpla kit,
-            or LEGO build. Later we can attach this to a specific project row.
-          </Text>
-
-          {/* Notes */}
-          <Text
-            style={{ fontSize: 13, fontWeight: "600", color: "#2D3748", marginBottom: 4 }}
-          >
-            Notes
-          </Text>
-
-          <TextInput
-            style={{
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#E2E8F0",
-              paddingHorizontal: 10,
-              paddingVertical: 8,
-              fontSize: 13,
-              color: "#1A202C",
-              minHeight: 80,
-              marginBottom: 12,
-            }}
-            placeholder="Example: Warm ivory armor, purple OSL on blade, oils for skin…"
-            placeholderTextColor="#A0AEC0"
-            multiline
-            textAlignVertical="top"
-          />
-
-          {/* Steps */}
-          <Text
-            style={{ fontSize: 13, fontWeight: "600", color: "2D3748", marginBottom: 6 }}
-          >
-            Progress steps
-          </Text>
-
-          {[
-            "Planning and references gathered",
-            "Assembly / build finished",
-            "Primed / surface prepared",
-            "Base layer / basecoat finished",
-            "Shading / washes done",
-            "Details and highlights finished",
-            "Final touches & varnish / display ready",
-          ].map((label, idx) => (
-            <View
-              key={idx}
-              style={{ flexDirection: "row", alignItems: "center", paddingVertical: 6 }}
-            >
-              <View
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: "#CBD5E0",
-                  marginRight: 8,
-                }}
-              />
-              <Text style={{ flex: 1, fontSize: 13, color: "#2D3748" }} numberOfLines={2}>
-                {label}
-              </Text>
-            </View>
-          ))}
-
-          <Text style={{ marginTop: 10, fontSize: 11, color: "#A0AEC0" }}>
-            This is local-only for now. Later we’ll hook it to Supabase projects and sessions.
-          </Text>
-        </View>
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header */}
+          {/* Header */}
         <View style={styles.headerRow}>
           <View>
             <Text style={[styles.headerLabel, { color: colors.muted }]}>
               Projects
             </Text>
             <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Build & paint tracker (DEBUG)
+              Projects
             </Text>
             <Text style={[styles.headerSub, { color: colors.muted }]}>
               Track backlog, active projects and completed builds, plus total
@@ -375,7 +281,71 @@ const BuildPaintProjectsScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Status banner */}
+        
+          {/* Quick notes (local) */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Quick notes</Text>
+              <Text style={[styles.cardHint, { color: colors.muted }]}>Local-only for now</Text>
+            </View>
+
+            <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18, marginTop: 6 }}>
+              Use this for paint notes and a simple progress checklist. Later we can attach it to a project row in Supabase.
+            </Text>
+
+            <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginTop: 12, marginBottom: 6 }}>
+              Notes
+            </Text>
+
+            <TextInput
+              style={{
+                borderRadius: 0,
+                borderWidth: 1,
+                borderColor: colors.border,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                fontSize: 13,
+                color: colors.text,
+                minHeight: 88,
+              }}
+              placeholder="Example: Warm ivory armor, purple OSL on blade, oils for skin…"
+              placeholderTextColor={colors.muted}
+              multiline
+              textAlignVertical="top"
+            />
+
+            <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginTop: 14, marginBottom: 6 }}>
+              Progress steps
+            </Text>
+
+            {[
+              "Planning and references gathered",
+              "Assembly / build finished",
+              "Primed / surface prepared",
+              "Base layer / basecoat finished",
+              "Shading / washes done",
+              "Details and highlights finished",
+              "Final touches & varnish / display ready",
+            ].map((label, idx) => (
+              <View key={idx} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}>
+                <View
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 9,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    marginRight: 10,
+                  }}
+                />
+                <Text style={{ flex: 1, fontSize: 13, color: colors.text }} numberOfLines={2}>
+                  {label}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+{/* Status banner */}
         <View
           style={[
             styles.banner,
@@ -709,6 +679,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   summaryCard: {
+  borderWidth: 1,
+  borderRadius: 0,
+  paddingVertical: 12,
+  paddingHorizontal: 14,
+  borderWidth: 1,
+  borderRadius: 0,
+  paddingVertical: 12,
+  paddingHorizontal: 14,
     flexDirection: "row",
     justifyContent: "space-between",
     borderRadius: 12,
@@ -727,6 +705,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   card: {
+  borderWidth: 1,
+  borderRadius: 0,
+  padding: 14,
     borderRadius: 12,
     borderWidth: 1,
     padding: 14,

@@ -137,7 +137,7 @@ const EventsScreen: React.FC = () => {
             key={event.id}
             activeOpacity={0.9}
             onPress={() =>
-              router.push(`/events/${encodeURIComponent(event.id)}`)
+              router.push(`/event-card?id=${encodeURIComponent(event.id)}`)
             }
             style={{
               borderRadius: 16,

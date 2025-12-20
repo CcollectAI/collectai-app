@@ -5,6 +5,10 @@ import { Stack } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import ThemedItemCard from '@/components/ThemedItemCard';
 
+// --- Safe radius fallback (do not depend on theme shape) ---
+const RADIUS_LG = 12;
+
+
 function formatCurrency(value: number): string {
   try {
     return new Intl.NumberFormat('de-DE', {
@@ -70,7 +74,7 @@ export default function WatchlistV1DemoScreen() {
         {/* Intro */}
         <View
           style={{
-            borderRadius: radii.lg,
+            borderRadius: RADIUS_LG,
             backgroundColor: colors.card,
             padding: spacing.md,
           }}

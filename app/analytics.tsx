@@ -1,546 +1,622 @@
-import React, { useEffect, useState } from "react";
-import {
-  SafeAreaView,
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import supabase from "@/lib/supabaseClient";
+import React, { useEffect, useMemo, useState } from "react";
+import { ScrollView, View, Text, Pressable, ActivityIndicator } from "react-native";
+import { useRouter } from "expo-router";
+import Svg, { Path, G } from "react-native-svg";
+
+// NOTE: Keep theme system stable. If your project uses a different hook path, adjust ONLY this import.
 import { useAppTheme } from "@/hooks/useAppTheme";
-type LoadState = "idle" | "loading" | "loaded" | "error";
 
-// Compatibility: replace old ./ui/theme usage with app theme hook
-const useAppColors = () => {
-  const { colors } = useAppTheme();
-  return colors;
+// NOTE: Keep Supabase client stable. If your project uses a different path, adjust ONLY this import.
+import { supabase } from "@/lib/supabaseClient";
+
+type ItemRow = {
+  id?: string | number;
+  title?: string;
+  name?: string;
+  category?: string;
+  category_name?: string;
+  collection?: string;
+  collection_name?: string;
+  value?: number | string | null;
+  estimated_value?: number | string | null;
+  liquidity?: "High" | "Medium" | "Low" | string | null;
 };
 
-type AnalyticsMetrics = {
-  // Build & paint
-  activeProjects: number;
-  backlogProjects: number;
-  completedProjects: number;
-  totalBuildMinutes: number;
-  totalBuildHours: number;
-
-  // Twitch
-  twitchCreatorsTracked: number;
-  twitchCreatorsLive: number;
+type EventRow = {
+  id?: string | number;
+  title?: string;
+  name?: string;
+  date?: string | null;
+  starts_at?: string | null;
+  impact?: "Low" | "Medium" | "High" | string | null;
 };
 
-const initialMetrics: AnalyticsMetrics = {
-  activeProjects: 0,
-  backlogProjects: 0,
-  completedProjects: 0,
-  totalBuildMinutes: 0,
-  totalBuildHours: 0,
-  twitchCreatorsTracked: 0,
-  twitchCreatorsLive: 0,
-};
+type SeriesPoint = { at: string; value: number };
 
-const AnalyticsScreen: React.FC = () => {
-  const colors = useAppColors();
+function eur(n: number) {
+  try {
+    return new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+  } catch {
+    // Fallback if Intl is weird in some RN runtimes
+    return `€${Math.round(n).toLocaleString("nl-NL")}`;
+  }
+}
 
-  const [state, setState] = useState<LoadState>("idle");
-  const [errorText, setErrorText] = useState<string | null>(null);
-  const [metrics, setMetrics] = useState<AnalyticsMetrics>(initialMetrics);
+function pct(n: number) {
+  const v = Math.round(n * 10) / 10;
+  return `${v}%`;
+}
 
-  useEffect(() => {
-    const load = async () => {
-      setState("loading");
-      setErrorText(null);
+function clamp01(x: number) {
+  return Math.max(0, Math.min(1, x));
+}
 
-      try {
-        const client: any = supabase as any;
-        if (!client || typeof client.from !== "function") {
-          setState("error");
-          setErrorText(
-            "Supabase client not configured – analytics are running in demo mode."
-          );
-          return;
-        }
+function normalizeCategory(item: ItemRow): string {
+  const c =
+    item.category?.trim() ||
+    item.category_name?.trim() ||
+    item.collection?.trim() ||
+    item.collection_name?.trim() ||
+    "Uncategorized";
+  return c.length ? c : "Uncategorized";
+}
 
-        // We try 3 queries in parallel; each can fail without crashing the UI.
-        const [
-          projectsRes,
-          sessionsRes,
-          twitchRes,
-        ] = await Promise.allSettled([
-          client
-            .from("build_paint_projects")
-            .select("id, status")
-            .limit(500),
-          client
-            .from("build_paint_sessions")
-            .select("minutes")
-            .limit(2000),
-          client
-            .from("twitch_creators")
-            .select("id, is_live")
-            .limit(500),
-        ]);
+function normalizeTitle(item: ItemRow): string {
+  return (item.title?.trim() || item.name?.trim() || "Untitled Item").toString();
+}
 
-        let next: AnalyticsMetrics = { ...initialMetrics };
+function parseValue(item: ItemRow): number {
+  const raw = item.value ?? item.estimated_value ?? 0;
+  const n = typeof raw === "number" ? raw : Number(String(raw).replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
 
-        // --- Build & paint projects ---
-        if (projectsRes.status === "fulfilled") {
-          const { data, error } = projectsRes.value;
-          if (error) {
-            // ignore, but keep note for banner
-            console.warn("[Analytics] build_paint_projects error:", error.message);
-          } else if (Array.isArray(data)) {
-            for (const row of data) {
-              const status = (row.status || "").toString();
-              if (status === "Active") next.activeProjects += 1;
-              else if (status === "Backlog") next.backlogProjects += 1;
-              else if (status === "Completed") next.completedProjects += 1;
-            }
-          }
-        } else {
-          console.warn(
-            "[Analytics] build_paint_projects rejected:",
-            projectsRes.reason
-          );
-        }
+/**
+ * SimplePieChart
+ * - No extra deps
+ * - Legend rendered outside SVG (consistent + readable)
+ */
+function SimplePieChart({
+  slices,
+  size = 160,
+}: {
+  slices: { label: string; value: number; color: string }[];
+  size?: number;
+}) {
+  const total = slices.reduce((a, s) => a + s.value, 0);
+  const r = size / 2;
+  const cx = r;
+  const cy = r;
 
-        // --- Build & paint sessions ---
-        if (sessionsRes.status === "fulfilled") {
-          const { data, error } = sessionsRes.value;
-          if (error) {
-            console.warn("[Analytics] build_paint_sessions error:", error.message);
-          } else if (Array.isArray(data)) {
-            let sumMinutes = 0;
-            for (const row of data) {
-              const m = Number(row.minutes ?? 0);
-              if (!Number.isNaN(m)) sumMinutes += m;
-            }
-            next.totalBuildMinutes = sumMinutes;
-            next.totalBuildHours = sumMinutes / 60;
-          }
-        } else {
-          console.warn(
-            "[Analytics] build_paint_sessions rejected:",
-            sessionsRes.reason
-          );
-        }
+  let startAngle = -Math.PI / 2;
 
-        // --- Twitch creators ---
-        if (twitchRes.status === "fulfilled") {
-          const { data, error } = twitchRes.value;
-          if (error) {
-            console.warn("[Analytics] twitch_creators error:", error.message);
-          } else if (Array.isArray(data)) {
-            next.twitchCreatorsTracked = data.length;
-            next.twitchCreatorsLive = data.filter(
-              (row: any) => row.is_live === true
-            ).length;
-          }
-        } else {
-          console.warn(
-            "[Analytics] twitch_creators rejected:",
-            twitchRes.reason
-          );
-        }
+  const paths = slices
+    .filter((s) => s.value > 0)
+    .map((s, idx) => {
+      const frac = total > 0 ? s.value / total : 0;
+      const endAngle = startAngle + frac * Math.PI * 2;
 
-        setMetrics(next);
-        setState("loaded");
-      } catch (err: any) {
-        console.warn("[Analytics] unexpected error:", err);
-        setState("error");
-        setErrorText(
-          err?.message || "Unexpected error while loading analytics."
-        );
-      }
-    };
+      const x1 = cx + r * Math.cos(startAngle);
+      const y1 = cy + r * Math.sin(startAngle);
+      const x2 = cx + r * Math.cos(endAngle);
+      const y2 = cy + r * Math.sin(endAngle);
 
-    load();
-  }, []);
+      const largeArc = frac > 0.5 ? 1 : 0;
 
-  const bannerLabel =
-    state === "loading"
-      ? "Loading analytics from Supabase…"
-      : state === "error"
-      ? "Analytics in demo mode"
-      : "Analytics synced with Supabase";
+      const d = [
+        `M ${cx} ${cy}`,
+        `L ${x1} ${y1}`,
+        `A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`,
+        "Z",
+      ].join(" ");
 
-  const totalProjects =
-    metrics.activeProjects +
-    metrics.backlogProjects +
-    metrics.completedProjects;
+      startAngle = endAngle;
+
+      return <Path key={`${s.label}-${idx}`} d={d} fill={s.color} />;
+    });
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.headerLabel, { color: colors.muted }]}>
-              Analytics
-            </Text>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Collection analytics
-            </Text>
-            <Text style={[styles.headerSub, { color: colors.muted }]}>
-              A high-level view for investors and collectors: build progress,
-              total hobby time, and Twitch presence, powered by Supabase.
-            </Text>
-          </View>
-          <View style={styles.headerIcon}>
-            <Ionicons name="stats-chart-outline" size={20} color={colors.accent} />
-          </View>
-        </View>
-
-        {/* Status banner */}
-        <View
-          style={[
-            styles.banner,
-            {
-              backgroundColor:
-                state === "error"
-                  ? "#FDECEC"
-                  : state === "loading"
-                  ? "#FFF7E6"
-                  : "#E7F6F8",
-              borderColor:
-                state === "error"
-                  ? "#D64545"
-                  : state === "loading"
-                  ? "#F59E0B"
-                  : "#19A7AE",
-            },
-          ]}
-        >
-          <View style={styles.bannerIconBox}>
-            {state === "loading" ? (
-              <ActivityIndicator size="small" color={colors.accent} />
-            ) : (
-              <Ionicons
-                name={
-                  state === "error"
-                    ? "warning-outline"
-                    : "checkmark-circle-outline"
-                }
-                size={18}
-                color={
-                  state === "error"
-                    ? "#D64545"
-                    : "#19A7AE"
-                }
-              />
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.bannerTitle, { color: colors.text }]}>
-              {bannerLabel}
-            </Text>
-            <Text style={[styles.bannerBody, { color: colors.muted }]}>
-              Data is read-only from Supabase. If a table is missing or
-              misconfigured, we fall back gracefully without breaking the app.
-            </Text>
-            {errorText && (
-              <Text
-                style={[styles.bannerError, { color: "#D64545" }]}
-                numberOfLines={2}
-              >
-                {errorText}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Build & paint analytics */}
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>
-              Build & paint analytics
-            </Text>
-            <Text style={[styles.cardHint, { color: colors.muted }]}>
-              Pulled from build_paint_projects + build_paint_sessions
-            </Text>
-          </View>
-
-          <View style={styles.metricsRow}>
-            <View style={styles.metricBlock}>
-              <Text style={[styles.metricLabel, { color: colors.muted }]}>
-                Active projects
-              </Text>
-              <Text style={[styles.metricValue, { color: colors.text }]}>
-                {metrics.activeProjects}
-              </Text>
-            </View>
-            <View style={styles.metricBlock}>
-              <Text style={[styles.metricLabel, { color: colors.muted }]}>
-                Backlog
-              </Text>
-              <Text style={[styles.metricValue, { color: colors.text }]}>
-                {metrics.backlogProjects}
-              </Text>
-            </View>
-            <View style={styles.metricBlock}>
-              <Text style={[styles.metricLabel, { color: colors.muted }]}>
-                Completed
-              </Text>
-              <Text
-                style={[
-                  styles.metricValue,
-                  { color: metrics.completedProjects > 0 ? "#0BA86C" : colors.text },
-                ]}
-              >
-                {metrics.completedProjects}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.metricsRow}>
-            <View style={styles.metricBlockWide}>
-              <Text style={[styles.metricLabel, { color: colors.muted }]}>
-                Total build time (all sessions)
-              </Text>
-              <Text style={[styles.metricValue, { color: colors.text }]}>
-                {metrics.totalBuildMinutes.toLocaleString("en-US")} min
-                {"  "}
-                <Text style={styles.metricValueSub}>
-                  (~{metrics.totalBuildHours.toFixed(1)} hours)
-                </Text>
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.metaRow}>
-            <Ionicons
-              name="information-circle-outline"
-              size={14}
-              color={colors.muted}
-              style={{ marginRight: 4 }}
-            />
-            <Text style={[styles.metaText, { color: colors.muted }]}>
-              These numbers update when you log time on the Build & paint
-              projects screen.
-            </Text>
-          </View>
-        </View>
-
-        {/* Twitch & live content */}
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>
-              Twitch & live content
-            </Text>
-            <Text style={[styles.cardHint, { color: colors.muted }]}>
-              Pulled from twitch_creators
-            </Text>
-          </View>
-
-          <View style={styles.metricsRow}>
-            <View style={styles.metricBlock}>
-              <Text style={[styles.metricLabel, { color: colors.muted }]}>
-                Creators tracked
-              </Text>
-              <Text style={[styles.metricValue, { color: colors.text }]}>
-                {metrics.twitchCreatorsTracked}
-              </Text>
-            </View>
-            <View style={styles.metricBlock}>
-              <Text style={[styles.metricLabel, { color: colors.muted }]}>
-                Live right now
-              </Text>
-              <Text style={[styles.metricValue, { color: "#0BA86C" }]}>
-                {metrics.twitchCreatorsLive}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.metaRow}>
-            <Ionicons
-              name="logo-twitch"
-              size={14}
-              color={colors.muted}
-              style={{ marginRight: 4 }}
-            />
-            <Text style={[styles.metaText, { color: colors.muted }]}>
-              Hook a worker into the Twitch API to refresh this table. The app
-              doesn&apos;t need API keys – it only reads from Supabase.
-            </Text>
-          </View>
-        </View>
-
-        {/* Future analytics placeholder */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              marginBottom: 24,
-            },
-          ]}
-        >
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>
-              Future analytics
-            </Text>
-          </View>
-          <Text style={[styles.futureText, { color: colors.muted }]}>
-            Later we can add:
-          </Text>
-          <Text style={[styles.futureText, { color: colors.muted }]}>
-            • Portfolio value over time (once items/prices are in Supabase)
-          </Text>
-          <Text style={[styles.futureText, { color: colors.muted }]}>
-            • Category-level performance (TCG vs. models vs. designer toys)
-          </Text>
-          <Text style={[styles.futureText, { color: colors.muted }]}>
-            • Risk / exposure metrics (e.g. % in sealed vs. loose)
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={{ alignItems: "center" }}>
+      <Svg width={size} height={size}>
+        <G>{paths}</G>
+      </Svg>
+    </View>
   );
-};
+}
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  scroll: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  headerLabel: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    fontWeight: "600",
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  headerSub: {
-    fontSize: 12,
-    marginTop: 4,
-    maxWidth: 280,
-  },
-  headerIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D6E4EC",
-  },
-  banner: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-  bannerIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
-  },
-  bannerTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  bannerBody: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  bannerError: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  card: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 16,
-  },
-  cardHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  cardHint: {
-    fontSize: 11,
-  },
-  metricsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 6,
-  },
-  metricBlock: {
-    flex: 1,
-    marginRight: 8,
-  },
-  metricBlockWide: {
-    flex: 1,
-    marginTop: 4,
-  },
-  metricLabel: {
-    fontSize: 12,
-  },
-  metricValue: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  metricValueSub: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  metaText: {
-    fontSize: 11,
-    flex: 1,
-  },
-  futureText: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-});
+function kpiCardStyles(theme: any) {
+  return {
+    card: {
+      backgroundColor: theme.colors.card,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+      padding: 12,
+      borderRadius: 0, // square
+    },
+    label: { color: theme.colors.mutedText, fontSize: 12 },
+    value: { color: theme.colors.text, fontSize: 18, fontWeight: "700" as const, marginTop: 4 },
+  };
+}
 
-export default AnalyticsScreen;
+export default function AnalyticsScreen() {
+  const theme = useAppTheme();
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+
+  const [items, setItems] = useState<ItemRow[]>([]);
+  const [events, setEvents] = useState<EventRow[]>([]);
+  const [series, setSeries] = useState<SeriesPoint[]>([]);
+
+  // Force visibility / cache confirmation
+  const subtitle = "Investor Analytics v1 ✅✅✅ (MARKER)";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+
+      // Items (Supabase) — best-effort, falls back to demo
+      let fetchedItems: ItemRow[] = [];
+      try {
+        const { data, error } = await supabase
+          .from("items")
+          .select("id,title,name,category,category_name,collection,collection_name,value,estimated_value,liquidity")
+          .limit(500);
+
+        if (error) throw error;
+        fetchedItems = (data as any[]) || [];
+      } catch (e) {
+        fetchedItems = [
+          { id: "demo-1", title: "PSA 10 Charizard", category: "Pokémon", value: 1800, liquidity: "High" },
+          { id: "demo-2", title: "Funko – Rare Chase", category: "Funko", value: 420, liquidity: "Medium" },
+          { id: "demo-3", title: "Gunpla – Limited Kit", category: "Gunpla", value: 260, liquidity: "Medium" },
+          { id: "demo-4", title: "Warhammer Army (Painted)", category: "Warhammer", value: 900, liquidity: "Low" },
+          { id: "demo-5", title: "Designer Toy – Small Run", category: "Art Toys", value: 520, liquidity: "Low" },
+        ];
+      }
+
+      // Portfolio series (optional) — best-effort, falls back to demo
+      let fetchedSeries: SeriesPoint[] = [];
+      try {
+        const { data, error } = await supabase
+          .from("portfolio_values")
+          .select("at,value")
+          .order("at", { ascending: true })
+          .limit(90);
+
+        if (error) throw error;
+
+        fetchedSeries =
+          ((data as any[]) || [])
+            .map((r) => {
+              const v = typeof r.value === "number" ? r.value : Number(String(r.value).replace(/[^\d.-]/g, ""));
+              return { at: String(r.at), value: Number.isFinite(v) ? v : 0 };
+            })
+            .filter((p) => p.at && Number.isFinite(p.value)) || [];
+      } catch (e) {
+        // visually-real mock
+        const base = fetchedItems.reduce((a, it) => a + parseValue(it), 0) || 3000;
+        const now = Date.now();
+        fetchedSeries = Array.from({ length: 14 }).map((_, i) => {
+          const t = new Date(now - (13 - i) * 24 * 3600 * 1000).toISOString();
+          const wobble = (Math.sin(i / 2) + Math.cos(i / 3)) * 0.012;
+          return { at: t, value: Math.round(base * (1 + wobble)) };
+        });
+      }
+
+      // Events (optional) — best-effort, falls back to demo
+      let fetchedEvents: EventRow[] = [];
+      try {
+        const { data, error } = await supabase
+          .from("events")
+          .select("id,title,name,date,starts_at,impact")
+          .order("date", { ascending: true })
+          .limit(12);
+
+        if (error) throw error;
+        fetchedEvents = (data as any[]) || [];
+      } catch (e) {
+        fetchedEvents = [
+          { id: "evt-demo-1", title: "Major Drop: Limited Release", date: new Date(Date.now() + 4 * 86400000).toISOString(), impact: "High" },
+          { id: "evt-demo-2", title: "Streamer Auction Night", date: new Date(Date.now() + 9 * 86400000).toISOString(), impact: "Medium" },
+          { id: "evt-demo-3", title: "Set Reprint Rumor Window", date: new Date(Date.now() + 14 * 86400000).toISOString(), impact: "Low" },
+        ];
+      }
+
+      if (!cancelled) {
+        setItems(fetchedItems);
+        setSeries(fetchedSeries);
+        setEvents(fetchedEvents);
+        setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const totals = useMemo(() => {
+    const parsed = items.map((it) => ({ ...it, _v: parseValue(it), _cat: normalizeCategory(it), _t: normalizeTitle(it) }));
+    const totalValue = parsed.reduce((a, it) => a + it._v, 0);
+
+    const categories = new Map<string, number>();
+    const collections = new Map<string, number>();
+    const liquidity = new Map<string, number>();
+
+    for (const it of parsed) {
+      categories.set(it._cat, (categories.get(it._cat) || 0) + it._v);
+
+      const col = (it.collection?.trim() || it.collection_name?.trim() || "No Collection").toString();
+      collections.set(col, (collections.get(col) || 0) + it._v);
+
+      const liq = (it.liquidity?.toString().trim() || "Medium").toString();
+      const liqNorm = liq === "High" || liq === "Low" || liq === "Medium" ? liq : "Medium";
+      liquidity.set(liqNorm, (liquidity.get(liqNorm) || 0) + it._v);
+    }
+
+    const catArr = Array.from(categories.entries()).sort((a, b) => b[1] - a[1]);
+    const colArr = Array.from(collections.entries()).sort((a, b) => b[1] - a[1]);
+    const liqArr = Array.from(liquidity.entries()).sort((a, b) => b[1] - a[1]);
+
+    const topItem = parsed.slice().sort((a, b) => b._v - a._v)[0];
+    const topCat = catArr[0];
+
+    const largestPositionPct = totalValue > 0 && topItem ? (topItem._v / totalValue) * 100 : 0;
+    const topCategoryPct = totalValue > 0 && topCat ? (topCat[1] / totalValue) * 100 : 0;
+
+    return {
+      parsed,
+      totalValue,
+      itemCount: parsed.length,
+      categoryCount: categories.size,
+      largestPositionPct,
+      topCategoryPct,
+      catArr,
+      colArr,
+      liqArr,
+    };
+  }, [items]);
+
+  const concentration = useMemo(() => {
+    const { parsed, totalValue } = totals;
+
+    const top5 = parsed.slice().sort((a, b) => b._v - a._v).slice(0, 5);
+
+    // Herfindahl-style concentration score (sum of squared weights)
+    const hhi = totalValue > 0 ? parsed.reduce((a, it) => a + Math.pow(it._v / totalValue, 2), 0) : 0;
+
+    // Simple label (no math explanation)
+    let label: "Low" | "Medium" | "High" = "Low";
+    if (hhi >= 0.18) label = "High";
+    else if (hhi >= 0.10) label = "Medium";
+
+    return { top5, hhi, label };
+  }, [totals]);
+
+  const performance = useMemo(() => {
+    // 7D change from series (if present). If short series, still compute best-effort.
+    const pts = series.slice().sort((a, b) => a.at.localeCompare(b.at));
+    if (pts.length < 2) return { has: false, changePct: 0, changeAbs: 0 };
+
+    const last = pts[pts.length - 1].value;
+    // pick a point ~7 days back (or earliest)
+    const idx = Math.max(0, pts.length - 8);
+    const prev = pts[idx].value;
+
+    const changeAbs = last - prev;
+    const changePct = prev > 0 ? (changeAbs / prev) * 100 : 0;
+
+    return { has: true, changeAbs, changePct };
+  }, [series]);
+
+  const chartPalette = useMemo(() => {
+    // Use theme-derived palette if available; otherwise fallback to a consistent set.
+    // (Keeps visual stable, avoids adding deps.)
+    const fallback = ["#2DD4BF", "#60A5FA", "#A78BFA", "#FBBF24", "#34D399", "#F472B6", "#94A3B8"];
+    const p = theme?.colors?.chartPalette;
+    return Array.isArray(p) && p.length >= 5 ? p : fallback;
+  }, [theme]);
+
+  const categorySlices = useMemo(() => {
+    const top = totals.catArr.slice(0, 7);
+    return top.map(([label, value], i) => ({ label, value, color: chartPalette[i % chartPalette.length] }));
+  }, [totals.catArr, chartPalette]);
+
+  const collectionSlices = useMemo(() => {
+    const top = totals.colArr.slice(0, 7);
+    return top.map(([label, value], i) => ({ label, value, color: chartPalette[(i + 2) % chartPalette.length] }));
+  }, [totals.colArr, chartPalette]);
+
+  const liquiditySlices = useMemo(() => {
+    const order = ["High", "Medium", "Low"];
+    const map = new Map(totals.liqArr);
+    const colors = ["#34D399", "#FBBF24", "#F87171"];
+    return order.map((label, i) => ({ label, value: map.get(label) || 0, color: colors[i] }));
+  }, [totals.liqArr]);
+
+  const styles = useMemo(() => {
+    return {
+      page: { flex: 1, backgroundColor: theme.colors.background },
+      container: { padding: 16, paddingBottom: 28 },
+      h1: { color: theme.colors.text, fontSize: 22, fontWeight: "800" as const },
+      sub: { color: theme.colors.mutedText, marginTop: 6, lineHeight: 18 },
+      sectionTitle: { color: theme.colors.text, fontSize: 16, fontWeight: "800" as const, marginTop: 18, marginBottom: 10 },
+      card: {
+        backgroundColor: theme.colors.card,
+        borderColor: theme.colors.border,
+        borderWidth: 1,
+        borderRadius: 0,
+        padding: 14,
+      },
+      row: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const },
+      pill: {
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: theme.colors.card,
+      },
+      pillText: { color: theme.colors.text, fontWeight: "700" as const, fontSize: 12 },
+      legendRow: { flexDirection: "row" as const, alignItems: "center" as const, marginTop: 8 },
+      dot: { width: 10, height: 10, marginRight: 8, borderRadius: 999 },
+      legendLabel: { color: theme.colors.text, fontSize: 12, flex: 1 },
+      legendValue: { color: theme.colors.mutedText, fontSize: 12 },
+      tableHeader: { color: theme.colors.mutedText, fontSize: 12, fontWeight: "800" as const },
+      tableCell: { color: theme.colors.text, fontSize: 13 },
+      divider: { height: 1, backgroundColor: theme.colors.border, marginVertical: 10 },
+      link: { color: theme.colors.primary, fontWeight: "800" as const },
+    };
+  }, [theme]);
+
+  const kpi = kpiCardStyles(theme);
+
+  if (loading) {
+    return (
+      <View style={[styles.page, { alignItems: "center", justifyContent: "center" }]}>
+        <ActivityIndicator />
+        <Text style={{ color: theme.colors.mutedText, marginTop: 10 }}>Loading analytics…</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.page} contentContainerStyle={styles.container}>
+      {/* Header */}
+      <View>
+        <Text style={styles.h1}>Analytics</Text>
+        <Text style={styles.sub}>{subtitle}</Text>
+      </View>
+
+      {/* KPI strip */}
+      <Text style={styles.sectionTitle}>Key metrics</Text>
+      <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" as const }}>
+        <View style={[kpi.card, { width: "48%" }]}>
+          <Text style={kpi.label}>Current Value</Text>
+          <Text style={kpi.value}>{eur(totals.totalValue)}</Text>
+        </View>
+
+        <View style={[kpi.card, { width: "48%" }]}>
+          <Text style={kpi.label}># Items</Text>
+          <Text style={kpi.value}>{totals.itemCount}</Text>
+        </View>
+
+        <View style={[kpi.card, { width: "48%" }]}>
+          <Text style={kpi.label}># Categories</Text>
+          <Text style={kpi.value}>{totals.categoryCount}</Text>
+        </View>
+
+        <View style={[kpi.card, { width: "48%" }]}>
+          <Text style={kpi.label}>Largest Position</Text>
+          <Text style={kpi.value}>{pct(totals.largestPositionPct)}</Text>
+        </View>
+
+        <View style={[kpi.card, { width: "48%" }]}>
+          <Text style={kpi.label}>Top Category</Text>
+          <Text style={kpi.value}>{pct(totals.topCategoryPct)}</Text>
+        </View>
+
+        <View style={[kpi.card, { width: "48%" }]}>
+          <Text style={kpi.label}>Concentration</Text>
+          <Text style={kpi.value}>{concentration.label}</Text>
+        </View>
+      </View>
+
+      {/* Overview pies */}
+      <Text style={styles.sectionTitle}>Overview</Text>
+
+      {/* Pie A — Allocation by Category (must-have) */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>
+            Allocation by Category
+          </Text>
+          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>“Where is my money?”</Text>
+        </View>
+
+        <View style={{ marginTop: 12 }}>
+          <SimplePieChart slices={categorySlices} />
+          <View style={{ marginTop: 10 }}>
+            {categorySlices.map((s) => (
+              <View key={s.label} style={styles.legendRow}>
+                <View style={[styles.dot, { backgroundColor: s.color }]} />
+                <Text style={styles.legendLabel}>{s.label}</Text>
+                <Text style={styles.legendValue}>{eur(s.value)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      {/* Pie B — Allocation by Collection / Set (optional but strong) */}
+      <View style={[styles.card, { marginTop: 12 }]}>
+        <View style={styles.row}>
+          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>
+            Allocation by Collection
+          </Text>
+          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>Optional (strong)</Text>
+        </View>
+
+        <View style={{ marginTop: 12 }}>
+          <SimplePieChart slices={collectionSlices} />
+          <View style={{ marginTop: 10 }}>
+            {collectionSlices.map((s) => (
+              <View key={s.label} style={styles.legendRow}>
+                <View style={[styles.dot, { backgroundColor: s.color }]} />
+                <Text style={styles.legendLabel}>{s.label}</Text>
+                <Text style={styles.legendValue}>{eur(s.value)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      {/* Pie C — Liquidity / Sellability (mock-first) */}
+      <View style={[styles.card, { marginTop: 12 }]}>
+        <View style={styles.row}>
+          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>
+            Liquidity / Sellability
+          </Text>
+          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>Mock-first</Text>
+        </View>
+
+        <Text style={{ color: theme.colors.mutedText, marginTop: 6, lineHeight: 18 }}>
+          “How fast can I exit?” (High / Medium / Low — heuristic today, tags later.)
+        </Text>
+
+        <View style={{ marginTop: 12 }}>
+          <SimplePieChart slices={liquiditySlices} />
+          <View style={{ marginTop: 10 }}>
+            {liquiditySlices.map((s) => (
+              <View key={s.label} style={styles.legendRow}>
+                <View style={[styles.dot, { backgroundColor: s.color }]} />
+                <Text style={styles.legendLabel}>{s.label}</Text>
+                <Text style={styles.legendValue}>{eur(s.value)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      {/* Concentration & Risk */}
+      <Text style={styles.sectionTitle}>Concentration & Risk</Text>
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>Top positions</Text>
+          <View style={styles.pill}>
+            <Text style={styles.pillText}>Concentration: {concentration.label}</Text>
+          </View>
+        </View>
+
+        <View style={[styles.divider]} />
+
+        {/* Table header */}
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <Text style={[styles.tableHeader, { flex: 1.4 }]}>Item</Text>
+          <Text style={[styles.tableHeader, { flex: 0.9 }]}>Category</Text>
+          <Text style={[styles.tableHeader, { width: 80, textAlign: "right" as const }]}>Value</Text>
+          <Text style={[styles.tableHeader, { width: 60, textAlign: "right" as const }]}>%</Text>
+        </View>
+
+        <View style={{ marginTop: 8 }}>
+          {concentration.top5.map((it: any, idx: number) => {
+            const share = totals.totalValue > 0 ? (it._v / totals.totalValue) * 100 : 0;
+            return (
+              <View key={`${it._t}-${idx}`} style={{ flexDirection: "row", gap: 10, paddingVertical: 8 }}>
+                <Text style={[styles.tableCell, { flex: 1.4 }]} numberOfLines={1}>
+                  {it._t}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 0.9 }]} numberOfLines={1}>
+                  {it._cat}
+                </Text>
+                <Text style={[styles.tableCell, { width: 80, textAlign: "right" as const }]}>{eur(it._v)}</Text>
+                <Text style={[styles.tableCell, { width: 60, textAlign: "right" as const }]}>{pct(share)}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Performance (no buy price) */}
+      <Text style={styles.sectionTitle}>Performance</Text>
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>Market movement</Text>
+          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>7D (best-effort)</Text>
+        </View>
+
+        <View style={{ marginTop: 12 }}>
+          <Text style={{ color: theme.colors.mutedText }}>Portfolio 7D change</Text>
+          <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: "800" as const, marginTop: 4 }}>
+            {performance.has ? `${eur(totals.totalValue)} · ${performance.changeAbs >= 0 ? "+" : ""}${eur(performance.changeAbs)} (${performance.changePct >= 0 ? "+" : ""}${pct(performance.changePct)})` : "Demo"}
+          </Text>
+
+          <Text style={{ color: theme.colors.mutedText, marginTop: 10, lineHeight: 18 }}>
+            If portfolio history isn’t present yet, this stays mocked-but-real visually until you enable real price history.
+          </Text>
+        </View>
+      </View>
+
+      {/* Events impact */}
+      <Text style={styles.sectionTitle}>Events impact</Text>
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>Upcoming events</Text>
+          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>click → detail</Text>
+        </View>
+
+        <View style={{ marginTop: 10 }}>
+          {events.slice(0, 6).map((e, idx) => {
+            const title = (e.title || e.name || "Event").toString();
+            const dt = (e.date || e.starts_at || "").toString();
+            const impact = (e.impact || "Medium").toString();
+
+            return (
+              <Pressable
+                key={`${e.id}-${idx}`}
+                onPress={() => {
+                  // Primary event detail route from your docs: app/events/[eventId].tsx
+                  // If your route differs, adjust here only.
+                  const id = e.id ? String(e.id) : "demo";
+                  router.push(`/events/${id}`);
+                }}
+                style={{ paddingVertical: 10 }}
+              >
+                <View style={styles.row}>
+                  <Text style={{ color: theme.colors.text, fontWeight: "800" as const, flex: 1 }} numberOfLines={1}>
+                    {title}
+                  </Text>
+                  <View style={styles.pill}>
+                    <Text style={styles.pillText}>Impact: {impact}</Text>
+                  </View>
+                </View>
+                {dt ? (
+                  <Text style={{ color: theme.colors.mutedText, marginTop: 6 }}>
+                    {new Date(dt).toLocaleDateString("nl-NL")}
+                  </Text>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={{ marginTop: 8 }}>
+          <Text style={{ color: theme.colors.mutedText, lineHeight: 18 }}>
+            This ties Analytics to your live collector ecosystem (Events / Drops / Twitch moat) without needing buy prices.
+          </Text>
+        </View>
+      </View>
+
+      {/* Footer link (optional) */}
+      <View style={{ marginTop: 18 }}>
+        <Pressable onPress={() => router.push("/(tabs)")}>
+          <Text style={styles.link}>Back to Portfolio</Text>
+        </Pressable>
+      </View>
+    </ScrollView>
+  );
+}

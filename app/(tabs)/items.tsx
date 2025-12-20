@@ -765,16 +765,8 @@ const ItemsScreen: React.FC = () => {
             Open a simple view backed directly by your Supabase items table.
           </Text>
 
-          <Link href="/items-supabase-demo">
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: "#19A7AE",
-              }}
-            >
-              Open Supabase items →
-            </Text>
+          <Link href="/build-paint-projects">
+            <Text style={{ fontWeight: "800", fontSize: 14 }}>Projects</Text><Text style={{ marginTop: 4, fontSize: 12, opacity: 0.7 }}>Project progress & roadmap</Text>
           </Link>
         </View>
 
@@ -784,7 +776,27 @@ const ItemsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  
+  projectsIngress: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderRadius: 0,
+  },
+  projectsIngressLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  projectsIngressText: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
+
+safeArea: {
     flex: 1,
   },
   scroll: {
