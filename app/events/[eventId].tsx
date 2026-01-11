@@ -80,6 +80,11 @@ const Section: React.FC<{ title: string; icon: any; right?: React.ReactNode; chi
 export default function EventDetailScreen() {
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const router = useRouter();
+  const openCategoryOverview = (categoryId?: string) => {
+    if (!categoryId) return;
+    router.push({ pathname: "/categories/[categoryId]" as any, params: { categoryId: String(categoryId) } } as any);
+  };
+
 
   const event: CollectorsEvent | undefined = useMemo(
     () => EVENTS.find((e) => e.id === eventId),
@@ -218,15 +223,29 @@ export default function EventDetailScreen() {
           ) : null}
         </View>
 
-        {event.onlineUrl ? (
-          <Pressable onPress={openExternal} style={styles.primaryCta} accessibilityRole="button">
-            <Ionicons name="open-outline" size={16} color={NAVY} />
-            <Text style={styles.primaryCtaText}>
-              {event.kind === "stream" ? "Open stream" : "Open link"}
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
+        {/* CTAs */}
+        <View style={styles.ctaRow}>
+          {event.onlineUrl ? (
+            <Pressable onPress={openExternal} style={styles.primaryCta} accessibilityRole="button">
+              <Ionicons name="open-outline" size={16} color={NAVY} />
+              <Text style={styles.primaryCtaText}>
+                {event.kind === "stream" ? "Open stream" : "Open link"}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {event.categoryId ? (
+            <Pressable
+              onPress={() => openCategoryOverview(event.categoryId)}
+              style={styles.secondaryBtn}
+              accessibilityRole="button"
+            >
+              <Ionicons name="storefront-outline" size={16} color={NAVY} style={{ marginRight: 6 }} />
+              <Text style={styles.secondaryBtnText}>Category overview</Text>
+            </Pressable>
+          ) : null}
+        </View>
+</View>
 
       {/* Professional collector sections */}
       <Section
@@ -448,6 +467,14 @@ const styles = StyleSheet.create({
   heroMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
   metaChip: { ...typography.body, marginTop: 12 },
   metaChipText: { color: TEXT, fontSize: 12, fontWeight: "800" },
+
+  ctaRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  },
 
   primaryCta: {
     marginTop: 12,

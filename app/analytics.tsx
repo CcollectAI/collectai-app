@@ -1,622 +1,469 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import Svg, { Path, G } from "react-native-svg";
+import Svg, { G, Path, Circle } from "react-native-svg";
 
-// NOTE: Keep theme system stable. If your project uses a different hook path, adjust ONLY this import.
-import { useAppTheme } from "@/hooks/useAppTheme";
+/**
+ * Pro Collector Analytics (Expo-Go safe)
+ * - No extra chart libs; uses react-native-svg (already in Expo)
+ * - Multiple pie charts + professional KPIs + concentration + movers
+ * - Data: tries to read from collectorsClient.getPortfolioItems; falls back to mock
+ */
 
-// NOTE: Keep Supabase client stable. If your project uses a different path, adjust ONLY this import.
-import { supabase } from "@/lib/supabaseClient";
-
-type ItemRow = {
-  id?: string | number;
-  title?: string;
-  name?: string;
-  category?: string;
-  category_name?: string;
-  collection?: string;
-  collection_name?: string;
-  value?: number | string | null;
-  estimated_value?: number | string | null;
-  liquidity?: "High" | "Medium" | "Low" | string | null;
+// ---- Types ----
+type PortfolioItem = {
+  id: string;
+  name: string;
+  categoryId: string;
+  categoryLabel?: string;
+  value_eur: number;
+  cost_eur?: number;
+  change_7d_pct?: number;
+  change_30d_pct?: number;
+  liquidity?: "low" | "medium" | "high";
+  condition?: "mint" | "nm" | "lp" | "mp" | "hp";
 };
 
-type EventRow = {
-  id?: string | number;
-  title?: string;
-  name?: string;
-  date?: string | null;
-  starts_at?: string | null;
-  impact?: "Low" | "Medium" | "High" | string | null;
+type RangeKey = "7D" | "30D" | "ALL";
+
+// ---- Theme (match Items / Tiffany+Navy) ----
+const THEME = {
+  BG: "#E6FFFA",
+  CARD: "#FFFFFF",
+  BORDER: "rgba(12,34,51,0.10)",
+  NAVY: "#0C2233",
+  MUTED: "rgba(12,34,51,0.62)",
+  ACCENT: "#38D6C7",
+  ACCENT_SOFT: "rgba(56,214,199,0.18)",
+  GREEN: "rgba(16,185,129,1)",
+  RED: "rgba(239,68,68,1)",
 };
 
-type SeriesPoint = { at: string; value: number };
+// ---- Mock-safe data fallback ----
+const MOCK_ITEMS: PortfolioItem[] = [
+  { id: "i1", name: "Charizard Holo (PSA 9)", categoryId: "pokemon", categoryLabel: "Pokémon", value_eur: 1250, cost_eur: 800, change_7d_pct: 2.2, change_30d_pct: 6.4, liquidity: "high", condition: "mint" },
+  { id: "i2", name: "Lorcana — Enchanted", categoryId: "lorcana", categoryLabel: "Lorcana", value_eur: 690, cost_eur: 520, change_7d_pct: -1.1, change_30d_pct: 3.1, liquidity: "medium", condition: "nm" },
+  { id: "i3", name: "Gunpla — Limited RG", categoryId: "gunpla", categoryLabel: "Gunpla", value_eur: 240, cost_eur: 180, change_7d_pct: 0.4, change_30d_pct: 1.6, liquidity: "medium", condition: "nm" },
+  { id: "i4", name: "Warhammer — OOP kit", categoryId: "warhammer", categoryLabel: "Warhammer", value_eur: 410, cost_eur: 250, change_7d_pct: 1.4, change_30d_pct: 4.0, liquidity: "low", condition: "lp" },
+  { id: "i5", name: "MTG — Reserved List", categoryId: "mtg", categoryLabel: "MTG", value_eur: 980, cost_eur: 900, change_7d_pct: -0.6, change_30d_pct: 0.8, liquidity: "high", condition: "nm" },
+  { id: "i6", name: "Designer Toy — Artist Drop", categoryId: "art-toys", categoryLabel: "Art Toys", value_eur: 540, cost_eur: 430, change_7d_pct: 3.6, change_30d_pct: 9.5, liquidity: "medium", condition: "mint" },
+];
 
-function eur(n: number) {
-  try {
-    return new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
-  } catch {
-    // Fallback if Intl is weird in some RN runtimes
-    return `€${Math.round(n).toLocaleString("nl-NL")}`;
-  }
-}
-
-function pct(n: number) {
-  const v = Math.round(n * 10) / 10;
-  return `${v}%`;
+function fmtEUR(n: number) {
+  const x = Math.round(n * 100) / 100;
+  // keep stable formatting w/out Intl dependency issues
+  const parts = x.toFixed(2).split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `€${parts.join(".")}`;
 }
 
 function clamp01(x: number) {
   return Math.max(0, Math.min(1, x));
 }
 
-function normalizeCategory(item: ItemRow): string {
-  const c =
-    item.category?.trim() ||
-    item.category_name?.trim() ||
-    item.collection?.trim() ||
-    item.collection_name?.trim() ||
-    "Uncategorized";
-  return c.length ? c : "Uncategorized";
+function sum(nums: number[]) {
+  return nums.reduce((a, b) => a + b, 0);
 }
 
-function normalizeTitle(item: ItemRow): string {
-  return (item.title?.trim() || item.name?.trim() || "Untitled Item").toString();
+function pct(n: number) {
+  const s = (Math.round(n * 10) / 10).toFixed(1);
+  return `${s}%`;
 }
 
-function parseValue(item: ItemRow): number {
-  const raw = item.value ?? item.estimated_value ?? 0;
-  const n = typeof raw === "number" ? raw : Number(String(raw).replace(/[^\d.-]/g, ""));
-  return Number.isFinite(n) ? n : 0;
+// ---- Pie chart (react-native-svg) ----
+type PieDatum = { label: string; value: number; color: string };
+
+function polarToCartesian(cx: number, cy: number, r: number, angleRad: number) {
+  return { x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad) };
 }
 
-/**
- * SimplePieChart
- * - No extra deps
- * - Legend rendered outside SVG (consistent + readable)
- */
-function SimplePieChart({
-  slices,
-  size = 160,
+function arcPath(cx: number, cy: number, r: number, start: number, end: number) {
+  const startPt = polarToCartesian(cx, cy, r, start);
+  const endPt = polarToCartesian(cx, cy, r, end);
+  const large = end - start > Math.PI ? 1 : 0;
+  return `M ${cx} ${cy} L ${startPt.x} ${startPt.y} A ${r} ${r} 0 ${large} 1 ${endPt.x} ${endPt.y} Z`;
+}
+
+function PieChart({
+  data,
+  size = 170,
+  innerRatio = 0.62,
+  title,
+  subtitle,
 }: {
-  slices: { label: string; value: number; color: string }[];
+  data: PieDatum[];
   size?: number;
+  innerRatio?: number;
+  title: string;
+  subtitle?: string;
 }) {
-  const total = slices.reduce((a, s) => a + s.value, 0);
+  const total = Math.max(1e-9, sum(data.map((d) => d.value)));
   const r = size / 2;
   const cx = r;
   const cy = r;
 
-  let startAngle = -Math.PI / 2;
-
-  const paths = slices
-    .filter((s) => s.value > 0)
-    .map((s, idx) => {
-      const frac = total > 0 ? s.value / total : 0;
-      const endAngle = startAngle + frac * Math.PI * 2;
-
-      const x1 = cx + r * Math.cos(startAngle);
-      const y1 = cy + r * Math.sin(startAngle);
-      const x2 = cx + r * Math.cos(endAngle);
-      const y2 = cy + r * Math.sin(endAngle);
-
-      const largeArc = frac > 0.5 ? 1 : 0;
-
-      const d = [
-        `M ${cx} ${cy}`,
-        `L ${x1} ${y1}`,
-        `A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`,
-        "Z",
-      ].join(" ");
-
-      startAngle = endAngle;
-
-      return <Path key={`${s.label}-${idx}`} d={d} fill={s.color} />;
-    });
+  let acc = -Math.PI / 2; // start top
+  const slices = data.map((d) => {
+    const angle = (d.value / total) * Math.PI * 2;
+    const start = acc;
+    const end = acc + angle;
+    acc = end;
+    return { ...d, start, end };
+  });
 
   return (
-    <View style={{ alignItems: "center" }}>
-      <Svg width={size} height={size}>
-        <G>{paths}</G>
-      </Svg>
+    <View>
+      <Text style={styles.chartTitle}>{title}</Text>
+      {subtitle ? <Text style={styles.chartSub}>{subtitle}</Text> : null}
+
+      <View style={{ marginTop: 10, alignItems: "center" }}>
+        <Svg width={size} height={size}>
+          <G>
+            {slices.map((s, idx) => (
+              <Path key={`${s.label}-${idx}`} d={arcPath(cx, cy, r, s.start, s.end)} fill={s.color} />
+            ))}
+            <Circle cx={cx} cy={cy} r={r * innerRatio} fill={THEME.CARD} />
+          </G>
+        </Svg>
+      </View>
+
+      <View style={{ marginTop: 10 }}>
+        {data.slice(0, 6).map((d, i) => (
+          <View key={`${d.label}-${i}`} style={styles.legendRow}>
+            <View style={[styles.legendDot, { backgroundColor: d.color }]} />
+            <Text style={styles.legendLabel} numberOfLines={1}>{d.label}</Text>
+            <Text style={styles.legendValue}>{fmtEUR(d.value)}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
-function kpiCardStyles(theme: any) {
-  return {
-    card: {
-      backgroundColor: theme.colors.card,
-      borderColor: theme.colors.border,
-      borderWidth: 1,
-      padding: 12,
-      borderRadius: 0, // square
-    },
-    label: { color: theme.colors.mutedText, fontSize: 12 },
-    value: { color: theme.colors.text, fontSize: 18, fontWeight: "700" as const, marginTop: 4 },
-  };
-}
-
+// ---- Screen ----
 export default function AnalyticsScreen() {
-  const theme = useAppTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-
-  const [items, setItems] = useState<ItemRow[]>([]);
-  const [events, setEvents] = useState<EventRow[]>([]);
-  const [series, setSeries] = useState<SeriesPoint[]>([]);
-
-  // Force visibility / cache confirmation
-  const subtitle = "Investor Analytics v1 ✅✅✅ (MARKER)";
+  const [range, setRange] = useState<RangeKey>("30D");
+  const [items, setItems] = useState<PortfolioItem[]>(MOCK_ITEMS);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-
-      // Items (Supabase) — best-effort, falls back to demo
-      let fetchedItems: ItemRow[] = [];
+    // Backend-ready: attempt to load from collectorsClient if present.
+    // This is intentionally defensive to avoid bundler crashes.
+    (async () => {
       try {
-        const { data, error } = await supabase
-          .from("items")
-          .select("id,title,name,category,category_name,collection,collection_name,value,estimated_value,liquidity")
-          .limit(500);
-
-        if (error) throw error;
-        fetchedItems = (data as any[]) || [];
-      } catch (e) {
-        fetchedItems = [
-          { id: "demo-1", title: "PSA 10 Charizard", category: "Pokémon", value: 1800, liquidity: "High" },
-          { id: "demo-2", title: "Funko – Rare Chase", category: "Funko", value: 420, liquidity: "Medium" },
-          { id: "demo-3", title: "Gunpla – Limited Kit", category: "Gunpla", value: 260, liquidity: "Medium" },
-          { id: "demo-4", title: "Warhammer Army (Painted)", category: "Warhammer", value: 900, liquidity: "Low" },
-          { id: "demo-5", title: "Designer Toy – Small Run", category: "Art Toys", value: 520, liquidity: "Low" },
-        ];
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const mod = require("@/services/collectorsClient");
+        const fn = mod?.getPortfolioItems;
+        if (typeof fn === "function") {
+          const data = await fn();
+          if (Array.isArray(data) && data.length) setItems(data);
+        }
+      } catch {
+        // keep mock
       }
-
-      // Portfolio series (optional) — best-effort, falls back to demo
-      let fetchedSeries: SeriesPoint[] = [];
-      try {
-        const { data, error } = await supabase
-          .from("portfolio_values")
-          .select("at,value")
-          .order("at", { ascending: true })
-          .limit(90);
-
-        if (error) throw error;
-
-        fetchedSeries =
-          ((data as any[]) || [])
-            .map((r) => {
-              const v = typeof r.value === "number" ? r.value : Number(String(r.value).replace(/[^\d.-]/g, ""));
-              return { at: String(r.at), value: Number.isFinite(v) ? v : 0 };
-            })
-            .filter((p) => p.at && Number.isFinite(p.value)) || [];
-      } catch (e) {
-        // visually-real mock
-        const base = fetchedItems.reduce((a, it) => a + parseValue(it), 0) || 3000;
-        const now = Date.now();
-        fetchedSeries = Array.from({ length: 14 }).map((_, i) => {
-          const t = new Date(now - (13 - i) * 24 * 3600 * 1000).toISOString();
-          const wobble = (Math.sin(i / 2) + Math.cos(i / 3)) * 0.012;
-          return { at: t, value: Math.round(base * (1 + wobble)) };
-        });
-      }
-
-      // Events (optional) — best-effort, falls back to demo
-      let fetchedEvents: EventRow[] = [];
-      try {
-        const { data, error } = await supabase
-          .from("events")
-          .select("id,title,name,date,starts_at,impact")
-          .order("date", { ascending: true })
-          .limit(12);
-
-        if (error) throw error;
-        fetchedEvents = (data as any[]) || [];
-      } catch (e) {
-        fetchedEvents = [
-          { id: "evt-demo-1", title: "Major Drop: Limited Release", date: new Date(Date.now() + 4 * 86400000).toISOString(), impact: "High" },
-          { id: "evt-demo-2", title: "Streamer Auction Night", date: new Date(Date.now() + 9 * 86400000).toISOString(), impact: "Medium" },
-          { id: "evt-demo-3", title: "Set Reprint Rumor Window", date: new Date(Date.now() + 14 * 86400000).toISOString(), impact: "Low" },
-        ];
-      }
-
-      if (!cancelled) {
-        setItems(fetchedItems);
-        setSeries(fetchedSeries);
-        setEvents(fetchedEvents);
-        setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
+    })();
   }, []);
 
-  const totals = useMemo(() => {
-    const parsed = items.map((it) => ({ ...it, _v: parseValue(it), _cat: normalizeCategory(it), _t: normalizeTitle(it) }));
-    const totalValue = parsed.reduce((a, it) => a + it._v, 0);
+  const totalValue = useMemo(() => sum(items.map((i) => i.value_eur || 0)), [items]);
+  const totalCost = useMemo(() => sum(items.map((i) => i.cost_eur || 0)), [items]);
 
-    const categories = new Map<string, number>();
-    const collections = new Map<string, number>();
-    const liquidity = new Map<string, number>();
+  const pnlAbs = totalValue - totalCost;
+  const pnlPct = totalCost > 0 ? (pnlAbs / totalCost) * 100 : 0;
 
-    for (const it of parsed) {
-      categories.set(it._cat, (categories.get(it._cat) || 0) + it._v);
+  const rangeKey = range === "7D" ? "change_7d_pct" : range === "30D" ? "change_30d_pct" : null;
+  const weightedReturnPct = useMemo(() => {
+    if (!rangeKey) return pnlPct; // fallback
+    const w = sum(items.map((i) => i.value_eur || 0));
+    if (w <= 0) return 0;
+    const wr = sum(items.map((i) => (i.value_eur || 0) * ((i as any)[rangeKey] || 0))) / w;
+    return wr;
+  }, [items, rangeKey, pnlPct]);
 
-      const col = (it.collection?.trim() || it.collection_name?.trim() || "No Collection").toString();
-      collections.set(col, (collections.get(col) || 0) + it._v);
-
-      const liq = (it.liquidity?.toString().trim() || "Medium").toString();
-      const liqNorm = liq === "High" || liq === "Low" || liq === "Medium" ? liq : "Medium";
-      liquidity.set(liqNorm, (liquidity.get(liqNorm) || 0) + it._v);
+  const categoryAgg = useMemo(() => {
+    const map = new Map<string, { label: string; value: number; count: number }>();
+    for (const it of items) {
+      const k = it.categoryId || "other";
+      const prev = map.get(k);
+      const label = it.categoryLabel || k;
+      if (!prev) map.set(k, { label, value: it.value_eur || 0, count: 1 });
+      else map.set(k, { label, value: prev.value + (it.value_eur || 0), count: prev.count + 1 });
     }
-
-    const catArr = Array.from(categories.entries()).sort((a, b) => b[1] - a[1]);
-    const colArr = Array.from(collections.entries()).sort((a, b) => b[1] - a[1]);
-    const liqArr = Array.from(liquidity.entries()).sort((a, b) => b[1] - a[1]);
-
-    const topItem = parsed.slice().sort((a, b) => b._v - a._v)[0];
-    const topCat = catArr[0];
-
-    const largestPositionPct = totalValue > 0 && topItem ? (topItem._v / totalValue) * 100 : 0;
-    const topCategoryPct = totalValue > 0 && topCat ? (topCat[1] / totalValue) * 100 : 0;
-
-    return {
-      parsed,
-      totalValue,
-      itemCount: parsed.length,
-      categoryCount: categories.size,
-      largestPositionPct,
-      topCategoryPct,
-      catArr,
-      colArr,
-      liqArr,
-    };
+    return [...map.entries()]
+      .map(([id, v]) => ({ id, ...v }))
+      .sort((a, b) => b.value - a.value);
   }, [items]);
 
-  const concentration = useMemo(() => {
-    const { parsed, totalValue } = totals;
+  const topConcentration = useMemo(() => {
+    const sorted = [...items].sort((a, b) => (b.value_eur || 0) - (a.value_eur || 0));
+    const w = Math.max(1e-9, totalValue);
+    const top1 = sorted[0] ? (sorted[0].value_eur || 0) / w : 0;
+    const top5 = sum(sorted.slice(0, 5).map((i) => i.value_eur || 0)) / w;
+    return { top1, top5 };
+  }, [items, totalValue]);
 
-    const top5 = parsed.slice().sort((a, b) => b._v - a._v).slice(0, 5);
+  const liquidityAgg = useMemo(() => {
+    const buckets: Record<string, number> = { high: 0, medium: 0, low: 0, unknown: 0 };
+    for (const it of items) {
+      const k = it.liquidity || "unknown";
+      buckets[k] = (buckets[k] || 0) + (it.value_eur || 0);
+    }
+    return buckets;
+  }, [items]);
 
-    // Herfindahl-style concentration score (sum of squared weights)
-    const hhi = totalValue > 0 ? parsed.reduce((a, it) => a + Math.pow(it._v / totalValue, 2), 0) : 0;
-
-    // Simple label (no math explanation)
-    let label: "Low" | "Medium" | "High" = "Low";
-    if (hhi >= 0.18) label = "High";
-    else if (hhi >= 0.10) label = "Medium";
-
-    return { top5, hhi, label };
-  }, [totals]);
-
-  const performance = useMemo(() => {
-    // 7D change from series (if present). If short series, still compute best-effort.
-    const pts = series.slice().sort((a, b) => a.at.localeCompare(b.at));
-    if (pts.length < 2) return { has: false, changePct: 0, changeAbs: 0 };
-
-    const last = pts[pts.length - 1].value;
-    // pick a point ~7 days back (or earliest)
-    const idx = Math.max(0, pts.length - 8);
-    const prev = pts[idx].value;
-
-    const changeAbs = last - prev;
-    const changePct = prev > 0 ? (changeAbs / prev) * 100 : 0;
-
-    return { has: true, changeAbs, changePct };
-  }, [series]);
-
-  const chartPalette = useMemo(() => {
-    // Use theme-derived palette if available; otherwise fallback to a consistent set.
-    // (Keeps visual stable, avoids adding deps.)
-    const fallback = ["#2DD4BF", "#60A5FA", "#A78BFA", "#FBBF24", "#34D399", "#F472B6", "#94A3B8"];
-    const p = theme?.colors?.chartPalette;
-    return Array.isArray(p) && p.length >= 5 ? p : fallback;
-  }, [theme]);
-
-  const categorySlices = useMemo(() => {
-    const top = totals.catArr.slice(0, 7);
-    return top.map(([label, value], i) => ({ label, value, color: chartPalette[i % chartPalette.length] }));
-  }, [totals.catArr, chartPalette]);
-
-  const collectionSlices = useMemo(() => {
-    const top = totals.colArr.slice(0, 7);
-    return top.map(([label, value], i) => ({ label, value, color: chartPalette[(i + 2) % chartPalette.length] }));
-  }, [totals.colArr, chartPalette]);
-
-  const liquiditySlices = useMemo(() => {
-    const order = ["High", "Medium", "Low"];
-    const map = new Map(totals.liqArr);
-    const colors = ["#34D399", "#FBBF24", "#F87171"];
-    return order.map((label, i) => ({ label, value: map.get(label) || 0, color: colors[i] }));
-  }, [totals.liqArr]);
-
-  const styles = useMemo(() => {
+  const movers = useMemo(() => {
+    const key = rangeKey || "change_30d_pct";
+    const sorted = [...items].sort((a, b) => ((b as any)[key] || 0) - ((a as any)[key] || 0));
     return {
-      page: { flex: 1, backgroundColor: theme.colors.background },
-      container: { padding: 16, paddingBottom: 28 },
-      h1: { color: theme.colors.text, fontSize: 22, fontWeight: "800" as const },
-      sub: { color: theme.colors.mutedText, marginTop: 6, lineHeight: 18 },
-      sectionTitle: { color: theme.colors.text, fontSize: 16, fontWeight: "800" as const, marginTop: 18, marginBottom: 10 },
-      card: {
-        backgroundColor: theme.colors.card,
-        borderColor: theme.colors.border,
-        borderWidth: 1,
-        borderRadius: 0,
-        padding: 14,
-      },
-      row: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const },
-      pill: {
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 999,
-        backgroundColor: theme.colors.card,
-      },
-      pillText: { color: theme.colors.text, fontWeight: "700" as const, fontSize: 12 },
-      legendRow: { flexDirection: "row" as const, alignItems: "center" as const, marginTop: 8 },
-      dot: { width: 10, height: 10, marginRight: 8, borderRadius: 999 },
-      legendLabel: { color: theme.colors.text, fontSize: 12, flex: 1 },
-      legendValue: { color: theme.colors.mutedText, fontSize: 12 },
-      tableHeader: { color: theme.colors.mutedText, fontSize: 12, fontWeight: "800" as const },
-      tableCell: { color: theme.colors.text, fontSize: 13 },
-      divider: { height: 1, backgroundColor: theme.colors.border, marginVertical: 10 },
-      link: { color: theme.colors.primary, fontWeight: "800" as const },
+      up: sorted.slice(0, 3),
+      down: sorted.slice(-3).reverse(),
     };
-  }, [theme]);
+  }, [items, rangeKey]);
 
-  const kpi = kpiCardStyles(theme);
+  // deterministic palette
+  const palette = [
+    "rgba(56,214,199,1)",
+    "rgba(12,34,51,0.92)",
+    "rgba(99,102,241,0.95)",
+    "rgba(245,158,11,0.95)",
+    "rgba(236,72,153,0.92)",
+    "rgba(34,197,94,0.90)",
+    "rgba(239,68,68,0.90)",
+  ];
 
-  if (loading) {
-    return (
-      <View style={[styles.page, { alignItems: "center", justifyContent: "center" }]}>
-        <ActivityIndicator />
-        <Text style={{ color: theme.colors.mutedText, marginTop: 10 }}>Loading analytics…</Text>
-      </View>
-    );
-  }
+  const categoryPie: PieDatum[] = useMemo(() => {
+    return categoryAgg.slice(0, 6).map((c, idx) => ({
+      label: `${c.label} (${c.count})`,
+      value: c.value,
+      color: palette[idx % palette.length],
+    }));
+  }, [categoryAgg]);
+
+  const liquidityPie: PieDatum[] = useMemo(() => {
+    const entries: { label: string; value: number; color: string }[] = [
+      { label: "High liquidity", value: liquidityAgg.high, color: "rgba(34,197,94,0.90)" },
+      { label: "Medium liquidity", value: liquidityAgg.medium, color: "rgba(245,158,11,0.92)" },
+      { label: "Low liquidity", value: liquidityAgg.low, color: "rgba(239,68,68,0.90)" },
+    ];
+    const other = liquidityAgg.unknown || 0;
+    if (other > 0) entries.push({ label: "Unknown", value: other, color: "rgba(12,34,51,0.45)" });
+    return entries.filter((e) => e.value > 0.0001);
+  }, [liquidityAgg]);
+
+  const riskBand = useMemo(() => {
+    // simple “risk score” proxy: concentration + low-liquidity share
+    const lowShare = totalValue > 0 ? liquidityAgg.low / totalValue : 0;
+    const score = clamp01(0.55 * topConcentration.top1 + 0.35 * lowShare + 0.10 * (topConcentration.top5 - topConcentration.top1));
+    const label =
+      score < 0.25 ? "Low" : score < 0.50 ? "Moderate" : score < 0.75 ? "High" : "Very High";
+    return { score, label };
+  }, [liquidityAgg.low, totalValue, topConcentration]);
+
+  const deltaColor = weightedReturnPct >= 0 ? THEME.GREEN : THEME.RED;
 
   return (
-    <ScrollView style={styles.page} contentContainerStyle={styles.container}>
-      {/* Header */}
-      <View>
-        <Text style={styles.h1}>Analytics</Text>
-        <Text style={styles.sub}>{subtitle}</Text>
-      </View>
+    <SafeAreaView style={[styles.safe, { backgroundColor: THEME.BG }]} edges={["top", "left", "right"]}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingTop: Math.max(12, insets.top),
+          paddingBottom: 28,
+          paddingHorizontal: 16,
+        }}
+      >
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <Pressable onPress={() => router.back()} style={[styles.iconBtn, { borderColor: THEME.BORDER }]} accessibilityRole="button">
+            <Ionicons name="chevron-back" size={18} color={THEME.NAVY} />
+          </Pressable>
 
-      {/* KPI strip */}
-      <Text style={styles.sectionTitle}>Key metrics</Text>
-      <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" as const }}>
-        <View style={[kpi.card, { width: "48%" }]}>
-          <Text style={kpi.label}>Current Value</Text>
-          <Text style={kpi.value}>{eur(totals.totalValue)}</Text>
-        </View>
-
-        <View style={[kpi.card, { width: "48%" }]}>
-          <Text style={kpi.label}># Items</Text>
-          <Text style={kpi.value}>{totals.itemCount}</Text>
-        </View>
-
-        <View style={[kpi.card, { width: "48%" }]}>
-          <Text style={kpi.label}># Categories</Text>
-          <Text style={kpi.value}>{totals.categoryCount}</Text>
-        </View>
-
-        <View style={[kpi.card, { width: "48%" }]}>
-          <Text style={kpi.label}>Largest Position</Text>
-          <Text style={kpi.value}>{pct(totals.largestPositionPct)}</Text>
-        </View>
-
-        <View style={[kpi.card, { width: "48%" }]}>
-          <Text style={kpi.label}>Top Category</Text>
-          <Text style={kpi.value}>{pct(totals.topCategoryPct)}</Text>
-        </View>
-
-        <View style={[kpi.card, { width: "48%" }]}>
-          <Text style={kpi.label}>Concentration</Text>
-          <Text style={kpi.value}>{concentration.label}</Text>
-        </View>
-      </View>
-
-      {/* Overview pies */}
-      <Text style={styles.sectionTitle}>Overview</Text>
-
-      {/* Pie A — Allocation by Category (must-have) */}
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>
-            Allocation by Category
-          </Text>
-          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>“Where is my money?”</Text>
-        </View>
-
-        <View style={{ marginTop: 12 }}>
-          <SimplePieChart slices={categorySlices} />
-          <View style={{ marginTop: 10 }}>
-            {categorySlices.map((s) => (
-              <View key={s.label} style={styles.legendRow}>
-                <View style={[styles.dot, { backgroundColor: s.color }]} />
-                <Text style={styles.legendLabel}>{s.label}</Text>
-                <Text style={styles.legendValue}>{eur(s.value)}</Text>
-              </View>
-            ))}
+          <View style={{ flex: 1, paddingHorizontal: 10 }}>
+            <Text style={[styles.hTitle, { color: THEME.NAVY }]} numberOfLines={1}>
+              Portfolio Analytics
+            </Text>
+            <Text style={[styles.hSub, { color: THEME.MUTED }]} numberOfLines={1}>
+              Allocation • risk • performance • movers
+            </Text>
           </View>
-        </View>
-      </View>
 
-      {/* Pie B — Allocation by Collection / Set (optional but strong) */}
-      <View style={[styles.card, { marginTop: 12 }]}>
-        <View style={styles.row}>
-          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>
-            Allocation by Collection
-          </Text>
-          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>Optional (strong)</Text>
+          <Pressable onPress={() => {}} style={[styles.iconBtn, { borderColor: THEME.BORDER }]} accessibilityRole="button">
+            <Ionicons name="download-outline" size={18} color={THEME.NAVY} />
+          </Pressable>
         </View>
 
-        <View style={{ marginTop: 12 }}>
-          <SimplePieChart slices={collectionSlices} />
-          <View style={{ marginTop: 10 }}>
-            {collectionSlices.map((s) => (
-              <View key={s.label} style={styles.legendRow}>
-                <View style={[styles.dot, { backgroundColor: s.color }]} />
-                <Text style={styles.legendLabel}>{s.label}</Text>
-                <Text style={styles.legendValue}>{eur(s.value)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
-
-      {/* Pie C — Liquidity / Sellability (mock-first) */}
-      <View style={[styles.card, { marginTop: 12 }]}>
-        <View style={styles.row}>
-          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>
-            Liquidity / Sellability
-          </Text>
-          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>Mock-first</Text>
-        </View>
-
-        <Text style={{ color: theme.colors.mutedText, marginTop: 6, lineHeight: 18 }}>
-          “How fast can I exit?” (High / Medium / Low — heuristic today, tags later.)
-        </Text>
-
-        <View style={{ marginTop: 12 }}>
-          <SimplePieChart slices={liquiditySlices} />
-          <View style={{ marginTop: 10 }}>
-            {liquiditySlices.map((s) => (
-              <View key={s.label} style={styles.legendRow}>
-                <View style={[styles.dot, { backgroundColor: s.color }]} />
-                <Text style={styles.legendLabel}>{s.label}</Text>
-                <Text style={styles.legendValue}>{eur(s.value)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
-
-      {/* Concentration & Risk */}
-      <Text style={styles.sectionTitle}>Concentration & Risk</Text>
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>Top positions</Text>
-          <View style={styles.pill}>
-            <Text style={styles.pillText}>Concentration: {concentration.label}</Text>
-          </View>
-        </View>
-
-        <View style={[styles.divider]} />
-
-        {/* Table header */}
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <Text style={[styles.tableHeader, { flex: 1.4 }]}>Item</Text>
-          <Text style={[styles.tableHeader, { flex: 0.9 }]}>Category</Text>
-          <Text style={[styles.tableHeader, { width: 80, textAlign: "right" as const }]}>Value</Text>
-          <Text style={[styles.tableHeader, { width: 60, textAlign: "right" as const }]}>%</Text>
-        </View>
-
-        <View style={{ marginTop: 8 }}>
-          {concentration.top5.map((it: any, idx: number) => {
-            const share = totals.totalValue > 0 ? (it._v / totals.totalValue) * 100 : 0;
-            return (
-              <View key={`${it._t}-${idx}`} style={{ flexDirection: "row", gap: 10, paddingVertical: 8 }}>
-                <Text style={[styles.tableCell, { flex: 1.4 }]} numberOfLines={1}>
-                  {it._t}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.9 }]} numberOfLines={1}>
-                  {it._cat}
-                </Text>
-                <Text style={[styles.tableCell, { width: 80, textAlign: "right" as const }]}>{eur(it._v)}</Text>
-                <Text style={[styles.tableCell, { width: 60, textAlign: "right" as const }]}>{pct(share)}</Text>
-              </View>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Performance (no buy price) */}
-      <Text style={styles.sectionTitle}>Performance</Text>
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>Market movement</Text>
-          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>7D (best-effort)</Text>
-        </View>
-
-        <View style={{ marginTop: 12 }}>
-          <Text style={{ color: theme.colors.mutedText }}>Portfolio 7D change</Text>
-          <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: "800" as const, marginTop: 4 }}>
-            {performance.has ? `${eur(totals.totalValue)} · ${performance.changeAbs >= 0 ? "+" : ""}${eur(performance.changeAbs)} (${performance.changePct >= 0 ? "+" : ""}${pct(performance.changePct)})` : "Demo"}
-          </Text>
-
-          <Text style={{ color: theme.colors.mutedText, marginTop: 10, lineHeight: 18 }}>
-            If portfolio history isn’t present yet, this stays mocked-but-real visually until you enable real price history.
-          </Text>
-        </View>
-      </View>
-
-      {/* Events impact */}
-      <Text style={styles.sectionTitle}>Events impact</Text>
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" as const }}>Upcoming events</Text>
-          <Text style={{ color: theme.colors.mutedText, fontSize: 12 }}>click → detail</Text>
-        </View>
-
-        <View style={{ marginTop: 10 }}>
-          {events.slice(0, 6).map((e, idx) => {
-            const title = (e.title || e.name || "Event").toString();
-            const dt = (e.date || e.starts_at || "").toString();
-            const impact = (e.impact || "Medium").toString();
-
+        {/* Range selector */}
+        <View style={[styles.segment, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+          {(["7D", "30D", "ALL"] as RangeKey[]).map((k) => {
+            const active = range === k;
             return (
               <Pressable
-                key={`${e.id}-${idx}`}
-                onPress={() => {
-                  // Primary event detail route from your docs: app/events/[eventId].tsx
-                  // If your route differs, adjust here only.
-                  const id = e.id ? String(e.id) : "demo";
-                  router.push(`/events/${id}`);
-                }}
-                style={{ paddingVertical: 10 }}
+                key={k}
+                onPress={() => setRange(k)}
+                style={[styles.segmentBtn, active ? { backgroundColor: THEME.ACCENT_SOFT } : null]}
+                accessibilityRole="button"
               >
-                <View style={styles.row}>
-                  <Text style={{ color: theme.colors.text, fontWeight: "800" as const, flex: 1 }} numberOfLines={1}>
-                    {title}
-                  </Text>
-                  <View style={styles.pill}>
-                    <Text style={styles.pillText}>Impact: {impact}</Text>
-                  </View>
-                </View>
-                {dt ? (
-                  <Text style={{ color: theme.colors.mutedText, marginTop: 6 }}>
-                    {new Date(dt).toLocaleDateString("nl-NL")}
-                  </Text>
-                ) : null}
+                <Text style={[styles.segmentText, { color: THEME.NAVY }]}>{k}</Text>
               </Pressable>
             );
           })}
         </View>
 
-        <View style={{ marginTop: 8 }}>
-          <Text style={{ color: theme.colors.mutedText, lineHeight: 18 }}>
-            This ties Analytics to your live collector ecosystem (Events / Drops / Twitch moat) without needing buy prices.
+        {/* KPI row */}
+        <View style={styles.kpiRow}>
+          <View style={[styles.kpiCard, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+            <Text style={[styles.kpiLabel, { color: THEME.MUTED }]}>Total value</Text>
+            <Text style={[styles.kpiValue, { color: THEME.NAVY }]}>{fmtEUR(totalValue)}</Text>
+          </View>
+
+          <View style={[styles.kpiCard, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+            <Text style={[styles.kpiLabel, { color: THEME.MUTED }]}>Return ({range})</Text>
+            <Text style={[styles.kpiValue, { color: deltaColor }]}>{pct(weightedReturnPct)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.kpiRow}>
+          <View style={[styles.kpiCard, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+            <Text style={[styles.kpiLabel, { color: THEME.MUTED }]}>Unrealized P&L</Text>
+            <Text style={[styles.kpiValue, { color: pnlAbs >= 0 ? THEME.GREEN : THEME.RED }]}>{fmtEUR(pnlAbs)}</Text>
+            <Text style={[styles.kpiSub, { color: THEME.MUTED }]}>{pct(pnlPct)} vs cost</Text>
+          </View>
+
+          <View style={[styles.kpiCard, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+            <Text style={[styles.kpiLabel, { color: THEME.MUTED }]}>Risk band</Text>
+            <Text style={[styles.kpiValue, { color: THEME.NAVY }]}>{riskBand.label}</Text>
+            <Text style={[styles.kpiSub, { color: THEME.MUTED }]}>Score {Math.round(riskBand.score * 100)}/100</Text>
+          </View>
+        </View>
+
+        {/* Charts */}
+        <View style={[styles.card, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+          <PieChart
+            title="Allocation by category"
+            subtitle="Value-weighted exposure (top categories)"
+            data={categoryPie}
+            size={180}
+            innerRatio={0.64}
+          />
+          <View style={styles.divider} />
+          <View style={styles.metricRow}>
+            <View style={styles.metric}>
+              <Text style={[styles.metricLabel, { color: THEME.MUTED }]}>Top 1 holding</Text>
+              <Text style={[styles.metricValue, { color: THEME.NAVY }]}>{pct(topConcentration.top1 * 100)}</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={[styles.metricLabel, { color: THEME.MUTED }]}>Top 5 concentration</Text>
+              <Text style={[styles.metricValue, { color: THEME.NAVY }]}>{pct(topConcentration.top5 * 100)}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+          <PieChart
+            title="Liquidity mix"
+            subtitle="A collector’s sellability view"
+            data={liquidityPie}
+            size={180}
+            innerRatio={0.66}
+          />
+          <View style={styles.divider} />
+          <Text style={[styles.note, { color: THEME.MUTED }]}>
+            Tip: keep low-liquidity share controlled if you rely on fast exits, trade cycles, or liquidation events.
           </Text>
         </View>
-      </View>
 
-      {/* Footer link (optional) */}
-      <View style={{ marginTop: 18 }}>
-        <Pressable onPress={() => router.push("/(tabs)")}>
-          <Text style={styles.link}>Back to Portfolio</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+        {/* Movers */}
+        <View style={[styles.card, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+          <Text style={[styles.sectionTitle, { color: THEME.NAVY }]}>Top movers ({range})</Text>
+
+          <View style={{ marginTop: 10 }}>
+            <Text style={[styles.moverHeader, { color: THEME.MUTED }]}>Gainers</Text>
+            {movers.up.map((m) => {
+              const v = (m as any)[rangeKey || "change_30d_pct"] || 0;
+              return (
+                <View key={m.id} style={styles.moverRow}>
+                  <Text style={[styles.moverName, { color: THEME.NAVY }]} numberOfLines={1}>{m.name}</Text>
+                  <Text style={[styles.moverPct, { color: THEME.GREEN }]}>{pct(v)}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          <View style={{ marginTop: 12 }}>
+            <Text style={[styles.moverHeader, { color: THEME.MUTED }]}>Decliners</Text>
+            {movers.down.map((m) => {
+              const v = (m as any)[rangeKey || "change_30d_pct"] || 0;
+              return (
+                <View key={m.id} style={styles.moverRow}>
+                  <Text style={[styles.moverName, { color: THEME.NAVY }]} numberOfLines={1}>{m.name}</Text>
+                  <Text style={[styles.moverPct, { color: THEME.RED }]}>{pct(v)}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+
+  // --- Typography (match Items tab baseline) ---
+  h1: { fontSize: 18, fontWeight: "900" },
+  h2: { fontSize: 14, fontWeight: "900" },
+  body: { fontSize: 12, fontWeight: "600", lineHeight: 17 },
+  meta: { fontSize: 11, fontWeight: "600" },
+safe: { flex: 1,
+    backgroundColor: "#F2F4F7"
+  },
+
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+  hTitle: { fontSize: 16, fontWeight: "900" },
+  hSub: { marginTop: 2, fontSize: 12, fontWeight: "700" },
+
+  segment: { flexDirection: "row", borderWidth: 1, borderRadius: 14, padding: 4, marginBottom: 10 },
+  segmentBtn: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: "center" },
+  segmentText: { fontSize: 12, fontWeight: "900" },
+
+  kpiRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
+  kpiCard: { flex: 1, borderWidth: 1, borderRadius: 16, padding: 12 },
+  kpiLabel: { fontSize: 11, fontWeight: "800" },
+  kpiValue: { marginTop: 6, fontSize: 16, fontWeight: "900" },
+  kpiSub: { marginTop: 4, fontSize: 11, fontWeight: "700" },
+
+  card: { borderWidth: 1, borderRadius: 16, padding: 12, marginBottom: 10 },
+
+  chartTitle: { fontSize: 13, fontWeight: "900", color: THEME.NAVY },
+  chartSub: { marginTop: 2, fontSize: 11, fontWeight: "700", color: THEME.MUTED },
+
+  legendRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+  legendDot: { width: 10, height: 10, borderRadius: 999, marginRight: 8 },
+  legendLabel: { flex: 1, fontSize: 12, fontWeight: "800", color: THEME.NAVY },
+  legendValue: { fontSize: 12, fontWeight: "900", color: THEME.NAVY },
+
+  divider: { height: 1, backgroundColor: THEME.BORDER, marginVertical: 12 },
+
+  metricRow: { flexDirection: "row", gap: 10 },
+  metric: { flex: 1 },
+  metricLabel: { fontSize: 11, fontWeight: "800" },
+  metricValue: { marginTop: 6, fontSize: 14, fontWeight: "900" },
+
+  note: { fontSize: 12, fontWeight: "700", lineHeight: 18 },
+  sectionTitle: { fontSize: 14, fontWeight: "900" },
+  moverHeader: { fontSize: 11, fontWeight: "900" },
+  moverRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+  moverName: { flex: 1, fontSize: 12, fontWeight: "800" },
+  moverPct: { fontSize: 12, fontWeight: "900" },
+});

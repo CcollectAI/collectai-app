@@ -1,814 +1,302 @@
-import { TextInput } from "react-native";
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  SafeAreaView,
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Pressable,
-} from "react-native";
+import React, { useMemo, useState } from "react";
+import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import supabase from "@/lib/supabaseClient";
-import { useAppTheme } from "@/hooks/useAppTheme";
-type LoadState = "idle" | "loading" | "loaded" | "error";
+import { useRouter } from "expo-router";
+import { Link } from "expo-router";
 
-// Compatibility: replace old ./ui/theme usage with app theme hook
-const useAppColors = () => {
-  const { colors } = useAppTheme();
-  return colors;
-};
+/**
+ * Projects Hub (Build & Paint)
+ * - Ongoing vs Closed
+ * - Professional cards with % completion and meta
+ * - Routes into /projects/[id]
+ */
 
-type BuildPaintProject = {
+type Step = { id: string; label: string; done: boolean };
+type Project = {
   id: string;
   title: string;
-  category: string | null;
-  status: string | null;   // Backlog | Active | Completed
-  priority: string | null; // Low | Medium | High
-  notes: string | null;
-  estimated_hours: number | null;
+  categoryId?: string; // optional, for future category overview linking
+  kit?: string;
+  status: "ongoing" | "closed";
+  updatedAt: string; // ISO date string
+  steps: Step[];
 };
 
-type BuildPaintSession = {
-  id: string;
-  project_id: string;
-  minutes: number;
+const THEME = {
+  BG: "#E6FFFA",        // Tiffany-ish wash
+  CARD: "#FFFFFF",
+  BORDER: "rgba(12,34,51,0.10)",
+  NAVY: "#0C2233",
+  MUTED: "rgba(12,34,51,0.65)",
+  ACCENT: "#38D6C7",    // Tiffany
+  ACCENT_SOFT: "rgba(56,214,199,0.18)",
 };
 
-type ProjectWithStats = BuildPaintProject & {
-  totalMinutes: number;
-  totalHours: number;
-};
-
-const MOCK_PROJECTS: ProjectWithStats[] = [
+const MOCK_PROJECTS: Project[] = [
   {
-    id: "mock-1",
-    title: "Gunpla MG RX-78-2 (Ver. 3.0)",
-    category: "Gunpla & model kits",
-    status: "Active",
-    priority: "High",
-    notes: "Panel lining + decals this weekend.",
-    estimated_hours: 12,
-    totalMinutes: 180,
-    totalHours: 3,
+    id: "p1",
+    title: "Gunpla — RX-78 Build",
+    categoryId: "gunpla",
+    kit: "RG 1/144",
+    status: "ongoing",
+    updatedAt: "2026-01-11",
+    steps: [
+      { id: "s1", label: "Unbox & inventory parts", done: true },
+      { id: "s2", label: "Build (core frame)", done: true },
+      { id: "s3", label: "Build (armor)", done: false },
+      { id: "s4", label: "Panel lining", done: false },
+      { id: "s5", label: "Decals", done: false },
+      { id: "s6", label: "Top coat", done: false },
+      { id: "s7", label: "Photography + archive", done: false },
+    ],
   },
   {
-    id: "mock-2",
-    title: "Warhammer Kill Team squad",
-    category: "Warhammer minis",
-    status: "Backlog",
-    priority: "Medium",
-    notes: "Prime + zenithal highlight first.",
-    estimated_hours: 10,
-    totalMinutes: 0,
-    totalHours: 0,
+    id: "p2",
+    title: "Warhammer — Squad Paint",
+    categoryId: "warhammer",
+    kit: "10 minis",
+    status: "ongoing",
+    updatedAt: "2026-01-10",
+    steps: [
+      { id: "s1", label: "Clean mold lines", done: true },
+      { id: "s2", label: "Prime", done: true },
+      { id: "s3", label: "Basecoats", done: false },
+      { id: "s4", label: "Shade + highlights", done: false },
+      { id: "s5", label: "Basing", done: false },
+      { id: "s6", label: "Varnish", done: false },
+    ],
   },
   {
-    id: "mock-3",
-    title: "LEGO UCS starship",
-    category: "Bricks & kits",
-    status: "Completed",
-    priority: "Low",
-    notes: "Display-only; tracking for nostalgia.",
-    estimated_hours: 8,
-    totalMinutes: 480,
-    totalHours: 8,
+    id: "p3",
+    title: "LEGO — Display Rebuild",
+    categoryId: "lego",
+    kit: "Shelf set",
+    status: "closed",
+    updatedAt: "2025-12-28",
+    steps: [
+      { id: "s1", label: "Plan display layout", done: true },
+      { id: "s2", label: "Rebuild", done: true },
+      { id: "s3", label: "Lighting + photos", done: true },
+    ],
   },
 ];
 
-const statusColor = (status: string | null | undefined) => {
-  const s = (status || "").toLowerCase();
-  if (s === "active") return { bg: "#E7F6F8", text: "#19A7AE" };
-  if (s === "completed") return { bg: "#E6F7EF", text: "#0BA86C" };
-  if (s === "backlog") return { bg: "#F3F6F8", text: "#647589" };
-  return { bg: "#F3F6F8", text: "#647589" };
-};
+function pctDone(steps: Step[]) {
+  const total = steps.length || 1;
+  const done = steps.filter((s) => s.done).length;
+  return Math.round((done / total) * 100);
+}
 
-const priorityLabel = (priority: string | null | undefined) => {
-  const p = (priority || "").toLowerCase();
-  if (p === "high") return "High";
-  if (p === "medium") return "Medium";
-  if (p === "low") return "Low";
-  return "—";
-};
+function fmtUpdated(iso: string) {
+  // keep it simple + stable (no Intl)
+  return iso;
+}
 
-const BuildPaintProjectsScreen: React.FC = () => {
-  const colors = useAppColors();
-
-  const [state, setState] = useState<LoadState>("idle");
-  const [errorText, setErrorText] = useState<string | null>(null);
-  const [projects, setProjects] = useState<ProjectWithStats[]>([]);
-  const [loggingIds, setLoggingIds] = useState<Set<string>>(new Set());
-
-  const usingMock = useMemo(() => state === "error" || projects.length === 0, [
-    state,
-    projects.length,
-  ]);
-
-  useEffect(() => {
-    const load = async () => {
-      setState("loading");
-      setErrorText(null);
-
-      try {
-        const client: any = supabase as any;
-        if (!client || typeof client.from !== "function") {
-          // Supabase not wired → fall back to mock
-          setProjects(MOCK_PROJECTS);
-          setState("error");
-          setErrorText("Supabase client not configured – running on mock data.");
-          return;
-        }
-
-        const [projRes, sessRes] = await Promise.all([
-          client
-            .from("build_paint_projects")
-            .select(
-              "id, title, category, status, priority, notes, estimated_hours"
-            )
-            .order("created_at", { ascending: true }),
-          client
-            .from("build_paint_sessions")
-            .select("id, project_id, minutes"),
-        ]);
-
-        let projData: BuildPaintProject[] = [];
-        let sessData: BuildPaintSession[] = [];
-
-        if (projRes.error) {
-          console.warn(
-            "[BuildPaint] build_paint_projects error:",
-            projRes.error.message
-          );
-        } else if (Array.isArray(projRes.data)) {
-          projData = projRes.data as BuildPaintProject[];
-        }
-
-        if (sessRes.error) {
-          console.warn(
-            "[BuildPaint] build_paint_sessions error:",
-            sessRes.error.message
-          );
-        } else if (Array.isArray(sessRes.data)) {
-          sessData = sessRes.data as BuildPaintSession[];
-        }
-
-        if (projData.length === 0) {
-          // If no projects in DB, use mocks so the screen never feels empty
-          setProjects(MOCK_PROJECTS);
-          setState("loaded");
-          return;
-        }
-
-        const totals = new Map<string, number>();
-        for (const s of sessData) {
-          const current = totals.get(s.project_id) ?? 0;
-          const m = Number(s.minutes ?? 0);
-          if (!Number.isNaN(m)) {
-            totals.set(s.project_id, current + m);
-          }
-        }
-
-        const withStats: ProjectWithStats[] = projData.map((p) => {
-          const minutes = totals.get(p.id) ?? 0;
-          return {
-            ...p,
-            totalMinutes: minutes,
-            totalHours: minutes / 60,
-          };
-        });
-
-        setProjects(withStats);
-        setState("loaded");
-      } catch (err: any) {
-        console.warn("[BuildPaint] unexpected error:", err);
-        setProjects(MOCK_PROJECTS);
-        setState("error");
-        setErrorText(
-          err?.message || "Unexpected error while loading build/paint projects."
-        );
-      }
-    };
-
-    load();
-  }, []);
-
-  const handleLogSession = async (projectId: string, minutes: number = 30) => {
-    const client: any = supabase as any;
-    if (!client || typeof client.from !== "function") {
-      // No-op in demo mode
-      return;
-    }
-
-    setLoggingIds((prev) => new Set(prev).add(projectId));
-
-    try {
-      const { error } = await client
-        .from("build_paint_sessions")
-        .insert([{ project_id: projectId, minutes }]);
-
-      if (error) {
-        console.warn("[BuildPaint] log session error:", error.message);
-      } else {
-        // Update local state
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.id === projectId
-              ? {
-                  ...p,
-                  totalMinutes: p.totalMinutes + minutes,
-                  totalHours: (p.totalMinutes + minutes) / 60,
-                }
-              : p
-          )
-        );
-      }
-    } catch (err: any) {
-      console.warn("[BuildPaint] log session unexpected:", err);
-    } finally {
-      setLoggingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(projectId);
-        return next;
-      });
-    }
-  };
-
-  const loading = state === "loading";
-
-  const totalMinutesAll = projects.reduce(
-    (sum, p) => sum + (p.totalMinutes ?? 0),
-    0
+function ProgressBar({ value }: { value: number }) {
+  const v = Math.max(0, Math.min(100, value));
+  return (
+    <View style={styles.progressTrack}>
+      <View style={[styles.progressFill, { width: `${v}%` }]} />
+    </View>
   );
-  const totalHoursAll = totalMinutesAll / 60;
-  const activeCount = projects.filter(
-    (p) => (p.status || "").toLowerCase() === "active"
-  ).length;
-  const backlogCount = projects.filter(
-    (p) => (p.status || "").toLowerCase() === "backlog"
-  ).length;
-  const completedCount = projects.filter(
-    (p) => (p.status || "").toLowerCase() === "completed"
-  ).length;
+}
+
+export default function BuildPaintProjectsScreen() {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+
+  const [tab, setTab] = useState<"ongoing" | "closed">("ongoing");
+
+  const projects = useMemo(() => {
+    const all = [...MOCK_PROJECTS].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+    return all.filter((p) => p.status === tab);
+  }, [tab]);
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-          {/* Header */}
+    <SafeAreaView style={[styles.safe, { backgroundColor: THEME.BG }]} edges={["top", "left", "right"]}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingTop: Math.max(12, insets.top),
+          paddingBottom: 28,
+          paddingHorizontal: 16,
+        }}
+      >
+        {/* Header */}
         <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.headerLabel, { color: colors.muted }]}>
-              Projects
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            style={[styles.iconBtn, { borderColor: THEME.BORDER }]}
+          >
+            <Ionicons name="chevron-back" size={18} color={THEME.NAVY} />
+          </Pressable>
+
+          <View style={{ flex: 1, paddingHorizontal: 10 }}>
+            <Text style={[styles.hTitle, { color: THEME.NAVY }]} numberOfLines={1}>
+              Build & Paint Projects
             </Text>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Projects
-            </Text>
-            <Text style={[styles.headerSub, { color: colors.muted }]}>
-              Track backlog, active projects and completed builds, plus total
-              time spent. Logging here flows into your Analytics screen.
+            <Text style={[styles.hSub, { color: THEME.MUTED }]} numberOfLines={1}>
+              Track steps, notes, and completion.
             </Text>
           </View>
-          <View style={styles.headerIcon}>
-            <Ionicons
-              name="color-palette-outline"
-              size={20}
-              color={colors.accent}
-            />
-          </View>
+
+          <Pressable
+            onPress={() => {}}
+            accessibilityRole="button"
+            style={[styles.iconBtn, { borderColor: THEME.BORDER }]}
+          >
+            <Ionicons name="add" size={18} color={THEME.NAVY} />
+          </Pressable>
         </View>
 
-        
-          {/* Quick notes (local) */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.cardHeaderRow}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Quick notes</Text>
-              <Text style={[styles.cardHint, { color: colors.muted }]}>Local-only for now</Text>
-            </View>
-
-            <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18, marginTop: 6 }}>
-              Use this for paint notes and a simple progress checklist. Later we can attach it to a project row in Supabase.
-            </Text>
-
-            <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginTop: 12, marginBottom: 6 }}>
-              Notes
-            </Text>
-
-            <TextInput
-              style={{
-                borderRadius: 0,
-                borderWidth: 1,
-                borderColor: colors.border,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                fontSize: 13,
-                color: colors.text,
-                minHeight: 88,
-              }}
-              placeholder="Example: Warm ivory armor, purple OSL on blade, oils for skin…"
-              placeholderTextColor={colors.muted}
-              multiline
-              textAlignVertical="top"
-            />
-
-            <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginTop: 14, marginBottom: 6 }}>
-              Progress steps
-            </Text>
-
-            {[
-              "Planning and references gathered",
-              "Assembly / build finished",
-              "Primed / surface prepared",
-              "Base layer / basecoat finished",
-              "Shading / washes done",
-              "Details and highlights finished",
-              "Final touches & varnish / display ready",
-            ].map((label, idx) => (
-              <View key={idx} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}>
-                <View
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 9,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    marginRight: 10,
-                  }}
-                />
-                <Text style={{ flex: 1, fontSize: 13, color: colors.text }} numberOfLines={2}>
-                  {label}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-{/* Status banner */}
-        <View
-          style={[
-            styles.banner,
-            {
-              backgroundColor:
-                state === "error"
-                  ? "#FDECEC"
-                  : state === "loading"
-                  ? "#FFF7E6"
-                  : "#E7F6F8",
-              borderColor:
-                state === "error"
-                  ? "#D64545"
-                  : state === "loading"
-                  ? "#F59E0B"
-                  : "#19A7AE",
-            },
-          ]}
-        >
-          <View style={styles.bannerIconBox}>
-            {loading ? (
-              <ActivityIndicator size="small" color={colors.accent} />
-            ) : (
-              <Ionicons
-                name={
-                  state === "error"
-                    ? "warning-outline"
-                    : "checkmark-circle-outline"
-                }
-                size={18}
-                color={
-                  state === "error"
-                    ? "#D64545"
-                    : "#19A7AE"
-                }
-              />
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.bannerTitle, { color: colors.text }]}>
-              {usingMock
-                ? "Running on mock projects"
-                : "Projects & sessions loaded from Supabase"}
-            </Text>
-            <Text style={[styles.bannerBody, { color: colors.muted }]}>
-              When Supabase is configured and tables exist, this screen reads
-              real projects and time logs. Otherwise it falls back to safe demo
-              data.
-            </Text>
-            {errorText && (
-              <Text
-                style={[styles.bannerError, { color: "#D64545" }]}
-                numberOfLines={2}
-              >
-                {errorText}
-              </Text>
-            )}
-          </View>
+        {/* Segmented control */}
+        <View style={[styles.segment, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+          <Pressable
+            onPress={() => setTab("ongoing")}
+            style={[
+              styles.segmentBtn,
+              tab === "ongoing" ? { backgroundColor: THEME.ACCENT_SOFT } : null,
+            ]}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.segmentText, { color: THEME.NAVY }]}>Ongoing</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setTab("closed")}
+            style={[
+              styles.segmentBtn,
+              tab === "closed" ? { backgroundColor: THEME.ACCENT_SOFT } : null,
+            ]}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.segmentText, { color: THEME.NAVY }]}>Closed</Text>
+          </Pressable>
         </View>
 
-        {/* Summary strip */}
-        <View
-          style={[
-            styles.summaryCard,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              Active
-            </Text>
-            <Text style={[styles.summaryValue, { color: colors.text }]}>
-              {activeCount}
+        {/* Cards */}
+        {projects.length === 0 ? (
+          <View style={[styles.card, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}>
+            <Text style={[styles.emptyTitle, { color: THEME.NAVY }]}>No projects yet</Text>
+            <Text style={[styles.emptyBody, { color: THEME.MUTED }]}>
+              Create a project to track steps, progress, and notes.
             </Text>
           </View>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              Backlog
-            </Text>
-            <Text style={[styles.summaryValue, { color: colors.text }]}>
-              {backlogCount}
-            </Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              Completed
-            </Text>
-            <Text style={[styles.summaryValue, { color: "#0BA86C" }]}>
-              {completedCount}
-            </Text>
-          </View>
-        </View>
-
-        {/* Total time card */}
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>
-              Total build time
-            </Text>
-            <Text style={[styles.cardHint, { color: colors.muted }]}>
-              All sessions across all projects
-            </Text>
-          </View>
-          <Text style={[styles.totalTimeText, { color: colors.text }]}>
-            {totalMinutesAll.toLocaleString("en-US")} min{" "}
-            <Text style={styles.totalTimeSub}>
-              (~{totalHoursAll.toFixed(1)} hours)
-            </Text>
-          </Text>
-          <View style={styles.metaRow}>
-            <Ionicons
-              name="information-circle-outline"
-              size={14}
-              color={colors.muted}
-              style={{ marginRight: 4 }}
-            />
-            <Text style={[styles.metaText, { color: colors.muted }]}>
-              Each tap on &quot;Log 30 min&quot; creates a build_paint_sessions
-              row in Supabase (when configured).
-            </Text>
-          </View>
-        </View>
-
-        {/* Projects list */}
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>
-              Projects
-            </Text>
-            <Text style={[styles.cardHint, { color: colors.muted }]}>
-              Tap &quot;Log 30 min&quot; as you work
-            </Text>
-          </View>
-
-          {projects.map((p, idx) => {
-            const colorsStatus = statusColor(p.status);
-            const isLogging = loggingIds.has(p.id);
-            const displayHours = p.totalHours || 0;
-
+        ) : (
+          projects.map((p) => {
+            const pct = pctDone(p.steps);
+            const done = p.steps.filter((s) => s.done).length;
             return (
-              <View key={p.id}>
-                <View style={styles.projectRow}>
+              <Pressable
+                key={p.id}
+                onPress={() => router.push({ pathname: "/projects/[id]" as any, params: { id: p.id } } as any)}
+                style={[styles.card, { backgroundColor: THEME.CARD, borderColor: THEME.BORDER }]}
+                accessibilityRole="button"
+              >
+                <View style={styles.cardTop}>
+                  <View style={[styles.badge, { backgroundColor: THEME.ACCENT_SOFT }]}>
+                    <Ionicons name="hammer-outline" size={14} color={THEME.NAVY} style={{ marginRight: 6 }} />
+                    <Text style={[styles.badgeText, { color: THEME.NAVY }]}>{pct}%</Text>
+                  </View>
+
                   <View style={{ flex: 1 }}>
-                    <Text
-                      style={[styles.projectTitle, { color: colors.text }]}
-                      numberOfLines={1}
-                    >
+                    <Text style={[styles.cardTitle, { color: THEME.NAVY }]} numberOfLines={1}>
                       {p.title}
                     </Text>
-                    <Text
-                      style={[styles.projectMetaTop, { color: colors.muted }]}
-                      numberOfLines={1}
-                    >
-                      {p.category || "Build / paint"}
+                    <Text style={[styles.cardSub, { color: THEME.MUTED }]} numberOfLines={1}>
+                      {p.kit ? `${p.kit} • ` : ""}{done}/{p.steps.length} steps • Updated {fmtUpdated(p.updatedAt)}
                     </Text>
-                    <View style={styles.projectMetaRow}>
-                      <View
-                        style={[
-                          styles.statusPill,
-                          { backgroundColor: colorsStatus.bg },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.statusPillText,
-                            { color: colorsStatus.text },
-                          ]}
-                        >
-                          {p.status || "Backlog"}
-                        </Text>
-                      </View>
-                      <Text
-                        style={[
-                          styles.projectMetaBottom,
-                          { color: colors.muted },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        Priority: {priorityLabel(p.priority)} · Logged:{" "}
-                        {displayHours.toFixed(1)}h
-                      </Text>
-                    </View>
-                    {p.notes ? (
-                      <Text
-                        style={[styles.projectNotes, { color: colors.muted }]}
-                        numberOfLines={2}
-                      >
-                        {p.notes}
-                      </Text>
-                    ) : null}
                   </View>
 
-                  <View style={styles.projectRight}>
-                    <Pressable
-                      onPress={() => handleLogSession(p.id, 30)}
-                      disabled={isLogging || usingMock}
-                      style={[
-                        styles.logButton,
-                        {
-                          backgroundColor: usingMock
-                            ? "#F3F6F8"
-                            : colors.accent,
-                          opacity: isLogging ? 0.7 : 1,
-                        },
-                      ]}
-                    >
-                      {isLogging ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <>
-                          <Ionicons
-                            name="time-outline"
-                            size={14}
-                            color={usingMock ? "#647589" : "#FFFFFF"}
-                          />
-                          <Text
-                            style={[
-                              styles.logButtonText,
-                              {
-                                color: usingMock ? "#647589" : "#FFFFFF",
-                              },
-                            ]}
-                          >
-                            Log 30 min
-                          </Text>
-                        </>
-                      )}
-                    </Pressable>
-                    {usingMock && (
-                      <Text style={styles.demoTag}>
-                        Demo only
-                      </Text>
-                    )}
-                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={THEME.MUTED} />
                 </View>
-                {idx < projects.length - 1 && (
-                  <View
-                    style={[
-                      styles.separator,
-                      { backgroundColor: colors.border },
-                    ]}
-                  />
-                )}
-              </View>
-            );
-          })}
-        </View>
 
-        <View style={{ height: 24 }} />
+                <View style={{ marginTop: 10 }}>
+                  <ProgressBar value={pct} />
+                </View>
+              </Pressable>
+            );
+          })
+        )}
       </ScrollView>
-    </SafeAreaView>
+    
+      {/* Floating + (New project) */}
+      <Link href="/projects/new" asChild>
+        <Pressable
+          accessibilityRole="button"
+          style={{
+            position: "absolute",
+            right: 16,
+            bottom: 16,
+            width: 54,
+            height: 54,
+            borderRadius: 27,
+            backgroundColor: "#0C2233",
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: "#D6E4EC",
+          }}
+        >
+          <Ionicons name="add" size={26} color="#FFFFFF" />
+        </Pressable>
+      </Link>
+
+</SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  scroll: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  headerLabel: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    fontWeight: "600",
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  headerSub: {
-    fontSize: 12,
-    marginTop: 4,
-    maxWidth: 280,
-  },
-  headerIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D6E4EC",
-  },
-  banner: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-  bannerIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
-  },
-  bannerTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  bannerBody: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  bannerError: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  summaryCard: {
-  borderWidth: 1,
-  borderRadius: 0,
-  paddingVertical: 12,
-  paddingHorizontal: 14,
-  borderWidth: 1,
-  borderRadius: 0,
-  paddingVertical: 12,
-  paddingHorizontal: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-  },
-  summaryItem: { flex: 1 },
-  summaryLabel: {
-    fontSize: 12,
-  },
-  summaryValue: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  card: {
-  borderWidth: 1,
-  borderRadius: 0,
-  padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 16,
-  },
-  cardHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  cardHint: {
-    fontSize: 11,
-  },
-  totalTimeText: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 4,
-  },
-  totalTimeSub: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  metaText: {
-    fontSize: 11,
-    flex: 1,
-  },
-  metricsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 6,
-  },
-  projectRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingVertical: 8,
-  },
-  projectTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  projectMetaTop: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  projectMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  statusPill: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginRight: 8,
-  },
-  statusPillText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  projectMetaBottom: {
-    fontSize: 11,
-  },
-  projectNotes: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-  projectRight: {
-    alignItems: "flex-end",
-    marginLeft: 8,
-  },
-  logButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    gap: 4,
-  },
-  logButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  demoTag: {
-    marginTop: 4,
-    fontSize: 10,
-    color: "#647589",
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    marginVertical: 6,
-  },
-});
+  safe: { backgroundColor: "#F2F4F7", flex: 1},
 
-export default BuildPaintProjectsScreen;
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+
+  hTitle: { fontSize: 16, fontWeight: "900" },
+  hSub: { marginTop: 2, fontSize: 12, fontWeight: "700" },
+
+  segment: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 10,
+  },
+  segmentBtn: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: "center" },
+  segmentText: { fontSize: 12, fontWeight: "900" },
+
+  card: { borderWidth: 1, borderRadius: 16, padding: 12, marginBottom: 10 },
+  cardTop: { flexDirection: "row", alignItems: "center", gap: 10 },
+
+  badge: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  badgeText: { fontSize: 12, fontWeight: "900" },
+
+  cardTitle: { fontSize: 14, fontWeight: "900" },
+  cardSub: { marginTop: 2, fontSize: 12, fontWeight: "700" },
+
+  progressTrack: {
+    height: 10,
+    borderRadius: 999,
+    overflow: "hidden",
+    backgroundColor: "rgba(12,34,51,0.08)",
+  },
+  progressFill: { height: 10, borderRadius: 999, backgroundColor: "#38D6C7" },
+
+  emptyTitle: { fontSize: 14, fontWeight: "900" },
+  emptyBody: { marginTop: 6, fontSize: 12, fontWeight: "700", lineHeight: 18 },
+});

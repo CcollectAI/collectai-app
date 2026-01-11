@@ -67,8 +67,8 @@ export default function CategoriesHub() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  container: { paddingHorizontal: 16 },
+  safe: { backgroundColor: '#FFFFFF', flex: 1},
+  container: { backgroundColor: '#FFFFFF', paddingHorizontal: 16},
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   iconBtn: { width: 36, height: 36, borderRadius: 999, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   headerTitle: { fontSize: 16, fontWeight: "900" },

@@ -7,6 +7,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { getUserById } from "@/data/users";
 import { getCategoryById } from "@/data/categories";
 import { getConnectionStatus, getLocalUserId } from "@/lib/connections";
+import { typography } from "@/ui/typography";
 
 type AnyUser = {
   id: string;
@@ -376,32 +377,32 @@ const styles = StyleSheet.create({
 
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   iconBtn: { width: 36, height: 36, borderRadius: 999, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 16, fontWeight: "900" },
-  headerSub: { marginTop: 2, fontSize: 11, fontWeight: "600" },
+  headerTitle: { ...typography.h2 },
+  headerSub: { ...typography.meta, marginTop: 2 },
 
   card: { borderRadius: 16, borderWidth: 1, padding: 12, marginBottom: 10 },
 
   heroRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontSize: 16, fontWeight: "900" },
-  title: { fontSize: 16, fontWeight: "900" },
+  title: { ...typography.h1 },
 
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
   chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1 },
   chipText: { fontSize: 12, fontWeight: "800" },
   chipTextMuted: { fontSize: 12, fontWeight: "800" },
 
-  body: { marginTop: 10, fontSize: 12, lineHeight: 17, fontWeight: "600" },
+  body: { ...typography.body },
   bodyTight: { fontSize: 12, lineHeight: 16, fontWeight: "600", flex: 1 },
 
   ctaRow: { marginTop: 12, flexDirection: "row", alignItems: "center", gap: 8 },
   primaryBtn: { flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center", flexDirection: "row" },
-  primaryText: { color: "#fff", fontSize: 12, fontWeight: "900" },
+  primaryText: { ...typography.label, color: "#ffffff" },
   secondaryBtn: { paddingVertical: 10, paddingHorizontal: 10, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center", flexDirection: "row" },
-  secondaryText: { fontSize: 12, fontWeight: "800" },
+  secondaryText: { ...typography.label },
 
   sectionHead: {},
-  sectionTitle: { fontSize: 13, fontWeight: "900" },
+  sectionTitle: { ...typography.h3 },
   sectionHint: { marginTop: 6, fontSize: 11, fontWeight: "600" },
 
   metricsGrid: { marginTop: 12, flexDirection: "row", flexWrap: "wrap", gap: 10 },

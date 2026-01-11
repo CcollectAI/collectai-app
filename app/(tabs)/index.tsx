@@ -8,6 +8,7 @@ import { useWatchlist } from "@/state/watchlistStore";
 import { useRouter, Link } from "expo-router";
 
 import { usePortfolioWatchlist } from "src/ui/usePortfolioWatchlist";
+import { typography } from "@/ui/typography";
 // Theme: use app theme when available; fallback is safe.
 let themeApi: any = null;
 try {
@@ -494,7 +495,7 @@ const polylinePoints = useMemo(() => {
         </View>
 
         {/* Clear analytics ingress */}
-        <Link href="/portfolio-analytics" asChild>
+        <Link href="/analytics" asChild>
           <Pressable style={styles.ctaRow}>
             <View style={styles.ctaLeft}>
               <Ionicons name="analytics-outline" size={18} color={vars.text} />
@@ -638,7 +639,7 @@ function makeStyles(v: ReturnType<typeof getThemeVars>) {
       marginTop: 6,
       marginBottom: 10,
     },
-    sectionTitle: { fontSize: 16, fontWeight: "700", color: v.text },
+    sectionTitle: { ...typography.h3 },
     sectionRight: { fontSize: 12, fontWeight: "600", color: v.muted },
 
     listCard: {

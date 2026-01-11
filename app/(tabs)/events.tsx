@@ -5,6 +5,7 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { EVENTS, CollectorsEvent } from '@/data/events';
+import { typography } from "@/ui/typography";
 
 const DARK = {
   BG: '#0f172a',

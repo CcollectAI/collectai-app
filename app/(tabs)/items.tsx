@@ -733,42 +733,47 @@ const ItemsScreen: React.FC = () => {
           ))
         )}
       
-        {/* Supabase-backed items view (beta) */}
-        <View
-          style={{
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "#D6E4EC",
-            backgroundColor: "#FFFFFF",
-            padding: 14,
-            marginTop: 12,
-            marginBottom: 24,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "600",
-              color: "#0C2233",
-              marginBottom: 4,
-            }}
+        {/* Projects ingress (pro) */}
+        <Link href="/build-paint-projects" asChild>
+          <Pressable
+            accessibilityRole="button"
+            style={[
+              styles.projectsIngress,
+              {
+                borderColor: "#D6E4EC",
+                backgroundColor: "#FFFFFF",
+                marginTop: 12,
+                marginBottom: 24,
+              },
+            ]}
           >
-            
-          </Text>
-          <Text
-            style={{
-              fontSize: 12,
-              color: "#647589",
-              marginBottom: 8,
-            }}
-          >
-            Open a simple view backed directly by your Supabase items table.
-          </Text>
+            <View style={styles.projectsIngressLeft}>
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(56,214,199,0.18)",
+                }}
+              >
+                <Ionicons name="brush-outline" size={18} color="#0C2233" />
+              </View>
 
-          <Link href="/build-paint-projects">
-            <Text style={{ fontWeight: "800", fontSize: 14 }}>Projects</Text><Text style={{ marginTop: 4, fontSize: 12, opacity: 0.7 }}>Project progress & roadmap</Text>
-          </Link>
-        </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.projectsIngressText, { color: "#0C2233" }]} numberOfLines={1}>
+                  Track build & paint projects
+                </Text>
+                <Text style={{ marginTop: 4, fontSize: 12, color: "#647589" }} numberOfLines={2}>
+                  Steps, notes, % completion — ongoing & finished projects in one place
+                </Text>
+              </View>
+            </View>
+
+            <Ionicons name="chevron-forward" size={18} color="#647589" />
+          </Pressable>
+        </Link>
 
 </ScrollView>
     </SafeAreaView>
@@ -784,7 +789,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderRadius: 0,
+    borderRadius: 12,
   },
   projectsIngressLeft: {
     flexDirection: "row",
