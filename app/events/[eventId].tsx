@@ -36,17 +36,21 @@ function pillForKind(kind: EventKind) {
   return { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.35)", icon: "people-outline" as const };
 }
 
-const AvatarSmall: React.FC<{ name: string; color?: string }> = ({ name, color }) => {
+const AvatarSmall: React.FC<{ name?: string; color?: string }> = ({ name, color }) => {
+  const safeName = (name ?? "").trim();
   const initials =
-    name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "?";
+    safeName.length > 0
+      ? safeName
+          .split(" ")
+          .filter(Boolean)
+          .map((part) => part[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase()
+      : "?";
 
   return (
-    <View style={[styles.avatar, { backgroundColor: color ?? "rgba(56,214,199,0.35)" }]}>
+    <View style={[styles.avatar, { backgroundColor: color ?? "rgba(14,165,233,0.35)" }]}>
       <Text style={styles.avatarText}>{initials}</Text>
     </View>
   );
@@ -132,6 +136,7 @@ export default function EventDetailScreen() {
 
   return (
     <ScrollView
+        contentInsetAdjustmentBehavior={Platform.OS === "ios" ? "automatic" : undefined}
       style={{ flex: 1, backgroundColor: BG }}
       contentContainerStyle={styles.container}
     >
