@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { EVENTS, CollectorsEvent, EventKind } from "@/data/events";
 import { getCategoryById } from "@/data/categories";
 import { getUserById } from "@/data/users";
+import { typography } from "@/ui/typography";
 
 const BG = "#0b1220";           // deep slate
 const CARD = "#0f172a";         // slate card
@@ -445,17 +446,7 @@ const styles = StyleSheet.create({
   },
 
   heroMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
-  metaChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-    backgroundColor: CARD_2,
-    borderWidth: 1,
-    borderColor: BORDER,
-    maxWidth: "100%",
-  },
+  metaChip: { ...typography.body, marginTop: 12 },
   metaChipText: { color: TEXT, fontSize: 12, fontWeight: "800" },
 
   primaryCta: {
@@ -485,7 +476,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  sectionTitle: { fontSize: 14, fontWeight: "900", color: TEXT },
+  sectionTitle: { ...typography.h3 },
   sectionBody: {},
 
   badge: {
@@ -517,8 +508,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  personName: { color: TEXT, fontSize: 13, fontWeight: "900" },
-  personMeta: { color: MUTED, fontSize: 12, fontWeight: "800", marginTop: 2 },
+  personName: { ...typography.h3 },
+  personMeta: { ...typography.meta, marginTop: 2 },
 
   secondaryBtn: {
     flexDirection: "row",
@@ -534,18 +525,8 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { color: TEXT, fontSize: 12, fontWeight: "900" },
 
-  attendeeWrap: { gap: 10 },
-  attendeeChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-    backgroundColor: CARD_2,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
+  attendeeWrap: { ...typography.body, marginTop: 12 },
+  attendeeChip: { ...typography.body, marginTop: 12 },
   attendeeName: { color: TEXT, fontSize: 12, fontWeight: "900", flex: 1 },
 
   avatar: {
