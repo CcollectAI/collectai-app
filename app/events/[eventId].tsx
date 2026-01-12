@@ -13,7 +13,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { EVENTS, CollectorsEvent, EventKind } from "@/data/events";
 import { getCategoryById } from "@/data/categories";
 import { getUserById } from "@/data/users";
-import { typography } from "@/ui/typography";
 
 const BG = "#0b1220";           // deep slate
 const CARD = "#0f172a";         // slate card
@@ -37,21 +36,17 @@ function pillForKind(kind: EventKind) {
   return { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.35)", icon: "people-outline" as const };
 }
 
-const AvatarSmall: React.FC<{ name?: string; color?: string }> = ({ name, color }) => {
-  const safeName = (name ?? "").trim();
+const AvatarSmall: React.FC<{ name: string; color?: string }> = ({ name, color }) => {
   const initials =
-    safeName.length > 0
-      ? safeName
-          .split(" ")
-          .filter(Boolean)
-          .map((part) => part[0])
-          .join("")
-          .slice(0, 2)
-          .toUpperCase()
-      : "?";
+    name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?";
 
   return (
-    <View style={[styles.avatar, { backgroundColor: color ?? "rgba(14,165,233,0.35)" }]}>
+    <View style={[styles.avatar, { backgroundColor: color ?? "rgba(56,214,199,0.35)" }]}>
       <Text style={styles.avatarText}>{initials}</Text>
     </View>
   );
@@ -80,11 +75,6 @@ const Section: React.FC<{ title: string; icon: any; right?: React.ReactNode; chi
 export default function EventDetailScreen() {
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const router = useRouter();
-  const openCategoryOverview = (categoryId?: string) => {
-    if (!categoryId) return;
-    router.push({ pathname: "/categories/[categoryId]" as any, params: { categoryId: String(categoryId) } } as any);
-  };
-
 
   const event: CollectorsEvent | undefined = useMemo(
     () => EVENTS.find((e) => e.id === eventId),
@@ -142,7 +132,6 @@ export default function EventDetailScreen() {
 
   return (
     <ScrollView
-        contentInsetAdjustmentBehavior={Platform.OS === "ios" ? "automatic" : undefined}
       style={{ flex: 1, backgroundColor: BG }}
       contentContainerStyle={styles.container}
     >
@@ -223,29 +212,15 @@ export default function EventDetailScreen() {
           ) : null}
         </View>
 
-        {/* CTAs */}
-        <View style={styles.ctaRow}>
-          {event.onlineUrl ? (
-            <Pressable onPress={openExternal} style={styles.primaryCta} accessibilityRole="button">
-              <Ionicons name="open-outline" size={16} color={NAVY} />
-              <Text style={styles.primaryCtaText}>
-                {event.kind === "stream" ? "Open stream" : "Open link"}
-              </Text>
-            </Pressable>
-          ) : null}
-
-          {event.categoryId ? (
-            <Pressable
-              onPress={() => openCategoryOverview(event.categoryId)}
-              style={styles.secondaryBtn}
-              accessibilityRole="button"
-            >
-              <Ionicons name="storefront-outline" size={16} color={NAVY} style={{ marginRight: 6 }} />
-              <Text style={styles.secondaryBtnText}>Category overview</Text>
-            </Pressable>
-          ) : null}
-        </View>
-</View>
+        {event.onlineUrl ? (
+          <Pressable onPress={openExternal} style={styles.primaryCta} accessibilityRole="button">
+            <Ionicons name="open-outline" size={16} color={NAVY} />
+            <Text style={styles.primaryCtaText}>
+              {event.kind === "stream" ? "Open stream" : "Open link"}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       {/* Professional collector sections */}
       <Section
@@ -465,16 +440,18 @@ const styles = StyleSheet.create({
   },
 
   heroMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
-  metaChip: { ...typography.body, marginTop: 12 },
-  metaChipText: { color: TEXT, fontSize: 12, fontWeight: "800" },
-
-  ctaRow: {
-    marginTop: 12,
+  metaChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    flexWrap: "wrap",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: CARD_2,
+    borderWidth: 1,
+    borderColor: BORDER,
+    maxWidth: "100%",
   },
+  metaChipText: { color: TEXT, fontSize: 12, fontWeight: "800" },
 
   primaryCta: {
     marginTop: 12,
@@ -503,7 +480,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  sectionTitle: { ...typography.h3 },
+  sectionTitle: { fontSize: 14, fontWeight: "900", color: TEXT },
   sectionBody: {},
 
   badge: {
@@ -535,8 +512,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  personName: { ...typography.h3 },
-  personMeta: { ...typography.meta, marginTop: 2 },
+  personName: { color: TEXT, fontSize: 13, fontWeight: "900" },
+  personMeta: { color: MUTED, fontSize: 12, fontWeight: "800", marginTop: 2 },
 
   secondaryBtn: {
     flexDirection: "row",
@@ -552,8 +529,18 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { color: TEXT, fontSize: 12, fontWeight: "900" },
 
-  attendeeWrap: { ...typography.body, marginTop: 12 },
-  attendeeChip: { ...typography.body, marginTop: 12 },
+  attendeeWrap: { gap: 10 },
+  attendeeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: CARD_2,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
   attendeeName: { color: TEXT, fontSize: 12, fontWeight: "900", flex: 1 },
 
   avatar: {
