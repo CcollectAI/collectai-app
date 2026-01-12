@@ -45,3 +45,16 @@ ops/logs/
 *.bak_*
 *.pre_restore_*
 *.gz
+
+# --- local backups / scratch ---
+*.bak
+*.bak.*
+*.bak_*
+*.gz
+*.log
+
+# local artifacts / logs
+artifacts/**/active
+artifacts/**/[0-9]*/
+logs/
+ops/logs/
