@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import supabase from "@/lib/supabaseClient";
 import { EVENTS, CollectorsEvent, EventKind } from "@/data/events";
 import { getCategoryById } from "@/data/categories";
 import { getUserById } from "@/data/users";
@@ -37,13 +38,121 @@ function pillForKind(kind: EventKind) {
 }
 
 const AvatarSmall: React.FC<{ name: string; color?: string }> = ({ name, color }) => {
+  const safeName =
+
+  /* SUPABASE_FOLLOW_ATTEND_V1 */
+  // If your DB uses different column names, change ONLY these:
+  const COL_EVENT_ID = "event_id";
+  const COL_DROP_ID = "drop_id";
+  const COL_USER_ID = "user_id";
+
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isAttending, setIsAttending] = useState(false);
+  const [savingAction, setSavingAction] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUserFlags() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if (!uid) return;
+
+        // Follow state (drops)
+        const f = await supabase
+          .from("drop_follows")
+          .select("id")
+          .eq(COL_USER_ID, uid)
+          .eq(COL_DROP_ID, event.id)
+          .maybeSingle();
+
+        // Attend state (events)
+        const a = await supabase
+          .from("event_attendees")
+          .select("id")
+          .eq(COL_USER_ID, uid)
+          .eq(COL_DROP_ID, event.id)
+          .maybeSingle();
+
+        if (!mounted) return;
+        setIsFollowing(!!f?.data?.id);
+        setIsAttending(!!a?.data?.id);
+      } catch (_e) {
+        // silent: keep UI usable even if tables differ
+      }
+    }
+
+    loadUserFlags();
+    return () => { mounted = false; };
+  }, [event?.id]);
+
+  async function toggleFollow() {
+    try {
+      setSavingAction(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+      if (!uid) throw new Error("Not signed in");
+
+      if (isFollowing) {
+        const { error } = await supabase
+          .from("drop_follows")
+          .delete()
+          .eq(COL_USER_ID, uid)
+          .eq(COL_DROP_ID, event.id);
+        if (error) throw error;
+        setIsFollowing(false);
+      } else {
+        const { error } = await supabase
+          .from("drop_follows")
+          .insert({ [COL_USER_ID]: uid, [COL_DROP_ID]: event.id });
+        if (error) throw error;
+        setIsFollowing(true);
+      }
+    } catch (e) {
+      Alert.alert("Follow error", e?.message ? String(e.message) : String(e));
+    } finally {
+      setSavingAction(false);
+    }
+  }
+
+  async function toggleAttend() {
+    try {
+      setSavingAction(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+      if (!uid) throw new Error("Not signed in");
+
+      if (isAttending) {
+        const { error } = await supabase
+          .from("event_attendees")
+          .delete()
+          .eq(COL_USER_ID, uid)
+          .eq(COL_DROP_ID, event.id);
+        if (error) throw error;
+        setIsAttending(false);
+      } else {
+        const { error } = await supabase
+          .from("event_attendees")
+          .insert({ [COL_USER_ID]: uid, [COL_EVENT_ID]: event.id });
+        if (error) throw error;
+        setIsAttending(true);
+      }
+    } catch (e) {
+      Alert.alert("Attend error", e?.message ? String(e.message) : String(e));
+    } finally {
+      setSavingAction(false);
+    }
+  }
+    typeof name === "string" && name.trim().length > 0 ? name.trim() : "?";
+
   const initials =
-    name
-      .split(" ")
-      .map((part) => part[0])
+    safeName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => (part?.[0] ? part[0].toUpperCase() : ""))
       .join("")
-      .slice(0, 2)
-      .toUpperCase() || "?";
+      .slice(0, 2) || "?";
 
   return (
     <View style={[styles.avatar, { backgroundColor: color ?? "rgba(56,214,199,0.35)" }]}>
@@ -71,6 +180,7 @@ const Section: React.FC<{ title: string; icon: any; right?: React.ReactNode; chi
     </View>
   );
 };
+
 
 export default function EventDetailScreen() {
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
@@ -156,7 +266,6 @@ export default function EventDetailScreen() {
             <Ionicons name={pill.icon} size={14} color={TEXT} style={{ marginRight: 6, opacity: 0.9 }} />
             <Text style={styles.kindPillText}>{kindLabel[event.kind]}</Text>
           </View>
-
           <View style={styles.heroActions}>
             <Pressable
               onPress={() => setAlertsOn((v) => !v)}
@@ -286,6 +395,46 @@ export default function EventDetailScreen() {
             No host is linked yet. Add a hostUserId to the event data to enable DMs.
           </Text>
         )}
+
+        
+        {/* Follow / Attend (Supabase) */}
+        {event.kind === "collection_drop" ? (
+          <Pressable
+            style={[styles.actionCard, isFollowing ? styles.actionCardOn : null]}
+            onPress={toggleFollow}
+            disabled={savingAction}
+            accessibilityRole="button"
+          >
+            <Ionicons
+              name={isFollowing ? "heart" : "heart-outline"}
+              size={18}
+              color={isFollowing ? PRIMARY : TEXT}
+            />
+            <Text style={styles.actionTitle}>{isFollowing ? "Following" : "Follow drop"}</Text>
+            <Text style={styles.actionBody}>
+              {isFollowing ? "You’ll see updates + alerts." : "Track this drop in your feed."}
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {event.kind === "meetup" ? (
+          <Pressable
+            style={[styles.actionCard, isAttending ? styles.actionCardOn : null]}
+            onPress={toggleAttend}
+            disabled={savingAction}
+            accessibilityRole="button"
+          >
+            <Ionicons
+              name={isAttending ? "checkmark-circle" : "checkmark-circle-outline"}
+              size={18}
+              color={isAttending ? PRIMARY : TEXT}
+            />
+            <Text style={styles.actionTitle}>{isAttending ? "Attending" : "Attend (meetup)"}</Text>
+            <Text style={styles.actionBody}>
+              {isAttending ? "You’re on the attendee list." : "Opt in so others can see you’re going."}
+            </Text>
+          </Pressable>
+        ) : null}
 
         <View style={{ height: 10 }} />
 
