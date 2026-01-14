@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, {useMemo, useState, useEffect} from "react";
+
 import {
   View,
   Text,
@@ -14,6 +15,16 @@ import supabase from "@/lib/supabaseClient";
 import { EVENTS, CollectorsEvent, EventKind } from "@/data/events";
 import { getCategoryById } from "@/data/categories";
 import { getUserById } from "@/data/users";
+
+// TEMP STABILITY GUARDS (remove once EventDetailScreen state is cleaned up)
+const isFollowing: boolean = false;
+
+// TEMP STABILITY GUARDS (remove once EventDetailScreen is cleaned up)
+const savingAction: boolean = false;
+const toggleAttend = () => {};
+
+// TEMP STABILITY GUARD: prevents runtime ReferenceError while file is being cleaned up
+const isAttending: boolean = false;
 
 const BG = "#0b1220";           // deep slate
 const CARD = "#0f172a";         // slate card
@@ -38,13 +49,8 @@ function pillForKind(kind: EventKind) {
 }
 
 const AvatarSmall: React.FC<{ name: string; color?: string }> = ({ name, color }) => {
-  const safeName =
+  const safeName = (name || "").trim();
 
-  /* SUPABASE_FOLLOW_ATTEND_V1 */
-  // If your DB uses different column names, change ONLY these:
-  const COL_EVENT_ID = "event_id";
-  const COL_DROP_ID = "drop_id";
-  const COL_USER_ID = "user_id";
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [isAttending, setIsAttending] = useState(false);
@@ -229,6 +235,9 @@ export default function EventDetailScreen() {
   const pill = pillForKind(event.kind);
 
   const openExternal = async () => {
+
+  // RSVP state (stops runtime ReferenceError; wire persistence later)
+  const [isAttending, setIsAttending] = useState(false);
     if (!event.onlineUrl) return;
     try {
       await Linking.openURL(event.onlineUrl);

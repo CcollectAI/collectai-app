@@ -410,15 +410,7 @@ export default function AnalyticsScreen() {
 }
 
 const styles = StyleSheet.create({
-
-  // --- Typography (match Items tab baseline) ---
-  h1: { fontSize: 18, fontWeight: "900" },
-  h2: { fontSize: 14, fontWeight: "900" },
-  body: { fontSize: 12, fontWeight: "600", lineHeight: 17 },
-  meta: { fontSize: 11, fontWeight: "600" },
-safe: { flex: 1,
-    backgroundColor: "#F2F4F7"
-  },
+  safe: { flex: 1 },
 
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   iconBtn: {
@@ -461,7 +453,8 @@ safe: { flex: 1,
   metricValue: { marginTop: 6, fontSize: 14, fontWeight: "900" },
 
   note: { fontSize: 12, fontWeight: "700", lineHeight: 18 },
-  sectionTitle: { fontSize: 14, fontWeight: "900" },
+
+  sectionTitle: { fontSize: 13, fontWeight: "900" },
   moverHeader: { fontSize: 11, fontWeight: "900" },
   moverRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
   moverName: { flex: 1, fontSize: 12, fontWeight: "800" },
