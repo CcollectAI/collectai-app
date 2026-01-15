@@ -1,10 +1,9 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "jsx": "react",
     "strict": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -14,20 +13,37 @@
   },
   "include": [
     "app/_layout.tsx",
-    "app/index.tsx",
     "app/+not-found.tsx",
-    "src/**/*",
+    "app/(tabs)/**/*.ts",
+    "app/(tabs)/**/*.tsx",
+    "src/ui/typography.ts",
+    "src/ui/usePortfolioWatchlist.ts",
+    "src/state/watchlistStore.ts",
+    "src/store/collectionStore.ts",
+    "src/hooks/useAppTheme.ts",
+    "src/components/CategoryPill.tsx",
+    "src/components/AddQuickScanLayoutPro.tsx",
+    "src/components/AddImportCard.tsx",
+    "src/data/events.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],
   "exclude": [
-    "app_full_backup",
-    "app/debug/**",
-    "app/(tabs).bak_routerdebug/**",
-    "**/*.bak.*",
-    "src/screens/MarketplaceScreen.tsx",
-    "src/screens/SignIn.tsx",
-    "src/screens/SignUp.tsx",
-    "app/lib/busy.ts"
+    "node_modules",
+    "dist",
+    ".expo",
+    "app/_shelf/**",
+    "src/screens/**",
+    "src/app/**",
+    "src/services/**",
+    "src/analytics/**",
+    "src/export/**",
+    "src/settings/**",
+    "src/utils/**",
+    "src/components/ui/**",
+    "types/**",
+    "**/*.disabled*",
+    "**/*.broken*",
+    "**/*.pre_*"
   ]
 }

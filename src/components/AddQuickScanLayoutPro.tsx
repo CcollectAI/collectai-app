@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAppTheme } from "@/theme";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 type Props = {
   name: string;
@@ -37,7 +37,7 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      style={{ flex: 1, backgroundColor: theme.colors.bg }}
       contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
     >
       {/* QuickScan hero */}
@@ -53,7 +53,7 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
           onPress={onQuickScan}
           style={[
             styles.primaryButton,
-            { backgroundColor: theme.colors.primary },
+            { backgroundColor: theme.colors.brand.base },
           ]}
         >
           <Ionicons name="camera-outline" size={18} color="#fff" />
@@ -131,7 +131,7 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
           onPress={onSave}
           style={[
             styles.primaryButton,
-            { backgroundColor: theme.colors.primary, marginTop: 12 },
+            { backgroundColor: theme.colors.brand.base, marginTop: 12 },
           ]}
         >
           <Text style={styles.primaryButtonText}>Save to collection</Text>

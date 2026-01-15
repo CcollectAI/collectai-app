@@ -1,3 +1,4 @@
+import type { CollectionItem } from "@/store/collectionStore";
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { Link } from 'expo-router';
@@ -25,7 +26,7 @@ type Item = {
   notes?: string;
 };
 
-const MOCK_ITEMS: Item[] = [
+const MOCK_ITEMS: CollectionItem[] = [
   {
     id: "1",
     name: "Charizard GX (Alt Art)",
@@ -113,8 +114,8 @@ const ItemsScreen: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const [backendItems, setBackendItems] = useState<Item[]>([]);
-  const [supaItems, setSupaItems] = useState<Item[]>([]);
+  const [backendItems, setBackendItems] = useState<CollectionItem[]>([]);
+  const [supaItems, setSupaItems] = useState<CollectionItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,7 +133,7 @@ const ItemsScreen: React.FC = () => {
         const data: any[] = await res.json();
         if (!Array.isArray(data) || cancelled) return;
 
-        const mapped: Item[] = data
+        const mapped: CollectionItem[] = data
           .map((it: any) => {
             if (!it || typeof it.id !== "string" || typeof it.name !== "string") {
               return null;
@@ -176,7 +177,7 @@ const ItemsScreen: React.FC = () => {
             };
             return item;
           })
-          .filter(Boolean) as Item[];
+          .filter(Boolean) as CollectionItem[];
 
         setBackendItems(mapped);
       } catch (e) {
@@ -241,7 +242,7 @@ const ItemsScreen: React.FC = () => {
       base = base.filter(
         (item) =>
           item.name.toLowerCase().includes(q) ||
-          item.collectionName.toLowerCase().includes(q) ||
+          ((item.collectionName ?? "").toLowerCase()).includes(q) ||
           item.category.toLowerCase().includes(q)
       );
     }
@@ -259,7 +260,7 @@ const ItemsScreen: React.FC = () => {
       }
     });
 
-    const groups: { category: string; items: Item[]; total: number }[] = [];
+    const groups: { category: string; items: CollectionItem[]; total: number }[] = [];
     for (const item of base) {
       let group = groups.find((g) => g.category === item.category);
       if (!group) {
@@ -280,7 +281,7 @@ const ItemsScreen: React.FC = () => {
     []
   );
 
-  const handleOpenItem = (item: Item) => {
+  const handleOpenItem = (item: CollectionItem) => {
     router.push({
       pathname: "/item/[id]",
       params: {

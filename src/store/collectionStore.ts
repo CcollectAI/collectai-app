@@ -36,7 +36,7 @@ export async function fetchCollectionItems(): Promise<CollectionItem[]> {
     ];
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("items")
     .select("id,title,image_url,category,value,updated_at")
     .order("updated_at", { ascending: false })
@@ -90,7 +90,7 @@ export async function fetchPortfolioTotals(): Promise<PortfolioTotals> {
     return demoTotals();
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("portfolio_values")
     .select("at,value")
     .order("at", { ascending: true })

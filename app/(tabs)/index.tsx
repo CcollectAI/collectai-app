@@ -273,8 +273,8 @@ const [chartW, setChartW] = useState<number>(0);
   }, [range]);
 
   const norm = useMemo(() => normalizeSeries(series), [series]);
-  const chart = norm.pts;
-
+  const normObj = Array.isArray(norm) ? { min: 0, max: 0, pts: norm } : norm;
+  const chart = normObj.pts;
   // Chart geometry (SVG covers the WHOLE card including the button area)
   const W = 320;
   const H = 215;
@@ -356,8 +356,7 @@ const polylinePoints = useMemo(() => {
   const hovered = hoverIndex !== null && chart[hoverIndex] ? chart[hoverIndex] : null;
 
 
-  const minV = norm.min ?? 0;
-  const maxV = norm.max ?? 0;
+  const minV = (Array.isArray(norm) ? 0 : (norm.min ?? 0));  const maxV = (Array.isArray(norm) ? 0 : (norm.max ?? 0));
   const midV = (minV + maxV) / 2;
 
   const rangeButtons: RangeKey[] = ["1D", "7D", "30D"];

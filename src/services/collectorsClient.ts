@@ -608,7 +608,9 @@ export interface CollectionLeaderboardEntry {
  * or a bare array.
  */
 export async function getCollectionsLeaderboard(): Promise<CollectionLeaderboardEntry[]> {
-  const res = await client.get('/portfolio/leaderboard');
+  const __base = (process.env.EXPO_PUBLIC_API_BASE_URL || process.env.EXPO_PUBLIC_API_URL || '');
+  const __r = await fetch(__base + '/portfolio/leaderboard');
+  const res = { data: await __r.json() };
   const data = res.data ?? [];
   const raw =
     (data && (data.leaderboard || data.items || data.rows || data)) ?? [];
