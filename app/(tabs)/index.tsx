@@ -1,3 +1,4 @@
+import { TwitchCreatorsCard } from "@/components/TwitchCreatorsCard";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, StyleSheet, Platform } from "react-native";
 import { PanResponder } from "react-native";
