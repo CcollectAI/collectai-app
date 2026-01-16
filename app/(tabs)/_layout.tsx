@@ -99,7 +99,7 @@ return (
         }}
       />
 
-      {/* Hide stub route so it doesn't appear as an extra tab */}
+      {/* Hide hidden route so it doesn't appear as an extra tab */}
       <Tabs.Screen name="search" options={{ href: null }} />
     </Tabs>
   );

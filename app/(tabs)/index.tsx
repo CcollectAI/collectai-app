@@ -41,11 +41,11 @@ function getThemeVars() {
 let watchlistApi: any = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  watchlistApi = require("@/src/state/watchlistStore");
+  watchlistApi = require("@/state/watchlistStore");
 } catch (_e) {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    watchlistApi = require("../src/state/watchlistStore");
+    watchlistApi = require("@/state/watchlistStore");
   } catch (_e2) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -103,11 +103,11 @@ function normalizeSeries(points: PortfolioPoint[]) {
 let analyticsApi: any = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  analyticsApi = require("@/src/store/portfolioAnalyticsStore");
+  analyticsApi = require("@/store/portfolioAnalyticsStore");
 } catch (_e) {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    analyticsApi = require("../src/store/portfolioAnalyticsStore");
+    analyticsApi = require("@/store/portfolioAnalyticsStore");
   } catch (_e2) {
     analyticsApi = null;
   }
