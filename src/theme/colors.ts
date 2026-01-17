@@ -28,7 +28,8 @@ function setColorMode(mode: ColorMode) {
 }
 
 function toggleColorMode() {
-  setColorMode(currentMode === "light" ? "dark" : "light");
+// DISABLED: was auto-toggling color mode and could cause infinite re-render loops
+// setColorMode(currentMode === "light" ? "dark" : "light");
 }
 
 export function useColorMode() {

@@ -370,7 +370,27 @@ const polylinePoints = useMemo(() => {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          {/* DEV: quick access */}
+          <Pressable
+            onPress={() => router.push("/category-card")}
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              zIndex: 9999,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              backgroundColor: "#ffffff",
+              borderWidth: 1,
+              borderColor: "#d7e6f2",
+              borderRadius: 0,
+            }}
+          >
+            <Text style={{ fontSize: 12, fontWeight: "900", color: "#0b1f3a" }}>
+              Category Card
+            </Text>
+          </Pressable>
+<ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
           <View>

@@ -237,9 +237,8 @@ const EventsScreen: React.FC = () => {
                 key={a.id}
                 onPress={() =>
                   router.push({
-                    pathname: "/users/[id]",
-                    params: {
-                      id: a.id,
+                    pathname: "/users/[userId]",
+                    params: { userId: a.id,
                       name: a.name,
                       handle: a.handle,
                       city: a.city,
