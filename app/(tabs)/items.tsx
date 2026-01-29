@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { Link } from 'expo-router';
 import { CategoryPill } from '@/components/CategoryPill';
@@ -10,10 +10,11 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { fetchCollectionItems } from "@/store/collectionStore";
+import { dataProvider, type Item as DataItem } from "@/data";
 
 type Item = {
   id: string;
@@ -87,10 +88,6 @@ const DARK_COLORS = {
 };
 
 
-const API_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? "http://127.0.0.1:8080";
-
-
 type SortKey = "value_desc" | "value_asc" | "title";
 
 const formatCurrency = (value: number) =>
@@ -113,117 +110,55 @@ const ItemsScreen: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const [backendItems, setBackendItems] = useState<Item[]>([]);
-  const [supaItems, setSupaItems] = useState<Item[]>([]);
+  const [providerItems, setProviderItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadItems = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-    const load = async () => {
-      try {
-        const res = await fetch(`${API_URL}/items`, {
-          method: "GET",
-        });
-        if (!res.ok) {
-          console.log("[Items] backend responded with", res.status);
-          return;
-        }
-
-        const data: any[] = await res.json();
-        if (!Array.isArray(data) || cancelled) return;
-
-        const mapped: Item[] = data
-          .map((it: any) => {
-            if (!it || typeof it.id !== "string" || typeof it.name !== "string") {
-              return null;
-            }
-
-            const value =
-              typeof it.estimated_value === "number"
-                ? it.estimated_value
-                : typeof it.value === "number"
-                ? it.value
-                : 0;
-
-            const category =
-              typeof it.category === "string" && it.category
-                ? it.category
-                : "Uncategorized";
-
-            const collectionName =
-              typeof it.collection_name === "string"
-                ? it.collection_name
-                : "";
-
-            const condition =
-              typeof it.condition === "string"
-                ? it.condition
-                : undefined;
-
-            const notes =
-              typeof it.notes === "string"
-                ? it.notes
-                : undefined;
-
-            const item: Item = {
-              id: it.id,
-              name: it.name,
-              category,
-              collectionName,
-              value,
-              condition,
-              notes,
-            };
-            return item;
-          })
-          .filter(Boolean) as Item[];
-
-        setBackendItems(mapped);
-      } catch (e) {
-        console.log("[Items] backend fetch failed", e);
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const items = await dataProvider.listItems();
+      // Map DataProvider items to screen Item shape
+      const mapped: Item[] = items.map((it: DataItem) => ({
+        id: it.id,
+        name: it.name,
+        category: it.category,
+        collectionName: "", // DataProvider doesn't have this yet
+        value: it.price,
+        condition: undefined,
+        notes: undefined,
+      }));
+      setProviderItems(mapped);
+    } catch (e: any) {
+      console.warn("[Items] dataProvider.listItems failed", e);
+      setError(e?.message || "Failed to load items");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadFromSupabase = async () => {
-      try {
-        const items = await fetchCollectionItems();
-        if (!cancelled) {
-          setSupaItems(items);
-        }
-      } catch (e) {
-        console.log("[Items] supabase fetch failed", e);
-      }
-    };
-
-    loadFromSupabase();
-    return () => {
-      cancelled = false;
-    };
-  }, []);
+    loadItems();
+  }, [loadItems]);
 
   const categoryParam =
     typeof params.category === "string" ? params.category : undefined;
   const collectionParam =
     typeof params.collectionName === "string" ? params.collectionName : undefined;
 
+  // Use providerItems if available, otherwise fall back to MOCK_ITEMS
+  const dataSource = providerItems.length > 0 ? providerItems : MOCK_ITEMS;
+
   const allCategories = useMemo(
-    () => Array.from(new Set(MOCK_ITEMS.map((i) => i.category))).sort(),
-    []
+    () => Array.from(new Set(dataSource.map((i) => i.category))).sort(),
+    [dataSource]
   );
 
   const filteredAndSortedByCategory = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const source = supaItems.length ? supaItems : (backendItems.length ? backendItems : MOCK_ITEMS);
-    let base = [...source];
+    let base = [...dataSource];
 
     if (categoryParam) {
       base = base.filter((item) => item.category === categoryParam);
@@ -273,11 +208,11 @@ const ItemsScreen: React.FC = () => {
     groups.sort((a, b) => a.category.localeCompare(b.category));
 
     return groups;
-  }, [query, filterCategory, sortKey, categoryParam, collectionParam]);
+  }, [query, filterCategory, sortKey, categoryParam, collectionParam, dataSource]);
 
   const portfolioTotal = useMemo(
-    () => MOCK_ITEMS.reduce((sum, item) => sum + item.value, 0),
-    []
+    () => dataSource.reduce((sum, item) => sum + item.value, 0),
+    [dataSource]
   );
 
   const handleOpenItem = (item: Item) => {
@@ -325,6 +260,33 @@ const ItemsScreen: React.FC = () => {
       // ignore if not supported
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading items...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <View style={styles.centerContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color="#B42318" />
+          <Text style={[styles.errorText, { color: "#B42318" }]}>{error}</Text>
+          <Pressable style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={loadItems}>
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -794,6 +756,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 32,
+  },
+  // Loading/Error states
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  retryBtn: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+  },
+  retryText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
   },
   headerRow: {
     flexDirection: "row",
