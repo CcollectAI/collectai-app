@@ -8,9 +8,9 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  Pressable,
   ActivityIndicator,
   Alert,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +18,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { dataProvider, type Item as DataItem } from "@/data";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { AnimatedPressable, useEnterReveal } from "@/motion";
 
 type Item = {
   id: string;
@@ -86,6 +87,7 @@ const ItemsScreen: React.FC = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ category?: string; collectionName?: string }>();
   const { colors } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("value_desc");
@@ -331,9 +333,9 @@ const ItemsScreen: React.FC = () => {
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle-outline" size={48} color="#B42318" />
           <Text style={[styles.errorText, { color: "#B42318" }]}>{error}</Text>
-          <Pressable style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={loadItems}>
+          <AnimatedPressable style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={loadItems}>
             <Text style={styles.retryText}>Retry</Text>
-          </Pressable>
+          </AnimatedPressable>
         </View>
       </SafeAreaView>
     );
@@ -349,6 +351,7 @@ const ItemsScreen: React.FC = () => {
         ]}
         keyboardShouldPersistTaps="handled"
       >
+        <Animated.View style={animatedStyle}>
         {/* Header row */}
         <View style={styles.headerRow}>
           <View>
@@ -395,7 +398,7 @@ const ItemsScreen: React.FC = () => {
         {/* Filter / Sort dropdown row */}
         <View style={styles.controlsRow}>
           <View style={styles.dropdownWrapper}>
-            <Pressable
+            <AnimatedPressable
               style={[
                 styles.dropdownButton,
                 { borderColor: colors.border, backgroundColor: colors.card },
@@ -416,7 +419,7 @@ const ItemsScreen: React.FC = () => {
                 size={16}
                 color={colors.muted}
               />
-            </Pressable>
+            </AnimatedPressable>
             {filterOpen && (
               <View
                 style={[
@@ -424,7 +427,7 @@ const ItemsScreen: React.FC = () => {
                   { borderColor: colors.border, backgroundColor: colors.card },
                 ]}
               >
-                <Pressable
+                <AnimatedPressable
                   style={styles.dropdownItem}
                   onPress={() => {
                     setFilterCategory(null);
@@ -439,9 +442,9 @@ const ItemsScreen: React.FC = () => {
                   >
                     All categories
                   </Text>
-                </Pressable>
+                </AnimatedPressable>
                 {allCategories.map((cat) => (
-                  <Pressable
+                  <AnimatedPressable
                     key={cat}
                     style={styles.dropdownItem}
                     onPress={() => {
@@ -457,14 +460,14 @@ const ItemsScreen: React.FC = () => {
                     >
                       {cat}
                     </Text>
-                  </Pressable>
+                  </AnimatedPressable>
                 ))}
               </View>
             )}
           </View>
 
           <View style={styles.dropdownWrapper}>
-            <Pressable
+            <AnimatedPressable
               style={[
                 styles.dropdownButton,
                 { borderColor: colors.border, backgroundColor: colors.card },
@@ -485,7 +488,7 @@ const ItemsScreen: React.FC = () => {
                 size={16}
                 color={colors.muted}
               />
-            </Pressable>
+            </AnimatedPressable>
             {sortOpen && (
               <View
                 style={[
@@ -493,7 +496,7 @@ const ItemsScreen: React.FC = () => {
                   { borderColor: colors.border, backgroundColor: colors.card },
                 ]}
               >
-                <Pressable
+                <AnimatedPressable
                   style={styles.dropdownItem}
                   onPress={() => {
                     setSortKey("value_desc");
@@ -508,8 +511,8 @@ const ItemsScreen: React.FC = () => {
                   >
                     Value (high → low)
                   </Text>
-                </Pressable>
-                <Pressable
+                </AnimatedPressable>
+                <AnimatedPressable
                   style={styles.dropdownItem}
                   onPress={() => {
                     setSortKey("value_asc");
@@ -524,8 +527,8 @@ const ItemsScreen: React.FC = () => {
                   >
                     Value (low → high)
                   </Text>
-                </Pressable>
-                <Pressable
+                </AnimatedPressable>
+                <AnimatedPressable
                   style={styles.dropdownItem}
                   onPress={() => {
                     setSortKey("title");
@@ -540,7 +543,7 @@ const ItemsScreen: React.FC = () => {
                   >
                     Title (A → Z)
                   </Text>
-                </Pressable>
+                </AnimatedPressable>
               </View>
             )}
           </View>
@@ -602,7 +605,7 @@ const ItemsScreen: React.FC = () => {
                 </View>
               )}
             </View>
-            <Pressable
+            <AnimatedPressable
               onPress={clearFilters}
               style={styles.filterClearButton}
             >
@@ -611,7 +614,7 @@ const ItemsScreen: React.FC = () => {
               >
                 Clear
               </Text>
-            </Pressable>
+            </AnimatedPressable>
           </View>
         )}
 
@@ -633,7 +636,7 @@ const ItemsScreen: React.FC = () => {
                 >
                   {group.category}
                 </Text>
-                <Pressable
+                <AnimatedPressable
                   style={[
                     styles.categoryAddButton,
                     { borderColor: colors.accent },
@@ -654,12 +657,12 @@ const ItemsScreen: React.FC = () => {
                   >
                     Add
                   </Text>
-                </Pressable>
+                </AnimatedPressable>
               </View>
 
               {/* Items in category */}
               {group.items.map((item) => (
-                <Pressable
+                <AnimatedPressable
                   key={item.id}
                   style={[
                     styles.itemRow,
@@ -705,7 +708,7 @@ const ItemsScreen: React.FC = () => {
                       {formatCurrency(item.value)}
                     </Text>
                   </View>
-                </Pressable>
+                </AnimatedPressable>
               ))}
 
               {/* Category total bottom-right */}
@@ -742,7 +745,7 @@ const ItemsScreen: React.FC = () => {
 
           <View style={styles.bottomActionButtons}>
             {/* Download Overview (Export CSV) */}
-            <Pressable
+            <AnimatedPressable
               style={[
                 styles.actionButton,
                 {
@@ -771,10 +774,10 @@ const ItemsScreen: React.FC = () => {
               >
                 {exporting ? 'Exporting...' : 'Download overview'}
               </Text>
-            </Pressable>
+            </AnimatedPressable>
 
             {/* Build & Paint Projects */}
-            <Pressable
+            <AnimatedPressable
               style={[
                 styles.actionButton,
                 {
@@ -797,7 +800,7 @@ const ItemsScreen: React.FC = () => {
               >
                 Build & Paint Projects
               </Text>
-            </Pressable>
+            </AnimatedPressable>
           </View>
 
           {/* Export status feedback */}
@@ -807,7 +810,7 @@ const ItemsScreen: React.FC = () => {
             </Text>
           )}
         </View>
-
+        </Animated.View>
 </ScrollView>
     </SafeAreaView>
   );

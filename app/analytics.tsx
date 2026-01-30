@@ -5,11 +5,13 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { dataProvider, type AnalyticsMetrics } from "@/data";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useEnterReveal } from "@/motion";
 
 type LoadState = "idle" | "loading" | "loaded" | "error";
 
@@ -31,6 +33,7 @@ const initialMetrics: AnalyticsMetrics = {
 
 const AnalyticsScreen: React.FC = () => {
   const colors = useAppColors();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [state, setState] = useState<LoadState>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -75,6 +78,7 @@ const AnalyticsScreen: React.FC = () => {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
       >
+        <Animated.View style={animatedStyle}>
         {/* Header */}
         <View style={styles.headerRow}>
           <View>
@@ -307,6 +311,7 @@ const AnalyticsScreen: React.FC = () => {
             • Risk / exposure metrics (e.g. % in sealed vs. loose)
           </Text>
         </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, ScrollView, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { EVENTS, CollectorsEvent } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable, useEnterReveal } from '@/motion';
 
 const kindLabel: Record<CollectorsEvent['kind'], string> = {
   collection_drop: 'Collection drop',
@@ -20,6 +21,7 @@ const kindIcon: Record<CollectorsEvent['kind'], keyof typeof Ionicons.glyphMap> 
 const EventsScreen: React.FC = () => {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   // Map to local variable names for minimal diff
   const BG = colors.background;
@@ -40,6 +42,7 @@ const EventsScreen: React.FC = () => {
         paddingHorizontal: 16,
       }}
     >
+      <Animated.View style={animatedStyle}>
       {/* Subtitle */}
       <View style={{ marginBottom: 16 }}>
         <Text
@@ -70,9 +73,8 @@ const EventsScreen: React.FC = () => {
           .join(' • ');
 
         return (
-          <TouchableOpacity
+          <AnimatedPressable
             key={event.id}
-            activeOpacity={0.9}
             onPress={() =>
               router.push(`/events/${encodeURIComponent(event.id)}`)
             }
@@ -157,7 +159,7 @@ const EventsScreen: React.FC = () => {
               size={18}
               color={MUTED}
             />
-          </TouchableOpacity>
+          </AnimatedPressable>
         );
       })}
     
@@ -169,7 +171,7 @@ const EventsScreen: React.FC = () => {
 
           <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
             {MEETUP_ATTENDEES__MOCK.filter(a => a.optedIn).map((a) => (
-              <Pressable
+              <AnimatedPressable
                 key={a.id}
                 onPress={() =>
                   router.push({
@@ -183,15 +185,14 @@ const EventsScreen: React.FC = () => {
                     },
                   })
                 }
-                hitSlop={10}
                 style={{ alignItems: "center" }}
               >
                 <AvatarBubble label={a.name} />
-              </Pressable>
+              </AnimatedPressable>
             ))}
           </View>
         </View>
-
+      </Animated.View>
       </ScrollView>
   );
 };

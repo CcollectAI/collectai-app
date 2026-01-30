@@ -6,11 +6,12 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  Pressable,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
 
 type Item = {
   id: string;
@@ -87,6 +88,7 @@ const formatCurrency = (value: number) =>
 const SearchScreen: React.FC = () => {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([
     "Charizard",
@@ -167,6 +169,7 @@ const SearchScreen: React.FC = () => {
         ]}
         keyboardShouldPersistTaps="handled"
       >
+        <Animated.View style={animatedStyle}>
         {/* Header */}
         <View style={styles.headerRow}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>
@@ -200,7 +203,7 @@ const SearchScreen: React.FC = () => {
             </Text>
             <View style={styles.chipRow}>
               {recent.map((term) => (
-                <Pressable
+                <AnimatedPressable
                   key={term}
                   style={styles.chip}
                   onPress={() => {
@@ -210,7 +213,7 @@ const SearchScreen: React.FC = () => {
                   <Text style={[styles.chipText, { color: colors.text }]}>
                     {term}
                   </Text>
-                </Pressable>
+                </AnimatedPressable>
               ))}
             </View>
           </View>
@@ -233,7 +236,7 @@ const SearchScreen: React.FC = () => {
                     ? TILE_COLORS.tile3
                     : TILE_COLORS.tile4;
                 return (
-                  <Pressable
+                  <AnimatedPressable
                     key={cat}
                     style={[styles.categoryTile, { backgroundColor: bg }]}
                     onPress={() => handleOpenCategory(cat)}
@@ -241,7 +244,7 @@ const SearchScreen: React.FC = () => {
                     <Text style={[styles.categoryTileText, { color: colors.text }]}>
                       {cat}
                     </Text>
-                  </Pressable>
+                  </AnimatedPressable>
                 );
               })}
             </View>
@@ -255,7 +258,7 @@ const SearchScreen: React.FC = () => {
               Top result
             </Text>
             {topResult ? (
-              <Pressable
+              <AnimatedPressable
                 style={styles.resultRow}
                 onPress={() => handleOpenItem(topResult)}
               >
@@ -273,7 +276,7 @@ const SearchScreen: React.FC = () => {
                 <Text style={[styles.resultValue, { color: colors.text }]}>
                   {formatCurrency(topResult.value)}
                 </Text>
-              </Pressable>
+              </AnimatedPressable>
             ) : (
               <Text style={[styles.emptyText, { color: colors.muted }]}>
                 No results yet. Try another search.
@@ -291,7 +294,7 @@ const SearchScreen: React.FC = () => {
                   More results
                 </Text>
                 {otherResults.map((item) => (
-                  <Pressable
+                  <AnimatedPressable
                     key={item.id}
                     style={styles.resultRow}
                     onPress={() => handleOpenItem(item)}
@@ -310,7 +313,7 @@ const SearchScreen: React.FC = () => {
                     <Text style={[styles.resultValue, { color: colors.text }]}>
                       {formatCurrency(item.value)}
                     </Text>
-                  </Pressable>
+                  </AnimatedPressable>
                 ))}
               </>
             )}
@@ -325,7 +328,7 @@ const SearchScreen: React.FC = () => {
               Collections
             </Text>
             {uniqueCollections.map((item) => (
-              <Pressable
+              <AnimatedPressable
                 key={item.collectionName}
                 style={styles.collectionRow}
                 onPress={() => handleOpenCollection(item.collectionName)}
@@ -345,10 +348,11 @@ const SearchScreen: React.FC = () => {
                     {item.category}
                   </Text>
                 </View>
-              </Pressable>
+              </AnimatedPressable>
             ))}
           </View>
         ) : null}
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

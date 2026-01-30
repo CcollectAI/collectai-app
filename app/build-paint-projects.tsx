@@ -6,12 +6,13 @@ import {
   TextInput,
   StyleSheet,
   ActivityIndicator,
-  Pressable,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import supabase from "@/lib/supabaseClient";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
 type LoadState = "idle" | "loading" | "loaded" | "error";
 
 // Compatibility: replace old ./ui/theme usage with app theme hook
@@ -95,6 +96,7 @@ const priorityLabel = (priority: string | null | undefined) => {
 
 const BuildPaintProjectsScreen: React.FC = () => {
   const colors = useAppColors();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [state, setState] = useState<LoadState>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -257,6 +259,7 @@ const BuildPaintProjectsScreen: React.FC = () => {
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <ScrollView>
+        <Animated.View style={animatedStyle}>
         {/* Simple local build & paint tracker card */}
         <View
           style={{
@@ -580,7 +583,7 @@ const BuildPaintProjectsScreen: React.FC = () => {
                   </View>
 
                   <View style={styles.projectRight}>
-                    <Pressable
+                    <AnimatedPressable
                       onPress={() => handleLogSession(p.id, 30)}
                       disabled={isLogging || usingMock}
                       style={[
@@ -614,7 +617,7 @@ const BuildPaintProjectsScreen: React.FC = () => {
                           </Text>
                         </>
                       )}
-                    </Pressable>
+                    </AnimatedPressable>
                     {usingMock && (
                       <Text style={styles.demoTag}>
                         Demo only
@@ -636,6 +639,7 @@ const BuildPaintProjectsScreen: React.FC = () => {
         </View>
 
         <View style={{ height: 24 }} />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -11,13 +11,13 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
-  Pressable,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
 
 /**
  * Add screen:
@@ -32,6 +32,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 
 const AddScreen: React.FC = () => {
   const { colors } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const handleQuickScanPress = () => {
     router.push('/quickscan');
@@ -165,6 +166,7 @@ const handleImportCollectionFile = async () => {
 return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
+        <Animated.View style={animatedStyle}>
         {/* Header */}
         <View style={styles.headerRow}>
           <Text style={[styles.title, { color: colors.text }]}>Add to your collection</Text>
@@ -172,9 +174,8 @@ return (
         </View>
 
         {/* QuickScan hero card */}
-        <TouchableOpacity
+        <AnimatedPressable
           style={[styles.quickScanCard, { backgroundColor: colors.card }]}
-          activeOpacity={0.9}
           onPress={handleQuickScanPress}
         >
           <View style={[styles.quickScanIconCircle, { backgroundColor: colors.accent + '20' }]}>
@@ -189,7 +190,7 @@ return (
             <Text style={[styles.quickScanButtonText, { color: colors.accent }]}>Start QuickScan</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.accent} />
           </View>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
         {/* Divider */}
         <View style={styles.dividerRow}>
@@ -199,9 +200,8 @@ return (
         </View>
 
         {/* Manual add card (secondary) */}
-        <TouchableOpacity
+        <AnimatedPressable
           style={[styles.manualCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-          activeOpacity={0.9}
           onPress={handleManualAddPress}
         >
           <View style={[styles.manualIconCircle, { backgroundColor: colors.background }]}>
@@ -214,7 +214,7 @@ return (
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-        </TouchableOpacity>
+        </AnimatedPressable>
 
         <AddImportCard
           importBusy={importBusy}
@@ -222,7 +222,7 @@ return (
           onUploadFile={handleImportCollectionFile}
           onDownloadTemplate={handleDownloadImportTemplate}
         />
-
+        </Animated.View>
 </ScrollView>
     </SafeAreaView>
   );

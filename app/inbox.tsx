@@ -9,16 +9,17 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type DmThread, type DmRequest } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable, useEnterReveal } from '@/motion';
 
 // Fixed colors for specific UI elements
 const fixedColors = {
@@ -82,6 +83,7 @@ function UserAvatar({
 export default function InboxScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
   const [threads, setThreads] = useState<DmThread[]>([]);
   const [requests, setRequests] = useState<DmRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,9 +168,9 @@ export default function InboxScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </TouchableOpacity>
+          </AnimatedPressable>
           <Text style={styles.headerTitle}>Inbox</Text>
           <View style={{ width: 32 }} />
         </View>
@@ -185,9 +187,9 @@ export default function InboxScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        </AnimatedPressable>
         <Text style={styles.headerTitle}>Inbox</Text>
         <View style={{ width: 32 }} />
       </View>
@@ -203,6 +205,7 @@ export default function InboxScreen() {
           />
         }
       >
+        <Animated.View style={animatedStyle}>
         {/* Requests Section */}
         {requests.length > 0 && (
           <View style={styles.section}>
@@ -233,7 +236,7 @@ export default function InboxScreen() {
                   </Text>
                 )}
                 <View style={styles.requestActions}>
-                  <TouchableOpacity
+                  <AnimatedPressable
                     style={[styles.actionBtn, styles.declineBtn]}
                     onPress={() => handleDeclineRequest(req.threadId)}
                     disabled={processingRequestId === req.threadId}
@@ -243,8 +246,8 @@ export default function InboxScreen() {
                     ) : (
                       <Text style={styles.declineBtnText}>Decline</Text>
                     )}
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </AnimatedPressable>
+                  <AnimatedPressable
                     style={[styles.actionBtn, styles.acceptBtn]}
                     onPress={() => handleAcceptRequest(req.threadId)}
                     disabled={processingRequestId === req.threadId}
@@ -254,7 +257,7 @@ export default function InboxScreen() {
                     ) : (
                       <Text style={styles.acceptBtnText}>Accept</Text>
                     )}
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 </View>
               </View>
             ))}
@@ -266,7 +269,7 @@ export default function InboxScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Messages</Text>
             {threads.map((thread) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={thread.id}
                 style={styles.threadRow}
                 onPress={() => handleThreadPress(thread)}
@@ -310,7 +313,7 @@ export default function InboxScreen() {
                     )}
                   </View>
                 </View>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
         )}
@@ -325,6 +328,7 @@ export default function InboxScreen() {
             </Text>
           </View>
         )}
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

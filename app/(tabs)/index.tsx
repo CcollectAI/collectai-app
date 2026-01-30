@@ -3,16 +3,17 @@ import {
   View,
   Text,
   ScrollView,
-  Pressable,
   StyleSheet,
   Platform,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Polyline, Line } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { dataProvider, type PortfolioSummary, type Item as DataItem } from "@/data";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
 
 type RangeKey = "1D" | "7D" | "30D";
 
@@ -130,6 +131,7 @@ export default function PortfolioScreen() {
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   // Fallback chart series (chart data not yet in DataProvider)
   const fallbackSeries: PortfolioPoint[] = useMemo(() => [
@@ -229,9 +231,9 @@ export default function PortfolioScreen() {
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle-outline" size={48} color={stylesVars.error} />
           <Text style={styles.errorText}>{error}</Text>
-          <Pressable style={styles.retryBtn} onPress={loadData}>
+          <AnimatedPressable style={styles.retryBtn} onPress={loadData}>
             <Text style={styles.retryText}>Retry</Text>
-          </Pressable>
+          </AnimatedPressable>
         </View>
       </SafeAreaView>
     );
@@ -253,6 +255,7 @@ export default function PortfolioScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <Animated.View style={animatedStyle}>
         {/* Header */}
         <View style={styles.headerRow}>
           <View>
@@ -262,7 +265,7 @@ export default function PortfolioScreen() {
 
           <View style={styles.headerActions}>
             <InboxHeaderButton size={20} />
-            <Pressable
+            <AnimatedPressable
               accessibilityRole="button"
               style={styles.settingsBtn}
               onPress={() => {
@@ -271,7 +274,7 @@ export default function PortfolioScreen() {
               }}
             >
               <Ionicons name="settings-outline" size={20} color={stylesVars.navy} />
-            </Pressable>
+            </AnimatedPressable>
           </View>
         </View>
 
@@ -280,14 +283,14 @@ export default function PortfolioScreen() {
           {rangeButtons.map((k) => {
             const active = k === range;
             return (
-              <Pressable
+              <AnimatedPressable
                 key={k}
                 accessibilityRole="button"
                 onPress={() => setRange(k)}
                 style={[styles.rangeBtn, active ? styles.rangeBtnActive : null]}
               >
                 <Text style={[styles.rangeText, active ? styles.rangeTextActive : null]}>{k}</Text>
-              </Pressable>
+              </AnimatedPressable>
             );
           })}
         </View>
@@ -353,6 +356,7 @@ export default function PortfolioScreen() {
         </View>
 
         <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

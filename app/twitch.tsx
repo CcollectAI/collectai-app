@@ -1,19 +1,22 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
 
 export default function TwitchScreen() {
   const router = useRouter();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Animated.View style={animatedStyle}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Twitch Overview</Text>
-        <Pressable onPress={() => router.back()} style={styles.iconBtn} accessibilityLabel="Back">
+        <AnimatedPressable onPress={() => router.back()} style={styles.iconBtn} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={18} color="#0b1f3a" />
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       <View style={styles.card}>
@@ -22,9 +25,10 @@ export default function TwitchScreen() {
           <Text style={styles.cardTitle}>Creator & Drops Hub</Text>
         </View>
         <Text style={styles.cardText}>
-          This is the Twitch landing page. We’ll move the “Twitch creators” banner here and keep Portfolio clean.
+          This is the Twitch landing page. We'll move the "Twitch creators" banner here and keep Portfolio clean.
         </Text>
       </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
