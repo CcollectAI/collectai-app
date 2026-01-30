@@ -10,6 +10,8 @@ import type {
   WatchlistItem,
   CreateItemInput,
   QuickScanResult,
+  PublicUserProfile,
+  CategoryStoreData,
 } from './types';
 
 export interface DataProvider {
@@ -48,4 +50,19 @@ export interface DataProvider {
    * @param query - Search term to match against item name/title
    */
   searchItems(query: string): Promise<Item[]>;
+
+  /**
+   * Get public user profile by ID.
+   * Queries user_public_profile_v1 view (RLS: public SELECT).
+   * Returns null if user not found.
+   * @param userId - The user's ID
+   */
+  getPublicUserProfile(userId: string): Promise<PublicUserProfile | null>;
+
+  /**
+   * Get category store data for Amazon Brand Store style layout.
+   * Returns category info, spotlight slides, items, events, and friends.
+   * @param categoryId - The category ID
+   */
+  getCategoryStore(categoryId: string): Promise<CategoryStoreData | null>;
 }

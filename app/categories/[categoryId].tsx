@@ -1,0 +1,699 @@
+/**
+ * Category Store — Amazon Brand Store style layout for a category.
+ * Shows: header, spotlight carousel, items, events, friends, sponsored slot.
+ */
+import React, { useEffect, useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { dataProvider, type CategoryStoreData, type Item, type MiniUserProfile } from '@/data';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Theme colors (Tiffany-ish background, white cards, navy text)
+const COLORS = {
+  bg: '#E6F7F5',
+  card: '#FFFFFF',
+  border: '#D6E4EC',
+  text: '#0F172A',
+  muted: '#64748B',
+  accent: '#40C9C6',
+  accentDark: '#0ea5e9',
+};
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const kindIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
+  collection_drop: 'cube-outline',
+  meetup: 'people-outline',
+  stream: 'logo-twitch',
+};
+
+const kindLabel: Record<string, string> = {
+  collection_drop: 'Drop',
+  meetup: 'Meetup',
+  stream: 'Stream',
+};
+
+// Avatar component for friends
+const FriendAvatar: React.FC<{ profile: MiniUserProfile; onPress: () => void }> = ({
+  profile,
+  onPress,
+}) => {
+  const initials = profile.displayName
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <TouchableOpacity style={styles.friendCard} onPress={onPress}>
+      {profile.avatarUrl ? (
+        <Image source={{ uri: profile.avatarUrl }} style={styles.friendAvatar} />
+      ) : (
+        <View
+          style={[
+            styles.friendAvatar,
+            styles.friendAvatarPlaceholder,
+            { backgroundColor: profile.avatarColor || COLORS.accent },
+          ]}
+        >
+          <Text style={styles.friendInitials}>{initials}</Text>
+        </View>
+      )}
+      <Text style={styles.friendName} numberOfLines={1}>
+        {profile.displayName}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
+export default function CategoryStoreScreen() {
+  const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
+  const router = useRouter();
+
+  const [data, setData] = useState<CategoryStoreData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [following, setFollowing] = useState(false);
+  const [spotlightIndex, setSpotlightIndex] = useState(0);
+
+  const spotlightRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    if (!categoryId) return;
+
+    setLoading(true);
+    setError(null);
+
+    dataProvider
+      .getCategoryStore(categoryId)
+      .then((result) => {
+        if (result) {
+          setData(result);
+        } else {
+          setError('Category not found');
+        }
+      })
+      .catch((err) => {
+        console.warn('[CategoryStore] error:', err);
+        setError(err?.message || 'Failed to load category');
+      })
+      .finally(() => setLoading(false));
+  }, [categoryId]);
+
+  // Auto-rotate spotlight carousel
+  useEffect(() => {
+    if (!data || data.spotlightSlides.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setSpotlightIndex((prev) => {
+        const next = (prev + 1) % data.spotlightSlides.length;
+        spotlightRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [data]);
+
+  const handleItemPress = (item: Item) => {
+    router.push({
+      pathname: '/item/[id]',
+      params: {
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        value: String(item.price),
+        imageUri: item.imageUrl || '',
+      },
+    });
+  };
+
+  const handleEventPress = (eventId: string) => {
+    router.push(`/events/${encodeURIComponent(eventId)}`);
+  };
+
+  const handleFriendPress = (userId: string) => {
+    router.push(`/users/${encodeURIComponent(userId)}`);
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={COLORS.accent} />
+        <Text style={styles.loadingText}>Loading category...</Text>
+      </View>
+    );
+  }
+
+  // Error / not found state
+  if (error || !data) {
+    return (
+      <View style={styles.centered}>
+        <Ionicons name="alert-circle-outline" size={48} color={COLORS.muted} />
+        <Text style={styles.errorTitle}>Category not found</Text>
+        <Text style={styles.errorSubtitle}>
+          This category doesn't exist or couldn't be loaded.
+        </Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>Go back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
+      {/* Back button */}
+      <TouchableOpacity style={styles.backChip} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={16} color={COLORS.muted} />
+        <Text style={styles.backChipText}>Back</Text>
+      </TouchableOpacity>
+
+      {/* 1. Category Header Card */}
+      <View style={styles.headerCard}>
+        <View style={styles.headerContent}>
+          <Text style={styles.categoryName}>{data.categoryName}</Text>
+          <Text style={styles.categoryTagline} numberOfLines={3}>
+            {data.categoryTagline}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={[
+            styles.followButton,
+            following && styles.followButtonActive,
+          ]}
+          onPress={() => setFollowing(!following)}
+        >
+          <Ionicons
+            name={following ? 'checkmark' : 'add'}
+            size={16}
+            color={following ? '#fff' : COLORS.accentDark}
+          />
+          <Text
+            style={[
+              styles.followButtonText,
+              following && styles.followButtonTextActive,
+            ]}
+          >
+            {following ? 'Following' : 'Follow'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 2. Spotlight Carousel */}
+      {data.spotlightSlides.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Spotlight</Text>
+          <FlatList
+            ref={spotlightRef}
+            data={data.spotlightSlides}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(slide) => slide.id}
+            onMomentumScrollEnd={(e) => {
+              const index = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 32));
+              setSpotlightIndex(index);
+            }}
+            renderItem={({ item: slide }) => (
+              <View style={styles.spotlightSlide}>
+                <View style={styles.spotlightImagePlaceholder}>
+                  <Ionicons name="sparkles" size={32} color={COLORS.accent} />
+                </View>
+                <Text style={styles.spotlightTitle}>{slide.title}</Text>
+                {slide.subtitle && (
+                  <Text style={styles.spotlightSubtitle}>{slide.subtitle}</Text>
+                )}
+              </View>
+            )}
+          />
+          {/* Dots indicator */}
+          {data.spotlightSlides.length > 1 && (
+            <View style={styles.dotsRow}>
+              {data.spotlightSlides.map((_, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    styles.dot,
+                    idx === spotlightIndex && styles.dotActive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* 3. Items in this Category */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Items in {data.categoryName}</Text>
+        {data.items.length === 0 ? (
+          <Text style={styles.emptyText}>No items yet in this category.</Text>
+        ) : (
+          data.items.slice(0, 6).map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.itemCard}
+              onPress={() => handleItemPress(item)}
+            >
+              <View style={styles.itemInfo}>
+                <Text style={styles.itemName} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={styles.itemCategory}>{item.category}</Text>
+              </View>
+              <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.muted} />
+            </TouchableOpacity>
+          ))
+        )}
+        {data.items.length > 6 && (
+          <TouchableOpacity
+            style={styles.seeAllButton}
+            onPress={() =>
+              router.push({
+                pathname: '/(tabs)/items',
+                params: { category: data.categoryName },
+              })
+            }
+          >
+            <Text style={styles.seeAllText}>
+              See all {data.items.length} items
+            </Text>
+            <Ionicons name="arrow-forward" size={14} color={COLORS.accentDark} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* 4. Upcoming Events / Drops */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Upcoming Events & Drops</Text>
+        {data.upcomingEvents.length === 0 ? (
+          <Text style={styles.emptyText}>No upcoming events for this category.</Text>
+        ) : (
+          data.upcomingEvents.map((event) => (
+            <TouchableOpacity
+              key={event.id}
+              style={styles.eventCard}
+              onPress={() => handleEventPress(event.id)}
+            >
+              <View
+                style={[
+                  styles.eventIconBubble,
+                  { backgroundColor: COLORS.accentDark },
+                ]}
+              >
+                <Ionicons
+                  name={kindIcon[event.kind] || 'calendar-outline'}
+                  size={18}
+                  color="#fff"
+                />
+              </View>
+              <View style={styles.eventInfo}>
+                <Text style={styles.eventTitle} numberOfLines={1}>
+                  {event.title}
+                </Text>
+                <Text style={styles.eventMeta}>
+                  {kindLabel[event.kind] || event.kind} · {event.date}
+                  {event.time ? ` · ${event.time}` : ''}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.muted} />
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+
+      {/* 5. Friends Who Follow */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Friends Who Follow</Text>
+        {data.friendsWhoFollow.length === 0 ? (
+          <Text style={styles.emptyText}>
+            None of your friends follow this category yet.
+          </Text>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.friendsRow}
+          >
+            {data.friendsWhoFollow.map((friend) => (
+              <FriendAvatar
+                key={friend.id}
+                profile={friend}
+                onPress={() => handleFriendPress(friend.id)}
+              />
+            ))}
+          </ScrollView>
+        )}
+      </View>
+
+      {/* 6. Sponsored Slot (Placeholder) */}
+      <View style={styles.section}>
+        <View style={styles.sponsoredCard}>
+          <Text style={styles.sponsoredLabel}>Sponsored</Text>
+          <View style={styles.sponsoredPlaceholder}>
+            <Ionicons name="megaphone-outline" size={24} color={COLORS.muted} />
+            <Text style={styles.sponsoredText}>Ad slot placeholder</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Bottom spacing */}
+      <View style={{ height: 32 }} />
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
+  contentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 48,
+  },
+  centered: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: COLORS.muted,
+  },
+  errorTitle: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  errorSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    color: COLORS.muted,
+    textAlign: 'center',
+  },
+  backButton: {
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  backButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: COLORS.text,
+  },
+  backChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.card,
+    marginBottom: 12,
+  },
+  backChipText: {
+    fontSize: 12,
+    color: COLORS.muted,
+    marginLeft: 2,
+  },
+
+  // Header card
+  headerCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 14,
+    marginBottom: 16,
+  },
+  headerContent: {
+    marginBottom: 12,
+  },
+  categoryName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  categoryTagline: {
+    marginTop: 4,
+    fontSize: 13,
+    color: COLORS.muted,
+    lineHeight: 18,
+  },
+  followButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.accentDark,
+  },
+  followButtonActive: {
+    backgroundColor: COLORS.accentDark,
+    borderColor: COLORS.accentDark,
+  },
+  followButtonText: {
+    marginLeft: 4,
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.accentDark,
+  },
+  followButtonTextActive: {
+    color: '#fff',
+  },
+
+  // Sections
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 10,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: COLORS.muted,
+  },
+
+  // Spotlight carousel
+  spotlightSlide: {
+    width: SCREEN_WIDTH - 32,
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    alignItems: 'center',
+  },
+  spotlightImagePlaceholder: {
+    width: '100%',
+    height: 100,
+    backgroundColor: COLORS.bg,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  spotlightTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  spotlightSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    color: COLORS.muted,
+    textAlign: 'center',
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 10,
+    gap: 6,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.border,
+  },
+  dotActive: {
+    backgroundColor: COLORS.accentDark,
+  },
+
+  // Items
+  itemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 12,
+    marginBottom: 8,
+  },
+  itemInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  itemCategory: {
+    fontSize: 12,
+    color: COLORS.muted,
+    marginTop: 2,
+  },
+  itemPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginRight: 8,
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    gap: 4,
+  },
+  seeAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.accentDark,
+  },
+
+  // Events
+  eventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 10,
+    marginBottom: 8,
+  },
+  eventIconBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  eventInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  eventTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  eventMeta: {
+    fontSize: 11,
+    color: COLORS.muted,
+    marginTop: 2,
+  },
+
+  // Friends
+  friendsRow: {
+    gap: 12,
+  },
+  friendCard: {
+    alignItems: 'center',
+    width: 64,
+  },
+  friendAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  friendAvatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  friendInitials: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  friendName: {
+    marginTop: 4,
+    fontSize: 11,
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+
+  // Sponsored
+  sponsoredCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 12,
+  },
+  sponsoredLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  sponsoredPlaceholder: {
+    height: 60,
+    backgroundColor: COLORS.bg,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  sponsoredText: {
+    fontSize: 12,
+    color: COLORS.muted,
+  },
+});

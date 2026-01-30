@@ -11,7 +11,11 @@ import type {
   WatchlistItem,
   CreateItemInput,
   QuickScanResult,
+  PublicUserProfile,
+  CategoryStoreData,
 } from './types';
+import { getCategoryById } from './categories';
+import { EVENTS } from './events';
 import { supabase } from '../lib/supabase';
 import { collectorsApi } from '../api/collectorsApi';
 
@@ -214,6 +218,78 @@ export class SupabaseDataProvider implements DataProvider {
       imageUrl: r.image_url ?? undefined,
       updatedAt: r.updated_at ?? undefined,
     }));
+  }
+
+  async getPublicUserProfile(userId: string): Promise<PublicUserProfile | null> {
+    if (!userId) return null;
+
+    // Query user_public_profile_v1 view (RLS: public SELECT)
+    const { data, error } = await supabase
+      .from('user_public_profile_v1')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      // Try alternate column name for user ID
+      if (error.code === 'PGRST116') {
+        // No rows returned
+        return null;
+      }
+      console.warn('[SupabaseDataProvider] getPublicUserProfile error:', error);
+      return null;
+    }
+
+    if (!data) return null;
+
+    // Log discovered columns for debugging (remove in production)
+    console.log('[SupabaseDataProvider] user_public_profile_v1 columns:', Object.keys(data));
+
+    // Map columns flexibly - handle various naming conventions
+    const row = data as Record<string, any>;
+
+    return {
+      id: row.id ?? row.user_id ?? userId,
+      displayName: row.display_name ?? row.displayName ?? row.username ?? row.name ?? 'Unknown',
+      handle: row.handle ?? row.username ?? null,
+      avatarUrl: row.avatar_url ?? row.avatarUrl ?? null,
+      bio: row.bio ?? row.about ?? row.description ?? null,
+      interests: row.interests ?? null,
+      collectionCount: row.collection_count ?? row.total_items ?? row.item_count ?? null,
+      collectionValueEur: row.collection_value_eur ?? row.total_value_eur ?? row.portfolio_value ?? null,
+    };
+  }
+
+  async getCategoryStore(categoryId: string): Promise<CategoryStoreData | null> {
+    const category = getCategoryById(categoryId);
+    if (!category) return null;
+
+    // Fetch items matching category from Supabase
+    const items = await this.searchItems(category.name.split(' ')[0]);
+
+    // Filter events by categoryId (from static data for now)
+    const upcomingEvents = EVENTS
+      .filter((e) => e.categoryId === categoryId)
+      .map((e) => ({
+        id: e.id,
+        title: e.title,
+        kind: e.kind,
+        date: e.date,
+        time: e.time,
+      }));
+
+    // Return minimal data — spotlight slides and friends empty for real mode
+    // These would come from dedicated tables in a full implementation
+    return {
+      categoryId: category.id,
+      categoryName: category.name,
+      categoryTagline: category.tagline,
+      bannerImageUrl: category.bannerImageUrl,
+      spotlightSlides: [], // Would come from category_spotlight table
+      items,
+      upcomingEvents,
+      friendsWhoFollow: [], // Would come from user_category_follows table
+    };
   }
 }
 

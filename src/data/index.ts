@@ -20,9 +20,13 @@ export type {
   Item,
   WatchlistItem,
   CreateItemInput,
+  PublicUserProfile,
   QuickScanAttributes,
   QuickScanPrediction,
   QuickScanResult,
+  SpotlightSlide,
+  MiniUserProfile,
+  CategoryStoreData,
 } from './types';
 
 export type { DataProvider } from './DataProvider';

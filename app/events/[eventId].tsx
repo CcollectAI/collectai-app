@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { EVENTS, CollectorsEvent, EventKind } from '@/data/events';
 import { getCategoryById } from '@/data/categories';
 import { getUserById } from '@/data/users';
+import { dataProvider, type PublicUserProfile } from '@/data';
+import { PublicUserProfileCard } from '@/components/PublicUserProfileCard';
 
 const BG = '#0f172a';
 const CARD = '#020617';
@@ -120,10 +122,23 @@ const EventDetailScreen: React.FC = () => {
   const relatedCategory = event.categoryId
     ? getCategoryById(event.categoryId)
     : undefined;
-  const hostUser = event.hostUserId ? getUserById(event.hostUserId) : undefined;
   const attendeeUsers = event.attendeeIds
     .map((id) => getUserById(id))
     .filter((u): u is NonNullable<ReturnType<typeof getUserById>> => Boolean(u));
+
+  // Fetch host profile via DataProvider (public view only)
+  const [hostProfile, setHostProfile] = useState<PublicUserProfile | null>(null);
+  const [hostProfileLoading, setHostProfileLoading] = useState(false);
+
+  useEffect(() => {
+    if (event?.hostUserId) {
+      setHostProfileLoading(true);
+      dataProvider.getPublicUserProfile(event.hostUserId)
+        .then(setHostProfile)
+        .catch(() => setHostProfile(null))
+        .finally(() => setHostProfileLoading(false));
+    }
+  }, [event?.hostUserId]);
 
   const [alertsOn, setAlertsOn] = useState(false);
   const [followingStream, setFollowingStream] = useState(false);
@@ -523,8 +538,8 @@ const EventDetailScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Host collector */}
-      {hostUser && (
+      {/* Host collector — uses dataProvider.getPublicUserProfile (public view only) */}
+      {(hostProfile || hostProfileLoading) && (
         <View
           style={{
             marginBottom: 14,
@@ -540,49 +555,11 @@ const EventDetailScreen: React.FC = () => {
           >
             Host collector
           </Text>
-          <TouchableOpacity
-            onPress={() =>
-              router.push(`/users/${encodeURIComponent(hostUser.id)}`)
-            }
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: BORDER,
-              backgroundColor: CARD,
-              padding: 10,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
-            <AvatarSmall
-              name={hostUser.displayName}
-              color={hostUser.avatarColor}
-            />
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: '600',
-                  color: TEXT,
-                }}
-              >
-                {hostUser.displayName}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: MUTED,
-                }}
-              >
-                @{hostUser.handle}
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={MUTED}
-            />
-          </TouchableOpacity>
+          <PublicUserProfileCard
+            profile={hostProfile}
+            loading={hostProfileLoading}
+            onPress={hostProfile ? () => router.push(`/users/${encodeURIComponent(hostProfile.id)}`) : undefined}
+          />
         </View>
       )}
 
