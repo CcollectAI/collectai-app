@@ -181,6 +181,40 @@ export class SupabaseDataProvider implements DataProvider {
       },
     };
   }
+
+  async searchItems(query: string): Promise<Item[]> {
+    if (!query.trim()) return [];
+
+    const { data, error } = await supabase
+      .from('items')
+      .select('id,title,image_url,category,value,updated_at')
+      .ilike('title', `%${query}%`)
+      .order('updated_at', { ascending: false })
+      .limit(25);
+
+    if (error) {
+      console.warn('[SupabaseDataProvider] searchItems error:', error);
+      return [];
+    }
+
+    const rows = (data ?? []) as {
+      id: string;
+      title: string;
+      image_url?: string | null;
+      category?: string | null;
+      value?: number | null;
+      updated_at?: string | null;
+    }[];
+
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.title,
+      category: r.category || 'Uncategorized',
+      price: typeof r.value === 'number' ? r.value : 0,
+      imageUrl: r.image_url ?? undefined,
+      updatedAt: r.updated_at ?? undefined,
+    }));
+  }
 }
 
 // Singleton instance

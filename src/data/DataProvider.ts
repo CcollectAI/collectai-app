@@ -41,4 +41,11 @@ export interface DataProvider {
    * Returns attributes + prediction (no save).
    */
   quickscanSingle(): Promise<QuickScanResult>;
+
+  /**
+   * Search items by query string.
+   * Returns empty array if query is empty.
+   * @param query - Search term to match against item name/title
+   */
+  searchItems(query: string): Promise<Item[]>;
 }

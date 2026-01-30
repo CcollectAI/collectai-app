@@ -98,6 +98,19 @@ export class MockDataProvider implements DataProvider {
       },
     };
   }
+
+  async searchItems(query: string): Promise<Item[]> {
+    if (!query.trim()) return [];
+
+    const allItems = await this.listItems();
+    const lowerQuery = query.toLowerCase();
+
+    return allItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(lowerQuery) ||
+        item.category.toLowerCase().includes(lowerQuery)
+    );
+  }
 }
 
 // Singleton instance
