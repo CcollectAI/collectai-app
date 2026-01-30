@@ -1,4 +1,5 @@
 import { Alert, Linking } from 'react-native';
+import { router } from 'expo-router';
 import { AddImportCard } from '@/components/AddImportCard';
 import { AddQuickScanLayoutPro } from '@/components/AddQuickScanLayoutPro';
 const API_BASE_URL_IMPORT = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:8080';
@@ -19,7 +20,6 @@ import { Ionicons } from "@expo/vector-icons";
  * Add screen:
  * - SafeAreaView to avoid notch bleed
  * - QuickScan hero is the main action
- * - Fraud / security checks card (informational)
  * - Manual add as a secondary path
  *
  * NOTE:
@@ -29,10 +29,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const AddScreen: React.FC = () => {
   const handleQuickScanPress = () => {
-    // TODO: replace with your real QuickScan trigger
-    // Example:
-    // router.push("/quickscan-advanced");
-    console.log("QuickScan pressed");
+    router.push('/quickscan');
   };
 
   const handleManualAddPress = () => {
@@ -189,46 +186,6 @@ return (
           </View>
         </TouchableOpacity>
 
-        {/* Fraud & security checks card */}
-        <View style={styles.fraudCard}>
-          <View style={styles.fraudHeaderRow}>
-            <View style={styles.fraudIconCircle}>
-              <Ionicons name="shield-checkmark-outline" size={20} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fraudTitle}>Risk & fraud checks</Text>
-              <Text style={styles.fraudSubtitle}>
-                We run background checks on pricing, listings, and patterns to
-                highlight potential risk signals in your collection.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.fraudBulletRow}>
-            <View style={styles.bulletDot} />
-            <Text style={styles.fraudBulletText}>
-              Flags suspicious price spikes or under-market listings
-            </Text>
-          </View>
-          <View style={styles.fraudBulletRow}>
-            <View style={styles.bulletDot} />
-            <Text style={styles.fraudBulletText}>
-              Highlights items often targeted by counterfeiters
-            </Text>
-          </View>
-          <View style={styles.fraudBulletRow}>
-            <View style={styles.bulletDot} />
-            <Text style={styles.fraudBulletText}>
-              Surfaces items worth extra provenance (grading, receipts, photos)
-            </Text>
-          </View>
-
-          <Text style={styles.fraudFooterText}>
-            Fraud checks run in the background after you add items. You&apos;ll
-            see risk hints on item detail and alerts in your watchlist.
-          </Text>
-        </View>
-
         {/* Divider */}
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
@@ -331,60 +288,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginRight: 4,
-  },
-  fraudCard: {
-    borderRadius: 14,
-    padding: 14,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E0E7EC",
-    marginBottom: 20,
-  },
-  fraudHeaderRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 8,
-    gap: 8,
-  },
-  fraudIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E6F7FF",
-  },
-  fraudTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  fraudSubtitle: {
-    fontSize: 12,
-    opacity: 0.8,
-  },
-  fraudBulletRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginTop: 6,
-  },
-  bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#00A3C4",
-    marginTop: 4,
-    marginRight: 8,
-  },
-  fraudBulletText: {
-    fontSize: 12,
-    opacity: 0.85,
-    flex: 1,
-  },
-  fraudFooterText: {
-    fontSize: 11,
-    opacity: 0.7,
-    marginTop: 10,
   },
   dividerRow: {
     flexDirection: "row",

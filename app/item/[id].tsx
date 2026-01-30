@@ -20,22 +20,37 @@ export default function ItemDetailScreen() {
   const theme = useColorTheme();
   const params = useLocalSearchParams<{
     id?: string;
+    draft?: string;
     name?: string;
     category?: string;
     collection?: string;
     condition?: string;
     value?: string;
     notes?: string;
+    imageUri?: string;
+    q10?: string;
+    q50?: string;
+    q90?: string;
+    confidence?: string;
   }>();
 
   const {
+    id,
+    draft,
     name = "Unknown item",
     category = "Unknown category",
     collection = "Not set",
     condition = "Not set",
     value = "0",
     notes: initialNotes = "",
+    imageUri,
+    q10,
+    q50,
+    q90,
+    confidence,
   } = params;
+
+  const isDraft = id === 'draft' || draft === '1';
 
   const [notes, setNotes] = useState(initialNotes || "");
   const [saving, setSaving] = useState(false);
@@ -69,14 +84,31 @@ export default function ItemDetailScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Image placeholder (swap later with real image URL) */}
+          {/* Image — use captured imageUri in draft mode, placeholder otherwise */}
           <View style={[styles.imageWrapper, { borderColor: theme.border }]}>
-            <Image
-              source={require("../../assets/placeholder.png")}
-              style={styles.image}
-              resizeMode="cover"
-            />
+            {imageUri ? (
+              <Image
+                source={{ uri: imageUri }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            ) : (
+              <Image
+                source={require("../../assets/placeholder.png")}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            )}
           </View>
+
+          {/* Draft mode indicator */}
+          {isDraft && (
+            <View style={[styles.draftBanner, { backgroundColor: theme.accent }]}>
+              <Text style={[styles.draftText, { color: theme.accentText }]}>
+                Draft — not saved yet
+              </Text>
+            </View>
+          )}
 
           {/* Details card */}
           <View
@@ -112,6 +144,30 @@ export default function ItemDetailScreen() {
                 €{value}
               </Text>
             </View>
+
+            {/* Price bands (q10/q50/q90) — shown in draft mode */}
+            {(q10 || q50 || q90) && (
+              <View style={styles.priceBandsRow}>
+                <Text style={[styles.label, { color: theme.mutedText }]}>
+                  Price range
+                </Text>
+                <Text style={[styles.value, { color: theme.text }]}>
+                  €{q10 ?? '?'} – €{q50 ?? '?'} – €{q90 ?? '?'}
+                </Text>
+              </View>
+            )}
+
+            {/* Confidence — shown in draft mode */}
+            {confidence && (
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.mutedText }]}>
+                  Confidence
+                </Text>
+                <Text style={[styles.value, { color: theme.text }]}>
+                  {confidence}%
+                </Text>
+              </View>
+            )}
 
             {/* Notes (editable) */}
             <View style={styles.notesBlock}>
@@ -202,6 +258,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: "hidden",
     marginBottom: 16,
+  },
+  draftBanner: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  draftText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  priceBandsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 6,
   },
   image: {
     width: "100%",
