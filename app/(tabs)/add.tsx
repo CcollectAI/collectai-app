@@ -13,8 +13,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView, Pressable} from "react-native";
+  Pressable,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 /**
  * Add screen:
@@ -28,6 +31,8 @@ import { Ionicons } from "@expo/vector-icons";
  */
 
 const AddScreen: React.FC = () => {
+  const { colors } = useAppTheme();
+
   const handleQuickScanPress = () => {
     router.push('/quickscan');
   };
@@ -158,57 +163,57 @@ const handleImportCollectionFile = async () => {
 
   
 return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Add to your collection</Text>
-          <Text style={styles.subtitle}>Fast, camera-first flow.</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Add to your collection</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>Fast, camera-first flow.</Text>
         </View>
 
         {/* QuickScan hero card */}
         <TouchableOpacity
-          style={styles.quickScanCard}
+          style={[styles.quickScanCard, { backgroundColor: colors.card }]}
           activeOpacity={0.9}
           onPress={handleQuickScanPress}
         >
-          <View style={styles.quickScanIconCircle}>
-            <Ionicons name="scan-outline" size={32} />
+          <View style={[styles.quickScanIconCircle, { backgroundColor: colors.accent + '20' }]}>
+            <Ionicons name="scan-outline" size={32} color={colors.accent} />
           </View>
-          <Text style={styles.quickScanTitle}>QuickScan (beta)</Text>
-          <Text style={styles.quickScanSubtitle}>
+          <Text style={[styles.quickScanTitle, { color: colors.text }]}>QuickScan (beta)</Text>
+          <Text style={[styles.quickScanSubtitle, { color: colors.muted }]}>
             Snap a photo and we prefill the details. You can override anything
             before saving.
           </Text>
-          <View style={styles.quickScanButton}>
-            <Text style={styles.quickScanButtonText}>Start QuickScan</Text>
-            <Ionicons name="chevron-forward" size={18} />
+          <View style={[styles.quickScanButton, { backgroundColor: colors.accent + '20' }]}>
+            <Text style={[styles.quickScanButtonText, { color: colors.accent }]}>Start QuickScan</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.accent} />
           </View>
         </TouchableOpacity>
 
         {/* Divider */}
         <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.dividerLine} />
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <Text style={[styles.dividerText, { color: colors.muted }]}>or</Text>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
         {/* Manual add card (secondary) */}
         <TouchableOpacity
-          style={styles.manualCard}
+          style={[styles.manualCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
           activeOpacity={0.9}
           onPress={handleManualAddPress}
         >
-          <View style={styles.manualIconCircle}>
-            <Ionicons name="create-outline" size={24} />
+          <View style={[styles.manualIconCircle, { backgroundColor: colors.background }]}>
+            <Ionicons name="create-outline" size={24} color={colors.text} />
           </View>
           <View style={styles.manualTextBlock}>
-            <Text style={styles.manualTitle}>Add manually</Text>
-            <Text style={styles.manualSubtitle}>
+            <Text style={[styles.manualTitle, { color: colors.text }]}>Add manually</Text>
+            <Text style={[styles.manualSubtitle, { color: colors.muted }]}>
               Enter card / figure details yourself if you prefer full control.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} />
+          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
         </TouchableOpacity>
 
         <AddImportCard

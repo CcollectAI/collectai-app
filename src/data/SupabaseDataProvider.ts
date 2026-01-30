@@ -13,6 +13,11 @@ import type {
   QuickScanResult,
   PublicUserProfile,
   CategoryStoreData,
+  DmThread,
+  DmRequest,
+  DmMessage,
+  DmThreadStatus,
+  AnalyticsMetrics,
 } from './types';
 import { getCategoryById } from './categories';
 import { EVENTS } from './events';
@@ -289,6 +294,234 @@ export class SupabaseDataProvider implements DataProvider {
       items,
       upcomingEvents,
       friendsWhoFollow: [], // Would come from user_category_follows table
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // DM / Inbox methods
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async listInboxThreads(): Promise<DmThread[]> {
+    const { data, error } = await supabase
+      .from('v_chat_inbox_v1')
+      .select('*')
+      .order('last_message_at', { ascending: false });
+
+    if (error) {
+      console.warn('[SupabaseDataProvider] listInboxThreads error:', error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    // Map flexibly to handle various column naming conventions
+    return (data as Record<string, any>[]).map((row) => ({
+      id: row.id ?? row.thread_id,
+      otherUserId: row.other_user_id ?? row.otherUserId,
+      otherUserName: row.other_user_name ?? row.otherUserName ?? 'Unknown',
+      otherUserHandle: row.other_user_handle ?? row.otherUserHandle ?? null,
+      otherUserAvatarUrl: row.other_user_avatar_url ?? row.otherUserAvatarUrl ?? null,
+      otherUserAvatarColor: row.other_user_avatar_color ?? '#6b7280',
+      status: (row.status ?? 'accepted') as DmThreadStatus,
+      lastMessagePreview: row.last_message_preview ?? row.lastMessagePreview ?? null,
+      lastMessageAt: row.last_message_at ?? row.lastMessageAt ?? null,
+      unreadCount: row.unread_count ?? row.unreadCount ?? 0,
+      isIncoming: row.is_incoming ?? row.isIncoming ?? false,
+    }));
+  }
+
+  async listIncomingRequests(): Promise<DmRequest[]> {
+    const { data, error } = await supabase
+      .from('v_chat_inbox_v1')
+      .select('*')
+      .eq('status', 'pending')
+      .eq('is_incoming', true)
+      .order('last_message_at', { ascending: false });
+
+    if (error) {
+      console.warn('[SupabaseDataProvider] listIncomingRequests error:', error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    return (data as Record<string, any>[]).map((row) => ({
+      threadId: row.id ?? row.thread_id,
+      fromUserId: row.other_user_id ?? row.otherUserId,
+      fromUserName: row.other_user_name ?? row.otherUserName ?? 'Unknown',
+      fromUserHandle: row.other_user_handle ?? row.otherUserHandle ?? null,
+      fromUserAvatarUrl: row.other_user_avatar_url ?? row.otherUserAvatarUrl ?? null,
+      fromUserAvatarColor: row.other_user_avatar_color ?? '#6b7280',
+      requestMessage: row.last_message_preview ?? row.lastMessagePreview ?? null,
+      requestedAt: row.last_message_at ?? row.lastMessageAt ?? new Date().toISOString(),
+    }));
+  }
+
+  async requestDm(toUserId: string, message?: string): Promise<string> {
+    const { data, error } = await supabase.rpc('rpc_request_dm_v1', {
+      p_to_user_id: toUserId,
+      p_message: message ?? null,
+    });
+
+    if (error) {
+      console.error('[SupabaseDataProvider] requestDm error:', error);
+      throw new Error(error.message || 'Failed to send DM request');
+    }
+
+    // RPC returns the thread ID
+    return (data as any)?.thread_id ?? data ?? '';
+  }
+
+  async decideDmRequest(threadId: string, accept: boolean): Promise<void> {
+    const { error } = await supabase.rpc('rpc_decide_dm_request_v1', {
+      p_thread_id: threadId,
+      p_accept: accept,
+    });
+
+    if (error) {
+      console.error('[SupabaseDataProvider] decideDmRequest error:', error);
+      throw new Error(error.message || 'Failed to process DM request');
+    }
+  }
+
+  async markThreadRead(threadId: string): Promise<void> {
+    const { error } = await supabase.rpc('rpc_mark_thread_read_v1', {
+      p_thread_id: threadId,
+    });
+
+    if (error) {
+      console.warn('[SupabaseDataProvider] markThreadRead error:', error);
+      // Don't throw - marking read is non-critical
+    }
+  }
+
+  async getThreadMessages(threadId: string): Promise<DmMessage[]> {
+    const { data, error } = await supabase
+      .from('chat_messages_v1')
+      .select('id, thread_id, author_user_id, text, created_at')
+      .eq('thread_id', threadId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.warn('[SupabaseDataProvider] getThreadMessages error:', error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    return (data as Record<string, any>[]).map((row) => ({
+      id: row.id,
+      threadId: row.thread_id ?? threadId,
+      authorUserId: row.author_user_id ?? row.authorUserId,
+      text: row.text ?? '',
+      createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
+    }));
+  }
+
+  async getDmStatus(otherUserId: string): Promise<'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined'> {
+    const { data, error } = await supabase
+      .from('v_chat_inbox_v1')
+      .select('status, is_incoming')
+      .eq('other_user_id', otherUserId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return 'none';
+    }
+
+    const row = data as { status: string; is_incoming: boolean };
+    if (row.status === 'accepted') return 'accepted';
+    if (row.status === 'declined') return 'declined';
+    if (row.status === 'pending') {
+      return row.is_incoming ? 'pending_incoming' : 'pending_outgoing';
+    }
+    return 'none';
+  }
+
+  async getInboxUnreadCount(): Promise<number> {
+    const { data, error } = await supabase
+      .from('v_chat_inbox_v1')
+      .select('unread_count, status, is_incoming');
+
+    if (error || !data) {
+      return 0;
+    }
+
+    const rows = data as { unread_count: number; status: string; is_incoming: boolean }[];
+
+    // Sum unread from accepted threads + count pending incoming requests
+    let total = 0;
+    for (const row of rows) {
+      if (row.status === 'accepted') {
+        total += row.unread_count ?? 0;
+      } else if (row.status === 'pending' && row.is_incoming) {
+        total += 1; // Each pending request counts as 1
+      }
+    }
+    return total;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Analytics
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
+    // Initialize with zeros
+    let activeProjects = 0;
+    let backlogProjects = 0;
+    let completedProjects = 0;
+    let totalBuildMinutes = 0;
+    let twitchCreatorsTracked = 0;
+    let twitchCreatorsLive = 0;
+
+    // Query all 3 tables in parallel; each can fail independently
+    const [projectsRes, sessionsRes, twitchRes] = await Promise.allSettled([
+      supabase.from('build_paint_projects').select('id, status').limit(500),
+      supabase.from('build_paint_sessions').select('minutes').limit(2000),
+      supabase.from('twitch_creators').select('id, is_live').limit(500),
+    ]);
+
+    // Build & paint projects
+    if (projectsRes.status === 'fulfilled') {
+      const { data, error } = projectsRes.value;
+      if (!error && Array.isArray(data)) {
+        for (const row of data) {
+          const status = (row.status || '').toString();
+          if (status === 'Active') activeProjects += 1;
+          else if (status === 'Backlog') backlogProjects += 1;
+          else if (status === 'Completed') completedProjects += 1;
+        }
+      }
+    }
+
+    // Build & paint sessions
+    if (sessionsRes.status === 'fulfilled') {
+      const { data, error } = sessionsRes.value;
+      if (!error && Array.isArray(data)) {
+        for (const row of data) {
+          const m = Number(row.minutes ?? 0);
+          if (!Number.isNaN(m)) totalBuildMinutes += m;
+        }
+      }
+    }
+
+    // Twitch creators
+    if (twitchRes.status === 'fulfilled') {
+      const { data, error } = twitchRes.value;
+      if (!error && Array.isArray(data)) {
+        twitchCreatorsTracked = data.length;
+        twitchCreatorsLive = data.filter((row: any) => row.is_live === true).length;
+      }
+    }
+
+    return {
+      activeProjects,
+      backlogProjects,
+      completedProjects,
+      totalBuildMinutes,
+      totalBuildHours: totalBuildMinutes / 60,
+      twitchCreatorsTracked,
+      twitchCreatorsLive,
     };
   }
 }

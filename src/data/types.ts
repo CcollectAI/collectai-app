@@ -116,3 +116,66 @@ export type CategoryStoreData = {
   }[];
   friendsWhoFollow: MiniUserProfile[];
 };
+
+/**
+ * DM thread status.
+ */
+export type DmThreadStatus = 'pending' | 'accepted' | 'declined';
+
+/**
+ * DM thread — from v_chat_inbox_v1 view.
+ */
+export type DmThread = {
+  id: string;
+  otherUserId: string;
+  otherUserName: string;
+  otherUserHandle?: string | null;
+  otherUserAvatarUrl?: string | null;
+  otherUserAvatarColor?: string;
+  status: DmThreadStatus;
+  lastMessagePreview?: string | null;
+  lastMessageAt?: string | null;
+  unreadCount: number;
+  isIncoming: boolean; // true if other user initiated
+};
+
+/**
+ * Incoming DM request (pending threads where we are the recipient).
+ */
+export type DmRequest = {
+  threadId: string;
+  fromUserId: string;
+  fromUserName: string;
+  fromUserHandle?: string | null;
+  fromUserAvatarUrl?: string | null;
+  fromUserAvatarColor?: string;
+  requestMessage?: string | null;
+  requestedAt: string;
+};
+
+/**
+ * DM message — individual message in a thread.
+ */
+export type DmMessage = {
+  id: string;
+  threadId: string;
+  authorUserId: string;
+  text: string;
+  createdAt: string;
+};
+
+/**
+ * Analytics metrics for the Analytics screen.
+ * Combines build/paint project stats and Twitch creator stats.
+ */
+export type AnalyticsMetrics = {
+  // Build & paint
+  activeProjects: number;
+  backlogProjects: number;
+  completedProjects: number;
+  totalBuildMinutes: number;
+  totalBuildHours: number;
+  // Twitch
+  twitchCreatorsTracked: number;
+  twitchCreatorsLive: number;
+};

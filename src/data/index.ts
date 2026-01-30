@@ -27,6 +27,11 @@ export type {
   SpotlightSlide,
   MiniUserProfile,
   CategoryStoreData,
+  DmThread,
+  DmRequest,
+  DmMessage,
+  DmThreadStatus,
+  AnalyticsMetrics,
 } from './types';
 
 export type { DataProvider } from './DataProvider';

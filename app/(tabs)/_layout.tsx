@@ -1,25 +1,46 @@
 import React from "react";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { InboxHeaderButton } from "@/components/InboxHeaderButton";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+
+function TabHeaderRight() {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
+      <InboxHeaderButton />
+      <ThemeToggleButton />
+    </View>
+  );
+}
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-return (
+  const { colors } = useAppTheme();
+
+  return (
     <Tabs
       screenOptions={{
-        headerShown: false,                 // remove title banner
-        tabBarShowLabel: true,              // words under icons
+        headerShown: true,
+        headerRight: () => <TabHeaderRight />,
+        headerStyle: { backgroundColor: colors.card },
+        headerTintColor: colors.text,
+        headerTitleStyle: { fontWeight: '600' },
+        tabBarShowLabel: true,
         tabBarLabelPosition: "below-icon",
         tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
         tabBarIconStyle: { marginTop: 2 },
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.muted,
         tabBarStyle: {
           height: 58 + Math.max(insets.bottom, 10),
           paddingTop: 8,
           paddingBottom: Math.max(insets.bottom, 10),
-          backgroundColor: "#FFFFFF",
+          backgroundColor: colors.card,
           borderTopWidth: 1,
-          borderTopColor: "rgba(11,31,58,0.10)",
+          borderTopColor: colors.border,
         },
       }}
     >

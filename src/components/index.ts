@@ -10,3 +10,5 @@ export { default as Input } from "./Input";
 export { default as ItemCard } from "./ItemCard";
 export { default as SkeletonCard } from "./SkeletonCard";
 export { default as SearchBar } from "./SearchBar";
+export { default as InboxHeaderButton, InboxHeaderButton as InboxHeaderButtonComponent } from "./InboxHeaderButton";
+export { default as ThemeToggleButton, ThemeToggleButton as ThemeToggleButtonComponent } from "./ThemeToggleButton";

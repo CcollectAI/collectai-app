@@ -1,34 +1,22 @@
 import React, { useEffect, useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import supabase from "@/lib/supabaseClient";
+import { dataProvider, type AnalyticsMetrics } from "@/data";
 import { useAppTheme } from "@/hooks/useAppTheme";
+
 type LoadState = "idle" | "loading" | "loaded" | "error";
 
 // Compatibility: replace old ./ui/theme usage with app theme hook
 const useAppColors = () => {
   const { colors } = useAppTheme();
   return colors;
-};
-
-type AnalyticsMetrics = {
-  // Build & paint
-  activeProjects: number;
-  backlogProjects: number;
-  completedProjects: number;
-  totalBuildMinutes: number;
-  totalBuildHours: number;
-
-  // Twitch
-  twitchCreatorsTracked: number;
-  twitchCreatorsLive: number;
 };
 
 const initialMetrics: AnalyticsMetrics = {
@@ -54,105 +42,13 @@ const AnalyticsScreen: React.FC = () => {
       setErrorText(null);
 
       try {
-        const client: any = supabase as any;
-        if (!client || typeof client.from !== "function") {
-          setState("error");
-          setErrorText(
-            "Supabase client not configured – analytics are running in demo mode."
-          );
-          return;
-        }
-
-        // We try 3 queries in parallel; each can fail without crashing the UI.
-        const [
-          projectsRes,
-          sessionsRes,
-          twitchRes,
-        ] = await Promise.allSettled([
-          client
-            .from("build_paint_projects")
-            .select("id, status")
-            .limit(500),
-          client
-            .from("build_paint_sessions")
-            .select("minutes")
-            .limit(2000),
-          client
-            .from("twitch_creators")
-            .select("id, is_live")
-            .limit(500),
-        ]);
-
-        let next: AnalyticsMetrics = { ...initialMetrics };
-
-        // --- Build & paint projects ---
-        if (projectsRes.status === "fulfilled") {
-          const { data, error } = projectsRes.value;
-          if (error) {
-            // ignore, but keep note for banner
-            console.warn("[Analytics] build_paint_projects error:", error.message);
-          } else if (Array.isArray(data)) {
-            for (const row of data) {
-              const status = (row.status || "").toString();
-              if (status === "Active") next.activeProjects += 1;
-              else if (status === "Backlog") next.backlogProjects += 1;
-              else if (status === "Completed") next.completedProjects += 1;
-            }
-          }
-        } else {
-          console.warn(
-            "[Analytics] build_paint_projects rejected:",
-            projectsRes.reason
-          );
-        }
-
-        // --- Build & paint sessions ---
-        if (sessionsRes.status === "fulfilled") {
-          const { data, error } = sessionsRes.value;
-          if (error) {
-            console.warn("[Analytics] build_paint_sessions error:", error.message);
-          } else if (Array.isArray(data)) {
-            let sumMinutes = 0;
-            for (const row of data) {
-              const m = Number(row.minutes ?? 0);
-              if (!Number.isNaN(m)) sumMinutes += m;
-            }
-            next.totalBuildMinutes = sumMinutes;
-            next.totalBuildHours = sumMinutes / 60;
-          }
-        } else {
-          console.warn(
-            "[Analytics] build_paint_sessions rejected:",
-            sessionsRes.reason
-          );
-        }
-
-        // --- Twitch creators ---
-        if (twitchRes.status === "fulfilled") {
-          const { data, error } = twitchRes.value;
-          if (error) {
-            console.warn("[Analytics] twitch_creators error:", error.message);
-          } else if (Array.isArray(data)) {
-            next.twitchCreatorsTracked = data.length;
-            next.twitchCreatorsLive = data.filter(
-              (row: any) => row.is_live === true
-            ).length;
-          }
-        } else {
-          console.warn(
-            "[Analytics] twitch_creators rejected:",
-            twitchRes.reason
-          );
-        }
-
-        setMetrics(next);
+        const data = await dataProvider.getAnalyticsMetrics();
+        setMetrics(data);
         setState("loaded");
       } catch (err: any) {
-        console.warn("[Analytics] unexpected error:", err);
+        console.warn("[Analytics] Error loading metrics:", err);
         setState("error");
-        setErrorText(
-          err?.message || "Unexpected error while loading analytics."
-        );
+        setErrorText(err?.message || "Failed to load analytics data.");
       }
     };
 
@@ -161,10 +57,10 @@ const AnalyticsScreen: React.FC = () => {
 
   const bannerLabel =
     state === "loading"
-      ? "Loading analytics from Supabase…"
+      ? "Loading analytics…"
       : state === "error"
-      ? "Analytics in demo mode"
-      : "Analytics synced with Supabase";
+      ? "Analytics unavailable"
+      : "Analytics loaded";
 
   const totalProjects =
     metrics.activeProjects +
@@ -242,8 +138,8 @@ const AnalyticsScreen: React.FC = () => {
               {bannerLabel}
             </Text>
             <Text style={[styles.bannerBody, { color: colors.muted }]}>
-              Data is read-only from Supabase. If a table is missing or
-              misconfigured, we fall back gracefully without breaking the app.
+              Data is fetched via the DataProvider abstraction. In mock mode,
+              deterministic demo data is shown.
             </Text>
             {errorText && (
               <Text

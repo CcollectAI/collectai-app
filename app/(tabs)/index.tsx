@@ -6,34 +6,13 @@ import {
   Pressable,
   StyleSheet,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Polyline, Line } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
-
-
-function formatEURPrefix(v: number) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return "EUR—";
-  return "EUR" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
-}
-
-// Keep imports conservative and optional.
-// If these paths differ in your repo, the fallback data will still render.
-let analyticsApi: any = null;
-try {
-  // Common paths from the thread summaries: analytics/store consolidated.
-  // Adjust if your repo uses a different alias or location.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  analyticsApi = require("@/src/store/portfolioAnalyticsStore");
-} catch (_e) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    analyticsApi = require("../src/store/portfolioAnalyticsStore");
-  } catch (_e2) {
-    analyticsApi = null;
-  }
-}
+import { dataProvider, type PortfolioSummary, type Item as DataItem } from "@/data";
+import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 
 type RangeKey = "1D" | "7D" | "30D";
 
@@ -149,74 +128,61 @@ export default function PortfolioScreen() {
   const [series, setSeries] = useState<PortfolioPoint[]>([]);
   const [items, setItems] = useState<ItemRow[]>([]);
   const [total, setTotal] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fallback chart series (chart data not yet in DataProvider)
+  const fallbackSeries: PortfolioPoint[] = useMemo(() => [
+    { t: 0, v: 12400 },
+    { t: 1, v: 12340 },
+    { t: 2, v: 12510 },
+    { t: 3, v: 12680 },
+    { t: 4, v: 12590 },
+    { t: 5, v: 12840 },
+    { t: 6, v: 13120 },
+    { t: 7, v: 13040 },
+    { t: 8, v: 13310 },
+    { t: 9, v: 13480 },
+    { t: 10, v: 13290 },
+    { t: 11, v: 13610 },
+  ], []);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Fetch from DataProvider (mock or real based on EXPO_PUBLIC_SUPABASE_MODE)
+      const [summary, dataItems] = await Promise.all([
+        dataProvider.getPortfolioSummary(),
+        dataProvider.listItems(),
+      ]);
+
+      // Map DataProvider items to screen ItemRow shape
+      const mappedItems: ItemRow[] = dataItems.map((item: DataItem) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        value: item.price,
+        changePct: undefined, // Not available in DataProvider yet
+      }));
+
+      // Sort by value descending
+      const sorted = mappedItems.sort((a, b) => b.value - a.value);
+
+      setTotal(summary.total);
+      setItems(sorted);
+      setSeries(fallbackSeries); // Chart series uses fallback for now
+    } catch (e: any) {
+      console.warn("[PortfolioScreen] loadData error:", e);
+      setError(e?.message || "Failed to load portfolio data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true;
-
-    async function load() {
-      // Fallback data must ALWAYS render (no blank chart).
-      const fallbackSeries: PortfolioPoint[] = [
-        { t: 0, v: 12400 },
-        { t: 1, v: 12340 },
-        { t: 2, v: 12510 },
-        { t: 3, v: 12680 },
-        { t: 4, v: 12590 },
-        { t: 5, v: 12840 },
-        { t: 6, v: 13120 },
-        { t: 7, v: 13040 },
-        { t: 8, v: 13310 },
-        { t: 9, v: 13480 },
-        { t: 10, v: 13290 },
-        { t: 11, v: 13610 },
-      ];
-
-      const fallbackItems: ItemRow[] = [
-        { id: "1", name: "PSA 10 Lugia (Neo Genesis)", category: "Pokémon", value: 3450, changePct: 0.028 },
-        { id: "2", name: "Gunpla MG Barbatos (built)", category: "Gunpla", value: 1820, changePct: -0.011 },
-        { id: "3", name: "Funko: Vaulted Grail", category: "Funko", value: 1250, changePct: 0.007 },
-        { id: "4", name: "Warhammer Army Lot", category: "Warhammer", value: 980, changePct: 0.014 },
-        { id: "5", name: "Designer Toy (limited run)", category: "Art Toys", value: 760, changePct: -0.006 },
-      ];
-
-      try {
-        if (analyticsApi?.fetchPortfolioSeries) {
-          const raw = await analyticsApi.fetchPortfolioSeries({ range });
-          const s = extractSeries(raw);
-          if (mounted) setSeries(s.length ? s : fallbackSeries);
-        } else {
-          if (mounted) setSeries(fallbackSeries);
-        }
-
-        // Snapshot: try to get value-ranked positions/items.
-        if (analyticsApi?.fetchPortfolioSnapshot) {
-          const snap = await analyticsApi.fetchPortfolioSnapshot();
-          const extracted = extractItems(snap);
-          const sorted = extracted.sort((a, b) => b.value - a.value);
-          if (mounted) setItems(sorted.length ? sorted : fallbackItems);
-          const computedTotal =
-            typeof snap?.totalValue === "number"
-              ? snap.totalValue
-              : sorted.reduce((acc, it) => acc + it.value, 0);
-          if (mounted) setTotal(computedTotal || fallbackItems.reduce((acc, it) => acc + it.value, 0));
-        } else {
-          if (mounted) {
-            setItems(fallbackItems.slice().sort((a, b) => b.value - a.value));
-            setTotal(fallbackItems.reduce((acc, it) => acc + it.value, 0));
-          }
-        }
-      } catch (_e) {
-        if (!mounted) return;
-        setSeries(fallbackSeries);
-        const sorted = fallbackItems.slice().sort((a, b) => b.value - a.value);
-        setItems(sorted);
-        setTotal(sorted.reduce((acc, it) => acc + it.value, 0));
-      }
-    }
-
-    load();
-    return () => {
-      mounted = false;
-    };
+    loadData();
   }, [range]);
 
   const chart = useMemo(() => {
@@ -244,6 +210,46 @@ export default function PortfolioScreen() {
 
   const rangeButtons: RangeKey[] = ["1D", "7D", "30D"];
 
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={stylesVars.tiffany} />
+          <Text style={styles.loadingText}>Loading portfolio...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+        <View style={styles.centerContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color={stylesVars.error} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable style={styles.retryBtn} onPress={loadData}>
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Empty state
+  if (items.length === 0 && total === 0) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+        <View style={styles.centerContainer}>
+          <Ionicons name="albums-outline" size={48} color={stylesVars.sub} />
+          <Text style={styles.emptyText}>No items in your collection yet</Text>
+          <Text style={styles.emptySubtext}>Add items to start tracking your portfolio</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -254,16 +260,19 @@ export default function PortfolioScreen() {
             <Text style={styles.total}>{formatMoneyEUR(total)}</Text>
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            style={styles.settingsBtn}
-            onPress={() => {
-              // Keep this non-destructive; wire later.
-              // You can route to settings if you already have it.
-            }}
-          >
-            <Ionicons name="settings-outline" size={20} color={stylesVars.navy} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            <InboxHeaderButton size={20} />
+            <Pressable
+              accessibilityRole="button"
+              style={styles.settingsBtn}
+              onPress={() => {
+                // Keep this non-destructive; wire later.
+                // You can route to settings if you already have it.
+              }}
+            >
+              <Ionicons name="settings-outline" size={20} color={stylesVars.navy} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Range toggles */}
@@ -358,17 +367,70 @@ const stylesVars = {
   sub: "#5B6B86",
   grid: "rgba(11,27,58,0.10)",
   border: "rgba(11,27,58,0.08)",
+  error: "#B42318",
+  success: "#0A7D4E",
 };
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: stylesVars.bg },
   container: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 22 },
 
+  // Loading/Error/Empty states
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: stylesVars.sub,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  errorText: {
+    marginTop: 12,
+    color: stylesVars.error,
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  retryBtn: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: stylesVars.tiffany,
+    borderRadius: 6,
+  },
+  retryText: {
+    color: stylesVars.card,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  emptyText: {
+    marginTop: 12,
+    color: stylesVars.navy,
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  emptySubtext: {
+    marginTop: 6,
+    color: stylesVars.sub,
+    fontSize: 13,
+    textAlign: "center",
+  },
+
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 10,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   kicker: { color: stylesVars.sub, fontSize: 13, marginBottom: 4 },
   total: { color: stylesVars.navy, fontSize: 32, fontWeight: "800" },
@@ -434,6 +496,6 @@ const styles = StyleSheet.create({
   rowRight: { alignItems: "flex-end", minWidth: 92 },
   rowValue: { color: stylesVars.navy, fontWeight: "800", fontSize: 14 },
   rowPct: { fontWeight: "900", fontSize: 12, marginTop: 3 },
-  pctUp: { color: "#0A7D4E" },
-  pctDown: { color: "#B42318" },
+  pctUp: { color: stylesVars.success },
+  pctDown: { color: stylesVars.error },
 });

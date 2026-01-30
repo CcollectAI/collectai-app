@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
+  TextInput,
   StyleSheet,
   ActivityIndicator,
   Pressable,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import supabase from "@/lib/supabaseClient";
 import { useAppTheme } from "@/hooks/useAppTheme";

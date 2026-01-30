@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ChartRange = '1D'|'7D'|'30D';
@@ -9,6 +9,8 @@ export type Settings = {
   defaultRange: ChartRange;
   /** FX rates per 1 EUR (manual stub) */
   fxRates: { USD: number; GBP: number };
+  /** Dark mode toggle */
+  isDark: boolean;
 };
 
 const DEFAULTS: Settings = {
@@ -17,15 +19,16 @@ const DEFAULTS: Settings = {
   density: 'cozy',
   defaultRange: '7D',
   fxRates: { USD: 1.08, GBP: 0.86 },
+  isDark: false,
 };
 
 type Ctx = {
   settings: Settings;
-  updateSettings: (patch: Partial<Settings>) => Promise<void>;
+  updateSettings: (patch: Partial<Settings>) => void;
   ready: boolean;
 };
 
-const SettingsCtx = createContext<Ctx>({ settings: DEFAULTS, updateSettings: async()=>{}, ready:false });
+const SettingsCtx = createContext<Ctx>({ settings: DEFAULTS, updateSettings: ()=>{}, ready:false });
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
@@ -39,13 +42,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setReady(true);
   })() },[]);
 
-  const updateSettings = async (patch: Partial<Settings>)=>{
-    const next = { ...settings, ...patch };
-    setSettings(next);
-    try { await AsyncStorage.setItem('@settings', JSON.stringify(next)); } catch {}
-  };
+  const updateSettings = useCallback((patch: Partial<Settings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      // Persist async (fire and forget)
+      AsyncStorage.setItem('@settings', JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
 
-  const value = useMemo(()=>({ settings, updateSettings, ready }),[settings, ready]);
+  const value = useMemo(() => ({ settings, updateSettings, ready }), [settings, updateSettings, ready]);
   return <SettingsCtx.Provider value={value}>{children}</SettingsCtx.Provider>;
 }
 

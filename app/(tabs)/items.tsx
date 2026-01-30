@@ -3,7 +3,6 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { Link } from 'expo-router';
 import { CategoryPill } from '@/components/CategoryPill';
 import {
-  SafeAreaView,
   View,
   Text,
   TextInput,
@@ -11,10 +10,14 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { dataProvider, type Item as DataItem } from "@/data";
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 type Item = {
   id: string;
@@ -69,25 +72,6 @@ const MOCK_ITEMS: Item[] = [
   },
 ];
 
-const LIGHT_COLORS = {
-  background: "#FFFFFF",
-  text: "#0F172A",
-  muted: "#64748B",
-  border: "#E2E8F0",
-  card: "#F8FAFC",
-  accent: "#40C9C6", // Tiffany-ish
-};
-
-const DARK_COLORS = {
-  background: "#020617",
-  text: "#F9FAFB",
-  muted: "#9CA3AF",
-  border: "#1F2937",
-  card: "#020617",
-  accent: "#40C9C6",
-};
-
-
 type SortKey = "value_desc" | "value_asc" | "title";
 
 const formatCurrency = (value: number) =>
@@ -101,9 +85,7 @@ const formatCurrency = (value: number) =>
 const ItemsScreen: React.FC = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ category?: string; collectionName?: string }>();
-
-  const [isDark, setIsDark] = useState(false);
-  const colors = isDark ? DARK_COLORS : LIGHT_COLORS;
+  const { colors } = useAppTheme();
 
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("value_desc");
@@ -113,6 +95,8 @@ const ItemsScreen: React.FC = () => {
   const [providerItems, setProviderItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -142,6 +126,73 @@ const ItemsScreen: React.FC = () => {
   useEffect(() => {
     loadItems();
   }, [loadItems]);
+
+  // Export all items to CSV
+  const handleExportCSV = useCallback(async () => {
+    setExporting(true);
+    setExportStatus(null);
+
+    try {
+      // Fetch all items via DataProvider
+      const items = await dataProvider.listItems();
+
+      if (items.length === 0) {
+        setExportStatus('No items to export');
+        setExporting(false);
+        return;
+      }
+
+      // Generate CSV content
+      const headers = ['id', 'name', 'category', 'price', 'imageUrl'];
+      const csvRows = [
+        headers.join(','),
+        ...items.map((item) => {
+          const row = [
+            `"${(item.id || '').replace(/"/g, '""')}"`,
+            `"${(item.name || '').replace(/"/g, '""')}"`,
+            `"${(item.category || '').replace(/"/g, '""')}"`,
+            item.price?.toString() || '0',
+            `"${(item.imageUrl || '').replace(/"/g, '""')}"`,
+          ];
+          return row.join(',');
+        }),
+      ];
+      const csvContent = csvRows.join('\n');
+
+      // Generate filename with date
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `CollectAI_Collection_${dateStr}.csv`;
+      const filePath = `${FileSystem.documentDirectory}${filename}`;
+
+      // Write file (use string 'utf8' for encoding)
+      await FileSystem.writeAsStringAsync(filePath, csvContent);
+
+      // Check if sharing is available
+      const sharingAvailable = await Sharing.isAvailableAsync();
+      if (sharingAvailable) {
+        await Sharing.shareAsync(filePath, {
+          mimeType: 'text/csv',
+          dialogTitle: 'Export Collection',
+          UTI: 'public.comma-separated-values-text',
+        });
+        setExportStatus('Exported successfully');
+      } else {
+        Alert.alert(
+          'Export Complete',
+          `File saved to: ${filename}\n\nSharing is not available on this device.`
+        );
+        setExportStatus('Saved (sharing unavailable)');
+      }
+    } catch (err: any) {
+      console.warn('[Items] export error:', err);
+      setExportStatus('Export failed');
+      Alert.alert('Export Error', err?.message || 'Failed to export items');
+    } finally {
+      setExporting(false);
+      // Clear status after 3 seconds
+      setTimeout(() => setExportStatus(null), 3000);
+    }
+  }, []);
 
   const categoryParam =
     typeof params.category === "string" ? params.category : undefined;
@@ -309,29 +360,17 @@ const ItemsScreen: React.FC = () => {
             </Text>
           </View>
 
-          <View style={styles.headerRight}>
-            <View style={{ alignItems: "flex-end", marginRight: 8 }}>
-              <Text
-                style={[styles.portfolioLabel, { color: colors.muted }]}
-              >
-                Portfolio total
-              </Text>
-              <Text
-                style={[styles.portfolioValue, { color: colors.text }]}
-              >
-                {formatCurrency(portfolioTotal)}
-              </Text>
-            </View>
-            <Pressable
-              style={styles.iconButton}
-              onPress={() => setIsDark((prev) => !prev)}
+          <View style={{ alignItems: "flex-end" }}>
+            <Text
+              style={[styles.portfolioLabel, { color: colors.muted }]}
             >
-              <Ionicons
-                name={isDark ? "sunny-outline" : "moon-outline"}
-                size={18}
-                color={colors.muted}
-              />
-            </Pressable>
+              Portfolio total
+            </Text>
+            <Text
+              style={[styles.portfolioValue, { color: colors.text }]}
+            >
+              {formatCurrency(portfolioTotal)}
+            </Text>
           </View>
         </View>
 
@@ -583,7 +622,7 @@ const ItemsScreen: React.FC = () => {
           </Text>
         ) : (
           filteredAndSortedByCategory.map((group) => (
-            <View key={group.category} style={styles.categoryBlock}>
+            <View key={group.category} style={[styles.categoryBlock, { borderTopColor: colors.border }]}>
               {/* Category header with inline add button */}
               <View style={styles.categoryHeaderRow}>
                 <Text
@@ -694,50 +733,79 @@ const ItemsScreen: React.FC = () => {
             </View>
           ))
         )}
-      
-        {/* Supabase-backed items view (beta) */}
-        <View
-          style={{
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "#D6E4EC",
-            backgroundColor: "#FFFFFF",
-            padding: 14,
-            marginTop: 12,
-            marginBottom: 24,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "600",
-              color: "#0C2233",
-              marginBottom: 4,
-            }}
-          >
-            
-          </Text>
-          <Text
-            style={{
-              fontSize: 12,
-              color: "#647589",
-              marginBottom: 8,
-            }}
-          >
-            Open a simple view backed directly by your Supabase items table.
+
+        {/* Bottom Action Bar */}
+        <View style={[styles.bottomActionBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.bottomActionTitle, { color: colors.text }]}>
+            Actions
           </Text>
 
-          <Link href="/items-supabase-demo">
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: "#19A7AE",
-              }}
+          <View style={styles.bottomActionButtons}>
+            {/* Download Overview (Export CSV) */}
+            <Pressable
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.accent,
+                },
+                exporting && styles.actionButtonDisabled,
+              ]}
+              onPress={handleExportCSV}
+              disabled={exporting}
             >
-              Open Supabase items →
+              {exporting ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <Ionicons
+                  name="download-outline"
+                  size={18}
+                  color={colors.accent}
+                />
+              )}
+              <Text
+                style={[
+                  styles.actionButtonText,
+                  { color: colors.accent },
+                ]}
+              >
+                {exporting ? 'Exporting...' : 'Download overview'}
+              </Text>
+            </Pressable>
+
+            {/* Build & Paint Projects */}
+            <Pressable
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.accent,
+                },
+              ]}
+              onPress={() => router.push('/build-paint-projects')}
+            >
+              <Ionicons
+                name="color-palette-outline"
+                size={18}
+                color={colors.accent}
+              />
+              <Text
+                style={[
+                  styles.actionButtonText,
+                  { color: colors.accent },
+                ]}
+              >
+                Build & Paint Projects
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Export status feedback */}
+          {exportStatus && (
+            <Text style={[styles.exportStatus, { color: colors.muted }]}>
+              {exportStatus}
             </Text>
-          </Link>
+          )}
         </View>
 
 </ScrollView>
@@ -977,6 +1045,48 @@ const styles = StyleSheet.create({
   categoryTotalValue: {
     fontSize: 13,
     fontWeight: "700",
+  },
+  // Bottom action bar
+  bottomActionBar: {
+    marginTop: 8,
+    marginBottom: 24,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D6E4EC",
+    backgroundColor: "#FFFFFF",
+  },
+  bottomActionTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  bottomActionButtons: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
+  },
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  exportStatus: {
+    marginTop: 8,
+    fontSize: 11,
+    textAlign: "center",
   },
 });
 

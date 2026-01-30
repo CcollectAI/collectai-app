@@ -1,28 +1,9 @@
-import React, { useState } from 'react';
-
-import { Pressable } from "react-native";
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { EVENTS, CollectorsEvent } from '@/data/events';
-
-const DARK = {
-  BG: '#0f172a',
-  CARD: '#020617',
-  BORDER: '#1f2933',
-  TEXT: '#e5e7eb',
-  MUTED: '#9ca3af',
-  PRIMARY: '#0ea5e9',
-};
-
-const LIGHT = {
-  BG: '#f4f4f5',
-  CARD: '#ffffff',
-  BORDER: '#e5e7eb',
-  TEXT: '#0f172a',
-  MUTED: '#6b7280',
-  PRIMARY: '#0ea5e9',
-};
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 const kindLabel: Record<CollectorsEvent['kind'], string> = {
   collection_drop: 'Collection drop',
@@ -38,82 +19,38 @@ const kindIcon: Record<CollectorsEvent['kind'], keyof typeof Ionicons.glyphMap> 
 
 const EventsScreen: React.FC = () => {
   const router = useRouter();
-  const [isDark, setIsDark] = useState(true);
+  const { colors, isDark } = useAppTheme();
 
-  const theme = isDark ? DARK : LIGHT;
-  const { BG, CARD, BORDER, TEXT, MUTED, PRIMARY } = theme;
+  // Map to local variable names for minimal diff
+  const BG = colors.background;
+  const CARD = colors.card;
+  const BORDER = colors.border;
+  const TEXT = colors.text;
+  const MUTED = colors.muted;
+  const PRIMARY = colors.accent;
 
   const sortedEvents = [...EVENTS].sort((a, b) => a.date.localeCompare(b.date));
-
-  console.log('[Events] screen mounted, theme =', isDark ? 'dark' : 'light');
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: BG }}
       contentContainerStyle={{
-        paddingTop: 48,
+        paddingTop: 16,
         paddingBottom: 32,
         paddingHorizontal: 16,
       }}
     >
-      {/* Header with light/dark toggle */}
-      <View
-        style={{
-          marginBottom: 16,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <View style={{ flex: 1, paddingRight: 8 }}>
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: '700',
-              color: TEXT,
-            }}
-          >
-            Events & Drops
-          </Text>
-          <Text
-            style={{
-              marginTop: 4,
-              fontSize: 12,
-              color: MUTED,
-            }}
-          >
-            Collection drops, local meetups, and Twitch sessions in one timeline.
-            Tap a card to see who&apos;s going, follow drops, or join streams.
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={() => setIsDark((prev) => !prev)}
+      {/* Subtitle */}
+      <View style={{ marginBottom: 16 }}>
+        <Text
           style={{
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 999,
-            borderWidth: 1,
-            borderColor: BORDER,
-            flexDirection: 'row',
-            alignItems: 'center',
+            fontSize: 12,
+            color: MUTED,
           }}
         >
-          <Ionicons
-            name={isDark ? 'sunny-outline' : 'moon-outline'}
-            size={16}
-            color={MUTED}
-            style={{ marginRight: 4 }}
-          />
-          <Text
-            style={{
-              fontSize: 11,
-              color: MUTED,
-            }}
-          >
-            {isDark ? 'Light' : 'Dark'}
-          </Text>
-        </TouchableOpacity>
+          Collection drops, local meetups, and Twitch sessions in one timeline.
+          Tap a card to see who&apos;s going, follow drops, or join streams.
+        </Text>
       </View>
 
       {/* Events list */}

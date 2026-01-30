@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 type Item = {
   id: string;
@@ -67,12 +68,8 @@ const CATEGORIES = [
   "Warhammer",
 ];
 
-const COLORS = {
-  background: "#FFFFFF",
-  text: "#0F172A",
-  muted: "#64748B",
-  border: "#E2E8F0",
-  accent: "#40C9C6",
+// Tile colors stay constant for visual variety
+const TILE_COLORS = {
   tile1: "#E0F7F9",
   tile2: "#FDE68A",
   tile3: "#FECACA",
@@ -89,6 +86,7 @@ const formatCurrency = (value: number) =>
 
 const SearchScreen: React.FC = () => {
   const router = useRouter();
+  const { colors } = useAppTheme();
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([
     "Charizard",
@@ -160,18 +158,18 @@ const SearchScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: COLORS.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { backgroundColor: COLORS.background },
+          { backgroundColor: colors.background },
         ]}
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View style={styles.headerRow}>
-          <Text style={[styles.headerTitle, { color: COLORS.text }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
             Search
           </Text>
         </View>
@@ -181,7 +179,7 @@ const SearchScreen: React.FC = () => {
           <Ionicons
             name="search-outline"
             size={18}
-            color={COLORS.muted}
+            color={colors.muted}
             style={{ marginRight: 8 }}
           />
           <TextInput
@@ -189,15 +187,15 @@ const SearchScreen: React.FC = () => {
             onChangeText={setQuery}
             onSubmitEditing={handleSubmitSearch}
             placeholder="Search items & collections"
-            placeholderTextColor={COLORS.muted}
-            style={[styles.searchInput, { color: COLORS.text }]}
+            placeholderTextColor={colors.muted}
+            style={[styles.searchInput, { color: colors.text }]}
           />
         </View>
 
         {/* Recent searches */}
         {recent.length > 0 && !trimmedQuery && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Recent searches
             </Text>
             <View style={styles.chipRow}>
@@ -209,7 +207,7 @@ const SearchScreen: React.FC = () => {
                     setQuery(term);
                   }}
                 >
-                  <Text style={[styles.chipText, { color: COLORS.text }]}>
+                  <Text style={[styles.chipText, { color: colors.text }]}>
                     {term}
                   </Text>
                 </Pressable>
@@ -221,26 +219,26 @@ const SearchScreen: React.FC = () => {
         {/* Browse by category (Spotify-style grid) */}
         {!trimmedQuery && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Browse by category
             </Text>
             <View style={styles.categoryGrid}>
               {CATEGORIES.map((cat, index) => {
                 const bg =
                   index % 4 === 0
-                    ? COLORS.tile1
+                    ? TILE_COLORS.tile1
                     : index % 4 === 1
-                    ? COLORS.tile2
+                    ? TILE_COLORS.tile2
                     : index % 4 === 2
-                    ? COLORS.tile3
-                    : COLORS.tile4;
+                    ? TILE_COLORS.tile3
+                    : TILE_COLORS.tile4;
                 return (
                   <Pressable
                     key={cat}
                     style={[styles.categoryTile, { backgroundColor: bg }]}
                     onPress={() => handleOpenCategory(cat)}
                   >
-                    <Text style={[styles.categoryTileText, { color: COLORS.text }]}>
+                    <Text style={[styles.categoryTileText, { color: colors.text }]}>
                       {cat}
                     </Text>
                   </Pressable>
@@ -253,7 +251,7 @@ const SearchScreen: React.FC = () => {
         {/* Results when searching */}
         {trimmedQuery ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Top result
             </Text>
             {topResult ? (
@@ -262,22 +260,22 @@ const SearchScreen: React.FC = () => {
                 onPress={() => handleOpenItem(topResult)}
               >
                 <View style={styles.resultIcon}>
-                  <Ionicons name="star-outline" size={18} color={COLORS.accent} />
+                  <Ionicons name="star-outline" size={18} color={colors.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.resultTitle, { color: COLORS.text }]}>
+                  <Text style={[styles.resultTitle, { color: colors.text }]}>
                     {topResult.name}
                   </Text>
-                  <Text style={[styles.resultMeta, { color: COLORS.muted }]}>
+                  <Text style={[styles.resultMeta, { color: colors.muted }]}>
                     {topResult.category} • {topResult.collectionName}
                   </Text>
                 </View>
-                <Text style={[styles.resultValue, { color: COLORS.text }]}>
+                <Text style={[styles.resultValue, { color: colors.text }]}>
                   {formatCurrency(topResult.value)}
                 </Text>
               </Pressable>
             ) : (
-              <Text style={[styles.emptyText, { color: COLORS.muted }]}>
+              <Text style={[styles.emptyText, { color: colors.muted }]}>
                 No results yet. Try another search.
               </Text>
             )}
@@ -287,7 +285,7 @@ const SearchScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.sectionTitle,
-                    { color: COLORS.text, marginTop: 16 },
+                    { color: colors.text, marginTop: 16 },
                   ]}
                 >
                   More results
@@ -299,17 +297,17 @@ const SearchScreen: React.FC = () => {
                     onPress={() => handleOpenItem(item)}
                   >
                     <View style={styles.resultIcon}>
-                      <Ionicons name="card-outline" size={18} color={COLORS.muted} />
+                      <Ionicons name="card-outline" size={18} color={colors.muted} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.resultTitle, { color: COLORS.text }]}>
+                      <Text style={[styles.resultTitle, { color: colors.text }]}>
                         {item.name}
                       </Text>
-                      <Text style={[styles.resultMeta, { color: COLORS.muted }]}>
+                      <Text style={[styles.resultMeta, { color: colors.muted }]}>
                         {item.category} • {item.collectionName}
                       </Text>
                     </View>
-                    <Text style={[styles.resultValue, { color: COLORS.text }]}>
+                    <Text style={[styles.resultValue, { color: colors.text }]}>
                       {formatCurrency(item.value)}
                     </Text>
                   </Pressable>
@@ -321,7 +319,7 @@ const SearchScreen: React.FC = () => {
             <Text
               style={[
                 styles.sectionTitle,
-                { color: COLORS.text, marginTop: 16 },
+                { color: colors.text, marginTop: 16 },
               ]}
             >
               Collections
@@ -333,16 +331,16 @@ const SearchScreen: React.FC = () => {
                 onPress={() => handleOpenCollection(item.collectionName)}
               >
                 <View style={styles.collectionIcon}>
-                  <Ionicons name="albums-outline" size={18} color={COLORS.accent} />
+                  <Ionicons name="albums-outline" size={18} color={colors.accent} />
                 </View>
                 <View>
                   <Text
-                    style={[styles.collectionTitle, { color: COLORS.text }]}
+                    style={[styles.collectionTitle, { color: colors.text }]}
                   >
                     {item.collectionName}
                   </Text>
                   <Text
-                    style={[styles.collectionMeta, { color: COLORS.muted }]}
+                    style={[styles.collectionMeta, { color: colors.muted }]}
                   >
                     {item.category}
                   </Text>

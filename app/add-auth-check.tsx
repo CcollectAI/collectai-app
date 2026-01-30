@@ -14,23 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Stack } from 'expo-router';
 
 import { useAppTheme } from '@/hooks/useAppTheme';
-
-type QuickScanPrediction = {
-  name?: string;
-  category_label?: string;
-  estimated_low?: number | null;
-  estimated_mid?: number | null;
-  estimated_high?: number | null;
-  currency?: string | null;
-  confidence?: number | null;
-  price_band_label?: string | null;
-};
-
-type QuickScanResult = {
-  prediction?: QuickScanPrediction;
-  // allow any extra fields from backend without breaking
-  [key: string]: any;
-};
+import { dataProvider, type QuickScanResult } from '@/data';
 
 type DealRating =
   | 'great_deal'
@@ -49,9 +33,6 @@ type DealAnalysis = {
   diffPct: number | null;
   notes: string[];
 };
-
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:8081';
 
 function parsePrice(text: string): number | null {
   const cleaned = text.replace(/[^\d.,]/g, '').replace(',', '.');
@@ -94,9 +75,9 @@ function analyzeDeal(
 ): DealAnalysis | null {
   const prediction = quickScan?.prediction;
   const mid =
-    prediction?.estimated_mid ??
-    prediction?.estimated_low ??
-    prediction?.estimated_high ??
+    prediction?.estimatedMid ??
+    prediction?.estimatedLow ??
+    prediction?.estimatedHigh ??
     null;
 
   if (!mid || !askingPrice) {
@@ -150,8 +131,8 @@ function analyzeDeal(
     );
   }
 
-  const low = prediction?.estimated_low ?? null;
-  const high = prediction?.estimated_high ?? null;
+  const low = prediction?.estimatedLow ?? null;
+  const high = prediction?.estimatedHigh ?? null;
 
   if (
     confidence &&
@@ -188,7 +169,7 @@ function analyzeDeal(
 }
 
 export default function AddAuthCheckScreen() {
-  const { colors, spacing, radii } = useAppTheme();
+  const { colors, spacing, radius } = useAppTheme();
 
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [quickScan, setQuickScan] = useState<QuickScanResult | null>(
@@ -233,25 +214,8 @@ export default function AddAuthCheckScreen() {
     setAnalysisError(null);
 
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/quickscan-advanced/single`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ demo_mode: true }),
-        },
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          `QuickScan failed with status ${res.status}`,
-        );
-      }
-
-      const json = (await res.json()) as QuickScanResult;
-      setQuickScan(json);
+      const result = await dataProvider.quickscanSingle();
+      setQuickScan(result);
       setScanStatus('QuickScan results loaded.');
     } catch (err: any) {
       console.warn('[AddAuthCheck] QuickScan error', err);
@@ -285,6 +249,7 @@ export default function AddAuthCheckScreen() {
   }, [askingPriceText, quickScan]);
 
   const prediction = quickScan?.prediction;
+  const attributes = quickScan?.attributes;
   const currency = prediction?.currency ?? 'EUR';
 
   let dealLabel = 'Waiting for analysis';
@@ -384,7 +349,7 @@ export default function AddAuthCheckScreen() {
           {/* Scan card */}
           <View
             style={{
-              borderRadius: radii.lg,
+              borderRadius: radius.lg,
               backgroundColor: colors.card,
               padding: spacing.md,
             }}
@@ -402,7 +367,7 @@ export default function AddAuthCheckScreen() {
             {previewUri ? (
               <View
                 style={{
-                  borderRadius: radii.md,
+                  borderRadius: radius.md,
                   overflow: 'hidden',
                   borderWidth: 1,
                   borderColor: colors.border,
@@ -437,7 +402,7 @@ export default function AddAuthCheckScreen() {
               onPress={handlePickPhoto}
               disabled={scanLoading}
               style={{
-                borderRadius: radii.full,
+                borderRadius: radius.full,
                 backgroundColor: colors.primary,
                 paddingVertical: spacing.sm,
                 alignItems: 'center',
@@ -496,7 +461,7 @@ export default function AddAuthCheckScreen() {
                 >
                   {prediction.name}
                 </Text>
-                {prediction.category_label && (
+                {attributes?.category && (
                   <Text
                     style={{
                       fontSize: 12,
@@ -505,7 +470,7 @@ export default function AddAuthCheckScreen() {
                     }}
                     numberOfLines={1}
                   >
-                    {prediction.category_label}
+                    {attributes.category}
                   </Text>
                 )}
               </View>
@@ -515,7 +480,7 @@ export default function AddAuthCheckScreen() {
           {/* Asking price + analysis */}
           <View
             style={{
-              borderRadius: radii.lg,
+              borderRadius: radius.lg,
               backgroundColor: colors.card,
               padding: spacing.md,
             }}
@@ -548,7 +513,7 @@ export default function AddAuthCheckScreen() {
                 placeholder="e.g. 120"
                 placeholderTextColor={colors.mutedText}
                 style={{
-                  borderRadius: radii.md,
+                  borderRadius: radius.md,
                   borderWidth: 1,
                   borderColor: colors.border,
                   paddingHorizontal: spacing.sm,
@@ -562,7 +527,7 @@ export default function AddAuthCheckScreen() {
             <TouchableOpacity
               onPress={handleAnalyze}
               style={{
-                borderRadius: radii.full,
+                borderRadius: radius.full,
                 backgroundColor: colors.primary,
                 paddingVertical: spacing.sm,
                 alignItems: 'center',
@@ -649,7 +614,7 @@ export default function AddAuthCheckScreen() {
                 >
                   {formatCurrency(
                     analysis?.fairValue ??
-                      prediction?.estimated_mid ??
+                      prediction?.estimatedMid ??
                       null,
                     currency,
                   )}
@@ -677,7 +642,7 @@ export default function AddAuthCheckScreen() {
           {/* Manual authenticity checklist */}
           <View
             style={{
-              borderRadius: radii.lg,
+              borderRadius: radius.lg,
               backgroundColor: colors.card,
               padding: spacing.md,
               marginBottom: spacing.lg,
