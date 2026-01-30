@@ -9,6 +9,7 @@ import type {
   Item,
   WatchlistItem,
   CreateItemInput,
+  QuickScanResult,
 } from './types';
 import {
   MOCK_ANALYTICS_SUMMARY,
@@ -75,6 +76,27 @@ export class MockDataProvider implements DataProvider {
     };
     mockCreatedItems.push(newItem);
     return newItem;
+  }
+
+  async quickscanSingle(): Promise<QuickScanResult> {
+    // Deterministic mock matching backend schema
+    return {
+      itemId: null,
+      attributes: {
+        category: 'mtg',
+        editionGuess: 'Unlimited',
+        conditionGuess: 'Near Mint',
+        rarityScore: 0.82,
+      },
+      prediction: {
+        name: 'Demo Black Lotus',
+        estimatedLow: 18000.0,
+        estimatedMid: 22000.0,
+        estimatedHigh: 26000.0,
+        currency: 'EUR',
+        confidence: 0.91,
+      },
+    };
   }
 }
 

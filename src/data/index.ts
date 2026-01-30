@@ -20,6 +20,9 @@ export type {
   Item,
   WatchlistItem,
   CreateItemInput,
+  QuickScanAttributes,
+  QuickScanPrediction,
+  QuickScanResult,
 } from './types';
 
 export type { DataProvider } from './DataProvider';

@@ -9,6 +9,7 @@ import type {
   Item,
   WatchlistItem,
   CreateItemInput,
+  QuickScanResult,
 } from './types';
 
 export interface DataProvider {
@@ -34,4 +35,10 @@ export interface DataProvider {
    * @returns The created item
    */
   createItem(input: CreateItemInput): Promise<Item>;
+
+  /**
+   * Run QuickScan on a single image.
+   * Returns attributes + prediction (no save).
+   */
+  quickscanSingle(): Promise<QuickScanResult>;
 }

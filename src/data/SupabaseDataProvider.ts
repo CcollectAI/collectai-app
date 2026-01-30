@@ -10,8 +10,10 @@ import type {
   Item,
   WatchlistItem,
   CreateItemInput,
+  QuickScanResult,
 } from './types';
 import { supabase } from '../lib/supabase';
+import { collectorsApi } from '../api/collectorsApi';
 
 export class SupabaseDataProvider implements DataProvider {
   async getPortfolioSummary(): Promise<PortfolioSummary> {
@@ -153,6 +155,30 @@ export class SupabaseDataProvider implements DataProvider {
       price: typeof r.value === 'number' ? r.value : 0,
       imageUrl: r.image_url ?? undefined,
       updatedAt: r.updated_at ?? undefined,
+    };
+  }
+
+  async quickscanSingle(): Promise<QuickScanResult> {
+    // Call HTTP endpoint via collectorsApi
+    const res = await collectorsApi.quickscanSingle();
+
+    // Map snake_case response to camelCase
+    return {
+      itemId: res.item_id ?? null,
+      attributes: {
+        category: res.attributes?.category ?? '',
+        editionGuess: res.attributes?.edition_guess ?? null,
+        conditionGuess: res.attributes?.condition_guess ?? null,
+        rarityScore: res.attributes?.rarity_score ?? null,
+      },
+      prediction: {
+        name: res.prediction?.name ?? '',
+        estimatedLow: res.prediction?.estimated_low ?? 0,
+        estimatedMid: res.prediction?.estimated_mid ?? 0,
+        estimatedHigh: res.prediction?.estimated_high ?? 0,
+        currency: res.prediction?.currency ?? 'EUR',
+        confidence: res.prediction?.confidence ?? 0,
+      },
     };
   }
 }

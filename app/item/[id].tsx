@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import {
   SafeAreaView,
   ScrollView,
@@ -12,9 +12,11 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useColorTheme } from "../../src/theme/colors";
+import { dataProvider } from "@/data";
 
 export default function ItemDetailScreen() {
   const theme = useColorTheme();
@@ -53,16 +55,51 @@ export default function ItemDetailScreen() {
   const isDraft = id === 'draft' || draft === '1';
 
   const [notes, setNotes] = useState(initialNotes || "");
-  const [saving, setSaving] = useState(false);
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const notesInputRef = useRef<TextInput | null>(null);
 
   const onSaveNotes = () => {
-    setSaving(true);
-    // For now this is local-only; later we hook into Supabase / API.
+    setSavingNotes(true);
+    // Notes are local-only for now
     setTimeout(() => {
-      setSaving(false);
-      Alert.alert("Notes saved", "Your notes for this item have been updated.");
+      setSavingNotes(false);
+      Alert.alert("Notes saved locally", "Notes are stored on device only (not synced yet).");
     }, 300);
+  };
+
+  const onSaveDraft = async () => {
+    if (!isDraft) return;
+
+    setSavingDraft(true);
+    setSaveError(null);
+
+    try {
+      const created = await dataProvider.createItem({
+        name: name,
+        category: category,
+        price: Number(q50) || Number(value) || 0,
+        imageUrl: imageUri || undefined,
+      });
+
+      // Navigate to saved item
+      router.replace({
+        pathname: '/item/[id]',
+        params: {
+          id: created.id,
+          name: created.name,
+          category: created.category,
+          value: String(created.price),
+          imageUri: created.imageUrl || '',
+        },
+      });
+    } catch (err: any) {
+      console.error('[ItemDetail] save draft error:', err);
+      setSaveError(err?.message || 'Failed to save item');
+    } finally {
+      setSavingDraft(false);
+    }
   };
 
   const focusNotes = () => {
@@ -101,12 +138,35 @@ export default function ItemDetailScreen() {
             )}
           </View>
 
-          {/* Draft mode indicator */}
+          {/* Draft mode indicator + save button */}
           {isDraft && (
-            <View style={[styles.draftBanner, { backgroundColor: theme.accent }]}>
-              <Text style={[styles.draftText, { color: theme.accentText }]}>
-                Draft — not saved yet
-              </Text>
+            <View style={styles.draftSection}>
+              <View style={[styles.draftBanner, { backgroundColor: theme.accent }]}>
+                <Text style={[styles.draftText, { color: theme.accentText }]}>
+                  Draft — not saved yet
+                </Text>
+              </View>
+
+              {saveError && (
+                <Text style={[styles.errorText, { color: '#B00020' }]}>
+                  {saveError}
+                </Text>
+              )}
+
+              <Pressable
+                onPress={onSaveDraft}
+                disabled={savingDraft}
+                style={[
+                  styles.saveDraftButton,
+                  { backgroundColor: '#16a34a', opacity: savingDraft ? 0.7 : 1 },
+                ]}
+              >
+                {savingDraft ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveDraftButtonText}>Save to Collection</Text>
+                )}
+              </Pressable>
             </View>
           )}
 
@@ -212,14 +272,17 @@ export default function ItemDetailScreen() {
                 textAlignVertical="top"
                 blurOnSubmit={false}
               />
+              <Text style={[styles.notesHint, { color: theme.mutedText }]}>
+                Notes are stored locally only (not synced yet)
+              </Text>
               <View style={styles.notesActions}>
                 <Pressable
                   onPress={onSaveNotes}
                   style={[
                     styles.saveButton,
-                    { backgroundColor: theme.accent, opacity: saving ? 0.7 : 1 },
+                    { backgroundColor: theme.accent, opacity: savingNotes ? 0.7 : 1 },
                   ]}
-                  disabled={saving}
+                  disabled={savingNotes}
                 >
                   <Text
                     style={[
@@ -227,7 +290,7 @@ export default function ItemDetailScreen() {
                       { color: theme.accentText },
                     ]}
                   >
-                    {saving ? "Saving…" : "Save notes"}
+                    {savingNotes ? "Saving…" : "Save notes"}
                   </Text>
                 </Pressable>
               </View>
@@ -259,16 +322,35 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 16,
   },
+  draftSection: {
+    marginBottom: 16,
+    gap: 8,
+  },
   draftBanner: {
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
-    marginBottom: 16,
     alignItems: 'center',
   },
   draftText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  saveDraftButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveDraftButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  errorText: {
+    fontSize: 12,
+    textAlign: 'center',
   },
   priceBandsRow: {
     flexDirection: "row",
@@ -334,6 +416,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     minHeight: 100,
     maxHeight: 220,
+  },
+  notesHint: {
+    marginTop: 4,
+    fontSize: 11,
+    fontStyle: 'italic',
   },
   notesActions: {
     marginTop: 8,

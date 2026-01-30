@@ -33,3 +33,28 @@ export type CreateItemInput = {
   price: number;
   imageUrl?: string;
 };
+
+/**
+ * QuickScan types — matches backend /quickscan-advanced/single response.
+ */
+export type QuickScanAttributes = {
+  category: string;
+  editionGuess?: string | null;
+  conditionGuess?: string | null;
+  rarityScore?: number | null;
+};
+
+export type QuickScanPrediction = {
+  name: string;
+  estimatedLow: number;
+  estimatedMid: number;
+  estimatedHigh: number;
+  currency: string;
+  confidence: number;
+};
+
+export type QuickScanResult = {
+  itemId?: string | null;
+  attributes: QuickScanAttributes;
+  prediction: QuickScanPrediction;
+};
