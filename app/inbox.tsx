@@ -154,26 +154,18 @@ export default function InboxScreen() {
   };
 
   const handleThreadPress = (thread: DmThread) => {
-    // Mark as read
+    // Mark as read (best-effort)
     dataProvider.markThreadRead(thread.id).catch((err) => {
       console.warn('[InboxScreen] markThreadRead error:', err);
     });
 
-    // Navigate to chat (chat screen not yet implemented, so just log)
-    console.log('[InboxScreen] Open thread:', thread.id);
-    // router.push(`/chat/${thread.id}`);
+    // Navigate to thread detail
+    router.push(`/chat/${thread.id}`);
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={styles.headerTitle}>Inbox</Text>
-          <View style={{ width: 32 }} />
-        </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -184,16 +176,7 @@ export default function InboxScreen() {
   const hasContent = requests.length > 0 || threads.length > 0;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={styles.headerTitle}>Inbox</Text>
-        <View style={{ width: 32 }} />
-      </View>
-
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -209,11 +192,11 @@ export default function InboxScreen() {
         {/* Requests Section */}
         {requests.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: colors.muted }]}>
               Message Requests ({requests.length})
             </Text>
             {requests.map((req) => (
-              <View key={req.threadId} style={styles.requestCard}>
+              <View key={req.threadId} style={[styles.requestCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.requestHeader}>
                   <UserAvatar
                     name={req.fromUserName}
@@ -221,17 +204,17 @@ export default function InboxScreen() {
                     size={44}
                   />
                   <View style={styles.requestInfo}>
-                    <Text style={styles.requestName}>{req.fromUserName}</Text>
+                    <Text style={[styles.requestName, { color: colors.text }]}>{req.fromUserName}</Text>
                     {req.fromUserHandle && (
-                      <Text style={styles.requestHandle}>@{req.fromUserHandle}</Text>
+                      <Text style={[styles.requestHandle, { color: colors.muted }]}>@{req.fromUserHandle}</Text>
                     )}
-                    <Text style={styles.requestTime}>
+                    <Text style={[styles.requestTime, { color: colors.muted }]}>
                       {formatRelativeTime(req.requestedAt)}
                     </Text>
                   </View>
                 </View>
                 {req.requestMessage && (
-                  <Text style={styles.requestMessage} numberOfLines={2}>
+                  <Text style={[styles.requestMessage, { color: colors.text }]} numberOfLines={2}>
                     {req.requestMessage}
                   </Text>
                 )}
@@ -248,7 +231,7 @@ export default function InboxScreen() {
                     )}
                   </AnimatedPressable>
                   <AnimatedPressable
-                    style={[styles.actionBtn, styles.acceptBtn]}
+                    style={[styles.actionBtn, styles.acceptBtn, { backgroundColor: colors.accent }]}
                     onPress={() => handleAcceptRequest(req.threadId)}
                     disabled={processingRequestId === req.threadId}
                   >
@@ -267,13 +250,12 @@ export default function InboxScreen() {
         {/* Messages Section */}
         {threads.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Messages</Text>
+            <Text style={[styles.sectionTitle, { color: colors.muted }]}>Messages</Text>
             {threads.map((thread) => (
               <AnimatedPressable
                 key={thread.id}
-                style={styles.threadRow}
+                style={[styles.threadRow, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => handleThreadPress(thread)}
-                activeOpacity={0.7}
               >
                 <UserAvatar
                   name={thread.otherUserName}
@@ -285,12 +267,13 @@ export default function InboxScreen() {
                     <Text
                       style={[
                         styles.threadName,
+                        { color: colors.text },
                         thread.unreadCount > 0 && styles.threadNameUnread,
                       ]}
                     >
                       {thread.otherUserName}
                     </Text>
-                    <Text style={styles.threadTime}>
+                    <Text style={[styles.threadTime, { color: colors.muted }]}>
                       {formatRelativeTime(thread.lastMessageAt)}
                     </Text>
                   </View>
@@ -298,14 +281,15 @@ export default function InboxScreen() {
                     <Text
                       style={[
                         styles.threadPreview,
-                        thread.unreadCount > 0 && styles.threadPreviewUnread,
+                        { color: colors.muted },
+                        thread.unreadCount > 0 && { color: colors.text, fontWeight: '500' },
                       ]}
                       numberOfLines={1}
                     >
                       {thread.lastMessagePreview || 'No messages yet'}
                     </Text>
                     {thread.unreadCount > 0 && (
-                      <View style={styles.unreadBadge}>
+                      <View style={[styles.unreadBadge, { backgroundColor: colors.accent }]}>
                         <Text style={styles.unreadBadgeText}>
                           {thread.unreadCount > 99 ? '99+' : thread.unreadCount}
                         </Text>
@@ -322,10 +306,17 @@ export default function InboxScreen() {
         {!hasContent && (
           <View style={styles.emptyContainer}>
             <Ionicons name="chatbubbles-outline" size={64} color={colors.muted} />
-            <Text style={styles.emptyTitle}>No messages yet</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No messages yet</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
               Start a conversation by visiting someone's profile
             </Text>
+            <AnimatedPressable
+              style={[styles.newMessageBtn, { backgroundColor: colors.accent }]}
+              onPress={() => router.push('/chat/new')}
+            >
+              <Ionicons name="add" size={18} color="#fff" />
+              <Text style={styles.newMessageBtnText}>New Message</Text>
+            </AnimatedPressable>
           </View>
         )}
         </Animated.View>
@@ -334,28 +325,10 @@ export default function InboxScreen() {
   );
 }
 
+// Static styles only — no theme tokens
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
   },
   loadingContainer: {
     flex: 1,
@@ -375,7 +348,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.muted,
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -383,12 +355,10 @@ const styles = StyleSheet.create({
 
   // Request cards
   requestCard: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   requestHeader: {
     flexDirection: 'row',
@@ -401,21 +371,17 @@ const styles = StyleSheet.create({
   requestName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
   },
   requestHandle: {
     fontSize: 13,
-    color: colors.muted,
     marginTop: 1,
   },
   requestTime: {
     fontSize: 12,
-    color: colors.muted,
     marginTop: 2,
   },
   requestMessage: {
     fontSize: 14,
-    color: colors.text,
     marginTop: 12,
     lineHeight: 20,
   },
@@ -443,7 +409,7 @@ const styles = StyleSheet.create({
     color: fixedColors.error,
   },
   acceptBtn: {
-    backgroundColor: colors.accent,
+    // backgroundColor applied inline
   },
   acceptBtnText: {
     fontSize: 14,
@@ -455,13 +421,11 @@ const styles = StyleSheet.create({
   threadRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   avatar: {
     alignItems: 'center',
@@ -483,14 +447,12 @@ const styles = StyleSheet.create({
   threadName: {
     fontSize: 15,
     fontWeight: '500',
-    color: colors.text,
   },
   threadNameUnread: {
     fontWeight: '700',
   },
   threadTime: {
     fontSize: 12,
-    color: colors.muted,
   },
   threadPreviewRow: {
     flexDirection: 'row',
@@ -500,17 +462,11 @@ const styles = StyleSheet.create({
   threadPreview: {
     flex: 1,
     fontSize: 14,
-    color: colors.muted,
-  },
-  threadPreviewUnread: {
-    color: colors.text,
-    fontWeight: '500',
   },
   unreadBadge: {
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
@@ -533,14 +489,26 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
     marginTop: 16,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: colors.muted,
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
+  },
+  newMessageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginTop: 24,
+    gap: 8,
+  },
+  newMessageBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });

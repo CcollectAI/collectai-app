@@ -35,10 +35,6 @@ function RootStack() {
       <Stack.Screen name="analytics" options={{ title: 'Analytics' }} />
       <Stack.Screen name="twitch" options={{ title: 'Twitch' }} />
       <Stack.Screen name="build-paint-projects" options={{ title: 'Build & Paint' }} />
-      <Stack.Screen name="categories/index" options={{ title: 'Categories' }} />
-      <Stack.Screen name="categories/[categoryId]" options={{ title: 'Category' }} />
-      <Stack.Screen name="projects/[id]" options={{ title: 'Project' }} />
-      <Stack.Screen name="users/[userId]" options={{ title: 'Profile' }} />
     </Stack>
   );
 }

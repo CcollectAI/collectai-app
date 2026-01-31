@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { EVENTS, CollectorsEvent } from '@/data/events';
@@ -20,6 +21,7 @@ const kindIcon: Record<CollectorsEvent['kind'], keyof typeof Ionicons.glyphMap> 
 
 const EventsScreen: React.FC = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors, isDark } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
@@ -37,7 +39,7 @@ const EventsScreen: React.FC = () => {
     <ScrollView
       style={{ flex: 1, backgroundColor: BG }}
       contentContainerStyle={{
-        paddingTop: 16,
+        paddingTop: insets.top + 16,
         paddingBottom: 32,
         paddingHorizontal: 16,
       }}

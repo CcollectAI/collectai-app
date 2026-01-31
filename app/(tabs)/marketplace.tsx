@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Animated,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -69,13 +70,14 @@ const CATEGORIES = [
   "Warhammer",
 ];
 
-// Tile colors stay constant for visual variety
-const TILE_COLORS = {
-  tile1: "#E0F7F9",
-  tile2: "#FDE68A",
-  tile3: "#FECACA",
-  tile4: "#C7D2FE",
-};
+// Tile colors now come from theme.tileScale (Tiffany → cobalt brand scale)
+
+// Compute uniform tile dimensions for 2-col grid
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const TILE_PAD = 16; // matches content paddingHorizontal
+const TILE_GAP = 12;
+const TILE_WIDTH = Math.floor((SCREEN_WIDTH - TILE_PAD * 2 - TILE_GAP) / 2);
+const TILE_HEIGHT = Math.floor(TILE_WIDTH * 0.62); // ~110-120px for consistent aspect
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-US", {
@@ -87,7 +89,7 @@ const formatCurrency = (value: number) =>
 
 const SearchScreen: React.FC = () => {
   const router = useRouter();
-  const { colors } = useAppTheme();
+  const { colors, isDark, toggleTheme } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([
@@ -175,6 +177,20 @@ const SearchScreen: React.FC = () => {
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             Search
           </Text>
+          <View style={styles.headerIcons}>
+            <AnimatedPressable
+              style={styles.headerIconBtn}
+              onPress={() => router.push("/inbox")}
+            >
+              <Ionicons name="chatbubbles-outline" size={22} color={colors.text} />
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.headerIconBtn}
+              onPress={toggleTheme}
+            >
+              <Ionicons name={isDark ? "sunny-outline" : "moon-outline"} size={22} color={colors.text} />
+            </AnimatedPressable>
+          </View>
         </View>
 
         {/* Search input */}
@@ -227,21 +243,20 @@ const SearchScreen: React.FC = () => {
             </Text>
             <View style={styles.categoryGrid}>
               {CATEGORIES.map((cat, index) => {
-                const bg =
-                  index % 4 === 0
-                    ? TILE_COLORS.tile1
-                    : index % 4 === 1
-                    ? TILE_COLORS.tile2
-                    : index % 4 === 2
-                    ? TILE_COLORS.tile3
-                    : TILE_COLORS.tile4;
+                const bg = colors.tileScale[index % colors.tileScale.length];
+                // Use white text on darker tiles (indices 2, 3)
+                const textColor = index % 4 >= 2 ? '#FFFFFF' : colors.text;
                 return (
                   <AnimatedPressable
                     key={cat}
                     style={[styles.categoryTile, { backgroundColor: bg }]}
                     onPress={() => handleOpenCategory(cat)}
                   >
-                    <Text style={[styles.categoryTileText, { color: colors.text }]}>
+                    <Text
+                      style={[styles.categoryTileText, { color: textColor }]}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                    >
                       {cat}
                     </Text>
                   </AnimatedPressable>
@@ -371,11 +386,22 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
+  },
+  headerIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  headerIconBtn: {
+    padding: 6,
   },
   searchRow: {
     flexDirection: "row",
@@ -418,14 +444,14 @@ const styles = StyleSheet.create({
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: TILE_GAP,
   },
   categoryTile: {
-    width: "47%",
+    width: TILE_WIDTH,
+    height: TILE_HEIGHT,
     borderRadius: 12,
     padding: 12,
     justifyContent: "flex-end",
-    minHeight: 80,
   },
   categoryTileText: {
     fontSize: 14,

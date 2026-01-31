@@ -73,31 +73,13 @@ const AnalyticsScreen: React.FC = () => {
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
+      edges={['left', 'right']}
     >
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
       >
         <Animated.View style={animatedStyle}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.headerLabel, { color: colors.muted }]}>
-              Analytics
-            </Text>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Collection analytics
-            </Text>
-            <Text style={[styles.headerSub, { color: colors.muted }]}>
-              A high-level view for investors and collectors: build progress,
-              total hobby time, and Twitch presence, powered by Supabase.
-            </Text>
-          </View>
-          <View style={styles.headerIcon}>
-            <Ionicons name="stats-chart-outline" size={20} color={colors.accent} />
-          </View>
-        </View>
-
         {/* Status banner */}
         <View
           style={[
@@ -323,38 +305,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  headerLabel: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    fontWeight: "600",
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  headerSub: {
-    fontSize: 12,
-    marginTop: 4,
-    maxWidth: 280,
-  },
-  headerIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D6E4EC",
   },
   banner: {
     flexDirection: "row",

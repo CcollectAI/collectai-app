@@ -354,7 +354,7 @@ const ItemsScreen: React.FC = () => {
         <Animated.View style={animatedStyle}>
         {/* Header row */}
         <View style={styles.headerRow}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={[styles.title, { color: colors.text }]}>
               Items
             </Text>
@@ -363,18 +363,33 @@ const ItemsScreen: React.FC = () => {
             </Text>
           </View>
 
-          <View style={{ alignItems: "flex-end" }}>
-            <Text
-              style={[styles.portfolioLabel, { color: colors.muted }]}
-            >
+          <View style={styles.headerRight}>
+            <Text style={[styles.portfolioLabel, { color: colors.muted }]}>
               Portfolio total
             </Text>
-            <Text
-              style={[styles.portfolioValue, { color: colors.text }]}
-            >
+            <Text style={[styles.portfolioValue, { color: colors.text }]}>
               {formatCurrency(portfolioTotal)}
             </Text>
           </View>
+        </View>
+
+        {/* Action buttons row */}
+        <View style={styles.actionButtonsRow}>
+          <AnimatedPressable
+            style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => router.push('/categories')}
+          >
+            <Ionicons name="grid-outline" size={16} color={colors.accent} />
+            <Text style={[styles.actionBtnText, { color: colors.accent }]}>Categories</Text>
+          </AnimatedPressable>
+
+          <AnimatedPressable
+            style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => router.push('/wishlist')}
+          >
+            <Ionicons name="eye-outline" size={16} color={colors.accent} />
+            <Text style={[styles.actionBtnText, { color: colors.accent }]}>Watchlist</Text>
+          </AnimatedPressable>
         </View>
 
         {/* Search input */}
@@ -861,7 +876,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: 8,
+  },
+  headerLeft: {
+    flex: 1,
   },
   title: {
     fontSize: 22,
@@ -872,16 +890,49 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
+    marginLeft: 16,
   },
   portfolioLabel: {
     fontSize: 11,
     fontWeight: "500",
   },
   portfolioValue: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
+    marginTop: 2,
+  },
+  actionButtonsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+    minHeight: 36,
+  },
+  actionBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  wishlistBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+  },
+  wishlistBtnText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   iconButton: {
     width: 32,

@@ -45,3 +45,4 @@ ops/logs/
 *.bak_*
 *.pre_restore_*
 *.gz
+*.bak_*

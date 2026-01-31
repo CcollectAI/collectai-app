@@ -173,24 +173,26 @@ return (
           <Text style={[styles.subtitle, { color: colors.muted }]}>Fast, camera-first flow.</Text>
         </View>
 
-        {/* QuickScan hero card */}
-        <AnimatedPressable
-          style={[styles.quickScanCard, { backgroundColor: colors.card }]}
-          onPress={handleQuickScanPress}
-        >
-          <View style={[styles.quickScanIconCircle, { backgroundColor: colors.accent + '20' }]}>
-            <Ionicons name="scan-outline" size={32} color={colors.accent} />
-          </View>
-          <Text style={[styles.quickScanTitle, { color: colors.text }]}>QuickScan (beta)</Text>
-          <Text style={[styles.quickScanSubtitle, { color: colors.muted }]}>
-            Snap a photo and we prefill the details. You can override anything
-            before saving.
-          </Text>
-          <View style={[styles.quickScanButton, { backgroundColor: colors.accent + '20' }]}>
-            <Text style={[styles.quickScanButtonText, { color: colors.accent }]}>Start QuickScan</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.accent} />
-          </View>
-        </AnimatedPressable>
+        {/* QuickScan hero card with backdrop */}
+        <View style={[styles.quickScanBackdrop, { backgroundColor: colors.quickscanBackdrop }]}>
+          <AnimatedPressable
+            style={[styles.quickScanCard, { backgroundColor: colors.card }]}
+            onPress={handleQuickScanPress}
+          >
+            <View style={[styles.quickScanIconCircle, { backgroundColor: colors.accent + '20' }]}>
+              <Ionicons name="scan-outline" size={32} color={colors.accent} />
+            </View>
+            <Text style={[styles.quickScanTitle, { color: colors.text }]}>QuickScan (beta)</Text>
+            <Text style={[styles.quickScanSubtitle, { color: colors.muted }]}>
+              Snap a photo and we prefill the details. You can override anything
+              before saving.
+            </Text>
+            <View style={[styles.quickScanButton, { backgroundColor: colors.accent + '20' }]}>
+              <Text style={[styles.quickScanButtonText, { color: colors.accent }]}>Start QuickScan</Text>
+              <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+            </View>
+          </AnimatedPressable>
+        </View>
 
         {/* Divider */}
         <View style={styles.dividerRow}>
@@ -250,6 +252,13 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginTop: 4,
   },
+  quickScanBackdrop: {
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 16,
+    borderRadius: 20,
+  },
   quickScanCard: {
     borderRadius: 16,
     padding: 20,
@@ -259,7 +268,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    marginBottom: 16,
   },
   quickScanIconCircle: {
     width: 48,

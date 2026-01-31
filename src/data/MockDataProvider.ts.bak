@@ -24,10 +24,6 @@ import type {
   DmRequest,
   DmMessage,
   AnalyticsMetrics,
-  BuildPaintProject,
-  BuildPaintStep,
-  BuildPaintNote,
-  CreateBuildPaintProjectInput,
 } from './types';
 import { getCategoryById, CATEGORIES, type Category } from './categories';
 import { EVENTS } from './events';
@@ -142,82 +138,6 @@ const mockDmStatusByUser: Map<string, 'pending_outgoing' | 'pending_incoming' | 
   ['collector-rune', 'accepted'],
   ['collector-mini', 'accepted'],
   ['collector-alex', 'pending_incoming'],
-]);
-
-// In-memory build & paint projects store
-const mockBuildPaintProjects: Map<string, BuildPaintProject> = new Map([
-  ['bp-mock-1', {
-    id: 'bp-mock-1',
-    title: 'Warhammer Kill Team squad',
-    category: 'Warhammer minis',
-    status: 'active',
-    percent: 40,
-    isCompleted: false,
-    notes: 'Urban camo scheme with some neon accents',
-    createdAt: '2025-12-01T10:00:00Z',
-    updatedAt: '2025-12-15T14:00:00Z',
-  }],
-  ['bp-mock-2', {
-    id: 'bp-mock-2',
-    title: 'Gunpla MG RX-78-2 (Ver. 3.0)',
-    category: 'Gunpla & model kits',
-    status: 'active',
-    percent: 65,
-    isCompleted: false,
-    notes: 'Panel lining + decals this weekend',
-    createdAt: '2025-11-20T08:00:00Z',
-    updatedAt: '2025-12-14T18:00:00Z',
-  }],
-  ['bp-mock-3', {
-    id: 'bp-mock-3',
-    title: 'LEGO UCS Millennium Falcon',
-    category: 'Bricks & kits',
-    status: 'completed',
-    percent: 100,
-    isCompleted: true,
-    notes: 'Display-only; tracking for nostalgia',
-    createdAt: '2025-10-01T12:00:00Z',
-    updatedAt: '2025-11-15T16:00:00Z',
-  }],
-  ['bp-mock-4', {
-    id: 'bp-mock-4',
-    title: 'Blood Angels Sanguinary Guard',
-    category: 'Warhammer minis',
-    status: 'backlog',
-    percent: 0,
-    isCompleted: false,
-    notes: null,
-    createdAt: '2025-12-10T09:00:00Z',
-    updatedAt: '2025-12-10T09:00:00Z',
-  }],
-]);
-
-// In-memory build paint steps
-const mockBuildPaintSteps: Map<string, BuildPaintStep[]> = new Map([
-  ['bp-mock-1', [
-    { id: 'step-1-1', projectId: 'bp-mock-1', title: 'Assemble all models', isDone: true, sortOrder: 1, createdAt: '2025-12-01T10:00:00Z' },
-    { id: 'step-1-2', projectId: 'bp-mock-1', title: 'Prime with airbrush', isDone: true, sortOrder: 2, createdAt: '2025-12-02T10:00:00Z' },
-    { id: 'step-1-3', projectId: 'bp-mock-1', title: 'Base coat armor', isDone: false, sortOrder: 3, createdAt: '2025-12-05T10:00:00Z' },
-    { id: 'step-1-4', projectId: 'bp-mock-1', title: 'Details and highlights', isDone: false, sortOrder: 4, createdAt: '2025-12-05T10:00:00Z' },
-    { id: 'step-1-5', projectId: 'bp-mock-1', title: 'Basing and varnish', isDone: false, sortOrder: 5, createdAt: '2025-12-05T10:00:00Z' },
-  ]],
-  ['bp-mock-2', [
-    { id: 'step-2-1', projectId: 'bp-mock-2', title: 'Snap fit assembly', isDone: true, sortOrder: 1, createdAt: '2025-11-20T08:00:00Z' },
-    { id: 'step-2-2', projectId: 'bp-mock-2', title: 'Panel lining', isDone: true, sortOrder: 2, createdAt: '2025-11-25T08:00:00Z' },
-    { id: 'step-2-3', projectId: 'bp-mock-2', title: 'Apply decals', isDone: false, sortOrder: 3, createdAt: '2025-12-01T08:00:00Z' },
-    { id: 'step-2-4', projectId: 'bp-mock-2', title: 'Top coat', isDone: false, sortOrder: 4, createdAt: '2025-12-01T08:00:00Z' },
-  ]],
-]);
-
-// In-memory build paint notes
-const mockBuildPaintNotes: Map<string, BuildPaintNote[]> = new Map([
-  ['bp-mock-1', [
-    { id: 'note-1-1', projectId: 'bp-mock-1', body: 'Decided on urban camo pattern - grey base with dark grey camo stripes', createdAt: '2025-12-01T11:00:00Z' },
-    { id: 'note-1-2', projectId: 'bp-mock-1', body: 'Zenithal prime worked great. Using Vallejo German Grey as base.', createdAt: '2025-12-03T14:00:00Z' },
-  ]],
-  ['bp-mock-2', [
-    { id: 'note-2-1', projectId: 'bp-mock-2', body: 'Using Tamiya Panel Line Accent - brown for white parts, black for dark parts', createdAt: '2025-11-26T10:00:00Z' },
-  ]],
 ]);
 
 export class MockDataProvider implements DataProvider {
@@ -822,12 +742,11 @@ export class MockDataProvider implements DataProvider {
   // ─────────────────────────────────────────────────────────────────────────────
 
   async getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
-    // Compute from actual mock projects
-    const projects = Array.from(mockBuildPaintProjects.values());
-    const activeProjects = projects.filter((p) => p.status === 'active').length;
-    const backlogProjects = projects.filter((p) => p.status === 'backlog').length;
-    const completedProjects = projects.filter((p) => p.isCompleted).length;
-    const totalBuildMinutes = 1260; // ~21 hours (mock)
+    // Deterministic mock data for build & paint projects
+    const activeProjects = 2;
+    const backlogProjects = 5;
+    const completedProjects = 8;
+    const totalBuildMinutes = 1260; // ~21 hours
     const totalBuildHours = totalBuildMinutes / 60;
 
     // Use MOCK_TWITCH_CREATORS for Twitch stats
@@ -843,132 +762,6 @@ export class MockDataProvider implements DataProvider {
       twitchCreatorsTracked,
       twitchCreatorsLive,
     };
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Build & Paint Projects
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  async listBuildPaintProjects(): Promise<BuildPaintProject[]> {
-    return Array.from(mockBuildPaintProjects.values()).sort((a, b) =>
-      b.updatedAt.localeCompare(a.updatedAt)
-    );
-  }
-
-  async createBuildPaintProject(input: CreateBuildPaintProjectInput): Promise<BuildPaintProject> {
-    const id = `bp-mock-${Date.now()}`;
-    const now = new Date().toISOString();
-    const project: BuildPaintProject = {
-      id,
-      title: input.title,
-      category: input.category || null,
-      status: 'backlog',
-      percent: 0,
-      isCompleted: false,
-      notes: null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    mockBuildPaintProjects.set(id, project);
-    mockBuildPaintSteps.set(id, []);
-    mockBuildPaintNotes.set(id, []);
-    console.log('[MockDataProvider] createBuildPaintProject', { id, title: input.title });
-    return project;
-  }
-
-  async setBuildPaintProgress(projectId: string, percent: number, status?: string): Promise<void> {
-    const project = mockBuildPaintProjects.get(projectId);
-    if (!project) return;
-
-    project.percent = Math.max(0, Math.min(100, percent));
-    if (status) project.status = status;
-    project.updatedAt = new Date().toISOString();
-    mockBuildPaintProjects.set(projectId, project);
-    console.log('[MockDataProvider] setBuildPaintProgress', { projectId, percent, status });
-  }
-
-  async markBuildPaintProjectComplete(projectId: string, isCompleted: boolean): Promise<void> {
-    const project = mockBuildPaintProjects.get(projectId);
-    if (!project) return;
-
-    project.isCompleted = isCompleted;
-    project.status = isCompleted ? 'completed' : 'active';
-    if (isCompleted) project.percent = 100;
-    project.updatedAt = new Date().toISOString();
-    mockBuildPaintProjects.set(projectId, project);
-    console.log('[MockDataProvider] markBuildPaintProjectComplete', { projectId, isCompleted });
-  }
-
-  async listBuildPaintSteps(projectId: string): Promise<BuildPaintStep[]> {
-    const steps = mockBuildPaintSteps.get(projectId) || [];
-    return [...steps].sort((a, b) => a.sortOrder - b.sortOrder);
-  }
-
-  async addBuildPaintStep(projectId: string, title: string): Promise<BuildPaintStep> {
-    const steps = mockBuildPaintSteps.get(projectId) || [];
-    const sortOrder = steps.length > 0 ? Math.max(...steps.map((s) => s.sortOrder)) + 1 : 1;
-    const step: BuildPaintStep = {
-      id: `step-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-      projectId,
-      title,
-      isDone: false,
-      sortOrder,
-      createdAt: new Date().toISOString(),
-    };
-    steps.push(step);
-    mockBuildPaintSteps.set(projectId, steps);
-    // Touch project
-    const project = mockBuildPaintProjects.get(projectId);
-    if (project) {
-      project.updatedAt = new Date().toISOString();
-      mockBuildPaintProjects.set(projectId, project);
-    }
-    console.log('[MockDataProvider] addBuildPaintStep', { projectId, title, stepId: step.id });
-    return step;
-  }
-
-  async toggleBuildPaintStep(stepId: string, isDone: boolean): Promise<void> {
-    const entries = Array.from(mockBuildPaintSteps.entries());
-    for (let i = 0; i < entries.length; i++) {
-      const [projectId, steps] = entries[i];
-      const step = steps.find((s) => s.id === stepId);
-      if (step) {
-        step.isDone = isDone;
-        // Touch project
-        const project = mockBuildPaintProjects.get(projectId);
-        if (project) {
-          project.updatedAt = new Date().toISOString();
-          mockBuildPaintProjects.set(projectId, project);
-        }
-        console.log('[MockDataProvider] toggleBuildPaintStep', { stepId, isDone });
-        return;
-      }
-    }
-  }
-
-  async listBuildPaintNotes(projectId: string): Promise<BuildPaintNote[]> {
-    const notes = mockBuildPaintNotes.get(projectId) || [];
-    return [...notes].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
-
-  async addBuildPaintNote(projectId: string, body: string): Promise<BuildPaintNote> {
-    const notes = mockBuildPaintNotes.get(projectId) || [];
-    const note: BuildPaintNote = {
-      id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-      projectId,
-      body,
-      createdAt: new Date().toISOString(),
-    };
-    notes.push(note);
-    mockBuildPaintNotes.set(projectId, notes);
-    // Touch project
-    const project = mockBuildPaintProjects.get(projectId);
-    if (project) {
-      project.updatedAt = new Date().toISOString();
-      mockBuildPaintProjects.set(projectId, project);
-    }
-    console.log('[MockDataProvider] addBuildPaintNote', { projectId, noteId: note.id });
-    return note;
   }
 }
 

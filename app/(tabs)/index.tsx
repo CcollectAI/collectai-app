@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Polyline, Line } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { dataProvider, type PortfolioSummary, type Item as DataItem } from "@/data";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
@@ -325,6 +326,24 @@ export default function PortfolioScreen() {
           </View>
         </View>
 
+        {/* Analytics CTA - matches QuickScan ingress style */}
+        <AnimatedPressable
+          style={styles.analyticsCta}
+          onPress={() => router.push("/analytics")}
+        >
+          <View style={styles.analyticsIconCircle}>
+            <Ionicons name="bar-chart-outline" size={32} color={stylesVars.tiffany} />
+          </View>
+          <Text style={styles.analyticsTitle}>Analytics</Text>
+          <Text style={styles.analyticsSubtitle}>
+            View detailed insights, trends, and portfolio performance metrics.
+          </Text>
+          <View style={styles.analyticsButton}>
+            <Text style={styles.analyticsButtonText}>View Analytics</Text>
+            <Ionicons name="chevron-forward" size={18} color={stylesVars.tiffany} />
+          </View>
+        </AnimatedPressable>
+
         {/* List header */}
         <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>Collection</Text>
@@ -469,6 +488,55 @@ const styles = StyleSheet.create({
   },
   chartFooter: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
   chartHint: { color: stylesVars.sub, fontSize: 12, fontWeight: "600" },
+
+  // Analytics CTA - matches QuickScan ingress card style
+  analyticsCta: {
+    borderRadius: 16,
+    padding: 20,
+    backgroundColor: stylesVars.card,
+    marginBottom: 14,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  analyticsIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+    backgroundColor: stylesVars.tiffanySoft,
+  },
+  analyticsTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 6,
+    color: stylesVars.navy,
+  },
+  analyticsSubtitle: {
+    fontSize: 14,
+    opacity: 0.75,
+    marginBottom: 16,
+    color: stylesVars.sub,
+  },
+  analyticsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: stylesVars.tiffanySoft,
+  },
+  analyticsButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginRight: 4,
+    color: stylesVars.tiffany,
+  },
 
   sectionRow: {
     flexDirection: "row",

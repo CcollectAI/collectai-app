@@ -22,10 +22,6 @@ import type {
   DmRequest,
   DmMessage,
   AnalyticsMetrics,
-  BuildPaintProject,
-  BuildPaintStep,
-  BuildPaintNote,
-  CreateBuildPaintProjectInput,
 } from './types';
 
 export interface DataProvider {
@@ -218,71 +214,4 @@ export interface DataProvider {
    * Includes build/paint project stats and Twitch creator stats.
    */
   getAnalyticsMetrics(): Promise<AnalyticsMetrics>;
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Build & Paint Projects
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * List all build & paint projects for the current user.
-   * Mock: returns in-memory projects.
-   * Real: reads from v_build_paint_projects_v1.
-   */
-  listBuildPaintProjects(): Promise<BuildPaintProject[]>;
-
-  /**
-   * Create a new build & paint project.
-   * Mock: appends to in-memory store.
-   * Real: calls rpc_create_build_paint_project_v1.
-   */
-  createBuildPaintProject(input: CreateBuildPaintProjectInput): Promise<BuildPaintProject>;
-
-  /**
-   * Set progress (percent + optional status) on a project.
-   * Mock: updates in-memory.
-   * Real: calls rpc_set_build_paint_progress_v1.
-   */
-  setBuildPaintProgress(projectId: string, percent: number, status?: string): Promise<void>;
-
-  /**
-   * Mark a project as complete or incomplete.
-   * Mock: updates in-memory.
-   * Real: calls rpc_mark_build_paint_project_complete_v1.
-   */
-  markBuildPaintProjectComplete(projectId: string, isCompleted: boolean): Promise<void>;
-
-  /**
-   * List steps for a project.
-   * Mock: returns in-memory steps.
-   * Real: reads from v_build_paint_project_steps_v1 filtered by projectId.
-   */
-  listBuildPaintSteps(projectId: string): Promise<BuildPaintStep[]>;
-
-  /**
-   * Add a step to a project.
-   * Mock: appends to in-memory.
-   * Real: calls rpc_add_build_paint_step_v1.
-   */
-  addBuildPaintStep(projectId: string, title: string): Promise<BuildPaintStep>;
-
-  /**
-   * Toggle a step's done status.
-   * Mock: updates in-memory.
-   * Real: calls rpc_toggle_build_paint_step_v1.
-   */
-  toggleBuildPaintStep(stepId: string, isDone: boolean): Promise<void>;
-
-  /**
-   * List notes for a project.
-   * Mock: returns in-memory notes.
-   * Real: reads from v_build_paint_project_notes_v1 filtered by projectId.
-   */
-  listBuildPaintNotes(projectId: string): Promise<BuildPaintNote[]>;
-
-  /**
-   * Add a note to a project.
-   * Mock: appends to in-memory.
-   * Real: calls rpc_add_build_paint_note_v1.
-   */
-  addBuildPaintNote(projectId: string, body: string): Promise<BuildPaintNote>;
 }

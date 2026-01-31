@@ -1,20 +1,8 @@
 import React from "react";
-import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { InboxHeaderButton } from "@/components/InboxHeaderButton";
-import { ThemeToggleButton } from "@/components/ThemeToggleButton";
-
-function TabHeaderRight() {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
-      <InboxHeaderButton />
-      <ThemeToggleButton />
-    </View>
-  );
-}
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
@@ -23,11 +11,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerRight: () => <TabHeaderRight />,
-        headerStyle: { backgroundColor: colors.card },
-        headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: '600' },
+        headerShown: false,
         tabBarShowLabel: true,
         tabBarLabelPosition: "below-icon",
         tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
@@ -103,6 +87,9 @@ export default function TabsLayout() {
           ),
         }}
       />
+
+      {/* Hide wishlist from tabs - accessible via Items screen only */}
+      <Tabs.Screen name="wishlist" options={{ href: null }} />
 
       {/* IMPORTANT: Search tab uses the real Search UI living in marketplace.tsx */}
       <Tabs.Screen

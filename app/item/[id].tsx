@@ -76,22 +76,22 @@ export default function ItemDetailScreen() {
     setSaveError(null);
 
     try {
-      const created = await dataProvider.createItem({
-        name: name,
-        category: category,
-        price: Number(q50) || Number(value) || 0,
-        imageUrl: imageUri || undefined,
+      const persisted = await dataProvider.persistQuickscanDraft({
+        photoUri: imageUri || '',
+        categoryId: category,
+        title: name,
+        notes: notes || undefined,
       });
 
       // Navigate to saved item
       router.replace({
         pathname: '/item/[id]',
         params: {
-          id: created.id,
-          name: created.name,
-          category: created.category,
-          value: String(created.price),
-          imageUri: created.imageUrl || '',
+          id: persisted.id,
+          name: persisted.title,
+          category: persisted.categoryId,
+          value: String(q50 || value || 0),
+          imageUri: persisted.imageUrl || '',
         },
       });
     } catch (err: any) {

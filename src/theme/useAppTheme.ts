@@ -19,6 +19,10 @@ const LIGHT_COLORS = {
     light: "#AEE6E1",
     lighter: "#E6F7F5",
   },
+  // Tiffany → cobalt scale for category tiles
+  tileScale: ["#E6F7F5", "#81D8D0", "#5AA3B8", "#1D4ED8"],
+  // Light grey backdrop for QuickScan section
+  quickscanBackdrop: "#F1F5F9",
   success: "#10B981",
   warning: "#F59E0B",
   danger: "#EF4444",
@@ -38,6 +42,10 @@ const DARK_COLORS = {
     light: "#AEE6E1",
     lighter: "#1E3A3A",
   },
+  // Tiffany → cobalt scale for category tiles (darker variants for dark mode)
+  tileScale: ["#1E3A3A", "#2D5A5A", "#3A6B7A", "#1E40AF"],
+  // Dark backdrop for QuickScan section
+  quickscanBackdrop: "#0F172A",
   success: "#10B981",
   warning: "#F59E0B",
   danger: "#EF4444",

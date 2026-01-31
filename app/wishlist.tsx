@@ -1,0 +1,598 @@
+/**
+ * Watchlist Screen — track prices and drops for items you want.
+ * Route: /wishlist (kept for URL stability)
+ */
+
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TextInput,
+  Modal,
+  Alert,
+  ActivityIndicator,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { dataProvider, type WatchlistItem } from '@/data';
+import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable, useEnterReveal } from '@/motion';
+
+const CATEGORIES = [
+  'Pokémon',
+  'Magic: The Gathering',
+  'Disney Lorcana',
+  'Funko Pop',
+  'Diecast',
+  'LEGO',
+  'Warhammer',
+  'Other',
+];
+
+function formatCurrency(value: number | null): string {
+  if (value === null || value === undefined) return '—';
+  try {
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    }).format(value);
+  } catch {
+    return `€${value}`;
+  }
+}
+
+function formatDate(dateStr: string | undefined): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+export default function WishlistScreen() {
+  const router = useRouter();
+  const { colors } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
+
+  const [items, setItems] = useState<WatchlistItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
+  const [formTitle, setFormTitle] = useState('');
+  const [formCategory, setFormCategory] = useState('');
+  const [formTargetPrice, setFormTargetPrice] = useState('');
+  const [formNotes, setFormNotes] = useState('');
+  const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
+
+  const loadItems = useCallback(async () => {
+    try {
+      // userId is ignored in mock mode
+      const data = await dataProvider.listWatchlist('current-user');
+      setItems(data);
+    } catch (err) {
+      console.warn('[Wishlist] loadItems error:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadItems();
+  }, [loadItems]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadItems();
+  }, [loadItems]);
+
+  const resetForm = () => {
+    setFormTitle('');
+    setFormCategory('');
+    setFormTargetPrice('');
+    setFormNotes('');
+  };
+
+  const handleAdd = async () => {
+    if (!formTitle.trim()) {
+      Alert.alert('Required', 'Please enter a title');
+      return;
+    }
+    if (!formCategory) {
+      Alert.alert('Required', 'Please select a category');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const targetPrice = formTargetPrice.trim()
+        ? parseFloat(formTargetPrice.replace(/[^0-9.]/g, ''))
+        : null;
+
+      await dataProvider.addWatchlistItem({
+        title: formTitle.trim(),
+        category: formCategory,
+        targetPrice: targetPrice && !isNaN(targetPrice) ? targetPrice : null,
+        notes: formNotes.trim() || undefined,
+      });
+
+      setModalVisible(false);
+      resetForm();
+      loadItems();
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to add item');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemove = (item: WatchlistItem) => {
+    Alert.alert(
+      'Remove from Watchlist',
+      `Remove "${item.title}" from your watchlist?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dataProvider.removeWatchlistItem(item.id);
+              loadItems();
+            } catch (err: any) {
+              Alert.alert('Error', err?.message || 'Failed to remove item');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const renderItem = ({ item }: { item: WatchlistItem }) => {
+    const priorityColor =
+      item.priority === 'high'
+        ? '#ef4444'
+        : item.priority === 'medium'
+        ? '#f59e0b'
+        : '#22c55e';
+
+    return (
+      <View style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.itemHeader}>
+          <View style={styles.itemTitleRow}>
+            <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
+            <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={1}>
+              {item.title}
+            </Text>
+          </View>
+          <AnimatedPressable onPress={() => handleRemove(item)} style={styles.removeBtn}>
+            <Ionicons name="close-circle" size={22} color={colors.muted} />
+          </AnimatedPressable>
+        </View>
+
+        <View style={styles.itemMeta}>
+          {item.category && (
+            <View style={[styles.categoryBadge, { backgroundColor: colors.accent + '20' }]}>
+              <Text style={[styles.categoryText, { color: colors.accent }]}>{item.category}</Text>
+            </View>
+          )}
+          {item.targetPrice !== null && (
+            <Text style={[styles.targetPrice, { color: colors.text }]}>
+              Target: {formatCurrency(item.targetPrice)}
+            </Text>
+          )}
+        </View>
+
+        {item.notes && (
+          <Text style={[styles.notes, { color: colors.muted }]} numberOfLines={2}>
+            {item.notes}
+          </Text>
+        )}
+
+        {item.createdAt && (
+          <Text style={[styles.dateAdded, { color: colors.muted }]}>
+            Added {formatDate(item.createdAt)}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="eye-outline" size={64} color={colors.muted} />
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>Your watchlist is empty</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+        Track prices and drops for items you want
+      </Text>
+      <AnimatedPressable
+        style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
+        onPress={() => setModalVisible(true)}
+      >
+        <Ionicons name="add" size={20} color="#fff" />
+        <Text style={styles.emptyBtnText}>Add to Watchlist</Text>
+      </AnimatedPressable>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Watchlist</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        </AnimatedPressable>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Watchlist</Text>
+        <View style={styles.headerRight}>
+          <AnimatedPressable onPress={() => router.push('/alerts')} style={styles.alertsBtn}>
+            <Ionicons name="notifications-outline" size={22} color={colors.accent} />
+          </AnimatedPressable>
+          <AnimatedPressable onPress={() => setModalVisible(true)} style={styles.addBtn}>
+            <Ionicons name="add-circle" size={28} color={colors.accent} />
+          </AnimatedPressable>
+        </View>
+      </View>
+
+      <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={[
+            styles.listContent,
+            items.length === 0 && styles.listContentEmpty,
+          ]}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          ListEmptyComponent={renderEmpty}
+        />
+      </Animated.View>
+
+      {/* Add Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Watchlist</Text>
+              <AnimatedPressable onPress={() => { setModalVisible(false); resetForm(); }}>
+                <Ionicons name="close" size={24} color={colors.muted} />
+              </AnimatedPressable>
+            </View>
+
+            {/* Title */}
+            <Text style={[styles.label, { color: colors.text }]}>Title *</Text>
+            <TextInput
+              value={formTitle}
+              onChangeText={setFormTitle}
+              placeholder="e.g. Charizard VMAX Rainbow"
+              placeholderTextColor={colors.muted}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+            />
+
+            {/* Category */}
+            <Text style={[styles.label, { color: colors.text }]}>Category *</Text>
+            <AnimatedPressable
+              style={[styles.input, styles.pickerBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
+              onPress={() => setCategoryPickerVisible(true)}
+            >
+              <Text style={{ color: formCategory ? colors.text : colors.muted }}>
+                {formCategory || 'Select category'}
+              </Text>
+              <Ionicons name="chevron-down" size={18} color={colors.muted} />
+            </AnimatedPressable>
+
+            {/* Target Price */}
+            <Text style={[styles.label, { color: colors.text }]}>Target Price (EUR)</Text>
+            <TextInput
+              value={formTargetPrice}
+              onChangeText={setFormTargetPrice}
+              placeholder="e.g. 350"
+              placeholderTextColor={colors.muted}
+              keyboardType="numeric"
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+            />
+
+            {/* Notes */}
+            <Text style={[styles.label, { color: colors.text }]}>Notes</Text>
+            <TextInput
+              value={formNotes}
+              onChangeText={setFormNotes}
+              placeholder="e.g. Looking for PSA 9 or higher"
+              placeholderTextColor={colors.muted}
+              multiline
+              numberOfLines={3}
+              style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+            />
+
+            {/* Save Button */}
+            <AnimatedPressable
+              style={[styles.saveBtn, { backgroundColor: colors.accent }]}
+              onPress={handleAdd}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.saveBtnText}>Add to Watchlist</Text>
+              )}
+            </AnimatedPressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Category Picker Modal */}
+      <Modal visible={categoryPickerVisible} animationType="fade" transparent>
+        <AnimatedPressable
+          style={styles.pickerOverlay}
+          onPress={() => setCategoryPickerVisible(false)}
+        >
+          <View style={[styles.pickerContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Category</Text>
+            {CATEGORIES.map((cat) => (
+              <AnimatedPressable
+                key={cat}
+                style={[
+                  styles.pickerItem,
+                  formCategory === cat && { backgroundColor: colors.accent + '20' },
+                ]}
+                onPress={() => {
+                  setFormCategory(cat);
+                  setCategoryPickerVisible(false);
+                }}
+              >
+                <Text style={[styles.pickerItemText, { color: colors.text }]}>{cat}</Text>
+                {formCategory === cat && (
+                  <Ionicons name="checkmark" size={20} color={colors.accent} />
+                )}
+              </AnimatedPressable>
+            ))}
+          </View>
+        </AnimatedPressable>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  backBtn: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  addBtn: {
+    padding: 4,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  alertsBtn: {
+    padding: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listContent: {
+    padding: 16,
+    gap: 12,
+  },
+  listContentEmpty: {
+    flex: 1,
+  },
+  itemCard: {
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  itemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  priorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  itemTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+  },
+  removeBtn: {
+    padding: 4,
+  },
+  itemMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 10,
+  },
+  categoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  categoryText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  targetPrice: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  notes: {
+    fontSize: 13,
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  dateAdded: {
+    fontSize: 11,
+    marginTop: 6,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 24,
+    gap: 6,
+  },
+  emptyBtnText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  input: {
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    borderWidth: 1,
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  pickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  saveBtn: {
+    marginTop: 24,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  saveBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  pickerContent: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 16,
+  },
+  pickerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  pickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  pickerItemText: {
+    fontSize: 15,
+  },
+});

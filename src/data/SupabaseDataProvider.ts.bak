@@ -24,10 +24,6 @@ import type {
   DmMessage,
   DmThreadStatus,
   AnalyticsMetrics,
-  BuildPaintProject,
-  BuildPaintStep,
-  BuildPaintNote,
-  CreateBuildPaintProjectInput,
 } from './types';
 import { getCategoryById } from './categories';
 import { EVENTS } from './events';
@@ -107,11 +103,11 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   async listItems(): Promise<Item[]> {
-    // items table schema: id, title, category, updated_at
-    // attributes/attributes_json may or may not exist - query base columns only
+    // items table schema: id, title, category, images (jsonb array), attributes_json, updated_at
+    // No 'value' column - price would come from price_predictions
     const { data, error } = await supabase
       .from('items')
-      .select('id, title, category, updated_at')
+      .select('id, title, category, images, updated_at')
       .order('updated_at', { ascending: false })
       .limit(200);
 
@@ -124,6 +120,7 @@ export class SupabaseDataProvider implements DataProvider {
       id: string;
       title?: string | null;
       category?: string | null;
+      images?: string[] | null;
       updated_at?: string | null;
     }[];
 
@@ -132,7 +129,7 @@ export class SupabaseDataProvider implements DataProvider {
       name: r.title ?? 'Untitled',
       category: r.category || 'Uncategorized',
       price: 0, // Price comes from price_predictions table, not items
-      imageUrl: undefined, // Image URL not available from base items table
+      imageUrl: Array.isArray(r.images) && r.images.length > 0 ? r.images[0] : undefined,
       updatedAt: r.updated_at ?? undefined,
     }));
   }
@@ -299,10 +296,10 @@ export class SupabaseDataProvider implements DataProvider {
   async searchItems(query: string): Promise<Item[]> {
     if (!query.trim()) return [];
 
-    // items table schema: id, title, category, updated_at
+    // items table schema: id, title, category, images (jsonb array), updated_at
     const { data, error } = await supabase
       .from('items')
-      .select('id, title, category, updated_at')
+      .select('id, title, category, images, updated_at')
       .ilike('title', `%${query}%`)
       .order('updated_at', { ascending: false })
       .limit(25);
@@ -316,6 +313,7 @@ export class SupabaseDataProvider implements DataProvider {
       id: string;
       title?: string | null;
       category?: string | null;
+      images?: string[] | null;
       updated_at?: string | null;
     }[];
 
@@ -324,7 +322,7 @@ export class SupabaseDataProvider implements DataProvider {
       name: r.title ?? 'Untitled',
       category: r.category || 'Uncategorized',
       price: 0, // Price comes from price_predictions table, not items
-      imageUrl: undefined, // Image URL not available from base items table
+      imageUrl: Array.isArray(r.images) && r.images.length > 0 ? r.images[0] : undefined,
       updatedAt: r.updated_at ?? undefined,
     }));
   }
@@ -448,43 +446,19 @@ export class SupabaseDataProvider implements DataProvider {
   // ─────────────────────────────────────────────────────────────────────────────
 
   async listCategorySummaries(): Promise<CategorySummary[]> {
-    const { data, error } = await supabase
-      .from('v_category_summaries_v1')
-      .select('id, name, completion_pct, owned_count, missing_count, total_count');
+    // VIEW_NOT_AVAILABLE: v_category_summaries_v1 does not exist yet.
+    this.assertViewAvailable('v_category_summaries_v1', false);
 
-    if (error) {
-      console.warn('[SupabaseDataProvider] listCategorySummaries error:', error);
-      return [];
-    }
-
-    return (data ?? []).map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      completionPct: row.completion_pct ?? 0,
-      ownedCount: row.owned_count ?? 0,
-      missingCount: row.missing_count ?? 0,
-      totalCount: row.total_count ?? 0,
-    }));
+    // Unreachable - assertViewAvailable throws
+    return [];
   }
 
   async listCategoryMissing(categoryId: string): Promise<CategoryMissingItem[]> {
-    const { data, error } = await supabase
-      .from('v_category_missing_items_v1')
-      .select('id, category_id, title, brand, notes')
-      .eq('category_id', categoryId);
+    // VIEW_NOT_AVAILABLE: v_category_missing_items_v1 does not exist yet.
+    this.assertViewAvailable('v_category_missing_items_v1', false);
 
-    if (error) {
-      console.warn('[SupabaseDataProvider] listCategoryMissing error:', error);
-      return [];
-    }
-
-    return (data ?? []).map((row: any) => ({
-      id: row.id,
-      categoryId: row.category_id,
-      title: row.title,
-      brand: row.brand,
-      notes: row.notes,
-    }));
+    // Unreachable - assertViewAvailable throws
+    return [];
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -776,181 +750,6 @@ export class SupabaseDataProvider implements DataProvider {
       totalBuildHours: totalBuildMinutes / 60,
       twitchCreatorsTracked,
       twitchCreatorsLive,
-    };
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Build & Paint Projects
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  async listBuildPaintProjects(): Promise<BuildPaintProject[]> {
-    const { data, error } = await supabase
-      .from('v_build_paint_projects_v1')
-      .select('id, title, category, status, percent_complete, is_completed, notes, created_at, updated_at')
-      .order('updated_at', { ascending: false })
-      .limit(200);
-
-    if (error) {
-      console.warn('[SupabaseDataProvider] listBuildPaintProjects error:', error);
-      return [];
-    }
-
-    return (data ?? []).map((row: any) => ({
-      id: row.id,
-      title: row.title,
-      category: row.category,
-      status: row.status,
-      percent: row.percent_complete ?? 0,
-      isCompleted: row.is_completed ?? false,
-      notes: row.notes,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    }));
-  }
-
-  async createBuildPaintProject(input: CreateBuildPaintProjectInput): Promise<BuildPaintProject> {
-    const { data, error } = await supabase.rpc('rpc_create_build_paint_project_v1', {
-      p_title: input.title,
-      p_category: input.category || null,
-    });
-
-    if (error) {
-      console.warn('[SupabaseDataProvider] createBuildPaintProject error:', error);
-      throw new Error(error.message || 'Failed to create project');
-    }
-
-    const row = data as any;
-    return {
-      id: row.id,
-      title: row.title,
-      category: row.category,
-      status: row.status,
-      percent: row.percent_complete ?? 0,
-      isCompleted: row.is_completed ?? false,
-      notes: row.notes || null,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    };
-  }
-
-  async setBuildPaintProgress(projectId: string, percent: number, status?: string): Promise<void> {
-    const { error } = await supabase.rpc('rpc_set_build_paint_progress_v1', {
-      p_project_id: projectId,
-      p_percent: percent,
-      p_status: status || null,
-    });
-
-    if (error) {
-      console.warn('[SupabaseDataProvider] setBuildPaintProgress error:', error);
-      throw new Error(error.message || 'Failed to set progress');
-    }
-  }
-
-  async markBuildPaintProjectComplete(projectId: string, isCompleted: boolean): Promise<void> {
-    const { error } = await supabase.rpc('rpc_mark_build_paint_project_complete_v1', {
-      p_project_id: projectId,
-      p_is_completed: isCompleted,
-    });
-
-    if (error) {
-      console.warn('[SupabaseDataProvider] markBuildPaintProjectComplete error:', error);
-      throw new Error(error.message || 'Failed to mark complete');
-    }
-  }
-
-  async listBuildPaintSteps(projectId: string): Promise<BuildPaintStep[]> {
-    const { data, error } = await supabase
-      .from('v_build_paint_project_steps_v1')
-      .select('id, project_id, title, is_done, sort_order, created_at')
-      .eq('project_id', projectId)
-      .order('sort_order', { ascending: true });
-
-    if (error) {
-      console.warn('[SupabaseDataProvider] listBuildPaintSteps error:', error);
-      return [];
-    }
-
-    return (data ?? []).map((row: any) => ({
-      id: row.id,
-      projectId: row.project_id,
-      title: row.title,
-      isDone: row.is_done ?? false,
-      sortOrder: row.sort_order ?? 0,
-      createdAt: row.created_at,
-    }));
-  }
-
-  async addBuildPaintStep(projectId: string, title: string): Promise<BuildPaintStep> {
-    const { data, error } = await supabase.rpc('rpc_add_build_paint_step_v1', {
-      p_project_id: projectId,
-      p_title: title,
-    });
-
-    if (error) {
-      console.warn('[SupabaseDataProvider] addBuildPaintStep error:', error);
-      throw new Error(error.message || 'Failed to add step');
-    }
-
-    const row = data as any;
-    return {
-      id: row.id,
-      projectId: row.project_id,
-      title: row.title,
-      isDone: row.is_done ?? false,
-      sortOrder: row.sort_order ?? 0,
-      createdAt: row.created_at,
-    };
-  }
-
-  async toggleBuildPaintStep(stepId: string, isDone: boolean): Promise<void> {
-    const { error } = await supabase.rpc('rpc_toggle_build_paint_step_v1', {
-      p_step_id: stepId,
-      p_is_done: isDone,
-    });
-
-    if (error) {
-      console.warn('[SupabaseDataProvider] toggleBuildPaintStep error:', error);
-      throw new Error(error.message || 'Failed to toggle step');
-    }
-  }
-
-  async listBuildPaintNotes(projectId: string): Promise<BuildPaintNote[]> {
-    const { data, error } = await supabase
-      .from('v_build_paint_project_notes_v1')
-      .select('id, project_id, body, created_at')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.warn('[SupabaseDataProvider] listBuildPaintNotes error:', error);
-      return [];
-    }
-
-    return (data ?? []).map((row: any) => ({
-      id: row.id,
-      projectId: row.project_id,
-      body: row.body,
-      createdAt: row.created_at,
-    }));
-  }
-
-  async addBuildPaintNote(projectId: string, body: string): Promise<BuildPaintNote> {
-    const { data, error } = await supabase.rpc('rpc_add_build_paint_note_v1', {
-      p_project_id: projectId,
-      p_body: body,
-    });
-
-    if (error) {
-      console.warn('[SupabaseDataProvider] addBuildPaintNote error:', error);
-      throw new Error(error.message || 'Failed to add note');
-    }
-
-    const row = data as any;
-    return {
-      id: row.id,
-      projectId: row.project_id,
-      body: row.body,
-      createdAt: row.created_at,
     };
   }
 }

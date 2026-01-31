@@ -1,723 +1,478 @@
-import React, { useMemo } from 'react';
+/**
+ * User Profile Screen — Pro-grade collector profile with opt-in sections.
+ * Route: /users/[userId]
+ * Uses DataProvider for profile data; hides sections when data unavailable.
+ */
+
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  getUserById,
-  getSimilarUsers,
-  UserProfile,
-} from '@/data/users';
+import { dataProvider, type PublicUserProfile, type WatchlistItem } from '@/data';
+import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
 
-const BG = '#0f172a';
-const CARD = '#020617';
-const BORDER = '#1f2933';
-const TEXT = '#e5e7eb';
-const MUTED = '#9ca3af';
+// ─────────────────────────────────────────────────────────────────────────────
+// Avatar Component
+// ─────────────────────────────────────────────────────────────────────────────
+const AvatarCircle: React.FC<{ name: string; size?: number }> = ({ name, size = 64 }) => {
+  const { colors } = useAppTheme();
+  const initials = name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || '?';
 
-const formatCurrency = (value: number | undefined | null): string => {
-  if (!value || !Number.isFinite(value)) return '€0';
-  try {
-    return `€${value.toLocaleString('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })}`;
-  } catch {
-    return `€${value}`;
-  }
-};
-
-const StatChip: React.FC<{ label: string; value: string }> = ({ label, value }) => {
   return (
     <View
-      style={{
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: BORDER,
-        backgroundColor: CARD,
-        minWidth: 90,
-      }}
+      style={[
+        styles.avatar,
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: colors.accent,
+        },
+      ]}
     >
-      <Text
-        style={{
-          fontSize: 11,
-          color: MUTED,
-        }}
-      >
-        {label}
-      </Text>
-      <Text
-        style={{
-          marginTop: 2,
-          fontSize: 14,
-          fontWeight: '600',
-          color: TEXT,
-        }}
-      >
-        {value}
-      </Text>
+      <Text style={[styles.avatarText, { fontSize: size * 0.35 }]}>{initials}</Text>
     </View>
   );
 };
 
-const ScorePill: React.FC<{ label: string; value: number }> = ({ label, value }) => {
-  const clamped = Math.max(0, Math.min(100, value));
+// ─────────────────────────────────────────────────────────────────────────────
+// Section Card Component
+// ─────────────────────────────────────────────────────────────────────────────
+const SectionCard: React.FC<{
+  title: string;
+  children: React.ReactNode;
+}> = ({ title, children }) => {
+  const { colors } = useAppTheme();
+
   return (
-    <View
-      style={{
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: BORDER,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginRight: 8,
-      }}
-    >
-      <View
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          marginRight: 6,
-          backgroundColor:
-            clamped >= 80 ? '#22c55e' : clamped >= 60 ? '#eab308' : '#64748b',
-        }}
-      />
-      <Text
-        style={{
-          fontSize: 11,
-          color: MUTED,
-          marginRight: 4,
-        }}
-      >
-        {label}
-      </Text>
-      <Text
-        style={{
-          fontSize: 12,
-          fontWeight: '600',
-          color: TEXT,
-        }}
-      >
-        {clamped}
-      </Text>
+    <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Text style={[styles.sectionTitle, { color: colors.muted }]}>{title}</Text>
+      {children}
     </View>
   );
 };
 
-const AvatarCircle: React.FC<{ name: string; color: string }> = ({ name, color }) => {
-  const initials =
-    name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase() || '?';
+// ─────────────────────────────────────────────────────────────────────────────
+// Stat Box Component
+// ─────────────────────────────────────────────────────────────────────────────
+const StatBox: React.FC<{ label: string; value: string | number }> = ({ label, value }) => {
+  const { colors } = useAppTheme();
+
   return (
-    <View
-      style={{
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        backgroundColor: color,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 18,
-          fontWeight: '700',
-          color: '#ffffff',
-        }}
-      >
-        {initials}
-      </Text>
+    <View style={[styles.statBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
+      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: colors.muted }]}>{label}</Text>
     </View>
   );
 };
 
-const UserProfileScreen: React.FC = () => {
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Screen
+// ─────────────────────────────────────────────────────────────────────────────
+export default function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId?: string }>();
   const router = useRouter();
+  const { colors } = useAppTheme();
 
-  const user: UserProfile | undefined = useMemo(
-    () => getUserById(userId ?? null),
-    [userId],
-  );
+  const [profile, setProfile] = useState<PublicUserProfile | null>(null);
+  const [watchlistCount, setWatchlistCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!user) {
+  const loadProfile = useCallback(async () => {
+    if (!userId) {
+      setError('No user ID provided');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Load profile from DataProvider
+      const profileData = await dataProvider.getPublicUserProfile(userId);
+      setProfile(profileData);
+
+      // Try to load watchlist count (best-effort)
+      try {
+        const watchlist = await dataProvider.listWatchlist(userId);
+        setWatchlistCount(watchlist.length);
+      } catch {
+        // Watchlist may not be accessible for other users
+        setWatchlistCount(null);
+      }
+    } catch (err: any) {
+      console.warn('[UserProfile] loadProfile error:', err);
+      setError(err?.message || 'Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  // Loading state
+  if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: BG,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: '600',
-            color: TEXT,
-            marginBottom: 8,
-          }}
-        >
-          Collector not found
-        </Text>
-        <Text
-          style={{
-            fontSize: 13,
-            color: MUTED,
-            textAlign: 'center',
-          }}
-        >
-          This profile doesn&apos;t exist yet. Try opening from the leaderboard
-          or from a different link.
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            marginTop: 16,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderRadius: 999,
-            borderWidth: 1,
-            borderColor: BORDER,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '500',
-              color: TEXT,
-            }}
-          >
-            Go back
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </SafeAreaView>
     );
   }
 
-  const similarUsers = getSimilarUsers(user);
+  // Error / Not found state
+  if (error || !profile) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.centerContainer}>
+          <Ionicons name="person-outline" size={48} color={colors.muted} />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>
+            {error || 'Collector not found'}
+          </Text>
+          <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
+            This profile doesn't exist or couldn't be loaded.
+          </Text>
+          <AnimatedPressable
+            style={[styles.retryBtn, { borderColor: colors.border }]}
+            onPress={() => router.back()}
+          >
+            <Text style={[styles.retryBtnText, { color: colors.text }]}>Go back</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Format collection value
+  const formattedValue = profile.collectionValueEur
+    ? `€${profile.collectionValueEur.toLocaleString()}`
+    : null;
 
   return (
-    <ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: BG,
-      }}
-      contentContainerStyle={{
-        paddingBottom: 32,
-      }}
-    >
-      {/* Header / hero */}
-      <View
-        style={{
-          paddingTop: 48,
-          paddingHorizontal: 16,
-          paddingBottom: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: BORDER,
-          backgroundColor: CARD,
-        }}
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        </AnimatedPressable>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+        <View style={{ width: 32 }} />
+      </View>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 12,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={{
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: BORDER,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 11,
-                color: MUTED,
-              }}
-            >
-              Back
-            </Text>
-          </TouchableOpacity>
+        {/* ═══════════════════════════════════════════════════════════════════
+            A) Profile Header Card
+        ═══════════════════════════════════════════════════════════════════ */}
+        <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <AvatarCircle name={profile.displayName} size={72} />
 
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
-            <Ionicons
-              name="trophy-outline"
-              size={18}
-              color={MUTED}
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={{
-                fontSize: 12,
-                color: MUTED,
-              }}
-            >
-              Leaderboard profile
+          <View style={styles.profileInfo}>
+            <Text style={[styles.displayName, { color: colors.text }]}>
+              {profile.displayName}
             </Text>
-          </View>
-        </View>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}
-        >
-          <AvatarCircle name={user.displayName} color={user.avatarColor} />
-          <View style={{ marginLeft: 12, flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: '700',
-                color: TEXT,
-              }}
-            >
-              {user.displayName}
-            </Text>
-            <Text
-              style={{
-                fontSize: 13,
-                color: MUTED,
-              }}
-            >
-              @{user.handle}
-            </Text>
-            {user.location && (
-              <Text
-                style={{
-                  marginTop: 2,
-                  fontSize: 12,
-                  color: MUTED,
-                }}
-              >
-                <Ionicons
-                  name="location-outline"
-                  size={12}
-                  color={MUTED}
-                />{' '}
-                {user.location}
+            {profile.handle && (
+              <Text style={[styles.handle, { color: colors.muted }]}>
+                @{profile.handle}
               </Text>
             )}
           </View>
-        </View>
 
-        {user.bio && (
-          <Text
-            style={{
-              marginTop: 10,
-              fontSize: 12,
-              color: MUTED,
-            }}
-          >
-            {user.bio}
-          </Text>
-        )}
-      </View>
-
-      {/* Stats row */}
-      <View
-        style={{
-          paddingHorizontal: 16,
-          paddingTop: 12,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 12,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: '700',
-              color: TEXT,
-            }}
-          >
-            Collection snapshot
-          </Text>
-          {user.joinedAt && (
-            <Text
-              style={{
-                fontSize: 11,
-                color: MUTED,
-              }}
-            >
-              Joined{' '}
-              {new Date(user.joinedAt).toLocaleDateString('en-GB', {
-                month: 'short',
-                year: 'numeric',
-              })}
-            </Text>
-          )}
-        </View>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-          }}
-        >
-          <StatChip
-            label="Portfolio value"
-            value={formatCurrency(user.stats.totalEstimatedValueEur)}
-          />
-          <StatChip
-            label="Items"
-            value={user.stats.totalItems.toString()}
-          />
-          <StatChip
-            label="Categories"
-            value={user.stats.totalCategories.toString()}
-          />
-        </View>
-
-        <View
-          style={{
-            marginTop: 10,
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-          }}
-        >
-          <ScorePill label="Completion" value={user.stats.completionScore} />
-          <ScorePill label="Rarity" value={user.stats.rarityScore} />
-          <ScorePill label="Activity" value={user.stats.activityScore} />
-        </View>
-      </View>
-
-      {/* Collections by category */}
-      <View
-        style={{
-          marginTop: 16,
-          paddingHorizontal: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: '700',
-            color: TEXT,
-            marginBottom: 6,
-          }}
-        >
-          Collections by category
-        </Text>
-        <Text
-          style={{
-            fontSize: 12,
-            color: MUTED,
-            marginBottom: 8,
-          }}
-        >
-          Structured similar to your Items view: each category shows a total and
-          links into that slice of the portfolio.
-        </Text>
-
-        {user.categories.map((cat) => (
-          <View
-            key={cat.id}
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: BORDER,
-              backgroundColor: CARD,
-              padding: 12,
-              marginBottom: 8,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 6,
-              }}
-            >
-              <View>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: '600',
-                    color: TEXT,
-                  }}
-                >
-                  {cat.name}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: MUTED,
-                  }}
-                >
-                  {cat.itemCount} items
-                </Text>
-              </View>
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: '600',
-                  color: TEXT,
-                }}
-              >
-                {formatCurrency(cat.totalEstimatedValueEur)}
-              </Text>
-            </View>
-
-            <TouchableOpacity
+          {/* CTA Row */}
+          <View style={styles.ctaRow}>
+            <AnimatedPressable
+              style={[styles.ctaBtn, styles.ctaBtnPrimary, { backgroundColor: colors.accent }]}
               onPress={() => {
-                console.log('[UserProfile] open category slice', user.id, cat.id);
-              }}
-              style={{
-                marginTop: 4,
-                alignSelf: 'flex-start',
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 999,
-                borderWidth: 1,
-                borderColor: BORDER,
-                flexDirection: 'row',
-                alignItems: 'center',
+                // Navigate to DM - best effort
+                dataProvider.requestDm(userId!, '').then((result) => {
+                  const threadId = typeof result === 'string' ? result : (result as any)?.thread_id;
+                  if (threadId) {
+                    router.push(`/chat/${threadId}`);
+                  }
+                }).catch(() => {
+                  // DM not available
+                });
               }}
             >
-              <Ionicons
-                name="albums-outline"
-                size={13}
-                color={MUTED}
-                style={{ marginRight: 6 }}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: '500',
-                  color: MUTED,
-                }}
-              >
-                View items in this category
-              </Text>
-            </TouchableOpacity>
+              <Ionicons name="chatbubble-outline" size={16} color="#fff" />
+              <Text style={styles.ctaBtnTextLight}>Message</Text>
+            </AnimatedPressable>
+
+            <AnimatedPressable
+              style={[styles.ctaBtn, { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 }]}
+              disabled
+            >
+              <Ionicons name="person-add-outline" size={16} color={colors.muted} />
+              <Text style={[styles.ctaBtnText, { color: colors.muted }]}>Follow</Text>
+            </AnimatedPressable>
           </View>
-        ))}
-      </View>
+        </View>
 
-      {/* Recent pickups */}
-      <View
-        style={{
-          marginTop: 16,
-          paddingHorizontal: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: '700',
-            color: TEXT,
-            marginBottom: 6,
-          }}
-        >
-          Recent pickups
-        </Text>
-        <Text
-          style={{
-            fontSize: 12,
-            color: MUTED,
-            marginBottom: 8,
-          }}
-        >
-          A short stream of the latest items added, useful for leaderboard
-          viewers to understand how this collection is evolving.
-        </Text>
-
-        {user.recentItems.map((it) => (
-          <View
-            key={it.id}
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: BORDER,
-              backgroundColor: CARD,
-              padding: 10,
-              marginBottom: 6,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '600',
-                    color: TEXT,
-                  }}
-                  numberOfLines={1}
-                >
-                  {it.name}
-                </Text>
-                <Text
-                  style={{
-                    marginTop: 2,
-                    fontSize: 11,
-                    color: MUTED,
-                  }}
-                  numberOfLines={1}
-                >
-                  {it.category}
-                  {it.collectionName ? ` • ${it.collectionName}` : ''}
-                </Text>
-              </View>
-              {it.estimatedValueEur && (
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: '600',
-                    color: TEXT,
-                  }}
-                >
-                  {formatCurrency(it.estimatedValueEur)}
-                </Text>
+        {/* ═══════════════════════════════════════════════════════════════════
+            B) Stats Card (conditional - show if any stats available)
+        ═══════════════════════════════════════════════════════════════════ */}
+        {(profile.collectionCount !== null || watchlistCount !== null || formattedValue) && (
+          <SectionCard title="Collector Stats">
+            <View style={styles.statsGrid}>
+              {profile.collectionCount !== null && (
+                <StatBox label="Items" value={profile.collectionCount} />
+              )}
+              {watchlistCount !== null && (
+                <StatBox label="Watchlist" value={watchlistCount} />
+              )}
+              {formattedValue && (
+                <StatBox label="Value" value={formattedValue} />
               )}
             </View>
-          </View>
-        ))}
-      </View>
+          </SectionCard>
+        )}
 
-      {/* Similar collectors */}
-      {similarUsers.length > 0 && (
-        <View
-          style={{
-            marginTop: 16,
-            paddingHorizontal: 16,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: '700',
-              color: TEXT,
-              marginBottom: 6,
-            }}
-          >
-            Similar collectors
-          </Text>
-          <Text
-            style={{
-              fontSize: 12,
-              color: MUTED,
-              marginBottom: 6,
-            }}
-          >
-            Profiles with similar category focus or portfolio patterns — useful
-            for leaderboard discovery.
-          </Text>
+        {/* ═══════════════════════════════════════════════════════════════════
+            C) Bio Card (conditional - show if bio exists)
+        ═══════════════════════════════════════════════════════════════════ */}
+        {profile.bio && (
+          <SectionCard title="About">
+            <Text style={[styles.bioText, { color: colors.text }]}>{profile.bio}</Text>
+          </SectionCard>
+        )}
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: 4 }}
-          >
-            {similarUsers.map((u) => (
-              <TouchableOpacity
-                key={u.id}
-                onPress={() =>
-                  router.push(`/users/${encodeURIComponent(u.id)}`)
-                }
-                style={{
-                  width: 190,
-                  marginRight: 10,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: BORDER,
-                  backgroundColor: CARD,
-                  padding: 10,
-                }}
-              >
+        {/* ═══════════════════════════════════════════════════════════════════
+            D) Interests Card (conditional - show if interests exist)
+        ═══════════════════════════════════════════════════════════════════ */}
+        {profile.interests && profile.interests.length > 0 && (
+          <SectionCard title="Interests">
+            <View style={styles.interestsRow}>
+              {profile.interests.map((interest, idx) => (
                 <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginBottom: 6,
-                  }}
+                  key={idx}
+                  style={[styles.interestPill, { backgroundColor: colors.background, borderColor: colors.border }]}
                 >
-                  <AvatarCircle name={u.displayName} color={u.avatarColor} />
-                  <View style={{ marginLeft: 8, flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: '600',
-                        color: TEXT,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {u.displayName}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        color: MUTED,
-                      }}
-                      numberOfLines={1}
-                    >
-                      @{u.handle}
-                    </Text>
-                  </View>
+                  <Text style={[styles.interestText, { color: colors.text }]}>{interest}</Text>
                 </View>
-                <Text
-                  style={{
-                    fontSize: 11,
-                    color: MUTED,
-                    marginBottom: 4,
-                  }}
-                  numberOfLines={2}
-                >
-                  {u.bio}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontWeight: '600',
-                    color: TEXT,
-                  }}
-                >
-                  {formatCurrency(u.stats.totalEstimatedValueEur)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-    </ScrollView>
-  );
-};
+              ))}
+            </View>
+          </SectionCard>
+        )}
 
-export default UserProfileScreen;
+        {/* ═══════════════════════════════════════════════════════════════════
+            E) Badges Card - Hidden (no badge data source yet)
+        ═══════════════════════════════════════════════════════════════════ */}
+        {/* Badges section hidden - no DataProvider method for badges */}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            F) Events Card - Hidden (no events-attending data source yet)
+        ═══════════════════════════════════════════════════════════════════ */}
+        {/* Events attending section hidden - no DataProvider method */}
+
+        {/* Bottom spacing */}
+        <View style={{ height: 32 }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Styles
+// ─────────────────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  backBtn: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+  },
+  errorSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  retryBtn: {
+    marginTop: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  retryBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Profile card
+  profileCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    alignItems: 'center',
+  },
+  avatar: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontWeight: '700',
+    color: '#fff',
+  },
+  profileInfo: {
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  displayName: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  handle: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 12,
+  },
+  ctaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  ctaBtnPrimary: {
+    // background set inline
+  },
+  ctaBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  ctaBtnTextLight: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+
+  // Section card
+  sectionCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginTop: 16,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+
+  // Stats
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statBox: {
+    flex: 1,
+    minWidth: 80,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  statLabel: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+
+  // Bio
+  bioText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+
+  // Interests
+  interestsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  interestPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  interestText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+});
