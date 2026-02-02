@@ -165,7 +165,14 @@ export default function InboxScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
+          <View style={{ width: 32 }} />
+        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -176,7 +183,16 @@ export default function InboxScreen() {
   const hasContent = requests.length > 0 || threads.length > 0;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        </AnimatedPressable>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
+        <View style={{ width: 32 }} />
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -310,13 +326,6 @@ export default function InboxScreen() {
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
               Start a conversation by visiting someone's profile
             </Text>
-            <AnimatedPressable
-              style={[styles.newMessageBtn, { backgroundColor: colors.accent }]}
-              onPress={() => router.push('/chat/new')}
-            >
-              <Ionicons name="add" size={18} color="#fff" />
-              <Text style={styles.newMessageBtnText}>New Message</Text>
-            </AnimatedPressable>
           </View>
         )}
         </Animated.View>
@@ -329,6 +338,21 @@ export default function InboxScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  backBtn: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
   },
   loadingContainer: {
     flex: 1,
@@ -496,19 +520,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
-  },
-  newMessageBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-    marginTop: 24,
-    gap: 8,
-  },
-  newMessageBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 });

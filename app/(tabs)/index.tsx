@@ -1,24 +1,54 @@
-import React, { useEffect, useMemo, useState } from "react";
+/**
+ * Portfolio Screen — Collectr-style portfolio view with interactive chart.
+ *
+ * Features:
+ * - Tiffany blue (#81D8D0) themed chart
+ * - Analytics banner with CTA
+ * - Pressable top valued items
+ * - Watchlist section with price targets
+ */
+
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
   ScrollView,
+  Pressable,
   StyleSheet,
   Platform,
   ActivityIndicator,
-  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Polyline, Line } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { dataProvider, type PortfolioSummary, type Item as DataItem } from "@/data";
-import { InboxHeaderButton } from "@/components/InboxHeaderButton";
-import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { useRouter } from "expo-router";
+import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/PortfolioLineChart";
+import { useWatchlist } from "@/state/watchlistStore";
+
+// Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
+const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
+const USE_REAL_BACKEND = SUPABASE_MODE === "real";
+
+// Keep imports conservative and optional.
+let analyticsApi: any = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  analyticsApi = require("@/store/portfolioAnalyticsStore");
+} catch {
+  analyticsApi = null;
+}
+
+// Optional: collectors client for real backend
+let collectorsClient: any = null;
+if (USE_REAL_BACKEND) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    collectorsClient = require("@/services/collectorsClient");
+  } catch {
+    collectorsClient = null;
+  }
+}
 
 type RangeKey = "1D" | "7D" | "30D";
-
-type PortfolioPoint = { t: number; v: number };
 
 type ItemRow = {
   id: string;
@@ -28,7 +58,11 @@ type ItemRow = {
   changePct?: number;
 };
 
-function formatMoneyEUR(n: number) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Formatting helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function formatMoneyEUR(n: number): string {
   try {
     return new Intl.NumberFormat("nl-NL", {
       style: "currency",
@@ -40,31 +74,22 @@ function formatMoneyEUR(n: number) {
   }
 }
 
-function formatPct(p?: number) {
+function formatPct(p?: number): string {
   if (p === undefined || p === null || Number.isNaN(p)) return "—";
   const sign = p > 0 ? "+" : "";
   return `${sign}${(p * 100).toFixed(2)}%`;
 }
 
-function clamp01(x: number) {
-  return Math.max(0, Math.min(1, x));
+function formatDeltaEUR(n: number): string {
+  const sign = n >= 0 ? "+" : "";
+  return `${sign}${formatMoneyEUR(n)}`;
 }
 
-function normalizeSeries(points: PortfolioPoint[]) {
-  if (!points.length) return [];
-  const vals = points.map((p) => p.v);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const span = max - min || 1;
-  return points.map((p) => ({ ...p, nv: (p.v - min) / span }));
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Data extraction helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
-function extractSeries(raw: any): PortfolioPoint[] {
-  // Accept a bunch of plausible shapes:
-  // - [{t,v}]
-  // - [{x,y}]
-  // - { points: [...] }
-  // - { series: [...] }
+function extractSeries(raw: any): TimeSeriesPoint[] {
   const arr =
     (Array.isArray(raw) && raw) ||
     raw?.points ||
@@ -74,19 +99,15 @@ function extractSeries(raw: any): PortfolioPoint[] {
   if (!Array.isArray(arr)) return [];
   return arr
     .map((p: any, idx: number) => {
-      const t = typeof p?.t === "number" ? p.t : typeof p?.x === "number" ? p.x : idx;
-      const v = typeof p?.v === "number" ? p.v : typeof p?.y === "number" ? p.y : Number(p?.value);
+      const t = p?.t ?? p?.timestamp ?? new Date().toISOString();
+      const v = typeof p?.v === "number" ? p.v : typeof p?.value === "number" ? p.value : Number(p?.y);
       if (typeof v !== "number" || Number.isNaN(v)) return null;
-      return { t, v };
+      return { t: String(t), v };
     })
-    .filter(Boolean) as PortfolioPoint[];
+    .filter(Boolean) as TimeSeriesPoint[];
 }
 
 function extractItems(raw: any): ItemRow[] {
-  // Accept:
-  // - raw.items
-  // - raw.holdings / raw.positions
-  // - raw.snapshot.items, etc.
   const base =
     raw?.items ||
     raw?.holdings ||
@@ -100,6 +121,8 @@ function extractItems(raw: any): ItemRow[] {
       const value =
         typeof it?.value === "number"
           ? it.value
+          : typeof it?.currentValue === "number"
+          ? it.currentValue
           : typeof it?.marketValue === "number"
           ? it.marketValue
           : typeof it?.totalValue === "number"
@@ -111,10 +134,10 @@ function extractItems(raw: any): ItemRow[] {
       const changePct =
         typeof it?.changePct === "number"
           ? it.changePct
+          : typeof it?.change1dPct === "number"
+          ? it.change1dPct
           : typeof it?.pctChange === "number"
           ? it.pctChange
-          : typeof it?.change === "number"
-          ? it.change
           : undefined;
 
       const category = it?.category ? String(it.category) : undefined;
@@ -125,449 +148,755 @@ function extractItems(raw: any): ItemRow[] {
     .filter(Boolean) as ItemRow[];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Fallback demo data
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FALLBACK_SERIES: TimeSeriesPoint[] = [
+  { t: "2025-11-01T00:00:00Z", v: 12400 },
+  { t: "2025-11-03T00:00:00Z", v: 12340 },
+  { t: "2025-11-06T00:00:00Z", v: 12510 },
+  { t: "2025-11-09T00:00:00Z", v: 12680 },
+  { t: "2025-11-12T00:00:00Z", v: 12590 },
+  { t: "2025-11-15T00:00:00Z", v: 12840 },
+  { t: "2025-11-18T00:00:00Z", v: 13120 },
+  { t: "2025-11-21T00:00:00Z", v: 13040 },
+  { t: "2025-11-24T00:00:00Z", v: 13310 },
+  { t: "2025-11-27T00:00:00Z", v: 13480 },
+  { t: "2025-11-29T00:00:00Z", v: 13290 },
+  { t: "2025-11-30T00:00:00Z", v: 13610 },
+];
+
+const FALLBACK_ITEMS: ItemRow[] = [
+  { id: "1", name: "PSA 10 Lugia (Neo Genesis)", category: "Pokémon", value: 3450, changePct: 0.028 },
+  { id: "2", name: "Gunpla MG Barbatos (built)", category: "Gunpla", value: 1820, changePct: -0.011 },
+  { id: "3", name: "Funko: Vaulted Grail", category: "Funko", value: 1250, changePct: 0.007 },
+  { id: "4", name: "Warhammer Army Lot", category: "Warhammer", value: 980, changePct: 0.014 },
+  { id: "5", name: "Designer Toy (limited run)", category: "Art Toys", value: 760, changePct: -0.006 },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function PortfolioScreen() {
+  const router = useRouter();
+  const watchlist = useWatchlist();
+
   const [range, setRange] = useState<RangeKey>("7D");
-  const [series, setSeries] = useState<PortfolioPoint[]>([]);
-  const [items, setItems] = useState<ItemRow[]>([]);
-  const [total, setTotal] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [series, setSeries] = useState<TimeSeriesPoint[]>(FALLBACK_SERIES);
+  const [items, setItems] = useState<ItemRow[]>(FALLBACK_ITEMS);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
-  // Fallback chart series (chart data not yet in DataProvider)
-  const fallbackSeries: PortfolioPoint[] = useMemo(() => [
-    { t: 0, v: 12400 },
-    { t: 1, v: 12340 },
-    { t: 2, v: 12510 },
-    { t: 3, v: 12680 },
-    { t: 4, v: 12590 },
-    { t: 5, v: 12840 },
-    { t: 6, v: 13120 },
-    { t: 7, v: 13040 },
-    { t: 8, v: 13310 },
-    { t: 9, v: 13480 },
-    { t: 10, v: 13290 },
-    { t: 11, v: 13610 },
-  ], []);
+  // Get watchlist items with their alerts
+  const watchlistItems = useMemo(() => {
+    return watchlist.items.slice(0, 5).map((item) => ({
+      ...item,
+      alert: watchlist.getAlert(item.id),
+    }));
+  }, [watchlist]);
 
-  const loadData = async () => {
+  // Compute totals from series
+  const { total, delta, deltaPct } = useMemo(() => {
+    if (!series.length) {
+      return { total: 0, delta: 0, deltaPct: 0 };
+    }
+    const sorted = [...series].sort(
+      (a, b) => new Date(a.t).getTime() - new Date(b.t).getTime()
+    );
+    const startVal = sorted[0].v;
+    const endVal = sorted[sorted.length - 1].v;
+    const d = endVal - startVal;
+    const pct = startVal > 0 ? d / startVal : 0;
+    return { total: endVal, delta: d, deltaPct: pct };
+  }, [series]);
+
+  // Load data based on mode and range
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Fetch from DataProvider (mock or real based on EXPO_PUBLIC_SUPABASE_MODE)
-      const [summary, dataItems] = await Promise.all([
-        dataProvider.getPortfolioSummary(),
-        dataProvider.listItems(),
-      ]);
+      // Pass 2 (C): Real backend wiring
+      if (USE_REAL_BACKEND && collectorsClient?.getPortfolioTimeseries) {
+        try {
+          const rangeParam = range.toLowerCase() as "1d" | "7d" | "30d";
+          const timeseriesData = await collectorsClient.getPortfolioTimeseries(rangeParam);
+          const extractedSeries = extractSeries(timeseriesData);
+          if (extractedSeries.length) {
+            setSeries(extractedSeries);
+          } else {
+            setSeries(FALLBACK_SERIES);
+          }
 
-      // Map DataProvider items to screen ItemRow shape
-      const mappedItems: ItemRow[] = dataItems.map((item: DataItem) => ({
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        value: item.price,
-        changePct: undefined, // Not available in DataProvider yet
-      }));
+          if (collectorsClient?.getPortfolioItems) {
+            const itemsData = await collectorsClient.getPortfolioItems();
+            const extractedItems = extractItems(itemsData);
+            if (extractedItems.length) {
+              setItems(extractedItems.sort((a, b) => b.value - a.value));
+            } else {
+              setItems(FALLBACK_ITEMS);
+            }
+          }
+        } catch (realErr: any) {
+          console.warn("[Portfolio] Real backend error, falling back:", realErr);
+          setError("Could not load real data. Showing demo.");
+          setSeries(FALLBACK_SERIES);
+          setItems(FALLBACK_ITEMS);
+        }
+      } else {
+        // Mock mode: use analytics store or fallback
+        if (analyticsApi?.fetchPortfolioSnapshot) {
+          try {
+            const snap = await analyticsApi.fetchPortfolioSnapshot();
+            const extractedSeries = extractSeries(snap?.series || snap);
+            const extractedItems = extractItems(snap);
 
-      // Sort by value descending
-      const sorted = mappedItems.sort((a, b) => b.value - a.value);
-
-      setTotal(summary.total);
-      setItems(sorted);
-      setSeries(fallbackSeries); // Chart series uses fallback for now
-    } catch (e: any) {
-      console.warn("[PortfolioScreen] loadData error:", e);
-      setError(e?.message || "Failed to load portfolio data");
+            setSeries(extractedSeries.length ? extractedSeries : FALLBACK_SERIES);
+            setItems(
+              extractedItems.length
+                ? extractedItems.sort((a, b) => b.value - a.value)
+                : FALLBACK_ITEMS
+            );
+          } catch (mockErr) {
+            console.warn("[Portfolio] Mock store error:", mockErr);
+            setSeries(FALLBACK_SERIES);
+            setItems(FALLBACK_ITEMS);
+          }
+        } else {
+          // No store available, use fallback
+          setSeries(FALLBACK_SERIES);
+          setItems(FALLBACK_ITEMS);
+        }
+      }
+    } catch (err: any) {
+      console.warn("[Portfolio] Unexpected error:", err);
+      setError("Failed to load portfolio data.");
+      setSeries(FALLBACK_SERIES);
+      setItems(FALLBACK_ITEMS);
     } finally {
       setLoading(false);
     }
-  };
+  }, [range]);
 
   useEffect(() => {
     loadData();
-  }, [range]);
+  }, [loadData]);
 
-  const chart = useMemo(() => {
-    const pts = normalizeSeries(series);
-    return pts;
-  }, [series]);
-
-  // Chart geometry
-  const W = 320; // virtual width (scaled by viewBox)
-  const H = 170; // visible height (this is the "make it visible" fix)
-  const PAD_X = 10;
-  const PAD_Y = 14;
-
-  const polylinePoints = useMemo(() => {
-    if (!chart.length) return "";
-    const n = chart.length;
-    return chart
-      .map((p: any, i: number) => {
-        const x = PAD_X + (i * (W - PAD_X * 2)) / Math.max(1, n - 1);
-        const y = PAD_Y + (1 - clamp01(p.nv)) * (H - PAD_Y * 2);
-        return `${x},${y}`;
-      })
-      .join(" ");
-  }, [chart]);
+  // Determine if positive or negative
+  const isPositive = deltaPct >= 0;
 
   const rangeButtons: RangeKey[] = ["1D", "7D", "30D"];
 
-  // Loading state
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={stylesVars.tiffany} />
-          <Text style={styles.loadingText}>Loading portfolio...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Navigate to item detail
+  const handleItemPress = (item: ItemRow) => {
+    router.push({
+      pathname: "/item/[id]",
+      params: {
+        id: item.id,
+        name: item.name,
+        category: item.category ?? "",
+        value: String(item.value),
+      },
+    });
+  };
 
-  // Error state
-  if (error) {
-    return (
-      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-        <View style={styles.centerContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color={stylesVars.error} />
-          <Text style={styles.errorText}>{error}</Text>
-          <AnimatedPressable style={styles.retryBtn} onPress={loadData}>
-            <Text style={styles.retryText}>Retry</Text>
-          </AnimatedPressable>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Navigate to analytics
+  const handleAnalyticsPress = () => {
+    router.push("/analytics");
+  };
 
-  // Empty state
-  if (items.length === 0 && total === 0) {
-    return (
-      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-        <View style={styles.centerContainer}>
-          <Ionicons name="albums-outline" size={48} color={stylesVars.sub} />
-          <Text style={styles.emptyText}>No items in your collection yet</Text>
-          <Text style={styles.emptySubtext}>Add items to start tracking your portfolio</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Navigate to watchlist
+  const handleWatchlistPress = () => {
+    router.push("/watchlist-builder");
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Animated.View style={animatedStyle}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.kicker}>Collection Value</Text>
-            <Text style={styles.total}>{formatMoneyEUR(total)}</Text>
-          </View>
-
-          <View style={styles.headerActions}>
-            <InboxHeaderButton size={20} />
-            <AnimatedPressable
-              accessibilityRole="button"
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header: Total Value + Delta + Settings */}
+        <View style={styles.headerSection}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerLabel}>COLLECTION VALUE</Text>
+              <Text style={styles.totalValue}>{formatMoneyEUR(total)}</Text>
+              <Text style={[styles.deltaText, isPositive ? styles.deltaUp : styles.deltaDown]}>
+                {formatDeltaEUR(delta)} ({formatPct(deltaPct)})
+              </Text>
+            </View>
+            <Pressable
               style={styles.settingsBtn}
-              onPress={() => {
-                // Keep this non-destructive; wire later.
-                // You can route to settings if you already have it.
-              }}
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
             >
-              <Ionicons name="settings-outline" size={20} color={stylesVars.navy} />
-            </AnimatedPressable>
+              <Ionicons name="settings-outline" size={20} color={COLORS.muted} />
+            </Pressable>
           </View>
         </View>
 
-        {/* Range toggles */}
+        {/* Range Toggles */}
         <View style={styles.rangeRow}>
           {rangeButtons.map((k) => {
             const active = k === range;
             return (
-              <AnimatedPressable
+              <Pressable
                 key={k}
                 accessibilityRole="button"
                 onPress={() => setRange(k)}
-                style={[styles.rangeBtn, active ? styles.rangeBtnActive : null]}
+                style={[styles.rangeBtn, active && styles.rangeBtnActive]}
               >
-                <Text style={[styles.rangeText, active ? styles.rangeTextActive : null]}>{k}</Text>
-              </AnimatedPressable>
+                <Text style={[styles.rangeText, active && styles.rangeTextActive]}>
+                  {k}
+                </Text>
+              </Pressable>
             );
           })}
         </View>
 
-        {/* Chart card */}
-        <View style={styles.card}>
-          <Svg
-            width="100%"
-            height={H}
-            viewBox={`0 0 ${W} ${H}`}
-            preserveAspectRatio="none"
-          >
-            {/* gridlines */}
-            <Line x1={0} y1={H / 2} x2={W} y2={H / 2} stroke={stylesVars.grid} strokeWidth={1} />
-            <Line x1={0} y1={PAD_Y} x2={W} y2={PAD_Y} stroke={stylesVars.grid} strokeWidth={1} />
-            <Line x1={0} y1={H - PAD_Y} x2={W} y2={H - PAD_Y} stroke={stylesVars.grid} strokeWidth={1} />
-
-            {/* series */}
-            <Polyline
-              points={polylinePoints}
-              fill="none"
-              stroke={stylesVars.tiffany}
-              strokeWidth={3}
-              strokeLinejoin="round"
-              strokeLinecap="round"
+        {/* Chart Card with Interactive Line Chart */}
+        <View style={styles.chartCard}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={COLORS.tiffany} />
+              <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+          ) : (
+            <PortfolioLineChart
+              series={series}
+              accentColor={COLORS.tiffany}
+              showValueHeader={true}
+              showAxisLabels={true}
+              axisLabelColor={COLORS.muted}
             />
-          </Svg>
-
-          <View style={styles.chartFooter}>
-            <Ionicons name="trending-up-outline" size={16} color={stylesVars.navy} />
-            <Text style={styles.chartHint}>Value trend (demo/analytics-driven)</Text>
-          </View>
+          )}
         </View>
 
-        {/* Analytics CTA - matches QuickScan ingress style */}
-        <AnimatedPressable
-          style={styles.analyticsCta}
-          onPress={() => router.push("/analytics")}
-        >
-          <View style={styles.analyticsIconCircle}>
-            <Ionicons name="bar-chart-outline" size={32} color={stylesVars.tiffany} />
+        {/* Error message (if any) */}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="warning-outline" size={14} color={COLORS.danger} />
+            <Text style={styles.errorText}>{error}</Text>
           </View>
-          <Text style={styles.analyticsTitle}>Analytics</Text>
-          <Text style={styles.analyticsSubtitle}>
-            View detailed insights, trends, and portfolio performance metrics.
+        )}
+
+        {/* Mode indicator (dev only) */}
+        {__DEV__ && (
+          <Text style={styles.modeIndicator}>
+            Mode: {USE_REAL_BACKEND ? "REAL" : "MOCK"}
           </Text>
-          <View style={styles.analyticsButton}>
-            <Text style={styles.analyticsButtonText}>View Analytics</Text>
-            <Ionicons name="chevron-forward" size={18} color={stylesVars.tiffany} />
-          </View>
-        </AnimatedPressable>
+        )}
 
-        {/* List header */}
-        <View style={styles.sectionRow}>
+        {/* Analytics Banner */}
+        <Pressable style={styles.analyticsBanner} onPress={handleAnalyticsPress}>
+          <View style={styles.analyticsBannerLeft}>
+            <View style={styles.analyticsIconWrap}>
+              <Ionicons name="bar-chart-outline" size={20} color={COLORS.analyticsAccent} />
+            </View>
+            <View style={styles.analyticsBannerText}>
+              <Text style={styles.analyticsBannerTitle}>View Portfolio Analytics</Text>
+              <Text style={styles.analyticsBannerSubtitle}>
+                Track performance, allocations, and insights
+              </Text>
+            </View>
+          </View>
+          <View style={styles.analyticsBannerBtn}>
+            <Text style={styles.analyticsBannerBtnText}>Open Analytics</Text>
+          </View>
+        </Pressable>
+
+        {/* Collection Section Header */}
+        <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Collection</Text>
-          <Text style={styles.sectionRight}>{items.length ? `${items.length} items` : ""}</Text>
+          <Text style={styles.sectionCount}>
+            {items.length} {items.length === 1 ? "item" : "items"}
+          </Text>
         </View>
 
-        {/* Value-ranked list */}
+        {/* Value-Ranked Items List - Pressable Cards */}
         <View style={styles.listCard}>
           {items.slice(0, 12).map((it, idx) => {
-            const isUp = (it.changePct ?? 0) >= 0;
+            const itemUp = (it.changePct ?? 0) >= 0;
             return (
-              <View key={it.id} style={[styles.row, idx === 0 ? styles.rowFirst : null]}>
-                <View style={styles.rowLeft}>
-                  <Text style={styles.rowName} numberOfLines={1}>{it.name}</Text>
-                  <Text style={styles.rowSub} numberOfLines={1}>
-                    {it.category ? it.category : "—"} • {formatPct(it.changePct)}
+              <Pressable
+                key={it.id}
+                style={({ pressed }) => [
+                  styles.itemRow,
+                  idx === 0 && styles.itemRowFirst,
+                  pressed && styles.itemRowPressed,
+                ]}
+                onPress={() => handleItemPress(it)}
+                accessibilityRole="button"
+                accessibilityLabel={`View ${it.name}`}
+              >
+                <View style={styles.itemLeft}>
+                  <Text style={styles.itemName} numberOfLines={1}>
+                    {it.name}
+                  </Text>
+                  <Text style={styles.itemCategory} numberOfLines={1}>
+                    {it.category ?? "—"}
                   </Text>
                 </View>
-
-                <View style={styles.rowRight}>
-                  <Text style={styles.rowValue}>{formatMoneyEUR(it.value)}</Text>
-                  <Text style={[styles.rowPct, isUp ? styles.pctUp : styles.pctDown]}>
+                <View style={styles.itemRight}>
+                  <Text style={styles.itemValue}>{formatMoneyEUR(it.value)}</Text>
+                  <Text style={[styles.itemPct, itemUp ? styles.pctUp : styles.pctDown]}>
                     {formatPct(it.changePct)}
                   </Text>
                 </View>
-              </View>
+              </Pressable>
             );
           })}
         </View>
 
+        {/* Watchlist Section */}
+        {watchlistItems.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Watchlist</Text>
+              <Pressable onPress={handleWatchlistPress} accessibilityRole="link">
+                <Text style={styles.seeAllLink}>See all →</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.listCard}>
+              {watchlistItems.map((it, idx) => {
+                const hasAlert = Boolean(it.alert);
+                const targetPrice = it.alert?.threshold;
+                const currentValue = it.currentValue ?? it.value ?? 0;
+
+                return (
+                  <Pressable
+                    key={it.id}
+                    style={({ pressed }) => [
+                      styles.watchlistRow,
+                      idx === 0 && styles.itemRowFirst,
+                      pressed && styles.itemRowPressed,
+                    ]}
+                    onPress={handleWatchlistPress}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Watchlist item: ${it.name ?? it.title}`}
+                  >
+                    <View style={styles.watchlistLeft}>
+                      <View style={styles.watchlistNameRow}>
+                        <Ionicons
+                          name={hasAlert ? "notifications" : "notifications-outline"}
+                          size={16}
+                          color={hasAlert ? COLORS.tiffany : COLORS.muted}
+                          style={styles.bellIcon}
+                        />
+                        <Text style={styles.itemName} numberOfLines={1}>
+                          {it.name ?? it.title ?? "Watchlist Item"}
+                        </Text>
+                      </View>
+                      <Text style={styles.itemCategory} numberOfLines={1}>
+                        {it.category ?? "—"}
+                      </Text>
+                    </View>
+                    <View style={styles.watchlistRight}>
+                      {targetPrice != null && (
+                        <Text style={styles.targetPrice}>
+                          Target {formatMoneyEUR(targetPrice)}
+                        </Text>
+                      )}
+                      <Text style={styles.currentPrice}>
+                        Current {formatMoneyEUR(currentValue)}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        )}
+
+        {/* Watchlist Empty State - Show banner to add items */}
+        {watchlistItems.length === 0 && (
+          <Pressable style={styles.watchlistEmptyBanner} onPress={handleWatchlistPress}>
+            <Ionicons name="eye-outline" size={20} color={COLORS.muted} />
+            <View style={styles.watchlistEmptyText}>
+              <Text style={styles.watchlistEmptyTitle}>Start Your Watchlist</Text>
+              <Text style={styles.watchlistEmptySubtitle}>
+                Track items you want and set price alerts
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.muted} />
+          </Pressable>
+        )}
+
+        {/* Bottom spacing */}
         <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />
-        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const stylesVars = {
-  tiffany: "#38D6C7",
-  tiffanySoft: "#E9FFFC",
-  navy: "#0B1B3A",
+// ─────────────────────────────────────────────────────────────────────────────
+// Colors & Styles (Collectr Design Tokens)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const COLORS = {
+  // Brand
+  tiffany: "#81D8D0",
+  tiffanyDark: "#5FBFB6",
+  tiffanyLight: "#E6F7F5",
+
+  // Core
+  background: "#F7FAF9",
   card: "#FFFFFF",
-  bg: "#EAFBFF",
-  sub: "#5B6B86",
-  grid: "rgba(11,27,58,0.10)",
-  border: "rgba(11,27,58,0.08)",
-  error: "#B42318",
-  success: "#0A7D4E",
+  navy: "#0F172A",
+  muted: "#64748B",
+  border: "#E2E8F0",
+
+  // Status
+  success: "#10B981",
+  warning: "#F59E0B",
+  danger: "#EF4444",
+
+  // Banners
+  analyticsBg: "#E5F4F8",
+  analyticsBorder: "#B4DDE7",
+  analyticsAccent: "#00A3C4",
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: stylesVars.bg },
-  container: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 22 },
-
-  // Loading/Error/Empty states
-  centerContainer: {
+  safe: {
     flex: 1,
-    justifyContent: "center",
+    backgroundColor: COLORS.background,
+  },
+  container: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+
+  // Header
+  headerSection: {
+    marginBottom: 16,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerLabel: {
+    color: COLORS.muted,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  totalValue: {
+    color: COLORS.navy,
+    fontSize: 36,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  deltaText: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  deltaUp: {
+    color: COLORS.success,
+  },
+  deltaDown: {
+    color: COLORS.danger,
+  },
+  settingsBtn: {
+    width: 36,
+    height: 36,
+    backgroundColor: COLORS.card,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     alignItems: "center",
-    paddingHorizontal: 24,
+    justifyContent: "center",
+  },
+
+  // Range toggles
+  rangeRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  rangeBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+  },
+  rangeBtnActive: {
+    backgroundColor: COLORS.tiffanyLight,
+    borderColor: COLORS.tiffany,
+  },
+  rangeText: {
+    color: COLORS.muted,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  rangeTextActive: {
+    color: COLORS.navy,
+  },
+
+  // Chart card
+  chartCard: {
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    minHeight: 220,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 190,
   },
   loadingText: {
-    marginTop: 12,
-    color: stylesVars.sub,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  errorText: {
-    marginTop: 12,
-    color: stylesVars.error,
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: stylesVars.tiffany,
-    borderRadius: 6,
-  },
-  retryText: {
-    color: stylesVars.card,
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  emptyText: {
-    marginTop: 12,
-    color: stylesVars.navy,
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  emptySubtext: {
-    marginTop: 6,
-    color: stylesVars.sub,
-    fontSize: 13,
-    textAlign: "center",
+    color: COLORS.muted,
+    fontSize: 12,
+    marginTop: 8,
   },
 
-  headerRow: {
+  // Error
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FEF2F2",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: COLORS.danger,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+
+  // Mode indicator (dev)
+  modeIndicator: {
+    fontSize: 10,
+    color: COLORS.muted,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+
+  // Analytics Banner
+  analyticsBanner: {
+    backgroundColor: COLORS.analyticsBg,
+    borderWidth: 1,
+    borderColor: COLORS.analyticsBorder,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
   },
-  headerActions: {
+  analyticsBannerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    flex: 1,
   },
-  kicker: { color: stylesVars.sub, fontSize: 13, marginBottom: 4 },
-  total: { color: stylesVars.navy, fontSize: 32, fontWeight: "800" },
-  settingsBtn: {
-    width: 40,
-    height: 40,
-    backgroundColor: stylesVars.card,
-    borderWidth: 1,
-    borderColor: stylesVars.border,
+  analyticsIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: COLORS.card,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 12,
   },
-
-  rangeRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
-  rangeBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: stylesVars.card,
-    borderWidth: 1,
-    borderColor: stylesVars.border,
+  analyticsBannerText: {
+    flex: 1,
   },
-  rangeBtnActive: { backgroundColor: stylesVars.tiffanySoft, borderColor: "rgba(56,214,199,0.35)" },
-  rangeText: { color: stylesVars.sub, fontWeight: "700" },
-  rangeTextActive: { color: stylesVars.navy },
-
-  card: {
-    backgroundColor: stylesVars.card,
-    borderWidth: 1,
-    borderColor: stylesVars.border,
-    padding: 12,
-    marginBottom: 14,
-  },
-  chartFooter: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
-  chartHint: { color: stylesVars.sub, fontSize: 12, fontWeight: "600" },
-
-  // Analytics CTA - matches QuickScan ingress card style
-  analyticsCta: {
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: stylesVars.card,
-    marginBottom: 14,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  analyticsIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-    backgroundColor: stylesVars.tiffanySoft,
-  },
-  analyticsTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 6,
-    color: stylesVars.navy,
-  },
-  analyticsSubtitle: {
-    fontSize: 14,
-    opacity: 0.75,
-    marginBottom: 16,
-    color: stylesVars.sub,
-  },
-  analyticsButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: stylesVars.tiffanySoft,
-  },
-  analyticsButtonText: {
+  analyticsBannerTitle: {
     fontSize: 14,
     fontWeight: "600",
-    marginRight: 4,
-    color: stylesVars.tiffany,
+    color: COLORS.navy,
+    marginBottom: 2,
+  },
+  analyticsBannerSubtitle: {
+    fontSize: 12,
+    color: COLORS.muted,
+  },
+  analyticsBannerBtn: {
+    backgroundColor: COLORS.analyticsAccent,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginLeft: 12,
+  },
+  analyticsBannerBtnText: {
+    color: COLORS.card,
+    fontSize: 13,
+    fontWeight: "600",
   },
 
-  sectionRow: {
+  // Section header
+  sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
-    marginTop: 6,
     marginBottom: 10,
   },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: stylesVars.navy },
-  sectionRight: { fontSize: 12, fontWeight: "700", color: stylesVars.sub },
-
-  listCard: {
-    backgroundColor: stylesVars.card,
-    borderWidth: 1,
-    borderColor: stylesVars.border,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: COLORS.navy,
   },
-  row: {
+  sectionCount: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.muted,
+  },
+  seeAllLink: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.tiffanyDark,
+  },
+
+  // Items list
+  listCard: {
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 20,
+  },
+  itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     borderTopWidth: 1,
-    borderTopColor: stylesVars.border,
+    borderTopColor: COLORS.border,
   },
-  rowFirst: { borderTopWidth: 0 },
-  rowLeft: { flex: 1, paddingRight: 10 },
-  rowName: { color: stylesVars.navy, fontWeight: "800", fontSize: 14 },
-  rowSub: { color: stylesVars.sub, fontWeight: "700", fontSize: 12, marginTop: 3 },
-  rowRight: { alignItems: "flex-end", minWidth: 92 },
-  rowValue: { color: stylesVars.navy, fontWeight: "800", fontSize: 14 },
-  rowPct: { fontWeight: "900", fontSize: 12, marginTop: 3 },
-  pctUp: { color: stylesVars.success },
-  pctDown: { color: stylesVars.error },
+  itemRowFirst: {
+    borderTopWidth: 0,
+  },
+  itemRowPressed: {
+    backgroundColor: COLORS.tiffanyLight,
+  },
+  itemLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  itemName: {
+    color: COLORS.navy,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  itemCategory: {
+    color: COLORS.muted,
+    fontWeight: "600",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  itemRight: {
+    alignItems: "flex-end",
+    minWidth: 90,
+  },
+  itemValue: {
+    color: COLORS.navy,
+    fontWeight: "800",
+    fontSize: 14,
+  },
+  itemPct: {
+    fontWeight: "700",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  pctUp: {
+    color: COLORS.success,
+  },
+  pctDown: {
+    color: COLORS.danger,
+  },
+
+  // Watchlist rows
+  watchlistRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  watchlistLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  watchlistNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  bellIcon: {
+    marginRight: 6,
+  },
+  watchlistRight: {
+    alignItems: "flex-end",
+    minWidth: 100,
+  },
+  targetPrice: {
+    color: COLORS.tiffanyDark,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  currentPrice: {
+    color: COLORS.muted,
+    fontWeight: "600",
+    fontSize: 12,
+    marginTop: 2,
+  },
+
+  // Watchlist empty state
+  watchlistEmptyBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  watchlistEmptyText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  watchlistEmptyTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.navy,
+    marginBottom: 2,
+  },
+  watchlistEmptySubtitle: {
+    fontSize: 12,
+    color: COLORS.muted,
+  },
 });
