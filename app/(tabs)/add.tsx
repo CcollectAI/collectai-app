@@ -18,6 +18,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { InboxHeaderButton } from '@/components/InboxHeaderButton';
+import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 
 /**
  * Add screen:
@@ -39,10 +41,7 @@ const AddScreen: React.FC = () => {
   };
 
   const handleManualAddPress = () => {
-    // TODO: replace with your real manual-add navigation
-    // Example:
-    // router.push("/add-manual");
-    console.log("Manual add pressed");
+    router.push("/add-manual");
   };
 
   
@@ -155,7 +154,6 @@ const handleImportCollectionFile = async () => {
     } finally {
       setImportBusy(false);
     }
-      // TODO: wire to backend /api/imports/collection in next step
     } catch (e) {
       console.error('[Add] import collection file error', e);
     }
@@ -169,8 +167,14 @@ return (
         <Animated.View style={animatedStyle}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: colors.text }]}>Add to your collection</Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>Fast, camera-first flow.</Text>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.title, { color: colors.text }]}>Add</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>Fast, camera-first flow.</Text>
+          </View>
+          <View style={styles.headerIcons}>
+            <InboxHeaderButton color={colors.text} size={22} />
+            <ThemeToggleButton size={22} />
+          </View>
         </View>
 
         {/* QuickScan hero card with backdrop */}
@@ -193,6 +197,23 @@ return (
             </View>
           </AnimatedPressable>
         </View>
+
+        {/* Barcode / ISBN scan card */}
+        <AnimatedPressable
+          style={[styles.barcodeCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+          onPress={() => router.push('/barcode-scan')}
+        >
+          <View style={[styles.barcodeIconCircle, { backgroundColor: colors.accent + '15' }]}>
+            <Ionicons name="barcode-outline" size={24} color={colors.accent} />
+          </View>
+          <View style={styles.barcodeTextBlock}>
+            <Text style={[styles.barcodeTitle, { color: colors.text }]}>Scan barcode / ISBN</Text>
+            <Text style={[styles.barcodeSubtitle, { color: colors.muted }]}>
+              Books, albums, boxed products with barcodes.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+        </AnimatedPressable>
 
         {/* Divider */}
         <View style={styles.dividerRow}>
@@ -241,15 +262,25 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 16,
   },
+  headerLeft: {
+    flex: 1,
+  },
+  headerIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
   },
   subtitle: {
-    fontSize: 14,
-    opacity: 0.7,
+    fontSize: 12,
     marginTop: 4,
   },
   quickScanBackdrop: {
@@ -342,6 +373,33 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   manualSubtitle: {
+    fontSize: 13,
+    opacity: 0.75,
+  },
+  barcodeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    gap: 10,
+  },
+  barcodeIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  barcodeTextBlock: {
+    flex: 1,
+  },
+  barcodeTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  barcodeSubtitle: {
     fontSize: 13,
     opacity: 0.75,
   },

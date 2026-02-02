@@ -13,6 +13,7 @@
 import type { DataProvider } from './DataProvider';
 import { mockDataProvider } from './MockDataProvider';
 import { supabaseDataProvider } from './SupabaseDataProvider';
+import { dataLogger } from '@/lib/logger';
 
 // Re-export types for convenience
 export type {
@@ -43,6 +44,11 @@ export type {
   BuildPaintStep,
   BuildPaintNote,
   CreateBuildPaintProjectInput,
+  // Barcode / Market Data types
+  BarcodeLookupResult,
+  MarketHit,
+  MarketSearchOptions,
+  MarketSearchResult,
 } from './types';
 
 export type { DataProvider } from './DataProvider';
@@ -55,12 +61,12 @@ function selectProvider(): DataProvider {
   const mode = (process.env.EXPO_PUBLIC_SUPABASE_MODE ?? 'mock').toLowerCase();
 
   if (mode === 'real') {
-    console.log('[DataProvider] Using SupabaseDataProvider (real mode)');
+    dataLogger.info('Using SupabaseDataProvider (real mode)');
     return supabaseDataProvider;
   }
 
   // Default: mock, off, or any other value → use mock
-  console.log('[DataProvider] Using MockDataProvider (mock mode)');
+  dataLogger.info('Using MockDataProvider (mock mode)');
   return mockDataProvider;
 }
 

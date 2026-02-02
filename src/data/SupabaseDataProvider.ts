@@ -28,6 +28,9 @@ import type {
   BuildPaintStep,
   BuildPaintNote,
   CreateBuildPaintProjectInput,
+  BarcodeLookupResult,
+  MarketSearchOptions,
+  MarketSearchResult,
 } from './types';
 import { getCategoryById } from './categories';
 import { EVENTS } from './events';
@@ -292,6 +295,7 @@ export class SupabaseDataProvider implements DataProvider {
         estimatedHigh: res.prediction?.estimated_high ?? 0,
         currency: res.prediction?.currency ?? 'EUR',
         confidence: res.prediction?.confidence ?? 0,
+        explanation: res.prediction?.explanation ?? null,
       },
     };
   }
@@ -952,6 +956,234 @@ export class SupabaseDataProvider implements DataProvider {
       body: row.body,
       createdAt: row.created_at,
     };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Feedback
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async submitFeedback(
+    itemId: string,
+    feedbackType: 'sale_price' | 'disagree' | 'accurate',
+    value?: string,
+  ): Promise<{ success: boolean; feedbackId?: string }> {
+    try {
+      const res = await collectorsApi.submitFeedback({
+        item_id: itemId,
+        feedback_type: feedbackType,
+        value,
+      });
+      return {
+        success: res.success ?? true,
+        feedbackId: res.feedback_id,
+      };
+    } catch (err: any) {
+      console.error('[SupabaseDataProvider] submitFeedback error:', err);
+      throw new Error(err?.message || 'Failed to submit feedback');
+    }
+  }
+
+  async submitCorrection(
+    itemId: string,
+    corrections: {
+      correctedPrice?: number;
+      correctedCondition?: string;
+      correctedCategory?: string;
+      notes?: string;
+    },
+  ): Promise<{ success: boolean }> {
+    try {
+      const res = await collectorsApi.submitCorrection({
+        item_id: itemId,
+        corrected_price: corrections.correctedPrice,
+        corrected_condition: corrections.correctedCondition,
+        corrected_category: corrections.correctedCategory,
+        notes: corrections.notes,
+      });
+      return { success: res.success ?? true };
+    } catch (err: any) {
+      console.error('[SupabaseDataProvider] submitCorrection error:', err);
+      throw new Error(err?.message || 'Failed to submit correction');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Category Ownership
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async markCategoryItemOwned(
+    categoryItemId: string,
+    quantity: number = 1,
+    notes?: string,
+  ): Promise<{ success: boolean }> {
+    const { error } = await supabase.rpc('rpc_mark_category_item_owned_v1', {
+      p_category_item_id: categoryItemId,
+      p_quantity: quantity,
+      p_notes: notes ?? null,
+    });
+
+    if (error) {
+      console.error('[SupabaseDataProvider] markCategoryItemOwned error:', error);
+      throw new Error(error.message || 'Failed to mark item as owned');
+    }
+
+    return { success: true };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Watchlist → Portfolio Conversion
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async convertWatchlistToItem(
+    watchlistItemId: string,
+    actualPrice?: number,
+    notes?: string,
+  ): Promise<Item> {
+    // Call RPC to convert watchlist item to portfolio item
+    // The RPC should: 1) create the item, 2) remove from watchlist, 3) return the new item
+    const { data, error } = await supabase.rpc('rpc_convert_watchlist_to_item_v1', {
+      p_watchlist_item_id: watchlistItemId,
+      p_actual_price: actualPrice ?? null,
+      p_notes: notes ?? null,
+    });
+
+    if (error) {
+      console.error('[SupabaseDataProvider] convertWatchlistToItem error:', error);
+      throw new Error(error.message || 'Failed to convert watchlist item');
+    }
+
+    const row = data as any;
+    return {
+      id: row.id,
+      name: row.name ?? row.title,
+      category: row.category ?? 'Other',
+      price: row.price ?? actualPrice ?? 0,
+      imageUrl: row.image_url ?? null,
+      updatedAt: row.updated_at ?? new Date().toISOString(),
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Events
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async getEventById(eventId: string): Promise<import('./events').CollectorsEvent | null> {
+    // For now, use static events data (same as mock)
+    // Future: query events table from Supabase
+    const event = EVENTS.find((e) => e.id === eventId);
+    return event ?? null;
+  }
+
+  async listEvents(): Promise<import('./events').CollectorsEvent[]> {
+    // For now, use static events data (same as mock)
+    // Future: query events table from Supabase
+    return [...EVENTS].sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Barcode / Market Data
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async lookupByBarcode(
+    barcode: string,
+    opts?: { codeType?: string },
+  ): Promise<BarcodeLookupResult> {
+    console.log('[SupabaseDataProvider] lookupByBarcode', { barcode, opts });
+
+    // Call backend API for barcode lookup
+    // This will query product databases (Open Library, Google Books, etc.)
+    // and market sources for pricing
+    try {
+      const res = await collectorsApi.lookupByBarcode(barcode, opts?.codeType);
+
+      return {
+        title: res.title ?? null,
+        categoryId: res.category_id ?? res.categoryId ?? null,
+        subtypeId: res.subtype_id ?? res.subtypeId ?? null,
+        taxonomyVersion: res.taxonomy_version ?? 'v1.0',
+        collections: res.collections ?? [],
+        attributes: res.attributes ?? {},
+        missingRequired: res.missing_required ?? [],
+        priceBand: res.price_band ? {
+          q10: res.price_band.q10,
+          q50: res.price_band.q50,
+          q90: res.price_band.q90,
+          confidence: res.price_band.confidence,
+          currency: res.price_band.currency ?? 'EUR',
+        } : null,
+        rationale: res.rationale ?? [],
+        barcode,
+        barcodeType: opts?.codeType ?? 'unknown',
+        imageUrl: res.image_url ?? null,
+      };
+    } catch (err: any) {
+      console.warn('[SupabaseDataProvider] lookupByBarcode API error:', err);
+
+      // Return minimal result on error - UI can fall back to manual entry
+      return {
+        title: null,
+        categoryId: null,
+        subtypeId: null,
+        taxonomyVersion: 'v1.0',
+        collections: [],
+        attributes: {},
+        missingRequired: ['title', 'categoryId'],
+        priceBand: null,
+        rationale: ['Barcode lookup failed - try manual search'],
+        barcode,
+        barcodeType: opts?.codeType ?? 'unknown',
+        imageUrl: null,
+      };
+    }
+  }
+
+  async marketSearch(
+    query: string,
+    opts?: MarketSearchOptions,
+  ): Promise<MarketSearchResult> {
+    console.log('[SupabaseDataProvider] marketSearch', { query, opts });
+
+    // Call backend API for market search
+    // This aggregates results from multiple providers (eBay, TCGPlayer, etc.)
+    try {
+      const res = await collectorsApi.marketSearch(query, {
+        category_id: opts?.categoryId,
+        subtype_id: opts?.subtypeId,
+        collections: opts?.collections,
+        limit: opts?.limit,
+        sold_only: opts?.soldOnly,
+        min_price: opts?.minPrice,
+        max_price: opts?.maxPrice,
+      });
+
+      return {
+        hits: (res.hits ?? []).map((hit: any) => ({
+          source: hit.source,
+          rawId: hit.raw_id ?? hit.rawId,
+          title: hit.title,
+          price: hit.price,
+          currency: hit.currency ?? 'EUR',
+          soldAt: hit.sold_at ?? hit.soldAt ?? null,
+          url: hit.url ?? null,
+          condition: hit.condition ?? null,
+          imageUrl: hit.image_url ?? hit.imageUrl ?? null,
+          rawPayloadHash: hit.raw_payload_hash ?? hit.rawPayloadHash ?? null,
+        })),
+        providers: res.providers ?? [],
+        totalRaw: res.total_raw ?? res.totalRaw ?? 0,
+        confidence: res.confidence ?? 0.5,
+      };
+    } catch (err: any) {
+      console.warn('[SupabaseDataProvider] marketSearch API error:', err);
+
+      // Return empty result on error
+      return {
+        hits: [],
+        providers: [],
+        totalRaw: 0,
+        confidence: 0,
+      };
+    }
   }
 }
 

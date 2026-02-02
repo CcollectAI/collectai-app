@@ -26,7 +26,12 @@ import type {
   BuildPaintStep,
   BuildPaintNote,
   CreateBuildPaintProjectInput,
+  BarcodeLookupResult,
+  MarketHit,
+  MarketSearchOptions,
+  MarketSearchResult,
 } from './types';
+import type { CollectorsEvent } from './events';
 
 export interface DataProvider {
   /**
@@ -285,4 +290,121 @@ export interface DataProvider {
    * Real: calls rpc_add_build_paint_note_v1.
    */
   addBuildPaintNote(projectId: string, body: string): Promise<BuildPaintNote>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Feedback
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Submit feedback on an item's price prediction.
+   * @param itemId - The item's UUID
+   * @param feedbackType - Type: 'sale_price' | 'disagree' | 'accurate'
+   * @param value - Optional value (e.g., actual sale price)
+   * @returns Promise with success status
+   */
+  submitFeedback(
+    itemId: string,
+    feedbackType: 'sale_price' | 'disagree' | 'accurate',
+    value?: string,
+  ): Promise<{ success: boolean; feedbackId?: string }>;
+
+  /**
+   * Submit corrections to training item data.
+   * @param itemId - The training item's UUID
+   * @param corrections - Object with corrected fields
+   * @returns Promise with success status
+   */
+  submitCorrection(
+    itemId: string,
+    corrections: {
+      correctedPrice?: number;
+      correctedCondition?: string;
+      correctedCategory?: string;
+      notes?: string;
+    },
+  ): Promise<{ success: boolean }>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Category Ownership
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Mark a category item as owned.
+   * @param categoryItemId - The category item's UUID
+   * @param quantity - Number owned (default 1)
+   * @param notes - Optional notes about ownership
+   * @returns Promise with success status
+   */
+  markCategoryItemOwned(
+    categoryItemId: string,
+    quantity?: number,
+    notes?: string,
+  ): Promise<{ success: boolean }>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Watchlist → Portfolio Conversion
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Convert a watchlist item to a portfolio item ("I Got It!" flow).
+   * Creates a new item in the collection and removes from watchlist.
+   * @param watchlistItemId - The watchlist item's ID
+   * @param actualPrice - The actual purchase price (for ML feedback)
+   * @param notes - Optional notes about the acquisition
+   * @returns The created portfolio item
+   */
+  convertWatchlistToItem(
+    watchlistItemId: string,
+    actualPrice?: number,
+    notes?: string,
+  ): Promise<Item>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Events
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Get event by ID.
+   * Mock: returns from static EVENTS array.
+   * Real: reads from events table.
+   * @param eventId - The event ID
+   */
+  getEventById(eventId: string): Promise<CollectorsEvent | null>;
+
+  /**
+   * List all upcoming events.
+   * Mock: returns from static EVENTS array.
+   * Real: reads from events table filtered by date >= now.
+   */
+  listEvents(): Promise<CollectorsEvent[]>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Barcode / Market Data
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Lookup product info by barcode (EAN-13, UPC-A, ISBN).
+   * Returns prefill data for item creation including category, price band, etc.
+   * Mock: returns fixtures for known barcodes.
+   * Real: queries product databases and market sources.
+   * @param barcode - The barcode value
+   * @param opts - Optional: codeType hint (ean13, upc_a, isbn)
+   */
+  lookupByBarcode(
+    barcode: string,
+    opts?: { codeType?: string },
+  ): Promise<BarcodeLookupResult>;
+
+  /**
+   * Search market data across multiple providers.
+   * Aggregates and dedupes results from all configured adapters.
+   * Mock: returns demo hits.
+   * Real: queries eBay, TCGPlayer, etc. via adapters.
+   * @param query - Search query
+   * @param opts - Search options (category, limit, soldOnly, etc.)
+   */
+  marketSearch(
+    query: string,
+    opts?: MarketSearchOptions,
+  ): Promise<MarketSearchResult>;
 }

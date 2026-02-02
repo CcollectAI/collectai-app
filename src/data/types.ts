@@ -3,6 +3,39 @@
  * These are the stable shapes returned to UI — no raw Supabase responses.
  */
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Taxonomy Types (Hybrid Architecture)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Price band with quantiles and confidence.
+ * q10/q50/q90 represent 10th, 50th (median), and 90th percentile estimates.
+ */
+export type PriceBand = {
+  q10: number;
+  q50: number;
+  q90: number;
+  confidence: number;  // 0.0 - 1.0
+  currency: string;
+};
+
+/**
+ * Taxonomy classification result.
+ * Returned from mapping operations.
+ */
+export type TaxonomyClassification = {
+  categoryId: string;
+  subtypeId: string;
+  taxonomyVersion: string;
+  collections: string[];  // Orthogonal collection tags (e.g., 'taylor_swift', 'bts')
+  confidence: number;
+  rationale?: string;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Core Types
+// ─────────────────────────────────────────────────────────────────────────────
+
 export type PortfolioSummary = {
   total: number;
   deltaPct: number;
@@ -13,7 +46,11 @@ export type Item = {
   id: string;
   name: string;
   category: string;
+  subtypeId?: string;           // Finer granularity (e.g., 'warhammer_books')
+  taxonomyVersion?: string;     // Version of taxonomy used for classification
+  collections?: string[];       // Collection tags (e.g., ['taylor_swift', 'eras_tour'])
   price: number;
+  priceBand?: PriceBand;        // q10/q50/q90 price estimates
   imageUrl?: string;
   updatedAt?: string;
 };
@@ -44,7 +81,11 @@ export type CreateWishlistInput = CreateWatchlistInput;
 export type CreateItemInput = {
   name: string;
   category: string;
+  subtypeId?: string;
+  taxonomyVersion?: string;
+  collections?: string[];
   price: number;
+  priceBand?: PriceBand;
   imageUrl?: string;
 };
 
@@ -80,12 +121,110 @@ export type QuickScanPrediction = {
   estimatedHigh: number;
   currency: string;
   confidence: number;
+  explanation?: string | null;
 };
 
 export type QuickScanResult = {
   itemId?: string | null;
   attributes: QuickScanAttributes;
   prediction: QuickScanPrediction;
+  taxonomy?: TaxonomyClassification;  // Classification with subtype and collections
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Barcode / Market Data Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Result from barcode/ISBN lookup.
+ * Prefills item data from product databases or market search.
+ */
+export type BarcodeLookupResult = {
+  /** Matched product title */
+  title?: string | null;
+  /** Detected category (e.g., 'music_media', 'warhammer', 'books') */
+  categoryId?: string | null;
+  /** Subtype within category (e.g., 'signed_media', 'album', 'rulebook') */
+  subtypeId?: string | null;
+  /** Taxonomy version used for classification */
+  taxonomyVersion?: string;
+  /** Collection tags (e.g., ['bts', 'proof_album'], ['taylor_swift', 'eras_tour']) */
+  collections?: string[];
+  /** Extracted attributes (artist, ISBN, publisher, etc.) */
+  attributes?: Record<string, unknown>;
+  /** Required attributes that are still missing */
+  missingRequired?: string[];
+  /** Price band estimate from market data */
+  priceBand?: PriceBand | null;
+  /** Explanation of how price/category was determined */
+  rationale?: string[];
+  /** Original barcode value */
+  barcode?: string;
+  /** Barcode type (ean13, upc_a, isbn, etc.) */
+  barcodeType?: string;
+  /** Image URL if found */
+  imageUrl?: string | null;
+};
+
+/**
+ * Normalized market hit from any provider (eBay, TCGPlayer, etc.).
+ * Used for price comparisons and sold comps.
+ */
+export type MarketHit = {
+  /** Source provider (e.g., 'ebay', 'tcgplayer', 'discogs') */
+  source: string;
+  /** Provider's listing ID */
+  rawId: string;
+  /** Listing title */
+  title: string;
+  /** Price in source currency */
+  price: number;
+  /** Currency code (EUR, USD, GBP) */
+  currency: string;
+  /** Sale/end date if sold */
+  soldAt?: string | null;
+  /** Listing URL */
+  url?: string | null;
+  /** Condition description */
+  condition?: string | null;
+  /** Image URL */
+  imageUrl?: string | null;
+  /** Hash of raw payload for deduplication */
+  rawPayloadHash?: string;
+};
+
+/**
+ * Options for market search.
+ */
+export type MarketSearchOptions = {
+  /** Filter by category */
+  categoryId?: string;
+  /** Filter by subtype */
+  subtypeId?: string;
+  /** Filter by collection tags */
+  collections?: string[];
+  /** Max results per provider */
+  limit?: number;
+  /** Only include sold items */
+  soldOnly?: boolean;
+  /** Minimum price filter */
+  minPrice?: number;
+  /** Maximum price filter */
+  maxPrice?: number;
+};
+
+/**
+ * Aggregated market search result.
+ */
+export type MarketSearchResult = {
+  /** Combined hits from all providers */
+  hits: MarketHit[];
+  /** Which providers were queried */
+  providers: string[];
+  /** Total hits before deduplication */
+  totalRaw: number;
+  /** Confidence in results (0-1) */
+  confidence: number;
 };
 
 /**
