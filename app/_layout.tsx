@@ -5,6 +5,7 @@ import { SettingsProvider } from "@/lib/settings";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function HeaderRight() {
   return (
@@ -31,22 +32,26 @@ function RootStack() {
       {/* Tabs group hides Stack header - tabs have their own header */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       {/* Named screens with proper titles */}
-      <Stack.Screen name="inbox" options={{ title: 'Inbox' }} />
+      <Stack.Screen name="inbox" options={{ headerShown: false }} />
+      <Stack.Screen name="chat/[threadId]" options={{ headerShown: false }} />
+      <Stack.Screen name="chat/new" options={{ headerShown: false }} />
       <Stack.Screen name="analytics" options={{ title: 'Analytics' }} />
       <Stack.Screen name="twitch" options={{ title: 'Twitch' }} />
       <Stack.Screen name="build-paint-projects" options={{ title: 'Build & Paint' }} />
       <Stack.Screen name="categories/index" options={{ title: 'Categories' }} />
       <Stack.Screen name="categories/[categoryId]" options={{ title: 'Category' }} />
       <Stack.Screen name="projects/[id]" options={{ title: 'Project' }} />
-      <Stack.Screen name="users/[userId]" options={{ title: 'Profile' }} />
+      <Stack.Screen name="users/[id]" options={{ headerShown: false }} />
     </Stack>
   );
 }
 
 export default function RootLayout() {
   return (
-    <SettingsProvider>
-      <RootStack />
-    </SettingsProvider>
+    <ErrorBoundary>
+      <SettingsProvider>
+        <RootStack />
+      </SettingsProvider>
+    </ErrorBoundary>
   );
 }

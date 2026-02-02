@@ -13,6 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { InboxHeaderButton } from "@/components/InboxHeaderButton";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 
 type Item = {
   id: string;
@@ -89,7 +91,7 @@ const formatCurrency = (value: number) =>
 
 const SearchScreen: React.FC = () => {
   const router = useRouter();
-  const { colors, isDark, toggleTheme } = useAppTheme();
+  const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([
@@ -174,22 +176,17 @@ const SearchScreen: React.FC = () => {
         <Animated.View style={animatedStyle}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            Search
-          </Text>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>
+              Marketplace
+            </Text>
+            <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
+              Search items and collections.
+            </Text>
+          </View>
           <View style={styles.headerIcons}>
-            <AnimatedPressable
-              style={styles.headerIconBtn}
-              onPress={() => router.push("/inbox")}
-            >
-              <Ionicons name="chatbubbles-outline" size={22} color={colors.text} />
-            </AnimatedPressable>
-            <AnimatedPressable
-              style={styles.headerIconBtn}
-              onPress={toggleTheme}
-            >
-              <Ionicons name={isDark ? "sunny-outline" : "moon-outline"} size={22} color={colors.text} />
-            </AnimatedPressable>
+            <InboxHeaderButton color={colors.text} size={22} />
+            <ThemeToggleButton size={22} />
           </View>
         </View>
 
@@ -387,21 +384,25 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    marginTop: 4,
   },
   headerIcons: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-  },
-  headerIconBtn: {
-    padding: 6,
+    gap: 4,
   },
   searchRow: {
     flexDirection: "row",

@@ -1,0 +1,70 @@
+name: Nightly Ingest Pipeline
+
+on:
+  schedule:
+    # Run at 03:00 UTC every day (after other nightly jobs)
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no writes)'
+        required: false
+        default: 'false'
+        type: boolean
+      max_items:
+        description: 'Maximum items to process'
+        required: false
+        default: '1000'
+        type: string
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run ingest pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          INGEST_S3_BUCKET: ${{ secrets.INGEST_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'eu-west-1' }}
+        run: |
+          # Determine flags from inputs or defaults
+          DRY_RUN_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+
+          MAX_ITEMS="${{ github.event.inputs.max_items || '1000' }}"
+
+          echo "Running ingest pipeline..."
+          echo "  Dry-run: ${{ github.event.inputs.dry_run || 'false' }}"
+          echo "  Max items: $MAX_ITEMS"
+
+          python scripts/ingest/run_nightly.py \
+            $DRY_RUN_FLAG \
+            --max-items="$MAX_ITEMS" \
+            --source=app_signals
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ingest-logs
+          path: /tmp/collectai_ingest/
+          retention-days: 7

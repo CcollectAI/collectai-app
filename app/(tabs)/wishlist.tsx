@@ -3,7 +3,7 @@
  * No custom header (Stack header is unified).
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
+import * as Haptics from 'expo-haptics';
 
 const CATEGORIES = [
   'Pokémon',
@@ -71,6 +72,16 @@ export default function WatchlistTabScreen() {
   const [formTargetPrice, setFormTargetPrice] = useState('');
   const [formNotes, setFormNotes] = useState('');
   const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
+
+  // "I Got It!" acquisition state
+  const [acquireModalVisible, setAcquireModalVisible] = useState(false);
+  const [acquireItem, setAcquireItem] = useState<WatchlistItem | null>(null);
+  const [acquirePrice, setAcquirePrice] = useState('');
+  const [acquireNotes, setAcquireNotes] = useState('');
+  const [acquiring, setAcquiring] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+  const congratsScale = useRef(new Animated.Value(0)).current;
+  const congratsOpacity = useRef(new Animated.Value(0)).current;
 
   const loadItems = useCallback(async () => {
     try {
@@ -155,6 +166,86 @@ export default function WatchlistTabScreen() {
     );
   };
 
+  // "I Got It!" flow
+  const handleGotIt = (item: WatchlistItem) => {
+    setAcquireItem(item);
+    setAcquirePrice(item.targetPrice?.toString() || '');
+    setAcquireNotes('');
+    setAcquireModalVisible(true);
+  };
+
+  const playCongrats = () => {
+    setShowCongrats(true);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    // Animate in
+    Animated.parallel([
+      Animated.spring(congratsScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.timing(congratsOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Animate out after delay
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(congratsScale, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(congratsOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowCongrats(false);
+        congratsScale.setValue(0);
+        congratsOpacity.setValue(0);
+      });
+    }, 2000);
+  };
+
+  const handleConfirmAcquire = async () => {
+    if (!acquireItem) return;
+
+    setAcquiring(true);
+    try {
+      const actualPrice = acquirePrice.trim()
+        ? parseFloat(acquirePrice.replace(/[^0-9.]/g, ''))
+        : undefined;
+
+      await dataProvider.convertWatchlistToItem(
+        acquireItem.id,
+        actualPrice && !isNaN(actualPrice) ? actualPrice : undefined,
+        acquireNotes.trim() || undefined
+      );
+
+      setAcquireModalVisible(false);
+      setAcquireItem(null);
+      setAcquirePrice('');
+      setAcquireNotes('');
+
+      // Show congrats animation
+      playCongrats();
+
+      // Reload list
+      loadItems();
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to add to collection');
+    } finally {
+      setAcquiring(false);
+    }
+  };
+
   const renderItem = ({ item }: { item: WatchlistItem }) => {
     const priorityColor =
       item.priority === 'high'
@@ -201,24 +292,49 @@ export default function WatchlistTabScreen() {
             Added {formatDate(item.createdAt)}
           </Text>
         )}
+
+        {/* "I Got It!" button */}
+        <AnimatedPressable
+          style={[styles.gotItBtn, { backgroundColor: colors.accent }]}
+          onPress={() => handleGotIt(item)}
+        >
+          <Ionicons name="checkmark-circle" size={18} color="#fff" />
+          <Text style={styles.gotItBtnText}>I Got It!</Text>
+        </AnimatedPressable>
       </View>
     );
   };
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="eye-outline" size={64} color={colors.muted} />
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>Your watchlist is empty</Text>
+      <View style={[styles.emptyIconWrap, { backgroundColor: colors.accent + '15' }]}>
+        <Ionicons name="eye-outline" size={40} color={colors.accent} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>Start your watchlist</Text>
       <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-        Track prices and drops for items you want
+        Track prices, get alerts when items drop, and never miss a deal on items you want.
       </Text>
       <AnimatedPressable
         style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
         onPress={() => setModalVisible(true)}
       >
-        <Ionicons name="add" size={20} color="#fff" />
-        <Text style={styles.emptyBtnText}>Add to Watchlist</Text>
+        <Ionicons name="add" size={18} color="#fff" />
+        <Text style={styles.emptyBtnText}>Add your first item</Text>
       </AnimatedPressable>
+      <View style={styles.emptyFeatures}>
+        <View style={styles.emptyFeatureRow}>
+          <Ionicons name="notifications-outline" size={16} color={colors.muted} />
+          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>Price drop alerts</Text>
+        </View>
+        <View style={styles.emptyFeatureRow}>
+          <Ionicons name="trending-down-outline" size={16} color={colors.muted} />
+          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>Target price tracking</Text>
+        </View>
+        <View style={styles.emptyFeatureRow}>
+          <Ionicons name="flash-outline" size={16} color={colors.muted} />
+          <Text style={[styles.emptyFeatureText, { color: colors.muted }]}>Restock notifications</Text>
+        </View>
+      </View>
     </View>
   );
 
@@ -374,6 +490,101 @@ export default function WatchlistTabScreen() {
           </View>
         </AnimatedPressable>
       </Modal>
+
+      {/* "I Got It!" Acquisition Modal */}
+      <Modal visible={acquireModalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Collection</Text>
+              <AnimatedPressable onPress={() => { setAcquireModalVisible(false); setAcquireItem(null); }}>
+                <Ionicons name="close" size={24} color={colors.muted} />
+              </AnimatedPressable>
+            </View>
+
+            {acquireItem && (
+              <>
+                <View style={[styles.acquireItemPreview, { backgroundColor: colors.background }]}>
+                  <Text style={[styles.acquireItemTitle, { color: colors.text }]} numberOfLines={2}>
+                    {acquireItem.title}
+                  </Text>
+                  {acquireItem.category && (
+                    <View style={[styles.categoryBadge, { backgroundColor: colors.accent + '20' }]}>
+                      <Text style={[styles.categoryText, { color: colors.accent }]}>{acquireItem.category}</Text>
+                    </View>
+                  )}
+                </View>
+
+                <Text style={[styles.label, { color: colors.text }]}>What did you pay? (EUR)</Text>
+                <TextInput
+                  value={acquirePrice}
+                  onChangeText={setAcquirePrice}
+                  placeholder={acquireItem.targetPrice ? `Target was €${acquireItem.targetPrice}` : 'e.g. 150'}
+                  placeholderTextColor={colors.muted}
+                  keyboardType="numeric"
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                />
+                <Text style={[styles.helperText, { color: colors.muted }]}>
+                  This helps improve price predictions for everyone
+                </Text>
+
+                <Text style={[styles.label, { color: colors.text }]}>Notes (optional)</Text>
+                <TextInput
+                  value={acquireNotes}
+                  onChangeText={setAcquireNotes}
+                  placeholder="e.g. Found at local shop, great condition"
+                  placeholderTextColor={colors.muted}
+                  multiline
+                  numberOfLines={2}
+                  style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                />
+
+                <AnimatedPressable
+                  style={[styles.acquireBtn, { backgroundColor: colors.accent }]}
+                  onPress={handleConfirmAcquire}
+                  disabled={acquiring}
+                >
+                  {acquiring ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                      <Text style={styles.acquireBtnText}>Add to My Collection</Text>
+                    </>
+                  )}
+                </AnimatedPressable>
+              </>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Congrats Overlay */}
+      {showCongrats && (
+        <View style={styles.congratsOverlay}>
+          <Animated.View
+            style={[
+              styles.congratsContent,
+              {
+                backgroundColor: colors.card,
+                transform: [{ scale: congratsScale }],
+                opacity: congratsOpacity,
+              },
+            ]}
+          >
+            <View style={[styles.congratsIconWrap, { backgroundColor: '#22c55e20' }]}>
+              <Ionicons name="trophy" size={48} color="#22c55e" />
+            </View>
+            <Text style={[styles.congratsTitle, { color: colors.text }]}>Congrats!</Text>
+            <Text style={[styles.congratsSubtitle, { color: colors.muted }]}>
+              Added to your collection
+            </Text>
+          </Animated.View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -396,9 +607,9 @@ const styles = StyleSheet.create({
   alertsPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
     borderWidth: 1,
     gap: 6,
   },
@@ -409,10 +620,10 @@ const styles = StyleSheet.create({
   addPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 0,
-    gap: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
   },
   addPillText: {
     color: '#fff',
@@ -427,7 +638,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemCard: {
-    borderRadius: 0,
+    borderRadius: 14,
     padding: 14,
     borderWidth: 1,
   },
@@ -465,7 +676,7 @@ const styles = StyleSheet.create({
   categoryBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 0,
+    borderRadius: 12,
   },
   categoryText: {
     fontSize: 12,
@@ -507,7 +718,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 0,
+    borderRadius: 24,
     marginTop: 24,
     gap: 6,
   },
@@ -516,14 +727,33 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyFeatures: {
+    marginTop: 32,
+    gap: 12,
+  },
+  emptyFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  emptyFeatureText: {
+    fontSize: 14,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
     paddingBottom: 40,
   },
@@ -544,7 +774,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   input: {
-    borderRadius: 0,
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
@@ -562,7 +792,7 @@ const styles = StyleSheet.create({
   saveBtn: {
     marginTop: 24,
     paddingVertical: 14,
-    borderRadius: 0,
+    borderRadius: 24,
     alignItems: 'center',
   },
   saveBtnText: {
@@ -579,7 +809,7 @@ const styles = StyleSheet.create({
   },
   pickerContent: {
     width: '100%',
-    borderRadius: 0,
+    borderRadius: 16,
     padding: 16,
   },
   pickerTitle: {
@@ -594,9 +824,85 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 0,
+    borderRadius: 8,
   },
   pickerItemText: {
     fontSize: 15,
+  },
+  // "I Got It!" button styles
+  gotItBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    gap: 6,
+  },
+  gotItBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  // Acquire modal styles
+  acquireItemPreview: {
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  acquireItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  acquireBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    paddingVertical: 14,
+    borderRadius: 24,
+    gap: 8,
+  },
+  acquireBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  helperText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  // Congrats overlay styles
+  congratsOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  congratsContent: {
+    alignItems: 'center',
+    padding: 32,
+    borderRadius: 24,
+    minWidth: 240,
+  },
+  congratsIconWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  congratsTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  congratsSubtitle: {
+    fontSize: 14,
   },
 });

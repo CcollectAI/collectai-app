@@ -1,4 +1,5 @@
 import supabase from "../lib/supabaseClient";
+import { storeLogger } from "@/lib/logger";
 
 export type CollectionItem = {
   id: string;
@@ -43,7 +44,7 @@ export async function fetchCollectionItems(): Promise<CollectionItem[]> {
     .limit(200);
 
   if (error) {
-    console.log("[collectionStore] fetchCollectionItems error", error);
+    storeLogger.error("fetchCollectionItems error", error);
     // return empty so the UI can fall back to its own mocks if needed
     return [];
   }
@@ -97,7 +98,7 @@ export async function fetchPortfolioTotals(): Promise<PortfolioTotals> {
     .limit(365);
 
   if (error) {
-    console.log("[collectionStore] fetchPortfolioTotals error", error);
+    storeLogger.error("fetchPortfolioTotals error", error);
     return demoTotals();
   }
 

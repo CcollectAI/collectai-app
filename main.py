@@ -7,6 +7,7 @@ from app.features import marketplace_trust_router
 from app.features import provenance_router
 from app.features import trends_and_deepdive_router
 from app.features import alerts_feature_router
+from app.features import feedback_router
 import os
 import httpx
 from pathlib import Path
@@ -22,7 +23,7 @@ from app.logging_mw import logging_middleware
 from app.limit_body import limit_body_middleware
 from app.rate_limit import rate_limit_middleware
 from app.routes.agent import router as agent_router
-from app.routes.spool import router as ops_router
+from app.routes.spool import router as spool_router
 from app.routes.spool_ui import router as spool_ui_router
 from app.routes.webhook import router as webhook_router
 from app.routes.vision_debug import router as vision_debug_router
@@ -46,11 +47,6 @@ async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
     if x_api_key != API_SHARED_SECRET:
         raise HTTPException(status_code=401, detail="Invalid API key")
     return True
-
-
-@app.get("/debug-ping")
-async def debug_ping():
-    return {"ok": True}
 
 
 @app.get("/portfolio/overview")
@@ -100,7 +96,7 @@ app.middleware("http")(logging_middleware)
 
 # Routers
 app.include_router(agent_router)
-app.include_router(ops_router)
+app.include_router(spool_router)
 app.include_router(spool_ui_router)
 app.include_router(webhook_router)
 app.include_router(vision_debug_router)
@@ -111,7 +107,6 @@ app.include_router(vision_search_router)
 app.include_router(spool_ops_router)
 app.include_router(manifests_router)
 app.include_router(ops_router)
-app.include_router(spool_ui_router)
 
 @app.get("/healthz")
 async def healthz():
@@ -146,9 +141,11 @@ async def _startup():
 async def _shutdown():
     await close_pool()
 
-@app.get("/debug-ping")
-async def debug_ping():
-    return {"ok": True}
+# Debug endpoint - only enabled in development
+if os.getenv("DEBUG", "false").lower() == "true":
+    @app.get("/debug-ping")
+    async def debug_ping():
+        return {"ok": True}
 
 # Auto-wired alerts router
 app.include_router(alerts_feature_router.router)
@@ -171,6 +168,9 @@ app.include_router(insights_router.router)
 # Screenshot intel router
 app.include_router(screenshot_intel_router.router)
 
+# Feedback router
+app.include_router(feedback_router.router)
+
 from app.features import items_export_router
 
 app.include_router(items_export_router.router)
@@ -180,12 +180,6 @@ class QuickScanRequest(BaseModel):
     category_hint: Optional[str] = None
     image_id: Optional[str] = None
     image_ids: Optional[List[str]] = None
-    image_id: Optional[str] = None
-    image_ids: Optional[List[str]] = None
-
-@app.post("/quickscan")
-
-@app.post("/quickscan")
 
 @app.post("/quickscan")
 async def quickscan_proxy(payload: QuickScanRequest):
@@ -391,8 +385,11 @@ async def ops_status():
 # -----------------------------------------
 # Twitch routes
 # -----------------------------------------
-from routers.twitch import router as twitch_router
-app.include_router(twitch_router)
+try:
+    from app.routers.twitch import router as twitch_router
+    app.include_router(twitch_router)
+except ImportError:
+    pass  # Twitch router not available
 
 
 

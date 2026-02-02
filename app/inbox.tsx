@@ -230,22 +230,14 @@ export default function InboxScreen() {
                   </View>
                 </View>
                 {req.requestMessage && (
-                  <Text style={[styles.requestMessage, { color: colors.text }]} numberOfLines={2}>
-                    {req.requestMessage}
-                  </Text>
+                  <View style={[styles.requestMessageWrap, { backgroundColor: colors.background }]}>
+                    <Ionicons name="chatbubble-outline" size={14} color={colors.muted} style={{ marginRight: 8 }} />
+                    <Text style={[styles.requestMessage, { color: colors.text }]} numberOfLines={2}>
+                      "{req.requestMessage}"
+                    </Text>
+                  </View>
                 )}
                 <View style={styles.requestActions}>
-                  <AnimatedPressable
-                    style={[styles.actionBtn, styles.declineBtn]}
-                    onPress={() => handleDeclineRequest(req.threadId)}
-                    disabled={processingRequestId === req.threadId}
-                  >
-                    {processingRequestId === req.threadId ? (
-                      <ActivityIndicator size="small" color={fixedColors.error} />
-                    ) : (
-                      <Text style={styles.declineBtnText}>Decline</Text>
-                    )}
-                  </AnimatedPressable>
                   <AnimatedPressable
                     style={[styles.actionBtn, styles.acceptBtn, { backgroundColor: colors.accent }]}
                     onPress={() => handleAcceptRequest(req.threadId)}
@@ -255,6 +247,17 @@ export default function InboxScreen() {
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
                       <Text style={styles.acceptBtnText}>Accept</Text>
+                    )}
+                  </AnimatedPressable>
+                  <AnimatedPressable
+                    style={[styles.actionBtn, styles.declineBtn]}
+                    onPress={() => handleDeclineRequest(req.threadId)}
+                    disabled={processingRequestId === req.threadId}
+                  >
+                    {processingRequestId === req.threadId ? (
+                      <ActivityIndicator size="small" color={fixedColors.error} />
+                    ) : (
+                      <Text style={styles.declineBtnText}>Decline</Text>
                     )}
                   </AnimatedPressable>
                 </View>
@@ -267,10 +270,13 @@ export default function InboxScreen() {
         {threads.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.muted }]}>Messages</Text>
-            {threads.map((thread) => (
+            {threads.map((thread, idx) => (
               <AnimatedPressable
                 key={thread.id}
-                style={[styles.threadRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[
+                  styles.threadRow,
+                  idx < threads.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+                ]}
                 onPress={() => handleThreadPress(thread)}
               >
                 <UserAvatar
@@ -343,9 +349,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backBtn: {
     padding: 4,
@@ -370,11 +376,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 8,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 
   // Request cards
@@ -404,10 +410,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  requestMessage: {
-    fontSize: 14,
+  requestMessageWrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginTop: 12,
+    padding: 12,
+    borderRadius: 10,
+  },
+  requestMessage: {
+    flex: 1,
+    fontSize: 14,
     lineHeight: 20,
+    fontStyle: 'italic',
   },
   requestActions: {
     flexDirection: 'row',
@@ -416,11 +430,11 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 40,
+    minHeight: 44,
   },
   declineBtn: {
     backgroundColor: '#fef2f2',
@@ -441,15 +455,13 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 
-  // Thread rows
+  // Thread rows — cleaner WhatsApp-style
   threadRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 0,
+    marginBottom: 0,
   },
   avatar: {
     alignItems: 'center',

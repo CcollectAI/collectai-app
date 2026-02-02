@@ -7,8 +7,7 @@ type Props = {
   subtitle?: string;
 };
 
-export const CategoryImageTile: React.FC<Props> = ({
-
+export const CategoryImageTile: React.FC<Props> = ({ label, image, subtitle }) => {
   const theme = {
     colors: {
       card: "#FFFFFF",
@@ -16,7 +15,7 @@ export const CategoryImageTile: React.FC<Props> = ({
       muted: "#4A5568",
       primary: "#02B5C4",
     },
-  }; label, image, subtitle }) => {
+  };
 
   return (
     <View

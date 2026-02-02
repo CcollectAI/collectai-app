@@ -1,19 +1,27 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
+/**
+ * Event Detail Screen — View event details, host, and attendees.
+ * Route: /events/[eventId]
+ */
+
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Linking,
+  ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { EVENTS, CollectorsEvent, EventKind } from '@/data/events';
+import { dataProvider, type PublicUserProfile } from '@/data';
+import type { CollectorsEvent, EventKind } from '@/data/events';
 import { getCategoryById } from '@/data/categories';
 import { getUserById } from '@/data/users';
-import { dataProvider, type PublicUserProfile } from '@/data';
 import { PublicUserProfileCard } from '@/components/PublicUserProfileCard';
-
-const BG = '#0f172a';
-const CARD = '#020617';
-const BORDER = '#1f2933';
-const TEXT = '#e5e7eb';
-const MUTED = '#9ca3af';
-const PRIMARY = '#0ea5e9';
+import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
 
 const kindLabel: Record<EventKind, string> = {
   collection_drop: 'Collection drop',
@@ -21,7 +29,13 @@ const kindLabel: Record<EventKind, string> = {
   stream: 'Twitch stream',
 };
 
-const AvatarSmall: React.FC<{ name: string; color: string }> = ({ name, color }) => {
+const kindIcon: Record<EventKind, keyof typeof Ionicons.glyphMap> = {
+  collection_drop: 'pricetag-outline',
+  meetup: 'people-outline',
+  stream: 'videocam-outline',
+};
+
+const AvatarSmall: React.FC<{ name: string; color: string; textColor: string }> = ({ name, color, textColor }) => {
   const initials =
     name
       .split(' ')
@@ -31,105 +45,48 @@ const AvatarSmall: React.FC<{ name: string; color: string }> = ({ name, color })
       .toUpperCase() || '?';
   return (
     <View
-      style={{
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: color,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 8,
-      }}
+      style={[styles.avatarSmall, { backgroundColor: color }]}
     >
-      <Text
-        style={{
-          fontSize: 11,
-          fontWeight: '700',
-          color: '#ffffff',
-        }}
-      >
+      <Text style={[styles.avatarSmallText, { color: textColor }]}>
         {initials}
       </Text>
     </View>
   );
 };
 
-const EventDetailScreen: React.FC = () => {
+export default function EventDetailScreen() {
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const router = useRouter();
+  const { colors } = useAppTheme();
 
-  const event: CollectorsEvent | undefined = useMemo(
-    () => EVENTS.find((e) => e.id === eventId),
-    [eventId],
-  );
-
-  if (!event) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: BG,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: '600',
-            color: TEXT,
-            marginBottom: 8,
-          }}
-        >
-          Event not found
-        </Text>
-        <Text
-          style={{
-            fontSize: 13,
-            color: MUTED,
-            textAlign: 'center',
-          }}
-        >
-          This event doesn&apos;t exist yet. Try opening it from the Events
-          tab again.
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            marginTop: 16,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderRadius: 999,
-            borderWidth: 1,
-            borderColor: BORDER,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '500',
-              color: TEXT,
-            }}
-          >
-            Go back
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const relatedCategory = event.categoryId
-    ? getCategoryById(event.categoryId)
-    : undefined;
-  const attendeeUsers = event.attendeeIds
-    .map((id) => getUserById(id))
-    .filter((u): u is NonNullable<ReturnType<typeof getUserById>> => Boolean(u));
-
-  // Fetch host profile via DataProvider (public view only)
+  const [event, setEvent] = useState<CollectorsEvent | null>(null);
+  const [loading, setLoading] = useState(true);
   const [hostProfile, setHostProfile] = useState<PublicUserProfile | null>(null);
   const [hostProfileLoading, setHostProfileLoading] = useState(false);
 
+  const [alertsOn, setAlertsOn] = useState(false);
+  const [followingStream, setFollowingStream] = useState(false);
+  const [going, setGoing] = useState(false);
+
+  // Load event data
+  const loadEvent = useCallback(async () => {
+    if (!eventId) return;
+    setLoading(true);
+    try {
+      const eventData = await dataProvider.getEventById(eventId);
+      setEvent(eventData);
+    } catch (err) {
+      console.warn('[EventDetail] loadEvent error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    loadEvent();
+  }, [loadEvent]);
+
+  // Load host profile when event loads
   useEffect(() => {
     if (event?.hostUserId) {
       setHostProfileLoading(true);
@@ -140,557 +97,559 @@ const EventDetailScreen: React.FC = () => {
     }
   }, [event?.hostUserId]);
 
-  const [alertsOn, setAlertsOn] = useState(false);
-  const [followingStream, setFollowingStream] = useState(false);
-  const [going, setGoing] = useState(false);
+  const relatedCategory = useMemo(
+    () => (event?.categoryId ? getCategoryById(event.categoryId) : undefined),
+    [event?.categoryId]
+  );
+
+  const attendeeUsers = useMemo(
+    () =>
+      event?.attendeeIds
+        .map((id) => getUserById(id))
+        .filter((u): u is NonNullable<ReturnType<typeof getUserById>> => Boolean(u)) ?? [],
+    [event?.attendeeIds]
+  );
 
   const openExternal = () => {
-    if (!event.onlineUrl) return;
+    if (!event?.onlineUrl) return;
     Linking.openURL(event.onlineUrl).catch((err) =>
       console.log('[EventDetail] failed to open url', err),
     );
   };
 
-  const isStream = event.kind === 'stream';
-  const isDrop = event.kind === 'collection_drop';
-  const isMeetup = event.kind === 'meetup';
+  const isStream = event?.kind === 'stream';
+  const isDrop = event?.kind === 'collection_drop';
+  const isMeetup = event?.kind === 'meetup';
 
   const handleAskToConnect = (userId: string) => {
     router.push({
       pathname: '/chat/new',
       params: {
         toUserId: userId,
-        contextEventId: event.id,
+        contextEventId: event?.id,
       },
     });
   };
 
-  return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: BG }}
-      contentContainerStyle={{
-        paddingTop: 48,
-        paddingBottom: 32,
-        paddingHorizontal: 16,
-      }}
-    >
-      {/* Header */}
-      <View
-        style={{
-          marginBottom: 16,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 10,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={{
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: BORDER,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 11,
-                color: MUTED,
-              }}
-            >
-              Back
-            </Text>
-          </TouchableOpacity>
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Event</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-          <View
-            style={{
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: BORDER,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
+  // Not found state
+  if (!event) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Event</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="calendar-outline" size={48} color={colors.muted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Event not found</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+            This event doesn't exist yet. Try opening it from the Events tab again.
+          </Text>
+          <AnimatedPressable
+            onPress={() => router.back()}
+            style={[styles.emptyBtn, { borderColor: colors.border }]}
           >
-            <Ionicons
-              name="calendar-outline"
-              size={14}
-              color={MUTED}
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={{
-                fontSize: 11,
-                color: MUTED,
-              }}
-            >
-              {kindLabel[event.kind]}
-            </Text>
-          </View>
+            <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        </AnimatedPressable>
+        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+          {event.title}
+        </Text>
+        <View style={{ width: 32 }} />
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Event Kind Badge */}
+        <View style={[styles.kindBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Ionicons
+            name={kindIcon[event.kind]}
+            size={14}
+            color={colors.accent}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={[styles.kindText, { color: colors.text }]}>
+            {kindLabel[event.kind]}
+          </Text>
         </View>
 
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: '700',
-            color: TEXT,
-          }}
-        >
+        {/* Title & Date/Time */}
+        <Text style={[styles.eventTitle, { color: colors.text }]}>
           {event.title}
         </Text>
 
-        <Text
-          style={{
-            marginTop: 6,
-            fontSize: 13,
-            color: MUTED,
-          }}
-        >
-          {event.date}
-          {event.time ? ` • ${event.time}` : ''}
-        </Text>
+        <View style={styles.metaRow}>
+          <Ionicons name="calendar-outline" size={16} color={colors.muted} style={{ marginRight: 6 }} />
+          <Text style={[styles.metaText, { color: colors.muted }]}>
+            {event.date}
+            {event.time ? ` • ${event.time}` : ''}
+          </Text>
+        </View>
 
         {event.location && (
-          <Text
-            style={{
-              marginTop: 2,
-              fontSize: 12,
-              color: MUTED,
-            }}
-          >
-            <Ionicons
-              name="location-outline"
-              size={12}
-              color={MUTED}
-            />{' '}
-            {event.location}
-          </Text>
-        )}
-      </View>
-
-      {/* Description */}
-      <View
-        style={{
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: BORDER,
-          backgroundColor: CARD,
-          padding: 12,
-          marginBottom: 12,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 13,
-            color: TEXT,
-          }}
-        >
-          {event.description}
-        </Text>
-      </View>
-
-      {/* Primary external action */}
-      {event.onlineUrl && (
-        <TouchableOpacity
-          onPress={openExternal}
-          style={{
-            alignSelf: 'flex-start',
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderRadius: 999,
-            backgroundColor: PRIMARY,
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 12,
-          }}
-        >
-          <Ionicons
-            name={isStream ? 'logo-twitch' : 'open-outline'}
-            size={16}
-            color="#ffffff"
-            style={{ marginRight: 6 }}
-          />
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '600',
-              color: '#ffffff',
-            }}
-          >
-            {isStream
-              ? 'Open stream'
-              : isDrop
-              ? 'Open drop page'
-              : 'Open link'}
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Participation controls */}
-      <View
-        style={{
-          marginBottom: 16,
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-        }}
-      >
-        {isDrop && (
-          <TouchableOpacity
-            onPress={() => {
-              setAlertsOn(!alertsOn);
-              console.log('[EventDetail] toggle drop alerts', event.id, !alertsOn);
-            }}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: alertsOn ? PRIMARY : BORDER,
-              backgroundColor: alertsOn ? '#022c22' : CARD,
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginRight: 8,
-              marginBottom: 8,
-            }}
-          >
-            <Ionicons
-              name={alertsOn ? 'notifications' : 'notifications-outline'}
-              size={16}
-              color={alertsOn ? PRIMARY : MUTED}
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '500',
-                color: alertsOn ? PRIMARY : MUTED,
-              }}
-            >
-              {alertsOn ? 'Alerts on for this drop' : 'Alert me for this drop'}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {isStream && (
-          <TouchableOpacity
-            onPress={() => {
-              setFollowingStream(!followingStream);
-              console.log('[EventDetail] toggle stream follow', event.id, !followingStream);
-            }}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: followingStream ? PRIMARY : BORDER,
-              backgroundColor: followingStream ? '#022c22' : CARD,
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginRight: 8,
-              marginBottom: 8,
-            }}
-          >
-            <Ionicons
-              name={followingStream ? 'checkmark-circle' : 'add-circle-outline'}
-              size={16}
-              color={followingStream ? PRIMARY : MUTED}
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '500',
-                color: followingStream ? PRIMARY : MUTED,
-              }}
-            >
-              {followingStream ? 'Following this stream' : 'Follow this stream'}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {isMeetup && (
-          <TouchableOpacity
-            onPress={() => {
-              setGoing(!going);
-              console.log('[EventDetail] toggle meetup going', event.id, !going);
-            }}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: going ? PRIMARY : BORDER,
-              backgroundColor: going ? '#022c22' : CARD,
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginRight: 8,
-              marginBottom: 8,
-            }}
-          >
-            <Ionicons
-              name={going ? 'checkmark' : 'walk-outline'}
-              size={16}
-              color={going ? PRIMARY : MUTED}
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '500',
-                color: going ? PRIMARY : MUTED,
-              }}
-            >
-              {going ? 'You are going' : 'I’m going to this meetup'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Related category */}
-      {relatedCategory && (
-        <View
-          style={{
-            marginBottom: 14,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '700',
-              color: TEXT,
-              marginBottom: 4,
-            }}
-          >
-            Related category
-          </Text>
-
-          <TouchableOpacity
-            onPress={() =>
-              router.push(`/categories/${encodeURIComponent(relatedCategory.id)}`)
-            }
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: BORDER,
-              backgroundColor: CARD,
-              padding: 10,
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '600',
-                color: TEXT,
-              }}
-            >
-              {relatedCategory.name}
-            </Text>
-            <Text
-              style={{
-                marginTop: 2,
-                fontSize: 11,
-                color: MUTED,
-              }}
-              numberOfLines={2}
-            >
-              {relatedCategory.tagline}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() =>
-              router.push(`/chat/category/${encodeURIComponent(relatedCategory.id)}`)
-            }
-            style={{
-              alignSelf: 'flex-start',
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: BORDER,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
-            <Ionicons
-              name="chatbubbles-outline"
-              size={14}
-              color={PRIMARY}
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '500',
-                color: PRIMARY,
-              }}
-            >
-              Open category chat
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Host collector — uses dataProvider.getPublicUserProfile (public view only) */}
-      {(hostProfile || hostProfileLoading) && (
-        <View
-          style={{
-            marginBottom: 14,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '700',
-              color: TEXT,
-              marginBottom: 4,
-            }}
-          >
-            Host collector
-          </Text>
-          <PublicUserProfileCard
-            profile={hostProfile}
-            loading={hostProfileLoading}
-            onPress={hostProfile ? () => router.push(`/users/${encodeURIComponent(hostProfile.id)}`) : undefined}
-          />
-        </View>
-      )}
-
-      {/* Collectors attending */}
-      <View
-        style={{
-          marginTop: 4,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '700',
-            color: TEXT,
-            marginBottom: 4,
-          }}
-        >
-          Collectors attending / following
-        </Text>
-        {attendeeUsers.length === 0 ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: MUTED,
-            }}
-          >
-            No collectors are marked as attending yet. You can be the first.
-          </Text>
-        ) : (
-          <View
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: BORDER,
-              backgroundColor: CARD,
-              padding: 10,
-            }}
-          >
-            {attendeeUsers.map((u) => (
-              <View
-                key={u.id}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginBottom: 8,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() =>
-                    router.push(`/users/${encodeURIComponent(u.id)}`)
-                  }
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    flex: 1,
-                  }}
-                >
-                  <AvatarSmall
-                    name={u.displayName}
-                    color={u.avatarColor}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: '600',
-                        color: TEXT,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {u.displayName}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        color: MUTED,
-                      }}
-                      numberOfLines={1}
-                    >
-                      @{u.handle}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => handleAskToConnect(u.id)}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 999,
-                    borderWidth: 1,
-                    borderColor: BORDER,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Ionicons
-                    name="chatbubble-ellipses-outline"
-                    size={14}
-                    color={PRIMARY}
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: '500',
-                      color: PRIMARY,
-                    }}
-                  >
-                    Ask to connect
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-
-            <Text
-              style={{
-                fontSize: 11,
-                color: MUTED,
-                marginTop: 4,
-              }}
-            >
-              {attendeeUsers.length === 1
-                ? '1 collector is attending/following this event.'
-                : `${attendeeUsers.length} collectors are attending/following this event.`}
+          <View style={styles.metaRow}>
+            <Ionicons name="location-outline" size={16} color={colors.muted} style={{ marginRight: 6 }} />
+            <Text style={[styles.metaText, { color: colors.muted }]}>
+              {event.location}
             </Text>
           </View>
         )}
-      </View>
-    </ScrollView>
-  );
-};
 
-export default EventDetailScreen;
+        {/* Description */}
+        <View style={[styles.descriptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.descriptionText, { color: colors.text }]}>
+            {event.description}
+          </Text>
+        </View>
+
+        {/* Primary external action */}
+        {event.onlineUrl && (
+          <AnimatedPressable
+            onPress={openExternal}
+            style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+          >
+            <Ionicons
+              name={isStream ? 'logo-twitch' : 'open-outline'}
+              size={16}
+              color="#ffffff"
+              style={{ marginRight: 6 }}
+            />
+            <Text style={styles.primaryBtnText}>
+              {isStream
+                ? 'Open stream'
+                : isDrop
+                ? 'Open drop page'
+                : 'Open link'}
+            </Text>
+          </AnimatedPressable>
+        )}
+
+        {/* Participation controls */}
+        <View style={styles.actionsRow}>
+          {isDrop && (
+            <AnimatedPressable
+              onPress={() => {
+                setAlertsOn(!alertsOn);
+                console.log('[EventDetail] toggle drop alerts', event.id, !alertsOn);
+              }}
+              style={[
+                styles.actionBtn,
+                {
+                  backgroundColor: alertsOn ? `${colors.accent}15` : colors.card,
+                  borderColor: alertsOn ? colors.accent : colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name={alertsOn ? 'notifications' : 'notifications-outline'}
+                size={16}
+                color={alertsOn ? colors.accent : colors.muted}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.actionBtnText, { color: alertsOn ? colors.accent : colors.muted }]}>
+                {alertsOn ? 'Alerts on' : 'Alert me'}
+              </Text>
+            </AnimatedPressable>
+          )}
+
+          {isStream && (
+            <AnimatedPressable
+              onPress={() => {
+                setFollowingStream(!followingStream);
+                console.log('[EventDetail] toggle stream follow', event.id, !followingStream);
+              }}
+              style={[
+                styles.actionBtn,
+                {
+                  backgroundColor: followingStream ? `${colors.accent}15` : colors.card,
+                  borderColor: followingStream ? colors.accent : colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name={followingStream ? 'checkmark-circle' : 'add-circle-outline'}
+                size={16}
+                color={followingStream ? colors.accent : colors.muted}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.actionBtnText, { color: followingStream ? colors.accent : colors.muted }]}>
+                {followingStream ? 'Following' : 'Follow stream'}
+              </Text>
+            </AnimatedPressable>
+          )}
+
+          {isMeetup && (
+            <AnimatedPressable
+              onPress={() => {
+                setGoing(!going);
+                console.log('[EventDetail] toggle meetup going', event.id, !going);
+              }}
+              style={[
+                styles.actionBtn,
+                {
+                  backgroundColor: going ? `${colors.accent}15` : colors.card,
+                  borderColor: going ? colors.accent : colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name={going ? 'checkmark' : 'walk-outline'}
+                size={16}
+                color={going ? colors.accent : colors.muted}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.actionBtnText, { color: going ? colors.accent : colors.muted }]}>
+                {going ? 'Going' : "I'm going"}
+              </Text>
+            </AnimatedPressable>
+          )}
+        </View>
+
+        {/* Related category */}
+        {relatedCategory && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Related category
+            </Text>
+
+            <AnimatedPressable
+              onPress={() =>
+                router.push(`/categories/${encodeURIComponent(relatedCategory.id)}`)
+              }
+              style={[styles.categoryCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Text style={[styles.categoryName, { color: colors.text }]}>
+                {relatedCategory.name}
+              </Text>
+              <Text style={[styles.categoryTagline, { color: colors.muted }]} numberOfLines={2}>
+                {relatedCategory.tagline}
+              </Text>
+            </AnimatedPressable>
+          </View>
+        )}
+
+        {/* Host collector */}
+        {(hostProfile || hostProfileLoading) && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Host collector
+            </Text>
+            <PublicUserProfileCard
+              profile={hostProfile}
+              loading={hostProfileLoading}
+              onPress={hostProfile ? () => router.push(`/users/${encodeURIComponent(hostProfile.id)}`) : undefined}
+            />
+          </View>
+        )}
+
+        {/* Collectors attending */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Collectors attending / following
+          </Text>
+          {attendeeUsers.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.muted }]}>
+              No collectors are marked as attending yet. You can be the first.
+            </Text>
+          ) : (
+            <View style={[styles.attendeesCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              {attendeeUsers.map((u) => (
+                <View key={u.id} style={styles.attendeeRow}>
+                  <AnimatedPressable
+                    onPress={() => router.push(`/users/${encodeURIComponent(u.id)}`)}
+                    style={styles.attendeeLeft}
+                  >
+                    <AvatarSmall
+                      name={u.displayName}
+                      color={u.avatarColor}
+                      textColor="#ffffff"
+                    />
+                    <View style={styles.attendeeInfo}>
+                      <Text style={[styles.attendeeName, { color: colors.text }]} numberOfLines={1}>
+                        {u.displayName}
+                      </Text>
+                      <Text style={[styles.attendeeHandle, { color: colors.muted }]} numberOfLines={1}>
+                        @{u.handle}
+                      </Text>
+                    </View>
+                  </AnimatedPressable>
+
+                  <AnimatedPressable
+                    onPress={() => handleAskToConnect(u.id)}
+                    style={[styles.connectBtn, { borderColor: colors.border }]}
+                  >
+                    <Ionicons
+                      name="chatbubble-ellipses-outline"
+                      size={14}
+                      color={colors.accent}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text style={[styles.connectBtnText, { color: colors.accent }]}>
+                      Connect
+                    </Text>
+                  </AnimatedPressable>
+                </View>
+              ))}
+
+              <Text style={[styles.attendeeCount, { color: colors.muted }]}>
+                {attendeeUsers.length === 1
+                  ? '1 collector is attending/following this event.'
+                  : `${attendeeUsers.length} collectors are attending/following this event.`}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Bottom spacing */}
+        <View style={{ height: 32 }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  backBtn: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  emptyBtn: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  emptyBtnText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  kindBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  kindText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  eventTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  metaText: {
+    fontSize: 14,
+  },
+  descriptionCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  descriptionText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  primaryBtn: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginBottom: 16,
+  },
+  primaryBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  actionBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  categoryCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+  },
+  categoryName: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  categoryTagline: {
+    fontSize: 13,
+    marginTop: 4,
+  },
+  emptyText: {
+    fontSize: 13,
+  },
+  attendeesCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+  },
+  attendeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  attendeeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarSmall: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  avatarSmallText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  attendeeInfo: {
+    flex: 1,
+  },
+  attendeeName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  attendeeHandle: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  connectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  connectBtnText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  attendeeCount: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+});

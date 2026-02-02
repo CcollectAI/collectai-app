@@ -42,7 +42,21 @@ expo-env.d.ts
 backups/
 logs/
 ops/logs/
-*.bak_*
 *.pre_restore_*
 *.gz
+
+# Backup files (various patterns)
+*.bak
+*.bak.*
 *.bak_*
+*.broken.*
+*.save
+*.orphan.bak
+main.py.bak*
+main.py.broken*
+main.py.save
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo

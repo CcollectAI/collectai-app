@@ -97,6 +97,7 @@ export default function CategoryStoreScreen() {
   const [error, setError] = useState<string | null>(null);
   const [following, setFollowing] = useState(false);
   const [spotlightIndex, setSpotlightIndex] = useState(0);
+  const [markingOwned, setMarkingOwned] = useState<string | null>(null);
 
   const spotlightRef = useRef<FlatList>(null);
 
@@ -160,6 +161,19 @@ export default function CategoryStoreScreen() {
 
   const handleFriendPress = (userId: string) => {
     router.push(`/users/${encodeURIComponent(userId)}`);
+  };
+
+  const handleMarkOwned = async (itemId: string) => {
+    setMarkingOwned(itemId);
+    try {
+      await dataProvider.markCategoryItemOwned(itemId);
+      // Remove from missing items list
+      setMissingItems((prev) => prev.filter((item) => item.id !== itemId));
+    } catch (err: any) {
+      console.warn('[CategoryStore] markOwned error:', err);
+    } finally {
+      setMarkingOwned(null);
+    }
   };
 
   // Loading state
@@ -257,13 +271,20 @@ export default function CategoryStoreScreen() {
                 >
                   <Ionicons name="eye-outline" size={16} color={colors.muted} />
                 </TouchableOpacity>
-                {/* Mark Owned - disabled for v1 */}
+                {/* Mark Owned */}
                 <TouchableOpacity
-                  style={[styles.missingBtn, styles.missingBtnDisabled]}
-                  disabled
-                  onPress={() => {}}
+                  style={[
+                    styles.missingBtn,
+                    { backgroundColor: markingOwned === item.id ? COLORS.accent : COLORS.bg },
+                  ]}
+                  disabled={markingOwned === item.id}
+                  onPress={() => handleMarkOwned(item.id)}
                 >
-                  <Ionicons name="checkmark" size={16} color={colors.muted} />
+                  <Ionicons
+                    name={markingOwned === item.id ? 'hourglass-outline' : 'checkmark'}
+                    size={16}
+                    color={markingOwned === item.id ? '#fff' : colors.text}
+                  />
                 </TouchableOpacity>
               </View>
             </View>

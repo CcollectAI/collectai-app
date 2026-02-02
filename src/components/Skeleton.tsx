@@ -1,25 +1,197 @@
-import { useEffect, useRef } from 'react';
-import { Animated, ViewStyle } from 'react-native';
-import { theme } from '@/theme';
+/**
+ * Skeleton loading components for placeholder UI while data loads.
+ * Provides shimmer effect for visual feedback.
+ */
 
-export default function Skeleton({ style }: { style?: ViewStyle }) {
-  const opacity = useRef(new Animated.Value(0.4)).current;
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
+
+interface SkeletonProps {
+  width?: number | string;
+  height?: number;
+  borderRadius?: number;
+  style?: ViewStyle;
+}
+
+export function Skeleton({
+  width = '100%',
+  height = 16,
+  borderRadius = 4,
+  style,
+}: SkeletonProps) {
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
-    const loop = Animated.loop(
+    const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(shimmerAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmerAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
       ])
     );
-    loop.start();
-    return () => loop.stop();
-  }, [opacity]);
+    animation.start();
+    return () => animation.stop();
+  }, [shimmerAnim]);
+
+  const opacity = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
   return (
     <Animated.View
       style={[
-        { backgroundColor: theme.colors.border, opacity },
+        styles.skeleton,
+        {
+          width: width as any,
+          height,
+          borderRadius,
+          opacity,
+        },
         style,
       ]}
     />
   );
 }
+
+// Pre-built skeleton patterns for common UI elements
+
+export function SkeletonItemCard() {
+  return (
+    <View style={styles.itemCard}>
+      <Skeleton width={80} height={80} borderRadius={12} />
+      <View style={styles.itemCardContent}>
+        <Skeleton width="70%" height={16} borderRadius={4} />
+        <Skeleton width="40%" height={12} borderRadius={4} style={{ marginTop: 8 }} />
+        <Skeleton width="30%" height={14} borderRadius={4} style={{ marginTop: 8 }} />
+      </View>
+    </View>
+  );
+}
+
+export function SkeletonItemRow() {
+  return (
+    <View style={styles.itemRow}>
+      <Skeleton width={56} height={56} borderRadius={10} />
+      <View style={styles.itemRowContent}>
+        <Skeleton width="60%" height={14} borderRadius={4} />
+        <Skeleton width="35%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
+      </View>
+      <Skeleton width={60} height={16} borderRadius={4} />
+    </View>
+  );
+}
+
+export function SkeletonEventCard() {
+  return (
+    <View style={styles.eventCard}>
+      <View style={styles.eventHeader}>
+        <Skeleton width={40} height={40} borderRadius={8} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Skeleton width="80%" height={14} borderRadius={4} />
+          <Skeleton width="50%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
+        </View>
+      </View>
+      <Skeleton width="100%" height={12} borderRadius={4} style={{ marginTop: 12 }} />
+      <Skeleton width="70%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
+    </View>
+  );
+}
+
+export function SkeletonPortfolioHeader() {
+  return (
+    <View style={styles.portfolioHeader}>
+      <Skeleton width={120} height={32} borderRadius={6} />
+      <Skeleton width={80} height={16} borderRadius={4} style={{ marginTop: 8 }} />
+      <View style={styles.portfolioChart}>
+        <Skeleton width="100%" height={150} borderRadius={12} />
+      </View>
+    </View>
+  );
+}
+
+export function SkeletonCategoryPills() {
+  return (
+    <View style={styles.categoryPills}>
+      <Skeleton width={80} height={28} borderRadius={14} />
+      <Skeleton width={100} height={28} borderRadius={14} />
+      <Skeleton width={70} height={28} borderRadius={14} />
+      <Skeleton width={90} height={28} borderRadius={14} />
+    </View>
+  );
+}
+
+export function SkeletonList({ count = 5, type = 'row' }: { count?: number; type?: 'row' | 'card' | 'event' }) {
+  const Component = type === 'card' ? SkeletonItemCard : type === 'event' ? SkeletonEventCard : SkeletonItemRow;
+  return (
+    <View style={styles.list}>
+      {Array.from({ length: count }).map((_, i) => (
+        <Component key={i} />
+      ))}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  skeleton: {
+    backgroundColor: '#e2e8f0',
+  },
+  itemCard: {
+    flexDirection: 'row',
+    padding: 12,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+  },
+  itemCardContent: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginBottom: 8,
+  },
+  itemRowContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  eventCard: {
+    padding: 14,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  portfolioHeader: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  portfolioChart: {
+    width: '100%',
+    marginTop: 16,
+  },
+  categoryPills: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  list: {
+    paddingHorizontal: 16,
+  },
+});
+
+export default Skeleton;

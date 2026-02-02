@@ -1,24 +1,28 @@
 """
-Stub DB layer for collectors backend.
+DB layer for collectors backend.
 
 main.py expects:
     from app.db import connect_pool, close_pool, db_configured
 
-For now we run in 'DB disabled' mode:
-- db_configured() always returns False
-- connect_pool() / close_pool() are async no-ops
-
-This matches the DB-optional setup described in the progress docs.
+When DB_ENABLED=true (and DB_DSN is set), provides real asyncpg connections.
+Otherwise runs in 'DB disabled' mode with no-ops.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Optional
+import os
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Optional
+
+import asyncpg
 
 from fastapi import FastAPI  # only for type hints, not strictly required
 
 logger = logging.getLogger(__name__)
+
+DB_ENABLED = os.getenv("DB_ENABLED", "false").lower() == "true"
+DB_DSN = os.getenv("DB_DSN", "")
 
 
 class _DummyPool:
@@ -26,32 +30,60 @@ class _DummyPool:
         logger.info("DB stub: closing dummy pool")
 
 
-_pool: Optional[_DummyPool] = None
+_pool: Optional[asyncpg.Pool | _DummyPool] = None
 
 
 def db_configured() -> bool:
     """
-    Return False to indicate 'no real DB configured'.
-
-    main.py can then skip DB-dependent features, but the app still boots.
+    Return True if DB_ENABLED=true and DB_DSN is set.
     """
-    return False
+    return DB_ENABLED and bool(DB_DSN)
 
 
 async def connect_pool(app: Optional[FastAPI] = None) -> None:
     """
-    Async no-op for startup hooks.
+    Initialize connection pool on startup.
     """
     global _pool
-    logger.info("DB stub: connect_pool() called; no DB connection will be created")
-    _pool = _DummyPool()
+    if db_configured():
+        logger.info("DB: creating asyncpg connection pool")
+        _pool = await asyncpg.create_pool(DB_DSN, min_size=1, max_size=10)
+    else:
+        logger.info("DB stub: connect_pool() called; no DB connection will be created")
+        _pool = _DummyPool()
 
 
 async def close_pool(app: Optional[FastAPI] = None) -> None:
     """
-    Async no-op for shutdown hooks.
+    Close connection pool on shutdown.
     """
     global _pool
     if _pool is not None:
         await _pool.close()
     _pool = None
+
+
+@asynccontextmanager
+async def get_conn() -> AsyncGenerator[asyncpg.Connection, None]:
+    """
+    Context manager for getting a database connection.
+
+    Usage:
+        async with get_conn() as conn:
+            row = await conn.fetchrow("SELECT ...")
+
+    Raises RuntimeError if DB is not configured.
+    """
+    if not db_configured():
+        raise RuntimeError("Database not configured (DB_ENABLED=false or DB_DSN missing)")
+
+    if _pool is None or isinstance(_pool, _DummyPool):
+        # Fallback: create one-off connection if pool not initialized
+        conn = await asyncpg.connect(DB_DSN)
+        try:
+            yield conn
+        finally:
+            await conn.close()
+    else:
+        async with _pool.acquire() as conn:
+            yield conn

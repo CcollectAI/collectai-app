@@ -6,12 +6,19 @@ from pydantic import BaseModel
 
 DEFAULT_OWNER = "local_demo"
 
+# CORS configuration from environment
+CORS_ORIGINS = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080"
+).split(",")
+
 app = FastAPI(title="CollectAI Signals API")
 
-# CORS: wide open for now; you can restrict origins later
+# CORS: configured via CORS_ORIGINS environment variable
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -26,12 +33,17 @@ from fastapi import Header, HTTPException, status
 
 
 def verify_api_key(x_api_key: str = Header(alias="X-API-Key")):
-    expected_key = "dev-local-secret-collectai"
-
+    expected_key = os.environ.get("API_SHARED_SECRET")
+    if not expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="API key not configured on server",
+        )
     if x_api_key != expected_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key",)
+            detail="Invalid API key",
+        )
 
 async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
     expected = os.environ.get("API_SHARED_SECRET")

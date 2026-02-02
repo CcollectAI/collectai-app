@@ -13,10 +13,37 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { Ionicons } from '@expo/vector-icons';
 import { useColorTheme } from "../../src/theme/colors";
 import { dataProvider } from "@/data";
+import { PriceConfidenceGauge } from "@/components/PriceConfidenceGauge";
+
+// Format currency with proper number syntax (e.g., €1.234 or €1,234)
+const formatCurrency = (value: string | number | undefined | null): string => {
+  if (value === undefined || value === null || value === '') return '?';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '?';
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(num);
+};
+
+// Format just the number without currency symbol
+const formatNumber = (value: string | number | undefined | null): string => {
+  if (value === undefined || value === null || value === '') return '?';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '?';
+  return new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(num);
+};
 
 export default function ItemDetailScreen() {
   const theme = useColorTheme();
@@ -34,6 +61,7 @@ export default function ItemDetailScreen() {
     q50?: string;
     q90?: string;
     confidence?: string;
+    explanation?: string;
   }>();
 
   const {
@@ -50,6 +78,7 @@ export default function ItemDetailScreen() {
     q50,
     q90,
     confidence,
+    explanation,
   } = params;
 
   const isDraft = id === 'draft' || draft === '1';
@@ -59,6 +88,21 @@ export default function ItemDetailScreen() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const notesInputRef = useRef<TextInput | null>(null);
+
+  // Feedback state
+  const [showSalePriceInput, setShowSalePriceInput] = useState(false);
+  const [salePrice, setSalePrice] = useState("");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+
+  // Quick-edit state (draft mode)
+  const [editableName, setEditableName] = useState(name);
+  const [editableCategory, setEditableCategory] = useState(category);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+
+  // Expandable explanation state
+  const [explanationExpanded, setExplanationExpanded] = useState(false);
 
   const onSaveNotes = () => {
     setSavingNotes(true);
@@ -78,8 +122,8 @@ export default function ItemDetailScreen() {
     try {
       const persisted = await dataProvider.persistQuickscanDraft({
         photoUri: imageUri || '',
-        categoryId: category,
-        title: name,
+        categoryId: editableCategory,
+        title: editableName,
         notes: notes || undefined,
       });
 
@@ -104,6 +148,42 @@ export default function ItemDetailScreen() {
 
   const focusNotes = () => {
     notesInputRef.current?.focus();
+  };
+
+  const onSubmitSalePrice = async () => {
+    if (!salePrice.trim() || !id || isDraft) return;
+
+    setSubmittingFeedback(true);
+    setFeedbackMessage(null);
+
+    try {
+      await dataProvider.submitFeedback(id, 'sale_price', salePrice.trim());
+      setFeedbackMessage("Thanks! Sale price recorded.");
+      setShowSalePriceInput(false);
+      setSalePrice("");
+    } catch (err: any) {
+      console.error('[ItemDetail] feedback error:', err);
+      setFeedbackMessage("Failed to submit feedback");
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
+  const onPriceDisagree = async () => {
+    if (!id || isDraft) return;
+
+    setSubmittingFeedback(true);
+    setFeedbackMessage(null);
+
+    try {
+      await dataProvider.submitFeedback(id, 'disagree', 'inaccurate');
+      setFeedbackMessage("Thanks for the feedback!");
+    } catch (err: any) {
+      console.error('[ItemDetail] feedback error:', err);
+      setFeedbackMessage("Failed to submit feedback");
+    } finally {
+      setSubmittingFeedback(false);
+    }
   };
 
   return (
@@ -153,20 +233,36 @@ export default function ItemDetailScreen() {
                 </Text>
               )}
 
-              <Pressable
-                onPress={onSaveDraft}
-                disabled={savingDraft}
-                style={[
-                  styles.saveDraftButton,
-                  { backgroundColor: '#16a34a', opacity: savingDraft ? 0.7 : 1 },
-                ]}
-              >
-                {savingDraft ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.saveDraftButtonText}>Save to Collection</Text>
-                )}
-              </Pressable>
+              <View style={styles.draftButtonsRow}>
+                <Pressable
+                  onPress={onSaveDraft}
+                  disabled={savingDraft}
+                  style={[
+                    styles.saveDraftButton,
+                    { backgroundColor: '#16a34a', opacity: savingDraft ? 0.7 : 1 },
+                  ]}
+                >
+                  {savingDraft ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+                      <Text style={styles.saveDraftButtonText}>Save to Collection</Text>
+                    </>
+                  )}
+                </Pressable>
+
+                <Pressable
+                  onPress={() => router.push('/quickscan')}
+                  style={[
+                    styles.scanAnotherButton,
+                    { backgroundColor: theme.accent },
+                  ]}
+                >
+                  <Ionicons name="camera" size={18} color="#FFFFFF" />
+                  <Text style={styles.scanAnotherButtonText}>Scan Another</Text>
+                </Pressable>
+              </View>
             </View>
           )}
 
@@ -177,10 +273,61 @@ export default function ItemDetailScreen() {
               { backgroundColor: theme.card, borderColor: theme.border },
             ]}
           >
-            <Text style={[styles.name, { color: theme.text }]}>{name}</Text>
-            <Text style={[styles.category, { color: theme.mutedText }]}>
-              {category}
-            </Text>
+            {/* Editable Name (draft mode) */}
+            {isDraft && isEditingName ? (
+              <TextInput
+                style={[styles.nameInput, { color: theme.text, borderColor: theme.border }]}
+                value={editableName}
+                onChangeText={setEditableName}
+                onBlur={() => setIsEditingName(false)}
+                autoFocus
+                selectTextOnFocus
+              />
+            ) : (
+              <Pressable
+                onPress={() => isDraft && setIsEditingName(true)}
+                style={styles.editableRow}
+              >
+                <Text style={[styles.name, { color: theme.text }]}>{editableName}</Text>
+                {isDraft && (
+                  <Ionicons name="pencil" size={14} color={theme.mutedText} style={{ marginLeft: 6 }} />
+                )}
+              </Pressable>
+            )}
+
+            {/* Editable Category with drill-down link */}
+            {isDraft && isEditingCategory ? (
+              <TextInput
+                style={[styles.categoryInput, { color: theme.mutedText, borderColor: theme.border }]}
+                value={editableCategory}
+                onChangeText={setEditableCategory}
+                onBlur={() => setIsEditingCategory(false)}
+                autoFocus
+                selectTextOnFocus
+              />
+            ) : (
+              <Pressable
+                onPress={() => {
+                  if (isDraft) {
+                    setIsEditingCategory(true);
+                  } else {
+                    // Navigate to category store
+                    const categorySlug = editableCategory.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                    router.push(`/categories/${categorySlug}`);
+                  }
+                }}
+                style={[styles.categoryPill, { backgroundColor: theme.accent + '20' }]}
+              >
+                <Text style={[styles.categoryPillText, { color: theme.accent }]}>
+                  {editableCategory}
+                </Text>
+                {isDraft ? (
+                  <Ionicons name="pencil" size={12} color={theme.accent} />
+                ) : (
+                  <Ionicons name="chevron-forward" size={14} color={theme.accent} />
+                )}
+              </Pressable>
+            )}
 
             <View style={styles.row}>
               <Text style={[styles.label, { color: theme.mutedText }]}>
@@ -201,7 +348,7 @@ export default function ItemDetailScreen() {
                 Estimated value
               </Text>
               <Text style={[styles.valueHighlight, { color: theme.text }]}>
-                €{value}
+                {formatCurrency(value)}
               </Text>
             </View>
 
@@ -212,20 +359,129 @@ export default function ItemDetailScreen() {
                   Price range
                 </Text>
                 <Text style={[styles.value, { color: theme.text }]}>
-                  €{q10 ?? '?'} – €{q50 ?? '?'} – €{q90 ?? '?'}
+                  {formatCurrency(q10)} – {formatCurrency(q50)} – {formatCurrency(q90)}
                 </Text>
               </View>
             )}
 
-            {/* Confidence — shown in draft mode */}
+            {/* Confidence Gauge — shown in draft mode */}
             {confidence && (
-              <View style={styles.row}>
-                <Text style={[styles.label, { color: theme.mutedText }]}>
-                  Confidence
+              <View style={styles.confidenceSection}>
+                <PriceConfidenceGauge
+                  confidence={parseFloat(confidence)}
+                  size="medium"
+                  colors={{
+                    text: theme.text as string,
+                    muted: theme.mutedText as string,
+                    background: theme.border as string,
+                  }}
+                />
+              </View>
+            )}
+
+            {/* Explanation — expandable "Why this price?" section */}
+            {explanation && (
+              <View style={styles.explanationBlock}>
+                <Pressable
+                  onPress={() => setExplanationExpanded(!explanationExpanded)}
+                  style={styles.explanationHeaderRow}
+                >
+                  <View style={styles.explanationHeaderLeft}>
+                    <Ionicons name="help-circle-outline" size={18} color={theme.accent} />
+                    <Text style={[styles.explanationHeader, { color: theme.text }]}>
+                      Why this price?
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name={explanationExpanded ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={theme.mutedText}
+                  />
+                </Pressable>
+                {explanationExpanded && (
+                  <View style={[styles.explanationContent, { backgroundColor: theme.background }]}>
+                    <Text style={[styles.explanationText, { color: theme.mutedText }]}>
+                      {explanation}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Feedback section — shown for saved items */}
+            {!isDraft && id && (
+              <View style={styles.feedbackBlock}>
+                <Text style={[styles.feedbackHeader, { color: theme.text }]}>
+                  Help improve our estimates
                 </Text>
-                <Text style={[styles.value, { color: theme.text }]}>
-                  {confidence}%
-                </Text>
+
+                {feedbackMessage && (
+                  <Text style={[styles.feedbackMessage, { color: theme.accent }]}>
+                    {feedbackMessage}
+                  </Text>
+                )}
+
+                {showSalePriceInput ? (
+                  <View style={styles.salePriceInputRow}>
+                    <TextInput
+                      style={[
+                        styles.salePriceInput,
+                        {
+                          color: theme.text,
+                          borderColor: theme.border,
+                          backgroundColor: theme.background,
+                        },
+                      ]}
+                      placeholder="Sale price (e.g., 150.00)"
+                      placeholderTextColor={theme.mutedText as string}
+                      keyboardType="decimal-pad"
+                      value={salePrice}
+                      onChangeText={setSalePrice}
+                      autoFocus
+                    />
+                    <Pressable
+                      onPress={onSubmitSalePrice}
+                      disabled={submittingFeedback || !salePrice.trim()}
+                      style={[
+                        styles.feedbackSubmitBtn,
+                        { backgroundColor: theme.accent, opacity: submittingFeedback ? 0.7 : 1 },
+                      ]}
+                    >
+                      <Text style={[styles.feedbackBtnText, { color: theme.accentText }]}>
+                        {submittingFeedback ? "..." : "Submit"}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setShowSalePriceInput(false)}
+                      style={[styles.feedbackCancelBtn, { borderColor: theme.border }]}
+                    >
+                      <Text style={[styles.feedbackBtnText, { color: theme.mutedText }]}>
+                        Cancel
+                      </Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <View style={styles.feedbackButtonsRow}>
+                    <Pressable
+                      onPress={() => setShowSalePriceInput(true)}
+                      style={[styles.feedbackBtn, { backgroundColor: '#16a34a' }]}
+                    >
+                      <Text style={styles.feedbackBtnTextWhite}>I sold it for...</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={onPriceDisagree}
+                      disabled={submittingFeedback}
+                      style={[
+                        styles.feedbackBtn,
+                        { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
+                      ]}
+                    >
+                      <Text style={[styles.feedbackBtnText, { color: theme.text }]}>
+                        Price seems off
+                      </Text>
+                    </Pressable>
+                  </View>
+                )}
               </View>
             )}
 
@@ -336,16 +592,38 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  draftButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   saveDraftButton: {
+    flex: 1,
+    flexDirection: 'row',
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
   saveDraftButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  scanAnotherButton: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  scanAnotherButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
   errorText: {
@@ -371,8 +649,46 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
   },
+  nameInput: {
+    fontSize: 20,
+    fontWeight: "700",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 4,
+  },
+  editableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   category: {
     fontSize: 13,
+  },
+  categoryInput: {
+    fontSize: 13,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 4,
+  },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 4,
+    gap: 4,
+  },
+  categoryPillText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  confidenceSection: {
+    marginTop: 12,
   },
   row: {
     flexDirection: "row",
@@ -389,6 +705,36 @@ const styles = StyleSheet.create({
   valueHighlight: {
     fontSize: 16,
     fontWeight: "700",
+  },
+  explanationBlock: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+  },
+  explanationHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  explanationHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  explanationHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  explanationContent: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 10,
+  },
+  explanationText: {
+    fontSize: 13,
+    lineHeight: 19,
   },
   notesBlock: {
     marginTop: 16,
@@ -435,5 +781,64 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 13,
     fontWeight: "600",
+  },
+  feedbackBlock: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+  },
+  feedbackHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  feedbackMessage: {
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  feedbackButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  feedbackBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  feedbackBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  feedbackBtnTextWhite: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  salePriceInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  salePriceInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
+  feedbackSubmitBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  feedbackCancelBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
   },
 });

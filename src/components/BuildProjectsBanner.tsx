@@ -41,7 +41,6 @@ export default function BuildProjectsBanner() {
       </Text>
 
       <Pressable
-        // TODO: update this route to your real build/paint projects screen
         onPress={() => router.push("/build-paint-projects")}
         style={{
           alignSelf: "flex-start",

@@ -23,6 +23,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/PortfolioLineChart";
 import { useWatchlist } from "@/state/watchlistStore";
+import { InboxHeaderButton } from "@/components/InboxHeaderButton";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
 const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
@@ -182,6 +185,7 @@ const FALLBACK_ITEMS: ItemRow[] = [
 export default function PortfolioScreen() {
   const router = useRouter();
   const watchlist = useWatchlist();
+  const { colors } = useAppTheme();
 
   const [range, setRange] = useState<RangeKey>("7D");
   const [series, setSeries] = useState<TimeSeriesPoint[]>(FALLBACK_SERIES);
@@ -318,24 +322,25 @@ export default function PortfolioScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header: Total Value + Delta + Settings */}
-        <View style={styles.headerSection}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.headerLabel}>COLLECTION VALUE</Text>
-              <Text style={styles.totalValue}>{formatMoneyEUR(total)}</Text>
-              <Text style={[styles.deltaText, isPositive ? styles.deltaUp : styles.deltaDown]}>
-                {formatDeltaEUR(delta)} ({formatPct(deltaPct)})
-              </Text>
-            </View>
-            <Pressable
-              style={styles.settingsBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Settings"
-            >
-              <Ionicons name="settings-outline" size={20} color={COLORS.muted} />
-            </Pressable>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Portfolio</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.muted }]}>Track your collection value.</Text>
           </View>
+          <View style={styles.headerIcons}>
+            <InboxHeaderButton color={colors.text} size={22} />
+            <ThemeToggleButton size={22} />
+          </View>
+        </View>
+
+        {/* Collection Value */}
+        <View style={styles.valueSection}>
+          <Text style={styles.headerLabel}>COLLECTION VALUE</Text>
+          <Text style={styles.totalValue}>{formatMoneyEUR(total)}</Text>
+          <Text style={[styles.deltaText, isPositive ? styles.deltaUp : styles.deltaDown]}>
+            {formatDeltaEUR(delta)} ({formatPct(deltaPct)})
+          </Text>
         </View>
 
         {/* Range Toggles */}
@@ -573,16 +578,30 @@ const styles = StyleSheet.create({
   },
 
   // Header
-  headerSection: {
-    marginBottom: 16,
-  },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+    marginBottom: 16,
   },
   headerLeft: {
     flex: 1,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  headerIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  valueSection: {
+    marginBottom: 16,
   },
   headerLabel: {
     color: COLORS.muted,
@@ -608,16 +627,6 @@ const styles = StyleSheet.create({
   },
   deltaDown: {
     color: COLORS.danger,
-  },
-  settingsBtn: {
-    width: 36,
-    height: 36,
-    backgroundColor: COLORS.card,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: "center",
-    justifyContent: "center",
   },
 
   // Range toggles

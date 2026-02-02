@@ -12,6 +12,8 @@ import {
 import { router } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { dataProvider, type Item } from "@/data";
+import { InboxHeaderButton } from "@/components/InboxHeaderButton";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 
 export default function SearchScreen() {
   const t = useAppTheme();
@@ -81,10 +83,19 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors?.background ?? "#f5f7fa" }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors?.text ?? "#0b1f3a" }]}>
-          Search
-        </Text>
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Text style={[styles.title, { color: colors?.text ?? "#0b1f3a" }]}>
+            Search
+          </Text>
+          <Text style={[styles.subtitle, { color: colors?.muted ?? colors?.mutedText ?? "#666" }]}>
+            Find items in your collection.
+          </Text>
+        </View>
+        <View style={styles.headerIcons}>
+          <InboxHeaderButton color={colors?.text ?? "#0b1f3a"} size={22} />
+          <ThemeToggleButton size={22} />
+        </View>
       </View>
 
       <View style={styles.searchRow}>
@@ -142,14 +153,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
   },
+  headerLeft: {
+    flex: 1,
+  },
+  headerIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
+  },
+  subtitle: {
+    fontSize: 12,
+    marginTop: 4,
   },
   searchRow: {
     flexDirection: "row",
