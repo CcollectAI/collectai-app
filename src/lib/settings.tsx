@@ -11,6 +11,10 @@ export type Settings = {
   fxRates: { USD: number; GBP: number };
   /** Dark mode toggle */
   isDark: boolean;
+  /** Haptic feedback toggle */
+  hapticsEnabled: boolean;
+  /** Micro-animations toggle */
+  animationsEnabled: boolean;
 };
 
 const DEFAULTS: Settings = {
@@ -20,6 +24,8 @@ const DEFAULTS: Settings = {
   defaultRange: '7D',
   fxRates: { USD: 1.08, GBP: 0.86 },
   isDark: false,
+  hapticsEnabled: true,
+  animationsEnabled: true,
 };
 
 type Ctx = {
