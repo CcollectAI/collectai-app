@@ -8,20 +8,43 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import supabase from "@/lib/supabaseClient";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
+
 type SaveState = "idle" | "saving" | "success" | "error";
 
-// Compatibility: replace old ./ui/theme usage with app theme hook
-const useAppColors = () => {
-  const { colors } = useAppTheme();
-  return colors;
-};
+// Common categories for quick selection
+const CATEGORY_CHIPS = [
+  { label: "Pokémon", icon: "flash-outline" },
+  { label: "Funko Pop", icon: "cube-outline" },
+  { label: "LEGO", icon: "grid-outline" },
+  { label: "Warhammer", icon: "skull-outline" },
+  { label: "Gunpla", icon: "rocket-outline" },
+  { label: "Other", icon: "ellipsis-horizontal" },
+];
+
+// Common condition grades for quick selection
+const CONDITION_CHIPS = [
+  { label: "Mint", short: "M" },
+  { label: "Near Mint", short: "NM" },
+  { label: "Excellent", short: "EX" },
+  { label: "Good", short: "G" },
+  { label: "PSA 10", short: "10" },
+  { label: "PSA 9", short: "9" },
+  { label: "Raw", short: "Raw" },
+];
 
 const ManualAddScreen: React.FC = () => {
-  const colors = useAppColors();
+  const router = useRouter();
+  const { colors } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -36,6 +59,14 @@ const ManualAddScreen: React.FC = () => {
   const [errorText, setErrorText] = useState<string | null>(null);
 
   const canSubmit = name.trim().length > 0 && saveState !== "saving";
+
+  const handleCategoryChip = (label: string) => {
+    if (label === "Other") {
+      setCategory("");
+    } else {
+      setCategory(label);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -99,367 +130,439 @@ const ManualAddScreen: React.FC = () => {
 
   const bannerContent = (() => {
     if (saveState === "saving")
-      return { type: "info" as const, text: "Saving item to Supabase…" };
+      return { type: "info" as const, text: "Saving item…" };
     if (saveState === "success")
       return {
         type: "success" as const,
-        text: "Item saved to your portfolio_items table.",
+        text: "Item saved successfully!",
       };
     if (saveState === "error")
       return {
         type: "error" as const,
-        text:
-          errorText ||
-          "Something went wrong while saving. Check Supabase later.",
+        text: errorText || "Something went wrong while saving.",
       };
     return null;
   })();
 
-  const bannerColors =
-    bannerContent?.type === "error"
-      ? { bg: "#FDECEC", border: "#D64545", icon: "warning-outline" as const }
-      : bannerContent?.type === "success"
-      ? {
-          bg: "#E7F6F8",
-          border: "#19A7AE",
-          icon: "checkmark-circle-outline" as const,
-        }
-      : {
-          bg: "#FFF7E6",
-          border: "#F59E0B",
-          icon: "time-outline" as const,
-        };
+  const getBannerColors = (type: string) => {
+    if (type === "error") {
+      return { bg: "#FEF2F2", border: "#EF4444", icon: "warning-outline" as const, iconColor: "#EF4444" };
+    }
+    if (type === "success") {
+      return { bg: colors.accent + "15", border: colors.accent, icon: "checkmark-circle-outline" as const, iconColor: colors.accent };
+    }
+    return { bg: "#FEF3C7", border: "#F59E0B", icon: "time-outline" as const, iconColor: "#F59E0B" };
+  };
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         {/* Header */}
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.headerLabel, { color: colors.muted }]}>
-              Add item
-            </Text>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Manual entry
-            </Text>
-            <Text style={[styles.headerSub, { color: colors.muted }]}>
-              Quick way to log a card, figure or kit manually. Data is written
-              into the portfolio_items table so we can use it later for value
-              tracking and analytics.
-            </Text>
-          </View>
-          <View style={styles.headerIcon}>
-            <Ionicons
-              name="create-outline"
-              size={20}
-              color={colors.accent}
-            />
-          </View>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Add Manually</Text>
+          <View style={{ width: 32 }} />
         </View>
 
-        {/* Status banner */}
-        {bannerContent && (
-          <View
-            style={[
-              styles.banner,
-              {
-                backgroundColor: bannerColors.bg,
-                borderColor: bannerColors.border,
-              },
-            ]}
-          >
-            <View style={styles.bannerIconBox}>
-              {saveState === "saving" ? (
-                <ActivityIndicator size="small" color={colors.accent} />
-              ) : (
-                <Ionicons
-                  name={bannerColors.icon}
-                  size={18}
-                  color={bannerColors.border}
-                />
-              )}
-            </View>
-            <Text style={[styles.bannerText, { color: colors.text }]}>
-              {bannerContent.text}
-            </Text>
-          </View>
-        )}
-
-        {/* Form */}
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {/* Name */}
-          <View style={styles.fieldBlock}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>
-              Item name *
-            </Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g. Charizard GX (Alt Art)"
-              placeholderTextColor="#A0B3C4"
-              style={[
-                styles.input,
-                {
-                  borderColor: colors.border,
-                  backgroundColor: "#FFFFFF",
-                  color: colors.text,
-                },
-              ]}
-            />
-          </View>
+          <Animated.View style={animatedStyle}>
+            {/* Intro Card */}
+            <View style={[styles.introCard, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '30' }]}>
+              <View style={[styles.introIconWrap, { backgroundColor: colors.accent + '20' }]}>
+                <Ionicons name="create-outline" size={20} color={colors.accent} />
+              </View>
+              <View style={styles.introText}>
+                <Text style={[styles.introTitle, { color: colors.text }]}>Manual Entry</Text>
+                <Text style={[styles.introSubtitle, { color: colors.muted }]}>
+                  Enter item details yourself for full control
+                </Text>
+              </View>
+            </View>
 
-          {/* Category + game/series */}
-          <View style={styles.fieldRow}>
-            <View style={[styles.fieldBlock, { flex: 1, marginRight: 8 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.text }]}>
-                Category
-              </Text>
-              <TextInput
-                value={category}
-                onChangeText={setCategory}
-                placeholder="Pokémon, Funko, LEGO…"
-                placeholderTextColor="#A0B3C4"
+            {/* Status banner */}
+            {bannerContent && (
+              <View
                 style={[
-                  styles.input,
+                  styles.banner,
                   {
-                    borderColor: colors.border,
-                    backgroundColor: "#FFFFFF",
-                    color: colors.text,
+                    backgroundColor: getBannerColors(bannerContent.type).bg,
+                    borderColor: getBannerColors(bannerContent.type).border,
                   },
                 ]}
-              />
-            </View>
-            <View style={[styles.fieldBlock, { flex: 1 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.text }]}>
-                Game / series
-              </Text>
-              <TextInput
-                value={gameOrSeries}
-                onChangeText={setGameOrSeries}
-                placeholder="Set or line (e.g. MH3, One Piece)"
-                placeholderTextColor="#A0B3C4"
-                style={[
-                  styles.input,
-                  {
-                    borderColor: colors.border,
-                    backgroundColor: "#FFFFFF",
-                    color: colors.text,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-
-          {/* Condition */}
-          <View style={styles.fieldBlock}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>
-              Condition / grade
-            </Text>
-            <TextInput
-              value={conditionGrade}
-              onChangeText={setConditionGrade}
-              placeholder="Raw, Near Mint, PSA 9…"
-              placeholderTextColor="#A0B3C4"
-              style={[
-                styles.input,
-                {
-                  borderColor: colors.border,
-                  backgroundColor: "#FFFFFF",
-                  color: colors.text,
-                },
-              ]}
-            />
-          </View>
-
-          {/* Prices */}
-          <View style={styles.fieldRow}>
-            <View style={[styles.fieldBlock, { flex: 1, marginRight: 8 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.text }]}>
-                Purchase price (EUR)
-              </Text>
-              <TextInput
-                value={purchasePrice}
-                onChangeText={setPurchasePrice}
-                keyboardType="decimal-pad"
-                placeholder="e.g. 120"
-                placeholderTextColor="#A0B3C4"
-                style={[
-                  styles.input,
-                  {
-                    borderColor: colors.border,
-                    backgroundColor: "#FFFFFF",
-                    color: colors.text,
-                  },
-                ]}
-              />
-            </View>
-            <View style={[styles.fieldBlock, { flex: 1 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.text }]}>
-                Estimated value (EUR)
-              </Text>
-              <TextInput
-                value={estimatedValue}
-                onChangeText={setEstimatedValue}
-                keyboardType="decimal-pad"
-                placeholder="e.g. 240"
-                placeholderTextColor="#A0B3C4"
-                style={[
-                  styles.input,
-                  {
-                    borderColor: colors.border,
-                    backgroundColor: "#FFFFFF",
-                    color: colors.text,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-
-          {/* Source */}
-          <View style={styles.fieldBlock}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>
-              Source
-            </Text>
-            <TextInput
-              value={source}
-              onChangeText={setSource}
-              placeholder="Twitch stream, local shop, Cardmarket…"
-              placeholderTextColor="#A0B3C4"
-              style={[
-                styles.input,
-                {
-                  borderColor: colors.border,
-                  backgroundColor: "#FFFFFF",
-                  color: colors.text,
-                },
-              ]}
-            />
-          </View>
-
-          {/* Notes */}
-          <View style={styles.fieldBlock}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>
-              Notes
-            </Text>
-            <TextInput
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              placeholder="Print line, story, plans, etc."
-              placeholderTextColor="#A0B3C4"
-              style={[
-                styles.input,
-                styles.inputMultiline,
-                {
-                  borderColor: colors.border,
-                  backgroundColor: "#FFFFFF",
-                  color: colors.text,
-                  textAlignVertical: "top",
-                },
-              ]}
-            />
-          </View>
-
-          {/* Submit button */}
-          <Pressable
-            onPress={handleSubmit}
-            disabled={!canSubmit}
-            style={[
-              styles.submitButton,
-              {
-                backgroundColor: canSubmit ? colors.accent : "#D6E4EC",
-              },
-            ]}
-          >
-            {saveState === "saving" ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Ionicons name="save-outline" size={16} color="#FFFFFF" />
-                <Text style={styles.submitButtonText}>Save item</Text>
-              </>
+              >
+                <View style={styles.bannerIconBox}>
+                  {saveState === "saving" ? (
+                    <ActivityIndicator size="small" color={colors.accent} />
+                  ) : (
+                    <Ionicons
+                      name={getBannerColors(bannerContent.type).icon}
+                      size={18}
+                      color={getBannerColors(bannerContent.type).iconColor}
+                    />
+                  )}
+                </View>
+                <Text style={[styles.bannerText, { color: colors.text }]}>
+                  {bannerContent.text}
+                </Text>
+              </View>
             )}
-          </Pressable>
 
-          <Text style={[styles.footerText, { color: colors.muted }]}>
-            Later we can auto-fill this from QuickScan or marketplace imports.
-            For now, this gives you a real table with real items to build on.
-          </Text>
-        </View>
-      </ScrollView>
+            {/* Section: Basic Info */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Basic Information</Text>
+              </View>
+
+              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {/* Name */}
+                <View style={styles.fieldBlock}>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>
+                    Item name <Text style={{ color: colors.accent }}>*</Text>
+                  </Text>
+                  <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                    <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
+                    <TextInput
+                      value={name}
+                      onChangeText={setName}
+                      placeholder="e.g. Charizard GX (Alt Art)"
+                      placeholderTextColor={colors.muted}
+                      style={[styles.input, { color: colors.text }]}
+                    />
+                  </View>
+                </View>
+
+                {/* Category Chips */}
+                <View style={styles.fieldBlock}>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Category</Text>
+                  <View style={styles.chipRow}>
+                    {CATEGORY_CHIPS.map((chip) => {
+                      const isSelected = category === chip.label || (chip.label === "Other" && category === "");
+                      return (
+                        <AnimatedPressable
+                          key={chip.label}
+                          style={[
+                            styles.chip,
+                            {
+                              backgroundColor: isSelected ? colors.accent + '20' : colors.background,
+                              borderColor: isSelected ? colors.accent : colors.border,
+                            },
+                          ]}
+                          onPress={() => handleCategoryChip(chip.label)}
+                        >
+                          <Ionicons
+                            name={chip.icon as any}
+                            size={14}
+                            color={isSelected ? colors.accent : colors.muted}
+                          />
+                          <Text
+                            style={[
+                              styles.chipText,
+                              { color: isSelected ? colors.accent : colors.text },
+                            ]}
+                          >
+                            {chip.label}
+                          </Text>
+                        </AnimatedPressable>
+                      );
+                    })}
+                  </View>
+                  {category !== "" && !CATEGORY_CHIPS.find(c => c.label === category) && (
+                    <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background, marginTop: 8 }]}>
+                      <Ionicons name="pricetag-outline" size={16} color={colors.muted} style={styles.inputIcon} />
+                      <TextInput
+                        value={category}
+                        onChangeText={setCategory}
+                        placeholder="Custom category"
+                        placeholderTextColor={colors.muted}
+                        style={[styles.input, { color: colors.text }]}
+                      />
+                    </View>
+                  )}
+                </View>
+
+                {/* Game / Series */}
+                <View style={styles.fieldBlock}>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Set / Series</Text>
+                  <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                    <Ionicons name="albums-outline" size={16} color={colors.muted} style={styles.inputIcon} />
+                    <TextInput
+                      value={gameOrSeries}
+                      onChangeText={setGameOrSeries}
+                      placeholder="e.g. Scarlet & Violet, Master Grade"
+                      placeholderTextColor={colors.muted}
+                      style={[styles.input, { color: colors.text }]}
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Section: Condition & Value */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="diamond-outline" size={16} color={colors.accent} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Condition & Value</Text>
+              </View>
+
+              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {/* Condition */}
+                <View style={styles.fieldBlock}>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Condition / Grade</Text>
+                  <View style={styles.chipRow}>
+                    {CONDITION_CHIPS.map((chip) => {
+                      const isSelected = conditionGrade === chip.label;
+                      return (
+                        <AnimatedPressable
+                          key={chip.label}
+                          style={[
+                            styles.conditionChip,
+                            {
+                              backgroundColor: isSelected ? colors.accent + '20' : colors.background,
+                              borderColor: isSelected ? colors.accent : colors.border,
+                            },
+                          ]}
+                          onPress={() => setConditionGrade(chip.label)}
+                        >
+                          <Text
+                            style={[
+                              styles.conditionChipText,
+                              { color: isSelected ? colors.accent : colors.text },
+                            ]}
+                          >
+                            {chip.short}
+                          </Text>
+                        </AnimatedPressable>
+                      );
+                    })}
+                  </View>
+                  {conditionGrade && !CONDITION_CHIPS.find(c => c.label === conditionGrade) && (
+                    <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background, marginTop: 8 }]}>
+                      <Ionicons name="ribbon-outline" size={16} color={colors.muted} style={styles.inputIcon} />
+                      <TextInput
+                        value={conditionGrade}
+                        onChangeText={setConditionGrade}
+                        placeholder="Custom condition"
+                        placeholderTextColor={colors.muted}
+                        style={[styles.input, { color: colors.text }]}
+                      />
+                    </View>
+                  )}
+                </View>
+
+                {/* Prices */}
+                <View style={styles.fieldRow}>
+                  <View style={[styles.fieldBlock, { flex: 1, marginRight: 8 }]}>
+                    <Text style={[styles.fieldLabel, { color: colors.text }]}>Purchase Price</Text>
+                    <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                      <Text style={[styles.currencyPrefix, { color: colors.muted }]}>€</Text>
+                      <TextInput
+                        value={purchasePrice}
+                        onChangeText={setPurchasePrice}
+                        keyboardType="decimal-pad"
+                        placeholder="0.00"
+                        placeholderTextColor={colors.muted}
+                        style={[styles.input, { color: colors.text }]}
+                      />
+                    </View>
+                  </View>
+                  <View style={[styles.fieldBlock, { flex: 1 }]}>
+                    <Text style={[styles.fieldLabel, { color: colors.text }]}>Estimated Value</Text>
+                    <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                      <Text style={[styles.currencyPrefix, { color: colors.muted }]}>€</Text>
+                      <TextInput
+                        value={estimatedValue}
+                        onChangeText={setEstimatedValue}
+                        keyboardType="decimal-pad"
+                        placeholder="0.00"
+                        placeholderTextColor={colors.muted}
+                        style={[styles.input, { color: colors.text }]}
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Section: Additional Details */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="document-text-outline" size={16} color={colors.accent} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Additional Details</Text>
+              </View>
+
+              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {/* Source */}
+                <View style={styles.fieldBlock}>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Source</Text>
+                  <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                    <Ionicons name="storefront-outline" size={16} color={colors.muted} style={styles.inputIcon} />
+                    <TextInput
+                      value={source}
+                      onChangeText={setSource}
+                      placeholder="Twitch stream, local shop, Cardmarket…"
+                      placeholderTextColor={colors.muted}
+                      style={[styles.input, { color: colors.text }]}
+                    />
+                  </View>
+                </View>
+
+                {/* Notes */}
+                <View style={styles.fieldBlock}>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Notes</Text>
+                  <View style={[styles.inputWrapMultiline, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                    <TextInput
+                      value={notes}
+                      onChangeText={setNotes}
+                      multiline
+                      numberOfLines={3}
+                      placeholder="Print line, story, plans, etc."
+                      placeholderTextColor={colors.muted}
+                      style={[styles.inputMultiline, { color: colors.text }]}
+                      textAlignVertical="top"
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Submit Button */}
+            <AnimatedPressable
+              onPress={handleSubmit}
+              disabled={!canSubmit}
+              style={[
+                styles.submitButton,
+                {
+                  backgroundColor: canSubmit ? colors.accent : colors.border,
+                },
+              ]}
+            >
+              {saveState === "saving" ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+                  <Text style={styles.submitButtonText}>Save to Collection</Text>
+                </>
+              )}
+            </AnimatedPressable>
+
+            {/* Footer hint */}
+            <View style={styles.footerHint}>
+              <Ionicons name="bulb-outline" size={14} color={colors.muted} />
+              <Text style={[styles.footerHintText, { color: colors.muted }]}>
+                Tip: Use QuickScan for faster entry with AI assistance
+              </Text>
+            </View>
+
+            <View style={{ height: 32 }} />
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  scroll: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  safeArea: {
+    flex: 1,
   },
-  headerRow: {
+  keyboardView: {
+    flex: 1,
+  },
+  header: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerLabel: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    fontWeight: "600",
+  backBtn: {
+    padding: 4,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginTop: 2,
+    fontSize: 17,
+    fontWeight: "600",
   },
-  headerSub: {
-    fontSize: 12,
-    marginTop: 4,
-    maxWidth: 280,
+  scroll: {
+    flex: 1,
   },
-  headerIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  introCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  introIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D6E4EC",
+    marginRight: 12,
+  },
+  introText: {
+    flex: 1,
+  },
+  introTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  introSubtitle: {
+    fontSize: 13,
   },
   banner: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     marginBottom: 16,
   },
   bannerIconBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 8,
+    marginRight: 10,
   },
   bannerText: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
+    fontWeight: "500",
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   card: {
     borderRadius: 12,
@@ -467,44 +570,101 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   fieldBlock: {
-    marginBottom: 12,
+    marginBottom: 14,
   },
   fieldRow: {
     flexDirection: "row",
-    marginBottom: 4,
   },
   fieldLabel: {
     fontSize: 13,
     fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  input: {
+  inputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 13,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  inputWrapMultiline: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    minHeight: 88,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  currencyPrefix: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginRight: 4,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
   },
   inputMultiline: {
-    minHeight: 72,
+    flex: 1,
+    fontSize: 14,
+    minHeight: 64,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  conditionChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 44,
+    alignItems: 'center',
+  },
+  conditionChipText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   submitButton: {
-    marginTop: 8,
-    borderRadius: 999,
-    paddingVertical: 10,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    flexDirection: "row",
-    gap: 6,
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 4,
   },
   submitButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: "#FFFFFF",
   },
-  footerText: {
-    marginTop: 10,
-    fontSize: 11,
+  footerHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 16,
+  },
+  footerHintText: {
+    fontSize: 12,
   },
 });
 

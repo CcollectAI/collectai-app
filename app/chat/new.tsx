@@ -1,16 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getUserById } from '@/data/users';
 import { EVENTS } from '@/data/events';
-
-const BG = '#0f172a';
-const CARD = '#020617';
-const BORDER = '#1f2933';
-const TEXT = '#e5e7eb';
-const MUTED = '#9ca3af';
-const PRIMARY = '#0ea5e9';
+import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
 
 const NewChatScreen: React.FC = () => {
   const { toUserId, contextEventId } = useLocalSearchParams<{
@@ -18,6 +14,7 @@ const NewChatScreen: React.FC = () => {
     contextEventId?: string;
   }>();
   const router = useRouter();
+  const { colors } = useAppTheme();
 
   const toUser = useMemo(() => getUserById(toUserId ?? null), [toUserId]);
   const contextEvent = useMemo(
@@ -46,256 +43,262 @@ const NewChatScreen: React.FC = () => {
 
   if (!toUser) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: BG,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: '600',
-            color: TEXT,
-            marginBottom: 8,
-          }}
-        >
-          Collector not found
-        </Text>
-        <Text
-          style={{
-            fontSize: 13,
-            color: MUTED,
-            textAlign: 'center',
-          }}
-        >
-          This chat can&apos;t be started because the collector profile is
-          missing.
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            marginTop: 16,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderRadius: 999,
-            borderWidth: 1,
-            borderColor: BORDER,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '500',
-              color: TEXT,
-            }}
-          >
-            Go back
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="person-outline" size={48} color={colors.muted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            Collector not found
           </Text>
-        </TouchableOpacity>
-      </View>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+            This chat can&apos;t be started because the collector profile is missing.
+          </Text>
+          <AnimatedPressable
+            onPress={() => router.back()}
+            style={[styles.emptyBtn, { borderColor: colors.border }]}
+          >
+            <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
+  const initials = toUser.displayName
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: BG }}
-      contentContainerStyle={{
-        paddingTop: 48,
-        paddingBottom: 32,
-        paddingHorizontal: 16,
-      }}
-    >
-      {/* Header */}
-      <View
-        style={{
-          marginBottom: 16,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={{
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: BORDER,
-              marginRight: 8,
-            }}
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </AnimatedPressable>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Request to Connect</Text>
+            <View style={{ width: 32 }} />
+          </View>
+
+          {/* Recipient card */}
+          <View style={[styles.recipientCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.avatar, { backgroundColor: toUser.avatarColor }]}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+            <View style={styles.recipientInfo}>
+              <Text style={[styles.recipientName, { color: colors.text }]}>
+                {toUser.displayName}
+              </Text>
+              <Text style={[styles.recipientHandle, { color: colors.muted }]}>
+                @{toUser.handle}
+              </Text>
+              {contextEvent && (
+                <View style={styles.contextRow}>
+                  <Ionicons name="calendar-outline" size={12} color={colors.accent} />
+                  <Text style={[styles.contextText, { color: colors.accent }]} numberOfLines={1}>
+                    {contextEvent.title}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Message input */}
+          <View style={[styles.messageCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.messageLabelRow}>
+              <Ionicons name="chatbubble-outline" size={14} color={colors.muted} />
+              <Text style={[styles.messageLabel, { color: colors.muted }]}>Your message</Text>
+            </View>
+            <TextInput
+              multiline
+              value={message}
+              onChangeText={setMessage}
+              placeholder={
+                contextEvent
+                  ? 'Write a friendly message about this event…'
+                  : 'Write a friendly message…'
+              }
+              placeholderTextColor={colors.muted}
+              style={[styles.messageInput, { color: colors.text }]}
+            />
+          </View>
+
+          {/* Send button */}
+          <AnimatedPressable
+            disabled={!message.trim() || sent}
+            onPress={handleSend}
+            style={[
+              styles.sendBtn,
+              {
+                backgroundColor: message.trim() && !sent ? colors.accent : colors.border,
+                opacity: message.trim() && !sent ? 1 : 0.6,
+              },
+            ]}
           >
-            <Text
-              style={{
-                fontSize: 11,
-                color: MUTED,
-              }}
-            >
-              Back
+            <Ionicons
+              name={sent ? 'checkmark-circle' : 'send'}
+              size={18}
+              color="#ffffff"
+            />
+            <Text style={styles.sendBtnText}>
+              {sent ? 'Request sent!' : 'Send connection request'}
             </Text>
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: '700',
-              color: TEXT,
-            }}
-          >
-            Ask to connect
+          </AnimatedPressable>
+
+          {/* Info text */}
+          <Text style={[styles.infoText, { color: colors.muted }]}>
+            They'll receive a notification and can choose to accept or decline your request.
           </Text>
         </View>
-      </View>
-
-      {/* Target info */}
-      <View
-        style={{
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: BORDER,
-          backgroundColor: CARD,
-          padding: 12,
-          marginBottom: 12,
-          flexDirection: 'row',
-          alignItems: 'center',
-        }}
-      >
-        <View
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: toUser.avatarColor,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: '700',
-              color: '#ffffff',
-            }}
-          >
-            {toUser.displayName
-              .split(' ')
-              .map((p) => p[0])
-              .join('')
-              .slice(0, 2)
-              .toUpperCase()}
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: TEXT,
-            }}
-          >
-            {toUser.displayName}
-          </Text>
-          <Text
-            style={{
-              fontSize: 11,
-              color: MUTED,
-            }}
-          >
-            @{toUser.handle}
-          </Text>
-          {contextEvent && (
-            <Text
-              style={{
-                marginTop: 2,
-                fontSize: 11,
-                color: MUTED,
-              }}
-              numberOfLines={1}
-            >
-              About: {contextEvent.title}
-            </Text>
-          )}
-        </View>
-      </View>
-
-      {/* Message box */}
-      <View
-        style={{
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: BORDER,
-          backgroundColor: CARD,
-          padding: 12,
-          marginBottom: 12,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: TEXT,
-            marginBottom: 6,
-          }}
-        >
-          Message
-        </Text>
-        <TextInput
-          multiline
-          value={message}
-          onChangeText={setMessage}
-          placeholder={
-            contextEvent
-              ? 'Write a short message about this event…'
-              : 'Write a short message…'
-          }
-          placeholderTextColor={MUTED}
-          style={{
-            minHeight: 100,
-            fontSize: 13,
-            color: TEXT,
-            textAlignVertical: 'top',
-          }}
-        />
-      </View>
-
-      {/* Send button */}
-      <TouchableOpacity
-        disabled={!message.trim()}
-        onPress={handleSend}
-        style={{
-          alignSelf: 'flex-start',
-          paddingHorizontal: 16,
-          paddingVertical: 10,
-          borderRadius: 999,
-          backgroundColor: message.trim() ? PRIMARY : BORDER,
-          flexDirection: 'row',
-          alignItems: 'center',
-          opacity: message.trim() ? 1 : 0.6,
-        }}
-      >
-        <Ionicons
-          name={sent ? 'checkmark-circle-outline' : 'send-outline'}
-          size={16}
-          color="#ffffff"
-          style={{ marginRight: 6 }}
-        />
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: '#ffffff',
-          }}
-        >
-          {sent ? 'Request sent (mock)' : 'Send request'}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  backBtn: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  emptyBtn: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  emptyBtnText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  recipientCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  recipientInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  recipientName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  recipientHandle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  contextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 4,
+  },
+  contextText: {
+    fontSize: 12,
+    fontWeight: '500',
+    flex: 1,
+  },
+  messageCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginTop: 16,
+  },
+  messageLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  messageLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  messageInput: {
+    minHeight: 120,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlignVertical: 'top',
+  },
+  sendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 20,
+    gap: 8,
+  },
+  sendBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  infoText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 18,
+  },
+});
 
 export default NewChatScreen;

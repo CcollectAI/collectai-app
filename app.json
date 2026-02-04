@@ -13,8 +13,21 @@
       "expo-font",
       "expo-secure-store",
       "expo-sqlite",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "CollectAI needs access to your calendar to add collection events and drops."
+        }
+      ],
+expo-notifications
     ],
+    "ios": {
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "CollectAI needs access to your calendar to add collection events, drops, and meetups.",
+        "NSRemindersUsageDescription": "CollectAI needs access to reminders to notify you about upcoming events."
+      }
+    },
     "experiments": {
       "typedRoutes": true
     }

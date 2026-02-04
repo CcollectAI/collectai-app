@@ -29,8 +29,6 @@ function formatPercent(value: number): string {
 }
 
 function MoverItem({ item, colors }: { item: ItemMover; colors: any }) {
-  const isPositive = item.percentChange >= 0;
-
   return (
     <View style={styles.moverRow}>
       <View style={styles.moverInfo}>
@@ -45,12 +43,7 @@ function MoverItem({ item, colors }: { item: ItemMover; colors: any }) {
         <Text style={[styles.moverPrice, { color: colors.text }]}>
           {formatCurrency(item.currentValue)}
         </Text>
-        <Text
-          style={[
-            styles.moverChange,
-            { color: isPositive ? '#0BA86C' : '#EF4444' },
-          ]}
-        >
+        <Text style={[styles.moverChange, { color: colors.muted }]}>
           {formatPercent(item.percentChange)}
         </Text>
       </View>
@@ -137,10 +130,10 @@ export function InsightsCard({ insights, onViewDetails }: InsightsCardProps) {
         </View>
       )}
 
-      {/* View Details */}
+      {/* View Details - Highlighted */}
       {onViewDetails && (
         <Pressable
-          style={styles.viewDetails}
+          style={[styles.viewDetailsHighlighted, { backgroundColor: colors.accent + '20' }]}
           onPress={onViewDetails}
           accessibilityRole="button"
           accessibilityLabel="View full insights"
@@ -261,6 +254,15 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  viewDetailsHighlighted: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    padding: 12,
+    marginTop: 8,
+    borderRadius: 10,
   },
   viewDetailsText: {
     fontSize: 14,

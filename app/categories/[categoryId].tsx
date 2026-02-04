@@ -7,30 +7,22 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type CategoryStoreData, type Item, type MiniUserProfile, type CategoryMissingItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Theme colors (Tiffany-ish background, white cards, navy text)
-const COLORS = {
-  bg: '#E6F7F5',
-  card: '#FFFFFF',
-  border: '#D6E4EC',
-  text: '#0F172A',
-  muted: '#64748B',
-  accent: '#40C9C6',
-  accentDark: '#0ea5e9',
-};
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('en-US', {
@@ -53,9 +45,11 @@ const kindLabel: Record<string, string> = {
 };
 
 // Avatar component for friends
-const FriendAvatar: React.FC<{ profile: MiniUserProfile; onPress: () => void }> = ({
+const FriendAvatar: React.FC<{ profile: MiniUserProfile; onPress: () => void; accentColor: string; textColor: string }> = ({
   profile,
   onPress,
+  accentColor,
+  textColor,
 }) => {
   const initials = profile.displayName
     .split(' ')
@@ -65,7 +59,7 @@ const FriendAvatar: React.FC<{ profile: MiniUserProfile; onPress: () => void }> 
     .toUpperCase();
 
   return (
-    <TouchableOpacity style={styles.friendCard} onPress={onPress}>
+    <AnimatedPressable style={styles.friendCard} onPress={onPress}>
       {profile.avatarUrl ? (
         <Image source={{ uri: profile.avatarUrl }} style={styles.friendAvatar} />
       ) : (
@@ -73,16 +67,16 @@ const FriendAvatar: React.FC<{ profile: MiniUserProfile; onPress: () => void }> 
           style={[
             styles.friendAvatar,
             styles.friendAvatarPlaceholder,
-            { backgroundColor: profile.avatarColor || COLORS.accent },
+            { backgroundColor: profile.avatarColor || accentColor },
           ]}
         >
           <Text style={styles.friendInitials}>{initials}</Text>
         </View>
       )}
-      <Text style={styles.friendName} numberOfLines={1}>
+      <Text style={[styles.friendName, { color: textColor }]} numberOfLines={1}>
         {profile.displayName}
       </Text>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 
@@ -90,6 +84,7 @@ export default function CategoryStoreScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
 
   const [data, setData] = useState<CategoryStoreData | null>(null);
   const [missingItems, setMissingItems] = useState<CategoryMissingItem[]>([]);
@@ -98,6 +93,7 @@ export default function CategoryStoreScreen() {
   const [following, setFollowing] = useState(false);
   const [spotlightIndex, setSpotlightIndex] = useState(0);
   const [markingOwned, setMarkingOwned] = useState<string | null>(null);
+  const [recentlyOwned, setRecentlyOwned] = useState<Set<string>>(new Set());
 
   const spotlightRef = useRef<FlatList>(null);
 
@@ -163,14 +159,46 @@ export default function CategoryStoreScreen() {
     router.push(`/users/${encodeURIComponent(userId)}`);
   };
 
+  const handleToggleFollow = async () => {
+    const newFollowing = !following;
+    setFollowing(newFollowing);
+
+    try {
+      if (newFollowing) {
+        await dataProvider.followCategory(categoryId!);
+      } else {
+        await dataProvider.unfollowCategory(categoryId!);
+      }
+    } catch (err) {
+      // Revert on error
+      setFollowing(!newFollowing);
+      console.warn('[CategoryStore] follow toggle error:', err);
+    }
+  };
+
   const handleMarkOwned = async (itemId: string) => {
     setMarkingOwned(itemId);
     try {
       await dataProvider.markCategoryItemOwned(itemId);
-      // Remove from missing items list
-      setMissingItems((prev) => prev.filter((item) => item.id !== itemId));
+
+      // Fire success haptic
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+
+      // Mark as recently owned for visual feedback
+      setRecentlyOwned((prev) => new Set(prev).add(itemId));
+
+      // Remove from missing items list after brief delay for animation
+      setTimeout(() => {
+        setMissingItems((prev) => prev.filter((item) => item.id !== itemId));
+        setRecentlyOwned((prev) => {
+          const next = new Set(prev);
+          next.delete(itemId);
+          return next;
+        });
+      }, 600);
     } catch (err: any) {
       console.warn('[CategoryStore] markOwned error:', err);
+      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     } finally {
       setMarkingOwned(null);
     }
@@ -179,128 +207,93 @@ export default function CategoryStoreScreen() {
   // Loading state
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
-        <Text style={styles.loadingText}>Loading category...</Text>
-      </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+        <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+        </View>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading category...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   // Error / not found state
   if (error || !data) {
     return (
-      <View style={styles.centered}>
-        <Ionicons name="alert-circle-outline" size={48} color={COLORS.muted} />
-        <Text style={styles.errorTitle}>Category not found</Text>
-        <Text style={styles.errorSubtitle}>
-          This category doesn't exist or couldn't be loaded.
-        </Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go back</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+        <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+        </View>
+        <View style={styles.centered}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.muted} />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Category not found</Text>
+          <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
+            This category doesn't exist or couldn't be loaded.
+          </Text>
+          <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => router.back()}>
+            <Text style={[styles.backButtonText, { color: colors.text }]}>Go back</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
-      {/* 1. Category Header Card */}
-      <View style={styles.headerCard}>
-        <View style={styles.headerContent}>
-          <Text style={styles.categoryName}>{data.categoryName}</Text>
-          <Text style={styles.categoryTagline} numberOfLines={3}>
-            {data.categoryTagline}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={[
-            styles.followButton,
-            following && styles.followButtonActive,
-          ]}
-          onPress={() => setFollowing(!following)}
-        >
-          <Ionicons
-            name={following ? 'checkmark' : 'add'}
-            size={16}
-            color={following ? '#fff' : COLORS.accentDark}
-          />
-          <Text
-            style={[
-              styles.followButtonText,
-              following && styles.followButtonTextActive,
-            ]}
-          >
-            {following ? 'Following' : 'Follow'}
-          </Text>
-        </TouchableOpacity>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      {/* Header row with back button */}
+      <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        </AnimatedPressable>
       </View>
 
-      {/* 1.5. Missing Checklist */}
-      {missingItems.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Missing Items</Text>
-            <Text style={[styles.sectionCount, { color: colors.accent }]}>
-              {missingItems.length} to collect
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+      >
+        {/* 1. Category Header Card */}
+        <View style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.headerContent}>
+            <Text style={[styles.categoryName, { color: colors.text }]}>{data.categoryName}</Text>
+            <Text style={[styles.categoryTagline, { color: colors.muted }]} numberOfLines={3}>
+              {data.categoryTagline}
             </Text>
           </View>
-          {missingItems.slice(0, 6).map((item) => (
-            <View
-              key={item.id}
-              style={[styles.missingRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+          <AnimatedPressable
+            style={[
+              styles.followButton,
+              { borderColor: colors.accent },
+              following && { backgroundColor: colors.accent },
+            ]}
+            onPress={handleToggleFollow}
+          >
+            <Ionicons
+              name={following ? 'checkmark' : 'add'}
+              size={16}
+              color={following ? '#fff' : colors.accent}
+            />
+            <Text
+              style={[
+                styles.followButtonText,
+                { color: colors.accent },
+                following && { color: '#fff' },
+              ]}
             >
-              <View style={styles.missingInfo}>
-                <Text style={[styles.missingTitle, { color: colors.text }]} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                {item.brand && (
-                  <Text style={[styles.missingBrand, { color: colors.muted }]} numberOfLines={1}>
-                    {item.brand}
-                  </Text>
-                )}
-              </View>
-              <View style={styles.missingActions}>
-                {/* Add to Watchlist - disabled for v1 */}
-                <TouchableOpacity
-                  style={[styles.missingBtn, styles.missingBtnDisabled]}
-                  disabled
-                  onPress={() => {}}
-                >
-                  <Ionicons name="eye-outline" size={16} color={colors.muted} />
-                </TouchableOpacity>
-                {/* Mark Owned */}
-                <TouchableOpacity
-                  style={[
-                    styles.missingBtn,
-                    { backgroundColor: markingOwned === item.id ? COLORS.accent : COLORS.bg },
-                  ]}
-                  disabled={markingOwned === item.id}
-                  onPress={() => handleMarkOwned(item.id)}
-                >
-                  <Ionicons
-                    name={markingOwned === item.id ? 'hourglass-outline' : 'checkmark'}
-                    size={16}
-                    color={markingOwned === item.id ? '#fff' : colors.text}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-          {missingItems.length > 6 && (
-            <Text style={[styles.seeMore, { color: colors.accent }]}>
-              +{missingItems.length - 6} more items
+              {following ? 'Following' : 'Follow'}
             </Text>
-          )}
+          </AnimatedPressable>
         </View>
-      )}
 
       {/* 2. Spotlight Carousel */}
       {data.spotlightSlides.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Spotlight</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Spotlight</Text>
           <FlatList
             ref={spotlightRef}
             data={data.spotlightSlides}
@@ -313,13 +306,13 @@ export default function CategoryStoreScreen() {
               setSpotlightIndex(index);
             }}
             renderItem={({ item: slide }) => (
-              <View style={styles.spotlightSlide}>
-                <View style={styles.spotlightImagePlaceholder}>
-                  <Ionicons name="sparkles" size={32} color={COLORS.accent} />
+              <View style={[styles.spotlightSlide, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.spotlightImagePlaceholder, { backgroundColor: colors.background }]}>
+                  <Ionicons name="sparkles" size={32} color={colors.accent} />
                 </View>
-                <Text style={styles.spotlightTitle}>{slide.title}</Text>
+                <Text style={[styles.spotlightTitle, { color: colors.text }]}>{slide.title}</Text>
                 {slide.subtitle && (
-                  <Text style={styles.spotlightSubtitle}>{slide.subtitle}</Text>
+                  <Text style={[styles.spotlightSubtitle, { color: colors.muted }]}>{slide.subtitle}</Text>
                 )}
               </View>
             )}
@@ -332,7 +325,8 @@ export default function CategoryStoreScreen() {
                   key={idx}
                   style={[
                     styles.dot,
-                    idx === spotlightIndex && styles.dotActive,
+                    { backgroundColor: colors.border },
+                    idx === spotlightIndex && { backgroundColor: colors.accent },
                   ]}
                 />
               ))}
@@ -343,29 +337,29 @@ export default function CategoryStoreScreen() {
 
       {/* 3. Items in this Category */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Items in {data.categoryName}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Items in {data.categoryName}</Text>
         {data.items.length === 0 ? (
-          <Text style={styles.emptyText}>No items yet in this category.</Text>
+          <Text style={[styles.emptyText, { color: colors.muted }]}>No items yet in this category.</Text>
         ) : (
           data.items.slice(0, 6).map((item) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={item.id}
-              style={styles.itemCard}
+              style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => handleItemPress(item)}
             >
               <View style={styles.itemInfo}>
-                <Text style={styles.itemName} numberOfLines={1}>
+                <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text style={styles.itemCategory}>{item.category}</Text>
+                <Text style={[styles.itemCategory, { color: colors.muted }]}>{item.category}</Text>
               </View>
-              <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
-              <Ionicons name="chevron-forward" size={18} color={COLORS.muted} />
-            </TouchableOpacity>
+              <Text style={[styles.itemPrice, { color: colors.text }]}>{formatCurrency(item.price)}</Text>
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            </AnimatedPressable>
           ))
         )}
         {data.items.length > 6 && (
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.seeAllButton}
             onPress={() =>
               router.push({
@@ -374,30 +368,30 @@ export default function CategoryStoreScreen() {
               })
             }
           >
-            <Text style={styles.seeAllText}>
+            <Text style={[styles.seeAllText, { color: colors.accent }]}>
               See all {data.items.length} items
             </Text>
-            <Ionicons name="arrow-forward" size={14} color={COLORS.accentDark} />
-          </TouchableOpacity>
+            <Ionicons name="arrow-forward" size={14} color={colors.accent} />
+          </AnimatedPressable>
         )}
       </View>
 
       {/* 4. Upcoming Events / Drops */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Upcoming Events & Drops</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Events & Drops</Text>
         {data.upcomingEvents.length === 0 ? (
-          <Text style={styles.emptyText}>No upcoming events for this category.</Text>
+          <Text style={[styles.emptyText, { color: colors.muted }]}>No upcoming events for this category.</Text>
         ) : (
           data.upcomingEvents.map((event) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={event.id}
-              style={styles.eventCard}
+              style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => handleEventPress(event.id)}
             >
               <View
                 style={[
                   styles.eventIconBubble,
-                  { backgroundColor: COLORS.accentDark },
+                  { backgroundColor: colors.accent },
                 ]}
               >
                 <Ionicons
@@ -407,25 +401,111 @@ export default function CategoryStoreScreen() {
                 />
               </View>
               <View style={styles.eventInfo}>
-                <Text style={styles.eventTitle} numberOfLines={1}>
+                <Text style={[styles.eventTitle, { color: colors.text }]} numberOfLines={1}>
                   {event.title}
                 </Text>
-                <Text style={styles.eventMeta}>
+                <Text style={[styles.eventMeta, { color: colors.muted }]}>
                   {kindLabel[event.kind] || event.kind} · {event.date}
                   {event.time ? ` · ${event.time}` : ''}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={COLORS.muted} />
-            </TouchableOpacity>
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            </AnimatedPressable>
           ))
         )}
       </View>
 
+      {/* 4.5. Missing Items Banner - above Friends */}
+      {missingItems.length > 0 && (
+        <View style={[styles.missingBanner, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
+          <View style={styles.missingBannerHeader}>
+            <Ionicons name="list-outline" size={18} color={colors.accent} />
+            <Text style={[styles.missingBannerTitle, { color: colors.text }]}>
+              Missing Items
+            </Text>
+            <View style={[styles.missingBannerBadge, { backgroundColor: colors.accent }]}>
+              <Text style={styles.missingBannerBadgeText}>{missingItems.length}</Text>
+            </View>
+          </View>
+          <Text style={[styles.missingBannerSubtitle, { color: colors.muted }]}>
+            {missingItems.length} item{missingItems.length > 1 ? 's' : ''} to complete your collection
+          </Text>
+          {missingItems.slice(0, 3).map((item) => {
+            const isOwned = recentlyOwned.has(item.id);
+            const isMarking = markingOwned === item.id;
+
+            return (
+              <View
+                key={item.id}
+                style={[
+                  styles.missingRow,
+                  {
+                    backgroundColor: isOwned ? colors.accent + '20' : colors.card,
+                    borderColor: isOwned ? colors.accent : colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.missingInfo}>
+                  <Text
+                    style={[
+                      styles.missingTitle,
+                      { color: isOwned ? colors.accent : colors.text },
+                      isOwned && styles.missingTitleOwned,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {isOwned ? '✓ ' : ''}{item.title}
+                  </Text>
+                  {item.brand && (
+                    <Text style={[styles.missingBrand, { color: colors.muted }]} numberOfLines={1}>
+                      {item.brand}
+                    </Text>
+                  )}
+                </View>
+                <View style={styles.missingActions}>
+                  <AnimatedPressable
+                    style={[
+                      styles.missingBtn,
+                      {
+                        backgroundColor: isOwned || isMarking ? colors.accent : colors.accent + '15',
+                        borderWidth: 1,
+                        borderColor: colors.accent,
+                      },
+                    ]}
+                    disabled={isMarking || isOwned}
+                    onPress={() => handleMarkOwned(item.id)}
+                  >
+                    {isMarking ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : isOwned ? (
+                      <>
+                        <Ionicons name="checkmark-circle" size={14} color="#fff" />
+                        <Text style={[styles.missingBtnText, { color: '#fff' }]}>Added!</Text>
+                      </>
+                    ) : (
+                      <>
+                        <Ionicons name="add-circle-outline" size={14} color={colors.accent} />
+                        <Text style={[styles.missingBtnText, { color: colors.accent }]}>I Own This</Text>
+                      </>
+                    )}
+                  </AnimatedPressable>
+                </View>
+              </View>
+            );
+          })}
+          {missingItems.length > 3 && (
+            <Text style={[styles.seeMore, { color: colors.accent }]}>
+              +{missingItems.length - 3} more to collect
+            </Text>
+          )}
+        </View>
+      )}
+
       {/* 5. Friends Who Follow */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Friends Who Follow</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Friends Who Follow</Text>
         {data.friendsWhoFollow.length === 0 ? (
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: colors.muted }]}>
             None of your friends follow this category yet.
           </Text>
         ) : (
@@ -439,6 +519,8 @@ export default function CategoryStoreScreen() {
                 key={friend.id}
                 profile={friend}
                 onPress={() => handleFriendPress(friend.id)}
+                accentColor={colors.accent}
+                textColor={colors.text}
               />
             ))}
           </ScrollView>
@@ -447,11 +529,11 @@ export default function CategoryStoreScreen() {
 
       {/* 6. Sponsored Slot (Placeholder) */}
       <View style={styles.section}>
-        <View style={styles.sponsoredCard}>
-          <Text style={styles.sponsoredLabel}>Sponsored</Text>
-          <View style={styles.sponsoredPlaceholder}>
-            <Ionicons name="megaphone-outline" size={24} color={COLORS.muted} />
-            <Text style={styles.sponsoredText}>Ad slot placeholder</Text>
+        <View style={[styles.sponsoredCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sponsoredLabel, { color: colors.muted }]}>Sponsored</Text>
+          <View style={[styles.sponsoredPlaceholder, { backgroundColor: colors.background }]}>
+            <Ionicons name="megaphone-outline" size={24} color={colors.muted} />
+            <Text style={[styles.sponsoredText, { color: colors.muted }]}>Ad slot placeholder</Text>
           </View>
         </View>
       </View>
@@ -459,21 +541,37 @@ export default function CategoryStoreScreen() {
       {/* Bottom spacing */}
       <View style={{ height: 32 }} />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 0,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   centered: {
     flex: 1,
-    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
@@ -481,18 +579,15 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: COLORS.muted,
   },
   errorTitle: {
     marginTop: 12,
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.text,
   },
   errorSubtitle: {
     marginTop: 4,
     fontSize: 13,
-    color: COLORS.muted,
     textAlign: 'center',
   },
   backButton: {
@@ -501,20 +596,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   backButtonText: {
     fontSize: 13,
     fontWeight: '500',
-    color: COLORS.text,
   },
 
   // Header card
   headerCard: {
-    backgroundColor: COLORS.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: 14,
     marginBottom: 16,
   },
@@ -524,12 +615,10 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.text,
   },
   categoryTagline: {
     marginTop: 4,
     fontSize: 13,
-    color: COLORS.muted,
     lineHeight: 18,
   },
   followButton: {
@@ -540,20 +629,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: COLORS.accentDark,
-  },
-  followButtonActive: {
-    backgroundColor: COLORS.accentDark,
-    borderColor: COLORS.accentDark,
   },
   followButtonText: {
     marginLeft: 4,
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.accentDark,
-  },
-  followButtonTextActive: {
-    color: '#fff',
   },
 
   // Sections
@@ -563,7 +643,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.text,
     marginBottom: 10,
   },
   sectionHeader: {
@@ -578,9 +657,40 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
-    color: COLORS.muted,
   },
 
+  // Missing items banner
+  missingBanner: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  missingBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  missingBannerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+    flex: 1,
+  },
+  missingBannerBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  missingBannerBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  missingBannerSubtitle: {
+    fontSize: 13,
+    marginBottom: 12,
+  },
   // Missing items checklist
   missingRow: {
     flexDirection: 'row',
@@ -597,6 +707,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  missingTitleOwned: {
+    fontWeight: '600',
+  },
   missingBrand: {
     fontSize: 12,
     marginTop: 2,
@@ -606,12 +719,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   missingBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.bg,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
+    minWidth: 60,
+  },
+  missingBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   missingBtnDisabled: {
     opacity: 0.5,
@@ -626,17 +745,14 @@ const styles = StyleSheet.create({
   // Spotlight carousel
   spotlightSlide: {
     width: SCREEN_WIDTH - 32,
-    backgroundColor: COLORS.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: 16,
     alignItems: 'center',
   },
   spotlightImagePlaceholder: {
     width: '100%',
     height: 100,
-    backgroundColor: COLORS.bg,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -645,12 +761,10 @@ const styles = StyleSheet.create({
   spotlightTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.text,
   },
   spotlightSubtitle: {
     marginTop: 2,
     fontSize: 12,
-    color: COLORS.muted,
     textAlign: 'center',
   },
   dotsRow: {
@@ -663,20 +777,14 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: COLORS.border,
-  },
-  dotActive: {
-    backgroundColor: COLORS.accentDark,
   },
 
   // Items
   itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: 12,
     marginBottom: 8,
   },
@@ -687,17 +795,14 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
   },
   itemCategory: {
     fontSize: 12,
-    color: COLORS.muted,
     marginTop: 2,
   },
   itemPrice: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.text,
     marginRight: 8,
   },
   seeAllButton: {
@@ -710,17 +815,14 @@ const styles = StyleSheet.create({
   seeAllText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.accentDark,
   },
 
   // Events
   eventCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: 10,
     marginBottom: 8,
   },
@@ -739,11 +841,9 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
   },
   eventMeta: {
     fontSize: 11,
-    color: COLORS.muted,
     marginTop: 2,
   },
 
@@ -772,29 +872,24 @@ const styles = StyleSheet.create({
   friendName: {
     marginTop: 4,
     fontSize: 11,
-    color: COLORS.text,
     textAlign: 'center',
   },
 
   // Sponsored
   sponsoredCard: {
-    backgroundColor: COLORS.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: 12,
   },
   sponsoredLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: COLORS.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 8,
   },
   sponsoredPlaceholder: {
     height: 60,
-    backgroundColor: COLORS.bg,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -803,6 +898,5 @@ const styles = StyleSheet.create({
   },
   sponsoredText: {
     fontSize: 12,
-    color: COLORS.muted,
   },
 });

@@ -1,3 +1,8 @@
+// Import theme from the theme directory
+import { theme } from './theme/index';
+
+// Re-export everything from the theme directory
+export * from './theme/index';
 
 // --- Compatibility shims (non-destructive) ---
 (() => {

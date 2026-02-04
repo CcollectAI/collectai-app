@@ -7,7 +7,6 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Image,
@@ -15,17 +14,20 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import type { PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
 
 type Props = {
   profile: PublicUserProfile | null;
   loading?: boolean;
   onPress?: () => void;
+  onConnect?: () => void;
 };
 
-const Avatar: React.FC<{ name: string; avatarUrl?: string | null; accentColor: string }> = ({
+const Avatar: React.FC<{ name: string; avatarUrl?: string | null; accentColor: string; size?: number }> = ({
   name,
   avatarUrl,
   accentColor,
+  size = 56,
 }) => {
   const initials = name
     .split(' ')
@@ -38,15 +40,15 @@ const Avatar: React.FC<{ name: string; avatarUrl?: string | null; accentColor: s
     return (
       <Image
         source={{ uri: avatarUrl }}
-        style={styles.avatar}
+        style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
         resizeMode="cover"
       />
     );
   }
 
   return (
-    <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: accentColor }]}>
-      <Text style={styles.avatarInitials}>{initials}</Text>
+    <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: accentColor, width: size, height: size, borderRadius: size / 2 }]}>
+      <Text style={[styles.avatarInitials, { fontSize: size * 0.35 }]}>{initials}</Text>
     </View>
   );
 };
@@ -55,6 +57,7 @@ export const PublicUserProfileCard: React.FC<Props> = ({
   profile,
   loading,
   onPress,
+  onConnect,
 }) => {
   const { colors } = useAppTheme();
 
@@ -80,34 +83,59 @@ export const PublicUserProfileCard: React.FC<Props> = ({
     return `€${value}`;
   };
 
+  const CardWrapper = onPress ? AnimatedPressable : View;
+  const cardProps = onPress ? { onPress } : {};
+
   return (
-    <TouchableOpacity
+    <CardWrapper
+      {...cardProps}
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={onPress}
-      disabled={!onPress}
-      activeOpacity={onPress ? 0.7 : 1}
     >
-      {/* Header: Avatar + Name */}
-      <View style={styles.header}>
-        <Avatar name={profile.displayName} avatarUrl={profile.avatarUrl} accentColor={colors.accent} />
-        <View style={styles.headerText}>
-          <Text style={[styles.displayName, { color: colors.text }]} numberOfLines={1}>
-            {profile.displayName}
-          </Text>
+      {/* Top section: Avatar + Info + Actions */}
+      <View style={styles.topSection}>
+        <Avatar name={profile.displayName} avatarUrl={profile.avatarUrl} accentColor={colors.accent} size={56} />
+
+        <View style={styles.infoSection}>
+          <View style={styles.nameRow}>
+            <Text style={[styles.displayName, { color: colors.text }]} numberOfLines={1}>
+              {profile.displayName}
+            </Text>
+            {onPress && (
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+            )}
+          </View>
+
           {profile.handle && (
             <Text style={[styles.handle, { color: colors.muted }]} numberOfLines={1}>
               @{profile.handle}
             </Text>
           )}
+
+          {/* Stats inline */}
+          <View style={styles.statsInline}>
+            {profile.collectionCount != null && (
+              <View style={styles.statItem}>
+                <Ionicons name="grid-outline" size={12} color={colors.accent} />
+                <Text style={[styles.statText, { color: colors.text }]}>
+                  {profile.collectionCount}
+                </Text>
+              </View>
+            )}
+            {profile.collectionValueEur != null && (
+              <View style={styles.statItem}>
+                <Ionicons name="trending-up-outline" size={12} color={colors.accent} />
+                <Text style={[styles.statText, { color: colors.text }]}>
+                  {formatValue(profile.collectionValueEur)}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
-        {onPress && (
-          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-        )}
       </View>
 
       {/* Bio */}
       {profile.bio && (
-        <Text style={[styles.bio, { color: colors.text }]} numberOfLines={3}>
+        <Text style={[styles.bio, { color: colors.text }]} numberOfLines={2}>
           {profile.bio}
         </Text>
       )}
@@ -116,35 +144,29 @@ export const PublicUserProfileCard: React.FC<Props> = ({
       {profile.interests && profile.interests.length > 0 && (
         <View style={styles.interestsRow}>
           {profile.interests.slice(0, 4).map((interest, idx) => (
-            <View key={idx} style={[styles.interestPill, { borderColor: colors.border, backgroundColor: `${colors.accent}15` }]}>
+            <View key={idx} style={[styles.interestPill, { backgroundColor: `${colors.accent}15`, borderColor: `${colors.accent}30` }]}>
               <Text style={[styles.interestText, { color: colors.accent }]}>{interest}</Text>
             </View>
           ))}
+          {profile.interests.length > 4 && (
+            <View style={[styles.interestPill, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <Text style={[styles.interestText, { color: colors.muted }]}>+{profile.interests.length - 4}</Text>
+            </View>
+          )}
         </View>
       )}
 
-      {/* Collection summary */}
-      {(profile.collectionCount != null || profile.collectionValueEur != null) && (
-        <View style={styles.statsRow}>
-          {profile.collectionCount != null && (
-            <View style={styles.statItem}>
-              <Ionicons name="grid-outline" size={14} color={colors.muted} />
-              <Text style={[styles.statText, { color: colors.muted }]}>
-                {profile.collectionCount} items
-              </Text>
-            </View>
-          )}
-          {profile.collectionValueEur != null && (
-            <View style={styles.statItem}>
-              <Ionicons name="trending-up-outline" size={14} color={colors.muted} />
-              <Text style={[styles.statText, { color: colors.muted }]}>
-                {formatValue(profile.collectionValueEur)}
-              </Text>
-            </View>
-          )}
-        </View>
+      {/* Connect button (optional) */}
+      {onConnect && (
+        <AnimatedPressable
+          onPress={onConnect}
+          style={[styles.connectBtn, { backgroundColor: colors.accent }]}
+        >
+          <Ionicons name="chatbubble-ellipses-outline" size={16} color="#ffffff" />
+          <Text style={styles.connectBtnText}>Connect</Text>
+        </AnimatedPressable>
       )}
-    </TouchableOpacity>
+    </CardWrapper>
   );
 };
 
@@ -152,72 +174,53 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 12,
+    padding: 16,
   },
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    gap: 8,
+    paddingVertical: 12,
+    gap: 10,
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: 14,
   },
-  header: {
+  topSection: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
+    marginRight: 14,
   },
   avatarPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitials: {
-    fontSize: 14,
     fontWeight: '700',
     color: '#ffffff',
   },
-  headerText: {
+  infoSection: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   displayName: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
   },
   handle: {
-    fontSize: 12,
-    marginTop: 1,
-  },
-  bio: {
-    marginTop: 10,
     fontSize: 13,
-    lineHeight: 18,
+    marginTop: 2,
   },
-  interestsRow: {
+  statsInline: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 10,
-    gap: 6,
-  },
-  interestPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  interestText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    marginTop: 10,
+    marginTop: 8,
     gap: 16,
   },
   statItem: {
@@ -226,7 +229,43 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  bio: {
+    marginTop: 12,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  interestsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+    gap: 6,
+  },
+  interestPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  interestText: {
     fontSize: 12,
+    fontWeight: '500',
+  },
+  connectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 14,
+    gap: 6,
+  },
+  connectBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });
 

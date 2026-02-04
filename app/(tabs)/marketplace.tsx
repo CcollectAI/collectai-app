@@ -15,6 +15,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+import { CATEGORIES } from "@/data/categories";
 
 type Item = {
   id: string;
@@ -62,15 +63,11 @@ const MOCK_ITEMS: Item[] = [
   },
 ];
 
-const CATEGORIES = [
-  "Pokémon",
-  "Magic: The Gathering",
-  "Disney Lorcana",
-  "Funko Pop",
-  "Diecast",
-  "LEGO",
-  "Warhammer",
-];
+// Use category data from the data layer - get all categories for browsing
+const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
+  id: cat.id,
+  name: cat.name,
+}));
 
 // Tile colors now come from theme.tileScale (Tiffany → cobalt brand scale)
 
@@ -149,11 +146,8 @@ const SearchScreen: React.FC = () => {
     });
   };
 
-  const handleOpenCategory = (category: string) => {
-    router.push({
-      pathname: "/items",
-      params: { category },
-    });
+  const handleOpenCategory = (categoryId: string) => {
+    router.push(`/categories/${encodeURIComponent(categoryId)}`);
   };
 
   const handleOpenCollection = (collectionName: string) => {
@@ -178,10 +172,10 @@ const SearchScreen: React.FC = () => {
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Marketplace
+              Search
             </Text>
             <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-              Search items and collections.
+              Find items, collections, and categories.
             </Text>
           </View>
           <View style={styles.headerIcons}>
@@ -234,33 +228,68 @@ const SearchScreen: React.FC = () => {
 
         {/* Browse by category (Spotify-style grid) */}
         {!trimmedQuery && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Browse by category
-            </Text>
-            <View style={styles.categoryGrid}>
-              {CATEGORIES.map((cat, index) => {
-                const bg = colors.tileScale[index % colors.tileScale.length];
-                // Use white text on darker tiles (indices 2, 3)
-                const textColor = index % 4 >= 2 ? '#FFFFFF' : colors.text;
-                return (
-                  <AnimatedPressable
-                    key={cat}
-                    style={[styles.categoryTile, { backgroundColor: bg }]}
-                    onPress={() => handleOpenCategory(cat)}
-                  >
-                    <Text
-                      style={[styles.categoryTileText, { color: textColor }]}
-                      numberOfLines={2}
-                      ellipsizeMode="tail"
+          <>
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Browse by category
+              </Text>
+              <View style={styles.categoryGrid}>
+                {BROWSE_CATEGORIES.map((cat, index) => {
+                  const bg = colors.tileScale[index % colors.tileScale.length];
+                  // Use white text on darker tiles (indices 2, 3)
+                  const textColor = index % 4 >= 2 ? '#FFFFFF' : colors.text;
+                  return (
+                    <AnimatedPressable
+                      key={cat.id}
+                      style={[styles.categoryTile, { backgroundColor: bg }]}
+                      onPress={() => handleOpenCategory(cat.id)}
                     >
-                      {cat}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
+                      <Text
+                        style={[styles.categoryTileText, { color: textColor }]}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                      >
+                        {cat.name}
+                      </Text>
+                    </AnimatedPressable>
+                  );
+                })}
+              </View>
             </View>
-          </View>
+
+            {/* Trending categories */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Trending categories
+              </Text>
+              <View style={styles.trendingList}>
+                {[
+                  { id: 'lorcana', name: 'Disney Lorcana', meta: 'Hot right now' },
+                  { id: 'pokemon', name: 'Pokémon Cards', meta: 'Always popular' },
+                  { id: 'lego', name: 'LEGO', meta: 'Growing fast' },
+                ].map((cat, index) => (
+                  <AnimatedPressable
+                    key={cat.id}
+                    style={[styles.trendingRow, { borderColor: colors.border }]}
+                    onPress={() => handleOpenCategory(cat.id)}
+                  >
+                    <View style={[styles.trendingRank, { backgroundColor: colors.accent + '20' }]}>
+                      <Text style={[styles.trendingRankText, { color: colors.accent }]}>
+                        {index + 1}
+                      </Text>
+                    </View>
+                    <View style={styles.trendingInfo}>
+                      <Text style={[styles.trendingName, { color: colors.text }]}>{cat.name}</Text>
+                      <Text style={[styles.trendingMeta, { color: colors.muted }]}>
+                        {cat.meta}
+                      </Text>
+                    </View>
+                    <Ionicons name="trending-up" size={18} color={colors.accent} />
+                  </AnimatedPressable>
+                ))}
+              </View>
+            </View>
+          </>
         )}
 
         {/* Results when searching */}
@@ -510,6 +539,39 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   collectionMeta: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  trendingList: {
+    gap: 8,
+  },
+  trendingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  trendingRank: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  trendingRankText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  trendingInfo: {
+    flex: 1,
+  },
+  trendingName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  trendingMeta: {
     fontSize: 11,
     marginTop: 2,
   },

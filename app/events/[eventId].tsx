@@ -134,14 +134,7 @@ export default function EventDetailScreen() {
   // Loading state
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Event</Text>
-          <View style={{ width: 32 }} />
-        </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -152,14 +145,7 @@ export default function EventDetailScreen() {
   // Not found state
   if (!event) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Event</Text>
-          <View style={{ width: 32 }} />
-        </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.emptyContainer}>
           <Ionicons name="calendar-outline" size={48} color={colors.muted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>Event not found</Text>
@@ -178,32 +164,21 @@ export default function EventDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-          {event.title}
-        </Text>
-        <View style={{ width: 32 }} />
-      </View>
-
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Event Kind Badge */}
-        <View style={[styles.kindBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.kindBadge, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
           <Ionicons
             name={kindIcon[event.kind]}
             size={14}
             color={colors.accent}
             style={{ marginRight: 6 }}
           />
-          <Text style={[styles.kindText, { color: colors.text }]}>
+          <Text style={[styles.kindText, { color: colors.accent }]}>
             {kindLabel[event.kind]}
           </Text>
         </View>
@@ -249,7 +224,7 @@ export default function EventDetailScreen() {
               color="#ffffff"
               style={{ marginRight: 6 }}
             />
-            <Text style={styles.primaryBtnText}>
+            <Text style={[styles.primaryBtnText, { color: colors.card }]}>
               {isStream
                 ? 'Open stream'
                 : isDrop
@@ -436,7 +411,7 @@ export default function EventDetailScreen() {
         </View>
 
         {/* Bottom spacing */}
-        <View style={{ height: 32 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -445,24 +420,6 @@ export default function EventDetailScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
-    marginHorizontal: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -501,7 +458,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 16,
   },
   kindBadge: {
@@ -512,7 +469,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   kindText: {
     fontSize: 12,
@@ -521,12 +478,12 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 22,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   metaText: {
     fontSize: 14,
@@ -535,8 +492,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     padding: 14,
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 12,
   },
   descriptionText: {
     fontSize: 14,
@@ -549,18 +506,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 24,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   primaryBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#ffffff',
   },
   actionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   actionBtn: {
     flexDirection: 'row',
@@ -575,12 +531,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   categoryCard: {
     borderRadius: 12,
@@ -606,7 +562,7 @@ const styles = StyleSheet.create({
   attendeeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   attendeeLeft: {
     flexDirection: 'row',

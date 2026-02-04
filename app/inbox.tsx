@@ -205,12 +205,15 @@ export default function InboxScreen() {
         }
       >
         <Animated.View style={animatedStyle}>
-        {/* Requests Section */}
+        {/* Requests Section - Highlighted with accent theme */}
         {requests.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.muted }]}>
-              Message Requests ({requests.length})
-            </Text>
+            <View style={[styles.sectionTitleHighlight, { backgroundColor: colors.accent + '15' }]}>
+              <Ionicons name="mail-unread-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+              <Text style={[styles.sectionTitleText, { color: colors.text }]}>
+                Message Requests ({requests.length})
+              </Text>
+            </View>
             {requests.map((req) => (
               <View key={req.threadId} style={[styles.requestCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.requestHeader}>
@@ -382,6 +385,18 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
+  sectionTitleHighlight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  sectionTitleText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
 
   // Request cards
   requestCard: {
@@ -430,8 +445,9 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,

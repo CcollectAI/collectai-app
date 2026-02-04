@@ -102,8 +102,6 @@ const ItemsScreen: React.FC = () => {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("value_desc");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
   const [providerItems, setProviderItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -531,13 +529,6 @@ const ItemsScreen: React.FC = () => {
     });
   };
 
-  const currentFilterLabel = filterCategory ?? "All categories";
-  const currentSortLabel =
-    sortKey === "value_desc"
-      ? "Value (high → low)"
-      : sortKey === "value_asc"
-      ? "Value (low → high)"
-      : "Title (A → Z)";
 
   const hasAnyFilter =
     !!categoryParam ||
@@ -610,27 +601,72 @@ const ItemsScreen: React.FC = () => {
         <Animated.View style={animatedStyle}>
         {/* Header row - switches between normal and multi-select mode */}
         {isMultiSelectMode ? (
-          <View style={styles.multiSelectHeader}>
-            <AnimatedPressable
-              style={styles.multiSelectCloseBtn}
-              onPress={exitMultiSelectMode}
-            >
-              <Ionicons name="close" size={24} color={colors.text} />
-            </AnimatedPressable>
-            <Text style={[styles.multiSelectTitle, { color: colors.text }]}>
-              {selectedCount} selected
-            </Text>
-            <View style={styles.multiSelectActions}>
+          <>
+            <View style={styles.multiSelectHeader}>
               <AnimatedPressable
-                style={styles.multiSelectActionBtn}
-                onPress={selectedCount === providerItems.length ? deselectAll : selectAll}
+                style={styles.multiSelectCloseBtn}
+                onPress={exitMultiSelectMode}
               >
-                <Text style={[styles.multiSelectActionText, { color: colors.accent }]}>
-                  {selectedCount === providerItems.length ? 'Deselect All' : 'Select All'}
-                </Text>
+                <Ionicons name="close" size={24} color={colors.text} />
               </AnimatedPressable>
+              <Text style={[styles.multiSelectTitle, { color: colors.text }]}>
+                {selectedCount} selected
+              </Text>
+              <View style={styles.multiSelectActions}>
+                <AnimatedPressable
+                  style={styles.multiSelectActionBtn}
+                  onPress={selectedCount === providerItems.length ? deselectAll : selectAll}
+                >
+                  <Text style={[styles.multiSelectActionText, { color: colors.accent }]}>
+                    {selectedCount === providerItems.length ? 'Deselect All' : 'Select All'}
+                  </Text>
+                </AnimatedPressable>
+              </View>
             </View>
-          </View>
+
+            {/* Bulk Actions - Top contextual bar */}
+            {selectedCount > 0 && (
+              <View style={[styles.topBulkActionsBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {bulkActionLoading ? (
+                  <ActivityIndicator size="small" color={colors.accent} />
+                ) : (
+                  <View style={styles.topBulkActionsRow}>
+                    <AnimatedPressable
+                      style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
+                      onPress={() => setCategoryModalVisible(true)}
+                    >
+                      <Ionicons name="folder-outline" size={18} color={colors.accent} />
+                      <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Move</Text>
+                    </AnimatedPressable>
+
+                    <AnimatedPressable
+                      style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
+                      onPress={handleBulkExport}
+                    >
+                      <Ionicons name="download-outline" size={18} color={colors.accent} />
+                      <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Export</Text>
+                    </AnimatedPressable>
+
+                    <AnimatedPressable
+                      style={[styles.topBulkActionBtn, { backgroundColor: '#f9731610' }]}
+                      onPress={handleBulkArchive}
+                    >
+                      <Ionicons name="archive-outline" size={18} color="#f97316" />
+                      <Text style={[styles.topBulkActionText, { color: '#f97316' }]}>Archive</Text>
+                    </AnimatedPressable>
+
+                    <AnimatedPressable
+                      style={[styles.topBulkActionBtn, { backgroundColor: '#ef444410' }]}
+                      onPress={handleBulkDelete}
+                    >
+                      <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                      <Text style={[styles.topBulkActionText, { color: '#ef4444' }]}>Delete</Text>
+                    </AnimatedPressable>
+                  </View>
+                )}
+              </View>
+            )}
+          </>
         ) : (
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
@@ -643,232 +679,92 @@ const ItemsScreen: React.FC = () => {
             </View>
 
             <View style={styles.headerIcons}>
-              <AnimatedPressable
-                style={styles.iconButton}
-                onPress={() => setFilterSheetVisible(true)}
-              >
-                <Ionicons name="options-outline" size={22} color={colors.text} />
-                {(advancedFilter.categories.length > 0 ||
-                  advancedFilter.conditions.length > 0 ||
-                  advancedFilter.priceMin !== null ||
-                  advancedFilter.priceMax !== null) && (
-                  <View style={[styles.filterActiveDot, { backgroundColor: colors.accent }]} />
-                )}
-              </AnimatedPressable>
-              <AnimatedPressable
-                style={styles.iconButton}
-                onPress={enterMultiSelectMode}
-              >
-                <Ionicons name="checkbox-outline" size={22} color={colors.text} />
-              </AnimatedPressable>
               <InboxHeaderButton color={colors.text} size={22} />
               <ThemeToggleButton size={22} />
             </View>
           </View>
         )}
 
-        {/* View mode toggle */}
-        <View style={styles.viewToggleRow}>
-          <AnimatedPressable
-            style={[
-              styles.viewToggleBtn,
-              viewMode === 'list' && { backgroundColor: colors.accent + '20' },
-              { borderColor: colors.border },
-            ]}
-            onPress={() => setViewMode('list')}
-          >
-            <Ionicons
-              name="list"
-              size={18}
-              color={viewMode === 'list' ? colors.accent : colors.muted}
+        {/* Search row */}
+        <View style={styles.searchRow}>
+          <View style={[styles.searchInputWrapper, { backgroundColor: colors.card }]}>
+            <Ionicons name="search" size={16} color={colors.muted} style={styles.searchIcon} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search items"
+              placeholderTextColor={colors.muted}
+              style={[
+                styles.searchInput,
+                {
+                  backgroundColor: colors.card,
+                  color: colors.text,
+                },
+              ]}
             />
-          </AnimatedPressable>
+          </View>
+
+          {/* Filter button */}
           <AnimatedPressable
-            style={[
-              styles.viewToggleBtn,
-              viewMode === 'gallery' && { backgroundColor: colors.accent + '20' },
-              { borderColor: colors.border },
-            ]}
-            onPress={() => setViewMode('gallery')}
+            style={[styles.searchRowButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setFilterSheetVisible(true)}
           >
-            <Ionicons
-              name="grid"
-              size={18}
-              color={viewMode === 'gallery' ? colors.accent : colors.muted}
-            />
+            <Ionicons name="options-outline" size={18} color={colors.accent} />
+            {(advancedFilter.categories.length > 0 ||
+              advancedFilter.conditions.length > 0 ||
+              advancedFilter.priceMin !== null ||
+              advancedFilter.priceMax !== null) && (
+              <View style={[styles.filterDot, { backgroundColor: colors.accent }]} />
+            )}
           </AnimatedPressable>
         </View>
 
-        {/* Search input */}
-        <View style={styles.searchContainer}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search items"
-            placeholderTextColor={colors.muted}
-            style={[
-              styles.searchInput,
-              {
-                borderColor: colors.border,
-                backgroundColor: colors.card,
-                color: colors.text,
-              },
-            ]}
-          />
-        </View>
-
-        {/* Filter / Sort dropdown row */}
-        <View style={styles.controlsRow}>
-          <View style={styles.dropdownWrapper}>
+        {/* Controls row: View toggle, Select All */}
+        <View style={styles.controlsRowNew}>
+          {/* View mode toggle */}
+          <View style={styles.viewToggleRow}>
             <AnimatedPressable
               style={[
-                styles.dropdownButton,
-                { borderColor: colors.border, backgroundColor: colors.card },
+                styles.viewToggleBtn,
+                viewMode === 'list' && { backgroundColor: colors.accent + '20' },
+                { borderColor: colors.border },
               ]}
-              onPress={() => {
-                setFilterOpen((o) => !o);
-                setSortOpen(false);
-              }}
+              onPress={() => setViewMode('list')}
             >
-              <Text
-                style={[styles.dropdownLabel, { color: colors.text }]}
-                numberOfLines={1}
-              >
-                {currentFilterLabel}
-              </Text>
               <Ionicons
-                name={filterOpen ? "chevron-up-outline" : "chevron-down-outline"}
-                size={16}
-                color={colors.muted}
+                name="list"
+                size={18}
+                color={viewMode === 'list' ? colors.accent : colors.muted}
               />
             </AnimatedPressable>
-            {filterOpen && (
-              <View
-                style={[
-                  styles.dropdownMenu,
-                  { borderColor: colors.border, backgroundColor: colors.card },
-                ]}
-              >
-                <AnimatedPressable
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setFilterCategory(null);
-                    setFilterOpen(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownItemText,
-                      { color: colors.text },
-                    ]}
-                  >
-                    All categories
-                  </Text>
-                </AnimatedPressable>
-                {allCategories.map((cat) => (
-                  <AnimatedPressable
-                    key={cat}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setFilterCategory(cat);
-                      setFilterOpen(false);
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.dropdownItemText,
-                        { color: colors.text },
-                      ]}
-                    >
-                      {cat}
-                    </Text>
-                  </AnimatedPressable>
-                ))}
-              </View>
-            )}
-          </View>
-
-          <View style={styles.dropdownWrapper}>
             <AnimatedPressable
               style={[
-                styles.dropdownButton,
-                { borderColor: colors.border, backgroundColor: colors.card },
+                styles.viewToggleBtn,
+                viewMode === 'gallery' && { backgroundColor: colors.accent + '20' },
+                { borderColor: colors.border },
               ]}
-              onPress={() => {
-                setSortOpen((o) => !o);
-                setFilterOpen(false);
-              }}
+              onPress={() => setViewMode('gallery')}
             >
-              <Text
-                style={[styles.dropdownLabel, { color: colors.text }]}
-                numberOfLines={1}
-              >
-                {currentSortLabel}
-              </Text>
               <Ionicons
-                name={sortOpen ? "chevron-up-outline" : "chevron-down-outline"}
-                size={16}
-                color={colors.muted}
+                name="grid"
+                size={18}
+                color={viewMode === 'gallery' ? colors.accent : colors.muted}
               />
             </AnimatedPressable>
-            {sortOpen && (
-              <View
-                style={[
-                  styles.dropdownMenu,
-                  { borderColor: colors.border, backgroundColor: colors.card },
-                ]}
-              >
-                <AnimatedPressable
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setSortKey("value_desc");
-                    setSortOpen(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownItemText,
-                      { color: colors.text },
-                    ]}
-                  >
-                    Value (high → low)
-                  </Text>
-                </AnimatedPressable>
-                <AnimatedPressable
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setSortKey("value_asc");
-                    setSortOpen(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownItemText,
-                      { color: colors.text },
-                    ]}
-                  >
-                    Value (low → high)
-                  </Text>
-                </AnimatedPressable>
-                <AnimatedPressable
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setSortKey("title");
-                    setSortOpen(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownItemText,
-                      { color: colors.text },
-                    ]}
-                  >
-                    Title (A → Z)
-                  </Text>
-                </AnimatedPressable>
-              </View>
-            )}
           </View>
+
+          {/* Spacer */}
+          <View style={{ flex: 1 }} />
+
+          {/* Select All text button */}
+          {!isMultiSelectMode && (
+            <AnimatedPressable
+              style={styles.selectAllTextBtn}
+              onPress={enterMultiSelectMode}
+            >
+              <Text style={[styles.selectAllText, { color: colors.accent }]}>Select</Text>
+            </AnimatedPressable>
+          )}
         </View>
 
         {/* Active filter summary */}
@@ -1119,31 +1015,19 @@ const ItemsScreen: React.FC = () => {
             {/* Download Overview (Export CSV) */}
             <AnimatedPressable
               style={[
-                styles.actionButton,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.accent,
-                },
+                styles.actionButtonPrimary,
+                { backgroundColor: colors.accent },
                 exporting && styles.actionButtonDisabled,
               ]}
               onPress={handleExportCSV}
               disabled={exporting}
             >
               {exporting ? (
-                <ActivityIndicator size="small" color={colors.accent} />
+                <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Ionicons
-                  name="download-outline"
-                  size={18}
-                  color={colors.accent}
-                />
+                <Ionicons name="download-outline" size={18} color="#FFFFFF" />
               )}
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  { color: colors.accent },
-                ]}
-              >
+              <Text style={styles.actionButtonPrimaryText}>
                 {exporting ? 'Exporting...' : 'Download overview'}
               </Text>
             </AnimatedPressable>
@@ -1151,25 +1035,13 @@ const ItemsScreen: React.FC = () => {
             {/* Projects */}
             <AnimatedPressable
               style={[
-                styles.actionButton,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.accent,
-                },
+                styles.actionButtonSecondary,
+                { borderColor: colors.accent },
               ]}
               onPress={() => router.push('/build-paint-projects')}
             >
-              <Ionicons
-                name="color-palette-outline"
-                size={18}
-                color={colors.accent}
-              />
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  { color: colors.accent },
-                ]}
-              >
+              <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
+              <Text style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
                 Projects
               </Text>
             </AnimatedPressable>
@@ -1177,55 +1049,17 @@ const ItemsScreen: React.FC = () => {
 
           {/* Export status feedback */}
           {exportStatus && (
-            <Text style={[styles.exportStatus, { color: colors.muted }]}>
-              {exportStatus}
-            </Text>
+            <View style={[styles.exportStatusBanner, { backgroundColor: colors.accent + '15' }]}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+              <Text style={[styles.exportStatusText, { color: colors.accent }]}>
+                {exportStatus}
+              </Text>
+            </View>
           )}
         </View>
         </Animated.View>
 
-        {/* Bulk Actions Toolbar - shown when in multi-select mode */}
-        {isMultiSelectMode && selectedCount > 0 && (
-          <View style={[styles.bulkActionsBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {bulkActionLoading ? (
-              <ActivityIndicator size="small" color={colors.accent} />
-            ) : (
-              <View style={styles.bulkActionsRow}>
-                <AnimatedPressable
-                  style={[styles.bulkActionBtn, { borderColor: colors.border }]}
-                  onPress={() => setCategoryModalVisible(true)}
-                >
-                  <Ionicons name="folder-outline" size={20} color={colors.accent} />
-                  <Text style={[styles.bulkActionText, { color: colors.text }]}>Category</Text>
-                </AnimatedPressable>
-
-                <AnimatedPressable
-                  style={[styles.bulkActionBtn, { borderColor: colors.border }]}
-                  onPress={handleBulkExport}
-                >
-                  <Ionicons name="download-outline" size={20} color={colors.accent} />
-                  <Text style={[styles.bulkActionText, { color: colors.text }]}>Export</Text>
-                </AnimatedPressable>
-
-                <AnimatedPressable
-                  style={[styles.bulkActionBtn, { borderColor: colors.border }]}
-                  onPress={handleBulkArchive}
-                >
-                  <Ionicons name="archive-outline" size={20} color="#f97316" />
-                  <Text style={[styles.bulkActionText, { color: colors.text }]}>Archive</Text>
-                </AnimatedPressable>
-
-                <AnimatedPressable
-                  style={[styles.bulkActionBtn, { borderColor: colors.border }]}
-                  onPress={handleBulkDelete}
-                >
-                  <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                  <Text style={[styles.bulkActionText, { color: colors.text }]}>Delete</Text>
-                </AnimatedPressable>
-              </View>
-            )}
-          </View>
-        )}
+        {/* Bulk actions moved to top contextual bar - see multiSelectHeader section */}
 </ScrollView>
 
       {/* Category Change Modal */}
@@ -1349,14 +1183,25 @@ const styles = StyleSheet.create({
   // View toggle styles
   viewToggleRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginBottom: 12,
+    gap: 6,
   },
   viewToggleBtn: {
     padding: 8,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  controlsRowNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  selectAllTextBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  selectAllText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   headerRow: {
     flexDirection: "row",
@@ -1428,54 +1273,46 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  searchContainer: {
-    marginBottom: 10,
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  searchInputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingLeft: 14,
+    height: 44,
+  },
+  searchIcon: {
+    marginRight: 10,
   },
   searchInput: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    fontSize: 13,
-  },
-  controlsRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 8,
-  },
-  dropdownWrapper: {
     flex: 1,
-    position: "relative",
-  },
-  dropdownButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  dropdownLabel: {
-    fontSize: 12,
-    maxWidth: "80%",
-  },
-  dropdownMenu: {
-    position: "absolute",
-    top: 38,
-    left: 0,
-    right: 0,
-    borderWidth: 1,
     borderRadius: 12,
-    paddingVertical: 4,
-    zIndex: 20,
+    paddingHorizontal: 0,
+    paddingVertical: 10,
+    fontSize: 14,
   },
-  dropdownItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  searchRowButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  dropdownItemText: {
-    fontSize: 12,
+  filterDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   filterSummaryRow: {
     flexDirection: "row",
@@ -1589,45 +1426,68 @@ const styles = StyleSheet.create({
   },
   // Bottom action bar
   bottomActionBar: {
-    marginTop: 8,
+    marginTop: 16,
     marginBottom: 24,
-    padding: 14,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#D6E4EC",
-    backgroundColor: "#FFFFFF",
   },
   bottomActionTitle: {
     fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 12,
+    fontWeight: "700",
+    marginBottom: 14,
   },
   bottomActionButtons: {
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
   },
-  actionButton: {
+  actionButtonPrimary: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  actionButtonPrimaryText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  actionButtonSecondary: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    gap: 8,
+    backgroundColor: "transparent",
+  },
+  actionButtonSecondaryText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   actionButtonDisabled: {
     opacity: 0.6,
   },
-  actionButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
+  exportStatusBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
   },
-  exportStatus: {
-    marginTop: 8,
-    fontSize: 11,
-    textAlign: "center",
+  exportStatusText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
   // Multi-select styles
   multiSelectHeader: {
@@ -1669,6 +1529,31 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
+  },
+  topBulkActionsBar: {
+    marginBottom: 12,
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  topBulkActionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  topBulkActionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    gap: 4,
+  },
+  topBulkActionText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   bulkActionsBar: {
     position: "absolute",

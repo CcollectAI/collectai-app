@@ -13,6 +13,8 @@ type AlertsCardProps = {
   alerts: Alert[];
   onAlertPress?: (alert: Alert) => void;
   onViewAll?: () => void;
+  onStartWatchlist?: () => void;
+  showEmptyState?: boolean;
 };
 
 function getAlertIcon(type: AlertType): string {
@@ -92,31 +94,82 @@ function AlertItem({ alert, colors, onPress }: AlertItemProps) {
   );
 }
 
-export function AlertsCard({ alerts, onAlertPress, onViewAll }: AlertsCardProps) {
+export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, showEmptyState = true }: AlertsCardProps) {
   const { colors } = useAppTheme();
   const unreadCount = alerts.filter((a) => !a.isRead).length;
 
+  // Show card with empty state prompt if no alerts
   if (alerts.length === 0) {
-    return null;
+    if (!showEmptyState) return null;
+
+    return (
+      <View
+        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        accessibilityRole="region"
+        accessibilityLabel="Watchlist section"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Ionicons name="eye-outline" size={18} color={colors.text} />
+            <Text style={[styles.title, { color: colors.text }]}>Watchlist</Text>
+          </View>
+          <Pressable
+            style={[styles.addBtn, { backgroundColor: colors.accent }]}
+            onPress={onStartWatchlist}
+            accessibilityRole="button"
+            accessibilityLabel="Add to watchlist"
+          >
+            <Ionicons name="add" size={16} color="#FFFFFF" />
+            <Text style={styles.addBtnText}>Add</Text>
+          </Pressable>
+        </View>
+
+        {/* Empty State - Start Watchlist prompt */}
+        <Pressable
+          style={styles.emptyState}
+          onPress={onStartWatchlist}
+          accessibilityRole="button"
+          accessibilityLabel="Start your watchlist"
+        >
+          <View style={styles.emptyContent}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Start Your Watchlist</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+              Track items you want and set price alerts
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+        </Pressable>
+      </View>
+    );
   }
 
   return (
     <View
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
       accessibilityRole="list"
-      accessibilityLabel={`Alerts: ${alerts.length} total, ${unreadCount} unread`}
+      accessibilityLabel={`Watchlist: ${alerts.length} total, ${unreadCount} unread`}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <Ionicons name="notifications-outline" size={18} color={colors.accent} />
-          <Text style={[styles.title, { color: colors.text }]}>Alerts</Text>
+          <Ionicons name="eye-outline" size={18} color={colors.text} />
+          <Text style={[styles.title, { color: colors.text }]}>Watchlist</Text>
           {unreadCount > 0 && (
             <View style={[styles.badge, { backgroundColor: colors.accent }]}>
               <Text style={styles.badgeText}>{unreadCount}</Text>
             </View>
           )}
         </View>
+        <Pressable
+          style={[styles.addBtn, { backgroundColor: colors.accent }]}
+          onPress={onStartWatchlist}
+          accessibilityRole="button"
+          accessibilityLabel="Add to watchlist"
+        >
+          <Ionicons name="add" size={16} color="#FFFFFF" />
+          <Text style={styles.addBtnText}>Add</Text>
+        </Pressable>
       </View>
 
       {/* Alert Items */}
@@ -157,23 +210,60 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
     borderWidth: 1,
-    padding: 16,
+    overflow: 'hidden',
     marginBottom: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    padding: 12,
+    paddingHorizontal: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    paddingHorizontal: 16,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  addBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   title: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  emptyState: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  emptyContent: {
+    flex: 1,
+  },
+  emptyTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  emptySubtitle: {
+    fontSize: 12,
   },
   badge: {
     minWidth: 20,
@@ -188,7 +278,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  alertList: {},
+  alertList: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
   alertRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -228,7 +321,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingTop: 12,
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(0,0,0,0.1)',
   },

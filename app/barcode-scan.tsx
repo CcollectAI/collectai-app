@@ -13,6 +13,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  TextInput,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -31,6 +35,8 @@ export default function BarcodeScanScreen() {
   const [scannedCode, setScannedCode] = useState<{ type: string; value: string } | null>(null);
   const [lookupResult, setLookupResult] = useState<BarcodeLookupResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [manualIsbn, setManualIsbn] = useState('');
+  const [isManualSubmitting, setIsManualSubmitting] = useState(false);
 
   // Handle barcode detection
   const handleBarcodeScanned = async (result: BarcodeScanningResult) => {
@@ -60,11 +66,44 @@ export default function BarcodeScanScreen() {
     }
   };
 
+  // Handle manual ISBN submission
+  const handleManualSubmit = async () => {
+    const cleaned = manualIsbn.replace(/[\s-]/g, '');
+
+    // Validate ISBN length (10 or 13 digits)
+    if (cleaned.length < 10 || cleaned.length > 13) {
+      setErrorMessage('Please enter a valid ISBN (10 or 13 digits)');
+      setScanState('error');
+      return;
+    }
+
+    Keyboard.dismiss();
+    setIsManualSubmitting(true);
+    setScannedCode({ type: 'manual', value: cleaned });
+    setScanState('loading');
+
+    try {
+      const prefill = await dataProvider.lookupByBarcode(cleaned, {
+        codeType: 'isbn',
+        source: 'manual'
+      });
+      setLookupResult(prefill);
+      setScanState('result');
+    } catch (err) {
+      console.error('[BarcodeScan] Manual lookup error:', err);
+      setErrorMessage('Could not find product information. Check the ISBN and try again.');
+      setScanState('error');
+    } finally {
+      setIsManualSubmitting(false);
+    }
+  };
+
   // Reset to scanning state
   const handleRescan = () => {
     setScannedCode(null);
     setLookupResult(null);
     setErrorMessage(null);
+    setManualIsbn('');
     setScanState('scanning');
   };
 
@@ -125,7 +164,7 @@ export default function BarcodeScanScreen() {
             style={[styles.permissionButton, { backgroundColor: colors.accent }]}
             onPress={requestPermission}
           >
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+            <Text style={[styles.permissionButtonText, { color: colors.card }]}>Grant Permission</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={[styles.backButtonText, { color: colors.muted }]}>Go Back</Text>
@@ -136,9 +175,9 @@ export default function BarcodeScanScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      {/* Header - compact, no extra padding */}
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerBack}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -147,29 +186,87 @@ export default function BarcodeScanScreen() {
       </View>
 
       {scanState === 'scanning' && (
-        <View style={styles.cameraContainer}>
-          <CameraView
-            style={styles.camera}
-            facing="back"
-            barcodeScannerSettings={{
-              barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128'],
-            }}
-            onBarcodeScanned={handleBarcodeScanned}
-          >
-            {/* Scan overlay */}
-            <View style={styles.scanOverlay}>
-              <View style={styles.scanFrame}>
-                <View style={[styles.scanCorner, styles.scanCornerTL]} />
-                <View style={[styles.scanCorner, styles.scanCornerTR]} />
-                <View style={[styles.scanCorner, styles.scanCornerBL]} />
-                <View style={[styles.scanCorner, styles.scanCornerBR]} />
+        <KeyboardAvoidingView
+          style={styles.scanningContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20}
+        >
+          <View style={styles.cameraContainer}>
+            <CameraView
+              style={styles.camera}
+              facing="back"
+              barcodeScannerSettings={{
+                barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128'],
+              }}
+              onBarcodeScanned={handleBarcodeScanned}
+            >
+              {/* Scan overlay */}
+              <View style={styles.scanOverlay}>
+                <View style={styles.scanFrame}>
+                  <View style={[styles.scanCorner, styles.scanCornerTL]} />
+                  <View style={[styles.scanCorner, styles.scanCornerTR]} />
+                  <View style={[styles.scanCorner, styles.scanCornerBL]} />
+                  <View style={[styles.scanCorner, styles.scanCornerBR]} />
+                </View>
+                <Text style={styles.scanHint}>
+                  Point camera at barcode or ISBN
+                </Text>
               </View>
-              <Text style={styles.scanHint}>
-                Point camera at barcode or ISBN
+            </CameraView>
+          </View>
+
+          {/* Manual ISBN Entry - Upgraded card design */}
+          <ScrollView
+            style={styles.manualEntryScroll}
+            contentContainerStyle={styles.manualEntryScrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.manualEntryCard, { backgroundColor: colors.card }]}>
+              <Text style={[styles.manualEntryTitle, { color: colors.text }]}>
+                Manual Entry
               </Text>
+              <Text style={[styles.manualEntryHelper, { color: colors.muted }]}>
+                Can't scan? Type the ISBN code from the back cover
+              </Text>
+              <View style={styles.manualEntryRow}>
+                <TextInput
+                  style={[styles.manualInput, {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    color: colors.text
+                  }]}
+                  placeholder="978-0-123456-78-9"
+                  placeholderTextColor={colors.muted}
+                  value={manualIsbn}
+                  onChangeText={setManualIsbn}
+                  keyboardType="number-pad"
+                  maxLength={17}
+                  returnKeyType="search"
+                  onSubmitEditing={handleManualSubmit}
+                  accessibilityLabel="ISBN input field"
+                  accessibilityHint="Enter 10 or 13 digit ISBN number"
+                />
+                <TouchableOpacity
+                  style={[styles.manualSubmitButton, {
+                    backgroundColor: colors.accent,
+                    opacity: manualIsbn.length < 10 || isManualSubmitting ? 0.5 : 1
+                  }]}
+                  onPress={handleManualSubmit}
+                  disabled={manualIsbn.length < 10 || isManualSubmitting}
+                  accessibilityLabel="Look up ISBN"
+                  accessibilityRole="button"
+                >
+                  {isManualSubmitting ? (
+                    <ActivityIndicator size="small" color={colors.card} />
+                  ) : (
+                    <Ionicons name="search" size={20} color={colors.card} />
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
-          </CameraView>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       )}
 
       {scanState === 'loading' && (
@@ -191,7 +288,7 @@ export default function BarcodeScanScreen() {
           {/* Product card */}
           <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.productHeader}>
-              <Ionicons name="checkmark-circle" size={32} color="#22C55E" />
+              <Ionicons name="checkmark-circle" size={32} color={colors.accent} />
               <Text style={[styles.productFound, { color: colors.text }]}>Product Found</Text>
             </View>
 
@@ -237,29 +334,32 @@ export default function BarcodeScanScreen() {
             )}
           </View>
 
-          {/* Action buttons */}
-          <View style={styles.actionButtons}>
+          {/* Action buttons - Reordered: Scan another left, Save right */}
+          <View style={styles.actionButtonsRow}>
             <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: colors.accent }]}
+              style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
+              onPress={handleRescan}
+            >
+              <Ionicons name="scan-outline" size={18} color={colors.text} />
+              <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Scan Another</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.primaryButtonHalf, { backgroundColor: colors.accent }]}
               onPress={handleSaveToCollection}
             >
-              <Ionicons name="add-circle-outline" size={20} color="#fff" />
-              <Text style={styles.primaryButtonText}>Add to Collection</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.secondaryButton, { borderColor: colors.border }]}
-              onPress={handleAddToWatchlist}
-            >
-              <Ionicons name="eye-outline" size={20} color={colors.text} />
-              <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Add to Watchlist</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.rescanButton} onPress={handleRescan}>
-              <Ionicons name="scan-outline" size={18} color={colors.muted} />
-              <Text style={[styles.rescanButtonText, { color: colors.muted }]}>Scan Another</Text>
+              <Ionicons name="add-circle-outline" size={18} color={colors.card} />
+              <Text style={[styles.primaryButtonText, { color: colors.card }]}>Save</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={[styles.watchlistButton, { borderColor: colors.border }]}
+            onPress={handleAddToWatchlist}
+          >
+            <Ionicons name="eye-outline" size={18} color={colors.muted} />
+            <Text style={[styles.watchlistButtonText, { color: colors.muted }]}>Add to Watchlist Instead</Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
 
@@ -280,8 +380,8 @@ export default function BarcodeScanScreen() {
               style={[styles.primaryButton, { backgroundColor: colors.accent }]}
               onPress={handleRescan}
             >
-              <Ionicons name="scan-outline" size={20} color="#fff" />
-              <Text style={styles.primaryButtonText}>Try Again</Text>
+              <Ionicons name="scan-outline" size={20} color={colors.card} />
+              <Text style={[styles.primaryButtonText, { color: colors.card }]}>Try Again</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.secondaryButton, { borderColor: colors.border }]}
@@ -304,9 +404,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  scanningContainer: {
+    flex: 1,
   },
   headerBack: {
     padding: 4,
@@ -341,7 +444,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   permissionButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -497,6 +599,10 @@ const styles = StyleSheet.create({
   actionButtons: {
     gap: 12,
   },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -505,9 +611,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 10,
   },
+  primaryButtonHalf: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
   primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   secondaryButton: {
@@ -519,9 +633,30 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
+  secondaryButtonHalf: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
   secondaryButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
+  },
+  watchlistButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  watchlistButtonText: {
+    fontSize: 13,
   },
   rescanButton: {
     flexDirection: 'row',
@@ -554,5 +689,48 @@ const styles = StyleSheet.create({
     marginTop: 24,
     gap: 12,
     width: '100%',
+  },
+  manualEntryScroll: {
+    maxHeight: 200,
+  },
+  manualEntryScrollContent: {
+    flexGrow: 1,
+  },
+  manualEntryCard: {
+    margin: 16,
+    marginTop: 12,
+    padding: 20,
+    borderRadius: 16,
+  },
+  manualEntryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  manualEntryHelper: {
+    fontSize: 13,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  manualEntryRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  manualInput: {
+    flex: 1,
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    fontSize: 17,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+  manualSubmitButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

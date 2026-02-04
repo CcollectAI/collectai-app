@@ -44,6 +44,9 @@ import {
 // In-memory store for created items (persists only during session)
 let mockCreatedItems: Item[] = [];
 
+// In-memory store for owned category items (persists only during session)
+const ownedCategoryItems: Set<string> = new Set();
+
 // In-memory watchlist store (persists only during session)
 let mockWatchlistItems: WatchlistItem[] = [
   {
@@ -570,18 +573,22 @@ export class MockDataProvider implements DataProvider {
     };
 
     // Return category-specific items or generate generic ones
+    let items: CategoryMissingItem[];
     if (mockMissingItems[categoryId]) {
-      return mockMissingItems[categoryId];
+      items = mockMissingItems[categoryId];
+    } else {
+      // Generic missing items for categories without specific mock data
+      items = Array.from({ length: 8 }, (_, i) => ({
+        id: `${categoryId}-missing-${i + 1}`,
+        categoryId,
+        title: `${category.name} Item #${i + 1}`,
+        brand: category.name,
+        notes: i % 2 === 0 ? 'Rare variant' : null,
+      }));
     }
 
-    // Generic missing items for categories without specific mock data
-    return Array.from({ length: 8 }, (_, i) => ({
-      id: `${categoryId}-missing-${i + 1}`,
-      categoryId,
-      title: `${category.name} Item #${i + 1}`,
-      brand: category.name,
-      notes: i % 2 === 0 ? 'Rare variant' : null,
-    }));
+    // Filter out items that have been marked as owned
+    return items.filter((item) => !ownedCategoryItems.has(item.id));
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1013,6 +1020,8 @@ export class MockDataProvider implements DataProvider {
     notes?: string,
   ): Promise<{ success: boolean }> {
     console.log('[MockDataProvider] markCategoryItemOwned', { categoryItemId, quantity, notes });
+    // Track the owned item in memory
+    ownedCategoryItems.add(categoryItemId);
     return { success: true };
   }
 

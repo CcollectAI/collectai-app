@@ -19,6 +19,19 @@ export type CollectorsEvent = {
 
 export const EVENTS: CollectorsEvent[] = [
   {
+    id: 'meetup-rotterdam-pokemon',
+    title: 'Rotterdam Pokemon TCG Tournament',
+    kind: 'meetup',
+    date: '2026-02-08',
+    time: '12:00 CET',
+    location: 'Rotterdam, Netherlands - Gaming Cafe De Dobbelaar',
+    description:
+      'Upcoming Pokemon TCG tournament with prize support! Bring your best decks and trade binders. Side events include grading showcase and portfolio comparison.',
+    categoryId: 'pokemon',
+    hostUserId: 'collector-aurora',
+    attendeeIds: ['collector-aurora', 'collector-rune'],
+  },
+  {
     id: 'drop-aurora-modern-grails',
     title: 'Aurora Modern Grails Drop',
     kind: 'collection_drop',
@@ -26,7 +39,7 @@ export const EVENTS: CollectorsEvent[] = [
     time: '20:00 CET',
     onlineUrl: 'https://www.cardmarket.com',
     description:
-      'Live sale of high-end modern Pokémon slabs from Aurora’s Modern Grails collection. Great for price discovery on chase cards.',
+      'Live sale of high-end modern Pokemon slabs from Aurora Modern Grails collection. Great for price discovery on chase cards.',
     categoryId: 'pokemon',
     hostUserId: 'collector-aurora',
     attendeeIds: ['collector-rune', 'collector-mini'],
@@ -37,7 +50,7 @@ export const EVENTS: CollectorsEvent[] = [
     kind: 'meetup',
     date: '2025-12-27',
     time: '14:00 CET',
-    location: 'Amsterdam, Netherlands — central café (TBA)',
+    location: 'Amsterdam, Netherlands - central cafe (TBA)',
     description:
       'In-person meetup for TCG, Funko, and designer toy collectors. Trade, show off grails, and compare portfolios IRL.',
     categoryId: 'pokemon',
@@ -46,7 +59,7 @@ export const EVENTS: CollectorsEvent[] = [
   },
   {
     id: 'stream-mini-martian-paint',
-    title: 'Mini Martian Painting Stream — Plague Marines',
+    title: 'Mini Martian Painting Stream - Plague Marines',
     kind: 'stream',
     date: '2025-12-19',
     time: '19:30 CET',

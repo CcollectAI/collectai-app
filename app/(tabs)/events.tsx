@@ -140,8 +140,7 @@ export default function EventsScreen() {
           styles.eventCard,
           {
             backgroundColor: colors.card,
-            borderColor: colors.border,
-            opacity: isPast ? 0.6 : 1,
+            borderColor: isPast ? colors.border : colors.accent + '40',
           },
         ]}
       >
@@ -149,7 +148,7 @@ export default function EventsScreen() {
           <View
             style={[
               styles.eventIcon,
-              { backgroundColor: isPast ? colors.muted : colors.accent },
+              { backgroundColor: isPast ? colors.muted + '80' : colors.accent },
             ]}
           >
             <Ionicons name={kindIcon[event.kind]} size={20} color="#ffffff" />
@@ -158,7 +157,7 @@ export default function EventsScreen() {
           <View style={styles.eventInfo}>
             <View style={styles.eventTitleRow}>
               <Text
-                style={[styles.eventTitle, { color: colors.text }]}
+                style={[styles.eventTitle, { color: isPast ? colors.muted : colors.text }]}
                 numberOfLines={1}
               >
                 {event.title}

@@ -7,7 +7,8 @@ export type CategoryId =
   | 'fab'
   | 'warhammer'
   | 'gunpla'
-  | 'designer_toys';
+  | 'designer_toys'
+  | 'lego';
 
 export type CategoryCollection = {
   id: string;
@@ -236,11 +237,53 @@ export const CATEGORIES: Category[] = [
     ],
     relatedCategoryIds: ['funko', 'pokemon'],
   },
+  {
+    id: 'lego',
+    name: 'LEGO',
+    tagline: 'UCS sets, retired exclusives, and minifigure collections.',
+    bannerImageUrl:
+      'https://images.pexels.com/photos/1472386/pexels-photo-1472386.jpeg',
+    collections: [
+      {
+        id: 'lego-ucs',
+        name: 'Ultimate Collector Series',
+        itemCount: 15,
+        totalEstimatedValueEur: 5200,
+      },
+      {
+        id: 'lego-retired',
+        name: 'Retired Sets',
+        itemCount: 28,
+        totalEstimatedValueEur: 3100,
+      },
+    ],
+    externalMarketplaces: [
+      {
+        id: 'bricklink',
+        label: 'BrickLink',
+        url: 'https://www.bricklink.com',
+      },
+      {
+        id: 'ebay',
+        label: 'eBay',
+        url: 'https://www.ebay.com',
+      },
+    ],
+    relatedCategoryIds: ['gunpla', 'diecast'],
+  },
 ];
 
 export function getCategoryById(id: CategoryId | string | null | undefined): Category | undefined {
   if (!id) return undefined;
   return CATEGORIES.find((c) => c.id === id);
+}
+
+export function getCategoryByName(name: string | null | undefined): Category | undefined {
+  if (!name) return undefined;
+  const normalized = name.toLowerCase();
+  return CATEGORIES.find(
+    (c) => c.name.toLowerCase() === normalized || c.id === normalized
+  );
 }
 
 export function getRelatedCategories(category: Category): Category[] {

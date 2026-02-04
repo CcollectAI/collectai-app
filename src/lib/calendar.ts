@@ -85,20 +85,40 @@ export async function requestNotificationPermission(): Promise<boolean> {
 async function getDefaultCalendarId(): Promise<string | null> {
   if (!Calendar) return null;
 
-  const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+  try {
+    const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
 
-  // Prefer primary calendar
-  const primaryCalendar = calendars.find(
-    (cal: any) => cal.isPrimary || cal.allowsModifications
-  );
+    if (Platform.OS === 'ios') {
+      // iOS: Prefer iCloud calendar, then local calendar
+      const iCloudCalendar = calendars.find(
+        (cal: any) => cal.source?.type === 'caldav' && cal.allowsModifications
+      );
+      if (iCloudCalendar) return iCloudCalendar.id;
 
-  if (primaryCalendar) {
-    return primaryCalendar.id;
+      // Fallback to local calendar
+      const localCalendar = calendars.find(
+        (cal: any) => cal.source?.type === 'local' && cal.allowsModifications
+      );
+      if (localCalendar) return localCalendar.id;
+
+      // Any modifiable calendar
+      const modifiable = calendars.find((cal: any) => cal.allowsModifications);
+      return modifiable?.id || null;
+    }
+
+    // Android: Prefer primary calendar
+    const primaryCalendar = calendars.find(
+      (cal: any) => cal.isPrimary && cal.allowsModifications
+    );
+    if (primaryCalendar) return primaryCalendar.id;
+
+    // Fallback to first modifiable calendar
+    const modifiableCalendar = calendars.find((cal: any) => cal.allowsModifications);
+    return modifiableCalendar?.id || null;
+  } catch (error) {
+    console.warn('[Calendar] Error getting calendars:', error);
+    return null;
   }
-
-  // Fallback to first modifiable calendar
-  const modifiableCalendar = calendars.find((cal: any) => cal.allowsModifications);
-  return modifiableCalendar?.id || null;
 }
 
 /**
@@ -243,6 +263,11 @@ export async function scheduleReminder(params: {
       return { success: false, error: 'Event has already passed' };
     }
 
+    // iOS uses date trigger, Android needs seconds from now
+    const trigger = Platform.OS === 'ios'
+      ? { date: params.triggerDate }
+      : { seconds: Math.max(1, Math.floor((params.triggerDate.getTime() - Date.now()) / 1000)) };
+
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: params.title,
@@ -250,9 +275,7 @@ export async function scheduleReminder(params: {
         sound: true,
         data: { eventId: params.eventId },
       },
-      trigger: {
-        date: params.triggerDate,
-      },
+      trigger,
     });
 
     // Store the reminder
@@ -401,8 +424,10 @@ export function parseEventDate(dateStr: string, timeStr?: string): Date {
   }
 
   if (timeStr) {
-    // Parse time like "14:00" or "2:00 PM"
-    const [hours, minutes] = timeStr.replace(/\s*(AM|PM)$/i, '').split(':').map(Number);
+    // Parse time like "14:00", "2:00 PM", "12:00 CET"
+    // Strip timezone/AM/PM suffixes and extract just HH:MM
+    const cleanTime = timeStr.replace(/\s*(AM|PM|[A-Z]{2,4})$/i, '').trim();
+    const [hours, minutes] = cleanTime.split(':').map(Number);
     const isPM = /PM$/i.test(timeStr);
     const adjustedHours = isPM && hours !== 12 ? hours + 12 : hours;
     return new Date(`${dateStr}T${String(adjustedHours).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}:00`);

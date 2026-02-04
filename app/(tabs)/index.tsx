@@ -13,10 +13,10 @@ import {
   View,
   Text,
   ScrollView,
-  Pressable,
   StyleSheet,
   Platform,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +26,14 @@ import { useWatchlist } from "@/state/watchlistStore";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { featureFlags } from "@/config/featureFlags";
+import { InsightsCard } from "@/components/home/InsightsCard";
+import { AlertsCard } from "@/components/home/AlertsCard";
+import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
+import { useAlertsFeed } from "@/hooks/useAlertsFeed";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
 const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
@@ -186,12 +194,24 @@ export default function PortfolioScreen() {
   const router = useRouter();
   const watchlist = useWatchlist();
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [range, setRange] = useState<RangeKey>("7D");
   const [series, setSeries] = useState<TimeSeriesPoint[]>(FALLBACK_SERIES);
   const [items, setItems] = useState<ItemRow[]>(FALLBACK_ITEMS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Data insights & alerts (feature flagged)
+  const { insights } = usePortfolioInsights({
+    period: range.toLowerCase() as '7d' | '30d',
+    enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
+  });
+  const { alerts, markAsRead } = useAlertsFeed({
+    limit: 5,
+    enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
+  });
 
   // Get watchlist items with their alerts
   const watchlistItems = useMemo(() => {
@@ -317,11 +337,12 @@ export default function PortfolioScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
       >
+        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
@@ -336,9 +357,9 @@ export default function PortfolioScreen() {
 
         {/* Collection Value */}
         <View style={styles.valueSection}>
-          <Text style={styles.headerLabel}>COLLECTION VALUE</Text>
-          <Text style={styles.totalValue}>{formatMoneyEUR(total)}</Text>
-          <Text style={[styles.deltaText, isPositive ? styles.deltaUp : styles.deltaDown]}>
+          <Text style={[styles.headerLabel, { color: colors.muted }]}>COLLECTION VALUE</Text>
+          <Text style={[styles.totalValue, { color: colors.text }]}>{formatMoneyEUR(total)}</Text>
+          <Text style={[styles.deltaText, { color: isPositive ? '#10B981' : '#EF4444' }]}>
             {formatDeltaEUR(delta)} ({formatPct(deltaPct)})
           </Text>
         </View>
@@ -348,110 +369,123 @@ export default function PortfolioScreen() {
           {rangeButtons.map((k) => {
             const active = k === range;
             return (
-              <Pressable
+              <AnimatedPressable
                 key={k}
                 accessibilityRole="button"
-                onPress={() => setRange(k)}
-                style={[styles.rangeBtn, active && styles.rangeBtnActive]}
+                onPress={() => {
+                  if (k !== range) {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  }
+                  setRange(k);
+                }}
+                style={[
+                  styles.rangeBtn,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                  active && { backgroundColor: colors.accent + '20', borderColor: colors.accent },
+                ]}
               >
-                <Text style={[styles.rangeText, active && styles.rangeTextActive]}>
+                <Text style={[styles.rangeText, { color: colors.muted }, active && { color: colors.text }]}>
                   {k}
                 </Text>
-              </Pressable>
+              </AnimatedPressable>
             );
           })}
         </View>
 
         {/* Chart Card with Interactive Line Chart */}
-        <View style={styles.chartCard}>
+        <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={COLORS.tiffany} />
-              <Text style={styles.loadingText}>Loading...</Text>
+              <ActivityIndicator size="small" color={colors.accent} />
+              <Text style={[styles.loadingText, { color: colors.muted }]}>Loading...</Text>
             </View>
           ) : (
             <PortfolioLineChart
               series={series}
-              accentColor={COLORS.tiffany}
+              accentColor={colors.accent}
               showValueHeader={true}
               showAxisLabels={true}
-              axisLabelColor={COLORS.muted}
+              axisLabelColor={colors.muted}
             />
           )}
         </View>
 
         {/* Error message (if any) */}
         {error && (
-          <View style={styles.errorBanner}>
-            <Ionicons name="warning-outline" size={14} color={COLORS.danger} />
-            <Text style={styles.errorText}>{error}</Text>
+          <View style={[styles.errorBanner, { backgroundColor: '#FEF2F2' }]}>
+            <Ionicons name="warning-outline" size={14} color="#EF4444" />
+            <Text style={[styles.errorText, { color: '#EF4444' }]}>{error}</Text>
           </View>
         )}
 
         {/* Mode indicator (dev only) */}
         {__DEV__ && (
-          <Text style={styles.modeIndicator}>
+          <Text style={[styles.modeIndicator, { color: colors.muted }]}>
             Mode: {USE_REAL_BACKEND ? "REAL" : "MOCK"}
           </Text>
         )}
 
-        {/* Analytics Banner */}
-        <Pressable style={styles.analyticsBanner} onPress={handleAnalyticsPress}>
-          <View style={styles.analyticsBannerLeft}>
-            <View style={styles.analyticsIconWrap}>
-              <Ionicons name="bar-chart-outline" size={20} color={COLORS.analyticsAccent} />
-            </View>
-            <View style={styles.analyticsBannerText}>
-              <Text style={styles.analyticsBannerTitle}>View Portfolio Analytics</Text>
-              <Text style={styles.analyticsBannerSubtitle}>
-                Track performance, allocations, and insights
-              </Text>
-            </View>
-          </View>
-          <View style={styles.analyticsBannerBtn}>
-            <Text style={styles.analyticsBannerBtnText}>Open Analytics</Text>
-          </View>
-        </Pressable>
+        {/* Watchlist Card (always show - has empty state) */}
+        {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
+          <AlertsCard
+            alerts={alerts}
+            onAlertPress={(alert) => {
+              markAsRead(alert.id);
+              router.push({ pathname: '/item/[id]', params: { id: alert.itemId } });
+            }}
+            onStartWatchlist={handleWatchlistPress}
+            showEmptyState={true}
+          />
+        )}
+        {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && (
+          <InsightsCard
+            insights={insights}
+            onViewDetails={handleAnalyticsPress}
+          />
+        )}
 
         {/* Collection Section Header */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Collection</Text>
-          <Text style={styles.sectionCount}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Collection</Text>
+          <Text style={[styles.sectionCount, { color: colors.muted }]}>
             {items.length} {items.length === 1 ? "item" : "items"}
           </Text>
         </View>
 
         {/* Value-Ranked Items List - Pressable Cards */}
-        <View style={styles.listCard}>
+        <View style={[styles.listCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {items.slice(0, 12).map((it, idx) => {
             const itemUp = (it.changePct ?? 0) >= 0;
             return (
-              <Pressable
+              <AnimatedPressable
                 key={it.id}
-                style={({ pressed }) => [
+                style={[
                   styles.itemRow,
+                  { borderTopColor: colors.border },
                   idx === 0 && styles.itemRowFirst,
-                  pressed && styles.itemRowPressed,
                 ]}
-                onPress={() => handleItemPress(it)}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  handleItemPress(it);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={`View ${it.name}`}
               >
                 <View style={styles.itemLeft}>
-                  <Text style={styles.itemName} numberOfLines={1}>
+                  <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
                     {it.name}
                   </Text>
-                  <Text style={styles.itemCategory} numberOfLines={1}>
+                  <Text style={[styles.itemCategory, { color: colors.muted }]} numberOfLines={1}>
                     {it.category ?? "—"}
                   </Text>
                 </View>
                 <View style={styles.itemRight}>
-                  <Text style={styles.itemValue}>{formatMoneyEUR(it.value)}</Text>
-                  <Text style={[styles.itemPct, itemUp ? styles.pctUp : styles.pctDown]}>
+                  <Text style={[styles.itemValue, { color: colors.text }]}>{formatMoneyEUR(it.value)}</Text>
+                  <Text style={[styles.itemPct, { color: itemUp ? '#10B981' : '#EF4444' }]}>
                     {formatPct(it.changePct)}
                   </Text>
                 </View>
-              </Pressable>
+              </AnimatedPressable>
             );
           })}
         </View>
@@ -460,27 +494,36 @@ export default function PortfolioScreen() {
         {watchlistItems.length > 0 && (
           <>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Watchlist</Text>
-              <Pressable onPress={handleWatchlistPress} accessibilityRole="link">
-                <Text style={styles.seeAllLink}>See all →</Text>
-              </Pressable>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Watchlist</Text>
+              <AnimatedPressable
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  handleWatchlistPress();
+                }}
+                accessibilityRole="link"
+              >
+                <Text style={[styles.seeAllLink, { color: colors.accent }]}>See all →</Text>
+              </AnimatedPressable>
             </View>
 
-            <View style={styles.listCard}>
+            <View style={[styles.listCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               {watchlistItems.map((it, idx) => {
                 const hasAlert = Boolean(it.alert);
                 const targetPrice = it.alert?.threshold;
                 const currentValue = it.currentValue ?? it.value ?? 0;
 
                 return (
-                  <Pressable
+                  <AnimatedPressable
                     key={it.id}
-                    style={({ pressed }) => [
+                    style={[
                       styles.watchlistRow,
+                      { borderTopColor: colors.border },
                       idx === 0 && styles.itemRowFirst,
-                      pressed && styles.itemRowPressed,
                     ]}
-                    onPress={handleWatchlistPress}
+                    onPress={() => {
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      handleWatchlistPress();
+                    }}
                     accessibilityRole="button"
                     accessibilityLabel={`Watchlist item: ${it.name ?? it.title}`}
                   >
@@ -489,50 +532,39 @@ export default function PortfolioScreen() {
                         <Ionicons
                           name={hasAlert ? "notifications" : "notifications-outline"}
                           size={16}
-                          color={hasAlert ? COLORS.tiffany : COLORS.muted}
+                          color={hasAlert ? colors.accent : colors.muted}
                           style={styles.bellIcon}
                         />
-                        <Text style={styles.itemName} numberOfLines={1}>
+                        <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
                           {it.name ?? it.title ?? "Watchlist Item"}
                         </Text>
                       </View>
-                      <Text style={styles.itemCategory} numberOfLines={1}>
+                      <Text style={[styles.itemCategory, { color: colors.muted }]} numberOfLines={1}>
                         {it.category ?? "—"}
                       </Text>
                     </View>
                     <View style={styles.watchlistRight}>
                       {targetPrice != null && (
-                        <Text style={styles.targetPrice}>
+                        <Text style={[styles.targetPrice, { color: colors.accent }]}>
                           Target {formatMoneyEUR(targetPrice)}
                         </Text>
                       )}
-                      <Text style={styles.currentPrice}>
+                      <Text style={[styles.currentPrice, { color: colors.muted }]}>
                         Current {formatMoneyEUR(currentValue)}
                       </Text>
                     </View>
-                  </Pressable>
+                  </AnimatedPressable>
                 );
               })}
             </View>
           </>
         )}
 
-        {/* Watchlist Empty State - Show banner to add items */}
-        {watchlistItems.length === 0 && (
-          <Pressable style={styles.watchlistEmptyBanner} onPress={handleWatchlistPress}>
-            <Ionicons name="eye-outline" size={20} color={COLORS.muted} />
-            <View style={styles.watchlistEmptyText}>
-              <Text style={styles.watchlistEmptyTitle}>Start Your Watchlist</Text>
-              <Text style={styles.watchlistEmptySubtitle}>
-                Track items you want and set price alerts
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.muted} />
-          </Pressable>
-        )}
+        {/* Watchlist Empty State - Now shown in AlertsCard above */}
 
         {/* Bottom spacing */}
         <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

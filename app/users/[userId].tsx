@@ -131,7 +131,7 @@ export default function UserProfileScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <View style={[styles.header, { backgroundColor: colors.card }]}>
           <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
@@ -149,7 +149,7 @@ export default function UserProfileScreen() {
   if (error || !profile) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <View style={[styles.header, { backgroundColor: colors.card }]}>
           <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
@@ -183,7 +183,7 @@ export default function UserProfileScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { backgroundColor: colors.card }]}>
         <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
@@ -197,15 +197,29 @@ export default function UserProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ═══════════════════════════════════════════════════════════════════
-            A) Profile Header Card
+            A) Profile Header Card - Enhanced UI
         ═══════════════════════════════════════════════════════════════════ */}
         <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <AvatarCircle name={profile.displayName} size={72} />
+          {/* Accent banner at top */}
+          <View style={[styles.profileBanner, { backgroundColor: colors.accent + '15' }]} />
+
+          {/* Avatar with accent ring */}
+          <View style={[styles.avatarRing, { borderColor: colors.accent + '40', backgroundColor: colors.card }]}>
+            <AvatarCircle name={profile.displayName} size={80} />
+          </View>
 
           <View style={styles.profileInfo}>
-            <Text style={[styles.displayName, { color: colors.text }]}>
-              {profile.displayName}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text style={[styles.displayName, { color: colors.text }]}>
+                {profile.displayName}
+              </Text>
+              {/* Verified badge - shown for premium members */}
+              {profile.collectionCount && profile.collectionCount > 50 && (
+                <View style={[styles.verifiedBadge, { backgroundColor: colors.accent }]}>
+                  <Ionicons name="checkmark" size={10} color="#fff" />
+                </View>
+              )}
+            </View>
             {profile.handle && (
               <Text style={[styles.handle, { color: colors.muted }]}>
                 @{profile.handle}
@@ -213,32 +227,50 @@ export default function UserProfileScreen() {
             )}
           </View>
 
+          {/* Quick stats row */}
+          <View style={[styles.quickStatsRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <View style={styles.quickStat}>
+              <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.collectionCount ?? 0}</Text>
+              <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Items</Text>
+            </View>
+            <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.quickStat}>
+              <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                {profile.collectionValueEur ? `€${Math.round(profile.collectionValueEur / 1000)}k` : '—'}
+              </Text>
+              <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Value</Text>
+            </View>
+            <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.quickStat}>
+              <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.interests?.length || 0}</Text>
+              <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Interests</Text>
+            </View>
+          </View>
+
           {/* CTA Row */}
           <View style={styles.ctaRow}>
             <AnimatedPressable
               style={[styles.ctaBtn, styles.ctaBtnPrimary, { backgroundColor: colors.accent }]}
               onPress={() => {
-                // Navigate to DM - best effort
-                dataProvider.requestDm(userId!, '').then((result) => {
-                  const threadId = typeof result === 'string' ? result : (result as any)?.thread_id;
-                  if (threadId) {
-                    router.push(`/chat/${threadId}`);
-                  }
-                }).catch(() => {
-                  // DM not available
+                // Navigate to chat/new for connection request
+                router.push({
+                  pathname: '/chat/new',
+                  params: { toUserId: userId },
                 });
               }}
             >
-              <Ionicons name="chatbubble-outline" size={16} color="#fff" />
+              <Ionicons name="chatbubble-outline" size={18} color="#FFFFFF" />
               <Text style={styles.ctaBtnTextLight}>Message</Text>
             </AnimatedPressable>
 
             <AnimatedPressable
               style={[styles.ctaBtn, { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 }]}
-              disabled
+              onPress={() => {
+                // TODO: Follow functionality
+              }}
             >
-              <Ionicons name="person-add-outline" size={16} color={colors.muted} />
-              <Text style={[styles.ctaBtnText, { color: colors.muted }]}>Follow</Text>
+              <Ionicons name="person-add-outline" size={16} color={colors.text} />
+              <Text style={[styles.ctaBtnText, { color: colors.text }]}>Follow</Text>
             </AnimatedPressable>
           </View>
         </View>
@@ -319,7 +351,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
   },
   backBtn: {
     padding: 4,
@@ -364,10 +395,38 @@ const styles = StyleSheet.create({
 
   // Profile card
   profileCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 20,
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  profileBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+  },
+  avatarRing: {
+    padding: 4,
+    borderRadius: 50,
+    borderWidth: 3,
+    marginTop: -20,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  verifiedBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatar: {
     alignItems: 'center',
@@ -379,40 +438,69 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 16,
   },
   displayName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
   },
   handle: {
-    fontSize: 14,
+    fontSize: 15,
+    marginTop: 4,
+  },
+  quickStatsRow: {
+    flexDirection: 'row',
+    marginTop: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    width: '100%',
+  },
+  quickStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  quickStatDivider: {
+    width: 1,
+    height: 32,
+    marginHorizontal: 8,
+  },
+  quickStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  quickStatLabel: {
+    fontSize: 12,
     marginTop: 2,
   },
   ctaRow: {
     flexDirection: 'row',
-    marginTop: 16,
+    marginTop: 24,
     gap: 12,
+    width: '100%',
   },
   ctaBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    gap: 6,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
   },
   ctaBtnPrimary: {
     // background set inline
   },
   ctaBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   ctaBtnTextLight: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: '#FFFFFF',
   },
 
   // Section card
