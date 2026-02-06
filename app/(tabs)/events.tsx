@@ -20,6 +20,8 @@ import { dataProvider } from '@/data';
 import type { CollectorsEvent } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { CountdownBadge } from '@/components/EventCountdown';
@@ -46,6 +48,7 @@ export default function EventsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
   const [refreshing, setRefreshing] = useState(false);
   const [events, setEvents] = useState<CollectorsEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,20 +97,25 @@ export default function EventsScreen() {
     setRefreshing(false);
   }, [loadEvents]);
 
-  const handleAddToCalendar = async (event: CollectorsEvent) => {
-    const eventDate = parseEventDate(event.date, event.time);
-    const result = await calendar.addToCalendar({
-      eventId: event.id,
-      title: event.title,
-      startDate: eventDate,
-      location: event.location,
-      notes: `CollectAI Event: ${kindLabel[event.kind]}`,
-    });
-
-    if (result.success) {
-      Alert.alert('Added to Calendar', `"${event.title}" has been added to your calendar.`);
-    } else if (result.error !== 'Permission denied') {
-      Alert.alert('Error', result.error || 'Could not add event to calendar.');
+  const handleAttend = async (event: CollectorsEvent) => {
+    try {
+      if (event.isAttending) {
+        await dataProvider.unrsvpEvent(event.id);
+      } else {
+        await dataProvider.rsvpEvent(event.id);
+        // Silently add to calendar after RSVP
+        const eventDate = parseEventDate(event.date, event.time);
+        await calendar.addToCalendar({
+          eventId: event.id,
+          title: event.title,
+          startDate: eventDate,
+          location: event.location,
+          notes: `CollectAI Event: ${kindLabel[event.kind]}`,
+        });
+      }
+      await loadEvents();
+    } catch (err) {
+      console.warn('[EventsScreen] handleAttend error:', err);
     }
   };
 
@@ -153,7 +161,10 @@ export default function EventsScreen() {
     return (
       <AnimatedPressable
         key={event.id}
-        onPress={() => router.push(`/events/${encodeURIComponent(event.id)}`)}
+        onPress={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          router.push(`/events/${encodeURIComponent(event.id)}`);
+        }}
         style={[
           styles.eventCard,
           {
@@ -213,40 +224,11 @@ export default function EventsScreen() {
         {showActions && !isPast && (
           <View style={[styles.eventActions, { borderTopColor: colors.border }]}>
             <AnimatedPressable
-              style={[styles.actionBtn, { borderColor: colors.border }]}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleAddToCalendar(event);
-              }}
-            >
-              <Ionicons name="calendar-outline" size={16} color={colors.accent} />
-              <Text style={[styles.actionBtnText, { color: colors.text }]}>
-                Add to Calendar
-              </Text>
-            </AnimatedPressable>
-
-            <AnimatedPressable
-              style={[styles.actionBtn, { borderColor: colors.border }]}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleSetReminder(event);
-              }}
-            >
-              <Ionicons name="notifications-outline" size={16} color={colors.accent} />
-              <Text style={[styles.actionBtnText, { color: colors.text }]}>
-                Set Reminder
-              </Text>
-            </AnimatedPressable>
-
-            <AnimatedPressable
               style={[styles.actionBtn, { borderColor: event.isAttending ? colors.accent : colors.border }]}
               onPress={(e) => {
                 e.stopPropagation();
-                if (event.isAttending) {
-                  dataProvider.unrsvpEvent(event.id).then(loadEvents);
-                } else {
-                  dataProvider.rsvpEvent(event.id).then(loadEvents);
-                }
+                fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+                handleAttend(event);
               }}
             >
               <Ionicons
@@ -256,6 +238,20 @@ export default function EventsScreen() {
               />
               <Text style={[styles.actionBtnText, { color: event.isAttending ? colors.accent : colors.text }]}>
                 {event.isAttending ? 'Going' : 'Attend'}
+              </Text>
+            </AnimatedPressable>
+
+            <AnimatedPressable
+              style={[styles.actionBtn, { borderColor: colors.border }]}
+              onPress={(e) => {
+                e.stopPropagation();
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                handleSetReminder(event);
+              }}
+            >
+              <Ionicons name="notifications-outline" size={16} color={colors.accent} />
+              <Text style={[styles.actionBtnText, { color: colors.text }]}>
+                Set Reminder
               </Text>
             </AnimatedPressable>
           </View>
@@ -279,7 +275,7 @@ export default function EventsScreen() {
           />
         }
       >
-        <Animated.View style={animatedStyle}>
+        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
           {/* Header */}
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
@@ -300,7 +296,10 @@ export default function EventsScreen() {
           {followedCategories.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
               <AnimatedPressable
-                onPress={() => setActiveFilter(null)}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  setActiveFilter(null);
+                }}
                 style={[
                   styles.filterChip,
                   { borderColor: !activeFilter ? colors.accent : colors.border },
@@ -317,7 +316,10 @@ export default function EventsScreen() {
                 return (
                   <AnimatedPressable
                     key={catId}
-                    onPress={() => setActiveFilter(isActive ? null : catId)}
+                    onPress={() => {
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      setActiveFilter(isActive ? null : catId);
+                    }}
                     style={[
                       styles.filterChip,
                       { borderColor: isActive ? colors.accent : colors.border },
@@ -373,7 +375,10 @@ export default function EventsScreen() {
 
       {/* Create Event FAB */}
       <AnimatedPressable
-        onPress={() => router.push('/create-event')}
+        onPress={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          router.push('/create-event');
+        }}
         style={[styles.fab, { backgroundColor: colors.accent }]}
       >
         <Ionicons name="add" size={28} color="#ffffff" />

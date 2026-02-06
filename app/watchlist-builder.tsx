@@ -15,15 +15,18 @@ import {
   Text,
   ScrollView,
   TextInput,
-  Pressable,
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 
 import { useSession } from "@/hooks/useSession";
 import {
@@ -84,6 +87,8 @@ export default function WatchlistBuilderScreen() {
   const router = useRouter();
   const { user } = useSession();
   const userId = user?.id ?? "";
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
 
   // State
   const [loading, setLoading] = useState(false);
@@ -228,24 +233,24 @@ export default function WatchlistBuilderScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable
+          <AnimatedPressable
             style={styles.backBtn}
-            onPress={() => router.back()}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}
             accessibilityLabel="Go back"
           >
             <Ionicons name="chevron-back" size={24} color={COLORS.navy} />
-          </Pressable>
+          </AnimatedPressable>
           <View style={styles.headerText}>
             <Text style={styles.headerLabel}>COLLECTOR</Text>
             <Text style={styles.headerTitle}>Watchlist</Text>
           </View>
-          <Pressable
+          <AnimatedPressable
             style={styles.addHeaderBtn}
-            onPress={() => setShowAddForm(true)}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }}
             accessibilityLabel="Add item"
           >
             <Ionicons name="add" size={24} color={COLORS.tiffanyDark} />
-          </Pressable>
+          </AnimatedPressable>
         </View>
 
         <ScrollView
@@ -254,6 +259,7 @@ export default function WatchlistBuilderScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
           {/* Stats Banner */}
           <View style={styles.statsBanner}>
             <View style={styles.statItem}>
@@ -293,9 +299,9 @@ export default function WatchlistBuilderScreen() {
             <View style={styles.addFormCard}>
               <View style={styles.addFormHeader}>
                 <Text style={styles.addFormTitle}>Add to Watchlist</Text>
-                <Pressable onPress={resetForm} style={styles.closeFormBtn}>
+                <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); resetForm(); }} style={styles.closeFormBtn}>
                   <Ionicons name="close" size={20} color={COLORS.muted} />
-                </Pressable>
+                </AnimatedPressable>
               </View>
 
               {/* Title Input */}
@@ -333,13 +339,13 @@ export default function WatchlistBuilderScreen() {
                     const config = PRIORITY_CONFIG[p];
                     const active = newPriority === p;
                     return (
-                      <Pressable
+                      <AnimatedPressable
                         key={p}
                         style={[
                           styles.priorityBtn,
                           active && { backgroundColor: config.bg, borderColor: config.color },
                         ]}
-                        onPress={() => setNewPriority(p)}
+                        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setNewPriority(p); }}
                       >
                         <Text
                           style={[
@@ -349,7 +355,7 @@ export default function WatchlistBuilderScreen() {
                         >
                           {config.label}
                         </Text>
-                      </Pressable>
+                      </AnimatedPressable>
                     );
                   })}
                 </View>
@@ -370,9 +376,9 @@ export default function WatchlistBuilderScreen() {
               </View>
 
               {/* Save Button */}
-              <Pressable
+              <AnimatedPressable
                 style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-                onPress={handleSave}
+                onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSave(); }}
                 disabled={saving}
               >
                 {saving ? (
@@ -383,13 +389,13 @@ export default function WatchlistBuilderScreen() {
                     <Text style={styles.saveBtnText}>Add to Watchlist</Text>
                   </>
                 )}
-              </Pressable>
+              </AnimatedPressable>
             </View>
           )}
 
           {/* Empty State */}
           {!loading && items.length === 0 && !showAddForm && (
-            <Pressable style={styles.emptyState} onPress={() => setShowAddForm(true)}>
+            <AnimatedPressable style={styles.emptyState} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }}>
               <View style={styles.emptyIconWrap}>
                 <Ionicons name="eye-outline" size={32} color={COLORS.tiffany} />
               </View>
@@ -402,7 +408,7 @@ export default function WatchlistBuilderScreen() {
                 <Ionicons name="add" size={18} color={COLORS.tiffanyDark} />
                 <Text style={styles.emptyAddText}>Add Your First Item</Text>
               </View>
-            </Pressable>
+            </AnimatedPressable>
           )}
 
           {/* Watchlist Items */}
@@ -452,13 +458,12 @@ export default function WatchlistBuilderScreen() {
                         )}
                       </View>
 
-                      <Pressable
+                      <AnimatedPressable
                         style={styles.deleteBtn}
-                        onPress={() => handleDelete(item)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); handleDelete(item); }}
                       >
                         <Ionicons name="trash-outline" size={18} color={COLORS.muted} />
-                      </Pressable>
+                      </AnimatedPressable>
                     </View>
                   </View>
                 );
@@ -468,14 +473,15 @@ export default function WatchlistBuilderScreen() {
 
           {/* Floating Add Button (when form is closed and list exists) */}
           {!showAddForm && items.length > 0 && (
-            <Pressable style={styles.floatingAddBtn} onPress={() => setShowAddForm(true)}>
+            <AnimatedPressable style={styles.floatingAddBtn} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }}>
               <Ionicons name="add" size={20} color="#FFFFFF" />
               <Text style={styles.floatingAddText}>Add Item</Text>
-            </Pressable>
+            </AnimatedPressable>
           )}
 
           {/* Bottom spacing */}
           <View style={{ height: 32 }} />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

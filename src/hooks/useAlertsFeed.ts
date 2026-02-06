@@ -1,52 +1,12 @@
 /**
  * useAlertsFeed Hook
- * Fetches pending alerts from the backend RPC.
+ * Fetches alerts from backend + derives price alerts from item priceBand data.
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Alert } from '@/types/insights';
+import { Alert, AlertType } from '@/types/insights';
 import { featureFlags } from '@/config/featureFlags';
-
-// Mock data for development
-const MOCK_ALERTS: Alert[] = [
-  {
-    id: 'a1',
-    type: 'price_drop',
-    itemId: '1',
-    itemName: 'Charizard #4 PSA 10',
-    itemCategory: 'Pokémon',
-    description: 'Price dropped 10% below your target',
-    condition: 'Price fell below €400 threshold',
-    value: 380,
-    previousValue: 420,
-    triggeredAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    isRead: false,
-  },
-  {
-    id: 'a2',
-    type: 'new_listing',
-    itemId: '2',
-    itemName: 'Funko Pop – Goku Ultra Instinct',
-    itemCategory: 'Funko Pop',
-    description: 'New listing found on eBay',
-    condition: 'Matching item listed at €85',
-    value: 85,
-    triggeredAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    isRead: false,
-  },
-  {
-    id: 'a3',
-    type: 'milestone',
-    itemId: '3',
-    itemName: 'Your Pokémon Collection',
-    itemCategory: 'Pokémon',
-    description: 'Collection reached €5,000 milestone!',
-    condition: 'Total value exceeded €5,000',
-    value: 5120,
-    triggeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    isRead: true,
-  },
-];
+import { dataProvider } from '@/data';
 
 export type UseAlertsFeedOptions = {
   limit?: number;
@@ -81,17 +41,83 @@ export function useAlertsFeed(
     setError(null);
 
     try {
-      // TODO: Replace with actual RPC call
-      // const { data, error } = await supabase.rpc('rpc_get_alerts_feed_v1', { limit, unread_only: unreadOnly });
+      const [feedItems, items] = await Promise.all([
+        dataProvider.listAlertsFeed(),
+        dataProvider.listItems(),
+      ]);
 
-      // Simulate API delay
-      await new Promise((r) => setTimeout(r, 300));
+      // Map backend AlertFeedItems to UI Alert type
+      const backendAlerts: Alert[] = feedItems.map((fi) => {
+        const alertType: AlertType =
+          fi.type === 'price_drop' ? 'price_drop'
+            : fi.type === 'price_spike' ? 'price_increase'
+            : fi.type === 'restock' ? 'new_listing'
+            : 'milestone';
 
-      let result = [...MOCK_ALERTS];
-      if (unreadOnly) {
-        result = result.filter((a) => !a.isRead);
+        return {
+          id: fi.id,
+          type: alertType,
+          itemId: fi.itemId ?? '',
+          itemName: fi.title,
+          itemCategory: '',
+          description: fi.title,
+          condition: fi.body ?? '',
+          value: 0,
+          triggeredAt: fi.createdAt,
+          isRead: false,
+        };
+      });
+
+      // Derive price alerts from items with priceBand data
+      const derivedAlerts: Alert[] = [];
+      for (const item of items) {
+        if (!item.priceBand) continue;
+
+        if (item.price < item.priceBand.q10) {
+          derivedAlerts.push({
+            id: `derived-drop-${item.id}`,
+            type: 'price_drop',
+            itemId: item.id,
+            itemName: item.name,
+            itemCategory: item.category,
+            itemImageUrl: item.imageUrl,
+            description: `${item.name} price below Q10 threshold`,
+            condition: `Price \u20AC${item.price} < Q10 \u20AC${item.priceBand.q10}`,
+            value: item.price,
+            previousValue: item.priceBand.q10,
+            triggeredAt: item.updatedAt ?? new Date().toISOString(),
+            isRead: false,
+          });
+        } else if (item.price > item.priceBand.q90) {
+          derivedAlerts.push({
+            id: `derived-spike-${item.id}`,
+            type: 'price_increase',
+            itemId: item.id,
+            itemName: item.name,
+            itemCategory: item.category,
+            itemImageUrl: item.imageUrl,
+            description: `${item.name} price above Q90 threshold`,
+            condition: `Price \u20AC${item.price} > Q90 \u20AC${item.priceBand.q90}`,
+            value: item.price,
+            previousValue: item.priceBand.q90,
+            triggeredAt: item.updatedAt ?? new Date().toISOString(),
+            isRead: false,
+          });
+        }
       }
-      setAlerts(result.slice(0, limit));
+
+      let combined = [...backendAlerts, ...derivedAlerts];
+
+      // Sort by triggeredAt descending (most recent first)
+      combined.sort(
+        (a, b) => new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime()
+      );
+
+      if (unreadOnly) {
+        combined = combined.filter((a) => !a.isRead);
+      }
+
+      setAlerts(combined.slice(0, limit));
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Failed to fetch alerts'));
     } finally {

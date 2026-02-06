@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { theme } from "../theme";
+import { AnimatedPressable } from "@/motion";
 
 export default function ActionTile({
   label,
@@ -12,9 +13,8 @@ export default function ActionTile({
   onPress?: () => void;
 }) {
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       onPress={onPress}
-      activeOpacity={0.85}
       style={{
         width: "48%",
         backgroundColor: "#fff",
@@ -40,6 +40,6 @@ export default function ActionTile({
         <Text style={{ fontWeight: "800", color: "#0F172A" }}>{emoji}</Text>
       </View>
       <Text style={{ fontWeight: "800", color: theme.colors.text }}>{label}</Text>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }

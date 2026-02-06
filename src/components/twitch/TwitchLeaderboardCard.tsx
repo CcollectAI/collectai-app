@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/theme';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 
 type TwitchCategory = 'tcg' | 'painting' | 'gunpla' | 'designer_toys';
 
@@ -100,6 +103,7 @@ const formatViewers = (n: number) =>
 const TwitchLeaderboardCard: React.FC = () => {
   const theme = useAppTheme();
   const router = useRouter();
+  const { settings } = useSettings();
 
   return (
     <View
@@ -141,8 +145,11 @@ const TwitchLeaderboardCard: React.FC = () => {
             build inspiration, and future watchlist ideas.
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={() => router.push('/analytics-metrics-debug')}
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push('/analytics-metrics-debug');
+          }}
           style={{
             paddingHorizontal: 10,
             paddingVertical: 6,
@@ -159,7 +166,7 @@ const TwitchLeaderboardCard: React.FC = () => {
           >
             View metrics
           </Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       <ScrollView
@@ -381,8 +388,9 @@ const TwitchLeaderboardCard: React.FC = () => {
                 justifyContent: 'space-between',
               }}
             >
-              <TouchableOpacity
+              <AnimatedPressable
                 onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                   // Future: open Twitch URL or deep link
                   console.log('[Twitch] open stream', s.handle);
                 }}
@@ -404,10 +412,11 @@ const TwitchLeaderboardCard: React.FC = () => {
                 >
                   Open on Twitch
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
 
-              <TouchableOpacity
+              <AnimatedPressable
                 onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                   // Future: create event or watchlist suggestion
                   console.log('[Twitch] suggest event/watchlist for', s.handle);
                   router.push('/calendar'); // or an events route if you prefer
@@ -431,7 +440,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                 >
                   Link to Events & Drops
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
           </View>
         ))}

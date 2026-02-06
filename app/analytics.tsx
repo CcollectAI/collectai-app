@@ -16,17 +16,23 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Pressable,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 
 // Import analytics store
 import {
   fetchPortfolioSnapshot,
   type PortfolioSnapshot,
 } from "@/store/portfolioAnalyticsStore";
+import { dataProvider } from "@/data";
+import type { CategorySummary } from "@/data/types";
+import { ScoreExplanationSheet } from "@/components/ScoreExplanationSheet";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Design Tokens (Collectr)
@@ -94,9 +100,13 @@ function formatScore(s: number): string {
 
 export default function AnalyticsScreen() {
   const router = useRouter();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<PortfolioSnapshot | null>(null);
+  const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
+  const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -106,8 +116,12 @@ export default function AnalyticsScreen() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchPortfolioSnapshot();
+      const [data, catSummaries] = await Promise.all([
+        fetchPortfolioSnapshot(),
+        dataProvider.listCategorySummaries(),
+      ]);
       setSnapshot(data);
+      setCategorySummaries(catSummaries);
     } catch (err: any) {
       console.warn("[Analytics] Error loading snapshot:", err);
       setError(err?.message || "Failed to load analytics");
@@ -137,6 +151,13 @@ export default function AnalyticsScreen() {
     return map;
   }, [allocations]);
 
+  // Categories with owned items, sorted by completionPct desc
+  const activeCategories = useMemo(() => {
+    return categorySummaries
+      .filter((c) => c.ownedCount > 0)
+      .sort((a, b) => b.completionPct - a.completionPct);
+  }, [categorySummaries]);
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -156,22 +177,23 @@ export default function AnalyticsScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
+        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable
+          <AnimatedPressable
             style={styles.backBtn}
-            onPress={() => router.back()}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}
             accessibilityLabel="Go back"
           >
             <Ionicons name="chevron-back" size={24} color={COLORS.navy} />
-          </Pressable>
+          </AnimatedPressable>
           <View style={styles.headerText}>
             <Text style={styles.headerLabel}>PORTFOLIO</Text>
             <Text style={styles.headerTitle}>Analytics</Text>
           </View>
-          <Pressable style={styles.refreshBtn} onPress={loadData}>
+          <AnimatedPressable style={styles.refreshBtn} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); loadData(); }}>
             <Ionicons name="refresh-outline" size={20} color={COLORS.muted} />
-          </Pressable>
+          </AnimatedPressable>
         </View>
 
         {/* Error Banner */}
@@ -226,7 +248,12 @@ export default function AnalyticsScreen() {
               <Text style={styles.cardTitle}>Portfolio Tier</Text>
             </View>
 
-            <View style={styles.tierBadgeContainer}>
+            <AnimatedPressable
+              style={styles.tierBadgeContainer}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push("/leaderboard"); }}
+              accessibilityRole="button"
+              accessibilityLabel={`${tierSummary.tier} tier — view leaderboard`}
+            >
               <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[tierSummary.tier] + "20" }]}>
                 <Ionicons
                   name={TIER_ICONS[tierSummary.tier] as any}
@@ -236,8 +263,15 @@ export default function AnalyticsScreen() {
                 <Text style={[styles.tierLabel, { color: TIER_COLORS[tierSummary.tier] }]}>
                   {tierSummary.tier}
                 </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={TIER_COLORS[tierSummary.tier]}
+                  style={{ marginLeft: 4 }}
+                />
               </View>
-            </View>
+              <Text style={styles.tierTapHint}>Tap to view leaderboard</Text>
+            </AnimatedPressable>
 
             <View style={styles.scoresRow}>
               <View style={styles.scoreItem}>
@@ -255,8 +289,27 @@ export default function AnalyticsScreen() {
                 <Text style={styles.scoreLabel}>Diversity</Text>
               </View>
             </View>
+
+            <AnimatedPressable
+              style={styles.whyScoresBtn}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setScoreSheetVisible(true); }}
+              accessibilityRole="button"
+              accessibilityLabel="How are scores calculated?"
+            >
+              <Ionicons name="help-circle-outline" size={16} color={COLORS.tiffanyDark} />
+              <Text style={styles.whyScoresText}>How are these scores calculated?</Text>
+            </AnimatedPressable>
           </View>
         )}
+
+        <ScoreExplanationSheet
+          visible={scoreSheetVisible}
+          onClose={() => setScoreSheetVisible(false)}
+          rarityScore={tierSummary?.rarityScore}
+          completenessScore={tierSummary?.completenessScore}
+          diversificationScore={tierSummary?.diversificationScore}
+          tier={tierSummary?.tier}
+        />
 
         {/* Category Allocations */}
         {allocations.length > 0 && (
@@ -381,8 +434,74 @@ export default function AnalyticsScreen() {
           </View>
         )}
 
+        {/* Collection Completeness */}
+        {activeCategories.length > 0 && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Collection Completeness</Text>
+              <Text style={styles.cardSubtitle}>{activeCategories.length} categories</Text>
+            </View>
+
+            {activeCategories.slice(0, 8).map((cat) => {
+              const displayPct = Math.min(cat.completionPct, 100);
+              const hasDuplicates = cat.ownedCount > cat.totalCount;
+              const barColor =
+                displayPct >= 75 ? COLORS.success
+                : displayPct >= 50 ? COLORS.warning
+                : COLORS.tiffany;
+              return (
+                <View key={cat.id} style={styles.completenessRow}>
+                  <View style={styles.completenessInfo}>
+                    <Text style={styles.completenessName} numberOfLines={1}>{cat.name}</Text>
+                    <View style={styles.completenessCountRow}>
+                      {hasDuplicates && (
+                        <View style={styles.dupBadge}>
+                          <Ionicons name="copy-outline" size={10} color={COLORS.muted} />
+                          <Text style={styles.dupBadgeText}>dupes</Text>
+                        </View>
+                      )}
+                      <Text style={styles.completenessCount}>
+                        {cat.ownedCount}/{cat.totalCount}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.completenessBarWrap}>
+                    <View style={styles.completenessBarBg}>
+                      <View
+                        style={[
+                          styles.completenessBarFill,
+                          {
+                            width: `${displayPct}%`,
+                            backgroundColor: barColor,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.completenessPct}>
+                      {displayPct}%
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+
+            {activeCategories.length > 8 && (
+              <AnimatedPressable
+                style={styles.viewAllBtn}
+                onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push("/categories"); }}
+              >
+                <Text style={[styles.viewAllText, { color: COLORS.tiffanyDark }]}>
+                  View all
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={COLORS.tiffanyDark} />
+              </AnimatedPressable>
+            )}
+          </View>
+        )}
+
         {/* Bottom spacing */}
         <View style={{ height: 32 }} />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -566,6 +685,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "800",
   },
+  tierTapHint: {
+    fontSize: 11,
+    color: COLORS.muted,
+    marginTop: 6,
+  },
   scoresRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -589,6 +713,21 @@ const styles = StyleSheet.create({
     width: 1,
     height: 32,
     backgroundColor: COLORS.border,
+  },
+  whyScoresBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  whyScoresText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.tiffanyDark,
   },
 
   // Allocations
@@ -709,5 +848,82 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
+  },
+
+  // Completeness
+  completenessRow: {
+    marginBottom: 12,
+  },
+  completenessInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  completenessName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.navy,
+    flex: 1,
+    marginRight: 8,
+  },
+  completenessCountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  completenessCount: {
+    fontSize: 12,
+    color: COLORS.muted,
+  },
+  dupBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    backgroundColor: COLORS.border,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  dupBadgeText: {
+    fontSize: 9,
+    fontWeight: "600",
+    color: COLORS.muted,
+  },
+  completenessBarWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  completenessBarBg: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.border,
+    overflow: "hidden",
+  },
+  completenessBarFill: {
+    height: 6,
+    borderRadius: 3,
+  },
+  completenessPct: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.navy,
+    minWidth: 36,
+    textAlign: "right",
+  },
+  viewAllBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

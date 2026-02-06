@@ -5,10 +5,12 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider } from '@/data';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 type Props = {
   /** Icon color, defaults to navy */
@@ -50,8 +52,11 @@ export const InboxHeaderButton: React.FC<Props> = ({
   }, []);
 
   return (
-    <TouchableOpacity
-      onPress={() => router.push('/inbox')}
+    <AnimatedPressable
+      onPress={() => {
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+        router.push('/inbox');
+      }}
       style={styles.container}
       accessibilityRole="button"
       accessibilityLabel={`Inbox${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
@@ -64,7 +69,7 @@ export const InboxHeaderButton: React.FC<Props> = ({
           </Text>
         </View>
       )}
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 

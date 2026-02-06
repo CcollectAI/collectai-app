@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, TextStyle } from 'react-native';
+import { Text, ViewStyle, TextStyle } from 'react-native';
 import { useRouter } from 'expo-router';
+import { AnimatedPressable } from '@/motion';
 
 type CategoryPillProps = {
   id?: string | null;
@@ -31,9 +32,8 @@ export const CategoryPill: React.FC<CategoryPillProps> = ({
   };
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       onPress={handlePress}
-      activeOpacity={0.85}
       style={[
         {
           paddingHorizontal: 10,
@@ -58,7 +58,7 @@ export const CategoryPill: React.FC<CategoryPillProps> = ({
       >
         {label ?? id}
       </Text>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 

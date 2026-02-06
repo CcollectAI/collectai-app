@@ -6,7 +6,6 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  Pressable,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +16,8 @@ import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 
 type SaveState = "idle" | "saving" | "success" | "error";
 
@@ -56,6 +57,7 @@ const ManualAddScreen: React.FC = () => {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -174,7 +176,7 @@ const ManualAddScreen: React.FC = () => {
       >
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Add Manually</Text>
@@ -187,7 +189,7 @@ const ManualAddScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View style={animatedStyle}>
+          <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
             {/* Intro Card */}
             <View style={[styles.introCard, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '30' }]}>
               <View style={[styles.introIconWrap, { backgroundColor: colors.accent + '20' }]}>
@@ -270,7 +272,7 @@ const ManualAddScreen: React.FC = () => {
                               borderColor: isSelected ? colors.accent : colors.border,
                             },
                           ]}
-                          onPress={() => handleCategoryChip(chip.label)}
+                          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleCategoryChip(chip.label); }}
                         >
                           <Ionicons
                             name={chip.icon as any}
@@ -344,7 +346,7 @@ const ManualAddScreen: React.FC = () => {
                               borderColor: isSelected ? colors.accent : colors.border,
                             },
                           ]}
-                          onPress={() => setConditionGrade(chip.label)}
+                          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setConditionGrade(chip.label); }}
                         >
                           <Text
                             style={[
@@ -450,7 +452,7 @@ const ManualAddScreen: React.FC = () => {
 
             {/* Submit Button */}
             <AnimatedPressable
-              onPress={handleSubmit}
+              onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSubmit(); }}
               disabled={!canSubmit}
               style={[
                 styles.submitButton,

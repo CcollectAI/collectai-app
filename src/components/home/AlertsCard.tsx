@@ -4,10 +4,12 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { Alert, AlertType } from '@/types/insights';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 type AlertsCardProps = {
   alerts: Alert[];
@@ -70,9 +72,12 @@ function AlertItem({ alert, colors, onPress }: AlertItemProps) {
   const iconColor = getAlertColor(alert.type);
 
   return (
-    <Pressable
+    <AnimatedPressable
       style={[styles.alertRow, !alert.isRead && styles.alertUnread]}
-      onPress={onPress}
+      onPress={() => {
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+        onPress?.();
+      }}
       accessibilityRole="button"
       accessibilityLabel={`${alert.description}. ${formatTimeAgo(alert.triggeredAt)}`}
     >
@@ -90,7 +95,7 @@ function AlertItem({ alert, colors, onPress }: AlertItemProps) {
       <Text style={[styles.alertTime, { color: colors.muted }]}>
         {formatTimeAgo(alert.triggeredAt)}
       </Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -114,21 +119,27 @@ export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, 
             <Ionicons name="eye-outline" size={18} color={colors.text} />
             <Text style={[styles.title, { color: colors.text }]}>Watchlist</Text>
           </View>
-          <Pressable
+          <AnimatedPressable
             style={[styles.addBtn, { backgroundColor: colors.accent }]}
-            onPress={onStartWatchlist}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+              onStartWatchlist?.();
+            }}
             accessibilityRole="button"
             accessibilityLabel="Add to watchlist"
           >
             <Ionicons name="add" size={16} color="#FFFFFF" />
             <Text style={styles.addBtnText}>Add</Text>
-          </Pressable>
+          </AnimatedPressable>
         </View>
 
         {/* Empty State - Start Watchlist prompt */}
-        <Pressable
+        <AnimatedPressable
           style={styles.emptyState}
-          onPress={onStartWatchlist}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            onStartWatchlist?.();
+          }}
           accessibilityRole="button"
           accessibilityLabel="Start your watchlist"
         >
@@ -139,7 +150,7 @@ export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, 
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-        </Pressable>
+        </AnimatedPressable>
       </View>
     );
   }
@@ -161,15 +172,18 @@ export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, 
             </View>
           )}
         </View>
-        <Pressable
+        <AnimatedPressable
           style={[styles.addBtn, { backgroundColor: colors.accent }]}
-          onPress={onStartWatchlist}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            onStartWatchlist?.();
+          }}
           accessibilityRole="button"
           accessibilityLabel="Add to watchlist"
         >
           <Ionicons name="add" size={16} color="#FFFFFF" />
           <Text style={styles.addBtnText}>Add</Text>
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       {/* Alert Items */}
@@ -190,9 +204,12 @@ export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, 
 
       {/* View All */}
       {alerts.length > 3 && onViewAll && (
-        <Pressable
+        <AnimatedPressable
           style={styles.viewAll}
-          onPress={onViewAll}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            onViewAll();
+          }}
           accessibilityRole="button"
           accessibilityLabel={`View all ${alerts.length} alerts`}
         >
@@ -200,7 +217,7 @@ export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, 
             View All ({alerts.length})
           </Text>
           <Ionicons name="chevron-forward" size={16} color={colors.accent} />
-        </Pressable>
+        </AnimatedPressable>
       )}
     </View>
   );

@@ -174,6 +174,7 @@ app.include_router(feedback_router.router)
 from app.features import items_export_router
 from app.features import photo_upload_router
 from app.features import events_router
+from app.features import barcode_lookup_router
 
 app.include_router(items_export_router.router)
 
@@ -182,6 +183,9 @@ app.include_router(photo_upload_router.router)
 
 # Community events router
 app.include_router(events_router.router)
+
+# Barcode / ISBN lookup router
+app.include_router(barcode_lookup_router.router)
 
 class QuickScanRequest(BaseModel):
     mode: Optional[str] = None
@@ -414,17 +418,52 @@ except ImportError:
 
 
 from fastapi import UploadFile, File, HTTPException
+from fastapi.responses import StreamingResponse
 import csv
 import io
+import json
+import uuid as _uuid
 from typing import Any, Dict, List
+
+
+# ---- Import template columns (shared by template + import) ----
+IMPORT_COLUMNS = [
+    "name", "category", "condition", "grade", "graded_by",
+    "sealed", "estimated_value", "notes",
+]
+
+IMPORT_COLUMN_EXAMPLES = {
+    "name": "Charizard Base Set Holo 1st Edition",
+    "category": "pokemon",
+    "condition": "Near Mint",
+    "grade": "PSA 9",
+    "graded_by": "PSA",
+    "sealed": "no",
+    "estimated_value": "350.00",
+    "notes": "My favourite card",
+}
+
+
+@app.get("/api/imports/template")
+async def import_template():
+    """Return a CSV template with headers + one example row."""
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(IMPORT_COLUMNS)
+    writer.writerow([IMPORT_COLUMN_EXAMPLES.get(c, "") for c in IMPORT_COLUMNS])
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=collectai_import_template.csv"},
+    )
 
 
 @app.post("/api/imports/collection")
 async def import_collection(file: UploadFile = File(...)) -> Dict[str, Any]:
     """
-    Accept a CSV or Excel file and return a summary of rows.
-    This first version does NOT write to the database – it only parses.
-    Later we will attach user_id & insert into items table.
+    Accept a CSV or Excel file, parse it, and insert valid rows into
+    the Supabase `items` table.  Returns a summary with counts.
     """
     filename = file.filename or "upload"
     content = await file.read()
@@ -477,15 +516,69 @@ async def import_collection(file: UploadFile = File(...)) -> Dict[str, Any]:
     skipped = 0
     errors: List[Dict[str, Any]] = []
 
+    # Try to get DB pool for actual inserts
+    pool = None
+    try:
+        from app.db import get_pool
+        pool = get_pool()
+    except Exception:
+        pass
+
+    # Placeholder user_id until real auth is wired
+    user_id = "demo-user"
+
     for idx, r in enumerate(norm_rows, start=1):
-        name = r.get("name")
+        name = r.get("name") or r.get("title")
         if not name or str(name).strip() == "":
             skipped += 1
             errors.append({"row": idx, "message": "Missing required 'name' column"})
             continue
 
-        # Later: validate more fields, insert into DB items table
-        inserted += 1
+        title = str(name).strip()
+        category = str(r.get("category", "") or "").strip() or None
+        condition = str(r.get("condition", "") or "").strip() or None
+        grade = str(r.get("grade", "") or "").strip() or None
+        graded_by = str(r.get("graded_by", "") or "").strip() or None
+        sealed_raw = str(r.get("sealed", "") or "").strip().lower()
+        sealed = sealed_raw in ("yes", "true", "1", "y")
+
+        # Build attributes JSON for extra fields
+        attrs: Dict[str, Any] = {}
+        est_val = r.get("estimated_value") or r.get("price") or r.get("value")
+        if est_val is not None:
+            try:
+                attrs["estimated_value"] = float(str(est_val).replace(",", ".").strip())
+            except (ValueError, TypeError):
+                pass
+        notes = r.get("notes")
+        if notes:
+            attrs["notes"] = str(notes).strip()
+
+        if pool:
+            try:
+                async with pool.acquire() as conn:
+                    await conn.execute(
+                        """
+                        INSERT INTO items (id, user_id, title, category, condition, grade, graded_by, sealed, attributes_json)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                        """,
+                        str(_uuid.uuid4()),
+                        user_id,
+                        title,
+                        category,
+                        condition,
+                        grade,
+                        graded_by,
+                        sealed,
+                        json.dumps(attrs) if attrs else None,
+                    )
+                inserted += 1
+            except Exception as e:
+                skipped += 1
+                errors.append({"row": idx, "message": f"DB insert failed: {e}"})
+        else:
+            # No DB — count as inserted (parse-only mode)
+            inserted += 1
 
     return {
         "total_rows": total,
@@ -493,4 +586,5 @@ async def import_collection(file: UploadFile = File(...)) -> Dict[str, Any]:
         "skipped_count": skipped,
         "errors": errors,
         "columns_detected": sorted(list(norm_rows[0].keys())) if norm_rows else [],
+        "db_mode": "live" if pool else "parse_only",
     }

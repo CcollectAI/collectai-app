@@ -22,6 +22,7 @@ import {
   Platform,
   Alert,
   Switch,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -29,7 +30,10 @@ import { dataProvider } from '@/data';
 import type { EventKind, CreateEventInput } from '@/data/events';
 import { CATEGORIES } from '@/constants/categories';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { AnimatedPressable } from '@/motion';
+import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
+import CompactSelect from '@/components/CompactSelect';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -67,6 +71,8 @@ const FORMAT_OPTIONS: { label: string; value: EventFormat; icon: keyof typeof Io
 const CreateEventScreen: React.FC = () => {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
 
   /* ---- form state ---- */
   const [title, setTitle] = useState('');
@@ -184,7 +190,7 @@ const CreateEventScreen: React.FC = () => {
         {/*  Header                                                          */}
         {/* ---------------------------------------------------------------- */}
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Create Event</Text>
@@ -197,6 +203,7 @@ const CreateEventScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
           {/* ============================================================== */}
           {/*  Section: Basic Information                                     */}
           {/* ============================================================== */}
@@ -224,94 +231,37 @@ const CreateEventScreen: React.FC = () => {
                 </View>
               </View>
 
-              {/* Kind chips */}
+              {/* Kind dropdown */}
               <View style={styles.fieldBlock}>
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>Kind</Text>
-                <View style={styles.chipRow}>
-                  {EVENT_KINDS.map((k) => {
-                    const isSelected = kind === k.value;
-                    return (
-                      <AnimatedPressable
-                        key={k.value}
-                        style={[
-                          styles.chip,
-                          {
-                            backgroundColor: isSelected ? colors.accent + '20' : colors.background,
-                            borderColor: isSelected ? colors.accent : colors.border,
-                          },
-                        ]}
-                        onPress={() => setKind(k.value)}
-                      >
-                        <Ionicons
-                          name={KIND_ICON[k.value]}
-                          size={14}
-                          color={isSelected ? colors.accent : colors.muted}
-                        />
-                        <Text
-                          style={[
-                            styles.chipText,
-                            { color: isSelected ? colors.accent : colors.text },
-                          ]}
-                        >
-                          {k.label}
-                        </Text>
-                      </AnimatedPressable>
-                    );
-                  })}
-                </View>
+                <CompactSelect
+                  title="Kind"
+                  value={EVENT_KINDS.find((k) => k.value === kind)?.label}
+                  options={EVENT_KINDS.map((k) => k.label)}
+                  onChange={(label) => {
+                    const match = EVENT_KINDS.find((k) => k.label === label);
+                    if (match) setKind(match.value);
+                  }}
+                />
               </View>
 
-              {/* Category chips */}
+              {/* Category dropdown */}
               <View style={styles.fieldBlock}>
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>Category (optional)</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.chipRow}>
-                    <AnimatedPressable
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: !categoryId ? colors.accent + '20' : colors.background,
-                          borderColor: !categoryId ? colors.accent : colors.border,
-                        },
-                      ]}
-                      onPress={() => setCategoryId(undefined)}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          { color: !categoryId ? colors.accent : colors.text },
-                        ]}
-                      >
-                        None
-                      </Text>
-                    </AnimatedPressable>
-                    {CATEGORIES.map((cat) => {
-                      const isSelected = categoryId === cat.slug;
-                      return (
-                        <AnimatedPressable
-                          key={cat.slug}
-                          style={[
-                            styles.chip,
-                            {
-                              backgroundColor: isSelected ? colors.accent + '20' : colors.background,
-                              borderColor: isSelected ? colors.accent : colors.border,
-                            },
-                          ]}
-                          onPress={() => setCategoryId(cat.slug)}
-                        >
-                          <Text
-                            style={[
-                              styles.chipText,
-                              { color: isSelected ? colors.accent : colors.text },
-                            ]}
-                          >
-                            {cat.name}
-                          </Text>
-                        </AnimatedPressable>
-                      );
-                    })}
-                  </View>
-                </ScrollView>
+                <CompactSelect
+                  title="Category"
+                  searchable
+                  value={categoryId ? CATEGORIES.find((c) => c.slug === categoryId)?.name ?? 'None' : 'None'}
+                  options={['None', ...CATEGORIES.map((c) => c.name)]}
+                  onChange={(name) => {
+                    if (name === 'None') {
+                      setCategoryId(undefined);
+                    } else {
+                      const match = CATEGORIES.find((c) => c.name === name);
+                      if (match) setCategoryId(match.slug);
+                    }
+                  }}
+                />
               </View>
             </View>
           </View>
@@ -339,7 +289,7 @@ const CreateEventScreen: React.FC = () => {
                           borderColor: isSelected ? colors.accent : colors.border,
                         },
                       ]}
-                      onPress={() => setFormat(opt.value)}
+                      onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setFormat(opt.value); }}
                     >
                       <Ionicons
                         name={opt.icon}
@@ -462,7 +412,7 @@ const CreateEventScreen: React.FC = () => {
                         />
                       </View>
                       <AnimatedPressable
-                        onPress={handleUseMyLocation}
+                        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleUseMyLocation(); }}
                         disabled={geoLoading}
                         style={[
                           styles.geoButton,
@@ -582,7 +532,7 @@ const CreateEventScreen: React.FC = () => {
           {/*  Submit Button                                                  */}
           {/* ============================================================== */}
           <AnimatedPressable
-            onPress={handleSubmit}
+            onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSubmit(); }}
             disabled={!canSubmit}
             style={[
               styles.submitButton,
@@ -635,6 +585,7 @@ const CreateEventScreen: React.FC = () => {
           </View>
 
           <View style={{ height: 32 }} />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

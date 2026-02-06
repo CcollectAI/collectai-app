@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
 import {
   AntiFraudInput,
   AntiFraudResult,
@@ -10,6 +10,9 @@ import {
   logAntiFraudEvent,
   AntiFraudUserDecision,
 } from '@/services/antiFraudClient';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 
 interface Props {
   input: AntiFraudInput | null;
@@ -33,6 +36,7 @@ export const AntiFraudCard: React.FC<Props> = ({
   quickscanId,
   currency,
 }) => {
+  const { settings } = useSettings();
   const result: AntiFraudResult | null = useMemo(() => {
     if (!input) return null;
     return computeAntiFraudSignal(input);
@@ -228,8 +232,11 @@ export const AntiFraudCard: React.FC<Props> = ({
           justifyContent: 'space-between',
         }}
       >
-        <TouchableOpacity
-          onPress={() => handleDecision('avoid')}
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+            handleDecision('avoid');
+          }}
           style={{
             flex: 1,
             paddingVertical: 6,
@@ -248,9 +255,12 @@ export const AntiFraudCard: React.FC<Props> = ({
           >
             Avoid purchase
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleDecision('negotiate')}
+        </AnimatedPressable>
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            handleDecision('negotiate');
+          }}
           style={{
             flex: 1,
             paddingVertical: 6,
@@ -269,9 +279,12 @@ export const AntiFraudCard: React.FC<Props> = ({
           >
             Negotiate
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleDecision('proceed')}
+        </AnimatedPressable>
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+            handleDecision('proceed');
+          }}
           style={{
             flex: 1,
             paddingVertical: 6,
@@ -290,7 +303,7 @@ export const AntiFraudCard: React.FC<Props> = ({
           >
             Proceed
           </Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
     </View>
   );

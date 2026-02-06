@@ -1,0 +1,47 @@
+-- Auto-generated catalog seed for manga
+-- Generated: 2026-02-05T23:20:38.413262+00:00
+-- Items: 40
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('manga', 'dark-horse', 'dark-horse-blade-of-the-immortal-singles', 'Blade of the Immortal (Singles)', 'Dark Horse', 'High', 'Dark Horse | 31 vols | OOP'),
+  ('manga', 'dark-horse', 'dark-horse-berserk-deluxe', 'Berserk (Deluxe)', 'Dark Horse', 'Standard', 'Dark Horse | 14 vols | In Print'),
+  ('manga', 'dark-horse', 'dark-horse-berserk-singles', 'Berserk (Singles)', 'Dark Horse', 'Mid', 'Dark Horse | 42 vols | OOP'),
+  ('manga', 'viz', 'viz-vagabond-singles', 'Vagabond (Singles)', 'VIZ', 'Mid', 'VIZ | 37 vols | Partial OOP'),
+  ('manga', 'viz', 'viz-vagabond-vizbig', 'Vagabond VizBig', 'VIZ', 'Standard', 'VIZ | 12 vols | In Print'),
+  ('manga', 'viz', 'viz-slam-dunk', 'Slam Dunk', 'VIZ', 'High', 'VIZ | 31 vols | OOP'),
+  ('manga', 'dark-horse', 'dark-horse-gantz', 'Gantz', 'Dark Horse', 'High', 'Dark Horse | 37 vols | OOP'),
+  ('manga', 'viz', 'viz-pluto', 'Pluto', 'VIZ', 'Standard', 'VIZ | 8 vols | In Print'),
+  ('manga', 'viz', 'viz-20th-century-boys-perfect', '20th Century Boys (Perfect)', 'VIZ', 'Standard', 'VIZ | 12 vols | In Print'),
+  ('manga', 'viz', 'viz-monster-perfect', 'Monster (Perfect)', 'VIZ', 'Standard', 'VIZ | 9 vols | In Print'),
+  ('manga', 'tokyopop', 'tokyopop-battle-royale', 'Battle Royale', 'Tokyopop', 'High', 'Tokyopop | 15 vols | OOP'),
+  ('manga', 'tokyopop', 'tokyopop-gto-great-teacher-onizuka', 'GTO (Great Teacher Onizuka)', 'Tokyopop', 'Mid', 'Tokyopop | 25 vols | OOP'),
+  ('manga', 'viz', 'viz-eyeshield-21', 'Eyeshield 21', 'VIZ', 'Mid', 'VIZ | 37 vols | OOP'),
+  ('manga', 'viz', 'viz-dgray-man', 'D.Gray-man', 'VIZ', 'Mid', 'VIZ | 27 vols | Partial OOP'),
+  ('manga', 'viz', 'viz-uzumaki-deluxe', 'Uzumaki (Deluxe)', 'VIZ', 'Standard', 'VIZ | 1 vols | In Print'),
+  ('manga', 'viz', 'viz-tomie-deluxe', 'Tomie (Deluxe)', 'VIZ', 'Standard', 'VIZ | 1 vols | In Print'),
+  ('manga', 'viz', 'viz-nana', 'Nana', 'VIZ', 'High', 'VIZ | 21 vols | OOP'),
+  ('manga', 'tokyopop/vertical', 'tokyopopvertical-paradise-kiss', 'Paradise Kiss', 'Tokyopop/Vertical', 'Mid', 'Tokyopop/Vertical | 5 vols | OOP'),
+  ('manga', 'viz', 'viz-claymore', 'Claymore', 'VIZ', 'Standard', 'VIZ | 27 vols | In Print'),
+  ('manga', 'dark-horse', 'dark-horse-trigun-maximum', 'Trigun Maximum', 'Dark Horse', 'Mid', 'Dark Horse | 14 vols | OOP'),
+  ('manga', 'dark-horse', 'dark-horse-lone-wolf-and-cub', 'Lone Wolf and Cub', 'Dark Horse', 'Standard', 'Dark Horse | 28 vols | In Print'),
+  ('manga', 'kodansha', 'kodansha-akira-box-set', 'Akira (Box Set)', 'Kodansha', 'Standard', 'Kodansha | 6 vols | In Print'),
+  ('manga', 'viz', 'viz-dragon-ball-box-set', 'Dragon Ball (Box Set)', 'VIZ', 'Standard', 'VIZ | 16 vols | In Print'),
+  ('manga', 'viz', 'viz-naruto-box-set-1-3', 'Naruto (Box Set 1-3)', 'VIZ', 'Standard', 'VIZ | 72 vols | In Print'),
+  ('manga', 'viz', 'viz-one-piece-box-set', 'One Piece (Box Set)', 'VIZ', 'Standard', 'VIZ | 23 vols | In Print'),
+  ('manga', 'viz', 'viz-fullmetal-alchemist-box-set', 'Fullmetal Alchemist (Box Set)', 'VIZ', 'Standard', 'VIZ | 27 vols | In Print'),
+  ('manga', 'viz', 'viz-death-note-box-set', 'Death Note (Box Set)', 'VIZ', 'Standard', 'VIZ | 13 vols | In Print'),
+  ('manga', 'viz', 'viz-oyasumi-punpun', 'Oyasumi Punpun', 'VIZ', 'Standard', 'VIZ | 7 vols | In Print'),
+  ('manga', 'viz', 'viz-dorohedoro', 'Dorohedoro', 'VIZ', 'Standard', 'VIZ | 23 vols | In Print'),
+  ('manga', 'viz', 'viz-chainsaw-man', 'Chainsaw Man', 'VIZ', 'Standard', 'VIZ | 17 vols | In Print'),
+  ('manga', 'viz', 'viz-jujutsu-kaisen', 'Jujutsu Kaisen', 'VIZ', 'Standard', 'VIZ | 25 vols | In Print'),
+  ('manga', 'viz', 'viz-spy-x-family', 'Spy x Family', 'VIZ', 'Standard', 'VIZ | 13 vols | In Print'),
+  ('manga', 'kodansha', 'kodansha-vinland-saga-hardcover', 'Vinland Saga (Hardcover)', 'Kodansha', 'Standard', 'Kodansha | 13 vols | In Print'),
+  ('manga', 'viz', 'viz-real', 'Real', 'VIZ', 'Mid', 'VIZ | 15 vols | Partial OOP'),
+  ('manga', 'del-rey/kodansha', 'del-reykodansha-mushishi', 'Mushishi', 'Del Rey/Kodansha', 'High', 'Del Rey/Kodansha | 10 vols | OOP'),
+  ('manga', 'dark-horse', 'dark-horse-eden-its-an-endless-world', 'Eden: It''s an Endless World!', 'Dark Horse', 'High', 'Dark Horse | 14 vols | OOP'),
+  ('manga', 'viz', 'viz-biomega', 'Biomega', 'VIZ', 'Mid', 'VIZ | 6 vols | OOP'),
+  ('manga', 'vertical', 'vertical-flowers-of-evil', 'Flowers of Evil', 'Vertical', 'Mid', 'Vertical | 11 vols | OOP'),
+  ('manga', 'yen-press', 'yen-press-sundome', 'Sundome', 'Yen Press', 'Mid', 'Yen Press | 8 vols | OOP'),
+  ('manga', 'viz', 'viz-is', 'I''''s', 'VIZ', 'Mid', 'VIZ | 15 vols | OOP')
+ON CONFLICT (category, item_key) DO NOTHING;
+

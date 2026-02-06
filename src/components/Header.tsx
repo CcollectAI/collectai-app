@@ -1,11 +1,15 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { theme } from "../theme";
+import { AnimatedPressable } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 
 export default function Header({ title = "Collectors" }: { title?: string }) {
   const router = useRouter();
+  const { settings } = useSettings();
   return (
     <View
       style={{
@@ -19,8 +23,11 @@ export default function Header({ title = "Collectors" }: { title?: string }) {
       }}
     >
       <Text style={{ fontSize: 22, fontWeight: "800", color: theme.colors.text }}>{title}</Text>
-      <TouchableOpacity
-        onPress={() => router.push("/settings")}
+      <AnimatedPressable
+        onPress={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          router.push("/settings");
+        }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         style={{
           width: 36,
@@ -35,7 +42,7 @@ export default function Header({ title = "Collectors" }: { title?: string }) {
         }}
       >
         <Ionicons name="settings-outline" size={20} color="#0F172A" />
-      </TouchableOpacity>
+      </AnimatedPressable>
     </View>
   );
 }

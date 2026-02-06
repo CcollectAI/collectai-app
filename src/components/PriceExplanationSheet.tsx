@@ -9,12 +9,13 @@ import {
   Text,
   StyleSheet,
   Modal,
-  Pressable,
   ScrollView,
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
 import {
   PriceExplanation,
   PriceBand,
@@ -67,14 +68,17 @@ export function PriceExplanationSheet({
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             Price Explanation
           </Text>
-          <Pressable
-            onPress={onClose}
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+              onClose();
+            }}
             style={styles.closeButton}
             accessibilityRole="button"
             accessibilityLabel="Close"
           >
             <Ionicons name="close" size={24} color={colors.text} />
-          </Pressable>
+          </AnimatedPressable>
         </View>
 
         <ScrollView

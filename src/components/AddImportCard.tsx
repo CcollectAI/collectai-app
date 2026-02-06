@@ -2,10 +2,11 @@ import React from "react";
 import {
   View,
   Text,
-  Pressable,
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 type ImportSummary = {
   total: number;
@@ -73,8 +74,11 @@ export const AddImportCard: React.FC<Props> = ({
       </Text>
 
       <View style={styles.buttonRow}>
-        <Pressable
-          onPress={importBusy ? undefined : onUploadFile}
+        <AnimatedPressable
+          onPress={importBusy ? undefined : () => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            onUploadFile();
+          }}
           style={[
             styles.primaryButton,
             {
@@ -87,10 +91,13 @@ export const AddImportCard: React.FC<Props> = ({
           <Text style={styles.primaryButtonText}>
             {importBusy ? "Uploading & parsing…" : "Upload file"}
           </Text>
-        </Pressable>
+        </AnimatedPressable>
 
-        <Pressable
-          onPress={onDownloadTemplate}
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            onDownloadTemplate();
+          }}
           style={[
             styles.secondaryButton,
             {
@@ -109,7 +116,7 @@ export const AddImportCard: React.FC<Props> = ({
           >
             Download template
           </Text>
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       {importSummary && (

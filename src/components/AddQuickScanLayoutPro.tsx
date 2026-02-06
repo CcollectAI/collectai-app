@@ -4,11 +4,12 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/theme";
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 type Props = {
   name: string;
@@ -49,8 +50,11 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
           Take a photo to identify the item and pre-fill details automatically.
         </Text>
 
-        <Pressable
-          onPress={onQuickScan}
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            onQuickScan();
+          }}
           style={[
             styles.primaryButton,
             { backgroundColor: theme.colors.primary },
@@ -58,7 +62,7 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
         >
           <Ionicons name="camera-outline" size={18} color="#fff" />
           <Text style={styles.primaryButtonText}>Open camera</Text>
-        </Pressable>
+        </AnimatedPressable>
 
         {lastScanSummary ? (
           <View style={{ marginTop: 8 }}>
@@ -127,15 +131,18 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
           placeholderTextColor={theme.colors.muted}
         />
 
-        <Pressable
-          onPress={onSave}
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            onSave();
+          }}
           style={[
             styles.primaryButton,
             { backgroundColor: theme.colors.primary, marginTop: 12 },
           ]}
         >
           <Text style={styles.primaryButtonText}>Save to collection</Text>
-        </Pressable>
+        </AnimatedPressable>
       </View>
     </ScrollView>
   );

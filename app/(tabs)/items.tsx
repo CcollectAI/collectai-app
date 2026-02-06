@@ -15,7 +15,6 @@ import {
   Animated,
   RefreshControl,
   Modal,
-  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,6 +27,8 @@ import { SkeletonList, SkeletonCategoryPills } from "@/components/Skeleton";
 import { ItemGalleryGrid } from "@/components/ItemGalleryGrid";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import haptics from "@/lib/haptics";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 import { FilterSheet, FilterConfig, SortOption } from "@/components/FilterSheet";
 
 type Item = {
@@ -98,6 +99,7 @@ const ItemsScreen: React.FC = () => {
   const params = useLocalSearchParams<{ category?: string; collectionName?: string }>();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
 
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("value_desc");
@@ -572,7 +574,10 @@ const ItemsScreen: React.FC = () => {
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle-outline" size={48} color="#B42318" />
           <Text style={[styles.errorText, { color: "#B42318" }]}>{error}</Text>
-          <AnimatedPressable style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={loadItems}>
+          <AnimatedPressable style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            loadItems();
+          }}>
             <Text style={styles.retryText}>Retry</Text>
           </AnimatedPressable>
         </View>
@@ -598,14 +603,17 @@ const ItemsScreen: React.FC = () => {
           />
         }
       >
-        <Animated.View style={animatedStyle}>
+        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header row - switches between normal and multi-select mode */}
         {isMultiSelectMode ? (
           <>
             <View style={styles.multiSelectHeader}>
               <AnimatedPressable
                 style={styles.multiSelectCloseBtn}
-                onPress={exitMultiSelectMode}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  exitMultiSelectMode();
+                }}
               >
                 <Ionicons name="close" size={24} color={colors.text} />
               </AnimatedPressable>
@@ -615,7 +623,10 @@ const ItemsScreen: React.FC = () => {
               <View style={styles.multiSelectActions}>
                 <AnimatedPressable
                   style={styles.multiSelectActionBtn}
-                  onPress={selectedCount === providerItems.length ? deselectAll : selectAll}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                    (selectedCount === providerItems.length ? deselectAll : selectAll)();
+                  }}
                 >
                   <Text style={[styles.multiSelectActionText, { color: colors.accent }]}>
                     {selectedCount === providerItems.length ? 'Deselect All' : 'Select All'}
@@ -633,7 +644,10 @@ const ItemsScreen: React.FC = () => {
                   <View style={styles.topBulkActionsRow}>
                     <AnimatedPressable
                       style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
-                      onPress={() => setCategoryModalVisible(true)}
+                      onPress={() => {
+                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                        setCategoryModalVisible(true);
+                      }}
                     >
                       <Ionicons name="folder-outline" size={18} color={colors.accent} />
                       <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Move</Text>
@@ -641,7 +655,10 @@ const ItemsScreen: React.FC = () => {
 
                     <AnimatedPressable
                       style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
-                      onPress={handleBulkExport}
+                      onPress={() => {
+                        fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+                        handleBulkExport();
+                      }}
                     >
                       <Ionicons name="download-outline" size={18} color={colors.accent} />
                       <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Export</Text>
@@ -649,7 +666,10 @@ const ItemsScreen: React.FC = () => {
 
                     <AnimatedPressable
                       style={[styles.topBulkActionBtn, { backgroundColor: '#f9731610' }]}
-                      onPress={handleBulkArchive}
+                      onPress={() => {
+                        fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+                        handleBulkArchive();
+                      }}
                     >
                       <Ionicons name="archive-outline" size={18} color="#f97316" />
                       <Text style={[styles.topBulkActionText, { color: '#f97316' }]}>Archive</Text>
@@ -657,7 +677,10 @@ const ItemsScreen: React.FC = () => {
 
                     <AnimatedPressable
                       style={[styles.topBulkActionBtn, { backgroundColor: '#ef444410' }]}
-                      onPress={handleBulkDelete}
+                      onPress={() => {
+                        fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+                        handleBulkDelete();
+                      }}
                     >
                       <Ionicons name="trash-outline" size={18} color="#ef4444" />
                       <Text style={[styles.topBulkActionText, { color: '#ef4444' }]}>Delete</Text>
@@ -707,7 +730,10 @@ const ItemsScreen: React.FC = () => {
           {/* Filter button */}
           <AnimatedPressable
             style={[styles.searchRowButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setFilterSheetVisible(true)}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setFilterSheetVisible(true);
+            }}
           >
             <Ionicons name="options-outline" size={18} color={colors.accent} />
             {(advancedFilter.categories.length > 0 ||
@@ -729,7 +755,10 @@ const ItemsScreen: React.FC = () => {
                 viewMode === 'list' && { backgroundColor: colors.accent + '20' },
                 { borderColor: colors.border },
               ]}
-              onPress={() => setViewMode('list')}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                setViewMode('list');
+              }}
             >
               <Ionicons
                 name="list"
@@ -743,7 +772,10 @@ const ItemsScreen: React.FC = () => {
                 viewMode === 'gallery' && { backgroundColor: colors.accent + '20' },
                 { borderColor: colors.border },
               ]}
-              onPress={() => setViewMode('gallery')}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                setViewMode('gallery');
+              }}
             >
               <Ionicons
                 name="grid"
@@ -760,7 +792,10 @@ const ItemsScreen: React.FC = () => {
           {!isMultiSelectMode && (
             <AnimatedPressable
               style={styles.selectAllTextBtn}
-              onPress={enterMultiSelectMode}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                enterMultiSelectMode();
+              }}
             >
               <Text style={[styles.selectAllText, { color: colors.accent }]}>Select</Text>
             </AnimatedPressable>
@@ -824,7 +859,10 @@ const ItemsScreen: React.FC = () => {
               )}
             </View>
             <AnimatedPressable
-              onPress={clearFilters}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                clearFilters();
+              }}
               style={styles.filterClearButton}
             >
               <Text
@@ -884,7 +922,10 @@ const ItemsScreen: React.FC = () => {
                     styles.categoryAddButton,
                     { borderColor: colors.accent },
                   ]}
-                  onPress={() => handleAddForCategory(group.category)}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                    handleAddForCategory(group.category);
+                  }}
                 >
                   <Ionicons
                     name="add-outline"
@@ -915,7 +956,10 @@ const ItemsScreen: React.FC = () => {
                       borderColor: colors.accent,
                     },
                   ]}
-                  onPress={() => handleItemPress(item)}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                    handleItemPress(item);
+                  }}
                   onLongPress={() => handleLongPress(item.id)}
                   delayLongPress={400}
                 >
@@ -1019,7 +1063,10 @@ const ItemsScreen: React.FC = () => {
                 { backgroundColor: colors.accent },
                 exporting && styles.actionButtonDisabled,
               ]}
-              onPress={handleExportCSV}
+              onPress={() => {
+                fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+                handleExportCSV();
+              }}
               disabled={exporting}
             >
               {exporting ? (
@@ -1038,7 +1085,10 @@ const ItemsScreen: React.FC = () => {
                 styles.actionButtonSecondary,
                 { borderColor: colors.accent },
               ]}
-              onPress={() => router.push('/build-paint-projects')}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                router.push('/build-paint-projects');
+              }}
             >
               <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
               <Text style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
@@ -1069,9 +1119,12 @@ const ItemsScreen: React.FC = () => {
         animationType="slide"
         onRequestClose={() => setCategoryModalVisible(false)}
       >
-        <Pressable
+        <AnimatedPressable
           style={styles.modalOverlay}
-          onPress={() => setCategoryModalVisible(false)}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            setCategoryModalVisible(false);
+          }}
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
@@ -1088,7 +1141,10 @@ const ItemsScreen: React.FC = () => {
                 <AnimatedPressable
                   key={cat}
                   style={[styles.modalOption, { borderColor: colors.border }]}
-                  onPress={() => handleBulkChangeCategory(cat)}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+                    handleBulkChangeCategory(cat);
+                  }}
                 >
                   <CategoryPill id={cat} label={cat} />
                   <Ionicons name="chevron-forward" size={18} color={colors.muted} />
@@ -1098,12 +1154,15 @@ const ItemsScreen: React.FC = () => {
 
             <AnimatedPressable
               style={[styles.modalCancelBtn, { borderColor: colors.border }]}
-              onPress={() => setCategoryModalVisible(false)}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                setCategoryModalVisible(false);
+              }}
             >
               <Text style={[styles.modalCancelText, { color: colors.muted }]}>Cancel</Text>
             </AnimatedPressable>
           </View>
-        </Pressable>
+        </AnimatedPressable>
       </Modal>
 
       {/* Advanced Filter Sheet */}

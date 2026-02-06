@@ -1,15 +1,17 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import { USER_PROFILES } from '@/data/users';
+import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 
-const BG = '#0f172a';
-const CARD = '#020617';
-const BORDER = '#1f2933';
-const TEXT = '#e5e7eb';
-const MUTED = '#9ca3af';
-const PRIMARY = '#0ea5e9';
+const MEDAL_GOLD = '#eab308';
+const MEDAL_SILVER = '#9ca3af';
+const MEDAL_BRONZE = '#b45309';
 
 const formatCurrency = (value: number | undefined | null): string => {
   if (!value || !Number.isFinite(value)) return '€0';
@@ -32,31 +34,24 @@ const AvatarCircle: React.FC<{ name: string; color: string }> = ({ name, color }
       .slice(0, 2)
       .toUpperCase() || '?';
   return (
-    <View
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: color,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 14,
-          fontWeight: '700',
-          color: '#ffffff',
-        }}
-      >
-        {initials}
-      </Text>
+    <View style={[styles.avatar, { backgroundColor: color }]}>
+      <Text style={styles.avatarText}>{initials}</Text>
     </View>
   );
 };
 
+function getMedalColor(index: number, fallback: string): string {
+  if (index === 0) return MEDAL_GOLD;
+  if (index === 1) return MEDAL_SILVER;
+  if (index === 2) return MEDAL_BRONZE;
+  return fallback;
+}
+
 const LeaderboardScreen: React.FC = () => {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
 
   const rankedUsers = useMemo(
     () =>
@@ -68,186 +63,166 @@ const LeaderboardScreen: React.FC = () => {
   );
 
   return (
-    <ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: BG,
-      }}
-      contentContainerStyle={{
-        paddingTop: 48,
-        paddingBottom: 32,
-        paddingHorizontal: 16,
-      }}
-    >
-      {/* Header */}
-      <View
-        style={{
-          marginBottom: 16,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={{ flex: 1, paddingRight: 8 }}>
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: '700',
-              color: TEXT,
-            }}
-          >
-            Collector Leaderboard
-          </Text>
-          <Text
-            style={{
-              marginTop: 4,
-              fontSize: 12,
-              color: MUTED,
-            }}
-          >
-            Ranked by estimated portfolio value. Tap a row to view a full
-            collector profile.
-          </Text>
+        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <View style={styles.headerText}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>
+              Collector Leaderboard
+            </Text>
+            <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
+              Ranked by estimated portfolio value
+            </Text>
+          </View>
         </View>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 999,
-            borderWidth: 1,
-            borderColor: BORDER,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 11,
-              color: MUTED,
-            }}
-          >
-            Back
-          </Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* Leaderboard list */}
-      {rankedUsers.map((user, index) => (
-        <TouchableOpacity
-          key={user.id}
-          activeOpacity={0.9}
-          onPress={() => router.push(`/users/${encodeURIComponent(user.id)}`)}
-          style={{
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: BORDER,
-            backgroundColor: CARD,
-            padding: 10,
-            marginBottom: 8,
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}
-        >
-          {/* Rank */}
-          <View
-            style={{
-              width: 30,
-              alignItems: 'center',
-              marginRight: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: '700',
-                color:
-                  index === 0
-                    ? '#eab308'
-                    : index === 1
-                    ? '#9ca3af'
-                    : index === 2
-                    ? '#b45309'
-                    : MUTED,
-              }}
+        {/* Leaderboard list */}
+        {rankedUsers.map((user, index) => {
+          const medalColor = getMedalColor(index, colors.muted);
+          return (
+            <AnimatedPressable
+              key={user.id}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push(`/users/${encodeURIComponent(user.id)}`); }}
+              style={[
+                styles.card,
+                { borderColor: colors.border, backgroundColor: colors.card },
+              ]}
             >
-              #{index + 1}
-            </Text>
-            {index < 3 && (
-              <Ionicons
-                name="trophy-outline"
-                size={14}
-                color={
-                  index === 0
-                    ? '#eab308'
-                    : index === 1
-                    ? '#9ca3af'
-                    : '#b45309'
-                }
-              />
-            )}
-          </View>
+              {/* Rank */}
+              <View style={styles.rankCol}>
+                <Text style={[styles.rankText, { color: medalColor }]}>
+                  #{index + 1}
+                </Text>
+                {index < 3 && (
+                  <Ionicons name="trophy-outline" size={14} color={medalColor} />
+                )}
+              </View>
 
-          {/* Avatar + main info */}
-          <AvatarCircle name={user.displayName} color={user.avatarColor} />
-          <View style={{ marginLeft: 10, flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: TEXT,
-              }}
-            >
-              {user.displayName}
-            </Text>
-            <Text
-              style={{
-                fontSize: 11,
-                color: MUTED,
-              }}
-            >
-              @{user.handle}
-            </Text>
-            <Text
-              style={{
-                marginTop: 2,
-                fontSize: 11,
-                color: MUTED,
-              }}
-              numberOfLines={1}
-            >
-              {user.stats.totalItems} items • {user.stats.totalCategories}{' '}
-              categories
-            </Text>
-          </View>
+              {/* Avatar + main info */}
+              <AvatarCircle name={user.displayName} color={user.avatarColor} />
+              <View style={styles.infoCol}>
+                <Text style={[styles.userName, { color: colors.text }]}>
+                  {user.displayName}
+                </Text>
+                <Text style={[styles.userHandle, { color: colors.muted }]}>
+                  @{user.handle}
+                </Text>
+                <Text style={[styles.userMeta, { color: colors.muted }]} numberOfLines={1}>
+                  {user.stats.totalItems} items · {user.stats.totalCategories} categories
+                </Text>
+              </View>
 
-          {/* Value + key score */}
-          <View
-            style={{
-              alignItems: 'flex-end',
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '700',
-                color: TEXT,
-              }}
-            >
-              {formatCurrency(user.stats.totalEstimatedValueEur)}
-            </Text>
-            <Text
-              style={{
-                marginTop: 2,
-                fontSize: 11,
-                color: MUTED,
-              }}
-            >
-              Rarity {user.stats.rarityScore}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+              {/* Value + key score */}
+              <View style={styles.valueCol}>
+                <Text style={[styles.valueText, { color: colors.text }]}>
+                  {formatCurrency(user.stats.totalEstimatedValueEur)}
+                </Text>
+                <Text style={[styles.rarityText, { color: colors.muted }]}>
+                  Rarity {user.stats.rarityScore}
+                </Text>
+              </View>
+            </AnimatedPressable>
+          );
+        })}
+        </Animated.View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 8,
+    paddingBottom: 32,
+    paddingHorizontal: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  backBtn: {
+    padding: 4,
+  },
+  headerText: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+  },
+  card: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rankCol: {
+    width: 30,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  rankText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  infoCol: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  userName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  userHandle: {
+    fontSize: 11,
+  },
+  userMeta: {
+    marginTop: 2,
+    fontSize: 11,
+  },
+  valueCol: {
+    alignItems: 'flex-end',
+  },
+  valueText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  rarityText: {
+    marginTop: 2,
+    fontSize: 11,
+  },
+});
 
 export default LeaderboardScreen;

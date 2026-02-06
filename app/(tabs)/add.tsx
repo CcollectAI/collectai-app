@@ -2,9 +2,7 @@ import { Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { AddImportCard } from '@/components/AddImportCard';
 import { AddQuickScanLayoutPro } from '@/components/AddQuickScanLayoutPro';
-const API_BASE_URL_IMPORT = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:8080';
-
-const IMPORT_TEMPLATE_URL = process.env.EXPO_PUBLIC_IMPORT_TEMPLATE_URL ?? null;
+import { API_BASE } from '@/api/config';
 import * as DocumentPicker from 'expo-document-picker';
 import React from "react";
 import {
@@ -18,6 +16,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 
@@ -35,12 +35,15 @@ import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 const AddScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
 
   const handleQuickScanPress = () => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push('/quickscan');
   };
 
   const handleManualAddPress = () => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push("/add-manual");
   };
 
@@ -55,15 +58,9 @@ const AddScreen: React.FC = () => {
 
 
   const handleDownloadImportTemplate = () => {
-    if (!IMPORT_TEMPLATE_URL) {
-      Alert.alert(
-        "Template not configured",
-        "Ask your developer to set EXPO_PUBLIC_IMPORT_TEMPLATE_URL so this button can open the latest import template."
-      );
-      return;
-    }
-
-    Linking.openURL(IMPORT_TEMPLATE_URL).catch((err) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    const templateUrl = `${API_BASE}/api/imports/template`;
+    Linking.openURL(templateUrl).catch((err) => {
       console.error("[Add] Failed to open template URL", err);
       Alert.alert(
         "Could not open template",
@@ -73,6 +70,7 @@ const AddScreen: React.FC = () => {
   };
 
 const handleImportCollectionFile = async () => {
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: [
@@ -123,7 +121,7 @@ const handleImportCollectionFile = async () => {
         type: asset.mimeType || "application/octet-stream",
       } as any);
 
-      const res = await fetch(`${API_BASE_URL_IMPORT}/api/imports/collection`, {
+      const res = await fetch(`${API_BASE}/api/imports/collection`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -164,7 +162,7 @@ const handleImportCollectionFile = async () => {
 return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Animated.View style={animatedStyle}>
+        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
@@ -201,7 +199,10 @@ return (
         {/* Barcode / ISBN scan card */}
         <AnimatedPressable
           style={[styles.barcodeCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-          onPress={() => router.push('/barcode-scan')}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push('/barcode-scan');
+          }}
         >
           <View style={[styles.barcodeIconCircle, { backgroundColor: colors.accent + '15' }]}>
             <Ionicons name="barcode-outline" size={24} color={colors.accent} />

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   TextInput,
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +16,9 @@ import {
   getMessagesForRoom,
   CategoryChatMessage,
 } from '@/data/chat';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 
 const BG = '#0f172a';
 const CARD = '#020617';
@@ -61,6 +63,7 @@ const AvatarSmall: React.FC<{ name: string; color: string }> = ({ name, color })
 const CategoryChatScreen: React.FC = () => {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
   const router = useRouter();
+  const { settings } = useSettings();
 
   const category = useMemo(
     () => (categoryId ? getCategoryById(categoryId as any) : undefined),
@@ -108,8 +111,11 @@ const CategoryChatScreen: React.FC = () => {
         >
           This category doesn&apos;t have a chat room yet.
         </Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.back();
+          }}
           style={{
             marginTop: 16,
             paddingHorizontal: 16,
@@ -128,7 +134,7 @@ const CategoryChatScreen: React.FC = () => {
           >
             Go back
           </Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
     );
   }
@@ -176,8 +182,11 @@ const CategoryChatScreen: React.FC = () => {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity
-                onPress={() => router.back()}
+              <AnimatedPressable
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  router.back();
+                }}
                 style={{
                   paddingHorizontal: 10,
                   paddingVertical: 6,
@@ -195,7 +204,7 @@ const CategoryChatScreen: React.FC = () => {
                 >
                   Back
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
               <View>
                 <Text
                   style={{
@@ -264,16 +273,17 @@ const CategoryChatScreen: React.FC = () => {
                   }}
                 >
                   {author && (
-                    <TouchableOpacity
-                      onPress={() =>
-                        router.push(`/users/${encodeURIComponent(author.id)}`)
-                      }
+                    <AnimatedPressable
+                      onPress={() => {
+                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                        router.push(`/users/${encodeURIComponent(author.id)}`);
+                      }}
                     >
                       <AvatarSmall
                         name={author.displayName}
                         color={author.avatarColor}
                       />
-                    </TouchableOpacity>
+                    </AnimatedPressable>
                   )}
                   <View
                     style={{
@@ -370,8 +380,11 @@ const CategoryChatScreen: React.FC = () => {
                 color: TEXT,
               }}
             />
-            <TouchableOpacity
-              onPress={handleSend}
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+                handleSend();
+              }}
               disabled={!draft.trim()}
               style={{
                 marginLeft: 8,
@@ -385,7 +398,7 @@ const CategoryChatScreen: React.FC = () => {
               }}
             >
               <Ionicons name="send-outline" size={16} color="#ffffff" />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </View>
       </View>

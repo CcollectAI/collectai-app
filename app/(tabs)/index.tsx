@@ -202,6 +202,7 @@ export default function PortfolioScreen() {
   const [items, setItems] = useState<ItemRow[]>(FALLBACK_ITEMS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tierSummary, setTierSummary] = useState<any>(null);
 
   // Data insights & alerts (feature flagged)
   const { insights } = usePortfolioInsights({
@@ -271,28 +272,35 @@ export default function PortfolioScreen() {
         }
       } else {
         // Mock mode: use analytics store or fallback
+        let baseSeries: TimeSeriesPoint[] = FALLBACK_SERIES;
+        let baseItems: ItemRow[] = FALLBACK_ITEMS;
+
         if (analyticsApi?.fetchPortfolioSnapshot) {
           try {
             const snap = await analyticsApi.fetchPortfolioSnapshot();
             const extractedSeries = extractSeries(snap?.series || snap);
             const extractedItems = extractItems(snap);
 
-            setSeries(extractedSeries.length ? extractedSeries : FALLBACK_SERIES);
-            setItems(
-              extractedItems.length
-                ? extractedItems.sort((a, b) => b.value - a.value)
-                : FALLBACK_ITEMS
-            );
+            baseSeries = extractedSeries.length ? extractedSeries : FALLBACK_SERIES;
+            baseItems = extractedItems.length
+              ? extractedItems.sort((a, b) => b.value - a.value)
+              : FALLBACK_ITEMS;
+            if (snap?.tierSummary) setTierSummary(snap.tierSummary);
           } catch (mockErr) {
             console.warn("[Portfolio] Mock store error:", mockErr);
-            setSeries(FALLBACK_SERIES);
-            setItems(FALLBACK_ITEMS);
           }
-        } else {
-          // No store available, use fallback
-          setSeries(FALLBACK_SERIES);
-          setItems(FALLBACK_ITEMS);
         }
+
+        // Filter series by selected range
+        const now = new Date();
+        const rangeDays = range === "1D" ? 1 : range === "7D" ? 7 : 30;
+        const cutoff = new Date(now.getTime() - rangeDays * 24 * 60 * 60 * 1000);
+        const filtered = baseSeries.filter(
+          (p) => new Date(p.t).getTime() >= cutoff.getTime()
+        );
+        // Use filtered if enough points, otherwise show all (demo data may be older)
+        setSeries(filtered.length >= 2 ? filtered : baseSeries);
+        setItems(baseItems);
       }
     } catch (err: any) {
       console.warn("[Portfolio] Unexpected error:", err);
@@ -440,6 +448,7 @@ export default function PortfolioScreen() {
         {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && (
           <InsightsCard
             insights={insights}
+            tierSummary={tierSummary}
             onViewDetails={handleAnalyticsPress}
           />
         )}
@@ -447,16 +456,16 @@ export default function PortfolioScreen() {
         {/* Collection Section Header */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Collection</Text>
-          <Text style={[styles.sectionCount, { color: colors.muted }]}>
-            {items.length} {items.length === 1 ? "item" : "items"}
-          </Text>
         </View>
 
-        {/* Value-Ranked Items List - Pressable Cards */}
+        {/* Top Movers & Shakers */}
         <View style={[styles.listCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {items.slice(0, 12).map((it, idx) => {
-            const itemUp = (it.changePct ?? 0) >= 0;
-            return (
+          {/* Movers (top gainers) */}
+          {items
+            .filter((it) => (it.changePct ?? 0) > 0)
+            .sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0))
+            .slice(0, 3)
+            .map((it, idx) => (
               <AnimatedPressable
                 key={it.id}
                 style={[
@@ -472,22 +481,66 @@ export default function PortfolioScreen() {
                 accessibilityLabel={`View ${it.name}`}
               >
                 <View style={styles.itemLeft}>
-                  <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                    {it.name}
-                  </Text>
+                  <View style={styles.moverLabel}>
+                    <Ionicons name="trending-up" size={12} color="#10B981" />
+                    <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
+                      {it.name}
+                    </Text>
+                  </View>
                   <Text style={[styles.itemCategory, { color: colors.muted }]} numberOfLines={1}>
                     {it.category ?? "—"}
                   </Text>
                 </View>
                 <View style={styles.itemRight}>
                   <Text style={[styles.itemValue, { color: colors.text }]}>{formatMoneyEUR(it.value)}</Text>
-                  <Text style={[styles.itemPct, { color: itemUp ? '#10B981' : '#EF4444' }]}>
+                  <Text style={[styles.itemPct, { color: '#10B981' }]}>
                     {formatPct(it.changePct)}
                   </Text>
                 </View>
               </AnimatedPressable>
-            );
-          })}
+            ))}
+          {/* Shakers (top losers) */}
+          {items
+            .filter((it) => (it.changePct ?? 0) < 0)
+            .sort((a, b) => (a.changePct ?? 0) - (b.changePct ?? 0))
+            .slice(0, 3)
+            .map((it, idx, arr) => {
+              const isFirstInList = idx === 0 && items.filter((i) => (i.changePct ?? 0) > 0).length === 0;
+              return (
+                <AnimatedPressable
+                  key={it.id}
+                  style={[
+                    styles.itemRow,
+                    { borderTopColor: colors.border },
+                    isFirstInList && styles.itemRowFirst,
+                  ]}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                    handleItemPress(it);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${it.name}`}
+                >
+                  <View style={styles.itemLeft}>
+                    <View style={styles.moverLabel}>
+                      <Ionicons name="trending-down" size={12} color="#EF4444" />
+                      <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
+                        {it.name}
+                      </Text>
+                    </View>
+                    <Text style={[styles.itemCategory, { color: colors.muted }]} numberOfLines={1}>
+                      {it.category ?? "—"}
+                    </Text>
+                  </View>
+                  <View style={styles.itemRight}>
+                    <Text style={[styles.itemValue, { color: colors.text }]}>{formatMoneyEUR(it.value)}</Text>
+                    <Text style={[styles.itemPct, { color: '#EF4444' }]}>
+                      {formatPct(it.changePct)}
+                    </Text>
+                  </View>
+                </AnimatedPressable>
+              );
+            })}
         </View>
 
         {/* Watchlist Section */}
@@ -664,6 +717,7 @@ const styles = StyleSheet.create({
   // Range toggles
   rangeRow: {
     flexDirection: "row",
+    justifyContent: "flex-end",
     gap: 8,
     marginBottom: 12,
   },
@@ -846,6 +900,11 @@ const styles = StyleSheet.create({
   itemLeft: {
     flex: 1,
     paddingRight: 12,
+  },
+  moverLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   itemName: {
     color: COLORS.navy,

@@ -1,7 +1,10 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
+import { AnimatedPressable } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 
 type TwitchCreator = {
   id: string;
@@ -45,6 +48,8 @@ const MOCK_TWITCH_CREATORS: TwitchCreator[] = [
 ];
 
 export const TwitchCreatorsCard: React.FC = () => {
+  const router = useRouter();
+  const { settings } = useSettings();
   const live = MOCK_TWITCH_CREATORS.filter((c) => c.isLive);
   const upcoming = MOCK_TWITCH_CREATORS.filter((c) => !c.isLive);
   const rows = [...live, ...upcoming].slice(0, 3);
@@ -229,34 +234,35 @@ export const TwitchCreatorsCard: React.FC = () => {
       </View>
 
       {/* CTA */}
-      <Link href="/twitch-leaderboard" asChild>
-        <TouchableOpacity
+      <AnimatedPressable
+        onPress={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          router.push("/twitch-leaderboard");
+        }}
+        style={{
+          marginTop: 12,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingVertical: 10,
+          borderRadius: 999,
+          backgroundColor: "#02B5C4",
+        }}
+      >
+        <Ionicons name="logo-twitch" size={18} color="#FFFFFF" />
+        <Text
           style={{
-            marginTop: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: 10,
-            borderRadius: 999,
-            backgroundColor: "#02B5C4",
+            marginLeft: 8,
+            marginRight: 4,
+            fontSize: 14,
+            fontWeight: "600",
+            color: "#FFFFFF",
           }}
-          activeOpacity={0.9}
         >
-          <Ionicons name="logo-twitch" size={18} color="#FFFFFF" />
-          <Text
-            style={{
-              marginLeft: 8,
-              marginRight: 4,
-              fontSize: 14,
-              fontWeight: "600",
-              color: "#FFFFFF",
-            }}
-          >
-            Open Twitch hub
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
-        </TouchableOpacity>
-      </Link>
+          Open Twitch hub
+        </Text>
+        <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+      </AnimatedPressable>
 
       {/* Helper text */}
       <Text

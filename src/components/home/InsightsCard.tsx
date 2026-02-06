@@ -4,13 +4,31 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { PortfolioInsights, ItemMover } from '@/types/insights';
+import type { PortfolioTierSummary } from '@/analytics/portfolioMetrics';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+
+const TIER_COLORS: Record<string, string> = {
+  Diamond: '#A78BFA',
+  Gold: '#FBBF24',
+  Silver: '#94A3B8',
+  Unranked: '#64748B',
+};
+
+const TIER_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  Diamond: 'diamond-outline',
+  Gold: 'trophy-outline',
+  Silver: 'medal-outline',
+  Unranked: 'help-circle-outline',
+};
 
 type InsightsCardProps = {
   insights: PortfolioInsights;
+  tierSummary?: PortfolioTierSummary | null;
   onViewDetails?: () => void;
 };
 
@@ -51,7 +69,7 @@ function MoverItem({ item, colors }: { item: ItemMover; colors: any }) {
   );
 }
 
-export function InsightsCard({ insights, onViewDetails }: InsightsCardProps) {
+export function InsightsCard({ insights, tierSummary, onViewDetails }: InsightsCardProps) {
   const { colors } = useAppTheme();
   const isPositive = insights.percentChange >= 0;
 
@@ -71,6 +89,44 @@ export function InsightsCard({ insights, onViewDetails }: InsightsCardProps) {
           Last {insights.period === '7d' ? '7 days' : insights.period === '30d' ? '30 days' : '90 days'}
         </Text>
       </View>
+
+      {/* Tier Highlights */}
+      {tierSummary && (
+        <View style={[styles.tierRow, { borderBottomColor: colors.border }]}>
+          <View style={styles.tierLeft}>
+            <Ionicons
+              name={TIER_ICONS[tierSummary.tier] ?? 'help-circle-outline'}
+              size={18}
+              color={TIER_COLORS[tierSummary.tier] ?? colors.muted}
+            />
+            <Text style={[styles.tierName, { color: TIER_COLORS[tierSummary.tier] ?? colors.text }]}>
+              {tierSummary.tier}
+            </Text>
+          </View>
+          <View style={styles.tierScores}>
+            <View style={styles.tierScoreItem}>
+              <Text style={[styles.tierScoreValue, { color: colors.text }]}>
+                {Math.round(tierSummary.rarityScore * 100)}
+              </Text>
+              <Text style={[styles.tierScoreLabel, { color: colors.muted }]}>Rarity</Text>
+            </View>
+            <View style={[styles.tierScoreDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.tierScoreItem}>
+              <Text style={[styles.tierScoreValue, { color: colors.text }]}>
+                {Math.round(tierSummary.completenessScore * 100)}
+              </Text>
+              <Text style={[styles.tierScoreLabel, { color: colors.muted }]}>Compl.</Text>
+            </View>
+            <View style={[styles.tierScoreDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.tierScoreItem}>
+              <Text style={[styles.tierScoreValue, { color: colors.text }]}>
+                {Math.round(tierSummary.diversificationScore * 100)}
+              </Text>
+              <Text style={[styles.tierScoreLabel, { color: colors.muted }]}>Diversity</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Main Stats */}
       <View style={styles.statsRow}>
@@ -132,9 +188,12 @@ export function InsightsCard({ insights, onViewDetails }: InsightsCardProps) {
 
       {/* View Details - Highlighted */}
       {onViewDetails && (
-        <Pressable
+        <AnimatedPressable
           style={[styles.viewDetailsHighlighted, { backgroundColor: colors.accent + '20' }]}
-          onPress={onViewDetails}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            onViewDetails!();
+          }}
           accessibilityRole="button"
           accessibilityLabel="View full insights"
         >
@@ -142,7 +201,7 @@ export function InsightsCard({ insights, onViewDetails }: InsightsCardProps) {
             View Full Insights
           </Text>
           <Ionicons name="chevron-forward" size={16} color={colors.accent} />
-        </Pressable>
+        </AnimatedPressable>
       )}
     </View>
   );
@@ -172,6 +231,43 @@ const styles = StyleSheet.create({
   },
   period: {
     fontSize: 12,
+  },
+  tierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+    marginBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  tierLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tierName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  tierScores: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tierScoreItem: {
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  tierScoreValue: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  tierScoreLabel: {
+    fontSize: 10,
+    marginTop: 1,
+  },
+  tierScoreDivider: {
+    width: 1,
+    height: 20,
   },
   statsRow: {
     flexDirection: 'row',

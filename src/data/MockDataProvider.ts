@@ -514,9 +514,10 @@ export class MockDataProvider implements DataProvider {
   async listCategorySummaries(): Promise<CategorySummary[]> {
     // Generate mock summaries from static CATEGORIES
     return CATEGORIES.map((cat, idx) => {
-      // Vary completion for visual interest
+      // Vary completion for visual interest (cap at 95% to stay realistic)
       const totalCount = 50 + idx * 15;
-      const ownedCount = Math.floor(totalCount * (0.3 + idx * 0.08));
+      const pct = Math.min(0.3 + idx * 0.04, 0.95);
+      const ownedCount = Math.floor(totalCount * pct);
       const missingCount = totalCount - ownedCount;
       const completionPct = Math.round((ownedCount / totalCount) * 100);
 

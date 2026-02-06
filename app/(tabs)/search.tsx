@@ -4,20 +4,25 @@ import {
   Text,
   TextInput,
   FlatList,
-  Pressable,
   StyleSheet,
   ActivityIndicator,
-  SafeAreaView,
+  Animated,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { dataProvider, type Item } from "@/data";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 
 export default function SearchScreen() {
   const t = useAppTheme();
   const colors = (t as any)?.colors ?? (t as any);
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Item[]>([]);
@@ -26,6 +31,7 @@ export default function SearchScreen() {
   const [searched, setSearched] = useState(false);
 
   const handleSearch = useCallback(async () => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     const trimmed = query.trim();
     if (!trimmed) {
       setResults([]);
@@ -47,9 +53,10 @@ export default function SearchScreen() {
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [query, settings.hapticsEnabled]);
 
   const handleItemPress = (item: Item) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push({
       pathname: "/item/[id]",
       params: {
@@ -63,7 +70,7 @@ export default function SearchScreen() {
   };
 
   const renderItem = ({ item }: { item: Item }) => (
-    <Pressable
+    <AnimatedPressable
       style={[styles.itemRow, { backgroundColor: colors?.card ?? "#fff", borderColor: colors?.border ?? "#e0e0e0" }]}
       onPress={() => handleItemPress(item)}
     >
@@ -78,11 +85,12 @@ export default function SearchScreen() {
       <Text style={[styles.itemPrice, { color: colors?.text ?? "#000" }]}>
         €{item.price}
       </Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors?.background ?? "#f5f7fa" }]}>
+      <Animated.View style={[{ flex: 1 }, settings.animationsEnabled ? animatedStyle : undefined]}>
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <Text style={[styles.title, { color: colors?.text ?? "#0b1f3a" }]}>
@@ -115,7 +123,7 @@ export default function SearchScreen() {
           onSubmitEditing={handleSearch}
           returnKeyType="search"
         />
-        <Pressable
+        <AnimatedPressable
           style={[styles.searchButton, { backgroundColor: colors?.accent ?? "#007AFF" }]}
           onPress={handleSearch}
           disabled={loading}
@@ -125,7 +133,7 @@ export default function SearchScreen() {
           ) : (
             <Text style={styles.searchButtonText}>Search</Text>
           )}
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       {error && (
@@ -145,6 +153,7 @@ export default function SearchScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
+      </Animated.View>
     </SafeAreaView>
   );
 }

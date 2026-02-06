@@ -20,6 +20,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type DmThread, type DmRequest } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 
 // Fixed colors for specific UI elements
 const fixedColors = {
@@ -84,6 +86,7 @@ export default function InboxScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
   const [threads, setThreads] = useState<DmThread[]>([]);
   const [requests, setRequests] = useState<DmRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,7 +170,7 @@ export default function InboxScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
@@ -186,7 +189,7 @@ export default function InboxScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
@@ -204,7 +207,7 @@ export default function InboxScreen() {
           />
         }
       >
-        <Animated.View style={animatedStyle}>
+        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Requests Section - Highlighted with accent theme */}
         {requests.length > 0 && (
           <View style={styles.section}>
@@ -243,7 +246,7 @@ export default function InboxScreen() {
                 <View style={styles.requestActions}>
                   <AnimatedPressable
                     style={[styles.actionBtn, styles.acceptBtn, { backgroundColor: colors.accent }]}
-                    onPress={() => handleAcceptRequest(req.threadId)}
+                    onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleAcceptRequest(req.threadId); }}
                     disabled={processingRequestId === req.threadId}
                   >
                     {processingRequestId === req.threadId ? (
@@ -254,7 +257,7 @@ export default function InboxScreen() {
                   </AnimatedPressable>
                   <AnimatedPressable
                     style={[styles.actionBtn, styles.declineBtn]}
-                    onPress={() => handleDeclineRequest(req.threadId)}
+                    onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); handleDeclineRequest(req.threadId); }}
                     disabled={processingRequestId === req.threadId}
                   >
                     {processingRequestId === req.threadId ? (
@@ -280,7 +283,7 @@ export default function InboxScreen() {
                   styles.threadRow,
                   idx < threads.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
                 ]}
-                onPress={() => handleThreadPress(thread)}
+                onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleThreadPress(thread); }}
               >
                 <UserAvatar
                   name={thread.otherUserName}

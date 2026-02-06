@@ -4,9 +4,11 @@
  */
 
 import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 type Props = {
   /** Icon size, defaults to 22 */
@@ -17,8 +19,11 @@ export const ThemeToggleButton: React.FC<Props> = ({ size = 22 }) => {
   const { isDark, toggleTheme, colors } = useAppTheme();
 
   return (
-    <TouchableOpacity
-      onPress={toggleTheme}
+    <AnimatedPressable
+      onPress={() => {
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+        toggleTheme();
+      }}
       style={styles.container}
       accessibilityRole="button"
       accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -28,7 +33,7 @@ export const ThemeToggleButton: React.FC<Props> = ({ size = 22 }) => {
         size={size}
         color={colors.text}
       />
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 

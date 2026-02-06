@@ -1,6 +1,7 @@
 import React from 'react';
-import { Text, View, TouchableOpacity, ViewStyle } from 'react-native';
+import { Text, View, ViewStyle } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
 
 export type ThemedItemCardProps = {
   title: string;
@@ -146,12 +147,11 @@ export const ThemedItemCard: React.FC<ThemedItemCardProps> = ({
 
   if (onPress) {
     return (
-      <TouchableOpacity
-        activeOpacity={0.85}
+      <AnimatedPressable
         onPress={onPress}
       >
         {content}
-      </TouchableOpacity>
+      </AnimatedPressable>
     );
   }
 

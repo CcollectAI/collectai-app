@@ -10,13 +10,13 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
   ScrollView,
   TextInput,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -24,11 +24,16 @@ import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-ca
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { dataProvider, type BarcodeLookupResult } from '@/data';
+import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 
 type ScanState = 'scanning' | 'loading' | 'result' | 'error';
 
 export default function BarcodeScanScreen() {
   const { colors } = useAppTheme();
+  const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettings();
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanState, setScanState] = useState<ScanState>('scanning');
@@ -160,15 +165,15 @@ export default function BarcodeScanScreen() {
           <Text style={[styles.permissionText, { color: colors.muted }]}>
             We need camera access to scan barcodes and ISBN codes.
           </Text>
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.permissionButton, { backgroundColor: colors.accent }]}
-            onPress={requestPermission}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); requestPermission(); }}
           >
             <Text style={[styles.permissionButtonText, { color: colors.card }]}>Grant Permission</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          </AnimatedPressable>
+          <AnimatedPressable style={styles.backButton} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}>
             <Text style={[styles.backButtonText, { color: colors.muted }]}>Go Back</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       </SafeAreaView>
     );
@@ -178,9 +183,9 @@ export default function BarcodeScanScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       {/* Header - compact, no extra padding */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBack}>
+        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.headerBack}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        </AnimatedPressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Scan Barcode</Text>
         <View style={styles.headerRight} />
       </View>
@@ -247,12 +252,12 @@ export default function BarcodeScanScreen() {
                   accessibilityLabel="ISBN input field"
                   accessibilityHint="Enter 10 or 13 digit ISBN number"
                 />
-                <TouchableOpacity
+                <AnimatedPressable
                   style={[styles.manualSubmitButton, {
                     backgroundColor: colors.accent,
                     opacity: manualIsbn.length < 10 || isManualSubmitting ? 0.5 : 1
                   }]}
-                  onPress={handleManualSubmit}
+                  onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleManualSubmit(); }}
                   disabled={manualIsbn.length < 10 || isManualSubmitting}
                   accessibilityLabel="Look up ISBN"
                   accessibilityRole="button"
@@ -262,7 +267,7 @@ export default function BarcodeScanScreen() {
                   ) : (
                     <Ionicons name="search" size={20} color={colors.card} />
                   )}
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
             </View>
           </ScrollView>
@@ -336,30 +341,30 @@ export default function BarcodeScanScreen() {
 
           {/* Action buttons - Reordered: Scan another left, Save right */}
           <View style={styles.actionButtonsRow}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
-              onPress={handleRescan}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleRescan(); }}
             >
               <Ionicons name="scan-outline" size={18} color={colors.text} />
               <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Scan Another</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.primaryButtonHalf, { backgroundColor: colors.accent }]}
-              onPress={handleSaveToCollection}
+              onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSaveToCollection(); }}
             >
               <Ionicons name="add-circle-outline" size={18} color={colors.card} />
               <Text style={[styles.primaryButtonText, { color: colors.card }]}>Save</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.watchlistButton, { borderColor: colors.border }]}
-            onPress={handleAddToWatchlist}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleAddToWatchlist(); }}
           >
             <Ionicons name="eye-outline" size={18} color={colors.muted} />
             <Text style={[styles.watchlistButtonText, { color: colors.muted }]}>Add to Watchlist Instead</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </ScrollView>
       )}
 
@@ -376,19 +381,19 @@ export default function BarcodeScanScreen() {
             </Text>
           )}
           <View style={styles.errorActions}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.primaryButton, { backgroundColor: colors.accent }]}
-              onPress={handleRescan}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleRescan(); }}
             >
               <Ionicons name="scan-outline" size={20} color={colors.card} />
               <Text style={[styles.primaryButtonText, { color: colors.card }]}>Try Again</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </AnimatedPressable>
+            <AnimatedPressable
               style={[styles.secondaryButton, { borderColor: colors.border }]}
-              onPress={() => router.push('/add-manual')}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/add-manual'); }}
             >
               <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Add Manually</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </View>
       )}

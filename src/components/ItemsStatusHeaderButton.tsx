@@ -1,13 +1,20 @@
 import React from 'react';
-import { TouchableOpacity, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 
 export const ItemsStatusHeaderButton: React.FC = () => {
   const router = useRouter();
+  const { settings } = useSettings();
 
   return (
-    <TouchableOpacity
-      onPress={() => router.push('/items-status')}
+    <AnimatedPressable
+      onPress={() => {
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+        router.push('/items-status');
+      }}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -35,7 +42,7 @@ export const ItemsStatusHeaderButton: React.FC = () => {
       >
         Status & leaderboard
       </Text>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 

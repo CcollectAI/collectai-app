@@ -1,57 +1,12 @@
 /**
  * usePortfolioInsights Hook
- * Fetches portfolio insights from the backend RPC.
+ * Computes portfolio insights from real item data and portfolio summary.
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { PortfolioInsights } from '@/types/insights';
+import { PortfolioInsights, ItemMover } from '@/types/insights';
 import { featureFlags } from '@/config/featureFlags';
-
-// Mock data for development
-const MOCK_INSIGHTS: PortfolioInsights = {
-  totalValue: 12450,
-  valueChange: 820,
-  percentChange: 7.05,
-  period: '7d',
-  topGainers: [
-    {
-      itemId: '1',
-      name: 'Charizard GX (Alt Art)',
-      category: 'Pokémon',
-      currentValue: 450,
-      previousValue: 380,
-      absoluteChange: 70,
-      percentChange: 18.4,
-    },
-    {
-      itemId: '2',
-      name: 'Funko Pop – Luffy (NYCC)',
-      category: 'Funko Pop',
-      currentValue: 210,
-      previousValue: 190,
-      absoluteChange: 20,
-      percentChange: 10.5,
-    },
-  ],
-  topLosers: [
-    {
-      itemId: '3',
-      name: 'Hot Wheels RLC Skyline',
-      category: 'Diecast',
-      currentValue: 140,
-      previousValue: 160,
-      absoluteChange: -20,
-      percentChange: -12.5,
-    },
-  ],
-  watchlistSummary: {
-    totalItems: 8,
-    belowTargetCount: 3,
-    priceDropCount: 2,
-    newListingsCount: 1,
-  },
-  calculatedAt: new Date().toISOString(),
-};
+import { dataProvider } from '@/data';
 
 export type UsePortfolioInsightsOptions = {
   period?: '7d' | '30d' | '90d';
@@ -82,13 +37,63 @@ export function usePortfolioInsights(
     setError(null);
 
     try {
-      // TODO: Replace with actual RPC call
-      // const { data, error } = await supabase.rpc('rpc_get_portfolio_insights_v1', { period });
+      const [items, summary] = await Promise.all([
+        dataProvider.listItems(),
+        dataProvider.getPortfolioSummary(),
+      ]);
 
-      // Simulate API delay
-      await new Promise((r) => setTimeout(r, 500));
+      const totalValue = items.reduce((sum, item) => sum + (item.price || 0), 0);
+      const percentChange = summary.deltaPct ?? 0;
+      const valueChange = totalValue > 0 ? totalValue * (percentChange / 100) : 0;
 
-      setInsights({ ...MOCK_INSIGHTS, period });
+      // Compute movers from items that have priceBand data
+      const movers: ItemMover[] = items
+        .filter((item) => item.priceBand && item.priceBand.q50 > 0)
+        .map((item) => {
+          const median = item.priceBand!.q50;
+          const absoluteChange = item.price - median;
+          const pctChange = median > 0 ? (absoluteChange / median) * 100 : 0;
+          return {
+            itemId: item.id,
+            name: item.name,
+            category: item.category,
+            currentValue: item.price,
+            previousValue: median,
+            absoluteChange,
+            percentChange: Math.round(pctChange * 100) / 100,
+            imageUrl: item.imageUrl,
+          };
+        });
+
+      const topGainers = movers
+        .filter((m) => m.absoluteChange > 0)
+        .sort((a, b) => b.percentChange - a.percentChange)
+        .slice(0, 5);
+
+      const topLosers = movers
+        .filter((m) => m.absoluteChange < 0)
+        .sort((a, b) => a.percentChange - b.percentChange)
+        .slice(0, 5);
+
+      const priceDropCount = topLosers.length;
+
+      setInsights({
+        totalValue,
+        valueChange: Math.round(valueChange * 100) / 100,
+        percentChange: Math.round(percentChange * 100) / 100,
+        period,
+        topGainers,
+        topLosers,
+        watchlistSummary: {
+          totalItems: items.length,
+          belowTargetCount: items.filter(
+            (i) => i.priceBand && i.price < i.priceBand.q10
+          ).length,
+          priceDropCount,
+          newListingsCount: 0,
+        },
+        calculatedAt: new Date().toISOString(),
+      });
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Failed to fetch insights'));
     } finally {
