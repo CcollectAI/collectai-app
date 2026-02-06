@@ -183,7 +183,7 @@ const FALLBACK_ITEMS: ItemRow[] = [
   { id: "2", name: "Gunpla MG Barbatos (built)", category: "Gunpla", value: 1820, changePct: -0.011 },
   { id: "3", name: "Funko: Vaulted Grail", category: "Funko", value: 1250, changePct: 0.007 },
   { id: "4", name: "Warhammer Army Lot", category: "Warhammer", value: 980, changePct: 0.014 },
-  { id: "5", name: "Designer Toy (limited run)", category: "Art Toys", value: 760, changePct: -0.006 },
+  { id: "5", name: "Designer Toy (limited run)", category: "Designer & Art Toys", value: 760, changePct: -0.006 },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

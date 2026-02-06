@@ -1,12 +1,49 @@
 from __future__ import annotations
 
+import logging
+from datetime import datetime, timedelta
 from typing import List
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/insights", tags=["insights"])
+logger = logging.getLogger(__name__)
 
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _get_db_pool():
+    """Get database pool if available."""
+    try:
+        from app.db import get_pool
+        return get_pool()
+    except Exception as e:
+        logger.debug(f"DB pool not available: {e}")
+        return None
+
+
+def _get_current_user_id() -> str:
+    """
+    TODO: Replace with real auth (e.g. JWT / Supabase session).
+    For now returns a placeholder user-id so queries are scoped.
+    """
+    return "demo-user"
+
+
+# ---------------------------------------------------------------------------
+# Thresholds for insight generation
+# ---------------------------------------------------------------------------
+
+_OVEREXPOSURE_THRESHOLD = 0.40   # category > 40% of portfolio -> flagged
+_HIGH_RISK_THRESHOLD = 0.50      # category > 50% -> "high" risk
+
+
+# ---------------------------------------------------------------------------
+# Response models (unchanged)
+# ---------------------------------------------------------------------------
 
 class CategoryExposure(BaseModel):
     category: str
@@ -44,47 +81,271 @@ class HomeWidgetResponse(BaseModel):
     )
 
 
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
+
 @router.get("/personalized", response_model=PersonalizedInsightsResponse)
 async def get_personalized_insights() -> PersonalizedInsightsResponse:
-    overexposed = [
-        CategoryExposure(category="gunpla", share_pct=0.45, risk_level="medium"),
-        CategoryExposure(category="mtg", share_pct=0.35, risk_level="high"),
-    ]
-    diversification = [
-        "Consider adding more Warhammer minis to reduce TCG concentration.",
-        "Your Gunpla exposure is high vs. Funko and Designer Toys.",
-    ]
-    rare_alerts = [
-        RareSetAlert(
-            category="gunpla",
-            item_name="Wave 1 RX-78 (Launch)",
-            note="Likely to retire in the next cycle.",
+    """
+    Personalized insights based on the user's actual portfolio composition:
+    - Over-exposed categories (concentration risk)
+    - Diversification suggestions
+    - Rare-set / retirement alerts   (TODO: needs catalogue metadata)
+    - Trending items from market data
+    """
+    pool = _get_db_pool()
+    if not pool:
+        return PersonalizedInsightsResponse(
+            overexposed_categories=[],
+            diversification_suggestions=[],
+            rare_set_alerts=[],
+            trending_items=[],
         )
-    ]
-    trending = [
-        TrendingItem(
-            category="designer-toys",
-            item_name="Labubu-style collab drop",
-            change_pct=0.32,
+
+    user_id = _get_current_user_id()
+
+    try:
+        async with pool.acquire() as conn:
+            # ---- Category exposure from user's items ----
+            cat_rows = await conn.fetch(
+                """
+                SELECT
+                    category,
+                    COUNT(*)::float AS cnt,
+                    SUM(COUNT(*)) OVER ()::float AS total
+                FROM items
+                WHERE user_id = $1
+                GROUP BY category
+                ORDER BY cnt DESC
+                """,
+                user_id,
+            )
+
+            overexposed: List[CategoryExposure] = []
+            category_shares: dict[str, float] = {}
+            for row in cat_rows:
+                share = row["cnt"] / row["total"] if row["total"] else 0.0
+                category_shares[row["category"]] = share
+                if share >= _OVEREXPOSURE_THRESHOLD:
+                    if share >= _HIGH_RISK_THRESHOLD:
+                        risk = "high"
+                    else:
+                        risk = "medium"
+                    overexposed.append(
+                        CategoryExposure(
+                            category=row["category"],
+                            share_pct=round(share, 4),
+                            risk_level=risk,
+                        )
+                    )
+
+            # ---- Diversification suggestions ----
+            suggestions: List[str] = []
+            if len(category_shares) == 1:
+                only_cat = list(category_shares.keys())[0]
+                suggestions.append(
+                    f"Your entire portfolio is in '{only_cat}'. "
+                    "Consider diversifying into other categories to reduce risk."
+                )
+            elif overexposed:
+                top_cat = overexposed[0].category
+                suggestions.append(
+                    f"Your '{top_cat}' exposure is {overexposed[0].share_pct:.0%} of "
+                    "your portfolio. Adding items from other categories would reduce "
+                    "concentration risk."
+                )
+            if len(category_shares) >= 2:
+                sorted_cats = sorted(category_shares.items(), key=lambda x: x[1])
+                smallest_cat = sorted_cats[0][0]
+                suggestions.append(
+                    f"Consider growing your '{smallest_cat}' collection -- it is "
+                    "currently your smallest category."
+                )
+
+            # ---- Trending items from market_hits (positive price delta, last 14 days) ----
+            cutoff = datetime.utcnow() - timedelta(days=14)
+            trend_rows = await conn.fetch(
+                """
+                WITH first_last AS (
+                    SELECT
+                        normalized_key,
+                        COALESCE(MAX(title), normalized_key) AS item_name,
+                        (ARRAY_AGG(price ORDER BY created_at ASC))[1]  AS first_price,
+                        (ARRAY_AGG(price ORDER BY created_at DESC))[1] AS last_price
+                    FROM market_hits
+                    WHERE created_at >= $1
+                      AND price IS NOT NULL
+                    GROUP BY normalized_key
+                    HAVING COUNT(*) >= 2
+                )
+                SELECT
+                    normalized_key,
+                    item_name,
+                    first_price,
+                    last_price,
+                    CASE WHEN first_price > 0
+                         THEN (last_price - first_price) / first_price
+                         ELSE 0
+                    END AS change_pct
+                FROM first_last
+                WHERE last_price > first_price
+                ORDER BY change_pct DESC
+                LIMIT 5
+                """,
+                cutoff,
+            )
+            trending = [
+                TrendingItem(
+                    category=_extract_category_from_key(row["normalized_key"]),
+                    item_name=row["item_name"] or row["normalized_key"],
+                    change_pct=round(float(row["change_pct"] or 0), 4),
+                )
+                for row in trend_rows
+            ]
+
+            # ---- Rare-set alerts ----
+            # TODO: requires catalogue / retirement metadata; return empty for now
+            rare_alerts: List[RareSetAlert] = []
+
+            return PersonalizedInsightsResponse(
+                overexposed_categories=overexposed,
+                diversification_suggestions=suggestions,
+                rare_set_alerts=rare_alerts,
+                trending_items=trending,
+            )
+
+    except Exception as e:
+        logger.error(f"[insights/personalized] DB error: {e}")
+        return PersonalizedInsightsResponse(
+            overexposed_categories=[],
+            diversification_suggestions=[],
+            rare_set_alerts=[],
+            trending_items=[],
         )
-    ]
-    return PersonalizedInsightsResponse(
-        overexposed_categories=overexposed,
-        diversification_suggestions=diversification,
-        rare_set_alerts=rare_alerts,
-        trending_items=trending,
-    )
 
 
 @router.get("/home-widget", response_model=HomeWidgetResponse)
 async def get_home_widget() -> HomeWidgetResponse:
     """
     'What's it worth today?' home widget snapshot.
+    Computes real collection value and daily change from price_predictions.
     """
-    return HomeWidgetResponse(
-        collection_value=12450.0,
-        today_change=+145.0,
-        biggest_mover_name="Demo Charizard",
-        biggest_mover_change=+12.5,
-        currency="EUR",
-    )
+    pool = _get_db_pool()
+    if not pool:
+        return HomeWidgetResponse(
+            collection_value=0.0,
+            today_change=0.0,
+            biggest_mover_name="--",
+            biggest_mover_change=0.0,
+            currency="EUR",
+        )
+
+    user_id = _get_current_user_id()
+
+    try:
+        async with pool.acquire() as conn:
+            # Latest predicted value for each item -> total collection value
+            value_row = await conn.fetchrow(
+                """
+                SELECT COALESCE(SUM(pp.q50), 0) AS total_value
+                FROM (
+                    SELECT DISTINCT ON (pp.item_id) pp.q50
+                    FROM price_predictions pp
+                    JOIN items i ON i.id = pp.item_id
+                    WHERE i.user_id = $1
+                    ORDER BY pp.item_id, pp.asof DESC
+                ) pp
+                """,
+                user_id,
+            )
+            collection_value = float(value_row["total_value"]) if value_row else 0.0
+
+            # Yesterday's total for change calculation
+            yesterday = datetime.utcnow() - timedelta(days=1)
+            yesterday_row = await conn.fetchrow(
+                """
+                SELECT COALESCE(SUM(pp.q50), 0) AS total_value
+                FROM (
+                    SELECT DISTINCT ON (pp.item_id) pp.q50
+                    FROM price_predictions pp
+                    JOIN items i ON i.id = pp.item_id
+                    WHERE i.user_id = $1
+                      AND pp.asof <= $2
+                    ORDER BY pp.item_id, pp.asof DESC
+                ) pp
+                """,
+                user_id,
+                yesterday,
+            )
+            yesterday_value = float(yesterday_row["total_value"]) if yesterday_row else 0.0
+            today_change = collection_value - yesterday_value
+
+            # Biggest mover: item with largest absolute q50 change today vs yesterday
+            mover_row = await conn.fetchrow(
+                """
+                WITH latest AS (
+                    SELECT DISTINCT ON (pp.item_id)
+                        pp.item_id,
+                        pp.q50 AS latest_q50
+                    FROM price_predictions pp
+                    JOIN items i ON i.id = pp.item_id
+                    WHERE i.user_id = $1
+                    ORDER BY pp.item_id, pp.asof DESC
+                ),
+                prev AS (
+                    SELECT DISTINCT ON (pp.item_id)
+                        pp.item_id,
+                        pp.q50 AS prev_q50
+                    FROM price_predictions pp
+                    JOIN items i ON i.id = pp.item_id
+                    WHERE i.user_id = $1
+                      AND pp.asof <= $2
+                    ORDER BY pp.item_id, pp.asof DESC
+                )
+                SELECT
+                    COALESCE(i.title, i.normalized_key, i.id::text) AS item_name,
+                    (l.latest_q50 - COALESCE(p.prev_q50, l.latest_q50)) AS change
+                FROM latest l
+                JOIN items i ON i.id = l.item_id
+                LEFT JOIN prev p ON p.item_id = l.item_id
+                ORDER BY ABS(l.latest_q50 - COALESCE(p.prev_q50, l.latest_q50)) DESC
+                LIMIT 1
+                """,
+                user_id,
+                yesterday,
+            )
+            biggest_name = mover_row["item_name"] if mover_row else "--"
+            biggest_change = float(mover_row["change"]) if mover_row else 0.0
+
+            return HomeWidgetResponse(
+                collection_value=round(collection_value, 2),
+                today_change=round(today_change, 2),
+                biggest_mover_name=biggest_name,
+                biggest_mover_change=round(biggest_change, 2),
+                currency="EUR",
+            )
+
+    except Exception as e:
+        logger.error(f"[insights/home-widget] DB error: {e}")
+        return HomeWidgetResponse(
+            collection_value=0.0,
+            today_change=0.0,
+            biggest_mover_name="--",
+            biggest_mover_change=0.0,
+            currency="EUR",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+def _extract_category_from_key(normalized_key: str) -> str:
+    """
+    normalized_key is typically formatted as 'category|...' (e.g. 'lego|10297|...').
+    Extract the leading category segment.
+    """
+    if normalized_key and "|" in normalized_key:
+        return normalized_key.split("|", 1)[0]
+    return normalized_key or "unknown"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Alert, Text, StyleSheet, Switch, ActivityIndicator } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import ActionTile from '@/components/ActionTile';
 import { AccessibilitySettings } from '@/components/AccessibilitySettings';
 import { AlertSettings } from '@/components/AlertSettings';

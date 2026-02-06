@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import { decode as atob } from 'base-64';
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 function b64ToBytes(b64:string){
   const bin = atob(b64); const out = new Uint8Array(bin.length);

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, Alert, ScrollView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 type TabKey = "MY" | "DROPS";
 

@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
 type ItemRow = {
   id: string;

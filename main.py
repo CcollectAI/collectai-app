@@ -38,7 +38,7 @@ from app.routes.marketplace import router as marketplace_router
 
 app = FastAPI(title="Collectors Merge Service", version=os.getenv("SERVICE_VERSION","0.1.0"))
 API_SHARED_SECRET = os.environ.get("API_SHARED_SECRET")
-SIGNALS_BASE_URL = "http://127.0.0.1:8082"
+SIGNALS_BASE_URL = os.getenv("SIGNALS_BASE_URL", "http://127.0.0.1:8082")
 
 
 async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
@@ -172,8 +172,16 @@ app.include_router(screenshot_intel_router.router)
 app.include_router(feedback_router.router)
 
 from app.features import items_export_router
+from app.features import photo_upload_router
+from app.features import events_router
 
 app.include_router(items_export_router.router)
+
+# User photo upload router
+app.include_router(photo_upload_router.router)
+
+# Community events router
+app.include_router(events_router.router)
 
 class QuickScanRequest(BaseModel):
     mode: Optional[str] = None
@@ -232,11 +240,23 @@ async def quickscan_proxy(payload: QuickScanRequest):
     # Map category codes (mtg/funko/etc.) to friendly labels
     raw_cat = (attrs.category or "").lower()
     friendly_category_map = {
-        "mtg": "Magic: The Gathering",
-        "lorcana": "Disney Lorcana",
-        "fab": "Flesh and Blood",
-        "funko": "Funko Pop",
-        "diecast": "Diecast",
+        "pokemon": "Pokémon", "mtg": "Magic: The Gathering", "yugioh": "Yu-Gi-Oh!",
+        "lorcana": "Disney Lorcana", "funko": "Funko Pop", "lego": "LEGO",
+        "warhammer": "Warhammer", "retro_games": "Retro Games", "manga": "Manga",
+        "sportscards": "Sports Cards", "designer_toys": "Designer & Art Toys",
+        "anime_figures": "Anime Figures", "hot_toys": "Hot Toys",
+        "gunpla": "Gunpla & Model Kits", "scale_models": "Scale Models",
+        "keycaps": "Artisan Keycaps", "bluray_steelbook": "Blu-ray Steelbooks",
+        "anime_bluray": "Anime Blu-ray", "nintendo_merch": "Nintendo Merch",
+        "one_piece": "One Piece", "retro_pokemon": "Retro Pokémon",
+        "diecast": "Diecast & Hot Wheels", "kpop_merch": "K-pop Merch",
+        "taylor_swift": "Taylor Swift", "pop_fandom": "Pop Fandom",
+        "kpop_lightsticks": "K-pop Lightsticks", "anime_soundtrack": "Anime Soundtrack",
+        "anime_ost_vinyl": "Anime OST Vinyl", "disney": "Disney",
+        "theme_park": "Theme Park", "ghibli": "Studio Ghibli",
+        "bandai_premium": "Bandai Premium", "jp_magazine": "JP Magazines",
+        "jp_event": "JP Event Exclusives", "vtuber": "VTuber",
+        "loungefly": "Loungefly",
     }
     friendly_category = friendly_category_map.get(raw_cat, attrs.category)
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, Alert, ActivityIndicator } from "react-native";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "../../lib/supabase";
 import { router } from "expo-router";
 import Input from '@/components/ui/Input";
 import Button from '@/components/ui/Button";

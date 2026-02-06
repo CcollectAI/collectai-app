@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 type Offer = { id: string|number; listing_id?: string|number|null; price?: number|null; created_at?: string|null; from_user?: string|null };
 

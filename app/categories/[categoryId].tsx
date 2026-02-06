@@ -123,6 +123,14 @@ export default function CategoryStoreScreen() {
       .finally(() => setLoading(false));
   }, [categoryId]);
 
+  // Load follow state
+  useEffect(() => {
+    if (!categoryId) return;
+    dataProvider.isFollowingCategory(categoryId)
+      .then(setFollowing)
+      .catch(() => {}); // Non-critical
+  }, [categoryId]);
+
   // Auto-rotate spotlight carousel
   useEffect(() => {
     if (!data || data.spotlightSlides.length <= 1) return;

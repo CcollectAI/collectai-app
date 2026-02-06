@@ -9,7 +9,7 @@
  * or hooks. No global state here.
  */
 
-import supabase from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 
 export type WatchlistPriority = 'high' | 'medium' | 'low';
 

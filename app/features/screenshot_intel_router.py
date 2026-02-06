@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 from typing import List, Optional
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/screenshot-intel", tags=["screenshot-intel"])
+logger = logging.getLogger(__name__)
 
 
 class ScreenshotIntelRequest(BaseModel):
@@ -32,21 +35,27 @@ class ScreenshotIntelResponse(BaseModel):
 @router.post("/analyze", response_model=ScreenshotIntelResponse)
 async def analyze_screenshot(payload: ScreenshotIntelRequest) -> ScreenshotIntelResponse:
     """
-    Proof-of-concept screenshot extraction.
+    Screenshot extraction endpoint (proof-of-concept).
 
-    Later this will use multimodal OCR + scraping.
-    For now, returns one deterministic item per screenshot.
+    Real implementation requires multimodal OCR + marketplace scraping which
+    is not yet wired up.  Returns a 501 status with an empty items list so
+    the frontend can distinguish between 'no results found' (200) and
+    'feature not implemented yet' (501).
     """
-    platform = payload.source_hint or "ebay"
-    item = ScreenshotItemIntel(
-        item_name="Demo Grail from screenshot",
-        estimated_value=120.0,
-        currency="EUR",
-        source_url="https://example.com/demo-listing",
-        can_add_to_watchlist=True,
-        listing_platform=platform,
+    logger.info(
+        f"[screenshot-intel/analyze] Received request for screenshot_id={payload.screenshot_id}, "
+        f"source_hint={payload.source_hint} -- OCR pipeline not yet implemented"
     )
-    return ScreenshotIntelResponse(
-        screenshot_id=payload.screenshot_id,
-        items=[item],
+
+    # Return 501 Not Implemented with an honest empty result
+    return JSONResponse(
+        status_code=501,
+        content={
+            "screenshot_id": payload.screenshot_id,
+            "items": [],
+            "detail": (
+                "Screenshot analysis is not yet implemented. "
+                "Multimodal OCR and marketplace scraping are planned for a future release."
+            ),
+        },
     )

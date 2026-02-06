@@ -14,20 +14,31 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 
 type SaveState = "idle" | "saving" | "success" | "error";
 
-// Common categories for quick selection
+// Pull from single source of truth — show top categories as chips, rest in "Other"
+import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+
+const ICON_MAP: Record<string, string> = {
+  pokemon: 'flash-outline', mtg: 'sparkles-outline', yugioh: 'layers-outline',
+  lorcana: 'star-outline', funko: 'cube-outline', lego: 'grid-outline',
+  warhammer: 'skull-outline', gunpla: 'rocket-outline', retro_games: 'game-controller-outline',
+  manga: 'book-outline', sportscards: 'football-outline', designer_toys: 'color-palette-outline',
+  anime_figures: 'person-outline', hot_toys: 'flame-outline', diecast: 'car-outline',
+  kpop_merch: 'musical-notes-outline', taylor_swift: 'musical-note-outline',
+  disney: 'heart-outline', keycaps: 'keypad-outline', one_piece: 'boat-outline',
+};
+
 const CATEGORY_CHIPS = [
-  { label: "Pokémon", icon: "flash-outline" },
-  { label: "Funko Pop", icon: "cube-outline" },
-  { label: "LEGO", icon: "grid-outline" },
-  { label: "Warhammer", icon: "skull-outline" },
-  { label: "Gunpla", icon: "rocket-outline" },
-  { label: "Other", icon: "ellipsis-horizontal" },
+  ...ALL_CATS.map((c) => ({
+    label: c.name,
+    icon: ICON_MAP[c.slug] ?? 'pricetag-outline',
+  })),
+  { label: 'Other', icon: 'ellipsis-horizontal' },
 ];
 
 // Common condition grades for quick selection

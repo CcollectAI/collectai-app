@@ -10,6 +10,17 @@
       "Effect":"Allow",
       "Action":["s3:PutObject","s3:PutObjectAcl"],
       "Resource":["arn:aws:s3:::collectai-models/*"]
+    },
+    {
+      "Effect":"Allow",
+      "Action":["s3:GetObject","s3:PutObject","s3:HeadObject"],
+      "Resource":["arn:aws:s3:::collectai-artifacts/catalog-images/*"]
+    },
+    {
+      "Effect":"Allow",
+      "Action":["s3:ListBucket"],
+      "Resource":["arn:aws:s3:::collectai-artifacts"],
+      "Condition":{"StringLike":{"s3:prefix":["catalog-images/*"]}}
     }
   ]
 }

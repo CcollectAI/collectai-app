@@ -16,7 +16,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 # Default allows localhost/dev origins; production should set explicit list
 CORS_ORIGINS = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080,exp://localhost:*"
+    "http://localhost:3000,http://localhost:8080,http://localhost:8081,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:8081,exp://localhost:*,exp://192.168.*:*,exp://10.*:*,https://app.collectai.io"
 ).split(",")
 
 # Trusted hosts - set in production to your actual domains

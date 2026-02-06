@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import { colors, spacing } from '../theme/tokens';
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import { uploadListingImage } from '../utils/uploadListingImage';
 
 export default function NewListing({ route, navigation }: any){

@@ -23,18 +23,23 @@ import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { CountdownBadge } from '@/components/EventCountdown';
+import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 import calendar, { parseEventDate, getCountdown } from '@/lib/calendar';
 
 const kindLabel: Record<CollectorsEvent['kind'], string> = {
   collection_drop: 'Collection drop',
   meetup: 'Meetup',
   stream: 'Twitch stream',
+  convention: 'Convention',
+  release: 'New release',
 };
 
 const kindIcon: Record<CollectorsEvent['kind'], keyof typeof Ionicons.glyphMap> = {
   collection_drop: 'cube-outline',
   meetup: 'people-outline',
   stream: 'logo-twitch',
+  convention: 'map-outline',
+  release: 'rocket-outline',
 };
 
 export default function EventsScreen() {
@@ -44,6 +49,8 @@ export default function EventsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [events, setEvents] = useState<CollectorsEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [followedCategories, setFollowedCategories] = useState<string[]>([]);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const loadEvents = useCallback(async () => {
     try {
@@ -60,6 +67,10 @@ export default function EventsScreen() {
     loadEvents();
   }, [loadEvents]);
 
+  useEffect(() => {
+    dataProvider.listFollowedCategories().then(setFollowedCategories).catch(() => {});
+  }, []);
+
   const now = new Date();
   const upcomingEvents = events.filter((e) => {
     const eventDate = parseEventDate(e.date, e.time);
@@ -69,6 +80,13 @@ export default function EventsScreen() {
     const eventDate = parseEventDate(e.date, e.time);
     return eventDate < now;
   });
+
+  const filteredUpcoming = activeFilter
+    ? upcomingEvents.filter((e) => e.categoryId === activeFilter)
+    : upcomingEvents;
+  const filteredPast = activeFilter
+    ? pastEvents.filter((e) => e.categoryId === activeFilter)
+    : pastEvents;
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -174,6 +192,11 @@ export default function EventsScreen() {
             >
               {metaLine}
             </Text>
+            {event.attendeeCount != null && event.attendeeCount > 0 && (
+              <Text style={[styles.attendeeCountText, { color: colors.muted }]}>
+                {event.attendeeCount} attending
+              </Text>
+            )}
             {event.location && (
               <Text
                 style={[styles.eventLocation, { color: colors.muted }]}
@@ -214,6 +237,27 @@ export default function EventsScreen() {
                 Set Reminder
               </Text>
             </AnimatedPressable>
+
+            <AnimatedPressable
+              style={[styles.actionBtn, { borderColor: event.isAttending ? colors.accent : colors.border }]}
+              onPress={(e) => {
+                e.stopPropagation();
+                if (event.isAttending) {
+                  dataProvider.unrsvpEvent(event.id).then(loadEvents);
+                } else {
+                  dataProvider.rsvpEvent(event.id).then(loadEvents);
+                }
+              }}
+            >
+              <Ionicons
+                name={event.isAttending ? 'checkmark-circle' : 'person-add-outline'}
+                size={16}
+                color={event.isAttending ? colors.accent : colors.text}
+              />
+              <Text style={[styles.actionBtnText, { color: event.isAttending ? colors.accent : colors.text }]}>
+                {event.isAttending ? 'Going' : 'Attend'}
+              </Text>
+            </AnimatedPressable>
           </View>
         )}
       </AnimatedPressable>
@@ -252,23 +296,60 @@ export default function EventsScreen() {
             </View>
           </View>
 
+          {/* Category Filter Chips */}
+          {followedCategories.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+              <AnimatedPressable
+                onPress={() => setActiveFilter(null)}
+                style={[
+                  styles.filterChip,
+                  { borderColor: !activeFilter ? colors.accent : colors.border },
+                  !activeFilter && { backgroundColor: colors.accent + '15' },
+                ]}
+              >
+                <Text style={[styles.filterChipText, { color: !activeFilter ? colors.accent : colors.muted }]}>
+                  All
+                </Text>
+              </AnimatedPressable>
+              {followedCategories.map((catId) => {
+                const cat = ALL_CATS.find((c) => c.slug === catId);
+                const isActive = activeFilter === catId;
+                return (
+                  <AnimatedPressable
+                    key={catId}
+                    onPress={() => setActiveFilter(isActive ? null : catId)}
+                    style={[
+                      styles.filterChip,
+                      { borderColor: isActive ? colors.accent : colors.border },
+                      isActive && { backgroundColor: colors.accent + '15' },
+                    ]}
+                  >
+                    <Text style={[styles.filterChipText, { color: isActive ? colors.accent : colors.muted }]}>
+                      {cat?.name || catId}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </ScrollView>
+          )}
+
           {/* Upcoming Events */}
-          {upcomingEvents.length > 0 && (
+          {filteredUpcoming.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Upcoming ({upcomingEvents.length})
+                Upcoming ({filteredUpcoming.length})
               </Text>
-              {upcomingEvents.map((event) => renderEventCard(event, true))}
+              {filteredUpcoming.map((event) => renderEventCard(event, true))}
             </View>
           )}
 
           {/* Past Events */}
-          {pastEvents.length > 0 && (
+          {filteredPast.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.muted }]}>
-                Past Events ({pastEvents.length})
+                Past Events ({filteredPast.length})
               </Text>
-              {pastEvents.map((event) => renderEventCard(event, false))}
+              {filteredPast.map((event) => renderEventCard(event, false))}
             </View>
           )}
 
@@ -289,6 +370,14 @@ export default function EventsScreen() {
           <View style={{ height: 24 }} />
         </Animated.View>
       </ScrollView>
+
+      {/* Create Event FAB */}
+      <AnimatedPressable
+        onPress={() => router.push('/create-event')}
+        style={[styles.fab, { backgroundColor: colors.accent }]}
+      >
+        <Ionicons name="add" size={28} color="#ffffff" />
+      </AnimatedPressable>
     </SafeAreaView>
   );
 }
@@ -396,6 +485,39 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  filterRow: {
+    marginBottom: 12,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  attendeeCountText: {
+    fontSize: 11,
+    marginTop: 2,
   },
   emptyContainer: {
     alignItems: 'center',

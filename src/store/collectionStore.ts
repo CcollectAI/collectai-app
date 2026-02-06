@@ -1,4 +1,4 @@
-import supabase from "../lib/supabaseClient";
+import { supabase } from "../lib/supabase";
 import { storeLogger } from "@/lib/logger";
 
 export type CollectionItem = {

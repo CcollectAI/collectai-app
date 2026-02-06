@@ -33,7 +33,7 @@ import type {
   MarketSearchResult,
 } from './types';
 import { getCategoryById } from './categories';
-import { EVENTS } from './events';
+import type { CollectorsEvent, CreateEventInput } from './events';
 import { supabase } from '../lib/supabase';
 import { collectorsApi } from '../api/collectorsApi';
 
@@ -422,16 +422,22 @@ export class SupabaseDataProvider implements DataProvider {
     // Fetch items matching category from Supabase
     const items = await this.searchItems(category.name.split(' ')[0]);
 
-    // Filter events by categoryId (from static data for now)
-    const upcomingEvents = EVENTS
-      .filter((e) => e.categoryId === categoryId)
-      .map((e) => ({
-        id: e.id,
-        title: e.title,
-        kind: e.kind,
-        date: e.date,
-        time: e.time,
-      }));
+    // Fetch upcoming events for this category from Supabase
+    const { data: eventsData } = await supabase
+      .from('v_events_with_attendees_v1')
+      .select('id, title, kind, date, time')
+      .eq('category_id', categoryId)
+      .gte('date', new Date().toISOString().split('T')[0])
+      .order('date', { ascending: true })
+      .limit(5);
+
+    const upcomingEvents = (eventsData ?? []).map((e: any) => ({
+      id: e.id,
+      title: e.title,
+      kind: e.kind,
+      date: e.date,
+      time: e.time,
+    }));
 
     // Return minimal data — spotlight slides and friends empty for real mode
     // These would come from dedicated tables in a full implementation
@@ -1064,20 +1070,195 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // Category Following
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async followCategory(categoryId: string): Promise<void> {
+    const { error } = await supabase.rpc('rpc_follow_category_v1', {
+      p_category_id: categoryId,
+    });
+    if (error) {
+      console.error('[SupabaseDataProvider] followCategory error:', error);
+      throw new Error(error.message || 'Failed to follow category');
+    }
+  }
+
+  async unfollowCategory(categoryId: string): Promise<void> {
+    const { error } = await supabase.rpc('rpc_unfollow_category_v1', {
+      p_category_id: categoryId,
+    });
+    if (error) {
+      console.error('[SupabaseDataProvider] unfollowCategory error:', error);
+      throw new Error(error.message || 'Failed to unfollow category');
+    }
+  }
+
+  async listFollowedCategories(): Promise<string[]> {
+    const { data, error } = await supabase.rpc('rpc_list_followed_categories_v1');
+    if (error) {
+      console.warn('[SupabaseDataProvider] listFollowedCategories error:', error);
+      return [];
+    }
+    return (data ?? []).map((row: any) => row.category_id);
+  }
+
+  async isFollowingCategory(categoryId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('rpc_is_following_category_v1', {
+      p_category_id: categoryId,
+    });
+    if (error) {
+      console.warn('[SupabaseDataProvider] isFollowingCategory error:', error);
+      return false;
+    }
+    return data === true;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // Events
   // ─────────────────────────────────────────────────────────────────────────────
 
-  async getEventById(eventId: string): Promise<import('./events').CollectorsEvent | null> {
-    // For now, use static events data (same as mock)
-    // Future: query events table from Supabase
-    const event = EVENTS.find((e) => e.id === eventId);
-    return event ?? null;
+  async getEventById(eventId: string): Promise<CollectorsEvent | null> {
+    const { data, error } = await supabase
+      .from('v_events_with_attendees_v1')
+      .select('*')
+      .eq('id', eventId)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.warn('[SupabaseDataProvider] getEventById error:', error);
+      return null;
+    }
+
+    return this.mapEventRow(data);
   }
 
-  async listEvents(): Promise<import('./events').CollectorsEvent[]> {
-    // For now, use static events data (same as mock)
-    // Future: query events table from Supabase
-    return [...EVENTS].sort((a, b) => a.date.localeCompare(b.date));
+  async listEvents(): Promise<CollectorsEvent[]> {
+    // Use personalized RPC that filters to user's categories + followed categories
+    const { data, error } = await supabase.rpc('rpc_list_personalized_events_v1');
+
+    if (error) {
+      console.warn('[SupabaseDataProvider] listEvents error:', error);
+      return [];
+    }
+
+    return (data ?? []).map((row: any) => this.mapEventRow(row));
+  }
+
+  async createEvent(input: CreateEventInput): Promise<CollectorsEvent> {
+    const { data, error } = await supabase.rpc('rpc_create_event_v1', {
+      p_title: input.title,
+      p_kind: input.kind,
+      p_category_id: input.categoryId ?? null,
+      p_date: input.date,
+      p_time: input.time ?? null,
+      p_end_date: input.endDate ?? null,
+      p_location: input.location ?? null,
+      p_online_url: input.onlineUrl ?? null,
+      p_description: input.description,
+      p_format: input.format ?? null,
+      p_is_public: input.isPublic ?? null,
+      p_latitude: input.latitude ?? null,
+      p_longitude: input.longitude ?? null,
+    });
+
+    if (error) {
+      console.error('[SupabaseDataProvider] createEvent error:', error);
+      throw new Error(error.message || 'Failed to create event');
+    }
+
+    return this.mapEventRow(data);
+  }
+
+  async rsvpEvent(eventId: string, status: string = 'going'): Promise<void> {
+    const { error } = await supabase.rpc('rpc_rsvp_event_v1', {
+      p_event_id: eventId,
+      p_status: status,
+    });
+
+    if (error) {
+      console.error('[SupabaseDataProvider] rsvpEvent error:', error);
+      throw new Error(error.message || 'Failed to RSVP');
+    }
+  }
+
+  async unrsvpEvent(eventId: string): Promise<void> {
+    const { error } = await supabase.rpc('rpc_unrsvp_event_v1', {
+      p_event_id: eventId,
+    });
+
+    if (error) {
+      console.error('[SupabaseDataProvider] unrsvpEvent error:', error);
+      throw new Error(error.message || 'Failed to un-RSVP');
+    }
+  }
+
+  async shareEventViaDm(eventId: string, recipientUserId: string): Promise<void> {
+    // 1. Fetch event details
+    const event = await this.getEventById(eventId);
+    if (!event) {
+      throw new Error(`Event not found: ${eventId}`);
+    }
+
+    // 2. Find or create a DM thread with the recipient
+    const dmStatus = await this.getDmStatus(recipientUserId);
+    let threadId: string;
+
+    if (dmStatus === 'accepted') {
+      // Find the existing accepted thread
+      const { data } = await supabase
+        .from('v_chat_inbox_v1')
+        .select('id')
+        .eq('other_user_id', recipientUserId)
+        .eq('status', 'accepted')
+        .maybeSingle();
+      threadId = (data as any)?.id;
+      if (!threadId) {
+        throw new Error('Could not find existing DM thread');
+      }
+    } else if (dmStatus === 'none') {
+      // Create a new DM request (thread) with the recipient
+      threadId = await this.requestDm(recipientUserId);
+    } else {
+      throw new Error(`Cannot share event: DM status with user is "${dmStatus}"`);
+    }
+
+    // 3. Build the share message
+    const message =
+      `\u{1F3AB} Check out this event: ${event.title}\n` +
+      `\u{1F4C5} ${event.date}${event.time ? ' ' + event.time : ''}\n` +
+      `\u{1F449} collectai://events/${eventId}`;
+
+    // 4. Send the message
+    await this.sendMessage(threadId, message);
+  }
+
+  // Helper to map DB row to CollectorsEvent
+  private mapEventRow(row: Record<string, any>): CollectorsEvent {
+    return {
+      id: row.id,
+      title: row.title,
+      kind: row.kind,
+      date: row.date,
+      time: row.time ?? undefined,
+      endDate: row.end_date ?? undefined,
+      location: row.location ?? undefined,
+      onlineUrl: row.online_url ?? undefined,
+      description: row.description ?? '',
+      categoryId: row.category_id ?? undefined,
+      hostUserId: row.created_by ?? undefined,
+      attendeeIds: [],
+      attendeeCount: row.attendee_count ?? 0,
+      isAttending: row.is_attending ?? false,
+      myRsvpStatus: row.my_rsvp_status ?? undefined,
+      source: row.source ?? undefined,
+      sourceUrl: row.source_url ?? undefined,
+      imageUrl: row.image_url ?? undefined,
+      createdBy: row.created_by ?? undefined,
+      format: row.format ?? undefined,
+      isPublic: row.is_public ?? undefined,
+      latitude: row.latitude ?? undefined,
+      longitude: row.longitude ?? undefined,
+    };
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

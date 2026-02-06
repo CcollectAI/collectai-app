@@ -122,8 +122,8 @@ export const USER_PROFILES: UserProfile[] = [
         totalEstimatedValueEur: 15400,
       },
       {
-        id: "fab",
-        name: "Flesh and Blood",
+        id: "yugioh",
+        name: "Yu-Gi-Oh!",
         itemCount: 50,
         totalEstimatedValueEur: 3000,
       },

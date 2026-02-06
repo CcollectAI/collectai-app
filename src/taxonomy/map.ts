@@ -91,7 +91,7 @@ export function mapToTaxonomy(input: MappingInput): MappingResult {
   }
 
   // Step 4: Special handling for artist collections (before generic keywords)
-  // Artist collection tags should take precedence over generic categories like vinyl_records
+  // Artist collection tags should take precedence over generic keyword matches
   if (collections.length > 0) {
     const collectionResult = mapByCollectionTags(collections, text);
     if (collectionResult) {
@@ -266,73 +266,92 @@ function mapWarhammerItem(text: string): Omit<MappingResult, 'collections' | 'ta
 }
 
 function mapByCollectionTags(collections: string[], text: string): Omit<MappingResult, 'collections' | 'taxonomyVersion'> | null {
-  // K-pop collections -> music_memorabilia by default
+  // K-pop collections → kpop_merch or kpop_lightsticks
   const kpopTags = ['bts', 'blackpink', 'stray_kids', 'seventeen'];
   if (collections.some((c) => kpopTags.includes(c))) {
-    // Try to determine subtype
-    if (hasAnyKeyword(text, ['photocard', 'pc', 'photo card'])) {
-      return {
-        categoryId: 'music_memorabilia',
-        subtypeId: 'music_photocards',
-        confidence: 0.8,
-        rationale: `K-pop collection detected with photocard keywords → music_photocards`,
-      };
-    }
-    if (hasAnyKeyword(text, ['album', 'cd', 'vinyl'])) {
-      return {
-        categoryId: 'music_memorabilia',
-        subtypeId: 'music_albums',
-        confidence: 0.8,
-        rationale: `K-pop collection detected with album keywords → music_albums`,
-      };
-    }
     if (hasAnyKeyword(text, ['lightstick', 'light stick', 'army bomb'])) {
       return {
-        categoryId: 'music_memorabilia',
-        subtypeId: 'music_lightsticks',
+        categoryId: 'kpop_lightsticks',
+        subtypeId: 'kpop_lightsticks_official',
         confidence: 0.85,
-        rationale: `K-pop collection detected with lightstick keywords → music_lightsticks`,
+        rationale: `K-pop collection detected with lightstick keywords → kpop_lightsticks`,
+      };
+    }
+    if (hasAnyKeyword(text, ['photocard', 'pc', 'photo card'])) {
+      return {
+        categoryId: 'kpop_merch',
+        subtypeId: 'kpop_photocards',
+        confidence: 0.8,
+        rationale: `K-pop collection detected with photocard keywords → kpop_photocards`,
+      };
+    }
+    if (hasAnyKeyword(text, ['album', 'cd'])) {
+      return {
+        categoryId: 'kpop_merch',
+        subtypeId: 'kpop_albums',
+        confidence: 0.8,
+        rationale: `K-pop collection detected with album keywords → kpop_albums`,
       };
     }
     return {
-      categoryId: 'music_memorabilia',
-      subtypeId: 'music_merch',
+      categoryId: 'kpop_merch',
+      subtypeId: 'kpop_general',
       confidence: 0.6,
-      rationale: `K-pop collection detected, defaulting to general merchandise`,
+      rationale: `K-pop collection detected, defaulting to general K-pop merch`,
     };
   }
 
-  // Taylor Swift special handling - crosses categories
+  // Taylor Swift → taylor_swift category
   if (collections.includes('taylor_swift')) {
-    if (hasAnyKeyword(text, ['hoodie', 'shirt', 'tee', 'sweater', 'jacket'])) {
+    if (hasAnyKeyword(text, ['vinyl', 'record', 'lp', 'pressing'])) {
       return {
-        categoryId: 'apparel',
-        subtypeId: 'apparel_tops',
+        categoryId: 'taylor_swift',
+        subtypeId: 'taylor_swift_vinyl',
+        confidence: 0.85,
+        rationale: `Taylor Swift collection with vinyl keywords → taylor_swift_vinyl`,
+      };
+    }
+    if (hasAnyKeyword(text, ['cd', 'album', 'signed'])) {
+      return {
+        categoryId: 'taylor_swift',
+        subtypeId: 'taylor_swift_albums',
+        confidence: 0.85,
+        rationale: `Taylor Swift collection with album keywords → taylor_swift_albums`,
+      };
+    }
+    if (hasAnyKeyword(text, ['tour', 'eras', 'merch', 'hoodie', 'shirt'])) {
+      return {
+        categoryId: 'taylor_swift',
+        subtypeId: 'taylor_swift_tour',
         confidence: 0.8,
-        rationale: `Taylor Swift collection with apparel keywords → apparel_tops`,
-      };
-    }
-    if (hasAnyKeyword(text, ['guitar', 'signed guitar'])) {
-      return {
-        categoryId: 'instruments',
-        subtypeId: hasAnyKeyword(text, ['signed', 'autograph']) ? 'instruments_signed' : 'instruments_guitars',
-        confidence: 0.85,
-        rationale: `Taylor Swift collection with guitar keywords → instruments`,
-      };
-    }
-    if (hasAnyKeyword(text, ['cd', 'vinyl', 'album', 'record'])) {
-      return {
-        categoryId: 'music_memorabilia',
-        subtypeId: 'music_albums',
-        confidence: 0.85,
-        rationale: `Taylor Swift collection with album keywords → music_albums`,
+        rationale: `Taylor Swift collection with tour/merch keywords → taylor_swift_tour`,
       };
     }
     return {
-      categoryId: 'music_memorabilia',
-      subtypeId: 'music_merch',
+      categoryId: 'taylor_swift',
+      subtypeId: 'taylor_swift_general',
       confidence: 0.6,
-      rationale: `Taylor Swift collection detected, defaulting to music merchandise`,
+      rationale: `Taylor Swift collection detected, defaulting to general`,
+    };
+  }
+
+  // Pop artist collections → pop_fandom
+  if (collections.some((c) => ['ariana_grande', 'olivia_rodrigo', 'harry_styles', 'billie_eilish'].includes(c))) {
+    return {
+      categoryId: 'pop_fandom',
+      subtypeId: 'pop_fandom_merch',
+      confidence: 0.7,
+      rationale: `Pop artist collection detected → pop_fandom`,
+    };
+  }
+
+  // Disney collections → disney
+  if (collections.includes('disney')) {
+    return {
+      categoryId: 'disney',
+      subtypeId: 'disney_general',
+      confidence: 0.7,
+      rationale: `Disney collection detected → disney`,
     };
   }
 

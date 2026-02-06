@@ -3,7 +3,7 @@ import { View, Image, Alert, ScrollView, Platform, KeyboardAvoidingView } from '
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import { colors, spacing } from '../theme/tokens';
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import { uploadImageToBucket } from '../utils/uploadImage';
 
 export default function EditItem({ navigation, route }: any){

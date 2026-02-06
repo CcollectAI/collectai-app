@@ -63,6 +63,16 @@ async def close_pool(app: Optional[FastAPI] = None) -> None:
     _pool = None
 
 
+def get_pool() -> Optional[asyncpg.Pool]:
+    """
+    Return the connection pool (or None if not initialized / DB disabled).
+    Used by model_loader.py to query model_registry.
+    """
+    if isinstance(_pool, _DummyPool):
+        return None
+    return _pool
+
+
 @asynccontextmanager
 async def get_conn() -> AsyncGenerator[asyncpg.Connection, None]:
     """

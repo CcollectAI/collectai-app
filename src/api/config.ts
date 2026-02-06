@@ -1,3 +1,4 @@
-// API base URL for backend running on EC2.
-// IMPORTANT: replace with your EC2 public IP or DNS.
-export const API_BASE = "http://3.75.182.41:8000"; 
+// API base URL — reads from env, falls back to EC2 for production.
+// In development, set EXPO_PUBLIC_API_BASE_URL in .env
+export const API_BASE =
+  process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://3.75.182.41:8000';

@@ -76,76 +76,75 @@ describe('Taxonomy Mapper', () => {
     });
   });
 
-  describe('Taylor Swift cross-category items', () => {
-    it('should classify Taylor Swift hoodie as apparel with collection tag', () => {
+  describe('Taylor Swift items', () => {
+    it('should classify Taylor Swift hoodie as taylor_swift tour merch', () => {
       const result = mapToTaxonomy({
         title: 'Taylor Swift Eras Tour Hoodie Size M Black',
       });
 
-      expect(result.categoryId).toBe('apparel');
-      expect(result.subtypeId).toBe('apparel_tops');
+      expect(result.categoryId).toBe('taylor_swift');
+      expect(result.subtypeId).toBe('taylor_swift_tour');
       expect(result.collections).toContain('taylor_swift');
     });
 
-    it('should classify Taylor Swift signed CD as music_albums', () => {
+    it('should classify Taylor Swift signed CD as taylor_swift albums', () => {
       const result = mapToTaxonomy({
         title: 'Taylor Swift 1989 Signed CD Autographed',
       });
 
-      expect(result.categoryId).toBe('music_memorabilia');
-      expect(result.subtypeId).toBe('music_albums');
+      expect(result.categoryId).toBe('taylor_swift');
+      expect(result.subtypeId).toBe('taylor_swift_albums');
       expect(result.collections).toContain('taylor_swift');
     });
 
-    it('should classify Taylor Swift vinyl as music_albums', () => {
+    it('should classify Taylor Swift vinyl as taylor_swift vinyl', () => {
       const result = mapToTaxonomy({
         title: 'Taylor Swift Folklore Vinyl LP Limited Edition',
       });
 
-      expect(result.categoryId).toBe('music_memorabilia');
-      expect(result.subtypeId).toBe('music_albums');
+      expect(result.categoryId).toBe('taylor_swift');
+      expect(result.subtypeId).toBe('taylor_swift_vinyl');
       expect(result.collections).toContain('taylor_swift');
     });
 
-    it('should classify Taylor Swift signed guitar as instruments', () => {
+    it('should classify Taylor Swift signed guitar as taylor_swift general', () => {
       const result = mapToTaxonomy({
         title: 'Taylor Swift Signed Acoustic Guitar Autographed',
       });
 
-      expect(result.categoryId).toBe('instruments');
-      expect(result.subtypeId).toBe('instruments_signed');
+      expect(result.categoryId).toBe('taylor_swift');
       expect(result.collections).toContain('taylor_swift');
     });
   });
 
   describe('BTS K-pop items', () => {
-    it('should classify BTS photocard as music_photocards', () => {
+    it('should classify BTS photocard as kpop_merch', () => {
       const result = mapToTaxonomy({
         title: 'BTS Jimin Photocard POB Proof Album',
       });
 
-      expect(result.categoryId).toBe('music_memorabilia');
-      expect(result.subtypeId).toBe('music_photocards');
+      expect(result.categoryId).toBe('kpop_merch');
+      expect(result.subtypeId).toBe('kpop_photocards');
       expect(result.collections).toContain('bts');
     });
 
-    it('should classify BTS album as music_albums', () => {
+    it('should classify BTS album as kpop_merch', () => {
       const result = mapToTaxonomy({
         title: 'BTS Map of the Soul 7 Album CD Version 2',
       });
 
-      expect(result.categoryId).toBe('music_memorabilia');
-      expect(result.subtypeId).toBe('music_albums');
+      expect(result.categoryId).toBe('kpop_merch');
+      expect(result.subtypeId).toBe('kpop_albums');
       expect(result.collections).toContain('bts');
     });
 
-    it('should classify BTS lightstick as music_lightsticks', () => {
+    it('should classify BTS lightstick as kpop_lightsticks', () => {
       const result = mapToTaxonomy({
         title: 'BTS Official Army Bomb Ver 4 Lightstick',
       });
 
-      expect(result.categoryId).toBe('music_memorabilia');
-      expect(result.subtypeId).toBe('music_lightsticks');
+      expect(result.categoryId).toBe('kpop_lightsticks');
+      expect(result.subtypeId).toBe('kpop_lightsticks_official');
       expect(result.collections).toContain('bts');
     });
   });

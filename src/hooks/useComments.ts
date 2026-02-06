@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 type Comment = { id: string|number; post_id?: string|number|null; body?: string|null; created_at?: string|null; author_id?: string|null };
 

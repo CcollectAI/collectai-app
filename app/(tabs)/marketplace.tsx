@@ -267,6 +267,9 @@ const SearchScreen: React.FC = () => {
                   { id: 'lorcana', name: 'Disney Lorcana', meta: 'Hot right now' },
                   { id: 'pokemon', name: 'Pokémon Cards', meta: 'Always popular' },
                   { id: 'lego', name: 'LEGO', meta: 'Growing fast' },
+                  { id: 'one_piece', name: 'One Piece', meta: 'Rising demand' },
+                  { id: 'kpop_merch', name: 'K-pop Merch', meta: 'Surging' },
+                  { id: 'gunpla', name: 'Gunpla & Model Kits', meta: 'Steady growth' },
                 ].map((cat, index) => (
                   <AnimatedPressable
                     key={cat.id}

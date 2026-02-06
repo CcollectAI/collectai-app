@@ -3,7 +3,7 @@ import { View, Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import { colors } from '../theme/tokens';
 import { uploadFeedImage } from '../utils/uploadFeedImage';
 

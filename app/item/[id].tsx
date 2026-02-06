@@ -19,6 +19,8 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { useSession } from "@/hooks/useSession";
 import { dataProvider } from "@/data";
 import { PriceConfidenceGauge } from "@/components/PriceConfidenceGauge";
 import { PriceCard } from "@/components/PriceCard";
@@ -58,21 +60,13 @@ const formatNumber = (value: string | number | undefined | null): string => {
 // Predefined options for dropdown menus
 const COLLECTION_OPTIONS = ['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rocket', 'Gym Heroes', 'Neo Genesis', 'Other'];
 const CONDITION_OPTIONS = ['Not set', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor', 'PSA 10', 'PSA 9', 'PSA 8', 'PSA 7', 'BGS 10', 'BGS 9.5', 'Raw'];
-const CATEGORY_OPTIONS = ['Pokémon', 'Yu-Gi-Oh!', 'Sports Cards', 'Funko Pop', 'LEGO', 'Hot Wheels', 'Warhammer', 'Gunpla', 'Vinyl Records', 'Sneakers', 'Other'];
+// Pull from single source of truth — all 36 categories
+import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 
-// Map display names to category IDs used in navigation (must match src/data/categories.ts)
+const CATEGORY_OPTIONS = [...ALL_CATS.map((c) => c.name), 'Other'];
 const CATEGORY_ID_MAP: Record<string, string> = {
-  'Pokémon': 'pokemon',
-  'Yu-Gi-Oh!': 'lorcana', // Placeholder - using closest TCG category
-  'Sports Cards': 'fab', // Placeholder
-  'Funko Pop': 'funko',
-  'LEGO': 'lego',
-  'Hot Wheels': 'diecast',
-  'Warhammer': 'warhammer',
-  'Gunpla': 'gunpla',
-  'Vinyl Records': 'designer_toys', // Placeholder
-  'Sneakers': 'designer_toys', // Placeholder
-  'Other': 'designer_toys',
+  ...CATEGORY_NAME_TO_SLUG,
+  'Other': 'unknown',
 };
 
 export default function ItemDetailScreen() {
@@ -112,6 +106,51 @@ export default function ItemDetailScreen() {
   } = params;
 
   const isDraft = id === 'draft' || draft === '1';
+
+  // Photo upload
+  const { user } = useSession();
+  const {
+    pickAndUpload,
+    uploading: photoUploading,
+    error: photoError,
+    photoUrl: userPhotoUrl,
+  } = usePhotoUpload(id || "draft");
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
+
+  // Resolved display image: user photo > imageUri (catalog) > placeholder
+  const displayImageUri = userPhoto || userPhotoUrl || imageUri;
+
+  const handlePhotoUpload = async (source: "camera" | "gallery") => {
+    const url = await pickAndUpload(source);
+    if (url) {
+      setUserPhoto(url);
+    }
+  };
+
+  const showPhotoSourcePicker = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", "Take Photo", "Choose from Library"],
+          cancelButtonIndex: 0,
+          title: "Add Your Photo",
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) handlePhotoUpload("camera");
+          if (buttonIndex === 2) handlePhotoUpload("gallery");
+        },
+      );
+    } else {
+      Alert.alert("Add Your Photo", "Choose a source", [
+        { text: "Take Photo", onPress: () => handlePhotoUpload("camera") },
+        {
+          text: "Choose from Library",
+          onPress: () => handlePhotoUpload("gallery"),
+        },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
+  };
 
   const [notes, setNotes] = useState(initialNotes || "");
   const [savingNotes, setSavingNotes] = useState(false);
@@ -372,11 +411,11 @@ export default function ItemDetailScreen() {
           )}
           scrollEventThrottle={16}
         >
-          {/* Image — use captured imageUri in draft mode, placeholder otherwise */}
+          {/* Image — priority: user photo > catalog imageUri > placeholder */}
           <View style={[styles.imageWrapper, { borderColor: theme.border }]}>
-            {imageUri ? (
+            {displayImageUri ? (
               <Image
-                source={{ uri: imageUri }}
+                source={{ uri: displayImageUri }}
                 style={styles.image}
                 resizeMode="cover"
               />
@@ -386,6 +425,40 @@ export default function ItemDetailScreen() {
                 style={styles.image}
                 resizeMode="cover"
               />
+            )}
+
+            {/* Photo upload overlay button */}
+            <Pressable
+              onPress={showPhotoSourcePicker}
+              disabled={photoUploading}
+              style={[
+                styles.photoUploadOverlay,
+                !displayImageUri && styles.photoUploadOverlayEmpty,
+              ]}
+            >
+              {photoUploading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons
+                    name={displayImageUri ? "camera" : "camera-outline"}
+                    size={displayImageUri ? 18 : 28}
+                    color="#FFFFFF"
+                  />
+                  {!displayImageUri && (
+                    <Text style={styles.photoUploadOverlayText}>
+                      Add your photo
+                    </Text>
+                  )}
+                </>
+              )}
+            </Pressable>
+
+            {/* Photo error */}
+            {photoError && (
+              <View style={styles.photoErrorBanner}>
+                <Text style={styles.photoErrorText}>{photoError}</Text>
+              </View>
             )}
           </View>
 
@@ -893,6 +966,47 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+  },
+  photoUploadOverlay: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoUploadOverlayEmpty: {
+    bottom: 0,
+    right: 0,
+    left: 0,
+    top: 0,
+    width: "100%",
+    height: "100%",
+    borderRadius: 0,
+    backgroundColor: "rgba(0,0,0,0.15)",
+    gap: 8,
+  },
+  photoUploadOverlayText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  photoErrorBanner: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(220,38,38,0.85)",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  photoErrorText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    textAlign: "center",
   },
   card: {
     borderWidth: 1,

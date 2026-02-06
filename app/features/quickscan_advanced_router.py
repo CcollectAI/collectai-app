@@ -37,9 +37,19 @@ class QuickScanResult(BaseModel):
     prediction: QuickScanPrediction
 
 
+class QuickScanSingleRequest(BaseModel):
+    category: str = Field(..., description="Category slug (e.g. 'pokemon', 'funko')")
+    edition_guess: str | None = None
+    condition_guess: str | None = None
+    rarity_score: float | None = Field(None, description="0-1 rarity estimate")
+
+
 class BatchQuickScanRequest(BaseModel):
     image_ids: List[str] = Field(
         ..., description="Identifiers of uploaded images (S3 keys, etc.)"
+    )
+    category: str | None = Field(
+        None, description="Category slug; if omitted, auto-detect per image (not yet implemented)"
     )
 
 
@@ -169,46 +179,59 @@ def _edition_to_score(edition: str | None) -> float:
 
 
 @router.post("/single", response_model=QuickScanResult)
-async def quickscan_single_demo():
+async def quickscan_single(request: QuickScanSingleRequest | None = None):
     """
     Enriched QuickScan: edition, condition, rarity, q10/q50/q90 band.
 
-    Attempts to use real model if available, falls back to demo data.
+    Accepts category and optional attributes. Attempts real model first,
+    falls back to demo data if no model available.
     """
+    if request:
+        attrs = QuickScanAttributes(
+            category=request.category,
+            edition_guess=request.edition_guess,
+            condition_guess=request.condition_guess,
+            rarity_score=request.rarity_score,
+        )
+    else:
+        # Backwards-compatible: use demo attrs if no request body
+        attrs = DEMO_ATTRS
+
     # Try real model first
-    real_pred = await _get_real_prediction(DEMO_ATTRS.category, DEMO_ATTRS)
+    real_pred = await _get_real_prediction(attrs.category, attrs)
 
     if real_pred:
         return QuickScanResult(
             item_id=None,
-            attributes=DEMO_ATTRS,
+            attributes=attrs,
             prediction=real_pred,
         )
 
     # Fallback to demo
     return QuickScanResult(
         item_id=None,
-        attributes=DEMO_ATTRS,
+        attributes=attrs,
         prediction=DEMO_PREDICTION,
     )
 
 
 @router.post("/batch", response_model=BatchQuickScanResponse)
-async def quickscan_batch_demo(payload: BatchQuickScanRequest):
+async def quickscan_batch(payload: BatchQuickScanRequest):
     """
     Multi-item batch scanning (Advanced D).
-    Attempts real model, falls back to demo per image.
+
+    Pass category in the request body. If omitted, falls back to demo.
+    Attempts real model per image, falls back to demo prediction.
     """
     results: list[QuickScanResult] = []
+    category = payload.category or "funko"  # fallback for backwards compat
 
     for image_id in payload.image_ids:
-        # For batch, we'd normally extract category from image
-        # For now, use funko as demo category for batch
         attrs = QuickScanAttributes(
-            category="funko",
-            edition_guess="Convention Exclusive",
-            condition_guess="Boxed",
-            rarity_score=0.7,
+            category=category,
+            edition_guess=None,
+            condition_guess=None,
+            rarity_score=0.5,
         )
 
         # Try real model
@@ -224,15 +247,15 @@ async def quickscan_batch_demo(payload: BatchQuickScanRequest):
                 )
             )
         else:
-            # Fallback to demo
+            # Fallback to generic demo
             pred = QuickScanPrediction(
-                name=f"Demo Funko from {image_id}",
+                name=f"Detected item from {image_id}",
                 estimated_low=35.0,
                 estimated_mid=45.0,
                 estimated_high=60.0,
                 currency="EUR",
-                confidence=0.8,
-                explanation="Estimate based on recent Funko Pop market sales.",
+                confidence=0.5,
+                explanation=f"Estimate based on {category} market data.",
             )
             results.append(
                 QuickScanResult(

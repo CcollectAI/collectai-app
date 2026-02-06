@@ -31,7 +31,7 @@ import type {
   MarketSearchOptions,
   MarketSearchResult,
 } from './types';
-import type { CollectorsEvent } from './events';
+import type { CollectorsEvent, CreateEventInput } from './events';
 
 export interface DataProvider {
   /**
@@ -360,23 +360,92 @@ export interface DataProvider {
   ): Promise<Item>;
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Events
+  // Category Following
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Follow a category.
+   * Mock: adds to in-memory set.
+   * Real: calls rpc_follow_category_v1.
+   * @param categoryId - The category ID
+   */
+  followCategory(categoryId: string): Promise<void>;
+
+  /**
+   * Unfollow a category.
+   * Mock: removes from in-memory set.
+   * Real: calls rpc_unfollow_category_v1.
+   * @param categoryId - The category ID
+   */
+  unfollowCategory(categoryId: string): Promise<void>;
+
+  /**
+   * List all followed category IDs.
+   * Mock: returns from in-memory set.
+   * Real: calls rpc_list_followed_categories_v1.
+   */
+  listFollowedCategories(): Promise<string[]>;
+
+  /**
+   * Check if the current user follows a category.
+   * Mock: checks in-memory set.
+   * Real: calls rpc_is_following_category_v1.
+   * @param categoryId - The category ID
+   */
+  isFollowingCategory(categoryId: string): Promise<boolean>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Events (updated)
   // ─────────────────────────────────────────────────────────────────────────────
 
   /**
    * Get event by ID.
    * Mock: returns from static EVENTS array.
-   * Real: reads from events table.
+   * Real: reads from v_events_with_attendees_v1 view.
    * @param eventId - The event ID
    */
   getEventById(eventId: string): Promise<CollectorsEvent | null>;
 
   /**
-   * List all upcoming events.
-   * Mock: returns from static EVENTS array.
-   * Real: reads from events table filtered by date >= now.
+   * List upcoming events (personalized to user's categories).
+   * Mock: returns from static EVENTS array filtered by followed categories.
+   * Real: calls rpc_list_personalized_events_v1.
    */
   listEvents(): Promise<CollectorsEvent[]>;
+
+  /**
+   * Create a new event.
+   * Mock: appends to in-memory EVENTS array.
+   * Real: calls rpc_create_event_v1.
+   * @param input - Event data to create
+   */
+  createEvent(input: CreateEventInput): Promise<CollectorsEvent>;
+
+  /**
+   * RSVP to an event.
+   * Mock: tracks in-memory.
+   * Real: calls rpc_rsvp_event_v1.
+   * @param eventId - The event ID
+   * @param status - RSVP status ('going' | 'interested'), defaults to 'going'
+   */
+  rsvpEvent(eventId: string, status?: string): Promise<void>;
+
+  /**
+   * Remove RSVP from an event.
+   * Mock: removes from in-memory tracking.
+   * Real: calls rpc_unrsvp_event_v1.
+   * @param eventId - The event ID
+   */
+  unrsvpEvent(eventId: string): Promise<void>;
+
+  /**
+   * Share an event with another user via DM.
+   * Sends a formatted message with event details and a deep link.
+   * Creates or reuses an existing DM thread with the recipient.
+   * @param eventId - The event ID to share
+   * @param recipientUserId - The user ID of the recipient
+   */
+  shareEventViaDm(eventId: string, recipientUserId: string): Promise<void>;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Barcode / Market Data

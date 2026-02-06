@@ -1,20 +1,48 @@
 import type { CategoryId } from './categories';
 import type { UserId } from './users';
 
-export type EventKind = 'collection_drop' | 'meetup' | 'stream';
+export type EventKind = 'collection_drop' | 'meetup' | 'stream' | 'convention' | 'release';
 
 export type CollectorsEvent = {
   id: string;
   title: string;
   kind: EventKind;
-  date: string;      // ISO string, e.g. "2025-12-21"
-  time?: string;     // e.g. "19:30 CET"
-  location?: string; // for meetups
+  date: string;           // ISO date "2026-03-22"
+  time?: string;          // "19:30 CET"
+  endDate?: string;       // for multi-day events
+  location?: string;
   onlineUrl?: string;
   description: string;
-  categoryId?: CategoryId;
-  hostUserId?: UserId;
-  attendeeIds: UserId[]; // collectors who are attending / following
+  categoryId?: string;    // was CategoryId, keep as string for flexibility
+  hostUserId?: string;    // was UserId
+  attendeeIds: string[];  // kept for backwards compat with mock
+  attendeeCount?: number; // real count from DB
+  isAttending?: boolean;  // current user's attendance status
+  myRsvpStatus?: string;  // 'going' | 'interested' | null
+  source?: string;        // 'user' | 'admin' | 'scraper' | 'newsletter'
+  sourceUrl?: string;
+  imageUrl?: string;
+  createdBy?: string;
+  format?: 'in_person' | 'online' | 'hybrid';
+  isPublic?: boolean;
+  latitude?: number;
+  longitude?: number;
+};
+
+export type CreateEventInput = {
+  title: string;
+  kind: EventKind;
+  categoryId?: string;
+  date: string;
+  time?: string;
+  endDate?: string;
+  location?: string;
+  onlineUrl?: string;
+  description: string;
+  format?: 'in_person' | 'online' | 'hybrid';
+  isPublic?: boolean;
+  latitude?: number;
+  longitude?: number;
 };
 
 export const EVENTS: CollectorsEvent[] = [

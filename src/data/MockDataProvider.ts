@@ -34,7 +34,7 @@ import type {
   MarketHit,
 } from './types';
 import { getCategoryById, CATEGORIES, type Category } from './categories';
-import { EVENTS, type CollectorsEvent } from './events';
+import { EVENTS, type CollectorsEvent, type CreateEventInput } from './events';
 import {
   MOCK_ANALYTICS_SUMMARY,
   MOCK_TOP_MOVERS,
@@ -43,6 +43,12 @@ import {
 
 // In-memory store for created items (persists only during session)
 let mockCreatedItems: Item[] = [];
+
+// In-memory store for followed categories
+const mockFollowedCategories: Set<string> = new Set(['pokemon', 'warhammer', 'lego']);
+
+// In-memory store for event RSVP status
+const mockEventAttendees: Map<string, string> = new Map(); // eventId -> status
 
 // In-memory store for owned category items (persists only during session)
 const ownedCategoryItems: Set<string> = new Set();
@@ -1067,6 +1073,28 @@ export class MockDataProvider implements DataProvider {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // Category Following
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async followCategory(categoryId: string): Promise<void> {
+    mockFollowedCategories.add(categoryId);
+    console.log('[MockDataProvider] followCategory', { categoryId });
+  }
+
+  async unfollowCategory(categoryId: string): Promise<void> {
+    mockFollowedCategories.delete(categoryId);
+    console.log('[MockDataProvider] unfollowCategory', { categoryId });
+  }
+
+  async listFollowedCategories(): Promise<string[]> {
+    return Array.from(mockFollowedCategories);
+  }
+
+  async isFollowingCategory(categoryId: string): Promise<boolean> {
+    return mockFollowedCategories.has(categoryId);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // Events
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1076,8 +1104,60 @@ export class MockDataProvider implements DataProvider {
   }
 
   async listEvents(): Promise<CollectorsEvent[]> {
-    // Return all events sorted by date (ascending)
-    return [...EVENTS].sort((a, b) => a.date.localeCompare(b.date));
+    // Filter to followed categories (mock personalization)
+    const followed = mockFollowedCategories;
+    return [...EVENTS]
+      .filter((e) => !e.categoryId || followed.has(e.categoryId))
+      .map((e) => ({
+        ...e,
+        attendeeCount: e.attendeeIds?.length ?? 0,
+        isAttending: mockEventAttendees.has(e.id),
+        myRsvpStatus: mockEventAttendees.get(e.id),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  async createEvent(input: CreateEventInput): Promise<CollectorsEvent> {
+    const event: CollectorsEvent = {
+      id: `event-mock-${Date.now()}`,
+      title: input.title,
+      kind: input.kind,
+      date: input.date,
+      time: input.time,
+      endDate: input.endDate,
+      location: input.location,
+      onlineUrl: input.onlineUrl,
+      description: input.description,
+      categoryId: input.categoryId,
+      hostUserId: 'collector-aurora',
+      attendeeIds: ['collector-aurora'],
+      attendeeCount: 1,
+      isAttending: true,
+      myRsvpStatus: 'going',
+      source: 'user',
+      createdBy: 'collector-aurora',
+      format: input.format,
+      isPublic: input.isPublic,
+      latitude: input.latitude,
+      longitude: input.longitude,
+    };
+    EVENTS.push(event);
+    console.log('[MockDataProvider] createEvent', { id: event.id, title: event.title });
+    return event;
+  }
+
+  async rsvpEvent(eventId: string, status: string = 'going'): Promise<void> {
+    mockEventAttendees.set(eventId, status);
+    console.log('[MockDataProvider] rsvpEvent', { eventId, status });
+  }
+
+  async unrsvpEvent(eventId: string): Promise<void> {
+    mockEventAttendees.delete(eventId);
+    console.log('[MockDataProvider] unrsvpEvent', { eventId });
+  }
+
+  async shareEventViaDm(eventId: string, recipientUserId: string): Promise<void> {
+    console.log('[MockDataProvider] shareEventViaDm (no-op)', { eventId, recipientUserId });
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

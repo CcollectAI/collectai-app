@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 export type Valuation = { id:number; item_id:string; user_id:string; estimated_value:number; confidence:number; as_of:string; created_at:string; };
 

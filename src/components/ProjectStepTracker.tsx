@@ -15,7 +15,7 @@ import {
   UIManager,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as supabaseModule from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -41,27 +41,16 @@ type Props = {
   projectId?: string | null;
 };
 
-/**
- * Try to derive a usable Supabase client from whatever supabaseClient exports.
- * Works with:
- *  - export const supabase = createClient(...)
- *  - export default createClient(...)
- *  - module itself being the client (less likely)
- */
+/** Return the real Supabase client, or null when it's a mock without .from(). */
 function getSafeSupabase() {
   try {
-    const candidate =
-      (supabaseModule as any).supabase ||
-      (supabaseModule as any).default ||
-      (supabaseModule as any);
-
-    if (!candidate || typeof candidate.from !== "function") {
+    if (!supabase || typeof supabase.from !== "function") {
       console.warn(
         "[ProjectStepTracker] Supabase client not ready; running in local-only mode."
       );
       return null;
     }
-    return candidate;
+    return supabase;
   } catch {
     console.warn(
       "[ProjectStepTracker] Supabase client threw; running in local-only mode."

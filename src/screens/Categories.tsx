@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Pressable, ActivityIndicator, Alert } from "react-native";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import { router } from "expo-router";
 
 type Category = {

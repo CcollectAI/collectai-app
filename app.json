@@ -20,7 +20,7 @@
           "calendarPermission": "CollectAI needs access to your calendar to add collection events and drops."
         }
       ],
-expo-notifications
+"expo-notifications"
     ],
     "ios": {
       "infoPlist": {

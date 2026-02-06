@@ -25,16 +25,9 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import * as Haptics from 'expo-haptics';
 
-const CATEGORIES = [
-  'Pokémon',
-  'Magic: The Gathering',
-  'Disney Lorcana',
-  'Funko Pop',
-  'Diecast',
-  'LEGO',
-  'Warhammer',
-  'Other',
-];
+// Pull from single source of truth — all 36 categories + "Other"
+import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+const CATEGORIES = [...ALL_CATS.map((c) => c.name), 'Other'];
 
 function formatCurrency(value: number | null): string {
   if (value === null || value === undefined) return '—';

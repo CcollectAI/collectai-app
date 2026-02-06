@@ -3,7 +3,7 @@ import { View, Text, Image, ScrollView, Alert } from 'react-native';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import { colors, fonts, spacing } from '../theme/tokens';
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import useOffers from '../hooks/useOffers';
 
 export default function ListingDetail({ route }:any){

@@ -27,12 +27,16 @@ const kindLabel: Record<EventKind, string> = {
   collection_drop: 'Collection drop',
   meetup: 'Meetup',
   stream: 'Twitch stream',
+  convention: 'Convention',
+  release: 'New release',
 };
 
 const kindIcon: Record<EventKind, keyof typeof Ionicons.glyphMap> = {
   collection_drop: 'pricetag-outline',
   meetup: 'people-outline',
   stream: 'videocam-outline',
+  convention: 'map-outline',
+  release: 'rocket-outline',
 };
 
 const AvatarSmall: React.FC<{ name: string; color: string; textColor: string }> = ({ name, color, textColor }) => {
@@ -66,7 +70,7 @@ export default function EventDetailScreen() {
 
   const [alertsOn, setAlertsOn] = useState(false);
   const [followingStream, setFollowingStream] = useState(false);
-  const [going, setGoing] = useState(false);
+  const [rsvpStatus, setRsvpStatus] = useState<string | undefined>(undefined);
 
   // Load event data
   const loadEvent = useCallback(async () => {
@@ -96,6 +100,28 @@ export default function EventDetailScreen() {
         .finally(() => setHostProfileLoading(false));
     }
   }, [event?.hostUserId]);
+
+  // Update RSVP status when event loads
+  useEffect(() => {
+    if (event) {
+      setRsvpStatus(event.myRsvpStatus);
+    }
+  }, [event?.myRsvpStatus]);
+
+  const handleRsvp = async () => {
+    if (!event) return;
+    try {
+      if (rsvpStatus === 'going') {
+        await dataProvider.unrsvpEvent(event.id);
+        setRsvpStatus(undefined);
+      } else {
+        await dataProvider.rsvpEvent(event.id, 'going');
+        setRsvpStatus('going');
+      }
+    } catch (err) {
+      console.warn('[EventDetail] RSVP error:', err);
+    }
+  };
 
   const relatedCategory = useMemo(
     () => (event?.categoryId ? getCategoryById(event.categoryId) : undefined),
@@ -182,6 +208,16 @@ export default function EventDetailScreen() {
             {kindLabel[event.kind]}
           </Text>
         </View>
+
+        {/* Source badge for scraped events */}
+        {event.source && event.source !== 'user' && (
+          <View style={[styles.sourceBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Ionicons name="globe-outline" size={12} color={colors.muted} style={{ marginRight: 4 }} />
+            <Text style={[styles.sourceText, { color: colors.muted }]}>
+              {event.source === 'admin' ? 'Official' : event.source === 'newsletter' ? 'From newsletter' : 'Auto-discovered'}
+            </Text>
+          </View>
+        )}
 
         {/* Title & Date/Time */}
         <Text style={[styles.eventTitle, { color: colors.text }]}>
@@ -288,32 +324,34 @@ export default function EventDetailScreen() {
             </AnimatedPressable>
           )}
 
-          {isMeetup && (
-            <AnimatedPressable
-              onPress={() => {
-                setGoing(!going);
-                console.log('[EventDetail] toggle meetup going', event.id, !going);
-              }}
-              style={[
-                styles.actionBtn,
-                {
-                  backgroundColor: going ? `${colors.accent}15` : colors.card,
-                  borderColor: going ? colors.accent : colors.border,
-                },
-              ]}
-            >
-              <Ionicons
-                name={going ? 'checkmark' : 'walk-outline'}
-                size={16}
-                color={going ? colors.accent : colors.muted}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={[styles.actionBtnText, { color: going ? colors.accent : colors.muted }]}>
-                {going ? 'Going' : "I'm going"}
-              </Text>
-            </AnimatedPressable>
-          )}
+          <AnimatedPressable
+            onPress={handleRsvp}
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: rsvpStatus === 'going' ? `${colors.accent}15` : colors.card,
+                borderColor: rsvpStatus === 'going' ? colors.accent : colors.border,
+              },
+            ]}
+          >
+            <Ionicons
+              name={rsvpStatus === 'going' ? 'checkmark-circle' : 'person-add-outline'}
+              size={16}
+              color={rsvpStatus === 'going' ? colors.accent : colors.muted}
+              style={{ marginRight: 6 }}
+            />
+            <Text style={[styles.actionBtnText, { color: rsvpStatus === 'going' ? colors.accent : colors.muted }]}>
+              {rsvpStatus === 'going' ? 'Going' : 'Attend'}
+            </Text>
+          </AnimatedPressable>
         </View>
+
+        {/* Attendee count */}
+        {event.attendeeCount != null && event.attendeeCount > 0 && (
+          <Text style={[styles.attendeeCountText, { color: colors.muted }]}>
+            {event.attendeeCount} {event.attendeeCount === 1 ? 'collector' : 'collectors'} attending
+          </Text>
+        )}
 
         {/* Related category */}
         {relatedCategory && (
@@ -607,5 +645,23 @@ const styles = StyleSheet.create({
   attendeeCount: {
     fontSize: 12,
     marginTop: 4,
+  },
+  attendeeCountText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  sourceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  sourceText: {
+    fontSize: 11,
   },
 });

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
 type LoadState = "idle" | "loading" | "loaded" | "error";
 

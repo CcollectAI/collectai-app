@@ -16,6 +16,12 @@ async function post(path: string, body: any = {}) {
   return res.json();
 }
 
+async function del(path: string) {
+  const res = await fetch(`${API_BASE}${path}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`DELETE ${path} failed (${res.status})`);
+  return res.json();
+}
+
 export const collectorsApi = {
   // Watchlist
   fetchWatchlist: () => get("/watchlist/mine"),
@@ -63,4 +69,30 @@ export const collectorsApi = {
     min_price?: number;
     max_price?: number;
   }) => post("/market/search", { query, ...opts }),
+
+  // Photo upload
+  getPresignedUploadUrl: (itemId: string, contentType: string, userId: string) =>
+    post("/photos/presign-upload", {
+      item_id: itemId,
+      content_type: contentType,
+      user_id: userId,
+    }) as Promise<{
+      upload_url: string;
+      photo_key: string;
+      cdn_url: string;
+    }>,
+
+  deletePhoto: (photoKey: string, userId: string) =>
+    del(`/photos/${photoKey}?user_id=${encodeURIComponent(userId)}`),
+
+  listItemPhotos: (itemId: string, userId: string) =>
+    get(`/photos/list/${itemId}?user_id=${encodeURIComponent(userId)}`) as Promise<{
+      photos: Array<{
+        photo_key: string;
+        cdn_url: string;
+        size?: number;
+        last_modified?: string;
+      }>;
+      item_id: string;
+    }>,
 };

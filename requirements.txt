@@ -10,3 +10,13 @@ supabase
 supafunc
 imagehash
 pillow
+# ML
+numpy
+scikit-learn
+# S3
+boto3
+# testing
+pytest>=8.2
+pytest-asyncio>=0.23
+pytest-cov>=5
+starlette

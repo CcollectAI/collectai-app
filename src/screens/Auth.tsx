@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Alert } from 'react-native';
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import { colors } from '../theme/tokens';
