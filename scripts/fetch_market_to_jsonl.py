@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.providers.registry import providers_for_category
 
@@ -71,7 +71,7 @@ def main():
                     hits.extend(prov.search(p))
                 for row in emit_rows(cat, hits):
                     f.write(json.dumps(row) + "\n")
-    print(f"[ok] appended rows into {out} at {datetime.utcnow().isoformat()}Z")
+    print(f"[ok] appended rows into {out} at {datetime.now(timezone.utc).isoformat()}Z")
 
 
 if __name__ == "__main__":

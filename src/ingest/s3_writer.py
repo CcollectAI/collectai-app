@@ -11,7 +11,7 @@ For production, implement with boto3 or use Supabase Storage as interim.
 import os
 import json
 import gzip
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -31,7 +31,7 @@ class S3Writer:
     def __init__(self, run_id: str, dry_run: bool = False):
         self.run_id = run_id
         self.dry_run = dry_run
-        self.date_partition = datetime.utcnow().strftime('%Y/%m/%d')
+        self.date_partition = datetime.now(timezone.utc).strftime('%Y/%m/%d')
 
     def _get_s3_key(self) -> str:
         """Generate S3 key for this run's bundle."""

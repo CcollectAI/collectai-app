@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 import sys
+
+logger = logging.getLogger(__name__)
 
 
 # Append a row every time we have a prediction and later see an "actual"
@@ -24,8 +27,9 @@ if __name__ == "__main__":
             "q50": 100,
             "q90": 120,
             "category": "test",
-            "asof": dt.datetime.utcnow().isoformat() + "Z",
+            "asof": dt.datetime.now(dt.timezone.utc).isoformat() + "Z",
         }
     )
+    logging.basicConfig(level=logging.INFO)
     append_row(row)
-    print("ok")
+    logger.info("ok")

@@ -1,7 +1,7 @@
 """
 Master runner for all category import pipelines.
 
-Runs all Tier 1-3 import scripts in sequence.
+Runs all Tier 1-3 import scripts in sequence (or parallel).
 Use --tier to run only a specific tier, or --category for a single category.
 
 Usage:
@@ -11,15 +11,28 @@ Usage:
     python -m pipelines.import_all --tier 1 --dry-run       # dry run
     python -m pipelines.import_all --cache-images           # cache images to S3
     python -m pipelines.import_all --list                   # show all categories
+    python -m pipelines.import_all --parallel 4             # run 4 at a time
+    python -m pipelines.import_all --resume                 # resume interrupted run
 """
 
 from __future__ import annotations
 
 import argparse
 import importlib
+import json
+import sqlite3
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from pathlib import Path
+
+from pipelines.import_common import (
+    close_http_client,
+    logger,
+    setup_logging,
+    IngestStats,
+)
 
 # All categories organized by tier
 TIER_1 = [
@@ -70,12 +83,72 @@ TIER_3 = [
 ALL_TIERS = {1: TIER_1, 2: TIER_2, 3: TIER_3}
 
 
+# ---------------------------------------------------------------------------
+# Progress Persistence (SQLite checkpoint) (#10)
+# ---------------------------------------------------------------------------
+
+CHECKPOINT_DB = Path(__file__).resolve().parent.parent / "data" / ".import_checkpoint.db"
+
+
+def _init_checkpoint_db() -> sqlite3.Connection:
+    CHECKPOINT_DB.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(CHECKPOINT_DB))
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS checkpoints (
+            run_id TEXT NOT NULL,
+            category TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            started_at TEXT,
+            finished_at TEXT,
+            error_msg TEXT,
+            PRIMARY KEY (run_id, category)
+        )
+    """)
+    conn.commit()
+    return conn
+
+
+def _mark_checkpoint(conn: sqlite3.Connection, run_id: str, category: str,
+                     status: str, error_msg: str = "") -> None:
+    now = datetime.now().isoformat()
+    if status == "running":
+        conn.execute(
+            "INSERT OR REPLACE INTO checkpoints (run_id, category, status, started_at) VALUES (?, ?, ?, ?)",
+            (run_id, category, status, now),
+        )
+    else:
+        conn.execute(
+            "UPDATE checkpoints SET status = ?, finished_at = ?, error_msg = ? WHERE run_id = ? AND category = ?",
+            (status, now, error_msg, run_id, category),
+        )
+    conn.commit()
+
+
+def _get_completed_categories(conn: sqlite3.Connection, run_id: str) -> set[str]:
+    rows = conn.execute(
+        "SELECT category FROM checkpoints WHERE run_id = ? AND status = 'success'",
+        (run_id,),
+    ).fetchall()
+    return {r[0] for r in rows}
+
+
+def _get_latest_run_id(conn: sqlite3.Connection) -> str | None:
+    row = conn.execute(
+        "SELECT DISTINCT run_id FROM checkpoints ORDER BY run_id DESC LIMIT 1"
+    ).fetchone()
+    return row[0] if row else None
+
+
+# ---------------------------------------------------------------------------
+# Import runner
+# ---------------------------------------------------------------------------
+
 def run_import(module_name: str, category: str, description: str,
-               dry_run: bool, cache_images: bool = False) -> bool:
-    """Run a single import module."""
-    print(f"\n{'='*60}")
-    print(f"  {category.upper()} - {description}")
-    print(f"{'='*60}")
+               dry_run: bool, cache_images: bool = False) -> tuple[bool, str]:
+    """Run a single import module. Returns (success, error_message)."""
+    logger.info(f"{'='*60}")
+    logger.info(f"  {category.upper()} - {description}")
+    logger.info(f"{'='*60}")
 
     try:
         # Save original argv and override
@@ -91,14 +164,16 @@ def run_import(module_name: str, category: str, description: str,
         mod.main()
 
         sys.argv = orig_argv
-        return True
+        return True, ""
 
     except ModuleNotFoundError:
-        print(f"  SKIP: pipelines/{module_name}.py not yet implemented")
-        return False
+        msg = f"pipelines/{module_name}.py not yet implemented"
+        logger.warning(f"SKIP: {msg}")
+        return False, msg
     except Exception as e:
-        print(f"  ERROR: {e}")
-        return False
+        msg = str(e)
+        logger.error(f"FAILED {category}: {msg}")
+        return False, msg
 
 
 def main():
@@ -113,64 +188,128 @@ def main():
                         help="Download external images and cache to S3")
     parser.add_argument("--list", action="store_true",
                         help="List all categories and exit")
+    parser.add_argument("--parallel", type=int, default=1, metavar="N",
+                        help="Run N categories in parallel (default: 1 = sequential)")
+    parser.add_argument("--resume", action="store_true",
+                        help="Resume the most recent interrupted run")
     args = parser.parse_args()
 
     if args.list:
         for tier_num, tier in ALL_TIERS.items():
-            print(f"\n=== Tier {tier_num} ===")
+            logger.info(f"\n=== Tier {tier_num} ===")
             for slug, module, desc in tier:
-                print(f"  {slug:20s} | {desc}")
+                logger.info(f"  {slug:20s} | {desc}")
         return
+
+    # Initialize checkpoint DB
+    checkpoint_conn = _init_checkpoint_db()
+    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    completed_categories: set[str] = set()
+
+    if args.resume:
+        prev_run_id = _get_latest_run_id(checkpoint_conn)
+        if prev_run_id:
+            run_id = prev_run_id
+            completed_categories = _get_completed_categories(checkpoint_conn, run_id)
+            logger.info(f"Resuming run {run_id} — {len(completed_categories)} categories already done")
+        else:
+            logger.info("No previous run found, starting fresh")
 
     start_time = datetime.now()
     results = {"success": [], "skipped": [], "failed": []}
+    global_stats = IngestStats()
+
+    def _run_one(slug: str, module: str, desc: str) -> tuple[str, bool, str]:
+        """Wrapper for parallel execution."""
+        if slug in completed_categories:
+            logger.info(f"SKIP (already completed): {slug}")
+            return slug, True, ""
+        _mark_checkpoint(checkpoint_conn, run_id, slug, "running")
+        ok, err = run_import(module, slug, desc, args.dry_run, args.cache_images)
+        status = "success" if ok else ("skipped" if "not yet implemented" in err else "failed")
+        _mark_checkpoint(checkpoint_conn, run_id, slug, status, err)
+        return slug, ok, err
 
     # Determine which categories to run
     if args.category:
-        # Find the category in any tier
         found = False
         for tier in ALL_TIERS.values():
             for slug, module, desc in tier:
                 if slug == args.category:
-                    ok = run_import(module, slug, desc, args.dry_run, args.cache_images)
-                    (results["success"] if ok else results["failed"]).append(slug)
+                    slug, ok, err = _run_one(slug, module, desc)
+                    if ok:
+                        results["success"].append(slug)
+                    else:
+                        results["failed"].append(slug)
                     found = True
                     break
         if not found:
-            print(f"ERROR: Unknown category '{args.category}'")
+            logger.error(f"Unknown category '{args.category}'")
             sys.exit(1)
     else:
         tiers_to_run = [args.tier] if args.tier else [1, 2, 3]
+
         for tier_num in tiers_to_run:
             tier = ALL_TIERS[tier_num]
-            print(f"\n{'#'*60}")
-            print(f"  TIER {tier_num} ({len(tier)} categories)")
-            print(f"{'#'*60}")
+            logger.info(f"\n{'#'*60}")
+            logger.info(f"  TIER {tier_num} ({len(tier)} categories)")
+            logger.info(f"{'#'*60}")
 
-            for slug, module, desc in tier:
-                ok = run_import(module, slug, desc, args.dry_run, args.cache_images)
-                if ok:
-                    results["success"].append(slug)
-                else:
-                    results["skipped"].append(slug)
-                time.sleep(0.5)
+            if args.parallel > 1:
+                # Parallel execution within tier (#11)
+                with ThreadPoolExecutor(max_workers=args.parallel) as pool:
+                    futures = {
+                        pool.submit(_run_one, slug, module, desc): slug
+                        for slug, module, desc in tier
+                    }
+                    for future in as_completed(futures):
+                        slug, ok, err = future.result()
+                        if ok:
+                            results["success"].append(slug)
+                        elif "not yet implemented" in err:
+                            results["skipped"].append(slug)
+                        else:
+                            results["failed"].append(slug)
+            else:
+                # Sequential (default)
+                for slug, module, desc in tier:
+                    slug, ok, err = _run_one(slug, module, desc)
+                    if ok:
+                        results["success"].append(slug)
+                    elif "not yet implemented" in err:
+                        results["skipped"].append(slug)
+                    else:
+                        results["failed"].append(slug)
+                    time.sleep(0.5)
 
     elapsed = (datetime.now() - start_time).total_seconds()
 
-    print(f"\n{'='*60}")
-    print(f"  IMPORT SUMMARY")
-    print(f"{'='*60}")
-    print(f"  Completed: {len(results['success'])} categories")
-    print(f"  Skipped:   {len(results['skipped'])} categories (not yet implemented)")
-    print(f"  Failed:    {len(results['failed'])} categories")
-    print(f"  Time:      {elapsed:.0f}s")
+    # Close shared HTTP client
+    close_http_client()
+
+    # Summary
+    logger.info(f"\n{'='*60}")
+    logger.info(f"  IMPORT SUMMARY")
+    logger.info(f"{'='*60}")
+    logger.info(f"  Run ID:    {run_id}")
+    logger.info(f"  Completed: {len(results['success'])} categories")
+    logger.info(f"  Skipped:   {len(results['skipped'])} categories (not yet implemented)")
+    logger.info(f"  Failed:    {len(results['failed'])} categories")
+    logger.info(f"  Time:      {elapsed:.0f}s")
 
     if results["success"]:
-        print(f"\n  Completed: {', '.join(results['success'])}")
+        logger.info(f"  Completed: {', '.join(results['success'])}")
     if results["skipped"]:
-        print(f"  Skipped:   {', '.join(results['skipped'])}")
+        logger.info(f"  Skipped:   {', '.join(results['skipped'])}")
     if results["failed"]:
-        print(f"  Failed:    {', '.join(results['failed'])}")
+        logger.info(f"  Failed:    {', '.join(results['failed'])}")
+
+    # Non-zero exit code on failures (#4)
+    if results["failed"]:
+        logger.error(f"{len(results['failed'])} categories failed — exiting with code 1")
+        sys.exit(1)
+
+    checkpoint_conn.close()
 
 
 if __name__ == "__main__":

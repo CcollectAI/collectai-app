@@ -174,8 +174,8 @@ def _is_isbn(code: str) -> bool:
 # ---------------------------------------------------------------------------
 
 class BarcodeLookupRequest(BaseModel):
-    barcode: str
-    code_type: Optional[str] = None
+    barcode: str = Field(..., min_length=1, max_length=50)
+    code_type: Optional[str] = Field(None, max_length=20)
 
 
 class PriceBand(BaseModel):
@@ -286,8 +286,8 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
                         if author_resp.status_code == 200:
                             author_data = author_resp.json()
                             authors.append(author_data.get("name", ""))
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("[barcode] Author lookup failed for %s: %s", author_key, e)
 
             # Also check works for subjects if edition has none
             if not subjects:
@@ -306,8 +306,8 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
                                     s if isinstance(s, str) else s.get("name", "")
                                     for s in work_data.get("subjects", [])
                                 ]
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug("[barcode] Work lookup failed for %s: %s", work_key, e)
 
             return {
                 "title": title,
@@ -380,9 +380,9 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
     return None
 
 
-async def _lookup_market_price(category: str, title: str, pool) -> Optional[PriceBand]:
+async def _lookup_market_price(category: str, title: Optional[str], pool) -> Optional[PriceBand]:
     """Look up recent market prices from market_hits for similar items."""
-    if not pool or not category:
+    if not pool or not category or not title:
         return None
 
     try:

@@ -8,9 +8,13 @@ Installs CORS and security-related middleware.
 """
 
 import os
+from typing import Callable, Awaitable
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 # Allowed origins for CORS - configure via environment variable
 # Default allows localhost/dev origins; production should set explicit list
@@ -44,5 +48,19 @@ def install_middlewares(app: FastAPI) -> FastAPI:
             TrustedHostMiddleware,
             allowed_hosts=TRUSTED_HOSTS,
         )
+
+    # Security headers middleware
+    @app.middleware("http")
+    async def security_headers_middleware(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
 
     return app

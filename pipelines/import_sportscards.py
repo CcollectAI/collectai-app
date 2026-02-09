@@ -23,6 +23,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, SupabaseIngest,
     write_training_jsonl, write_catalog_sql,
     log_progress, slugify,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "sportscards"
@@ -123,9 +127,7 @@ def item_to_catalog_item(item: dict) -> CatalogItem:
 
 
 def item_to_price_observations(item: dict) -> list[PriceObservation]:
-    rarity_map = {"Standard": 0.2, "Mid": 0.4, "High": 0.6,
-                  "Iconic": 0.8, "Ultra Rare": 0.9, "Legendary": 0.95}
-    rarity_score = rarity_map.get(item["rarity"], 0.5)
+    rarity_score = shared_rarity_score(item["rarity"])
 
     observations = []
     # Raw (ungraded)
@@ -159,7 +161,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== Sports Cards Import ===")
+    logger.info("=== Sports Cards Import ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -184,9 +186,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== Sports Cards Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== Sports Cards Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 if __name__ == "__main__":

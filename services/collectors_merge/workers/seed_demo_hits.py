@@ -8,7 +8,7 @@ NK = os.environ.get("NK", "lego|10240|pcs:1559|ret:1|s:1")
 URL = os.environ["DATABASE_URL"]
 conn = psycopg2.connect(URL)
 cur = conn.cursor()
-base = datetime.datetime.utcnow()
+base = datetime.datetime.now(datetime.timezone.utc)
 rows = []
 random.seed(42)
 for i in range(12):

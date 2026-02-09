@@ -86,10 +86,6 @@ const handleImportCollectionFile = async () => {
         return;
       }
 
-      if (!result) {
-      return;
-    }
-
     // Handle both new (assets) and old (single object) shapes from DocumentPicker
     // @ts-ignore
     const canceled = result.canceled ?? (result.type && result.type !== 'success');

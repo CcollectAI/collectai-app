@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 from fastapi import APIRouter
@@ -164,7 +164,7 @@ async def get_personalized_insights() -> PersonalizedInsightsResponse:
                 )
 
             # ---- Trending items from market_hits (positive price delta, last 14 days) ----
-            cutoff = datetime.utcnow() - timedelta(days=14)
+            cutoff = datetime.now(timezone.utc) - timedelta(days=14)
             trend_rows = await conn.fetch(
                 """
                 WITH first_last AS (
@@ -262,7 +262,7 @@ async def get_home_widget() -> HomeWidgetResponse:
             collection_value = float(value_row["total_value"]) if value_row else 0.0
 
             # Yesterday's total for change calculation
-            yesterday = datetime.utcnow() - timedelta(days=1)
+            yesterday = datetime.now(timezone.utc) - timedelta(days=1)
             yesterday_row = await conn.fetchrow(
                 """
                 SELECT COALESCE(SUM(pp.q50), 0) AS total_value

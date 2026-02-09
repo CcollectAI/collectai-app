@@ -26,6 +26,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, SupabaseIngest,
     write_training_jsonl, write_catalog_sql, fetch_json,
     log_progress, slugify,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "manga"
@@ -52,7 +56,7 @@ def fetch_top_manga(limit: int = 200) -> list[dict]:
             page += 1
             time.sleep(1.0)  # Jikan rate limit: 1 req/sec
         except Exception as e:
-            print(f"  Jikan API error on page {page}: {e}")
+            logger.info(f"  Jikan API error on page {page}: {e}")
             break
 
     log_progress(CATEGORY, "MAL manga fetched", len(all_manga))
@@ -170,8 +174,7 @@ def oop_to_catalog_item(item: dict) -> CatalogItem:
 
 
 def oop_to_price_observations(item: dict) -> list[PriceObservation]:
-    rarity_map = {"Standard": 0.2, "Mid": 0.5, "High": 0.8}
-    rarity_score = rarity_map.get(item["rarity"], 0.4)
+    rarity_score = shared_rarity_score(item["rarity"])
     is_oop = item["status"] in ("OOP", "Partial OOP")
 
     observations = []
@@ -205,7 +208,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== Manga Import ===")
+    logger.info("=== Manga Import ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -220,7 +223,7 @@ def main():
             mal_manga = fetch_top_manga(limit=200)
             all_items.extend([mal_to_catalog_item(m) for m in mal_manga])
         except Exception as e:
-            print(f"  MAL fetch failed: {e}, using curated only")
+            logger.info(f"  MAL fetch failed: {e}, using curated only")
 
     # 2. Add curated OOP manga with price data
     oop_manga = get_curated_oop_manga()
@@ -250,9 +253,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== Manga Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== Manga Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 if __name__ == "__main__":

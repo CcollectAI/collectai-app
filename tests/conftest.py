@@ -7,7 +7,7 @@ from starlette.testclient import TestClient
 os.environ.setdefault("DB_ENABLED", "false")
 os.environ.setdefault("DATABASE_URL", "mock://localhost")
 
-from app.main import app  # noqa: E402
+from main import app  # noqa: E402
 
 @pytest.fixture(scope="module")
 def client():

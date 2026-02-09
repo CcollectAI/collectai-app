@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import uuid4
 
@@ -16,17 +16,17 @@ class WatchlistItem(BaseModel):
     item_id: Optional[str] = None
     name: Optional[str] = None
     category: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     predicted_value: Optional[float] = None
     currency: str = "EUR"
 
 
 class WatchlistCreate(BaseModel):
-    item_id: Optional[str] = None
-    name: Optional[str] = None
-    category: Optional[str] = None
+    item_id: Optional[str] = Field(None, max_length=64)
+    name: Optional[str] = Field(None, max_length=255)
+    category: Optional[str] = Field(None, max_length=64)
     predicted_value: Optional[float] = None
-    currency: str = "EUR"
+    currency: str = Field(default="EUR", max_length=3, pattern=r"^[A-Z]{3}$")
 
 
 class WatchlistResponse(BaseModel):

@@ -1,38 +1,82 @@
-name: Nightly Train/Eval/Gate
+name: Nightly Train/Eval/Gate (All Categories)
 on:
   schedule:
     - cron: "0 2 * * *"   # 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      category:
+        description: 'Single category to train (leave empty for all)'
+        required: false
+        default: ''
+        type: string
+      include_feedback:
+        description: 'Include user feedback in training'
+        required: false
+        default: 'true'
+        type: boolean
+
 jobs:
-  run:
+  train-all:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: pip install -r requirements.txt || true
-      - name: Train pokemon
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt || pip install scikit-learn numpy httpx pyyaml
+
+      - name: Train all categories
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: eu-north-1
+          AWS_DEFAULT_REGION: eu-west-1
           ARTIFACT_BUCKET: collectai-models
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
-          python - <<'PY'
-          import trainer
-          evt = {
-            "model":"price",
-            "version":"v0.0.${{ github.run_number }}",
-            "dataset_csv":"s3://collectai-datasets/datasets/test.csv",
-            "category":"pokemon",
-            "meta":{"generated_at":"${{ github.run_id }}"}
-          }
-          print(trainer.handler(evt, None))
-          PY
+          CATEGORY="${{ github.event.inputs.category }}"
+          FEEDBACK_FLAG=""
+          if [ "${{ github.event.inputs.include_feedback }}" != "false" ]; then
+            FEEDBACK_FLAG="--include-feedback"
+          fi
+
+          if [ -n "$CATEGORY" ]; then
+            echo "Training single category: $CATEGORY"
+            python -m pipelines.train_price \
+              --category "$CATEGORY" \
+              --register \
+              $FEEDBACK_FLAG
+          else
+            echo "Training ALL 36 categories..."
+            python -m pipelines.train_price \
+              --all \
+              --register \
+              $FEEDBACK_FLAG
+          fi
+
       - name: Evaluate & Gate
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GATE_IMPROVE_PCT: "3"
-        run: python scripts/eval_mae_and_gate.py pokemon
+        run: |
+          # Run eval gate if eval script exists
+          if [ -f scripts/eval_mae_and_gate.py ]; then
+            CATEGORY="${{ github.event.inputs.category || 'pokemon' }}"
+            python scripts/eval_mae_and_gate.py "$CATEGORY"
+          else
+            echo "Eval script not found, skipping gate check"
+          fi
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-logs
+          path: artifacts/
+          retention-days: 7

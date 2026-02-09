@@ -35,7 +35,11 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
+import logging
+
 import httpx
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -93,11 +97,11 @@ class S3ImageCache:
         LOCAL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
         if not S3_BUCKET:
-            print("[S3ImageCache] No S3 bucket configured — images will use original URLs")
+            logger.info("No S3 bucket configured — images will use original URLs")
             self.enabled = False
         else:
             self.enabled = True
-            print(f"[S3ImageCache] Bucket: {S3_BUCKET} | CDN: {CDN_URL or 'none'}")
+            logger.info("S3ImageCache enabled — Bucket: %s | CDN: %s", S3_BUCKET, CDN_URL or "none")
 
     @property
     def s3_client(self):
@@ -107,7 +111,7 @@ class S3ImageCache:
                 import boto3
                 self._s3_client = boto3.client("s3", region_name=AWS_REGION)
             except ImportError:
-                print("[S3ImageCache] boto3 not installed — falling back to original URLs")
+                logger.warning("boto3 not installed — falling back to original URLs")
                 self.enabled = False
         return self._s3_client
 
@@ -184,10 +188,10 @@ class S3ImageCache:
             cached_url = self.cache_image(url, category, item_key)
             url_map[url] = cached_url
             if i > 0 and i % 50 == 0:
-                print(f"  [ImageCache] Progress: {i}/{len(items)} "
-                      f"(cached={self._stats['cached']}, "
-                      f"skipped={self._stats['skipped']}, "
-                      f"failed={self._stats['failed']})")
+                logger.info(
+                    "ImageCache progress: %d/%d (cached=%d, skipped=%d, failed=%d)",
+                    i, len(items), self._stats['cached'], self._stats['skipped'], self._stats['failed'],
+                )
             time.sleep(rate_limit)
         return url_map
 
@@ -235,7 +239,7 @@ class S3ImageCache:
             )
             return True
         except Exception as e:
-            print(f"  [ImageCache] S3 upload failed for {key}: {e}")
+            logger.warning("S3 upload failed for %s: %s", key, e)
             return False
 
     def _object_exists(self, key: str) -> bool:
@@ -256,12 +260,12 @@ class S3ImageCache:
         return f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{key}"
 
     def print_stats(self):
-        """Print caching statistics."""
+        """Log caching statistics."""
         total = sum(self._stats.values())
-        print(f"\n  [ImageCache] Stats: {total} total | "
-              f"{self._stats['cached']} cached | "
-              f"{self._stats['skipped']} already cached | "
-              f"{self._stats['failed']} failed")
+        logger.info(
+            "ImageCache stats: %d total | %d cached | %d already cached | %d failed",
+            total, self._stats['cached'], self._stats['skipped'], self._stats['failed'],
+        )
 
     def close(self):
         """Clean up HTTP client."""

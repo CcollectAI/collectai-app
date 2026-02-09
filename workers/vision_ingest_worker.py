@@ -35,66 +35,66 @@ async def run_once():
         return
 
     conn = await asyncpg.connect(DSN)
+    try:
+        rows = await conn.fetch("""
+            SELECT id, item_ref
+            FROM public.vision_predict_log
+            WHERE embedding IS NULL
+            ORDER BY created_at ASC
+            LIMIT 10;
+        """)
 
-    rows = await conn.fetch("""
-        SELECT id, item_ref
-        FROM public.vision_predict_log
-        WHERE embedding IS NULL
-        ORDER BY created_at ASC
-        LIMIT 10;
-    """)
+        if not rows:
+            logging.info("No pending vision logs")
+            return
 
-    if not rows:
-        logging.info("No pending vision logs")
-        await conn.close()
-        return
+        logging.info("Processing %d vision logs", len(rows))
 
-    logging.info("Processing %d vision logs", len(rows))
+        for r in rows:
+            vid = r["id"]
+            item_ref = r["item_ref"] or ""
 
-    for r in rows:
-        vid = r["id"]
-        item_ref = r["item_ref"] or ""
-
-        emb_resp = client.embeddings.create(
-            model="text-embedding-3-small",
-            input=item_ref
-        )
-        emb = emb_resp.data[0].embedding
-        emb_literal = to_vector_literal(emb)
-
-        sims = []
-        for label in ZERO_SHOT_LABELS:
-            lab_emb_resp = client.embeddings.create(
+            emb_resp = client.embeddings.create(
                 model="text-embedding-3-small",
-                input=label
+                input=item_ref
             )
-            lab_emb = lab_emb_resp.data[0].embedding
-            sim = sum(a * b for a, b in zip(emb, lab_emb))
-            sims.append((sim, label))
+            emb = emb_resp.data[0].embedding
+            emb_literal = to_vector_literal(emb)
 
-        best_sim, best_label = max(sims)
+            sims = []
+            for label in ZERO_SHOT_LABELS:
+                lab_emb_resp = client.embeddings.create(
+                    model="text-embedding-3-small",
+                    input=label
+                )
+                lab_emb = lab_emb_resp.data[0].embedding
+                sim = sum(a * b for a, b in zip(emb, lab_emb))
+                sims.append((sim, label))
 
-        logging.info(
-            "vision_id=%s ref=%s label=%s score=%.4f",
-            vid, item_ref, best_label, best_sim
-        )
+            best_sim, best_label = max(sims)
 
-        await conn.execute(
-            """
-            UPDATE public.vision_predict_log
-            SET embedding = $1::vector,
-                predicted_label = $2,
-                score = $3
-            WHERE id = $4
-            """,
-            emb_literal,
-            best_label,
-            float(best_sim),
-            vid,
-        )
+            logging.info(
+                "vision_id=%s ref=%s label=%s score=%.4f",
+                vid, item_ref, best_label, best_sim
+            )
 
-    await conn.close()
-    logging.info("Done vision ingestion cycle")
+            await conn.execute(
+                """
+                UPDATE public.vision_predict_log
+                SET embedding = $1::vector,
+                    predicted_label = $2,
+                    score = $3
+                WHERE id = $4
+                """,
+                emb_literal,
+                best_label,
+                float(best_sim),
+                vid,
+            )
+
+        logging.info("Done vision ingestion cycle")
+    finally:
+        await conn.close()
 
 async def main():
     try:

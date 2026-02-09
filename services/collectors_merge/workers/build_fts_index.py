@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 
 try:
@@ -14,6 +15,8 @@ from typing import Any
 
 import psycopg2
 import psycopg2.extras
+
+logger = logging.getLogger(__name__)
 
 DBPATH = pathlib.Path("data/search.db")
 
@@ -51,12 +54,14 @@ def load_recent_hits(days=365, limit=200000) -> list[dict[str, Any]]:
       LIMIT %s
     """
     conn = pg()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute(q, (days, limit))
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return rows
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(q, (days, limit))
+        rows = cur.fetchall()
+        cur.close()
+        return rows
+    finally:
+        conn.close()
 
 
 def rebuild(days=365):
@@ -82,8 +87,9 @@ def rebuild(days=365):
     c.execute("INSERT INTO hits_fts(rowid, title) SELECT rowid, title FROM hits;")
     conn.commit()
     conn.close()
-    print(f"fts indexed {len(rows)} rows")
+    logger.info("fts indexed %d rows", len(rows))
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [build_fts] %(levelname)s: %(message)s")
     rebuild()

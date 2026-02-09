@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 
 import psycopg2
 import psycopg2.extras
+
+logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 
@@ -33,39 +36,45 @@ def med(conn, nk: str, days: int):
 
 def run():
     conn = db()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    # evaluate for all watchlist NKs (user_id ignored for events)
-    cur.execute(
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        # evaluate for all watchlist NKs (user_id ignored for events)
+        cur.execute(
+            """
+          select distinct normalized_key
+          from public.watchlist
         """
-      select distinct normalized_key
-      from public.watchlist
-    """
-    )
-    wrows = cur.fetchall()
-    created = 0
-    for r in wrows:
-        nk = r["normalized_key"]
-        p30 = med(conn, nk, 30)
-        p7 = med(conn, nk, 7)
-        if not p30 or not p7:
-            continue
-        up = p7 >= p30 * 1.15
-        dn = p7 <= p30 * 0.85
-        if up or dn:
-            kind = "alert:spike" if up else "alert:drop"
-            payload = {"p7": p7, "p30": p30, "nk": nk, "rule": "p7_vs_p30@±15%"}
-            cur2 = conn.cursor()
-            cur2.execute(
-                """insert into public.events (kind, payload) values (%s,%s::jsonb)""",
-                (kind, json.dumps(payload)),
-            )
-            cur2.close()
-            created += 1
-    conn.commit()
-    cur.close()
-    conn.close()
-    print(f"alerts created: {created}")
+        )
+        wrows = cur.fetchall()
+        created = 0
+        for r in wrows:
+            nk = r["normalized_key"]
+            p30 = med(conn, nk, 30)
+            p7 = med(conn, nk, 7)
+            if not p30 or not p7:
+                continue
+            up = p7 >= p30 * 1.15
+            dn = p7 <= p30 * 0.85
+            if up or dn:
+                kind = "alert:spike" if up else "alert:drop"
+                payload = {"p7": p7, "p30": p30, "nk": nk, "rule": "p7_vs_p30@±15%"}
+                cur2 = conn.cursor()
+                cur2.execute(
+                    """insert into public.events (kind, payload) values (%s,%s::jsonb)""",
+                    (kind, json.dumps(payload)),
+                )
+                cur2.close()
+                created += 1
+        conn.commit()
+        cur.close()
+        logger.info("alerts created: %d", created)
+    except Exception as e:
+        logger.exception("alerts_evaluator failed: %s", e)
+        raise
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [alerts_eval] %(levelname)s: %(message)s")
     run()

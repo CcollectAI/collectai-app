@@ -1,3 +1,4 @@
+import logging
 from uuid import uuid4
 from app.features import insights_router
 from app.features import screenshot_intel_router
@@ -11,10 +12,15 @@ from app.features import feedback_router
 import os
 import httpx
 from pathlib import Path
-from typing import Optional, List
+import csv
+import io
+import json
+import uuid as _uuid
+from typing import Any, Dict, List, Optional
 from app.routers.vision_commit import router as vision_commit_router
 from app.routers.vision_predict_log import router as vision_predict_log_router
-from fastapi import FastAPI, Depends, Header, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, Header, HTTPException, Request, UploadFile, File
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from app.middleware_stack import install_middlewares
 from app.db import connect_pool, close_pool, db_configured
@@ -37,6 +43,15 @@ from app.routes.ops import router as ops_router
 from app.routes.marketplace import router as marketplace_router
 
 app = FastAPI(title="Collectors Merge Service", version=os.getenv("SERVICE_VERSION","0.1.0"))
+
+_logger = logging.getLogger("collectai.main")
+
+@app.exception_handler(Exception)
+async def _global_exception_handler(request: Request, exc: Exception):
+    """Catch unhandled exceptions and return a safe 500 without leaking internals."""
+    _logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
 API_SHARED_SECRET = os.environ.get("API_SHARED_SECRET")
 SIGNALS_BASE_URL = os.getenv("SIGNALS_BASE_URL", "http://127.0.0.1:8082")
 
@@ -49,40 +64,38 @@ async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
     return True
 
 
+async def _proxy_signals(path: str) -> dict:
+    """Proxy a request to the Signals service with error handling."""
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.get(
+                f"{SIGNALS_BASE_URL}{path}",
+                headers={"X-API-Key": API_SHARED_SECRET},
+                timeout=10.0,
+            )
+            r.raise_for_status()
+            return r.json()
+    except httpx.HTTPStatusError as e:
+        _logger.error("Upstream %s returned %d", path, e.response.status_code)
+        raise HTTPException(status_code=502, detail="Upstream service error")
+    except httpx.RequestError as e:
+        _logger.error("Upstream %s request failed: %s", path, e)
+        raise HTTPException(status_code=503, detail="Upstream service unavailable")
+
+
 @app.get("/portfolio/overview")
 async def portfolio_overview(_: bool = Depends(require_api_key)):
-    async with httpx.AsyncClient() as client:
-        r = await client.get(
-            f"{SIGNALS_BASE_URL}/portfolio/overview",
-            headers={"X-API-Key": API_SHARED_SECRET},
-            timeout=10.0,
-        )
-    r.raise_for_status()
-    return r.json()
+    return await _proxy_signals("/portfolio/overview")
 
 
 @app.get("/portfolio/items")
 async def portfolio_items(_: bool = Depends(require_api_key)):
-    async with httpx.AsyncClient() as client:
-        r = await client.get(
-            f"{SIGNALS_BASE_URL}/portfolio/items",
-            headers={"X-API-Key": API_SHARED_SECRET},
-            timeout=10.0,
-        )
-    r.raise_for_status()
-    return r.json()
+    return await _proxy_signals("/portfolio/items")
 
 
 @app.get("/portfolio/timeseries")
 async def portfolio_timeseries(_: bool = Depends(require_api_key)):
-    async with httpx.AsyncClient() as client:
-        r = await client.get(
-            f"{SIGNALS_BASE_URL}/portfolio/timeseries",
-            headers={"X-API-Key": API_SHARED_SECRET},
-            timeout=10.0,
-        )
-    r.raise_for_status()
-    return r.json()
+    return await _proxy_signals("/portfolio/timeseries")
 
 app.include_router(vision_commit_router)
 app.include_router(vision_predict_log_router)
@@ -90,9 +103,11 @@ app.include_router(marketplace_router)
 
 # Core middlewares
 install_middlewares(app)
+app.middleware("http")(limit_body_middleware)
 app.middleware("http")(rate_limit_middleware)
 app.middleware("http")(metrics_middleware)
 app.middleware("http")(logging_middleware)
+ensure_metrics_once(app)
 
 # Routers
 app.include_router(agent_router)
@@ -300,10 +315,14 @@ async def quickscan_upload_image(file: UploadFile = File(...)):
     tmp_dir = Path(os.getenv("QUICKSCAN_TMP_DIR", "/tmp"))
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    safe_name = file.filename or "upload.jpg"
+    import re as _re
+    raw_name = os.path.basename(file.filename or "upload.jpg")
+    safe_name = _re.sub(r"[^\w.\-]", "_", raw_name)[:100]
     out_path = tmp_dir / f"{image_id}_{safe_name}"
 
     contents = await file.read()
+    if len(contents) > 20 * 1024 * 1024:  # 20 MB max for images
+        raise HTTPException(status_code=413, detail="Image too large (max 20 MB)")
     out_path.write_bytes(contents)
 
     return {"image_id": image_id}
@@ -417,15 +436,6 @@ except ImportError:
 
 
 
-from fastapi import UploadFile, File, HTTPException
-from fastapi.responses import StreamingResponse
-import csv
-import io
-import json
-import uuid as _uuid
-from typing import Any, Dict, List
-
-
 # ---- Import template columns (shared by template + import) ----
 IMPORT_COLUMNS = [
     "name", "category", "condition", "grade", "graded_by",
@@ -470,6 +480,9 @@ async def import_collection(file: UploadFile = File(...)) -> Dict[str, Any]:
 
     if not content:
         raise HTTPException(status_code=400, detail="Empty file")
+
+    if len(content) > 50 * 1024 * 1024:  # 50 MB max for CSV/Excel
+        raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
 
     # Decide how to parse based on extension
     lower_name = filename.lower()

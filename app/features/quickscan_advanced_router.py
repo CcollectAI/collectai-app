@@ -95,13 +95,9 @@ async def _get_real_prediction(
             logger.info(f"No model available for category: {category}")
             return None
 
-        # Build features from attributes
-        # This is a simplified feature set - real implementation would extract more
-        features = {
-            "condition_score": _condition_to_score(attrs.condition_guess),
-            "rarity_score": attrs.rarity_score or 0.5,
-            "edition_score": _edition_to_score(attrs.edition_guess),
-        }
+        # Build features dynamically from model artifact's feature list
+        model_features = artifact.get("features", [])
+        features = _build_features(attrs, model_features)
 
         # Get quantile predictions
         quantiles = ridge_infer_quantiles(artifact, features)
@@ -109,10 +105,20 @@ async def _get_real_prediction(
             logger.warning(f"Model inference failed for {category}")
             return None
 
+        # Compute confidence from model metadata
+        cv_mae = artifact.get("cv_mae")
+        train_size = artifact.get("train_size", 0)
+        confidence = 0.75
+        if cv_mae is not None and train_size > 0:
+            # Higher confidence with more data and lower error
+            size_factor = min(1.0, train_size / 500)  # saturates at 500 samples
+            error_factor = max(0.0, 1.0 - cv_mae / 100)  # lower MAE = higher conf
+            confidence = round(0.5 + 0.4 * size_factor * error_factor, 2)
+            confidence = max(0.3, min(0.95, confidence))
+
         # Generate explanation
         explanation = generate_explanation(features, artifact)
         if not explanation or explanation == "Price estimate based on market data and item characteristics.":
-            # Fallback to simple explanation
             explanation = generate_simple_explanation(
                 category,
                 attrs.condition_guess,
@@ -126,7 +132,7 @@ async def _get_real_prediction(
             estimated_mid=quantiles["q50"],
             estimated_high=quantiles["q90"],
             currency="EUR",
-            confidence=0.75,  # Default confidence for real model
+            confidence=confidence,
             explanation=explanation,
         )
 
@@ -136,6 +142,37 @@ async def _get_real_prediction(
     except Exception as e:
         logger.warning(f"Error getting real prediction: {e}")
         return None
+
+
+def _build_features(attrs: QuickScanAttributes, model_features: list[str]) -> dict[str, float]:
+    """Build feature dict dynamically based on model's expected features."""
+    # Core feature generators
+    core = {
+        "condition_score": lambda: _condition_to_score(attrs.condition_guess),
+        "rarity_score": lambda: attrs.rarity_score or 0.5,
+        "edition_score": lambda: _edition_to_score(attrs.edition_guess),
+        "is_foil": lambda: 0.0,
+        "is_sealed": lambda: 0.0,
+        "is_graded": lambda: 0.0,
+        "is_first_edition": lambda: 1.0 if attrs.edition_guess and ("1st" in attrs.edition_guess.lower() or "first" in attrs.edition_guess.lower()) else 0.0,
+        "is_holo": lambda: 0.0,
+        "set_age_years": lambda: 0.0,
+    }
+
+    features: dict[str, float] = {}
+    for feat in model_features:
+        if feat in core:
+            features[feat] = core[feat]()
+        else:
+            features[feat] = 0.0  # Safe default for unknown features
+
+    # Always include core 3 even if not in model_features (backward compat)
+    if not model_features:
+        features["condition_score"] = _condition_to_score(attrs.condition_guess)
+        features["rarity_score"] = attrs.rarity_score or 0.5
+        features["edition_score"] = _edition_to_score(attrs.edition_guess)
+
+    return features
 
 
 def _condition_to_score(condition: str | None) -> float:

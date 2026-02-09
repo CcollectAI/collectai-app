@@ -25,6 +25,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, SupabaseIngest,
     write_training_jsonl, write_catalog_sql,
     log_progress, slugify,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "one_piece"
@@ -155,13 +159,12 @@ def _line_to_brand(line: str) -> str:
 
 def item_to_price_observation(item: dict) -> PriceObservation:
     tier = item["rarity_tier"]
-    rarity_map = {"grail": 0.95, "high": 0.8, "mid": 0.6, "standard": 0.2}
     is_limited = item["line"].startswith("P.O.P.") or "Last One" in item.get("variant", "")
 
     return PriceObservation(
         features={
             "condition_score": 0.9,
-            "rarity_score": rarity_map.get(tier, 0.5),
+            "rarity_score": shared_rarity_score(tier),
             "edition_score": 0.85 if is_limited else 0.4,
             "is_figure": 1.0 if item["line"] != "OP Card Game" else 0.0,
             "is_card": 1.0 if item["line"] == "OP Card Game" else 0.0,
@@ -175,7 +178,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== One Piece Import ===")
+    logger.info("=== One Piece Import ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -198,9 +201,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== One Piece Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== One Piece Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 if __name__ == "__main__":

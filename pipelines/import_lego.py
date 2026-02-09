@@ -28,6 +28,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, SupabaseIngest,
     write_training_jsonl, write_catalog_sql, fetch_json,
     log_progress, slugify, to_eur,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "lego"
@@ -172,12 +176,12 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== LEGO Import (Rebrickable) ===")
+    logger.info("=== LEGO Import (Rebrickable) ===")
 
     if not API_KEY:
-        print("WARNING: REBRICKABLE_API_KEY not set.")
-        print("Get a free key at https://rebrickable.com/users/merle/settings/#api")
-        print("Falling back to curated seed data...")
+        logger.info("WARNING: REBRICKABLE_API_KEY not set.")
+        logger.info("Get a free key at https://rebrickable.com/users/merle/settings/#api")
+        logger.info("Falling back to curated seed data...")
         _run_curated_seed(args.dry_run)
         return
 
@@ -204,9 +208,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== LEGO Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== LEGO Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 def _run_curated_seed(dry_run: bool):
@@ -258,7 +262,7 @@ def _run_curated_seed(dry_run: bool):
         ingest.upsert_catalog(items)
     ingest.close()
 
-    print(f"  Seeded {len(items)} curated LEGO sets")
+    logger.info(f"  Seeded {len(items)} curated LEGO sets")
 
 
 if __name__ == "__main__":

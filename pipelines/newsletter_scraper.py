@@ -369,7 +369,8 @@ class EmailConnector:
 
     def _fetch_one(self, uid: str) -> ParsedEmail | None:
         """Fetch and parse a single email by UID."""
-        assert self._conn is not None
+        if self._conn is None:
+            raise RuntimeError("Not connected. Call connect() first.")
         status, msg_data = self._conn.fetch(uid.encode(), "(RFC822)")
         if status != "OK" or not msg_data or not msg_data[0]:
             return None
@@ -398,7 +399,10 @@ class EmailConnector:
 
         # Date
         date_str = msg.get("Date", "")
-        date_tuple = email.utils.parsedate_to_datetime(date_str) if date_str else datetime.now(timezone.utc)
+        try:
+            date_tuple = email.utils.parsedate_to_datetime(date_str) if date_str else datetime.now(timezone.utc)
+        except (TypeError, ValueError):
+            date_tuple = datetime.now(timezone.utc)
 
         # Body
         html_body = ""

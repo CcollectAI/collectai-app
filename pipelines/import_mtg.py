@@ -25,6 +25,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, MarketHit, SupabaseIngest,
     write_training_jsonl, write_catalog_sql, fetch_json,
     log_progress, slugify, to_eur,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 API_BASE = "https://api.scryfall.com"
@@ -33,7 +37,7 @@ CATEGORY = "mtg"
 
 def fetch_bulk_cards() -> list[dict]:
     """Fetch all cards via Scryfall bulk data endpoint."""
-    print("Fetching bulk data manifest...")
+    logger.info("Fetching bulk data manifest...")
     bulk_info = fetch_json(f"{API_BASE}/bulk-data")
     # Find the "default_cards" bulk file (smaller, no variations)
     default_cards_url = None
@@ -43,10 +47,10 @@ def fetch_bulk_cards() -> list[dict]:
             break
 
     if not default_cards_url:
-        print("ERROR: Could not find default_cards bulk data URL")
+        logger.info("ERROR: Could not find default_cards bulk data URL")
         return []
 
-    print(f"Downloading bulk data from: {default_cards_url}")
+    logger.info(f"Downloading bulk data from: {default_cards_url}")
     import httpx
     client = httpx.Client(timeout=120.0)
     resp = client.get(default_cards_url)
@@ -88,9 +92,7 @@ def card_to_catalog_item(card: dict) -> CatalogItem:
     collector_no = card.get("collector_number", "")
     name = card.get("name", "")
     set_name = card.get("set_name", "")
-
-    rarity_map = {"common": "Common", "uncommon": "Uncommon", "rare": "Rare", "mythic": "Mythic"}
-    rarity = rarity_map.get(card.get("rarity", ""), card.get("rarity", ""))
+    rarity = shared_rarity_score(card.get("rarity"), card.get("rarity", ""))
 
     image_url = ""
     image_uris = card.get("image_uris", {})
@@ -124,9 +126,7 @@ def card_to_price_observations(card: dict) -> list[PriceObservation]:
     observations = []
     prices = card.get("prices", {})
     rarity = card.get("rarity", "common")
-
-    rarity_score_map = {"common": 0.1, "uncommon": 0.3, "rare": 0.6, "mythic": 0.85, "special": 0.7}
-    rarity_score = rarity_score_map.get(rarity, 0.5)
+    rarity_score = shared_rarity_score(rarity)
     is_reserved = card.get("reserved", False)
 
     for price_key in ["eur", "eur_foil"]:
@@ -196,7 +196,7 @@ def main():
                         help="Only write local files, skip Supabase")
     args = parser.parse_args()
 
-    print(f"=== MTG Import (Scryfall) ===")
+    logger.info(f"=== MTG Import (Scryfall) ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -241,10 +241,10 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== MTG Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
-    print(f"  Market hits:        {len(all_hits)}")
+    logger.info(f"\n=== MTG Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
+    logger.info(f"  Market hits:        {len(all_hits)}")
 
 
 if __name__ == "__main__":

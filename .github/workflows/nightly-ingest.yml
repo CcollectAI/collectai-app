@@ -1,8 +1,8 @@
-name: Nightly Ingest Pipeline
+name: Nightly Ingest Pipeline (All Tiers)
 
 on:
   schedule:
-    # Run at 03:00 UTC every day (after other nightly jobs)
+    # Run at 03:00 UTC every day (after training pipeline)
     - cron: "0 3 * * *"
   workflow_dispatch:
     inputs:
@@ -11,16 +11,26 @@ on:
         required: false
         default: 'false'
         type: boolean
-      max_items:
-        description: 'Maximum items to process'
+      tier:
+        description: 'Tier to run (1, 2, 3, or empty for all)'
         required: false
-        default: '1000'
+        default: ''
         type: string
+      parallel:
+        description: 'Number of parallel workers per tier'
+        required: false
+        default: '4'
+        type: string
+      cache_images:
+        description: 'Cache images to S3'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -33,38 +43,46 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests
+          pip install httpx boto3 || true
 
-      - name: Run ingest pipeline
+      - name: Run import_all.py (all tiers)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          INGEST_S3_BUCKET: ${{ secrets.INGEST_S3_BUCKET }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          CATALOG_IMAGES_S3_BUCKET: ${{ secrets.CATALOG_IMAGES_S3_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'eu-west-1' }}
+          PIPELINE_LOG_LEVEL: INFO
         run: |
-          # Determine flags from inputs or defaults
-          DRY_RUN_FLAG=""
+          # Build flags
+          FLAGS=""
+
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            DRY_RUN_FLAG="--dry-run"
+            FLAGS="$FLAGS --dry-run"
           fi
 
-          MAX_ITEMS="${{ github.event.inputs.max_items || '1000' }}"
+          TIER="${{ github.event.inputs.tier }}"
+          if [ -n "$TIER" ]; then
+            FLAGS="$FLAGS --tier $TIER"
+          fi
 
-          echo "Running ingest pipeline..."
-          echo "  Dry-run: ${{ github.event.inputs.dry_run || 'false' }}"
-          echo "  Max items: $MAX_ITEMS"
+          PARALLEL="${{ github.event.inputs.parallel || '4' }}"
+          FLAGS="$FLAGS --parallel $PARALLEL"
 
-          python scripts/ingest/run_nightly.py \
-            $DRY_RUN_FLAG \
-            --max-items="$MAX_ITEMS" \
-            --source=app_signals
+          if [ "${{ github.event.inputs.cache_images }}" = "true" ]; then
+            FLAGS="$FLAGS --cache-images"
+          fi
+
+          echo "Running: python -m pipelines.import_all $FLAGS"
+          python -m pipelines.import_all $FLAGS
 
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: ingest-logs
-          path: /tmp/collectai_ingest/
+          path: |
+            data/.import_checkpoint.db
+            /tmp/collectai_ingest/
           retention-days: 7

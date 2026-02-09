@@ -9,7 +9,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -32,17 +32,20 @@ def _get_db_pool():
 
 class FeedbackSubmitRequest(BaseModel):
     """Request body for submitting feedback."""
-    item_id: str = Field(..., description="UUID of the item")
+    item_id: str = Field(..., max_length=64, description="UUID of the item")
     feedback_type: str = Field(
         ...,
+        max_length=50,
         description="Type of feedback: sale_price, disagree, accurate, or custom"
     )
     value: str | None = Field(
         None,
+        max_length=500,
         description="Value for the feedback (e.g., sale price amount)"
     )
     notes: str | None = Field(
         None,
+        max_length=2000,
         description="Optional notes about the feedback"
     )
 
@@ -56,17 +59,19 @@ class FeedbackSubmitResponse(BaseModel):
 
 class CorrectionRequest(BaseModel):
     """Request body for submitting a correction to training data."""
-    item_id: str = Field(..., description="UUID of the training item")
+    item_id: str = Field(..., max_length=64, description="UUID of the training item")
     corrected_price: float | None = Field(
         None,
         description="Corrected price value"
     )
     corrected_condition: str | None = Field(
         None,
+        max_length=100,
         description="Corrected condition (e.g., 'Near Mint', 'Good')"
     )
     corrected_category: str | None = Field(
         None,
+        max_length=64,
         description="Corrected category"
     )
     corrected_attributes: dict[str, Any] | None = Field(
@@ -75,6 +80,7 @@ class CorrectionRequest(BaseModel):
     )
     notes: str | None = Field(
         None,
+        max_length=2000,
         description="Notes about the correction"
     )
 
@@ -142,7 +148,7 @@ async def submit_feedback(request: FeedbackSubmitRequest):
                 item_uuid,
                 label,
                 request.notes,
-                datetime.utcnow(),
+                datetime.now(timezone.utc),
             )
 
             feedback_id = str(row["id"]) if row else None
@@ -158,8 +164,8 @@ async def submit_feedback(request: FeedbackSubmitRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[feedback/submit] Error saving feedback: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to save feedback: {str(e)}")
+        logger.error("[feedback/submit] Error saving feedback: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to save feedback")
 
 
 @router.post("/correction", response_model=CorrectionResponse)
@@ -227,7 +233,7 @@ async def submit_correction(request: CorrectionRequest):
 
         # Always update corrected_at timestamp
         updates.append(f"corrected_at = ${param_idx}")
-        params.append(datetime.utcnow())
+        params.append(datetime.now(timezone.utc))
         param_idx += 1
 
         # Add item_id as final parameter
@@ -255,5 +261,5 @@ async def submit_correction(request: CorrectionRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[feedback/correction] Error saving correction: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to save correction: {str(e)}")
+        logger.error("[feedback/correction] Error saving correction: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to save correction")

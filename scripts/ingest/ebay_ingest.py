@@ -78,7 +78,7 @@ def normalize(item, provider, query):
         ts = (
             item.get("endTime")
             or item.get("date")
-            or datetime.datetime.utcnow().isoformat() + "Z"
+            or datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z"
         )
         return {
             "provider": "ebay",
@@ -114,7 +114,7 @@ def normalize(item, provider, query):
         ts = (
             item.get("itemEndDate")
             or item.get("itemCreationDate")
-            or datetime.datetime.utcnow().isoformat() + "Z"
+            or datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z"
         )
         return {
             "provider": "ebay",

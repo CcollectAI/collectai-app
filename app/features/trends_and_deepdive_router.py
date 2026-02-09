@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Query
@@ -90,7 +90,7 @@ async def get_collection_trends(
         )
 
     user_id = _get_current_user_id()
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     try:
         async with pool.acquire() as conn:
@@ -193,7 +193,7 @@ async def get_item_trends(
             model_confidence=[],
         )
 
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     try:
         async with pool.acquire() as conn:
@@ -262,7 +262,7 @@ async def get_category_deep_dive(
             top_movers=[],
         )
 
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     try:
         async with pool.acquire() as conn:

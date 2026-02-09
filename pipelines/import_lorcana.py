@@ -23,6 +23,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, MarketHit, SupabaseIngest,
     write_training_jsonl, write_catalog_sql, fetch_json,
     log_progress, slugify, to_eur,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "lorcana"
@@ -43,7 +47,7 @@ def fetch_all_cards() -> list[dict]:
         log_progress(CATEGORY, "cards fetched", len(cards))
         return cards
     except Exception as e:
-        print(f"API fetch failed ({e}), using curated seed data...")
+        logger.info(f"API fetch failed ({e}), using curated seed data...")
         return _curated_seed_cards()
 
 
@@ -153,14 +157,12 @@ def card_to_price_observation(card: dict) -> PriceObservation | None:
         return None
 
     rarity = card.get("rarity", card.get("Rarity", ""))
-    rarity_map = {"Common": 0.1, "Uncommon": 0.3, "Rare": 0.5,
-                  "Super Rare": 0.75, "Legendary": 0.9}
     variant = card.get("variant", "standard")
 
     return PriceObservation(
         features={
             "condition_score": 0.9,
-            "rarity_score": rarity_map.get(rarity, 0.5),
+            "rarity_score": shared_rarity_score(rarity),
             "edition_score": 0.9 if variant == "enchanted" else 0.5,
             "is_foil": 1.0 if variant in ("enchanted", "foil") else 0.0,
         },
@@ -173,7 +175,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== Disney Lorcana Import ===")
+    logger.info("=== Disney Lorcana Import ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -206,9 +208,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== Lorcana Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== Lorcana Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 if __name__ == "__main__":

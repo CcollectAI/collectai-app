@@ -28,6 +28,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, SupabaseIngest,
     write_training_jsonl, write_catalog_sql,
     log_progress, slugify,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "vtuber"
@@ -125,7 +129,6 @@ def item_to_catalog_item(item: dict) -> CatalogItem:
 
 def item_to_price_observation(item: dict) -> PriceObservation:
     tier = item["rarity_tier"]
-    rarity_map = {"grail": 0.95, "high": 0.8, "mid": 0.6, "standard": 0.2}
 
     exclusive_type = item["exclusive_type"]
     edition_scores = {
@@ -145,7 +148,7 @@ def item_to_price_observation(item: dict) -> PriceObservation:
     return PriceObservation(
         features={
             "condition_score": 0.85,
-            "rarity_score": rarity_map.get(tier, 0.5),
+            "rarity_score": shared_rarity_score(tier),
             "edition_score": edition_scores.get(exclusive_type, 0.5),
         },
         price=item["price_eur"],
@@ -157,7 +160,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== VTuber Merch Import ===")
+    logger.info("=== VTuber Merch Import ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -180,9 +183,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== VTuber Merch Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== VTuber Merch Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 if __name__ == "__main__":

@@ -788,6 +788,22 @@ export const CATEGORIES: Category[] = [
     ],
     relatedCategoryIds: ['pokemon', 'retro_games', 'mtg'],
   },
+  {
+    id: 'retro_handhelds',
+    name: 'Retro Handhelds',
+    tagline: 'Classic portable gaming hardware from Game Boy to PSP.',
+    bannerImageUrl:
+      'https://images.pexels.com/photos/1298601/pexels-photo-1298601.jpeg',
+    collections: [],
+    externalMarketplaces: [
+      {
+        id: 'ebay',
+        label: 'eBay',
+        url: 'https://www.ebay.com',
+      },
+    ],
+    relatedCategoryIds: ['retro_games', 'nintendo_merch', 'retro_pokemon'],
+  },
 ];
 
 export function getCategoryById(id: CategoryId | string | null | undefined): Category | undefined {

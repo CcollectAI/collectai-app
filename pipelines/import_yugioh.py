@@ -24,6 +24,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, MarketHit, SupabaseIngest,
     write_training_jsonl, write_catalog_sql, fetch_json,
     log_progress, slugify, to_eur,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 API_BASE = "https://db.ygoprodeck.com/api/v7"
@@ -32,7 +36,7 @@ CATEGORY = "yugioh"
 
 def fetch_all_cards() -> list[dict]:
     """Fetch entire Yu-Gi-Oh card database (single request)."""
-    print("Fetching all Yu-Gi-Oh cards (single API call)...")
+    logger.info("Fetching all Yu-Gi-Oh cards (single API call)...")
     data = fetch_json(f"{API_BASE}/cardinfo.php")
     cards = data.get("data", [])
     log_progress(CATEGORY, "cards fetched", len(cards))
@@ -45,15 +49,6 @@ def card_to_catalog_items(card: dict) -> list[CatalogItem]:
     name = card.get("name", "")
     card_type = card.get("type", "")
     race = card.get("race", "")
-
-    rarity_score_map = {
-        "Common": 0.1, "Rare": 0.4, "Super Rare": 0.55,
-        "Ultra Rare": 0.7, "Secret Rare": 0.8,
-        "Ultimate Rare": 0.85, "Ghost Rare": 0.9,
-        "Starlight Rare": 0.95, "Collector's Rare": 0.85,
-        "Prismatic Secret Rare": 0.9, "Quarter Century Secret Rare": 0.95,
-        "Short Print": 0.6,
-    }
 
     card_sets = card.get("card_sets", [])
     if not card_sets:
@@ -195,7 +190,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== Yu-Gi-Oh Import (YGOProDeck) ===")
+    logger.info("=== Yu-Gi-Oh Import (YGOProDeck) ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -240,10 +235,10 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== Yu-Gi-Oh Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
-    print(f"  Market hits:        {len(all_hits)}")
+    logger.info(f"\n=== Yu-Gi-Oh Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
+    logger.info(f"  Market hits:        {len(all_hits)}")
 
 
 if __name__ == "__main__":

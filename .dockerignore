@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.venv
+venv
+env
+
+# Node / frontend
+node_modules
+.expo
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Data & artifacts (large, rebuilt in CI)
+data/
+artifacts/
+*.jsonl
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Docs & misc
+*.md
+LICENSE
+V1.txt
+Untitled

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
@@ -17,7 +17,7 @@ class OwnershipEvent(BaseModel):
         ...,
         description="added | transferred_in | transferred_out | sale | purchase",
     )
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     note: Optional[str] = None
     source: Optional[str] = Field(
         None, description="receipt | manual | marketplace | ocr"
@@ -48,7 +48,7 @@ async def get_provenance(item_id: str):
     """
     if item_id not in _PROVENANCE:
         # create a minimal placeholder timeline
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         timeline = ProvenanceTimeline(
             item_id=item_id,
             created_at=now,
@@ -70,10 +70,14 @@ async def get_provenance(item_id: str):
 
 
 class OwnershipEventCreate(BaseModel):
-    user_id: str
-    event_type: str
-    note: Optional[str] = None
-    source: Optional[str] = None
+    user_id: str = Field(..., min_length=1, max_length=255)
+    event_type: str = Field(
+        ...,
+        max_length=50,
+        pattern=r"^(added|transferred_in|transferred_out|sale|purchase)$",
+    )
+    note: Optional[str] = Field(None, max_length=2000)
+    source: Optional[str] = Field(None, max_length=50)
     metadata: dict = Field(default_factory=dict)
 
 

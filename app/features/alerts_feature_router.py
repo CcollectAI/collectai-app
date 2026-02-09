@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -35,7 +35,7 @@ class PriceAlert(BaseModel):
         None, description="up | down for trend-style triggers"
     )
     active: bool = Field(True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_triggered_at: Optional[datetime] = None
     metadata: dict = Field(default_factory=dict)
 
@@ -127,7 +127,7 @@ async def create_or_update_alert(
     if alert_id is None:
         alert_id = str(uuid4())
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     alert = PriceAlert(
         id=alert_id,
         user_id=user_id,

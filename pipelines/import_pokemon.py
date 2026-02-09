@@ -25,7 +25,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipelines.import_common import (
     CatalogItem, PriceObservation, MarketHit, SupabaseIngest,
     write_training_jsonl, write_catalog_sql, fetch_json,
-    log_progress, slugify, to_eur,
+    log_progress, slugify, to_eur, close_http_client,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
 )
 
 API_BASE = "https://api.pokemontcg.io/v2"
@@ -107,16 +110,7 @@ def card_to_price_observations(card: dict) -> list[PriceObservation]:
     prices = tcgplayer.get("prices", {})
     rarity = card.get("rarity", "") or "Common"
 
-    rarity_score_map = {
-        "Common": 0.1, "Uncommon": 0.3, "Rare": 0.5,
-        "Rare Holo": 0.65, "Rare Holo EX": 0.7, "Rare Ultra": 0.8,
-        "Rare Secret": 0.9, "Rare Holo V": 0.7, "Rare Holo VMAX": 0.75,
-        "Rare Holo VSTAR": 0.75, "Amazing Rare": 0.8,
-        "Illustration Rare": 0.85, "Special Art Rare": 0.9,
-        "Hyper Rare": 0.95, "Rare Shiny": 0.8,
-        "LEGEND": 0.85, "Promo": 0.4,
-    }
-    rarity_score = rarity_score_map.get(rarity, 0.5)
+    rarity_score = shared_rarity_score(rarity)
 
     for variant, price_data in prices.items():
         market_price = price_data.get("market")
@@ -177,8 +171,8 @@ def main():
                         help="Only write local files, skip Supabase")
     args = parser.parse_args()
 
-    print(f"=== Pokemon TCG Import ===")
-    print(f"Limit sets: {args.limit_sets or 'ALL'}")
+    logger.info(f"=== Pokemon TCG Import ===")
+    logger.info(f"Limit sets: {args.limit_sets or 'ALL'}")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -224,11 +218,12 @@ def main():
             log_progress(CATEGORY, "market_hits upserted", hits_inserted)
 
     ingest.close()
+    close_http_client()
 
-    print(f"\n=== Pokemon Import Complete ===")
-    print(f"  Catalog items:     {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
-    print(f"  Market hits:       {len(all_hits)}")
+    logger.info(f"=== Pokemon Import Complete ===")
+    logger.info(f"  Catalog items:     {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
+    logger.info(f"  Market hits:       {len(all_hits)}")
 
 
 if __name__ == "__main__":

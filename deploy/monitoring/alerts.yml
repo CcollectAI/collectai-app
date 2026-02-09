@@ -18,9 +18,33 @@ groups:
       description: "Endpoints {{ $labels.path }} {{ $labels.method }} breaching."
 
   - alert: CalibrationCoverageDrift
-    expr: (service_health == 1) and on() (max_over_time(service_health[10m]) == 1) and 0 # placeholder; wire to coverage gauge if you export one
+    expr: collectai_model_picp < 0.70
     for: 5m
     labels: {severity: ticket}
     annotations:
-      summary: "Calibration coverage drifted"
-      description: "Hook this rule to PICP coverage gauge when exposed."
+      summary: "Model PICP coverage below 70% for {{ $labels.category }}"
+      description: "Model calibration has drifted. PICP={{ $value }}. Check calibration_snapshots table and retrain."
+
+  - alert: CalibrationACEHigh
+    expr: collectai_model_ace > 0.15
+    for: 5m
+    labels: {severity: ticket}
+    annotations:
+      summary: "Model ACE above 0.15 for {{ $labels.category }}"
+      description: "Average Coverage Error is too high. ACE={{ $value }}. Model may need retraining."
+
+  - alert: ModelMAEHigh
+    expr: collectai_model_mae > on(category) group_left collectai_gate_mae_max
+    for: 10m
+    labels: {severity: ticket}
+    annotations:
+      summary: "Model MAE exceeds gate threshold for {{ $labels.category }}"
+      description: "MAE={{ $value }} exceeds category threshold. Retrain or investigate data quality."
+
+  - alert: IngestPipelineFailure
+    expr: collectai_ingest_failed_categories > 0
+    for: 1m
+    labels: {severity: ticket}
+    annotations:
+      summary: "Ingest pipeline had {{ $value }} failed categories"
+      description: "Check import_all.py logs and checkpoint DB for details."

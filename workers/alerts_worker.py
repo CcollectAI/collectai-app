@@ -11,30 +11,30 @@ async def run_once():
         return
 
     conn = await asyncpg.connect(DSN)
+    try:
+        rows = await conn.fetch("""
+            SELECT item_ref, q10, q50, q90
+            FROM public.price_predictions
+            ORDER BY generated_at DESC
+            LIMIT 50
+        """)
 
-    rows = await conn.fetch("""
-        SELECT item_ref, q10, q50, q90
-        FROM public.price_predictions
-        ORDER BY generated_at DESC
-        LIMIT 50
-    """)
+        for r in rows:
+            ref = r["item_ref"]
+            mid = r["q50"]
 
-    for r in rows:
-        ref = r["item_ref"]
-        mid = r["q50"]
+            if mid is None:
+                continue
 
-        if mid is None:
-            continue
-
-        if mid < 10:
-            msg = f"Low valuation alert: {ref} at {mid}"
-            await conn.execute("""
-                INSERT INTO public.alerts (item_ref, alert_type, message)
-                VALUES ($1, 'low_value', $2)
-            """, ref, msg)
-            logging.info(msg)
-
-    await conn.close()
+            if mid < 10:
+                msg = f"Low valuation alert: {ref} at {mid}"
+                await conn.execute("""
+                    INSERT INTO public.alerts (item_ref, alert_type, message)
+                    VALUES ($1, 'low_value', $2)
+                """, ref, msg)
+                logging.info(msg)
+    finally:
+        await conn.close()
 
 async def main():
     try:

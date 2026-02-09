@@ -15,6 +15,10 @@ numpy
 scikit-learn
 # S3
 boto3
+# config
+pyyaml>=6.0
+# DB (sync, used by routes.py)
+psycopg2-binary
 # testing
 pytest>=8.2
 pytest-asyncio>=0.23

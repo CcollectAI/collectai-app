@@ -16,7 +16,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
@@ -64,27 +64,27 @@ def get_optional_user_id() -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 class CreateEventRequest(BaseModel):
-    title: str
-    kind: str  # collection_drop, meetup, stream, convention, release
-    category_id: Optional[str] = None
-    date: str  # YYYY-MM-DD
-    time: Optional[str] = None
-    end_date: Optional[str] = None
-    location: Optional[str] = None
-    online_url: Optional[str] = None
-    description: str = ""
-    format: str = "in_person"  # in_person, online, hybrid
+    title: str = Field(..., min_length=1, max_length=255)
+    kind: str = Field(..., max_length=50, pattern=r"^(collection_drop|meetup|stream|convention|release)$")
+    category_id: Optional[str] = Field(None, max_length=64)
+    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="YYYY-MM-DD")
+    time: Optional[str] = Field(None, max_length=10)
+    end_date: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    location: Optional[str] = Field(None, max_length=500)
+    online_url: Optional[str] = Field(None, max_length=2048)
+    description: str = Field(default="", max_length=5000)
+    format: str = Field(default="in_person", pattern=r"^(in_person|online|hybrid)$")
     is_public: bool = True
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
 
 
 class RsvpRequest(BaseModel):
-    status: str = "going"  # going, interested, not_going
+    status: str = Field(default="going", pattern=r"^(going|interested|not_going)$")
 
 
 class FollowCategoryRequest(BaseModel):
-    category_id: str
+    category_id: str = Field(..., min_length=1, max_length=64)
 
 
 class EventResponse(BaseModel):
@@ -266,7 +266,7 @@ async def create_event(
 
     # Offline / in-memory fallback
     event_id = str(uuid4())
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     event_data = {
         "id": event_id,
         "title": request.title,
@@ -331,8 +331,8 @@ async def get_event(
                         )
                         if rsvp_row:
                             event.user_rsvp_status = rsvp_row["status"]
-                    except Exception:
-                        pass  # RSVP lookup is best-effort
+                    except Exception as e:
+                        logger.warning("[events] RSVP lookup failed for user=%s event=%s: %s", user_id, event_id, e)
 
                 return event
 

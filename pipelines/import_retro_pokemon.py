@@ -25,6 +25,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, SupabaseIngest,
     write_training_jsonl, write_catalog_sql,
     log_progress, slugify,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "retro_pokemon"
@@ -134,8 +138,7 @@ def item_to_catalog_item(item: dict) -> CatalogItem:
 def item_to_price_observations(item: dict) -> list[PriceObservation]:
     """Create observations for loose and boxed conditions."""
     tier = item["rarity_tier"]
-    rarity_map = {"grail": 0.95, "high": 0.8, "mid": 0.6, "standard": 0.2}
-    rarity_score = rarity_map.get(tier, 0.5)
+    rarity_score = shared_rarity_score(tier)
 
     observations = []
 
@@ -171,7 +174,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== Retro Pokemon Import ===")
+    logger.info("=== Retro Pokemon Import ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -196,9 +199,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== Retro Pokemon Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== Retro Pokemon Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 if __name__ == "__main__":

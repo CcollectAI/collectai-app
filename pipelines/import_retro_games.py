@@ -23,6 +23,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, SupabaseIngest,
     write_training_jsonl, write_catalog_sql,
     log_progress, slugify,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "retro_games"
@@ -174,9 +178,7 @@ def item_to_price_observations(item: dict) -> list[PriceObservation]:
     """Create observations for loose, CIB, and sealed conditions."""
     observations = []
     rarity_str = item.get("rarity", "Common")
-    rarity_map = {"Common": 0.2, "Uncommon": 0.4, "Rare": 0.7,
-                  "Ultra Rare": 0.9, "JP Only": 0.6, "Console": 0.3}
-    rarity_score = rarity_map.get(rarity_str, 0.4)
+    rarity_score = shared_rarity_score(rarity_str)
 
     conditions = [
         ("loose", item["price_loose"], 0.5),
@@ -203,7 +205,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== Retro Games Import ===")
+    logger.info("=== Retro Games Import ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -228,9 +230,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== Retro Games Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== Retro Games Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 if __name__ == "__main__":

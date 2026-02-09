@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 
 import psycopg2
 
 from services.collectors_merge.core.market_models import MarketHit
 from services.collectors_merge.providers.bricklink.price_guide import price_guide
+
+logger = logging.getLogger(__name__)
 
 
 def db():
@@ -44,13 +47,14 @@ def upsert_market_hits(conn, hits: list[MarketHit]):
 def main(set_no: str):
     # TODO: convert BrickLink price guide rows -> MarketHit list
     js = price_guide(set_no)
-    print("bricklink response:", js)
+    logger.info("bricklink response: %s", js)
     # parse js into hits...
     # upsert_market_hits(db(), hits)
-    print("bricklink ingest scaffold complete")
+    logger.info("bricklink ingest scaffold complete")
 
 
 if __name__ == "__main__":
     import sys
 
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [bricklink] %(levelname)s: %(message)s")
     main(sys.argv[1] if len(sys.argv) > 1 else "10240")

@@ -21,6 +21,9 @@ ios/build/
 # local env
 .env
 .env.*
+env/.env*
+functions.env
+supa_test.env*
 *.keystore
 *.jks
 

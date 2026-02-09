@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 import psycopg2
 import psycopg2.extras
@@ -10,6 +11,8 @@ from services.collectors_merge.core.currency.fx import to_eur
 from services.collectors_merge.core.fees.fees import effective_price
 from services.collectors_merge.core.notify.queue import enqueue
 
+logger = logging.getLogger(__name__)
+
 
 def db():
     return psycopg2.connect(os.environ["DATABASE_URL"])
@@ -17,19 +20,21 @@ def db():
 
 def recent_price_for(nk: str, days: int = 7):
     conn = db()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute(
-        """
-        select provider, price, currency, shipping, ended_at
-        from public.market_hits
-        where normalized_key=%s and ended_at >= now() - (%s || ' days')::interval
-        order by ended_at desc limit 20
-    """,
-        (nk, days),
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(
+            """
+            select provider, price, currency, shipping, ended_at
+            from public.market_hits
+            where normalized_key=%s and ended_at >= now() - (%s || ' days')::interval
+            order by ended_at desc limit 20
+        """,
+            (nk, days),
+        )
+        rows = cur.fetchall()
+        cur.close()
+    finally:
+        conn.close()
     eff = []
     for r in rows:
         eur = (
@@ -80,11 +85,12 @@ def main():
                     "trend": "spike" if spike else "drop",
                     "p7": round(p7, 2),
                     "p30": round(p30, 2),
-                    "at": datetime.utcnow().isoformat() + "Z",
+                    "at": datetime.now(timezone.utc).isoformat() + "Z",
                 }
             )
-    print("alerts queued")
+    logger.info("watchlist alerts queued")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [alerts_watchlist] %(levelname)s: %(message)s")
     main()

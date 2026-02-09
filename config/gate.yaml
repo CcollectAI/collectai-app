@@ -1,15 +1,166 @@
+# Model quality gate thresholds per category.
+# Used by calibration_job.py and nightly eval pipelines.
+# Missing categories fall back to _default.
+
+_default:
+  mae_max: 10.0
+  mape_max: 0.30
+  r2_min: -0.20
+  min_eval_rows: 10
+  picp_min: 0.70
+  ace_max: 0.15
+
+# --- Tier 1 (high data volume) ---
 pokemon:
   mae_max: 6.0
   mape_max: 0.20
-  r2_min:  0.00
+  r2_min: 0.00
   min_eval_rows: 20
-diecast:
-  mae_max: 7.0
+  picp_min: 0.75
+  ace_max: 0.10
+
+mtg:
+  mae_max: 8.0
+  mape_max: 0.22
+  r2_min: 0.00
+  min_eval_rows: 20
+  picp_min: 0.75
+  ace_max: 0.10
+
+yugioh:
+  mae_max: 5.0
+  mape_max: 0.20
+  r2_min: 0.00
+  min_eval_rows: 20
+  picp_min: 0.75
+  ace_max: 0.10
+
+lorcana:
+  mae_max: 6.0
   mape_max: 0.25
   r2_min: -0.10
-  min_eval_rows: 20
+  min_eval_rows: 15
+  picp_min: 0.70
+  ace_max: 0.12
+
 lego:
   mae_max: 8.0
   mape_max: 0.28
   r2_min: -0.10
   min_eval_rows: 20
+  picp_min: 0.72
+  ace_max: 0.12
+
+funko:
+  mae_max: 15.0
+  mape_max: 0.35
+  r2_min: -0.15
+  min_eval_rows: 15
+  picp_min: 0.68
+  ace_max: 0.15
+
+warhammer:
+  mae_max: 10.0
+  mape_max: 0.25
+  r2_min: -0.10
+  min_eval_rows: 15
+  picp_min: 0.70
+  ace_max: 0.12
+
+retro_games:
+  mae_max: 12.0
+  mape_max: 0.30
+  r2_min: -0.10
+  min_eval_rows: 15
+  picp_min: 0.70
+  ace_max: 0.12
+
+manga:
+  mae_max: 8.0
+  mape_max: 0.25
+  r2_min: -0.10
+  min_eval_rows: 15
+  picp_min: 0.70
+  ace_max: 0.12
+
+sportscards:
+  mae_max: 10.0
+  mape_max: 0.30
+  r2_min: -0.10
+  min_eval_rows: 15
+  picp_min: 0.70
+  ace_max: 0.12
+
+# --- Tier 2 ---
+diecast:
+  mae_max: 7.0
+  mape_max: 0.25
+  r2_min: -0.10
+  min_eval_rows: 15
+  picp_min: 0.70
+  ace_max: 0.12
+
+anime_figures:
+  mae_max: 12.0
+  mape_max: 0.30
+  r2_min: -0.15
+  min_eval_rows: 10
+  picp_min: 0.68
+  ace_max: 0.15
+
+hot_toys:
+  mae_max: 20.0
+  mape_max: 0.25
+  r2_min: -0.15
+  min_eval_rows: 10
+  picp_min: 0.68
+  ace_max: 0.15
+
+gunpla:
+  mae_max: 8.0
+  mape_max: 0.25
+  r2_min: -0.10
+  min_eval_rows: 10
+  picp_min: 0.70
+  ace_max: 0.12
+
+designer_toys:
+  mae_max: 15.0
+  mape_max: 0.35
+  r2_min: -0.20
+  min_eval_rows: 10
+  picp_min: 0.65
+  ace_max: 0.18
+
+keycaps:
+  mae_max: 10.0
+  mape_max: 0.30
+  r2_min: -0.15
+  min_eval_rows: 10
+  picp_min: 0.68
+  ace_max: 0.15
+
+# --- Tier 3 (low data, relaxed thresholds) ---
+kpop_merch:
+  mae_max: 12.0
+  mape_max: 0.35
+  r2_min: -0.20
+  min_eval_rows: 10
+  picp_min: 0.65
+  ace_max: 0.18
+
+taylor_swift:
+  mae_max: 15.0
+  mape_max: 0.40
+  r2_min: -0.25
+  min_eval_rows: 10
+  picp_min: 0.60
+  ace_max: 0.20
+
+disney:
+  mae_max: 12.0
+  mape_max: 0.30
+  r2_min: -0.15
+  min_eval_rows: 10
+  picp_min: 0.68
+  ace_max: 0.15

@@ -122,7 +122,7 @@ def generate_explanation(features: dict[str, Any], artifact: dict) -> str:
     Returns:
         Human-readable explanation string
     """
-    if artifact.get("model_type") != "ridge_v1":
+    if artifact.get("model_type") not in ("ridge_v1", "ridge_v2"):
         return "Price estimate based on similar items in the market."
 
     try:

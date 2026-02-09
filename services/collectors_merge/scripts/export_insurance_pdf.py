@@ -19,7 +19,7 @@ def render_pdf(in_path: str, out_path: str):
     c.drawString(margin, y, "Portfolio Insurance Report")
     y -= 20
     c.setFont("Helvetica", 10)
-    c.drawString(margin, y, f"Generated: {dt.datetime.utcnow().isoformat()}Z")
+    c.drawString(margin, y, f"Generated: {dt.datetime.now(dt.timezone.utc).isoformat()}Z")
     y -= 30
 
     total = 0.0

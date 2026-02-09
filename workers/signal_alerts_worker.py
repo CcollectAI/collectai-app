@@ -14,60 +14,60 @@ async def run_once():
         return
 
     conn = await asyncpg.connect(DSN)
+    try:
+        rows = await conn.fetch("""
+            SELECT item_ref, vision_label, vision_score, q10, q50, q90, valuation_at
+            FROM public.v_item_signal
+            WHERE q50 IS NOT NULL
+            ORDER BY valuation_at DESC
+            LIMIT 50;
+        """)
 
-    rows = await conn.fetch("""
-        SELECT item_ref, vision_label, vision_score, q10, q50, q90, valuation_at
-        FROM public.v_item_signal
-        WHERE q50 IS NOT NULL
-        ORDER BY valuation_at DESC
-        LIMIT 50;
-    """)
+        if not rows:
+            logging.info("No valuation signals to check")
+            return
 
-    if not rows:
-        logging.info("No valuation signals to check")
+        for r in rows:
+            ref = r["item_ref"]
+            label = r["vision_label"]
+            mid = r["q50"]
+
+            if mid is None:
+                continue
+
+            if float(mid) < THRESH_LOW:
+                msg = f"Low valuation: {ref} ({label}) at {mid} EUR"
+                logging.info("ALERT low_value: %s", msg)
+
+                # insert alerts only if at least one user exists
+                await conn.execute("""
+                    INSERT INTO public.alerts (
+                        user_id,
+                        query,
+                        max_price,
+                        marketplaces,
+                        active,
+                        item_ref,
+                        alert_type,
+                        message
+                    )
+                    SELECT
+                        u.id,
+                        'auto_low_value_signal',
+                        NULL,
+                        '{}'::text[],
+                        true,
+                        $1,
+                        'low_value',
+                        $2
+                    FROM public.users u
+                    ORDER BY u.id
+                    LIMIT 1
+                """, ref, msg)
+
+        logging.info("signal_alerts cycle done")
+    finally:
         await conn.close()
-        return
-
-    for r in rows:
-        ref = r["item_ref"]
-        label = r["vision_label"]
-        mid = r["q50"]
-
-        if mid is None:
-            continue
-
-        if float(mid) < THRESH_LOW:
-            msg = f"Low valuation: {ref} ({label}) at {mid} EUR"
-            logging.info("ALERT low_value: %s", msg)
-
-            # insert alerts only if at least one user exists
-            await conn.execute("""
-                INSERT INTO public.alerts (
-                    user_id,
-                    query,
-                    max_price,
-                    marketplaces,
-                    active,
-                    item_ref,
-                    alert_type,
-                    message
-                )
-                SELECT
-                    u.id,
-                    'auto_low_value_signal',
-                    NULL,
-                    '{}'::text[],
-                    true,
-                    $1,
-                    'low_value',
-                    $2
-                FROM public.users u
-                ORDER BY u.id
-                LIMIT 1
-            """, ref, msg)
-
-    await conn.close()
-    logging.info("signal_alerts cycle done")
 
 async def main():
     try:

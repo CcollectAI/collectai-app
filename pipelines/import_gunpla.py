@@ -28,6 +28,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, SupabaseIngest,
     write_training_jsonl, write_catalog_sql,
     log_progress, slugify,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "gunpla"
@@ -142,7 +146,6 @@ def item_to_catalog_item(item: dict) -> CatalogItem:
 
 def item_to_price_observation(item: dict) -> PriceObservation:
     tier = item["rarity_tier"]
-    rarity_map = {"grail": 0.95, "high": 0.8, "mid": 0.6, "standard": 0.2}
 
     variant = item["variant"]
     is_p_bandai = "P-Bandai" in variant if variant else False
@@ -165,7 +168,7 @@ def item_to_price_observation(item: dict) -> PriceObservation:
     return PriceObservation(
         features={
             "condition_score": 0.85,
-            "rarity_score": rarity_map.get(tier, 0.5),
+            "rarity_score": shared_rarity_score(tier),
             "edition_score": edition_score,
         },
         price=item["price_eur"],
@@ -177,7 +180,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== Gunpla Import ===")
+    logger.info("=== Gunpla Import ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -200,9 +203,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== Gunpla Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== Gunpla Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 if __name__ == "__main__":

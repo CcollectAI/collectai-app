@@ -110,11 +110,10 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   async listItems(): Promise<Item[]> {
-    // items table schema: id, title, category, updated_at
-    // attributes/attributes_json may or may not exist - query base columns only
+    // JOIN price_predictions via FK (item_id → items.id)
     const { data, error } = await supabase
       .from('items')
-      .select('id, title, category, updated_at')
+      .select('id, title, category, updated_at, price_predictions(q10, q50, q90, conf_score, asof)')
       .order('updated_at', { ascending: false })
       .limit(200);
 
@@ -123,21 +122,36 @@ export class SupabaseDataProvider implements DataProvider {
       return [];
     }
 
-    const rows = (data ?? []) as {
+    type PredRow = { q10: number | null; q50: number | null; q90: number | null; conf_score: number | null; asof: string | null };
+    type ItemRow = {
       id: string;
       title?: string | null;
       category?: string | null;
       updated_at?: string | null;
-    }[];
+      price_predictions?: PredRow[];
+    };
 
-    return rows.map((r) => ({
-      id: r.id,
-      name: r.title ?? 'Untitled',
-      category: r.category || 'Uncategorized',
-      price: 0, // Price comes from price_predictions table, not items
-      imageUrl: undefined, // Image URL not available from base items table
-      updatedAt: r.updated_at ?? undefined,
-    }));
+    const rows = (data ?? []) as ItemRow[];
+
+    return rows.map((r) => {
+      // Pick latest prediction by asof
+      const preds = (r.price_predictions ?? []).sort(
+        (a, b) => (b.asof ?? '').localeCompare(a.asof ?? ''),
+      );
+      const latest = preds[0];
+
+      return {
+        id: r.id,
+        name: r.title ?? 'Untitled',
+        category: r.category || 'Uncategorized',
+        price: latest?.q50 ?? 0,
+        priceBand: latest
+          ? { q10: latest.q10 ?? 0, q50: latest.q50 ?? 0, q90: latest.q90 ?? 0, confidence: latest.conf_score ?? 0, currency: 'EUR' }
+          : undefined,
+        imageUrl: undefined,
+        updatedAt: r.updated_at ?? undefined,
+      };
+    });
   }
 
   async listWatchlist(_userId: string): Promise<WatchlistItem[]> {
@@ -303,10 +317,10 @@ export class SupabaseDataProvider implements DataProvider {
   async searchItems(query: string): Promise<Item[]> {
     if (!query.trim()) return [];
 
-    // items table schema: id, title, category, updated_at
+    // JOIN price_predictions via FK (item_id → items.id)
     const { data, error } = await supabase
       .from('items')
-      .select('id, title, category, updated_at')
+      .select('id, title, category, updated_at, price_predictions(q10, q50, q90, conf_score, asof)')
       .ilike('title', `%${query}%`)
       .order('updated_at', { ascending: false })
       .limit(25);
@@ -316,21 +330,35 @@ export class SupabaseDataProvider implements DataProvider {
       return [];
     }
 
-    const rows = (data ?? []) as {
+    type PredRow = { q10: number | null; q50: number | null; q90: number | null; conf_score: number | null; asof: string | null };
+    type ItemRow = {
       id: string;
       title?: string | null;
       category?: string | null;
       updated_at?: string | null;
-    }[];
+      price_predictions?: PredRow[];
+    };
 
-    return rows.map((r) => ({
-      id: r.id,
-      name: r.title ?? 'Untitled',
-      category: r.category || 'Uncategorized',
-      price: 0, // Price comes from price_predictions table, not items
-      imageUrl: undefined, // Image URL not available from base items table
-      updatedAt: r.updated_at ?? undefined,
-    }));
+    const rows = (data ?? []) as ItemRow[];
+
+    return rows.map((r) => {
+      const preds = (r.price_predictions ?? []).sort(
+        (a, b) => (b.asof ?? '').localeCompare(a.asof ?? ''),
+      );
+      const latest = preds[0];
+
+      return {
+        id: r.id,
+        name: r.title ?? 'Untitled',
+        category: r.category || 'Uncategorized',
+        price: latest?.q50 ?? 0,
+        priceBand: latest
+          ? { q10: latest.q10 ?? 0, q50: latest.q50 ?? 0, q90: latest.q90 ?? 0, confidence: latest.conf_score ?? 0, currency: 'EUR' }
+          : undefined,
+        imageUrl: undefined,
+        updatedAt: r.updated_at ?? undefined,
+      };
+    });
   }
 
   async getPublicUserProfile(userId: string): Promise<PublicUserProfile | null> {

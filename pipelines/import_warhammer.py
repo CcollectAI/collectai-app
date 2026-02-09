@@ -26,6 +26,10 @@ from pipelines.import_common import (
     CatalogItem, PriceObservation, SupabaseIngest,
     write_training_jsonl, write_catalog_sql,
     log_progress, slugify,
+    rarity_score as shared_rarity_score,
+    RARITY_SCORE_MAP,
+    logger,
+    close_http_client,
 )
 
 CATEGORY = "warhammer"
@@ -145,19 +149,12 @@ def item_to_catalog_item(item: dict) -> CatalogItem:
 
 def item_to_price_observation(item: dict) -> PriceObservation:
     kit_type = item["kit_type"]
-    rarity_map = {
-        "Centerpiece": 0.8, "Primarch": 0.85, "Titan": 0.95,
-        "HQ": 0.5, "Elite": 0.4, "Troops": 0.2,
-        "Vehicle": 0.5, "Monster": 0.5, "Battlesuit": 0.5,
-        "Lord of War": 0.7, "Box Set": 0.6, "Board Game": 0.7,
-        "Limited": 0.9, "Flyer": 0.6, "War Dog": 0.4,
-    }
 
     is_oop = item["retail_gbp"] == 0
     return PriceObservation(
         features={
             "condition_score": 0.85,
-            "rarity_score": rarity_map.get(kit_type, 0.5),
+            "rarity_score": shared_rarity_score(kit_type),
             "edition_score": 0.9 if is_oop else 0.5,
             "is_painted": 0.0,
             "is_new_on_sprue": 1.0,
@@ -171,7 +168,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print("=== Warhammer Import ===")
+    logger.info("=== Warhammer Import ===")
 
     ingest = SupabaseIngest()
     if args.dry_run:
@@ -194,9 +191,9 @@ def main():
 
     ingest.close()
 
-    print(f"\n=== Warhammer Import Complete ===")
-    print(f"  Catalog items:      {len(all_items)}")
-    print(f"  Price observations: {len(all_observations)}")
+    logger.info(f"\n=== Warhammer Import Complete ===")
+    logger.info(f"  Catalog items:      {len(all_items)}")
+    logger.info(f"  Price observations: {len(all_observations)}")
 
 
 if __name__ == "__main__":

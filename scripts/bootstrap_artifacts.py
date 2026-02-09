@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import pathlib
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 from joblib import dump
@@ -28,7 +28,7 @@ ART = ROOT / "artifacts"
 
 
 def _mk_run_dir(cat: str) -> pathlib.Path:
-    run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     d = ART / cat / run_id
     d.mkdir(parents=True, exist_ok=True)
     return d
@@ -52,7 +52,7 @@ def _fit_and_save(cat: str, X: list[dict[str, float]]):
         json.dumps(
             {
                 "category": cat,
-                "created_utc": datetime.utcnow().isoformat() + "Z",
+                "created_utc": datetime.now(timezone.utc).isoformat() + "Z",
                 "n_samples": len(X),
                 "n_features": len(keys),
                 "feature_keys": keys,

@@ -157,8 +157,8 @@ async def presign_upload(request: PresignUploadRequest):
             ExpiresIn=PRESIGN_EXPIRY,
         )
     except Exception as e:
-        logger.error(f"[photo_upload] Failed to generate presigned URL: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate upload URL: {e}")
+        logger.error("[photo_upload] Failed to generate presigned URL: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to generate upload URL")
 
     cdn_url = _public_url(photo_key)
 
@@ -182,6 +182,10 @@ async def delete_photo(photo_key: str, user_id: str = Query(..., description="Us
     Verifies the photo_key starts with `user-uploads/{user_id}/`
     to prevent cross-user deletion.
     """
+    # Security: reject path traversal attempts
+    if ".." in photo_key:
+        raise HTTPException(status_code=400, detail="Invalid photo key")
+
     # Security: verify the photo belongs to the requesting user
     expected_prefix = f"user-uploads/{user_id}/"
     if not photo_key.startswith(expected_prefix):
@@ -199,11 +203,11 @@ async def delete_photo(photo_key: str, user_id: str = Query(..., description="Us
 
     try:
         s3.delete_object(Bucket=S3_BUCKET, Key=photo_key)
-        logger.info(f"[photo_upload] Deleted photo: key={photo_key}, user={user_id}")
+        logger.info("[photo_upload] Deleted photo: key=%s, user=%s", photo_key, user_id)
         return DeletePhotoResponse(success=True, message="Photo deleted successfully")
     except Exception as e:
-        logger.error(f"[photo_upload] Failed to delete photo: key={photo_key}, error={e}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete photo: {e}")
+        logger.error("[photo_upload] Failed to delete photo: key=%s, error=%s", photo_key, e)
+        raise HTTPException(status_code=500, detail="Failed to delete photo")
 
 
 @router.get("/list/{item_id}", response_model=PhotoListResponse)
@@ -245,5 +249,5 @@ async def list_photos(item_id: str, user_id: str = Query(..., description="User 
         return PhotoListResponse(photos=photos, item_id=item_id)
 
     except Exception as e:
-        logger.error(f"[photo_upload] Failed to list photos: user={user_id}, item={item_id}, error={e}")
-        raise HTTPException(status_code=500, detail=f"Failed to list photos: {e}")
+        logger.error("[photo_upload] Failed to list photos: user=%s, item=%s, error=%s", user_id, item_id, e)
+        raise HTTPException(status_code=500, detail="Failed to list photos")
