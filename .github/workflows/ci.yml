@@ -20,5 +20,10 @@ jobs:
         run: ruff check .
       - name: Type
         run: mypy .
+      - name: Security scan
+        run: |
+          pip install bandit pip-audit
+          bandit -r app/ -q -ll
+          pip-audit --strict
       - name: Test
         run: pytest --cov=app --cov=inference --cov-report=term-missing --cov-fail-under=40 -q

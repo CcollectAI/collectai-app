@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
-import os; print("[alert-delivery] DB_DSN host =", os.getenv("DB_DSN","").split("@")[-1].split(":")[0], flush=True)
-import os, asyncio, json, time
-import asyncpg, httpx
+import asyncio
+import json
+import logging
+import os
+import time
+
+import asyncpg
+import httpx
+
+logger = logging.getLogger(__name__)
+logger.info("DB_DSN host = %s", os.getenv("DB_DSN", "").split("@")[-1].split(":")[0])
 
 DB_HOST     = os.getenv("DB_HOST",     "db.ykqrruipzmrrvjcvwfgp.supabase.co")
 DB_PORT     = int(os.getenv("DB_PORT", "5432"))
@@ -22,15 +30,13 @@ def _sslmode():
     return "require" if DB_SSL.lower() == "require" else "disable"
 
 async def _pool():
-    import asyncio, time
     delay=1
-    
     dsn = f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode={_sslmode()}"
     while True:
         try:
             return await asyncpg.create_pool(dsn=dsn, min_size=1, max_size=5, command_timeout=30)
         except Exception as e:
-            print(f"[alert-delivery] db pool connect failed: {e}; retrying in {delay}s", flush=True)
+            logger.warning("db pool connect failed: %s; retrying in %ss", e, delay)
             await asyncio.sleep(delay)
             delay=min(delay*2, 30)
 
@@ -74,7 +80,7 @@ async def worker_loop():
                 payload  = job.get("payload") or job.get("body") or {}
                 if isinstance(payload, str):
                     try: payload = json.loads(payload)
-                    except: payload = {"raw": payload}
+                    except (json.JSONDecodeError, ValueError, TypeError): payload = {"raw": payload}
 
                 # fetch targets
                 async with pool.acquire() as conn:
@@ -103,11 +109,11 @@ async def worker_loop():
 
             except Exception as e:
                 # Keep running; log to stdout for journald scraping
-                print(f"[alert-delivery] error: {e}", flush=True)
+                logger.warning("error: %s", e)
                 await asyncio.sleep(2)
 
 async def main():
-    print("[alert-delivery] worker online", flush=True)
+    logger.info("worker online")
     await worker_loop()
 
 if __name__ == "__main__":

@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import json
+import logging
 import os
 import pathlib
 from collections import defaultdict
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 CALIB = os.environ.get("CALIB_LOG", "data/training/calibration.jsonl")
 MODELS = pathlib.Path(os.environ.get("MODELS_DIR", "/opt/models"))
@@ -21,7 +24,7 @@ def read_jsonl(p):
                 continue
             try:
                 out.append(json.loads(line))
-            except:
+            except (json.JSONDecodeError, ValueError):
                 pass
     return out
 
@@ -32,7 +35,7 @@ for r in rows:
     try:
         pct_err = abs(r["y_true"] - r["y_pred"]) / max(1e-6, r["y_true"])
         by[r["category"]].append(min(1.0, pct_err))
-    except:
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
         pass
 
 for cat, errs in by.items():
@@ -46,5 +49,5 @@ for cat, errs in by.items():
     a, b = np.linalg.lstsq(X, y, rcond=None)[0]
     calib = {"a": float(a), "b": float(b), "n": int(len(e))}
     (MODELS / cat / "calib.json").write_text(json.dumps(calib, indent=2))
-    print(f"[{cat}] calib a={a:.3f}, b={b:.3f}, n={len(e)}")
-print("[ok] calibration done")
+    logger.info("[%s] calib a=%.3f, b=%.3f, n=%d", cat, a, b, len(e))
+logger.info("calibration done")

@@ -1,4 +1,9 @@
-import csv, json, sys
+import csv
+import json
+import logging
+import sys
+
+logger = logging.getLogger(__name__)
 
 GOLD = {}
 with open("ops/eval/gold_labels.csv", newline="") as f:
@@ -11,17 +16,18 @@ hits = total = 0
 try:
     f = open("ops/spool/vision_predictions.jsonl", "r", encoding="utf-8")
 except FileNotFoundError:
-    print({"error":"predictions file missing","path":"ops/spool/vision_predictions.jsonl"})
+    logger.warning("predictions file missing: ops/spool/vision_predictions.jsonl")
     raise SystemExit(2)
 
-for line in f:
-    j = json.loads(line)
-    sha = j.get("sha256")
-    cats = j.get("categories") or []
-    if sha in GOLD:
-        total += 1
-        topk = [c["id"] for c in cats[:K]]
-        if GOLD[sha] in topk:
-            hits += 1
+with f:
+    for line in f:
+        j = json.loads(line)
+        sha = j.get("sha256")
+        cats = j.get("categories") or []
+        if sha in GOLD:
+            total += 1
+            topk = [c["id"] for c in cats[:K]]
+            if GOLD[sha] in topk:
+                hits += 1
 
-print({"k":K, "total": total, "hits": hits, "precision_at_k": (hits/total if total else 0.0)})
+logger.info("k=%d total=%d hits=%d precision_at_k=%.4f", K, total, hits, (hits/total if total else 0.0))

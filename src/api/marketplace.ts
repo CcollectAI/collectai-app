@@ -1,7 +1,7 @@
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8081";
-const API_KEY =
-  process.env.EXPO_PUBLIC_API_KEY ?? "dev-local-secret-collectai";
+import { API_BASE_URL as _SHARED_BASE } from '../config/api';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_MARKETPLACE_API_URL ?? _SHARED_BASE;
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY ?? '';
 
 async function doGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {

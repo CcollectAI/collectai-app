@@ -1,7 +1,15 @@
-import os, json, io, sys, boto3
+import io
+import json
+import logging
+import os
+import sys
+
+import boto3
 from botocore.exceptions import ClientError
 from PIL import Image, UnidentifiedImageError, ImageFile
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+logger = logging.getLogger(__name__)
 
 BUCKET=os.getenv("SPOOL_S3_BUCKET","collectai-datasets")
 REG=os.getenv("AWS_DEFAULT_REGION","eu-north-1")
@@ -14,7 +22,7 @@ with open(REGFILE) as f:
         line=line.strip()
         if not line: continue
         try: j=json.loads(line)
-        except: bad.append({"type":"json-parse","line":line[:120]}); continue
+        except (json.JSONDecodeError, ValueError): bad.append({"type":"json-parse","line":line[:120]}); continue
         key=j.get("key"); sha=j.get("sha256")
         if not key: bad.append({"type":"no-key","raw":line[:120]}); continue
         scanned+=1
@@ -33,4 +41,4 @@ with open(REGFILE) as f:
             bad.append({"type":"PIL-sniff-fail","key":key,"ct":ct,"size":sz})
         except Exception as e:
             bad.append({"type":"get/open-fail","key":key,"err":str(e)[:160]})
-print(json.dumps({"scanned":scanned,"good":len(good),"bad":len(bad),"bad_items":bad}, indent=2))
+logger.info(json.dumps({"scanned":scanned,"good":len(good),"bad":len(bad),"bad_items":bad}, indent=2))

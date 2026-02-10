@@ -1,4 +1,8 @@
-// API base URL — reads from env, falls back to EC2 for production.
-// In development, set EXPO_PUBLIC_API_BASE_URL in .env
-export const API_BASE =
-  process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://3.75.182.41:8000';
+// API base URL — MUST be set via EXPO_PUBLIC_API_BASE_URL in .env
+// Do NOT hardcode IP addresses or secrets here.
+export const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
+
+if (!API_BASE && typeof __DEV__ !== 'undefined') {
+  // eslint-disable-next-line no-console
+  console.error('[config] EXPO_PUBLIC_API_BASE_URL is not set — API calls will fail');
+}

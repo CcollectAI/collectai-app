@@ -1,10 +1,19 @@
-import os, json, boto3, io
+import io
+import json
+import logging
+import os
+
+import boto3
 from PIL import Image
+
 from app.vision_index import load_model, load_index, save_index, embed_image, S3, BUCKET
+
+logger = logging.getLogger(__name__)
 
 def main():
     load_model(); load_index()
-    lines = [json.loads(x) for x in open("ops/backlog.jsonl")]
+    with open("ops/backlog.jsonl") as f:
+        lines = [json.loads(x) for x in f]
     from app.vision_index import INDEX, META, caption_baseline
     added=0
     for r in lines:
@@ -17,5 +26,5 @@ def main():
         META.append({"sha256": r["sha256"], "key": key, "caption": caption_baseline(), "dim":512})
         added+=1
     if added: save_index()
-    print(f"embedded {added}")
+    logger.info("embedded %d", added)
 if __name__=="__main__": main()

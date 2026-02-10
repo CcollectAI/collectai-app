@@ -1,8 +1,0 @@
-export * from './colors';
-export * from './tokens';
-
-import { colors, radius, spacing, shadow } from './tokens';
-export const theme = { colors, radius, spacing, shadow };
-
-export { useAppTheme } from './useAppTheme';
-export { useAppTheme as useTheme } from './useAppTheme';

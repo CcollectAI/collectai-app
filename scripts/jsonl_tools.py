@@ -16,8 +16,8 @@ def tail(path, n=50):
 
 def dedupe(src, dst):
     seen = set()
-    out = open(dst, "w", encoding="utf-8")
-    with open(src, encoding="utf-8", errors="ignore") as f:
+    with open(dst, "w", encoding="utf-8") as out, \
+         open(src, encoding="utf-8", errors="ignore") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -27,7 +27,6 @@ def dedupe(src, dst):
                 continue
             seen.add(h)
             out.write(line + "\n")
-    out.close()
 
 
 if __name__ == "__main__":

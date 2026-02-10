@@ -1,7 +1,16 @@
-import os, json, boto3, io, time, sys
-import sys, os
+import io
+import json
+import logging
+import os
+import sys
+import time
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import boto3
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 import numpy as np
 from app.vision_embed import get_image_embed, get_text_matrix, topk_cosine
 
@@ -24,10 +33,9 @@ def zs_predict(img, k=5):
 def main():
     reg_path = "ops/spool/vision_registry.jsonl"
     if not os.path.exists(reg_path):
-        print("no registry", file=sys.stderr); return
+        logger.warning("no registry"); return
     seen=set()
-    out=open(OUT,"a")
-    with open(reg_path) as f:
+    with open(OUT,"a") as out, open(reg_path) as f:
         for line in f:
             o = json.loads(line)
             key=o["key"]; sha=o["sha256"]
@@ -42,9 +50,8 @@ def main():
                                       "sha256":sha,"key":key,
                                       "categories":cats,"neighbors":nns,"dim":d})+"\n")
             except Exception as e:
-                print("skip", key, e, file=sys.stderr)
-    out.close()
-    print("done ->", OUT)
+                logger.warning("skip %s %s", key, e)
+    logger.info("done -> %s", OUT)
 
 if __name__ == "__main__":
     main()

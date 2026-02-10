@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
-import argparse, json, os, re, sys, tempfile, time
+import argparse
+import json
+import logging
+import os
+import re
+import sys
+import tempfile
+import time
 from datetime import datetime, timezone
-import boto3, requests
+
+import boto3
+import requests
+
+logger = logging.getLogger(__name__)
 
 def list_good_images(s3, bucket, prefix, max_items=200, min_bytes=4096):
     paginator = s3.get_paginator("list_objects_v2")
@@ -37,15 +48,14 @@ def main():
             # Download to tmp
             local = os.path.join(tmpdir, key.split("/")[-1])
             s3.download_file(args.bucket, key, local)
-            files = {"file": open(local, "rb")}
-            try:
-                resp = requests.post(args.api, files=files, timeout=60)
-                resp.raise_for_status()
-                data = resp.json()
-            except Exception as e:
-                data = {"error": str(e)}
-            finally:
-                files["file"].close()
+            with open(local, "rb") as fh:
+                files = {"file": fh}
+                try:
+                    resp = requests.post(args.api, files=files, timeout=60)
+                    resp.raise_for_status()
+                    data = resp.json()
+                except Exception as e:
+                    data = {"error": str(e)}
 
             rec = {
                 "s3_key": key,
@@ -64,8 +74,8 @@ def main():
             out_bucket, out_prefix = m.groups()
             dest = f"{out_prefix.rstrip('/')}/{os.path.basename(ts)}"
             s3.upload_file(ts, out_bucket, dest)
-            print(f"Uploaded -> s3://{out_bucket}/{dest}")
-    print(json.dumps({"ok": True, "written": written, "out": ts}, indent=2))
+            logger.info("Uploaded -> s3://%s/%s", out_bucket, dest)
+    logger.info("ok=True written=%d out=%s", written, ts)
 
 if __name__ == "__main__":
     sys.exit(main())

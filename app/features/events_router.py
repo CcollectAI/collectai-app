@@ -40,7 +40,7 @@ def _get_db_pool():
         from app.db import get_pool
         return get_pool()
     except Exception as e:
-        logger.debug(f"DB pool not available: {e}")
+        logger.debug("DB pool not available: %s", e)
         return None
 
 
@@ -154,7 +154,7 @@ async def list_events(
                             include_past,
                         )
                     except Exception as rpc_err:
-                        logger.warning(f"[events] Personalized RPC failed, falling back: {rpc_err}")
+                        logger.warning("[events] Personalized RPC failed, falling back: %s", rpc_err)
                         rows = await _fetch_events_basic(conn, category_id, include_past)
                 else:
                     rows = await _fetch_events_basic(conn, category_id, include_past)
@@ -171,8 +171,8 @@ async def list_events(
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[events] Error listing events: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to list events: {str(e)}")
+            logger.error("[events] Error listing events: %s", e)
+            raise HTTPException(status_code=500, detail="Failed to list events")
 
     # Offline / in-memory fallback
     today_str = date.today().isoformat()
@@ -261,8 +261,8 @@ async def create_event(
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[events] Error creating event: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to create event: {str(e)}")
+            logger.error("[events] Error creating event: %s", e)
+            raise HTTPException(status_code=500, detail="Failed to create event")
 
     # Offline / in-memory fallback
     event_id = str(uuid4())
@@ -288,7 +288,7 @@ async def create_event(
         "created_at": now,
     }
     _IN_MEMORY_EVENTS[event_id] = event_data
-    logger.info(f"[events] Created event (in-memory): id={event_id}, title={request.title}")
+    logger.info("[events] Created event (in-memory): id=%s, title=%s", event_id, request.title)
     return EventResponse(**event_data)
 
 
@@ -310,7 +310,7 @@ async def get_event(
                         event_id,
                     )
                 except Exception as view_err:
-                    logger.warning(f"[events] View query failed, falling back to events table: {view_err}")
+                    logger.warning("[events] View query failed, falling back to events table: %s", view_err)
                     row = await conn.fetchrow(
                         "SELECT * FROM events WHERE id = $1",
                         event_id,
@@ -339,8 +339,8 @@ async def get_event(
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[events] Error fetching event {event_id}: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to fetch event: {str(e)}")
+            logger.error("[events] Error fetching event %s: %s", event_id, e)
+            raise HTTPException(status_code=500, detail="Failed to fetch event")
 
     # Offline / in-memory fallback
     ev = _IN_MEMORY_EVENTS.get(event_id)
@@ -387,18 +387,18 @@ async def rsvp_event(
                     user_id,
                     request.status,
                 )
-                logger.info(f"[events] RSVP: user={user_id}, event={event_id}, status={request.status}")
+                logger.info("[events] RSVP: user=%s, event=%s, status=%s", user_id, event_id, request.status)
                 return {"success": True, "status": request.status}
 
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[events] Error RSVP event {event_id}: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to RSVP: {str(e)}")
+            logger.error("[events] Error RSVP event %s: %s", event_id, e)
+            raise HTTPException(status_code=500, detail="Failed to RSVP")
 
     # Offline / in-memory fallback
     _IN_MEMORY_RSVPS.setdefault(event_id, {})[user_id] = request.status
-    logger.info(f"[events] RSVP (in-memory): user={user_id}, event={event_id}, status={request.status}")
+    logger.info("[events] RSVP (in-memory): user=%s, event=%s, status=%s", user_id, event_id, request.status)
     return {"success": True, "status": request.status}
 
 
@@ -418,19 +418,19 @@ async def unrsvp_event(
                     event_id,
                     user_id,
                 )
-                logger.info(f"[events] Un-RSVP: user={user_id}, event={event_id}")
+                logger.info("[events] Un-RSVP: user=%s, event=%s", user_id, event_id)
                 return {"success": True, "message": "RSVP removed"}
 
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[events] Error un-RSVP event {event_id}: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to remove RSVP: {str(e)}")
+            logger.error("[events] Error un-RSVP event %s: %s", event_id, e)
+            raise HTTPException(status_code=500, detail="Failed to remove RSVP")
 
     # Offline / in-memory fallback
     rsvps = _IN_MEMORY_RSVPS.get(event_id, {})
     rsvps.pop(user_id, None)
-    logger.info(f"[events] Un-RSVP (in-memory): user={user_id}, event={event_id}")
+    logger.info("[events] Un-RSVP (in-memory): user=%s, event=%s", user_id, event_id)
     return {"success": True, "message": "RSVP removed"}
 
 
@@ -457,8 +457,8 @@ async def list_followed_categories(
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[events] Error listing followed categories: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to list followed categories: {str(e)}")
+            logger.error("[events] Error listing followed categories: %s", e)
+            raise HTTPException(status_code=500, detail="Failed to list followed categories")
 
     # Offline / in-memory fallback
     follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
@@ -485,18 +485,18 @@ async def follow_category(
                     user_id,
                     category_id,
                 )
-                logger.info(f"[events] Follow category: user={user_id}, category={category_id}")
+                logger.info("[events] Follow category: user=%s, category=%s", user_id, category_id)
                 return {"success": True, "category_id": category_id}
 
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[events] Error following category {category_id}: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to follow category: {str(e)}")
+            logger.error("[events] Error following category %s: %s", category_id, e)
+            raise HTTPException(status_code=500, detail="Failed to follow category")
 
     # Offline / in-memory fallback
     _IN_MEMORY_FOLLOWS.setdefault(user_id, set()).add(category_id)
-    logger.info(f"[events] Follow category (in-memory): user={user_id}, category={category_id}")
+    logger.info("[events] Follow category (in-memory): user=%s, category=%s", user_id, category_id)
     return {"success": True, "category_id": category_id}
 
 
@@ -516,19 +516,19 @@ async def unfollow_category(
                     user_id,
                     category_id,
                 )
-                logger.info(f"[events] Unfollow category: user={user_id}, category={category_id}")
+                logger.info("[events] Unfollow category: user=%s, category=%s", user_id, category_id)
                 return {"success": True, "message": "Category unfollowed"}
 
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[events] Error unfollowing category {category_id}: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to unfollow category: {str(e)}")
+            logger.error("[events] Error unfollowing category %s: %s", category_id, e)
+            raise HTTPException(status_code=500, detail="Failed to unfollow category")
 
     # Offline / in-memory fallback
     follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
     follows.discard(category_id)
-    logger.info(f"[events] Unfollow category (in-memory): user={user_id}, category={category_id}")
+    logger.info("[events] Unfollow category (in-memory): user=%s, category=%s", user_id, category_id)
     return {"success": True, "message": "Category unfollowed"}
 
 
@@ -553,8 +553,8 @@ async def check_following_category(
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[events] Error checking follow status: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to check follow status: {str(e)}")
+            logger.error("[events] Error checking follow status: %s", e)
+            raise HTTPException(status_code=500, detail="Failed to check follow status")
 
     # Offline / in-memory fallback
     follows = _IN_MEMORY_FOLLOWS.get(user_id, set())

@@ -46,6 +46,7 @@ backups/
 logs/
 ops/logs/
 *.pre_restore_*
+*.pre_fix_*
 *.gz
 
 # Backup files (various patterns)

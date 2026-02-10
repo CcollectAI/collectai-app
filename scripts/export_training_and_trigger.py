@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import csv
 import json
+import logging
 import os
 import shutil
 import tempfile
@@ -8,6 +9,8 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
@@ -38,13 +41,6 @@ def supa_get(path, params=None, headers=None):
             last = e
             time.sleep(min(5 * (attempt + 1), 15))
     raise last
-    url = f"{SUPABASE_URL}{path}"
-    h = {"apikey": SERVICE_KEY, "Authorization": f"Bearer {SERVICE_KEY}"}
-    if headers:
-        h.update(headers)
-    r = requests.get(url, params=params, headers=h, timeout=60)
-    r.raise_for_status()
-    return r
 
 
 def supa_post(table, rows):
@@ -94,22 +90,6 @@ def fetch_dataset(days=90, limit=20000):
             break
         page += 1
     return rows[:limit]
-
-    params = {
-        "select": "sample_id,title,category,condition,label_value_eur,image_url,source,version,created_at",
-        "created_at": "gte."
-        + (datetime.now(timezone.utc) - timedelta(days=days))
-        .isoformat()
-        .replace("+00:00", "Z"),
-        "order": "created_at.desc",
-        "limit": str(limit),
-    }
-    r = supa_get(
-        "/rest/v1/v_training_dataset_union",
-        params=params,
-        headers={"Accept": "application/json"},
-    )
-    return r.json()
 
 
 def write_csv(rows, path):
@@ -177,17 +157,9 @@ def call_lambda_train(payload):
         r = requests.post(url, json=payload, timeout=300)
         try:
             return r.json()
-        except:
+        except (json.JSONDecodeError, ValueError):
             return {"status": r.status_code, "text": r.text}
     return {"ok": True, "skipped": True}
-
-    if not LAMBDA_TRAIN:
-        return {"ok": True, "skipped": True}
-    r = requests.post(LAMBDA_TRAIN, json=payload, timeout=300)
-    try:
-        return r.json()
-    except:
-        return {"status": r.status_code, "text": r.text}
 
 
 def write_registry(uri):
@@ -203,7 +175,7 @@ def write_registry(uri):
 def main():
     rows = fetch_dataset()
     if not rows:
-        print("No dataset rows; exiting")
+        logger.warning("No dataset rows; exiting")
         return
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     key_csv = f"datasets/{MODEL_NAME}/{MODEL_VER}/training_{ts}.csv"
@@ -221,11 +193,12 @@ def main():
             "generated_at": ts,
         }
         meta_path = os.path.join(d, "meta.json")
-        open(meta_path, "w").write(json.dumps(meta))
+        with open(meta_path, "w") as mf:
+            mf.write(json.dumps(meta))
 
         s3_upload(csv_path, s3_csv)
         s3_upload(meta_path, s3_meta)
-        print("Uploaded:", s3_csv, s3_meta)
+        logger.info("Uploaded: %s %s", s3_csv, s3_meta)
 
     train_payload = {
         "model": MODEL_NAME,
@@ -234,13 +207,13 @@ def main():
         "meta": meta,
     }
     train_resp = call_lambda_train(train_payload)
-    print("Training trigger resp:", train_resp)
+    logger.info("Training trigger resp: %s", train_resp)
 
     artifact_uri = (
         train_resp.get("artifact_uri") if isinstance(train_resp, dict) else None
     ) or s3_csv
     write_registry(artifact_uri)
-    print("Registry updated:", artifact_uri)
+    logger.info("Registry updated: %s", artifact_uri)
 
 
 if __name__ == "__main__":

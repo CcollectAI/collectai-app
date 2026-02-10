@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import json
+import logging
 import os
 import pathlib
 import time
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 import joblib
 import numpy as np
@@ -27,7 +30,7 @@ def load_rows(p):
                 continue
             try:
                 j = json.loads(line)
-            except:
+            except (json.JSONDecodeError, ValueError):
                 continue
             if j.get("y") is None:
                 continue
@@ -78,4 +81,4 @@ for cat, lst in by.items():
         }
     (catdir / f"model_info_v{ts}.json").write_text(json.dumps(info, indent=2))
     (catdir / "model_info.json").write_text(json.dumps(info, indent=2))
-print("[ok] versioned training complete", ts)
+logger.info("versioned training complete %s", ts)

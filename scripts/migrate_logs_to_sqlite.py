@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import json
+import logging
 import os
 import sqlite3
+
+logger = logging.getLogger(__name__)
 
 DB = "data/training/logs.db"
 os.makedirs("data/training", exist_ok=True)
@@ -25,7 +28,7 @@ for path, tbl, cols in [
                 continue
             try:
                 j = json.loads(line)
-            except:
+            except (json.JSONDecodeError, ValueError):
                 continue
             if tbl == "preds":
                 cur.execute(
@@ -44,4 +47,4 @@ for path, tbl, cols in [
                 )
 con.commit()
 con.close()
-print("[ok] migrated to", DB)
+logger.info("migrated to %s", DB)

@@ -9,7 +9,8 @@ from reportlab.pdfgen import canvas
 
 # Expect a JSON file with: items: [{title, category, y_hat, q10, q90, images[], provenance_strength}]
 def render_pdf(in_path: str, out_path: str):
-    data = json.load(open(in_path))
+    with open(in_path) as f:
+        data = json.load(f)
     c = canvas.Canvas(out_path, pagesize=A4)
     width, height = A4
     margin = 36

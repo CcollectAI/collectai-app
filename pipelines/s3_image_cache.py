@@ -250,6 +250,7 @@ class S3ImageCache:
             self.s3_client.head_object(Bucket=S3_BUCKET, Key=key)
             return True
         except Exception:
+            # boto3 ClientError on 404 is expected; other errors also mean "not cached"
             return False
 
     def _public_url(self, key: str) -> str:

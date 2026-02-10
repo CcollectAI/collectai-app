@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-cd "$(dirname "$0")/.."
-export PYTHONPATH="$PWD:$PYTHONPATH"
-if [ -d .venv ]; then source .venv/bin/activate; fi
-python3 -m pipelines.train --category diecast --with-features || python3 trainer.py --category diecast
-python3 -m pipelines.train --category lego    --with-features || python3 trainer.py --category lego
-[ -x ./scripts/promote_artifact.sh ] && ./scripts/promote_artifact.sh diecast best || true
-[ -x ./scripts/promote_artifact.sh ] && ./scripts/promote_artifact.sh lego   best || true

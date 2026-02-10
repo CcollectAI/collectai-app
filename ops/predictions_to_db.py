@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-import os, json, argparse, glob, psycopg2, pathlib
+import argparse
+import glob
+import json
+import logging
+import os
+import pathlib
+
+import psycopg2
+
+logger = logging.getLogger(__name__)
 # AUTOLOAD_DB_ENV
 for _cand in ("/etc/collectors/db.env", "ops/db.env"):
     p=pathlib.Path(_cand)
@@ -27,7 +36,7 @@ def main():
     ap.add_argument("--model-version", default="clip-v1.0.0")
     args=ap.parse_args()
     files=sorted(glob.glob(os.path.join(args.dir,"predictions-*.jsonl")))
-    if not files: print("no prediction files"); return 0
+    if not files: logger.warning("no prediction files"); return 0
     con=connect(); con.autocommit=True; cur=con.cursor()
     sql=("insert into price_predictions(item_ref, category, model_version, q10,q50,q90, confidence, raw) "
          "values (%s,%s,%s,%s,%s,%s,%s,%s)")
@@ -38,7 +47,7 @@ def main():
                 ln=ln.strip()
                 if not ln or ln[0] not in "{[": continue
                 try: rec=json.loads(ln)
-                except Exception: continue
+                except (json.JSONDecodeError, ValueError): continue
                 item_ref=rec.get("s3_key") or rec.get("item_ref")
                 cat=infer_category(rec)
                 results=(rec.get("prediction") or {}).get("results") or []
@@ -46,7 +55,7 @@ def main():
                 cur.execute(sql,(item_ref,cat,args.model_version,None,None,None,conf,json.dumps(rec)))
                 n+=1
     cur.close(); con.close()
-    print(f"✅ wrote {n} rows to price_predictions")
+    logger.info("wrote %d rows to price_predictions", n)
 if __name__=="__main__":
     import os; os.path
     raise SystemExit(main())

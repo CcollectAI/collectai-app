@@ -149,7 +149,7 @@ async def _startup():
     except Exception as e:
         # Optional mode: continue even if DB connect fails/missing DSN
         if os.getenv("DB_OPTIONAL", "0").lower() in ("1","true","yes"):
-            logging.getLogger("uvicorn").warning(f"[startup] DB optional; continuing without pool. Reason: {e}")
+            logging.getLogger("uvicorn").warning("[startup] DB optional; continuing without pool. Reason: %s", e)
             return
         raise
 @app.on_event("shutdown")
@@ -384,7 +384,7 @@ async def portfolio_summary():
         for it in _DEMO_ITEMS:
             try:
                 value = float(it.estimated_value or 0.0)
-            except Exception:
+            except (TypeError, ValueError):
                 value = 0.0
             items_payload.append(
                 {
@@ -397,7 +397,7 @@ async def portfolio_summary():
             )
     except Exception as e:
         logging.getLogger("uvicorn").warning(
-            f"[portfolio_summary] _DEMO_ITEMS unavailable: {e}"
+            "[portfolio_summary] _DEMO_ITEMS unavailable: %s", e
         )
 
     total_value = sum(i["value"] for i in items_payload) if items_payload else 0.0
@@ -511,7 +511,8 @@ async def import_collection(file: UploadFile = File(...)) -> Dict[str, Any]:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse file: {e}")
+        _logger.warning("Failed to parse uploaded file: %s", e)
+        raise HTTPException(status_code=400, detail="Failed to parse file")
 
     # Normalize keys (lowercase, strip spaces)
     norm_rows: List[Dict[str, Any]] = []
@@ -534,7 +535,7 @@ async def import_collection(file: UploadFile = File(...)) -> Dict[str, Any]:
     try:
         from app.db import get_pool
         pool = get_pool()
-    except Exception:
+    except (ImportError, RuntimeError, OSError):
         pass
 
     # Placeholder user_id until real auth is wired
