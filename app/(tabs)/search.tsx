@@ -17,6 +17,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+import logger from "@/utils/logger";
 
 export default function SearchScreen() {
   const t = useAppTheme();

@@ -34,6 +34,7 @@ import { useAlertsFeed } from "@/hooks/useAlertsFeed";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import logger from "@/utils/logger";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
 const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
@@ -265,7 +266,7 @@ export default function PortfolioScreen() {
             }
           }
         } catch (realErr: any) {
-          console.warn("[Portfolio] Real backend error, falling back:", realErr);
+          logger.warn("[Portfolio] Real backend error, falling back:", realErr);
           setError("Could not load real data. Showing demo.");
           setSeries(FALLBACK_SERIES);
           setItems(FALLBACK_ITEMS);
@@ -287,7 +288,7 @@ export default function PortfolioScreen() {
               : FALLBACK_ITEMS;
             if (snap?.tierSummary) setTierSummary(snap.tierSummary);
           } catch (mockErr) {
-            console.warn("[Portfolio] Mock store error:", mockErr);
+            logger.warn("[Portfolio] Mock store error:", mockErr);
           }
         }
 
@@ -303,7 +304,7 @@ export default function PortfolioScreen() {
         setItems(baseItems);
       }
     } catch (err: any) {
-      console.warn("[Portfolio] Unexpected error:", err);
+      logger.warn("[Portfolio] Unexpected error:", err);
       setError("Failed to load portfolio data.");
       setSeries(FALLBACK_SERIES);
       setItems(FALLBACK_ITEMS);

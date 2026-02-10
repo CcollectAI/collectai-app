@@ -33,6 +33,7 @@ import type {
   MarketSearchResult,
 } from './types';
 import { getCategoryById } from './categories';
+import logger from '../utils/logger';
 import type { CollectorsEvent, CreateEventInput } from './events';
 import { supabase } from '../lib/supabase';
 import { collectorsApi } from '../api/collectorsApi';
@@ -77,7 +78,7 @@ export class SupabaseDataProvider implements DataProvider {
       .limit(365);
 
     if (valuesError) {
-      console.warn('[SupabaseDataProvider] getPortfolioSummary error:', valuesError);
+      logger.warn('[SupabaseDataProvider] getPortfolioSummary error:', valuesError);
       return { total: 0, deltaPct: 0, itemCount: 0 };
     }
 
@@ -99,7 +100,7 @@ export class SupabaseDataProvider implements DataProvider {
       .select('id', { count: 'exact', head: true });
 
     if (countError) {
-      console.warn('[SupabaseDataProvider] item count error:', countError);
+      logger.warn('[SupabaseDataProvider] item count error:', countError);
     }
 
     return {
@@ -118,7 +119,7 @@ export class SupabaseDataProvider implements DataProvider {
       .limit(200);
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listItems error:', error);
+      logger.warn('[SupabaseDataProvider] listItems error:', error);
       return [];
     }
 
@@ -161,7 +162,7 @@ export class SupabaseDataProvider implements DataProvider {
       .select('id,title,priority,owned,target_price,currency,category,notes,created_at');
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listWatchlist error:', error);
+      logger.warn('[SupabaseDataProvider] listWatchlist error:', error);
       return [];
     }
 
@@ -201,7 +202,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] addWatchlistItem RPC error:', error);
+      logger.error('[SupabaseDataProvider] addWatchlistItem RPC error:', error);
       throw new Error(error.message || 'Failed to add watchlist item');
     }
 
@@ -231,7 +232,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] removeWatchlistItem RPC error:', error);
+      logger.error('[SupabaseDataProvider] removeWatchlistItem RPC error:', error);
       throw new Error(error.message || 'Failed to remove watchlist item');
     }
   }
@@ -246,7 +247,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] createItem RPC error:', error);
+      logger.error('[SupabaseDataProvider] createItem RPC error:', error);
       throw new Error(error.message || 'Failed to create item');
     }
 
@@ -273,7 +274,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] persistQuickscanDraft RPC error:', error);
+      logger.error('[SupabaseDataProvider] persistQuickscanDraft RPC error:', error);
       throw new Error(error.message || 'Failed to persist QuickScan draft');
     }
 
@@ -326,7 +327,7 @@ export class SupabaseDataProvider implements DataProvider {
       .limit(25);
 
     if (error) {
-      console.warn('[SupabaseDataProvider] searchItems error:', error);
+      logger.warn('[SupabaseDataProvider] searchItems error:', error);
       return [];
     }
 
@@ -394,7 +395,7 @@ export class SupabaseDataProvider implements DataProvider {
         this.profileCache.set(userId, null);
         return null;
       }
-      console.warn('[SupabaseDataProvider] getPublicUserProfile error:', error);
+      logger.warn('[SupabaseDataProvider] getPublicUserProfile error:', error);
       // Don't cache on network/auth errors - allow retry
       return null;
     }
@@ -432,7 +433,7 @@ export class SupabaseDataProvider implements DataProvider {
     // Get current user from auth
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      console.warn('[SupabaseDataProvider] getMyProfile: not authenticated');
+      logger.warn('[SupabaseDataProvider] getMyProfile: not authenticated');
       this.myProfileCache = null;
       return null;
     }
@@ -491,7 +492,7 @@ export class SupabaseDataProvider implements DataProvider {
       .select('id, name, completion_pct, owned_count, missing_count, total_count');
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listCategorySummaries error:', error);
+      logger.warn('[SupabaseDataProvider] listCategorySummaries error:', error);
       return [];
     }
 
@@ -512,7 +513,7 @@ export class SupabaseDataProvider implements DataProvider {
       .eq('category_id', categoryId);
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listCategoryMissing error:', error);
+      logger.warn('[SupabaseDataProvider] listCategoryMissing error:', error);
       return [];
     }
 
@@ -537,7 +538,7 @@ export class SupabaseDataProvider implements DataProvider {
       .limit(50);
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listAlertsFeed error:', error);
+      logger.warn('[SupabaseDataProvider] listAlertsFeed error:', error);
       return [];
     }
 
@@ -566,7 +567,7 @@ export class SupabaseDataProvider implements DataProvider {
       .order('last_message_at', { ascending: false });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listInboxThreads error:', error);
+      logger.warn('[SupabaseDataProvider] listInboxThreads error:', error);
       return [];
     }
 
@@ -597,7 +598,7 @@ export class SupabaseDataProvider implements DataProvider {
       .order('last_message_at', { ascending: false });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listIncomingRequests error:', error);
+      logger.warn('[SupabaseDataProvider] listIncomingRequests error:', error);
       return [];
     }
 
@@ -622,7 +623,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] requestDm error:', error);
+      logger.error('[SupabaseDataProvider] requestDm error:', error);
       throw new Error(error.message || 'Failed to send DM request');
     }
 
@@ -637,7 +638,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] decideDmRequest error:', error);
+      logger.error('[SupabaseDataProvider] decideDmRequest error:', error);
       throw new Error(error.message || 'Failed to process DM request');
     }
   }
@@ -648,7 +649,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] markThreadRead error:', error);
+      logger.warn('[SupabaseDataProvider] markThreadRead error:', error);
       // Don't throw - marking read is non-critical
     }
   }
@@ -661,7 +662,7 @@ export class SupabaseDataProvider implements DataProvider {
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] getThreadMessages error:', error);
+      logger.warn('[SupabaseDataProvider] getThreadMessages error:', error);
       return [];
     }
 
@@ -684,7 +685,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] sendMessage RPC error:', error);
+      logger.error('[SupabaseDataProvider] sendMessage RPC error:', error);
       throw new Error(error.message || 'Failed to send message');
     }
 
@@ -829,7 +830,7 @@ export class SupabaseDataProvider implements DataProvider {
       .limit(200);
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listBuildPaintProjects error:', error);
+      logger.warn('[SupabaseDataProvider] listBuildPaintProjects error:', error);
       return [];
     }
 
@@ -853,7 +854,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] createBuildPaintProject error:', error);
+      logger.warn('[SupabaseDataProvider] createBuildPaintProject error:', error);
       throw new Error(error.message || 'Failed to create project');
     }
 
@@ -879,7 +880,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] setBuildPaintProgress error:', error);
+      logger.warn('[SupabaseDataProvider] setBuildPaintProgress error:', error);
       throw new Error(error.message || 'Failed to set progress');
     }
   }
@@ -891,7 +892,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] markBuildPaintProjectComplete error:', error);
+      logger.warn('[SupabaseDataProvider] markBuildPaintProjectComplete error:', error);
       throw new Error(error.message || 'Failed to mark complete');
     }
   }
@@ -904,7 +905,7 @@ export class SupabaseDataProvider implements DataProvider {
       .order('sort_order', { ascending: true });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listBuildPaintSteps error:', error);
+      logger.warn('[SupabaseDataProvider] listBuildPaintSteps error:', error);
       return [];
     }
 
@@ -925,7 +926,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] addBuildPaintStep error:', error);
+      logger.warn('[SupabaseDataProvider] addBuildPaintStep error:', error);
       throw new Error(error.message || 'Failed to add step');
     }
 
@@ -947,7 +948,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] toggleBuildPaintStep error:', error);
+      logger.warn('[SupabaseDataProvider] toggleBuildPaintStep error:', error);
       throw new Error(error.message || 'Failed to toggle step');
     }
   }
@@ -960,7 +961,7 @@ export class SupabaseDataProvider implements DataProvider {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listBuildPaintNotes error:', error);
+      logger.warn('[SupabaseDataProvider] listBuildPaintNotes error:', error);
       return [];
     }
 
@@ -979,7 +980,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.warn('[SupabaseDataProvider] addBuildPaintNote error:', error);
+      logger.warn('[SupabaseDataProvider] addBuildPaintNote error:', error);
       throw new Error(error.message || 'Failed to add note');
     }
 
@@ -1012,7 +1013,7 @@ export class SupabaseDataProvider implements DataProvider {
         feedbackId: res.feedback_id,
       };
     } catch (err: any) {
-      console.error('[SupabaseDataProvider] submitFeedback error:', err);
+      logger.error('[SupabaseDataProvider] submitFeedback error:', err);
       throw new Error(err?.message || 'Failed to submit feedback');
     }
   }
@@ -1036,7 +1037,7 @@ export class SupabaseDataProvider implements DataProvider {
       });
       return { success: res.success ?? true };
     } catch (err: any) {
-      console.error('[SupabaseDataProvider] submitCorrection error:', err);
+      logger.error('[SupabaseDataProvider] submitCorrection error:', err);
       throw new Error(err?.message || 'Failed to submit correction');
     }
   }
@@ -1057,7 +1058,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] markCategoryItemOwned error:', error);
+      logger.error('[SupabaseDataProvider] markCategoryItemOwned error:', error);
       throw new Error(error.message || 'Failed to mark item as owned');
     }
 
@@ -1082,7 +1083,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] convertWatchlistToItem error:', error);
+      logger.error('[SupabaseDataProvider] convertWatchlistToItem error:', error);
       throw new Error(error.message || 'Failed to convert watchlist item');
     }
 
@@ -1106,7 +1107,7 @@ export class SupabaseDataProvider implements DataProvider {
       p_category_id: categoryId,
     });
     if (error) {
-      console.error('[SupabaseDataProvider] followCategory error:', error);
+      logger.error('[SupabaseDataProvider] followCategory error:', error);
       throw new Error(error.message || 'Failed to follow category');
     }
   }
@@ -1116,7 +1117,7 @@ export class SupabaseDataProvider implements DataProvider {
       p_category_id: categoryId,
     });
     if (error) {
-      console.error('[SupabaseDataProvider] unfollowCategory error:', error);
+      logger.error('[SupabaseDataProvider] unfollowCategory error:', error);
       throw new Error(error.message || 'Failed to unfollow category');
     }
   }
@@ -1124,7 +1125,7 @@ export class SupabaseDataProvider implements DataProvider {
   async listFollowedCategories(): Promise<string[]> {
     const { data, error } = await supabase.rpc('rpc_list_followed_categories_v1');
     if (error) {
-      console.warn('[SupabaseDataProvider] listFollowedCategories error:', error);
+      logger.warn('[SupabaseDataProvider] listFollowedCategories error:', error);
       return [];
     }
     return (data ?? []).map((row: any) => row.category_id);
@@ -1135,7 +1136,7 @@ export class SupabaseDataProvider implements DataProvider {
       p_category_id: categoryId,
     });
     if (error) {
-      console.warn('[SupabaseDataProvider] isFollowingCategory error:', error);
+      logger.warn('[SupabaseDataProvider] isFollowingCategory error:', error);
       return false;
     }
     return data === true;
@@ -1153,7 +1154,7 @@ export class SupabaseDataProvider implements DataProvider {
       .maybeSingle();
 
     if (error || !data) {
-      console.warn('[SupabaseDataProvider] getEventById error:', error);
+      logger.warn('[SupabaseDataProvider] getEventById error:', error);
       return null;
     }
 
@@ -1165,7 +1166,7 @@ export class SupabaseDataProvider implements DataProvider {
     const { data, error } = await supabase.rpc('rpc_list_personalized_events_v1');
 
     if (error) {
-      console.warn('[SupabaseDataProvider] listEvents error:', error);
+      logger.warn('[SupabaseDataProvider] listEvents error:', error);
       return [];
     }
 
@@ -1190,7 +1191,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] createEvent error:', error);
+      logger.error('[SupabaseDataProvider] createEvent error:', error);
       throw new Error(error.message || 'Failed to create event');
     }
 
@@ -1204,7 +1205,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] rsvpEvent error:', error);
+      logger.error('[SupabaseDataProvider] rsvpEvent error:', error);
       throw new Error(error.message || 'Failed to RSVP');
     }
   }
@@ -1215,7 +1216,7 @@ export class SupabaseDataProvider implements DataProvider {
     });
 
     if (error) {
-      console.error('[SupabaseDataProvider] unrsvpEvent error:', error);
+      logger.error('[SupabaseDataProvider] unrsvpEvent error:', error);
       throw new Error(error.message || 'Failed to un-RSVP');
     }
   }
@@ -1297,7 +1298,7 @@ export class SupabaseDataProvider implements DataProvider {
     barcode: string,
     opts?: { codeType?: string },
   ): Promise<BarcodeLookupResult> {
-    console.log('[SupabaseDataProvider] lookupByBarcode', { barcode, opts });
+    logger.info('[SupabaseDataProvider] lookupByBarcode', { barcode, opts });
 
     // Call backend API for barcode lookup
     // This will query product databases (Open Library, Google Books, etc.)
@@ -1326,7 +1327,7 @@ export class SupabaseDataProvider implements DataProvider {
         imageUrl: res.image_url ?? null,
       };
     } catch (err: any) {
-      console.warn('[SupabaseDataProvider] lookupByBarcode API error:', err);
+      logger.warn('[SupabaseDataProvider] lookupByBarcode API error:', err);
 
       // Return minimal result on error - UI can fall back to manual entry
       return {
@@ -1350,7 +1351,7 @@ export class SupabaseDataProvider implements DataProvider {
     query: string,
     opts?: MarketSearchOptions,
   ): Promise<MarketSearchResult> {
-    console.log('[SupabaseDataProvider] marketSearch', { query, opts });
+    logger.info('[SupabaseDataProvider] marketSearch', { query, opts });
 
     // Call backend API for market search
     // This aggregates results from multiple providers (eBay, TCGPlayer, etc.)
@@ -1383,7 +1384,7 @@ export class SupabaseDataProvider implements DataProvider {
         confidence: res.confidence ?? 0.5,
       };
     } catch (err: any) {
-      console.warn('[SupabaseDataProvider] marketSearch API error:', err);
+      logger.warn('[SupabaseDataProvider] marketSearch API error:', err);
 
       // Return empty result on error
       return {

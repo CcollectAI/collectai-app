@@ -20,6 +20,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
+import logger from '@/utils/logger';
 
 /**
  * Add screen:
@@ -61,7 +62,7 @@ const AddScreen: React.FC = () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     const templateUrl = `${API_BASE}/api/imports/template`;
     Linking.openURL(templateUrl).catch((err) => {
-      console.error("[Add] Failed to open template URL", err);
+      logger.error("[Add] Failed to open template URL", err);
       Alert.alert(
         "Could not open template",
         "We couldn't open the template link. Please try again later."
@@ -99,7 +100,7 @@ const handleImportCollectionFile = async () => {
     // Basic safety checks
     // @ts-ignore
     if (!asset || !asset.uri) {
-      console.warn('[Add] import: no asset URI found', asset);
+      logger.warn('[Add] import: no asset URI found', asset);
       return;
     }
 
@@ -127,7 +128,7 @@ const handleImportCollectionFile = async () => {
 
       if (!res.ok) {
         const text = await res.text();
-        console.error("[Add] import error response", res.status, text);
+        logger.error("[Add] import error response", res.status, text);
         setImportSummary({
           total: 0,
           inserted: 0,
@@ -138,7 +139,7 @@ const handleImportCollectionFile = async () => {
       }
 
       const json = await res.json();
-      console.log("[Add] import summary", json);
+      logger.info("[Add] import summary", json);
       setImportSummary({
         total: json.total_rows ?? 0,
         inserted: json.inserted_count ?? 0,
@@ -149,7 +150,7 @@ const handleImportCollectionFile = async () => {
       setImportBusy(false);
     }
     } catch (e) {
-      console.error('[Add] import collection file error', e);
+      logger.error('[Add] import collection file error', e);
     }
   };
 

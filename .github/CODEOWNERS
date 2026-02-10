@@ -1,0 +1,23 @@
+# Default owner for everything
+* @merle
+
+# Backend (Python)
+/app/features/ @merle
+/app/db.py @merle
+/app/ml/ @merle
+/main.py @merle
+/pipelines/ @merle
+/workers/ @merle
+/scripts/ @merle
+/ops/ @merle
+
+# Frontend (React Native / TypeScript)
+/src/ @merle
+/app/(tabs)/ @merle
+/app/*.tsx @merle
+
+# Infrastructure
+/.github/ @merle
+/deploy/ @merle
+/supabase/ @merle
+Dockerfile @merle
