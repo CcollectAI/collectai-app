@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import List
 
+import asyncpg
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
@@ -21,7 +22,7 @@ def _get_db_pool():
     try:
         from app.db import get_pool
         return get_pool()
-    except Exception as e:
+    except (ImportError, RuntimeError, OSError) as e:
         logger.debug(f"DB pool not available: {e}")
         return None
 
@@ -206,7 +207,7 @@ async def get_personalized_insights(user_id: str = Depends(get_current_user_id))
                 trending_items=trending,
             )
 
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error(f"[insights/personalized] DB error: {e}")
         return PersonalizedInsightsResponse(
             overexposed_categories=[],
@@ -315,7 +316,7 @@ async def get_home_widget(user_id: str = Depends(get_current_user_id)) -> HomeWi
                 currency="EUR",
             )
 
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error(f"[insights/home-widget] DB error: {e}")
         return HomeWidgetResponse(
             collection_value=0.0,

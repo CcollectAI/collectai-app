@@ -9,11 +9,14 @@ import json
 import logging
 from typing import Optional
 
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.db import db_configured, get_conn
+from app.errors import error_response
+from app.lib.affiliate import build_affiliate_url
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +34,7 @@ class MarketSearchRequest(BaseModel):
     sold_only: bool = False
     min_price: Optional[float] = Field(None, ge=0)
     max_price: Optional[float] = Field(None, ge=0)
+    region: Optional[str] = Field(None, max_length=16, description="User region: americas/europe/japan/other")
 
 
 class CompsRequest(BaseModel):
@@ -51,6 +55,20 @@ async def marketplace_search(
     """Aggregate search across all configured market adapters."""
     from app.agents.marketplace_agent import MarketplaceAgent
 
+    # Resolve region: explicit request > user_settings > None
+    region = request.region
+    if not region and db_configured():
+        try:
+            async with get_conn() as conn:
+                row = await conn.fetchval(
+                    "SELECT settings_json->>'region' FROM user_settings WHERE user_id = $1",
+                    user_id,
+                )
+                if row:
+                    region = row
+        except Exception:
+            logger.debug("Could not look up user region from DB")
+
     agent = MarketplaceAgent()
     try:
         result = await agent.aggregate_search(
@@ -58,32 +76,40 @@ async def marketplace_search(
             category=request.category,
             limit=request.limit,
             include_sold=request.sold_only,
+            region=region,
         )
 
         # Persist new hits to market_hits if DB is configured
         if db_configured() and result.hits:
             try:
                 await _persist_hits(result.hits, user_id)
-            except Exception:
+            except asyncpg.PostgresError:
                 logger.warning("Failed to persist market hits to DB")
 
+        # Build affiliate URLs for each hit
+        hits_out = []
+        for h in result.hits:
+            raw_url = h.hit.get("url") or ""
+            source_name = h.hit.get("source") or ""
+            aff_url, aff_source = build_affiliate_url(raw_url, source_name)
+            hits_out.append({
+                "source": source_name,
+                "title": h.hit.get("title"),
+                "price": h.hit.get("price"),
+                "currency": h.hit.get("currency", "EUR"),
+                "url": raw_url,
+                "affiliate_url": aff_url if aff_url != raw_url else None,
+                "affiliate_source": aff_source or None,
+                "image_url": h.hit.get("image_url"),
+                "condition": h.hit.get("condition"),
+                "is_sold": h.is_sold,
+                "provenance_score": round(h.provenance_score, 3),
+                "source_reliability": round(h.source_reliability, 3),
+                "recency_score": round(h.recency_score, 3),
+            })
+
         return {
-            "hits": [
-                {
-                    "source": h.hit.get("source"),
-                    "title": h.hit.get("title"),
-                    "price": h.hit.get("price"),
-                    "currency": h.hit.get("currency", "EUR"),
-                    "url": h.hit.get("url"),
-                    "image_url": h.hit.get("image_url"),
-                    "condition": h.hit.get("condition"),
-                    "is_sold": h.is_sold,
-                    "provenance_score": round(h.provenance_score, 3),
-                    "source_reliability": round(h.source_reliability, 3),
-                    "recency_score": round(h.recency_score, 3),
-                }
-                for h in result.hits
-            ],
+            "hits": hits_out,
             "total_sources_queried": result.total_sources_queried,
             "successful_sources": result.successful_sources,
             "aggregate_confidence": round(result.aggregate_confidence, 3),
@@ -92,9 +118,15 @@ async def marketplace_search(
         }
     except HTTPException:
         raise
+    except asyncpg.PostgresError:
+        logger.exception("Marketplace search failed due to DB error")
+        raise error_response(500, "Market search failed", code="DB_ERROR")
+    except (ConnectionError, TimeoutError, OSError) as e:
+        logger.exception("Marketplace search failed due to external API error")
+        raise error_response(503, "Market search failed", code="EXTERNAL_API_ERROR")
     except Exception:
         logger.exception("Marketplace search failed")
-        raise HTTPException(status_code=500, detail="Market search failed")
+        raise error_response(500, "Market search failed", code="INTERNAL_ERROR")
     finally:
         await agent.close()
 
@@ -104,10 +136,24 @@ async def marketplace_comps(
     item_ref: str,
     category: Optional[str] = None,
     limit: int = 20,
+    region: Optional[str] = None,
     user_id: str = Depends(get_current_user_id),
 ):
     """Find sold comparables for an item and persist to market_hits."""
     from app.agents.marketplace_agent import MarketplaceAgent
+
+    # Resolve region: explicit param > user_settings > None
+    if not region and db_configured():
+        try:
+            async with get_conn() as conn:
+                row = await conn.fetchval(
+                    "SELECT settings_json->>'region' FROM user_settings WHERE user_id = $1",
+                    user_id,
+                )
+                if row:
+                    region = row
+        except Exception:
+            logger.debug("Could not look up user region from DB")
 
     agent = MarketplaceAgent()
     try:
@@ -115,12 +161,13 @@ async def marketplace_comps(
             query=item_ref,
             category=category,
             limit=min(limit, 50),
+            region=region,
         )
 
         if db_configured() and result.hits:
             try:
                 await _persist_hits(result.hits, user_id)
-            except Exception:
+            except asyncpg.PostgresError:
                 logger.warning("Failed to persist comp hits to DB")
 
         return {
@@ -140,9 +187,15 @@ async def marketplace_comps(
         }
     except HTTPException:
         raise
+    except asyncpg.PostgresError:
+        logger.exception("Marketplace comps failed due to DB error")
+        raise error_response(500, "Comps lookup failed", code="DB_ERROR")
+    except (ConnectionError, TimeoutError, OSError) as e:
+        logger.exception("Marketplace comps failed due to external API error")
+        raise error_response(503, "Comps lookup failed", code="EXTERNAL_API_ERROR")
     except Exception:
         logger.exception("Marketplace comps failed")
-        raise HTTPException(status_code=500, detail="Comps lookup failed")
+        raise error_response(500, "Comps lookup failed", code="INTERNAL_ERROR")
     finally:
         await agent.close()
 
@@ -156,7 +209,7 @@ async def marketplace_health():
     try:
         statuses = await agent.health_check()
         return {"adapters": statuses}
-    except Exception:
+    except (ConnectionError, TimeoutError, OSError):
         logger.exception("Marketplace health check failed")
         return {"adapters": [], "error": "Health check failed"}
     finally:

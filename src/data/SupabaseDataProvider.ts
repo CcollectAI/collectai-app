@@ -287,10 +287,39 @@ export class SupabaseDataProvider implements DataProvider {
     }
   }
 
+  async updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item> {
+    const updatePayload: Record<string, unknown> = {};
+    if (patch.name !== undefined) updatePayload.name = patch.name;
+    if (patch.category !== undefined) updatePayload.category = patch.category;
+    if (patch.price !== undefined) updatePayload.price = patch.price;
+    if (patch.imageUrl !== undefined) updatePayload.image_url = patch.imageUrl;
+
+    const { data, error } = await supabase
+      .from('items')
+      .update(updatePayload)
+      .eq('id', itemId)
+      .select('id, name, category, price, image_url, updated_at')
+      .single();
+
+    if (error || !data) {
+      logger.error('[SupabaseDataProvider] updateItem error:', error);
+      throw new Error(error?.message || 'Failed to update item');
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      category: data.category,
+      price: data.price,
+      imageUrl: data.image_url,
+      updatedAt: data.updated_at,
+    };
+  }
+
   async archiveItem(itemId: string): Promise<void> {
     // Merge _archived: true into the existing attributes_json via JSONB concat
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await supabase.rpc('rpc_archive_item_v1' as any, {
+    // @ts-expect-error – RPC not in generated Supabase types
+    const { error } = await supabase.rpc('rpc_archive_item_v1', {
       p_item_id: itemId,
     });
 
@@ -299,8 +328,8 @@ export class SupabaseDataProvider implements DataProvider {
       const { error: updateError } = await supabase
         .from('items')
         .update({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          attributes_json: supabase.rpc('jsonb_set_archived' as any, { p_item_id: itemId }) as any,
+          // @ts-expect-error – RPC not in generated Supabase types; used as inline value expression
+          attributes_json: supabase.rpc('jsonb_set_archived', { p_item_id: itemId }),
         })
         .eq('id', itemId);
 
@@ -308,8 +337,8 @@ export class SupabaseDataProvider implements DataProvider {
       if (updateError) {
         const { error: rawError } = await supabase
           .from('items')
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .update({ archived_at: new Date().toISOString() } as any)
+          // @ts-expect-error – archived_at column not in generated Supabase types yet
+          .update({ archived_at: new Date().toISOString() })
           .eq('id', itemId);
 
         if (rawError) {

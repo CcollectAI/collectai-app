@@ -55,7 +55,9 @@ class TestRegisterPushToken:
             "platform": "android",
         })
         assert resp.status_code == 400
-        assert "invalid" in resp.json()["detail"].lower() or "Invalid" in resp.json()["detail"]
+        detail = resp.json()["detail"]
+        detail_str = detail["detail"] if isinstance(detail, dict) else detail
+        assert "invalid" in detail_str.lower()
 
     def test_register_token_too_short(self):
         """push_token min_length is 10."""

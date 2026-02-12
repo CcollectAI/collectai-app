@@ -29,6 +29,10 @@ import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
+import { useToast } from '@/components/Toast';
+
+/** Barcode types accepted by the scanner */
+const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
 
 type ScanState = 'scanning' | 'loading' | 'result' | 'error';
 type InputMode = 'camera' | 'url';
@@ -37,6 +41,7 @@ export default function BarcodeScanScreen() {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanState, setScanState] = useState<ScanState>('scanning');
@@ -57,10 +62,9 @@ export default function BarcodeScanScreen() {
     const { type, data } = result;
 
     // Only accept relevant barcode types
-    const validTypes = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'];
     const normalizedType = type.toLowerCase().replace('-', '_');
 
-    if (!validTypes.some(t => normalizedType.includes(t))) {
+    if (!SUPPORTED_BARCODE_TYPES.some(t => normalizedType.includes(t))) {
       return; // Ignore unsupported barcode types
     }
 
@@ -253,6 +257,7 @@ export default function BarcodeScanScreen() {
       });
     } catch (err) {
       logger.error('[BarcodeScan] Save to collection error:', err);
+      showToast({ message: 'Auto-save failed, opening manual entry', type: 'warning' });
       // Fallback: navigate to add-manual with prefilled data
       router.push({
         pathname: '/add-manual',

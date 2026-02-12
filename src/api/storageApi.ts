@@ -35,7 +35,20 @@ async function del(path: string) {
   const res = await fetchWithTimeout(`${API_BASE}${path}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`DELETE ${path} failed (${res.status})`);
+  if (!res.ok) {
+    let message = `DELETE ${path} failed (${res.status})`;
+    try {
+      const body = await res.text();
+      if (body) {
+        const parsed = JSON.parse(body);
+        if (parsed.detail) message = `${message}: ${parsed.detail}`;
+        else if (parsed.message) message = `${message}: ${parsed.message}`;
+      }
+    } catch {
+      // ignore parse errors — use default message
+    }
+    throw new Error(message);
+  }
   return res.json();
 }
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import {
   SafeAreaView,
   ScrollView,
@@ -21,6 +21,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { useSession } from "@/hooks/useSession";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
+import { useToast } from "@/components/Toast";
 import { dataProvider } from "@/data";
 import { PriceConfidenceGauge } from "@/components/PriceConfidenceGauge";
 import { PriceCard } from "@/components/PriceCard";
@@ -37,6 +40,7 @@ import { ProvenanceTimeline } from "@/components/ProvenanceTimeline";
 import { Linking } from "react-native";
 import logger from "@/utils/logger";
 import { ItemAttributesSection } from "@/components/ItemAttributesSection";
+import { formatPrice, formatNumber } from "@/lib/format";
 
 // Dossier data shape (mirrors collectorsApi.getDossier return type)
 interface DossierData {
@@ -58,33 +62,31 @@ interface MarketHit {
   title: string;
   price: number;
   url?: string;
+  affiliate_url?: string;
   source?: string;
   provider?: string;
   condition?: string;
 }
 
-// Format currency with proper number syntax (e.g., €1.234 or €1,234)
-const formatCurrency = (value: string | number | undefined | null): string => {
-  if (value === undefined || value === null || value === '') return '?';
+// Helper: parse string|number to number for formatPrice/formatNumber
+const toNum = (value: string | number | undefined | null): number | undefined => {
+  if (value === undefined || value === null || value === '') return undefined;
   const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return '?';
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
+  if (isNaN(num)) return undefined;
+  return num;
 };
 
-// Format just the number without currency symbol
-const formatNumber = (value: string | number | undefined | null): string => {
-  if (value === undefined || value === null || value === '') return '?';
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return '?';
-  return new Intl.NumberFormat('de-DE', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
+// Helper: relative time display from ISO timestamp
+const relativeTime = (iso: string | null | undefined): string => {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 };
 
 // Predefined options for dropdown menus
@@ -101,6 +103,8 @@ const CATEGORY_ID_MAP: Record<string, string> = {
 
 export default function ItemDetailScreen() {
   const { colors: theme } = useAppTheme();
+  const { settings } = useSettings();
+  const { showToast } = useToast();
   const params = useLocalSearchParams<{
     id?: string;
     draft?: string;
@@ -223,6 +227,10 @@ export default function ItemDetailScreen() {
   const [marketResults, setMarketResults] = useState<MarketHit[]>([]);
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketExpanded, setMarketExpanded] = useState(false);
+  const [marketScannedAt, setMarketScannedAt] = useState<string | null>(null);
+
+  // AI Intelligence refresh state
+  const [aiRefreshing, setAiRefreshing] = useState(false);
 
   // Alert creation state
   const [showAlertForm, setShowAlertForm] = useState(false);
@@ -333,6 +341,11 @@ export default function ItemDetailScreen() {
     collectorsApi.getPriceEvidence(id)
       .then(setEvidenceData)
       .catch((err) => logger.warn('[ItemDetail] evidence fetch error:', err));
+    // Auto-refresh evidence data every 5 minutes
+    const evidenceInterval = setInterval(() => {
+      collectorsApi.getPriceEvidence(id).then(setEvidenceData).catch(() => {});
+    }, 300000); // 5 min
+    return () => clearInterval(evidenceInterval);
   }, [id, isDraft]);
 
   // Item attributes from DB (attributes_json, taxonomy_version, subtype_id, collections)
@@ -391,11 +404,12 @@ export default function ItemDetailScreen() {
 
   // Load marketplace results on demand
   const loadMarketResults = async () => {
-    if (!editableName || marketResults.length > 0) return;
+    if (!editableName) return;
     setMarketLoading(true);
     try {
       const data = await collectorsApi.marketplaceSearch(editableName, editableCategory);
       setMarketResults(data.results || data.hits || []);
+      setMarketScannedAt(new Date().toISOString());
       setMarketExpanded(true);
     } catch (err) {
       logger.warn('[ItemDetail] marketplace search error:', err);
@@ -415,6 +429,8 @@ export default function ItemDetailScreen() {
         trigger_type: "below_threshold",
         threshold_value: parseFloat(alertThreshold),
       });
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Price alert set!', type: 'success' });
       setAlertMessage("Price alert set!");
       setShowAlertForm(false);
       setAlertThreshold("");
@@ -491,7 +507,8 @@ export default function ItemDetailScreen() {
     // Notes are local-only for now
     setTimeout(() => {
       setSavingNotes(false);
-      Alert.alert("Notes saved locally", "Notes are stored on device only (not synced yet).");
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Notes saved locally', type: 'info' });
     }, 300);
   };
 
@@ -509,6 +526,9 @@ export default function ItemDetailScreen() {
         notes: notes || undefined,
       });
 
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Item saved to collection', type: 'success' });
+
       // Navigate to saved item with all editable values
       router.replace({
         pathname: '/item/[id]',
@@ -524,6 +544,7 @@ export default function ItemDetailScreen() {
       });
     } catch (err: unknown) {
       logger.error('[ItemDetail] save draft error:', err);
+      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
       setSaveError(err instanceof Error ? err.message : 'Failed to save item');
     } finally {
       setSavingDraft(false);
@@ -542,11 +563,14 @@ export default function ItemDetailScreen() {
 
     try {
       await dataProvider.submitFeedback(id, 'sale_price', salePrice.trim());
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Sale price recorded — thanks!', type: 'success' });
       setFeedbackMessage("Thanks! Sale price recorded.");
       setShowSalePriceInput(false);
       setSalePrice("");
     } catch (err: unknown) {
       logger.error('[ItemDetail] feedback error:', err);
+      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
       setFeedbackMessage("Failed to submit feedback");
     } finally {
       setSubmittingFeedback(false);
@@ -561,6 +585,7 @@ export default function ItemDetailScreen() {
 
     try {
       await dataProvider.submitFeedback(id, 'disagree', 'inaccurate');
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
       setFeedbackMessage("Thanks for the feedback!");
     } catch (err: unknown) {
       logger.error('[ItemDetail] feedback error:', err);
@@ -569,6 +594,56 @@ export default function ItemDetailScreen() {
       setSubmittingFeedback(false);
     }
   };
+
+  // Refresh all AI intelligence data at once
+  const refreshAllIntelligence = async () => {
+    if (!id || isDraft || aiRefreshing) return;
+    setAiRefreshing(true);
+    try {
+      await Promise.all([
+        collectorsApi.getPriceEvidence(id).then(setEvidenceData).catch(() => {}),
+        collectorsApi.getProvenance(id).then((data) => {
+          setProvenanceEvents(data.events.map(e => ({
+            id: e.id,
+            eventType: e.event_type,
+            timestamp: e.timestamp,
+            note: e.note,
+            source: e.source,
+            metadata: e.metadata || {},
+          })));
+          setAuthenticitySignals(data.authenticity_signals || []);
+        }).catch(() => {}),
+        ...(marketResults.length > 0 || marketScannedAt ? [loadMarketResults()] : []),
+      ]);
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    } catch (err) {
+      logger.warn('[ItemDetail] intelligence refresh error:', err);
+    } finally {
+      setAiRefreshing(false);
+    }
+  };
+
+  // Derive the most recent provenance event timestamp
+  const latestProvenanceAt = useMemo(() => {
+    if (!provenanceEvents.length) return null;
+    return provenanceEvents.reduce((latest, ev) =>
+      new Date(ev.timestamp) > new Date(latest) ? ev.timestamp : latest
+    , provenanceEvents[0].timestamp);
+  }, [provenanceEvents]);
+
+  // Determine feedback loop status
+  const feedbackLoopStatus = useMemo(() => {
+    if (feedbackMessage && feedbackMessage.includes('Thanks')) return 'submitted';
+    if (submittingFeedback) return 'submitting';
+    return 'awaiting';
+  }, [feedbackMessage, submittingFeedback]);
+
+  // Determine if the model was recently calibrated (prediction within last 24h)
+  const recentlyCalibrated = useMemo(() => {
+    if (!evidenceData?.prediction_at) return false;
+    const diff = Date.now() - new Date(evidenceData.prediction_at).getTime();
+    return diff < 86400000; // 24 hours
+  }, [evidenceData?.prediction_at]);
 
   return (
     <KeyboardAvoidingView
@@ -712,7 +787,7 @@ export default function ItemDetailScreen() {
                 value={editableName}
                 onChangeText={setEditableName}
                 placeholder="Item name"
-                placeholderTextColor={theme.muted as string}
+                placeholderTextColor={theme.muted ?? '#64748B'}
                 accessibilityLabel="Item name"
               />
             ) : (
@@ -807,14 +882,14 @@ export default function ItemDetailScreen() {
                     value={editableValue}
                     onChangeText={setEditableValue}
                     placeholder="0"
-                    placeholderTextColor={theme.muted as string}
+                    placeholderTextColor={theme.muted ?? '#64748B'}
                     keyboardType="decimal-pad"
                     accessibilityLabel="Estimated value in euros"
                   />
                 </View>
               ) : (
                 <Text style={[styles.valueHighlight, { color: theme.text }]}>
-                  {formatCurrency(editableValue)}
+                  {formatPrice(toNum(editableValue))}
                 </Text>
               )}
             </View>
@@ -846,7 +921,7 @@ export default function ItemDetailScreen() {
                   Price range
                 </Text>
                 <Text style={[styles.value, { color: theme.text }]}>
-                  {formatCurrency(q10)} – {formatCurrency(q50)} – {formatCurrency(q90)}
+                  {formatPrice(toNum(q10))} – {formatPrice(toNum(q50))} – {formatPrice(toNum(q90))}
                 </Text>
               </View>
             )}
@@ -858,9 +933,9 @@ export default function ItemDetailScreen() {
                   confidence={parseFloat(confidence)}
                   size="medium"
                   colors={{
-                    text: theme.text as string,
-                    muted: theme.muted as string,
-                    background: theme.border as string,
+                    text: theme.text ?? '#1F2937',
+                    muted: theme.muted ?? '#64748B',
+                    background: theme.border ?? '#E2E8F0',
                   }}
                 />
               </View>
@@ -922,7 +997,7 @@ export default function ItemDetailScreen() {
                         },
                       ]}
                       placeholder="Sale price (e.g., 150.00)"
-                      placeholderTextColor={theme.muted as string}
+                      placeholderTextColor={theme.muted ?? '#64748B'}
                       keyboardType="decimal-pad"
                       value={salePrice}
                       onChangeText={setSalePrice}
@@ -988,7 +1063,7 @@ export default function ItemDetailScreen() {
               <View style={[styles.provenanceBlock, { borderTopColor: theme.border }]}>
                 <View style={styles.provenanceSectionHeader}>
                   <Ionicons name="time-outline" size={20} color={theme.accent} />
-                  <Text style={[styles.provenanceSectionTitle, { color: theme.text }]}>Provenance & History</Text>
+                  <Text style={[styles.provenanceSectionTitle, { color: theme.text }]}>Ownership History</Text>
                 </View>
                 <ProvenanceTimeline
                   events={provenanceEvents}
@@ -1008,11 +1083,11 @@ export default function ItemDetailScreen() {
                   }}
                   style={styles.sectionHeaderRow}
                   accessibilityRole="button"
-                  accessibilityLabel="View item dossier"
+                  accessibilityLabel="View full item report"
                 >
                   <View style={styles.sectionHeaderLeft}>
                     <Ionicons name="document-text-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Dossier</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Full Report</Text>
                   </View>
                   {dossierLoading ? (
                     <ActivityIndicator size="small" color={theme.accent} />
@@ -1031,7 +1106,7 @@ export default function ItemDetailScreen() {
                       <View style={[styles.dossierCard, { backgroundColor: theme.background }]}>
                         <Text style={[styles.dossierLabel, { color: theme.muted }]}>Estimated Value</Text>
                         <Text style={[styles.dossierValue, { color: theme.text }]}>
-                          {formatCurrency(dossierData.valuation.q50)}
+                          {formatPrice(toNum(dossierData.valuation.q50))}
                         </Text>
                         {dossierData.valuation.explanation && (
                           <Text style={[styles.dossierMeta, { color: theme.muted }]}>
@@ -1050,7 +1125,7 @@ export default function ItemDetailScreen() {
                     {/* Market comps count */}
                     {dossierData.market_comps?.length > 0 && (
                       <View style={styles.dossierRow}>
-                        <Text style={[styles.dossierRowLabel, { color: theme.muted }]}>Market Comparables</Text>
+                        <Text style={[styles.dossierRowLabel, { color: theme.muted }]}>Similar Listings</Text>
                         <Text style={[styles.dossierRowValue, { color: theme.text }]}>
                           {dossierData.market_comps.length} found
                         </Text>
@@ -1069,11 +1144,13 @@ export default function ItemDetailScreen() {
                     <Pressable
                       onPress={() => {
                         const url = collectorsApi.getDossierExportUrl(id);
-                        Linking.openURL(url);
+                        Linking.openURL(url).catch((err) => {
+                          logger.warn('[ItemDetail] Failed to open URL', err);
+                        });
                       }}
                       style={[styles.dossierExportBtn, { borderColor: theme.border }]}
                       accessibilityRole="button"
-                      accessibilityLabel="Export dossier as PDF"
+                      accessibilityLabel="Export report as PDF"
                     >
                       <Ionicons name="share-outline" size={16} color={theme.accent} />
                       <Text style={[styles.dossierExportText, { color: theme.accent }]}>Export Report</Text>
@@ -1114,7 +1191,12 @@ export default function ItemDetailScreen() {
                     {marketResults.slice(0, 5).map((hit, idx) => (
                       <Pressable
                         key={idx}
-                        onPress={() => hit.url && Linking.openURL(hit.url)}
+                        onPress={() => {
+                          const openUrl = hit.affiliate_url || hit.url;
+                          if (openUrl) Linking.openURL(openUrl).catch((err) => {
+                            logger.warn('[ItemDetail] Failed to open URL', err);
+                          });
+                        }}
                         style={[styles.marketHitRow, { borderBottomColor: theme.border }]}
                         accessibilityRole="link"
                       >
@@ -1127,7 +1209,7 @@ export default function ItemDetailScreen() {
                           </Text>
                         </View>
                         <Text style={[styles.marketHitPrice, { color: theme.text }]}>
-                          {formatCurrency(hit.price)}
+                          {formatPrice(toNum(hit.price))}
                         </Text>
                       </Pressable>
                     ))}
@@ -1182,7 +1264,7 @@ export default function ItemDetailScreen() {
                           },
                         ]}
                         placeholder="e.g. 50"
-                        placeholderTextColor={theme.muted as string}
+                        placeholderTextColor={theme.muted ?? '#64748B'}
                         keyboardType="decimal-pad"
                         value={alertThreshold}
                         onChangeText={setAlertThreshold}
@@ -1205,6 +1287,133 @@ export default function ItemDetailScreen() {
                     </View>
                   </View>
                 )}
+              </View>
+            )}
+
+            {/* AI Intelligence */}
+            {!isDraft && id && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="sparkles" size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>AI Intelligence</Text>
+                  </View>
+                  {aiRefreshing && (
+                    <ActivityIndicator size="small" color={theme.accent} />
+                  )}
+                </View>
+                <View style={styles.sectionContent}>
+                  <Text style={[styles.aiSubtitle, { color: theme.muted }]}>
+                    Powered by CcollectAI
+                  </Text>
+                  <View style={styles.aiGrid}>
+                    {/* Price Engine card */}
+                    <View style={[styles.aiCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                      <Ionicons name="analytics-outline" size={18} color={evidenceData ? theme.success : theme.muted} />
+                      <Text style={[styles.aiCardLabel, { color: theme.text }]}>Price Engine</Text>
+                      <Text style={[styles.aiCardStatus, { color: evidenceData ? theme.success : theme.muted }]}>
+                        {evidenceData ? 'Analyzed' : 'Pending'}
+                      </Text>
+                      <Text style={[styles.aiCardTimestamp, { color: theme.muted }]}>
+                        {evidenceData?.prediction_at ? relativeTime(evidenceData.prediction_at) : ''}
+                      </Text>
+                    </View>
+                    {/* Vision AI card */}
+                    <View style={[styles.aiCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                      <Ionicons name="eye-outline" size={18} color={editableCategory && editableCategory !== 'Unknown category' ? theme.success : theme.muted} />
+                      <Text style={[styles.aiCardLabel, { color: theme.text }]}>Vision AI</Text>
+                      <Text style={[styles.aiCardStatus, { color: editableCategory && editableCategory !== 'Unknown category' ? theme.success : theme.muted }]}>
+                        {editableCategory && editableCategory !== 'Unknown category' ? 'Classified' : 'Pending'}
+                      </Text>
+                      <Text style={[styles.aiCardTimestamp, { color: theme.muted }]}>
+                        {editableCategory && editableCategory !== 'Unknown category' ? 'On intake' : ''}
+                      </Text>
+                    </View>
+                    {/* Market Scan card */}
+                    <View style={[styles.aiCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                      <Ionicons name="search-outline" size={18} color={marketResults.length > 0 ? theme.success : theme.muted} />
+                      <Text style={[styles.aiCardLabel, { color: theme.text }]}>Market Scan</Text>
+                      <Text style={[styles.aiCardStatus, { color: marketResults.length > 0 ? theme.success : theme.muted }]}>
+                        {marketResults.length > 0 ? `${marketResults.length} found` : 'Ready'}
+                      </Text>
+                      <Text style={[styles.aiCardTimestamp, { color: theme.muted }]}>
+                        {marketScannedAt ? relativeTime(marketScannedAt) : ''}
+                      </Text>
+                    </View>
+                    {/* Trust Check card */}
+                    <View style={[styles.aiCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                      <Ionicons name="shield-checkmark-outline" size={18} color={provenanceEvents.length > 0 ? theme.success : theme.muted} />
+                      <Text style={[styles.aiCardLabel, { color: theme.text }]}>Trust Check</Text>
+                      <Text style={[styles.aiCardStatus, { color: provenanceEvents.length > 0 ? theme.success : theme.muted }]}>
+                        {authenticitySignals.length > 0 ? 'Verified' : provenanceEvents.length > 0 ? 'Tracked' : 'Pending'}
+                      </Text>
+                      <Text style={[styles.aiCardTimestamp, { color: theme.muted }]}>
+                        {latestProvenanceAt ? relativeTime(latestProvenanceAt) : ''}
+                      </Text>
+                    </View>
+                  </View>
+                  {/* Evidence data rows */}
+                  {evidenceData?.evidence_summary && (
+                    <View style={[styles.aiSourcesRow, { borderTopColor: theme.border }]}>
+                      <Text style={[styles.aiSourcesLabel, { color: theme.muted }]}>Data sources:</Text>
+                      <Text style={[styles.aiSourcesValue, { color: theme.text }]}>
+                        {evidenceData.evidence_summary.sources.map(s => s.source).join(', ') || 'Gathering...'}
+                      </Text>
+                    </View>
+                  )}
+                  {evidenceData?.evidence_summary?.total_comps != null && (
+                    <View style={styles.aiSourcesRow}>
+                      <Text style={[styles.aiSourcesLabel, { color: theme.muted }]}>Comparables analyzed:</Text>
+                      <Text style={[styles.aiSourcesValue, { color: theme.accent }]}>
+                        {evidenceData.evidence_summary.total_comps}
+                      </Text>
+                    </View>
+                  )}
+                  {dossierData && (
+                    <View style={styles.aiSourcesRow}>
+                      <Text style={[styles.aiSourcesLabel, { color: theme.muted }]}>Report completeness:</Text>
+                      <Text style={[styles.aiSourcesValue, { color: theme.accent }]}>
+                        {Math.round((dossierData.completeness_score || 0) * 100)}%
+                      </Text>
+                    </View>
+                  )}
+                  {/* Feedback loop status */}
+                  <View style={styles.aiSourcesRow}>
+                    <Text style={[styles.aiSourcesLabel, { color: theme.muted }]}>Feedback loop:</Text>
+                    <Text style={[styles.aiSourcesValue, { color: feedbackLoopStatus === 'submitted' ? theme.success : theme.muted }]}>
+                      {feedbackLoopStatus === 'submitted' ? 'Feedback submitted' : feedbackLoopStatus === 'submitting' ? 'Submitting...' : 'Help improve accuracy'}
+                    </Text>
+                  </View>
+                  {/* Model calibration status */}
+                  {evidenceData?.prediction_at && (
+                    <View style={styles.aiSourcesRow}>
+                      <Text style={[styles.aiSourcesLabel, { color: theme.muted }]}>Model calibration:</Text>
+                      <Text style={[styles.aiSourcesValue, { color: recentlyCalibrated ? theme.success : theme.muted }]}>
+                        {recentlyCalibrated ? 'Recently calibrated' : `Last run ${relativeTime(evidenceData.prediction_at)}`}
+                      </Text>
+                    </View>
+                  )}
+                  {/* Refresh Intelligence button */}
+                  <Pressable
+                    onPress={refreshAllIntelligence}
+                    disabled={aiRefreshing}
+                    style={[
+                      styles.refreshIntelligenceBtn,
+                      { borderColor: theme.accent, opacity: aiRefreshing ? 0.7 : 1 },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Refresh all intelligence data"
+                  >
+                    {aiRefreshing ? (
+                      <ActivityIndicator size="small" color={theme.accent} />
+                    ) : (
+                      <Ionicons name="refresh-outline" size={16} color={theme.accent} />
+                    )}
+                    <Text style={[styles.refreshIntelligenceBtnText, { color: theme.accent }]}>
+                      {aiRefreshing ? 'Refreshing...' : 'Refresh Intelligence'}
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
             )}
 
@@ -1245,8 +1454,8 @@ export default function ItemDetailScreen() {
                     backgroundColor: theme.background,
                   },
                 ]}
-                placeholder="Add your notes about condition, provenance, where you bought it, etc."
-                placeholderTextColor={theme.muted as string}
+                placeholder="Add your notes about condition, origin, where you bought it, etc."
+                placeholderTextColor={theme.muted ?? '#64748B'}
                 multiline
                 value={notes}
                 onChangeText={setNotes}
@@ -1255,7 +1464,7 @@ export default function ItemDetailScreen() {
                 accessibilityLabel="Item notes"
               />
               <Text style={[styles.notesHint, { color: theme.muted }]}>
-                Notes are stored locally only (not synced yet)
+                Item notes
               </Text>
               <View style={styles.notesActions}>
                 <Pressable
@@ -1923,5 +2132,70 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // AI Intelligence section
+  aiSubtitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+  aiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  aiCard: {
+    width: '47%',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    gap: 4,
+  },
+  aiCardLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  aiCardStatus: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  aiCardTimestamp: {
+    fontSize: 10,
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  aiSourcesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 8,
+  },
+  aiSourcesLabel: {
+    fontSize: 12,
+  },
+  aiSourcesValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    flexShrink: 1,
+    textAlign: 'right',
+  },
+  refreshIntelligenceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 12,
+  },
+  refreshIntelligenceBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

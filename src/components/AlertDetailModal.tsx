@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { Alert, AlertType } from '@/types/insights';
+import { formatPrice } from '@/lib/format';
 
 type AlertDetailModalProps = {
   alert: Alert | null;
@@ -52,14 +53,6 @@ function getAlertColor(type: AlertType): string {
     default:
       return '#6B7280';
   }
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-  }).format(value);
 }
 
 function formatDate(dateString: string): string {
@@ -133,14 +126,14 @@ export function AlertDetailModal({
             <View style={styles.valueBlock}>
               <Text style={[styles.valueLabel, { color: colors.muted }]}>Current</Text>
               <Text style={[styles.valueAmount, { color: colors.text }]}>
-                {formatCurrency(alert.value)}
+                {formatPrice(alert.value)}
               </Text>
             </View>
             {alert.previousValue && (
               <View style={styles.valueBlock}>
                 <Text style={[styles.valueLabel, { color: colors.muted }]}>Previous</Text>
                 <Text style={[styles.valueAmount, { color: colors.muted }]}>
-                  {formatCurrency(alert.previousValue)}
+                  {formatPrice(alert.previousValue)}
                 </Text>
               </View>
             )}

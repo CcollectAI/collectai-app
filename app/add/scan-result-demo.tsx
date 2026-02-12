@@ -7,18 +7,7 @@ import {
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
-
-function formatCurrency(value: number): string {
-  try {
-    return new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(value);
-  } catch {
-    return `${value.toFixed(0)} EUR`;
-  }
-}
+import { formatPrice } from '@/lib/format';
 
 function NotAvailableScreen() {
   return (
@@ -189,8 +178,8 @@ function ScanResultDemoScreen() {
               color: colors.text,
             }}
           >
-            {formatCurrency(demoItem.estimatedMin)} –{' '}
-            {formatCurrency(demoItem.estimatedMax)}
+            {formatPrice(demoItem.estimatedMin)} –{' '}
+            {formatPrice(demoItem.estimatedMax)}
           </Text>
           <Text
             style={{

@@ -15,9 +15,11 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
+from app.errors import error_response
 from app.features.pagination import pagination_params
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
@@ -29,7 +31,7 @@ def _get_db_pool():
     try:
         from app.db import get_pool
         return get_pool()
-    except Exception as e:
+    except (ImportError, RuntimeError, OSError) as e:
         logger.debug(f"DB pool not available: {e}")
         return None
 
@@ -123,7 +125,7 @@ async def _log_provenance_event(
             "[feedback] Auto-logged provenance event: item=%s, type=%s",
             item_id, event_type,
         )
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.warning(
             "[feedback] Failed to auto-log provenance event for item=%s: %s",
             item_id, e,
@@ -165,18 +167,23 @@ async def list_corrections(
 
     try:
         async with pool.acquire() as conn:
+            # Scope corrections to items owned by the current user via
+            # taxonomy_corrections join (which records user_id)
             rows = await conn.fetch(
                 """
-                SELECT id, corrected_price, corrected_condition,
-                       corrected_category, corrected_attributes,
-                       correction_notes, corrected_at
-                FROM training_items
-                WHERE corrected_at IS NOT NULL
-                ORDER BY corrected_at DESC
+                SELECT t.id, t.corrected_price, t.corrected_condition,
+                       t.corrected_category, t.corrected_attributes,
+                       t.correction_notes, t.corrected_at
+                FROM training_items t
+                INNER JOIN public.taxonomy_corrections tc
+                    ON tc.item_id = t.id::text AND tc.user_id = $3
+                WHERE t.corrected_at IS NOT NULL
+                ORDER BY t.corrected_at DESC
                 LIMIT $1 OFFSET $2
                 """,
                 limit,
                 offset,
+                user_id,
             )
 
         corrections = [
@@ -197,7 +204,7 @@ async def list_corrections(
         ]
         return CorrectionListResponse(corrections=corrections)
 
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error("[feedback/corrections] Error listing corrections: %s", e)
         return CorrectionListResponse(corrections=[])
 
@@ -246,20 +253,30 @@ async def submit_feedback(request: FeedbackSubmitRequest, user_id: str = Depends
         try:
             item_uuid = UUID(request.item_id)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid item_id format")
+            raise error_response(400, "Invalid item_id format", code="VALIDATION_ERROR")
 
         async with pool.acquire() as conn:
-            # Insert into feedback table
+            # Verify item ownership before recording feedback
+            owner_check = await conn.fetchval(
+                "SELECT 1 FROM public.items WHERE id = $1::uuid AND user_id = $2::uuid",
+                str(item_uuid),
+                user_id,
+            )
+            if owner_check is None:
+                raise error_response(404, "Item not found", code="NOT_FOUND")
+
+            # Insert into feedback table (user_id may be NULL if column not yet migrated)
             row = await conn.fetchrow(
                 """
-                INSERT INTO feedback (item_id, label, notes, observed_at)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO feedback (item_id, label, notes, observed_at, user_id)
+                VALUES ($1, $2, $3, $4, $5::uuid)
                 RETURNING id
                 """,
                 item_uuid,
                 label,
                 request.notes,
                 datetime.now(timezone.utc),
+                user_id,
             )
 
             feedback_id = str(row["id"]) if row else None
@@ -289,9 +306,12 @@ async def submit_feedback(request: FeedbackSubmitRequest, user_id: str = Depends
 
     except HTTPException:
         raise
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error("[feedback/submit] Error saving feedback: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to save feedback")
+        raise error_response(500, "Failed to save feedback", code="DB_ERROR")
+    except Exception as e:
+        logger.error("[feedback/submit] Unexpected error: %s", e)
+        raise error_response(500, "Failed to save feedback", code="INTERNAL_ERROR")
 
 
 @router.post("/correction", response_model=CorrectionResponse)
@@ -322,7 +342,10 @@ async def submit_correction(request: CorrectionRequest, user_id: str = Depends(g
         try:
             item_uuid = UUID(request.item_id)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid item_id format")
+            raise error_response(400, "Invalid item_id format", code="VALIDATION_ERROR")
+
+        # Verify the training item exists before updating
+        # (training_items are system-wide but corrections are user-attributed)
 
         # Build update query dynamically based on provided fields
         updates = []
@@ -355,7 +378,7 @@ async def submit_correction(request: CorrectionRequest, user_id: str = Depends(g
             param_idx += 1
 
         if not updates:
-            raise HTTPException(status_code=400, detail="No correction fields provided")
+            raise error_response(400, "No correction fields provided", code="VALIDATION_ERROR")
 
         # Always update corrected_at timestamp
         updates.append(f"corrected_at = ${param_idx}")
@@ -375,7 +398,7 @@ async def submit_correction(request: CorrectionRequest, user_id: str = Depends(g
             result = await conn.execute(query, *params)
 
             if result.endswith(" 0"):
-                raise HTTPException(status_code=404, detail="Training item not found")
+                raise error_response(404, "Training item not found", code="VALIDATION_ERROR")
 
             logger.info(f"[feedback/correction] Updated training_items: item={request.item_id}")
 
@@ -405,7 +428,7 @@ async def submit_correction(request: CorrectionRequest, user_id: str = Depends(g
                         "[feedback/correction] Logged taxonomy correction: item=%s, %s -> %s",
                         request.item_id, original_category, request.corrected_category,
                     )
-                except Exception as e:
+                except asyncpg.PostgresError as e:
                     logger.warning(
                         "[feedback/correction] Failed to log taxonomy correction for item=%s: %s",
                         request.item_id, e,
@@ -418,6 +441,9 @@ async def submit_correction(request: CorrectionRequest, user_id: str = Depends(g
 
     except HTTPException:
         raise
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error("[feedback/correction] Error saving correction: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to save correction")
+        raise error_response(500, "Failed to save correction", code="DB_ERROR")
+    except Exception as e:
+        logger.error("[feedback/correction] Unexpected error: %s", e)
+        raise error_response(500, "Failed to save correction", code="INTERNAL_ERROR")

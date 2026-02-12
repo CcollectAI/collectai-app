@@ -5,9 +5,11 @@ import logging
 from datetime import datetime, timezone
 from typing import List, Literal, Optional
 
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
+from app.errors import error_response
 from app.features.pagination import pagination_params
 
 from app.db import db_configured, get_conn
@@ -191,7 +193,7 @@ async def delete_alert(alert_id: str, user_id: str = Depends(get_current_user_id
         if existing and existing.user_id == user_id:
             del _IN_MEMORY_ALERTS[alert_id]
             return {"ok": True}
-        raise HTTPException(status_code=404, detail="Alert not found")
+        raise error_response(404, "Alert not found", code="VALIDATION_ERROR")
 
     async with get_conn() as conn:
         result = await conn.execute(
@@ -205,7 +207,7 @@ async def delete_alert(alert_id: str, user_id: str = Depends(get_current_user_id
         )
         # result is like "UPDATE 1" or "UPDATE 0"
         if result.endswith(" 0"):
-            raise HTTPException(status_code=404, detail="Alert not found")
+            raise error_response(404, "Alert not found", code="VALIDATION_ERROR")
     return {"ok": True}
 
 
@@ -249,7 +251,7 @@ async def get_trigger_history(
                 """,
                 user_id,
             )
-    except Exception:
+    except asyncpg.PostgresError:
         logger.warning("trigger-history query failed for user=%s", user_id, exc_info=True)
         return {"triggers": [], "unread_count": 0}
 
@@ -288,7 +290,7 @@ async def mark_trigger_read(trigger_id: str, user_id: str = Depends(get_current_
                 trigger_id,
                 user_id,
             )
-    except Exception:
+    except asyncpg.PostgresError:
         logger.warning(
             "mark_trigger_read failed trigger=%s user=%s", trigger_id, user_id, exc_info=True
         )

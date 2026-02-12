@@ -12,11 +12,13 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.db import db_configured, get_conn
+from app.errors import error_response
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ async def register_push_token(
 ):
     """Register an Expo push token for the current user."""
     if not req.push_token.startswith("ExponentPushToken["):
-        raise HTTPException(status_code=400, detail="Invalid Expo push token format")
+        raise error_response(400, "Invalid Expo push token format", code="VALIDATION_ERROR")
 
     if not db_configured():
         logger.info("[notifications] Token registered (no DB): user=%s", user_id)
@@ -62,9 +64,9 @@ async def register_push_token(
             )
         logger.info("[notifications] Token registered: user=%s, platform=%s", user_id, req.platform)
         return {"registered": True, "push_token": req.push_token}
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error("[notifications] Error registering token: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to register push token")
+        raise error_response(500, "Failed to register push token", code="DB_ERROR")
 
 
 @router.delete("/register")
@@ -89,9 +91,9 @@ async def unregister_push_token(
             )
         logger.info("[notifications] Token unregistered: user=%s", user_id)
         return {"unregistered": True}
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error("[notifications] Error unregistering token: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to unregister push token")
+        raise error_response(500, "Failed to unregister push token", code="DB_ERROR")
 
 
 @router.get("/tokens")
@@ -124,6 +126,6 @@ async def list_push_tokens(
                 for r in rows
             ]
         }
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error("[notifications] Error listing tokens: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to list push tokens")
+        raise error_response(500, "Failed to list push tokens", code="DB_ERROR")

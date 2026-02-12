@@ -163,6 +163,15 @@ export class CachedDataProvider implements DataProvider {
     ]);
   }
 
+  async updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item> {
+    const result = await this.inner.updateItem(itemId, patch);
+    await Promise.all([
+      cacheClear(CK.ITEMS_LIST),
+      cacheClear(CK.PORTFOLIO_SUMMARY),
+    ]);
+    return result;
+  }
+
   async archiveItem(itemId: string): Promise<void> {
     await this.inner.archiveItem(itemId);
     await Promise.all([

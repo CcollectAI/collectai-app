@@ -11,6 +11,7 @@ import { getPortfolioItems, type PortfolioItem } from '@/services/collectorsClie
 import type { CollectionStatusInput } from '@/utils/statusScoring';
 import ItemsStatusPanel from '@/components/ItemsStatusPanel';
 import logger from '@/utils/logger';
+import { formatPrice } from '@/lib/format';
 
 const ItemsStatusScreen: React.FC = () => {
   const [items, setItems] = useState<CollectionStatusInput[]>([]);
@@ -81,7 +82,7 @@ const ItemsStatusScreen: React.FC = () => {
             is a status/leaderboard view driven by your Items.
           </Text>
           <Text style={styles.meta}>
-            Items: {items.length} · Total value: {formatCurrency(totalValue)}
+            Items: {items.length} · Total value: {formatPrice(totalValue)}
           </Text>
         </View>
 
@@ -103,20 +104,6 @@ const ItemsStatusScreen: React.FC = () => {
       </ScrollView>
     </SafeAreaView>
   );
-};
-
-const formatCurrency = (v: number | null | undefined): string => {
-  if (v == null || Number.isNaN(v)) return '€0';
-  try {
-    return (
-      '€' +
-      Number(v).toLocaleString('de-DE', {
-        maximumFractionDigits: 0,
-      })
-    );
-  } catch {
-    return `€${v}`;
-  }
 };
 
 const styles = StyleSheet.create({

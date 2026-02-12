@@ -82,6 +82,14 @@ export interface DataProvider {
   deleteItem(itemId: string): Promise<void>;
 
   /**
+   * Update an item's fields (e.g. category, name, price).
+   * @param itemId - The item's UUID
+   * @param patch - Partial item fields to update
+   * @returns The updated item
+   */
+  updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item>;
+
+  /**
    * Archive an item (soft-delete). Sets attributes_json._archived = true.
    * Archived items are hidden from the active collection but can be restored.
    * @param itemId - The item's UUID

@@ -22,6 +22,11 @@ from typing import Any, Dict, List, Optional
 from app.agents.adapters.ebay_caller import EbayCaller
 from app.agents.adapters.tcgplayer_caller import TCGPlayerCaller
 from app.agents.adapters.firecrawl_caller import FirecrawlCaller
+from app.lib.region_marketplace_config import (
+    should_use_adapter,
+    get_ebay_marketplace_id,
+    get_firecrawl_sites,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -244,40 +249,47 @@ class MarketplaceAgent:
         condition: Optional[str] = None,
         limit: int = 20,
         include_sold: bool = True,
+        region: Optional[str] = None,
     ) -> AggregationResult:
         """Search across all configured marketplace adapters.
 
         Deduplicates results, computes provenance scores, and returns
         an AggregationResult with aggregate confidence.
+
+        *region* (americas/europe/japan/other) gates adapters and targets
+        region-specific eBay marketplaces and Firecrawl sites.
         """
         all_hits: List[Dict[str, Any]] = []
         total_sources = 0
         successful_sources = 0
         source_errors: List[str] = []
 
+        ebay_mktplace = get_ebay_marketplace_id(region)
+        fc_sites = get_firecrawl_sites(region, category)
+
         # Determine which adapters to query
         tasks = []
 
         # eBay active listings
-        if self._ebay.configured:
+        if self._ebay.configured and should_use_adapter(region, "ebay"):
             total_sources += 1
-            tasks.append(("ebay_listed", self._ebay.search(query, category=category, limit=limit)))
+            tasks.append(("ebay_listed", self._ebay.search(query, category=category, limit=limit, marketplace_id=ebay_mktplace)))
 
         # eBay sold comps
-        if self._ebay.configured and include_sold:
+        if self._ebay.configured and include_sold and should_use_adapter(region, "ebay"):
             total_sources += 1
-            tasks.append(("ebay_sold", self._ebay.sold_comps(query, category=category, limit=limit)))
+            tasks.append(("ebay_sold", self._ebay.sold_comps(query, category=category, limit=limit, marketplace_id=ebay_mktplace)))
 
         # TCGPlayer (only for TCG categories or if no category specified)
         tcg_categories = {"pokemon", "mtg", "yugioh", "lorcana"}
-        if self._tcgplayer.configured and (category is None or category in tcg_categories):
+        if self._tcgplayer.configured and should_use_adapter(region, "tcgplayer") and (category is None or category in tcg_categories):
             total_sources += 1
             tasks.append(("tcgplayer", self._tcgplayer.search(query, category=category, limit=limit)))
 
         # Firecrawl (web search for sites without direct APIs)
-        if self._firecrawl.configured:
+        if self._firecrawl.configured and should_use_adapter(region, "firecrawl"):
             total_sources += 1
-            tasks.append(("firecrawl", self._firecrawl.search(query, category=category, limit=limit)))
+            tasks.append(("firecrawl", self._firecrawl.search(query, category=category, limit=limit, region_sites=fc_sites)))
 
         if not tasks:
             logger.warning("[MarketplaceAgent] No adapters configured for query: %s", query)
@@ -287,7 +299,7 @@ class MarketplaceAgent:
                 successful_sources=0,
                 aggregate_confidence=0.0,
                 dedup_count=0,
-                query_metadata={"query": query, "category": category},
+                query_metadata={"query": query, "category": category, "region": region},
             )
 
         # Execute all adapter queries concurrently
@@ -354,6 +366,7 @@ class MarketplaceAgent:
                 "condition": condition,
                 "limit": limit,
                 "include_sold": include_sold,
+                "region": region,
                 "source_errors": source_errors,
             },
         )
@@ -368,6 +381,7 @@ class MarketplaceAgent:
         category: Optional[str] = None,
         condition: Optional[str] = None,
         limit: int = 20,
+        region: Optional[str] = None,
     ) -> AggregationResult:
         """Find sold comparables across all adapters.
 
@@ -378,23 +392,26 @@ class MarketplaceAgent:
         successful_sources = 0
         source_errors: List[str] = []
 
+        ebay_mktplace = get_ebay_marketplace_id(region)
+        fc_sites = get_firecrawl_sites(region, category)
+
         tasks = []
 
         # eBay sold comps
-        if self._ebay.configured:
+        if self._ebay.configured and should_use_adapter(region, "ebay"):
             total_sources += 1
-            tasks.append(("ebay_sold", self._ebay.sold_comps(query, category=category, limit=limit)))
+            tasks.append(("ebay_sold", self._ebay.sold_comps(query, category=category, limit=limit, marketplace_id=ebay_mktplace)))
 
         # TCGPlayer sold comps
         tcg_categories = {"pokemon", "mtg", "yugioh", "lorcana"}
-        if self._tcgplayer.configured and (category is None or category in tcg_categories):
+        if self._tcgplayer.configured and should_use_adapter(region, "tcgplayer") and (category is None or category in tcg_categories):
             total_sources += 1
             tasks.append(("tcgplayer_sold", self._tcgplayer.sold_comps(query, category=category, limit=limit)))
 
         # Firecrawl sold comps (web search)
-        if self._firecrawl.configured:
+        if self._firecrawl.configured and should_use_adapter(region, "firecrawl"):
             total_sources += 1
-            tasks.append(("firecrawl_sold", self._firecrawl.sold_comps(query, category=category, limit=limit)))
+            tasks.append(("firecrawl_sold", self._firecrawl.sold_comps(query, category=category, limit=limit, region_sites=fc_sites)))
 
         if not tasks:
             return AggregationResult(
@@ -403,7 +420,7 @@ class MarketplaceAgent:
                 successful_sources=0,
                 aggregate_confidence=0.0,
                 dedup_count=0,
-                query_metadata={"query": query, "category": category, "mode": "sold_comps"},
+                query_metadata={"query": query, "category": category, "region": region, "mode": "sold_comps"},
             )
 
         results = await asyncio.gather(
@@ -464,6 +481,7 @@ class MarketplaceAgent:
                 "category": category,
                 "condition": condition,
                 "limit": limit,
+                "region": region,
                 "mode": "sold_comps",
                 "source_errors": source_errors,
             },

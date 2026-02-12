@@ -13,6 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { CategoryPill } from '@/components/CategoryPill';
 import { featureFlags } from '@/config/featureFlags';
 import { logger } from '@/lib/logger';
+import { formatPrice } from '@/lib/format';
 
 type Item = {
   id: string;
@@ -40,14 +41,6 @@ type SwipeableItemRowProps = {
     accent: string;
   };
 };
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
 
 export function SwipeableItemRow({
   item,
@@ -136,7 +129,7 @@ export function SwipeableItemRow({
       onLongPress={handleLongPressInternal}
       delayLongPress={400}
       accessibilityRole="button"
-      accessibilityLabel={`${item.name}, ${formatCurrency(item.value)}${isMultiSelectMode && isSelected ? ', selected' : ''}`}
+      accessibilityLabel={`${item.name}, ${formatPrice(item.value)}${isMultiSelectMode && isSelected ? ', selected' : ''}`}
     >
       {/* Checkbox in multi-select mode */}
       {isMultiSelectMode && (
@@ -175,7 +168,7 @@ export function SwipeableItemRow({
 
       <View style={styles.itemRight}>
         <Text style={[styles.itemValue, { color: colors.text }]}>
-          {formatCurrency(item.value)}
+          {formatPrice(item.value)}
         </Text>
       </View>
     </AnimatedPressable>

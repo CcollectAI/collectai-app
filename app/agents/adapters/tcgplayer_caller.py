@@ -15,7 +15,8 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from app.config import USD_TO_EUR, TCGPLAYER_BEARER_TOKEN as _CFG_TCGPLAYER_BEARER_TOKEN
+from app.config import TCGPLAYER_BEARER_TOKEN as _CFG_TCGPLAYER_BEARER_TOKEN
+from workers.circuit_breaker import tcgplayer_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
 
@@ -40,13 +41,18 @@ SUPPORTED_CATEGORIES = list(CATEGORY_TO_TCGPLAYER_ID.keys())
 # Normalization helpers
 # ---------------------------------------------------------------------------
 
-def _convert_usd_to_eur(usd: float) -> float:
-    return round(usd * USD_TO_EUR, 2)
+def _convert_usd_to_eur(usd: float, rates: dict[str, float] | None = None) -> float:
+    rate = (rates or {}).get("USD")
+    if rate is None:
+        from app.config import USD_TO_EUR
+        rate = USD_TO_EUR
+    return round(usd * rate, 2)
 
 
 def _normalize_catalog_product(
     product: Dict[str, Any],
     price_map: Optional[Dict[int, Dict[str, Any]]] = None,
+    rates: dict[str, float] | None = None,
 ) -> Dict[str, Any]:
     """Normalize a TCGPlayer catalog product to a MarketHit dict."""
     product_id = product.get("productId") or product.get("productID", "")
@@ -69,8 +75,10 @@ def _normalize_catalog_product(
         "source": "tcgplayer",
         "raw_id": raw_id,
         "title": product.get("name") or product.get("productName", ""),
-        "price": _convert_usd_to_eur(raw_price),
+        "price": _convert_usd_to_eur(raw_price, rates),
         "currency": "EUR",
+        "source_price": raw_price,
+        "source_currency": "USD",
         "sold_at": None,
         "url": url,
         "condition": None,
@@ -82,6 +90,7 @@ def _normalize_catalog_product(
 def _normalize_price_entry(
     entry: Dict[str, Any],
     product_name: Optional[str] = None,
+    rates: dict[str, float] | None = None,
 ) -> Dict[str, Any]:
     """Normalize a TCGPlayer pricing entry as a sold-comp MarketHit dict."""
     product_id = entry.get("productId", "")
@@ -93,8 +102,10 @@ def _normalize_price_entry(
         "source": "tcgplayer",
         "raw_id": raw_id,
         "title": product_name or f"TCGPlayer #{raw_id}",
-        "price": _convert_usd_to_eur(raw_price),
+        "price": _convert_usd_to_eur(raw_price, rates),
         "currency": "EUR",
+        "source_price": raw_price,
+        "source_currency": "USD",
         "sold_at": entry.get("lastUpdated"),
         "url": f"https://www.tcgplayer.com/product/{raw_id}",
         "condition": condition,
@@ -185,6 +196,19 @@ class TCGPlayerCaller:
             logger.warning("[TCGPlayerCaller] Not configured (missing TCGPLAYER_BEARER_TOKEN)")
             return []
 
+        try:
+            tcgplayer_circuit.check()
+        except CircuitOpenError:
+            logger.warning("[TCGPlayerCaller] Circuit breaker OPEN — skipping search")
+            return []
+
+        # Fetch live FX rates once for this call
+        try:
+            from app.lib.fx_service import get_rates
+            rates = await get_rates()
+        except Exception:
+            rates = None
+
         client = await self._get_client()
         tcg_category_id = self._resolve_category_id(category)
 
@@ -218,12 +242,15 @@ class TCGPlayerCaller:
                     product_ids.append(int(pid))
 
             price_map = await self._fetch_prices(client, product_ids)
-            return [_normalize_catalog_product(p, price_map) for p in products]
+            tcgplayer_circuit.record_success()
+            return [_normalize_catalog_product(p, price_map, rates) for p in products]
 
         except httpx.HTTPStatusError as e:
+            tcgplayer_circuit.record_failure()
             logger.error("[TCGPlayerCaller] Catalog API HTTP error: %d", e.response.status_code)
             return []
-        except Exception:
+        except httpx.RequestError:
+            tcgplayer_circuit.record_failure()
             logger.error("[TCGPlayerCaller] Catalog API request failed", exc_info=True)
             return []
 
@@ -248,6 +275,13 @@ class TCGPlayerCaller:
         search_results = await self.search(query, category=category, limit=min(limit, 10))
         if not search_results:
             return []
+
+        # Fetch live FX rates once for this call
+        try:
+            from app.lib.fx_service import get_rates
+            rates = await get_rates()
+        except Exception:
+            rates = None
 
         client = await self._get_client()
 
@@ -284,14 +318,17 @@ class TCGPlayerCaller:
                 if market_price is not None and market_price > 0:
                     pid = str(entry.get("productId", ""))
                     name = name_map.get(pid)
-                    hits.append(_normalize_price_entry(entry, name))
+                    hits.append(_normalize_price_entry(entry, name, rates))
 
+            tcgplayer_circuit.record_success()
             return hits
 
         except httpx.HTTPStatusError as e:
+            tcgplayer_circuit.record_failure()
             logger.error("[TCGPlayerCaller] Pricing API HTTP error: %d", e.response.status_code)
             return []
-        except Exception:
+        except httpx.RequestError:
+            tcgplayer_circuit.record_failure()
             logger.error("[TCGPlayerCaller] Pricing API request failed", exc_info=True)
             return []
 

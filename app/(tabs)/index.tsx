@@ -31,9 +31,11 @@ import { InsightsCard } from "@/components/home/InsightsCard";
 import { AlertsCard } from "@/components/home/AlertsCard";
 import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
 import { useAlertsFeed } from "@/hooks/useAlertsFeed";
-import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { AnimatedPressable, useEnterReveal, AnimatedCounter } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { formatPrice } from "@/lib/format";
+import { useToast } from "@/components/Toast";
 import logger from "@/utils/logger";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
@@ -74,18 +76,6 @@ type ItemRow = {
 // Formatting helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function formatMoneyEUR(n: number): string {
-  try {
-    return new Intl.NumberFormat("nl-NL", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(n);
-  } catch {
-    return `€${Math.round(n).toLocaleString("en-US")}`;
-  }
-}
-
 function formatPct(p?: number): string {
   if (p === undefined || p === null || Number.isNaN(p)) return "—";
   const sign = p > 0 ? "+" : "";
@@ -94,7 +84,7 @@ function formatPct(p?: number): string {
 
 function formatDeltaEUR(n: number): string {
   const sign = n >= 0 ? "+" : "";
-  return `${sign}${formatMoneyEUR(n)}`;
+  return `${sign}${formatPrice(n)}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -163,33 +153,6 @@ function extractItems(raw: unknown): ItemRow[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Fallback demo data
-// ─────────────────────────────────────────────────────────────────────────────
-
-const FALLBACK_SERIES: TimeSeriesPoint[] = [
-  { t: "2025-11-01T00:00:00Z", v: 12400 },
-  { t: "2025-11-03T00:00:00Z", v: 12340 },
-  { t: "2025-11-06T00:00:00Z", v: 12510 },
-  { t: "2025-11-09T00:00:00Z", v: 12680 },
-  { t: "2025-11-12T00:00:00Z", v: 12590 },
-  { t: "2025-11-15T00:00:00Z", v: 12840 },
-  { t: "2025-11-18T00:00:00Z", v: 13120 },
-  { t: "2025-11-21T00:00:00Z", v: 13040 },
-  { t: "2025-11-24T00:00:00Z", v: 13310 },
-  { t: "2025-11-27T00:00:00Z", v: 13480 },
-  { t: "2025-11-29T00:00:00Z", v: 13290 },
-  { t: "2025-11-30T00:00:00Z", v: 13610 },
-];
-
-const FALLBACK_ITEMS: ItemRow[] = [
-  { id: "1", name: "PSA 10 Lugia (Neo Genesis)", category: "Pokémon", value: 3450, changePct: 0.028 },
-  { id: "2", name: "Gunpla MG Barbatos (built)", category: "Gunpla", value: 1820, changePct: -0.011 },
-  { id: "3", name: "Funko: Vaulted Grail", category: "Funko", value: 1250, changePct: 0.007 },
-  { id: "4", name: "Warhammer Army Lot", category: "Warhammer", value: 980, changePct: 0.014 },
-  { id: "5", name: "Designer Toy (limited run)", category: "Designer & Art Toys", value: 760, changePct: -0.006 },
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -198,11 +161,12 @@ export default function PortfolioScreen() {
   const watchlist = useWatchlist();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [range, setRange] = useState<RangeKey>("7D");
-  const [series, setSeries] = useState<TimeSeriesPoint[]>(FALLBACK_SERIES);
-  const [items, setItems] = useState<ItemRow[]>(FALLBACK_ITEMS);
+  const [series, setSeries] = useState<TimeSeriesPoint[]>([]);
+  const [items, setItems] = useState<ItemRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tierSummary, setTierSummary] = useState<{ tier: string; rarityScore: number; completenessScore: number; diversificationScore: number } | null>(null);
@@ -255,7 +219,7 @@ export default function PortfolioScreen() {
           if (extractedSeries.length) {
             setSeries(extractedSeries);
           } else {
-            setSeries(FALLBACK_SERIES);
+            setSeries([]);
           }
 
           if (collectorsClient?.getPortfolioItems) {
@@ -264,19 +228,19 @@ export default function PortfolioScreen() {
             if (extractedItems.length) {
               setItems(extractedItems.sort((a, b) => b.value - a.value));
             } else {
-              setItems(FALLBACK_ITEMS);
+              setItems([]);
             }
           }
         } catch (realErr: unknown) {
           logger.warn("[Portfolio] Real backend error, falling back:", realErr);
-          setError("Could not load real data. Showing demo.");
-          setSeries(FALLBACK_SERIES);
-          setItems(FALLBACK_ITEMS);
+          setError("Could not load portfolio data.");
+          setSeries([]);
+          setItems([]);
         }
       } else {
         // Mock mode: use analytics store or fallback
-        let baseSeries: TimeSeriesPoint[] = FALLBACK_SERIES;
-        let baseItems: ItemRow[] = FALLBACK_ITEMS;
+        let baseSeries: TimeSeriesPoint[] = [];
+        let baseItems: ItemRow[] = [];
 
         if (analyticsApi?.fetchPortfolioSnapshot) {
           try {
@@ -284,10 +248,10 @@ export default function PortfolioScreen() {
             const extractedSeries = extractSeries(snap?.series || snap);
             const extractedItems = extractItems(snap);
 
-            baseSeries = extractedSeries.length ? extractedSeries : FALLBACK_SERIES;
+            baseSeries = extractedSeries.length ? extractedSeries : [];
             baseItems = extractedItems.length
               ? extractedItems.sort((a, b) => b.value - a.value)
-              : FALLBACK_ITEMS;
+              : [];
             if (snap?.tierSummary) setTierSummary(snap.tierSummary);
           } catch (mockErr) {
             logger.warn("[Portfolio] Mock store error:", mockErr);
@@ -308,8 +272,8 @@ export default function PortfolioScreen() {
     } catch (err: unknown) {
       logger.warn("[Portfolio] Unexpected error:", err);
       setError("Failed to load portfolio data.");
-      setSeries(FALLBACK_SERIES);
-      setItems(FALLBACK_ITEMS);
+      setSeries([]);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -363,13 +327,27 @@ export default function PortfolioScreen() {
           <View style={styles.headerIcons}>
             <InboxHeaderButton color={colors.text} size={22} />
             <ThemeToggleButton size={22} />
+            <AnimatedPressable
+              onPress={() => router.push('/settings')}
+              style={{ padding: 4 }}
+              accessibilityRole="button"
+              accessibilityLabel="Open settings"
+            >
+              <Ionicons name="settings-outline" size={22} color={colors.text} />
+            </AnimatedPressable>
           </View>
         </View>
 
         {/* Collection Value */}
         <View style={styles.valueSection}>
           <Text style={[styles.headerLabel, { color: colors.muted }]}>COLLECTION VALUE</Text>
-          <Text style={[styles.totalValue, { color: colors.text }]}>{formatMoneyEUR(total)}</Text>
+          <AnimatedCounter
+            value={total}
+            format={(v) => formatPrice(v)}
+            style={[styles.totalValue, { color: colors.text }]}
+            enabled={settings.animationsEnabled}
+            accessibilityLabel={`Collection value: ${formatPrice(total)}`}
+          />
           <Text style={[styles.deltaText, { color: isPositive ? '#10B981' : '#EF4444' }]}>
             {formatDeltaEUR(delta)} ({formatPct(deltaPct)})
           </Text>
@@ -430,13 +408,6 @@ export default function PortfolioScreen() {
           </View>
         )}
 
-        {/* Mode indicator (dev only) */}
-        {__DEV__ && (
-          <Text style={[styles.modeIndicator, { color: colors.muted }]}>
-            Mode: {USE_REAL_BACKEND ? "REAL" : "MOCK"}
-          </Text>
-        )}
-
         {/* Watchlist Card (always show - has empty state) */}
         {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
           <AlertsCard
@@ -456,6 +427,32 @@ export default function PortfolioScreen() {
             onViewDetails={handleAnalyticsPress}
           />
         )}
+
+        {/* Deal Agent Summary Card */}
+        <AnimatedPressable
+          style={[styles.analyticsBanner, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push("/purchase");
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open Deal Agent"
+        >
+          <View style={styles.analyticsBannerLeft}>
+            <View style={[styles.analyticsIconWrap, { backgroundColor: colors.accent + '15' }]}>
+              <Ionicons name="flash" size={18} color={colors.accent} />
+            </View>
+            <View style={styles.analyticsBannerText}>
+              <Text style={[styles.analyticsBannerTitle, { color: colors.text }]}>Deal Agent</Text>
+              <Text style={[styles.analyticsBannerSubtitle, { color: colors.muted }]}>
+                Always-on deal discovery
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.analyticsBannerBtn, { backgroundColor: colors.accent }]}>
+            <Text style={styles.analyticsBannerBtnText}>View</Text>
+          </View>
+        </AnimatedPressable>
 
         {/* Collection Section Header */}
         <View style={styles.sectionHeader}>
@@ -496,7 +493,7 @@ export default function PortfolioScreen() {
                   </Text>
                 </View>
                 <View style={styles.itemRight}>
-                  <Text style={[styles.itemValue, { color: colors.text }]}>{formatMoneyEUR(it.value)}</Text>
+                  <Text style={[styles.itemValue, { color: colors.text }]}>{formatPrice(it.value)}</Text>
                   <Text style={[styles.itemPct, { color: '#10B981' }]}>
                     {formatPct(it.changePct)}
                   </Text>
@@ -537,7 +534,7 @@ export default function PortfolioScreen() {
                     </Text>
                   </View>
                   <View style={styles.itemRight}>
-                    <Text style={[styles.itemValue, { color: colors.text }]}>{formatMoneyEUR(it.value)}</Text>
+                    <Text style={[styles.itemValue, { color: colors.text }]}>{formatPrice(it.value)}</Text>
                     <Text style={[styles.itemPct, { color: '#EF4444' }]}>
                       {formatPct(it.changePct)}
                     </Text>
@@ -604,11 +601,11 @@ export default function PortfolioScreen() {
                     <View style={styles.watchlistRight}>
                       {targetPrice != null && (
                         <Text style={[styles.targetPrice, { color: colors.accent }]}>
-                          Target {formatMoneyEUR(targetPrice)}
+                          Target {formatPrice(targetPrice)}
                         </Text>
                       )}
                       <Text style={[styles.currentPrice, { color: colors.muted }]}>
-                        Current {formatMoneyEUR(currentValue)}
+                        Current {formatPrice(currentValue)}
                       </Text>
                     </View>
                   </AnimatedPressable>

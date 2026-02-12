@@ -49,6 +49,12 @@ API_SHARED_SECRET: str | None = os.environ.get("API_SHARED_SECRET")
 SIGNALS_BASE_URL: str = os.getenv("SIGNALS_BASE_URL", "http://127.0.0.1:8082")
 
 # ---------------------------------------------------------------------------
+# Ops endpoint authentication
+# ---------------------------------------------------------------------------
+
+OPS_API_KEY: str = os.getenv("OPS_API_KEY", "")
+
+# ---------------------------------------------------------------------------
 # Sentry
 # ---------------------------------------------------------------------------
 
@@ -129,8 +135,14 @@ FIRECRAWL_BASE_URL: str = os.getenv("FIRECRAWL_BASE_URL", "https://api.firecrawl
 # ---------------------------------------------------------------------------
 # FX rates (shared across marketplace adapters)
 # ---------------------------------------------------------------------------
+# These are fallback rates used when the live FX API is unavailable.
+# The frontend (src/lib/settings.tsx) stores rates as EUR→foreign:
+#   { USD: 1.08, GBP: 0.86, JPY: 164.0 }
+# The backend stores the inverse (foreign→EUR) for price normalisation.
+# Keep both sides in sync when updating defaults.
 
 USD_TO_EUR: float = float(os.getenv("USD_TO_EUR", "0.92"))
+GBP_TO_EUR: float = float(os.getenv("GBP_TO_EUR", "1.16"))
 JPY_TO_EUR: float = float(os.getenv("JPY_TO_EUR", "0.0061"))
 
 # ---------------------------------------------------------------------------
@@ -146,3 +158,74 @@ TCGPLAYER_BEARER_TOKEN: str = os.getenv("TCGPLAYER_BEARER_TOKEN", "")
 # ---------------------------------------------------------------------------
 
 MONITOR_ENABLED: bool = os.getenv("MONITOR_ENABLED", "false").lower() in ("1", "true", "yes")
+
+# ---------------------------------------------------------------------------
+# Deal Discovery (Smart Deal Agent)
+# ---------------------------------------------------------------------------
+
+DEAL_DISCOVERY_ENABLED: bool = os.getenv("DEAL_DISCOVERY_ENABLED", "false").lower() in ("1", "true", "yes")
+DEAL_SCAN_INTERVAL_SECS: int = int(os.getenv("DEAL_SCAN_INTERVAL_SECS", "1800"))
+MAX_MANDATES_PER_USER: int = int(os.getenv("MAX_MANDATES_PER_USER", "5"))
+MAX_MANDATES_SUBSCRIBER: int = int(os.getenv("MAX_MANDATES_SUBSCRIBER", "20"))
+EBAY_AFFILIATE_CAMPAIGN_ID: str = os.getenv("EBAY_AFFILIATE_CAMPAIGN_ID", "")
+TCGPLAYER_AFFILIATE_ID: str = os.getenv("TCGPLAYER_AFFILIATE_ID", "")
+CARDMARKET_AFFILIATE_ID: str = os.getenv("CARDMARKET_AFFILIATE_ID", "")
+
+
+# ---------------------------------------------------------------------------
+# Startup validation
+# ---------------------------------------------------------------------------
+
+def validate_config() -> None:
+    """Validate configuration at startup. Call from main.py _startup().
+
+    * In production (DEV_MODE=false): fail fast if critical keys are missing.
+    * Always: warn about optional-but-important keys that are empty.
+    """
+    import logging
+    import socket
+
+    _log = logging.getLogger("collectai.config")
+
+    # --- R15-1: DEV_MODE production guard ---
+    if DEV_MODE:
+        hostname = socket.gethostname().lower()
+        is_local = any(
+            hostname.startswith(prefix)
+            for prefix in ("localhost", "127.", "mbp", "macbook", "merle")
+        ) or hostname.endswith(".local")
+
+        force_dev = os.getenv("FORCE_DEV_MODE", "").lower() in ("1", "true", "yes")
+
+        if not is_local and not force_dev:
+            _log.critical(
+                "DEV_MODE=true on non-local host '%s'. "
+                "This bypasses JWT auth! Set FORCE_DEV_MODE=true to override, "
+                "or disable DEV_MODE for production.",
+                hostname,
+            )
+            raise SystemExit(1)
+        _log.warning("DEV_MODE is active — JWT auth is bypassed for requests without Bearer tokens")
+
+    # --- R15-2: Required keys (non-DEV only) ---
+    if not DEV_MODE and DB_ENABLED:
+        missing = []
+        if not JWT_SECRET:
+            missing.append("SUPABASE_JWT_SECRET")
+        if not DB_DSN:
+            missing.append("DB_DSN")
+        if missing:
+            _log.critical("Missing required env vars for production: %s", ", ".join(missing))
+            raise SystemExit(1)
+
+    # --- Warn about optional-but-important keys ---
+    warn_keys = {
+        "EBAY_CLIENT_ID": EBAY_CLIENT_ID,
+        "EBAY_CLIENT_SECRET": EBAY_CLIENT_SECRET,
+        "OPENAI_API_KEY": OPENAI_API_KEY,
+        "FAL_KEY": FAL_KEY,
+        "TCGPLAYER_BEARER_TOKEN": TCGPLAYER_BEARER_TOKEN,
+    }
+    empty = [k for k, v in warn_keys.items() if not v]
+    if empty:
+        _log.warning("Optional API keys not set (features will be degraded): %s", ", ".join(empty))

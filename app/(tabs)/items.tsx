@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
@@ -14,6 +14,8 @@ import {
   Animated,
   RefreshControl,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
@@ -23,7 +25,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { dataProvider, type Item as DataItem } from "@/data";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { AnimatedPressable, useEnterReveal, useStaggerReveal } from "@/motion";
 import { SkeletonList, SkeletonCategoryPills } from "@/components/Skeleton";
 import { ItemGalleryGrid } from "@/components/ItemGalleryGrid";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
@@ -35,6 +37,8 @@ import { usePaginatedList } from "@/hooks/usePaginatedList";
 import haptics from "@/lib/haptics";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { formatPrice } from "@/lib/format";
+import { useToast } from "@/components/Toast";
 import { FilterSheet, FilterConfig, SortOption } from "@/components/FilterSheet";
 import logger from "@/utils/logger";
 
@@ -48,58 +52,15 @@ type Item = {
   notes?: string;
 };
 
-const MOCK_ITEMS: Item[] = [
-  {
-    id: "1",
-    name: "Charizard GX (Alt Art)",
-    category: "Pokémon",
-    collectionName: "Sun & Moon – Burning Shadows",
-    value: 420,
-    condition: "PSA 9",
-  },
-  {
-    id: "2",
-    name: "Pikachu Illustrator (Proxy)",
-    category: "Pokémon",
-    collectionName: "Promo / Special",
-    value: 999,
-    condition: "Proxy",
-  },
-  {
-    id: "3",
-    name: "Lego UCS X-Wing",
-    category: "LEGO",
-    collectionName: "Ultimate Collector Series",
-    value: 320,
-    condition: "New, sealed",
-  },
-  {
-    id: "4",
-    name: "Hot Wheels RLC Skyline",
-    category: "Diecast",
-    collectionName: "RLC Exclusives",
-    value: 160,
-    condition: "Loose, mint",
-  },
-  {
-    id: "5",
-    name: "Luffy – NYCC Exclusive",
-    category: "Funko Pop",
-    collectionName: "Convention Exclusives",
-    value: 190,
-    condition: "Boxed",
-  },
-];
+// Semantic action colors (theme-independent)
+const ACTION_COLORS = {
+  archive: '#f97316',
+  archiveBg: '#f9731610',
+  danger: '#ef4444',
+  dangerBg: '#ef444410',
+} as const;
 
 type SortKey = "value_desc" | "value_asc" | "title";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
 
 const ItemsScreen: React.FC = () => {
   const router = useRouter();
@@ -107,6 +68,7 @@ const ItemsScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
 
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("value_desc");
@@ -138,6 +100,23 @@ const ItemsScreen: React.FC = () => {
     refresh: paginatedRefresh,
     setItems: setProviderItems,
   } = usePaginatedList<Item>(itemFetcher, { pageSize: 20 });
+
+  // Stagger animation for list items — compute flat index map
+  const { getItemStyle: getStaggerStyle } = useStaggerReveal({
+    count: (providerItems ?? []).length,
+    enabled: settings.animationsEnabled && !loading,
+    staggerMs: 40,
+  });
+  // Pre-compute flat index per item id for stagger animation
+  const staggerIndexMap = useRef(new Map<string, number>());
+  useEffect(() => {
+    const map = new Map<string, number>();
+    let idx = 0;
+    for (const item of (providerItems ?? [])) {
+      map.set(item.id, idx++);
+    }
+    staggerIndexMap.current = map;
+  }, [providerItems]);
 
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -183,8 +162,9 @@ const ItemsScreen: React.FC = () => {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await paginatedRefresh();
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setRefreshing(false);
-  }, [paginatedRefresh]);
+  }, [paginatedRefresh, settings.hapticsEnabled]);
 
   // Export all items to CSV
   const handleExportCSV = useCallback(async () => {
@@ -236,16 +216,13 @@ const ItemsScreen: React.FC = () => {
         });
         setExportStatus('Exported successfully');
       } else {
-        Alert.alert(
-          'Export Complete',
-          `File saved to: ${filename}\n\nSharing is not available on this device.`
-        );
+        showToast({ message: `Saved to ${filename}`, type: 'info', duration: 4000 });
         setExportStatus('Saved (sharing unavailable)');
       }
     } catch (err: unknown) {
       logger.warn('[Items] export error:', err);
       setExportStatus('Export failed');
-      Alert.alert('Export Error', err?.message || 'Failed to export items');
+      showToast({ message: 'Failed to export items', type: 'error' });
     } finally {
       setExporting(false);
       // Clear status after 3 seconds
@@ -362,26 +339,26 @@ const ItemsScreen: React.FC = () => {
   const handleBulkChangeCategory = useCallback(async (newCategory: string) => {
     if (selectedCount === 0) return;
 
+    const count = selectedCount;
+    const ids = [...selectedIds];
     setBulkActionLoading(true);
     setCategoryModalVisible(false);
     try {
-      // For now, log the action - full implementation requires DataProvider.updateItem
-      logger.info(`[Items] Changing ${selectedCount} items to category: ${newCategory}`);
-      // In a real implementation:
-      // for (const id of selectedIds) {
-      //   await dataProvider.updateItem(id, { category: newCategory });
-      // }
+      for (const id of ids) {
+        await dataProvider.updateItem(id, { category: newCategory });
+      }
       haptics.success();
       exitMultiSelectMode();
-      Alert.alert('Category Updated', `${selectedCount} item${selectedCount > 1 ? 's' : ''} moved to ${newCategory}`);
+      Alert.alert('Category Updated', `${count} item${count > 1 ? 's' : ''} moved to ${newCategory}`);
+      await paginatedRefresh();
     } catch (err: unknown) {
       logger.warn('[Items] bulk category change error:', err);
-      Alert.alert('Error', err?.message || 'Failed to change category');
+      Alert.alert('Error', 'Could not update items');
       haptics.error();
     } finally {
       setBulkActionLoading(false);
     }
-  }, [selectedCount, selectedIds, exitMultiSelectMode]);
+  }, [selectedCount, selectedIds, exitMultiSelectMode, paginatedRefresh]);
 
   // Open item detail
   const handleOpenItem = useCallback((item: Item) => {
@@ -421,8 +398,7 @@ const ItemsScreen: React.FC = () => {
   const collectionParam =
     typeof params.collectionName === "string" ? params.collectionName : undefined;
 
-  // Use providerItems if available, otherwise fall back to MOCK_ITEMS
-  const dataSource = providerItems.length > 0 ? providerItems : MOCK_ITEMS;
+  const dataSource = providerItems;
 
   const allCategories = useMemo(
     () => Array.from(new Set(dataSource.map((i) => i.category))).sort(),
@@ -596,6 +572,11 @@ const ItemsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
+      >
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
@@ -684,7 +665,7 @@ const ItemsScreen: React.FC = () => {
                     </AnimatedPressable>
 
                     <AnimatedPressable
-                      style={[styles.topBulkActionBtn, { backgroundColor: '#f9731610' }]}
+                      style={[styles.topBulkActionBtn, { backgroundColor: ACTION_COLORS.archiveBg }]}
                       onPress={() => {
                         fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
                         handleBulkArchive();
@@ -692,12 +673,12 @@ const ItemsScreen: React.FC = () => {
                       accessibilityRole="button"
                       accessibilityLabel="Archive selected items"
                     >
-                      <Ionicons name="archive-outline" size={18} color="#f97316" />
-                      <Text style={[styles.topBulkActionText, { color: '#f97316' }]}>Archive</Text>
+                      <Ionicons name="archive-outline" size={18} color={ACTION_COLORS.archive} />
+                      <Text style={[styles.topBulkActionText, { color: ACTION_COLORS.archive }]}>Archive</Text>
                     </AnimatedPressable>
 
                     <AnimatedPressable
-                      style={[styles.topBulkActionBtn, { backgroundColor: '#ef444410' }]}
+                      style={[styles.topBulkActionBtn, { backgroundColor: ACTION_COLORS.dangerBg }]}
                       onPress={() => {
                         fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
                         handleBulkDelete();
@@ -705,8 +686,8 @@ const ItemsScreen: React.FC = () => {
                       accessibilityRole="button"
                       accessibilityLabel="Delete selected items"
                     >
-                      <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                      <Text style={[styles.topBulkActionText, { color: '#ef4444' }]}>Delete</Text>
+                      <Ionicons name="trash-outline" size={18} color={ACTION_COLORS.danger} />
+                      <Text style={[styles.topBulkActionText, { color: ACTION_COLORS.danger }]}>Delete</Text>
                     </AnimatedPressable>
                   </View>
                 )}
@@ -720,7 +701,7 @@ const ItemsScreen: React.FC = () => {
                 Items
               </Text>
               <Text style={[styles.subtitle, { color: colors.muted }]}>
-                Portfolio total: {formatCurrency(portfolioTotal)}
+                Portfolio total: {formatPrice(portfolioTotal)}
               </Text>
             </View>
 
@@ -982,8 +963,11 @@ const ItemsScreen: React.FC = () => {
 
               {/* Items in category */}
               {group.items.map((item) => (
-                <AnimatedPressable
+                <Animated.View
                   key={item.id}
+                  style={getStaggerStyle(staggerIndexMap.current.get(item.id) ?? 0)}
+                >
+                <AnimatedPressable
                   style={[
                     styles.itemRow,
                     { borderColor: colors.border },
@@ -999,7 +983,7 @@ const ItemsScreen: React.FC = () => {
                   onLongPress={() => handleLongPress(item.id)}
                   delayLongPress={400}
                   accessibilityRole="button"
-                  accessibilityLabel={`${item.name}, ${formatCurrency(item.value)}`}
+                  accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
                 >
                   {/* Checkbox in multi-select mode */}
                   {isMultiSelectMode && (
@@ -1055,10 +1039,11 @@ const ItemsScreen: React.FC = () => {
                         { color: colors.text },
                       ]}
                     >
-                      {formatCurrency(item.value)}
+                      {formatPrice(item.value)}
                     </Text>
                   </View>
                 </AnimatedPressable>
+                </Animated.View>
               ))}
 
               {/* Category total bottom-right */}
@@ -1079,7 +1064,7 @@ const ItemsScreen: React.FC = () => {
                       { color: colors.text },
                     ]}
                   >
-                    {formatCurrency(group.total)}
+                    {formatPrice(group.total)}
                   </Text>
                 </View>
               </View>
@@ -1160,6 +1145,7 @@ const ItemsScreen: React.FC = () => {
           </View>
         )}
 </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Category Change Modal */}
       <Modal

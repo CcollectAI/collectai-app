@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Alert, AlertType } from '@/types/insights';
 import { featureFlags } from '@/config/featureFlags';
 import { dataProvider } from '@/data';
+import { collectorsApi } from '@/api/collectorsApi';
 
 export type UseAlertsFeedOptions = {
   limit?: number;
@@ -133,13 +134,22 @@ export function useAlertsFeed(
     setAlerts((prev) =>
       prev.map((a) => (a.id === alertId ? { ...a, isRead: true } : a))
     );
-    // TODO: Call RPC to persist
+    // Persist to backend (fire-and-forget)
+    try {
+      await collectorsApi.markTriggerRead(alertId);
+    } catch {
+      // Best-effort — UI already updated optimistically
+    }
   }, []);
 
   const markAllAsRead = useCallback(async () => {
+    const unread = alerts.filter((a) => !a.isRead);
     setAlerts((prev) => prev.map((a) => ({ ...a, isRead: true })));
-    // TODO: Call RPC to persist
-  }, []);
+    // Persist each to backend (fire-and-forget, don't block on failures)
+    await Promise.allSettled(
+      unread.map((a) => collectorsApi.markTriggerRead(a.id))
+    );
+  }, [alerts]);
 
   const unreadCount = alerts.filter((a) => !a.isRead).length;
 

@@ -28,6 +28,7 @@ import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import logger from "@/utils/logger";
+import { formatPrice } from "@/lib/format";
 
 import { useSession } from "@/hooks/useSession";
 import {
@@ -66,19 +67,6 @@ const PRIORITY_CONFIG: Record<WatchlistPriority, { label: string; color: string;
 // ─────────────────────────────────────────────────────────────────────────────
 // Formatting helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-function formatCurrency(n: number | null | undefined): string {
-  if (n == null) return "—";
-  try {
-    return new Intl.NumberFormat("nl-NL", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(n);
-  } catch {
-    return `€${Math.round(n).toLocaleString()}`;
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
@@ -454,7 +442,7 @@ export default function WatchlistBuilderScreen() {
                           <View style={styles.targetRow}>
                             <Ionicons name="flag" size={14} color={COLORS.tiffanyDark} />
                             <Text style={styles.targetText}>
-                              Target: {formatCurrency(item.target_price)}
+                              Target: {formatPrice(item.target_price)}
                             </Text>
                           </View>
                         )}

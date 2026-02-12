@@ -37,6 +37,10 @@ jobs:
           ON CONFLICT DO NOTHING;
           SQL
           python services/collectors_merge/workers/build_fts_index.py
+      - name: Audit Python dependencies
+        run: |
+          pip install pip-audit
+          pip-audit --strict --desc 2>&1 || true
       - name: Run sanity check
         env:
           USER_ID: "00000000-0000-0000-0000-000000000001"

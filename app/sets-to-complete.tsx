@@ -14,6 +14,7 @@ import {
   CollectionStatusScore,
 } from '@/utils/statusScoring';
 import logger from '@/utils/logger';
+import { formatPrice } from '@/lib/format';
 
 const MIN_COMPLETENESS = 0.4;
 const MAX_COMPLETENESS = 0.95;
@@ -135,7 +136,7 @@ const SetsToCompleteScreen: React.FC = () => {
                   Missing items: {missing}
                 </Text>
                 <Text style={styles.cardRow}>
-                  Estimated value: {formatCurrency(s.valueTotal)}
+                  Estimated value: {formatPrice(s.valueTotal)}
                 </Text>
               </View>
             );
@@ -143,20 +144,6 @@ const SetsToCompleteScreen: React.FC = () => {
       </ScrollView>
     </SafeAreaView>
   );
-};
-
-const formatCurrency = (v: number | null | undefined): string => {
-  if (v == null || Number.isNaN(v)) return '€0';
-  try {
-    return (
-      '€' +
-      Number(v).toLocaleString('de-DE', {
-        maximumFractionDigits: 0,
-      })
-    );
-  } catch {
-    return `€${v}`;
-  }
 };
 
 const styles = StyleSheet.create({

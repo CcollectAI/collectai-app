@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import logging
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Request
 from app.request_id import set_user_id
-from app.config import DEV_MODE, DEV_USER_ID, JWT_SECRET
+from app.config import DEV_MODE, DEV_USER_ID, JWT_SECRET, OPS_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +39,11 @@ async def get_current_user_id(request: Request) -> str:
                 set_user_id(user_id)
                 return user_id
             logger.warning("JWT decoded but 'sub' claim is empty")
-        except Exception:
-            logger.warning("JWT validation failed")
+        except ImportError:
+            logger.error("PyJWT not installed — cannot validate tokens")
+            raise HTTPException(status_code=500, detail="Auth module misconfigured")
+        except Exception as exc:
+            logger.warning("JWT validation failed: %s", type(exc).__name__)
             if not DEV_MODE:
                 raise HTTPException(
                     status_code=401,
@@ -74,3 +77,29 @@ async def get_optional_user_id(request: Request) -> str | None:
         return await get_current_user_id(request)
     except HTTPException:
         return None
+
+
+async def require_ops_key(
+    x_ops_key: str | None = Header(None, alias="X-Ops-Key"),
+) -> bool:
+    """
+    Lightweight auth guard for /ops/* endpoints.
+
+    Checks the ``X-Ops-Key`` header against the ``OPS_API_KEY`` env var.
+    In DEV_MODE the check is skipped so local development works without
+    extra configuration.
+    """
+    if DEV_MODE:
+        return True
+
+    if not OPS_API_KEY:
+        logger.error("OPS_API_KEY is not configured — ops endpoints are locked out")
+        raise HTTPException(
+            status_code=503,
+            detail="Ops endpoints are not configured",
+        )
+
+    if not x_ops_key or x_ops_key != OPS_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing ops key")
+
+    return True

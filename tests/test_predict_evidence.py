@@ -184,13 +184,14 @@ class TestPriceEvidenceEndpointMocked:
         assert resp.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_item_not_owned_403(self):
-        """When item belongs to another user, return 403."""
+    async def test_item_not_owned_404(self):
+        """When item belongs to another user, return 404 (no info leak)."""
         from fastapi.testclient import TestClient
         from main import app
 
         mock_conn = AsyncMock()
-        mock_conn.fetchval = AsyncMock(return_value="different-user-id")
+        # The ownership query checks both item_id AND user_id — returns None if not matched
+        mock_conn.fetchval = AsyncMock(return_value=None)
 
         mock_get_conn = MagicMock()
         mock_get_conn.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
@@ -201,7 +202,7 @@ class TestPriceEvidenceEndpointMocked:
             client = TestClient(app, raise_server_exceptions=False)
             resp = client.get("/predict/evidence/some-item-id")
 
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     @pytest.mark.asyncio
     async def test_no_prediction_returns_empty(self):

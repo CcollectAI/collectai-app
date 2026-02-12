@@ -59,7 +59,7 @@ const KIND_ICON: Record<EventKind, keyof typeof Ionicons.glyphMap> = {
   release: 'rocket-outline',
 };
 
-const FORMAT_OPTIONS: { label: string; value: EventFormat; icon: keyof typeof Ionicons.glyphMap }[] = [
+const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ionicons.glyphMap }[] = [
   { label: 'In-Person', value: 'in_person', icon: 'location-outline' },
   { label: 'Online', value: 'online', icon: 'globe-outline' },
   { label: 'Hybrid', value: 'hybrid', icon: 'git-merge-outline' },
@@ -279,7 +279,7 @@ const CreateEventScreen: React.FC = () => {
 
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.chipRow}>
-                {FORMAT_OPTIONS.map((opt) => {
+                {EVENT_FORMATS.map((opt) => {
                   const isSelected = format === opt.value;
                   return (
                     <AnimatedPressable

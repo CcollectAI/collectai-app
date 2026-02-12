@@ -23,31 +23,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { formatPrice } from '@/lib/format';
+import { CATEGORIES as CATEGORY_REGISTRY } from '@/constants/categories';
 import logger from '@/utils/logger';
 
-const CATEGORIES = [
-  'Pokémon',
-  'Magic: The Gathering',
-  'Disney Lorcana',
-  'Funko Pop',
-  'Diecast',
-  'LEGO',
-  'Warhammer',
-  'Other',
-];
-
-function formatCurrency(value: number | null): string {
-  if (value === null || value === undefined) return '—';
-  try {
-    return new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(value);
-  } catch {
-    return `€${value}`;
-  }
-}
+const CATEGORIES = CATEGORY_REGISTRY.map((c) => c.name);
 
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '';
@@ -187,7 +167,7 @@ export default function WishlistScreen() {
           )}
           {item.targetPrice !== null && (
             <Text style={[styles.targetPrice, { color: colors.text }]}>
-              Target: {formatCurrency(item.targetPrice)}
+              Target: {formatPrice(item.targetPrice)}
             </Text>
           )}
         </View>

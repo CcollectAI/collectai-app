@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { formatPrice } from '@/lib/format';
 
 interface GalleryItem {
   id: string;
@@ -50,13 +51,6 @@ export function ItemGalleryGrid({
 
   const itemWidth = (width - 48 - (numColumns - 1) * 12) / numColumns;
   const itemHeight = itemWidth * 1.2;
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(value);
 
   const handleItemPress = (item: GalleryItem) => {
     if (onItemPress) {
@@ -106,7 +100,7 @@ export function ItemGalleryGrid({
               <Text style={styles.lightboxName}>{selectedItem.name}</Text>
               <Text style={styles.lightboxCategory}>{selectedItem.category}</Text>
               <Text style={styles.lightboxPrice}>
-                {formatCurrency(selectedItem.value)}
+                {formatPrice(selectedItem.value)}
               </Text>
             </View>
           </View>
@@ -152,7 +146,7 @@ export function ItemGalleryGrid({
                 ]}
                 onPress={() => handleItemPress(item)}
                 accessibilityRole="button"
-                accessibilityLabel={`${item.name}, ${item.category}, ${formatCurrency(item.value)}`}
+                accessibilityLabel={`${item.name}, ${item.category}, ${formatPrice(item.value)}`}
               >
                 {item.imageUrl ? (
                   <Image
@@ -172,7 +166,7 @@ export function ItemGalleryGrid({
                   <Text style={styles.itemName} numberOfLines={2}>
                     {item.name}
                   </Text>
-                  <Text style={styles.itemPrice}>{formatCurrency(item.value)}</Text>
+                  <Text style={styles.itemPrice}>{formatPrice(item.value)}</Text>
                 </View>
 
                 <View style={[styles.categoryBadge, { backgroundColor: colors.accent }]}>

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { formatPrice } from "@/lib/format";
 
 type ItemDetailParams = {
   id?: string;
@@ -30,18 +31,6 @@ const LIGHT_COLORS = {
   border: "#E2E8F0",
   card: "#F8FAFC",
   accent: "#40C9C6",
-};
-
-const formatCurrency = (value: number | string | undefined) => {
-  if (value == null) return "€0";
-  const n = typeof value === "string" ? Number(value) : value;
-  if (!Number.isFinite(n)) return "€0";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n);
 };
 
 const ItemDetailScreen: React.FC = () => {
@@ -127,7 +116,7 @@ const ItemDetailScreen: React.FC = () => {
                   <Text
                     style={[styles.valueText, { color: colors.text }]}
                   >
-                    {formatCurrency(value)}
+                    {formatPrice(typeof value === 'string' ? Number(value) : value)}
                   </Text>
                 </View>
               </View>

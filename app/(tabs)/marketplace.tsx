@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   SafeAreaView,
   View,
@@ -8,60 +8,57 @@ import {
   ScrollView,
   Animated,
   Dimensions,
+  ActivityIndicator,
+  Linking,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { formatPrice } from "@/lib/format";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { CATEGORIES } from "@/data/categories";
+import { collectorsApi } from "@/api/collectorsApi";
+import { dataProvider, type Item as DataItem } from "@/data";
+import { getJSON, setJSON } from "@/lib/storage";
+import logger from "@/utils/logger";
 
-type Item = {
+// --- Types for marketplace API results ---
+type MarketplaceHit = {
+  source: string;
+  title: string;
+  price: number | null;
+  currency: string;
+  url: string;
+  affiliate_url: string | null;
+  affiliate_source: string | null;
+  image_url: string | null;
+  condition: string | null;
+  is_sold: boolean;
+  provenance_score: number;
+  source_reliability: number;
+  recency_score: number;
+};
+
+// Unified result type for rendering (same visual as before)
+type SearchResult = {
   id: string;
   name: string;
   category: string;
   collectionName: string;
   value: number;
+  // External marketplace data (when result is from API)
+  isMarketplace?: boolean;
+  externalUrl?: string;
+  affiliateUrl?: string;
+  source?: string;
+  condition?: string;
 };
 
-const MOCK_ITEMS: Item[] = [
-  {
-    id: "1",
-    name: "Charizard GX (Alt Art)",
-    category: "Pokémon",
-    collectionName: "Sun & Moon – Burning Shadows",
-    value: 420,
-  },
-  {
-    id: "2",
-    name: "Pikachu Illustrator (Proxy)",
-    category: "Pokémon",
-    collectionName: "Promo / Special",
-    value: 999,
-  },
-  {
-    id: "3",
-    name: "Lego UCS X-Wing",
-    category: "LEGO",
-    collectionName: "Ultimate Collector Series",
-    value: 320,
-  },
-  {
-    id: "4",
-    name: "Hot Wheels RLC Skyline",
-    category: "Diecast",
-    collectionName: "RLC Exclusives",
-    value: 160,
-  },
-  {
-    id: "5",
-    name: "Luffy – NYCC Exclusive",
-    category: "Funko Pop",
-    collectionName: "Convention Exclusives",
-    value: 190,
-  },
-];
+const RECENT_SEARCHES_KEY = "collectai_recent_searches";
 
 // Use category data from the data layer - get all categories for browsing
 const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
@@ -69,7 +66,16 @@ const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
   name: cat.name,
 }));
 
-// Tile colors now come from theme.tileScale (Tiffany → cobalt brand scale)
+const TRENDING_CATEGORIES = [
+  { id: 'lorcana', name: 'Disney Lorcana', meta: 'Hot right now' },
+  { id: 'pokemon', name: 'Pok\u00e9mon Cards', meta: 'Always popular' },
+  { id: 'lego', name: 'LEGO', meta: 'Growing fast' },
+  { id: 'one_piece', name: 'One Piece', meta: 'Rising demand' },
+  { id: 'kpop_merch', name: 'K-pop Merch', meta: 'Surging' },
+  { id: 'gunpla', name: 'Gunpla & Model Kits', meta: 'Steady growth' },
+] as const;
+
+// Tile colors now come from theme.tileScale (Tiffany brand scale)
 
 // Compute uniform tile dimensions for 2-col grid
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -78,73 +84,144 @@ const TILE_GAP = 12;
 const TILE_WIDTH = Math.floor((SCREEN_WIDTH - TILE_PAD * 2 - TILE_GAP) / 2);
 const TILE_HEIGHT = Math.floor(TILE_WIDTH * 0.62); // ~110-120px for consistent aspect
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-
 const SearchScreen: React.FC = () => {
   const router = useRouter();
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const [query, setQuery] = useState("");
-  const [recent, setRecent] = useState<string[]>([
-    "Charizard",
-    "UCS X-Wing",
-    "Lorcana Elsa",
-  ]);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [marketplaceResults, setMarketplaceResults] = useState<SearchResult[]>([]);
+  const [collectionResults, setCollectionResults] = useState<SearchResult[]>([]);
+  const searchIdRef = useRef(0);
+
+  // Load persisted recent searches on mount
+  useEffect(() => {
+    getJSON<string[]>(RECENT_SEARCHES_KEY, []).then(setRecent);
+  }, []);
 
   const trimmedQuery = query.trim();
 
-  const filteredItems = useMemo(() => {
-    if (!trimmedQuery) return [];
-    const q = trimmedQuery.toLowerCase();
-    return MOCK_ITEMS.filter(
-      (item) =>
-        item.name.toLowerCase().includes(q) ||
-        item.collectionName.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q)
-    );
-  }, [trimmedQuery]);
+  const allResults = useMemo(
+    () => [...marketplaceResults, ...collectionResults],
+    [marketplaceResults, collectionResults]
+  );
 
-  const topResult = filteredItems[0] ?? null;
-  const otherResults = topResult ? filteredItems.slice(1) : filteredItems;
+  const topResult = allResults[0] ?? null;
+  const otherResults = topResult ? allResults.slice(1) : allResults;
 
+  // Unique collections from collection results only
   const uniqueCollections = useMemo(
     () =>
       Array.from(
         new Map(
-          MOCK_ITEMS.map((item) => [item.collectionName, item])
+          collectionResults
+            .filter((r) => r.collectionName && r.collectionName !== "-")
+            .map((item) => [item.collectionName, item])
         ).values()
       ),
-    []
+    [collectionResults]
   );
 
-  const handleSubmitSearch = () => {
+  // Run the actual search against marketplace API + local collection
+  const executeSearch = useCallback(async (q: string) => {
+    if (!q.trim()) {
+      setMarketplaceResults([]);
+      setCollectionResults([]);
+      return;
+    }
+
+    const searchId = ++searchIdRef.current;
+    setSearchLoading(true);
+
+    // Run marketplace API + local collection search in parallel
+    const [mktResult, colResult] = await Promise.allSettled([
+      collectorsApi.marketplaceSearch(q.trim()).catch((err: unknown) => {
+        logger.warn("[Search] marketplace search error:", err);
+        return null;
+      }),
+      dataProvider.searchItems(q.trim()).catch((err: unknown) => {
+        logger.warn("[Search] collection search error:", err);
+        return [] as DataItem[];
+      }),
+    ]);
+
+    // Stale response guard
+    if (searchId !== searchIdRef.current) return;
+
+    // Map marketplace hits
+    const mktData = mktResult.status === "fulfilled" ? mktResult.value : null;
+    const hits: MarketplaceHit[] = mktData?.hits ?? [];
+    const mktResults: SearchResult[] = hits
+      .filter((h) => !h.is_sold)
+      .slice(0, 10)
+      .map((h, i) => ({
+        id: `mkt_${i}_${h.url}`,
+        name: h.title || "Untitled",
+        category: h.source || "",
+        collectionName: h.condition || "-",
+        value: h.price ?? 0,
+        isMarketplace: true,
+        externalUrl: h.url,
+        affiliateUrl: h.affiliate_url ?? undefined,
+        source: h.source,
+        condition: h.condition ?? undefined,
+      }));
+
+    // Map collection items
+    const colData = colResult.status === "fulfilled" ? colResult.value : [];
+    const colResults: SearchResult[] = (colData ?? []).slice(0, 10).map((item) => ({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      collectionName: (item.collections ?? [])[0] ?? "-",
+      value: item.price ?? item.priceBand?.q50 ?? 0,
+    }));
+
+    setMarketplaceResults(mktResults);
+    setCollectionResults(colResults);
+    setSearchLoading(false);
+  }, []);
+
+  const handleSubmitSearch = useCallback(() => {
     if (!trimmedQuery) return;
+    // Persist recent search
     setRecent((prev) => {
       const existing = prev.filter(
         (term) => term.toLowerCase() !== trimmedQuery.toLowerCase()
       );
-      return [trimmedQuery, ...existing].slice(0, 6);
+      const updated = [trimmedQuery, ...existing].slice(0, 6);
+      setJSON(RECENT_SEARCHES_KEY, updated);
+      return updated;
     });
-  };
+    executeSearch(trimmedQuery);
+  }, [trimmedQuery, executeSearch]);
 
-  const handleOpenItem = (item: Item) => {
-    router.push({
-      pathname: "/item/[id]",
-      params: {
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        collectionName: item.collectionName,
-        value: String(item.value),
-      },
-    });
-  };
+  // Also trigger search when tapping a recent search chip
+  const handleChipPress = useCallback((term: string) => {
+    setQuery(term);
+    executeSearch(term);
+  }, [executeSearch]);
+
+  const handleOpenResult = useCallback((item: SearchResult) => {
+    if (item.isMarketplace) {
+      const openUrl = item.affiliateUrl || item.externalUrl;
+      if (openUrl) Linking.openURL(openUrl).catch((err) => {
+        logger.warn('[Marketplace] Failed to open URL', err);
+      });
+    } else {
+      router.push({
+        pathname: "/item/[id]",
+        params: {
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          collectionName: item.collectionName,
+          value: String(item.value),
+        },
+      });
+    }
+  }, [router]);
 
   const handleOpenCategory = (categoryId: string) => {
     router.push(`/categories/${encodeURIComponent(categoryId)}`);
@@ -152,13 +229,20 @@ const SearchScreen: React.FC = () => {
 
   const handleOpenCollection = (collectionName: string) => {
     router.push({
-      pathname: "/items",
+      pathname: "/(tabs)/items",
       params: { collectionName },
     });
   };
 
+  const hasResults = trimmedQuery && (allResults.length > 0 || searchLoading);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
+      >
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
@@ -214,9 +298,7 @@ const SearchScreen: React.FC = () => {
                 <AnimatedPressable
                   key={term}
                   style={[styles.chip, { backgroundColor: colors.accent + '15' }]}
-                  onPress={() => {
-                    setQuery(term);
-                  }}
+                  onPress={() => handleChipPress(term)}
                   accessibilityRole="button"
                   accessibilityLabel={`Search for ${term}`}
                 >
@@ -238,9 +320,19 @@ const SearchScreen: React.FC = () => {
               </Text>
               <View style={styles.categoryGrid}>
                 {BROWSE_CATEGORIES.map((cat, index) => {
-                  const bg = colors.tileScale[index % colors.tileScale.length];
-                  // Use white text on darker tiles (indices 2, 3)
-                  const textColor = index % 4 >= 2 ? '#FFFFFF' : colors.text;
+                  // Checkerboard pattern: alternates light/dark per row
+                  const row = Math.floor(index / 2);
+                  const col = index % 2;
+                  const ci = (row + col) % 2 === 0
+                    ? (row % 2 === 0 ? 0 : 1)   // even diagonal: lightest ↔ medium
+                    : (row % 2 === 0 ? 2 : 3);   // odd diagonal: dark ↔ darkest
+                  const darkTileColors = [colors.accent + '70', colors.accent + '90', colors.accent + 'B0', colors.accent + 'D0'];
+                  const bg = isDark
+                    ? darkTileColors[ci]
+                    : colors.tileScale[ci];
+                  const textColor = isDark
+                    ? '#FFFFFF'
+                    : ci >= 2 ? '#FFFFFF' : colors.text;
                   return (
                     <AnimatedPressable
                       key={cat.id}
@@ -268,14 +360,7 @@ const SearchScreen: React.FC = () => {
                 Trending categories
               </Text>
               <View style={styles.trendingList}>
-                {[
-                  { id: 'lorcana', name: 'Disney Lorcana', meta: 'Hot right now' },
-                  { id: 'pokemon', name: 'Pokémon Cards', meta: 'Always popular' },
-                  { id: 'lego', name: 'LEGO', meta: 'Growing fast' },
-                  { id: 'one_piece', name: 'One Piece', meta: 'Rising demand' },
-                  { id: 'kpop_merch', name: 'K-pop Merch', meta: 'Surging' },
-                  { id: 'gunpla', name: 'Gunpla & Model Kits', meta: 'Steady growth' },
-                ].map((cat, index) => (
+                {TRENDING_CATEGORIES.map((cat, index) => (
                   <AnimatedPressable
                     key={cat.id}
                     style={[styles.trendingRow, { borderColor: colors.border }]}
@@ -305,112 +390,135 @@ const SearchScreen: React.FC = () => {
         {/* Results when searching */}
         {trimmedQuery ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Top result
-            </Text>
-            {topResult ? (
-              <AnimatedPressable
-                style={[styles.resultRow, { borderBottomColor: colors.border }]}
-                onPress={() => handleOpenItem(topResult)}
-                accessibilityRole="button"
-                accessibilityLabel={`${topResult.name}, ${formatCurrency(topResult.value)}`}
-              >
-                <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
-                  <Ionicons name="star-outline" size={18} color={colors.accent} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.resultTitle, { color: colors.text }]}>
-                    {topResult.name}
-                  </Text>
-                  <Text style={[styles.resultMeta, { color: colors.muted }]}>
-                    {topResult.category} • {topResult.collectionName}
-                  </Text>
-                </View>
-                <Text style={[styles.resultValue, { color: colors.text }]}>
-                  {formatCurrency(topResult.value)}
-                </Text>
-              </AnimatedPressable>
+            {searchLoading ? (
+              <ActivityIndicator size="small" color={colors.accent} style={{ marginTop: 24 }} />
             ) : (
-              <Text style={[styles.emptyText, { color: colors.muted }]}>
-                No results yet. Try another search.
-              </Text>
-            )}
-
-            {otherResults.length > 0 && (
               <>
-                <Text
-                  style={[
-                    styles.sectionTitle,
-                    { color: colors.text, marginTop: 16 },
-                  ]}
-                >
-                  More results
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Top result
                 </Text>
-                {otherResults.map((item) => (
+                {topResult ? (
                   <AnimatedPressable
-                    key={item.id}
                     style={[styles.resultRow, { borderBottomColor: colors.border }]}
-                    onPress={() => handleOpenItem(item)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${item.name}, ${formatCurrency(item.value)}`}
+                    onPress={() => handleOpenResult(topResult)}
+                    accessibilityRole={topResult.isMarketplace ? "link" : "button"}
+                    accessibilityLabel={`${topResult.name}, ${formatPrice(topResult.value)}`}
                   >
                     <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
-                      <Ionicons name="card-outline" size={18} color={colors.muted} />
+                      <Ionicons
+                        name={topResult.isMarketplace ? "cart-outline" : "star-outline"}
+                        size={18}
+                        color={colors.accent}
+                      />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.resultTitle, { color: colors.text }]}>
-                        {item.name}
+                        {topResult.name}
                       </Text>
                       <Text style={[styles.resultMeta, { color: colors.muted }]}>
-                        {item.category} • {item.collectionName}
+                        {topResult.isMarketplace
+                          ? `${topResult.source || "Marketplace"}${topResult.condition ? ` \u00B7 ${topResult.condition}` : ""}`
+                          : `${topResult.category} \u2022 ${topResult.collectionName}`}
                       </Text>
                     </View>
                     <Text style={[styles.resultValue, { color: colors.text }]}>
-                      {formatCurrency(item.value)}
+                      {formatPrice(topResult.value)}
                     </Text>
                   </AnimatedPressable>
-                ))}
+                ) : (
+                  <Text style={[styles.emptyText, { color: colors.muted }]}>
+                    No results yet. Try another search.
+                  </Text>
+                )}
+
+                {otherResults.length > 0 && (
+                  <>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        { color: colors.text, marginTop: 16 },
+                      ]}
+                    >
+                      More results
+                    </Text>
+                    {otherResults.map((item) => (
+                      <AnimatedPressable
+                        key={item.id}
+                        style={[styles.resultRow, { borderBottomColor: colors.border }]}
+                        onPress={() => handleOpenResult(item)}
+                        accessibilityRole={item.isMarketplace ? "link" : "button"}
+                        accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
+                      >
+                        <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
+                          <Ionicons
+                            name={item.isMarketplace ? "cart-outline" : "card-outline"}
+                            size={18}
+                            color={item.isMarketplace ? colors.accent : colors.muted}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.resultTitle, { color: colors.text }]}>
+                            {item.name}
+                          </Text>
+                          <Text style={[styles.resultMeta, { color: colors.muted }]}>
+                            {item.isMarketplace
+                              ? `${item.source || "Marketplace"}${item.condition ? ` \u00B7 ${item.condition}` : ""}`
+                              : `${item.category} \u2022 ${item.collectionName}`}
+                          </Text>
+                        </View>
+                        <Text style={[styles.resultValue, { color: colors.text }]}>
+                          {formatPrice(item.value)}
+                        </Text>
+                      </AnimatedPressable>
+                    ))}
+                  </>
+                )}
+
+                {/* Collections section */}
+                {uniqueCollections.length > 0 && (
+                  <>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        { color: colors.text, marginTop: 16 },
+                      ]}
+                    >
+                      Collections
+                    </Text>
+                    {uniqueCollections.map((item) => (
+                      <AnimatedPressable
+                        key={item.collectionName}
+                        style={styles.collectionRow}
+                        onPress={() => handleOpenCollection(item.collectionName)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`View ${item.collectionName} collection`}
+                      >
+                        <View style={[styles.collectionIcon, { backgroundColor: colors.accent + '10' }]}>
+                          <Ionicons name="albums-outline" size={18} color={colors.accent} />
+                        </View>
+                        <View>
+                          <Text
+                            style={[styles.collectionTitle, { color: colors.text }]}
+                          >
+                            {item.collectionName}
+                          </Text>
+                          <Text
+                            style={[styles.collectionMeta, { color: colors.muted }]}
+                          >
+                            {item.category}
+                          </Text>
+                        </View>
+                      </AnimatedPressable>
+                    ))}
+                  </>
+                )}
               </>
             )}
-
-            {/* Collections section */}
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: colors.text, marginTop: 16 },
-              ]}
-            >
-              Collections
-            </Text>
-            {uniqueCollections.map((item) => (
-              <AnimatedPressable
-                key={item.collectionName}
-                style={styles.collectionRow}
-                onPress={() => handleOpenCollection(item.collectionName)}
-                accessibilityRole="button"
-                accessibilityLabel={`View ${item.collectionName} collection`}
-              >
-                <View style={[styles.collectionIcon, { backgroundColor: colors.accent + '10' }]}>
-                  <Ionicons name="albums-outline" size={18} color={colors.accent} />
-                </View>
-                <View>
-                  <Text
-                    style={[styles.collectionTitle, { color: colors.text }]}
-                  >
-                    {item.collectionName}
-                  </Text>
-                  <Text
-                    style={[styles.collectionMeta, { color: colors.muted }]}
-                  >
-                    {item.category}
-                  </Text>
-                </View>
-              </AnimatedPressable>
-            ))}
           </View>
         ) : null}
         </Animated.View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

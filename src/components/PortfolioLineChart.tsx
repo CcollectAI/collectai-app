@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line, Path } from "react-native-svg";
+import { formatPrice } from "@/lib/format";
 
 export type TimeSeriesPoint = {
   t: string; // ISO timestamp
@@ -20,19 +21,6 @@ export type PortfolioLineChartProps = {
   /** Optional override */
   axisLabelColor?: string;
 };
-
-function formatCurrencyEUR(value: number): string {
-  if (!Number.isFinite(value)) return "—";
-  try {
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(value);
-  } catch {
-    return `${value.toFixed(0)} EUR`;
-  }
-}
 
 function formatDateShort(iso: string): string {
   const d = new Date(iso);
@@ -138,7 +126,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = ({
     >
       {showValueHeader && (
         <View style={styles.valueRow}>
-          <Text style={styles.valueText}>{formatCurrencyEUR(currentPoint.v)}</Text>
+          <Text style={styles.valueText}>{formatPrice(currentPoint.v)}</Text>
           <Text style={styles.dateText}>{formatDateShort(currentPoint.t)}</Text>
         </View>
       )}
@@ -149,10 +137,10 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = ({
             <>
               <View pointerEvents="none" style={styles.yLabels}>
                 <Text style={[styles.axisText, { color: axisLabelColor }]}>
-                  {formatCurrencyEUR(max)}
+                  {formatPrice(max)}
                 </Text>
                 <Text style={[styles.axisText, { color: axisLabelColor }]}>
-                  {formatCurrencyEUR(min)}
+                  {formatPrice(min)}
                 </Text>
               </View>
 

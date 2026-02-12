@@ -19,7 +19,8 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from app.config import USD_TO_EUR, EBAY_CLIENT_ID as _CFG_EBAY_CLIENT_ID, EBAY_CLIENT_SECRET as _CFG_EBAY_CLIENT_SECRET
+from app.config import EBAY_CLIENT_ID as _CFG_EBAY_CLIENT_ID, EBAY_CLIENT_SECRET as _CFG_EBAY_CLIENT_SECRET
+from workers.circuit_breaker import ebay_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
 
@@ -66,20 +67,38 @@ async def _get_access_token(client: httpx.AsyncClient, client_id: str, client_se
 # Normalization helpers
 # ---------------------------------------------------------------------------
 
-def _convert_price(price: float, currency: str) -> Dict[str, Any]:
+def _convert_price(price: float, currency: str, rates: Dict[str, float] | None = None) -> Dict[str, Any]:
+    """Convert to EUR for legacy compat, but also preserve source currency/amount.
+
+    *rates* is a foreign→EUR dict (e.g. {"USD": 0.92, "GBP": 1.16}).
+    If not supplied, falls back to config defaults.
+    """
     upper = currency.upper()
+    result: Dict[str, Any] = {
+        "source_price": price,
+        "source_currency": upper,
+    }
     if upper == "EUR":
-        return {"price": price, "currency": "EUR"}
-    if upper == "USD":
-        return {"price": round(price * USD_TO_EUR, 2), "currency": "EUR"}
-    return {"price": price, "currency": upper}
+        result.update(price=price, currency="EUR")
+    else:
+        rate = (rates or {}).get(upper)
+        if rate is None:
+            # Fallback to config
+            from app.config import USD_TO_EUR, GBP_TO_EUR, JPY_TO_EUR
+            _fallback = {"USD": USD_TO_EUR, "GBP": GBP_TO_EUR, "JPY": JPY_TO_EUR}
+            rate = _fallback.get(upper)
+        if rate is not None:
+            result.update(price=round(price * rate, 2), currency="EUR")
+        else:
+            result.update(price=price, currency=upper)
+    return result
 
 
-def _normalize_browse_item(item: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_browse_item(item: Dict[str, Any], rates: Dict[str, float] | None = None) -> Dict[str, Any]:
     """Normalize an eBay Browse API item summary to a MarketHit dict."""
     raw_price = float(item.get("price", {}).get("value", 0) or 0)
     raw_currency = item.get("price", {}).get("currency", "USD")
-    converted = _convert_price(raw_price, raw_currency)
+    converted = _convert_price(raw_price, raw_currency, rates)
     raw_id = item.get("itemId", "")
 
     return {
@@ -88,6 +107,8 @@ def _normalize_browse_item(item: Dict[str, Any]) -> Dict[str, Any]:
         "title": item.get("title", ""),
         "price": converted["price"],
         "currency": converted["currency"],
+        "source_price": converted.get("source_price"),
+        "source_currency": converted.get("source_currency"),
         "sold_at": None,
         "url": item.get("itemWebUrl") or item.get("itemHref"),
         "condition": item.get("condition") or item.get("conditionId"),
@@ -96,7 +117,7 @@ def _normalize_browse_item(item: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _normalize_finding_item(item: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_finding_item(item: Dict[str, Any], rates: Dict[str, float] | None = None) -> Dict[str, Any]:
     """Normalize an eBay Finding API completed item to a MarketHit dict."""
     raw_price = 0.0
     try:
@@ -118,7 +139,7 @@ def _normalize_finding_item(item: Dict[str, Any]) -> Dict[str, Any]:
     except (IndexError, KeyError, TypeError):
         pass
 
-    converted = _convert_price(raw_price, raw_currency)
+    converted = _convert_price(raw_price, raw_currency, rates)
     raw_id = ""
     try:
         raw_id = item.get("itemId", [""])[0]
@@ -152,6 +173,8 @@ def _normalize_finding_item(item: Dict[str, Any]) -> Dict[str, Any]:
         "title": item.get("title", [""])[0] if isinstance(item.get("title"), list) else item.get("title", ""),
         "price": converted["price"],
         "currency": converted["currency"],
+        "source_price": converted.get("source_price"),
+        "source_currency": converted.get("source_currency"),
         "sold_at": end_time,
         "url": item.get("viewItemURL", [None])[0] if isinstance(item.get("viewItemURL"), list) else item.get("viewItemURL"),
         "condition": condition_str,
@@ -195,19 +218,36 @@ class EbayCaller:
         query: str,
         category: Optional[str] = None,
         limit: int = 20,
+        marketplace_id: str = "EBAY_US",
     ) -> List[Dict[str, Any]]:
         """Search eBay Browse API for active listings.
 
         Returns a list of normalized MarketHit dicts.
+        *marketplace_id* controls the X-EBAY-C-MARKETPLACE-ID header
+        (e.g. ``EBAY_US``, ``EBAY_DE``, ``EBAY_JP``).
         """
         if not self.configured:
             logger.warning("[EbayCaller] Not configured (missing EBAY_CLIENT_ID/SECRET)")
             return []
 
+        try:
+            ebay_circuit.check()
+        except CircuitOpenError:
+            logger.warning("[EbayCaller] Circuit breaker OPEN — skipping search")
+            return []
+
+        # Fetch live FX rates once for this call
+        try:
+            from app.lib.fx_service import get_rates
+            rates = await get_rates()
+        except Exception:
+            rates = None
+
         client = await self._get_client()
         try:
             token = await _get_access_token(client, self.client_id, self.client_secret)
-        except Exception:
+        except httpx.HTTPError:
+            ebay_circuit.record_failure()
             logger.error("[EbayCaller] OAuth token acquisition failed", exc_info=True)
             return []
 
@@ -223,7 +263,7 @@ class EbayCaller:
                 params=params,
                 headers={
                     "Authorization": f"Bearer {token}",
-                    "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
+                    "X-EBAY-C-MARKETPLACE-ID": marketplace_id,
                     "Content-Type": "application/json",
                 },
             )
@@ -231,17 +271,21 @@ class EbayCaller:
             if resp.status_code == 429:
                 retry_after = resp.headers.get("Retry-After", "unknown")
                 logger.warning("[EbayCaller] Rate limited (Retry-After: %s)", retry_after)
+                ebay_circuit.record_failure()
                 return []
 
             resp.raise_for_status()
             data = resp.json()
             items = data.get("itemSummaries", [])
-            return [_normalize_browse_item(item) for item in items]
+            ebay_circuit.record_success()
+            return [_normalize_browse_item(item, rates) for item in items]
 
         except httpx.HTTPStatusError as e:
+            ebay_circuit.record_failure()
             logger.error("[EbayCaller] Browse API HTTP error: %d", e.response.status_code)
             return []
-        except Exception:
+        except httpx.RequestError:
+            ebay_circuit.record_failure()
             logger.error("[EbayCaller] Browse API request failed", exc_info=True)
             return []
 
@@ -250,14 +294,39 @@ class EbayCaller:
         query: str,
         category: Optional[str] = None,
         limit: int = 20,
+        marketplace_id: str = "EBAY_US",
     ) -> List[Dict[str, Any]]:
         """Search eBay Finding API for sold/completed items.
 
         Returns a list of normalized MarketHit dicts with is_sold=True.
+        *marketplace_id* maps to the Finding API GLOBAL-ID param.
         """
         if not self.configured:
             logger.warning("[EbayCaller] Not configured (missing EBAY_CLIENT_ID/SECRET)")
             return []
+
+        try:
+            ebay_circuit.check()
+        except CircuitOpenError:
+            logger.warning("[EbayCaller] Circuit breaker OPEN — skipping sold_comps")
+            return []
+
+        # Fetch live FX rates once for this call
+        try:
+            from app.lib.fx_service import get_rates
+            rates = await get_rates()
+        except Exception:
+            rates = None
+
+        # Map marketplace ID to Finding API GLOBAL-ID
+        _MARKETPLACE_TO_GLOBAL_ID = {
+            "EBAY_US": "EBAY-US",
+            "EBAY_DE": "EBAY-DE",
+            "EBAY_GB": "EBAY-GB",
+            "EBAY_JP": "EBAY-JP",
+            "EBAY_AU": "EBAY-AU",
+        }
+        global_id = _MARKETPLACE_TO_GLOBAL_ID.get(marketplace_id, "EBAY-US")
 
         client = await self._get_client()
         params = {
@@ -266,6 +335,7 @@ class EbayCaller:
             "SECURITY-APPNAME": self.client_id,
             "RESPONSE-DATA-FORMAT": "JSON",
             "REST-PAYLOAD": "",
+            "GLOBAL-ID": global_id,
             "keywords": query,
             "itemFilter(0).name": "SoldItemsOnly",
             "itemFilter(0).value": "true",
@@ -291,12 +361,15 @@ class EbayCaller:
                 .get("searchResult", [{}])[0]
             )
             items = search_result.get("item", [])
-            return [_normalize_finding_item(item) for item in items]
+            ebay_circuit.record_success()
+            return [_normalize_finding_item(item, rates) for item in items]
 
         except httpx.HTTPStatusError as e:
+            ebay_circuit.record_failure()
             logger.error("[EbayCaller] Finding API HTTP error: %d", e.response.status_code)
             return []
-        except Exception:
+        except httpx.RequestError:
+            ebay_circuit.record_failure()
             logger.error("[EbayCaller] Finding API request failed", exc_info=True)
             return []
 

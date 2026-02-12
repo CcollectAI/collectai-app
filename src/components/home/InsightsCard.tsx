@@ -11,6 +11,7 @@ import { PortfolioInsights, ItemMover } from '@/types/insights';
 import type { PortfolioTierSummary } from '@/analytics/portfolioMetrics';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { formatPrice } from '@/lib/format';
 
 const TIER_COLORS: Record<string, string> = {
   Diamond: '#A78BFA',
@@ -32,15 +33,6 @@ type InsightsCardProps = {
   onViewDetails?: () => void;
 };
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
 function formatPercent(value: number): string {
   const sign = value >= 0 ? '+' : '';
   return `${sign}${value.toFixed(1)}%`;
@@ -61,7 +53,7 @@ function MoverItem({ item, colors }: { item: ItemMover; colors: ThemeColors }) {
       </View>
       <View style={styles.moverValue}>
         <Text style={[styles.moverPrice, { color: colors.text }]}>
-          {formatCurrency(item.currentValue)}
+          {formatPrice(item.currentValue)}
         </Text>
         <Text style={[styles.moverChange, { color: colors.muted }]}>
           {formatPercent(item.percentChange)}
@@ -79,7 +71,7 @@ export function InsightsCard({ insights, tierSummary, onViewDetails }: InsightsC
     <View
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
       accessibilityRole="summary"
-      accessibilityLabel={`Portfolio insights: ${formatCurrency(insights.totalValue)} total value, ${formatPercent(insights.percentChange)} change`}
+      accessibilityLabel={`Portfolio insights: ${formatPrice(insights.totalValue)} total value, ${formatPercent(insights.percentChange)} change`}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -135,7 +127,7 @@ export function InsightsCard({ insights, tierSummary, onViewDetails }: InsightsC
         <View style={styles.statBlock}>
           <Text style={[styles.statLabel, { color: colors.muted }]}>Total Value</Text>
           <Text style={[styles.statValue, { color: colors.text }]}>
-            {formatCurrency(insights.totalValue)}
+            {formatPrice(insights.totalValue)}
           </Text>
         </View>
         <View style={styles.statBlock}>

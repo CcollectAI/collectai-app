@@ -305,8 +305,9 @@ def _render_html(dossier: ItemDossier) -> str:
         rows = ""
         for comp in dossier.market_comps:
             title_cell = _esc(comp.get("title", ""))
-            if comp.get("url"):
-                title_cell = f'<a href="{_esc(comp["url"])}" style="color:#0D9488;text-decoration:none;">{title_cell}</a>'
+            comp_href = comp.get("affiliate_url") or comp.get("url")
+            if comp_href:
+                title_cell = f'<a href="{_esc(comp_href)}" style="color:#0D9488;text-decoration:none;" target="_blank" rel="noopener">{title_cell}</a>'
             rows += f"""
             <tr style="border-bottom:1px solid #F3F4F6;">
               <td style="padding:8px 12px;font-size:13px;">{title_cell}</td>

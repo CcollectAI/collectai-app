@@ -456,3 +456,128 @@ export type CreateBuildPaintProjectInput = {
   title: string;
   category?: string | null;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Smart Deal Agent Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Purchase mandate — user-defined buying criteria for the Smart Deal Agent.
+ */
+export type PurchaseMandate = {
+  id: string;
+  userId: string;
+  name: string;
+  status: 'active' | 'paused' | 'exhausted' | 'expired';
+
+  // Search criteria
+  searchQuery: string;
+  category?: string | null;
+  conditionFilter: string[];
+  minTrustScore: number;
+
+  // Spending controls
+  maxPrice: number;
+  maxTotalBudget?: number | null;
+  spentTotal: number;
+  cooldownHours: number;
+
+  // Marketplace preferences
+  allowedSources: string[];
+  region?: string | null;
+
+  // Lifecycle
+  expiresAt?: string | null;
+  lastScanAt?: string | null;
+  lastDealAt?: string | null;
+  dealsFound: number;
+  dealsPurchased: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/**
+ * Input for creating a new purchase mandate.
+ */
+export type CreateMandateInput = {
+  name: string;
+  searchQuery: string;
+  category?: string | null;
+  conditionFilter?: string[];
+  minTrustScore?: number;
+  maxPrice: number;
+  maxTotalBudget?: number | null;
+  cooldownHours?: number;
+  allowedSources?: string[];
+  region?: string | null;
+  expiresAt?: string | null;
+};
+
+/**
+ * Input for updating an existing mandate.
+ */
+export type UpdateMandateInput = Partial<Omit<CreateMandateInput, 'searchQuery'>> & {
+  status?: 'active' | 'paused';
+};
+
+/**
+ * Mandate deal — a deal discovered by the Smart Deal Agent.
+ */
+export type MandateDeal = {
+  id: string;
+  mandateId: string;
+  userId: string;
+  status: 'discovered' | 'notified' | 'clicked' | 'purchased' | 'declined' | 'expired';
+
+  // Listing
+  listingSource: string;
+  listingUrl: string;
+  affiliateUrl?: string | null;
+  listingTitle: string;
+  listingPrice: number;
+  listingCurrency: string;
+  listingCondition?: string | null;
+  listingImageUrl?: string | null;
+  listingSeller?: string | null;
+  listingEnded: boolean;
+
+  // Scoring
+  provenanceScore?: number | null;
+  dealScore?: number | null;
+  priceVsQ50Pct?: number | null;
+  predictedQ50?: number | null;
+  predictedQ10?: number | null;
+  predictedQ90?: number | null;
+
+  // Policy
+  policyPassed: boolean;
+  policyReasons: string[];
+
+  // Affiliate
+  affiliateSource?: string | null;
+  affiliateClick: boolean;
+  estimatedCommission?: number | null;
+
+  // Confirmation
+  confirmedPrice?: number | null;
+  addedItemId?: string | null;
+
+  // Timestamps
+  discoveredAt: string;
+  notifiedAt?: string | null;
+  clickedAt?: string | null;
+  purchasedAt?: string | null;
+  createdAt: string;
+};
+
+/**
+ * Agent stats summary.
+ */
+export type DealAgentStats = {
+  activeMandates: number;
+  totalDealsFound: number;
+  totalDealsClicked: number;
+  totalDealsPurchased: number;
+  totalSavedVsQ50: number;
+  moneySavedEur: number;
+};

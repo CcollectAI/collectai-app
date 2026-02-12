@@ -17,14 +17,6 @@ export type Item = {
 
 const KEY='@items';
 
-export const SEED: Item[] = [
-  { id: 'itm-1001', title: 'Charizard PSA 9', category: 'Pokémon', priceEUR: 1250, changePct: 2.5, notes: 'Base Set' },
-  { id: 'itm-1002', title: 'LEGO Millennium Falcon (75192)', category: 'LEGO', priceEUR: 780, changePct: -1.2 },
-  { id: 'itm-1003', title: 'Funko Pop! Grogu #369', category: 'Funko', priceEUR: 42, changePct: 5.1 },
-  { id: 'itm-1004', title: 'Pokémon Pikachu PSA 10', category: 'Pokémon', priceEUR: 890, changePct: 1.1 },
-  { id: 'itm-1005', title: 'LEGO Modular – Boutique Hotel (10297)', category: 'LEGO', priceEUR: 220, changePct: 0.6 },
-];
-
 export async function getItems(): Promise<Item[]> { return await getJSON<Item[]>(KEY, []); }
 export async function setItems(next: Item[]): Promise<void> { await setJSON<Item[]>(KEY, next); }
 
@@ -54,7 +46,7 @@ export function useItems(){
   const [items,setItemsState] = useState<Item[]>([]);
   useEffect(()=>{ (async()=>{
     let cur = await getItems();
-    if (!cur || cur.length===0) { cur = SEED; await setItems(cur); }
+    if (!cur) cur = [];
     setItemsState(cur);
   })() },[]);
   return { items, setItems: setItemsState };

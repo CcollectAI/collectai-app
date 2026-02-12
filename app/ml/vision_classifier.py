@@ -163,6 +163,8 @@ class ClassificationResult:
     attributes: dict[str, Any] = field(default_factory=dict)
     embedding_vector: Optional[list[float]] = None
     classification_method: str = "heuristic"
+    # R15-11: Track which model(s) were used for reproducibility
+    model_version: Optional[str] = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -174,6 +176,7 @@ class ClassificationResult:
             "attributes": self.attributes,
             "embedding_vector": self.embedding_vector,
             "classification_method": self.classification_method,
+            "model_version": self.model_version,
         }
 
 
@@ -295,6 +298,7 @@ async def _classify_clip(image_bytes: bytes, filename: str) -> ClassificationRes
                 ]},
                 embedding_vector=image_embedding,
                 classification_method="clip",
+                model_version=f"clip:fal-ai/clip@{FAL_CLIP_URL}",
             )
 
     except httpx.HTTPStatusError as e:
@@ -438,6 +442,7 @@ async def _classify_openai_vision(image_bytes: bytes, filename: str) -> Classifi
             attributes=parsed.get("attributes", {}),
             embedding_vector=None,
             classification_method="openai_vision",
+            model_version=f"openai:{OPENAI_VISION_MODEL}",
         )
 
     except json.JSONDecodeError as e:
@@ -556,6 +561,7 @@ def _classify_heuristic(image_bytes: bytes, filename: str) -> ClassificationResu
         attributes=attributes,
         embedding_vector=None,
         classification_method="heuristic",
+        model_version="heuristic:v1",
     )
 
 
@@ -587,6 +593,7 @@ async def classify_image(
             category_id="funko",
             category_confidence=0.0,
             classification_method="heuristic",
+            model_version="heuristic:v1",
             attributes={"error": "empty_image"},
         )
 

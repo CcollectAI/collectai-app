@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import List
 
+import asyncpg
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
@@ -19,7 +20,7 @@ def _get_db_pool():
     try:
         from app.db import get_pool
         return get_pool()
-    except Exception as e:
+    except (ImportError, RuntimeError, OSError) as e:
         logger.debug(f"DB pool not available: {e}")
         return None
 
@@ -119,7 +120,7 @@ async def get_seller_reputation(user_id: str):
                 dispute_rate=0.0,
             )
 
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error(f"[trust/seller] DB error: {e}")
         return _empty_seller(user_id)
 
@@ -227,7 +228,7 @@ async def get_listing_trust_snapshot(listing_id: str):
 
             return MarketplaceTrustSnapshot(seller=seller, listing_flags=flags)
 
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error(f"[trust/listing] DB error: {e}")
         return MarketplaceTrustSnapshot(
             seller=_empty_seller("unknown"),

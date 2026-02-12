@@ -20,7 +20,7 @@ const LIGHT_COLORS = {
     lighter: "#E6F7F5",
   },
   // Tiffany → cobalt scale for category tiles
-  tileScale: ["#E6F7F5", "#81D8D0", "#5AA3B8", "#1D4ED8"],
+  tileScale: ["#B5E8E2", "#81D8D0", "#5AA3B8", "#3E8FA8"],
   // Light grey backdrop for QuickScan section
   quickscanBackdrop: "#F1F5F9",
   success: "#10B981",

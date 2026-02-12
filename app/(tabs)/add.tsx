@@ -1,7 +1,6 @@
 import { Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { AddImportCard } from '@/components/AddImportCard';
-import { AddQuickScanLayoutPro } from '@/components/AddQuickScanLayoutPro';
 import { API_BASE } from '@/api/config';
 import * as DocumentPicker from 'expo-document-picker';
 import React from "react";
@@ -94,17 +93,17 @@ const handleImportCollectionFile = async () => {
       }
 
     // Handle both new (assets) and old (single object) shapes from DocumentPicker
-    // @ts-ignore
+    // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
     const canceled = result.canceled ?? (result.type && result.type !== 'success');
     if (canceled) {
       return;
     }
 
-    // @ts-ignore
+    // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
     const asset = result.assets && result.assets.length > 0 ? result.assets[0] : result;
 
     // Basic safety checks
-    // @ts-ignore
+    // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
     if (!asset || !asset.uri) {
       logger.warn('[Add] import: no asset URI found', asset);
       return;
@@ -118,11 +117,11 @@ const handleImportCollectionFile = async () => {
       // React Native's FormData accepts this shape for file uploads
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       formData.append("file", {
-        // @ts-ignore -- DocumentPicker asset shape
+        // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
         uri: asset.uri,
-        // @ts-ignore -- DocumentPicker asset shape
+        // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
         name: asset.name || "collection.xlsx",
-        // @ts-ignore -- DocumentPicker asset shape
+        // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
         type: asset.mimeType || "application/octet-stream",
       } as unknown as Blob);
 

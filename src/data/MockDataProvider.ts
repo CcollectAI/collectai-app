@@ -319,6 +319,16 @@ export class MockDataProvider implements DataProvider {
     }
   }
 
+  async updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item> {
+    const idx = mockCreatedItems.findIndex((it) => it.id === itemId);
+    if (idx === -1) {
+      throw new Error(`Item ${itemId} not found`);
+    }
+    const updated = { ...mockCreatedItems[idx], ...patch, updatedAt: new Date().toISOString() };
+    mockCreatedItems[idx] = updated;
+    return updated;
+  }
+
   async archiveItem(itemId: string): Promise<void> {
     const idx = mockCreatedItems.findIndex((it) => it.id === itemId);
     if (idx !== -1) {

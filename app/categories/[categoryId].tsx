@@ -4,6 +4,7 @@
  */
 import React, { useEffect, useState, useRef } from 'react';
 import {
+  Alert,
   View,
   Text,
   ScrollView,
@@ -21,17 +22,10 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
 
 const kindIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
   collection_drop: 'cube-outline',
@@ -181,7 +175,8 @@ export default function CategoryStoreScreen() {
     } catch (err) {
       // Revert on error
       setFollowing(!newFollowing);
-      logger.warn('[CategoryStore] follow toggle error:', err);
+      logger.warn('[Category] Follow toggle failed', err);
+      Alert.alert('Error', 'Could not update follow status. Please try again.');
     }
   };
 
@@ -358,7 +353,7 @@ export default function CategoryStoreScreen() {
               style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => handleItemPress(item)}
               accessibilityRole="button"
-              accessibilityLabel={`${item.name}, ${formatCurrency(item.price)}`}
+              accessibilityLabel={`${item.name}, ${formatPrice(item.price)}`}
             >
               <View style={styles.itemInfo}>
                 <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
@@ -366,7 +361,7 @@ export default function CategoryStoreScreen() {
                 </Text>
                 <Text style={[styles.itemCategory, { color: colors.muted }]}>{item.category}</Text>
               </View>
-              <Text style={[styles.itemPrice, { color: colors.text }]}>{formatCurrency(item.price)}</Text>
+              <Text style={[styles.itemPrice, { color: colors.text }]}>{formatPrice(item.price)}</Text>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </AnimatedPressable>
           ))
@@ -544,17 +539,6 @@ export default function CategoryStoreScreen() {
             ))}
           </ScrollView>
         )}
-      </View>
-
-      {/* 6. Sponsored Slot (Placeholder) */}
-      <View style={styles.section}>
-        <View style={[styles.sponsoredCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sponsoredLabel, { color: colors.muted }]}>Sponsored</Text>
-          <View style={[styles.sponsoredPlaceholder, { backgroundColor: colors.background }]}>
-            <Ionicons name="megaphone-outline" size={24} color={colors.muted} />
-            <Text style={[styles.sponsoredText, { color: colors.muted }]}>Ad slot placeholder</Text>
-          </View>
-        </View>
       </View>
 
       {/* Bottom spacing */}

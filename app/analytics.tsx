@@ -24,6 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { formatPrice } from "@/lib/format";
 import logger from "@/utils/logger";
 
 // Import analytics store
@@ -73,18 +74,6 @@ const TIER_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 // ─────────────────────────────────────────────────────────────────────────────
 // Formatting helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-function formatCurrency(n: number): string {
-  try {
-    return new Intl.NumberFormat("nl-NL", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(n);
-  } catch {
-    return `€${Math.round(n).toLocaleString()}`;
-  }
-}
 
 function formatPct(p: number, includeSign = true): string {
   const sign = includeSign && p > 0 ? "+" : "";
@@ -220,16 +209,16 @@ export default function AnalyticsScreen() {
             <View style={styles.metricsGrid}>
               <View style={styles.metricItem}>
                 <Text style={styles.metricLabel}>Current Value</Text>
-                <Text style={styles.metricValue}>{formatCurrency(pl.currentValue)}</Text>
+                <Text style={styles.metricValue}>{formatPrice(pl.currentValue)}</Text>
               </View>
               <View style={styles.metricItem}>
                 <Text style={styles.metricLabel}>Starting Value</Text>
-                <Text style={styles.metricValueMuted}>{formatCurrency(pl.startValue)}</Text>
+                <Text style={styles.metricValueMuted}>{formatPrice(pl.startValue)}</Text>
               </View>
               <View style={styles.metricItem}>
                 <Text style={styles.metricLabel}>Total Gain/Loss</Text>
                 <Text style={[styles.metricValue, isPositive ? styles.textSuccess : styles.textDanger]}>
-                  {pl.deltaAbs >= 0 ? "+" : ""}{formatCurrency(pl.deltaAbs)}
+                  {pl.deltaAbs >= 0 ? "+" : ""}{formatPrice(pl.deltaAbs)}
                 </Text>
               </View>
               <View style={styles.metricItem}>
@@ -345,7 +334,7 @@ export default function AnalyticsScreen() {
                     <Text style={styles.allocationName}>{a.category}</Text>
                   </View>
                   <View style={styles.allocationRight}>
-                    <Text style={styles.allocationValue}>{formatCurrency(a.totalValue)}</Text>
+                    <Text style={styles.allocationValue}>{formatPrice(a.totalValue)}</Text>
                     <Text style={styles.allocationPct}>{formatPct(a.weight, false)}</Text>
                   </View>
                 </View>
@@ -418,7 +407,7 @@ export default function AnalyticsScreen() {
                   <Text style={styles.itemCategory}>{item.category}</Text>
                 </View>
                 <View style={styles.itemRight}>
-                  <Text style={styles.itemValue}>{formatCurrency(item.currentValue)}</Text>
+                  <Text style={styles.itemValue}>{formatPrice(item.currentValue)}</Text>
                   {item.change1dPct !== undefined && (
                     <Text
                       style={[

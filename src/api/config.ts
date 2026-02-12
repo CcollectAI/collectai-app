@@ -14,9 +14,9 @@
 /** FastAPI backend base URL */
 export const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
-if (!API_BASE && typeof __DEV__ !== 'undefined') {
+if (!process.env.EXPO_PUBLIC_API_BASE_URL && typeof __DEV__ !== 'undefined' && __DEV__) {
   // eslint-disable-next-line no-console
-  console.error('[config] EXPO_PUBLIC_API_BASE_URL is not set — API calls will fail');
+  console.warn('[config] EXPO_PUBLIC_API_BASE_URL is not set — using localhost fallback');
 }
 
 // ---------------------------------------------------------------------------

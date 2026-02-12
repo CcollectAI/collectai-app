@@ -253,7 +253,7 @@ async def presign_upload(request: PresignUploadRequest, user_id: str = Depends(g
 
 
 @router.get("/presign-download/{pointer_id}", response_model=PresignDownloadResponse)
-async def presign_download(pointer_id: str):
+async def presign_download(pointer_id: str, user_id: str = Depends(get_current_user_id)):
     """
     Generate a presigned GET URL for downloading an object.
 
@@ -275,9 +275,10 @@ async def presign_download(pointer_id: str):
                 """
                 SELECT s3_key, bucket, content_type, size_bytes
                 FROM object_pointers
-                WHERE id = $1 AND deleted_at IS NULL
+                WHERE id = $1 AND deleted_at IS NULL AND created_by = $2
                 """,
                 _uuid.UUID(pointer_id),
+                user_id,
             )
     except Exception as e:
         logger.error("Failed to look up object pointer %s: %s", pointer_id, e)
@@ -325,6 +326,7 @@ async def list_objects(
     related_item_id: Optional[str] = Query(None, description="Filter by related item ID"),
     limit: int = Query(50, ge=1, le=200, description="Max results to return"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
+    user_id: str = Depends(get_current_user_id),
 ):
     """
     List object pointers, optionally filtered by type and/or related item.
@@ -341,10 +343,12 @@ async def list_objects(
             detail=f"Invalid object_type. Allowed: {', '.join(sorted(ALLOWED_OBJECT_TYPES))}",
         )
 
-    # Build query dynamically
+    # Build query dynamically — always scope to current user
     conditions = ["deleted_at IS NULL"]
     params: list = []
-    param_idx = 0
+    param_idx = 1
+    conditions.append(f"created_by = ${param_idx}")
+    params.append(user_id)
 
     if object_type:
         param_idx += 1
@@ -406,7 +410,7 @@ async def list_objects(
 
 
 @router.delete("/objects/{pointer_id}", response_model=DeleteResponse)
-async def delete_object(pointer_id: str):
+async def delete_object(pointer_id: str, user_id: str = Depends(get_current_user_id)):
     """
     Soft-delete an object pointer.
 
@@ -428,10 +432,11 @@ async def delete_object(pointer_id: str):
                 """
                 UPDATE object_pointers
                 SET deleted_at = $1
-                WHERE id = $2 AND deleted_at IS NULL
+                WHERE id = $2 AND deleted_at IS NULL AND created_by = $3
                 """,
                 datetime.now(timezone.utc),
                 _uuid.UUID(pointer_id),
+                user_id,
             )
     except Exception as e:
         logger.error("Failed to soft-delete object pointer %s: %s", pointer_id, e)

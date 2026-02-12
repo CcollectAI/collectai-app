@@ -22,41 +22,48 @@ class TestExtractPrice:
     def test_usd_dollar_sign(self):
         from app.agents.adapters.firecrawl_caller import _extract_price
 
-        price, currency = _extract_price("$29.99 shipped")
+        # Pass explicit rates to avoid test pollution from config reloads
+        rates = {"USD": 0.92, "GBP": 0.86, "JPY": 0.0061}
+        price, currency, source_price, source_currency = _extract_price("$29.99 shipped", rates=rates)
         assert price == pytest.approx(29.99 * 0.92, abs=0.01)
         assert currency == "EUR"
+        assert source_price == pytest.approx(29.99, abs=0.01)
+        assert source_currency == "USD"
 
     def test_eur_price(self):
         from app.agents.adapters.firecrawl_caller import _extract_price
 
-        price, currency = _extract_price("EUR 45.00")
+        price, currency, source_price, source_currency = _extract_price("EUR 45.00")
         assert price == 45.0
         assert currency == "EUR"
 
     def test_jpy_price(self):
         from app.agents.adapters.firecrawl_caller import _extract_price
 
-        price, currency = _extract_price("¥3500")
+        rates = {"USD": 0.92, "GBP": 0.86, "JPY": 0.0061}
+        price, currency, source_price, source_currency = _extract_price("¥3500", rates=rates)
         assert price == pytest.approx(3500 * 0.0061, abs=0.1)
         assert currency == "EUR"
+        assert source_price == pytest.approx(3500, abs=1)
+        assert source_currency == "JPY"
 
     def test_no_price_found(self):
         from app.agents.adapters.firecrawl_caller import _extract_price
 
-        price, currency = _extract_price("No price here")
+        price, currency, source_price, source_currency = _extract_price("No price here")
         assert price is None
         assert currency == "EUR"
 
     def test_empty_string(self):
         from app.agents.adapters.firecrawl_caller import _extract_price
 
-        price, currency = _extract_price("")
+        price, currency, source_price, source_currency = _extract_price("")
         assert price is None
 
     def test_generic_decimal_price(self):
         from app.agents.adapters.firecrawl_caller import _extract_price
 
-        price, currency = _extract_price("Listed for 19.99")
+        price, currency, source_price, source_currency = _extract_price("Listed for 19.99")
         assert price == 19.99
 
 

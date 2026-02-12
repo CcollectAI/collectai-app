@@ -8,22 +8,11 @@ import { USER_PROFILES } from '@/data/users';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { formatPrice } from '@/lib/format';
 
 const MEDAL_GOLD = '#eab308';
 const MEDAL_SILVER = '#9ca3af';
 const MEDAL_BRONZE = '#b45309';
-
-const formatCurrency = (value: number | undefined | null): string => {
-  if (!value || !Number.isFinite(value)) return '€0';
-  try {
-    return `€${value.toLocaleString('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })}`;
-  } catch {
-    return `€${value}`;
-  }
-};
 
 const AvatarCircle: React.FC<{ name: string; color: string }> = ({ name, color }) => {
   const initials =
@@ -97,7 +86,7 @@ const LeaderboardScreen: React.FC = () => {
                 { borderColor: colors.border, backgroundColor: colors.card },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${formatCurrency(user.stats.totalEstimatedValueEur)}`}
+              accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${formatPrice(user.stats.totalEstimatedValueEur)}`}
             >
               {/* Rank */}
               <View style={styles.rankCol}>
@@ -126,7 +115,7 @@ const LeaderboardScreen: React.FC = () => {
               {/* Value + key score */}
               <View style={styles.valueCol}>
                 <Text style={[styles.valueText, { color: colors.text }]}>
-                  {formatCurrency(user.stats.totalEstimatedValueEur)}
+                  {formatPrice(user.stats.totalEstimatedValueEur)}
                 </Text>
                 <Text style={[styles.rarityText, { color: colors.muted }]}>
                   Rarity {user.stats.rarityScore}

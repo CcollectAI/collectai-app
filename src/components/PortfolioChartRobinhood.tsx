@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
+import { formatPrice } from "@/lib/format";
 
 export type PortfolioPoint = {
   label: string;   // "09:30", "Mon", etc.
@@ -41,21 +42,13 @@ export default function PortfolioChartRobinhood({ data }: Props) {
   const selectedPoint =
     selectedIndex >= 0 ? effectiveData[selectedIndex] : null;
 
-  const formatCurrency = (v: number) =>
-    v.toLocaleString(undefined, {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-
   return (
     <View style={styles.card}>
       {/* Value readout */}
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.totalValue}>
-            {selectedPoint ? formatCurrency(selectedPoint.value) : "—"}
+            {selectedPoint ? formatPrice(selectedPoint.value) : "—"}
           </Text>
           {selectedPoint && (
             <Text style={styles.pointLabel}>{selectedPoint.label}</Text>
@@ -80,7 +73,7 @@ export default function PortfolioChartRobinhood({ data }: Props) {
                 style={styles.segmentPressable}
                 onPress={() => setHoverIndex(idx)}
                 accessibilityRole="button"
-                accessibilityLabel={`${p.label}, ${formatCurrency(p.value)}`}
+                accessibilityLabel={`${p.label}, ${formatPrice(p.value)}`}
               >
                 <View style={styles.segmentColumn}>
                   <View

@@ -24,11 +24,9 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
 
-// Fixed colors for specific UI elements
-const fixedColors = {
-  error: '#ef4444',
-  success: '#22c55e',
-};
+// Semantic color fallback — used in the static StyleSheet where hooks are not accessible.
+// Inside the component, prefer `colors.danger` from the theme instead.
+const FALLBACK_ERROR = '#ef4444';
 
 function formatRelativeTime(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
@@ -266,7 +264,7 @@ export default function InboxScreen() {
                     accessibilityLabel={`Decline message request from ${req.fromUserName}`}
                   >
                     {processingRequestId === req.threadId ? (
-                      <ActivityIndicator size="small" color={fixedColors.error} />
+                      <ActivityIndicator size="small" color={colors.danger ?? FALLBACK_ERROR} />
                     ) : (
                       <Text style={styles.declineBtnText}>Decline</Text>
                     )}
@@ -470,7 +468,7 @@ const styles = StyleSheet.create({
   declineBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: fixedColors.error,
+    color: FALLBACK_ERROR,
   },
   acceptBtn: {
     // backgroundColor applied inline

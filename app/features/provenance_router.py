@@ -5,10 +5,12 @@ import logging
 from datetime import datetime, timezone
 from typing import List, Optional
 
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.db import db_configured, get_conn
+from app.errors import error_response
 from app.features.pagination import pagination_params
 
 router = APIRouter(prefix="/provenance", tags=["provenance"])
@@ -113,8 +115,17 @@ async def get_provenance(
             authenticity_signals=timeline.authenticity_signals,
         )
 
-    # DB mode: query item_provenance_events
+    # DB mode: query item_provenance_events (only if item belongs to user)
     async with get_conn() as conn:
+        # Verify item ownership first
+        owner_check = await conn.fetchval(
+            "SELECT 1 FROM public.items WHERE id = $1::uuid AND user_id = $2::uuid",
+            item_id,
+            user_id,
+        )
+        if owner_check is None:
+            raise error_response(404, "Item not found", code="NOT_FOUND")
+
         rows = await conn.fetch(
             """
             SELECT id, item_id, user_id, event_type, note, source, metadata, created_at
@@ -176,7 +187,7 @@ async def append_provenance_event(
         # Fallback: in-memory store
         timeline = _PROVENANCE.get(item_id)
         if not timeline:
-            raise HTTPException(status_code=404, detail="Provenance not found")
+            raise error_response(404, "Provenance not found", code="VALIDATION_ERROR")
 
         evt = OwnershipEvent(
             event_id=str(uuid4()),
@@ -191,9 +202,18 @@ async def append_provenance_event(
         _PROVENANCE[item_id] = timeline
         return timeline
 
-    # DB mode: INSERT into item_provenance_events
+    # DB mode: INSERT into item_provenance_events (verify ownership first)
     try:
         async with get_conn() as conn:
+            # Verify item ownership
+            owner_check = await conn.fetchval(
+                "SELECT 1 FROM public.items WHERE id = $1::uuid AND user_id = $2::uuid",
+                item_id,
+                user_id,
+            )
+            if owner_check is None:
+                raise error_response(404, "Item not found", code="NOT_FOUND")
+
             await conn.execute(
                 """
                 INSERT INTO public.item_provenance_events
@@ -201,7 +221,7 @@ async def append_provenance_event(
                 VALUES ($1, $2, $3, $4, $5, $6)
                 """,
                 item_id,
-                payload.user_id,
+                user_id,
                 payload.event_type,
                 payload.note,
                 payload.source,
@@ -213,9 +233,9 @@ async def append_provenance_event(
             item_id, payload.event_type, payload.user_id,
         )
 
-    except Exception as e:
+    except asyncpg.PostgresError as e:
         logger.error("[provenance] Error inserting event: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to save provenance event")
+        raise error_response(500, "Failed to save provenance event", code="DB_ERROR")
 
     # Return the full updated timeline (use default pagination to return first page)
     return await get_provenance(item_id, user_id, pagination=(50, 0))

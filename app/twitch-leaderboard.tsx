@@ -19,6 +19,7 @@ function NotAvailableScreen() {
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { formatPrice, formatNumber } from "@/lib/format";
 type LoadState = "idle" | "loading" | "loaded" | "error";
 
 // Compatibility: replace old ./ui/theme usage with app theme hook
@@ -44,22 +45,6 @@ type TwitchCreator = {
   followers_gained_30d: number | null;
   revenue_est_30d: number | null;
   score_30d: number | null;
-};
-
-const formatNumber = (n: number | null | undefined): string => {
-  if (n == null || Number.isNaN(n)) return "—";
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 1,
-  }).format(n);
-};
-
-const formatCurrency = (v: number | null | undefined): string => {
-  if (v == null || Number.isNaN(v)) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(v);
 };
 
 const TwitchLeaderboardScreen: React.FC = () => {
@@ -444,7 +429,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
                             { color: colors.text },
                           ]}
                         >
-                          {formatCurrency(c.revenue_est_30d)}
+                          {formatPrice(c.revenue_est_30d)}
                         </Text>
                       </View>
                     </View>

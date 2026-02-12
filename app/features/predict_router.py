@@ -77,15 +77,14 @@ async def get_price_evidence(
 
     try:
         async with get_conn() as conn:
-            # Verify item ownership
+            # Verify item ownership (single query — no info leak)
             owner_check = await conn.fetchval(
-                "SELECT user_id FROM public.items WHERE id = $1::uuid",
+                "SELECT 1 FROM public.items WHERE id = $1::uuid AND user_id = $2::uuid",
                 item_id,
+                user_id,
             )
             if owner_check is None:
                 raise HTTPException(status_code=404, detail="Item not found")
-            if str(owner_check) != user_id:
-                raise HTTPException(status_code=403, detail="Not your item")
 
             # Fetch latest prediction
             pred = await conn.fetchrow(

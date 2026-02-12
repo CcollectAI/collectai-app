@@ -1,6 +1,6 @@
 # CollectAI — Pro Grade Improvement Plan
 
-Updated 2026-02-11. Tracks all remaining work to take the app from MVP to production-ready.
+Updated 2026-02-12. Tracks all remaining work to take the app from MVP to production-ready.
 
 ---
 
@@ -182,6 +182,100 @@ Updated 2026-02-11. Tracks all remaining work to take the app from MVP to produc
 
 ---
 
+## Round 15 — Hardening + Geo-Aware Currency (2026-02-12) ✅ COMPLETE
+
+### R15-1. SECURITY: DEV_MODE production guard
+- [x] Added `validate_config()` in `app/config.py` — hostname check blocks DEV_MODE on non-local hosts
+- [x] `FORCE_DEV_MODE` escape hatch for CI/staging
+- Files: `app/config.py`, `main.py`
+
+### R15-2. SECURITY: Startup env validation
+- [x] `validate_config()` fails fast if `SUPABASE_JWT_SECRET` or `DB_DSN` empty in non-DEV mode
+- [x] Warn-only for optional keys: `EBAY_CLIENT_ID`, `OPENAI_API_KEY`, `FAL_KEY`, `TCGPLAYER_BEARER_TOKEN`, `AWS_ACCESS_KEY_ID`
+- [x] Wired into `main.py` startup event
+- [x] Fixed bare `except` in `app/auth.py` (split into ImportError + Exception with type logging)
+
+### R15-3. GEO-AWARE MULTI-CURRENCY & REGIONAL PRICING
+- [x] `src/lib/format.ts`: `formatPrice(amount, currency?, locale?)` — supports EUR, USD, JPY, GBP
+- [x] `src/lib/fx.ts`: `convertCurrency()` for any-to-any conversion via EUR pivot
+- [x] `src/lib/settings.tsx`: `Currency`, `Region`, `NumberLocale` types + `REGION_DEFAULTS` mapping
+- [x] All 23 files with inline `formatCurrency` / `Intl.NumberFormat` replaced with `formatPrice()`
+- [x] User geolocation opt-in: Americas→USD, Europe→EUR, Japan→JPY, other→EUR
+- [x] Backend: `user_settings` table (currency, region, locale) + `user_settings_router.py` (GET/PUT)
+- [x] Migration: `20260212_performance_indexes_and_user_settings.sql` with RLS + CHECK constraints
+- [x] Market adapters preserve `source_price` + `source_currency` in MarketHit dicts
+- [ ] **REMAINING**: Live FX rate API integration (currently uses static fallback rates)
+- [ ] **REMAINING**: Regional market price comparison (same item, different regions)
+- [ ] **REMAINING**: Delivery time/shipping cost factor in portfolio valuation
+- [ ] **REMAINING**: Cross-region availability flag display
+
+### R15-4. BACKEND: Exception handling cleanup
+- [x] Replaced bare `except Exception` with specific types in 8 routers:
+  - photo_upload_router, marketplace_router, insights_router, alerts_feature_router,
+  - marketplace_trust_router, feedback_router, notification_router, provenance_router
+- [x] All use `asyncpg.PostgresError`, `httpx.RequestError`, `BotoCoreError`, `ClientError` as appropriate
+
+### R15-5. BACKEND: Consistent error response codes
+- [x] All 8 routers adopted `error_response()` with machine-readable codes
+- [x] Codes: `DB_ERROR`, `AUTH_FAILED`, `VALIDATION_ERROR`, `EXTERNAL_API_ERROR`, `UPLOAD_ERROR`
+
+### R15-6. DATABASE: Performance indexes migration
+- [x] Migration: `20260212_performance_indexes_and_user_settings.sql`
+- [x] `alert_trigger_history(user_id, trigger_type, created_at DESC)`
+- [x] `item_provenance_events(user_id, event_type, created_at DESC)`
+- [x] `user_settings` table with PK, RLS, CHECK constraints, updated_at trigger
+
+### R15-7. WORKERS: Idempotency keys
+- [x] `alerts_worker.py`: 24h dedup check before INSERT into alert_trigger_history
+- [x] `vision_ingest_worker.py`: `FOR UPDATE SKIP LOCKED` to prevent double-processing
+- [x] `price_monitor_worker.py`: already had `_already_fired()` dedup (verified)
+
+### R15-8. WORKERS: Circuit breaker for external APIs
+- [x] `workers/circuit_breaker.py`: CLOSED→OPEN (5 failures)→HALF_OPEN (60s cooldown)
+- [x] Pre-configured: `ebay_circuit`, `tcgplayer_circuit`, `openai_circuit`
+- [x] Wired into `ebay_caller.py` and `tcgplayer_caller.py` (check/record_success/record_failure)
+- [x] `/ops/circuits` monitoring endpoint in main.py
+
+### R15-9. DEPS: psycopg2 review
+- [x] Verified: `psycopg2-binary==2.9.11` is current stable (NOT EOL). No change needed.
+
+### R15-10. DEPS: pip-audit in CI
+- [x] Added `pip-audit --strict` step to `.github/workflows/sanity.yml`
+
+### R15-11. ML: Vision model version tracking
+- [x] Added `model_version: Optional[str]` to `ClassificationResult` dataclass
+- [x] Set in all 4 creation sites: CLIP (`clip:fal-ai/clip@{url}`), OpenAI (`openai:{model}`), heuristic (`heuristic:v1`)
+
+### R15-12. TESTS: Fill coverage gaps
+- [x] `tests/test_circuit_breaker.py` — 31 tests (state machine, transitions, reset, global circuits, edge cases)
+- [x] `tests/test_config_validate.py` — 25 tests (DEV_MODE guard, FORCE_DEV_MODE, required vars, config constants)
+- [x] `tests/test_worker_idempotency.py` — 16 tests (alerts dedup, SKIP LOCKED verification, SQL structure)
+- [x] Total: 72 new tests, all passing
+
+### R15 Audit Findings (2026-02-12)
+
+**Security audit** (1 CRITICAL, 4 HIGH, 6 MEDIUM, 6 LOW):
+- [ ] **C-1/H-2**: Add URL validation to `_fetch_image_url()` — block private IPs, restrict schemes (SSRF risk)
+- [ ] **H-3**: Add auth to `/ops/*` endpoints (circuits, cache, worker-status)
+- [ ] **M-4**: Fix `FOR UPDATE SKIP LOCKED` — wrap SELECT+UPDATE in same transaction, or use "claim then process" pattern
+- [ ] **L-4**: Fix partial-update logic in `user_settings_router.py` — preserve existing DB values for non-provided fields
+
+**Performance audit** (3 HIGH, 6 MEDIUM, 7 LOW):
+- [ ] **P-HIGH**: Cache `Intl.NumberFormat` instances in `format.ts` (Map by locale+currency key, max 16 entries)
+- [ ] **P-HIGH**: Batch alerts_worker N+1 queries (JOIN instead of per-item SELECT, reduces 151→2 queries)
+- [ ] **P-HIGH**: Fix vision_ingest_worker transaction scope — "claim then process" pattern for correct concurrency
+- [ ] **P-MED**: TCGPlayer `sold_comps()` makes redundant `search()` call (3 HTTP requests → 2)
+- [ ] **P-MED**: Share httpx.AsyncClient across image fetches in vision batch
+
+**Test coverage gaps** (5 files at 0% coverage):
+- [ ] `app/routes/user_settings_router.py` — P1: 13 test cases needed
+- [ ] `app/agents/adapters/ebay_caller.py` — P1: 11 test cases (circuit breaker integration)
+- [ ] `app/agents/adapters/tcgplayer_caller.py` — P1: 11 test cases (+ 429 handling bug)
+- [ ] `src/lib/format.ts` — P2: 12 test cases (formatPrice/formatNumber)
+- [ ] `src/lib/fx.ts` — P2: 8 test cases (convertCurrency)
+
+---
+
 ## Previously Completed (Rounds 1-14 + Hardening)
 
 - [x] All 6 agentic layers implemented
@@ -194,7 +288,7 @@ Updated 2026-02-11. Tracks all remaining work to take the app from MVP to produc
 - [x] Rate limiting middleware
 - [x] CORS + security headers
 - [x] Error boundary component
-- [x] 689 backend tests passing (was 450)
+- [x] 761 backend tests passing (was 689, now +72 from R15)
 - [x] Bulk archive (archiveItem, not deleteItem)
 - [x] Alert threshold validation (Literal types + bounds)
 - [x] Transaction boundaries on marketplace + vision worker

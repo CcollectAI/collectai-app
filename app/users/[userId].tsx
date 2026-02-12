@@ -4,7 +4,7 @@
  * Uses DataProvider for profile data; hides sections when data unavailable.
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,10 +15,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { dataProvider, type PublicUserProfile, type WatchlistItem } from '@/data';
+import { dataProvider, type PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import logger from '@/utils/logger';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useToast } from '@/components/Toast';
+import { getJSON, setJSON } from '@/lib/storage';
+import { ACHIEVEMENTS, type Achievement } from '@/lib/achievements';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Avatar Component
@@ -54,28 +58,51 @@ const AvatarCircle: React.FC<{ name: string; size?: number }> = ({ name, size = 
 // ─────────────────────────────────────────────────────────────────────────────
 const SectionCard: React.FC<{
   title: string;
+  icon?: string;
   children: React.ReactNode;
-}> = ({ title, children }) => {
+}> = ({ title, icon, children }) => {
   const { colors } = useAppTheme();
 
   return (
     <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Text style={[styles.sectionTitle, { color: colors.muted }]}>{title}</Text>
+      <View style={styles.sectionHeader}>
+        {icon && <Ionicons name={icon as any} size={16} color={colors.accent} />}
+        <Text style={[styles.sectionTitle, { color: colors.muted }]}>{title}</Text>
+      </View>
       {children}
     </View>
   );
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Stat Box Component
+// Badge Item Component
 // ─────────────────────────────────────────────────────────────────────────────
-const StatBox: React.FC<{ label: string; value: string | number }> = ({ label, value }) => {
+const TIER_COLORS = {
+  bronze: '#CD7F32',
+  silver: '#C0C0C0',
+  gold: '#FFD700',
+  platinum: '#E5E4E2',
+};
+
+const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean }> = ({ achievement, earned }) => {
   const { colors } = useAppTheme();
+  const tierColor = TIER_COLORS[achievement.tier];
 
   return (
-    <View style={[styles.statBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.muted }]}>{label}</Text>
+    <View style={[styles.badgeItem, { opacity: earned ? 1 : 0.4 }]}>
+      <View style={[styles.badgeIcon, { backgroundColor: earned ? tierColor + '20' : colors.border + '40' }]}>
+        <Ionicons
+          name={achievement.icon as any}
+          size={20}
+          color={earned ? tierColor : colors.muted}
+        />
+      </View>
+      <Text
+        style={[styles.badgeLabel, { color: earned ? colors.text : colors.muted }]}
+        numberOfLines={1}
+      >
+        {achievement.title}
+      </Text>
     </View>
   );
 };
@@ -89,9 +116,34 @@ export default function UserProfileScreen() {
   const { colors } = useAppTheme();
 
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
-  const [watchlistCount, setWatchlistCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const { showToast } = useToast();
+
+  // Load follow state from AsyncStorage on mount
+  useEffect(() => {
+    if (!userId) return;
+    getJSON<string[]>('followed_users', []).then((ids) => {
+      setIsFollowing(ids.includes(userId));
+    });
+  }, [userId]);
+
+  const handleFollowToggle = useCallback(async () => {
+    if (!userId) return;
+    const next = !isFollowing;
+    setIsFollowing(next);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: true });
+    const ids = await getJSON<string[]>('followed_users', []);
+    if (next) {
+      if (!ids.includes(userId)) ids.push(userId);
+    } else {
+      const idx = ids.indexOf(userId);
+      if (idx !== -1) ids.splice(idx, 1);
+    }
+    await setJSON('followed_users', ids);
+    showToast({ message: next ? 'Following!' : 'Unfollowed', type: 'success' });
+  }, [userId, isFollowing, showToast]);
 
   const loadProfile = useCallback(async () => {
     if (!userId) {
@@ -104,18 +156,8 @@ export default function UserProfileScreen() {
     setError(null);
 
     try {
-      // Load profile from DataProvider
       const profileData = await dataProvider.getPublicUserProfile(userId);
       setProfile(profileData);
-
-      // Try to load watchlist count (best-effort)
-      try {
-        const watchlist = await dataProvider.listWatchlist(userId);
-        setWatchlistCount(watchlist.length);
-      } catch {
-        // Watchlist may not be accessible for other users
-        setWatchlistCount(null);
-      }
     } catch (err: unknown) {
       logger.warn('[UserProfile] loadProfile error:', err);
       setError(err?.message || 'Failed to load profile');
@@ -128,17 +170,28 @@ export default function UserProfileScreen() {
     loadProfile();
   }, [loadProfile]);
 
+  // Derive badges from profile data
+  const profileBadges = useMemo(() => {
+    if (!profile) return [];
+    const stats = {
+      itemCount: profile.collectionCount ?? 0,
+      totalValue: profile.collectionValueEur ?? 0,
+      categoryCount: profile.interests?.length ?? 0,
+      scanCount: 0,
+      streakDays: 0,
+      feedbackCount: 0,
+      joinedDaysAgo: 0,
+    };
+    // Show up to 8 relevant badges (earned first, then locked)
+    const earned = ACHIEVEMENTS.filter((a) => a.condition(stats));
+    const locked = ACHIEVEMENTS.filter((a) => !a.condition(stats)).slice(0, Math.max(0, 8 - earned.length));
+    return [...earned.map((a) => ({ ...a, earned: true })), ...locked.map((a) => ({ ...a, earned: false }))].slice(0, 8);
+  }, [profile]);
+
   // Loading state
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={[styles.header, { backgroundColor: colors.card }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
-          <View style={{ width: 32 }} />
-        </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -149,15 +202,11 @@ export default function UserProfileScreen() {
   // Error / Not found state
   if (error || !profile) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={[styles.header, { backgroundColor: colors.card }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
-          <View style={{ width: 32 }} />
-        </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.centerContainer}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.floatingBack} accessibilityRole="button" accessibilityLabel="Go back">
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </AnimatedPressable>
           <Ionicons name="person-outline" size={48} color={colors.muted} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>
             {error || 'Collector not found'}
@@ -178,33 +227,30 @@ export default function UserProfileScreen() {
     );
   }
 
-  // Format collection value
-  const formattedValue = profile.collectionValueEur
-    ? `€${profile.collectionValueEur.toLocaleString()}`
-    : null;
-
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
-        <View style={{ width: 32 }} />
-      </View>
-
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Back button — scrolls with content */}
+        <AnimatedPressable
+          onPress={() => router.back()}
+          style={[styles.backRow]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
+          <Text style={[styles.backText, { color: colors.text }]}>Back</Text>
+        </AnimatedPressable>
+
         {/* ═══════════════════════════════════════════════════════════════════
-            A) Profile Header Card - Enhanced UI
+            A) Profile Header Card
         ═══════════════════════════════════════════════════════════════════ */}
         <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {/* Accent banner at top */}
-          <View style={[styles.profileBanner, { backgroundColor: colors.accent + '15' }]} />
+          <View style={[styles.profileBanner, { backgroundColor: colors.accent + '20' }]} />
 
           {/* Avatar with accent ring */}
           <View style={[styles.avatarRing, { borderColor: colors.accent + '40', backgroundColor: colors.card }]}>
@@ -216,8 +262,7 @@ export default function UserProfileScreen() {
               <Text style={[styles.displayName, { color: colors.text }]}>
                 {profile.displayName}
               </Text>
-              {/* Verified badge - shown for premium members */}
-              {profile.collectionCount && profile.collectionCount > 50 && (
+              {profile.collectionCount != null && profile.collectionCount > 50 && (
                 <View style={[styles.verifiedBadge, { backgroundColor: colors.accent }]}>
                   <Ionicons name="checkmark" size={10} color="#fff" />
                 </View>
@@ -245,8 +290,8 @@ export default function UserProfileScreen() {
             </View>
             <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.quickStat}>
-              <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.interests?.length || 0}</Text>
-              <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Interests</Text>
+              <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.interests?.length ?? 0}</Text>
+              <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Categories</Text>
             </View>
           </View>
 
@@ -255,7 +300,6 @@ export default function UserProfileScreen() {
             <AnimatedPressable
               style={[styles.ctaBtn, styles.ctaBtnPrimary, { backgroundColor: colors.accent }]}
               onPress={() => {
-                // Navigate to chat/new for connection request
                 router.push({
                   pathname: '/chat/new',
                   params: { toUserId: userId },
@@ -269,74 +313,72 @@ export default function UserProfileScreen() {
             </AnimatedPressable>
 
             <AnimatedPressable
-              style={[styles.ctaBtn, { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 }]}
-              onPress={() => {
-                // TODO: Follow functionality
-              }}
+              style={[
+                styles.ctaBtn,
+                {
+                  backgroundColor: isFollowing ? colors.accent + '20' : colors.background,
+                  borderColor: isFollowing ? colors.accent : colors.border,
+                  borderWidth: 1,
+                },
+              ]}
+              onPress={handleFollowToggle}
               accessibilityRole="button"
-              accessibilityLabel={`Follow ${profile.displayName}`}
+              accessibilityLabel={isFollowing ? `Unfollow ${profile.displayName}` : `Follow ${profile.displayName}`}
             >
-              <Ionicons name="person-add-outline" size={16} color={colors.text} />
-              <Text style={[styles.ctaBtnText, { color: colors.text }]}>Follow</Text>
+              <Ionicons
+                name={isFollowing ? 'person-remove-outline' : 'person-add-outline'}
+                size={16}
+                color={isFollowing ? colors.accent : colors.text}
+              />
+              <Text style={[styles.ctaBtnText, { color: isFollowing ? colors.accent : colors.text }]}>
+                {isFollowing ? 'Following' : 'Follow'}
+              </Text>
             </AnimatedPressable>
           </View>
         </View>
 
         {/* ═══════════════════════════════════════════════════════════════════
-            B) Stats Card (conditional - show if any stats available)
-        ═══════════════════════════════════════════════════════════════════ */}
-        {(profile.collectionCount !== null || watchlistCount !== null || formattedValue) && (
-          <SectionCard title="Collector Stats">
-            <View style={styles.statsGrid}>
-              {profile.collectionCount !== null && (
-                <StatBox label="Items" value={profile.collectionCount} />
-              )}
-              {watchlistCount !== null && (
-                <StatBox label="Watchlist" value={watchlistCount} />
-              )}
-              {formattedValue && (
-                <StatBox label="Value" value={formattedValue} />
-              )}
-            </View>
-          </SectionCard>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            C) Bio Card (conditional - show if bio exists)
+            B) Bio Card
         ═══════════════════════════════════════════════════════════════════ */}
         {profile.bio && (
-          <SectionCard title="About">
+          <SectionCard title="About" icon="person-outline">
             <Text style={[styles.bioText, { color: colors.text }]}>{profile.bio}</Text>
           </SectionCard>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
-            D) Interests Card (conditional - show if interests exist)
+            C) Badges Card — derived from achievements system
         ═══════════════════════════════════════════════════════════════════ */}
-        {profile.interests && profile.interests.length > 0 && (
-          <SectionCard title="Interests">
-            <View style={styles.interestsRow}>
-              {profile.interests.map((interest, idx) => (
-                <View
-                  key={idx}
-                  style={[styles.interestPill, { backgroundColor: colors.background, borderColor: colors.border }]}
-                >
-                  <Text style={[styles.interestText, { color: colors.text }]}>{interest}</Text>
-                </View>
+        {profileBadges.length > 0 && (
+          <SectionCard title="Badges" icon="ribbon-outline">
+            <View style={styles.badgesGrid}>
+              {profileBadges.map((badge) => (
+                <BadgeItem key={badge.id} achievement={badge} earned={badge.earned} />
               ))}
             </View>
           </SectionCard>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
-            E) Badges Card - Hidden (no badge data source yet)
+            D) Interests Card
         ═══════════════════════════════════════════════════════════════════ */}
-        {/* Badges section hidden - no DataProvider method for badges */}
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            F) Events Card - Hidden (no events-attending data source yet)
-        ═══════════════════════════════════════════════════════════════════ */}
-        {/* Events attending section hidden - no DataProvider method */}
+        {profile.interests && profile.interests.length > 0 && (
+          <SectionCard title="Interests" icon="heart-outline">
+            <View style={styles.interestsRow}>
+              {profile.interests.map((interest, idx) => (
+                <AnimatedPressable
+                  key={idx}
+                  style={[styles.interestPill, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '30' }]}
+                  onPress={() => router.push(`/categories/${encodeURIComponent(interest)}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Browse ${interest}`}
+                >
+                  <Text style={[styles.interestText, { color: colors.accent }]}>{interest}</Text>
+                </AnimatedPressable>
+              ))}
+            </View>
+          </SectionCard>
+        )}
 
         {/* Bottom spacing */}
         <View style={{ height: 32 }} />
@@ -352,20 +394,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
   scroll: {
     flex: 1,
   },
@@ -377,6 +405,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+  },
+  floatingBack: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    padding: 8,
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 12,
+    alignSelf: 'flex-start',
+    padding: 4,
+  },
+  backText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
   errorTitle: {
     fontSize: 18,
@@ -497,9 +543,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 8,
   },
-  ctaBtnPrimary: {
-    // background set inline
-  },
+  ctaBtnPrimary: {},
   ctaBtnText: {
     fontSize: 15,
     fontWeight: '600',
@@ -517,41 +561,47 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 16,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 12,
-  },
-
-  // Stats
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  statBox: {
-    flex: 1,
-    minWidth: 80,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  statLabel: {
-    fontSize: 11,
-    marginTop: 2,
   },
 
   // Bio
   bioText: {
     fontSize: 14,
     lineHeight: 20,
+  },
+
+  // Badges
+  badgesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  badgeItem: {
+    alignItems: 'center',
+    width: 72,
+  },
+  badgeIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  badgeLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 
   // Interests
@@ -570,4 +620,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
+
 });

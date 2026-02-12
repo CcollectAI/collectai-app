@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { CollectionLeaderboardEntry } from '@/services/collectorsClient';
+import { formatPrice } from '@/lib/format';
 
 type StatusTier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Whale';
 
@@ -74,7 +75,7 @@ export const CollectionStatusBadge: React.FC<Props> = ({ entry, compact }) => {
       <View style={styles.labelsCol}>
         <Text style={styles.tierLabel}>{tier.label}</Text>
         <Text style={styles.subtle}>
-          {entry.item_count ?? 0} items · {formatCurrency(entry.total_value)}
+          {entry.item_count ?? 0} items · {formatPrice(entry.total_value)}
         </Text>
       </View>
       <View
@@ -89,20 +90,6 @@ export const CollectionStatusBadge: React.FC<Props> = ({ entry, compact }) => {
       </View>
     </View>
   );
-};
-
-const formatCurrency = (v: number | null | undefined): string => {
-  if (v == null || Number.isNaN(v)) return '€0';
-  try {
-    return (
-      '€' +
-      Number(v).toLocaleString('de-DE', {
-        maximumFractionDigits: 0,
-      })
-    );
-  } catch {
-    return `€${v}`;
-  }
 };
 
 const styles = StyleSheet.create({

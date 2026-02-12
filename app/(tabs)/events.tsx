@@ -79,7 +79,7 @@ export default function EventsScreen() {
   } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 20 });
 
   useEffect(() => {
-    dataProvider.listFollowedCategories().then(setFollowedCategories).catch(() => {});
+    dataProvider.listFollowedCategories().then(setFollowedCategories).catch((err) => { logger.warn('[Events] Failed to load followed categories', err); });
   }, []);
 
   const now = new Date();

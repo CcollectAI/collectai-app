@@ -29,6 +29,7 @@ from app.config import (
     AWS_REGION,
     USER_UPLOADS_MAX_SIZE as MAX_UPLOAD_SIZE,
 )
+from app.errors import error_response
 from app.lib.image_optimizer import generate_blurhash, optimize_image
 
 router = APIRouter(prefix="/photos", tags=["photos"])
@@ -59,7 +60,7 @@ def _get_s3():
         except ImportError:
             logger.warning("[photo_upload] boto3 not installed — photo upload will not work")
             return None
-        except Exception as e:
+        except (RuntimeError, OSError) as e:
             logger.error(f"[photo_upload] Failed to init S3 client: {e}")
             return None
     return _s3_client
@@ -142,23 +143,25 @@ async def presign_upload(request: PresignUploadRequest):
     """
     # Validate content type
     if request.content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported content type: {request.content_type}. "
-                   f"Allowed: {', '.join(ALLOWED_CONTENT_TYPES.keys())}",
+        raise error_response(
+            400,
+            f"Unsupported content type: {request.content_type}. "
+            f"Allowed: {', '.join(ALLOWED_CONTENT_TYPES.keys())}",
+            code="VALIDATION_ERROR",
         )
 
     # Validate user_id and item_id are non-empty
     if not request.user_id.strip():
-        raise HTTPException(status_code=400, detail="user_id is required")
+        raise error_response(400, "user_id is required", code="VALIDATION_ERROR")
     if not request.item_id.strip():
-        raise HTTPException(status_code=400, detail="item_id is required")
+        raise error_response(400, "item_id is required", code="VALIDATION_ERROR")
 
     s3 = _get_s3()
     if s3 is None:
-        raise HTTPException(
-            status_code=503,
-            detail="S3 is not configured — photo upload is unavailable",
+        raise error_response(
+            503,
+            "S3 is not configured — photo upload is unavailable",
+            code="STORAGE_ERROR",
         )
 
     # Generate unique filename
@@ -167,6 +170,8 @@ async def presign_upload(request: PresignUploadRequest):
     photo_key = f"user-uploads/{request.user_id}/{request.item_id}/{filename}"
 
     try:
+        from botocore.exceptions import BotoCoreError, ClientError
+
         upload_url = s3.generate_presigned_url(
             "put_object",
             Params={
@@ -176,9 +181,9 @@ async def presign_upload(request: PresignUploadRequest):
             },
             ExpiresIn=PRESIGN_EXPIRY,
         )
-    except Exception as e:
+    except (BotoCoreError, ClientError) as e:
         logger.error("[photo_upload] Failed to generate presigned URL: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to generate upload URL")
+        raise error_response(500, "Failed to generate upload URL", code="STORAGE_ERROR")
 
     cdn_url = _public_url(photo_key)
 
@@ -212,17 +217,18 @@ async def upload_photo(
     """
     # Validate user_id and item_id
     if not user_id.strip():
-        raise HTTPException(status_code=400, detail="user_id is required")
+        raise error_response(400, "user_id is required", code="VALIDATION_ERROR")
     if not item_id.strip():
-        raise HTTPException(status_code=400, detail="item_id is required")
+        raise error_response(400, "item_id is required", code="VALIDATION_ERROR")
 
     # Validate content type
     content_type = file.content_type or ""
     if content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported content type: {content_type}. "
-                   f"Allowed: {', '.join(ALLOWED_CONTENT_TYPES.keys())}",
+        raise error_response(
+            400,
+            f"Unsupported content type: {content_type}. "
+            f"Allowed: {', '.join(ALLOWED_CONTENT_TYPES.keys())}",
+            code="VALIDATION_ERROR",
         )
 
     # Read file bytes
@@ -230,36 +236,38 @@ async def upload_photo(
     original_size = len(raw_bytes)
 
     if original_size > MAX_RAW_UPLOAD:
-        raise HTTPException(
-            status_code=413,
-            detail=f"File too large ({original_size} bytes). Maximum: {MAX_RAW_UPLOAD} bytes (10 MB)",
+        raise error_response(
+            413,
+            f"File too large ({original_size} bytes). Maximum: {MAX_RAW_UPLOAD} bytes (10 MB)",
+            code="VALIDATION_ERROR",
         )
 
     if original_size == 0:
-        raise HTTPException(status_code=400, detail="Empty file")
+        raise error_response(400, "Empty file", code="VALIDATION_ERROR")
 
     # Optimize image
     try:
         optimized_bytes, width, height = optimize_image(raw_bytes, max_edge=1200)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+        raise error_response(400, str(e), code="VALIDATION_ERROR")
+    except (OSError, IOError) as e:
         logger.error("[photo_upload] Image optimization failed: %s", e)
-        raise HTTPException(status_code=500, detail="Image optimization failed")
+        raise error_response(500, "Image optimization failed", code="STORAGE_ERROR")
 
     # Generate blurhash (non-blocking — runs on the original bytes for accuracy)
     try:
         blurhash = generate_blurhash(raw_bytes, x_components=4, y_components=4)
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         logger.warning("[photo_upload] Blurhash generation failed: %s", e)
         blurhash = "C:808080:0:0"
 
     # Upload optimized image to S3
     s3 = _get_s3()
     if s3 is None:
-        raise HTTPException(
-            status_code=503,
-            detail="S3 is not configured — photo upload is unavailable",
+        raise error_response(
+            503,
+            "S3 is not configured — photo upload is unavailable",
+            code="STORAGE_ERROR",
         )
 
     # Always store as JPEG since we convert during optimization
@@ -267,6 +275,8 @@ async def upload_photo(
     photo_key = f"user-uploads/{user_id}/{item_id}/{filename}"
 
     try:
+        from botocore.exceptions import BotoCoreError, ClientError
+
         s3.put_object(
             Bucket=S3_BUCKET,
             Key=photo_key,
@@ -274,9 +284,9 @@ async def upload_photo(
             ContentType="image/jpeg",
             CacheControl="public, max-age=31536000, immutable",
         )
-    except Exception as e:
+    except (BotoCoreError, ClientError) as e:
         logger.error("[photo_upload] S3 upload failed: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to upload photo to S3")
+        raise error_response(500, "Failed to upload photo to S3", code="STORAGE_ERROR")
 
     cdn_url = _public_url(photo_key)
 
@@ -308,30 +318,34 @@ async def delete_photo(photo_key: str, user_id: str = Query(..., description="Us
     """
     # Security: reject path traversal attempts
     if ".." in photo_key:
-        raise HTTPException(status_code=400, detail="Invalid photo key")
+        raise error_response(400, "Invalid photo key", code="VALIDATION_ERROR")
 
     # Security: verify the photo belongs to the requesting user
     expected_prefix = f"user-uploads/{user_id}/"
     if not photo_key.startswith(expected_prefix):
-        raise HTTPException(
-            status_code=403,
-            detail="You can only delete your own photos",
+        raise error_response(
+            403,
+            "You can only delete your own photos",
+            code="AUTH_ERROR",
         )
 
     s3 = _get_s3()
     if s3 is None:
-        raise HTTPException(
-            status_code=503,
-            detail="S3 is not configured — photo deletion is unavailable",
+        raise error_response(
+            503,
+            "S3 is not configured — photo deletion is unavailable",
+            code="STORAGE_ERROR",
         )
 
     try:
+        from botocore.exceptions import BotoCoreError, ClientError
+
         s3.delete_object(Bucket=S3_BUCKET, Key=photo_key)
         logger.info("[photo_upload] Deleted photo: key=%s, user=%s", photo_key, user_id)
         return DeletePhotoResponse(success=True, message="Photo deleted successfully")
-    except Exception as e:
+    except (BotoCoreError, ClientError) as e:
         logger.error("[photo_upload] Failed to delete photo: key=%s, error=%s", photo_key, e)
-        raise HTTPException(status_code=500, detail="Failed to delete photo")
+        raise error_response(500, "Failed to delete photo", code="STORAGE_ERROR")
 
 
 @router.get("/list/{item_id}", response_model=PhotoListResponse)
@@ -342,20 +356,23 @@ async def list_photos(item_id: str, user_id: str = Query(..., description="User 
     Uses S3 list_objects_v2 with prefix `user-uploads/{user_id}/{item_id}/`.
     """
     if not user_id.strip():
-        raise HTTPException(status_code=400, detail="user_id is required")
+        raise error_response(400, "user_id is required", code="VALIDATION_ERROR")
     if not item_id.strip():
-        raise HTTPException(status_code=400, detail="item_id is required")
+        raise error_response(400, "item_id is required", code="VALIDATION_ERROR")
 
     s3 = _get_s3()
     if s3 is None:
-        raise HTTPException(
-            status_code=503,
-            detail="S3 is not configured — photo listing is unavailable",
+        raise error_response(
+            503,
+            "S3 is not configured — photo listing is unavailable",
+            code="STORAGE_ERROR",
         )
 
     prefix = f"user-uploads/{user_id}/{item_id}/"
 
     try:
+        from botocore.exceptions import BotoCoreError, ClientError
+
         response = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=prefix)
         photos: list[PhotoInfo] = []
 
@@ -372,6 +389,6 @@ async def list_photos(item_id: str, user_id: str = Query(..., description="User 
 
         return PhotoListResponse(photos=photos, item_id=item_id)
 
-    except Exception as e:
+    except (BotoCoreError, ClientError) as e:
         logger.error("[photo_upload] Failed to list photos: user=%s, item=%s, error=%s", user_id, item_id, e)
-        raise HTTPException(status_code=500, detail="Failed to list photos")
+        raise error_response(500, "Failed to list photos", code="STORAGE_ERROR")

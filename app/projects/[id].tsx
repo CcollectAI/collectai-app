@@ -13,6 +13,8 @@ import {
   ActivityIndicator,
   Switch,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -199,6 +201,11 @@ export default function ProjectDetailScreen() {
     <>
       <Stack.Screen options={{ headerTitle: project.title }} />
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
+        >
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -449,6 +456,7 @@ export default function ProjectDetailScreen() {
 
           <View style={{ height: 32 }} />
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </>
   );

@@ -63,16 +63,16 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function get(path: string) {
+async function get<T = unknown>(path: string): Promise<T> {
   const auth = await getAuthHeaders();
   const res = await fetchWithRetry(`${API_BASE}${path}`, {
     headers: { ...auth },
   });
   if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
-async function post(path: string, body: Record<string, unknown> = {}) {
+async function post<T = unknown>(path: string, body: Record<string, unknown> = {}): Promise<T> {
   const auth = await getAuthHeaders();
   const res = await fetchWithRetry(`${API_BASE}${path}`, {
     method: "POST",
@@ -80,20 +80,31 @@ async function post(path: string, body: Record<string, unknown> = {}) {
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`POST ${path} failed (${res.status})`);
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
-async function del(path: string) {
+async function del<T = unknown>(path: string): Promise<T> {
   const auth = await getAuthHeaders();
   const res = await fetchWithRetry(`${API_BASE}${path}`, {
     method: "DELETE",
     headers: { ...auth },
   });
   if (!res.ok) throw new Error(`DELETE ${path} failed (${res.status})`);
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
-async function postMultipart(path: string, formData: FormData) {
+async function patch<T = unknown>(path: string, body: Record<string, unknown> = {}): Promise<T> {
+  const auth = await getAuthHeaders();
+  const res = await fetchWithRetry(`${API_BASE}${path}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...auth },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`PATCH ${path} failed (${res.status})`);
+  return res.json() as Promise<T>;
+}
+
+async function postMultipart<T = unknown>(path: string, formData: FormData): Promise<T> {
   const auth = await getAuthHeaders();
   // Do NOT set Content-Type — fetch will auto-set multipart/form-data with boundary
   const res = await fetchWithRetry(`${API_BASE}${path}`, {
@@ -102,7 +113,7 @@ async function postMultipart(path: string, formData: FormData) {
     body: formData,
   });
   if (!res.ok) throw new Error(`POST ${path} failed (${res.status})`);
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
 /** Response from the server-side optimized photo upload endpoint */
@@ -169,16 +180,16 @@ export const collectorsApi = {
     item_id: string;
     category?: string;
     attributes?: Record<string, unknown>;
-  }) => post("/predict_v2", payload) as Promise<{
+  }) => post<{
     q10: number;
     q50: number;
     q90: number;
     asof: string;
-  }>,
+  }>("/predict_v2", payload),
 
   // Price evidence (for PriceExplanationSheet)
   getPriceEvidence: (itemId: string) =>
-    get(`/predict/evidence/${encodeURIComponent(itemId)}`) as Promise<{
+    get<{
       explanation: string | null;
       evidence_summary: {
         sources: Array<{ source: string; count: number; avg_price: number; date_range?: string }>;
@@ -186,7 +197,7 @@ export const collectorsApi = {
       } | null;
       evidence_hit_ids: string[];
       prediction_at: string | null;
-    }>,
+    }>(`/predict/evidence/${encodeURIComponent(itemId)}`),
 
   // Photo upload — server-side optimized (preferred)
   uploadPhoto: (itemId: string, userId: string, uri: string, mimeType: string) => {
@@ -197,26 +208,26 @@ export const collectorsApi = {
     formData.append("file", { uri, name: filename, type: mimeType } as any);
     formData.append("item_id", itemId);
     formData.append("user_id", userId);
-    return postMultipart("/photos/upload", formData) as Promise<ServerUploadResponse>;
+    return postMultipart<ServerUploadResponse>("/photos/upload", formData);
   },
 
   // Photo upload — presigned URL fallback (client-side upload)
   getPresignedUploadUrl: (itemId: string, contentType: string, userId: string) =>
-    post("/photos/presign-upload", {
-      item_id: itemId,
-      content_type: contentType,
-      user_id: userId,
-    }) as Promise<{
+    post<{
       upload_url: string;
       photo_key: string;
       cdn_url: string;
-    }>,
+    }>("/photos/presign-upload", {
+      item_id: itemId,
+      content_type: contentType,
+      user_id: userId,
+    }),
 
   deletePhoto: (photoKey: string, userId: string) =>
     del(`/photos/${photoKey}?user_id=${encodeURIComponent(userId)}`),
 
   listItemPhotos: (itemId: string, userId: string) =>
-    get(`/photos/list/${itemId}?user_id=${encodeURIComponent(userId)}`) as Promise<{
+    get<{
       photos: Array<{
         photo_key: string;
         cdn_url: string;
@@ -224,11 +235,11 @@ export const collectorsApi = {
         last_modified?: string;
       }>;
       item_id: string;
-    }>,
+    }>(`/photos/list/${itemId}?user_id=${encodeURIComponent(userId)}`),
 
   // Provenance
   getProvenance: (itemId: string) =>
-    get(`/provenance/items/${encodeURIComponent(itemId)}`) as Promise<{
+    get<{
       item_id: string;
       events: Array<{
         id: string;
@@ -240,11 +251,11 @@ export const collectorsApi = {
       }>;
       authenticity_signals: string[];
       created_at: string | null;
-    }>,
+    }>(`/provenance/items/${encodeURIComponent(itemId)}`),
 
   // Alert trigger history
   getAlertTriggerHistory: () =>
-    get("/alerts/trigger-history") as Promise<{
+    get<{
       triggers: Array<{
         id: string;
         alert_id: string | null;
@@ -256,14 +267,14 @@ export const collectorsApi = {
         created_at: string;
       }>;
       unread_count: number;
-    }>,
+    }>("/alerts/trigger-history"),
 
   markTriggerRead: (triggerId: string) =>
     post(`/alerts/trigger-history/${encodeURIComponent(triggerId)}/read`),
 
   // Dossier
   getDossier: (itemId: string) =>
-    get(`/dossier/${encodeURIComponent(itemId)}`) as Promise<{
+    get<{
       item_id: string;
       generated_at: string;
       identity: Record<string, unknown>;
@@ -275,30 +286,37 @@ export const collectorsApi = {
       collections: string[];
       authenticity_signals: string[];
       completeness_score: number;
-    }>,
+    }>(`/dossier/${encodeURIComponent(itemId)}`),
 
   getDossierSummary: (itemId: string) =>
-    get(`/dossier/${encodeURIComponent(itemId)}/summary`) as Promise<{
+    get<{
       item_id: string;
       identity: Record<string, unknown>;
       valuation: Record<string, unknown>;
       completeness_score: number;
-    }>,
+    }>(`/dossier/${encodeURIComponent(itemId)}/summary`),
 
   getDossierExportUrl: (itemId: string) =>
     `${API_BASE}/dossier/${encodeURIComponent(itemId)}/export`,
 
-  // Marketplace aggregation
-  marketplaceSearch: (query: string, category?: string, limit = 20) =>
-    post("/marketplace/search", { query, category, limit }),
+  // FX rates (public, no auth)
+  getFxRates: () => get<{
+    base: string;
+    rates: Record<string, number>;
+    rates_from_eur: Record<string, number>;
+  }>("/fx/rates"),
 
-  marketplaceComps: (itemRef: string, category?: string) =>
-    post(`/marketplace/comps/${encodeURIComponent(itemRef)}`, { category }),
+  // Marketplace aggregation
+  marketplaceSearch: (query: string, category?: string, limit = 20, region?: string) =>
+    post("/marketplace/search", { query, category, limit, region }),
+
+  marketplaceComps: (itemRef: string, category?: string, region?: string) =>
+    post(`/marketplace/comps/${encodeURIComponent(itemRef)}`, { category, region }),
 
   // Taxonomy
   getTaxonomy: () => get("/taxonomy/current"),
   getTaxonomyCategories: () =>
-    get("/taxonomy/categories") as Promise<{
+    get<{
       version: string;
       categories: Array<{
         category_id: string;
@@ -306,17 +324,17 @@ export const collectorsApi = {
         subtypes: string[];
         collections: string[];
       }>;
-    }>,
+    }>("/taxonomy/categories"),
 
   // URL Import (via Firecrawl)
   processIntakeUrl: (
     url: string,
     hints?: { category?: string; name?: string; condition?: string },
   ) =>
-    post("/intake/url", {
+    post<IntakeResultResponse>("/intake/url", {
       url,
       ...(hints ?? {}),
-    }) as Promise<IntakeResultResponse>,
+    }),
 
   // Intake Agent
   processIntake: (
@@ -324,11 +342,11 @@ export const collectorsApi = {
     barcodeType?: string,
     hints?: Record<string, unknown>,
   ) =>
-    post("/intake/barcode-only", {
+    post<IntakeResultResponse>("/intake/barcode-only", {
       barcode: barcode ?? "",
       barcode_type: barcodeType,
       ...(hints ?? {}),
-    }) as Promise<IntakeResultResponse>,
+    }),
 
   // Save intake result to collection
   intakeSave: (payload: {
@@ -342,16 +360,16 @@ export const collectorsApi = {
     barcode?: string;
     estimated_price?: number;
   }) =>
-    post("/intake/save", payload) as Promise<{
+    post<{
       id: string;
       title: string;
       category: string | null;
       created: boolean;
-    }>,
+    }>("/intake/save", payload),
 
   // Price alerts
   getMyAlerts: () =>
-    get("/alerts/mine") as Promise<{
+    get<{
       alerts: Array<{
         id: string;
         user_id: string;
@@ -363,7 +381,7 @@ export const collectorsApi = {
         active: boolean;
         created_at: string;
       }>;
-    }>,
+    }>("/alerts/mine"),
 
   createAlert: (payload: {
     item_id?: string;
@@ -373,12 +391,12 @@ export const collectorsApi = {
     direction?: string;
     metadata?: Record<string, unknown>;
   }) =>
-    post("/alerts/mine", payload) as Promise<{
+    post<{
       id: string;
       trigger_type: string;
       threshold_value: number | null;
       active: boolean;
-    }>,
+    }>("/alerts/mine", payload),
 
   deleteAlert: (alertId: string) =>
     del(`/alerts/mine/${encodeURIComponent(alertId)}`),
@@ -415,6 +433,62 @@ export const collectorsApi = {
       clearTimeout(timer);
     }
   },
+
+  // ── Smart Deal Agent ─────────────────────────────────────────────────────
+
+  // Mandates
+  createMandate: (payload: {
+    name: string;
+    search_query: string;
+    category?: string | null;
+    condition_filter?: string[];
+    min_trust_score?: number;
+    max_price: number;
+    max_total_budget?: number | null;
+    cooldown_hours?: number;
+    allowed_sources?: string[];
+    region?: string | null;
+    expires_at?: string | null;
+  }) => post("/purchase/mandates", payload as Record<string, unknown>),
+
+  listMandates: (limit = 20, offset = 0) =>
+    get(`/purchase/mandates?limit=${limit}&offset=${offset}`),
+
+  getMandate: (id: string) =>
+    get(`/purchase/mandates/${encodeURIComponent(id)}`),
+
+  updateMandate: (id: string, payload: Record<string, unknown>) =>
+    patch(`/purchase/mandates/${encodeURIComponent(id)}`, payload),
+
+  deleteMandate: (id: string) =>
+    del(`/purchase/mandates/${encodeURIComponent(id)}`),
+
+  // Deals
+  listDeals: (params?: { status?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.offset) qs.set("offset", String(params.offset));
+    const query = qs.toString();
+    return get(`/purchase/deals${query ? `?${query}` : ""}`);
+  },
+
+  getDeal: (id: string) =>
+    get(`/purchase/deals/${encodeURIComponent(id)}`),
+
+  clickDeal: (id: string) =>
+    post(`/purchase/deals/${encodeURIComponent(id)}/click`),
+
+  confirmDeal: (id: string, confirmedPrice?: number) =>
+    post(`/purchase/deals/${encodeURIComponent(id)}/confirm`, {
+      confirmed_price: confirmedPrice,
+    }),
+
+  declineDeal: (id: string) =>
+    post(`/purchase/deals/${encodeURIComponent(id)}/decline`),
+
+  // Stats
+  getDealStats: () => get("/purchase/stats"),
 };
 
 // Intake result type returned by the intake agent endpoints

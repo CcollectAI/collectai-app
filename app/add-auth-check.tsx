@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,6 +15,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { Stack } from 'expo-router';
 
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { formatPrice } from '@/lib/format';
+import type { Currency } from '@/lib/settings';
 import logger from '@/utils/logger';
 import { dataProvider, type QuickScanResult } from '@/data';
 
@@ -41,23 +44,6 @@ function parsePrice(text: string): number | null {
   const value = Number(cleaned);
   if (!Number.isFinite(value) || value <= 0) return null;
   return value;
-}
-
-function formatCurrency(
-  value: number | null | undefined,
-  currency: string | null | undefined,
-): string {
-  if (!value || !Number.isFinite(value)) return '—';
-  const cur = currency ?? 'EUR';
-  try {
-    return new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: cur,
-      maximumFractionDigits: 0,
-    }).format(value);
-  } catch {
-    return `${value.toFixed(0)} ${cur}`;
-  }
 }
 
 function formatPct(
@@ -375,28 +361,16 @@ export default function AddAuthCheckScreen() {
                   marginBottom: spacing.sm,
                 }}
               >
-                <View
+                <Image
+                  source={{ uri: previewUri }}
                   style={{
                     height: 180,
+                    width: '100%',
                     backgroundColor: colors.surface,
-                    justifyContent: 'center',
-                    alignItems: 'center',
                   }}
-                >
-                  {/* We avoid Image component imports to keep this file self-contained.
-                     Replace with <Image> if you prefer a real preview. */}
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.mutedText,
-                      paddingHorizontal: spacing.sm,
-                      textAlign: 'center',
-                    }}
-                  >
-                    Photo captured. (Preview hidden in this build to
-                    keep dependencies minimal.)
-                  </Text>
-                </View>
+                  resizeMode="cover"
+                  accessibilityLabel="Captured photo preview"
+                />
               </View>
             ) : null}
             <TouchableOpacity
@@ -618,11 +592,11 @@ export default function AddAuthCheckScreen() {
                     marginBottom: 2,
                   }}
                 >
-                  {formatCurrency(
+                  {formatPrice(
                     analysis?.fairValue ??
                       prediction?.estimatedMid ??
                       null,
-                    currency,
+                    (currency ?? 'EUR') as Currency,
                   )}
                 </Text>
                 {analysis?.diffAbs != null &&
@@ -633,9 +607,9 @@ export default function AddAuthCheckScreen() {
                         color: colors.mutedText,
                       }}
                     >
-                      Seller is {formatCurrency(
+                      Seller is {formatPrice(
                         Math.abs(analysis.diffAbs),
-                        currency,
+                        (currency ?? 'EUR') as Currency,
                       )}{' '}
                       {analysis.diffAbs > 0 ? 'above' : 'below'} our
                       estimate ({formatPct(analysis.diffPct)}).

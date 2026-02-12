@@ -131,7 +131,11 @@ export default function AlertsScreen() {
       setTriggersError(null);
       const historyData = await collectorsApi
         .getAlertTriggerHistory()
-        .catch(() => ({ triggers: [], unread_count: 0 }));
+        .catch((err) => {
+          logger.warn('[Alerts] Failed to load triggers', err);
+          setTriggersError('Could not load alerts. Pull to refresh.');
+          return { triggers: [], unread_count: 0 };
+        });
       setTriggerHistory(
         historyData.triggers.map((t) => ({
           id: t.id,

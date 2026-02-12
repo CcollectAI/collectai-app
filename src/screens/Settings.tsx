@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Alert, Text, StyleSheet, Switch, ActivityIndicator } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { supabase } from "@/lib/supabase";
-import ActionTile from '@/components/ActionTile';
 import { AccessibilitySettings } from '@/components/AccessibilitySettings';
 import { AlertSettings } from '@/components/AlertSettings';
 import { featureFlags } from '@/config/featureFlags';
@@ -10,6 +9,7 @@ import { DEFAULT_ALERT_PREFERENCES, AlertPreferences } from '@/types/insights';
 import { useSettings } from '@/lib/settings';
 import { Ionicons } from '@expo/vector-icons';
 import { logger } from '@/lib/logger';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 type PrivacySettings = {
   showCollectionValue: boolean;
@@ -67,17 +67,13 @@ export default function Settings() {
     loadPrivacySettings();
   }, []);
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) Alert.alert('Sign out error', error.message);
-  };
-
   const handleAlertPrefsUpdate = (prefs: AlertPreferences) => {
     setAlertPrefs(prefs);
     // TODO: Persist to backend
   };
 
   const updatePrivacy = async (key: keyof PrivacySettings, value: boolean) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     const prevPrivacy = { ...privacy };
     setPrivacy((prev) => ({ ...prev, [key]: value }));
     setSavingPrivacy(true);
@@ -126,19 +122,6 @@ export default function Settings() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
     >
-      {/* Accessibility Section */}
-      {featureFlags.FEATURE_ACCESSIBILITY_ENHANCEMENTS && (
-        <AccessibilitySettings />
-      )}
-
-      {/* Alerts Section */}
-      {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
-        <AlertSettings
-          preferences={alertPrefs}
-          onUpdate={handleAlertPrefsUpdate}
-        />
-      )}
-
       {/* Privacy Section */}
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.sectionHeader}>
@@ -228,12 +211,34 @@ export default function Settings() {
 
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Dark mode</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Switch between light and dark theme</Text>
+          </View>
+          <Switch
+            value={settings.isDark}
+            onValueChange={(v) => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              updateSettings({ isDark: v });
+            }}
+            trackColor={{ false: colors.border, true: colors.accent }}
+            thumbColor="#FFFFFF"
+            accessibilityLabel="Dark mode"
+          />
+        </View>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
             <Text style={[styles.settingLabel, { color: colors.text }]}>Haptic feedback</Text>
             <Text style={[styles.settingHint, { color: colors.muted }]}>Vibration feedback for interactions</Text>
           </View>
           <Switch
             value={settings.hapticsEnabled}
-            onValueChange={(v) => updateSettings({ hapticsEnabled: v })}
+            onValueChange={(v) => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: true });
+              updateSettings({ hapticsEnabled: v });
+            }}
             trackColor={{ false: colors.border, true: colors.accent }}
             thumbColor="#FFFFFF"
             accessibilityLabel="Haptic feedback"
@@ -249,7 +254,10 @@ export default function Settings() {
           </View>
           <Switch
             value={settings.animationsEnabled}
-            onValueChange={(v) => updateSettings({ animationsEnabled: v })}
+            onValueChange={(v) => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              updateSettings({ animationsEnabled: v });
+            }}
             trackColor={{ false: colors.border, true: colors.accent }}
             thumbColor="#FFFFFF"
             accessibilityLabel="Animations"
@@ -257,19 +265,19 @@ export default function Settings() {
         </View>
       </View>
 
-      {/* Account Section */}
-      <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="person-outline" size={18} color={colors.accent} />
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
-        </View>
-        <ActionTile
-          title="Log Out"
-          subtitle="Sign out of your account"
-          icon="log-out-outline"
-          onPress={signOut}
+      {/* Accessibility Section */}
+      {featureFlags.FEATURE_ACCESSIBILITY_ENHANCEMENTS && (
+        <AccessibilitySettings />
+      )}
+
+      {/* Alerts Section */}
+      {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
+        <AlertSettings
+          preferences={alertPrefs}
+          onUpdate={handleAlertPrefsUpdate}
         />
-      </View>
+      )}
+
     </ScrollView>
   );
 }

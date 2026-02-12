@@ -315,14 +315,20 @@ async def generate_dossier(
             """,
             search_key,
         )
+        from app.lib.affiliate import build_affiliate_url
+
         for row in mh_rows:
+            raw_url = row.get("url") or ""
+            source = row.get("provider") or ""
+            aff_url, _aff_source = build_affiliate_url(raw_url, source)
             market_comps.append({
                 "title": row["title"],
                 "price": float(row["price"]) if row["price"] is not None else None,
                 "currency": row.get("currency", "EUR"),
-                "source": row.get("provider"),
+                "source": source,
                 "sold_date": _ts(row.get("ended_at")),
-                "url": row.get("url"),
+                "url": raw_url,
+                "affiliate_url": aff_url if aff_url != raw_url else None,
                 "condition": row.get("condition"),
             })
     except Exception as e:

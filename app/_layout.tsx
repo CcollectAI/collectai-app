@@ -3,6 +3,7 @@ import { View, Pressable } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SettingsProvider } from "@/lib/settings";
+import { ToastProvider } from "@/components/Toast";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -99,6 +100,9 @@ function RootStack() {
       <Stack.Screen name="quickscan" options={iconOnlyHeader} />
       <Stack.Screen name="add-manual" options={iconOnlyHeader} />
       <Stack.Screen name="events/[eventId]" options={iconOnlyHeader} />
+      <Stack.Screen name="purchase/index" options={iconOnlyHeader} />
+      <Stack.Screen name="purchase/create-mandate" options={iconOnlyHeader} />
+      <Stack.Screen name="purchase/deal/[dealId]" options={iconOnlyHeader} />
     </Stack>
   );
 }
@@ -107,7 +111,9 @@ function RootLayout() {
   return (
     <ErrorBoundary>
       <SettingsProvider>
-        <RootStack />
+        <ToastProvider>
+          <RootStack />
+        </ToastProvider>
       </SettingsProvider>
     </ErrorBoundary>
   );

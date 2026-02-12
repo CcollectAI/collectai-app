@@ -608,9 +608,10 @@ export interface CollectionLeaderboardEntry {
  * or a bare array.
  */
 export async function getCollectionsLeaderboard(): Promise<CollectionLeaderboardEntry[]> {
-  const res = await client.get('/portfolio/leaderboard');
-  const data = res.data ?? [];
+  const data = await request<Record<string, unknown> | CollectionLeaderboardEntry[]>(
+    '/portfolio/leaderboard',
+  );
   const raw =
-    (data && (data.leaderboard || data.items || data.rows || data)) ?? [];
-  return raw as CollectionLeaderboardEntry[];
+    (data && ((data as Record<string, unknown>).leaderboard || (data as Record<string, unknown>).items || (data as Record<string, unknown>).rows || data)) ?? [];
+  return (Array.isArray(raw) ? raw : []) as CollectionLeaderboardEntry[];
 }

@@ -185,7 +185,9 @@ class TestFeedbackSubmitWithDB:
                 "value": "10.00",
             })
         assert r.status_code == 400
-        assert "Invalid item_id" in r.json()["detail"]
+        body = r.json()
+        detail = body.get("detail", body)
+        assert "Invalid item_id" in (detail if isinstance(detail, str) else str(detail))
 
     def test_submit_with_db_error_500(self):
         """Database errors should return 500."""
@@ -330,7 +332,8 @@ class TestCorrectionSubmitWithDB:
                 "corrected_price": 75.50,
             })
         assert r.status_code == 404
-        assert "not found" in r.json()["detail"].lower()
+        detail = r.json().get("detail", "")
+        assert "not found" in (detail.lower() if isinstance(detail, str) else str(detail).lower())
 
     def test_correction_with_db_no_fields_400(self):
         """When no correction fields are provided (only item_id), return 400."""
@@ -340,7 +343,8 @@ class TestCorrectionSubmitWithDB:
                 "item_id": VALID_ITEM_ID,
             })
         assert r.status_code == 400
-        assert "No correction fields" in r.json()["detail"]
+        detail = r.json().get("detail", "")
+        assert "No correction fields" in (detail if isinstance(detail, str) else str(detail))
 
     def test_correction_with_db_invalid_uuid_400(self):
         """Non-UUID item_id should return 400 when DB is available."""

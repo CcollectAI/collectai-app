@@ -22,7 +22,7 @@ from app.routers.vision_predict_log import router as vision_predict_log_router
 from fastapi import APIRouter, FastAPI, Depends, Header, HTTPException, Request, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
-from app.auth import get_current_user_id
+from app.auth import get_current_user_id, require_ops_key
 from app.config import (
     SERVICE_VERSION,
     SENTRY_DSN,
@@ -32,6 +32,7 @@ from app.config import (
     SIGNALS_BASE_URL,
     DB_ENABLED,
     MONITOR_ENABLED,
+    DEAL_DISCOVERY_ENABLED,
     DEBUG,
 )
 from app.middleware_stack import install_middlewares
@@ -54,6 +55,7 @@ from app.routes.spool_ops import router as spool_ops_router
 from app.routes.manifests import router as manifests_router
 from app.routes.ops import router as ops_router
 from app.routes.marketplace import router as marketplace_router
+from app.routes.user_settings_router import router as user_settings_router
 
 try:
     import sentry_sdk
@@ -189,6 +191,11 @@ async def version():
 async def _startup():
     import asyncio as _asyncio
     import os, logging
+
+    # R15-1 + R15-2: Validate config (DEV_MODE guard + required keys)
+    from app.config import validate_config
+    validate_config()
+
     # Offline mode: skip DB connect entirely
     if not DB_ENABLED:
         logging.getLogger("uvicorn").info("[startup] DB disabled; skipping pool connect.")
@@ -211,6 +218,15 @@ async def _startup():
             logging.getLogger("uvicorn").info("[startup] Price monitor scheduler started as background task")
         except Exception as e:
             logging.getLogger("uvicorn").warning("[startup] Failed to start price monitor: %s", e)
+
+    # Start deal discovery scheduler as background task if enabled
+    if DEAL_DISCOVERY_ENABLED:
+        try:
+            from workers.deal_discovery_scheduler import scheduler_loop as deal_scheduler_loop
+            _asyncio.create_task(deal_scheduler_loop())
+            logging.getLogger("uvicorn").info("[startup] Deal discovery scheduler started as background task")
+        except Exception as e:
+            logging.getLogger("uvicorn").warning("[startup] Failed to start deal discovery: %s", e)
 @app.on_event("shutdown")
 async def _shutdown():
     await close_pool()
@@ -255,7 +271,10 @@ from app.features import notification_router
 from app.agents.marketplace_router import router as marketplace_agg_router
 from app.agents.dossier_router import router as dossier_router
 from app.agents.intake_router import router as intake_router
+from app.agents.purchase_router import router as purchase_router
 from app.features.predict_router import router as predict_router
+from app.routes.fx_router import router as fx_router
+from app.routes.pipeline_status_router import router as pipeline_status_router
 
 app.include_router(items_export_router.router)
 
@@ -286,8 +305,20 @@ app.include_router(dossier_router)
 # Intake agent router (unified barcode + vision + taxonomy)
 app.include_router(intake_router)
 
+# Smart Deal Agent purchase router
+app.include_router(purchase_router)
+
 # Price prediction evidence router
 app.include_router(predict_router)
+
+# Live FX rates router (public, no auth)
+app.include_router(fx_router)
+
+# User settings router
+app.include_router(user_settings_router)
+
+# Pipeline health/status router (public, no auth)
+app.include_router(pipeline_status_router)
 
 # ---------------------------------------------------------------------------
 # API v1 aliases - all feature routers also available under /v1 prefix
@@ -312,7 +343,11 @@ _v1.include_router(notification_router.router)
 _v1.include_router(marketplace_agg_router)
 _v1.include_router(dossier_router)
 _v1.include_router(intake_router)
+_v1.include_router(purchase_router)
 _v1.include_router(predict_router)
+_v1.include_router(fx_router)
+_v1.include_router(user_settings_router)
+_v1.include_router(pipeline_status_router)
 app.include_router(_v1)
 
 class QuickScanRequest(BaseModel):
@@ -526,7 +561,7 @@ async def portfolio_summary():
 
 
 @app.get("/ops/status")
-async def ops_status():
+async def ops_status(_: bool = Depends(require_ops_key)):
     """Lightweight ops status for frontend + probes.
 
     Kept deliberately simple: if this returns 200, the app + DB wiring are considered 'up enough'
@@ -540,17 +575,24 @@ async def ops_status():
 
 
 @app.get("/ops/worker-status")
-async def ops_worker_status():
+async def ops_worker_status(_: bool = Depends(require_ops_key)):
     """Return health status of background workers."""
     from app.worker_registry import get_status
     return get_status()
 
 
 @app.get("/ops/cache")
-async def ops_cache():
+async def ops_cache(_: bool = Depends(require_ops_key)):
     """Return in-memory cache hit/miss stats for monitoring."""
     from app.cache import cache_stats
     return cache_stats()
+
+
+@app.get("/ops/circuits")
+async def ops_circuits(_: bool = Depends(require_ops_key)):
+    """Return circuit breaker states for external APIs."""
+    from workers.circuit_breaker import all_circuit_status
+    return all_circuit_status()
 
 # -----------------------------------------
 # Twitch routes

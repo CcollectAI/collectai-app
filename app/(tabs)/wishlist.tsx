@@ -22,26 +22,15 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useSession } from '@/hooks/useSession';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { formatPrice } from '@/lib/format';
 import * as Haptics from 'expo-haptics';
 import logger from '@/utils/logger';
 
 // Pull from single source of truth — all 36 categories + "Other"
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 const CATEGORIES = [...ALL_CATS.map((c) => c.name), 'Other'];
-
-function formatCurrency(value: number | null): string {
-  if (value === null || value === undefined) return '—';
-  try {
-    return new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(value);
-  } catch {
-    return `€${value}`;
-  }
-}
 
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '';
@@ -52,6 +41,7 @@ function formatDate(dateStr: string | undefined): string {
 export default function WatchlistTabScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { user } = useSession();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [items, setItems] = useState<WatchlistItem[]>([]);
@@ -79,7 +69,7 @@ export default function WatchlistTabScreen() {
 
   const loadItems = useCallback(async () => {
     try {
-      const data = await dataProvider.listWatchlist('current-user');
+      const data = await dataProvider.listWatchlist(user?.id ?? 'current-user');
       setItems(data);
     } catch (err) {
       logger.warn('[Watchlist] loadItems error:', err);
@@ -87,7 +77,7 @@ export default function WatchlistTabScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     loadItems();
@@ -270,7 +260,7 @@ export default function WatchlistTabScreen() {
           )}
           {item.targetPrice !== null && (
             <Text style={[styles.targetPrice, { color: colors.text }]}>
-              Target: {formatCurrency(item.targetPrice)}
+              Target: {formatPrice(item.targetPrice)}
             </Text>
           )}
         </View>
