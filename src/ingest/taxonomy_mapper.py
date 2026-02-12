@@ -3,11 +3,27 @@ Taxonomy Mapper for ingest pipeline.
 
 Maps raw category strings to canonical category_id/subtype_id.
 Stores taxonomy_version on every mapping for safe remapping later.
+
+Supports loading patterns from the taxonomy_registry table via
+load_from_registry(), with fallback to hardcoded patterns.
 """
 
+from __future__ import annotations
+
+import json
+import logging
 import re
-from typing import Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
 from .types import RawObservation, TAXONOMY_VERSION
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Registry cache — populated by load_from_registry(), used by map_category()
+# ---------------------------------------------------------------------------
+_registry_cache: dict[str, Any] | None = None
+_registry_version: str | None = None
 
 # Category mapping rules (v1.0)
 # Add new categories here; when taxonomy changes, increment TAXONOMY_VERSION in types.py

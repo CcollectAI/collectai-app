@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider } from '@/data';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { logger } from '@/lib/logger';
 
 type Props = {
   /** Icon color, defaults to navy */
@@ -36,7 +37,7 @@ export const InboxHeaderButton: React.FC<Props> = ({
           setUnreadCount(count);
         }
       } catch (err) {
-        console.warn('[InboxHeaderButton] Failed to fetch unread count:', err);
+        logger.warn('[InboxHeaderButton] Failed to fetch unread count:', err);
       }
     };
 

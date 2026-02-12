@@ -86,6 +86,8 @@ export const AddImportCard: React.FC<Props> = ({
               opacity: importBusy ? 0.7 : 1,
             },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel={importBusy ? "Uploading file" : "Upload file to import items"}
         >
           {importBusy && <ActivityIndicator size="small" color="#FFFFFF" />}
           <Text style={styles.primaryButtonText}>
@@ -105,6 +107,8 @@ export const AddImportCard: React.FC<Props> = ({
               backgroundColor: theme.colors.background,
             },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Download import template"
         >
           <Text
             style={[

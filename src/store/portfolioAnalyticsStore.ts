@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Portfolio Analytics Store (DB-optional, backend-optional)
  *
@@ -26,6 +25,13 @@ import {
   type PortfolioSnapshot,
   type TimeSeriesPoint,
 } from '@/analytics/portfolioMetrics';
+import { logger } from '@/lib/logger';
+import type {
+  CollectorsClient,
+  RawPortfolioTimeseriesPoint,
+  RawPortfolioItem,
+  RawPortfolioSet,
+} from '@/../types/api';
 
 let cachedSnapshot: PortfolioSnapshot | null = null;
 
@@ -135,13 +141,13 @@ const DEMO_SETS = [
  * Optional: collectors-merge API client.
  * We only import if the module exists; if not, the fallback will be used.
  */
-let client: any = null;
+let client: CollectorsClient | null = null;
 
 try {
   // Dynamic require to avoid bundling issues if the client path changes.
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   client = require('@/services/collectorsClient');
-} catch (e) {
+} catch (_e) {
   // Silent fallback to demo data.
   client = null;
 }
@@ -159,26 +165,26 @@ async function loadSeriesFromBackend(): Promise<TimeSeriesPoint[] | null> {
   }
 
   try {
-    const raw: any = await client.getPortfolioTimeseries();
+    const raw = await client.getPortfolioTimeseries!();
 
     if (!raw) return null;
 
-    const points: any[] = Array.isArray(raw)
+    const points: RawPortfolioTimeseriesPoint[] = Array.isArray(raw)
       ? raw
-      : Array.isArray(raw.points)
-      ? raw.points
+      : Array.isArray((raw as Record<string, unknown>).points)
+      ? (raw as Record<string, unknown>).points as RawPortfolioTimeseriesPoint[]
       : [];
 
     if (!points.length) return null;
 
-    const mapped: TimeSeriesPoint[] = points.map((p: any) => ({
+    const mapped: TimeSeriesPoint[] = points.map((p: RawPortfolioTimeseriesPoint) => ({
       t: p.t ?? p.timestamp ?? new Date().toISOString(),
       v: Number(p.v ?? p.value ?? 0),
     }));
 
     return mapped;
   } catch (error) {
-    console.warn('[portfolioAnalyticsStore] Timeseries backend error:', error);
+    logger.warn('[portfolioAnalyticsStore] Timeseries backend error:', error);
     return null;
   }
 }
@@ -197,17 +203,18 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
   }
 
   try {
-    const raw: any = await client.getPortfolioItems();
+    const raw = await client.getPortfolioItems!();
 
-    const items: any[] = Array.isArray(raw?.items)
-      ? raw.items
+    const rawObj = raw as Record<string, unknown> | null;
+    const items: RawPortfolioItem[] = Array.isArray(rawObj?.items)
+      ? rawObj!.items as RawPortfolioItem[]
       : Array.isArray(raw)
-      ? raw
+      ? raw as RawPortfolioItem[]
       : [];
 
     if (!items.length) return null;
 
-    const mapped: PortfolioItemSnapshot[] = items.map((it: any) => ({
+    const mapped: PortfolioItemSnapshot[] = items.map((it: RawPortfolioItem) => ({
       id: String(it.id ?? it.item_id ?? Math.random().toString(36).slice(2)),
       name: String(it.name ?? it.title ?? 'Untitled item'),
       category: String(it.category ?? it.category_slug ?? 'unknown'),
@@ -259,7 +266,7 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
 
     return mapped;
   } catch (error) {
-    console.warn('[portfolioAnalyticsStore] Items backend error:', error);
+    logger.warn('[portfolioAnalyticsStore] Items backend error:', error);
     return null;
   }
 }
@@ -275,8 +282,8 @@ async function loadSetsFromBackend(): Promise<
   }
 
   try {
-    const raw: any = await client.getPortfolioOverview();
-    const sets: any[] = Array.isArray(raw?.sets)
+    const raw = await client.getPortfolioOverview!();
+    const sets: RawPortfolioSet[] = Array.isArray(raw?.sets)
       ? raw.sets
       : Array.isArray(raw?.set_completion)
       ? raw.set_completion
@@ -284,14 +291,14 @@ async function loadSetsFromBackend(): Promise<
 
     if (!sets.length) return DEMO_SETS;
 
-    return sets.map((s: any) => ({
+    return sets.map((s: RawPortfolioSet) => ({
       setId: String(s.set_id ?? s.id ?? 'unknown-set'),
       setName: String(s.set_name ?? s.name ?? 'Unknown set'),
       ownedCount: Number(s.owned_count ?? s.owned ?? 0),
       totalCount: Number(s.total_count ?? s.total ?? 1),
     }));
   } catch (error) {
-    console.warn('[portfolioAnalyticsStore] Sets backend error:', error);
+    logger.warn('[portfolioAnalyticsStore] Sets backend error:', error);
     return DEMO_SETS;
   }
 }

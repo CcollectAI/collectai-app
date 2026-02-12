@@ -1,4 +1,5 @@
-import { View, Text, Image } from 'react-native';
+import { View, Text } from 'react-native';
+import { Image } from 'expo-image';
 import Icon from '@/components/Icon';
 import { theme } from '@/theme';
 export default function SearchRow({ title, subtitle, price, badge, thumbUri }:{
@@ -7,7 +8,7 @@ export default function SearchRow({ title, subtitle, price, badge, thumbUri }:{
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: theme.colors.border }}>
       <View style={{ width: 56, height: 56, borderWidth: 1, borderColor: theme.colors.border, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-        {thumbUri ? <Image source={{ uri: thumbUri }} style={{ width: 54, height: 54 }} /> : <Icon name="image-outline" />}
+        {thumbUri ? <Image source={{ uri: thumbUri }} style={{ width: 54, height: 54 }} cachePolicy="disk" transition={150} accessibilityLabel={`Thumbnail of ${title}`} /> : <Icon name="image-outline" />}
       </View>
       <View style={{ flex: 1, paddingRight: 12 }}>
         <Text style={{ color: theme.colors.navy, fontWeight: '600' }} numberOfLines={1}>{title}</Text>

@@ -24,6 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import logger from "@/utils/logger";
 
 // Import analytics store
 import {
@@ -62,7 +63,7 @@ const TIER_COLORS: Record<string, string> = {
   Unranked: COLORS.muted,
 };
 
-const TIER_ICONS: Record<string, string> = {
+const TIER_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   Diamond: "diamond-outline",
   Gold: "trophy-outline",
   Silver: "medal-outline",
@@ -122,8 +123,8 @@ export default function AnalyticsScreen() {
       ]);
       setSnapshot(data);
       setCategorySummaries(catSummaries);
-    } catch (err: any) {
-      console.warn("[Analytics] Error loading snapshot:", err);
+    } catch (err: unknown) {
+      logger.warn("[Analytics] Error loading snapshot:", err);
       setError(err?.message || "Failed to load analytics");
     } finally {
       setLoading(false);
@@ -191,7 +192,7 @@ export default function AnalyticsScreen() {
             <Text style={styles.headerLabel}>PORTFOLIO</Text>
             <Text style={styles.headerTitle}>Analytics</Text>
           </View>
-          <AnimatedPressable style={styles.refreshBtn} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); loadData(); }}>
+          <AnimatedPressable style={styles.refreshBtn} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); loadData(); }} accessibilityRole="button" accessibilityLabel="Refresh analytics data">
             <Ionicons name="refresh-outline" size={20} color={COLORS.muted} />
           </AnimatedPressable>
         </View>
@@ -256,7 +257,7 @@ export default function AnalyticsScreen() {
             >
               <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[tierSummary.tier] + "20" }]}>
                 <Ionicons
-                  name={TIER_ICONS[tierSummary.tier] as any}
+                  name={TIER_ICONS[tierSummary.tier]}
                   size={28}
                   color={TIER_COLORS[tierSummary.tier]}
                 />
@@ -489,6 +490,8 @@ export default function AnalyticsScreen() {
               <AnimatedPressable
                 style={styles.viewAllBtn}
                 onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push("/categories"); }}
+                accessibilityRole="link"
+                accessibilityLabel="View all categories"
               >
                 <Text style={[styles.viewAllText, { color: COLORS.tiffanyDark }]}>
                   View all

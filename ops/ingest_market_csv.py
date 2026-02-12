@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import os, io, argparse, re, pandas as pd, boto3, psycopg2, psycopg2.extras, pathlib
+import os, io, argparse, re, logging, pandas as pd, boto3, psycopg2, psycopg2.extras, pathlib
+
+logger = logging.getLogger(__name__)
 # AUTOLOAD_DB_ENV
 for _cand in ("/etc/collectors/db.env", "ops/db.env"):
     p=pathlib.Path(_cand)
@@ -41,6 +43,7 @@ def main():
         cur.execute(sql, (r.get("item_ref"), r["category"], r["price"], r["currency"], r["source"], r["observed_at"]))
         n+=1
     cur.close(); c.close()
-    print(f"✅ inserted {n} market rows")
+    logger.info("inserted %d market rows", n)
 if __name__=="__main__":
+    logging.basicConfig(level=logging.INFO)
     raise SystemExit(main())

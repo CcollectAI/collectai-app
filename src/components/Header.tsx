@@ -29,6 +29,8 @@ export default function Header({ title = "Collectors" }: { title?: string }) {
           router.push("/settings");
         }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel="Settings"
         style={{
           width: 36,
           height: 36,

@@ -163,9 +163,108 @@ All improvements implemented by Claude Code across multiple rounds.
 - **All Pydantic models** validated (events, feedback, provenance, watchlist, barcode)
 - **All workers** use try/finally for DB connection cleanup
 
+## Round 13 — Evidence-Native Intelligence Layer (2026-02-10)
+Full "data moat" / intelligence layer across 10 tasks:
+
+### Backend
+| Component | Files |
+|-----------|-------|
+| DB migration (9 schema additions) | `20260210_evidence_native.sql` — attributes_json, item_provenance_events, evidence bundles on predictions, alert_trigger_history, price_history, taxonomy_corrections, set_registry, feedback metadata, v_item_with_evidence |
+| Evidence explainer | `explainer.py` — generate_evidence_explanation() queries real market_hits |
+| Valuation worker | `valuation_worker.py` — _build_evidence(), INSERT evidence into price_predictions + price_history |
+| Provenance persistence | `provenance_router.py` — CRUD for item_provenance_events |
+| Feedback loop closure | `export_feedback.py` — feedback→train.jsonl per category; `taxonomy_improvement_report.py` |
+| Price monitoring | `price_monitor_worker.py` — threshold alerts, z-score anomaly detection, set completion; `price_monitor_scheduler.py` |
+| Market adapters | `adapters/ebay-adapter.ts` (Browse+Finding API), `adapters/tcgplayer-adapter.ts` (Catalog+Pricing), `adapters/index.ts` factory |
+| GH Actions | nightly-train-eval-gate.yml updated with feedback export step |
+
+### Frontend
+| Component | Files |
+|-----------|-------|
+| Price evidence | `routes.py` GET /predict/evidence/{item_id}; `collectorsApi.ts` getPriceEvidence(); `item/[id].tsx` wired with fallback |
+| Alert trigger history | `alerts_feature_router.py` GET/POST trigger-history; `alerts.tsx` "Recent"+"Rules" tabs, unread badges |
+| Provenance timeline | `ProvenanceTimeline.tsx` (317 lines) — vertical timeline, 8 event types, authenticity badges |
+| Item attributes | `ItemAttributesSection.tsx` (220 lines) — key-value display, collection tags, taxonomy version |
+| Data layer | `types.ts` Item expanded; `SupabaseDataProvider.ts` fetches new columns |
+
+---
+
+## Round 14 — Full Vision Build-out (2026-02-10)
+Implements remaining vision components across all 4 phases + 6 agentic modules.
+
+### Vision Classification (Phase 2)
+| Component | Files |
+|-----------|-------|
+| Vision classifier | `app/ml/vision_classifier.py` (613 lines) — 3-tier: CLIP→OpenAI Vision→heuristic, 36 CATEGORY_DESCRIPTIONS for zero-shot |
+| Vision endpoint | `app/routes/vision_predict.py` — POST /vision-predict/classify with ClassificationResponse |
+| Vision worker | `workers/vision_ingest_worker.py` (514 lines) — processes queue + unclassified items with real classifier |
+
+### Marketplace Aggregation Agent
+| Component | Files |
+|-----------|-------|
+| Agent core | `app/agents/marketplace_agent.py` (555 lines) — provenance scoring, dedup, confidence aggregation |
+| eBay caller | `app/agents/adapters/ebay_caller.py` (313 lines) — Python OAuth2 eBay Browse+Finding API |
+| TCGPlayer caller | `app/agents/adapters/tcgplayer_caller.py` (308 lines) — Python bearer auth TCGPlayer API |
+| Router | `app/agents/marketplace_router.py` — POST /marketplace/search, /comps/{item_ref}, GET /health |
+
+### Taxonomy Registry
+| Component | Files |
+|-----------|-------|
+| DB migration | `20260210_taxonomy_registry.sql` — taxonomy_registry table with version tracking |
+| Seed script | `pipelines/taxonomy_seed.py` (406 lines) — seeds v1.0 with all 36 categories |
+| Upgrade tool | `pipelines/taxonomy_version_upgrade.py` (466 lines) — version migration with rules |
+| Router | `app/features/taxonomy_router.py` — GET /taxonomy/current, /versions, /categories, /{version} |
+
+### JWT Auth Enforcement
+| Component | Files |
+|-----------|-------|
+| Auth module | `app/auth.py` — get_current_user_id() with JWT validation + DEV_MODE bypass |
+| 12 routers | All feature routers updated: demo-user → Depends(get_current_user_id) |
+
+### S3 Data Lake
+| Component | Files |
+|-----------|-------|
+| DB migration | `20260210_object_pointers.sql` — object_pointers table for S3 metadata |
+| S3 client | `app/lib/s3_client.py` (200 lines) — presigned URLs, CDN support, boto3 |
+| Router | `app/features/storage_router.py` (445 lines) — presign-upload, presign-download, list, delete |
+| Frontend | `src/api/storageApi.ts` — getUploadUrl, getDownloadUrl, listObjects, deleteObject |
+
+### Dossier Factory (Phase 4)
+| Component | Files |
+|-----------|-------|
+| Agent core | `app/agents/dossier_agent.py` (343 lines) — ItemDossier with 7 sections, completeness scoring |
+| Router | `app/agents/dossier_router.py` (444 lines) — GET /dossier/{id}, /summary, /export (self-contained HTML) |
+| Frontend | `collectorsApi.ts` — getDossier, getDossierSummary, getDossierExportUrl |
+
+### Intake Agent (Phase 2)
+| Component | Files |
+|-----------|-------|
+| Agent core | `app/agents/intake_agent.py` — barcode→vision fallback, taxonomy resolver, price hints |
+| Router | `app/agents/intake_router.py` — POST /intake/process, /barcode-only, /image-only |
+
+---
+
+## Cumulative Stats
+- **134+ tests** across 5+ test files, all passing
+- **14 rounds** of improvements
+- **~120 files** modified
+- **0** remaining `datetime.utcnow()` calls
+- **0** remaining file handle leaks
+- **0** remaining silent `except: pass` blocks
+- **0** remaining error detail leakage
+- **0** remaining `print()` in workers
+- **0** remaining hardcoded "demo-user" in feature routers
+- **36/36** categories aligned
+- **All middleware** wired and active
+- **All Pydantic models** validated
+- **All workers** use try/finally + retry/dead-letter
+- **All 6 agentic modules** implemented (Pricing, Alert, Learning, Vision, Marketplace, Identity)
+- **All 4 phases** structurally complete
+
 ## Known Remaining Issues
-1. **AUTH**: All feature routers use hardcoded "demo-user" — needs JWT validation before production
-2. **RLS bypass**: Backend asyncpg connections bypass Supabase RLS policies
-3. **Secret rotation**: .env files removed from git but tokens exposed in git history — rotate Supabase keys
-4. **Test coverage gaps**: Feature routers (events, feedback, watchlist, etc.) lack dedicated tests
-5. **Workers**: No retry logic or dead-letter handling
+1. **RLS bypass**: Backend asyncpg connections bypass Supabase RLS policies
+2. **Secret rotation**: .env files removed from git but tokens exposed in git history
+3. **Market API credentials**: eBay/TCGPlayer adapters need real production API keys
+4. **Vision model**: Uses fal.ai/OpenAI APIs — no offline/embedded model yet
+5. **S3 credentials**: presigned URLs need AWS_ACCESS_KEY_ID/SECRET configured
+6. **Test coverage gaps**: New agents/routers (marketplace, taxonomy, dossier, intake, storage) lack tests

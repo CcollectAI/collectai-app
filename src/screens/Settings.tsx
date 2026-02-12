@@ -9,6 +9,7 @@ import { featureFlags } from '@/config/featureFlags';
 import { DEFAULT_ALERT_PREFERENCES, AlertPreferences } from '@/types/insights';
 import { useSettings } from '@/lib/settings';
 import { Ionicons } from '@expo/vector-icons';
+import { logger } from '@/lib/logger';
 
 type PrivacySettings = {
   showCollectionValue: boolean;
@@ -57,7 +58,7 @@ export default function Settings() {
           });
         }
       } catch (err) {
-        console.warn('[Settings] Failed to load privacy settings:', err);
+        logger.warn('[Settings] Failed to load privacy settings:', err);
       } finally {
         setLoadingPrivacy(false);
       }
@@ -107,13 +108,13 @@ export default function Settings() {
         });
 
       if (error) {
-        console.warn('[Settings] Failed to save privacy setting:', error);
+        logger.warn('[Settings] Failed to save privacy setting:', error);
         // Revert on error
         setPrivacy(prevPrivacy);
         Alert.alert('Error', 'Failed to save privacy setting');
       }
     } catch (err) {
-      console.warn('[Settings] Privacy update error:', err);
+      logger.warn('[Settings] Privacy update error:', err);
       setPrivacy(prevPrivacy);
     } finally {
       setSavingPrivacy(false);
@@ -163,6 +164,7 @@ export default function Settings() {
                 onValueChange={(v) => updatePrivacy('showCollectionValue', v)}
                 trackColor={{ false: colors.border, true: colors.accent }}
                 thumbColor="#FFFFFF"
+                accessibilityLabel="Show collection value"
               />
             </View>
 
@@ -178,6 +180,7 @@ export default function Settings() {
                 onValueChange={(v) => updatePrivacy('showItemCount', v)}
                 trackColor={{ false: colors.border, true: colors.accent }}
                 thumbColor="#FFFFFF"
+                accessibilityLabel="Show item count"
               />
             </View>
 
@@ -193,6 +196,7 @@ export default function Settings() {
                 onValueChange={(v) => updatePrivacy('allowDiscovery', v)}
                 trackColor={{ false: colors.border, true: colors.accent }}
                 thumbColor="#FFFFFF"
+                accessibilityLabel="Allow discovery"
               />
             </View>
 
@@ -208,6 +212,7 @@ export default function Settings() {
                 onValueChange={(v) => updatePrivacy('showOnlineStatus', v)}
                 trackColor={{ false: colors.border, true: colors.accent }}
                 thumbColor="#FFFFFF"
+                accessibilityLabel="Show online status"
               />
             </View>
           </>
@@ -231,6 +236,7 @@ export default function Settings() {
             onValueChange={(v) => updateSettings({ hapticsEnabled: v })}
             trackColor={{ false: colors.border, true: colors.accent }}
             thumbColor="#FFFFFF"
+            accessibilityLabel="Haptic feedback"
           />
         </View>
 
@@ -246,6 +252,7 @@ export default function Settings() {
             onValueChange={(v) => updateSettings({ animationsEnabled: v })}
             trackColor={{ false: colors.border, true: colors.accent }}
             thumbColor="#FFFFFF"
+            accessibilityLabel="Animations"
           />
         </View>
       </View>

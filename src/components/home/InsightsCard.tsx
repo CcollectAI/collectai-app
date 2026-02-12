@@ -46,7 +46,9 @@ function formatPercent(value: number): string {
   return `${sign}${value.toFixed(1)}%`;
 }
 
-function MoverItem({ item, colors }: { item: ItemMover; colors: any }) {
+type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
+
+function MoverItem({ item, colors }: { item: ItemMover; colors: ThemeColors }) {
   return (
     <View style={styles.moverRow}>
       <View style={styles.moverInfo}>

@@ -53,7 +53,7 @@ export function AchievementBadge({
         ]}
       >
         <Ionicons
-          name={achievement.icon as any}
+          name={achievement.icon as keyof typeof Ionicons.glyphMap}
           size={iconSize}
           color={isEarned ? tierColor : colors.muted}
         />

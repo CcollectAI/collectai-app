@@ -19,8 +19,8 @@ export default function useComments(postId?: string|number, limit = 100) {
         const { data, error } = await q;
         if (error) throw error;
         on && setComments((data as Comment[]) ?? []);
-      } catch (e:any) {
-        on && setError(e?.message ?? "Failed to load comments");
+      } catch (e: unknown) {
+        on && setError(e instanceof Error ? e.message : "Failed to load comments");
         on && setComments([]);
       } finally {
         on && setLoading(false);

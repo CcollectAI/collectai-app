@@ -4,6 +4,19 @@
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Pagination
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Optional pagination parameters for list endpoints.
+ * When omitted, the provider uses sensible defaults.
+ */
+export type PaginationParams = {
+  limit?: number;
+  offset?: number;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Taxonomy Types (Hybrid Architecture)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -49,6 +62,7 @@ export type Item = {
   subtypeId?: string;           // Finer granularity (e.g., 'warhammer_books')
   taxonomyVersion?: string;     // Version of taxonomy used for classification
   collections?: string[];       // Collection tags (e.g., ['taylor_swift', 'eras_tour'])
+  attributesJson?: Record<string, unknown>;  // Category-specific attributes (condition, grade, etc.)
   price: number;
   priceBand?: PriceBand;        // q10/q50/q90 price estimates
   imageUrl?: string;

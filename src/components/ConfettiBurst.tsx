@@ -4,12 +4,12 @@
  */
 
 import React, { forwardRef, useImperativeHandle } from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
+import { View, Animated, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { useConfetti, UseConfettiOptions } from '@/hooks/useConfetti';
 
 export type ConfettiBurstProps = UseConfettiOptions & {
   /** Style for the container */
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 };
 
 export type ConfettiBurstRef = {

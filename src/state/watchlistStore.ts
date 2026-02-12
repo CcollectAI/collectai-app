@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { logger } from "@/lib/logger";
 
 // Adjust this import if your PortfolioItem type lives elsewhere
 import type { PortfolioItem } from "../services/collectorsClient";
@@ -49,7 +50,7 @@ async function loadFromStorage() {
     };
     emitChange();
   } catch (err) {
-    console.warn("[watchlistStore] Failed to load from storage", err);
+    logger.warn("[watchlistStore] Failed to load from storage", err);
   }
 }
 
@@ -58,7 +59,7 @@ async function saveToStorage(next: WatchlistState) {
     const payload = JSON.stringify(next);
     await AsyncStorage.setItem(STORAGE_KEY, payload);
   } catch (err) {
-    console.warn("[watchlistStore] Failed to save to storage", err);
+    logger.warn("[watchlistStore] Failed to save to storage", err);
   }
 }
 

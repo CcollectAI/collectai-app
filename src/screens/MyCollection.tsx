@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, ActivityIndicator } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 type Item = {
   id: string | number;
@@ -23,8 +24,8 @@ export default function MyCollection() {
           .order("created_at", { ascending: false });
         if (error) throw error;
         if (mounted) setItems(data ?? []);
-      } catch (e: any) {
-        console.warn("Error loading collection:", e?.message);
+      } catch (e: unknown) {
+        logger.warn("Error loading collection:", e instanceof Error ? e.message : String(e));
         setItems([]);
       } finally {
         if (mounted) setLoading(false);

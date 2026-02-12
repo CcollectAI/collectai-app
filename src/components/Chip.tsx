@@ -13,6 +13,8 @@ export default function Chip({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}${selected ? ', selected' : ''}`}
       style={{
         borderWidth: 1,
         borderColor: selected ? theme.colors.navy : theme.colors.border,

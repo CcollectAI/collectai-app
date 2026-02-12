@@ -8,6 +8,14 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
+
+function NotAvailableScreen() {
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ fontSize: 16, color: "#666" }}>Not available</Text>
+    </View>
+  );
+}
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -67,8 +75,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
       setErrorText(null);
 
       try {
-        const client: any = supabase as any;
-        if (!client || typeof client.from !== "function") {
+        if (!supabase || typeof supabase.from !== "function") {
           setState("error");
           setErrorText(
             "Supabase client not configured – Twitch leaderboard is running in demo mode."
@@ -76,7 +83,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
           return;
         }
 
-        const { data, error } = await client
+        const { data, error } = await supabase
           .from("twitch_creators")
           .select("*")
           .order("score_30d", { ascending: false })
@@ -90,7 +97,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
 
         setCreators((data ?? []) as TwitchCreator[]);
         setState("loaded");
-      } catch (err: any) {
+      } catch (err: unknown) {
         setState("error");
         setErrorText(
           err?.message || "Unexpected error while loading Twitch leaderboard."
@@ -699,4 +706,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TwitchLeaderboardScreen;
+export default __DEV__ ? TwitchLeaderboardScreen : NotAvailableScreen;

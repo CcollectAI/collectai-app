@@ -42,6 +42,8 @@ export default function BuildProjectsBanner() {
 
       <Pressable
         onPress={() => router.push("/build-paint-projects")}
+        accessibilityRole="button"
+        accessibilityLabel="Open build and paint view"
         style={{
           alignSelf: "flex-start",
           paddingHorizontal: 14,

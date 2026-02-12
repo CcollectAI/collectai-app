@@ -1214,36 +1214,36 @@ def _write_events_json(events: list[ScrapedEvent], path: str) -> None:
 
 
 def _print_events(events: list[ScrapedEvent]) -> None:
-    """Pretty-print events to stdout (for --dry-run)."""
+    """Log events (for --dry-run)."""
     if not events:
-        print("No events found.")
+        log.info("No events found.")
         return
 
-    print(f"\n{'=' * 72}")
-    print(f"  Scraped Events ({len(events)} total)")
-    print(f"{'=' * 72}\n")
+    log.info("\n%s", "=" * 72)
+    log.info("  Scraped Events (%d total)", len(events))
+    log.info("%s\n", "=" * 72)
 
     for i, ev in enumerate(events, 1):
-        print(f"  [{i}] {ev.title}")
-        print(f"      Kind:     {ev.kind}")
-        print(f"      Category: {ev.category_id or '(unknown)'}")
-        print(f"      Date:     {ev.date}")
+        log.info("  [%d] %s", i, ev.title)
+        log.info("      Kind:     %s", ev.kind)
+        log.info("      Category: %s", ev.category_id or "(unknown)")
+        log.info("      Date:     %s", ev.date)
         if ev.time:
-            print(f"      Time:     {ev.time}")
+            log.info("      Time:     %s", ev.time)
         if ev.end_date:
-            print(f"      End Date: {ev.end_date}")
+            log.info("      End Date: %s", ev.end_date)
         if ev.location:
-            print(f"      Location: {ev.location}")
+            log.info("      Location: %s", ev.location)
         if ev.online_url:
-            print(f"      URL:      {ev.online_url}")
+            log.info("      URL:      %s", ev.online_url)
         if ev.source_url:
-            print(f"      Source:   {ev.source_url}")
+            log.info("      Source:   %s", ev.source_url)
         if ev.image_url:
-            print(f"      Image:    {ev.image_url}")
+            log.info("      Image:    %s", ev.image_url)
         if ev.description:
             desc_preview = ev.description[:120].replace("\n", " ")
-            print(f"      Desc:     {desc_preview}...")
-        print()
+            log.info("      Desc:     %s...", desc_preview)
+        log.info("")
 
 
 # ---------------------------------------------------------------------------

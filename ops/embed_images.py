@@ -1,8 +1,17 @@
-import os, io, hashlib, argparse, asyncio
-import asyncpg, requests
-from PIL import Image
+import argparse
+import asyncio
+import hashlib
+import io
+import logging
+import os
+
+import asyncpg
 import numpy as np
+import requests
+from PIL import Image
 from sentence_transformers import SentenceTransformer
+
+logger = logging.getLogger(__name__)
 
 PG_DSN        = os.environ.get("PG_DSN")
 SUPABASE_URL  = os.environ.get("SUPABASE_URL")
@@ -13,24 +22,26 @@ MODEL_NAME    = os.environ.get("EMBED_MODEL", "sentence-transformers/clip-ViT-B-
 if not PG_DSN:
     raise RuntimeError("PG_DSN is not set. Export PG_DSN=postgresql://user:pass@host:5432/db?sslmode=require")
 
+
 def fetch_http(url: str) -> bytes | None:
     try:
         r = requests.get(url, timeout=25, allow_redirects=True,
-                         headers={"User-Agent":"collectors-merge/1.0"})
+                         headers={"User-Agent": "collectors-merge/1.0"})
         if not r.ok:
-            print(f"[skip] HTTP {r.status_code} for {url}")
+            logger.debug("[skip] HTTP %d for %s", r.status_code, url)
             return None
-        ctype = r.headers.get("Content-Type","").lower()
-        if "image" not in ctype and not url.lower().endswith((".jpg",".jpeg",".png",".webp",".gif",".bmp",".tif",".tiff")):
-            print(f"[skip] Non-image content-type '{ctype}' for {url}")
+        ctype = r.headers.get("Content-Type", "").lower()
+        if "image" not in ctype and not url.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tif", ".tiff")):
+            logger.debug("[skip] Non-image content-type '%s' for %s", ctype, url)
             return None
         if not r.content:
-            print(f"[skip] Empty body for {url}")
+            logger.debug("[skip] Empty body for %s", url)
             return None
         return r.content
     except Exception as e:
-        print(f"[skip] Exception fetching {url}: {e}")
+        logger.debug("[skip] Exception fetching %s: %s", url, e)
         return None
+
 
 def to_embedding(model: SentenceTransformer, img_bytes: bytes) -> np.ndarray | None:
     try:
@@ -39,8 +50,9 @@ def to_embedding(model: SentenceTransformer, img_bytes: bytes) -> np.ndarray | N
         emb = model.encode([img], batch_size=1, convert_to_numpy=True, show_progress_bar=False)[0]
         return emb.astype(np.float32)
     except Exception as e:
-        print(f"[skip] PIL/encode error: {e}")
+        logger.debug("[skip] PIL/encode error: %s", e)
         return None
+
 
 async def upsert_embedding(conn: asyncpg.Connection, image_id, emb: np.ndarray):
     await conn.execute(
@@ -49,40 +61,43 @@ async def upsert_embedding(conn: asyncpg.Connection, image_id, emb: np.ndarray):
         image_id, emb.tolist()
     )
 
+
 async def fetch_storage_signed_url(path: str) -> str | None:
     if not (SUPABASE_URL and SUPABASE_KEY and BUCKET_NAME):
         return None
     sign_api = f"{SUPABASE_URL}/storage/v1/object/sign/{BUCKET_NAME}/{path.lstrip('/')}"
-    h = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type":"application/json"}
+    h = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json"}
     try:
         r = requests.post(sign_api, headers=h, json={"expiresIn": 600}, timeout=10)
         if r.ok:
             return f"{SUPABASE_URL}{r.json()['signedURL']}"
-        print(f"[skip] signed-url HTTP {r.status_code}: {r.text}")
+        logger.debug("[skip] signed-url HTTP %d: %s", r.status_code, r.text)
     except Exception as e:
-        print(f"[skip] signed-url exception: {e}")
+        logger.debug("[skip] signed-url exception: %s", e)
     return None
+
 
 async def embed_single_url(dsn: str, url: str, image_id_hex: str | None):
     import uuid
     img_id = uuid.UUID(image_id_hex) if image_id_hex else uuid.UUID(bytes=hashlib.md5(url.encode()).digest())
-    print(f"[info] embedding single url → image_id={img_id} url={url}")
+    logger.info("[info] embedding single url -> image_id=%s url=%s", img_id, url)
     data = fetch_http(url)
     if not data:
-        print("[end] fetch failed")
+        logger.info("[end] fetch failed")
         return 0
     model = SentenceTransformer(MODEL_NAME)
     emb = to_embedding(model, data)
     if emb is None:
-        print("[end] embedding failed")
+        logger.info("[end] embedding failed")
         return 0
     conn = await asyncpg.connect(dsn)
     try:
         await upsert_embedding(conn, img_id, emb)
     finally:
         await conn.close()
-    print("[ok] upserted 1 embedding")
+    logger.info("[ok] upserted 1 embedding")
     return 1
+
 
 async def embed_batch(dsn: str, limit_storage: int, limit_hits: int):
     model = SentenceTransformer(MODEL_NAME)
@@ -97,7 +112,7 @@ async def embed_batch(dsn: str, limit_storage: int, limit_hits: int):
             order by created_at asc
             limit $1;
         """, limit_storage)
-        print(f"[info] storage-like candidates: {len(rows)}")
+        logger.info("[info] storage-like candidates: %d", len(rows))
         for r in rows:
             img_id = r["image_id"]
             path   = (r["path_like"] or "").strip()
@@ -107,11 +122,11 @@ async def embed_batch(dsn: str, limit_storage: int, limit_hits: int):
                 signed = await fetch_storage_signed_url(path)
                 data = fetch_http(signed) if signed else None
             if not data:
-                print(f"[skip] fetch failed for {path}")
+                logger.debug("[skip] fetch failed for %s", path)
                 continue
             emb = to_embedding(model, data)
             if emb is None:
-                print(f"[skip] embed failed for {path}")
+                logger.debug("[skip] embed failed for %s", path)
                 continue
             await upsert_embedding(conn, img_id, emb)
             processed += 1
@@ -124,7 +139,7 @@ async def embed_batch(dsn: str, limit_storage: int, limit_hits: int):
                 where image_url is not null and trim(image_url) <> ''
                 limit $1;
             """, limit_hits)
-            print(f"[info] market_hits candidates: {len(hit_rows)}")
+            logger.info("[info] market_hits candidates: %d", len(hit_rows))
             import uuid
             for r in hit_rows:
                 url = (r["image_url"] or "").strip()
@@ -132,20 +147,21 @@ async def embed_batch(dsn: str, limit_storage: int, limit_hits: int):
                     continue
                 data = fetch_http(url)
                 if not data:
-                    print(f"[skip] fetch failed for {url}")
+                    logger.debug("[skip] fetch failed for %s", url)
                     continue
                 emb = to_embedding(model, data)
                 if emb is None:
-                    print(f"[skip] embed failed for {url}")
+                    logger.debug("[skip] embed failed for %s", url)
                     continue
                 img_id = uuid.UUID(bytes=hashlib.md5(r["url_sig"].encode()).digest())
                 await upsert_embedding(conn, img_id, emb)
                 processed += 1
 
-        print(f"embedded images: {processed}")
+        logger.info("embedded images: %d", processed)
         return processed
     finally:
         await conn.close()
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -160,5 +176,7 @@ def main():
     else:
         asyncio.run(embed_batch(PG_DSN, args.limit_storage, args.limit_hits))
 
+
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

@@ -17,6 +17,7 @@ export default function Items(){
   const [grid, setGrid] = useState(true);
 
   const { items, loading, error, refreshing, refresh, loadMore } = useItems({ search, category, order, limit: grid? 24 : 16 });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nav = useNavigation<any>();
   const width = Dimensions.get('window').width;
   const col = grid ? 2 : 1;

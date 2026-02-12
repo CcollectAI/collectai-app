@@ -2,19 +2,23 @@
 Feedback router for capturing user feedback on predictions.
 
 Endpoints:
+- GET  /feedback/corrections - List training items with corrections (paginated)
 - POST /feedback/submit - Save feedback to feedback table
 - POST /feedback/correction - Update training_items.corrected_* columns
 """
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from app.auth import get_current_user_id
+from app.features.pagination import pagination_params
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 logger = logging.getLogger(__name__)
@@ -91,8 +95,115 @@ class CorrectionResponse(BaseModel):
     message: str
 
 
+async def _log_provenance_event(
+    pool, item_id: str, user_id: str, event_type: str,
+    note: str | None = None, source: str = "manual", metadata: dict | None = None,
+) -> None:
+    """
+    Insert a provenance event into item_provenance_events.
+
+    Best-effort: logs a warning on failure but does not raise.
+    """
+    try:
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO public.item_provenance_events
+                    (item_id, user_id, event_type, note, source, metadata)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                """,
+                item_id,
+                user_id,
+                event_type,
+                note,
+                source,
+                json.dumps(metadata or {}),
+            )
+        logger.info(
+            "[feedback] Auto-logged provenance event: item=%s, type=%s",
+            item_id, event_type,
+        )
+    except Exception as e:
+        logger.warning(
+            "[feedback] Failed to auto-log provenance event for item=%s: %s",
+            item_id, e,
+        )
+
+
+class CorrectionListItem(BaseModel):
+    """A single correction entry returned in the list."""
+    item_id: str
+    corrected_price: float | None = None
+    corrected_condition: str | None = None
+    corrected_category: str | None = None
+    corrected_attributes: dict[str, Any] | None = None
+    correction_notes: str | None = None
+    corrected_at: str | None = None
+
+
+class CorrectionListResponse(BaseModel):
+    """Response for listing corrections."""
+    corrections: list[CorrectionListItem]
+
+
+@router.get("/corrections", response_model=CorrectionListResponse)
+async def list_corrections(
+    user_id: str = Depends(get_current_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
+):
+    """
+    List training items that have user corrections applied.
+
+    Returns items where at least one corrected_* column is non-null,
+    ordered by most recently corrected first.
+    """
+    limit, offset = pagination
+    pool = _get_db_pool()
+
+    if pool is None:
+        return CorrectionListResponse(corrections=[])
+
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, corrected_price, corrected_condition,
+                       corrected_category, corrected_attributes,
+                       correction_notes, corrected_at
+                FROM training_items
+                WHERE corrected_at IS NOT NULL
+                ORDER BY corrected_at DESC
+                LIMIT $1 OFFSET $2
+                """,
+                limit,
+                offset,
+            )
+
+        corrections = [
+            CorrectionListItem(
+                item_id=str(row["id"]),
+                corrected_price=float(row["corrected_price"]) if row["corrected_price"] is not None else None,
+                corrected_condition=row["corrected_condition"],
+                corrected_category=row["corrected_category"],
+                corrected_attributes=(
+                    json.loads(row["corrected_attributes"])
+                    if isinstance(row["corrected_attributes"], str)
+                    else row["corrected_attributes"]
+                ) if row["corrected_attributes"] is not None else None,
+                correction_notes=row["correction_notes"],
+                corrected_at=row["corrected_at"].isoformat() if row["corrected_at"] else None,
+            )
+            for row in rows
+        ]
+        return CorrectionListResponse(corrections=corrections)
+
+    except Exception as e:
+        logger.error("[feedback/corrections] Error listing corrections: %s", e)
+        return CorrectionListResponse(corrections=[])
+
+
 @router.post("/submit", response_model=FeedbackSubmitResponse)
-async def submit_feedback(request: FeedbackSubmitRequest):
+async def submit_feedback(request: FeedbackSubmitRequest, user_id: str = Depends(get_current_user_id)):
     """
     Submit feedback on an item's prediction.
 
@@ -155,11 +266,26 @@ async def submit_feedback(request: FeedbackSubmitRequest):
 
             logger.info(f"[feedback/submit] Saved feedback: id={feedback_id}, item={request.item_id}, label={label}")
 
-            return FeedbackSubmitResponse(
-                success=True,
-                feedback_id=feedback_id,
-                message="Feedback submitted successfully",
+        # Task 3: Auto-log provenance event for sale_price feedback
+        if feedback_type == "sale_price" and request.value:
+            sale_note = f"Sale reported at {request.value} EUR"
+            if request.notes:
+                sale_note += f" - {request.notes}"
+            await _log_provenance_event(
+                pool,
+                item_id=request.item_id,
+                user_id=user_id,
+                event_type="sale",
+                note=sale_note,
+                source="manual",
+                metadata={"sale_price": request.value, "feedback_id": feedback_id},
             )
+
+        return FeedbackSubmitResponse(
+            success=True,
+            feedback_id=feedback_id,
+            message="Feedback submitted successfully",
+        )
 
     except HTTPException:
         raise
@@ -169,7 +295,7 @@ async def submit_feedback(request: FeedbackSubmitRequest):
 
 
 @router.post("/correction", response_model=CorrectionResponse)
-async def submit_correction(request: CorrectionRequest):
+async def submit_correction(request: CorrectionRequest, user_id: str = Depends(get_current_user_id)):
     """
     Submit a correction to training item data.
 
@@ -248,10 +374,42 @@ async def submit_correction(request: CorrectionRequest):
         async with pool.acquire() as conn:
             result = await conn.execute(query, *params)
 
-            if result == "UPDATE 0":
+            if result.endswith(" 0"):
                 raise HTTPException(status_code=404, detail="Training item not found")
 
             logger.info(f"[feedback/correction] Updated training_items: item={request.item_id}")
+
+            # Task 2: Log taxonomy correction if corrected_category is provided
+            if request.corrected_category is not None:
+                try:
+                    # Fetch the original category from training_items
+                    row = await conn.fetchrow(
+                        "SELECT category FROM training_items WHERE id = $1",
+                        item_uuid,
+                    )
+                    original_category = row["category"] if row and row["category"] else "unknown"
+
+                    await conn.execute(
+                        """
+                        INSERT INTO public.taxonomy_corrections
+                            (user_id, item_id, original_category, corrected_category, source)
+                        VALUES ($1, $2, $3, $4, $5)
+                        """,
+                        user_id,
+                        request.item_id,
+                        original_category,
+                        request.corrected_category,
+                        "feedback",
+                    )
+                    logger.info(
+                        "[feedback/correction] Logged taxonomy correction: item=%s, %s -> %s",
+                        request.item_id, original_category, request.corrected_category,
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "[feedback/correction] Failed to log taxonomy correction for item=%s: %s",
+                        request.item_id, e,
+                    )
 
             return CorrectionResponse(
                 success=True,

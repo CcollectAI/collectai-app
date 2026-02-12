@@ -158,6 +158,8 @@ const EventsDropsScreen: React.FC = () => {
                     borderColor: active ? colors.accent : "transparent",
                   },
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={`${tab.label}${active ? ', selected' : ''}`}
               >
                 <Text
                   style={[
@@ -191,7 +193,7 @@ const EventsDropsScreen: React.FC = () => {
                 <View style={styles.eventRow}>
                   <View style={styles.eventIconWrap}>
                     <Ionicons
-                      name={typeIcon(event.type) as any}
+                      name={typeIcon(event.type) as keyof typeof Ionicons.glyphMap}
                       size={18}
                       color={colors.accent}
                     />
@@ -252,7 +254,7 @@ const EventsDropsScreen: React.FC = () => {
                     </View>
                   </View>
                   <View style={styles.eventActions}>
-                    <Pressable style={styles.addButton}>
+                    <Pressable style={styles.addButton} accessibilityRole="button" accessibilityLabel={`Add ${event.title} to calendar`}>
                       <Ionicons
                         name="calendar-outline"
                         size={14}

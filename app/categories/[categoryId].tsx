@@ -21,6 +21,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import logger from '@/utils/logger';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -59,9 +60,9 @@ const FriendAvatar: React.FC<{ profile: MiniUserProfile; onPress: () => void; ac
     .toUpperCase();
 
   return (
-    <AnimatedPressable style={styles.friendCard} onPress={onPress}>
+    <AnimatedPressable style={styles.friendCard} onPress={onPress} accessibilityRole="button" accessibilityLabel={`View ${profile.displayName}'s profile`}>
       {profile.avatarUrl ? (
-        <Image source={{ uri: profile.avatarUrl }} style={styles.friendAvatar} />
+        <Image source={{ uri: profile.avatarUrl }} style={styles.friendAvatar} accessibilityLabel={`${profile.displayName} avatar`} />
       ) : (
         <View
           style={[
@@ -117,7 +118,7 @@ export default function CategoryStoreScreen() {
         }
       })
       .catch((err) => {
-        console.warn('[CategoryStore] error:', err);
+        logger.warn('[CategoryStore] error:', err);
         setError(err?.message || 'Failed to load category');
       })
       .finally(() => setLoading(false));
@@ -180,7 +181,7 @@ export default function CategoryStoreScreen() {
     } catch (err) {
       // Revert on error
       setFollowing(!newFollowing);
-      console.warn('[CategoryStore] follow toggle error:', err);
+      logger.warn('[CategoryStore] follow toggle error:', err);
     }
   };
 
@@ -204,8 +205,8 @@ export default function CategoryStoreScreen() {
           return next;
         });
       }, 600);
-    } catch (err: any) {
-      console.warn('[CategoryStore] markOwned error:', err);
+    } catch (err: unknown) {
+      logger.warn('[CategoryStore] markOwned error:', err);
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     } finally {
       setMarkingOwned(null);
@@ -217,7 +218,7 @@ export default function CategoryStoreScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
         </View>
@@ -234,7 +235,7 @@ export default function CategoryStoreScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
         </View>
@@ -244,7 +245,7 @@ export default function CategoryStoreScreen() {
           <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
             This category doesn't exist or couldn't be loaded.
           </Text>
-          <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => router.back()}>
+          <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
             <Text style={[styles.backButtonText, { color: colors.text }]}>Go back</Text>
           </AnimatedPressable>
         </View>
@@ -256,7 +257,7 @@ export default function CategoryStoreScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       {/* Header row with back button */}
       <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
       </View>
@@ -280,6 +281,8 @@ export default function CategoryStoreScreen() {
               following && { backgroundColor: colors.accent },
             ]}
             onPress={handleToggleFollow}
+            accessibilityRole="button"
+            accessibilityLabel={following ? `Unfollow ${data.categoryName}` : `Follow ${data.categoryName}`}
           >
             <Ionicons
               name={following ? 'checkmark' : 'add'}
@@ -354,6 +357,8 @@ export default function CategoryStoreScreen() {
               key={item.id}
               style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => handleItemPress(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.name}, ${formatCurrency(item.price)}`}
             >
               <View style={styles.itemInfo}>
                 <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
@@ -375,6 +380,8 @@ export default function CategoryStoreScreen() {
                 params: { category: data.categoryName },
               })
             }
+            accessibilityRole="link"
+            accessibilityLabel={`See all ${data.items.length} items`}
           >
             <Text style={[styles.seeAllText, { color: colors.accent }]}>
               See all {data.items.length} items
@@ -395,6 +402,8 @@ export default function CategoryStoreScreen() {
               key={event.id}
               style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => handleEventPress(event.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`${event.title}, ${kindLabel[event.kind] || event.kind}, ${event.date}`}
             >
               <View
                 style={[
@@ -482,6 +491,8 @@ export default function CategoryStoreScreen() {
                     ]}
                     disabled={isMarking || isOwned}
                     onPress={() => handleMarkOwned(item.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={isOwned ? `${item.title} marked as owned` : `Mark ${item.title} as owned`}
                   >
                     {isMarking ? (
                       <ActivityIndicator size="small" color="#fff" />

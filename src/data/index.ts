@@ -13,10 +13,12 @@
 import type { DataProvider } from './DataProvider';
 import { mockDataProvider } from './MockDataProvider';
 import { supabaseDataProvider } from './SupabaseDataProvider';
+import { CachedDataProvider } from './CachedDataProvider';
 import { dataLogger } from '@/lib/logger';
 
 // Re-export types for convenience
 export type {
+  PaginationParams,
   PortfolioSummary,
   Item,
   WatchlistItem,
@@ -56,18 +58,27 @@ export type { DataProvider } from './DataProvider';
 /**
  * Determine which provider to use based on environment variable.
  * Default is "mock" — real Supabase only when explicitly set to "real".
+ *
+ * The selected provider is always wrapped in a CachedDataProvider that adds
+ * a SQLite offline cache with stale-while-revalidate semantics.  The cache
+ * is transparent — callers see the same DataProvider interface.
  */
 function selectProvider(): DataProvider {
   const mode = (process.env.EXPO_PUBLIC_SUPABASE_MODE ?? 'mock').toLowerCase();
 
+  let inner: DataProvider;
+
   if (mode === 'real') {
     dataLogger.info('Using SupabaseDataProvider (real mode)');
-    return supabaseDataProvider;
+    inner = supabaseDataProvider;
+  } else {
+    // Default: mock, off, or any other value → use mock
+    dataLogger.info('Using MockDataProvider (mock mode)');
+    inner = mockDataProvider;
   }
 
-  // Default: mock, off, or any other value → use mock
-  dataLogger.info('Using MockDataProvider (mock mode)');
-  return mockDataProvider;
+  dataLogger.info('Wrapping provider with CachedDataProvider (SQLite offline cache)');
+  return new CachedDataProvider(inner);
 }
 
 /**

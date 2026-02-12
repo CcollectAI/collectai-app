@@ -10,11 +10,12 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import hashlib
 import random
 from functools import lru_cache
 from typing import Any
+
+from app.config import MODEL_CANARY_TRAFFIC_PCT as CANARY_TRAFFIC_PCT, ML_MODELS_S3_BUCKET, AWS_REGION
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,6 @@ try:
 except ImportError:
     S3_AVAILABLE = False
     logger.warning("boto3 not installed; S3 model loading disabled")
-
-# Canary configuration (#13)
-CANARY_TRAFFIC_PCT = float(os.getenv("MODEL_CANARY_TRAFFIC_PCT", "5"))  # % of traffic to canary
 
 
 def _get_db_pool():
@@ -96,8 +94,8 @@ def _load_artifact_from_s3(s3_key: str) -> dict | None:
     if not S3_AVAILABLE:
         return None
 
-    bucket = os.getenv("ML_MODELS_S3_BUCKET", "collectai-ml-models")
-    region = os.getenv("AWS_REGION", "eu-west-1")
+    bucket = ML_MODELS_S3_BUCKET
+    region = AWS_REGION
 
     try:
         s3 = boto3.client("s3", region_name=region)

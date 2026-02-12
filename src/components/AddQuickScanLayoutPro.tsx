@@ -55,6 +55,8 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
             onQuickScan();
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Open camera for QuickScan"
           style={[
             styles.primaryButton,
             { backgroundColor: theme.colors.primary },
@@ -95,6 +97,7 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
           value={name}
           onChangeText={setName}
           placeholder="Item name"
+          accessibilityLabel="Item name"
           style={[
             styles.input,
             { borderColor: theme.colors.border, color: theme.colors.text },
@@ -106,6 +109,7 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
           value={estimatedValue}
           onChangeText={setEstimatedValue}
           placeholder="Estimated value (€)"
+          accessibilityLabel="Estimated value"
           keyboardType="numeric"
           style={[
             styles.input,
@@ -118,6 +122,7 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
           value={notes}
           onChangeText={setNotes}
           placeholder="Notes (set, condition, extras…)"
+          accessibilityLabel="Notes"
           multiline
           style={[
             styles.input,
@@ -136,6 +141,8 @@ export const AddQuickScanLayoutPro: React.FC<Props> = ({
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
             onSave();
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Save to collection"
           style={[
             styles.primaryButton,
             { backgroundColor: theme.colors.primary, marginTop: 12 },

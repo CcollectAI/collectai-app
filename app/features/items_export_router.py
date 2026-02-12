@@ -5,8 +5,9 @@ import io
 import logging
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from app.auth import get_current_user_id
 
 router = APIRouter(prefix="/items-export", tags=["items-export"])
 logger = logging.getLogger(__name__)
@@ -26,14 +27,6 @@ def _get_db_pool():
         return None
 
 
-def _get_current_user_id() -> str:
-    """
-    TODO: Replace with real auth (e.g. JWT / Supabase session).
-    For now returns a placeholder user-id so queries are scoped.
-    """
-    return "demo-user"
-
-
 # ---------------------------------------------------------------------------
 # Response model (unchanged)
 # ---------------------------------------------------------------------------
@@ -48,7 +41,7 @@ class ItemsExportResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.get("/overview", response_model=ItemsExportResponse)
-async def export_items_overview() -> ItemsExportResponse:
+async def export_items_overview(user_id: str = Depends(get_current_user_id)) -> ItemsExportResponse:
     """
     Export the authenticated user's items as inline CSV.
 
@@ -62,8 +55,6 @@ async def export_items_overview() -> ItemsExportResponse:
             download_url=None,
             csv_inline="id,title,category,condition,grade,estimated_value,currency\n",
         )
-
-    user_id = _get_current_user_id()
 
     try:
         async with pool.acquire() as conn:

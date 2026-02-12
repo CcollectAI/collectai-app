@@ -9,6 +9,7 @@ export const SafeTextInput: React.FC<SafeTextInputProps> = ({ label, ...rest }) 
   return (
     <TextInput
       {...rest}
+      accessibilityLabel={rest.accessibilityLabel ?? label ?? rest.placeholder}
       placeholderTextColor={rest.placeholderTextColor ?? '#999999'}
       autoCorrect={rest.autoCorrect ?? false}
     />

@@ -185,7 +185,7 @@ const SearchScreen: React.FC = () => {
         </View>
 
         {/* Search input */}
-        <View style={styles.searchRow}>
+        <View style={[styles.searchRow, { borderColor: colors.border }]}>
           <Ionicons
             name="search-outline"
             size={18}
@@ -198,6 +198,7 @@ const SearchScreen: React.FC = () => {
             onSubmitEditing={handleSubmitSearch}
             placeholder="Search items & collections"
             placeholderTextColor={colors.muted}
+            accessibilityLabel="Search items and collections"
             style={[styles.searchInput, { color: colors.text }]}
           />
         </View>
@@ -212,10 +213,12 @@ const SearchScreen: React.FC = () => {
               {recent.map((term) => (
                 <AnimatedPressable
                   key={term}
-                  style={styles.chip}
+                  style={[styles.chip, { backgroundColor: colors.accent + '15' }]}
                   onPress={() => {
                     setQuery(term);
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Search for ${term}`}
                 >
                   <Text style={[styles.chipText, { color: colors.text }]}>
                     {term}
@@ -243,6 +246,8 @@ const SearchScreen: React.FC = () => {
                       key={cat.id}
                       style={[styles.categoryTile, { backgroundColor: bg }]}
                       onPress={() => handleOpenCategory(cat.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Browse ${cat.name}`}
                     >
                       <Text
                         style={[styles.categoryTileText, { color: textColor }]}
@@ -275,6 +280,8 @@ const SearchScreen: React.FC = () => {
                     key={cat.id}
                     style={[styles.trendingRow, { borderColor: colors.border }]}
                     onPress={() => handleOpenCategory(cat.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${cat.name}, ${cat.meta}`}
                   >
                     <View style={[styles.trendingRank, { backgroundColor: colors.accent + '20' }]}>
                       <Text style={[styles.trendingRankText, { color: colors.accent }]}>
@@ -303,10 +310,12 @@ const SearchScreen: React.FC = () => {
             </Text>
             {topResult ? (
               <AnimatedPressable
-                style={styles.resultRow}
+                style={[styles.resultRow, { borderBottomColor: colors.border }]}
                 onPress={() => handleOpenItem(topResult)}
+                accessibilityRole="button"
+                accessibilityLabel={`${topResult.name}, ${formatCurrency(topResult.value)}`}
               >
-                <View style={styles.resultIcon}>
+                <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
                   <Ionicons name="star-outline" size={18} color={colors.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -340,10 +349,12 @@ const SearchScreen: React.FC = () => {
                 {otherResults.map((item) => (
                   <AnimatedPressable
                     key={item.id}
-                    style={styles.resultRow}
+                    style={[styles.resultRow, { borderBottomColor: colors.border }]}
                     onPress={() => handleOpenItem(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.name}, ${formatCurrency(item.value)}`}
                   >
-                    <View style={styles.resultIcon}>
+                    <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
                       <Ionicons name="card-outline" size={18} color={colors.muted} />
                     </View>
                     <View style={{ flex: 1 }}>
@@ -376,8 +387,10 @@ const SearchScreen: React.FC = () => {
                 key={item.collectionName}
                 style={styles.collectionRow}
                 onPress={() => handleOpenCollection(item.collectionName)}
+                accessibilityRole="button"
+                accessibilityLabel={`View ${item.collectionName} collection`}
               >
-                <View style={styles.collectionIcon}>
+                <View style={[styles.collectionIcon, { backgroundColor: colors.accent + '10' }]}>
                   <Ionicons name="albums-outline" size={18} color={colors.accent} />
                 </View>
                 <View>

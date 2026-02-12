@@ -9,6 +9,8 @@ export default function CategoryCard({ item, onPress }: Props) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       style={{
         padding: 12,
         borderRadius: 12,

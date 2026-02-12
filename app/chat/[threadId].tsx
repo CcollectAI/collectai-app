@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type DmMessage, type DmThread, type PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import logger from '@/utils/logger';
 
 // Message with local status for optimistic UI
 type LocalMessage = DmMessage & {
@@ -51,7 +52,7 @@ export default function ThreadDetailScreen() {
       const msgs = await dataProvider.getThreadMessages(threadId);
       setMessages(msgs.map((m) => ({ ...m, localStatus: 'sent' })));
     } catch (err) {
-      console.warn('[ThreadDetail] loadMessages error:', err);
+      logger.warn('[ThreadDetail] loadMessages error:', err);
     } finally {
       setLoading(false);
     }
@@ -65,7 +66,7 @@ export default function ThreadDetailScreen() {
       const found = threads.find((t) => t.id === threadId);
       if (found) setThreadInfo(found);
     } catch (err) {
-      console.warn('[ThreadDetail] loadThreadInfo error:', err);
+      logger.warn('[ThreadDetail] loadThreadInfo error:', err);
     }
   }, [threadId]);
 
@@ -75,7 +76,7 @@ export default function ThreadDetailScreen() {
       const profile = await dataProvider.getMyProfile();
       if (profile) setCurrentUser(profile);
     } catch (err) {
-      console.warn('[ThreadDetail] loadCurrentUser error:', err);
+      logger.warn('[ThreadDetail] loadCurrentUser error:', err);
     }
   }, []);
 
@@ -122,8 +123,8 @@ export default function ThreadDetailScreen() {
             : m
         )
       );
-    } catch (err: any) {
-      console.warn('[ThreadDetail] sendMessage error:', err);
+    } catch (err: unknown) {
+      logger.warn('[ThreadDetail] sendMessage error:', err);
       // Mark as failed
       setMessages((prev) =>
         prev.map((m) =>
@@ -151,7 +152,7 @@ export default function ThreadDetailScreen() {
         {!isMe && (
           <View style={[styles.avatar, { backgroundColor: otherAvatar ? 'transparent' : otherAvatarColor }]}>
             {otherAvatar ? (
-              <Image source={{ uri: otherAvatar }} style={styles.avatarImage} />
+              <Image source={{ uri: otherAvatar }} style={styles.avatarImage} accessibilityLabel={`${threadInfo?.otherUserName || 'User'} avatar`} />
             ) : (
               <Text style={styles.avatarInitial}>{otherInitial}</Text>
             )}
@@ -188,7 +189,7 @@ export default function ThreadDetailScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Chat</Text>
@@ -205,7 +206,7 @@ export default function ThreadDetailScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
@@ -243,6 +244,7 @@ export default function ThreadDetailScreen() {
             onChangeText={setInputText}
             placeholder="Type a message..."
             placeholderTextColor={colors.muted}
+            accessibilityLabel="Message input"
             style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             multiline
             maxLength={1000}
@@ -254,6 +256,8 @@ export default function ThreadDetailScreen() {
               styles.sendBtn,
               { backgroundColor: inputText.trim() ? colors.accent : colors.border },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={sending ? 'Sending message' : 'Send message'}
           >
             {sending ? (
               <ActivityIndicator size="small" color="#fff" />

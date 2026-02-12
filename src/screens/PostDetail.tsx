@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, FlatList } from 'react-native';
 import { colors, spacing, fonts } from '../theme/tokens';
 import useComments from '../hooks/useComments';
 
-export default function PostDetail({ route }:any){
+export default function PostDetail({ route }: { route: { params: { post: { id: string; content: string } } } }){
   const { post } = route.params;
   const { rows, loading, add } = useComments(post.id);
   const [text,setText]=useState('');

@@ -39,7 +39,7 @@ export default function SignUp() {
       });
       if (pErr) {
         // If duplicate username, tell them
-        if ((pErr as any).code === "23505") {
+        if (pErr && typeof pErr === 'object' && 'code' in pErr && (pErr as { code: string }).code === "23505") {
           Alert.alert("Username taken", "Please choose another username.");
           return;
         }
@@ -48,8 +48,8 @@ export default function SignUp() {
 
       Alert.alert("Account created", "You can now sign in.");
       router.replace("/(auth)");
-    } catch (e: any) {
-      Alert.alert("Sign up failed", e?.message ?? "Unknown error");
+    } catch (e: unknown) {
+      Alert.alert("Sign up failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setLoading(false);
     }

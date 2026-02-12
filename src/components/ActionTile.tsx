@@ -15,6 +15,8 @@ export default function ActionTile({
   return (
     <AnimatedPressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       style={{
         width: "48%",
         backgroundColor: "#fff",

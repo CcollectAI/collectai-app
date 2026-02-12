@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, json
+import os, json, logging
 # AUTOLOAD_DB_ENV
 import os, pathlib
 for _cand in ("/etc/collectors/db.env", "ops/db.env"):
@@ -28,6 +28,8 @@ for _cand in ("/etc/collectors/db.env", "ops/db.env"):
 
 from datetime import datetime, timezone
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 def connect():
     return psycopg2.connect(
@@ -91,11 +93,12 @@ def main():
         mae = sum(v["errs"])/v["n"]
         mape = sum(v["pes"])/v["n"]
         cur.execute(ins, (args.model_version, cat, mae, mape, v["n"], args.window))
-        print(f"[{now}] {cat}: n={v['n']} MAE={mae:.2f} MAPE={mape:.1f}%")
+        logger.info("[%s] %s: n=%d MAE=%.2f MAPE=%.1f%%", now, cat, v["n"], mae, mape)
         wrote+=1
     cur.close(); conn.close()
-    print(f"✅ wrote {wrote} rows to model_metrics")
+    logger.info("wrote %d rows to model_metrics", wrote)
     return 0
 
 if __name__=="__main__":
+    logging.basicConfig(level=logging.INFO)
     raise SystemExit(main())

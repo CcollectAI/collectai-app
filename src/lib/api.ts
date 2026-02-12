@@ -1,7 +1,9 @@
+import { SUPABASE_URL } from '@/api/config';
+
 export type EdgeResult<T> = { ok: true; data: T } | { ok: false; error: string }
 
-export async function callEdge<T = any>(fn: string, jwt: string, anonKey: string, body: any): Promise<EdgeResult<T>> {
-  const base = process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+export async function callEdge<T = unknown>(fn: string, jwt: string, anonKey: string, body: unknown): Promise<EdgeResult<T>> {
+  const base = SUPABASE_URL;
   if (!base) return { ok: false, error: 'Missing SUPABASE_URL' }
   try {
     const res = await fetch(`${base}/functions/v1/${fn}`, {
@@ -18,7 +20,7 @@ export async function callEdge<T = any>(fn: string, jwt: string, anonKey: string
       return { ok: false, error: json?.error || `HTTP ${res.status}` }
     }
     return { ok: true, data: json as T }
-  } catch (e: any) {
-    return { ok: false, error: String(e?.message || e) }
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
 }

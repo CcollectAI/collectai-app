@@ -18,11 +18,17 @@ import re
 from typing import Any, Optional
 
 import httpx
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+
+from app.auth import get_current_user_id
+from app.cache import cache_get, cache_set
 
 router = APIRouter(prefix="/barcode", tags=["barcode"])
 logger = logging.getLogger(__name__)
+
+# Cache TTL for external barcode lookups (24 hours — ISBN data rarely changes)
+_BARCODE_CACHE_TTL = 86400
 
 
 # ---------------------------------------------------------------------------
@@ -241,6 +247,10 @@ async def _lookup_local_catalog(barcode: str, pool) -> Optional[dict]:
 
 async def _lookup_open_library(isbn: str) -> Optional[dict]:
     """Query Open Library for book data by ISBN."""
+    cached = cache_get(f"barcode:ol:{isbn}")
+    if cached is not None:
+        return cached
+
     url = f"https://openlibrary.org/isbn/{isbn}.json"
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
@@ -309,7 +319,7 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
                         except Exception as e:
                             logger.debug("[barcode] Work lookup failed for %s: %s", work_key, e)
 
-            return {
+            result = {
                 "title": title,
                 "publisher": publisher,
                 "publishers": publishers,
@@ -321,6 +331,8 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
                 "publish_date": data.get("publish_date"),
                 "source": "open_library",
             }
+            cache_set(f"barcode:ol:{isbn}", result, ttl=_BARCODE_CACHE_TTL)
+            return result
 
     except httpx.TimeoutException:
         logger.warning(f"[barcode] Open Library timeout for ISBN {isbn}")
@@ -332,6 +344,10 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
 
 async def _lookup_google_books(isbn: str) -> Optional[dict]:
     """Fallback: query Google Books API for ISBN data."""
+    cached = cache_get(f"barcode:gb:{isbn}")
+    if cached is not None:
+        return cached
+
     url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
@@ -359,7 +375,7 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
             image_links = vol.get("imageLinks", {})
             cover_url = image_links.get("thumbnail") or image_links.get("smallThumbnail")
 
-            return {
+            result = {
                 "title": title,
                 "publisher": publisher,
                 "publishers": [publisher] if publisher else [],
@@ -371,6 +387,8 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
                 "publish_date": vol.get("publishedDate"),
                 "source": "google_books",
             }
+            cache_set(f"barcode:gb:{isbn}", result, ttl=_BARCODE_CACHE_TTL)
+            return result
 
     except httpx.TimeoutException:
         logger.warning(f"[barcode] Google Books timeout for ISBN {isbn}")
@@ -428,7 +446,10 @@ async def _lookup_market_price(category: str, title: Optional[str], pool) -> Opt
 # ---------------------------------------------------------------------------
 
 @router.post("/lookup", response_model=BarcodeLookupResponse)
-async def barcode_lookup(req: BarcodeLookupRequest) -> BarcodeLookupResponse:
+async def barcode_lookup(
+    req: BarcodeLookupRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> BarcodeLookupResponse:
     """
     Look up a product by barcode or ISBN.
 

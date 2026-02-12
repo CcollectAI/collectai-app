@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import logging
 import os
 import pathlib
 import sys
@@ -9,6 +10,8 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
+
+logger = logging.getLogger(__name__)
 
 IN = sys.argv[1] if len(sys.argv) > 1 else "data/training/training.jsonl"
 MODELS_DIR = pathlib.Path(os.environ.get("MODELS_DIR", "/opt/models"))
@@ -45,68 +48,71 @@ def load_rows(path: str) -> list[dict]:
     return out
 
 
-rows = load_rows(IN)
-by_cat = defaultdict(list)
-for r in rows:
-    by_cat[r["category"]].append(r)
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
 
-MODELS_DIR.mkdir(parents=True, exist_ok=True)
-for cat, items in by_cat.items():
-    X_rows, ys = [], []
-    for it in items:
-        feats = it.get("features", {})
-        X_rows.append(feats)
-        ys.append(float(it["y"]))
+    rows = load_rows(IN)
+    by_cat = defaultdict(list)
+    for r in rows:
+        by_cat[r["category"]].append(r)
 
-    n = len(ys)
-    cat_dir = MODELS_DIR / cat
-    cat_dir.mkdir(parents=True, exist_ok=True)
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    for cat, items in by_cat.items():
+        X_rows, ys = [], []
+        for it in items:
+            feats = it.get("features", {})
+            X_rows.append(feats)
+            ys.append(float(it["y"]))
 
-    y_arr = np.array(ys, dtype=float)
-    y_w = winsorize(y_arr, WINSOR) if n >= 10 else y_arr
+        n = len(ys)
+        cat_dir = MODELS_DIR / cat
+        cat_dir.mkdir(parents=True, exist_ok=True)
 
-    df = pd.json_normalize(X_rows)
-    for col in df.columns:
-        if df[col].dtype == object:
-            df[col] = df[col].astype("string")
-    X = pd.get_dummies(df, dummy_na=True)
+        y_arr = np.array(ys, dtype=float)
+        y_w = winsorize(y_arr, WINSOR) if n >= 10 else y_arr
 
-    info = {
-        "category": cat,
-        "n_obs": n,
-        "winsor_p": WINSOR if n >= 10 else 0.0,
-        "features": list(df.columns),
-        "dummies": list(X.columns),
-        "trainer": "ridge" if n >= LOW_N else "dummy",
-        "alpha": ALPHA,
-    }
+        df = pd.json_normalize(X_rows)
+        for col in df.columns:
+            if df[col].dtype == object:
+                df[col] = df[col].astype("string")
+        X = pd.get_dummies(df, dummy_na=True)
 
-    model_path = cat_dir / "model.joblib"
-    info_path = cat_dir / "model_info.json"
+        info = {
+            "category": cat,
+            "n_obs": n,
+            "winsor_p": WINSOR if n >= 10 else 0.0,
+            "features": list(df.columns),
+            "dummies": list(X.columns),
+            "trainer": "ridge" if n >= LOW_N else "dummy",
+            "alpha": ALPHA,
+        }
 
-    if n >= LOW_N:
-        mdl = Ridge(alpha=ALPHA, random_state=0)
-        mdl.fit(X.values, y_w)
-        joblib.dump({"model": "ridge", "sk": mdl, "cols": list(X.columns)}, model_path)
-        # feature importance ~ abs(coef)
-        coefs = getattr(mdl, "coef_", None)
-        if coefs is not None and len(info["dummies"]) == len(coefs):
-            pairs = sorted(
-                zip(info["dummies"], map(abs, coefs)), key=lambda t: t[1], reverse=True
-            )
-            info["feature_importance"] = [
-                {"feature": k, "weight": float(v)} for k, v in pairs[:TOPK]
-            ]
-        info["model_name"] = "ridge"
-        print(f"[{cat}] ridge:n={n}|p={X.shape[1]} -> {model_path}")
-    else:
-        med = float(np.median(y_arr)) if n > 0 else 30.0
-        joblib.dump({"model": "dummy", "median": med}, model_path)
-        info["model_name"] = "dummy"
-        info["median"] = med
-        print(f"[{cat}] dummy:low_n={n} -> {model_path}")
+        model_path = cat_dir / "model.joblib"
+        info_path = cat_dir / "model_info.json"
 
-    with open(info_path, "w", encoding="utf-8") as f:
-        json.dump(info, f, indent=2)
+        if n >= LOW_N:
+            mdl = Ridge(alpha=ALPHA, random_state=0)
+            mdl.fit(X.values, y_w)
+            joblib.dump({"model": "ridge", "sk": mdl, "cols": list(X.columns)}, model_path)
+            # feature importance ~ abs(coef)
+            coefs = getattr(mdl, "coef_", None)
+            if coefs is not None and len(info["dummies"]) == len(coefs):
+                pairs = sorted(
+                    zip(info["dummies"], map(abs, coefs)), key=lambda t: t[1], reverse=True
+                )
+                info["feature_importance"] = [
+                    {"feature": k, "weight": float(v)} for k, v in pairs[:TOPK]
+                ]
+            info["model_name"] = "ridge"
+            logger.info("[%s] ridge:n=%d|p=%d -> %s", cat, n, X.shape[1], model_path)
+        else:
+            med = float(np.median(y_arr)) if n > 0 else 30.0
+            joblib.dump({"model": "dummy", "median": med}, model_path)
+            info["model_name"] = "dummy"
+            info["median"] = med
+            logger.info("[%s] dummy:low_n=%d -> %s", cat, n, model_path)
 
-print("[ok] done")
+        with open(info_path, "w", encoding="utf-8") as f:
+            json.dump(info, f, indent=2)
+
+    logger.info("[ok] done")

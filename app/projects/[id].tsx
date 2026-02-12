@@ -25,6 +25,7 @@ import {
 } from "@/data";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable } from "@/motion";
+import logger from "@/utils/logger";
 
 export default function ProjectDetailScreen() {
   const router = useRouter();
@@ -77,8 +78,8 @@ export default function ProjectDetailScreen() {
       setSteps(stepsData);
       setNotes(notesData);
       setError(null);
-    } catch (err: any) {
-      console.warn("[ProjectDetail] loadProject error:", err);
+    } catch (err: unknown) {
+      logger.warn("[ProjectDetail] loadProject error:", err);
       setError(err?.message || "Failed to load project");
     } finally {
       setLoading(false);
@@ -96,7 +97,7 @@ export default function ProjectDetailScreen() {
       const newStatus = pendingPercent >= 100 ? "completed" : pendingPercent > 0 ? "active" : "backlog";
       await dataProvider.setBuildPaintProgress(project.id, pendingPercent, newStatus);
       await loadProject();
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert("Error", err?.message || "Failed to save progress");
     } finally {
       setSavingProgress(false);
@@ -109,7 +110,7 @@ export default function ProjectDetailScreen() {
     try {
       await dataProvider.markBuildPaintProjectComplete(project.id, !project.isCompleted);
       await loadProject();
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert("Error", err?.message || "Failed to toggle complete");
     } finally {
       setTogglingComplete(false);
@@ -124,7 +125,7 @@ export default function ProjectDetailScreen() {
       setNewStepTitle("");
       const stepsData = await dataProvider.listBuildPaintSteps(project.id);
       setSteps(stepsData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert("Error", err?.message || "Failed to add step");
     } finally {
       setAddingStep(false);
@@ -136,7 +137,7 @@ export default function ProjectDetailScreen() {
       await dataProvider.toggleBuildPaintStep(stepId, !currentIsDone);
       const stepsData = await dataProvider.listBuildPaintSteps(projectId);
       setSteps(stepsData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert("Error", err?.message || "Failed to toggle step");
     }
   };
@@ -149,7 +150,7 @@ export default function ProjectDetailScreen() {
       setNewNoteBody("");
       const notesData = await dataProvider.listBuildPaintNotes(project.id);
       setNotes(notesData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert("Error", err?.message || "Failed to add note");
     } finally {
       setAddingNote(false);
@@ -180,6 +181,8 @@ export default function ProjectDetailScreen() {
             <AnimatedPressable
               style={[styles.backBtn, { borderColor: colors.border }]}
               onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
               <Text style={[styles.backBtnText, { color: colors.text }]}>Go back</Text>
             </AnimatedPressable>
@@ -220,6 +223,7 @@ export default function ProjectDetailScreen() {
                     onValueChange={handleToggleComplete}
                     trackColor={{ false: colors.border, true: "#34D399" }}
                     thumbColor={project.isCompleted ? "#fff" : "#fff"}
+                    accessibilityLabel="Mark project as complete"
                   />
                 )}
               </View>
@@ -246,18 +250,24 @@ export default function ProjectDetailScreen() {
                 <AnimatedPressable
                   style={[styles.percentBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
                   onPress={() => setPendingPercent(Math.max(0, pendingPercent - 5))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease progress by 5 percent"
                 >
                   <Text style={[styles.percentBtnText, { color: colors.text }]}>-5</Text>
                 </AnimatedPressable>
                 <AnimatedPressable
                   style={[styles.percentBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
                   onPress={() => setPendingPercent(Math.min(100, pendingPercent + 5))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase progress by 5 percent"
                 >
                   <Text style={[styles.percentBtnText, { color: colors.text }]}>+5</Text>
                 </AnimatedPressable>
                 <AnimatedPressable
                   style={[styles.percentBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
                   onPress={() => setPendingPercent(Math.min(100, pendingPercent + 10))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase progress by 10 percent"
                 >
                   <Text style={[styles.percentBtnText, { color: colors.text }]}>+10</Text>
                 </AnimatedPressable>
@@ -271,6 +281,8 @@ export default function ProjectDetailScreen() {
                   ]}
                   onPress={handleSaveProgress}
                   disabled={pendingPercent === project.percent || savingProgress}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save progress"
                 >
                   {savingProgress ? (
                     <ActivityIndicator size="small" color="#fff" />
@@ -308,6 +320,8 @@ export default function ProjectDetailScreen() {
                     key={step.id}
                     style={styles.stepRow}
                     onPress={() => handleToggleStep(step.id, step.isDone)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${step.title}, ${step.isDone ? 'completed' : 'not completed'}`}
                   >
                     <View
                       style={[
@@ -341,6 +355,7 @@ export default function ProjectDetailScreen() {
                 onChangeText={setNewStepTitle}
                 placeholder="Add a step..."
                 placeholderTextColor={colors.muted}
+                accessibilityLabel="New step title"
                 style={[
                   styles.addInput,
                   { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
@@ -356,6 +371,8 @@ export default function ProjectDetailScreen() {
                 ]}
                 onPress={handleAddStep}
                 disabled={!newStepTitle.trim() || addingStep}
+                accessibilityRole="button"
+                accessibilityLabel="Add step"
               >
                 {addingStep ? (
                   <ActivityIndicator size="small" color="#fff" />
@@ -402,6 +419,7 @@ export default function ProjectDetailScreen() {
                 placeholder="Add a note..."
                 placeholderTextColor={colors.muted}
                 multiline
+                accessibilityLabel="New note"
                 style={[
                   styles.addNoteInput,
                   { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
@@ -417,6 +435,8 @@ export default function ProjectDetailScreen() {
                 ]}
                 onPress={handleAddNote}
                 disabled={!newNoteBody.trim() || addingNote}
+                accessibilityRole="button"
+                accessibilityLabel={addingNote ? 'Adding note' : 'Add note'}
               >
                 {addingNote ? (
                   <ActivityIndicator size="small" color="#fff" />

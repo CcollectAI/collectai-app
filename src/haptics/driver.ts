@@ -7,7 +7,8 @@ import { Platform } from 'react-native';
 import { HapticIntent, uniqueIntents } from './intents';
 
 // Optional dependency - graceful fallback if not installed
-let Haptics: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Haptics: Record<string, any> | null = null;
 
 try {
   Haptics = require('expo-haptics');

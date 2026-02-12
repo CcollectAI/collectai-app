@@ -7,7 +7,7 @@ export default function Input({ label, error, style, ...props }:
   return (
     <View style={{ gap: space.xs }}>
       {label ? <Text style={{ fontWeight: "600" }}>{label}</Text> : null}
-      <TextInput {...props} style={[{
+      <TextInput {...props} accessibilityLabel={label || props.placeholder} style={[{
         borderWidth: 1, borderColor: error ? "#ef4444" : color.border,
         borderRadius: radius.md, paddingHorizontal: space.lg, paddingVertical: space.md, backgroundColor: color.bg,
       }, style]} />

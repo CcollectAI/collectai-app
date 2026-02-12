@@ -34,6 +34,7 @@ import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import CompactSelect from '@/components/CompactSelect';
+import logger from '@/utils/logger';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -135,8 +136,8 @@ const CreateEventScreen: React.FC = () => {
         const name = parts.join(', ');
         if (name) setLocation(name);
       }
-    } catch (err: any) {
-      console.warn('[CreateEvent] geolocation error:', err);
+    } catch (err: unknown) {
+      logger.warn('[CreateEvent] geolocation error:', err);
       Alert.alert('Location Error', 'Could not retrieve your location. Please enter it manually.');
     } finally {
       setGeoLoading(false);
@@ -168,8 +169,8 @@ const CreateEventScreen: React.FC = () => {
 
       await dataProvider.createEvent(input);
       router.back();
-    } catch (err: any) {
-      console.warn('[CreateEvent] error:', err);
+    } catch (err: unknown) {
+      logger.warn('[CreateEvent] error:', err);
       Alert.alert('Error', err?.message || 'Failed to create event. Please try again.');
     } finally {
       setSaveState('idle');
@@ -190,7 +191,7 @@ const CreateEventScreen: React.FC = () => {
         {/*  Header                                                          */}
         {/* ---------------------------------------------------------------- */}
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Create Event</Text>
@@ -227,6 +228,7 @@ const CreateEventScreen: React.FC = () => {
                     placeholder="e.g. Rotterdam TCG Meetup"
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
+                    accessibilityLabel="Event title"
                   />
                 </View>
               </View>
@@ -290,6 +292,8 @@ const CreateEventScreen: React.FC = () => {
                         },
                       ]}
                       onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setFormat(opt.value); }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${opt.label} format${isSelected ? ', selected' : ''}`}
                     >
                       <Ionicons
                         name={opt.icon}
@@ -334,6 +338,7 @@ const CreateEventScreen: React.FC = () => {
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
+                    accessibilityLabel="Event date"
                   />
                 </View>
               </View>
@@ -349,6 +354,7 @@ const CreateEventScreen: React.FC = () => {
                     placeholder="19:30 CET"
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
+                    accessibilityLabel="Event time"
                   />
                 </View>
               </View>
@@ -364,6 +370,7 @@ const CreateEventScreen: React.FC = () => {
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
+                    accessibilityLabel="Event end date"
                   />
                 </View>
               </View>
@@ -409,6 +416,7 @@ const CreateEventScreen: React.FC = () => {
                           placeholder="e.g. Amsterdam, Netherlands"
                           placeholderTextColor={colors.muted}
                           style={[styles.input, { color: colors.text }]}
+                          accessibilityLabel="Event location"
                         />
                       </View>
                       <AnimatedPressable
@@ -421,6 +429,8 @@ const CreateEventScreen: React.FC = () => {
                             borderColor: colors.accent + '40',
                           },
                         ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Use my current location"
                       >
                         {geoLoading ? (
                           <ActivityIndicator size="small" color={colors.accent} />
@@ -451,6 +461,7 @@ const CreateEventScreen: React.FC = () => {
                         style={[styles.input, { color: colors.text }]}
                         autoCapitalize="none"
                         keyboardType="url"
+                        accessibilityLabel="Online event URL"
                       />
                     </View>
                   </View>
@@ -483,6 +494,7 @@ const CreateEventScreen: React.FC = () => {
                     placeholderTextColor={colors.muted}
                     style={[styles.inputMultiline, { color: colors.text }]}
                     textAlignVertical="top"
+                    accessibilityLabel="Event description"
                   />
                 </View>
               </View>
@@ -523,6 +535,7 @@ const CreateEventScreen: React.FC = () => {
                   trackColor={{ false: colors.border, true: colors.accent + '60' }}
                   thumbColor={isPublic ? colors.accent : colors.muted}
                   ios_backgroundColor={colors.border}
+                  accessibilityLabel={isPublic ? "Event is public" : "Event is private"}
                 />
               </View>
             </View>
@@ -540,6 +553,8 @@ const CreateEventScreen: React.FC = () => {
                 backgroundColor: canSubmit ? colors.accent : colors.border,
               },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel="Create event"
           >
             {saveState === 'saving' ? (
               <ActivityIndicator size="small" color="#FFFFFF" />

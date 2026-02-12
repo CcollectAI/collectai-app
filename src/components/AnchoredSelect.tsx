@@ -43,7 +43,7 @@ export default function AnchoredSelect({
 
   // Trigger width (auto unless width prop provided)
   const trigW = typeof width === 'number' || typeof width === 'string'
-    ? (width as any)
+    ? (width as number | string)
     : Math.max(60, textW + 24); // value text width + horizontal padding
 
   const menuW = Math.max(typeof trigW === 'number' ? trigW : pos.w, estOptWidth);
@@ -56,6 +56,8 @@ export default function AnchoredSelect({
       <Pressable
         ref={ref}
         onPress={openMenu}
+        accessibilityRole="button"
+        accessibilityLabel={`${label ? label + ': ' : ''}${value}`}
         style={{
           borderWidth: 1,
           borderColor: theme.colors.border,
@@ -77,7 +79,7 @@ export default function AnchoredSelect({
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable onPress={() => setOpen(false)} style={{ flex: 1 }}>
+        <Pressable onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Close dropdown" style={{ flex: 1 }}>
           <View
             style={{
               position: 'absolute',
@@ -97,6 +99,8 @@ export default function AnchoredSelect({
                 <Pressable
                   key={opt}
                   onPress={() => { onChange(opt); setOpen(false); }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${opt}${opt === value ? ', selected' : ''}`}
                   style={{ paddingVertical: 8, paddingHorizontal: 10 }}
                 >
                   <Text style={{ color: theme.colors.navy }}>{opt}</Text>

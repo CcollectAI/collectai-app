@@ -30,6 +30,8 @@ export type ObjectStorePrefix =
   | 'training/raw'
   | 'training/processed';
 
+import { logger } from '@/lib/logger';
+
 export type ObjectMetadata = {
   objectKey: string;
   bucket: string;
@@ -212,12 +214,12 @@ export class MockObjectStore implements ObjectStore {
     _fields?: Record<string, string>
   ): Promise<void> {
     // Mock: just pretend the upload succeeded
-    console.log('[MockObjectStore] Upload simulated');
+    logger.info('[MockObjectStore] Upload simulated');
   }
 
   async saveObjectPointer(metadata: ObjectMetadata): Promise<void> {
     this.pointers.push(metadata);
-    console.log('[MockObjectStore] Saved pointer:', metadata.objectKey);
+    logger.info('[MockObjectStore] Saved pointer:', metadata.objectKey);
   }
 
   async listObjectPointers(options: {
@@ -259,7 +261,7 @@ let _objectStore: ObjectStore | null = null;
  */
 export function getObjectStore(): ObjectStore {
   if (!_objectStore) {
-    // TODO: Replace with real implementation when backend is ready
+    // TODO: Wire to storageApi (S3 presigned URLs) instead of mock
     _objectStore = new MockObjectStore();
   }
   return _objectStore;

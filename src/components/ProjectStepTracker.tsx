@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -45,14 +46,14 @@ type Props = {
 function getSafeSupabase() {
   try {
     if (!supabase || typeof supabase.from !== "function") {
-      console.warn(
+      logger.warn(
         "[ProjectStepTracker] Supabase client not ready; running in local-only mode."
       );
       return null;
     }
     return supabase;
   } catch {
-    console.warn(
+    logger.warn(
       "[ProjectStepTracker] Supabase client threw; running in local-only mode."
     );
     return null;
@@ -96,7 +97,7 @@ export const ProjectStepTracker: React.FC<Props> = ({ projectId }) => {
           .maybeSingle();
 
         if (error) {
-          console.error("[ProjectStepTracker] load error", error);
+          logger.error("[ProjectStepTracker] load error", error);
           if (!cancelled) {
             setLastError("Could not load project progress.");
           }
@@ -108,22 +109,23 @@ export const ProjectStepTracker: React.FC<Props> = ({ projectId }) => {
         }
 
         if (!cancelled) {
-          const remoteNotes = (data as any).notes ?? "";
-          const remoteSteps = (data as any).steps as Step[] | null;
+          const dataRow = data as Record<string, unknown>;
+          const remoteNotes = (dataRow.notes as string | undefined) ?? "";
+          const remoteSteps = dataRow.steps as Step[] | null;
 
           setNotes(typeof remoteNotes === "string" ? remoteNotes : "");
           if (Array.isArray(remoteSteps) && remoteSteps.length) {
             setSteps(
               remoteSteps.map((s) => ({
-                id: String((s as any).id),
-                label: String((s as any).label),
-                done: !!(s as any).done,
+                id: String(s.id),
+                label: String(s.label),
+                done: !!s.done,
               }))
             );
           }
         }
       } catch (err) {
-        console.error("[ProjectStepTracker] load exception", err);
+        logger.error("[ProjectStepTracker] load exception", err);
         if (!cancelled) {
           setLastError("Could not load project progress.");
         }
@@ -165,11 +167,11 @@ export const ProjectStepTracker: React.FC<Props> = ({ projectId }) => {
           .eq("id", projectId);
 
         if (error) {
-          console.error("[ProjectStepTracker] save error", error);
+          logger.error("[ProjectStepTracker] save error", error);
           setLastError("Could not save progress. Will retry on next change.");
         }
       } catch (err) {
-        console.error("[ProjectStepTracker] save exception", err);
+        logger.error("[ProjectStepTracker] save exception", err);
         setLastError("Could not save progress. Will retry on next change.");
       } finally {
         setSaving(false);
@@ -239,6 +241,7 @@ export const ProjectStepTracker: React.FC<Props> = ({ projectId }) => {
           multiline
           textAlignVertical="top"
           style={styles.notesInput}
+          accessibilityLabel="Project notes"
         />
         {saving && (
           <Text style={styles.savingText}>Saving…</Text>
@@ -257,6 +260,9 @@ export const ProjectStepTracker: React.FC<Props> = ({ projectId }) => {
             <Pressable
               key={step.id}
               onPress={() => toggleStep(step.id)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: step.done }}
+              accessibilityLabel={step.label}
               style={({ pressed }) => [
                 styles.stepRow,
                 step.done && styles.stepRowDone,

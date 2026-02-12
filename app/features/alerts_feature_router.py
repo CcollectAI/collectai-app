@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import json
-import os
+import logging
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from app.auth import get_current_user_id
+from app.features.pagination import pagination_params
 
 from app.db import db_configured, get_conn
 
-DB_ENABLED = os.getenv("DB_ENABLED", "false").lower() == "true"
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -43,9 +45,9 @@ class PriceAlert(BaseModel):
 class PriceAlertCreate(BaseModel):
     item_id: Optional[str] = None
     category: Optional[str] = None
-    trigger_type: str
-    threshold_value: Optional[float] = None
-    direction: Optional[str] = None
+    trigger_type: Literal["below_threshold", "category_trend", "high_prediction"] = "below_threshold"
+    threshold_value: Optional[float] = Field(None, gt=0, le=1_000_000)
+    direction: Optional[Literal["up", "down"]] = None
     metadata: dict = Field(default_factory=dict)
 
 
@@ -53,26 +55,26 @@ class PriceAlertListResponse(BaseModel):
     alerts: List[PriceAlert]
 
 
-def get_current_user_id() -> str:
-    # TODO: replace with real auth
-    return "demo-user"
-
-
 # In-memory store for DB_DISABLED mode
 _IN_MEMORY_ALERTS: dict[str, PriceAlert] = {}
 
 
 @router.get("/mine", response_model=PriceAlertListResponse)
-async def list_my_alerts(user_id: str = Depends(get_current_user_id)):
+async def list_my_alerts(
+    user_id: str = Depends(get_current_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
+):
     """
     List all alerts for the current user.
 
     - If DB is disabled: use in-memory store.
     - If DB is enabled: read from user_price_alerts table.
     """
-    if not DB_ENABLED:
+    limit, offset = pagination
+
+    if not db_configured():
         alerts = [a for a in _IN_MEMORY_ALERTS.values() if a.user_id == user_id]
-        return PriceAlertListResponse(alerts=alerts)
+        return PriceAlertListResponse(alerts=alerts[offset:offset + limit])
 
     async with get_conn() as conn:
         rows = await conn.fetch(
@@ -83,8 +85,11 @@ async def list_my_alerts(user_id: str = Depends(get_current_user_id)):
             FROM public.user_price_alerts
             WHERE user_id = $1
             ORDER BY created_at DESC
+            LIMIT $2 OFFSET $3
             """,
             user_id,
+            limit,
+            offset,
         )
 
     alerts = [
@@ -141,7 +146,7 @@ async def create_or_update_alert(
         metadata=payload.metadata or {},
     )
 
-    if not DB_ENABLED:
+    if not db_configured():
         _IN_MEMORY_ALERTS[alert_id] = alert
         return alert
 
@@ -181,7 +186,7 @@ async def delete_alert(alert_id: str, user_id: str = Depends(get_current_user_id
     """
     Delete/disable a user's alert (soft delete by setting active=false).
     """
-    if not DB_ENABLED:
+    if not db_configured():
         existing = _IN_MEMORY_ALERTS.get(alert_id)
         if existing and existing.user_id == user_id:
             del _IN_MEMORY_ALERTS[alert_id]
@@ -199,6 +204,92 @@ async def delete_alert(alert_id: str, user_id: str = Depends(get_current_user_id
             user_id,
         )
         # result is like "UPDATE 1" or "UPDATE 0"
-        if result == "UPDATE 0":
+        if result.endswith(" 0"):
             raise HTTPException(status_code=404, detail="Alert not found")
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Trigger history — records of when alerts actually fired
+# ---------------------------------------------------------------------------
+
+
+@router.get("/trigger-history")
+async def get_trigger_history(
+    user_id: str = Depends(get_current_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
+):
+    """Return alert trigger events for the current user, paginated."""
+    limit, offset = pagination
+
+    if not db_configured():
+        return {"triggers": [], "unread_count": 0}
+
+    try:
+        async with get_conn() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, alert_id, item_id, trigger_type, trigger_value,
+                       message, read, created_at
+                FROM public.alert_trigger_history
+                WHERE user_id = $1::text::uuid
+                ORDER BY created_at DESC
+                LIMIT $2 OFFSET $3
+                """,
+                user_id,
+                limit,
+                offset,
+            )
+
+            unread = await conn.fetchval(
+                """
+                SELECT count(*)
+                FROM public.alert_trigger_history
+                WHERE user_id = $1::text::uuid AND read = false
+                """,
+                user_id,
+            )
+    except Exception:
+        logger.warning("trigger-history query failed for user=%s", user_id, exc_info=True)
+        return {"triggers": [], "unread_count": 0}
+
+    return {
+        "triggers": [
+            {
+                "id": str(r["id"]),
+                "alert_id": str(r["alert_id"]) if r["alert_id"] else None,
+                "item_id": r["item_id"],
+                "trigger_type": r["trigger_type"],
+                "trigger_value": r["trigger_value"],  # asyncpg auto-deserialises JSONB
+                "message": r["message"],
+                "read": r["read"],
+                "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+            }
+            for r in rows
+        ],
+        "unread_count": unread or 0,
+    }
+
+
+@router.post("/trigger-history/{trigger_id}/read")
+async def mark_trigger_read(trigger_id: str, user_id: str = Depends(get_current_user_id)):
+    """Mark a single trigger-history entry as read."""
+    if not db_configured():
+        return {"ok": True}
+
+    try:
+        async with get_conn() as conn:
+            await conn.execute(
+                """
+                UPDATE public.alert_trigger_history
+                SET read = true
+                WHERE id = $1::text::uuid AND user_id = $2::text::uuid
+                """,
+                trigger_id,
+                user_id,
+            )
+    except Exception:
+        logger.warning(
+            "mark_trigger_read failed trigger=%s user=%s", trigger_id, user_id, exc_info=True
+        )
     return {"ok": True}

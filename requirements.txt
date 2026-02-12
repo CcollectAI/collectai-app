@@ -27,6 +27,12 @@ scikit-learn==1.6.1
 # AWS
 boto3==1.42.45
 
+# Auth
+PyJWT==2.9.0
+
+# Web Scraping
+firecrawl-py==1.6.2
+
 # Config
 pyyaml==6.0.3
 
@@ -34,3 +40,6 @@ pyyaml==6.0.3
 pytest==8.4.2
 pytest-asyncio==0.24.0
 pytest-cov==7.0.0
+
+# Monitoring
+sentry-sdk[fastapi]==2.22.0

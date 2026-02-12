@@ -39,6 +39,7 @@ with open(REGFILE) as f:
             good.append({"key":key,"sha256":sha})
         except UnidentifiedImageError:
             bad.append({"type":"PIL-sniff-fail","key":key,"ct":ct,"size":sz})
-        except Exception as e:
+        except (ClientError, OSError, IOError) as e:
+            logger.warning("get/open-fail for key=%s: %s", key, e)
             bad.append({"type":"get/open-fail","key":key,"err":str(e)[:160]})
 logger.info(json.dumps({"scanned":scanned,"good":len(good),"bad":len(bad),"bad_items":bad}, indent=2))

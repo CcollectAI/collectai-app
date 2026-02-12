@@ -1,13 +1,13 @@
 import { Share } from 'react-native';
 
-function escapeCSV(v: any): string {
+function escapeCSV(v: unknown): string {
   const s = String(v ?? '');
   if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
 
 /** Share CSV via the native share sheet (no extra deps). Returns the CSV string. */
-export async function exportCSV(rows: Record<string, any>[], name = 'items-export'): Promise<string> {
+export async function exportCSV(rows: Record<string, unknown>[], name = 'items-export'): Promise<string> {
   if (!rows.length) {
     await Share.share({ message: 'No data.' });
     return '';

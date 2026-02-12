@@ -1,2 +1,2 @@
-const store = { getState: () => ({}), setState: (_: any) => {} };
+const store = { getState: () => ({}), setState: (_: Record<string, unknown>) => {} };
 export default store;

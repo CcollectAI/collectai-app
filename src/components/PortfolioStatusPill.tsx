@@ -22,7 +22,7 @@ export const PortfolioStatusPill: React.FC = () => {
         const raw = await getPortfolioItems();
         if (cancelled) return;
 
-        const mapped: CollectionStatusInput[] = (raw || []).map((it: any) => ({
+        const mapped: CollectionStatusInput[] = (raw || []).map((it: Record<string, unknown>) => ({
           id: it.id ?? it.item_id ?? undefined,
           name: it.name ?? it.title ?? null,
           title: it.title ?? it.name ?? null,

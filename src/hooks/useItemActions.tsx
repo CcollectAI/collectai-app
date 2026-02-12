@@ -7,6 +7,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Share, Alert } from 'react-native';
 import { SwipeAction, SwipeActions } from '@/components/SwipeableRow';
+import { logger } from '@/lib/logger';
 
 type ItemData = {
   id: string;
@@ -62,7 +63,7 @@ export function useItemActions({
         url: shareUrl,
       });
     } catch (error) {
-      console.error('[useItemActions] Share failed:', error);
+      logger.error('[useItemActions] Share failed:', error);
     }
   }, [item, shareUrlTemplate]);
 

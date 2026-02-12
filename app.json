@@ -2,7 +2,7 @@
   "expo": {
     "name": "collectorsapp",
     "slug": "collectorsapp",
-    "scheme": "collectorsapp",
+    "scheme": "collectai",
     "plugins": [
       [
         "expo-router",
@@ -23,10 +23,47 @@
 "expo-notifications"
     ],
     "ios": {
+      "bundleIdentifier": "com.collectai.app",
+      "associatedDomains": [
+        "applinks:collectai.app",
+        "applinks:www.collectai.app"
+      ],
       "infoPlist": {
         "NSCalendarsUsageDescription": "CollectAI needs access to your calendar to add collection events, drops, and meetups.",
         "NSRemindersUsageDescription": "CollectAI needs access to reminders to notify you about upcoming events."
       }
+    },
+    "android": {
+      "package": "com.collectai.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "collectai.app",
+              "pathPrefix": "/item"
+            },
+            {
+              "scheme": "https",
+              "host": "collectai.app",
+              "pathPrefix": "/events"
+            },
+            {
+              "scheme": "https",
+              "host": "www.collectai.app",
+              "pathPrefix": "/item"
+            },
+            {
+              "scheme": "https",
+              "host": "www.collectai.app",
+              "pathPrefix": "/events"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "experiments": {
       "typedRoutes": true

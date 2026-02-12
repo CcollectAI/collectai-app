@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { Link, router } from 'expo-router';
 import {
   SafeAreaView,
@@ -6,7 +6,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TextInput,
   Pressable,
   Alert,
@@ -16,6 +15,7 @@ import {
   Animated,
   ActionSheetIOS,
 } from "react-native";
+import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -32,6 +32,36 @@ import {
   DEFAULT_DISCLAIMER,
 } from "@/types/priceExplanation";
 import { featureFlags } from "@/config/featureFlags";
+import { collectorsApi } from "@/api/collectorsApi";
+import { ProvenanceTimeline } from "@/components/ProvenanceTimeline";
+import { Linking } from "react-native";
+import logger from "@/utils/logger";
+import { ItemAttributesSection } from "@/components/ItemAttributesSection";
+
+// Dossier data shape (mirrors collectorsApi.getDossier return type)
+interface DossierData {
+  item_id: string;
+  generated_at: string;
+  identity: Record<string, unknown>;
+  valuation: Record<string, unknown>;
+  provenance: Array<Record<string, unknown>>;
+  price_history: Array<Record<string, unknown>>;
+  market_comps: Array<Record<string, unknown>>;
+  photos: string[];
+  collections: string[];
+  authenticity_signals: string[];
+  completeness_score: number;
+}
+
+// Market hit shape from marketplace search results
+interface MarketHit {
+  title: string;
+  price: number;
+  url?: string;
+  source?: string;
+  provider?: string;
+  condition?: string;
+}
 
 // Format currency with proper number syntax (e.g., €1.234 or €1,234)
 const formatCurrency = (value: string | number | undefined | null): string => {
@@ -176,6 +206,30 @@ export default function ItemDetailScreen() {
   // Expandable explanation state
   const [explanationExpanded, setExplanationExpanded] = useState(false);
 
+  // Provenance state
+  const [provenanceEvents, setProvenanceEvents] = useState<Array<{
+    id: string; eventType: string; timestamp: string;
+    note: string | null; source: string | null; metadata: Record<string, unknown>;
+  }>>([]);
+  const [authenticitySignals, setAuthenticitySignals] = useState<string[]>([]);
+  const [provenanceLoading, setProvenanceLoading] = useState(false);
+
+  // Dossier state
+  const [dossierData, setDossierData] = useState<DossierData | null>(null);
+  const [dossierLoading, setDossierLoading] = useState(false);
+  const [dossierExpanded, setDossierExpanded] = useState(false);
+
+  // Marketplace state
+  const [marketResults, setMarketResults] = useState<MarketHit[]>([]);
+  const [marketLoading, setMarketLoading] = useState(false);
+  const [marketExpanded, setMarketExpanded] = useState(false);
+
+  // Alert creation state
+  const [showAlertForm, setShowAlertForm] = useState(false);
+  const [alertThreshold, setAlertThreshold] = useState("");
+  const [alertSubmitting, setAlertSubmitting] = useState(false);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
   // ActionSheet handlers for iOS dropdowns
   const showCategoryPicker = () => {
     if (Platform.OS === 'ios') {
@@ -263,6 +317,115 @@ export default function ItemDetailScreen() {
   // Price explanation sheet state (for new explainable AI interface)
   const [showPriceExplanation, setShowPriceExplanation] = useState(false);
 
+  // Evidence data from backend (lazy-loaded for PriceExplanationSheet)
+  const [evidenceData, setEvidenceData] = useState<{
+    explanation: string | null;
+    evidence_summary: {
+      sources: Array<{ source: string; count: number; avg_price: number; date_range?: string }>;
+      total_comps: number;
+    } | null;
+    evidence_hit_ids: string[];
+    prediction_at: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!id || isDraft) return;
+    collectorsApi.getPriceEvidence(id)
+      .then(setEvidenceData)
+      .catch((err) => logger.warn('[ItemDetail] evidence fetch error:', err));
+  }, [id, isDraft]);
+
+  // Item attributes from DB (attributes_json, taxonomy_version, subtype_id, collections)
+  const [itemAttributes, setItemAttributes] = useState<Record<string, unknown> | null>(null);
+  const [taxonomyVersion, setTaxonomyVersion] = useState<string | undefined>();
+  const [subtypeId, setSubtypeId] = useState<string | undefined>();
+  const [itemCollections, setItemCollections] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!id || isDraft) return;
+    dataProvider.listItems().then((items) => {
+      const item = items.find((i) => i.id === id);
+      if (item) {
+        setItemAttributes(item.attributesJson || null);
+        setTaxonomyVersion(item.taxonomyVersion);
+        setSubtypeId(item.subtypeId);
+        setItemCollections(item.collections || []);
+      }
+    }).catch((err) => logger.warn('[ItemDetail] item attributes fetch error:', err));
+  }, [id, isDraft]);
+
+  // Load provenance history
+  useEffect(() => {
+    if (!id || isDraft) return;
+    setProvenanceLoading(true);
+    collectorsApi.getProvenance(id)
+      .then((data) => {
+        setProvenanceEvents(data.events.map(e => ({
+          id: e.id,
+          eventType: e.event_type,
+          timestamp: e.timestamp,
+          note: e.note,
+          source: e.source,
+          metadata: e.metadata || {},
+        })));
+        setAuthenticitySignals(data.authenticity_signals || []);
+      })
+      .catch((err) => logger.warn('[ItemDetail] provenance fetch error:', err))
+      .finally(() => setProvenanceLoading(false));
+  }, [id, isDraft]);
+
+  // Load dossier on demand
+  const loadDossier = async () => {
+    if (!id || isDraft || dossierData) return;
+    setDossierLoading(true);
+    try {
+      const data = await collectorsApi.getDossier(id);
+      setDossierData(data);
+      setDossierExpanded(true);
+    } catch (err) {
+      logger.warn('[ItemDetail] dossier fetch error:', err);
+    } finally {
+      setDossierLoading(false);
+    }
+  };
+
+  // Load marketplace results on demand
+  const loadMarketResults = async () => {
+    if (!editableName || marketResults.length > 0) return;
+    setMarketLoading(true);
+    try {
+      const data = await collectorsApi.marketplaceSearch(editableName, editableCategory);
+      setMarketResults(data.results || data.hits || []);
+      setMarketExpanded(true);
+    } catch (err) {
+      logger.warn('[ItemDetail] marketplace search error:', err);
+    } finally {
+      setMarketLoading(false);
+    }
+  };
+
+  // Submit alert
+  const onSubmitAlert = async () => {
+    if (!alertThreshold.trim() || !id || isDraft) return;
+    setAlertSubmitting(true);
+    setAlertMessage(null);
+    try {
+      await collectorsApi.createAlert({
+        item_id: id,
+        trigger_type: "below_threshold",
+        threshold_value: parseFloat(alertThreshold),
+      });
+      setAlertMessage("Price alert set!");
+      setShowAlertForm(false);
+      setAlertThreshold("");
+    } catch (err: unknown) {
+      logger.error('[ItemDetail] alert creation error:', err);
+      setAlertMessage("Failed to create alert");
+    } finally {
+      setAlertSubmitting(false);
+    }
+  };
+
   // Build PriceEstimate object from URL params for new PriceCard component
   const priceEstimate = useMemo((): PriceEstimate | null => {
     if (!q10 || !q50 || !q90) return null;
@@ -282,23 +445,46 @@ export default function ItemDetailScreen() {
   // Build PriceExplanation object for the explanation sheet
   const priceExplanationData = useMemo((): PriceExplanation | null => {
     if (!priceEstimate) return null;
+
+    // Use real evidence from backend when available, else fall back to defaults
+    const summary = evidenceData?.explanation
+      || explanation
+      || 'Price estimated based on comparable sales and market data.';
+
+    const keyFactors: string[] = [
+      `Item condition: ${condition || 'Not specified'}`,
+      `Category: ${editableCategory}`,
+    ];
+    if (evidenceData?.evidence_summary?.total_comps) {
+      keyFactors.push(`Based on ${evidenceData.evidence_summary.total_comps} comparable sales`);
+    } else {
+      keyFactors.push('Based on recent market activity');
+    }
+
+    const compSources = evidenceData?.evidence_summary?.sources?.length
+      ? evidenceData.evidence_summary.sources.map((s) => ({
+          source: s.source,
+          count: s.count,
+          avgPrice: s.avg_price,
+          dateRange: s.date_range,
+        }))
+      : [
+          { source: 'eBay', count: 12, avgPrice: priceEstimate.priceBand.q50 * 0.95, dateRange: 'Last 90 days' },
+          { source: 'TCGPlayer', count: 8, avgPrice: priceEstimate.priceBand.q50 * 1.02 },
+        ];
+
+    const calculatedAt = evidenceData?.prediction_at || new Date().toISOString();
+
     return {
-      summary: explanation || 'Price estimated based on comparable sales and market data.',
-      keyFactors: [
-        `Item condition: ${condition || 'Not specified'}`,
-        `Category: ${editableCategory}`,
-        'Based on recent market activity',
-      ],
-      compSources: [
-        { source: 'eBay', count: 12, avgPrice: priceEstimate.priceBand.q50 * 0.95, dateRange: 'Last 90 days' },
-        { source: 'TCGPlayer', count: 8, avgPrice: priceEstimate.priceBand.q50 * 1.02 },
-      ],
+      summary,
+      keyFactors,
+      compSources,
       confidenceTier: priceEstimate.confidenceTier,
       confidencePercent: priceEstimate.confidencePercent,
       disclaimer: DEFAULT_DISCLAIMER,
-      calculatedAt: new Date().toISOString(),
+      calculatedAt,
     };
-  }, [priceEstimate, explanation, condition, editableCategory]);
+  }, [priceEstimate, explanation, condition, editableCategory, evidenceData]);
 
   const onSaveNotes = () => {
     setSavingNotes(true);
@@ -336,9 +522,9 @@ export default function ItemDetailScreen() {
           imageUri: persisted.imageUrl || '',
         },
       });
-    } catch (err: any) {
-      console.error('[ItemDetail] save draft error:', err);
-      setSaveError(err?.message || 'Failed to save item');
+    } catch (err: unknown) {
+      logger.error('[ItemDetail] save draft error:', err);
+      setSaveError(err instanceof Error ? err.message : 'Failed to save item');
     } finally {
       setSavingDraft(false);
     }
@@ -359,8 +545,8 @@ export default function ItemDetailScreen() {
       setFeedbackMessage("Thanks! Sale price recorded.");
       setShowSalePriceInput(false);
       setSalePrice("");
-    } catch (err: any) {
-      console.error('[ItemDetail] feedback error:', err);
+    } catch (err: unknown) {
+      logger.error('[ItemDetail] feedback error:', err);
       setFeedbackMessage("Failed to submit feedback");
     } finally {
       setSubmittingFeedback(false);
@@ -376,8 +562,8 @@ export default function ItemDetailScreen() {
     try {
       await dataProvider.submitFeedback(id, 'disagree', 'inaccurate');
       setFeedbackMessage("Thanks for the feedback!");
-    } catch (err: any) {
-      console.error('[ItemDetail] feedback error:', err);
+    } catch (err: unknown) {
+      logger.error('[ItemDetail] feedback error:', err);
       setFeedbackMessage("Failed to submit feedback");
     } finally {
       setSubmittingFeedback(false);
@@ -403,7 +589,7 @@ export default function ItemDetailScreen() {
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
             {
               useNativeDriver: false,
-              listener: (event: any) => {
+              listener: (event: { nativeEvent: { contentOffset: { y: number } } }) => {
                 const offsetY = event.nativeEvent.contentOffset.y;
                 setShowStickyButton(offsetY > 200);
               },
@@ -417,13 +603,15 @@ export default function ItemDetailScreen() {
               <Image
                 source={{ uri: displayImageUri }}
                 style={styles.image}
-                resizeMode="cover"
+                contentFit="cover"
+                cachePolicy="disk"
+                transition={200}
               />
             ) : (
               <Image
                 source={require("../../assets/placeholder.png")}
                 style={styles.image}
-                resizeMode="cover"
+                contentFit="cover"
               />
             )}
 
@@ -435,6 +623,8 @@ export default function ItemDetailScreen() {
                 styles.photoUploadOverlay,
                 !displayImageUri && styles.photoUploadOverlayEmpty,
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={displayImageUri ? "Change photo" : "Add your photo"}
             >
               {photoUploading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
@@ -478,6 +668,8 @@ export default function ItemDetailScreen() {
                     styles.scanAnotherButton,
                     { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 },
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Scan another item"
                 >
                   <Ionicons name="camera" size={18} color={theme.text} />
                   <Text style={[styles.scanAnotherButtonText, { color: theme.text }]}>Scan Another</Text>
@@ -490,6 +682,8 @@ export default function ItemDetailScreen() {
                     styles.saveDraftButton,
                     { backgroundColor: theme.accent, opacity: savingDraft ? 0.7 : 1 },
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save to collection"
                 >
                   {savingDraft ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
@@ -519,6 +713,7 @@ export default function ItemDetailScreen() {
                 onChangeText={setEditableName}
                 placeholder="Item name"
                 placeholderTextColor={theme.muted as string}
+                accessibilityLabel="Item name"
               />
             ) : (
               <Text style={[styles.name, { color: theme.text }]}>{editableName}</Text>
@@ -533,6 +728,8 @@ export default function ItemDetailScreen() {
                 <Pressable
                   onPress={showCategoryPicker}
                   style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Category: ${editableCategory === 'Unknown category' ? 'not set' : editableCategory}. Tap to change`}
                 >
                   <Text style={[styles.dropdownFieldTextSmall, { color: editableCategory === 'Unknown category' ? theme.muted : theme.text }]}>
                     {editableCategory === 'Unknown category' ? 'Select category' : editableCategory}
@@ -546,6 +743,8 @@ export default function ItemDetailScreen() {
                     router.push(`/categories/${categoryId}`);
                   }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                  accessibilityRole="link"
+                  accessibilityLabel={`View ${editableCategory} category`}
                 >
                   <Text style={[styles.value, { color: theme.accent }]}>{editableCategory}</Text>
                   <Ionicons name="chevron-forward" size={14} color={theme.accent} />
@@ -562,6 +761,8 @@ export default function ItemDetailScreen() {
                 <Pressable
                   onPress={showCollectionPicker}
                   style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Collection: ${editableCollection}. Tap to change`}
                 >
                   <Text style={[styles.dropdownFieldTextSmall, { color: editableCollection === 'Not set' ? theme.muted : theme.text }]}>
                     {editableCollection}
@@ -581,6 +782,8 @@ export default function ItemDetailScreen() {
                 <Pressable
                   onPress={showConditionPicker}
                   style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Condition: ${editableCondition}. Tap to change`}
                 >
                   <Text style={[styles.dropdownFieldTextSmall, { color: editableCondition === 'Not set' ? theme.muted : theme.text }]}>
                     {editableCondition}
@@ -606,6 +809,7 @@ export default function ItemDetailScreen() {
                     placeholder="0"
                     placeholderTextColor={theme.muted as string}
                     keyboardType="decimal-pad"
+                    accessibilityLabel="Estimated value in euros"
                   />
                 </View>
               ) : (
@@ -614,6 +818,14 @@ export default function ItemDetailScreen() {
                 </Text>
               )}
             </View>
+
+            {/* Item Attributes Section — from attributes_json */}
+            <ItemAttributesSection
+              attributes={itemAttributes}
+              taxonomyVersion={taxonomyVersion}
+              subtypeId={subtypeId}
+              collections={itemCollections}
+            />
 
             {/* New Explainable AI Interface - PriceCard with visual RangeBar */}
             {featureFlags.FEATURE_EXPLAINABLE_AI_INTERFACES && priceEstimate && (
@@ -660,6 +872,8 @@ export default function ItemDetailScreen() {
                 <Pressable
                   onPress={() => setExplanationExpanded(!explanationExpanded)}
                   style={styles.explanationHeaderRow}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Why this price${explanationExpanded ? ', expanded' : ', collapsed'}`}
                 >
                   <View style={styles.explanationHeaderLeft}>
                     <Ionicons name="help-circle-outline" size={18} color={theme.accent} />
@@ -713,6 +927,7 @@ export default function ItemDetailScreen() {
                       value={salePrice}
                       onChangeText={setSalePrice}
                       autoFocus
+                      accessibilityLabel="Sale price"
                     />
                     <Pressable
                       onPress={onSubmitSalePrice}
@@ -721,6 +936,8 @@ export default function ItemDetailScreen() {
                         styles.feedbackSubmitBtn,
                         { backgroundColor: theme.accent, opacity: submittingFeedback ? 0.7 : 1 },
                       ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Submit sale price"
                     >
                       <Text style={[styles.feedbackBtnText, { color: '#FFFFFF' }]}>
                         {submittingFeedback ? "..." : "Submit"}
@@ -729,6 +946,8 @@ export default function ItemDetailScreen() {
                     <Pressable
                       onPress={() => setShowSalePriceInput(false)}
                       style={[styles.feedbackCancelBtn, { borderColor: theme.border }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancel sale price entry"
                     >
                       <Text style={[styles.feedbackBtnText, { color: theme.muted }]}>
                         Cancel
@@ -740,6 +959,8 @@ export default function ItemDetailScreen() {
                     <Pressable
                       onPress={() => setShowSalePriceInput(true)}
                       style={[styles.feedbackBtn, { backgroundColor: theme.success }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Report sale price"
                     >
                       <Text style={styles.feedbackBtnTextWhite}>I sold it for...</Text>
                     </Pressable>
@@ -750,11 +971,238 @@ export default function ItemDetailScreen() {
                         styles.feedbackBtn,
                         { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
                       ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Report price seems off"
                     >
                       <Text style={[styles.feedbackBtnText, { color: theme.text }]}>
                         Price seems off
                       </Text>
                     </Pressable>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Provenance & History */}
+            {!isDraft && id && (
+              <View style={[styles.provenanceBlock, { borderTopColor: theme.border }]}>
+                <View style={styles.provenanceSectionHeader}>
+                  <Ionicons name="time-outline" size={20} color={theme.accent} />
+                  <Text style={[styles.provenanceSectionTitle, { color: theme.text }]}>Provenance & History</Text>
+                </View>
+                <ProvenanceTimeline
+                  events={provenanceEvents}
+                  authenticitySignals={authenticitySignals}
+                  loading={provenanceLoading}
+                />
+              </View>
+            )}
+
+            {/* Dossier Section */}
+            {!isDraft && id && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <Pressable
+                  onPress={() => {
+                    if (!dossierData) loadDossier();
+                    else setDossierExpanded(!dossierExpanded);
+                  }}
+                  style={styles.sectionHeaderRow}
+                  accessibilityRole="button"
+                  accessibilityLabel="View item dossier"
+                >
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="document-text-outline" size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Dossier</Text>
+                  </View>
+                  {dossierLoading ? (
+                    <ActivityIndicator size="small" color={theme.accent} />
+                  ) : (
+                    <Ionicons
+                      name={dossierExpanded ? "chevron-up" : "chevron-down"}
+                      size={18}
+                      color={theme.muted}
+                    />
+                  )}
+                </Pressable>
+                {dossierExpanded && dossierData && (
+                  <View style={styles.sectionContent}>
+                    {/* Valuation summary */}
+                    {dossierData.valuation?.q50 != null && (
+                      <View style={[styles.dossierCard, { backgroundColor: theme.background }]}>
+                        <Text style={[styles.dossierLabel, { color: theme.muted }]}>Estimated Value</Text>
+                        <Text style={[styles.dossierValue, { color: theme.text }]}>
+                          {formatCurrency(dossierData.valuation.q50)}
+                        </Text>
+                        {dossierData.valuation.explanation && (
+                          <Text style={[styles.dossierMeta, { color: theme.muted }]}>
+                            {dossierData.valuation.explanation}
+                          </Text>
+                        )}
+                      </View>
+                    )}
+                    {/* Completeness score */}
+                    <View style={styles.dossierRow}>
+                      <Text style={[styles.dossierRowLabel, { color: theme.muted }]}>Completeness</Text>
+                      <Text style={[styles.dossierRowValue, { color: theme.text }]}>
+                        {Math.round((dossierData.completeness_score || 0) * 100)}%
+                      </Text>
+                    </View>
+                    {/* Market comps count */}
+                    {dossierData.market_comps?.length > 0 && (
+                      <View style={styles.dossierRow}>
+                        <Text style={[styles.dossierRowLabel, { color: theme.muted }]}>Market Comparables</Text>
+                        <Text style={[styles.dossierRowValue, { color: theme.text }]}>
+                          {dossierData.market_comps.length} found
+                        </Text>
+                      </View>
+                    )}
+                    {/* Authenticity signals */}
+                    {dossierData.authenticity_signals?.length > 0 && (
+                      <View style={styles.dossierRow}>
+                        <Text style={[styles.dossierRowLabel, { color: theme.muted }]}>Authenticity</Text>
+                        <Text style={[styles.dossierRowValue, { color: theme.accent }]}>
+                          {dossierData.authenticity_signals.join(", ").replace(/_/g, " ")}
+                        </Text>
+                      </View>
+                    )}
+                    {/* Export button */}
+                    <Pressable
+                      onPress={() => {
+                        const url = collectorsApi.getDossierExportUrl(id);
+                        Linking.openURL(url);
+                      }}
+                      style={[styles.dossierExportBtn, { borderColor: theme.border }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Export dossier as PDF"
+                    >
+                      <Ionicons name="share-outline" size={16} color={theme.accent} />
+                      <Text style={[styles.dossierExportText, { color: theme.accent }]}>Export Report</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Marketplace Section */}
+            {!isDraft && id && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <Pressable
+                  onPress={() => {
+                    if (marketResults.length === 0) loadMarketResults();
+                    else setMarketExpanded(!marketExpanded);
+                  }}
+                  style={styles.sectionHeaderRow}
+                  accessibilityRole="button"
+                  accessibilityLabel="Find on market"
+                >
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="cart-outline" size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Market Prices</Text>
+                  </View>
+                  {marketLoading ? (
+                    <ActivityIndicator size="small" color={theme.accent} />
+                  ) : (
+                    <Ionicons
+                      name={marketExpanded ? "chevron-up" : "chevron-down"}
+                      size={18}
+                      color={theme.muted}
+                    />
+                  )}
+                </Pressable>
+                {marketExpanded && marketResults.length > 0 && (
+                  <View style={styles.sectionContent}>
+                    {marketResults.slice(0, 5).map((hit, idx) => (
+                      <Pressable
+                        key={idx}
+                        onPress={() => hit.url && Linking.openURL(hit.url)}
+                        style={[styles.marketHitRow, { borderBottomColor: theme.border }]}
+                        accessibilityRole="link"
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.marketHitTitle, { color: theme.text }]} numberOfLines={1}>
+                            {hit.title}
+                          </Text>
+                          <Text style={[styles.marketHitMeta, { color: theme.muted }]}>
+                            {hit.source || hit.provider} {hit.condition ? `· ${hit.condition}` : ""}
+                          </Text>
+                        </View>
+                        <Text style={[styles.marketHitPrice, { color: theme.text }]}>
+                          {formatCurrency(hit.price)}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+                {marketExpanded && marketResults.length === 0 && !marketLoading && (
+                  <Text style={[styles.emptyText, { color: theme.muted }]}>
+                    No listings found for this item.
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Set Price Alert */}
+            {!isDraft && id && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <Pressable
+                  onPress={() => setShowAlertForm(!showAlertForm)}
+                  style={styles.sectionHeaderRow}
+                  accessibilityRole="button"
+                  accessibilityLabel="Set price alert"
+                >
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="notifications-outline" size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Price Alert</Text>
+                  </View>
+                  <Ionicons
+                    name={showAlertForm ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={theme.muted}
+                  />
+                </Pressable>
+                {alertMessage && (
+                  <Text style={[styles.alertMessage, { color: theme.accent }]}>
+                    {alertMessage}
+                  </Text>
+                )}
+                {showAlertForm && (
+                  <View style={styles.sectionContent}>
+                    <Text style={[styles.alertFormLabel, { color: theme.muted }]}>
+                      Alert me when price drops below:
+                    </Text>
+                    <View style={styles.alertFormRow}>
+                      <Text style={[styles.currencySymbol, { color: theme.muted }]}>€</Text>
+                      <TextInput
+                        style={[
+                          styles.alertInput,
+                          {
+                            color: theme.text,
+                            borderColor: theme.border,
+                            backgroundColor: theme.background,
+                          },
+                        ]}
+                        placeholder="e.g. 50"
+                        placeholderTextColor={theme.muted as string}
+                        keyboardType="decimal-pad"
+                        value={alertThreshold}
+                        onChangeText={setAlertThreshold}
+                        accessibilityLabel="Alert threshold in euros"
+                      />
+                      <Pressable
+                        onPress={onSubmitAlert}
+                        disabled={alertSubmitting || !alertThreshold.trim()}
+                        style={[
+                          styles.alertSubmitBtn,
+                          { backgroundColor: theme.accent, opacity: alertSubmitting ? 0.7 : 1 },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Create alert"
+                      >
+                        <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>
+                          {alertSubmitting ? "..." : "Set Alert"}
+                        </Text>
+                      </Pressable>
+                    </View>
                   </View>
                 )}
               </View>
@@ -772,6 +1220,8 @@ export default function ItemDetailScreen() {
                     styles.notesAddButton,
                     { borderColor: theme.border, backgroundColor: theme.card },
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add notes"
                 >
                   <Text
                     style={{
@@ -802,6 +1252,7 @@ export default function ItemDetailScreen() {
                 onChangeText={setNotes}
                 textAlignVertical="top"
                 blurOnSubmit={false}
+                accessibilityLabel="Item notes"
               />
               <Text style={[styles.notesHint, { color: theme.muted }]}>
                 Notes are stored locally only (not synced yet)
@@ -814,6 +1265,8 @@ export default function ItemDetailScreen() {
                     { backgroundColor: theme.accent, opacity: savingNotes ? 0.7 : 1 },
                   ]}
                   disabled={savingNotes}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save notes"
                 >
                   <Text
                     style={[
@@ -837,6 +1290,8 @@ export default function ItemDetailScreen() {
                     { backgroundColor: theme.accent, opacity: savingNotes ? 0.7 : 1 },
                   ]}
                   disabled={savingNotes}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save all changes"
                 >
                   <Ionicons name="save-outline" size={18} color="#FFFFFF" />
                   <Text style={styles.saveAllButtonText}>
@@ -858,6 +1313,8 @@ export default function ItemDetailScreen() {
                 styles.stickyButton,
                 { backgroundColor: theme.accent, opacity: savingDraft ? 0.7 : 1 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Save to collection"
             >
               {savingDraft ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
@@ -1290,6 +1747,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
+  provenanceBlock: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  provenanceSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  provenanceSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   saveAllBlock: {
     marginTop: 20,
     paddingTop: 16,
@@ -1308,6 +1781,125 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  sectionBlock: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sectionContent: {
+    marginTop: 10,
+  },
+  emptyText: {
+    fontSize: 13,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  dossierCard: {
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  dossierLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  dossierValue: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  dossierMeta: {
+    fontSize: 12,
+    marginTop: 4,
+    lineHeight: 17,
+  },
+  dossierRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  dossierRowLabel: {
+    fontSize: 13,
+  },
+  dossierRowValue: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  dossierExportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  dossierExportText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  marketHitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+  },
+  marketHitTitle: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  marketHitMeta: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  marketHitPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    minWidth: 60,
+    textAlign: 'right',
+  },
+  alertMessage: {
+    fontSize: 12,
+    marginTop: 6,
+  },
+  alertFormLabel: {
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  alertFormRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  alertInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
+  alertSubmitBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   stickyButtonContainer: {
     position: 'absolute',

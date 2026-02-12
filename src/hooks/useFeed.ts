@@ -19,8 +19,8 @@ export default function useFeed(limit = 50) {
           .limit(limit);
         if (error) throw error;
         on && setPosts((data as Post[]) ?? []);
-      } catch (e:any) {
-        on && setError(e?.message ?? "Failed to load feed");
+      } catch (e: unknown) {
+        on && setError(e instanceof Error ? e.message : "Failed to load feed");
         on && setPosts([]);
       } finally {
         on && setLoading(false);

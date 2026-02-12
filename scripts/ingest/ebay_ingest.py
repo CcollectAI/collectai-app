@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import datetime
 import json
+import logging
 import os
 import time
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
@@ -61,7 +64,7 @@ def items_from_rapid(query):
 
 def items_from_official(query):
     # eBay Browse API: /buy/browse/v1/item_summary/search ? q=... & filter=buyingOptions:{FIXED_PRICE}|AUCTION & fieldgroups=ASPECTS
-    # Sold data often needs the "Marketing" or "Finding" / "Browse" variants—adjust per your app creds.
+    # Sold data often needs the "Marketing" or "Finding" / "Browse" variants--adjust per your app creds.
     url = "https://api.ebay.com/buy/browse/v1/item_summary/search"
     params = {"q": query, "limit": str(LIMIT)}
     hdrs = {"Authorization": f"Bearer {EBAY_APP_OAUTH}"}
@@ -148,7 +151,7 @@ def run(query):
         items = items_from_official(query)
         normalized = [normalize(i, "ebay_official", query) for i in items]
     else:
-        print("Set RAPIDAPI_KEY or EBAY_OAUTH_TOKEN")
+        logger.error("Set RAPIDAPI_KEY or EBAY_OAUTH_TOKEN")
         return
     # keep only with price + title
     rows = [r for r in normalized if r["title"] and r["price_eur"]]
@@ -157,9 +160,10 @@ def run(query):
     for i in range(0, len(rows), B):
         supa_upsert(rows[i : i + B])
         time.sleep(0.5)
-    print(f"Upserted {len(rows)} observations for query='{query}'")
+    logger.info("Upserted %d observations for query='%s'", len(rows), query)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     q = os.environ.get("EBAY_QUERY") or "Pikachu VMAX"
     run(q)

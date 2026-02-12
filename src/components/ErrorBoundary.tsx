@@ -9,6 +9,15 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+/* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
+import type { SentryModule } from '@/../types/api';
+let Sentry: SentryModule | null = null;
+try {
+  Sentry = require('@sentry/react-native');
+} catch (_) {
+  // @sentry/react-native not installed – skip silently
+}
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -37,6 +46,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo });
+
+    // Report to Sentry if available
+    if (Sentry?.captureException) {
+      Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
+    }
 
     // Call optional error handler (e.g., for logging to Sentry)
     if (this.props.onError) {
@@ -91,7 +105,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </ScrollView>
             )}
 
-            <Pressable style={styles.retryButton} onPress={this.handleRetry}>
+            <Pressable style={styles.retryButton} onPress={this.handleRetry} accessibilityRole="button" accessibilityLabel="Try again">
               <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
               <Text style={styles.retryButtonText}>Try Again</Text>
             </Pressable>

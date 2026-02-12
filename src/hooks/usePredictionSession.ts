@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 const FN_URL = process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
 export function usePredictionSession() {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
@@ -27,7 +27,7 @@ export function usePredictionSession() {
       if (!res.ok) throw new Error(json.error || "Failed to create session");
       setSession(json.session);
       return json.session;
-    } catch (e:any) { setError(e.message); throw e; }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); throw e; }
     finally { setLoading(false); }
   }, []);
 
@@ -43,7 +43,7 @@ export function usePredictionSession() {
       if (!res.ok) throw new Error(json.error || "Failed to complete prediction");
       setSession(json.session);
       return json.session;
-    } catch (e:any) { setError(e.message); throw e; }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); throw e; }
     finally { setLoading(false); }
   }, []);
 
@@ -61,7 +61,7 @@ export function usePredictionSession() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to save label");
       return json.label;
-    } catch (e:any) { setError(e.message); throw e; }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); throw e; }
     finally { setLoading(false); }
   }, []);
 

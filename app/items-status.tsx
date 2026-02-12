@@ -7,9 +7,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { getPortfolioItems } from '@/services/collectorsClient';
+import { getPortfolioItems, type PortfolioItem } from '@/services/collectorsClient';
 import type { CollectionStatusInput } from '@/utils/statusScoring';
 import ItemsStatusPanel from '@/components/ItemsStatusPanel';
+import logger from '@/utils/logger';
 
 const ItemsStatusScreen: React.FC = () => {
   const [items, setItems] = useState<CollectionStatusInput[]>([]);
@@ -26,7 +27,7 @@ const ItemsStatusScreen: React.FC = () => {
         const raw = await getPortfolioItems();
         if (cancelled) return;
 
-        const mapped: CollectionStatusInput[] = (raw || []).map((it: any) => ({
+        const mapped: CollectionStatusInput[] = (raw || []).map((it: PortfolioItem) => ({
           id: it.id ?? it.item_id ?? undefined,
           name: it.name ?? it.title ?? null,
           title: it.title ?? it.name ?? null,
@@ -43,8 +44,8 @@ const ItemsStatusScreen: React.FC = () => {
         }));
 
         setItems(mapped);
-      } catch (e: any) {
-        console.error('[ItemsStatusScreen] load error', e);
+      } catch (e: unknown) {
+        logger.error('[ItemsStatusScreen] load error', e);
         if (!cancelled) setError('Could not load items for status.');
       } finally {
         if (!cancelled) setLoading(false);

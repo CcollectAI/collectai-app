@@ -129,9 +129,8 @@ async def get_listing_trust_snapshot(listing_id: str):
     """
     Trust snapshot for a listing.
 
-    TODO: Cross-reference listing price against market_hits to detect
-    outlier pricing once the trust engine is built.  Returns empty flags
-    until then.
+    Cross-references listing price against market_hits to detect outlier
+    pricing (>2 std deviations) and low seller scores.
     """
     pool = _get_db_pool()
     if not pool:

@@ -23,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
+import logger from '@/utils/logger';
 
 const CATEGORIES = [
   'Pokémon',
@@ -78,7 +79,7 @@ export default function WishlistScreen() {
       const data = await dataProvider.listWatchlist('current-user');
       setItems(data);
     } catch (err) {
-      console.warn('[Wishlist] loadItems error:', err);
+      logger.warn('[Wishlist] loadItems error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -127,7 +128,7 @@ export default function WishlistScreen() {
       setModalVisible(false);
       resetForm();
       loadItems();
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert('Error', err?.message || 'Failed to add item');
     } finally {
       setSaving(false);
@@ -147,7 +148,7 @@ export default function WishlistScreen() {
             try {
               await dataProvider.removeWatchlistItem(item.id);
               loadItems();
-            } catch (err: any) {
+            } catch (err: unknown) {
               Alert.alert('Error', err?.message || 'Failed to remove item');
             }
           },
@@ -173,7 +174,7 @@ export default function WishlistScreen() {
               {item.title}
             </Text>
           </View>
-          <AnimatedPressable onPress={() => handleRemove(item)} style={styles.removeBtn}>
+          <AnimatedPressable onPress={() => handleRemove(item)} style={styles.removeBtn} accessibilityRole="button" accessibilityLabel={`Remove ${item.title} from watchlist`}>
             <Ionicons name="close-circle" size={22} color={colors.muted} />
           </AnimatedPressable>
         </View>
@@ -216,6 +217,8 @@ export default function WishlistScreen() {
       <AnimatedPressable
         style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
         onPress={() => setModalVisible(true)}
+        accessibilityRole="button"
+        accessibilityLabel="Add to watchlist"
       >
         <Ionicons name="add" size={20} color="#fff" />
         <Text style={styles.emptyBtnText}>Add to Watchlist</Text>
@@ -227,7 +230,7 @@ export default function WishlistScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Watchlist</Text>
@@ -244,15 +247,15 @@ export default function WishlistScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Watchlist</Text>
         <View style={styles.headerRight}>
-          <AnimatedPressable onPress={() => router.push('/alerts')} style={styles.alertsBtn}>
+          <AnimatedPressable onPress={() => router.push('/alerts')} style={styles.alertsBtn} accessibilityRole="button" accessibilityLabel="View alerts">
             <Ionicons name="notifications-outline" size={22} color={colors.accent} />
           </AnimatedPressable>
-          <AnimatedPressable onPress={() => setModalVisible(true)} style={styles.addBtn}>
+          <AnimatedPressable onPress={() => setModalVisible(true)} style={styles.addBtn} accessibilityRole="button" accessibilityLabel="Add to watchlist">
             <Ionicons name="add-circle" size={28} color={colors.accent} />
           </AnimatedPressable>
         </View>
@@ -282,7 +285,7 @@ export default function WishlistScreen() {
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Watchlist</Text>
-              <AnimatedPressable onPress={() => { setModalVisible(false); resetForm(); }}>
+              <AnimatedPressable onPress={() => { setModalVisible(false); resetForm(); }} accessibilityRole="button" accessibilityLabel="Close add modal">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
@@ -294,6 +297,7 @@ export default function WishlistScreen() {
               onChangeText={setFormTitle}
               placeholder="e.g. Charizard VMAX Rainbow"
               placeholderTextColor={colors.muted}
+              accessibilityLabel="Title"
               style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             />
 
@@ -302,6 +306,8 @@ export default function WishlistScreen() {
             <AnimatedPressable
               style={[styles.input, styles.pickerBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
               onPress={() => setCategoryPickerVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Category: ${formCategory || 'Select category'}`}
             >
               <Text style={{ color: formCategory ? colors.text : colors.muted }}>
                 {formCategory || 'Select category'}
@@ -317,6 +323,7 @@ export default function WishlistScreen() {
               placeholder="e.g. 350"
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
+              accessibilityLabel="Target price in EUR"
               style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             />
 
@@ -329,6 +336,7 @@ export default function WishlistScreen() {
               placeholderTextColor={colors.muted}
               multiline
               numberOfLines={3}
+              accessibilityLabel="Notes"
               style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             />
 
@@ -337,6 +345,8 @@ export default function WishlistScreen() {
               style={[styles.saveBtn, { backgroundColor: colors.accent }]}
               onPress={handleAdd}
               disabled={saving}
+              accessibilityRole="button"
+              accessibilityLabel={saving ? 'Saving' : 'Add to watchlist'}
             >
               {saving ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -353,6 +363,8 @@ export default function WishlistScreen() {
         <AnimatedPressable
           style={styles.pickerOverlay}
           onPress={() => setCategoryPickerVisible(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close category picker"
         >
           <View style={[styles.pickerContent, { backgroundColor: colors.card }]}>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Category</Text>
@@ -367,6 +379,8 @@ export default function WishlistScreen() {
                   setFormCategory(cat);
                   setCategoryPickerVisible(false);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`${cat}${formCategory === cat ? ', selected' : ''}`}
               >
                 <Text style={[styles.pickerItemText, { color: colors.text }]}>{cat}</Text>
                 {formCategory === cat && (

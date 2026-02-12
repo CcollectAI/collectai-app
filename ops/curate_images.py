@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
-import argparse, json, io, os, hashlib
+import argparse
+import json
+import logging
+import os
 from datetime import datetime, timezone
-import boto3, botocore
+
+import boto3
+
+logger = logging.getLogger(__name__)
 
 s3 = boto3.client("s3")
+
 
 def list_objs(bucket, prefix):
     p = s3.get_paginator("list_objects_v2")
@@ -12,17 +19,26 @@ def list_objs(bucket, prefix):
             if not o["Key"].endswith("/"):
                 yield o
 
+
 def head_ok(bucket, key, min_bytes):
     h = s3.head_object(Bucket=bucket, Key=key)
-    ct = h.get("ContentType","")
+    ct = h.get("ContentType", "")
     sz = h["ContentLength"]
-    if sz < min_bytes: return False, f"too_small({sz})"
-    if not ct.startswith("image/"): return False, f"not_image({ct})"
-    return True, {"ct":ct, "size":sz}
+    if sz < min_bytes:
+        return False, "too_small(%d)" % sz
+    if not ct.startswith("image/"):
+        return False, "not_image(%s)" % ct
+    return True, {"ct": ct, "size": sz}
+
 
 def sha256_s3(bucket, key):
-    bio = io.BytesIO(); s3.download_fileobj(bucket, key, bio); bio.seek(0)
+    import hashlib
+    import io
+    bio = io.BytesIO()
+    s3.download_fileobj(bucket, key, bio)
+    bio.seek(0)
     return hashlib.sha256(bio.read()).hexdigest()
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -31,16 +47,18 @@ def main():
     ap.add_argument("--categories", nargs="+", required=True)
     args = ap.parse_args()
 
-    kept=skipped=0
+    kept = skipped = 0
     for cat in args.categories:
         raw = f"raw/{cat}/"
         dstp = f"curated/{cat}/"
-        print(f"== {cat} ==")
+        logger.info("== %s ==", cat)
         for obj in list_objs(args.bucket, raw):
             key = obj["Key"]
             ok, meta = head_ok(args.bucket, key, args.min_bytes)
             if not ok:
-                print("skip", key, "->", meta); skipped+=1; continue
+                logger.debug("skip %s -> %s", key, meta)
+                skipped += 1
+                continue
             checksum = sha256_s3(args.bucket, key)
             filename = os.path.basename(key)
             dst = dstp + filename
@@ -50,11 +68,13 @@ def main():
                 "content_type": meta["ct"], "size": meta["size"],
                 "curated_at": datetime.now(timezone.utc).isoformat()
             }
-            s3.copy_object(Bucket=args.bucket, CopySource={"Bucket":args.bucket,"Key":key}, Key=dst)
-            s3.put_object(Bucket=args.bucket, Key=dst+".json", Body=json.dumps(side).encode("utf-8"), ContentType="application/json")
-            kept+=1
-            print("curated", key, "->", dst)
-    print(json.dumps({"kept":kept,"skipped":skipped}, indent=2))
+            s3.copy_object(Bucket=args.bucket, CopySource={"Bucket": args.bucket, "Key": key}, Key=dst)
+            s3.put_object(Bucket=args.bucket, Key=dst + ".json", Body=json.dumps(side).encode("utf-8"), ContentType="application/json")
+            kept += 1
+            logger.info("curated %s -> %s", key, dst)
+    logger.info(json.dumps({"kept": kept, "skipped": skipped}, indent=2))
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

@@ -10,9 +10,9 @@ import {
   StyleSheet,
   Pressable,
   Modal,
-  Image,
   useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
 interface GalleryItem {
@@ -82,9 +82,9 @@ export function ItemGalleryGrid({
         animationType="fade"
         onRequestClose={closeLightbox}
       >
-        <Pressable style={styles.lightboxOverlay} onPress={closeLightbox}>
+        <Pressable style={styles.lightboxOverlay} onPress={closeLightbox} accessibilityRole="button" accessibilityLabel="Close lightbox">
           <View style={styles.lightboxContent}>
-            <Pressable style={styles.closeButton} onPress={closeLightbox}>
+            <Pressable style={styles.closeButton} onPress={closeLightbox} accessibilityRole="button" accessibilityLabel="Close image viewer">
               <Ionicons name="close" size={28} color="#fff" />
             </Pressable>
 
@@ -92,7 +92,9 @@ export function ItemGalleryGrid({
               <Image
                 source={{ uri: selectedItem.imageUrl }}
                 style={styles.lightboxImage}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="disk"
+                transition={200}
               />
             ) : (
               <View style={[styles.lightboxPlaceholder, { backgroundColor: colors.border }]}>
@@ -149,12 +151,16 @@ export function ItemGalleryGrid({
                   },
                 ]}
                 onPress={() => handleItemPress(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.name}, ${item.category}, ${formatCurrency(item.value)}`}
               >
                 {item.imageUrl ? (
                   <Image
                     source={{ uri: item.imageUrl }}
                     style={styles.itemImage}
-                    resizeMode="cover"
+                    contentFit="cover"
+                    cachePolicy="disk"
+                    transition={200}
                   />
                 ) : (
                   <View style={[styles.placeholderContainer, { backgroundColor: colors.border }]}>

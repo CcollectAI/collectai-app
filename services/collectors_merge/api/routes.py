@@ -1378,6 +1378,63 @@ async def ingest_fastpass_v2(
     }
 
 
+# -------- Price Evidence (for PriceExplanationSheet) --------
+@router.get("/predict/evidence/{item_id}")
+async def predict_evidence(item_id: str) -> dict[str, Any]:
+    """Return the latest prediction evidence for an item.
+
+    Reads evidence_summary, explanation, and evidence_hit_ids from the
+    price_predictions table so the frontend can display real comparable
+    sales data instead of hardcoded stubs.
+    """
+    with db_conn() as conn:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        try:
+            cur.execute(
+                """
+                SELECT
+                    explanation,
+                    evidence_summary,
+                    evidence_hit_ids,
+                    asof AS prediction_at
+                FROM public.price_predictions
+                WHERE item_id::text = %s
+                ORDER BY asof DESC
+                LIMIT 1
+                """,
+                (str(item_id),),
+            )
+            row = cur.fetchone()
+        finally:
+            cur.close()
+
+    if not row:
+        return {
+            "explanation": None,
+            "evidence_summary": None,
+            "evidence_hit_ids": [],
+            "prediction_at": None,
+        }
+
+    evidence_summary = row.get("evidence_summary")
+    if isinstance(evidence_summary, str):
+        try:
+            evidence_summary = json.loads(evidence_summary)
+        except (json.JSONDecodeError, TypeError):
+            evidence_summary = None
+
+    prediction_at = row.get("prediction_at")
+    if hasattr(prediction_at, "isoformat"):
+        prediction_at = prediction_at.isoformat()
+
+    return {
+        "explanation": row.get("explanation"),
+        "evidence_summary": evidence_summary,
+        "evidence_hit_ids": row.get("evidence_hit_ids") or [],
+        "prediction_at": prediction_at,
+    }
+
+
 @router.post("/ingest/fastpass")
 async def ingest_fastpass_alias(
     user_id: str = Form(...),

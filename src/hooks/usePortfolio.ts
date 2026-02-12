@@ -18,8 +18,8 @@ export default function usePortfolio() {
           .order("ts", { ascending: true });
         if (error) throw error;
         on && setRows((data as Row[]) ?? []);
-      } catch (e: any) {
-        on && setError(e?.message ?? "Failed to load portfolio");
+      } catch (e: unknown) {
+        on && setError(e instanceof Error ? e.message : "Failed to load portfolio");
         on && setRows([
           { ts: "2025-01-01", value: 100 },
           { ts: "2025-02-01", value: 102 },

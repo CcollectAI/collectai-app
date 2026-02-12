@@ -14,6 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Stack } from 'expo-router';
 
 import { useAppTheme } from '@/hooks/useAppTheme';
+import logger from '@/utils/logger';
 import { dataProvider, type QuickScanResult } from '@/data';
 
 type DealRating =
@@ -217,8 +218,8 @@ export default function AddAuthCheckScreen() {
       const result = await dataProvider.quickscanSingle();
       setQuickScan(result);
       setScanStatus('QuickScan results loaded.');
-    } catch (err: any) {
-      console.warn('[AddAuthCheck] QuickScan error', err);
+    } catch (err: unknown) {
+      logger.warn('[AddAuthCheck] QuickScan error', err);
       setScanStatus('QuickScan failed. Using demo data instead.');
       setAnalysisError(
         err?.message ?? 'Unable to reach QuickScan service.',
@@ -401,6 +402,8 @@ export default function AddAuthCheckScreen() {
             <TouchableOpacity
               onPress={handlePickPhoto}
               disabled={scanLoading}
+              accessibilityRole="button"
+              accessibilityLabel={scanLoading ? 'Scanning item' : previewUri ? 'Rescan item' : 'Scan item with camera'}
               style={{
                 borderRadius: radius.full,
                 backgroundColor: colors.primary,
@@ -512,6 +515,7 @@ export default function AddAuthCheckScreen() {
                 keyboardType="decimal-pad"
                 placeholder="e.g. 120"
                 placeholderTextColor={colors.mutedText}
+                accessibilityLabel="Seller asking price"
                 style={{
                   borderRadius: radius.md,
                   borderWidth: 1,
@@ -526,6 +530,8 @@ export default function AddAuthCheckScreen() {
 
             <TouchableOpacity
               onPress={handleAnalyze}
+              accessibilityRole="button"
+              accessibilityLabel="Analyze deal"
               style={{
                 borderRadius: radius.full,
                 backgroundColor: colors.primary,

@@ -4,8 +4,9 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
+from app.auth import get_current_user_id
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 logger = logging.getLogger(__name__)
@@ -23,14 +24,6 @@ def _get_db_pool():
     except Exception as e:
         logger.debug(f"DB pool not available: {e}")
         return None
-
-
-def _get_current_user_id() -> str:
-    """
-    TODO: Replace with real auth (e.g. JWT / Supabase session).
-    For now returns a placeholder user-id so queries are scoped.
-    """
-    return "demo-user"
 
 
 # ---------------------------------------------------------------------------
@@ -86,7 +79,7 @@ class HomeWidgetResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.get("/personalized", response_model=PersonalizedInsightsResponse)
-async def get_personalized_insights() -> PersonalizedInsightsResponse:
+async def get_personalized_insights(user_id: str = Depends(get_current_user_id)) -> PersonalizedInsightsResponse:
     """
     Personalized insights based on the user's actual portfolio composition:
     - Over-exposed categories (concentration risk)
@@ -102,8 +95,6 @@ async def get_personalized_insights() -> PersonalizedInsightsResponse:
             rare_set_alerts=[],
             trending_items=[],
         )
-
-    user_id = _get_current_user_id()
 
     try:
         async with pool.acquire() as conn:
@@ -226,7 +217,7 @@ async def get_personalized_insights() -> PersonalizedInsightsResponse:
 
 
 @router.get("/home-widget", response_model=HomeWidgetResponse)
-async def get_home_widget() -> HomeWidgetResponse:
+async def get_home_widget(user_id: str = Depends(get_current_user_id)) -> HomeWidgetResponse:
     """
     'What's it worth today?' home widget snapshot.
     Computes real collection value and daily change from price_predictions.
@@ -240,8 +231,6 @@ async def get_home_widget() -> HomeWidgetResponse:
             biggest_mover_change=0.0,
             currency="EUR",
         )
-
-    user_id = _get_current_user_id()
 
     try:
         async with pool.acquire() as conn:

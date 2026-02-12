@@ -3,6 +3,7 @@ import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'rea
 import { useRouter } from 'expo-router';
 import SafeTextInput from '@/components/common/SafeTextInput';
 import { useAppTheme } from '@/theme';
+import logger from '@/utils/logger';
 
 type BuildStatus = 'planning' | 'in_progress' | 'blocked' | 'finished';
 
@@ -69,13 +70,13 @@ async function fetchProjectsSafe(): Promise<BuildProject[]> {
     });
 
     if (!res.ok) {
-      console.log('[Projects] backend responded non-200', res.status);
+      logger.info('[Projects] backend responded non-200', res.status);
       return DEMO_PROJECTS;
     }
 
     const json = await res.json();
     if (!Array.isArray(json?.projects)) {
-      console.log('[Projects] backend payload unexpected, falling back to demo');
+      logger.info('[Projects] backend payload unexpected, falling back to demo');
       return DEMO_PROJECTS;
     }
 
@@ -93,7 +94,7 @@ async function fetchProjectsSafe(): Promise<BuildProject[]> {
       lastUpdated: String(p.updated_at ?? new Date().toISOString()),
     }));
   } catch (err) {
-    console.log('[Projects] backend fetch failed', err);
+    logger.info('[Projects] backend fetch failed', err);
     return DEMO_PROJECTS;
   }
 }

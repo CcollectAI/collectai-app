@@ -1,5 +1,6 @@
 import client from '@/services/collectorsClient';
 import type { AntiFraudResult } from '@/utils/antiFraud';
+import { logger } from '@/lib/logger';
 
 export type AntiFraudUserDecision = 'proceed' | 'negotiate' | 'avoid';
 
@@ -25,7 +26,7 @@ export async function logAntiFraudEvent(
   try {
     await client.post('/anti-fraud/events', payload);
   } catch (e) {
-    console.warn('[antiFraudClient] logAntiFraudEvent failed', e);
+    logger.warn('[antiFraudClient] logAntiFraudEvent failed', e);
   }
 }
 

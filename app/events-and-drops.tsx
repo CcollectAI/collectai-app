@@ -106,8 +106,7 @@ const EventsAndDropsScreen: React.FC = () => {
       setErrorText(null);
 
       try {
-        const client: any = supabase as any;
-        if (!client || typeof client.from !== "function") {
+        if (!supabase || typeof supabase.from !== "function") {
           setState("error");
           setErrorText(
             "Supabase client not configured – Twitch section is running in demo mode."
@@ -115,7 +114,7 @@ const EventsAndDropsScreen: React.FC = () => {
           return;
         }
 
-        const { data, error } = await client
+        const { data, error } = await supabase
           .from("twitch_creators")
           .select(
             "id, twitch_login, display_name, avatar_url, category, is_partner, is_live, current_title, current_viewers"
@@ -130,7 +129,7 @@ const EventsAndDropsScreen: React.FC = () => {
 
         setCreators((data ?? []) as TwitchCreator[]);
         setState("loaded");
-      } catch (err: any) {
+      } catch (err: unknown) {
         setState("error");
         setErrorText(
           err?.message || "Unexpected error while loading Twitch creators."
@@ -378,7 +377,7 @@ const EventsAndDropsScreen: React.FC = () => {
                 Twitch live now (collectors)
               </Text>
             </View>
-            <Link href="/twitch-leaderboard">
+            <Link href="/twitch-leaderboard" accessibilityRole="link" accessibilityLabel="View full Twitch leaderboard">
               <Text style={[styles.sectionLink, { color: colors.accent }]}>
                 View full leaderboard →
               </Text>

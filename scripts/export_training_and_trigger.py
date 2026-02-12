@@ -37,7 +37,8 @@ def supa_get(path, params=None, headers=None):
                 raise requests.HTTPError(f"{r.status_code}", response=r)
             r.raise_for_status()
             return r
-        except Exception as e:
+        except (requests.RequestException, OSError) as e:
+            logger.warning("supa_get attempt %d failed: %s", attempt + 1, e)
             last = e
             time.sleep(min(5 * (attempt + 1), 15))
     raise last
@@ -149,7 +150,8 @@ def call_lambda_train(payload):
         body = resp.get("Payload").read().decode("utf-8") if "Payload" in resp else "{}"
         try:
             return json.loads(body)
-        except Exception:
+        except (json.JSONDecodeError, ValueError, TypeError) as e:
+            logger.warning("Failed to parse Lambda response as JSON: %s", e)
             return {"status": resp.get("StatusCode"), "text": body}
     if url:
         import requests

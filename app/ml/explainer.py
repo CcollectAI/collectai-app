@@ -3,12 +3,18 @@ Explainer module for generating human-readable price explanations.
 
 Takes model features and coefficients to produce natural language explanations
 of why an item is priced at a certain level.
+
+Supports evidence-native explanations grounded in real market_hits data.
 """
 
 from __future__ import annotations
 
+import json
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Any
+
+import asyncpg
 
 logger = logging.getLogger(__name__)
 
@@ -287,3 +293,162 @@ def generate_simple_explanation(
     else:
         factors = ", ".join(parts[:-1]) + f" and {parts[-1]}"
         return f"Key factors: {factors}."
+
+
+# ---------------------------------------------------------------------------
+# Evidence-native explanation — grounded in real market_hits
+# ---------------------------------------------------------------------------
+
+_EVIDENCE_LOOKBACK_DAYS = 90
+_EVIDENCE_HIT_LIMIT = 50
+
+
+async def generate_evidence_explanation(
+    item_ref: str,
+    category: str,
+    features: dict[str, Any],
+    artifact: dict,
+    conn: asyncpg.Connection,
+) -> dict[str, Any]:
+    """
+    Build an evidence-grounded price explanation from real market_hits.
+
+    1. Queries market_hits for *item_ref* within the last 90 days (limit 50).
+    2. Groups results by source, computing avg price, count, date range.
+    3. Builds an evidence_summary dict and collects hit IDs.
+    4. Generates human-readable explanation text referencing actual data.
+    5. Falls back to ``generate_explanation()`` if no market_hits are found.
+
+    Args:
+        item_ref:  Normalized key / item reference string.
+        category:  Category slug (e.g. "pokemon_tcg").
+        features:  Dict of feature name -> value used for the prediction.
+        artifact:  Model artifact (coefficients, means, etc.).
+        conn:      Active asyncpg database connection.
+
+    Returns:
+        Dict with keys ``explanation``, ``evidence_summary``,
+        ``evidence_hit_ids``.
+    """
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=_EVIDENCE_LOOKBACK_DAYS)
+
+        rows = await conn.fetch(
+            """
+            SELECT id, source, price, observed_at
+            FROM public.market_hits
+            WHERE item_ref = $1
+              AND observed_at >= $2
+              AND price IS NOT NULL
+            ORDER BY observed_at DESC
+            LIMIT $3
+            """,
+            item_ref,
+            cutoff,
+            _EVIDENCE_HIT_LIMIT,
+        )
+
+        if not rows:
+            logger.info(
+                "No market_hits for item_ref=%s in last %d days; falling back to model explanation",
+                item_ref,
+                _EVIDENCE_LOOKBACK_DAYS,
+            )
+            fallback_text = generate_explanation(features, artifact)
+            return {
+                "explanation": fallback_text,
+                "evidence_summary": {},
+                "evidence_hit_ids": [],
+            }
+
+        # Collect hit IDs (cast to str for TEXT[] compatibility)
+        evidence_hit_ids: list[str] = [str(r["id"]) for r in rows]
+
+        # Group by source
+        source_groups: dict[str, list[dict]] = {}
+        for r in rows:
+            src = r["source"] or "unknown"
+            source_groups.setdefault(src, []).append(
+                {"price": float(r["price"]), "observed_at": r["observed_at"]}
+            )
+
+        # Build per-source summaries
+        source_summaries: list[dict[str, Any]] = []
+        for src, hits in sorted(source_groups.items()):
+            prices = [h["price"] for h in hits]
+            dates = [h["observed_at"] for h in hits if h["observed_at"] is not None]
+            avg_price = round(sum(prices) / len(prices), 2)
+
+            date_range = None
+            if dates:
+                earliest = min(dates).strftime("%Y-%m-%d")
+                latest = max(dates).strftime("%Y-%m-%d")
+                date_range = f"{earliest} to {latest}" if earliest != latest else earliest
+
+            source_summaries.append(
+                {
+                    "source": src,
+                    "count": len(hits),
+                    "avg_price": avg_price,
+                    "date_range": date_range,
+                }
+            )
+
+        total_comps = len(rows)
+
+        evidence_summary: dict[str, Any] = {
+            "sources": source_summaries,
+            "total_comps": total_comps,
+        }
+
+        # Build human-readable explanation text
+        explanation_parts: list[str] = []
+        for s in source_summaries:
+            src_label = _friendly_source_name(s["source"])
+            explanation_parts.append(
+                f"{s['count']} {src_label} listing{'s' if s['count'] != 1 else ''} "
+                f"(avg \u20ac{s['avg_price']:.2f})"
+            )
+
+        explanation_text = (
+            f"Based on {' and '.join(explanation_parts)} "
+            f"over the last {_EVIDENCE_LOOKBACK_DAYS} days."
+        )
+
+        logger.info(
+            "Evidence explanation for item_ref=%s: %d comps across %d sources",
+            item_ref,
+            total_comps,
+            len(source_summaries),
+        )
+
+        return {
+            "explanation": explanation_text,
+            "evidence_summary": evidence_summary,
+            "evidence_hit_ids": evidence_hit_ids,
+        }
+
+    except Exception as e:
+        logger.warning("Error generating evidence explanation for item_ref=%s: %s", item_ref, e)
+        fallback_text = generate_explanation(features, artifact)
+        return {
+            "explanation": fallback_text,
+            "evidence_summary": {},
+            "evidence_hit_ids": [],
+        }
+
+
+def _friendly_source_name(source: str) -> str:
+    """Map raw source identifiers to user-friendly display names."""
+    _SOURCE_NAMES = {
+        "ebay": "eBay sold",
+        "tcgplayer": "TCGPlayer",
+        "cardmarket": "Cardmarket",
+        "mercari": "Mercari",
+        "amazon": "Amazon",
+        "catawiki": "Catawiki",
+        "vinted": "Vinted",
+        "stockx": "StockX",
+        "discogs": "Discogs",
+    }
+    return _SOURCE_NAMES.get(source.lower(), source.replace("_", " ").title())

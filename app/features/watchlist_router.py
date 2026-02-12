@@ -4,8 +4,10 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from app.auth import get_current_user_id
+from app.features.pagination import pagination_params
 
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
 
@@ -37,21 +39,18 @@ class WatchlistResponse(BaseModel):
 _WATCHLIST: dict[str, list[WatchlistItem]] = {}
 
 
-def _get_user_id() -> str:
-    # Later: derive from auth/session. For now: demo user.
-    return "demo-user"
-
-
 @router.get("/mine", response_model=WatchlistResponse)
-async def get_my_watchlist() -> WatchlistResponse:
-    user_id = _get_user_id()
+async def get_my_watchlist(
+    user_id: str = Depends(get_current_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
+) -> WatchlistResponse:
+    limit, offset = pagination
     items = _WATCHLIST.get(user_id, [])
-    return WatchlistResponse(items=items)
+    return WatchlistResponse(items=items[offset:offset + limit])
 
 
 @router.post("/mine", response_model=WatchlistItem)
-async def add_to_watchlist(payload: WatchlistCreate) -> WatchlistItem:
-    user_id = _get_user_id()
+async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_current_user_id)) -> WatchlistItem:
     item = WatchlistItem(
         user_id=user_id,
         item_id=payload.item_id,
@@ -65,8 +64,7 @@ async def add_to_watchlist(payload: WatchlistCreate) -> WatchlistItem:
 
 
 @router.delete("/mine/{watch_id}", response_model=WatchlistResponse)
-async def remove_from_watchlist(watch_id: str) -> WatchlistResponse:
-    user_id = _get_user_id()
+async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_current_user_id)) -> WatchlistResponse:
     items = _WATCHLIST.get(user_id, [])
     new_items = [it for it in items if it.id != watch_id]
     if len(new_items) == len(items):

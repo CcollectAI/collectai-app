@@ -8,7 +8,7 @@ export default function RangeToggle({ options, value, onChange }: Props) {
       {options.map((opt) => {
         const active = opt === value;
         return (
-          <Pressable key={opt} onPress={() => onChange(opt)} style={{ paddingVertical: theme.spacing.xs }}>
+          <Pressable key={opt} onPress={() => onChange(opt)} accessibilityRole="button" accessibilityLabel={`${opt}${active ? ', selected' : ''}`} style={{ paddingVertical: theme.spacing.xs }}>
             <Text style={{ fontWeight: active ? '700' : '500', color: active ? theme.colors.navy : theme.colors.subtext }}>{opt}</Text>
             <View style={{ height: 2, marginTop: 4, backgroundColor: active ? theme.colors.navy : 'transparent' }} />
           </Pressable>

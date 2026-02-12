@@ -18,6 +18,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import logger from "@/utils/logger";
 
 type SaveState = "idle" | "saving" | "success" | "error";
 
@@ -84,8 +85,7 @@ const ManualAddScreen: React.FC = () => {
   const handleSubmit = async () => {
     if (!canSubmit) return;
 
-    const client: any = supabase as any;
-    if (!client || typeof client.from !== "function") {
+    if (!supabase || typeof supabase.from !== "function") {
       setSaveState("error");
       setErrorText(
         "Supabase client not configured. Manual entries are in demo mode only."
@@ -100,7 +100,7 @@ const ManualAddScreen: React.FC = () => {
       const purchase = purchasePrice ? Number(purchasePrice) : null;
       const estimated = estimatedValue ? Number(estimatedValue) : null;
 
-      const { error } = await client.from("portfolio_items").insert([
+      const { error } = await supabase.from("portfolio_items").insert([
         {
           name: name.trim(),
           category: category.trim() || null,
@@ -115,7 +115,7 @@ const ManualAddScreen: React.FC = () => {
       ]);
 
       if (error) {
-        console.warn("[ManualAdd] insert error:", error.message);
+        logger.warn("[ManualAdd] insert error:", error.message);
         setSaveState("error");
         setErrorText(error.message || "Failed to save item.");
         return;
@@ -130,8 +130,8 @@ const ManualAddScreen: React.FC = () => {
       setEstimatedValue("");
       setSource("");
       setNotes("");
-    } catch (err: any) {
-      console.warn("[ManualAdd] unexpected error:", err);
+    } catch (err: unknown) {
+      logger.warn("[ManualAdd] unexpected error:", err);
       setSaveState("error");
       setErrorText(err?.message || "Unexpected error while saving item.");
     } finally {
@@ -176,7 +176,7 @@ const ManualAddScreen: React.FC = () => {
       >
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Add Manually</Text>
@@ -252,6 +252,7 @@ const ManualAddScreen: React.FC = () => {
                       placeholder="e.g. Charizard GX (Alt Art)"
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
+                      accessibilityLabel="Item name"
                     />
                   </View>
                 </View>
@@ -273,9 +274,11 @@ const ManualAddScreen: React.FC = () => {
                             },
                           ]}
                           onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleCategoryChip(chip.label); }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${chip.label} category${isSelected ? ', selected' : ''}`}
                         >
                           <Ionicons
-                            name={chip.icon as any}
+                            name={chip.icon as keyof typeof Ionicons.glyphMap}
                             size={14}
                             color={isSelected ? colors.accent : colors.muted}
                           />
@@ -316,6 +319,7 @@ const ManualAddScreen: React.FC = () => {
                       placeholder="e.g. Scarlet & Violet, Master Grade"
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
+                      accessibilityLabel="Set or series"
                     />
                   </View>
                 </View>
@@ -347,6 +351,8 @@ const ManualAddScreen: React.FC = () => {
                             },
                           ]}
                           onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setConditionGrade(chip.label); }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${chip.label} condition${isSelected ? ', selected' : ''}`}
                         >
                           <Text
                             style={[
@@ -387,6 +393,7 @@ const ManualAddScreen: React.FC = () => {
                         placeholder="0.00"
                         placeholderTextColor={colors.muted}
                         style={[styles.input, { color: colors.text }]}
+                        accessibilityLabel="Purchase price in euros"
                       />
                     </View>
                   </View>
@@ -401,6 +408,7 @@ const ManualAddScreen: React.FC = () => {
                         placeholder="0.00"
                         placeholderTextColor={colors.muted}
                         style={[styles.input, { color: colors.text }]}
+                        accessibilityLabel="Estimated value in euros"
                       />
                     </View>
                   </View>
@@ -427,6 +435,7 @@ const ManualAddScreen: React.FC = () => {
                       placeholder="Twitch stream, local shop, Cardmarket…"
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
+                      accessibilityLabel="Source where item was purchased"
                     />
                   </View>
                 </View>
@@ -444,6 +453,7 @@ const ManualAddScreen: React.FC = () => {
                       placeholderTextColor={colors.muted}
                       style={[styles.inputMultiline, { color: colors.text }]}
                       textAlignVertical="top"
+                      accessibilityLabel="Notes"
                     />
                   </View>
                 </View>
@@ -460,6 +470,8 @@ const ManualAddScreen: React.FC = () => {
                   backgroundColor: canSubmit ? colors.accent : colors.border,
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Save to collection"
             >
               {saveState === "saving" ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />

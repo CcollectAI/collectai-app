@@ -17,6 +17,7 @@ import {
   CategoryChatMessage,
 } from '@/data/chat';
 import { AnimatedPressable } from '@/motion';
+import logger from '@/utils/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 
@@ -66,11 +67,11 @@ const CategoryChatScreen: React.FC = () => {
   const { settings } = useSettings();
 
   const category = useMemo(
-    () => (categoryId ? getCategoryById(categoryId as any) : undefined),
+    () => (categoryId ? getCategoryById(categoryId) : undefined),
     [categoryId],
   );
   const room = useMemo(
-    () => getCategoryRoomById((categoryId as any) ?? null),
+    () => getCategoryRoomById(categoryId ?? null),
     [categoryId],
   );
   const initialMessages = useMemo(
@@ -124,6 +125,8 @@ const CategoryChatScreen: React.FC = () => {
             borderWidth: 1,
             borderColor: BORDER,
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <Text
             style={{
@@ -154,7 +157,7 @@ const CategoryChatScreen: React.FC = () => {
 
     setMessages((prev) => [...prev, newMessage]);
     setDraft('');
-    console.log('[CategoryChat] send message', newMessage);
+    logger.info('[CategoryChat] send message', newMessage);
   };
 
   return (
@@ -195,6 +198,8 @@ const CategoryChatScreen: React.FC = () => {
                   borderColor: BORDER,
                   marginRight: 8,
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
               >
                 <Text
                   style={{
@@ -278,6 +283,8 @@ const CategoryChatScreen: React.FC = () => {
                         fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                         router.push(`/users/${encodeURIComponent(author.id)}`);
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View ${author.displayName}'s profile`}
                     >
                       <AvatarSmall
                         name={author.displayName}
@@ -368,6 +375,7 @@ const CategoryChatScreen: React.FC = () => {
               onChangeText={setDraft}
               placeholder="Share a thought, tip, or question…"
               placeholderTextColor={MUTED}
+              accessibilityLabel="Chat message"
               style={{
                 flex: 1,
                 borderRadius: 999,
@@ -396,6 +404,8 @@ const CategoryChatScreen: React.FC = () => {
                 flexDirection: 'row',
                 alignItems: 'center',
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Send message"
             >
               <Ionicons name="send-outline" size={16} color="#ffffff" />
             </AnimatedPressable>

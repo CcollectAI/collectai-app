@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-import os, asyncio, sys
+import asyncio
+import logging
+import os
+import sys
+
 import asyncpg
+
+logger = logging.getLogger(__name__)
+
 
 async def main():
     if len(sys.argv) < 2:
-        print("Usage: log_vision_item.py \"item description\"")
+        logger.error("Usage: log_vision_item.py \"item description\"")
         return
 
     item_ref = sys.argv[1]
     dsn = os.environ.get("DB_DSN")
     if not dsn:
-        print("DB_DSN not set")
+        logger.error("DB_DSN not set")
         return
 
     conn = await asyncpg.connect(dsn)
@@ -19,7 +26,9 @@ async def main():
         item_ref,
     )
     await conn.close()
-    print(f"logged vision item_ref={item_ref}")
+    logger.info("logged vision item_ref=%s", item_ref)
+
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

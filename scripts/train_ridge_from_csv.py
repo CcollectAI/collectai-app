@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import io
 import json
+import logging
 import os
 import sys
 
@@ -9,6 +10,8 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
+
+logger = logging.getLogger(__name__)
 
 
 def s3_get(uri, region):
@@ -122,7 +125,7 @@ def main(cat, ver, dataset_csv, alpha):
         {"features": feats, "coef": model.coef_, "intercept": model.intercept_}, buf
     )
     s3_put(f"{base}/model.joblib", buf.getvalue(), region)
-    print(
+    logger.info(
         json.dumps(
             {
                 "ok": True,
@@ -135,6 +138,7 @@ def main(cat, ver, dataset_csv, alpha):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     cat = sys.argv[1]
     ver = sys.argv[2]
     ds = sys.argv[3]

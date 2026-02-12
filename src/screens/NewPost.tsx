@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Image, Alert } from 'react-native';
+import { View, Alert } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
@@ -7,7 +8,11 @@ import { supabase } from "@/lib/supabase";
 import { colors } from '../theme/tokens';
 import { uploadFeedImage } from '../utils/uploadFeedImage';
 
-export default function NewPost({ navigation }: any){
+type NewPostScreenProps = {
+  navigation: { goBack?: () => void };
+};
+
+export default function NewPost({ navigation }: NewPostScreenProps){
   const [content, setContent] = useState('');
   const [imgUri, setImgUri] = useState<string|undefined>();
   const [loading, setLoading] = useState(false);
@@ -34,14 +39,14 @@ export default function NewPost({ navigation }: any){
       Alert.alert('Posted');
       setContent(''); setImgUri(undefined);
       navigation.goBack?.();
-    }catch(e:any){ Alert.alert('Post error', e.message||String(e)); }
+    }catch(e: unknown){ Alert.alert('Post error', e instanceof Error ? e.message : String(e)); }
     finally{ setLoading(false); }
   };
 
   return (
     <View style={{ flex:1, backgroundColor: colors.bg, padding:24, gap:16 }}>
       <Input label="What's new?" value={content} onChangeText={setContent} placeholder="Share your latest pickup…" />
-      {imgUri ? <Image source={{ uri: imgUri }} style={{ width:'100%', height:220, borderRadius:16 }} /> : null}
+      {imgUri ? <Image source={{ uri: imgUri }} style={{ width:'100%', height:220, borderRadius:16 }} contentFit="cover" cachePolicy="disk" transition={200} accessibilityLabel="Attached photo" /> : null}
       <Button title="Pick Photo" onPress={pick} variant="ghost" />
       <Button title="Post" onPress={post} loading={loading} />
     </View>

@@ -2,6 +2,7 @@
 import argparse
 import io
 import json
+import logging
 import os
 
 import boto3
@@ -9,6 +10,8 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import KFold
+
+logger = logging.getLogger(__name__)
 
 
 def s3_get(uri, region):
@@ -79,7 +82,7 @@ def main():
     }
     base = f"s3://{art_bucket}/artifacts/price/{a.category}/{a.version}"
     s3_put(f"{base}/model.json", json.dumps(meta).encode(), region)
-    print(
+    logger.info(
         json.dumps(
             {
                 "ok": True,
@@ -93,4 +96,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

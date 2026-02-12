@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 import datetime
 import json
+import logging
 import os
 import re
 import time
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
@@ -90,8 +93,9 @@ def run():
             )
         time.sleep(0.7)
     supa_upsert(rows)
-    print(f"Upserted {len(rows)} reddit observations.")
+    logger.info("Upserted %d reddit observations.", len(rows))
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     run()

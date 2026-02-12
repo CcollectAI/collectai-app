@@ -62,9 +62,11 @@ function formatTimeAgo(dateString: string): string {
   return `${diffDays}d ago`;
 }
 
+type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
+
 type AlertItemProps = {
   alert: Alert;
-  colors: any;
+  colors: ThemeColors;
   onPress?: () => void;
 };
 
@@ -82,7 +84,7 @@ function AlertItem({ alert, colors, onPress }: AlertItemProps) {
       accessibilityLabel={`${alert.description}. ${formatTimeAgo(alert.triggeredAt)}`}
     >
       <View style={[styles.alertIcon, { backgroundColor: iconColor + '15' }]}>
-        <Ionicons name={getAlertIcon(alert.type) as any} size={16} color={iconColor} />
+        <Ionicons name={getAlertIcon(alert.type) as keyof typeof Ionicons.glyphMap} size={16} color={iconColor} />
       </View>
       <View style={styles.alertContent}>
         <Text style={[styles.alertTitle, { color: colors.text }]} numberOfLines={1}>

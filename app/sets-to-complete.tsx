@@ -7,12 +7,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import { getPortfolioItems } from '@/services/collectorsClient';
+import { getPortfolioItems, type PortfolioItem } from '@/services/collectorsClient';
 import {
   CollectionStatusInput,
   computeCollectionStatusScores,
   CollectionStatusScore,
 } from '@/utils/statusScoring';
+import logger from '@/utils/logger';
 
 const MIN_COMPLETENESS = 0.4;
 const MAX_COMPLETENESS = 0.95;
@@ -32,7 +33,7 @@ const SetsToCompleteScreen: React.FC = () => {
         const raw = await getPortfolioItems();
         if (cancelled) return;
 
-        const mapped: CollectionStatusInput[] = (raw || []).map((it: any) => ({
+        const mapped: CollectionStatusInput[] = (raw || []).map((it: PortfolioItem) => ({
           id: it.id ?? it.item_id ?? undefined,
           name: it.name ?? it.title ?? null,
           title: it.title ?? it.name ?? null,
@@ -49,8 +50,8 @@ const SetsToCompleteScreen: React.FC = () => {
         }));
 
         setItems(mapped);
-      } catch (e: any) {
-        console.error('[SetsToComplete] load error', e);
+      } catch (e: unknown) {
+        logger.error('[SetsToComplete] load error', e);
         if (!cancelled) setError('Could not load items.');
       } finally {
         if (!cancelled) setLoading(false);

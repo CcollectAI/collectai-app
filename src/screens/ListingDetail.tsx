@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { View, Text, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, ScrollView, Alert } from 'react-native';
+import { Image } from 'expo-image';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { supabase } from "@/lib/supabase";
 import useOffers from '../hooks/useOffers';
 
-export default function ListingDetail({ route }:any){
+export default function ListingDetail({ route }: { route: { params: { listing: { id: string; title: string; price: number; currency: string; seller_id: string; image_url?: string; condition?: string; description?: string } } } }){
   const listing = route.params.listing;
   const { rows: offers, loading, make, setStatus, refresh } = useOffers(listing.id);
   const [offer, setOffer] = useState('');
@@ -18,7 +19,7 @@ export default function ListingDetail({ route }:any){
       await make(amt);
       setOffer('');
       Alert.alert('Offer sent');
-    }catch(e:any){ Alert.alert('Offer error', e.message||String(e)); }
+    }catch(e: unknown){ Alert.alert('Offer error', e instanceof Error ? e.message : String(e)); }
   };
 
   const isSeller = async ()=>{
@@ -29,7 +30,7 @@ export default function ListingDetail({ route }:any){
   return (
     <ScrollView style={{ flex:1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: spacing(2), gap: spacing(2) }}>
       <Text style={fonts.h2}>{listing.title}</Text>
-      {listing.image_url ? <Image source={{ uri: listing.image_url }} style={{ width:'100%', height:260, borderRadius:16 }} /> : null}
+      {listing.image_url ? <Image source={{ uri: listing.image_url }} style={{ width:'100%', height:260, borderRadius:16 }} contentFit="cover" cachePolicy="disk" transition={200} accessibilityLabel={`Photo of ${listing.title}`} /> : null}
       <Text style={fonts.body}>Price: ${listing.price} {listing.currency}</Text>
       {listing.condition && <Text style={fonts.body}>Condition: {listing.condition}</Text>}
       {listing.description && <Text style={fonts.body}>{listing.description}</Text>}

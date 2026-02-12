@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import logging
 
 # import your existing trainer module
 import importlib
 import sys
+
+logger = logging.getLogger(__name__)
 
 
 def main(argv=None):
@@ -22,7 +25,7 @@ def main(argv=None):
     try:
         trainer = importlib.import_module("trainer")
     except Exception as e:
-        print(f"Failed to import trainer.py: {e}", file=sys.stderr)
+        logger.error("Failed to import trainer.py: %s", e)
         sys.exit(2)
 
     # call trainer.main(...) if it exists, else fall back to a function you expose
@@ -34,9 +37,10 @@ def main(argv=None):
         # last resort: call a function name you have (edit if needed)
         if hasattr(trainer, "train"):
             sys.exit(trainer.train(args.category))
-        print("trainer.py must expose main/run/train", file=sys.stderr)
+        logger.error("trainer.py must expose main/run/train")
         sys.exit(2)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

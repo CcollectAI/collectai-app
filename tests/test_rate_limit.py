@@ -1,9 +1,12 @@
-"""Tests for rate_limit.py pure functions — _prune and _client_ip logic."""
+"""Tests for rate_limit.py pure functions — _prune, _client_ip, and per-user limiter."""
+import os
 import sys
 import time
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock, patch
 import pytest
 
+# Force DEV_MODE so auth doesn't require real JWT
+os.environ.setdefault("DEV_MODE", "true")
 
 # ---------------------------------------------------------------------------
 # Mock starlette before importing rate_limit (not installed locally)
@@ -15,7 +18,15 @@ sys.modules.setdefault("starlette", MagicMock())
 sys.modules.setdefault("starlette.requests", _starlette_request)
 sys.modules.setdefault("starlette.responses", _starlette_responses)
 
-from app.rate_limit import _prune, _client_ip, WINDOW_SECONDS  # noqa: E402
+from app.rate_limit import (  # noqa: E402
+    _prune,
+    _prune_user,
+    _client_ip,
+    _user_hits,
+    per_user_rate_limit,
+    WINDOW_SECONDS,
+    PER_USER_RATE_LIMIT_ENABLED,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -110,3 +121,126 @@ class TestClientIP:
     def test_ipv6_forwarded(self):
         req = self._make_request(headers={"x-forwarded-for": "::1, 10.0.0.2"})
         assert _client_ip(req) == "::1"
+
+
+# ---------------------------------------------------------------------------
+# _prune_user
+# ---------------------------------------------------------------------------
+
+class TestPruneUser:
+    def test_empty(self):
+        assert _prune_user([], 100.0, 60) == []
+
+    def test_custom_window(self):
+        now = 200.0
+        ts = [now - 30, now - 10]
+        # With a 20-second window, only the last one survives
+        assert _prune_user(ts, now, 20) == [now - 10]
+
+    def test_all_within_window(self):
+        now = 200.0
+        ts = [now - 5, now - 3, now - 1]
+        assert _prune_user(ts, now, 60) == ts
+
+
+# ---------------------------------------------------------------------------
+# per_user_rate_limit (unit tests using direct invocation)
+# ---------------------------------------------------------------------------
+
+class TestPerUserRateLimit:
+    """Test the per_user_rate_limit factory and its inner _check function."""
+
+    def setup_method(self):
+        """Clear the shared store and ensure per-user limiting is enabled."""
+        import app.rate_limit as rl
+        rl.PER_USER_RATE_LIMIT_ENABLED = True
+        _user_hits.clear()
+
+    @pytest.mark.asyncio
+    async def test_allows_requests_under_limit(self):
+        limiter = per_user_rate_limit(5, window_seconds=60, scope="test_under")
+        # Should not raise for 5 requests
+        for _ in range(5):
+            await limiter(user_id="user-a")
+
+    @pytest.mark.asyncio
+    async def test_blocks_at_limit(self):
+        from fastapi.exceptions import HTTPException
+
+        limiter = per_user_rate_limit(3, window_seconds=60, scope="test_block")
+        # First 3 are fine
+        for _ in range(3):
+            await limiter(user_id="user-b")
+
+        # 4th should raise 429
+        with pytest.raises(HTTPException) as exc_info:
+            await limiter(user_id="user-b")
+        assert exc_info.value.status_code == 429
+        assert "Retry-After" in exc_info.value.headers
+
+    @pytest.mark.asyncio
+    async def test_different_users_independent(self):
+        limiter = per_user_rate_limit(2, window_seconds=60, scope="test_indep")
+        # User A uses 2 slots
+        await limiter(user_id="user-x")
+        await limiter(user_id="user-x")
+
+        # User B should still have full quota
+        await limiter(user_id="user-y")
+        await limiter(user_id="user-y")
+
+    @pytest.mark.asyncio
+    async def test_different_scopes_independent(self):
+        limiter_a = per_user_rate_limit(2, window_seconds=60, scope="scope_a")
+        limiter_b = per_user_rate_limit(2, window_seconds=60, scope="scope_b")
+
+        # Exhaust scope_a for user
+        await limiter_a(user_id="user-z")
+        await limiter_a(user_id="user-z")
+
+        # scope_b should still work for same user
+        await limiter_b(user_id="user-z")
+        await limiter_b(user_id="user-z")
+
+    @pytest.mark.asyncio
+    async def test_window_expiry(self):
+        """Timestamps older than the window should be pruned, freeing capacity."""
+        limiter = per_user_rate_limit(2, window_seconds=60, scope="test_expiry")
+        key = ("test_expiry", "user-exp")
+
+        # Manually insert old timestamps that are already expired
+        old_time = time.monotonic() - 120  # 2 minutes ago
+        _user_hits[key] = [old_time, old_time + 1]
+
+        # Should succeed because old timestamps will be pruned
+        await limiter(user_id="user-exp")
+
+    @pytest.mark.asyncio
+    async def test_retry_after_header_value(self):
+        """Retry-After should be a positive integer representing seconds to wait."""
+        from fastapi.exceptions import HTTPException
+
+        limiter = per_user_rate_limit(1, window_seconds=30, scope="test_retry")
+        await limiter(user_id="user-r")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await limiter(user_id="user-r")
+
+        retry_after = int(exc_info.value.headers["Retry-After"])
+        assert 1 <= retry_after <= 30
+
+    @pytest.mark.asyncio
+    async def test_disabled_via_flag(self):
+        """When PER_USER_RATE_LIMIT_ENABLED is False, limiter should be a no-op."""
+        import app.rate_limit as rl
+        original = rl.PER_USER_RATE_LIMIT_ENABLED
+
+        try:
+            rl.PER_USER_RATE_LIMIT_ENABLED = False
+            limiter = per_user_rate_limit(1, window_seconds=60, scope="test_disabled")
+            # Even after exceeding the limit, should not raise
+            await limiter(user_id="user-off")
+            await limiter(user_id="user-off")
+            await limiter(user_id="user-off")
+        finally:
+            rl.PER_USER_RATE_LIMIT_ENABLED = original

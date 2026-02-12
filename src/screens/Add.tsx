@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Image, Alert } from 'react-native';
+import { View, Alert } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
@@ -62,7 +63,7 @@ export default function Add(){
       Alert.alert('Item added');
       setTitle(''); setCategory('pokemon'); setPurchase(''); setCondition('');
       setYear(''); setSeries(''); setBrand(''); setTags(''); setDescription(''); setImgUri(undefined); setSuggested(null);
-    }catch(e:any){ Alert.alert('Add item error', e.message||String(e)); }
+    }catch(e: unknown){ Alert.alert('Add item error', e instanceof Error ? e.message : String(e)); }
     finally{ setLoading(false); }
   };
 
@@ -77,7 +78,7 @@ export default function Add(){
       <Input label="Brand" value={brand} onChangeText={setBrand} placeholder="e.g. Pokémon / Funko / Hot Wheels" />
       <Input label="Tags (comma-separated)" value={tags} onChangeText={setTags} placeholder="e.g. holo, first edition" />
       <Input label="Description" value={description} onChangeText={setDescription} placeholder="notes…" />
-      {imgUri ? <Image source={{ uri: imgUri }} style={{ width:'100%', height:220, borderRadius:16 }} /> : null}
+      {imgUri ? <Image source={{ uri: imgUri }} style={{ width:'100%', height:220, borderRadius:16 }} contentFit="cover" cachePolicy="disk" transition={200} accessibilityLabel={`Photo of ${title || 'new item'}`} /> : null}
       {/* Optional: <Button title="Take Photo" onPress={capture} variant="ghost" /> */}
       <Button title="Suggest value" onPress={suggest} variant="ghost" />
       <Button title="Add Item" onPress={submit} loading={loading} />

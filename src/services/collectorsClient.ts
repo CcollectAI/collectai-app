@@ -181,7 +181,7 @@ export interface ItemDetail {
 export function getItemDetail(id: string): Promise<ItemDetail> {
   return request<ItemDetail>(`/items/${encodeURIComponent(id)}/detail`);
 }
-export async function createAlert(body: any) {
+export async function createAlert(body: Record<string, unknown>) {
   const res = await fetch(`${API_BASE_URL}/alerts`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
@@ -311,7 +311,7 @@ export type AdvancedAlertPayload = {
 export async function createAdvancedAlert(
   body: AdvancedAlertPayload,
 ) {
-  return request<{ ok: boolean; alert: any }>('/alerts/advanced/create', {
+  return request<{ ok: boolean; alert: Record<string, unknown> }>('/alerts/advanced/create', {
     method: 'POST',
     body: JSON.stringify(body),
   });
@@ -329,9 +329,9 @@ export type DemoAlertRunResult = {
       email?: boolean;
       push?: boolean;
       telegram?: boolean;
-      [key: string]: any;
+      [key: string]: unknown;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   }[];
 };
 
@@ -533,7 +533,7 @@ export type ScreenshotIntelDemoResponse = {
     create_price_alert_for_primary: boolean;
     watchlist_reason: string;
     alert_reason: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   generated_at: string;
 };

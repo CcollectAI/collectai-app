@@ -11,14 +11,14 @@ export function db() {
   return _db!;
 }
 
-export function cacheSet(key: string, obj: any) {
+export function cacheSet(key: string, obj: unknown) {
   const d = db();
   const val = JSON.stringify(obj);
   const now = Date.now();
   d.runSync("INSERT OR REPLACE INTO kv (key, value, updated_at) VALUES (?, ?, ?)", [key, val, now]);
 }
 
-export function cacheGet<T = any>(key: string): { value: T | null; ageMs: number } {
+export function cacheGet<T = unknown>(key: string): { value: T | null; ageMs: number } {
   const d = db();
   const row = d.getFirstSync<{ value: string; updated_at: number }>("SELECT value, updated_at FROM kv WHERE key = ?", [key]);
   if (!row) return { value: null, ageMs: Infinity };

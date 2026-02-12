@@ -99,15 +99,15 @@ export function parseCSV(text: string): {
   const rows: CSVRow[] = [];
   for (let li = 1; li < lines.length; li++) {
     const cols = splitLine(lines[li]);
-    const obj: any = {};
+    const obj: Partial<CSVRow> = {};
     Object.entries(headerMap).forEach(([idxStr, key]) => {
       const idx = Number(idxStr);
       const raw = (cols[idx] ?? '').trim();
       if (key === 'priceEUR' || key === 'changePct') {
         const num = toNumber(raw);
-        if (num !== undefined) obj[key] = num;
+        if (num !== undefined) (obj as Record<string, unknown>)[key] = num;
       } else {
-        obj[key] = raw;
+        (obj as Record<string, unknown>)[key] = raw;
       }
     });
 

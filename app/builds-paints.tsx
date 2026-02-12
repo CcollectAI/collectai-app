@@ -254,6 +254,7 @@ const BuildsPaintsScreen: React.FC = () => {
                   placeholderTextColor={colors.muted}
                   value={noteValue}
                   onChangeText={(text) => handleNoteChange(p.id, text)}
+                  accessibilityLabel={`Build notes for ${p.title}`}
                   style={[
                     styles.notesInput,
                     {

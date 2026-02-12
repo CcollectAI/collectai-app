@@ -1,21 +1,27 @@
 /**
- * Hook for uploading user photos to S3 via presigned URLs.
+ * Hook for uploading user photos with server-side optimization.
  *
- * Flow:
+ * Primary flow (server-side optimized):
  * 1. User picks a photo from camera or gallery (via expo-image-picker)
- * 2. Frontend calls backend /photos/presign-upload to get a presigned S3 PUT URL
- * 3. Frontend uploads the image directly to S3 (no proxy through backend)
- * 4. Returns the CDN/S3 URL for display
+ * 2. Frontend POSTs image to /photos/upload (multipart)
+ * 3. Server resizes to 1200px max edge, converts to JPEG q85, strips EXIF
+ * 4. Server generates a blurhash placeholder and uploads to S3
+ * 5. Returns CDN URL + blurhash + dimensions
+ *
+ * Fallback flow (presigned URL — used if server-side upload fails):
+ * 1. Frontend calls /photos/presign-upload for a presigned S3 PUT URL
+ * 2. Frontend uploads directly to S3
  *
  * Usage:
- *   const { pickAndUpload, uploading, error, photoUrl } = usePhotoUpload(itemId);
+ *   const { pickAndUpload, uploading, error, photoUrl, blurhash } = usePhotoUpload(itemId);
  */
 
 import { useState, useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { Alert, Platform } from "react-native";
 import { collectorsApi } from "@/api/collectorsApi";
+import type { ServerUploadResponse } from "@/api/collectorsApi";
 import { useSession } from "./useSession";
+import { logger } from "@/lib/logger";
 
 /** MIME type mapping from expo-image-picker type field */
 const MIME_MAP: Record<string, string> = {
@@ -32,7 +38,7 @@ function getMimeType(uri: string): string {
 }
 
 export type PhotoUploadResult = {
-  /** Pick a photo from camera or gallery and upload it to S3 */
+  /** Pick a photo from camera or gallery and upload it */
   pickAndUpload: (source?: "camera" | "gallery") => Promise<string | null>;
   /** Whether an upload is currently in progress */
   uploading: boolean;
@@ -40,6 +46,10 @@ export type PhotoUploadResult = {
   error: string | null;
   /** URL of the most recently uploaded photo */
   photoUrl: string | null;
+  /** Blurhash string for the most recently uploaded photo (for placeholder rendering) */
+  blurhash: string | null;
+  /** Dimensions of the optimized image */
+  dimensions: { width: number; height: number } | null;
   /** Clear the current error */
   clearError: () => void;
 };
@@ -49,6 +59,8 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [blurhash, setBlurhash] = useState<string | null>(null);
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -101,14 +113,38 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
         const uri = asset.uri;
         const contentType = getMimeType(uri);
 
-        // 3. Get presigned URL from backend
+        // 3. Try server-side optimized upload first
+        try {
+          const response: ServerUploadResponse = await collectorsApi.uploadPhoto(
+            itemId,
+            user.id,
+            uri,
+            contentType,
+          );
+
+          setPhotoUrl(response.cdn_url);
+          setBlurhash(response.blurhash);
+          setDimensions({ width: response.width, height: response.height });
+
+          logger.info(
+            `[usePhotoUpload] Server-side upload complete: ${response.original_size} -> ${response.optimized_size} bytes`,
+          );
+
+          return response.cdn_url;
+        } catch (serverErr: unknown) {
+          logger.warn(
+            "[usePhotoUpload] Server-side upload failed, falling back to presigned URL:",
+            serverErr instanceof Error ? serverErr.message : String(serverErr),
+          );
+        }
+
+        // 4. Fallback: presigned URL flow
         const presignResponse = await collectorsApi.getPresignedUploadUrl(
           itemId,
           contentType,
           user.id,
         );
 
-        // 4. Upload directly to S3
         const imageResponse = await fetch(uri);
         const blob = await imageResponse.blob();
 
@@ -126,12 +162,13 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
           );
         }
 
-        // 5. Return the CDN URL
         setPhotoUrl(presignResponse.cdn_url);
+        setBlurhash(null); // No blurhash from presigned flow
+        setDimensions(null);
         return presignResponse.cdn_url;
-      } catch (err: any) {
-        const message = err?.message || "Failed to upload photo";
-        console.error("[usePhotoUpload] Error:", message);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Failed to upload photo";
+        logger.error("[usePhotoUpload] Error:", message);
         setError(message);
         return null;
       } finally {
@@ -141,7 +178,7 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
     [itemId, user?.id],
   );
 
-  return { pickAndUpload, uploading, error, photoUrl, clearError };
+  return { pickAndUpload, uploading, error, photoUrl, blurhash, dimensions, clearError };
 }
 
 export default usePhotoUpload;

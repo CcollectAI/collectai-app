@@ -22,6 +22,8 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from app.auth import get_current_user_id, get_optional_user_id
+from app.features.pagination import pagination_params
 
 router = APIRouter(prefix="/events", tags=["events"])
 logger = logging.getLogger(__name__)
@@ -44,19 +46,7 @@ def _get_db_pool():
         return None
 
 
-# ---------------------------------------------------------------------------
-# Auth helper
-# ---------------------------------------------------------------------------
-
-def get_current_user_id() -> str:
-    # TODO: replace with real auth
-    return "demo-user"
-
-
-def get_optional_user_id() -> Optional[str]:
-    """Return user_id if authenticated, None otherwise."""
-    # TODO: replace with real auth — for now always returns the demo user
-    return "demo-user"
+# get_optional_user_id imported from app.auth — returns None instead of 401
 
 
 # ---------------------------------------------------------------------------
@@ -131,6 +121,7 @@ async def list_events(
     category_id: Optional[str] = Query(None, description="Filter by category"),
     include_past: bool = Query(False, description="Include past events"),
     user_id: Optional[str] = Depends(get_optional_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
 ):
     """
     List events, optionally filtered by category.
@@ -139,6 +130,7 @@ async def list_events(
     rpc_list_personalized_events_v1 for personalized ordering.
     Otherwise returns all future events.
     """
+    limit, offset = pagination
     pool = _get_db_pool()
 
     if pool is not None:
@@ -148,16 +140,18 @@ async def list_events(
                     # Try the personalized RPC first
                     try:
                         rows = await conn.fetch(
-                            "SELECT * FROM rpc_list_personalized_events_v1($1, $2, $3)",
+                            "SELECT * FROM rpc_list_personalized_events_v1($1, $2, $3) LIMIT $4 OFFSET $5",
                             user_id,
                             category_id,
                             include_past,
+                            limit,
+                            offset,
                         )
                     except Exception as rpc_err:
                         logger.warning("[events] Personalized RPC failed, falling back: %s", rpc_err)
-                        rows = await _fetch_events_basic(conn, category_id, include_past)
+                        rows = await _fetch_events_basic(conn, category_id, include_past, limit, offset)
                 else:
-                    rows = await _fetch_events_basic(conn, category_id, include_past)
+                    rows = await _fetch_events_basic(conn, category_id, include_past, limit, offset)
 
                 events = []
                 for row in rows:
@@ -190,7 +184,7 @@ async def list_events(
         if user_id:
             ev_copy["user_rsvp_status"] = rsvps.get(user_id)
         events.append(EventResponse(**ev_copy))
-    return EventListResponse(events=events)
+    return EventListResponse(events=events[offset:offset + limit])
 
 
 @router.post("", response_model=EventResponse, status_code=201)
@@ -565,7 +559,7 @@ async def check_following_category(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bool):
+async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bool, limit: int = 50, offset: int = 0):
     """Fetch events from the events table with optional filters."""
     conditions = []
     params = []
@@ -582,7 +576,9 @@ async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bo
         param_idx += 1
 
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-    query = f"SELECT * FROM events {where} ORDER BY date ASC"
+    query = f"SELECT * FROM events {where} ORDER BY date ASC LIMIT ${param_idx} OFFSET ${param_idx + 1}"
+    params.append(limit)
+    params.append(offset)
     return await conn.fetch(query, *params)
 
 

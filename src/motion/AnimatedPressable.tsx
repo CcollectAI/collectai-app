@@ -7,6 +7,7 @@
 import React, { useRef, useCallback } from 'react';
 import {
   Animated,
+  GestureResponderEvent,
   Pressable,
   PressableProps,
   ViewStyle,
@@ -34,7 +35,7 @@ export function AnimatedPressable({
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = useCallback(
-    (e: any) => {
+    (e: GestureResponderEvent) => {
       Animated.timing(scaleAnim, {
         toValue: scaleValue,
         duration,
@@ -46,7 +47,7 @@ export function AnimatedPressable({
   );
 
   const handlePressOut = useCallback(
-    (e: any) => {
+    (e: GestureResponderEvent) => {
       Animated.timing(scaleAnim, {
         toValue: 1,
         duration,

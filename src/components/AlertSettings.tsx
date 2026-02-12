@@ -25,12 +25,14 @@ const FREQUENCY_OPTIONS: { value: FrequencyOption; label: string }[] = [
 
 const THRESHOLD_OPTIONS = [5, 10, 15, 20, 25];
 
+type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
+
 type SettingRowProps = {
   label: string;
   description: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
-  colors: any;
+  colors: ThemeColors;
 };
 
 function SettingRow({ label, description, value, onValueChange, colors }: SettingRowProps) {
@@ -55,7 +57,7 @@ type ThresholdRowProps = {
   value: number;
   onValueChange: (value: number) => void;
   enabled: boolean;
-  colors: any;
+  colors: ThemeColors;
 };
 
 function ThresholdRow({ label, value, onValueChange, enabled, colors }: ThresholdRowProps) {

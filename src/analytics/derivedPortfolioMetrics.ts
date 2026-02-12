@@ -17,6 +17,7 @@ import type {
   PortfolioItemSnapshot,
   CategoryAllocation,
 } from './portfolioMetrics';
+import type { ExtendedPortfolioItem } from '@/../types/api';
 
 export type RoiByCategory = {
   category: string;
@@ -77,18 +78,18 @@ export function computeRoiByCategory(
     const category = item.category ?? 'Uncategorized';
     const now =
       toCurrency(item.currentValue) ||
-      toCurrency((item as any).estimatedValue);
+      toCurrency(item.estimatedValue);
 
     if (now <= 0) continue;
 
     let base = 0;
 
-    const costBasis = (item as any).costBasis ?? (item as any).purchasePrice;
+    const costBasis = item.costBasis ?? (item as ExtendedPortfolioItem).purchasePrice;
     if (typeof costBasis === 'number' && costBasis > 0) {
       base = costBasis;
     } else {
-      const c7 = (item as any).change7dPct;
-      const c1 = (item as any).change1dPct;
+      const c7 = item.change7dPct;
+      const c1 = item.change1dPct;
 
       if (typeof c7 === 'number' && c7 !== 0) {
         base = now / (1 + c7);
@@ -129,7 +130,7 @@ export function getTopMoves(
   const withChange = items
     .map((item) => {
       const change1dPct = safeNumber(
-        (item as any).change1dPct,
+        item.change1dPct,
         0,
       );
       return {
@@ -158,7 +159,7 @@ export function getTopMoves(
     category: row.item.category ?? 'Uncategorized',
     currentValue:
       toCurrency(row.item.currentValue) ||
-      toCurrency((row.item as any).estimatedValue),
+      toCurrency(row.item.estimatedValue),
     change1dPct: row.change1dPct,
   }));
 }
@@ -218,11 +219,11 @@ export function summarizePortfolioHealth(
   for (const item of items) {
     const now =
       toCurrency(item.currentValue) ||
-      toCurrency((item as any).estimatedValue);
+      toCurrency(item.estimatedValue);
 
     const costBasis =
-      (item as any).costBasis ??
-      (item as any).purchasePrice ??
+      item.costBasis ??
+      (item as ExtendedPortfolioItem).purchasePrice ??
       null;
 
     totalValue += now;

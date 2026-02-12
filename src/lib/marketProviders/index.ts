@@ -26,6 +26,9 @@ export type {
 
 export { DEFAULT_AGGREGATOR_CONFIG } from './types';
 
+// Concrete adapter implementations
+export { EbayAdapter, TCGPlayerAdapter, createAdapters } from './adapters';
+
 import type {
   MarketProviderAdapter,
   ProviderSearchOptions,
@@ -33,6 +36,7 @@ import type {
 } from './types';
 import type { MarketSearchResult, MarketHit } from '../../data/types';
 import { DEFAULT_AGGREGATOR_CONFIG } from './types';
+import { logger } from '@/lib/logger';
 
 /**
  * Aggregate search results from multiple providers.
@@ -65,13 +69,13 @@ export async function aggregateSearch(
       const result = await Promise.race([searchPromise, timeoutPromise]);
 
       if (!result) {
-        console.warn(`[aggregateSearch] ${adapter.metadata.id} timed out`);
+        logger.warn(`[aggregateSearch] ${adapter.metadata.id} timed out`);
         return { adapter, result: null };
       }
 
       return { adapter, result };
     } catch (err) {
-      console.warn(`[aggregateSearch] ${adapter.metadata.id} error:`, err);
+      logger.warn(`[aggregateSearch] ${adapter.metadata.id} error:`, err);
       return { adapter, result: null };
     }
   });

@@ -7,14 +7,16 @@
  */
 
 import { Platform } from 'react-native';
+import { logger } from '@/lib/logger';
 
 // Optional dependency - graceful fallback if not installed
-let Haptics: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Haptics: Record<string, any> | null = null;
 
 try {
   Haptics = require('expo-haptics');
 } catch {
-  console.log('[Haptics] expo-haptics not installed - haptic feedback disabled');
+  logger.info('[Haptics] expo-haptics not installed - haptic feedback disabled');
 }
 
 // Check if haptics are available (iOS and some Android devices)

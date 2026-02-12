@@ -7,9 +7,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { getPortfolioItems } from '@/services/collectorsClient';
+import { getPortfolioItems, type PortfolioItem } from '@/services/collectorsClient';
 import type { CollectionStatusInput } from '@/utils/statusScoring';
 import SearchStatusPanel from '@/components/SearchStatusPanel';
+import logger from '@/utils/logger';
 
 const SearchStatusScreen: React.FC = () => {
   const [items, setItems] = useState<CollectionStatusInput[]>([]);
@@ -27,7 +28,7 @@ const SearchStatusScreen: React.FC = () => {
         if (cancelled) return;
 
         const mapped: CollectionStatusInput[] = (raw || []).map(
-          (it: any) => ({
+          (it: PortfolioItem) => ({
             id: it.id ?? it.item_id ?? undefined,
             name: it.name ?? it.title ?? null,
             title: it.title ?? it.name ?? null,
@@ -45,8 +46,8 @@ const SearchStatusScreen: React.FC = () => {
         );
 
         setItems(mapped);
-      } catch (e: any) {
-        console.error('[SearchStatusScreen] load error', e);
+      } catch (e: unknown) {
+        logger.error('[SearchStatusScreen] load error', e);
         if (!cancelled) setError('Could not load items for search status.');
       } finally {
         if (!cancelled) setLoading(false);

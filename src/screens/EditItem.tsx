@@ -1,12 +1,18 @@
 import { useLayoutEffect, useState } from 'react';
-import { View, Image, Alert, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Alert, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
+import { Image } from 'expo-image';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import { colors, spacing } from '../theme/tokens';
 import { supabase } from "@/lib/supabase";
 import { uploadImageToBucket } from '../utils/uploadImage';
 
-export default function EditItem({ navigation, route }: any){
+type EditItemScreenProps = {
+  navigation: { setOptions: (opts: Record<string, unknown>) => void; goBack: () => void; popToTop: () => void };
+  route: { params: { item: Record<string, unknown> } };
+};
+
+export default function EditItem({ navigation, route }: EditItemScreenProps){
   const { item } = route.params;
 
   const [title, setTitle] = useState(item.title || '');
@@ -38,7 +44,7 @@ export default function EditItem({ navigation, route }: any){
         const uid = session?.user?.id; if(!uid) throw new Error('Not signed in');
         const url = await uploadImageToBucket({ uid, uri });
         setImageUrl(url);
-      }catch(e:any){ Alert.alert('Upload error', e.message||String(e)); }
+      }catch(e: unknown){ Alert.alert('Upload error', e instanceof Error ? e.message : String(e)); }
     }
   };
 
@@ -61,7 +67,7 @@ export default function EditItem({ navigation, route }: any){
 
       Alert.alert('Saved');
       navigation.goBack();
-    }catch(e:any){ Alert.alert('Save error', e.message||String(e)); }
+    }catch(e: unknown){ Alert.alert('Save error', e instanceof Error ? e.message : String(e)); }
     finally{ setLoading(false); }
   };
 
@@ -75,7 +81,7 @@ export default function EditItem({ navigation, route }: any){
           if (error) throw error;
           Alert.alert('Deleted');
           navigation.popToTop();
-        }catch(e:any){ Alert.alert('Delete error', e.message||String(e)); }
+        }catch(e: unknown){ Alert.alert('Delete error', e instanceof Error ? e.message : String(e)); }
         finally{ setLoading(false); }
       }}
     ]);
@@ -93,7 +99,7 @@ export default function EditItem({ navigation, route }: any){
         <Input label="Brand" value={brand} onChangeText={setBrand} />
         <Input label="Tags (comma-separated)" value={tags} onChangeText={setTags} />
         <Input label="Description" value={description} onChangeText={setDescription} />
-        {image_url ? <Image source={{ uri:image_url }} style={{ width:'100%', height:220, borderRadius:16 }} /> : null}
+        {image_url ? <Image source={{ uri:image_url }} style={{ width:'100%', height:220, borderRadius:16 }} contentFit="cover" cachePolicy="disk" transition={200} accessibilityLabel={`Photo of ${title || 'item'}`} /> : null}
         <Button title="Change Photo" onPress={pick} variant="ghost" />
         <Button title="Save Changes" onPress={save} loading={loading} />
         <Button title="Delete Item" onPress={remove} />

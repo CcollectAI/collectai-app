@@ -5,6 +5,7 @@
 
 import type { DataProvider } from './DataProvider';
 import type {
+  PaginationParams,
   PortfolioSummary,
   Item,
   WatchlistItem,
@@ -40,6 +41,7 @@ import {
   MOCK_TOP_MOVERS,
   MOCK_TWITCH_CREATORS,
 } from '../mockData';
+import { logger } from '@/lib/logger';
 
 // In-memory store for created items (persists only during session)
 let mockCreatedItems: Item[] = [];
@@ -243,7 +245,7 @@ export class MockDataProvider implements DataProvider {
     };
   }
 
-  async listItems(): Promise<Item[]> {
+  async listItems(pagination?: PaginationParams): Promise<Item[]> {
     // Convert MOCK_TOP_MOVERS to Item shape + any created items
     const mockItems: Item[] = MOCK_TOP_MOVERS.map((m) => ({
       id: m.id,
@@ -254,7 +256,13 @@ export class MockDataProvider implements DataProvider {
       updatedAt: undefined,
     }));
 
-    return [...mockItems, ...mockCreatedItems];
+    const all = [...mockItems, ...mockCreatedItems];
+    if (pagination) {
+      const offset = pagination.offset ?? 0;
+      const limit = pagination.limit ?? all.length;
+      return all.slice(offset, offset + limit);
+    }
+    return all;
   }
 
   async listWatchlist(_userId: string): Promise<WatchlistItem[]> {
@@ -279,7 +287,7 @@ export class MockDataProvider implements DataProvider {
       createdAt: new Date().toISOString(),
     };
     mockWatchlistItems.push(newItem);
-    console.log('[MockDataProvider] addWatchlistItem', { id: newItem.id, title: newItem.title });
+    logger.info('[MockDataProvider] addWatchlistItem', { id: newItem.id, title: newItem.title });
     return newItem;
   }
 
@@ -287,7 +295,7 @@ export class MockDataProvider implements DataProvider {
     const index = mockWatchlistItems.findIndex((item) => item.id === id);
     if (index !== -1) {
       mockWatchlistItems.splice(index, 1);
-      console.log('[MockDataProvider] removeWatchlistItem', { id });
+      logger.info('[MockDataProvider] removeWatchlistItem', { id });
     }
   }
 
@@ -302,6 +310,20 @@ export class MockDataProvider implements DataProvider {
     };
     mockCreatedItems.push(newItem);
     return newItem;
+  }
+
+  async deleteItem(itemId: string): Promise<void> {
+    const idx = mockCreatedItems.findIndex((it) => it.id === itemId);
+    if (idx !== -1) {
+      mockCreatedItems.splice(idx, 1);
+    }
+  }
+
+  async archiveItem(itemId: string): Promise<void> {
+    const idx = mockCreatedItems.findIndex((it) => it.id === itemId);
+    if (idx !== -1) {
+      mockCreatedItems.splice(idx, 1);
+    }
   }
 
   async persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
@@ -321,7 +343,7 @@ export class MockDataProvider implements DataProvider {
     };
     mockCreatedItems.push(item);
 
-    console.log('[MockDataProvider] persistQuickscanDraft', { id, title, categoryId });
+    logger.info('[MockDataProvider] persistQuickscanDraft', { id, title, categoryId });
 
     return {
       id,
@@ -602,7 +624,7 @@ export class MockDataProvider implements DataProvider {
   // Alerts Feed (read-only)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  async listAlertsFeed(): Promise<AlertFeedItem[]> {
+  async listAlertsFeed(pagination?: PaginationParams): Promise<AlertFeedItem[]> {
     // Return 12 demo alerts with mixed types
     const now = new Date();
     const mockAlerts: AlertFeedItem[] = [
@@ -695,6 +717,11 @@ export class MockDataProvider implements DataProvider {
       },
     ];
 
+    if (pagination) {
+      const offset = pagination.offset ?? 0;
+      const limit = pagination.limit ?? mockAlerts.length;
+      return mockAlerts.slice(offset, offset + limit);
+    }
     return mockAlerts;
   }
 
@@ -741,7 +768,7 @@ export class MockDataProvider implements DataProvider {
     mockDmThreads.set(threadId, thread);
     mockDmStatusByUser.set(toUserId, 'pending_outgoing');
 
-    console.log('[MockDataProvider] requestDm', { threadId, toUserId, message });
+    logger.info('[MockDataProvider] requestDm', { threadId, toUserId, message });
     return threadId;
   }
 
@@ -781,7 +808,7 @@ export class MockDataProvider implements DataProvider {
       }
     }
 
-    console.log('[MockDataProvider] decideDmRequest', { threadId, accept });
+    logger.info('[MockDataProvider] decideDmRequest', { threadId, accept });
   }
 
   async markThreadRead(threadId: string): Promise<void> {
@@ -790,7 +817,7 @@ export class MockDataProvider implements DataProvider {
       thread.unreadCount = 0;
       mockDmThreads.set(threadId, thread);
     }
-    console.log('[MockDataProvider] markThreadRead', { threadId });
+    logger.info('[MockDataProvider] markThreadRead', { threadId });
   }
 
   async getThreadMessages(threadId: string): Promise<DmMessage[]> {
@@ -819,7 +846,7 @@ export class MockDataProvider implements DataProvider {
       mockDmThreads.set(threadId, thread);
     }
 
-    console.log('[MockDataProvider] sendMessage', { threadId, body, messageId: newMessage.id });
+    logger.info('[MockDataProvider] sendMessage', { threadId, body, messageId: newMessage.id });
     return newMessage;
   }
 
@@ -891,7 +918,7 @@ export class MockDataProvider implements DataProvider {
     mockBuildPaintProjects.set(id, project);
     mockBuildPaintSteps.set(id, []);
     mockBuildPaintNotes.set(id, []);
-    console.log('[MockDataProvider] createBuildPaintProject', { id, title: input.title });
+    logger.info('[MockDataProvider] createBuildPaintProject', { id, title: input.title });
     return project;
   }
 
@@ -903,7 +930,7 @@ export class MockDataProvider implements DataProvider {
     if (status) project.status = status;
     project.updatedAt = new Date().toISOString();
     mockBuildPaintProjects.set(projectId, project);
-    console.log('[MockDataProvider] setBuildPaintProgress', { projectId, percent, status });
+    logger.info('[MockDataProvider] setBuildPaintProgress', { projectId, percent, status });
   }
 
   async markBuildPaintProjectComplete(projectId: string, isCompleted: boolean): Promise<void> {
@@ -915,7 +942,7 @@ export class MockDataProvider implements DataProvider {
     if (isCompleted) project.percent = 100;
     project.updatedAt = new Date().toISOString();
     mockBuildPaintProjects.set(projectId, project);
-    console.log('[MockDataProvider] markBuildPaintProjectComplete', { projectId, isCompleted });
+    logger.info('[MockDataProvider] markBuildPaintProjectComplete', { projectId, isCompleted });
   }
 
   async listBuildPaintSteps(projectId: string): Promise<BuildPaintStep[]> {
@@ -942,7 +969,7 @@ export class MockDataProvider implements DataProvider {
       project.updatedAt = new Date().toISOString();
       mockBuildPaintProjects.set(projectId, project);
     }
-    console.log('[MockDataProvider] addBuildPaintStep', { projectId, title, stepId: step.id });
+    logger.info('[MockDataProvider] addBuildPaintStep', { projectId, title, stepId: step.id });
     return step;
   }
 
@@ -959,7 +986,7 @@ export class MockDataProvider implements DataProvider {
           project.updatedAt = new Date().toISOString();
           mockBuildPaintProjects.set(projectId, project);
         }
-        console.log('[MockDataProvider] toggleBuildPaintStep', { stepId, isDone });
+        logger.info('[MockDataProvider] toggleBuildPaintStep', { stepId, isDone });
         return;
       }
     }
@@ -986,7 +1013,7 @@ export class MockDataProvider implements DataProvider {
       project.updatedAt = new Date().toISOString();
       mockBuildPaintProjects.set(projectId, project);
     }
-    console.log('[MockDataProvider] addBuildPaintNote', { projectId, noteId: note.id });
+    logger.info('[MockDataProvider] addBuildPaintNote', { projectId, noteId: note.id });
     return note;
   }
 
@@ -1000,7 +1027,7 @@ export class MockDataProvider implements DataProvider {
     value?: string,
   ): Promise<{ success: boolean; feedbackId?: string }> {
     const feedbackId = `feedback-mock-${Date.now()}`;
-    console.log('[MockDataProvider] submitFeedback', { itemId, feedbackType, value, feedbackId });
+    logger.info('[MockDataProvider] submitFeedback', { itemId, feedbackType, value, feedbackId });
     return { success: true, feedbackId };
   }
 
@@ -1013,7 +1040,7 @@ export class MockDataProvider implements DataProvider {
       notes?: string;
     },
   ): Promise<{ success: boolean }> {
-    console.log('[MockDataProvider] submitCorrection', { itemId, corrections });
+    logger.info('[MockDataProvider] submitCorrection', { itemId, corrections });
     return { success: true };
   }
 
@@ -1026,7 +1053,7 @@ export class MockDataProvider implements DataProvider {
     quantity: number = 1,
     notes?: string,
   ): Promise<{ success: boolean }> {
-    console.log('[MockDataProvider] markCategoryItemOwned', { categoryItemId, quantity, notes });
+    logger.info('[MockDataProvider] markCategoryItemOwned', { categoryItemId, quantity, notes });
     // Track the owned item in memory
     ownedCategoryItems.add(categoryItemId);
     return { success: true };
@@ -1063,7 +1090,7 @@ export class MockDataProvider implements DataProvider {
     // Remove from watchlist
     mockWatchlistItems = mockWatchlistItems.filter((w) => w.id !== watchlistItemId);
 
-    console.log('[MockDataProvider] convertWatchlistToItem', {
+    logger.info('[MockDataProvider] convertWatchlistToItem', {
       watchlistItemId,
       actualPrice,
       notes,
@@ -1079,12 +1106,12 @@ export class MockDataProvider implements DataProvider {
 
   async followCategory(categoryId: string): Promise<void> {
     mockFollowedCategories.add(categoryId);
-    console.log('[MockDataProvider] followCategory', { categoryId });
+    logger.info('[MockDataProvider] followCategory', { categoryId });
   }
 
   async unfollowCategory(categoryId: string): Promise<void> {
     mockFollowedCategories.delete(categoryId);
-    console.log('[MockDataProvider] unfollowCategory', { categoryId });
+    logger.info('[MockDataProvider] unfollowCategory', { categoryId });
   }
 
   async listFollowedCategories(): Promise<string[]> {
@@ -1104,10 +1131,10 @@ export class MockDataProvider implements DataProvider {
     return event ?? null;
   }
 
-  async listEvents(): Promise<CollectorsEvent[]> {
+  async listEvents(pagination?: PaginationParams): Promise<CollectorsEvent[]> {
     // Filter to followed categories (mock personalization)
     const followed = mockFollowedCategories;
-    return [...EVENTS]
+    const all = [...EVENTS]
       .filter((e) => !e.categoryId || followed.has(e.categoryId))
       .map((e) => ({
         ...e,
@@ -1116,6 +1143,12 @@ export class MockDataProvider implements DataProvider {
         myRsvpStatus: mockEventAttendees.get(e.id),
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
+    if (pagination) {
+      const offset = pagination.offset ?? 0;
+      const limit = pagination.limit ?? all.length;
+      return all.slice(offset, offset + limit);
+    }
+    return all;
   }
 
   async createEvent(input: CreateEventInput): Promise<CollectorsEvent> {
@@ -1143,22 +1176,22 @@ export class MockDataProvider implements DataProvider {
       longitude: input.longitude,
     };
     EVENTS.push(event);
-    console.log('[MockDataProvider] createEvent', { id: event.id, title: event.title });
+    logger.info('[MockDataProvider] createEvent', { id: event.id, title: event.title });
     return event;
   }
 
   async rsvpEvent(eventId: string, status: string = 'going'): Promise<void> {
     mockEventAttendees.set(eventId, status);
-    console.log('[MockDataProvider] rsvpEvent', { eventId, status });
+    logger.info('[MockDataProvider] rsvpEvent', { eventId, status });
   }
 
   async unrsvpEvent(eventId: string): Promise<void> {
     mockEventAttendees.delete(eventId);
-    console.log('[MockDataProvider] unrsvpEvent', { eventId });
+    logger.info('[MockDataProvider] unrsvpEvent', { eventId });
   }
 
   async shareEventViaDm(eventId: string, recipientUserId: string): Promise<void> {
-    console.log('[MockDataProvider] shareEventViaDm (no-op)', { eventId, recipientUserId });
+    logger.info('[MockDataProvider] shareEventViaDm (no-op)', { eventId, recipientUserId });
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1169,7 +1202,7 @@ export class MockDataProvider implements DataProvider {
     barcode: string,
     opts?: { codeType?: string },
   ): Promise<BarcodeLookupResult> {
-    console.log('[MockDataProvider] lookupByBarcode', { barcode, opts });
+    logger.info('[MockDataProvider] lookupByBarcode', { barcode, opts });
 
     // Mock fixtures for known barcodes
     const fixtures: Record<string, BarcodeLookupResult> = {
@@ -1371,7 +1404,7 @@ export class MockDataProvider implements DataProvider {
     query: string,
     opts?: MarketSearchOptions,
   ): Promise<MarketSearchResult> {
-    console.log('[MockDataProvider] marketSearch', { query, opts });
+    logger.info('[MockDataProvider] marketSearch', { query, opts });
 
     // Simulate network delay
     await new Promise((r) => setTimeout(r, 400));

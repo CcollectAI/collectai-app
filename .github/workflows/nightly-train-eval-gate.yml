@@ -27,7 +27,17 @@ jobs:
         with: { python-version: "3.12" }
 
       - name: Install dependencies
-        run: pip install -r requirements.txt || pip install scikit-learn numpy httpx pyyaml
+        run: pip install -r requirements.txt || pip install scikit-learn numpy httpx pyyaml asyncpg
+
+      - name: Export user feedback for retraining
+        env:
+          DB_DSN: ${{ secrets.DB_DSN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          echo "Exporting unprocessed user feedback..."
+          python -m pipelines.export_feedback
+          echo "Feedback export complete."
 
       - name: Train all categories
         env:

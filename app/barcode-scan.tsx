@@ -24,11 +24,14 @@ import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-ca
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { dataProvider, type BarcodeLookupResult } from '@/data';
+import { collectorsApi, type IntakeResultResponse } from '@/api/collectorsApi';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import logger from '@/utils/logger';
 
 type ScanState = 'scanning' | 'loading' | 'result' | 'error';
+type InputMode = 'camera' | 'url';
 
 export default function BarcodeScanScreen() {
   const { colors } = useAppTheme();
@@ -39,9 +42,13 @@ export default function BarcodeScanScreen() {
   const [scanState, setScanState] = useState<ScanState>('scanning');
   const [scannedCode, setScannedCode] = useState<{ type: string; value: string } | null>(null);
   const [lookupResult, setLookupResult] = useState<BarcodeLookupResult | null>(null);
+  const [intakeResult, setIntakeResult] = useState<IntakeResultResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [manualIsbn, setManualIsbn] = useState('');
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>('camera');
+  const [urlInput, setUrlInput] = useState('');
+  const [isUrlSubmitting, setIsUrlSubmitting] = useState(false);
 
   // Handle barcode detection
   const handleBarcodeScanned = async (result: BarcodeScanningResult) => {
@@ -61,13 +68,40 @@ export default function BarcodeScanScreen() {
     setScanState('loading');
 
     try {
-      const prefill = await dataProvider.lookupByBarcode(data, { codeType: normalizedType });
+      // Call the Intake Agent for enriched barcode lookup
+      const intake = await collectorsApi.processIntake(data, normalizedType);
+      setIntakeResult(intake);
+
+      // Also build a compatible BarcodeLookupResult for the existing UI
+      const prefill: BarcodeLookupResult = {
+        title: intake.name,
+        categoryId: intake.category_id,
+        subtypeId: intake.subtype_id,
+        taxonomyVersion: intake.taxonomy_version,
+        collections: [],
+        attributes: intake.attributes,
+        missingRequired: (!intake.name ? ['title'] : []).concat(!intake.category_id ? ['categoryId'] : []),
+        priceBand: intake.price_band ?? null,
+        rationale: intake.rationale,
+        barcode: intake.barcode ?? data,
+        barcodeType: intake.barcode_type ?? normalizedType,
+        imageUrl: intake.image_url,
+      };
       setLookupResult(prefill);
       setScanState('result');
     } catch (err) {
-      console.error('[BarcodeScan] Lookup error:', err);
-      setErrorMessage('Could not find product information. Try manual search.');
-      setScanState('error');
+      logger.error('[BarcodeScan] Intake error, falling back to direct lookup:', err);
+      // Fallback to direct barcode lookup if intake agent fails
+      try {
+        const prefill = await dataProvider.lookupByBarcode(data, { codeType: normalizedType });
+        setLookupResult(prefill);
+        setIntakeResult(null);
+        setScanState('result');
+      } catch (fallbackErr) {
+        logger.error('[BarcodeScan] Fallback lookup error:', fallbackErr);
+        setErrorMessage('Could not find product information. Try manual search.');
+        setScanState('error');
+      }
     }
   };
 
@@ -88,18 +122,86 @@ export default function BarcodeScanScreen() {
     setScanState('loading');
 
     try {
-      const prefill = await dataProvider.lookupByBarcode(cleaned, {
-        codeType: 'isbn',
-        source: 'manual'
-      });
+      // Call the Intake Agent for enriched manual ISBN lookup
+      const intake = await collectorsApi.processIntake(cleaned, 'isbn');
+      setIntakeResult(intake);
+
+      const prefill: BarcodeLookupResult = {
+        title: intake.name,
+        categoryId: intake.category_id,
+        subtypeId: intake.subtype_id,
+        taxonomyVersion: intake.taxonomy_version,
+        collections: [],
+        attributes: intake.attributes,
+        missingRequired: (!intake.name ? ['title'] : []).concat(!intake.category_id ? ['categoryId'] : []),
+        priceBand: intake.price_band ?? null,
+        rationale: intake.rationale,
+        barcode: intake.barcode ?? cleaned,
+        barcodeType: intake.barcode_type ?? 'isbn',
+        imageUrl: intake.image_url,
+      };
       setLookupResult(prefill);
       setScanState('result');
     } catch (err) {
-      console.error('[BarcodeScan] Manual lookup error:', err);
-      setErrorMessage('Could not find product information. Check the ISBN and try again.');
-      setScanState('error');
+      logger.error('[BarcodeScan] Intake manual error, falling back:', err);
+      try {
+        const prefill = await dataProvider.lookupByBarcode(cleaned, {
+          codeType: 'isbn',
+          source: 'manual'
+        });
+        setLookupResult(prefill);
+        setIntakeResult(null);
+        setScanState('result');
+      } catch (fallbackErr) {
+        logger.error('[BarcodeScan] Fallback manual lookup error:', fallbackErr);
+        setErrorMessage('Could not find product information. Check the ISBN and try again.');
+        setScanState('error');
+      }
     } finally {
       setIsManualSubmitting(false);
+    }
+  };
+
+  // Handle URL import
+  const handleUrlSubmit = async () => {
+    const trimmed = urlInput.trim();
+    if (!trimmed || !trimmed.startsWith('http')) {
+      setErrorMessage('Please enter a valid URL starting with http:// or https://');
+      setScanState('error');
+      return;
+    }
+
+    Keyboard.dismiss();
+    setIsUrlSubmitting(true);
+    setScannedCode({ type: 'url', value: trimmed });
+    setScanState('loading');
+
+    try {
+      const intake = await collectorsApi.processIntakeUrl(trimmed);
+      setIntakeResult(intake);
+
+      const prefill: BarcodeLookupResult = {
+        title: intake.name,
+        categoryId: intake.category_id,
+        subtypeId: intake.subtype_id,
+        taxonomyVersion: intake.taxonomy_version,
+        collections: [],
+        attributes: intake.attributes,
+        missingRequired: (!intake.name ? ['title'] : []).concat(!intake.category_id ? ['categoryId'] : []),
+        priceBand: intake.price_band ?? null,
+        rationale: intake.rationale,
+        barcode: null,
+        barcodeType: null,
+        imageUrl: intake.image_url,
+      };
+      setLookupResult(prefill);
+      setScanState('result');
+    } catch (err) {
+      logger.error('[BarcodeScan] URL import error:', err);
+      setErrorMessage('Could not import from this URL. Check the link and try again.');
+      setScanState('error');
+    } finally {
+      setIsUrlSubmitting(false);
     }
   };
 
@@ -107,26 +209,66 @@ export default function BarcodeScanScreen() {
   const handleRescan = () => {
     setScannedCode(null);
     setLookupResult(null);
+    setIntakeResult(null);
     setErrorMessage(null);
     setManualIsbn('');
+    setUrlInput('');
     setScanState('scanning');
   };
 
   // Save item to collection
-  const handleSaveToCollection = () => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveToCollection = async () => {
     if (!lookupResult) return;
 
-    // Navigate to add-manual with prefilled data
-    router.push({
-      pathname: '/add-manual',
-      params: {
-        prefillTitle: lookupResult.title || '',
-        prefillCategory: lookupResult.categoryId || '',
-        prefillPrice: lookupResult.priceBand?.q50?.toString() || '',
-        prefillBarcode: scannedCode?.value || '',
-        prefillCollections: lookupResult.collections?.join(',') || '',
-      },
-    });
+    setIsSaving(true);
+    try {
+      const saved = await collectorsApi.intakeSave({
+        title: lookupResult.title || 'Unknown item',
+        category: lookupResult.categoryId || undefined,
+        condition: undefined,
+        subtype_id: intakeResult?.subtype_id || lookupResult.subtypeId || undefined,
+        taxonomy_version: intakeResult?.taxonomy_version || lookupResult.taxonomyVersion || undefined,
+        attributes: (intakeResult?.attributes || lookupResult.attributes || {}) as Record<string, unknown>,
+        images: lookupResult.imageUrl ? [lookupResult.imageUrl] : [],
+        barcode: scannedCode?.value || undefined,
+        estimated_price: lookupResult.priceBand?.q50 || undefined,
+      });
+
+      // Navigate to the new item detail
+      router.replace({
+        pathname: '/item/[id]',
+        params: {
+          id: saved.id,
+          name: saved.title,
+          category: saved.category || lookupResult.categoryId || '',
+          value: lookupResult.priceBand?.q50?.toString() || '0',
+          q10: lookupResult.priceBand?.q10?.toString() || '',
+          q50: lookupResult.priceBand?.q50?.toString() || '',
+          q90: lookupResult.priceBand?.q90?.toString() || '',
+          confidence: lookupResult.priceBand?.confidence?.toString() || '',
+          imageUri: lookupResult.imageUrl || '',
+        },
+      });
+    } catch (err) {
+      logger.error('[BarcodeScan] Save to collection error:', err);
+      // Fallback: navigate to add-manual with prefilled data
+      router.push({
+        pathname: '/add-manual',
+        params: {
+          prefillTitle: lookupResult.title || '',
+          prefillCategory: lookupResult.categoryId || '',
+          prefillPrice: lookupResult.priceBand?.q50?.toString() || '',
+          prefillBarcode: scannedCode?.value || '',
+          prefillCollections: lookupResult.collections?.join(',') || '',
+          prefillMethod: intakeResult?.identification_method || 'barcode',
+          prefillSubtype: intakeResult?.subtype_id || '',
+        },
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Add to watchlist instead
@@ -168,10 +310,12 @@ export default function BarcodeScanScreen() {
           <AnimatedPressable
             style={[styles.permissionButton, { backgroundColor: colors.accent }]}
             onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); requestPermission(); }}
+            accessibilityRole="button"
+            accessibilityLabel="Grant camera permission"
           >
             <Text style={[styles.permissionButtonText, { color: colors.card }]}>Grant Permission</Text>
           </AnimatedPressable>
-          <AnimatedPressable style={styles.backButton} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}>
+          <AnimatedPressable style={styles.backButton} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} accessibilityRole="button" accessibilityLabel="Go back">
             <Text style={[styles.backButtonText, { color: colors.muted }]}>Go Back</Text>
           </AnimatedPressable>
         </View>
@@ -183,14 +327,114 @@ export default function BarcodeScanScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       {/* Header - compact, no extra padding */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.headerBack}>
+        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.headerBack} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Scan Barcode</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          {inputMode === 'camera' ? 'Scan Barcode' : 'Import from URL'}
+        </Text>
         <View style={styles.headerRight} />
       </View>
 
+      {/* Mode Toggle */}
       {scanState === 'scanning' && (
+        <View style={styles.modeToggleRow}>
+          <AnimatedPressable
+            style={[
+              styles.modeToggleButton,
+              inputMode === 'camera' && { backgroundColor: colors.accent },
+              inputMode !== 'camera' && { borderColor: colors.border, borderWidth: 1 },
+            ]}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setInputMode('camera'); }}
+            accessibilityRole="button"
+            accessibilityLabel="Switch to camera scan mode"
+          >
+            <Ionicons name="scan-outline" size={16} color={inputMode === 'camera' ? colors.card : colors.text} />
+            <Text style={[styles.modeToggleText, { color: inputMode === 'camera' ? colors.card : colors.text }]}>
+              Scan
+            </Text>
+          </AnimatedPressable>
+          <AnimatedPressable
+            style={[
+              styles.modeToggleButton,
+              inputMode === 'url' && { backgroundColor: colors.accent },
+              inputMode !== 'url' && { borderColor: colors.border, borderWidth: 1 },
+            ]}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setInputMode('url'); }}
+            accessibilityRole="button"
+            accessibilityLabel="Switch to URL import mode"
+          >
+            <Ionicons name="link-outline" size={16} color={inputMode === 'url' ? colors.card : colors.text} />
+            <Text style={[styles.modeToggleText, { color: inputMode === 'url' ? colors.card : colors.text }]}>
+              Paste URL
+            </Text>
+          </AnimatedPressable>
+        </View>
+      )}
+
+      {scanState === 'scanning' && inputMode === 'url' && (
+        <KeyboardAvoidingView
+          style={styles.scanningContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20}
+        >
+          <View style={styles.urlImportContainer}>
+            <View style={[styles.manualEntryCard, { backgroundColor: colors.card }]}>
+              <Text style={[styles.manualEntryTitle, { color: colors.text }]}>
+                Import from URL
+              </Text>
+              <Text style={[styles.manualEntryHelper, { color: colors.muted }]}>
+                Paste a link from eBay, Mercari, StockX, TCGPlayer, BrickLink, or other marketplaces
+              </Text>
+              <TextInput
+                style={[styles.urlInput, {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  color: colors.text,
+                }]}
+                placeholder="https://ebay.com/itm/..."
+                placeholderTextColor={colors.muted}
+                value={urlInput}
+                onChangeText={setUrlInput}
+                keyboardType="url"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="go"
+                onSubmitEditing={handleUrlSubmit}
+                accessibilityLabel="URL input field"
+                accessibilityHint="Paste a marketplace listing URL"
+              />
+              <AnimatedPressable
+                style={[styles.urlSubmitButton, {
+                  backgroundColor: colors.accent,
+                  opacity: !urlInput.startsWith('http') || isUrlSubmitting ? 0.5 : 1,
+                }]}
+                onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleUrlSubmit(); }}
+                disabled={!urlInput.startsWith('http') || isUrlSubmitting}
+                accessibilityLabel="Import from URL"
+                accessibilityRole="button"
+              >
+                {isUrlSubmitting ? (
+                  <ActivityIndicator size="small" color={colors.card} />
+                ) : (
+                  <>
+                    <Ionicons name="download-outline" size={18} color={colors.card} />
+                    <Text style={[styles.primaryButtonText, { color: colors.card }]}>Import</Text>
+                  </>
+                )}
+              </AnimatedPressable>
+            </View>
+            <View style={[styles.urlExamplesCard, { backgroundColor: colors.card }]}>
+              <Text style={[styles.urlExamplesTitle, { color: colors.muted }]}>Supported sites</Text>
+              <Text style={[styles.urlExamplesText, { color: colors.muted }]}>
+                eBay, Mercari, StockX, TCGPlayer, BrickLink, MyFigureCollection, Ktown4u, Weverse
+              </Text>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      )}
+
+      {scanState === 'scanning' && inputMode === 'camera' && (
         <KeyboardAvoidingView
           style={styles.scanningContainer}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -306,6 +550,16 @@ export default function BarcodeScanScreen() {
                 <Ionicons name="folder-outline" size={16} color={colors.muted} />
                 <Text style={[styles.productMetaText, { color: colors.muted }]}>
                   {lookupResult.categoryId}
+                  {intakeResult ? ` (${Math.round(intakeResult.category_confidence * 100)}% confidence)` : ''}
+                </Text>
+              </View>
+            )}
+
+            {intakeResult?.identification_method && (
+              <View style={styles.productMeta}>
+                <Ionicons name="bulb-outline" size={16} color={colors.muted} />
+                <Text style={[styles.productMetaText, { color: colors.muted }]}>
+                  Identified via: {intakeResult.identification_method.replace(/_/g, ' ')}
                 </Text>
               </View>
             )}
@@ -344,23 +598,36 @@ export default function BarcodeScanScreen() {
             <AnimatedPressable
               style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
               onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleRescan(); }}
+              accessibilityRole="button"
+              accessibilityLabel="Scan another barcode"
             >
               <Ionicons name="scan-outline" size={18} color={colors.text} />
               <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Scan Another</Text>
             </AnimatedPressable>
 
             <AnimatedPressable
-              style={[styles.primaryButtonHalf, { backgroundColor: colors.accent }]}
+              style={[styles.primaryButtonHalf, { backgroundColor: colors.accent, opacity: isSaving ? 0.7 : 1 }]}
               onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSaveToCollection(); }}
+              disabled={isSaving}
+              accessibilityRole="button"
+              accessibilityLabel="Save to collection"
             >
-              <Ionicons name="add-circle-outline" size={18} color={colors.card} />
-              <Text style={[styles.primaryButtonText, { color: colors.card }]}>Save</Text>
+              {isSaving ? (
+                <ActivityIndicator size="small" color={colors.card} />
+              ) : (
+                <>
+                  <Ionicons name="add-circle-outline" size={18} color={colors.card} />
+                  <Text style={[styles.primaryButtonText, { color: colors.card }]}>Save</Text>
+                </>
+              )}
             </AnimatedPressable>
           </View>
 
           <AnimatedPressable
             style={[styles.watchlistButton, { borderColor: colors.border }]}
             onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleAddToWatchlist(); }}
+            accessibilityRole="button"
+            accessibilityLabel="Add to watchlist instead"
           >
             <Ionicons name="eye-outline" size={18} color={colors.muted} />
             <Text style={[styles.watchlistButtonText, { color: colors.muted }]}>Add to Watchlist Instead</Text>
@@ -384,6 +651,8 @@ export default function BarcodeScanScreen() {
             <AnimatedPressable
               style={[styles.primaryButton, { backgroundColor: colors.accent }]}
               onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleRescan(); }}
+              accessibilityRole="button"
+              accessibilityLabel="Try scanning again"
             >
               <Ionicons name="scan-outline" size={20} color={colors.card} />
               <Text style={[styles.primaryButtonText, { color: colors.card }]}>Try Again</Text>
@@ -391,6 +660,8 @@ export default function BarcodeScanScreen() {
             <AnimatedPressable
               style={[styles.secondaryButton, { borderColor: colors.border }]}
               onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/add-manual'); }}
+              accessibilityRole="button"
+              accessibilityLabel="Add item manually"
             >
               <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Add Manually</Text>
             </AnimatedPressable>
@@ -700,6 +971,63 @@ const styles = StyleSheet.create({
   },
   manualEntryScrollContent: {
     flexGrow: 1,
+  },
+modeToggleRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  modeToggleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  modeToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  urlImportContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  urlInput: {
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    marginBottom: 12,
+  },
+  urlSubmitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  urlExamplesCard: {
+    margin: 0,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 12,
+  },
+  urlExamplesTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  urlExamplesText: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   manualEntryCard: {
     margin: 16,

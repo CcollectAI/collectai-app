@@ -19,8 +19,8 @@ export default function useOffers(listingId?: string|number, limit = 100) {
         const { data, error } = await q;
         if (error) throw error;
         on && setOffers((data as Offer[]) ?? []);
-      } catch (e:any) {
-        on && setError(e?.message ?? "Failed to load offers");
+      } catch (e: unknown) {
+        on && setError(e instanceof Error ? e.message : "Failed to load offers");
         on && setOffers([]);
       } finally {
         on && setLoading(false);

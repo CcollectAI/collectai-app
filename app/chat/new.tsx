@@ -7,6 +7,7 @@ import { getUserById } from '@/data/users';
 import { EVENTS } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import logger from '@/utils/logger';
 
 const NewChatScreen: React.FC = () => {
   const { toUserId, contextEventId } = useLocalSearchParams<{
@@ -30,7 +31,7 @@ const NewChatScreen: React.FC = () => {
   const [sent, setSent] = useState(false);
 
   const handleSend = () => {
-    console.log('[Chat] send connection message', {
+    logger.info('[Chat] send connection message', {
       toUserId,
       contextEventId,
       message,
@@ -55,6 +56,8 @@ const NewChatScreen: React.FC = () => {
           <AnimatedPressable
             onPress={() => router.back()}
             style={[styles.emptyBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
           </AnimatedPressable>
@@ -80,7 +83,7 @@ const NewChatScreen: React.FC = () => {
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+            <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
               <Ionicons name="chevron-back" size={24} color={colors.text} />
             </AnimatedPressable>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Request to Connect</Text>
@@ -126,6 +129,7 @@ const NewChatScreen: React.FC = () => {
                   : 'Write a friendly message…'
               }
               placeholderTextColor={colors.muted}
+              accessibilityLabel="Connection message"
               style={[styles.messageInput, { color: colors.text }]}
             />
           </View>
@@ -141,6 +145,8 @@ const NewChatScreen: React.FC = () => {
                 opacity: message.trim() && !sent ? 1 : 0.6,
               },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={sent ? 'Request sent' : 'Send connection request'}
           >
             <Ionicons
               name={sent ? 'checkmark-circle' : 'send'}

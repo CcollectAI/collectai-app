@@ -6,7 +6,7 @@ export * from './theme/index';
 
 // --- Compatibility shims (non-destructive) ---
 (() => {
-  const anyTheme: any = theme;
+  const anyTheme = theme as Record<string, unknown>;
 
   // Colors
   const c = anyTheme.colors ?? {};

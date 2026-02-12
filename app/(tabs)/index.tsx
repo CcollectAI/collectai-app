@@ -41,7 +41,7 @@ const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
 const USE_REAL_BACKEND = SUPABASE_MODE === "real";
 
 // Keep imports conservative and optional.
-let analyticsApi: any = null;
+let analyticsApi: Record<string, unknown> | null = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   analyticsApi = require("@/store/portfolioAnalyticsStore");
@@ -50,7 +50,7 @@ try {
 }
 
 // Optional: collectors client for real backend
-let collectorsClient: any = null;
+let collectorsClient: Record<string, unknown> | null = null;
 if (USE_REAL_BACKEND) {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -101,16 +101,17 @@ function formatDeltaEUR(n: number): string {
 // Data extraction helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function extractSeries(raw: any): TimeSeriesPoint[] {
+function extractSeries(raw: unknown): TimeSeriesPoint[] {
+  const rawObj = raw as Record<string, unknown> | unknown[] | null;
   const arr =
-    (Array.isArray(raw) && raw) ||
-    raw?.points ||
-    raw?.series ||
-    raw?.data ||
+    (Array.isArray(rawObj) && rawObj) ||
+    (rawObj && !Array.isArray(rawObj) && (rawObj as Record<string, unknown>).points) ||
+    (rawObj && !Array.isArray(rawObj) && (rawObj as Record<string, unknown>).series) ||
+    (rawObj && !Array.isArray(rawObj) && (rawObj as Record<string, unknown>).data) ||
     [];
   if (!Array.isArray(arr)) return [];
   return arr
-    .map((p: any, idx: number) => {
+    .map((p: Record<string, unknown>) => {
       const t = p?.t ?? p?.timestamp ?? new Date().toISOString();
       const v = typeof p?.v === "number" ? p.v : typeof p?.value === "number" ? p.value : Number(p?.y);
       if (typeof v !== "number" || Number.isNaN(v)) return null;
@@ -119,17 +120,18 @@ function extractSeries(raw: any): TimeSeriesPoint[] {
     .filter(Boolean) as TimeSeriesPoint[];
 }
 
-function extractItems(raw: any): ItemRow[] {
+function extractItems(raw: unknown): ItemRow[] {
+  const rawObj = raw as Record<string, unknown> | null;
   const base =
-    raw?.items ||
-    raw?.holdings ||
-    raw?.positions ||
-    raw?.snapshot?.items ||
-    raw?.snapshot?.holdings ||
+    rawObj?.items ||
+    rawObj?.holdings ||
+    rawObj?.positions ||
+    (rawObj?.snapshot as Record<string, unknown> | undefined)?.items ||
+    (rawObj?.snapshot as Record<string, unknown> | undefined)?.holdings ||
     [];
   if (!Array.isArray(base)) return [];
   return base
-    .map((it: any, i: number) => {
+    .map((it: Record<string, unknown>, i: number) => {
       const value =
         typeof it?.value === "number"
           ? it.value
@@ -203,7 +205,7 @@ export default function PortfolioScreen() {
   const [items, setItems] = useState<ItemRow[]>(FALLBACK_ITEMS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tierSummary, setTierSummary] = useState<any>(null);
+  const [tierSummary, setTierSummary] = useState<{ tier: string; rarityScore: number; completenessScore: number; diversificationScore: number } | null>(null);
 
   // Data insights & alerts (feature flagged)
   const { insights } = usePortfolioInsights({
@@ -265,7 +267,7 @@ export default function PortfolioScreen() {
               setItems(FALLBACK_ITEMS);
             }
           }
-        } catch (realErr: any) {
+        } catch (realErr: unknown) {
           logger.warn("[Portfolio] Real backend error, falling back:", realErr);
           setError("Could not load real data. Showing demo.");
           setSeries(FALLBACK_SERIES);
@@ -303,7 +305,7 @@ export default function PortfolioScreen() {
         setSeries(filtered.length >= 2 ? filtered : baseSeries);
         setItems(baseItems);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.warn("[Portfolio] Unexpected error:", err);
       setError("Failed to load portfolio data.");
       setSeries(FALLBACK_SERIES);
@@ -381,6 +383,7 @@ export default function PortfolioScreen() {
               <AnimatedPressable
                 key={k}
                 accessibilityRole="button"
+                accessibilityLabel={`Show ${k} range`}
                 onPress={() => {
                   if (k !== range) {
                     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -555,6 +558,7 @@ export default function PortfolioScreen() {
                   handleWatchlistPress();
                 }}
                 accessibilityRole="link"
+                accessibilityLabel="See all watchlist items"
               >
                 <Text style={[styles.seeAllLink, { color: colors.accent }]}>See all →</Text>
               </AnimatedPressable>

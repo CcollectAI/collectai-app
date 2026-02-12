@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-import os, asyncio, json
+import os, asyncio, json, logging
 from decimal import Decimal
 from datetime import datetime, date
 import asyncpg
+
+logger = logging.getLogger(__name__)
 
 DSN = os.environ.get("DB_DSN")
 
@@ -19,7 +21,7 @@ def to_jsonable_row(row: dict):
 
 async def main():
     if not DSN:
-        print("DB_DSN not set")
+        logger.error("DB_DSN not set")
         return
 
     conn = await asyncpg.connect(DSN)
@@ -87,7 +89,8 @@ async def main():
     )
 
     await conn.close()
-    print("Eval snapshot inserted.")
+    logger.info("Eval snapshot inserted.")
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

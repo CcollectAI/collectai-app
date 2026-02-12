@@ -4,7 +4,8 @@ export type PredictInput = { title:string; category:string; imageUrl?:string|nul
 export type PredictOut = { estimated_value:number; confidence:number; };
 
 export async function predictValue(input: PredictInput): Promise<PredictOut>{
-  const url = (Constants.expoConfig?.extra as any)?.PREDICT_URL as string | undefined;
+  const extra = Constants.expoConfig?.extra as Record<string, unknown> | undefined;
+  const url = extra?.PREDICT_URL as string | undefined;
 
   // Try external endpoint if provided
   if (url && url.startsWith('http')) {

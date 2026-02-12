@@ -24,6 +24,7 @@ import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import * as Haptics from 'expo-haptics';
+import logger from '@/utils/logger';
 
 // Pull from single source of truth — all 36 categories + "Other"
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
@@ -81,7 +82,7 @@ export default function WatchlistTabScreen() {
       const data = await dataProvider.listWatchlist('current-user');
       setItems(data);
     } catch (err) {
-      console.warn('[Watchlist] loadItems error:', err);
+      logger.warn('[Watchlist] loadItems error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -130,7 +131,7 @@ export default function WatchlistTabScreen() {
       setModalVisible(false);
       resetForm();
       loadItems();
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert('Error', err?.message || 'Failed to add item');
     } finally {
       setSaving(false);
@@ -150,7 +151,7 @@ export default function WatchlistTabScreen() {
             try {
               await dataProvider.removeWatchlistItem(item.id);
               loadItems();
-            } catch (err: any) {
+            } catch (err: unknown) {
               Alert.alert('Error', err?.message || 'Failed to remove item');
             }
           },
@@ -232,7 +233,7 @@ export default function WatchlistTabScreen() {
 
       // Reload list
       loadItems();
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert('Error', err?.message || 'Failed to add to collection');
     } finally {
       setAcquiring(false);
@@ -256,7 +257,7 @@ export default function WatchlistTabScreen() {
               {item.title}
             </Text>
           </View>
-          <AnimatedPressable onPress={() => handleRemove(item)} style={styles.removeBtn}>
+          <AnimatedPressable onPress={() => handleRemove(item)} style={styles.removeBtn} accessibilityRole="button" accessibilityLabel={`Remove ${item.title} from watchlist`}>
             <Ionicons name="close-circle" size={22} color={colors.muted} />
           </AnimatedPressable>
         </View>
@@ -290,6 +291,8 @@ export default function WatchlistTabScreen() {
         <AnimatedPressable
           style={[styles.gotItBtn, { backgroundColor: colors.accent }]}
           onPress={() => handleGotIt(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`Mark ${item.title} as acquired`}
         >
           <Ionicons name="checkmark-circle" size={18} color="#fff" />
           <Text style={styles.gotItBtnText}>I Got It!</Text>
@@ -310,6 +313,8 @@ export default function WatchlistTabScreen() {
       <AnimatedPressable
         style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
         onPress={() => setModalVisible(true)}
+        accessibilityRole="button"
+        accessibilityLabel="Add your first watchlist item"
       >
         <Ionicons name="add" size={18} color="#fff" />
         <Text style={styles.emptyBtnText}>Add your first item</Text>
@@ -336,6 +341,8 @@ export default function WatchlistTabScreen() {
       <AnimatedPressable
         style={[styles.alertsPill, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => router.push('/alerts')}
+        accessibilityRole="button"
+        accessibilityLabel="View price alerts"
       >
         <Ionicons name="notifications-outline" size={16} color={colors.accent} />
         <Text style={[styles.alertsPillText, { color: colors.accent }]}>Alerts</Text>
@@ -344,6 +351,8 @@ export default function WatchlistTabScreen() {
       <AnimatedPressable
         style={[styles.addPill, { backgroundColor: colors.accent }]}
         onPress={() => setModalVisible(true)}
+        accessibilityRole="button"
+        accessibilityLabel="Add item to watchlist"
       >
         <Ionicons name="add" size={18} color="#fff" />
         <Text style={styles.addPillText}>Add</Text>
@@ -388,7 +397,7 @@ export default function WatchlistTabScreen() {
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Watchlist</Text>
-              <AnimatedPressable onPress={() => { setModalVisible(false); resetForm(); }}>
+              <AnimatedPressable onPress={() => { setModalVisible(false); resetForm(); }} accessibilityRole="button" accessibilityLabel="Close add to watchlist form">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
@@ -401,6 +410,7 @@ export default function WatchlistTabScreen() {
               placeholder="e.g. Charizard VMAX Rainbow"
               placeholderTextColor={colors.muted}
               style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+              accessibilityLabel="Item title"
             />
 
             {/* Category */}
@@ -408,6 +418,8 @@ export default function WatchlistTabScreen() {
             <AnimatedPressable
               style={[styles.input, styles.pickerBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
               onPress={() => setCategoryPickerVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel={formCategory ? `Category: ${formCategory}. Tap to change` : "Select category"}
             >
               <Text style={{ color: formCategory ? colors.text : colors.muted }}>
                 {formCategory || 'Select category'}
@@ -424,6 +436,7 @@ export default function WatchlistTabScreen() {
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
               style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+              accessibilityLabel="Target price in euros"
             />
 
             {/* Notes */}
@@ -436,6 +449,7 @@ export default function WatchlistTabScreen() {
               multiline
               numberOfLines={3}
               style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+              accessibilityLabel="Notes"
             />
 
             {/* Save Button */}
@@ -443,6 +457,8 @@ export default function WatchlistTabScreen() {
               style={[styles.saveBtn, { backgroundColor: colors.accent }]}
               onPress={handleAdd}
               disabled={saving}
+              accessibilityRole="button"
+              accessibilityLabel="Add to watchlist"
             >
               {saving ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -473,6 +489,8 @@ export default function WatchlistTabScreen() {
                   setFormCategory(cat);
                   setCategoryPickerVisible(false);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`${cat}${formCategory === cat ? ', selected' : ''}`}
               >
                 <Text style={[styles.pickerItemText, { color: colors.text }]}>{cat}</Text>
                 {formCategory === cat && (
@@ -493,7 +511,7 @@ export default function WatchlistTabScreen() {
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Collection</Text>
-              <AnimatedPressable onPress={() => { setAcquireModalVisible(false); setAcquireItem(null); }}>
+              <AnimatedPressable onPress={() => { setAcquireModalVisible(false); setAcquireItem(null); }} accessibilityRole="button" accessibilityLabel="Close acquisition form">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
@@ -519,6 +537,7 @@ export default function WatchlistTabScreen() {
                   placeholderTextColor={colors.muted}
                   keyboardType="numeric"
                   style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                  accessibilityLabel="Price paid in euros"
                 />
                 <Text style={[styles.helperText, { color: colors.muted }]}>
                   This helps improve price predictions for everyone
@@ -533,12 +552,15 @@ export default function WatchlistTabScreen() {
                   multiline
                   numberOfLines={2}
                   style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                  accessibilityLabel="Acquisition notes"
                 />
 
                 <AnimatedPressable
                   style={[styles.acquireBtn, { backgroundColor: colors.accent }]}
                   onPress={handleConfirmAcquire}
                   disabled={acquiring}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add to my collection"
                 >
                   {acquiring ? (
                     <ActivityIndicator size="small" color="#fff" />

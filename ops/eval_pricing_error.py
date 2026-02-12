@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-import os, asyncio
+import asyncio
+import logging
+import os
+
 import asyncpg
+
+logger = logging.getLogger(__name__)
 
 DSN = os.environ.get("DB_DSN")
 
+
 async def main():
     if not DSN:
-        print("DB_DSN not set")
+        logger.error("DB_DSN not set")
         return
 
     conn = await asyncpg.connect(DSN)
 
-    print("== Per-item pricing error (latest sales) ==")
+    logger.info("== Per-item pricing error (latest sales) ==")
     rows = await conn.fetch("""
         SELECT owner_tag,
                item_ref,
@@ -26,16 +32,16 @@ async def main():
         LIMIT 50;
     """)
     if not rows:
-        print("  (no ground truth sales yet)")
+        logger.info("  (no ground truth sales yet)")
     for r in rows:
-        rel_pct = f"{float(r['rel_error'])*100:.1f}%" if r["rel_error"] is not None else "n/a"
-        print(f"- {r['item_ref']!r}")
-        print(f"    actual={r['actual_sale_price_eur']} q50={r['q50']}")
-        print(f"    abs_err={r['abs_error_eur']} rel_err={rel_pct}")
-        print(f"    sold_at={r['sold_at']} prediction_at={r['prediction_at']}")
-        print()
+        rel_pct = "%.1f%%" % (float(r['rel_error']) * 100) if r["rel_error"] is not None else "n/a"
+        logger.info("- %r", r['item_ref'])
+        logger.info("    actual=%s q50=%s", r['actual_sale_price_eur'], r['q50'])
+        logger.info("    abs_err=%s rel_err=%s", r['abs_error_eur'], rel_pct)
+        logger.info("    sold_at=%s prediction_at=%s", r['sold_at'], r['prediction_at'])
 
-    print("\n== Per-category error ==")
+    logger.info("")
+    logger.info("== Per-category error ==")
     cats = await conn.fetch("""
         SELECT category_name,
                category_slug,
@@ -48,16 +54,17 @@ async def main():
         ORDER BY category_name NULLS LAST;
     """)
     if not cats:
-        print("  (no category eval yet)")
+        logger.info("  (no category eval yet)")
     for c in cats:
-        avg_rel = f"{float(c['avg_abs_rel_error'])*100:.1f}%" if c["avg_abs_rel_error"] is not None else "n/a"
-        print(f"- {c['category_name']} ({c['category_slug']})")
-        print(f"    n_items={c['n_items']}")
-        print(f"    avg_abs_err={c['avg_abs_error_eur']}")
-        print(f"    avg_abs_rel_err={avg_rel}")
-        print()
+        avg_rel = "%.1f%%" % (float(c['avg_abs_rel_error']) * 100) if c["avg_abs_rel_error"] is not None else "n/a"
+        logger.info("- %s (%s)", c['category_name'], c['category_slug'])
+        logger.info("    n_items=%s", c['n_items'])
+        logger.info("    avg_abs_err=%s", c['avg_abs_error_eur'])
+        logger.info("    avg_abs_rel_err=%s", avg_rel)
 
     await conn.close()
 
+
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

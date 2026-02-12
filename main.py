@@ -19,15 +19,28 @@ import uuid as _uuid
 from typing import Any, Dict, List, Optional
 from app.routers.vision_commit import router as vision_commit_router
 from app.routers.vision_predict_log import router as vision_predict_log_router
-from fastapi import FastAPI, Depends, Header, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, FastAPI, Depends, Header, HTTPException, Request, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
+from app.auth import get_current_user_id
+from app.config import (
+    SERVICE_VERSION,
+    SENTRY_DSN,
+    SENTRY_TRACES_RATE,
+    SENTRY_ENV,
+    API_SHARED_SECRET,
+    SIGNALS_BASE_URL,
+    DB_ENABLED,
+    MONITOR_ENABLED,
+    DEBUG,
+)
 from app.middleware_stack import install_middlewares
 from app.db import connect_pool, close_pool, db_configured
 from app.metrics import metrics_middleware, ensure_metrics_once
 from app.logging_mw import logging_middleware
 from app.limit_body import limit_body_middleware
 from app.rate_limit import rate_limit_middleware
+from app.request_id import request_id_middleware
 from app.routes.agent import router as agent_router
 from app.routes.spool import router as spool_router
 from app.routes.spool_ui import router as spool_ui_router
@@ -42,7 +55,20 @@ from app.routes.manifests import router as manifests_router
 from app.routes.ops import router as ops_router
 from app.routes.marketplace import router as marketplace_router
 
-app = FastAPI(title="Collectors Merge Service", version=os.getenv("SERVICE_VERSION","0.1.0"))
+try:
+    import sentry_sdk
+except ImportError:
+    sentry_sdk = None  # type: ignore[assignment]
+
+if SENTRY_DSN and sentry_sdk is not None:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=SENTRY_TRACES_RATE,
+        environment=SENTRY_ENV,
+        release=SERVICE_VERSION,
+    )
+
+app = FastAPI(title="Collectors Merge Service", version=SERVICE_VERSION)
 
 _logger = logging.getLogger("collectai.main")
 
@@ -52,8 +78,7 @@ async def _global_exception_handler(request: Request, exc: Exception):
     _logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
-API_SHARED_SECRET = os.environ.get("API_SHARED_SECRET")
-SIGNALS_BASE_URL = os.getenv("SIGNALS_BASE_URL", "http://127.0.0.1:8082")
+# API_SHARED_SECRET and SIGNALS_BASE_URL imported from app.config
 
 
 async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
@@ -101,12 +126,13 @@ app.include_router(vision_commit_router)
 app.include_router(vision_predict_log_router)
 app.include_router(marketplace_router)
 
-# Core middlewares
+# Core middlewares (outermost first — request_id wraps everything)
 install_middlewares(app)
 app.middleware("http")(limit_body_middleware)
 app.middleware("http")(rate_limit_middleware)
 app.middleware("http")(metrics_middleware)
 app.middleware("http")(logging_middleware)
+app.middleware("http")(request_id_middleware)
 ensure_metrics_once(app)
 
 # Routers
@@ -114,7 +140,9 @@ app.include_router(agent_router)
 app.include_router(spool_router)
 app.include_router(spool_ui_router)
 app.include_router(webhook_router)
-app.include_router(vision_debug_router)
+# Only mount vision-debug routes in dev mode
+if os.getenv("DEV_MODE", "false").lower() in ("true", "1", "yes"):
+    app.include_router(vision_debug_router)
 app.include_router(vision_predict_router)
 app.include_router(vision_ops_router)
 app.include_router(vision_ingest_router)
@@ -125,39 +153,70 @@ app.include_router(ops_router)
 
 @app.get("/healthz")
 async def healthz():
-    return {
+    result = {
         "ok": True,
         "db_configured": db_configured(),
-        "db_enabled": os.getenv("DB_ENABLED","true"),
-        "db_optional": os.getenv("DB_OPTIONAL","0"),
     }
+
+    if db_configured():
+        import time as _time
+        try:
+            from app.db import get_pool
+            pool = get_pool()
+            if pool is not None:
+                t0 = _time.monotonic()
+                async with pool.acquire() as conn:
+                    await conn.fetchval("SELECT 1")
+                result["db_ms"] = round((_time.monotonic() - t0) * 1000, 1)
+                result["db"] = "up"
+            else:
+                result["db"] = "pool_not_initialized"
+                result["ok"] = False
+        except Exception as exc:
+            _logger.warning("healthz DB check failed: %s", exc)
+            result["db"] = "down"
+            result["ok"] = False
+
+    if not result["ok"]:
+        return JSONResponse(status_code=503, content=result)
+    return result
 
 @app.get("/version")
 async def version():
-    return {"version": os.getenv("SERVICE_VERSION","0.1.0")}
+    return {"version": SERVICE_VERSION}
 
 @app.on_event("startup")
 async def _startup():
+    import asyncio as _asyncio
     import os, logging
     # Offline mode: skip DB connect entirely
-    if os.getenv("DB_ENABLED", "false").lower() in ("0","false","no"):
+    if not DB_ENABLED:
         logging.getLogger("uvicorn").info("[startup] DB disabled; skipping pool connect.")
-        return
-    try:
-        from app.db import connect_pool
-        await connect_pool()
-    except Exception as e:
-        # Optional mode: continue even if DB connect fails/missing DSN
-        if os.getenv("DB_OPTIONAL", "0").lower() in ("1","true","yes"):
-            logging.getLogger("uvicorn").warning("[startup] DB optional; continuing without pool. Reason: %s", e)
-            return
-        raise
+    else:
+        try:
+            from app.db import connect_pool
+            await connect_pool()
+        except Exception as e:
+            # Optional mode: continue even if DB connect fails/missing DSN
+            if os.getenv("DB_OPTIONAL", "0").lower() in ("1","true","yes"):
+                logging.getLogger("uvicorn").warning("[startup] DB optional; continuing without pool. Reason: %s", e)
+            else:
+                raise
+
+    # Start price monitor scheduler as background task if enabled
+    if MONITOR_ENABLED:
+        try:
+            from workers.price_monitor_scheduler import scheduler_loop
+            _asyncio.create_task(scheduler_loop())
+            logging.getLogger("uvicorn").info("[startup] Price monitor scheduler started as background task")
+        except Exception as e:
+            logging.getLogger("uvicorn").warning("[startup] Failed to start price monitor: %s", e)
 @app.on_event("shutdown")
 async def _shutdown():
     await close_pool()
 
 # Debug endpoint - only enabled in development
-if os.getenv("DEBUG", "false").lower() == "true":
+if DEBUG:
     @app.get("/debug-ping")
     async def debug_ping():
         return {"ok": True}
@@ -190,8 +249,18 @@ from app.features import items_export_router
 from app.features import photo_upload_router
 from app.features import events_router
 from app.features import barcode_lookup_router
+from app.features import storage_router
+from app.features import taxonomy_router
+from app.features import notification_router
+from app.agents.marketplace_router import router as marketplace_agg_router
+from app.agents.dossier_router import router as dossier_router
+from app.agents.intake_router import router as intake_router
+from app.features.predict_router import router as predict_router
 
 app.include_router(items_export_router.router)
+
+# S3 data-lake storage router (presigned URLs + object pointers)
+app.include_router(storage_router.router)
 
 # User photo upload router
 app.include_router(photo_upload_router.router)
@@ -201,6 +270,50 @@ app.include_router(events_router.router)
 
 # Barcode / ISBN lookup router
 app.include_router(barcode_lookup_router.router)
+
+# Taxonomy registry router
+app.include_router(taxonomy_router.router)
+
+# Push notification management router
+app.include_router(notification_router.router)
+
+# Marketplace aggregation agent router
+app.include_router(marketplace_agg_router)
+
+# Dossier factory router
+app.include_router(dossier_router)
+
+# Intake agent router (unified barcode + vision + taxonomy)
+app.include_router(intake_router)
+
+# Price prediction evidence router
+app.include_router(predict_router)
+
+# ---------------------------------------------------------------------------
+# API v1 aliases - all feature routers also available under /v1 prefix
+# ---------------------------------------------------------------------------
+_v1 = APIRouter(prefix="/v1")
+_v1.include_router(alerts_feature_router.router)
+_v1.include_router(trends_and_deepdive_router.router)
+_v1.include_router(provenance_router.router)
+_v1.include_router(marketplace_trust_router.router)
+_v1.include_router(watchlist_router.router)
+_v1.include_router(quickscan_advanced_router.router)
+_v1.include_router(insights_router.router)
+_v1.include_router(screenshot_intel_router.router)
+_v1.include_router(feedback_router.router)
+_v1.include_router(items_export_router.router)
+_v1.include_router(storage_router.router)
+_v1.include_router(photo_upload_router.router)
+_v1.include_router(events_router.router)
+_v1.include_router(barcode_lookup_router.router)
+_v1.include_router(taxonomy_router.router)
+_v1.include_router(notification_router.router)
+_v1.include_router(marketplace_agg_router)
+_v1.include_router(dossier_router)
+_v1.include_router(intake_router)
+_v1.include_router(predict_router)
+app.include_router(_v1)
 
 class QuickScanRequest(BaseModel):
     mode: Optional[str] = None
@@ -425,6 +538,20 @@ async def ops_status():
         "version": "ops-status-v1"
     }
 
+
+@app.get("/ops/worker-status")
+async def ops_worker_status():
+    """Return health status of background workers."""
+    from app.worker_registry import get_status
+    return get_status()
+
+
+@app.get("/ops/cache")
+async def ops_cache():
+    """Return in-memory cache hit/miss stats for monitoring."""
+    from app.cache import cache_stats
+    return cache_stats()
+
 # -----------------------------------------
 # Twitch routes
 # -----------------------------------------
@@ -470,7 +597,7 @@ async def import_template():
 
 
 @app.post("/api/imports/collection")
-async def import_collection(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def import_collection(file: UploadFile = File(...), user_id: str = Depends(get_current_user_id)) -> Dict[str, Any]:
     """
     Accept a CSV or Excel file, parse it, and insert valid rows into
     the Supabase `items` table.  Returns a summary with counts.
@@ -537,9 +664,6 @@ async def import_collection(file: UploadFile = File(...)) -> Dict[str, Any]:
         pool = get_pool()
     except (ImportError, RuntimeError, OSError):
         pass
-
-    # Placeholder user_id until real auth is wired
-    user_id = "demo-user"
 
     for idx, r in enumerate(norm_rows, start=1):
         name = r.get("name") or r.get("title")

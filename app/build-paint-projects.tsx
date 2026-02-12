@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { dataProvider, type BuildPaintProject } from "@/data";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
+import logger from "@/utils/logger";
 
 const statusColor = (status: string | null | undefined, isCompleted: boolean) => {
   if (isCompleted) return { bg: "#E6F7EF", text: "#0BA86C" };
@@ -52,8 +53,8 @@ export default function BuildPaintProjectsScreen() {
       const data = await dataProvider.listBuildPaintProjects();
       setProjects(data);
       setError(null);
-    } catch (err: any) {
-      console.warn("[BuildPaintProjects] loadProjects error:", err);
+    } catch (err: unknown) {
+      logger.warn("[BuildPaintProjects] loadProjects error:", err);
       setError(err?.message || "Failed to load projects");
     } finally {
       setLoading(false);
@@ -78,8 +79,8 @@ export default function BuildPaintProjectsScreen() {
       setNewCategory("");
       setShowCreateModal(false);
       await loadProjects();
-    } catch (err: any) {
-      console.warn("[BuildPaintProjects] create error:", err);
+    } catch (err: unknown) {
+      logger.warn("[BuildPaintProjects] create error:", err);
     } finally {
       setCreating(false);
     }
@@ -113,6 +114,8 @@ export default function BuildPaintProjectsScreen() {
             <AnimatedPressable
               onPress={() => setShowCreateModal(true)}
               style={[styles.addBtn, { backgroundColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel="Create new project"
             >
               <Ionicons name="add" size={20} color="#fff" />
               <Text style={styles.addBtnText}>New Project</Text>
@@ -190,7 +193,7 @@ export default function BuildPaintProjectsScreen() {
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>New Project</Text>
-              <AnimatedPressable onPress={() => setShowCreateModal(false)}>
+              <AnimatedPressable onPress={() => setShowCreateModal(false)} accessibilityRole="button" accessibilityLabel="Close create project modal">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
@@ -201,6 +204,7 @@ export default function BuildPaintProjectsScreen() {
               onChangeText={setNewTitle}
               placeholder="e.g., Warhammer Kill Team squad"
               placeholderTextColor={colors.muted}
+              accessibilityLabel="Project title"
               style={[
                 styles.textInput,
                 { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
@@ -215,6 +219,7 @@ export default function BuildPaintProjectsScreen() {
               onChangeText={setNewCategory}
               placeholder="e.g., Warhammer, Gunpla, LEGO"
               placeholderTextColor={colors.muted}
+              accessibilityLabel="Project category"
               style={[
                 styles.textInput,
                 { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
@@ -231,6 +236,8 @@ export default function BuildPaintProjectsScreen() {
                   opacity: creating ? 0.7 : 1,
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={creating ? 'Creating project' : 'Create project'}
             >
               {creating ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -252,7 +259,7 @@ function ProjectCard({
   onPress,
 }: {
   project: BuildPaintProject;
-  colors: any;
+  colors: ReturnType<typeof useAppTheme>['colors'];
   onPress: () => void;
 }) {
   const statusColors = statusColor(project.status, project.isCompleted);
@@ -261,6 +268,8 @@ function ProjectCard({
     <AnimatedPressable
       onPress={onPress}
       style={[styles.projectCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      accessibilityRole="button"
+      accessibilityLabel={`${project.title}, ${project.percent}% complete, ${project.isCompleted ? 'completed' : project.status || 'backlog'}`}
     >
       <View style={styles.projectCardHeader}>
         <View style={{ flex: 1 }}>

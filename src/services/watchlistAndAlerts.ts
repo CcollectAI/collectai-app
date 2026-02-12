@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 export type WatchlistPriority = 'high' | 'medium' | 'low';
 
@@ -57,7 +58,7 @@ export async function fetchWatchlistForUser(
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.warn('[fetchWatchlistForUser] error', error);
+    logger.warn('[fetchWatchlistForUser] error', error);
     return [];
   }
 
@@ -80,7 +81,7 @@ export type UpsertWatchlistPayload = {
 export async function upsertWatchlistItem(
   payload: UpsertWatchlistPayload,
 ): Promise<WatchlistItem | null> {
-  const body: any = {
+  const body: Record<string, string | number | boolean | null> = {
     user_id: payload.user_id,
     title: payload.title,
     notes: payload.notes ?? null,
@@ -114,7 +115,7 @@ export async function upsertWatchlistItem(
   const { data, error } = await query;
 
   if (error) {
-    console.warn('[upsertWatchlistItem] error', error);
+    logger.warn('[upsertWatchlistItem] error', error);
     return null;
   }
 
@@ -130,7 +131,7 @@ export async function deleteWatchlistItem(id: string): Promise<boolean> {
     .eq('id', id);
 
   if (error) {
-    console.warn('[deleteWatchlistItem] error', error);
+    logger.warn('[deleteWatchlistItem] error', error);
     return false;
   }
   return true;
@@ -148,7 +149,7 @@ export async function fetchAlertsForUser(
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.warn('[fetchAlertsForUser] error', error);
+    logger.warn('[fetchAlertsForUser] error', error);
     return [];
   }
 
@@ -167,7 +168,7 @@ export type CreateAlertPayload = {
 export async function createAlert(
   payload: CreateAlertPayload,
 ): Promise<AlertRow | null> {
-  const body: any = {
+  const body: Record<string, string | number | null> = {
     user_id: payload.user_id,
     direction: payload.direction,
     threshold: payload.threshold,
@@ -189,7 +190,7 @@ export async function createAlert(
     .single();
 
   if (error) {
-    console.warn('[createAlert] error', error);
+    logger.warn('[createAlert] error', error);
     return null;
   }
 
@@ -208,7 +209,7 @@ export async function toggleAlertActive(
     .eq('id', id);
 
   if (error) {
-    console.warn('[toggleAlertActive] error', error);
+    logger.warn('[toggleAlertActive] error', error);
     return false;
   }
 

@@ -29,7 +29,9 @@ def connect():
         sslmode=os.environ.get("DB_SSLMODE","require"))
 def infer_category(rec):
     try: return rec["prediction"]["results"][0]["label"]
-    except Exception: return None
+    except (KeyError, IndexError, TypeError) as e:
+        logger.warning("infer_category failed: %s", e)
+        return None
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--dir", default="ops/vision")

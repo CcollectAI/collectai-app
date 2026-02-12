@@ -61,6 +61,8 @@ export default function UpcomingEventsBanner({ context = "portfolio" }: Props) {
 
       <Pressable
         onPress={() => router.push("/calendar-v1-demo")}
+        accessibilityRole="button"
+        accessibilityLabel={buttonLabel}
         style={{
           alignSelf: "flex-start",
           paddingHorizontal: 14,

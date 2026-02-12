@@ -1,9 +1,10 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, ImageSourcePropType } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { Image, ImageSource } from "expo-image";
 
 type Props = {
   label: string;
-  image: ImageSourcePropType;
+  image: ImageSource;
   subtitle?: string;
 };
 
@@ -26,7 +27,7 @@ export const CategoryImageTile: React.FC<Props> = ({ label, image, subtitle }) =
         },
       ]}
     >
-      <Image source={image} style={styles.image} resizeMode="cover" />
+      <Image source={image} style={styles.image} contentFit="cover" cachePolicy="disk" accessibilityLabel={`${label} category image`} />
       <View style={styles.textWrap}>
         <Text
           numberOfLines={1}

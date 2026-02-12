@@ -11,7 +11,6 @@ Otherwise runs in 'DB disabled' mode with no-ops.
 from __future__ import annotations
 
 import logging
-import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 
@@ -19,15 +18,17 @@ import asyncpg
 
 from fastapi import FastAPI  # only for type hints, not strictly required
 
-logger = logging.getLogger(__name__)
+from app.config import (
+    DB_ENABLED,
+    DB_DSN,
+    DB_POOL_MIN,
+    DB_POOL_MAX,
+    DB_COMMAND_TIMEOUT,
+    DB_CONNECT_TIMEOUT,
+    DB_IDLE_LIFETIME,
+)
 
-DB_ENABLED = os.getenv("DB_ENABLED", "false").lower() == "true"
-DB_DSN = os.getenv("DB_DSN", "")
-DB_POOL_MIN = int(os.getenv("DB_POOL_MIN_SIZE", "1"))
-DB_POOL_MAX = int(os.getenv("DB_POOL_MAX_SIZE", "10"))
-DB_COMMAND_TIMEOUT = float(os.getenv("DB_COMMAND_TIMEOUT", "30"))  # seconds
-DB_CONNECT_TIMEOUT = float(os.getenv("DB_CONNECT_TIMEOUT", "10"))  # seconds
-DB_IDLE_LIFETIME = float(os.getenv("DB_MAX_IDLE_LIFETIME", "300"))  # seconds
+logger = logging.getLogger(__name__)
 
 
 class _DummyPool:

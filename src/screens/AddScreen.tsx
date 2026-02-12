@@ -3,8 +3,9 @@ import { View, Text, TextInput, Button, ActivityIndicator, Alert } from 'react-n
 import { callEdge } from '@/lib/api'
 import { predictPrice } from '@/lib/predict'
 import { useSession } from '@/hooks/useSession' // assume you have a safe stub that never returns undefined
+import { logger } from '@/lib/logger'
 
-type PrefillResp = { ok: true; prefill: { title: string|null; category: string; guess_confidence: number; attrs: Record<string, any> } }
+type PrefillResp = { ok: true; prefill: { title: string|null; category: string; guess_confidence: number; attrs: Record<string, unknown> } }
 
 export default function AddScreen() {
   const { jwt, anonKey } = useSession()
@@ -33,10 +34,10 @@ export default function AddScreen() {
     setPrefillLoading(false)
     if (!resp.ok) {
       // non-fatal
-      console.warn('add-prefill error', resp.error)
+      logger.warn('add-prefill error', resp.error)
       return
     }
-    mergePrefill((resp.data as any).prefill)
+    mergePrefill((resp.data as PrefillResp).prefill)
   }, [jwt, anonKey, category, imageUrl, mergePrefill])
 
   // Trigger when category changes or image selected
@@ -96,12 +97,11 @@ export default function AddScreen() {
 <Button title="Estimate price" onPress={async () => {
   try {
     const res = await predictPrice(jwt, anonKey, title || "Item", category || "Pokemon", { condition });
-    if ((res as any).ok && !(valueEUR && valueEUR.length)) {
+    if (res.ok && !(valueEUR && valueEUR.length)) {
       // only fill if empty
-      // @ts-ignore
-      setValueEUR(String((res as any).data.price_eur))
+      setValueEUR(String((res as { ok: true; data: { price_eur: number } }).data.price_eur))
     }
-  } catch (e) { console.warn(e) }
+  } catch (e) { logger.warn(e) }
 }} />
       <Button title="Save" onPress={() => Alert.alert('Saved (mock)')} />
     </View>

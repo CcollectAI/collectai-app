@@ -6,7 +6,25 @@ import { SettingsProvider } from "@/lib/settings";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useSession } from "@/hooks/useSession";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+
+/* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
+let Sentry: { init: (opts: Record<string, unknown>) => void; wrap: (component: React.ComponentType) => React.ComponentType } | null = null;
+try {
+  Sentry = require("@sentry/react-native");
+} catch (_) {
+  // @sentry/react-native not installed – skip silently
+}
+
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
+if (Sentry && SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0.1,
+  });
+}
 
 function SettingsHeaderButton() {
   const router = useRouter();
@@ -35,6 +53,10 @@ function HeaderRight() {
 
 function RootStack() {
   const { colors } = useAppTheme();
+  const { user } = useSession();
+
+  // Register push notifications once auth has resolved
+  usePushNotifications(user?.id ?? null);
 
   // Shared screen options with icon-only header
   const iconOnlyHeader = {
@@ -81,7 +103,7 @@ function RootStack() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <ErrorBoundary>
       <SettingsProvider>
@@ -90,3 +112,5 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+export default Sentry?.wrap ? Sentry.wrap(RootLayout) : RootLayout;

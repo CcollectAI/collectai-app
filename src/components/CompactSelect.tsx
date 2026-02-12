@@ -21,7 +21,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
   const filtered = query ? options.filter(o=>o.toLowerCase().includes(query.toLowerCase())) : options;
   const { width:SW, height:SH } = Dimensions.get('window'); const POPOVER_W=280; const left=Math.max(8, Math.min((anch?.x ?? 16), SW-POPOVER_W-8)); const topBase=(anch ? anch.y+anch.h+6 : 120); const maxH=Math.max(160, Math.min(360, SH-topBase-16)); const top=Math.min(topBase, SH-maxH-8);
   return (<>
-    <AnimatedPressable ref={triggerRef} onPress={show} style={{ alignSelf: 'flex-start' }}>
+    <AnimatedPressable ref={triggerRef} onPress={show} style={{ alignSelf: 'flex-start' }} accessibilityRole="button" accessibilityLabel={`${title || 'Select'}: ${value || placeholder}`}>
       <View style={{
         backgroundColor: theme.colors.card,
         borderWidth: 1,
@@ -38,8 +38,8 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
       </View>
     </AnimatedPressable>
     <Modal visible={open} transparent animationType="fade" onRequestClose={hide}>
-      <Pressable onPress={hide} style={{ flex:1, backgroundColor:'rgba(0,0,0,0.15)' }}>
-        <Pressable onPress={()=>{}} style={{
+      <Pressable onPress={hide} style={{ flex:1, backgroundColor:'rgba(0,0,0,0.15)' }} accessibilityRole="button" accessibilityLabel="Close dropdown">
+        <Pressable onPress={()=>{}} accessibilityRole="none" style={{
           position:'absolute', top, left, width:POPOVER_W,
           backgroundColor: theme.colors.card,
           borderWidth:1, borderColor: theme.colors.border,
@@ -49,7 +49,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
         }}>
           {title ? (<View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
             <Text style={{ color: theme.colors.navy, fontWeight:'700', fontSize: 15 }}>{title}</Text>
-            <Pressable onPress={hide}>
+            <Pressable onPress={hide} accessibilityRole="button" accessibilityLabel="Close">
               <Icon name="close" />
             </Pressable>
           </View>) : null}
@@ -59,6 +59,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
               onChangeText={setQuery}
               placeholder="Search…"
               placeholderTextColor={theme.colors.subtext}
+              accessibilityLabel="Search options"
               style={{
                 borderWidth:1, borderColor: theme.colors.border,
                 borderRadius: 8,
@@ -70,7 +71,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
             {filtered.map((opt, idx) => {
               const selected = value === opt;
               return (
-                <AnimatedPressable key={opt} onPress={()=>{ fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onChange(opt); hide(); }}>
+                <AnimatedPressable key={opt} onPress={()=>{ fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onChange(opt); hide(); }} accessibilityRole="button" accessibilityLabel={`${opt}${selected ? ', selected' : ''}`}>
                   <View style={{
                     paddingVertical:10, paddingHorizontal: 8,
                     flexDirection:'row', alignItems:'center', justifyContent:'space-between',

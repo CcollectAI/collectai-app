@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
+/* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
+import type { SentryModule } from '@/../types/api';
+let Sentry: SentryModule | null = null;
+try {
+  Sentry = require("@sentry/react-native");
+} catch (_) {
+  // @sentry/react-native not installed – skip silently
+}
+
 type Profile = {
   id: string;
   username: string;
@@ -28,10 +37,10 @@ export default function useAuth() {
         .single();
       if (error) throw error;
       setProfile(data as Profile);
-    } catch (e: any) {
-      // Profile might not exist yet (e.g., user didn’t finish sign-up flow)
+    } catch (e: unknown) {
+      // Profile might not exist yet (e.g., user didn't finish sign-up flow)
       setProfile(null);
-      setError(e?.message ?? "Failed to load profile");
+      setError(e instanceof Error ? e.message : "Failed to load profile");
     }
   }
 
@@ -46,9 +55,12 @@ export default function useAuth() {
 
         setSession(data.session ?? null);
         setUser(data.session?.user ?? null);
+        if (Sentry?.setUser) {
+          Sentry.setUser(data.session?.user ? { id: data.session.user.id } : null);
+        }
         await loadProfile(data.session?.user ?? null);
-      } catch (e: any) {
-        if (on) setError(e?.message ?? "Failed to get session");
+      } catch (e: unknown) {
+        if (on) setError(e instanceof Error ? e.message : "Failed to get session");
       } finally {
         if (on) setLoading(false);
       }
@@ -60,6 +72,9 @@ export default function useAuth() {
       if (!on) return;
       setSession(newSession);
       setUser(newSession?.user ?? null);
+      if (Sentry?.setUser) {
+        Sentry.setUser(newSession?.user ? { id: newSession.user.id } : null);
+      }
       await loadProfile(newSession?.user ?? null);
     });
 

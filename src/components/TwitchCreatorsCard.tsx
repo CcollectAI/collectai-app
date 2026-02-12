@@ -239,6 +239,8 @@ export const TwitchCreatorsCard: React.FC = () => {
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
           router.push("/twitch-leaderboard");
         }}
+        accessibilityRole="button"
+        accessibilityLabel="Open Twitch hub"
         style={{
           marginTop: 12,
           flexDirection: "row",

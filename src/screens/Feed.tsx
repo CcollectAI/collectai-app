@@ -9,6 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 
 export default function Feed(){
   const { rows, loading, refreshing, refresh, loadMore, toggleLike } = useFeed();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nav = useNavigation<any>();
 
   useEffect(()=>{},[]);

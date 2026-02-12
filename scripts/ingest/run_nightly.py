@@ -23,12 +23,15 @@ Environment:
 
 import argparse
 import json
+import logging
 import os
 import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
+
+logger = logging.getLogger(__name__)
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -66,7 +69,7 @@ def fetch_app_signals(max_items: int) -> List[dict]:
     service_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
 
     if not supabase_url or not service_key:
-        print("[Gather] No Supabase credentials, returning empty signals")
+        logger.warning("[Gather] No Supabase credentials, returning empty signals")
         return []
 
     try:
@@ -88,11 +91,11 @@ def fetch_app_signals(max_items: int) -> List[dict]:
         if resp.status_code == 200:
             return resp.json()
         else:
-            print(f"[Gather] Fetch failed: {resp.status_code}")
+            logger.error("[Gather] Fetch failed: %d", resp.status_code)
             return []
 
     except Exception as e:
-        print(f"[Gather] Error fetching signals: {e}")
+        logger.error("[Gather] Error fetching signals: %s", e)
         return []
 
 
@@ -115,7 +118,7 @@ def normalize_to_observations(raw_rows: List[dict]) -> List[RawObservation]:
             obs.content_hash = obs.compute_hash()
             observations.append(obs)
         except Exception as e:
-            print(f"[Normalize] Error: {e} - row: {row.get('id', 'unknown')}")
+            logger.warning("[Normalize] Error: %s - row: %s", e, row.get('id', 'unknown'))
 
     return observations
 
@@ -130,7 +133,7 @@ def dedupe_observations(
     Checks both in-batch and against existing Supabase records.
     """
     if skip_dedupe:
-        print(f"[Dedupe] Skipping (--skip-dedupe)")
+        logger.info("[Dedupe] Skipping (--skip-dedupe)")
         return observations
 
     # In-batch dedupe
@@ -145,7 +148,7 @@ def dedupe_observations(
 
     in_batch_dupes = len(observations) - len(unique)
     if in_batch_dupes > 0:
-        print(f"[Dedupe] Removed {in_batch_dupes} in-batch duplicates")
+        logger.info("[Dedupe] Removed %d in-batch duplicates", in_batch_dupes)
 
     # Check against existing hashes in Supabase
     if not dry_run:
@@ -157,7 +160,7 @@ def dedupe_observations(
         if existing_hashes:
             before = len(unique)
             unique = [obs for obs in unique if obs.content_hash not in existing_hashes]
-            print(f"[Dedupe] Removed {before - len(unique)} existing duplicates")
+            logger.info("[Dedupe] Removed %d existing duplicates", before - len(unique))
 
     return unique
 
@@ -213,15 +216,15 @@ def run_pipeline(
     run_id = generate_run_id()
     started_at = datetime.now(timezone.utc).isoformat()
 
-    print(f"\n{'='*60}")
-    print(f"CollectAI Nightly Ingest Pipeline")
-    print(f"{'='*60}")
-    print(f"Run ID      : {run_id}")
-    print(f"Started     : {started_at}")
-    print(f"Dry-run     : {dry_run}")
-    print(f"Max items   : {max_items}")
-    print(f"Taxonomy    : {TAXONOMY_VERSION}")
-    print(f"{'='*60}\n")
+    logger.info("=" * 60)
+    logger.info("CollectAI Nightly Ingest Pipeline")
+    logger.info("=" * 60)
+    logger.info("Run ID      : %s", run_id)
+    logger.info("Started     : %s", started_at)
+    logger.info("Dry-run     : %s", dry_run)
+    logger.info("Max items   : %d", max_items)
+    logger.info("Taxonomy    : %s", TAXONOMY_VERSION)
+    logger.info("=" * 60)
 
     # Initialize run record
     run_record = IngestRunRecord(
@@ -239,76 +242,76 @@ def run_pipeline(
 
     try:
         # Stage 1: Gather inputs
-        print("[Stage 1] Gathering inputs...")
+        logger.info("[Stage 1] Gathering inputs...")
         sources = sources or ['app_signals']
         raw_rows = []
 
         for source in sources:
             if source == 'app_signals':
                 rows = fetch_app_signals(max_items)
-                print(f"  - app_signals: {len(rows)} rows")
+                logger.info("  - app_signals: %d rows", len(rows))
                 raw_rows.extend(rows)
             elif source == 'csv':
                 rows = fetch_csv_imports(max_items)
-                print(f"  - csv: {len(rows)} rows")
+                logger.info("  - csv: %d rows", len(rows))
                 raw_rows.extend(rows)
 
         run_record.input_count = len(raw_rows)
-        print(f"  Total input: {len(raw_rows)} rows\n")
+        logger.info("  Total input: %d rows", len(raw_rows))
 
         if not raw_rows:
-            print("[Pipeline] No input data, exiting early")
+            logger.info("[Pipeline] No input data, exiting early")
             run_record.status = 'completed'
             run_record.finished_at = datetime.now(timezone.utc).isoformat()
             return run_record
 
         # Apply max_items cap
         if len(raw_rows) > max_items:
-            print(f"[Safety] Capping at {max_items} items (had {len(raw_rows)})")
+            logger.info("[Safety] Capping at %d items (had %d)", max_items, len(raw_rows))
             raw_rows = raw_rows[:max_items]
 
         # Stage 2: Normalize
-        print("[Stage 2] Normalizing to RawObservation schema...")
+        logger.info("[Stage 2] Normalizing to RawObservation schema...")
         observations = normalize_to_observations(raw_rows)
-        print(f"  Normalized: {len(observations)} observations\n")
+        logger.info("  Normalized: %d observations", len(observations))
 
         # Dedupe
-        print("[Stage 3] Deduplicating...")
+        logger.info("[Stage 3] Deduplicating...")
         observations = dedupe_observations(observations, skip_dedupe, dry_run)
         run_record.skipped_count = run_record.input_count - len(observations)
-        print(f"  After dedupe: {len(observations)} observations\n")
+        logger.info("  After dedupe: %d observations", len(observations))
 
         # Stage 3: Taxonomy mapping
-        print("[Stage 4] Applying taxonomy mapping...")
+        logger.info("[Stage 4] Applying taxonomy mapping...")
         observations = batch_apply_taxonomy(observations)
 
         mapped_count = sum(1 for obs in observations if obs.category_id)
         unmapped_count = len(observations) - mapped_count
-        print(f"  Mapped: {mapped_count}, Unmapped: {unmapped_count}\n")
+        logger.info("  Mapped: %d, Unmapped: %d", mapped_count, unmapped_count)
 
         # Stage 4: Write raw bundle to S3
-        print("[Stage 5] Writing raw bundle to S3/local...")
+        logger.info("[Stage 5] Writing raw bundle to S3/local...")
         s3_key = write_observations_bundle(observations, run_id, dry_run)
         run_record.s3_bundle_key = s3_key
         if s3_key:
-            print(f"  Bundle: {s3_key}\n")
+            logger.info("  Bundle: %s", s3_key)
         else:
-            print("  (dry-run or no data)\n")
+            logger.info("  (dry-run or no data)")
 
         # Stage 5: Create training candidates
-        print("[Stage 6] Creating training candidates...")
+        logger.info("[Stage 6] Creating training candidates...")
         candidates = create_training_candidates(observations)
-        print(f"  Candidates: {len(candidates)}\n")
+        logger.info("  Candidates: %d", len(candidates))
 
         # Stage 6: Write to Supabase
-        print("[Stage 7] Writing to Supabase...")
+        logger.info("[Stage 7] Writing to Supabase...")
         run_record.processed_count = len(observations)
 
         if dry_run:
-            print("  DRY-RUN: Would write:")
-            print(f"    - 1 ingest_runs_v1 record")
-            print(f"    - {len(observations)} raw_observation_pointers_v1 rows")
-            print(f"    - {len(candidates)} training_candidates_v1 rows")
+            logger.info("  DRY-RUN: Would write:")
+            logger.info("    - 1 ingest_runs_v1 record")
+            logger.info("    - %d raw_observation_pointers_v1 rows", len(observations))
+            logger.info("    - %d training_candidates_v1 rows", len(candidates))
         else:
             success = write_ingest_results(
                 run_record=run_record,
@@ -323,7 +326,7 @@ def run_pipeline(
         run_record.status = 'completed'
 
     except Exception as e:
-        print(f"\n[ERROR] Pipeline failed: {e}")
+        logger.error("[ERROR] Pipeline failed: %s", e)
         errors.append(str(e))
         run_record.status = 'failed'
         run_record.error_count = 1
@@ -333,17 +336,17 @@ def run_pipeline(
         run_record.errors_json = errors
 
     # Summary
-    print(f"\n{'='*60}")
-    print("Pipeline Summary")
-    print(f"{'='*60}")
-    print(f"Status      : {run_record.status}")
-    print(f"Input       : {run_record.input_count}")
-    print(f"Processed   : {run_record.processed_count}")
-    print(f"Skipped     : {run_record.skipped_count}")
-    print(f"Errors      : {run_record.error_count}")
-    print(f"S3 Bundle   : {run_record.s3_bundle_key or 'N/A'}")
-    print(f"Finished    : {run_record.finished_at}")
-    print(f"{'='*60}\n")
+    logger.info("=" * 60)
+    logger.info("Pipeline Summary")
+    logger.info("=" * 60)
+    logger.info("Status      : %s", run_record.status)
+    logger.info("Input       : %s", run_record.input_count)
+    logger.info("Processed   : %s", run_record.processed_count)
+    logger.info("Skipped     : %s", run_record.skipped_count)
+    logger.info("Errors      : %s", run_record.error_count)
+    logger.info("S3 Bundle   : %s", run_record.s3_bundle_key or 'N/A')
+    logger.info("Finished    : %s", run_record.finished_at)
+    logger.info("=" * 60)
 
     return run_record
 
@@ -378,6 +381,8 @@ def main():
     )
 
     args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO)
 
     result = run_pipeline(
         dry_run=args.dry_run,

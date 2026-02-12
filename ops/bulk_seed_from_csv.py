@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-import os, asyncio, sys, csv
+import os, asyncio, sys, csv, logging
 from decimal import Decimal
 import asyncpg
+
+logger = logging.getLogger(__name__)
 
 DSN = os.environ.get("DB_DSN")
 
 async def main():
     if len(sys.argv) < 2:
-        print("Usage: bulk_seed_from_csv.py path/to/file.csv")
+        logger.error("Usage: bulk_seed_from_csv.py path/to/file.csv")
         return
 
     if not DSN:
-        print("DB_DSN not set")
+        logger.error("DB_DSN not set")
         return
 
     path = sys.argv[1]
@@ -61,9 +63,10 @@ async def main():
                         cat["id"],
                     )
 
-            print(f"seeded item_ref={item_ref}, price={price_eur}, category={category_slug}")
+            logger.info("seeded item_ref=%s, price=%s, category=%s", item_ref, price_eur, category_slug)
 
     await conn.close()
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

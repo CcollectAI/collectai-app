@@ -21,7 +21,7 @@ import logger from "@/utils/logger";
 
 export default function SearchScreen() {
   const t = useAppTheme();
-  const colors = (t as any)?.colors ?? (t as any);
+  const colors = t.colors;
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
 
@@ -47,8 +47,8 @@ export default function SearchScreen() {
     try {
       const items = await dataProvider.searchItems(trimmed);
       setResults(items);
-    } catch (err: any) {
-      console.warn("[Search] error:", err);
+    } catch (err: unknown) {
+      logger.warn("[Search] error:", err);
       setError(err?.message || "Search failed");
       setResults([]);
     } finally {
@@ -74,6 +74,8 @@ export default function SearchScreen() {
     <AnimatedPressable
       style={[styles.itemRow, { backgroundColor: colors?.card ?? "#fff", borderColor: colors?.border ?? "#e0e0e0" }]}
       onPress={() => handleItemPress(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.name}, ${item.category}, €${item.price}`}
     >
       <View style={styles.itemInfo}>
         <Text style={[styles.itemName, { color: colors?.text ?? "#000" }]} numberOfLines={1}>
@@ -123,11 +125,14 @@ export default function SearchScreen() {
           onChangeText={setQuery}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
+          accessibilityLabel="Search items"
         />
         <AnimatedPressable
           style={[styles.searchButton, { backgroundColor: colors?.accent ?? "#007AFF" }]}
           onPress={handleSearch}
           disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel="Search"
         >
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import json
+import logging
 import sys
 from datetime import datetime, timezone
 
 from app.providers.registry import providers_for_category
+
+logger = logging.getLogger(__name__)
 
 # Very simple sampler per category; extend with your own catalog/items
 SAMPLES = {
@@ -71,8 +74,9 @@ def main():
                     hits.extend(prov.search(p))
                 for row in emit_rows(cat, hits):
                     f.write(json.dumps(row) + "\n")
-    print(f"[ok] appended rows into {out} at {datetime.now(timezone.utc).isoformat()}Z")
+    logger.info("[ok] appended rows into %s at %sZ", out, datetime.now(timezone.utc).isoformat())
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

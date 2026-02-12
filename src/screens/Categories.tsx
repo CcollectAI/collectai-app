@@ -29,7 +29,7 @@ export default function Categories() {
         if (mounted) {
           setData(cats ?? []);
         }
-      } catch (e: any) {
+      } catch (_e: unknown) {
         // Fallback: try to derive categories from items table (distinct)
         try {
           const { data: rows, error } = await supabase
@@ -45,7 +45,7 @@ export default function Categories() {
             map.set(slug, { slug, name: r.category_name || slug });
           });
           setData(Array.from(map.values()).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")));
-        } catch (e2: any) {
+        } catch (_e2: unknown) {
           Alert.alert("Categories unavailable", "No categories table found and could not infer from items.");
           setData([]);
         }

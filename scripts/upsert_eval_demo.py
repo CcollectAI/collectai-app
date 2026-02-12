@@ -1,7 +1,10 @@
 import datetime as dt
+import logging
 import os
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
@@ -36,10 +39,11 @@ def upsert_eval(cat, ver, metrics, n):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     out = upsert_eval(
         cat="pokemon",
         ver="v0.1.0",
         metrics={"mae": 12.34, "mape": 0.11, "p50": 10.0, "p90": 20.0},
         n=123,
     )
-    print(out)
+    logger.info("%s", out)

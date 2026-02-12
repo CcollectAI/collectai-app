@@ -5,6 +5,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      DB_ENABLED: "false"
+      DB_DSN: ""
+      DEV_MODE: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,4 +30,54 @@ jobs:
           bandit -r app/ -q -ll
           pip-audit --strict
       - name: Test
-        run: pytest --cov=app --cov=inference --cov-report=term-missing --cov-fail-under=40 -q
+        run: pytest --cov=app --cov=inference --cov-report=term-missing --cov-fail-under=50 -q
+
+  frontend-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Install deps (skip scripts)
+        run: npm ci --ignore-scripts
+      - name: Audit
+        run: npm audit --audit-level=moderate
+
+  # ---------------------------------------------------------------------------
+  # Docker image vulnerability scan (Trivy) — main branch only
+  # ---------------------------------------------------------------------------
+  docker-scan:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t collectai:ci-scan .
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "collectai:ci-scan"
+          format: "table"
+          exit-code: "1"
+          severity: "HIGH,CRITICAL"
+
+  # ---------------------------------------------------------------------------
+  # Deploy job (uncomment when ready for CD)
+  # ---------------------------------------------------------------------------
+  # deploy:
+  #   needs: test
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   runs-on: ubuntu-latest
+  #   environment: production
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with: { python-version: "3.12" }
+  #     - name: Install deps
+  #       run: pip install asyncpg
+  #     - name: Run database migrations
+  #       env:
+  #         DB_DSN: ${{ secrets.DB_DSN }}
+  #       run: python scripts/migrate.py
+  #     - name: Deploy application
+  #       run: echo "deploy steps here"

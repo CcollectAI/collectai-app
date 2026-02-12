@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import logging
 import os
 
 import boto3
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -17,8 +20,9 @@ def main():
     s3 = boto3.client("s3", region_name=a.region)
     body = json.dumps({"version": a.version}).encode()
     s3.put_object(Bucket=bkt, Key=f"{key.rstrip('/')}/ACTIVE.json", Body=body)
-    print(json.dumps({"ok": True, "active": a.version}))
+    logger.info(json.dumps({"ok": True, "active": a.version}))
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

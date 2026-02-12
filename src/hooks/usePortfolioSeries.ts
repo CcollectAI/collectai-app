@@ -18,6 +18,7 @@ import type {
   PortfolioSnapshot,
   TimeSeriesPoint,
 } from '@/analytics/portfolioMetrics';
+import { logger } from '@/lib/logger';
 
 type UsePortfolioSeriesState = {
   loading: boolean;
@@ -42,8 +43,8 @@ export function usePortfolioSeries(): UsePortfolioSeriesState {
         const snap = await fetchPortfolioSnapshot();
         if (!active) return;
         setSnapshot(snap);
-      } catch (err: any) {
-        console.warn('[usePortfolioSeries] failed to load snapshot', err);
+      } catch (err: unknown) {
+        logger.warn('[usePortfolioSeries] failed to load snapshot', err);
         if (!active) return;
         setError('Could not load portfolio analytics.');
       } finally {

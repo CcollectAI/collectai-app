@@ -4,8 +4,9 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
+from app.auth import get_current_user_id
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 logger = logging.getLogger(__name__)
@@ -23,14 +24,6 @@ def _get_db_pool():
     except Exception as e:
         logger.debug(f"DB pool not available: {e}")
         return None
-
-
-def _get_current_user_id() -> str:
-    """
-    TODO: Replace with real auth (e.g. JWT / Supabase session).
-    For now returns a placeholder user-id so queries are scoped.
-    """
-    return "demo-user"
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +67,7 @@ class CategoryDeepDiveResponse(BaseModel):
 async def get_collection_trends(
     days: int = Query(30, ge=1, le=365),
     currency: str = Query("EUR"),
+    user_id: str = Depends(get_current_user_id),
 ):
     """
     Collection trend graph:
@@ -89,7 +83,6 @@ async def get_collection_trends(
             per_category_gain_loss={},
         )
 
-    user_id = _get_current_user_id()
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     try:

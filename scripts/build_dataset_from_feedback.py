@@ -2,6 +2,7 @@
 import datetime as dt
 import io
 import json
+import logging
 import os
 
 import boto3
@@ -9,6 +10,8 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from supabase import create_client
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -19,7 +22,7 @@ def main():
     sb = create_client(url, key)
     rows = sb.table("feedback").select("*").execute().data or []
     if not rows:
-        print("")
+        logger.info("No feedback rows found")
         return
     # group by category; numeric features only
     out = []
@@ -46,8 +49,9 @@ def main():
         df.to_csv(buf, index=False)
         s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue().encode("utf-8"))
         out.append({"category": cat, "s3": f"s3://{bucket}/{key}", "rows": len(df)})
-    print(json.dumps(out))
+    logger.info(json.dumps(out))
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

@@ -5,6 +5,7 @@ import { useAppTheme } from '@/theme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { logger } from '@/lib/logger';
 
 type TwitchCategory = 'tcg' | 'painting' | 'gunpla' | 'designer_toys';
 
@@ -392,7 +393,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                 onPress={() => {
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                   // Future: open Twitch URL or deep link
-                  console.log('[Twitch] open stream', s.handle);
+                  logger.info('[Twitch] open stream', s.handle);
                 }}
                 style={{
                   flex: 1,
@@ -418,7 +419,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                 onPress={() => {
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                   // Future: create event or watchlist suggestion
-                  console.log('[Twitch] suggest event/watchlist for', s.handle);
+                  logger.info('[Twitch] suggest event/watchlist for', s.handle);
                   router.push('/calendar'); // or an events route if you prefer
                 }}
                 style={{

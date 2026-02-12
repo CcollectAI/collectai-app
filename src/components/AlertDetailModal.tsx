@@ -109,7 +109,7 @@ export function AlertDetailModal({
         <View style={styles.content}>
           {/* Alert Type Icon */}
           <View style={[styles.iconContainer, { backgroundColor: iconColor + '20' }]}>
-            <Ionicons name={getAlertIcon(alert.type) as any} size={32} color={iconColor} />
+            <Ionicons name={getAlertIcon(alert.type) as keyof typeof Ionicons.glyphMap} size={32} color={iconColor} />
           </View>
 
           {/* Item Info */}

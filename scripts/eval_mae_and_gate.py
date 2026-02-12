@@ -2,6 +2,7 @@
 import argparse
 import io
 import json
+import logging
 import os
 import sys
 
@@ -9,6 +10,8 @@ import boto3
 import numpy as np
 import pandas as pd
 import yaml
+
+logger = logging.getLogger(__name__)
 
 
 def s3_get_text(uri, region):
@@ -159,12 +162,13 @@ def main():
         art_pref = f"{a.artifact_prefix.rstrip('/')}/{cat}"
         res = eval_one(cat, art_pref, ds_uri, gate, region)
         out.append(res)
-        print(json.dumps(res))
+        logger.info(json.dumps(res))
 
     # overall summary last line
-    print(json.dumps({"summary": {"categories": cats, "results": out}}))
+    logger.info(json.dumps({"summary": {"categories": cats, "results": out}}))
     return 0
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     sys.exit(main())

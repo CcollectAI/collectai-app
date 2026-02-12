@@ -1,10 +1,12 @@
 import asyncio
+import logging
 import os
 from typing import List
 
 from services.twitch_client import twitch_client
 from utils.supabase import supabase  # existing supabase wrapper
 
+logger = logging.getLogger(__name__)
 
 # You can override this via env var TWITCH_TRACKED_LOGINS ("login1,login2")
 TRACKED_TWITCH_LOGINS = [
@@ -38,12 +40,12 @@ def get_tracked_logins() -> List[str]:
 
 async def sync_creators_and_streams():
     logins = get_tracked_logins()
-    print(f"[twitch_sync] syncing Twitch creators for logins: {logins}")
+    logger.info("[twitch_sync] syncing Twitch creators for logins: %s", logins)
 
     # 1) Fetch user profiles from Twitch
     users = await twitch_client.get_users(logins=logins)
     if not users:
-        print("[twitch_sync] no Twitch users returned. Check logins and Twitch credentials.")
+        logger.warning("[twitch_sync] no Twitch users returned. Check logins and Twitch credentials.")
         return
 
     creators_rows = []
@@ -62,16 +64,16 @@ async def sync_creators_and_streams():
         )
 
     # 2) Upsert creators in Supabase
-    print(f"[twitch_sync] upserting {len(creators_rows)} creators into twitch_creators...")
+    logger.info("[twitch_sync] upserting %d creators into twitch_creators...", len(creators_rows))
     supabase.table("twitch_creators").upsert(
         creators_rows,
         on_conflict="twitch_id",
     ).execute()
 
     # 3) Fetch currently live streams for those creators
-    print(f"[twitch_sync] fetching live streams for {len(twitch_ids)} creators...")
+    logger.info("[twitch_sync] fetching live streams for %d creators...", len(twitch_ids))
     streams = await twitch_client.get_live_streams(twitch_ids)
-    print(f"[twitch_sync] Twitch returned {len(streams)} live streams.")
+    logger.info("[twitch_sync] Twitch returned %d live streams.", len(streams))
 
     if not streams:
         return
@@ -144,7 +146,7 @@ async def sync_creators_and_streams():
 
     # 4) Upsert live streams into twitch_streams_live
     if streams_rows:
-        print(f"[twitch_sync] upserting {len(streams_rows)} rows into twitch_streams_live...")
+        logger.info("[twitch_sync] upserting %d rows into twitch_streams_live...", len(streams_rows))
         supabase.table("twitch_streams_live").upsert(
             streams_rows,
             on_conflict="twitch_stream_id",
@@ -152,10 +154,10 @@ async def sync_creators_and_streams():
 
     # 5) Insert events rows into twitch_events (no dedupe yet)
     if events_rows:
-        print(f"[twitch_sync] inserting {len(events_rows)} rows into twitch_events...")
+        logger.info("[twitch_sync] inserting %d rows into twitch_events...", len(events_rows))
         supabase.table("twitch_events").insert(events_rows).execute()
 
-    print("[twitch_sync] done.")
+    logger.info("[twitch_sync] done.")
 
 
 def main():
@@ -163,4 +165,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

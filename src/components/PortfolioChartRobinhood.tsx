@@ -79,6 +79,8 @@ export default function PortfolioChartRobinhood({ data }: Props) {
                 key={idx}
                 style={styles.segmentPressable}
                 onPress={() => setHoverIndex(idx)}
+                accessibilityRole="button"
+                accessibilityLabel={`${p.label}, ${formatCurrency(p.value)}`}
               >
                 <View style={styles.segmentColumn}>
                   <View

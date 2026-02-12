@@ -29,6 +29,8 @@ export default function SortDropdown({ value, onChange }: Props) {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
             onChange(o.v);
           }}
+          accessibilityRole="button"
+          accessibilityLabel={`Sort by ${o.label}${value === o.v ? ', selected' : ''}`}
           style={{
             paddingVertical: 6,
             paddingHorizontal: 8,

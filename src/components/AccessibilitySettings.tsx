@@ -9,12 +9,14 @@ import { useAccessibility } from '@/lib/accessibilityContext';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { featureFlags } from '@/config/featureFlags';
 
+type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
+
 type SettingRowProps = {
   label: string;
   description: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
-  colors: any;
+  colors: ThemeColors;
 };
 
 function SettingRow({ label, description, value, onValueChange, colors }: SettingRowProps) {

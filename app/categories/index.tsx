@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type CategorySummary } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import logger from '@/utils/logger';
 
 export default function CategoriesListScreen() {
   const router = useRouter();
@@ -33,8 +34,8 @@ export default function CategoriesListScreen() {
       setError(null);
       const data = await dataProvider.listCategorySummaries();
       setCategories(data);
-    } catch (err: any) {
-      console.warn('[CategoriesList] loadCategories error:', err);
+    } catch (err: unknown) {
+      logger.warn('[CategoriesList] loadCategories error:', err);
       setError(err?.message || 'Failed to load categories');
     } finally {
       setLoading(false);
@@ -62,6 +63,8 @@ export default function CategoriesListScreen() {
       <AnimatedPressable
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => router.push(`/categories/${encodeURIComponent(item.id)}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.name}, ${item.completionPct}% complete, ${item.missingCount} missing`}
       >
         <View style={styles.cardContent}>
           <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
@@ -131,6 +134,8 @@ export default function CategoriesListScreen() {
           <AnimatedPressable
             style={[styles.retryBtn, { backgroundColor: colors.accent }]}
             onPress={loadCategories}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading categories"
           >
             <Text style={styles.retryBtnText}>Retry</Text>
           </AnimatedPressable>

@@ -72,7 +72,7 @@ const LeaderboardScreen: React.FC = () => {
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <View style={styles.headerText}>
@@ -96,6 +96,8 @@ const LeaderboardScreen: React.FC = () => {
                 styles.card,
                 { borderColor: colors.border, backgroundColor: colors.card },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${formatCurrency(user.stats.totalEstimatedValueEur)}`}
             >
               {/* Rank */}
               <View style={styles.rankCol}>

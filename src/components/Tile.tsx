@@ -21,6 +21,6 @@ export default function Tile({ title, subtitle, href, onPress, left, right, styl
       {subtitle ? <Text style={{ color: color.textMuted }}>{subtitle}</Text> : null}
     </View>
   );
-  if (href && !disabled) return <Link href={href} asChild><Pressable accessibilityRole="button">{inner}</Pressable></Link>;
-  return <Pressable onPress={() => { if (disabled) return; if (onPress) return onPress(); if (href) router.push(href); }} disabled={disabled}>{inner}</Pressable>;
+  if (href && !disabled) return <Link href={href} asChild><Pressable accessibilityRole="button" accessibilityLabel={title}>{inner}</Pressable></Link>;
+  return <Pressable onPress={() => { if (disabled) return; if (onPress) return onPress(); if (href) router.push(href); }} disabled={disabled} accessibilityRole="button" accessibilityLabel={title}>{inner}</Pressable>;
 }

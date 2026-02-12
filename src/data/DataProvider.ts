@@ -5,6 +5,7 @@
  */
 
 import type {
+  PaginationParams,
   PortfolioSummary,
   Item,
   WatchlistItem,
@@ -40,9 +41,10 @@ export interface DataProvider {
   getPortfolioSummary(): Promise<PortfolioSummary>;
 
   /**
-   * List all items in the user's collection.
+   * List items in the user's collection.
+   * Supports optional pagination (limit/offset).
    */
-  listItems(): Promise<Item[]>;
+  listItems(pagination?: PaginationParams): Promise<Item[]>;
 
   /**
    * List watchlist items for a user.
@@ -72,6 +74,19 @@ export interface DataProvider {
    * @returns The created item
    */
   createItem(input: CreateItemInput): Promise<Item>;
+
+  /**
+   * Delete an item from the collection.
+   * @param itemId - The item's UUID
+   */
+  deleteItem(itemId: string): Promise<void>;
+
+  /**
+   * Archive an item (soft-delete). Sets attributes_json._archived = true.
+   * Archived items are hidden from the active collection but can be restored.
+   * @param itemId - The item's UUID
+   */
+  archiveItem(itemId: string): Promise<void>;
 
   /**
    * Persist a QuickScan draft as a new item.
@@ -145,8 +160,9 @@ export interface DataProvider {
    * List recent alert events for the current user.
    * Mock: returns demo alerts.
    * Real: reads from v_alerts_feed_v1.
+   * Supports optional pagination (limit/offset).
    */
-  listAlertsFeed(): Promise<AlertFeedItem[]>;
+  listAlertsFeed(pagination?: PaginationParams): Promise<AlertFeedItem[]>;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // DM / Inbox methods
@@ -410,8 +426,9 @@ export interface DataProvider {
    * List upcoming events (personalized to user's categories).
    * Mock: returns from static EVENTS array filtered by followed categories.
    * Real: calls rpc_list_personalized_events_v1.
+   * Supports optional pagination (limit/offset).
    */
-  listEvents(): Promise<CollectorsEvent[]>;
+  listEvents(pagination?: PaginationParams): Promise<CollectorsEvent[]>;
 
   /**
    * Create a new event.

@@ -22,6 +22,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import logger from '@/utils/logger';
 
 // Fixed colors for specific UI elements
 const fixedColors = {
@@ -102,7 +103,7 @@ export default function InboxScreen() {
       setThreads(inboxThreads);
       setRequests(incomingRequests);
     } catch (err) {
-      console.warn('[InboxScreen] loadInbox error:', err);
+      logger.warn('[InboxScreen] loadInbox error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -124,7 +125,7 @@ export default function InboxScreen() {
       await dataProvider.decideDmRequest(threadId, true);
       // Reload to show thread in messages
       await loadInbox();
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert('Error', err?.message || 'Failed to accept request');
     } finally {
       setProcessingRequestId(null);
@@ -145,7 +146,7 @@ export default function InboxScreen() {
             try {
               await dataProvider.decideDmRequest(threadId, false);
               await loadInbox();
-            } catch (err: any) {
+            } catch (err: unknown) {
               Alert.alert('Error', err?.message || 'Failed to decline request');
             } finally {
               setProcessingRequestId(null);
@@ -159,7 +160,7 @@ export default function InboxScreen() {
   const handleThreadPress = (thread: DmThread) => {
     // Mark as read (best-effort)
     dataProvider.markThreadRead(thread.id).catch((err) => {
-      console.warn('[InboxScreen] markThreadRead error:', err);
+      logger.warn('[InboxScreen] markThreadRead error:', err);
     });
 
     // Navigate to thread detail
@@ -170,7 +171,7 @@ export default function InboxScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
@@ -189,7 +190,7 @@ export default function InboxScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn}>
+        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
@@ -248,6 +249,8 @@ export default function InboxScreen() {
                     style={[styles.actionBtn, styles.acceptBtn, { backgroundColor: colors.accent }]}
                     onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleAcceptRequest(req.threadId); }}
                     disabled={processingRequestId === req.threadId}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Accept message request from ${req.fromUserName}`}
                   >
                     {processingRequestId === req.threadId ? (
                       <ActivityIndicator size="small" color="#fff" />
@@ -259,6 +262,8 @@ export default function InboxScreen() {
                     style={[styles.actionBtn, styles.declineBtn]}
                     onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); handleDeclineRequest(req.threadId); }}
                     disabled={processingRequestId === req.threadId}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Decline message request from ${req.fromUserName}`}
                   >
                     {processingRequestId === req.threadId ? (
                       <ActivityIndicator size="small" color={fixedColors.error} />
@@ -284,6 +289,8 @@ export default function InboxScreen() {
                   idx < threads.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
                 ]}
                 onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleThreadPress(thread); }}
+                accessibilityRole="button"
+                accessibilityLabel={`Message thread with ${thread.otherUserName}${thread.unreadCount > 0 ? `, ${thread.unreadCount} unread` : ''}`}
               >
                 <UserAvatar
                   name={thread.otherUserName}

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-import argparse, json, os, sys, glob, gzip
+import argparse, json, os, sys, glob, gzip, logging
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 def iter_jsonl(path):
     """Robust JSONL reader that skips blanks/garbage, supports .gz."""
@@ -67,7 +69,7 @@ def main():
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     files = sorted(glob.glob(os.path.join(args.predictions, "predictions-*.jsonl*")))
     if not files:
-        print("No prediction files found; exiting 0.")
+        logger.info("No prediction files found; exiting 0.")
         return 0
 
     for f in files[-10:]:
@@ -87,8 +89,9 @@ def main():
         }
         with open(args.out, "a", encoding="utf-8") as w:
             w.write(json.dumps(payload, ensure_ascii=False) + "\n")
-        print("wrote metric:", payload)
+        logger.info("wrote metric: %s", payload)
     return 0
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     sys.exit(main())

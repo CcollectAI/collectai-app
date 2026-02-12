@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import pathlib
 import random
 from datetime import datetime, timezone
@@ -8,6 +9,8 @@ from datetime import datetime, timezone
 import numpy as np
 from joblib import dump
 from sklearn.linear_model import LinearRegression
+
+logger = logging.getLogger(__name__)
 
 # Try to import your featurizers (we created these earlier)
 try:
@@ -121,25 +124,26 @@ def build_cat(cat: str):
         payloads = gen_diecast_payloads()
         feats = [featurize_diecast(p) for p in payloads]
         rd = _fit_and_save(cat, feats)
-        print(f"[OK] diecast -> {rd}")
+        logger.info("[OK] diecast -> %s", rd)
     elif cat == "lego":
         if not HAVE_LEGO:
             raise RuntimeError("lego featurizer not importable (app.features.lego)")
         payloads = gen_lego_payloads()
         feats = [featurize_lego(p) for p in payloads]
         rd = _fit_and_save(cat, feats)
-        print(f"[OK] lego -> {rd}")
+        logger.info("[OK] lego -> %s", rd)
     else:
         raise ValueError(cat)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     built = []
     for cat in ("diecast", "lego"):
         try:
             build_cat(cat)
             built.append(cat)
         except Exception as e:
-            print(f"[ERR] {cat}: {e}")
+            logger.error("[ERR] %s: %s", cat, e)
     if not built:
         raise SystemExit(2)

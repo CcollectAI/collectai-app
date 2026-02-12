@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
-import { Link } from 'expo-router';
 import { CategoryPill } from '@/components/CategoryPill';
 import {
   View,
@@ -15,6 +14,8 @@ import {
   Animated,
   RefreshControl,
   Modal,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,10 +27,16 @@ import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { SkeletonList, SkeletonCategoryPills } from "@/components/Skeleton";
 import { ItemGalleryGrid } from "@/components/ItemGalleryGrid";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
+import {
+  useOptimisticBulkArchive,
+  useOptimisticBulkDelete,
+} from "@/hooks/useOptimisticItems";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
 import haptics from "@/lib/haptics";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { FilterSheet, FilterConfig, SortOption } from "@/components/FilterSheet";
+import logger from "@/utils/logger";
 
 type Item = {
   id: string;
@@ -104,10 +111,35 @@ const ItemsScreen: React.FC = () => {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("value_desc");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [providerItems, setProviderItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Paginated data fetching
+  const itemFetcher = useCallback(
+    async (limit: number, offset: number): Promise<Item[]> => {
+      const items = await dataProvider.listItems({ limit, offset });
+      return items.map((it: DataItem) => ({
+        id: it.id,
+        name: it.name,
+        category: it.category,
+        collectionName: "",
+        value: it.price,
+        condition: undefined,
+        notes: undefined,
+      }));
+    },
+    [],
+  );
+
+  const {
+    items: providerItems,
+    isLoading: loading,
+    isLoadingMore,
+    hasMore,
+    error,
+    loadMore,
+    refresh: paginatedRefresh,
+    setItems: setProviderItems,
+  } = usePaginatedList<Item>(itemFetcher, { pageSize: 20 });
+
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
@@ -139,43 +171,20 @@ const ItemsScreen: React.FC = () => {
     keyExtractor: (item) => item.id,
   });
 
-  const loadItems = useCallback(async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
+  // Stable ref for refresh so optimistic rollback callbacks stay current
+  const refreshRef = useRef(paginatedRefresh);
+  refreshRef.current = paginatedRefresh;
+  const stableReload = useCallback(() => { refreshRef.current(); }, []);
 
-    try {
-      const items = await dataProvider.listItems();
-      // Map DataProvider items to screen Item shape
-      const mapped: Item[] = items.map((it: DataItem) => ({
-        id: it.id,
-        name: it.name,
-        category: it.category,
-        collectionName: "", // DataProvider doesn't have this yet
-        value: it.price,
-        condition: undefined,
-        notes: undefined,
-      }));
-      setProviderItems(mapped);
-    } catch (e: any) {
-      console.warn("[Items] dataProvider.listItems failed", e);
-      setError(e?.message || "Failed to load items");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  // Optimistic mutation hooks for bulk operations
+  const optimisticBulkArchive = useOptimisticBulkArchive(setProviderItems, stableReload);
+  const optimisticBulkDelete = useOptimisticBulkDelete(setProviderItems, stableReload);
 
-  const handleRefresh = useCallback(() => {
-    loadItems(true);
-  }, [loadItems]);
-
-  useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await paginatedRefresh();
+    setRefreshing(false);
+  }, [paginatedRefresh]);
 
   // Export all items to CSV
   const handleExportCSV = useCallback(async () => {
@@ -233,8 +242,8 @@ const ItemsScreen: React.FC = () => {
         );
         setExportStatus('Saved (sharing unavailable)');
       }
-    } catch (err: any) {
-      console.warn('[Items] export error:', err);
+    } catch (err: unknown) {
+      logger.warn('[Items] export error:', err);
       setExportStatus('Export failed');
       Alert.alert('Export Error', err?.message || 'Failed to export items');
     } finally {
@@ -282,8 +291,8 @@ const ItemsScreen: React.FC = () => {
         haptics.success();
       }
       exitMultiSelectMode();
-    } catch (err: any) {
-      console.warn('[Items] bulk export error:', err);
+    } catch (err: unknown) {
+      logger.warn('[Items] bulk export error:', err);
       Alert.alert('Export Error', err?.message || 'Failed to export selected items');
       haptics.error();
     } finally {
@@ -291,7 +300,7 @@ const ItemsScreen: React.FC = () => {
     }
   }, [selectedCount, selectedItems, exitMultiSelectMode]);
 
-  // Bulk archive (mark as archived/sold)
+  // Bulk archive (mark as archived/sold) — with optimistic update
   const handleBulkArchive = useCallback(async () => {
     if (selectedCount === 0) return;
 
@@ -304,30 +313,23 @@ const ItemsScreen: React.FC = () => {
           text: 'Archive',
           style: 'destructive',
           onPress: async () => {
-            setBulkActionLoading(true);
-            try {
-              // For now, we'll delete items as archive isn't in the DataProvider yet
-              // In a real implementation, this would call dataProvider.archiveItems()
-              for (const id of selectedIds) {
-                await dataProvider.deleteItem(id);
-              }
+            const ids = [...selectedIds];
+            exitMultiSelectMode();
+            // Optimistic: removes items from list immediately, reverts on error
+            await optimisticBulkArchive.mutate(ids);
+            if (!optimisticBulkArchive.error) {
               haptics.success();
-              exitMultiSelectMode();
-              loadItems(true);
-            } catch (err: any) {
-              console.warn('[Items] bulk archive error:', err);
-              Alert.alert('Archive Error', err?.message || 'Failed to archive items');
+            } else {
+              Alert.alert('Archive Error', optimisticBulkArchive.error.message || 'Failed to archive items');
               haptics.error();
-            } finally {
-              setBulkActionLoading(false);
             }
           },
         },
       ]
     );
-  }, [selectedCount, selectedIds, exitMultiSelectMode, loadItems]);
+  }, [selectedCount, selectedIds, exitMultiSelectMode, optimisticBulkArchive]);
 
-  // Bulk delete
+  // Bulk delete — with optimistic update
   const handleBulkDelete = useCallback(async () => {
     if (selectedCount === 0) return;
 
@@ -340,26 +342,21 @@ const ItemsScreen: React.FC = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            setBulkActionLoading(true);
-            try {
-              for (const id of selectedIds) {
-                await dataProvider.deleteItem(id);
-              }
+            const ids = [...selectedIds];
+            exitMultiSelectMode();
+            // Optimistic: removes items from list immediately, reverts on error
+            await optimisticBulkDelete.mutate(ids);
+            if (!optimisticBulkDelete.error) {
               haptics.success();
-              exitMultiSelectMode();
-              loadItems(true);
-            } catch (err: any) {
-              console.warn('[Items] bulk delete error:', err);
-              Alert.alert('Delete Error', err?.message || 'Failed to delete items');
+            } else {
+              Alert.alert('Delete Error', optimisticBulkDelete.error.message || 'Failed to delete items');
               haptics.error();
-            } finally {
-              setBulkActionLoading(false);
             }
           },
         },
       ]
     );
-  }, [selectedCount, selectedIds, exitMultiSelectMode, loadItems]);
+  }, [selectedCount, selectedIds, exitMultiSelectMode, optimisticBulkDelete]);
 
   // Bulk change category
   const handleBulkChangeCategory = useCallback(async (newCategory: string) => {
@@ -369,7 +366,7 @@ const ItemsScreen: React.FC = () => {
     setCategoryModalVisible(false);
     try {
       // For now, log the action - full implementation requires DataProvider.updateItem
-      console.log(`[Items] Changing ${selectedCount} items to category: ${newCategory}`);
+      logger.info(`[Items] Changing ${selectedCount} items to category: ${newCategory}`);
       // In a real implementation:
       // for (const id of selectedIds) {
       //   await dataProvider.updateItem(id, { category: newCategory });
@@ -377,8 +374,8 @@ const ItemsScreen: React.FC = () => {
       haptics.success();
       exitMultiSelectMode();
       Alert.alert('Category Updated', `${selectedCount} item${selectedCount > 1 ? 's' : ''} moved to ${newCategory}`);
-    } catch (err: any) {
-      console.warn('[Items] bulk category change error:', err);
+    } catch (err: unknown) {
+      logger.warn('[Items] bulk category change error:', err);
       Alert.alert('Error', err?.message || 'Failed to change category');
       haptics.error();
     } finally {
@@ -538,6 +535,18 @@ const ItemsScreen: React.FC = () => {
     !!filterCategory ||
     query.trim().length > 0;
 
+  // Detect when ScrollView is near the bottom to trigger loadMore
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+      const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
+      if (distanceFromBottom < layoutMeasurement.height * 0.5) {
+        loadMore();
+      }
+    },
+    [loadMore],
+  );
+
   const clearFilters = () => {
     setFilterCategory(null);
     setQuery("");
@@ -576,8 +585,8 @@ const ItemsScreen: React.FC = () => {
           <Text style={[styles.errorText, { color: "#B42318" }]}>{error}</Text>
           <AnimatedPressable style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            loadItems();
-          }}>
+            paginatedRefresh();
+          }} accessibilityRole="button" accessibilityLabel="Retry loading items">
             <Text style={styles.retryText}>Retry</Text>
           </AnimatedPressable>
         </View>
@@ -594,6 +603,8 @@ const ItemsScreen: React.FC = () => {
           { backgroundColor: colors.background },
         ]}
         keyboardShouldPersistTaps="handled"
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -614,6 +625,8 @@ const ItemsScreen: React.FC = () => {
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                   exitMultiSelectMode();
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="Exit multi-select mode"
               >
                 <Ionicons name="close" size={24} color={colors.text} />
               </AnimatedPressable>
@@ -627,6 +640,8 @@ const ItemsScreen: React.FC = () => {
                     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                     (selectedCount === providerItems.length ? deselectAll : selectAll)();
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={selectedCount === providerItems.length ? 'Deselect all items' : 'Select all items'}
                 >
                   <Text style={[styles.multiSelectActionText, { color: colors.accent }]}>
                     {selectedCount === providerItems.length ? 'Deselect All' : 'Select All'}
@@ -638,7 +653,7 @@ const ItemsScreen: React.FC = () => {
             {/* Bulk Actions - Top contextual bar */}
             {selectedCount > 0 && (
               <View style={[styles.topBulkActionsBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {bulkActionLoading ? (
+                {(bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading) ? (
                   <ActivityIndicator size="small" color={colors.accent} />
                 ) : (
                   <View style={styles.topBulkActionsRow}>
@@ -648,6 +663,8 @@ const ItemsScreen: React.FC = () => {
                         fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                         setCategoryModalVisible(true);
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Move selected items to category"
                     >
                       <Ionicons name="folder-outline" size={18} color={colors.accent} />
                       <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Move</Text>
@@ -659,6 +676,8 @@ const ItemsScreen: React.FC = () => {
                         fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
                         handleBulkExport();
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Export selected items"
                     >
                       <Ionicons name="download-outline" size={18} color={colors.accent} />
                       <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Export</Text>
@@ -670,6 +689,8 @@ const ItemsScreen: React.FC = () => {
                         fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
                         handleBulkArchive();
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Archive selected items"
                     >
                       <Ionicons name="archive-outline" size={18} color="#f97316" />
                       <Text style={[styles.topBulkActionText, { color: '#f97316' }]}>Archive</Text>
@@ -681,6 +702,8 @@ const ItemsScreen: React.FC = () => {
                         fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
                         handleBulkDelete();
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete selected items"
                     >
                       <Ionicons name="trash-outline" size={18} color="#ef4444" />
                       <Text style={[styles.topBulkActionText, { color: '#ef4444' }]}>Delete</Text>
@@ -717,6 +740,7 @@ const ItemsScreen: React.FC = () => {
               onChangeText={setQuery}
               placeholder="Search items"
               placeholderTextColor={colors.muted}
+              accessibilityLabel="Search items"
               style={[
                 styles.searchInput,
                 {
@@ -734,6 +758,8 @@ const ItemsScreen: React.FC = () => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
               setFilterSheetVisible(true);
             }}
+            accessibilityRole="button"
+            accessibilityLabel="Open filters"
           >
             <Ionicons name="options-outline" size={18} color={colors.accent} />
             {(advancedFilter.categories.length > 0 ||
@@ -759,6 +785,8 @@ const ItemsScreen: React.FC = () => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 setViewMode('list');
               }}
+              accessibilityRole="button"
+              accessibilityLabel="List view"
             >
               <Ionicons
                 name="list"
@@ -776,6 +804,8 @@ const ItemsScreen: React.FC = () => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 setViewMode('gallery');
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Gallery view"
             >
               <Ionicons
                 name="grid"
@@ -796,6 +826,8 @@ const ItemsScreen: React.FC = () => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 enterMultiSelectMode();
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Enter selection mode"
             >
               <Text style={[styles.selectAllText, { color: colors.accent }]}>Select</Text>
             </AnimatedPressable>
@@ -810,7 +842,7 @@ const ItemsScreen: React.FC = () => {
             </Text>
             <View style={styles.filterChipsRow}>
               {categoryParam && (
-                <View style={styles.filterChip}>
+                <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
                   <Text
                     style={[
                       styles.filterChipText,
@@ -822,7 +854,7 @@ const ItemsScreen: React.FC = () => {
                 </View>
               )}
               {collectionParam && (
-                <View style={styles.filterChip}>
+                <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
                   <Text
                     style={[
                       styles.filterChipText,
@@ -834,7 +866,7 @@ const ItemsScreen: React.FC = () => {
                 </View>
               )}
               {filterCategory && !categoryParam && (
-                <View style={styles.filterChip}>
+                <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
                   <Text
                     style={[
                       styles.filterChipText,
@@ -846,7 +878,7 @@ const ItemsScreen: React.FC = () => {
                 </View>
               )}
               {query.trim().length > 0 && (
-                <View style={styles.filterChip}>
+                <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
                   <Text
                     style={[
                       styles.filterChipText,
@@ -864,6 +896,8 @@ const ItemsScreen: React.FC = () => {
                 clearFilters();
               }}
               style={styles.filterClearButton}
+              accessibilityRole="button"
+              accessibilityLabel="Clear all filters"
             >
               <Text
                 style={[styles.filterClearText, { color: colors.muted }]}
@@ -926,6 +960,8 @@ const ItemsScreen: React.FC = () => {
                     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                     handleAddForCategory(group.category);
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add item to ${group.category}`}
                 >
                   <Ionicons
                     name="add-outline"
@@ -962,6 +998,8 @@ const ItemsScreen: React.FC = () => {
                   }}
                   onLongPress={() => handleLongPress(item.id)}
                   delayLongPress={400}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${item.name}, ${formatCurrency(item.value)}`}
                 >
                   {/* Checkbox in multi-select mode */}
                   {isMultiSelectMode && (
@@ -1068,6 +1106,8 @@ const ItemsScreen: React.FC = () => {
                 handleExportCSV();
               }}
               disabled={exporting}
+              accessibilityRole="button"
+              accessibilityLabel="Download collection overview as CSV"
             >
               {exporting ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
@@ -1089,6 +1129,8 @@ const ItemsScreen: React.FC = () => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 router.push('/build-paint-projects');
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Open build and paint projects"
             >
               <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
               <Text style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
@@ -1110,6 +1152,13 @@ const ItemsScreen: React.FC = () => {
         </Animated.View>
 
         {/* Bulk actions moved to top contextual bar - see multiSelectHeader section */}
+
+        {/* Loading-more spinner at bottom of list */}
+        {isLoadingMore && (
+          <View style={styles.loadingMoreContainer}>
+            <ActivityIndicator size="small" color={colors.accent} />
+          </View>
+        )}
 </ScrollView>
 
       {/* Category Change Modal */}
@@ -1145,6 +1194,8 @@ const ItemsScreen: React.FC = () => {
                     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
                     handleBulkChangeCategory(cat);
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Move to ${cat}`}
                 >
                   <CategoryPill id={cat} label={cat} />
                   <Ionicons name="chevron-forward" size={18} color={colors.muted} />
@@ -1158,6 +1209,8 @@ const ItemsScreen: React.FC = () => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 setCategoryModalVisible(false);
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel category change"
             >
               <Text style={[styles.modalCancelText, { color: colors.muted }]}>Cancel</Text>
             </AnimatedPressable>
@@ -1197,6 +1250,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 32,
+  },
+  // Loading more (infinite scroll)
+  loadingMoreContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   // Loading/Error states
   centerContainer: {

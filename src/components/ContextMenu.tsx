@@ -49,10 +49,11 @@ export function ContextMenu({
       transparent
       onRequestClose={onClose}
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
+      <Pressable style={styles.overlay} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close menu">
         <Pressable
           style={[styles.menuContainer, { backgroundColor: colors.card }]}
           onPress={(e) => e.stopPropagation()}
+          accessibilityRole="none"
         >
           <SafeAreaView>
             {/* Header */}

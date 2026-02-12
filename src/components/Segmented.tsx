@@ -11,6 +11,8 @@ export default function Segmented({ segments, value, onChange }: Props) {
           <Pressable
             key={s}
             onPress={() => onChange(s)}
+            accessibilityRole="button"
+            accessibilityLabel={`${s}${active ? ', selected' : ''}`}
             style={{
               flex: 1,
               paddingVertical: theme.spacing.sm,

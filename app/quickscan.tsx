@@ -17,6 +17,7 @@ import { dataProvider } from '@/data';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent, confidenceToIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import logger from '@/utils/logger';
 
 export default function QuickScanScreen() {
   const { colors } = useAppTheme();
@@ -84,8 +85,8 @@ export default function QuickScanScreen() {
           notes: '',
         },
       });
-    } catch (err: any) {
-      console.warn('[QuickScan] error:', err);
+    } catch (err: unknown) {
+      logger.warn('[QuickScan] error:', err);
       if (featureFlags.FEATURE_HAPTICS_MICRO_ANIMATIONS) {
         fireHaptic(HapticIntent.ALERT_TRIGGERED);
       }

@@ -27,6 +27,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import logger from "@/utils/logger";
 
 import { useSession } from "@/hooks/useSession";
 import {
@@ -111,8 +112,8 @@ export default function WatchlistBuilderScreen() {
     try {
       const data = await fetchWatchlistForUser(userId);
       setItems(data);
-    } catch (err: any) {
-      console.warn("[watchlist-builder] load error", err);
+    } catch (err: unknown) {
+      logger.warn("[watchlist-builder] load error", err);
       setError(err?.message ?? "Unable to load your watchlist.");
     } finally {
       setLoading(false);
@@ -190,8 +191,8 @@ export default function WatchlistBuilderScreen() {
 
       resetForm();
       await loadWatchlist();
-    } catch (err: any) {
-      console.warn("[watchlist-builder] save error", err);
+    } catch (err: unknown) {
+      logger.warn("[watchlist-builder] save error", err);
       Alert.alert("Save error", err?.message ?? "Unable to save this item.");
     } finally {
       setSaving(false);
@@ -299,7 +300,7 @@ export default function WatchlistBuilderScreen() {
             <View style={styles.addFormCard}>
               <View style={styles.addFormHeader}>
                 <Text style={styles.addFormTitle}>Add to Watchlist</Text>
-                <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); resetForm(); }} style={styles.closeFormBtn}>
+                <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); resetForm(); }} style={styles.closeFormBtn} accessibilityRole="button" accessibilityLabel="Close add form">
                   <Ionicons name="close" size={20} color={COLORS.muted} />
                 </AnimatedPressable>
               </View>
@@ -314,6 +315,7 @@ export default function WatchlistBuilderScreen() {
                   placeholder="e.g., PSA 10 Charizard Base Set"
                   placeholderTextColor={COLORS.muted}
                   autoFocus
+                  accessibilityLabel="Item name"
                 />
               </View>
 
@@ -327,6 +329,7 @@ export default function WatchlistBuilderScreen() {
                   placeholder="e.g., 500"
                   placeholderTextColor={COLORS.muted}
                   keyboardType="decimal-pad"
+                  accessibilityLabel="Target price"
                 />
                 <Text style={styles.inputHint}>Get notified when price hits your target</Text>
               </View>
@@ -346,6 +349,8 @@ export default function WatchlistBuilderScreen() {
                           active && { backgroundColor: config.bg, borderColor: config.color },
                         ]}
                         onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setNewPriority(p); }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${config.label} priority${active ? ', selected' : ''}`}
                       >
                         <Text
                           style={[
@@ -372,6 +377,7 @@ export default function WatchlistBuilderScreen() {
                   placeholderTextColor={COLORS.muted}
                   multiline
                   numberOfLines={2}
+                  accessibilityLabel="Notes"
                 />
               </View>
 
@@ -380,6 +386,8 @@ export default function WatchlistBuilderScreen() {
                 style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
                 onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSave(); }}
                 disabled={saving}
+                accessibilityRole="button"
+                accessibilityLabel={saving ? 'Saving' : 'Add to watchlist'}
               >
                 {saving ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
@@ -395,7 +403,7 @@ export default function WatchlistBuilderScreen() {
 
           {/* Empty State */}
           {!loading && items.length === 0 && !showAddForm && (
-            <AnimatedPressable style={styles.emptyState} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }}>
+            <AnimatedPressable style={styles.emptyState} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }} accessibilityRole="button" accessibilityLabel="Start your watchlist, add your first item">
               <View style={styles.emptyIconWrap}>
                 <Ionicons name="eye-outline" size={32} color={COLORS.tiffany} />
               </View>
@@ -461,6 +469,8 @@ export default function WatchlistBuilderScreen() {
                       <AnimatedPressable
                         style={styles.deleteBtn}
                         onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); handleDelete(item); }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${item.title} from watchlist`}
                       >
                         <Ionicons name="trash-outline" size={18} color={COLORS.muted} />
                       </AnimatedPressable>
@@ -473,7 +483,7 @@ export default function WatchlistBuilderScreen() {
 
           {/* Floating Add Button (when form is closed and list exists) */}
           {!showAddForm && items.length > 0 && (
-            <AnimatedPressable style={styles.floatingAddBtn} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }}>
+            <AnimatedPressable style={styles.floatingAddBtn} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }} accessibilityRole="button" accessibilityLabel="Add item to watchlist">
               <Ionicons name="add" size={20} color="#FFFFFF" />
               <Text style={styles.floatingAddText}>Add Item</Text>
             </AnimatedPressable>

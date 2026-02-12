@@ -1,8 +1,11 @@
 import React, { useState } from 'react'
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, Linking } from 'react-native'
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Linking } from 'react-native'
+import { Image } from 'expo-image'
 import { useSession } from '@/hooks/useSession'
 import { searchEbay, MarketHit } from '@/lib/market'
 import { getFlags } from '@/lib/flags'
+import { logger } from '@/lib/logger'
+import { SUPABASE_URL } from '@/api/config'
 
 type Tab = 'Chat'|'Search'|'Sell'
 const Blue = '#40E0D0' // Tiffany-ish
@@ -11,7 +14,7 @@ const Navy = '#112B3C'
 export default function MarketplaceScreen() {
   const [tab, setTab] = useState<Tab>('Search')
   const { jwt, anonKey } = useSession()
-  const base = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ""
+  const base = SUPABASE_URL || ""
 
   const [query, setQuery] = useState('Pikachu VMAX')
   const [category, setCategory] = useState('Pokemon')
@@ -29,11 +32,12 @@ export default function MarketplaceScreen() {
     setLoading(true)
     const res = await searchEbay(jwt, anonKey, query, { category, limit })
     setLoading(false)
-    if (!res.ok) { console.warn(res.error); setHits([]); return }
-    setProvider((res.data as any).provider || 'mock')
-    let arr = (res.data as any).hits || []
-    if (sort==='price_asc') arr = [...arr].sort((a:any,b:any)=>a.price_eur-b.price_eur)
-    if (sort==='price_desc') arr = [...arr].sort((a:any,b:any)=>b.price_eur-a.price_eur)
+    if (!res.ok) { logger.warn(res.error); setHits([]); return }
+    const resData = res.data as { provider?: string; hits?: MarketHit[] };
+    setProvider(resData.provider || 'mock')
+    let arr = resData.hits || []
+    if (sort==='price_asc') arr = [...arr].sort((a: MarketHit, b: MarketHit)=>a.price_eur-b.price_eur)
+    if (sort==='price_desc') arr = [...arr].sort((a: MarketHit, b: MarketHit)=>b.price_eur-a.price_eur)
     setHits(arr)
   }
 
@@ -47,7 +51,7 @@ export default function MarketplaceScreen() {
     <TouchableOpacity onPress={() => Linking.openURL(item.url)} style={{
       backgroundColor: 'white', padding: 12, marginBottom: 12, borderRadius: 6, borderColor:'#e5e7eb', borderWidth:1, flexDirection:'row', gap:12
     }}>
-      <Image source={{ uri: item.image }} style={{ width: 64, height: 64, backgroundColor:'#f3f4f6' }} />
+      <Image source={{ uri: item.image }} style={{ width: 64, height: 64, backgroundColor:'#f3f4f6' }} cachePolicy="disk" transition={150} accessibilityLabel={`Thumbnail of ${item.title}`} />
       <View style={{ flex:1 }}>
         <Text style={{ fontWeight: '700', color: Navy }} numberOfLines={2}>{item.title}</Text>
         <Text style={{ marginTop:4, fontWeight:'600' }}>€ {Number(item.price_eur||0).toFixed(2)}</Text>

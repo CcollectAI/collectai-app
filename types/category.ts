@@ -41,6 +41,7 @@ export const CategoryList = [
 
 export type Category = typeof CategoryList[number];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const AttrSchemas: Record<Category, z.ZodObject<any>> = {
   // =========================================================================
   // TCGs

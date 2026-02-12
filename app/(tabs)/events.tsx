@@ -11,13 +11,18 @@ import {
   StyleSheet,
   Animated,
   Alert,
+  ActivityIndicator,
   RefreshControl,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider } from '@/data';
 import type { CollectorsEvent } from '@/data/events';
+import { useOptimisticRsvpList } from '@/hooks/useOptimisticRsvp';
+import { usePaginatedList } from '@/hooks/usePaginatedList';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -27,6 +32,7 @@ import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { CountdownBadge } from '@/components/EventCountdown';
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 import calendar, { parseEventDate, getCountdown } from '@/lib/calendar';
+import logger from '@/utils/logger';
 
 const kindLabel: Record<CollectorsEvent['kind'], string> = {
   collection_drop: 'Collection drop',
@@ -50,25 +56,27 @@ export default function EventsScreen() {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
   const [refreshing, setRefreshing] = useState(false);
-  const [events, setEvents] = useState<CollectorsEvent[]>([]);
-  const [loading, setLoading] = useState(true);
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
-  const loadEvents = useCallback(async () => {
-    try {
-      const eventsList = await dataProvider.listEvents();
-      setEvents(eventsList);
-    } catch (err) {
-      console.warn('[EventsScreen] loadEvents error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Paginated data fetching
+  const eventFetcher = useCallback(
+    async (limit: number, offset: number): Promise<CollectorsEvent[]> => {
+      return dataProvider.listEvents({ limit, offset });
+    },
+    [],
+  );
 
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
+  const {
+    items: events,
+    isLoading: loading,
+    isLoadingMore,
+    hasMore,
+    error,
+    loadMore,
+    refresh: paginatedRefresh,
+    setItems: setEvents,
+  } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 20 });
 
   useEffect(() => {
     dataProvider.listFollowedCategories().then(setFollowedCategories).catch(() => {});
@@ -93,17 +101,35 @@ export default function EventsScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadEvents();
+    await paginatedRefresh();
     setRefreshing(false);
-  }, [loadEvents]);
+  }, [paginatedRefresh]);
+
+  // Detect when ScrollView is near the bottom to trigger loadMore
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+      const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
+      if (distanceFromBottom < layoutMeasurement.height * 0.5) {
+        loadMore();
+      }
+    },
+    [loadMore],
+  );
+
+  // Optimistic RSVP: toggles attendance state immediately, reverts on error
+  const optimisticRsvp = useOptimisticRsvpList(setEvents, paginatedRefresh);
 
   const handleAttend = async (event: CollectorsEvent) => {
-    try {
-      if (event.isAttending) {
-        await dataProvider.unrsvpEvent(event.id);
-      } else {
-        await dataProvider.rsvpEvent(event.id);
-        // Silently add to calendar after RSVP
+    // Optimistic update: toggle attendance state immediately
+    await optimisticRsvp.mutate({
+      eventId: event.id,
+      currentlyAttending: !!event.isAttending,
+    });
+
+    // If RSVP succeeded and user is now attending, silently add to calendar
+    if (!event.isAttending && !optimisticRsvp.error) {
+      try {
         const eventDate = parseEventDate(event.date, event.time);
         await calendar.addToCalendar({
           eventId: event.id,
@@ -112,10 +138,10 @@ export default function EventsScreen() {
           location: event.location,
           notes: `CollectAI Event: ${kindLabel[event.kind]}`,
         });
+      } catch (calErr) {
+        // Calendar add is non-critical; don't fail the RSVP for this
+        logger.warn('[EventsScreen] calendar add error:', calErr);
       }
-      await loadEvents();
-    } catch (err) {
-      console.warn('[EventsScreen] handleAttend error:', err);
     }
   };
 
@@ -172,6 +198,8 @@ export default function EventsScreen() {
             borderColor: isPast ? colors.border : colors.accent + '40',
           },
         ]}
+        accessibilityRole="button"
+        accessibilityLabel={`${event.title}, ${kindLabel[event.kind]}, ${event.date}`}
       >
         <View style={styles.eventHeader}>
           <View
@@ -230,6 +258,8 @@ export default function EventsScreen() {
                 fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
                 handleAttend(event);
               }}
+              accessibilityRole="button"
+              accessibilityLabel={event.isAttending ? 'Cancel attendance' : 'Attend event'}
             >
               <Ionicons
                 name={event.isAttending ? 'checkmark-circle' : 'person-add-outline'}
@@ -248,6 +278,8 @@ export default function EventsScreen() {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 handleSetReminder(event);
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Set reminder for event"
             >
               <Ionicons name="notifications-outline" size={16} color={colors.accent} />
               <Text style={[styles.actionBtnText, { color: colors.text }]}>
@@ -266,6 +298,8 @@ export default function EventsScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -305,6 +339,8 @@ export default function EventsScreen() {
                   { borderColor: !activeFilter ? colors.accent : colors.border },
                   !activeFilter && { backgroundColor: colors.accent + '15' },
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel="Show all categories"
               >
                 <Text style={[styles.filterChipText, { color: !activeFilter ? colors.accent : colors.muted }]}>
                   All
@@ -325,6 +361,8 @@ export default function EventsScreen() {
                       { borderColor: isActive ? colors.accent : colors.border },
                       isActive && { backgroundColor: colors.accent + '15' },
                     ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filter by ${cat?.name || catId}`}
                   >
                     <Text style={[styles.filterChipText, { color: isActive ? colors.accent : colors.muted }]}>
                       {cat?.name || catId}
@@ -368,6 +406,13 @@ export default function EventsScreen() {
             </View>
           )}
 
+          {/* Loading-more spinner at bottom of list */}
+          {isLoadingMore && (
+            <View style={styles.loadingMoreContainer}>
+              <ActivityIndicator size="small" color={colors.accent} />
+            </View>
+          )}
+
           {/* Bottom spacing */}
           <View style={{ height: 24 }} />
         </Animated.View>
@@ -380,6 +425,8 @@ export default function EventsScreen() {
           router.push('/create-event');
         }}
         style={[styles.fab, { backgroundColor: colors.accent }]}
+        accessibilityRole="button"
+        accessibilityLabel="Create new event"
       >
         <Ionicons name="add" size={28} color="#ffffff" />
       </AnimatedPressable>
@@ -536,5 +583,9 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 13,
     marginTop: 4,
+  },
+  loadingMoreContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
 });

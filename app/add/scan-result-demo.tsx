@@ -20,7 +20,15 @@ function formatCurrency(value: number): string {
   }
 }
 
-export default function ScanResultDemoScreen() {
+function NotAvailableScreen() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 16, color: '#666' }}>Not available</Text>
+    </View>
+  );
+}
+
+function ScanResultDemoScreen() {
   const { colors, spacing, radii } = useAppTheme();
 
   const demoItem = {
@@ -226,6 +234,8 @@ export default function ScanResultDemoScreen() {
                 padding: spacing.sm,
                 backgroundColor: colors.surface,
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Add to collection"
             >
               <Text
                 style={{
@@ -254,6 +264,8 @@ export default function ScanResultDemoScreen() {
                 padding: spacing.sm,
                 backgroundColor: colors.surface,
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Add to watchlist"
             >
               <Text
                 style={{
@@ -282,6 +294,8 @@ export default function ScanResultDemoScreen() {
                 padding: spacing.sm,
                 backgroundColor: colors.surface,
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Add to wishlist"
             >
               <Text
                 style={{
@@ -308,3 +322,5 @@ export default function ScanResultDemoScreen() {
     </>
   );
 }
+
+export default __DEV__ ? ScanResultDemoScreen : NotAvailableScreen;

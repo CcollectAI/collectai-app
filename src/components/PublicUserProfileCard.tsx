@@ -9,8 +9,8 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import type { PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -41,7 +41,9 @@ const Avatar: React.FC<{ name: string; avatarUrl?: string | null; accentColor: s
       <Image
         source={{ uri: avatarUrl }}
         style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
-        resizeMode="cover"
+        contentFit="cover"
+        cachePolicy="disk"
+        transition={150}
       />
     );
   }
@@ -160,6 +162,8 @@ export const PublicUserProfileCard: React.FC<Props> = ({
       {onConnect && (
         <AnimatedPressable
           onPress={onConnect}
+          accessibilityRole="button"
+          accessibilityLabel={`Connect with ${profile.displayName}`}
           style={[styles.connectBtn, { backgroundColor: colors.accent }]}
         >
           <Ionicons name="chatbubble-ellipses-outline" size={16} color="#ffffff" />

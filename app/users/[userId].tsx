@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type PublicUserProfile, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import logger from '@/utils/logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Avatar Component
@@ -115,8 +116,8 @@ export default function UserProfileScreen() {
         // Watchlist may not be accessible for other users
         setWatchlistCount(null);
       }
-    } catch (err: any) {
-      console.warn('[UserProfile] loadProfile error:', err);
+    } catch (err: unknown) {
+      logger.warn('[UserProfile] loadProfile error:', err);
       setError(err?.message || 'Failed to load profile');
     } finally {
       setLoading(false);
@@ -132,7 +133,7 @@ export default function UserProfileScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { backgroundColor: colors.card }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
@@ -150,7 +151,7 @@ export default function UserProfileScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { backgroundColor: colors.card }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
@@ -167,6 +168,8 @@ export default function UserProfileScreen() {
           <AnimatedPressable
             style={[styles.retryBtn, { borderColor: colors.border }]}
             onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <Text style={[styles.retryBtnText, { color: colors.text }]}>Go back</Text>
           </AnimatedPressable>
@@ -184,7 +187,7 @@ export default function UserProfileScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
@@ -258,6 +261,8 @@ export default function UserProfileScreen() {
                   params: { toUserId: userId },
                 });
               }}
+              accessibilityRole="button"
+              accessibilityLabel={`Message ${profile.displayName}`}
             >
               <Ionicons name="chatbubble-outline" size={18} color="#FFFFFF" />
               <Text style={styles.ctaBtnTextLight}>Message</Text>
@@ -268,6 +273,8 @@ export default function UserProfileScreen() {
               onPress={() => {
                 // TODO: Follow functionality
               }}
+              accessibilityRole="button"
+              accessibilityLabel={`Follow ${profile.displayName}`}
             >
               <Ionicons name="person-add-outline" size={16} color={colors.text} />
               <Text style={[styles.ctaBtnText, { color: colors.text }]}>Follow</Text>

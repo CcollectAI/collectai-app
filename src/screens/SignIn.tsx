@@ -50,8 +50,8 @@ export default function SignIn() {
       });
       if (error) throw error;
       router.replace("/(tabs)");
-    } catch (e: any) {
-      Alert.alert("Sign in failed", e?.message ?? "Unknown error");
+    } catch (e: unknown) {
+      Alert.alert("Sign in failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -72,8 +72,8 @@ export default function SignIn() {
       });
       if (error) throw error;
       Alert.alert("Check your email", "We sent you a magic sign-in link.");
-    } catch (e: any) {
-      Alert.alert("Magic link failed", e?.message ?? "Unknown error");
+    } catch (e: unknown) {
+      Alert.alert("Magic link failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setLoading(false);
     }

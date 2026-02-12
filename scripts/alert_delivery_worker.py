@@ -35,7 +35,7 @@ async def _pool():
     while True:
         try:
             return await asyncpg.create_pool(dsn=dsn, min_size=1, max_size=5, command_timeout=30)
-        except Exception as e:
+        except (asyncpg.PostgresError, OSError, asyncio.TimeoutError) as e:
             logger.warning("db pool connect failed: %s; retrying in %ss", e, delay)
             await asyncio.sleep(delay)
             delay=min(delay*2, 30)
@@ -58,10 +58,11 @@ async def deliver_one(client, url, payload, auth_header):
             ok = 200 <= r.status_code < 300
             snippet = (r.text or "")[:512]
             return ok, r.status_code, snippet, elapsed_ms
-        except Exception as e:
+        except (httpx.HTTPError, OSError, asyncio.TimeoutError) as e:
             elapsed_ms = int((time.time()-ts)*1000)
             if attempt == RETRIES:
                 return False, 599, str(e)[:512], elapsed_ms
+            logger.warning("delivery attempt %d/%d to %s failed: %s", attempt, RETRIES, url, e)
             await asyncio.sleep(min(2**attempt, 10))  # jitterless backoff
 
 async def worker_loop():
@@ -107,9 +108,9 @@ async def worker_loop():
                 async with pool.acquire() as conn:
                     await conn.fetchval(FINISH_SQL, job_id, any_ok, worst_code, msg_snip, total_ms)
 
-            except Exception as e:
+            except (asyncpg.PostgresError, OSError, asyncio.TimeoutError, json.JSONDecodeError, ValueError) as e:
                 # Keep running; log to stdout for journald scraping
-                logger.warning("error: %s", e)
+                logger.error("worker_loop error: %s", e, exc_info=True)
                 await asyncio.sleep(2)
 
 async def main():

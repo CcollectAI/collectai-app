@@ -1,0 +1,76 @@
+from __future__ import annotations
+
+import logging
+from fastapi import Depends, HTTPException, Request
+from app.request_id import set_user_id
+from app.config import DEV_MODE, DEV_USER_ID, JWT_SECRET
+
+logger = logging.getLogger(__name__)
+
+
+async def get_current_user_id(request: Request) -> str:
+    """
+    FastAPI dependency that extracts and validates a JWT from the
+    Authorization header.
+
+    Returns the ``sub`` claim (Supabase user-id) on success.
+
+    Behaviour when no valid JWT is present:
+    * **DEV_MODE=true** and no Authorization header  ->  returns a
+      configurable dev user id (``DEV_USER_ID`` env var, default
+      ``"dev-user-local"``).
+    * Otherwise  ->  raises ``HTTPException(401)``.
+    """
+    auth_header = request.headers.get("authorization", "")
+
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        try:
+            import jwt as _jwt
+
+            payload = _jwt.decode(
+                token,
+                JWT_SECRET,
+                algorithms=["HS256"],
+                audience="authenticated",
+            )
+            user_id = payload.get("sub", "")
+            if user_id:
+                set_user_id(user_id)
+                return user_id
+            logger.warning("JWT decoded but 'sub' claim is empty")
+        except Exception:
+            logger.warning("JWT validation failed")
+            if not DEV_MODE:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Authentication required",
+                )
+            # In DEV_MODE, fall through to the dev-user path below
+
+    # No Authorization header (or it was invalid in DEV_MODE)
+    if DEV_MODE and not auth_header.startswith("Bearer "):
+        dev_id = DEV_USER_ID or "dev-user-local"
+        logger.debug("DEV_MODE active, returning dev user: %s", dev_id)
+        set_user_id(dev_id)
+        return dev_id
+
+    raise HTTPException(status_code=401, detail="Authentication required")
+
+
+# Backward-compatible alias so existing ``from app.auth import get_current_user``
+# imports continue to work without changes in non-feature files.
+get_current_user = get_current_user_id
+
+
+async def get_optional_user_id(request: Request) -> str | None:
+    """
+    Like get_current_user_id but returns None instead of raising 401.
+
+    Use this on read-only endpoints where anonymous access is allowed
+    but authenticated users get personalised results (e.g. events feed).
+    """
+    try:
+        return await get_current_user_id(request)
+    except HTTPException:
+        return None

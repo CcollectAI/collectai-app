@@ -17,11 +17,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type PublicUserProfile } from '@/data';
 import type { CollectorsEvent, EventKind } from '@/data/events';
+import { useOptimisticRsvpDetail } from '@/hooks/useOptimisticRsvp';
 import { getCategoryById } from '@/data/categories';
 import { getUserById } from '@/data/users';
 import { PublicUserProfileCard } from '@/components/PublicUserProfileCard';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import logger from '@/utils/logger';
 
 const kindLabel: Record<EventKind, string> = {
   collection_drop: 'Collection drop',
@@ -80,7 +82,7 @@ export default function EventDetailScreen() {
       const eventData = await dataProvider.getEventById(eventId);
       setEvent(eventData);
     } catch (err) {
-      console.warn('[EventDetail] loadEvent error:', err);
+      logger.warn('[EventDetail] loadEvent error:', err);
     } finally {
       setLoading(false);
     }
@@ -108,19 +110,18 @@ export default function EventDetailScreen() {
     }
   }, [event?.myRsvpStatus]);
 
+  // Optimistic RSVP: toggles state immediately, reverts on server error
+  const optimisticRsvp = useOptimisticRsvpDetail(
+    { setRsvpStatus, setEvent },
+    loadEvent,
+  );
+
   const handleRsvp = async () => {
     if (!event) return;
-    try {
-      if (rsvpStatus === 'going') {
-        await dataProvider.unrsvpEvent(event.id);
-        setRsvpStatus(undefined);
-      } else {
-        await dataProvider.rsvpEvent(event.id, 'going');
-        setRsvpStatus('going');
-      }
-    } catch (err) {
-      console.warn('[EventDetail] RSVP error:', err);
-    }
+    await optimisticRsvp.mutate({
+      eventId: event.id,
+      currentlyAttending: rsvpStatus === 'going',
+    });
   };
 
   const relatedCategory = useMemo(
@@ -139,7 +140,7 @@ export default function EventDetailScreen() {
   const openExternal = () => {
     if (!event?.onlineUrl) return;
     Linking.openURL(event.onlineUrl).catch((err) =>
-      console.log('[EventDetail] failed to open url', err),
+      logger.info('[EventDetail] failed to open url', err),
     );
   };
 
@@ -181,6 +182,8 @@ export default function EventDetailScreen() {
           <AnimatedPressable
             onPress={() => router.back()}
             style={[styles.emptyBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
           </AnimatedPressable>
@@ -253,6 +256,8 @@ export default function EventDetailScreen() {
           <AnimatedPressable
             onPress={openExternal}
             style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+            accessibilityRole="link"
+            accessibilityLabel={isStream ? 'Open stream' : isDrop ? 'Open drop page' : 'Open link'}
           >
             <Ionicons
               name={isStream ? 'logo-twitch' : 'open-outline'}
@@ -276,7 +281,7 @@ export default function EventDetailScreen() {
             <AnimatedPressable
               onPress={() => {
                 setAlertsOn(!alertsOn);
-                console.log('[EventDetail] toggle drop alerts', event.id, !alertsOn);
+                logger.info('[EventDetail] toggle drop alerts', event.id, !alertsOn);
               }}
               style={[
                 styles.actionBtn,
@@ -285,6 +290,8 @@ export default function EventDetailScreen() {
                   borderColor: alertsOn ? colors.accent : colors.border,
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={alertsOn ? 'Turn off drop alerts' : 'Alert me about this drop'}
             >
               <Ionicons
                 name={alertsOn ? 'notifications' : 'notifications-outline'}
@@ -302,7 +309,7 @@ export default function EventDetailScreen() {
             <AnimatedPressable
               onPress={() => {
                 setFollowingStream(!followingStream);
-                console.log('[EventDetail] toggle stream follow', event.id, !followingStream);
+                logger.info('[EventDetail] toggle stream follow', event.id, !followingStream);
               }}
               style={[
                 styles.actionBtn,
@@ -311,6 +318,8 @@ export default function EventDetailScreen() {
                   borderColor: followingStream ? colors.accent : colors.border,
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={followingStream ? 'Unfollow stream' : 'Follow stream'}
             >
               <Ionicons
                 name={followingStream ? 'checkmark-circle' : 'add-circle-outline'}
@@ -333,6 +342,8 @@ export default function EventDetailScreen() {
                 borderColor: rsvpStatus === 'going' ? colors.accent : colors.border,
               },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={rsvpStatus === 'going' ? 'Cancel attendance' : 'Attend this event'}
           >
             <Ionicons
               name={rsvpStatus === 'going' ? 'checkmark-circle' : 'person-add-outline'}
@@ -365,6 +376,8 @@ export default function EventDetailScreen() {
                 router.push(`/categories/${encodeURIComponent(relatedCategory.id)}`)
               }
               style={[styles.categoryCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              accessibilityRole="link"
+              accessibilityLabel={`View ${relatedCategory.name} category`}
             >
               <Text style={[styles.categoryName, { color: colors.text }]}>
                 {relatedCategory.name}
@@ -406,6 +419,8 @@ export default function EventDetailScreen() {
                   <AnimatedPressable
                     onPress={() => router.push(`/users/${encodeURIComponent(u.id)}`)}
                     style={styles.attendeeLeft}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${u.displayName}'s profile`}
                   >
                     <AvatarSmall
                       name={u.displayName}
@@ -425,6 +440,8 @@ export default function EventDetailScreen() {
                   <AnimatedPressable
                     onPress={() => handleAskToConnect(u.id)}
                     style={[styles.connectBtn, { borderColor: colors.border }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Connect with ${u.displayName}`}
                   >
                     <Ionicons
                       name="chatbubble-ellipses-outline"

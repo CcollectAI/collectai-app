@@ -12,6 +12,7 @@ import { ContextMenu } from './ContextMenu';
 import { AnimatedPressable } from '@/motion';
 import { CategoryPill } from '@/components/CategoryPill';
 import { featureFlags } from '@/config/featureFlags';
+import { logger } from '@/lib/logger';
 
 type Item = {
   id: string;
@@ -68,7 +69,7 @@ export function SwipeableItemRow({
         message: `Check out ${item.name} on CcollectAI`,
       });
     } catch (error) {
-      console.error('[SwipeableItemRow] Share failed:', error);
+      logger.error('[SwipeableItemRow] Share failed:', error);
     }
   }, [item.name]);
 
@@ -134,6 +135,8 @@ export function SwipeableItemRow({
       onPress={handlePress}
       onLongPress={handleLongPressInternal}
       delayLongPress={400}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.name}, ${formatCurrency(item.value)}${isMultiSelectMode && isSelected ? ', selected' : ''}`}
     >
       {/* Checkbox in multi-select mode */}
       {isMultiSelectMode && (

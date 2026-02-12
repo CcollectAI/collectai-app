@@ -35,6 +35,8 @@ export const EventsPreview: React.FC<Props> = ({ events, onPressEvent }) => {
             key={event.id}
             style={styles.card}
             onPress={() => onPressEvent?.(event)}
+            accessibilityRole="button"
+            accessibilityLabel={`${event.title}, ${dateLabel}${event.category ? `, ${event.category}` : ''}`}
           >
             <View style={{ flex: 1 }}>
               <Text style={styles.title}>{event.title}</Text>

@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import json
+import logging
 import os
 import time
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 PREDS = "data/training/preds.jsonl"
 OUT = "data/training/events.jsonl"
@@ -26,30 +29,33 @@ def read_jsonl(path):
     return out
 
 
-preds = read_jsonl(PREDS)
-by_cat = defaultdict(list)
-for p in preds[::-1]:  # newest first
-    cat = p.get("category") or p.get("cat") or "unknown"
-    by_cat[cat].append(p)
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
 
-now = int(time.time())
-count = 0
-with open(OUT, "a", encoding="utf-8") as fout:
-    for cat, lst in by_cat.items():
-        take = lst[:PER_CAT]
-        for p in take:
-            feats = p.get("features_used") or p.get("features") or {}
-            y = p.get("suggested_price")
-            if y is None:
-                continue
-            evt = {
-                "category": cat,
-                "features": feats,
-                "y": float(y) * FACTOR,
-                "source": "seed_from_preds",
-                "ts": now,
-            }
-            fout.write(json.dumps(evt) + "\n")
-            count += 1
+    preds = read_jsonl(PREDS)
+    by_cat = defaultdict(list)
+    for p in preds[::-1]:  # newest first
+        cat = p.get("category") or p.get("cat") or "unknown"
+        by_cat[cat].append(p)
 
-print(f"[ok] seeded {count} events into {OUT}")
+    now = int(time.time())
+    count = 0
+    with open(OUT, "a", encoding="utf-8") as fout:
+        for cat, lst in by_cat.items():
+            take = lst[:PER_CAT]
+            for p in take:
+                feats = p.get("features_used") or p.get("features") or {}
+                y = p.get("suggested_price")
+                if y is None:
+                    continue
+                evt = {
+                    "category": cat,
+                    "features": feats,
+                    "y": float(y) * FACTOR,
+                    "source": "seed_from_preds",
+                    "ts": now,
+                }
+                fout.write(json.dumps(evt) + "\n")
+                count += 1
+
+    logger.info("[ok] seeded %d events into %s", count, OUT)

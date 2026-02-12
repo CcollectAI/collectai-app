@@ -6,6 +6,7 @@
 
 import type { DataProvider } from './DataProvider';
 import type {
+  PaginationParams,
   PortfolioSummary,
   Item,
   WatchlistItem,
@@ -110,13 +111,15 @@ export class SupabaseDataProvider implements DataProvider {
     };
   }
 
-  async listItems(): Promise<Item[]> {
+  async listItems(pagination?: PaginationParams): Promise<Item[]> {
+    const limit = pagination?.limit ?? 200;
+    const offset = pagination?.offset ?? 0;
     // JOIN price_predictions via FK (item_id → items.id)
     const { data, error } = await supabase
       .from('items')
-      .select('id, title, category, updated_at, price_predictions(q10, q50, q90, conf_score, asof)')
+      .select('id, title, category, updated_at, attributes_json, taxonomy_version, subtype_id, collections, price_predictions(q10, q50, q90, conf_score, asof)')
       .order('updated_at', { ascending: false })
-      .limit(200);
+      .range(offset, offset + limit - 1);
 
     if (error) {
       logger.warn('[SupabaseDataProvider] listItems error:', error);
@@ -129,6 +132,10 @@ export class SupabaseDataProvider implements DataProvider {
       title?: string | null;
       category?: string | null;
       updated_at?: string | null;
+      attributes_json?: Record<string, unknown> | null;
+      taxonomy_version?: string | null;
+      subtype_id?: string | null;
+      collections?: string[] | null;
       price_predictions?: PredRow[];
     };
 
@@ -145,6 +152,10 @@ export class SupabaseDataProvider implements DataProvider {
         id: r.id,
         name: r.title ?? 'Untitled',
         category: r.category || 'Uncategorized',
+        subtypeId: r.subtype_id ?? undefined,
+        taxonomyVersion: r.taxonomy_version ?? undefined,
+        collections: r.collections ?? undefined,
+        attributesJson: r.attributes_json ?? undefined,
         price: latest?.q50 ?? 0,
         priceBand: latest
           ? { q10: latest.q10 ?? 0, q50: latest.q50 ?? 0, q90: latest.q90 ?? 0, confidence: latest.conf_score ?? 0, currency: 'EUR' }
@@ -207,7 +218,7 @@ export class SupabaseDataProvider implements DataProvider {
     }
 
     // RPC returns a row
-    const r = (Array.isArray(data) ? data[0] : data) as Record<string, any>;
+    const r = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>;
     if (!r) {
       throw new Error('No data returned from RPC');
     }
@@ -251,17 +262,62 @@ export class SupabaseDataProvider implements DataProvider {
       throw new Error(error.message || 'Failed to create item');
     }
 
-    const row = data as Record<string, any>;
+    const row = data as Record<string, unknown>;
     const images = row.images as string[] | null;
 
     return {
-      id: row.id,
-      name: row.title ?? input.name,
-      category: row.category ?? input.category,
+      id: row.id as string,
+      name: (row.title as string | null) ?? input.name,
+      category: (row.category as string | null) ?? input.category,
       price: 0, // No value column in items table
       imageUrl: images?.[0] ?? undefined,
-      updatedAt: row.updated_at ?? undefined,
+      updatedAt: (row.updated_at as string | null) ?? undefined,
     };
+  }
+
+  async deleteItem(itemId: string): Promise<void> {
+    const { error } = await supabase
+      .from('items')
+      .delete()
+      .eq('id', itemId);
+
+    if (error) {
+      logger.error('[SupabaseDataProvider] deleteItem error:', error);
+      throw new Error(error.message || 'Failed to delete item');
+    }
+  }
+
+  async archiveItem(itemId: string): Promise<void> {
+    // Merge _archived: true into the existing attributes_json via JSONB concat
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await supabase.rpc('rpc_archive_item_v1' as any, {
+      p_item_id: itemId,
+    });
+
+    if (error) {
+      // Fallback: direct update if RPC not yet deployed
+      const { error: updateError } = await supabase
+        .from('items')
+        .update({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          attributes_json: supabase.rpc('jsonb_set_archived' as any, { p_item_id: itemId }) as any,
+        })
+        .eq('id', itemId);
+
+      // If RPC fallback also fails, try raw SQL-style update
+      if (updateError) {
+        const { error: rawError } = await supabase
+          .from('items')
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .update({ archived_at: new Date().toISOString() } as any)
+          .eq('id', itemId);
+
+        if (rawError) {
+          logger.error('[SupabaseDataProvider] archiveItem error:', rawError);
+          throw new Error(rawError.message || 'Failed to archive item');
+        }
+      }
+    }
   }
 
   async persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
@@ -278,14 +334,14 @@ export class SupabaseDataProvider implements DataProvider {
       throw new Error(error.message || 'Failed to persist QuickScan draft');
     }
 
-    const row = data as Record<string, any>;
+    const row = data as Record<string, unknown>;
     const images = row.images as string[] | null;
 
     return {
-      id: row.id,
-      title: row.title ?? input.title ?? 'Untitled Scan',
-      categoryId: row.category ?? input.categoryId ?? 'uncategorized',
-      createdAt: row.created_at ?? new Date().toISOString(),
+      id: row.id as string,
+      title: (row.title as string | null) ?? input.title ?? 'Untitled Scan',
+      categoryId: (row.category as string | null) ?? input.categoryId ?? 'uncategorized',
+      createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
       imageUrl: images?.[0] ?? null,
     };
   }
@@ -321,7 +377,7 @@ export class SupabaseDataProvider implements DataProvider {
     // JOIN price_predictions via FK (item_id → items.id)
     const { data, error } = await supabase
       .from('items')
-      .select('id, title, category, updated_at, price_predictions(q10, q50, q90, conf_score, asof)')
+      .select('id, title, category, updated_at, attributes_json, taxonomy_version, subtype_id, collections, price_predictions(q10, q50, q90, conf_score, asof)')
       .ilike('title', `%${query}%`)
       .order('updated_at', { ascending: false })
       .limit(25);
@@ -337,6 +393,10 @@ export class SupabaseDataProvider implements DataProvider {
       title?: string | null;
       category?: string | null;
       updated_at?: string | null;
+      attributes_json?: Record<string, unknown> | null;
+      taxonomy_version?: string | null;
+      subtype_id?: string | null;
+      collections?: string[] | null;
       price_predictions?: PredRow[];
     };
 
@@ -352,6 +412,10 @@ export class SupabaseDataProvider implements DataProvider {
         id: r.id,
         name: r.title ?? 'Untitled',
         category: r.category || 'Uncategorized',
+        subtypeId: r.subtype_id ?? undefined,
+        taxonomyVersion: r.taxonomy_version ?? undefined,
+        collections: r.collections ?? undefined,
+        attributesJson: r.attributes_json ?? undefined,
         price: latest?.q50 ?? 0,
         priceBand: latest
           ? { q10: latest.q10 ?? 0, q50: latest.q50 ?? 0, q90: latest.q90 ?? 0, confidence: latest.conf_score ?? 0, currency: 'EUR' }
@@ -406,17 +470,17 @@ export class SupabaseDataProvider implements DataProvider {
     }
 
     // Map columns flexibly - handle various naming conventions
-    const row = data as Record<string, any>;
+    const row = data as Record<string, unknown>;
 
     const profile: PublicUserProfile = {
-      id: row.id ?? row.user_id ?? userId,
-      displayName: row.display_name ?? row.displayName ?? row.username ?? row.name ?? 'Unknown',
-      handle: row.handle ?? row.username ?? null,
-      avatarUrl: row.avatar_url ?? row.avatarUrl ?? null,
-      bio: row.bio ?? row.about ?? row.description ?? null,
-      interests: row.interests ?? null,
-      collectionCount: row.collection_count ?? row.total_items ?? row.item_count ?? null,
-      collectionValueEur: row.collection_value_eur ?? row.total_value_eur ?? row.portfolio_value ?? null,
+      id: (row.id ?? row.user_id ?? userId) as string,
+      displayName: (row.display_name ?? row.displayName ?? row.username ?? row.name ?? 'Unknown') as string,
+      handle: (row.handle ?? row.username ?? null) as string | null,
+      avatarUrl: (row.avatar_url ?? row.avatarUrl ?? null) as string | null,
+      bio: (row.bio ?? row.about ?? row.description ?? null) as string | null,
+      interests: (row.interests ?? null) as string[] | null,
+      collectionCount: (row.collection_count ?? row.total_items ?? row.item_count ?? null) as number | null,
+      collectionValueEur: (row.collection_value_eur ?? row.total_value_eur ?? row.portfolio_value ?? null) as number | null,
     };
 
     // Cache the result
@@ -460,7 +524,8 @@ export class SupabaseDataProvider implements DataProvider {
       .order('date', { ascending: true })
       .limit(5);
 
-    const upcomingEvents = (eventsData ?? []).map((e: any) => ({
+    type EventRow = { id: string; title: string; kind: string; date: string; time?: string };
+    const upcomingEvents = (eventsData ?? []).map((e: EventRow) => ({
       id: e.id,
       title: e.title,
       kind: e.kind,
@@ -496,7 +561,8 @@ export class SupabaseDataProvider implements DataProvider {
       return [];
     }
 
-    return (data ?? []).map((row: any) => ({
+    type SummaryRow = { id: string; name: string; completion_pct?: number; owned_count?: number; missing_count?: number; total_count?: number };
+    return (data ?? []).map((row: SummaryRow) => ({
       id: row.id,
       name: row.name,
       completionPct: row.completion_pct ?? 0,
@@ -517,7 +583,8 @@ export class SupabaseDataProvider implements DataProvider {
       return [];
     }
 
-    return (data ?? []).map((row: any) => ({
+    type MissingRow = { id: string; category_id: string; title: string; brand?: string; notes?: string };
+    return (data ?? []).map((row: MissingRow) => ({
       id: row.id,
       categoryId: row.category_id,
       title: row.title,
@@ -530,12 +597,14 @@ export class SupabaseDataProvider implements DataProvider {
   // Alerts Feed (read-only)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  async listAlertsFeed(): Promise<AlertFeedItem[]> {
+  async listAlertsFeed(pagination?: PaginationParams): Promise<AlertFeedItem[]> {
+    const limit = pagination?.limit ?? 50;
+    const offset = pagination?.offset ?? 0;
     const { data, error } = await supabase
       .from('v_alerts_feed_v1')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(50);
+      .range(offset, offset + limit - 1);
 
     if (error) {
       logger.warn('[SupabaseDataProvider] listAlertsFeed error:', error);
@@ -545,14 +614,14 @@ export class SupabaseDataProvider implements DataProvider {
     if (!data) return [];
 
     // Map snake_case → camelCase
-    return (data as Record<string, any>[]).map((row) => ({
-      id: row.id,
-      type: row.type ?? row.alert_type ?? 'unknown',
-      title: row.title ?? '',
-      body: row.body ?? null,
-      createdAt: row.created_at ?? new Date().toISOString(),
-      itemId: row.item_id ?? null,
-      watchlistItemId: row.watchlist_item_id ?? null,
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: row.id as string,
+      type: (row.type ?? row.alert_type ?? 'unknown') as string,
+      title: (row.title as string | null) ?? '',
+      body: (row.body as string | null) ?? null,
+      createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
+      itemId: (row.item_id as string | null) ?? null,
+      watchlistItemId: (row.watchlist_item_id as string | null) ?? null,
     }));
   }
 
@@ -574,18 +643,18 @@ export class SupabaseDataProvider implements DataProvider {
     if (!data) return [];
 
     // Map flexibly to handle various column naming conventions
-    return (data as Record<string, any>[]).map((row) => ({
-      id: row.id ?? row.thread_id,
-      otherUserId: row.other_user_id ?? row.otherUserId,
-      otherUserName: row.other_user_name ?? row.otherUserName ?? 'Unknown',
-      otherUserHandle: row.other_user_handle ?? row.otherUserHandle ?? null,
-      otherUserAvatarUrl: row.other_user_avatar_url ?? row.otherUserAvatarUrl ?? null,
-      otherUserAvatarColor: row.other_user_avatar_color ?? '#6b7280',
-      status: (row.status ?? 'accepted') as DmThreadStatus,
-      lastMessagePreview: row.last_message_preview ?? row.lastMessagePreview ?? null,
-      lastMessageAt: row.last_message_at ?? row.lastMessageAt ?? null,
-      unreadCount: row.unread_count ?? row.unreadCount ?? 0,
-      isIncoming: row.is_incoming ?? row.isIncoming ?? false,
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: (row.id ?? row.thread_id) as string,
+      otherUserId: (row.other_user_id ?? row.otherUserId) as string,
+      otherUserName: (row.other_user_name ?? row.otherUserName ?? 'Unknown') as string,
+      otherUserHandle: (row.other_user_handle ?? row.otherUserHandle ?? null) as string | null,
+      otherUserAvatarUrl: (row.other_user_avatar_url ?? row.otherUserAvatarUrl ?? null) as string | null,
+      otherUserAvatarColor: (row.other_user_avatar_color ?? '#6b7280') as string,
+      status: ((row.status ?? 'accepted') as string) as DmThreadStatus,
+      lastMessagePreview: (row.last_message_preview ?? row.lastMessagePreview ?? null) as string | null,
+      lastMessageAt: (row.last_message_at ?? row.lastMessageAt ?? null) as string | null,
+      unreadCount: (row.unread_count ?? row.unreadCount ?? 0) as number,
+      isIncoming: (row.is_incoming ?? row.isIncoming ?? false) as boolean,
     }));
   }
 
@@ -604,15 +673,15 @@ export class SupabaseDataProvider implements DataProvider {
 
     if (!data) return [];
 
-    return (data as Record<string, any>[]).map((row) => ({
-      threadId: row.id ?? row.thread_id,
-      fromUserId: row.other_user_id ?? row.otherUserId,
-      fromUserName: row.other_user_name ?? row.otherUserName ?? 'Unknown',
-      fromUserHandle: row.other_user_handle ?? row.otherUserHandle ?? null,
-      fromUserAvatarUrl: row.other_user_avatar_url ?? row.otherUserAvatarUrl ?? null,
-      fromUserAvatarColor: row.other_user_avatar_color ?? '#6b7280',
-      requestMessage: row.last_message_preview ?? row.lastMessagePreview ?? null,
-      requestedAt: row.last_message_at ?? row.lastMessageAt ?? new Date().toISOString(),
+    return (data as Record<string, unknown>[]).map((row) => ({
+      threadId: (row.id ?? row.thread_id) as string,
+      fromUserId: (row.other_user_id ?? row.otherUserId) as string,
+      fromUserName: (row.other_user_name ?? row.otherUserName ?? 'Unknown') as string,
+      fromUserHandle: (row.other_user_handle ?? row.otherUserHandle ?? null) as string | null,
+      fromUserAvatarUrl: (row.other_user_avatar_url ?? row.otherUserAvatarUrl ?? null) as string | null,
+      fromUserAvatarColor: (row.other_user_avatar_color ?? '#6b7280') as string,
+      requestMessage: (row.last_message_preview ?? row.lastMessagePreview ?? null) as string | null,
+      requestedAt: (row.last_message_at ?? row.lastMessageAt ?? new Date().toISOString()) as string,
     }));
   }
 
@@ -628,7 +697,8 @@ export class SupabaseDataProvider implements DataProvider {
     }
 
     // RPC returns the thread ID
-    return (data as any)?.thread_id ?? data ?? '';
+    const result = data as Record<string, unknown> | string | null;
+    return (typeof result === 'object' && result !== null ? (result.thread_id as string) : result) ?? '';
   }
 
   async decideDmRequest(threadId: string, accept: boolean): Promise<void> {
@@ -668,12 +738,12 @@ export class SupabaseDataProvider implements DataProvider {
 
     if (!data) return [];
 
-    return (data as Record<string, any>[]).map((row) => ({
-      id: row.id,
-      threadId: row.thread_id ?? threadId,
-      authorUserId: row.author_user_id ?? row.authorUserId,
-      text: row.text ?? '',
-      createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: row.id as string,
+      threadId: (row.thread_id as string | null) ?? threadId,
+      authorUserId: (row.author_user_id ?? row.authorUserId) as string,
+      text: (row.text as string | null) ?? '',
+      createdAt: (row.created_at ?? row.createdAt ?? new Date().toISOString()) as string,
     }));
   }
 
@@ -691,13 +761,13 @@ export class SupabaseDataProvider implements DataProvider {
 
     // RPC may return the created message; if not, build a stub
     if (data && typeof data === 'object') {
-      const row = data as Record<string, any>;
+      const row = data as Record<string, unknown>;
       return {
-        id: row.id ?? row.message_id ?? `msg-${Date.now()}`,
-        threadId: row.thread_id ?? threadId,
-        authorUserId: row.author_user_id ?? 'current-user',
-        text: row.text ?? body,
-        createdAt: row.created_at ?? new Date().toISOString(),
+        id: (row.id ?? row.message_id ?? `msg-${Date.now()}`) as string,
+        threadId: (row.thread_id as string | null) ?? threadId,
+        authorUserId: (row.author_user_id as string | null) ?? 'current-user',
+        text: (row.text as string | null) ?? body,
+        createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
       };
     }
 
@@ -803,7 +873,7 @@ export class SupabaseDataProvider implements DataProvider {
       const { data, error } = twitchRes.value;
       if (!error && Array.isArray(data)) {
         twitchCreatorsTracked = data.length;
-        twitchCreatorsLive = data.filter((row: any) => row.is_live === true).length;
+        twitchCreatorsLive = data.filter((row: { id: string; is_live?: boolean }) => row.is_live === true).length;
       }
     }
 
@@ -834,7 +904,12 @@ export class SupabaseDataProvider implements DataProvider {
       return [];
     }
 
-    return (data ?? []).map((row: any) => ({
+    type ProjectRow = {
+      id: string; title: string; category?: string; status?: string;
+      percent_complete?: number; is_completed?: boolean; notes?: string;
+      created_at?: string; updated_at?: string;
+    };
+    return (data ?? []).map((row: ProjectRow) => ({
       id: row.id,
       title: row.title,
       category: row.category,
@@ -858,17 +933,17 @@ export class SupabaseDataProvider implements DataProvider {
       throw new Error(error.message || 'Failed to create project');
     }
 
-    const row = data as any;
+    const row = data as Record<string, unknown>;
     return {
-      id: row.id,
-      title: row.title,
-      category: row.category,
-      status: row.status,
-      percent: row.percent_complete ?? 0,
-      isCompleted: row.is_completed ?? false,
-      notes: row.notes || null,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
+      id: row.id as string,
+      title: row.title as string,
+      category: row.category as string | undefined,
+      status: row.status as string | undefined,
+      percent: (row.percent_complete as number | null) ?? 0,
+      isCompleted: (row.is_completed as boolean | null) ?? false,
+      notes: (row.notes as string | null) || null,
+      createdAt: row.created_at as string | undefined,
+      updatedAt: row.updated_at as string | undefined,
     };
   }
 
@@ -909,7 +984,8 @@ export class SupabaseDataProvider implements DataProvider {
       return [];
     }
 
-    return (data ?? []).map((row: any) => ({
+    type StepRow = { id: string; project_id: string; title: string; is_done?: boolean; sort_order?: number; created_at?: string };
+    return (data ?? []).map((row: StepRow) => ({
       id: row.id,
       projectId: row.project_id,
       title: row.title,
@@ -930,14 +1006,14 @@ export class SupabaseDataProvider implements DataProvider {
       throw new Error(error.message || 'Failed to add step');
     }
 
-    const row = data as any;
+    const row = data as Record<string, unknown>;
     return {
-      id: row.id,
-      projectId: row.project_id,
-      title: row.title,
-      isDone: row.is_done ?? false,
-      sortOrder: row.sort_order ?? 0,
-      createdAt: row.created_at,
+      id: row.id as string,
+      projectId: row.project_id as string,
+      title: row.title as string,
+      isDone: (row.is_done as boolean | null) ?? false,
+      sortOrder: (row.sort_order as number | null) ?? 0,
+      createdAt: row.created_at as string | undefined,
     };
   }
 
@@ -965,7 +1041,8 @@ export class SupabaseDataProvider implements DataProvider {
       return [];
     }
 
-    return (data ?? []).map((row: any) => ({
+    type NoteRow = { id: string; project_id: string; body: string; created_at?: string };
+    return (data ?? []).map((row: NoteRow) => ({
       id: row.id,
       projectId: row.project_id,
       body: row.body,
@@ -984,12 +1061,12 @@ export class SupabaseDataProvider implements DataProvider {
       throw new Error(error.message || 'Failed to add note');
     }
 
-    const row = data as any;
+    const row = data as Record<string, unknown>;
     return {
-      id: row.id,
-      projectId: row.project_id,
-      body: row.body,
-      createdAt: row.created_at,
+      id: row.id as string,
+      projectId: row.project_id as string,
+      body: row.body as string,
+      createdAt: row.created_at as string | undefined,
     };
   }
 
@@ -1012,9 +1089,9 @@ export class SupabaseDataProvider implements DataProvider {
         success: res.success ?? true,
         feedbackId: res.feedback_id,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[SupabaseDataProvider] submitFeedback error:', err);
-      throw new Error(err?.message || 'Failed to submit feedback');
+      throw new Error(err instanceof Error ? err.message : 'Failed to submit feedback');
     }
   }
 
@@ -1036,9 +1113,9 @@ export class SupabaseDataProvider implements DataProvider {
         notes: corrections.notes,
       });
       return { success: res.success ?? true };
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[SupabaseDataProvider] submitCorrection error:', err);
-      throw new Error(err?.message || 'Failed to submit correction');
+      throw new Error(err instanceof Error ? err.message : 'Failed to submit correction');
     }
   }
 
@@ -1087,14 +1164,14 @@ export class SupabaseDataProvider implements DataProvider {
       throw new Error(error.message || 'Failed to convert watchlist item');
     }
 
-    const row = data as any;
+    const row = data as Record<string, unknown>;
     return {
-      id: row.id,
-      name: row.name ?? row.title,
-      category: row.category ?? 'Other',
-      price: row.price ?? actualPrice ?? 0,
-      imageUrl: row.image_url ?? null,
-      updatedAt: row.updated_at ?? new Date().toISOString(),
+      id: row.id as string,
+      name: ((row.name ?? row.title) as string | null) ?? 'Untitled',
+      category: (row.category as string | null) ?? 'Other',
+      price: (row.price as number | null) ?? actualPrice ?? 0,
+      imageUrl: (row.image_url as string | null) ?? null,
+      updatedAt: (row.updated_at as string | null) ?? new Date().toISOString(),
     };
   }
 
@@ -1128,7 +1205,7 @@ export class SupabaseDataProvider implements DataProvider {
       logger.warn('[SupabaseDataProvider] listFollowedCategories error:', error);
       return [];
     }
-    return (data ?? []).map((row: any) => row.category_id);
+    return (data ?? []).map((row: { category_id: string }) => row.category_id);
   }
 
   async isFollowingCategory(categoryId: string): Promise<boolean> {
@@ -1161,16 +1238,21 @@ export class SupabaseDataProvider implements DataProvider {
     return this.mapEventRow(data);
   }
 
-  async listEvents(): Promise<CollectorsEvent[]> {
+  async listEvents(pagination?: PaginationParams): Promise<CollectorsEvent[]> {
+    const limit = pagination?.limit ?? 50;
+    const offset = pagination?.offset ?? 0;
     // Use personalized RPC that filters to user's categories + followed categories
-    const { data, error } = await supabase.rpc('rpc_list_personalized_events_v1');
+    const { data, error } = await supabase.rpc('rpc_list_personalized_events_v1', {
+      p_limit: limit,
+      p_offset: offset,
+    });
 
     if (error) {
       logger.warn('[SupabaseDataProvider] listEvents error:', error);
       return [];
     }
 
-    return (data ?? []).map((row: any) => this.mapEventRow(row));
+    return (data ?? []).map((row: Record<string, unknown>) => this.mapEventRow(row));
   }
 
   async createEvent(input: CreateEventInput): Promise<CollectorsEvent> {
@@ -1240,7 +1322,7 @@ export class SupabaseDataProvider implements DataProvider {
         .eq('other_user_id', recipientUserId)
         .eq('status', 'accepted')
         .maybeSingle();
-      threadId = (data as any)?.id;
+      threadId = (data as Record<string, unknown> | null)?.id as string;
       if (!threadId) {
         throw new Error('Could not find existing DM thread');
       }
@@ -1262,31 +1344,31 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   // Helper to map DB row to CollectorsEvent
-  private mapEventRow(row: Record<string, any>): CollectorsEvent {
+  private mapEventRow(row: Record<string, unknown>): CollectorsEvent {
     return {
-      id: row.id,
-      title: row.title,
-      kind: row.kind,
-      date: row.date,
-      time: row.time ?? undefined,
-      endDate: row.end_date ?? undefined,
-      location: row.location ?? undefined,
-      onlineUrl: row.online_url ?? undefined,
-      description: row.description ?? '',
-      categoryId: row.category_id ?? undefined,
-      hostUserId: row.created_by ?? undefined,
+      id: row.id as string,
+      title: row.title as string,
+      kind: row.kind as CollectorsEvent['kind'],
+      date: row.date as string,
+      time: (row.time as string | null) ?? undefined,
+      endDate: (row.end_date as string | null) ?? undefined,
+      location: (row.location as string | null) ?? undefined,
+      onlineUrl: (row.online_url as string | null) ?? undefined,
+      description: (row.description as string | null) ?? '',
+      categoryId: (row.category_id as string | null) ?? undefined,
+      hostUserId: (row.created_by as string | null) ?? undefined,
       attendeeIds: [],
-      attendeeCount: row.attendee_count ?? 0,
-      isAttending: row.is_attending ?? false,
-      myRsvpStatus: row.my_rsvp_status ?? undefined,
-      source: row.source ?? undefined,
-      sourceUrl: row.source_url ?? undefined,
-      imageUrl: row.image_url ?? undefined,
-      createdBy: row.created_by ?? undefined,
-      format: row.format ?? undefined,
-      isPublic: row.is_public ?? undefined,
-      latitude: row.latitude ?? undefined,
-      longitude: row.longitude ?? undefined,
+      attendeeCount: (row.attendee_count as number | null) ?? 0,
+      isAttending: (row.is_attending as boolean | null) ?? false,
+      myRsvpStatus: (row.my_rsvp_status as string | null) ?? undefined,
+      source: (row.source as string | null) ?? undefined,
+      sourceUrl: (row.source_url as string | null) ?? undefined,
+      imageUrl: (row.image_url as string | null) ?? undefined,
+      createdBy: (row.created_by as string | null) ?? undefined,
+      format: (row.format as CollectorsEvent['format']) ?? undefined,
+      isPublic: (row.is_public as boolean | null) ?? undefined,
+      latitude: (row.latitude as number | null) ?? undefined,
+      longitude: (row.longitude as number | null) ?? undefined,
     };
   }
 
@@ -1326,7 +1408,7 @@ export class SupabaseDataProvider implements DataProvider {
         barcodeType: opts?.codeType ?? 'unknown',
         imageUrl: res.image_url ?? null,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.warn('[SupabaseDataProvider] lookupByBarcode API error:', err);
 
       // Return minimal result on error - UI can fall back to manual entry
@@ -1367,23 +1449,23 @@ export class SupabaseDataProvider implements DataProvider {
       });
 
       return {
-        hits: (res.hits ?? []).map((hit: any) => ({
-          source: hit.source,
-          rawId: hit.raw_id ?? hit.rawId,
-          title: hit.title,
-          price: hit.price,
-          currency: hit.currency ?? 'EUR',
-          soldAt: hit.sold_at ?? hit.soldAt ?? null,
-          url: hit.url ?? null,
-          condition: hit.condition ?? null,
-          imageUrl: hit.image_url ?? hit.imageUrl ?? null,
-          rawPayloadHash: hit.raw_payload_hash ?? hit.rawPayloadHash ?? null,
+        hits: (res.hits ?? []).map((hit: Record<string, unknown>) => ({
+          source: hit.source as string,
+          rawId: (hit.raw_id ?? hit.rawId) as string,
+          title: hit.title as string,
+          price: hit.price as number,
+          currency: (hit.currency as string | null) ?? 'EUR',
+          soldAt: (hit.sold_at ?? hit.soldAt ?? null) as string | null,
+          url: (hit.url ?? null) as string | null,
+          condition: (hit.condition ?? null) as string | null,
+          imageUrl: (hit.image_url ?? hit.imageUrl ?? null) as string | null,
+          rawPayloadHash: (hit.raw_payload_hash ?? hit.rawPayloadHash ?? null) as string | null,
         })),
         providers: res.providers ?? [],
         totalRaw: res.total_raw ?? res.totalRaw ?? 0,
         confidence: res.confidence ?? 0.5,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.warn('[SupabaseDataProvider] marketSearch API error:', err);
 
       // Return empty result on error

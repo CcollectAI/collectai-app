@@ -249,8 +249,11 @@ class S3ImageCache:
         try:
             self.s3_client.head_object(Bucket=S3_BUCKET, Key=key)
             return True
-        except Exception:
-            # boto3 ClientError on 404 is expected; other errors also mean "not cached"
+        except self.s3_client.exceptions.ClientError:
+            # 404 Not Found is expected for uncached objects
+            return False
+        except Exception as exc:
+            logger.warning("S3 head_object check failed for %s: %s", key, exc)
             return False
 
     def _public_url(self, key: str) -> str:

@@ -9,21 +9,26 @@
 import { Platform, Alert, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import haptics from './haptics';
+import { logger } from '@/lib/logger';
+
+import type { ExpoCalendarEntry } from '@/../types/api';
 
 // Optional dependencies - graceful fallback if not installed
-let Calendar: any = null;
-let Notifications: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Calendar: Record<string, any> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Notifications: Record<string, any> | null = null;
 
 try {
   Calendar = require('expo-calendar');
 } catch {
-  console.log('[Calendar] expo-calendar not installed - calendar features disabled');
+  logger.info('[Calendar] expo-calendar not installed - calendar features disabled');
 }
 
 try {
   Notifications = require('expo-notifications');
 } catch {
-  console.log('[Calendar] expo-notifications not installed - reminder features disabled');
+  logger.info('[Calendar] expo-notifications not installed - reminder features disabled');
 }
 
 const CALENDAR_STORAGE_KEY = '@collectai/calendar_events';
@@ -60,7 +65,7 @@ export function isNotificationsAvailable(): boolean {
  */
 export async function requestCalendarPermission(): Promise<boolean> {
   if (!Calendar) {
-    console.warn('[Calendar] expo-calendar not installed');
+    logger.warn('[Calendar] expo-calendar not installed');
     return false;
   }
   const { status } = await Calendar.requestCalendarPermissionsAsync();
@@ -72,7 +77,7 @@ export async function requestCalendarPermission(): Promise<boolean> {
  */
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!Notifications) {
-    console.warn('[Calendar] expo-notifications not installed');
+    logger.warn('[Calendar] expo-notifications not installed');
     return false;
   }
   const { status } = await Notifications.requestPermissionsAsync();
@@ -91,32 +96,32 @@ async function getDefaultCalendarId(): Promise<string | null> {
     if (Platform.OS === 'ios') {
       // iOS: Prefer iCloud calendar, then local calendar
       const iCloudCalendar = calendars.find(
-        (cal: any) => cal.source?.type === 'caldav' && cal.allowsModifications
+        (cal: ExpoCalendarEntry) => cal.source?.type === 'caldav' && cal.allowsModifications
       );
       if (iCloudCalendar) return iCloudCalendar.id;
 
       // Fallback to local calendar
       const localCalendar = calendars.find(
-        (cal: any) => cal.source?.type === 'local' && cal.allowsModifications
+        (cal: ExpoCalendarEntry) => cal.source?.type === 'local' && cal.allowsModifications
       );
       if (localCalendar) return localCalendar.id;
 
       // Any modifiable calendar
-      const modifiable = calendars.find((cal: any) => cal.allowsModifications);
+      const modifiable = calendars.find((cal: ExpoCalendarEntry) => cal.allowsModifications);
       return modifiable?.id || null;
     }
 
     // Android: Prefer primary calendar
     const primaryCalendar = calendars.find(
-      (cal: any) => cal.isPrimary && cal.allowsModifications
+      (cal: ExpoCalendarEntry) => cal.isPrimary && cal.allowsModifications
     );
     if (primaryCalendar) return primaryCalendar.id;
 
     // Fallback to first modifiable calendar
-    const modifiableCalendar = calendars.find((cal: any) => cal.allowsModifications);
+    const modifiableCalendar = calendars.find((cal: ExpoCalendarEntry) => cal.allowsModifications);
     return modifiableCalendar?.id || null;
   } catch (error) {
-    console.warn('[Calendar] Error getting calendars:', error);
+    logger.warn('[Calendar] Error getting calendars:', error);
     return null;
   }
 }
@@ -184,10 +189,10 @@ export async function addToCalendar(params: {
 
     haptics.success();
     return { success: true, calendarEventId };
-  } catch (error: any) {
-    console.warn('[Calendar] Error adding event:', error);
+  } catch (error: unknown) {
+    logger.warn('[Calendar] Error adding event:', error);
     haptics.error();
-    return { success: false, error: error.message || 'Failed to add event' };
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to add event' };
   }
 }
 
@@ -222,7 +227,7 @@ export async function removeFromCalendar(eventId: string): Promise<boolean> {
     }
     return false;
   } catch (error) {
-    console.warn('[Calendar] Error removing event:', error);
+    logger.warn('[Calendar] Error removing event:', error);
     return false;
   }
 }
@@ -287,10 +292,10 @@ export async function scheduleReminder(params: {
 
     haptics.success();
     return { success: true, notificationId };
-  } catch (error: any) {
-    console.warn('[Calendar] Error scheduling reminder:', error);
+  } catch (error: unknown) {
+    logger.warn('[Calendar] Error scheduling reminder:', error);
     haptics.error();
-    return { success: false, error: error.message || 'Failed to schedule reminder' };
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to schedule reminder' };
   }
 }
 
@@ -313,7 +318,7 @@ export async function cancelReminder(eventId: string): Promise<boolean> {
     }
     return false;
   } catch (error) {
-    console.warn('[Calendar] Error canceling reminder:', error);
+    logger.warn('[Calendar] Error canceling reminder:', error);
     return false;
   }
 }

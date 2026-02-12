@@ -18,9 +18,11 @@ export default function ItemCard({ item }: { item: ItemRow }) {
     >
       <Image
         source={ item.image_url ? { uri: item.image_url } : require("../../assets/images/placeholder.png") }
+        placeholder={ (item as ItemRow & { blurhash?: string }).blurhash ? { blurhash: (item as ItemRow & { blurhash?: string }).blurhash } : undefined }
         style={{ width: "100%", aspectRatio: 1 }}
         contentFit="cover"
         transition={200}
+        cachePolicy="disk"
       />
       <View style={{ padding: 10 }}>
         <Text numberOfLines={1} style={{ fontWeight: "700", color: theme.colors.text }}>

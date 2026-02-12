@@ -11,15 +11,14 @@ Configure via environment variables:
 from __future__ import annotations
 
 import logging
-import os
 from typing import Callable, Awaitable
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
-logger = logging.getLogger(__name__)
+from app.config import MAX_BODY_BYTES
 
-MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(10 * 1024 * 1024)))  # 10 MB
+logger = logging.getLogger(__name__)
 
 # Paths exempt from body size checks
 EXEMPT_PATHS = frozenset({"/healthz", "/version"})

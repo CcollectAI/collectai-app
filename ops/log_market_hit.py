@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-import os, asyncio, sys
-import asyncpg
+import asyncio
+import logging
+import os
+import sys
 from decimal import Decimal
-from datetime import datetime
+
+import asyncpg
+
+logger = logging.getLogger(__name__)
+
 
 async def main():
     if len(sys.argv) < 3:
-        print("Usage: log_market_hit.py \"item_ref\" price_in_eur")
+        logger.error("Usage: log_market_hit.py \"item_ref\" price_in_eur")
         return
 
     item_ref = sys.argv[1]
@@ -14,7 +20,7 @@ async def main():
 
     dsn = os.environ.get("DB_DSN")
     if not dsn:
-        print("DB_DSN not set")
+        logger.error("DB_DSN not set")
         return
 
     conn = await asyncpg.connect(dsn)
@@ -27,7 +33,9 @@ async def main():
         price,
     )
     await conn.close()
-    print(f"logged market hit item_ref={item_ref} price={price}")
+    logger.info("logged market hit item_ref=%s price=%s", item_ref, price)
+
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

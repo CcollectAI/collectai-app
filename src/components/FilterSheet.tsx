@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import haptics from '@/lib/haptics';
+import { logger } from '@/lib/logger';
 
 export type SortOption = 'value_desc' | 'value_asc' | 'name_asc' | 'name_desc' | 'date_desc' | 'date_asc';
 
@@ -103,7 +104,7 @@ export function FilterSheet({
         setPresets(JSON.parse(stored));
       }
     } catch (err) {
-      console.warn('[FilterSheet] Failed to load presets:', err);
+      logger.warn('[FilterSheet] Failed to load presets:', err);
     }
   };
 
@@ -112,7 +113,7 @@ export function FilterSheet({
       await AsyncStorage.setItem(PRESETS_KEY, JSON.stringify(newPresets));
       setPresets(newPresets);
     } catch (err) {
-      console.warn('[FilterSheet] Failed to save presets:', err);
+      logger.warn('[FilterSheet] Failed to save presets:', err);
     }
   };
 
@@ -219,7 +220,7 @@ export function FilterSheet({
                 </View>
               )}
             </View>
-            <Pressable onPress={onClose} style={styles.closeBtn}>
+            <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close filters">
               <Ionicons name="close" size={24} color={colors.text} />
             </Pressable>
           </View>
@@ -242,6 +243,9 @@ export function FilterSheet({
                       style={[styles.presetChip, { borderColor: colors.border }]}
                       onPress={() => handleLoadPreset(preset)}
                       onLongPress={() => handleDeletePreset(preset.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Load preset: ${preset.name}`}
+                      accessibilityHint="Long press to delete"
                     >
                       <Text style={[styles.presetChipText, { color: colors.text }]}>
                         {preset.name}
@@ -256,6 +260,8 @@ export function FilterSheet({
             <Pressable
               style={[styles.sectionHeader, { borderColor: colors.border }]}
               onPress={() => toggleSection('sort')}
+              accessibilityRole="button"
+              accessibilityLabel={`Sort By${expandedSection === 'sort' ? ', expanded' : ', collapsed'}`}
             >
               <View style={styles.sectionHeaderLeft}>
                 <Ionicons name="swap-vertical" size={20} color={colors.accent} />
@@ -281,6 +287,8 @@ export function FilterSheet({
                       },
                     ]}
                     onPress={() => handleSetSort(option.value)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Sort by ${option.label}${config.sortBy === option.value ? ', selected' : ''}`}
                   >
                     <Text
                       style={[
@@ -302,6 +310,8 @@ export function FilterSheet({
             <Pressable
               style={[styles.sectionHeader, { borderColor: colors.border }]}
               onPress={() => toggleSection('category')}
+              accessibilityRole="button"
+              accessibilityLabel={`Category filter${expandedSection === 'category' ? ', expanded' : ', collapsed'}`}
             >
               <View style={styles.sectionHeaderLeft}>
                 <Ionicons name="folder-outline" size={20} color={colors.accent} />
@@ -333,6 +343,8 @@ export function FilterSheet({
                         },
                       ]}
                       onPress={() => handleToggleCategory(category)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${category}${config.categories.includes(category) ? ', selected' : ''}`}
                     >
                       <Text
                         style={[
@@ -356,6 +368,8 @@ export function FilterSheet({
             <Pressable
               style={[styles.sectionHeader, { borderColor: colors.border }]}
               onPress={() => toggleSection('price')}
+              accessibilityRole="button"
+              accessibilityLabel={`Price Range filter${expandedSection === 'price' ? ', expanded' : ', collapsed'}`}
             >
               <View style={styles.sectionHeaderLeft}>
                 <Ionicons name="pricetag-outline" size={20} color={colors.accent} />
@@ -387,6 +401,7 @@ export function FilterSheet({
                       keyboardType="numeric"
                       value={config.priceMin?.toString() || ''}
                       onChangeText={(v) => handlePriceChange('priceMin', v)}
+                      accessibilityLabel="Minimum price"
                     />
                   </View>
                   <Text style={[styles.priceDash, { color: colors.muted }]}>—</Text>
@@ -402,6 +417,7 @@ export function FilterSheet({
                       keyboardType="numeric"
                       value={config.priceMax?.toString() || ''}
                       onChangeText={(v) => handlePriceChange('priceMax', v)}
+                      accessibilityLabel="Maximum price"
                     />
                   </View>
                 </View>
@@ -414,6 +430,8 @@ export function FilterSheet({
                 <Pressable
                   style={[styles.sectionHeader, { borderColor: colors.border }]}
                   onPress={() => toggleSection('condition')}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Condition filter${expandedSection === 'condition' ? ', expanded' : ', collapsed'}`}
                 >
                   <View style={styles.sectionHeaderLeft}>
                     <Ionicons name="star-outline" size={20} color={colors.accent} />
@@ -445,6 +463,8 @@ export function FilterSheet({
                             },
                           ]}
                           onPress={() => handleToggleCondition(condition)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${condition}${config.conditions.includes(condition) ? ', selected' : ''}`}
                         >
                           <Text
                             style={[
@@ -469,7 +489,7 @@ export function FilterSheet({
 
           {/* Footer Actions */}
           <View style={[styles.footer, { borderColor: colors.border }]}>
-            <Pressable style={styles.footerBtnSecondary} onPress={handleReset}>
+            <Pressable style={styles.footerBtnSecondary} onPress={handleReset} accessibilityRole="button" accessibilityLabel="Reset all filters">
               <Text style={[styles.footerBtnSecondaryText, { color: colors.muted }]}>
                 Reset
               </Text>
@@ -478,6 +498,8 @@ export function FilterSheet({
             <Pressable
               style={styles.footerBtnSecondary}
               onPress={() => setShowPresetModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Save current filters as preset"
             >
               <Ionicons name="bookmark-outline" size={16} color={colors.accent} />
               <Text style={[styles.footerBtnSecondaryText, { color: colors.accent }]}>
@@ -488,6 +510,8 @@ export function FilterSheet({
             <Pressable
               style={[styles.footerBtnPrimary, { backgroundColor: colors.accent }]}
               onPress={handleApply}
+              accessibilityRole="button"
+              accessibilityLabel="Apply filters"
             >
               <Text style={styles.footerBtnPrimaryText}>Apply Filters</Text>
             </Pressable>
@@ -523,11 +547,14 @@ export function FilterSheet({
               value={presetName}
               onChangeText={setPresetName}
               autoFocus
+              accessibilityLabel="Preset name"
             />
             <View style={styles.presetModalActions}>
               <Pressable
                 style={styles.presetModalCancel}
                 onPress={() => setShowPresetModal(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
               >
                 <Text style={[styles.presetModalCancelText, { color: colors.muted }]}>
                   Cancel
@@ -536,6 +563,8 @@ export function FilterSheet({
               <Pressable
                 style={[styles.presetModalSave, { backgroundColor: colors.accent }]}
                 onPress={handleSavePreset}
+                accessibilityRole="button"
+                accessibilityLabel="Save preset"
               >
                 <Text style={styles.presetModalSaveText}>Save</Text>
               </Pressable>

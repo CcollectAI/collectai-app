@@ -13,7 +13,7 @@ export function useSWR<T>(key: string, fetcher: Fetcher<T>, opts: Options = {}) 
     setLoading(true);
     try {
       const fresh = await fetcher();
-      setData(fresh as any);
+      setData(fresh);
       cacheSet(key, fresh);
     } finally {
       setLoading(false);

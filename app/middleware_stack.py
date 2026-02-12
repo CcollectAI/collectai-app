@@ -7,7 +7,6 @@ main.py expects:
 Installs CORS and security-related middleware.
 """
 
-import os
 from typing import Callable, Awaitable
 
 from fastapi import FastAPI
@@ -16,15 +15,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-# Allowed origins for CORS - configure via environment variable
-# Default allows localhost/dev origins; production should set explicit list
-CORS_ORIGINS = os.getenv(
-    "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:8080,http://localhost:8081,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:8081,exp://localhost:*,exp://192.168.*:*,exp://10.*:*,https://app.collectai.io"
-).split(",")
-
-# Trusted hosts - set in production to your actual domains
-TRUSTED_HOSTS = os.getenv("TRUSTED_HOSTS", "").split(",") if os.getenv("TRUSTED_HOSTS") else []
+from app.config import CORS_ORIGINS, TRUSTED_HOSTS
 
 
 def install_middlewares(app: FastAPI) -> FastAPI:

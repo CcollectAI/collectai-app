@@ -215,7 +215,12 @@ export function SwipeableRow({
     if (onDelete || onAction) {
       return (
         <View style={[styles.actionContainer, { backgroundColor: actionColor }]}>
-          <Pressable style={styles.actionButton} onPress={() => handleAction()}>
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => handleAction()}
+            accessibilityRole="button"
+            accessibilityLabel={deleteLabel || actionLabel}
+          >
             <Ionicons name={actionIcon} size={22} color="#fff" />
             <Text style={styles.actionText}>{deleteLabel || actionLabel}</Text>
           </Pressable>

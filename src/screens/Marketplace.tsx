@@ -12,6 +12,7 @@ export default function Marketplace(){
   const [order, setOrder] = useState<'new'|'price_asc'|'price_desc'>('new');
   const { rows, loading, refreshing, refresh, loadMore } = useMarketplace({ search, order });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nav = useNavigation<any>();
   const width = Dimensions.get('window').width;
   const col = 2;

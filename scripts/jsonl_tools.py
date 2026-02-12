@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import hashlib
+import logging
 import sys
+
+logger = logging.getLogger(__name__)
 
 
 def tail(path, n=50):
@@ -11,7 +14,7 @@ def tail(path, n=50):
         for line in f:
             dq.append(line.rstrip("\n"))
     for line in dq:
-        print(line)
+        logger.info(line)
 
 
 def dedupe(src, dst):
@@ -30,8 +33,9 @@ def dedupe(src, dst):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     if len(sys.argv) < 3:
-        print(
+        logger.error(
             "usage: jsonl_tools.py tail <path> [n]  |  jsonl_tools.py dedupe <src> <dst>"
         )
         sys.exit(1)
@@ -42,5 +46,5 @@ if __name__ == "__main__":
     elif cmd == "dedupe":
         dedupe(sys.argv[2], sys.argv[3])
     else:
-        print("unknown command")
+        logger.error("unknown command")
         sys.exit(2)

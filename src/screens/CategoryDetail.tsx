@@ -36,8 +36,8 @@ export default function CategoryDetail({ slug }: { slug: string }) {
         }
 
         if (mounted) setItems(data ?? []);
-      } catch (e: any) {
-        Alert.alert("Error", e?.message ?? "Failed to load items for category");
+      } catch (e: unknown) {
+        Alert.alert("Error", e instanceof Error ? e.message : "Failed to load items for category");
         setItems([]);
       } finally {
         if (mounted) setLoading(false);

@@ -19,8 +19,8 @@ export default function useMarketplace(limit = 100) {
           .limit(limit);
         if (error) throw error;
         on && setListings((data as Listing[]) ?? []);
-      } catch (e:any) {
-        on && setError(e?.message ?? "Failed to load marketplace");
+      } catch (e: unknown) {
+        on && setError(e instanceof Error ? e.message : "Failed to load marketplace");
         on && setListings([]);
       } finally {
         on && setLoading(false);

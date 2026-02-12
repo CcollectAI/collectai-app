@@ -8,6 +8,14 @@ import {
   TextInput,
   Pressable,
 } from "react-native";
+
+function NotAvailableScreen() {
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ fontSize: 16, color: "#666" }}>Not available</Text>
+    </View>
+  );
+}
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 type RiskLevel = "Low" | "Medium" | "High" | null;
@@ -102,6 +110,7 @@ const FraudCheckScreen: React.FC = () => {
             placeholder="https://www.example.com/listing/123…"
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
+            accessibilityLabel="Listing URL"
             style={[
               styles.input,
               {
@@ -120,6 +129,7 @@ const FraudCheckScreen: React.FC = () => {
             onChangeText={setPlatform}
             placeholder="eBay, Vinted, Facebook Marketplace…"
             placeholderTextColor={colors.muted}
+            accessibilityLabel="Platform or marketplace"
             style={[
               styles.input,
               {
@@ -139,6 +149,7 @@ const FraudCheckScreen: React.FC = () => {
             placeholder="Payment method, seller behaviour, anything that feels off…"
             placeholderTextColor={colors.muted}
             multiline
+            accessibilityLabel="Extra notes"
             style={[
               styles.input,
               styles.notesInput,
@@ -155,6 +166,8 @@ const FraudCheckScreen: React.FC = () => {
               styles.runButton,
               { backgroundColor: colors.accent },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel="Run fraud check"
           >
             <Text
               style={[styles.runButtonText, { color: "#FFFFFF" }]}
@@ -288,4 +301,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FraudCheckScreen;
+export default __DEV__ ? FraudCheckScreen : NotAvailableScreen;

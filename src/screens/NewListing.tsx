@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Image, Alert, ScrollView } from 'react-native';
+import { View, Alert, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
@@ -7,7 +8,12 @@ import { colors, spacing } from '../theme/tokens';
 import { supabase } from "@/lib/supabase";
 import { uploadListingImage } from '../utils/uploadListingImage';
 
-export default function NewListing({ route, navigation }: any){
+type NewListingScreenProps = {
+  route: { params?: { item?: Record<string, unknown> } };
+  navigation: { goBack: () => void };
+};
+
+export default function NewListing({ route, navigation }: NewListingScreenProps){
   const item = route?.params?.item || null;
 
   const [title, setTitle] = useState(item?.title || '');
@@ -62,7 +68,7 @@ export default function NewListing({ route, navigation }: any){
 
       Alert.alert('Listing created');
       navigation.goBack();
-    }catch(e:any){ Alert.alert('Listing error', e.message||String(e)); }
+    }catch(e: unknown){ Alert.alert('Listing error', e instanceof Error ? e.message : String(e)); }
     finally{ setLoading(false); }
   };
 
@@ -74,7 +80,7 @@ export default function NewListing({ route, navigation }: any){
       <Input label="Quantity" value={quantity} onChangeText={setQuantity} placeholder="1" />
       <Input label="Condition" value={condition} onChangeText={setCondition} placeholder="mint / near-mint / used" />
       <Input label="Description" value={description} onChangeText={setDescription} placeholder="details…" />
-      { (imgUri || imageUrl) ? <Image source={{ uri: imgUri || imageUrl! }} style={{ width:'100%', height:220, borderRadius:16 }} /> : null }
+      { (imgUri || imageUrl) ? <Image source={{ uri: imgUri || imageUrl! }} style={{ width:'100%', height:220, borderRadius:16 }} contentFit="cover" cachePolicy="disk" transition={200} accessibilityLabel={`Photo of ${title || 'listing'}`} /> : null }
       <Button title="Pick Photo" onPress={pick} variant="ghost" />
       <Button title="Create Listing" onPress={submit} />
     </ScrollView>

@@ -26,6 +26,8 @@ export default function NotFoundScreen() {
 
       <Link href="/(tabs)/portfolio" asChild>
         <Pressable
+          accessibilityRole="link"
+          accessibilityLabel="Go to Portfolio"
           style={{
             paddingHorizontal: 20,
             paddingVertical: 10,

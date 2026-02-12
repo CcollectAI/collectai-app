@@ -50,7 +50,13 @@ const AddScreen: React.FC = () => {
 
   
 
-  const [importSummary, setImportSummary] = React.useState<any>(null);
+  const [importSummary, setImportSummary] = React.useState<{
+    total: number;
+    inserted: number;
+    skipped: number;
+    error?: string;
+    errors?: { row: number; message: string }[];
+  } | null>(null);
   const [importBusy, setImportBusy] = React.useState(false);
 
   
@@ -109,14 +115,16 @@ const handleImportCollectionFile = async () => {
       setImportSummary(null);
 
       const formData = new FormData();
+      // React Native's FormData accepts this shape for file uploads
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       formData.append("file", {
-        // @ts-ignore
+        // @ts-ignore -- DocumentPicker asset shape
         uri: asset.uri,
-        // @ts-ignore
+        // @ts-ignore -- DocumentPicker asset shape
         name: asset.name || "collection.xlsx",
-        // @ts-ignore
+        // @ts-ignore -- DocumentPicker asset shape
         type: asset.mimeType || "application/octet-stream",
-      } as any);
+      } as unknown as Blob);
 
       const res = await fetch(`${API_BASE}/api/imports/collection`, {
         method: "POST",
@@ -177,6 +185,8 @@ return (
           <AnimatedPressable
             style={[styles.quickScanCard, { backgroundColor: colors.card }]}
             onPress={handleQuickScanPress}
+            accessibilityRole="button"
+            accessibilityLabel="Start QuickScan to add item by photo"
           >
             <View style={[styles.quickScanIconCircle, { backgroundColor: colors.accent + '20' }]}>
               <Ionicons name="scan-outline" size={32} color={colors.accent} />
@@ -200,6 +210,8 @@ return (
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
             router.push('/barcode-scan');
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Scan barcode or ISBN"
         >
           <View style={[styles.barcodeIconCircle, { backgroundColor: colors.accent + '15' }]}>
             <Ionicons name="barcode-outline" size={24} color={colors.accent} />
@@ -224,6 +236,8 @@ return (
         <AnimatedPressable
           style={[styles.manualCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
           onPress={handleManualAddPress}
+          accessibilityRole="button"
+          accessibilityLabel="Add item manually"
         >
           <View style={[styles.manualIconCircle, { backgroundColor: colors.background }]}>
             <Ionicons name="create-outline" size={24} color={colors.text} />
