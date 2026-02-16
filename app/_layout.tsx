@@ -100,6 +100,7 @@ function RootStack() {
       <Stack.Screen name="quickscan" options={iconOnlyHeader} />
       <Stack.Screen name="add-manual" options={iconOnlyHeader} />
       <Stack.Screen name="events/[eventId]" options={iconOnlyHeader} />
+      <Stack.Screen name="watchlist-builder" options={iconOnlyHeader} />
       <Stack.Screen name="purchase/index" options={iconOnlyHeader} />
       <Stack.Screen name="purchase/create-mandate" options={iconOnlyHeader} />
       <Stack.Screen name="purchase/deal/[dealId]" options={iconOnlyHeader} />

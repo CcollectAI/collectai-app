@@ -306,9 +306,9 @@ export default function PortfolioScreen() {
     router.push("/analytics");
   };
 
-  // Navigate to watchlist
+  // Navigate to items tab from watchlist
   const handleWatchlistPress = () => {
-    router.push("/watchlist-builder");
+    router.navigate("/(tabs)/items");
   };
 
   return (
@@ -414,17 +414,19 @@ export default function PortfolioScreen() {
             alerts={alerts}
             onAlertPress={(alert) => {
               markAsRead(alert.id);
-              router.push({ pathname: '/item/[id]', params: { id: alert.itemId } });
+              const itemId = alert.itemId || alert.id;
+              router.push({
+                pathname: '/item/[id]',
+                params: {
+                  id: itemId,
+                  name: alert.itemName,
+                  category: alert.itemCategory || '',
+                  value: String(alert.value || 0),
+                },
+              });
             }}
             onStartWatchlist={handleWatchlistPress}
             showEmptyState={true}
-          />
-        )}
-        {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && (
-          <InsightsCard
-            insights={insights}
-            tierSummary={tierSummary}
-            onViewDetails={handleAnalyticsPress}
           />
         )}
 
@@ -453,6 +455,14 @@ export default function PortfolioScreen() {
             <Text style={styles.analyticsBannerBtnText}>View</Text>
           </View>
         </AnimatedPressable>
+
+        {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && (
+          <InsightsCard
+            insights={insights}
+            tierSummary={tierSummary}
+            onViewDetails={handleAnalyticsPress}
+          />
+        )}
 
         {/* Collection Section Header */}
         <View style={styles.sectionHeader}>
@@ -577,7 +587,7 @@ export default function PortfolioScreen() {
                     ]}
                     onPress={() => {
                       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      handleWatchlistPress();
+                      router.navigate('/(tabs)/items');
                     }}
                     accessibilityRole="button"
                     accessibilityLabel={`Watchlist item: ${it.name ?? it.title}`}
@@ -614,8 +624,6 @@ export default function PortfolioScreen() {
             </View>
           </>
         )}
-
-        {/* Watchlist Empty State - Now shown in AlertsCard above */}
 
         {/* Bottom spacing */}
         <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />

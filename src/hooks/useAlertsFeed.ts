@@ -58,7 +58,7 @@ export function useAlertsFeed(
         return {
           id: fi.id,
           type: alertType,
-          itemId: fi.itemId ?? '',
+          itemId: fi.itemId ?? fi.watchlistItemId ?? '',
           itemName: fi.title,
           itemCategory: '',
           description: fi.title,
