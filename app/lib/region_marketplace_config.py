@@ -34,10 +34,10 @@ def get_ebay_marketplace_id(region: str | None) -> str:
 # True = use this adapter, False = skip
 
 _ADAPTER_POLICY: Dict[str, Dict[str, bool]] = {
-    "americas": {"ebay": True, "tcgplayer": True, "firecrawl": True},
-    "europe":   {"ebay": True, "tcgplayer": False, "firecrawl": True},
-    "japan":    {"ebay": True, "tcgplayer": False, "firecrawl": True},
-    "other":    {"ebay": True, "tcgplayer": True, "firecrawl": True},
+    "americas": {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True},
+    "europe":   {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True},
+    "japan":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True},
+    "other":    {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True},
 }
 
 
@@ -171,3 +171,14 @@ def get_firecrawl_sites(
     if not region_map:
         return None
     return region_map.get(category)
+
+
+def get_crawl4ai_sites(
+    region: str | None,
+    category: str | None,
+) -> Optional[List[str]]:
+    """Return region-specific Crawl4AI site targets.
+
+    Delegates to get_firecrawl_sites() — both adapters target the same sites.
+    """
+    return get_firecrawl_sites(region, category)

@@ -7,6 +7,7 @@ from starlette.testclient import TestClient
 os.environ.setdefault("DB_ENABLED", "false")
 os.environ.setdefault("DATABASE_URL", "mock://localhost")
 os.environ.setdefault("DEV_MODE", "true")
+os.environ.setdefault("FORCE_DEV_MODE", "true")  # bypass hostname check in validate_config
 os.environ["RATE_LIMIT_ENABLED"] = "false"
 os.environ["PER_USER_RATE_LIMIT_ENABLED"] = "false"
 

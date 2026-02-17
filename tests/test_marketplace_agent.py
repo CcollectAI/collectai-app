@@ -301,6 +301,8 @@ class TestMarketplaceAgentSearch:
             agent._tcgplayer.configured = False
             agent._firecrawl = MagicMock()
             agent._firecrawl.configured = False
+            agent._crawl4ai = MagicMock()
+            agent._crawl4ai.configured = False
 
             result = await agent.aggregate_search("Charizard")
 
@@ -329,6 +331,8 @@ class TestMarketplaceAgentSearch:
             agent._tcgplayer.configured = False
             agent._firecrawl = MagicMock()
             agent._firecrawl.configured = False
+            agent._crawl4ai = MagicMock()
+            agent._crawl4ai.configured = False
 
             result = await agent.aggregate_search("Charizard")
 
@@ -356,6 +360,8 @@ class TestMarketplaceAgentSearch:
             agent._tcgplayer.configured = False
             agent._firecrawl = MagicMock()
             agent._firecrawl.configured = False
+            agent._crawl4ai = MagicMock()
+            agent._crawl4ai.configured = False
 
             result = await agent.aggregate_search("Charizard")
 
@@ -376,6 +382,8 @@ class TestMarketplaceAgentSearch:
             agent._tcgplayer.configured = False
             agent._firecrawl = MagicMock()
             agent._firecrawl.configured = False
+            agent._crawl4ai = MagicMock()
+            agent._crawl4ai.configured = False
 
             result = await agent.aggregate_search("test")
 
@@ -396,6 +404,8 @@ class TestMarketplaceAgentSearch:
             agent._tcgplayer.search = AsyncMock(return_value=[])
             agent._firecrawl = MagicMock()
             agent._firecrawl.configured = False
+            agent._crawl4ai = MagicMock()
+            agent._crawl4ai.configured = False
 
             # Non-TCG category should skip TCGPlayer
             result = await agent.aggregate_search("LEGO Star Wars", category="lego")
@@ -431,6 +441,8 @@ class TestMarketplaceAgentSoldComps:
             agent._tcgplayer.configured = False
             agent._firecrawl = MagicMock()
             agent._firecrawl.configured = False
+            agent._crawl4ai = MagicMock()
+            agent._crawl4ai.configured = False
 
             result = await agent.find_sold_comps("Pokemon Card", category="pokemon")
 
@@ -459,6 +471,8 @@ class TestMarketplaceAgentHealth:
             agent._tcgplayer.configured = False
             agent._firecrawl = MagicMock()
             agent._firecrawl.configured = False
+            agent._crawl4ai = MagicMock()
+            agent._crawl4ai.configured = False
 
             health = await agent.health_check()
 

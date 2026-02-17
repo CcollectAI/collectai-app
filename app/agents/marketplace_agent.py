@@ -22,10 +22,12 @@ from typing import Any, Dict, List, Optional
 from app.agents.adapters.ebay_caller import EbayCaller
 from app.agents.adapters.tcgplayer_caller import TCGPlayerCaller
 from app.agents.adapters.firecrawl_caller import FirecrawlCaller
+from app.agents.adapters.crawl4ai_caller import Crawl4AICaller
 from app.lib.region_marketplace_config import (
     should_use_adapter,
     get_ebay_marketplace_id,
     get_firecrawl_sites,
+    get_crawl4ai_sites,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,8 @@ SOURCE_RELIABILITY: Dict[str, float] = {
     "ebay_listed": 0.70,
     "firecrawl": 0.65,
     "firecrawl_sold": 0.70,
+    "crawl4ai": 0.60,
+    "crawl4ai_sold": 0.65,
 }
 
 # Bonus scores
@@ -222,6 +226,7 @@ class MarketplaceAgent:
         self._ebay = EbayCaller()
         self._tcgplayer = TCGPlayerCaller()
         self._firecrawl = FirecrawlCaller()
+        self._crawl4ai = Crawl4AICaller()
 
     @property
     def adapters_configured(self) -> Dict[str, bool]:
@@ -230,6 +235,7 @@ class MarketplaceAgent:
             "ebay": self._ebay.configured,
             "tcgplayer": self._tcgplayer.configured,
             "firecrawl": self._firecrawl.configured,
+            "crawl4ai": self._crawl4ai.configured,
         }
 
     async def close(self) -> None:
@@ -237,6 +243,7 @@ class MarketplaceAgent:
         await self._ebay.close()
         await self._tcgplayer.close()
         await self._firecrawl.close()
+        await self._crawl4ai.close()
 
     # ------------------------------------------------------------------
     # Core search
@@ -266,6 +273,7 @@ class MarketplaceAgent:
 
         ebay_mktplace = get_ebay_marketplace_id(region)
         fc_sites = get_firecrawl_sites(region, category)
+        c4_sites = get_crawl4ai_sites(region, category)
 
         # Determine which adapters to query
         tasks = []
@@ -290,6 +298,11 @@ class MarketplaceAgent:
         if self._firecrawl.configured and should_use_adapter(region, "firecrawl"):
             total_sources += 1
             tasks.append(("firecrawl", self._firecrawl.search(query, category=category, limit=limit, region_sites=fc_sites)))
+
+        # Crawl4AI (local web crawler — parallel to Firecrawl)
+        if self._crawl4ai.configured and should_use_adapter(region, "crawl4ai"):
+            total_sources += 1
+            tasks.append(("crawl4ai", self._crawl4ai.search(query, category=category, limit=limit, region_sites=c4_sites)))
 
         if not tasks:
             logger.warning("[MarketplaceAgent] No adapters configured for query: %s", query)
@@ -394,6 +407,7 @@ class MarketplaceAgent:
 
         ebay_mktplace = get_ebay_marketplace_id(region)
         fc_sites = get_firecrawl_sites(region, category)
+        c4_sites = get_crawl4ai_sites(region, category)
 
         tasks = []
 
@@ -412,6 +426,11 @@ class MarketplaceAgent:
         if self._firecrawl.configured and should_use_adapter(region, "firecrawl"):
             total_sources += 1
             tasks.append(("firecrawl_sold", self._firecrawl.sold_comps(query, category=category, limit=limit, region_sites=fc_sites)))
+
+        # Crawl4AI sold comps (local web crawler)
+        if self._crawl4ai.configured and should_use_adapter(region, "crawl4ai"):
+            total_sources += 1
+            tasks.append(("crawl4ai_sold", self._crawl4ai.sold_comps(query, category=category, limit=limit, region_sites=c4_sites)))
 
         if not tasks:
             return AggregationResult(
@@ -574,6 +593,11 @@ class MarketplaceAgent:
             tasks.append(("firecrawl", self._firecrawl.health_check()))
         else:
             checks["firecrawl"] = {"configured": False, "healthy": False}
+
+        if self._crawl4ai.configured:
+            tasks.append(("crawl4ai", self._crawl4ai.health_check()))
+        else:
+            checks["crawl4ai"] = {"configured": False, "healthy": False}
 
         if tasks:
             results = await asyncio.gather(

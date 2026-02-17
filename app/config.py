@@ -133,6 +133,15 @@ FIRECRAWL_API_KEY: str = os.getenv("FIRECRAWL_API_KEY", "")
 FIRECRAWL_BASE_URL: str = os.getenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v1")
 
 # ---------------------------------------------------------------------------
+# Crawl4AI (local web crawler)
+# ---------------------------------------------------------------------------
+
+CRAWL4AI_ENABLED: bool = os.getenv("CRAWL4AI_ENABLED", "false").lower() in ("1", "true", "yes")
+CRAWL4AI_MAX_CONCURRENT: int = int(os.getenv("CRAWL4AI_MAX_CONCURRENT", "3"))
+CRAWL4AI_TIMEOUT: int = int(os.getenv("CRAWL4AI_TIMEOUT", "30"))
+CRAWL4AI_HEADLESS: bool = os.getenv("CRAWL4AI_HEADLESS", "true").lower() in ("1", "true", "yes")
+
+# ---------------------------------------------------------------------------
 # FX rates (shared across marketplace adapters)
 # ---------------------------------------------------------------------------
 # These are fallback rates used when the live FX API is unavailable.

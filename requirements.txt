@@ -32,6 +32,7 @@ PyJWT==2.9.0
 
 # Web Scraping
 firecrawl-py==1.6.2
+crawl4ai>=0.4.3
 
 # Config
 pyyaml==6.0.3
