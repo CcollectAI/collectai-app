@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Linking } from 'react-native'
 import { Image } from 'expo-image'
-import { useSession } from '@/hooks/useSession'
+import { useAuthContext } from '@/providers/useAuthContext'
 import { searchEbay, MarketHit } from '@/lib/market'
 import { getFlags } from '@/lib/flags'
 import { logger } from '@/lib/logger'
-import { SUPABASE_URL } from '@/api/config'
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/api/config'
 
 type Tab = 'Chat'|'Search'|'Sell'
 const Blue = '#40E0D0' // Tiffany-ish
@@ -13,7 +13,9 @@ const Navy = '#112B3C'
 
 export default function MarketplaceScreen() {
   const [tab, setTab] = useState<Tab>('Search')
-  const { jwt, anonKey } = useSession()
+  const { session } = useAuthContext()
+  const jwt = session?.access_token ?? ''
+  const anonKey = SUPABASE_ANON_KEY ?? ''
   const base = SUPABASE_URL || ""
 
   const [query, setQuery] = useState('Pikachu VMAX')

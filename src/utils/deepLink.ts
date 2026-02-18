@@ -68,3 +68,39 @@ export function getEventShareUrl(eventId: string): ShareUrls {
     deepLink: `${APP_SCHEME}://events/${encodeURIComponent(eventId)}`,
   };
 }
+
+/**
+ * Generate share URLs for a category page.
+ *
+ * Maps to route: app/categories/[categoryId].tsx
+ */
+export function getCategoryShareUrl(categoryId: string): ShareUrls {
+  return {
+    webUrl: `${WEB_DOMAIN}/categories/${encodeURIComponent(categoryId)}`,
+    deepLink: `${APP_SCHEME}://categories/${encodeURIComponent(categoryId)}`,
+  };
+}
+
+/**
+ * Generate share URLs for a deal.
+ *
+ * Maps to route: app/purchase/deal/[dealId].tsx
+ */
+export function getDealShareUrl(dealId: string): ShareUrls {
+  return {
+    webUrl: `${WEB_DOMAIN}/purchase/deal/${encodeURIComponent(dealId)}`,
+    deepLink: `${APP_SCHEME}://purchase/deal/${encodeURIComponent(dealId)}`,
+  };
+}
+
+/**
+ * Generate share URLs for a user profile.
+ *
+ * Maps to route: app/users/[userId].tsx
+ */
+export function getUserShareUrl(userId: string): ShareUrls {
+  return {
+    webUrl: `${WEB_DOMAIN}/users/${encodeURIComponent(userId)}`,
+    deepLink: `${APP_SCHEME}://users/${encodeURIComponent(userId)}`,
+  };
+}

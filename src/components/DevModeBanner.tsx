@@ -4,7 +4,7 @@ import { API_BASE_URL, API_KEY } from '@/config/api';
 import { useTheme } from '@/theme';
 
 export default function DevModeBanner() {
-  const { colors, spacing, textVariants } = useTheme();
+  const { colors, spacing } = useTheme();
 
   const baseUrl = API_BASE_URL || 'http://127.0.0.1:8080';
   const hasApiKey = Boolean(API_KEY);
@@ -25,25 +25,23 @@ export default function DevModeBanner() {
         borderRadius: spacing.md,
         padding: spacing.sm,
         marginBottom: spacing.md,
-        backgroundColor: colors.surfaceSubtle,
+        backgroundColor: colors.card,
       }}
     >
       <Text
-        style={[
-          textVariants.caption,
-          {
-            color: colors.textSecondary,
-            marginBottom: spacing.xs,
-          },
-        ]}
+        style={{
+          fontSize: 11,
+          color: colors.muted,
+          marginBottom: spacing.xs,
+        }}
       >
         {envLabel} • {hasApiKey ? 'API key: set' : 'API key: not set'}
       </Text>
       <Text
-        style={[
-          textVariants.caption,
-          { color: colors.textSecondary },
-        ]}
+        style={{
+          fontSize: 11,
+          color: colors.muted,
+        }}
       >
         {baseUrlDisplay}
       </Text>

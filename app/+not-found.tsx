@@ -24,7 +24,7 @@ export default function NotFoundScreen() {
         does not match any screen.
       </Text>
 
-      <Link href="/(tabs)/portfolio" asChild>
+      <Link href={"/(tabs)/portfolio" as any} asChild>
         <Pressable
           accessibilityRole="link"
           accessibilityLabel="Go to Portfolio"

@@ -70,7 +70,7 @@ export interface HealthStatus {
   [key: string]: unknown;
 }
 
-async function request<T>(
+export async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
@@ -615,3 +615,23 @@ export async function getCollectionsLeaderboard(): Promise<CollectionLeaderboard
     (data && ((data as Record<string, unknown>).leaderboard || (data as Record<string, unknown>).items || (data as Record<string, unknown>).rows || data)) ?? [];
   return (Array.isArray(raw) ? raw : []) as CollectionLeaderboardEntry[];
 }
+
+// Default export: lightweight HTTP client used by alertsClient, antiFraudClient, etc.
+const client = {
+  async get(path: string) {
+    const data = await request<unknown>(path);
+    return { data };
+  },
+  async post(path: string, body?: unknown) {
+    const data = await request<unknown>(path, {
+      method: 'POST',
+      body: body != null ? JSON.stringify(body) : undefined,
+    });
+    return { data };
+  },
+  async delete(path: string) {
+    await request<unknown>(path, { method: 'DELETE' });
+  },
+};
+
+export default client;

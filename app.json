@@ -1,8 +1,17 @@
 {
   "expo": {
-    "name": "collectorsapp",
-    "slug": "collectorsapp",
+    "name": "CollectAI",
+    "slug": "collectai",
+    "version": "1.0.0",
     "scheme": "collectai",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#81D8D0"
+    },
+    "userInterfaceStyle": "automatic",
     "plugins": [
       [
         "expo-router",
@@ -20,10 +29,14 @@
           "calendarPermission": "CollectAI needs access to your calendar to add collection events and drops."
         }
       ],
-"expo-notifications"
+"expo-notifications",
+      "expo-apple-authentication"
     ],
     "ios": {
       "bundleIdentifier": "com.collectai.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "usesAppleSignIn": true,
       "associatedDomains": [
         "applinks:collectai.app",
         "applinks:www.collectai.app"
@@ -35,6 +48,11 @@
     },
     "android": {
       "package": "com.collectai.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#81D8D0"
+      },
+      "versionCode": 1,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -52,6 +70,21 @@
             },
             {
               "scheme": "https",
+              "host": "collectai.app",
+              "pathPrefix": "/categories"
+            },
+            {
+              "scheme": "https",
+              "host": "collectai.app",
+              "pathPrefix": "/purchase"
+            },
+            {
+              "scheme": "https",
+              "host": "collectai.app",
+              "pathPrefix": "/users"
+            },
+            {
+              "scheme": "https",
               "host": "www.collectai.app",
               "pathPrefix": "/item"
             },
@@ -59,6 +92,21 @@
               "scheme": "https",
               "host": "www.collectai.app",
               "pathPrefix": "/events"
+            },
+            {
+              "scheme": "https",
+              "host": "www.collectai.app",
+              "pathPrefix": "/categories"
+            },
+            {
+              "scheme": "https",
+              "host": "www.collectai.app",
+              "pathPrefix": "/purchase"
+            },
+            {
+              "scheme": "https",
+              "host": "www.collectai.app",
+              "pathPrefix": "/users"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

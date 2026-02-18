@@ -7,6 +7,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { fireHaptic, HapticIntent } from '@/haptics';
 import { RangeBar } from './RangeBar';
 import {
   PriceEstimate,
@@ -88,7 +89,7 @@ export function PriceCard({
       {onWhyThisPrice && (
         <Pressable
           style={styles.whyLink}
-          onPress={onWhyThisPrice}
+          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onWhyThisPrice?.(); }}
           accessibilityRole="button"
           accessibilityLabel="Learn why this price was estimated"
           accessibilityHint="Opens explanation of how this price was calculated"

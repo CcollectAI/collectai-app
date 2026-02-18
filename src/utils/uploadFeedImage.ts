@@ -13,7 +13,7 @@ function base64ToUint8Array(base64: string) {
 export async function uploadFeedImage(uid: string, uri: string) {
   const ext = (uri.split('.').pop() || 'jpg').toLowerCase();
   const path = `${uid}/${Date.now()}.${ext}`;
-  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
   const bytes = base64ToUint8Array(base64);
   const { error } = await supabase.storage.from('feed-images').upload(path, bytes, { contentType: `image/${ext==='jpg'?'jpeg':ext}` });
   if (error) throw error;

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
@@ -9,6 +10,7 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
+  SectionList,
   ActivityIndicator,
   Alert,
   Animated,
@@ -497,13 +499,22 @@ const ItemsScreen: React.FC = () => {
     [dataSource]
   );
 
-  const handleAddForCategory = (category: string) => {
+  const handleAddForCategory = useCallback((category: string) => {
     router.push({
       pathname: "/add",
       params: { categoryHint: category },
     });
-  };
+  }, [router]);
 
+  // SectionList sections derived from grouped data
+  const sections = useMemo(() =>
+    filteredAndSortedByCategory.map(group => ({
+      title: group.category,
+      data: group.items,
+      total: group.total,
+    })),
+    [filteredAndSortedByCategory]
+  );
 
   const hasAnyFilter =
     !!categoryParam ||
@@ -570,6 +581,369 @@ const ItemsScreen: React.FC = () => {
     );
   }
 
+  // Shared header element for both gallery ScrollView and list SectionList
+  const headerElement = (
+    <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
+      {/* Header row - switches between normal and multi-select mode */}
+      {isMultiSelectMode ? (
+        <>
+          <View style={styles.multiSelectHeader}>
+            <AnimatedPressable
+              style={styles.multiSelectCloseBtn}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                exitMultiSelectMode();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Exit multi-select mode"
+            >
+              <Ionicons name="close" size={24} color={colors.text} />
+            </AnimatedPressable>
+            <Text style={[styles.multiSelectTitle, { color: colors.text }]}>
+              {selectedCount} selected
+            </Text>
+            <View style={styles.multiSelectActions}>
+              <AnimatedPressable
+                style={styles.multiSelectActionBtn}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  (selectedCount === providerItems.length ? deselectAll : selectAll)();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={selectedCount === providerItems.length ? 'Deselect all items' : 'Select all items'}
+              >
+                <Text style={[styles.multiSelectActionText, { color: colors.accent }]}>
+                  {selectedCount === providerItems.length ? 'Deselect All' : 'Select All'}
+                </Text>
+              </AnimatedPressable>
+            </View>
+          </View>
+
+          {/* Bulk Actions - Top contextual bar */}
+          {selectedCount > 0 && (
+            <View style={[styles.topBulkActionsBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              {(bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading) ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <View style={styles.topBulkActionsRow}>
+                  <AnimatedPressable
+                    style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
+                    onPress={() => {
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      setCategoryModalVisible(true);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Move selected items to category"
+                  >
+                    <Ionicons name="folder-outline" size={18} color={colors.accent} />
+                    <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Move</Text>
+                  </AnimatedPressable>
+
+                  <AnimatedPressable
+                    style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
+                    onPress={() => {
+                      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+                      handleBulkExport();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Export selected items"
+                  >
+                    <Ionicons name="download-outline" size={18} color={colors.accent} />
+                    <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Export</Text>
+                  </AnimatedPressable>
+
+                  <AnimatedPressable
+                    style={[styles.topBulkActionBtn, { backgroundColor: ACTION_COLORS.archiveBg }]}
+                    onPress={() => {
+                      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+                      handleBulkArchive();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Archive selected items"
+                  >
+                    <Ionicons name="archive-outline" size={18} color={ACTION_COLORS.archive} />
+                    <Text style={[styles.topBulkActionText, { color: ACTION_COLORS.archive }]}>Archive</Text>
+                  </AnimatedPressable>
+
+                  <AnimatedPressable
+                    style={[styles.topBulkActionBtn, { backgroundColor: ACTION_COLORS.dangerBg }]}
+                    onPress={() => {
+                      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+                      handleBulkDelete();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete selected items"
+                  >
+                    <Ionicons name="trash-outline" size={18} color={ACTION_COLORS.danger} />
+                    <Text style={[styles.topBulkActionText, { color: ACTION_COLORS.danger }]}>Delete</Text>
+                  </AnimatedPressable>
+                </View>
+              )}
+            </View>
+          )}
+        </>
+      ) : (
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Items
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>
+              Portfolio total: {formatPrice(portfolioTotal)}
+            </Text>
+          </View>
+
+          <View style={styles.headerIcons}>
+            <InboxHeaderButton color={colors.text} size={22} />
+            <ThemeToggleButton size={22} />
+          </View>
+        </View>
+      )}
+
+      {/* Search row */}
+      <View style={styles.searchRow}>
+        <View style={[styles.searchInputWrapper, { backgroundColor: colors.card }]}>
+          <Ionicons name="search" size={16} color={colors.muted} style={styles.searchIcon} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search items"
+            placeholderTextColor={colors.muted}
+            accessibilityLabel="Search items"
+            style={[
+              styles.searchInput,
+              {
+                backgroundColor: colors.card,
+                color: colors.text,
+              },
+            ]}
+          />
+        </View>
+
+        {/* Filter button */}
+        <AnimatedPressable
+          style={[styles.searchRowButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            setFilterSheetVisible(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open filters"
+        >
+          <Ionicons name="options-outline" size={18} color={colors.accent} />
+          {(advancedFilter.categories.length > 0 ||
+            advancedFilter.conditions.length > 0 ||
+            advancedFilter.priceMin !== null ||
+            advancedFilter.priceMax !== null) && (
+            <View style={[styles.filterDot, { backgroundColor: colors.accent }]} />
+          )}
+        </AnimatedPressable>
+      </View>
+
+      {/* Controls row: View toggle, Select All */}
+      <View style={styles.controlsRowNew}>
+        {/* View mode toggle */}
+        <View style={styles.viewToggleRow}>
+          <AnimatedPressable
+            style={[
+              styles.viewToggleBtn,
+              viewMode === 'list' && { backgroundColor: colors.accent + '20' },
+              { borderColor: colors.border },
+            ]}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setViewMode('list');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="List view"
+          >
+            <Ionicons
+              name="list"
+              size={18}
+              color={viewMode === 'list' ? colors.accent : colors.muted}
+            />
+          </AnimatedPressable>
+          <AnimatedPressable
+            style={[
+              styles.viewToggleBtn,
+              viewMode === 'gallery' && { backgroundColor: colors.accent + '20' },
+              { borderColor: colors.border },
+            ]}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setViewMode('gallery');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Gallery view"
+          >
+            <Ionicons
+              name="grid"
+              size={18}
+              color={viewMode === 'gallery' ? colors.accent : colors.muted}
+            />
+          </AnimatedPressable>
+        </View>
+
+        {/* Spacer */}
+        <View style={{ flex: 1 }} />
+
+        {/* Select All text button */}
+        {!isMultiSelectMode && (
+          <AnimatedPressable
+            style={styles.selectAllTextBtn}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              enterMultiSelectMode();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Enter selection mode"
+          >
+            <Text style={[styles.selectAllText, { color: colors.accent }]}>Select</Text>
+          </AnimatedPressable>
+        )}
+      </View>
+
+      {/* Active filter summary */}
+      {hasAnyFilter && (
+        <View style={styles.filterSummaryRow}>
+          <Text style={[styles.filterSummaryText, { color: colors.muted }]}>
+            Filtered by:
+          </Text>
+          <View style={styles.filterChipsRow}>
+            {categoryParam && (
+              <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
+                <Text style={[styles.filterChipText, { color: colors.text }]}>
+                  Category: {categoryParam}
+                </Text>
+              </View>
+            )}
+            {collectionParam && (
+              <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
+                <Text style={[styles.filterChipText, { color: colors.text }]}>
+                  Collection: {collectionParam}
+                </Text>
+              </View>
+            )}
+            {filterCategory && !categoryParam && (
+              <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
+                <Text style={[styles.filterChipText, { color: colors.text }]}>
+                  Category: {filterCategory}
+                </Text>
+              </View>
+            )}
+            {query.trim().length > 0 && (
+              <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
+                <Text style={[styles.filterChipText, { color: colors.text }]}>
+                  Search: "{query.trim()}"
+                </Text>
+              </View>
+            )}
+          </View>
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              clearFilters();
+            }}
+            style={styles.filterClearButton}
+            accessibilityRole="button"
+            accessibilityLabel="Clear all filters"
+          >
+            <Text style={[styles.filterClearText, { color: colors.muted }]}>
+              Clear
+            </Text>
+          </AnimatedPressable>
+        </View>
+      )}
+    </Animated.View>
+  );
+
+  // Shared footer element
+  const footerElement = (
+    <>
+      {/* Bottom Action Bar */}
+      <View style={[styles.bottomActionBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.bottomActionTitle, { color: colors.text }]}>
+          Actions
+        </Text>
+
+        <View style={styles.bottomActionButtons}>
+          <AnimatedPressable
+            style={[
+              styles.actionButtonPrimary,
+              { backgroundColor: colors.accent },
+              exporting && styles.actionButtonDisabled,
+            ]}
+            onPress={() => {
+              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+              handleExportCSV();
+            }}
+            disabled={exporting}
+            accessibilityRole="button"
+            accessibilityLabel="Download collection overview as CSV"
+          >
+            {exporting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="download-outline" size={18} color="#FFFFFF" />
+            )}
+            <Text style={styles.actionButtonPrimaryText}>
+              {exporting ? 'Exporting...' : 'Download overview'}
+            </Text>
+          </AnimatedPressable>
+
+          <AnimatedPressable
+            style={[
+              styles.actionButtonSecondary,
+              { borderColor: colors.accent },
+            ]}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.push('/build-paint-projects');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Open build and paint projects"
+          >
+            <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
+            <Text style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
+              Projects
+            </Text>
+          </AnimatedPressable>
+        </View>
+
+        {exportStatus && (
+          <View style={[styles.exportStatusBanner, { backgroundColor: colors.accent + '15' }]}>
+            <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+            <Text style={[styles.exportStatusText, { color: colors.accent }]}>
+              {exportStatus}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Loading-more spinner at bottom of list */}
+      {isLoadingMore && (
+        <View style={styles.loadingMoreContainer}>
+          <ActivityIndicator size="small" color={colors.accent} />
+        </View>
+      )}
+    </>
+  );
+
+  const emptyElement = (
+    <Text style={[styles.emptyText, { color: colors.muted }]}>
+      No items match your filters yet.
+    </Text>
+  );
+
+  const refreshCtrl = (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      tintColor={colors.accent}
+      colors={[colors.accent]}
+    />
+  );
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
@@ -577,574 +951,153 @@ const ItemsScreen: React.FC = () => {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
       >
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          { backgroundColor: colors.background },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        onScroll={handleScroll}
-        scrollEventThrottle={400}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
-          />
-        }
-      >
-        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
-        {/* Header row - switches between normal and multi-select mode */}
-        {isMultiSelectMode ? (
-          <>
-            <View style={styles.multiSelectHeader}>
-              <AnimatedPressable
-                style={styles.multiSelectCloseBtn}
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  exitMultiSelectMode();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Exit multi-select mode"
-              >
-                <Ionicons name="close" size={24} color={colors.text} />
-              </AnimatedPressable>
-              <Text style={[styles.multiSelectTitle, { color: colors.text }]}>
-                {selectedCount} selected
-              </Text>
-              <View style={styles.multiSelectActions}>
-                <AnimatedPressable
-                  style={styles.multiSelectActionBtn}
-                  onPress={() => {
-                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                    (selectedCount === providerItems.length ? deselectAll : selectAll)();
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={selectedCount === providerItems.length ? 'Deselect all items' : 'Select all items'}
-                >
-                  <Text style={[styles.multiSelectActionText, { color: colors.accent }]}>
-                    {selectedCount === providerItems.length ? 'Deselect All' : 'Select All'}
-                  </Text>
-                </AnimatedPressable>
-              </View>
-            </View>
-
-            {/* Bulk Actions - Top contextual bar */}
-            {selectedCount > 0 && (
-              <View style={[styles.topBulkActionsBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {(bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading) ? (
-                  <ActivityIndicator size="small" color={colors.accent} />
-                ) : (
-                  <View style={styles.topBulkActionsRow}>
-                    <AnimatedPressable
-                      style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
-                      onPress={() => {
-                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                        setCategoryModalVisible(true);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Move selected items to category"
-                    >
-                      <Ionicons name="folder-outline" size={18} color={colors.accent} />
-                      <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Move</Text>
-                    </AnimatedPressable>
-
-                    <AnimatedPressable
-                      style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
-                      onPress={() => {
-                        fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-                        handleBulkExport();
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Export selected items"
-                    >
-                      <Ionicons name="download-outline" size={18} color={colors.accent} />
-                      <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Export</Text>
-                    </AnimatedPressable>
-
-                    <AnimatedPressable
-                      style={[styles.topBulkActionBtn, { backgroundColor: ACTION_COLORS.archiveBg }]}
-                      onPress={() => {
-                        fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-                        handleBulkArchive();
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Archive selected items"
-                    >
-                      <Ionicons name="archive-outline" size={18} color={ACTION_COLORS.archive} />
-                      <Text style={[styles.topBulkActionText, { color: ACTION_COLORS.archive }]}>Archive</Text>
-                    </AnimatedPressable>
-
-                    <AnimatedPressable
-                      style={[styles.topBulkActionBtn, { backgroundColor: ACTION_COLORS.dangerBg }]}
-                      onPress={() => {
-                        fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-                        handleBulkDelete();
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Delete selected items"
-                    >
-                      <Ionicons name="trash-outline" size={18} color={ACTION_COLORS.danger} />
-                      <Text style={[styles.topBulkActionText, { color: ACTION_COLORS.danger }]}>Delete</Text>
-                    </AnimatedPressable>
-                  </View>
-                )}
-              </View>
-            )}
-          </>
-        ) : (
-          <View style={styles.headerRow}>
-            <View style={styles.headerLeft}>
-              <Text style={[styles.title, { color: colors.text }]}>
-                Items
-              </Text>
-              <Text style={[styles.subtitle, { color: colors.muted }]}>
-                Portfolio total: {formatPrice(portfolioTotal)}
-              </Text>
-            </View>
-
-            <View style={styles.headerIcons}>
-              <InboxHeaderButton color={colors.text} size={22} />
-              <ThemeToggleButton size={22} />
-            </View>
-          </View>
-        )}
-
-        {/* Search row */}
-        <View style={styles.searchRow}>
-          <View style={[styles.searchInputWrapper, { backgroundColor: colors.card }]}>
-            <Ionicons name="search" size={16} color={colors.muted} style={styles.searchIcon} />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search items"
-              placeholderTextColor={colors.muted}
-              accessibilityLabel="Search items"
-              style={[
-                styles.searchInput,
-                {
-                  backgroundColor: colors.card,
-                  color: colors.text,
-                },
-              ]}
+      {viewMode === 'gallery' ? (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.content, { backgroundColor: colors.background }]}
+          keyboardShouldPersistTaps="handled"
+          onScroll={handleScroll}
+          scrollEventThrottle={400}
+          refreshControl={refreshCtrl}
+        >
+          {headerElement}
+          {filteredAndSortedByCategory.length === 0 ? (
+            emptyElement
+          ) : (
+            <ItemGalleryGrid
+              items={filteredAndSortedByCategory.flatMap((g) =>
+                g.items.map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                  category: item.category,
+                  value: item.value,
+                  imageUrl: undefined,
+                }))
+              )}
+              onItemPress={(item) => {
+                const fullItem = dataSource.find((i) => i.id === item.id);
+                if (fullItem) handleOpenItem(fullItem);
+              }}
+              colors={{
+                card: colors.card,
+                text: colors.text,
+                muted: colors.muted,
+                border: colors.border,
+                accent: colors.accent,
+              }}
             />
-          </View>
-
-          {/* Filter button */}
-          <AnimatedPressable
-            style={[styles.searchRowButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              setFilterSheetVisible(true);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Open filters"
-          >
-            <Ionicons name="options-outline" size={18} color={colors.accent} />
-            {(advancedFilter.categories.length > 0 ||
-              advancedFilter.conditions.length > 0 ||
-              advancedFilter.priceMin !== null ||
-              advancedFilter.priceMax !== null) && (
-              <View style={[styles.filterDot, { backgroundColor: colors.accent }]} />
-            )}
-          </AnimatedPressable>
-        </View>
-
-        {/* Controls row: View toggle, Select All */}
-        <View style={styles.controlsRowNew}>
-          {/* View mode toggle */}
-          <View style={styles.viewToggleRow}>
-            <AnimatedPressable
-              style={[
-                styles.viewToggleBtn,
-                viewMode === 'list' && { backgroundColor: colors.accent + '20' },
-                { borderColor: colors.border },
-              ]}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                setViewMode('list');
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="List view"
-            >
-              <Ionicons
-                name="list"
-                size={18}
-                color={viewMode === 'list' ? colors.accent : colors.muted}
-              />
-            </AnimatedPressable>
-            <AnimatedPressable
-              style={[
-                styles.viewToggleBtn,
-                viewMode === 'gallery' && { backgroundColor: colors.accent + '20' },
-                { borderColor: colors.border },
-              ]}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                setViewMode('gallery');
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Gallery view"
-            >
-              <Ionicons
-                name="grid"
-                size={18}
-                color={viewMode === 'gallery' ? colors.accent : colors.muted}
-              />
-            </AnimatedPressable>
-          </View>
-
-          {/* Spacer */}
-          <View style={{ flex: 1 }} />
-
-          {/* Select All text button */}
-          {!isMultiSelectMode && (
-            <AnimatedPressable
-              style={styles.selectAllTextBtn}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                enterMultiSelectMode();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Enter selection mode"
-            >
-              <Text style={[styles.selectAllText, { color: colors.accent }]}>Select</Text>
-            </AnimatedPressable>
           )}
-        </View>
-
-        {/* Active filter summary */}
-        {hasAnyFilter && (
-          <View style={styles.filterSummaryRow}>
-            <Text style={[styles.filterSummaryText, { color: colors.muted }]}>
-              Filtered by:
-            </Text>
-            <View style={styles.filterChipsRow}>
-              {categoryParam && (
-                <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: colors.text },
-                    ]}
-                  >
-                    Category: {categoryParam}
-                  </Text>
-                </View>
-              )}
-              {collectionParam && (
-                <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: colors.text },
-                    ]}
-                  >
-                    Collection: {collectionParam}
-                  </Text>
-                </View>
-              )}
-              {filterCategory && !categoryParam && (
-                <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: colors.text },
-                    ]}
-                  >
-                    Category: {filterCategory}
-                  </Text>
-                </View>
-              )}
-              {query.trim().length > 0 && (
-                <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: colors.text },
-                    ]}
-                  >
-                    Search: "{query.trim()}"
-                  </Text>
-                </View>
-              )}
-            </View>
-            <AnimatedPressable
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                clearFilters();
-              }}
-              style={styles.filterClearButton}
-              accessibilityRole="button"
-              accessibilityLabel="Clear all filters"
-            >
-              <Text
-                style={[styles.filterClearText, { color: colors.muted }]}
-              >
-                Clear
-              </Text>
-            </AnimatedPressable>
-          </View>
-        )}
-
-        {/* Items view - List or Gallery */}
-        {filteredAndSortedByCategory.length === 0 ? (
-          <Text style={[styles.emptyText, { color: colors.muted }]}>
-            No items match your filters yet.
-          </Text>
-        ) : viewMode === 'gallery' ? (
-          /* Gallery View */
-          <ItemGalleryGrid
-            items={filteredAndSortedByCategory.flatMap((g) =>
-              g.items.map((item) => ({
-                id: item.id,
-                name: item.name,
-                category: item.category,
-                value: item.value,
-                imageUrl: undefined, // Add imageUrl when available from DataProvider
-              }))
-            )}
-            onItemPress={(item) => {
-              const fullItem = dataSource.find((i) => i.id === item.id);
-              if (fullItem) handleOpenItem(fullItem);
-            }}
-            colors={{
-              card: colors.card,
-              text: colors.text,
-              muted: colors.muted,
-              border: colors.border,
-              accent: colors.accent,
-            }}
-          />
-        ) : (
-          /* List View - Grouped by category */
-          filteredAndSortedByCategory.map((group) => (
-            <View key={group.category} style={[styles.categoryBlock, { borderTopColor: colors.border }]}>
-              {/* Category header with inline add button */}
+          {footerElement}
+        </ScrollView>
+      ) : (
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          renderSectionHeader={({ section }) => (
+            <View style={[styles.categoryBlock, { borderTopColor: colors.border }]}>
               <View style={styles.categoryHeaderRow}>
-                <Text
-                  style={[
-                    styles.categoryTitle,
-                    { color: colors.text },
-                  ]}
-                >
-                  {group.category}
+                <Text style={[styles.categoryTitle, { color: colors.text }]}>
+                  {section.title}
                 </Text>
                 <AnimatedPressable
-                  style={[
-                    styles.categoryAddButton,
-                    { borderColor: colors.accent },
-                  ]}
+                  style={[styles.categoryAddButton, { borderColor: colors.accent }]}
                   onPress={() => {
                     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                    handleAddForCategory(group.category);
+                    handleAddForCategory(section.title);
                   }}
                   accessibilityRole="button"
-                  accessibilityLabel={`Add item to ${group.category}`}
+                  accessibilityLabel={`Add item to ${section.title}`}
                 >
-                  <Ionicons
-                    name="add-outline"
-                    size={14}
-                    color={colors.accent}
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text
-                    style={[
-                      styles.categoryAddText,
-                      { color: colors.accent },
-                    ]}
-                  >
-                    Add
-                  </Text>
+                  <Ionicons name="add-outline" size={14} color={colors.accent} style={{ marginRight: 4 }} />
+                  <Text style={[styles.categoryAddText, { color: colors.accent }]}>Add</Text>
                 </AnimatedPressable>
               </View>
-
-              {/* Items in category */}
-              {group.items.map((item) => (
-                <Animated.View
-                  key={item.id}
-                  style={getStaggerStyle(staggerIndexMap.current.get(item.id) ?? 0)}
-                >
-                <AnimatedPressable
-                  style={[
-                    styles.itemRow,
-                    { borderColor: colors.border },
-                    isMultiSelectMode && isSelected(item.id) && {
-                      backgroundColor: colors.accent + '15',
-                      borderColor: colors.accent,
-                    },
-                  ]}
-                  onPress={() => {
-                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                    handleItemPress(item);
-                  }}
-                  onLongPress={() => handleLongPress(item.id)}
-                  delayLongPress={400}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
-                >
-                  {/* Checkbox in multi-select mode */}
-                  {isMultiSelectMode && (
-                    <View style={styles.checkboxContainer}>
-                      <View
-                        style={[
-                          styles.checkbox,
-                          { borderColor: colors.border },
-                          isSelected(item.id) && {
-                            backgroundColor: colors.accent,
-                            borderColor: colors.accent,
-                          },
-                        ]}
-                      >
-                        {isSelected(item.id) && (
-                          <Ionicons name="checkmark" size={14} color="#fff" />
-                        )}
-                      </View>
-                    </View>
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.itemName,
-                        { color: colors.text },
-                      ]}
-                    >
-                      {item.name}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.itemMeta,
-                        { color: colors.muted },
-                      ]}
-                    >
-                      <CategoryPill id={item.category} label={item.category} /> – {item.collectionName}
-                    </Text>
-                    {item.condition ? (
-                      <Text
-                        style={[
-                          styles.itemCondition,
-                          { color: colors.muted },
-                        ]}
-                      >
-                        {item.condition}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <View style={styles.itemRight}>
-                    <Text
-                      style={[
-                        styles.itemValue,
-                        { color: colors.text },
-                      ]}
-                    >
-                      {formatPrice(item.value)}
-                    </Text>
-                  </View>
-                </AnimatedPressable>
-                </Animated.View>
-              ))}
-
-              {/* Category total bottom-right */}
-              <View style={styles.categoryFooterRow}>
-                <View style={{ flex: 1 }} />
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text
-                    style={[
-                      styles.categoryTotalLabel,
-                      { color: colors.muted },
-                    ]}
-                  >
-                    Collection total
-                  </Text>
-                  <Text
-                    style={[
-                      styles.categoryTotalValue,
-                      { color: colors.text },
-                    ]}
-                  >
-                    {formatPrice(group.total)}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ))
-        )}
-
-        {/* Bottom Action Bar */}
-        <View style={[styles.bottomActionBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.bottomActionTitle, { color: colors.text }]}>
-            Actions
-          </Text>
-
-          <View style={styles.bottomActionButtons}>
-            {/* Download Overview (Export CSV) */}
-            <AnimatedPressable
-              style={[
-                styles.actionButtonPrimary,
-                { backgroundColor: colors.accent },
-                exporting && styles.actionButtonDisabled,
-              ]}
-              onPress={() => {
-                fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-                handleExportCSV();
-              }}
-              disabled={exporting}
-              accessibilityRole="button"
-              accessibilityLabel="Download collection overview as CSV"
-            >
-              {exporting ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Ionicons name="download-outline" size={18} color="#FFFFFF" />
-              )}
-              <Text style={styles.actionButtonPrimaryText}>
-                {exporting ? 'Exporting...' : 'Download overview'}
-              </Text>
-            </AnimatedPressable>
-
-            {/* Projects */}
-            <AnimatedPressable
-              style={[
-                styles.actionButtonSecondary,
-                { borderColor: colors.accent },
-              ]}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                router.push('/build-paint-projects');
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Open build and paint projects"
-            >
-              <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
-              <Text style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
-                Projects
-              </Text>
-            </AnimatedPressable>
-          </View>
-
-          {/* Export status feedback */}
-          {exportStatus && (
-            <View style={[styles.exportStatusBanner, { backgroundColor: colors.accent + '15' }]}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
-              <Text style={[styles.exportStatusText, { color: colors.accent }]}>
-                {exportStatus}
-              </Text>
             </View>
           )}
-        </View>
-        </Animated.View>
-
-        {/* Bulk actions moved to top contextual bar - see multiSelectHeader section */}
-
-        {/* Loading-more spinner at bottom of list */}
-        {isLoadingMore && (
-          <View style={styles.loadingMoreContainer}>
-            <ActivityIndicator size="small" color={colors.accent} />
-          </View>
-        )}
-</ScrollView>
+          renderItem={({ item }) => (
+            <Animated.View style={getStaggerStyle(staggerIndexMap.current.get(item.id) ?? 0)}>
+              <AnimatedPressable
+                style={[
+                  styles.itemRow,
+                  { borderColor: colors.border },
+                  isMultiSelectMode && isSelected(item.id) && {
+                    backgroundColor: colors.accent + '15',
+                    borderColor: colors.accent,
+                  },
+                ]}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  handleItemPress(item);
+                }}
+                onLongPress={() => handleLongPress(item.id)}
+                delayLongPress={400}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
+              >
+                {isMultiSelectMode && (
+                  <View style={styles.checkboxContainer}>
+                    <View
+                      style={[
+                        styles.checkbox,
+                        { borderColor: colors.border },
+                        isSelected(item.id) && {
+                          backgroundColor: colors.accent,
+                          borderColor: colors.accent,
+                        },
+                      ]}
+                    >
+                      {isSelected(item.id) && (
+                        <Ionicons name="checkmark" size={14} color="#fff" />
+                      )}
+                    </View>
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.itemName, { color: colors.text }]}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.itemMeta, { color: colors.muted }]}>
+                    <CategoryPill id={item.category} label={item.category} /> – {item.collectionName}
+                  </Text>
+                  {item.condition ? (
+                    <Text style={[styles.itemCondition, { color: colors.muted }]}>
+                      {item.condition}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={styles.itemRight}>
+                  <Text style={[styles.itemValue, { color: colors.text }]}>
+                    {formatPrice(item.value)}
+                  </Text>
+                </View>
+              </AnimatedPressable>
+            </Animated.View>
+          )}
+          renderSectionFooter={({ section }) => (
+            <View style={styles.categoryFooterRow}>
+              <View style={{ flex: 1 }} />
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={[styles.categoryTotalLabel, { color: colors.muted }]}>
+                  Collection total
+                </Text>
+                <Text style={[styles.categoryTotalValue, { color: colors.text }]}>
+                  {formatPrice(section.total)}
+                </Text>
+              </View>
+            </View>
+          )}
+          ListHeaderComponent={headerElement}
+          ListFooterComponent={footerElement}
+          ListEmptyComponent={emptyElement}
+          style={styles.scroll}
+          contentContainerStyle={[styles.content, { backgroundColor: colors.background }]}
+          stickySectionHeadersEnabled={false}
+          keyboardShouldPersistTaps="handled"
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          refreshControl={refreshCtrl}
+        />
+      )}
       </KeyboardAvoidingView>
 
       {/* Category Change Modal */}
@@ -1737,4 +1690,12 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ItemsScreen;
+function ItemsScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Items">
+      <ItemsScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+export default ItemsScreenWithBoundary;

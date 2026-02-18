@@ -26,6 +26,23 @@ const LIGHT_COLORS = {
   success: "#10B981",
   warning: "#F59E0B",
   danger: "#EF4444",
+  // Semantic colors for components
+  skeleton: "#E2E8F0",
+  skeletonCard: "#FFFFFF",
+  overlay: "rgba(0,0,0,0.5)",
+  offlineBanner: "#F59E0B",
+  offlineBannerText: "#FFFFFF",
+  // Chart colors
+  chartLine: "#40C9C6",
+  chartFill: "#E0F2F1",
+  chartDot: "#14B8A6",
+  // Toast backgrounds (intentionally dark for readability)
+  toastSuccess: "#1B5E20",
+  toastError: "#B71C1C",
+  toastWarning: "#E65100",
+  toastInfo: "#0D47A1",
+  // Aliases for legacy components
+  primary: "#40C9C6",
 };
 
 const DARK_COLORS = {
@@ -49,6 +66,23 @@ const DARK_COLORS = {
   success: "#10B981",
   warning: "#F59E0B",
   danger: "#EF4444",
+  // Semantic colors for components
+  skeleton: "#1F2937",
+  skeletonCard: "#0F172A",
+  overlay: "rgba(0,0,0,0.7)",
+  offlineBanner: "#92400E",
+  offlineBannerText: "#FEF3C7",
+  // Chart colors
+  chartLine: "#40C9C6",
+  chartFill: "#1E3A3A",
+  chartDot: "#14B8A6",
+  // Toast backgrounds
+  toastSuccess: "#1B5E20",
+  toastError: "#B71C1C",
+  toastWarning: "#E65100",
+  toastInfo: "#0D47A1",
+  // Aliases for legacy components
+  primary: "#40C9C6",
 };
 
 /**

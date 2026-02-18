@@ -1,10 +1,10 @@
 export * from "./colors";
 export * from "./tokens";
 
-import { colors, radius, spacing, shadow } from "./tokens";
+import { colors, color, radius, spacing, space, shadow, text } from "./tokens";
 
 /** Non-hook theme object */
-export const theme = { colors, radius, spacing, shadow };
+export const theme = { colors, color, radius, spacing, space, shadow, text };
 
 export { useAppTheme } from "./useAppTheme";
 

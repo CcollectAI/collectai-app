@@ -18,6 +18,8 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { useFormField, validateAll } from "@/hooks/useFormField";
+import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 
 type SaveState = "idle" | "saving" | "success" | "error";
@@ -60,19 +62,19 @@ const ManualAddScreen: React.FC = () => {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
 
-  const [name, setName] = useState("");
+  const nameField = useFormField(compose(required("Item name"), maxLength("Item name", 255)));
   const [category, setCategory] = useState("");
   const [gameOrSeries, setGameOrSeries] = useState("");
   const [conditionGrade, setConditionGrade] = useState("");
-  const [purchasePrice, setPurchasePrice] = useState("");
-  const [estimatedValue, setEstimatedValue] = useState("");
+  const purchasePriceField = useFormField(numeric("Purchase price"));
+  const estimatedValueField = useFormField(numeric("Estimated value"));
   const [source, setSource] = useState("");
   const [notes, setNotes] = useState("");
 
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  const canSubmit = name.trim().length > 0 && saveState !== "saving";
+  const canSubmit = nameField.value.trim().length > 0 && saveState !== "saving" && !nameField.error && !purchasePriceField.error && !estimatedValueField.error;
 
   const handleCategoryChip = (label: string) => {
     if (label === "Other") {
@@ -83,6 +85,7 @@ const ManualAddScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    if (!validateAll(nameField, purchasePriceField, estimatedValueField)) return;
     if (!canSubmit) return;
 
     if (!supabase || typeof supabase.from !== "function") {
@@ -97,12 +100,12 @@ const ManualAddScreen: React.FC = () => {
     setErrorText(null);
 
     try {
-      const purchase = purchasePrice ? Number(purchasePrice) : null;
-      const estimated = estimatedValue ? Number(estimatedValue) : null;
+      const purchase = purchasePriceField.value ? Number(purchasePriceField.value) : null;
+      const estimated = estimatedValueField.value ? Number(estimatedValueField.value) : null;
 
       const { error } = await supabase.from("portfolio_items").insert([
         {
-          name: name.trim(),
+          name: nameField.value.trim(),
           category: category.trim() || null,
           game_or_series: gameOrSeries.trim() || null,
           condition_grade: conditionGrade.trim() || null,
@@ -122,12 +125,12 @@ const ManualAddScreen: React.FC = () => {
       }
 
       setSaveState("success");
-      setName("");
+      nameField.reset();
       setCategory("");
       setGameOrSeries("");
       setConditionGrade("");
-      setPurchasePrice("");
-      setEstimatedValue("");
+      purchasePriceField.reset();
+      estimatedValueField.reset();
       setSource("");
       setNotes("");
     } catch (err: unknown) {
@@ -244,17 +247,21 @@ const ManualAddScreen: React.FC = () => {
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>
                     Item name <Text style={{ color: colors.accent }}>*</Text>
                   </Text>
-                  <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                  <View style={[styles.inputWrap, { borderColor: nameField.touched && nameField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
-                      value={name}
-                      onChangeText={setName}
+                      value={nameField.value}
+                      onChangeText={nameField.onChange}
+                      onBlur={nameField.onBlur}
                       placeholder="e.g. Charizard GX (Alt Art)"
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
                       accessibilityLabel="Item name"
                     />
                   </View>
+                  {nameField.touched && nameField.error && (
+                    <Text style={styles.fieldError}>{nameField.error}</Text>
+                  )}
                 </View>
 
                 {/* Category Chips */}
@@ -384,11 +391,12 @@ const ManualAddScreen: React.FC = () => {
                 <View style={styles.fieldRow}>
                   <View style={[styles.fieldBlock, { flex: 1, marginRight: 8 }]}>
                     <Text style={[styles.fieldLabel, { color: colors.text }]}>Purchase Price</Text>
-                    <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                    <View style={[styles.inputWrap, { borderColor: purchasePriceField.touched && purchasePriceField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                       <Text style={[styles.currencyPrefix, { color: colors.muted }]}>€</Text>
                       <TextInput
-                        value={purchasePrice}
-                        onChangeText={setPurchasePrice}
+                        value={purchasePriceField.value}
+                        onChangeText={purchasePriceField.onChange}
+                        onBlur={purchasePriceField.onBlur}
                         keyboardType="decimal-pad"
                         placeholder="0.00"
                         placeholderTextColor={colors.muted}
@@ -396,14 +404,18 @@ const ManualAddScreen: React.FC = () => {
                         accessibilityLabel="Purchase price in euros"
                       />
                     </View>
+                    {purchasePriceField.touched && purchasePriceField.error && (
+                      <Text style={styles.fieldError}>{purchasePriceField.error}</Text>
+                    )}
                   </View>
                   <View style={[styles.fieldBlock, { flex: 1 }]}>
                     <Text style={[styles.fieldLabel, { color: colors.text }]}>Estimated Value</Text>
-                    <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                    <View style={[styles.inputWrap, { borderColor: estimatedValueField.touched && estimatedValueField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                       <Text style={[styles.currencyPrefix, { color: colors.muted }]}>€</Text>
                       <TextInput
-                        value={estimatedValue}
-                        onChangeText={setEstimatedValue}
+                        value={estimatedValueField.value}
+                        onChangeText={estimatedValueField.onChange}
+                        onBlur={estimatedValueField.onBlur}
                         keyboardType="decimal-pad"
                         placeholder="0.00"
                         placeholderTextColor={colors.muted}
@@ -411,6 +423,9 @@ const ManualAddScreen: React.FC = () => {
                         accessibilityLabel="Estimated value in euros"
                       />
                     </View>
+                    {estimatedValueField.touched && estimatedValueField.error && (
+                      <Text style={styles.fieldError}>{estimatedValueField.error}</Text>
+                    )}
                   </View>
                 </View>
               </View>
@@ -690,6 +705,12 @@ const styles = StyleSheet.create({
   },
   footerHintText: {
     fontSize: 12,
+  },
+  fieldError: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

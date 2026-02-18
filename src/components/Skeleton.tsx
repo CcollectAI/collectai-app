@@ -5,6 +5,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 interface SkeletonProps {
   width?: number | string;
@@ -19,6 +20,7 @@ export function Skeleton({
   borderRadius = 4,
   style,
 }: SkeletonProps) {
+  const { colors } = useAppTheme();
   const shimmerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -47,9 +49,12 @@ export function Skeleton({
 
   return (
     <Animated.View
+      accessibilityRole="none"
+      accessibilityLabel="Loading"
       style={[
         styles.skeleton,
         {
+          backgroundColor: colors.skeleton,
           width: width as number | `${number}%`,
           height,
           borderRadius,
@@ -128,8 +133,70 @@ export function SkeletonCategoryPills() {
   );
 }
 
-export function SkeletonList({ count = 5, type = 'row' }: { count?: number; type?: 'row' | 'card' | 'event' }) {
-  const Component = type === 'card' ? SkeletonItemCard : type === 'event' ? SkeletonEventCard : SkeletonItemRow;
+export function SkeletonAnalytics() {
+  const { colors } = useAppTheme();
+  return (
+    <View style={[styles.analyticsCard, { backgroundColor: colors.card }]}>
+      <Skeleton width="50%" height={24} borderRadius={6} />
+      <Skeleton width="100%" height={120} borderRadius={12} style={{ marginTop: 16 }} />
+      <View style={styles.analyticsRow}>
+        <Skeleton width="30%" height={14} borderRadius={4} />
+        <Skeleton width="30%" height={14} borderRadius={4} />
+        <Skeleton width="30%" height={14} borderRadius={4} />
+      </View>
+      <Skeleton width="80%" height={12} borderRadius={4} style={{ marginTop: 12 }} />
+    </View>
+  );
+}
+
+export function SkeletonDeal() {
+  const { colors } = useAppTheme();
+  return (
+    <View style={[styles.dealCard, { backgroundColor: colors.card }]}>
+      <View style={styles.dealHeader}>
+        <Skeleton width={48} height={48} borderRadius={8} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Skeleton width="70%" height={16} borderRadius={4} />
+          <Skeleton width="40%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
+        </View>
+        <Skeleton width={60} height={24} borderRadius={12} />
+      </View>
+      <View style={styles.dealDetails}>
+        <Skeleton width="50%" height={12} borderRadius={4} />
+        <Skeleton width="35%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
+      </View>
+    </View>
+  );
+}
+
+export function SkeletonChat() {
+  const { colors } = useAppTheme();
+  return (
+    <View style={[styles.chatContainer, { backgroundColor: colors.background }]}>
+      {[0.6, 0.4, 0.7, 0.5, 0.3].map((w, i) => (
+        <View
+          key={i}
+          style={[
+            styles.chatBubble,
+            i % 2 === 0 ? styles.chatBubbleLeft : styles.chatBubbleRight,
+            { backgroundColor: colors.card },
+          ]}
+        >
+          <Skeleton width={`${w * 100}%`} height={14} borderRadius={4} />
+          {w > 0.5 && <Skeleton width="40%" height={12} borderRadius={4} style={{ marginTop: 6 }} />}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export function SkeletonList({ count = 5, type = 'row' }: { count?: number; type?: 'row' | 'card' | 'event' | 'deal' | 'analytics' }) {
+  const Component =
+    type === 'card' ? SkeletonItemCard :
+    type === 'event' ? SkeletonEventCard :
+    type === 'deal' ? SkeletonDeal :
+    type === 'analytics' ? SkeletonAnalytics :
+    SkeletonItemRow;
   return (
     <View style={styles.list}>
       {Array.from({ length: count }).map((_, i) => (
@@ -141,13 +208,12 @@ export function SkeletonList({ count = 5, type = 'row' }: { count?: number; type
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#e2e8f0',
+    // backgroundColor now set dynamically via theme
   },
   itemCard: {
     flexDirection: 'row',
     padding: 12,
     marginBottom: 12,
-    backgroundColor: '#fff',
     borderRadius: 12,
   },
   itemCardContent: {
@@ -168,7 +234,6 @@ const styles = StyleSheet.create({
   eventCard: {
     padding: 14,
     marginBottom: 12,
-    backgroundColor: '#fff',
     borderRadius: 12,
   },
   eventHeader: {
@@ -191,6 +256,45 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 16,
+  },
+  analyticsCard: {
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+  },
+  analyticsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  dealCard: {
+    padding: 14,
+    marginBottom: 12,
+    borderRadius: 12,
+  },
+  dealHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dealDetails: {
+    marginTop: 12,
+  },
+  chatContainer: {
+    padding: 16,
+  },
+  chatBubble: {
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 8,
+    maxWidth: '75%',
+  },
+  chatBubbleLeft: {
+    alignSelf: 'flex-start',
+    borderBottomLeftRadius: 4,
+  },
+  chatBubbleRight: {
+    alignSelf: 'flex-end',
+    borderBottomRightRadius: 4,
   },
 });
 

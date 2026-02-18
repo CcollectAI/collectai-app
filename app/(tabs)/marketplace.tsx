@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
   SafeAreaView,
   View,
@@ -701,4 +702,12 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SearchScreen;
+function SearchScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Search">
+      <SearchScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+export default SearchScreenWithBoundary;

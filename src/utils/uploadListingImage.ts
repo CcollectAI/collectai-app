@@ -11,7 +11,7 @@ function b64ToBytes(b64:string){
 export async function uploadListingImage(uid:string, uri:string){
   const ext = (uri.split('.').pop() || 'jpg').toLowerCase();
   const path = `${uid}/${Date.now()}.${ext}`;
-  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
   const bytes = b64ToBytes(base64);
   const { error } = await supabase.storage.from('listing-images').upload(path, bytes, { contentType:`image/${ext==='jpg'?'jpeg':ext}` });
   if (error) throw error;

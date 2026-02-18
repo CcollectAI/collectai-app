@@ -1,50 +1,83 @@
-# Welcome to your Expo app 👋
+# CollectAI
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Collectibles tracking, valuation, and smart deal discovery platform. Track your collection, get AI-powered price estimates, find deals across marketplaces, and never miss a collector event.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Smart Valuation** — Ridge regression ML models with q10/q50/q90 price bands and confidence scores
+- **Barcode + Vision Scan** — Scan items via barcode or photo; 3-tier classification (CLIP, OpenAI, heuristic) across 36 categories
+- **Marketplace Aggregation** — Search eBay, TCGPlayer, and Cardmarket with dedup and provenance scoring
+- **Smart Deal Agent** — Set purchase mandates and get notified when matching deals appear
+- **Price Monitoring** — Track price changes with threshold and anomaly alerts
+- **Events** — Discover collector shows, conventions, and meetups
+- **Dossier Export** — Generate item reports as JSON or HTML
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+| Layer | Technology |
+|-------|-----------|
+| Mobile | React Native 0.81, Expo SDK 54, TypeScript |
+| Backend | FastAPI, Python 3.12, Uvicorn |
+| Database | Supabase (PostgreSQL), asyncpg |
+| ML | scikit-learn Ridge regression, CLIP vision |
+| Storage | AWS S3 (presigned URLs) |
+| CI/CD | GitHub Actions, Docker |
+| Hosting | AWS EC2 (eu-central-1) |
 
-   ```bash
-   npx expo start
-   ```
+## Quick Start
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### Backend
 
 ```bash
-npm run reset-project
+pip install -r requirements.txt
+cd server
+DEV_MODE=true DB_ENABLED=false uvicorn main:app --reload --port 8000
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Frontend
 
-## Learn more
+```bash
+npm install
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### Tests
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+# Backend (1185+ tests)
+cd server && python -m pytest tests/ --ignore=tests/test_inference.py -x -q
 
-## Join the community
+# Frontend
+npx jest
+```
 
-Join our community of developers creating universal apps.
+## Documentation
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [Architecture](docs/ARCHITECTURE.md) — System overview, agents, data flows
+- [Deployment](docs/DEPLOYMENT.md) — Local dev, Docker, EC2, CI/CD
+- [Taxonomy](docs/TAXONOMY.md) — 36-category classification system
+- [Market Data](docs/MARKET_DATA.md) — Marketplace integration details
+- [Haptics](docs/haptics.md) — Haptic feedback patterns
+- [Accessibility](docs/accessibility.md) — A11y guidelines
+- [UI Playbook](docs/ui-playbook.md) — Component patterns
+
+## Project Structure
+
+```
+app/                    # Mobile screens (file-based routing)
+src/                    # Shared frontend code (components, hooks, API client)
+server/
+  app/                  # FastAPI application
+    routes/             # API routers
+    agents/             # Business logic agents
+    ml/                 # ML model loading and inference
+  workers/              # Background workers
+  tests/                # Backend test suite
+  pipelines/            # Data ingestion and training
+docs/                   # Documentation
+supabase/migrations/    # Database migrations
+```
+
+## License
+
+Proprietary. All rights reserved.

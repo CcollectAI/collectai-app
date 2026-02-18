@@ -25,7 +25,7 @@ export default function NotFoundScreen() {
         match any screen.
       </Text>
 
-      <Link href="/portfolio" asChild>
+      <Link href={"/portfolio" as any} asChild>
         <Pressable
           style={{
             paddingHorizontal: 20,

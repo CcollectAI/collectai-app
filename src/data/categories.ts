@@ -34,7 +34,8 @@ export type CategoryId =
   | 'keycaps'
   | 'loungefly'
   | 'diecast'
-  | 'sportscards';
+  | 'sportscards'
+  | 'retro_handhelds';
 
 export type CategoryCollection = {
   id: string;

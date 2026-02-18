@@ -25,9 +25,10 @@ import { collectorsApi } from "@/api/collectorsApi";
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
-    shouldShowInForeground: true,
   }),
 });
 

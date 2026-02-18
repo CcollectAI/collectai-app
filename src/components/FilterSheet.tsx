@@ -3,7 +3,7 @@
  * Supports category, price range, condition, and saved presets.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -97,7 +97,7 @@ export function FilterSheet({
     }
   }, [visible, currentConfig]);
 
-  const loadPresets = async () => {
+  const loadPresets = useCallback(async () => {
     try {
       const stored = await AsyncStorage.getItem(PRESETS_KEY);
       if (stored) {
@@ -106,18 +106,18 @@ export function FilterSheet({
     } catch (err) {
       logger.warn('[FilterSheet] Failed to load presets:', err);
     }
-  };
+  }, []);
 
-  const savePresets = async (newPresets: FilterPreset[]) => {
+  const savePresets = useCallback(async (newPresets: FilterPreset[]) => {
     try {
       await AsyncStorage.setItem(PRESETS_KEY, JSON.stringify(newPresets));
       setPresets(newPresets);
     } catch (err) {
       logger.warn('[FilterSheet] Failed to save presets:', err);
     }
-  };
+  }, []);
 
-  const handleToggleCategory = (category: string) => {
+  const handleToggleCategory = useCallback((category: string) => {
     haptics.lightTap();
     setConfig((prev) => ({
       ...prev,
@@ -125,9 +125,9 @@ export function FilterSheet({
         ? prev.categories.filter((c) => c !== category)
         : [...prev.categories, category],
     }));
-  };
+  }, []);
 
-  const handleToggleCondition = (condition: string) => {
+  const handleToggleCondition = useCallback((condition: string) => {
     haptics.lightTap();
     setConfig((prev) => ({
       ...prev,
@@ -135,33 +135,33 @@ export function FilterSheet({
         ? prev.conditions.filter((c) => c !== condition)
         : [...prev.conditions, condition],
     }));
-  };
+  }, []);
 
-  const handleSetSort = (sortBy: SortOption) => {
+  const handleSetSort = useCallback((sortBy: SortOption) => {
     haptics.lightTap();
     setConfig((prev) => ({ ...prev, sortBy }));
-  };
+  }, []);
 
-  const handlePriceChange = (field: 'priceMin' | 'priceMax', value: string) => {
+  const handlePriceChange = useCallback((field: 'priceMin' | 'priceMax', value: string) => {
     const numValue = value === '' ? null : parseFloat(value);
     setConfig((prev) => ({
       ...prev,
       [field]: isNaN(numValue as number) ? null : numValue,
     }));
-  };
+  }, []);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     haptics.mediumTap();
     setConfig(DEFAULT_CONFIG);
-  };
+  }, []);
 
-  const handleApply = () => {
+  const handleApply = useCallback(() => {
     haptics.success();
     onApply(config);
     onClose();
-  };
+  }, [config, onApply, onClose]);
 
-  const handleSavePreset = () => {
+  const handleSavePreset = useCallback(() => {
     if (!presetName.trim()) return;
 
     haptics.success();
@@ -173,28 +173,31 @@ export function FilterSheet({
     savePresets([...presets, newPreset]);
     setShowPresetModal(false);
     setPresetName('');
-  };
+  }, [presetName, config, presets]);
 
-  const handleLoadPreset = (preset: FilterPreset) => {
+  const handleLoadPreset = useCallback((preset: FilterPreset) => {
     haptics.mediumTap();
     setConfig(preset.config);
-  };
+  }, []);
 
-  const handleDeletePreset = (presetId: string) => {
+  const handleDeletePreset = useCallback((presetId: string) => {
     haptics.warning();
     savePresets(presets.filter((p) => p.id !== presetId));
-  };
+  }, [presets]);
 
-  const toggleSection = (section: string) => {
+  const toggleSection = useCallback((section: string) => {
     haptics.lightTap();
     setExpandedSection((prev) => (prev === section ? null : section));
-  };
+  }, []);
 
-  const hasActiveFilters =
-    config.categories.length > 0 ||
-    config.conditions.length > 0 ||
-    config.priceMin !== null ||
-    config.priceMax !== null;
+  const hasActiveFilters = useMemo(
+    () =>
+      config.categories.length > 0 ||
+      config.conditions.length > 0 ||
+      config.priceMin !== null ||
+      config.priceMax !== null,
+    [config.categories, config.conditions, config.priceMin, config.priceMax],
+  );
 
   return (
     <Modal

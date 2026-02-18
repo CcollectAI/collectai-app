@@ -23,19 +23,19 @@ export const PortfolioStatusPill: React.FC = () => {
         if (cancelled) return;
 
         const mapped: CollectionStatusInput[] = (raw || []).map((it: Record<string, unknown>) => ({
-          id: it.id ?? it.item_id ?? undefined,
-          name: it.name ?? it.title ?? null,
-          title: it.title ?? it.name ?? null,
-          category: it.category ?? it.category_label ?? null,
+          id: (it.id ?? it.item_id ?? undefined) as string | number | undefined,
+          name: (it.name ?? it.title ?? null) as string | null,
+          title: (it.title ?? it.name ?? null) as string | null,
+          category: (it.category ?? it.category_label ?? null) as string | null,
           value:
             typeof it.estimated_value === 'number'
               ? it.estimated_value
-              : it.value ?? null,
-          collection: it.collection ?? it.set_name ?? null,
-          collection_name: it.collection_name ?? it.collection ?? null,
-          set_code: it.set_code ?? null,
-          set_size: it.set_size ?? null,
-          rarity_score: it.rarity_score ?? null,
+              : (it.value ?? null) as number | null,
+          collection: (it.collection ?? it.set_name ?? null) as string | null,
+          collection_name: (it.collection_name ?? it.collection ?? null) as string | null,
+          set_code: (it.set_code ?? null) as string | null,
+          set_size: (it.set_size ?? null) as number | null,
+          rarity_score: (it.rarity_score ?? null) as number | null,
         }));
 
         const scores = computeCollectionStatusScores(mapped);

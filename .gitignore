@@ -64,3 +64,12 @@ main.py.save
 __pycache__/
 *.pyc
 *.pyo
+
+# JWT tokens
+*.jwt
+
+# Archived scripts (preserved but out of active tree)
+_archive/
+
+# Patch files
+*.patch

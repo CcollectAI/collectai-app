@@ -231,7 +231,7 @@ export function computeWinnersAndLosers(
     const pct = item.change1dPct;
     if (typeof pct !== 'number') {
       neutral.push(item);
-      return;
+      continue;
     }
     if (pct > thresholdPct) {
       winners.push(item);

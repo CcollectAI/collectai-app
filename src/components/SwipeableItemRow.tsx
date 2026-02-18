@@ -4,7 +4,7 @@
  * Includes long-press context menu for accessibility.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { View, Text, StyleSheet, Share, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SwipeableRow, SwipeActions, SwipeAction } from './SwipeableRow';
@@ -246,4 +246,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SwipeableItemRow;
+export default memo(SwipeableItemRow);

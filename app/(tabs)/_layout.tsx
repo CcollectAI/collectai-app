@@ -33,11 +33,13 @@ export default function TabsLayout() {
         options={{
           title: "Portfolio",
           tabBarLabel: "Portfolio",
+          tabBarAccessibilityLabel: "Portfolio tab",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "pie-chart" : "pie-chart-outline"}
               size={Math.max(18, size - 4)}
               color={color}
+              accessibilityElementsHidden
             />
           ),
         }}
@@ -48,11 +50,13 @@ export default function TabsLayout() {
         options={{
           title: "Items",
           tabBarLabel: "Items",
+          tabBarAccessibilityLabel: "Items tab — view your collection",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "albums" : "albums-outline"}
               size={Math.max(18, size - 4)}
               color={color}
+              accessibilityElementsHidden
             />
           ),
         }}
@@ -63,11 +67,13 @@ export default function TabsLayout() {
         options={{
           title: "Add",
           tabBarLabel: "Add",
+          tabBarAccessibilityLabel: "Add tab — add a new item",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "add-circle" : "add-circle-outline"}
               size={Math.max(22, size)}
               color={color}
+              accessibilityElementsHidden
             />
           ),
         }}
@@ -78,11 +84,13 @@ export default function TabsLayout() {
         options={{
           title: "Events",
           tabBarLabel: "Events",
+          tabBarAccessibilityLabel: "Events tab — community events and drops",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "calendar" : "calendar-outline"}
               size={Math.max(18, size - 4)}
               color={color}
+              accessibilityElementsHidden
             />
           ),
         }}
@@ -97,11 +105,13 @@ export default function TabsLayout() {
         options={{
           title: "Search",
           tabBarLabel: "Search",
+          tabBarAccessibilityLabel: "Search tab — search marketplace",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "search" : "search-outline"}
               size={Math.max(18, size - 4)}
               color={color}
+              accessibilityElementsHidden
             />
           ),
         }}

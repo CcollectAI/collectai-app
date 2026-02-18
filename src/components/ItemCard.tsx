@@ -1,10 +1,10 @@
-import React from "react";
+import React, { memo } from "react";
 import { View, Text } from "react-native";
 import { Image } from "expo-image";
 import { theme } from "../theme";
 import { ItemRow } from "../hooks/useItems";
 
-export default function ItemCard({ item }: { item: ItemRow }) {
+function ItemCard({ item }: { item: ItemRow }) {
   return (
     <View
       style={{
@@ -51,3 +51,5 @@ export default function ItemCard({ item }: { item: ItemRow }) {
     </View>
   );
 }
+
+export default memo(ItemCard);

@@ -1,3 +1,357 @@
+"""
+CollectAI — Collectors Merge Service entry point.
 
-from routes.item_detail import router as item_detail_router
-app.include_router(item_detail_router)
+This module creates the FastAPI app, installs middleware, registers all
+routers, and defines the lifespan (startup / shutdown) hooks.
+Endpoint logic lives in ``app/routes/``, ``app/features/``, and
+``app/agents/``.
+"""
+
+import asyncio
+import logging
+import os
+from contextlib import asynccontextmanager
+
+from fastapi import APIRouter, FastAPI, Depends, Request
+from fastapi.responses import JSONResponse
+
+from app.auth import require_ops_key
+from app.config import (
+    SERVICE_VERSION,
+    SENTRY_DSN,
+    SENTRY_TRACES_RATE,
+    SENTRY_ENV,
+    DB_ENABLED,
+    MONITOR_ENABLED,
+    DEAL_DISCOVERY_ENABLED,
+    DEBUG,
+)
+from app.middleware_stack import install_middlewares
+from app.db import connect_pool, close_pool, db_configured
+from app.metrics import metrics_middleware, ensure_metrics_once
+from app.logging_mw import logging_middleware
+from app.limit_body import limit_body_middleware
+from app.rate_limit import rate_limit_middleware
+from app.request_id import request_id_middleware
+
+# ---------------------------------------------------------------------------
+# Sentry (optional)
+# ---------------------------------------------------------------------------
+try:
+    import sentry_sdk
+except ImportError:
+    sentry_sdk = None  # type: ignore[assignment]
+
+if SENTRY_DSN and sentry_sdk is not None:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=SENTRY_TRACES_RATE,
+        environment=SENTRY_ENV,
+        release=SERVICE_VERSION,
+    )
+
+# ---------------------------------------------------------------------------
+# Lifespan (replaces deprecated @app.on_event("startup") / "shutdown")
+# ---------------------------------------------------------------------------
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Async context manager for app startup and shutdown."""
+    # ---- Startup ----
+    from app.config import validate_config
+    validate_config()
+
+    if not DB_ENABLED:
+        logging.getLogger("uvicorn").info("[startup] DB disabled; skipping pool connect.")
+    else:
+        try:
+            await connect_pool()
+        except Exception as e:
+            if os.getenv("DB_OPTIONAL", "0").lower() in ("1", "true", "yes"):
+                logging.getLogger("uvicorn").warning(
+                    "[startup] DB optional; continuing without pool. Reason: %s", e
+                )
+            else:
+                raise
+
+    if MONITOR_ENABLED:
+        try:
+            from workers.price_monitor_scheduler import scheduler_loop
+            asyncio.create_task(scheduler_loop())
+            logging.getLogger("uvicorn").info("[startup] Price monitor scheduler started")
+        except Exception as e:
+            logging.getLogger("uvicorn").warning("[startup] Failed to start price monitor: %s", e)
+
+    if DEAL_DISCOVERY_ENABLED:
+        try:
+            from workers.deal_discovery_scheduler import scheduler_loop as deal_scheduler_loop
+            asyncio.create_task(deal_scheduler_loop())
+            logging.getLogger("uvicorn").info("[startup] Deal discovery scheduler started")
+        except Exception as e:
+            logging.getLogger("uvicorn").warning("[startup] Failed to start deal discovery: %s", e)
+
+    yield
+
+    # ---- Shutdown ----
+    from app.routes.portfolio_router import close_http_client
+    await close_http_client()
+    await close_pool()
+
+
+# ---------------------------------------------------------------------------
+# App
+# ---------------------------------------------------------------------------
+app = FastAPI(title="Collectors Merge Service", version=SERVICE_VERSION, lifespan=lifespan)
+
+_logger = logging.getLogger("collectai.main")
+
+
+@app.exception_handler(Exception)
+async def _global_exception_handler(request: Request, exc: Exception):
+    """Catch unhandled exceptions and return a safe 500 without leaking internals."""
+    _logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+
+# ---------------------------------------------------------------------------
+# Middleware (outermost first — request_id wraps everything)
+# ---------------------------------------------------------------------------
+install_middlewares(app)
+app.middleware("http")(limit_body_middleware)
+app.middleware("http")(rate_limit_middleware)
+app.middleware("http")(metrics_middleware)
+app.middleware("http")(logging_middleware)
+app.middleware("http")(request_id_middleware)
+ensure_metrics_once(app)
+
+# ---------------------------------------------------------------------------
+# Router imports
+# ---------------------------------------------------------------------------
+from app.features.quickscan_proxy_router import router as quickscan_proxy_router
+from app.routes.items_router import router as items_router
+from app.routes.portfolio_router import router as portfolio_router
+from app.features.import_router import router as import_router
+
+from app.routers.vision_commit import router as vision_commit_router
+from app.routers.vision_predict_log import router as vision_predict_log_router
+from app.routes.agent import router as agent_router
+from app.routes.spool import router as spool_router
+from app.routes.spool_ui import router as spool_ui_router
+from app.routes.webhook import router as webhook_router
+from app.routes.vision_debug import router as vision_debug_router
+from app.routes.vision_predict import router as vision_predict_router
+from app.routes.vision_ops import router as vision_ops_router
+from app.routes.vision_ingest import router as vision_ingest_router
+from app.routes.vision_search import router as vision_search_router
+from app.routes.spool_ops import router as spool_ops_router
+from app.routes.manifests import router as manifests_router
+from app.routes.ops import router as ops_router
+from app.routes.marketplace import router as marketplace_router
+from app.routes.user_settings_router import router as user_settings_router
+from app.routes.account_router import router as account_router
+from app.routes.fx_router import router as fx_router
+from app.routes.pipeline_status_router import router as pipeline_status_router
+
+from app.features import insights_router
+from app.features import screenshot_intel_router
+from app.features import quickscan_advanced_router
+from app.features import watchlist_router
+from app.features import marketplace_trust_router
+from app.features import provenance_router
+from app.features import trends_and_deepdive_router
+from app.features import alerts_feature_router
+from app.features import feedback_router
+from app.features import items_export_router
+from app.features import photo_upload_router
+from app.features import events_router
+from app.features import barcode_lookup_router
+from app.features import storage_router
+from app.features import taxonomy_router
+from app.features import notification_router
+from app.features.predict_router import router as predict_router
+
+from app.agents.marketplace_router import router as marketplace_agg_router
+from app.agents.dossier_router import router as dossier_router
+from app.agents.intake_router import router as intake_router
+from app.agents.purchase_router import router as purchase_router
+from app.routes.billing_router import router as billing_router
+from app.routes.admin_dashboard import router as admin_dashboard_router
+from app.routes.mfa_router import router as mfa_router
+from app.routes.beta_signup_router import router as beta_signup_router
+from app.routes.seed_router import router as seed_router
+
+# ---------------------------------------------------------------------------
+# Register routers
+# ---------------------------------------------------------------------------
+
+# Extracted routers (Phase 1)
+app.include_router(quickscan_proxy_router)
+app.include_router(items_router)
+app.include_router(portfolio_router)
+app.include_router(import_router)
+
+# Core routers
+app.include_router(vision_commit_router)
+app.include_router(vision_predict_log_router)
+app.include_router(marketplace_router)
+app.include_router(agent_router)
+app.include_router(spool_router)
+app.include_router(spool_ui_router)
+app.include_router(webhook_router)
+if os.getenv("DEV_MODE", "false").lower() in ("true", "1", "yes"):
+    app.include_router(vision_debug_router)
+app.include_router(vision_predict_router)
+app.include_router(vision_ops_router)
+app.include_router(vision_ingest_router)
+app.include_router(vision_search_router)
+app.include_router(spool_ops_router)
+app.include_router(manifests_router)
+app.include_router(ops_router)
+
+# Feature routers
+app.include_router(alerts_feature_router.router)
+app.include_router(trends_and_deepdive_router.router)
+app.include_router(provenance_router.router)
+app.include_router(marketplace_trust_router.router)
+app.include_router(watchlist_router.router)
+app.include_router(quickscan_advanced_router.router)
+app.include_router(insights_router.router)
+app.include_router(screenshot_intel_router.router)
+app.include_router(feedback_router.router)
+app.include_router(items_export_router.router)
+app.include_router(storage_router.router)
+app.include_router(photo_upload_router.router)
+app.include_router(events_router.router)
+app.include_router(barcode_lookup_router.router)
+app.include_router(taxonomy_router.router)
+app.include_router(notification_router.router)
+
+# Agent routers
+app.include_router(marketplace_agg_router)
+app.include_router(dossier_router)
+app.include_router(intake_router)
+app.include_router(purchase_router)
+app.include_router(predict_router)
+app.include_router(fx_router)
+app.include_router(user_settings_router)
+app.include_router(account_router)
+app.include_router(pipeline_status_router)
+app.include_router(billing_router)
+app.include_router(admin_dashboard_router)
+app.include_router(mfa_router)
+app.include_router(beta_signup_router)
+app.include_router(seed_router)
+
+# Twitch (optional)
+try:
+    from app.routers.twitch import router as twitch_router
+    app.include_router(twitch_router)
+except ImportError:
+    pass
+
+# ---------------------------------------------------------------------------
+# /v1 aliases — all feature routers also available under /v1 prefix
+# ---------------------------------------------------------------------------
+_v1 = APIRouter(prefix="/v1")
+_v1.include_router(alerts_feature_router.router)
+_v1.include_router(trends_and_deepdive_router.router)
+_v1.include_router(provenance_router.router)
+_v1.include_router(marketplace_trust_router.router)
+_v1.include_router(watchlist_router.router)
+_v1.include_router(quickscan_advanced_router.router)
+_v1.include_router(insights_router.router)
+_v1.include_router(screenshot_intel_router.router)
+_v1.include_router(feedback_router.router)
+_v1.include_router(items_export_router.router)
+_v1.include_router(storage_router.router)
+_v1.include_router(photo_upload_router.router)
+_v1.include_router(events_router.router)
+_v1.include_router(barcode_lookup_router.router)
+_v1.include_router(taxonomy_router.router)
+_v1.include_router(notification_router.router)
+_v1.include_router(marketplace_agg_router)
+_v1.include_router(dossier_router)
+_v1.include_router(intake_router)
+_v1.include_router(purchase_router)
+_v1.include_router(predict_router)
+_v1.include_router(fx_router)
+_v1.include_router(user_settings_router)
+_v1.include_router(account_router)
+_v1.include_router(pipeline_status_router)
+_v1.include_router(billing_router)
+_v1.include_router(mfa_router)
+app.include_router(_v1)
+
+# ---------------------------------------------------------------------------
+# Lightweight inline endpoints
+# ---------------------------------------------------------------------------
+
+
+@app.get("/healthz")
+async def healthz():
+    result = {
+        "ok": True,
+        "db_configured": db_configured(),
+    }
+    if db_configured():
+        import time as _time
+        try:
+            from app.db import get_pool
+            pool = get_pool()
+            if pool is not None:
+                t0 = _time.monotonic()
+                async with pool.acquire() as conn:
+                    await conn.fetchval("SELECT 1")
+                result["db_ms"] = round((_time.monotonic() - t0) * 1000, 1)
+                result["db"] = "up"
+            else:
+                result["db"] = "pool_not_initialized"
+                result["ok"] = False
+        except Exception as exc:
+            _logger.warning("healthz DB check failed: %s", exc)
+            result["db"] = "down"
+            result["ok"] = False
+    if not result["ok"]:
+        return JSONResponse(status_code=503, content=result)
+    return result
+
+
+@app.get("/version")
+async def version():
+    return {"version": SERVICE_VERSION}
+
+
+# ---------------------------------------------------------------------------
+# Ops endpoints (kept inline — small and ops-key guarded)
+# ---------------------------------------------------------------------------
+
+
+@app.get("/ops/status")
+async def ops_status(_: bool = Depends(require_ops_key)):
+    return {"status": "ok", "service": "collectors-merge", "version": "ops-status-v1"}
+
+
+@app.get("/ops/worker-status")
+async def ops_worker_status(_: bool = Depends(require_ops_key)):
+    from app.worker_registry import get_status
+    return get_status()
+
+
+@app.get("/ops/cache")
+async def ops_cache(_: bool = Depends(require_ops_key)):
+    from app.cache import cache_stats
+    return cache_stats()
+
+
+@app.get("/ops/circuits")
+async def ops_circuits(_: bool = Depends(require_ops_key)):
+    from workers.circuit_breaker import all_circuit_status
+    return all_circuit_status()
+
+
+if DEBUG:
+    @app.get("/debug-ping")
+    async def debug_ping():
+        return {"ok": True}
+

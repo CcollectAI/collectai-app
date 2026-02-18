@@ -9,7 +9,7 @@ export * from './theme/index';
   const anyTheme = theme as Record<string, unknown>;
 
   // Colors
-  const c = anyTheme.colors ?? {};
+  const c = (anyTheme.colors ?? {}) as Record<string, unknown>;
   anyTheme.colors = {
     ...c,
     // common aliases
@@ -22,17 +22,21 @@ export * from './theme/index';
     // brand as nested object with .base
     brand: (typeof c.brand === "object" && c.brand)
       ? c.brand
-      : { base: c.brand ?? "#0ea5e9" },
+      : { base: (c.brand as string) ?? "#0ea5e9" },
     // sometimes used in buttons
-    accentStrong: c.accentStrong ?? ((typeof c.brand === "object" && c.brand?.base) ? c.brand.base : (c.brand ?? "#0ea5e9")),
+    accentStrong: c.accentStrong ?? (
+      (typeof c.brand === "object" && (c.brand as Record<string, unknown>)?.base)
+        ? (c.brand as Record<string, unknown>).base
+        : ((c.brand as string) ?? "#0ea5e9")
+    ),
   };
 
   // Spacing tokens
-  const s = anyTheme.space ?? {};
+  const s = (anyTheme.space ?? {}) as Record<string, unknown>;
   anyTheme.space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, ...s };
   anyTheme.spacing = anyTheme.spacing ?? anyTheme.space; // alias
 
   // Typography sizes
-  const t = anyTheme.text ?? {};
+  const t = (anyTheme.text ?? {}) as Record<string, unknown>;
   anyTheme.text = { sm: 12, md: 14, lg: 16, xl: 20, "2xl": 24, ...t };
 })();

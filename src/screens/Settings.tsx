@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Alert, Text, StyleSheet, Switch, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Alert, Text, StyleSheet, Switch, ActivityIndicator, Linking } from 'react-native';
+import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { supabase } from "@/lib/supabase";
 import { AccessibilitySettings } from '@/components/AccessibilitySettings';
@@ -7,9 +9,12 @@ import { AlertSettings } from '@/components/AlertSettings';
 import { featureFlags } from '@/config/featureFlags';
 import { DEFAULT_ALERT_PREFERENCES, AlertPreferences } from '@/types/insights';
 import { useSettings } from '@/lib/settings';
+import { useAuthContext } from '@/providers/useAuthContext';
+import { AnimatedPressable } from '@/motion';
 import { Ionicons } from '@expo/vector-icons';
 import { logger } from '@/lib/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { deleteAccount } from '@/api/collectorsApi';
 
 type PrivacySettings = {
   showCollectionValue: boolean;
@@ -26,8 +31,10 @@ const DEFAULT_PRIVACY: PrivacySettings = {
 };
 
 export default function Settings() {
+  const router = useRouter();
   const { colors } = useAppTheme();
   const { settings, updateSettings } = useSettings();
+  const { user, profile, signOut } = useAuthContext();
   const [alertPrefs, setAlertPrefs] = useState<AlertPreferences>(DEFAULT_ALERT_PREFERENCES);
   const [privacy, setPrivacy] = useState<PrivacySettings>(DEFAULT_PRIVACY);
   const [loadingPrivacy, setLoadingPrivacy] = useState(true);
@@ -278,6 +285,178 @@ export default function Settings() {
         />
       )}
 
+      {/* Account Section */}
+      <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="person-outline" size={18} color={colors.accent} />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
+        </View>
+
+        {user && (
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={[styles.settingLabel, { color: colors.text }]}>
+                {profile?.username ?? 'User'}
+              </Text>
+              <Text style={[styles.settingHint, { color: colors.muted }]}>
+                {user.email ?? ''}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {user && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+
+        <AnimatedPressable
+          style={styles.signOutBtn}
+          onPress={() => {
+            fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+            Alert.alert(
+              'Sign Out',
+              'Are you sure you want to sign out?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Sign Out',
+                  style: 'destructive',
+                  onPress: signOut,
+                },
+              ],
+            );
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+        >
+          <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => router.push('/subscription')}
+          accessibilityRole="link"
+          accessibilityLabel="Manage subscription"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Subscription</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Manage your plan</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => router.push('/mfa-setup')}
+          accessibilityRole="link"
+          accessibilityLabel="Two-factor authentication"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Two-Factor Auth</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Secure your account with 2FA</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.signOutBtn}
+          onPress={() => {
+            fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+            Alert.alert(
+              'Delete Account',
+              'This will permanently delete your account and all your data. This action cannot be undone.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete Account',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await deleteAccount();
+                      await signOut();
+                      Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
+                    } catch (e) {
+                      Alert.alert(
+                        'Error',
+                        e instanceof Error ? e.message : 'Failed to delete account. Please try again.',
+                      );
+                    }
+                  },
+                },
+              ],
+            );
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+        >
+          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+          <Text style={styles.signOutText}>Delete Account</Text>
+        </AnimatedPressable>
+      </View>
+
+      {/* About Section */}
+      <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="information-circle-outline" size={18} color={colors.accent} />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
+        </View>
+
+        <View style={styles.settingRow}>
+          <Text style={[styles.settingLabel, { color: colors.text }]}>Version</Text>
+          <Text style={[styles.settingHint, { color: colors.muted }]}>
+            {Constants.expoConfig?.version ?? '1.0.0'}
+          </Text>
+        </View>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => Linking.openURL('mailto:support@collectai.app')}
+          accessibilityRole="link"
+          accessibilityLabel="Report a bug"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Report a Bug</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>support@collectai.app</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => router.push('/legal/privacy-policy')}
+          accessibilityRole="link"
+          accessibilityLabel="Privacy Policy"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Privacy Policy</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => router.push('/legal/terms')}
+          accessibilityRole="link"
+          accessibilityLabel="Terms of Service"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Terms of Service</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+      </View>
+
     </ScrollView>
   );
 }
@@ -337,5 +516,16 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 13,
+  },
+  signOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+  },
+  signOutText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#EF4444',
   },
 });

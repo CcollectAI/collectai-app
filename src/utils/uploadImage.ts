@@ -23,7 +23,7 @@ export async function uploadImageToBucket(params: {
 
   // read file → base64 → Uint8Array
   const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
   const bytes = base64ToUint8Array(base64);
 

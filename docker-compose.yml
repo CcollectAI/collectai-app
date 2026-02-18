@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  api:
+    build: .
+    container_name: collectai-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - DB_ENABLED=true
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  price-monitor:
+    build: .
+    container_name: collectai-price-monitor
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["python", "-m", "workers.price_monitor_worker"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "3"
+
+  deal-discovery:
+    build: .
+    container_name: collectai-deal-discovery
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["python", "-m", "workers.deal_discovery_worker"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "3"

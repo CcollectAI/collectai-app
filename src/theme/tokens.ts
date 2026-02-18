@@ -14,10 +14,21 @@ export const colors = {
   success: "#10B981",
   warning: "#F59E0B",
   danger:  "#EF4444",
+  navy: "#0F172A",
+  subtext: "#64748B",
 };
 
-export const radius = { sm: 10, md: 16, lg: 20, xl: 24, "2xl": 28 };
+/** @deprecated Use `colors` instead */
+export const color = colors;
+
+export const radius = { sm: 10, md: 16, lg: 20, xl: 24, "2xl": 28, pill: 48 };
 export const spacing = { xs: 6, sm: 10, md: 14, lg: 18, xl: 24, "2xl": 32 };
+
+/** @deprecated Use `spacing` instead */
+export const space = spacing;
+
+/** Font size tokens */
+export const text = { sm: 12, md: 14, lg: 16, xl: 20, "2xl": 24 };
 
 export const shadow = {
   card: {

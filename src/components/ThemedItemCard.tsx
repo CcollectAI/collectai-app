@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Text, View, ViewStyle } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
@@ -14,7 +14,7 @@ export type ThemedItemCardProps = {
   style?: ViewStyle;
 };
 
-export const ThemedItemCard: React.FC<ThemedItemCardProps> = ({
+const ThemedItemCardInner: React.FC<ThemedItemCardProps> = ({
   title,
   subtitle,
   valueLabel,
@@ -24,15 +24,15 @@ export const ThemedItemCard: React.FC<ThemedItemCardProps> = ({
   onPress,
   style,
 }) => {
-  const { colors, spacing, radii } = useAppTheme();
+  const { colors, spacing, radius } = useAppTheme();
 
   const positive = deltaPositive == null ? null : deltaPositive;
   const deltaColor =
     positive == null
-      ? colors.mutedText
+      ? colors.muted
       : positive
       ? colors.success ?? '#16a34a'
-      : colors.error ?? '#B00020';
+      : colors.danger ?? '#B00020';
 
   const content = (
     <View
@@ -72,7 +72,7 @@ export const ThemedItemCard: React.FC<ThemedItemCardProps> = ({
             <Text
               style={{
                 fontSize: 12,
-                color: colors.mutedText,
+                color: colors.muted,
                 marginTop: 2,
               }}
               numberOfLines={1}
@@ -123,15 +123,15 @@ export const ThemedItemCard: React.FC<ThemedItemCardProps> = ({
             style={{
               paddingHorizontal: spacing.sm,
               paddingVertical: 4,
-              borderRadius: radii.full,
-              backgroundColor: colors.surface,
+              borderRadius: radius.xl,
+              backgroundColor: colors.card,
             }}
           >
             <Text
               style={{
                 fontSize: 11,
                 fontWeight: '600',
-                color: colors.mutedText,
+                color: colors.muted,
               }}
               numberOfLines={1}
             >
@@ -158,4 +158,5 @@ export const ThemedItemCard: React.FC<ThemedItemCardProps> = ({
   return content;
 };
 
+export const ThemedItemCard = memo(ThemedItemCardInner);
 export default ThemedItemCard;

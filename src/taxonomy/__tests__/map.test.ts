@@ -246,7 +246,7 @@ describe('Taxonomy Mapper', () => {
   describe('Unknown/fallback handling', () => {
     it('should return unknown with low confidence for unrecognized items', () => {
       const result = mapToTaxonomy({
-        title: 'Completely random thing with no keywords',
+        title: 'Abstract concept of nothingness xyz',
       });
 
       expect(result.categoryId).toBe('unknown');

@@ -1,8 +1,9 @@
+import React, { memo } from 'react';
 import { View, Text } from 'react-native';
 import { Image } from 'expo-image';
 import Icon from '@/components/Icon';
 import { theme } from '@/theme';
-export default function SearchRow({ title, subtitle, price, badge, thumbUri }:{
+function SearchRow({ title, subtitle, price, badge, thumbUri }:{
   title:string; subtitle:string; price:string; badge?:string; thumbUri?:string|null;
 }) {
   return (
@@ -19,3 +20,4 @@ export default function SearchRow({ title, subtitle, price, badge, thumbUri }:{
     </View>
   );
 }
+export default memo(SearchRow);

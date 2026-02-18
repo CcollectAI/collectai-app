@@ -22,7 +22,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { useSession } from '@/hooks/useSession';
+import { useAuthContext } from '@/providers/useAuthContext';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import * as Haptics from 'expo-haptics';
@@ -41,7 +41,7 @@ function formatDate(dateStr: string | undefined): string {
 export default function WatchlistTabScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { user } = useSession();
+  const { user } = useAuthContext();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [items, setItems] = useState<WatchlistItem[]>([]);

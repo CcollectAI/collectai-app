@@ -1,4 +1,4 @@
-import { featureFlags } from "../_featureFlags";
+const featureFlags = { darkMode: false };
 
 export type AppColors = {
   background: string;

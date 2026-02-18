@@ -3,18 +3,18 @@
  * Follows the same styling pattern as other tab pages.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
   ScrollView,
+  SectionList,
   StyleSheet,
   Animated,
   Alert,
   ActivityIndicator,
   RefreshControl,
-  type NativeSyntheticEvent,
-  type NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -50,7 +50,7 @@ const kindIcon: Record<CollectorsEvent['kind'], keyof typeof Ionicons.glyphMap> 
   release: 'rocket-outline',
 };
 
-export default function EventsScreen() {
+function EventsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
@@ -105,17 +105,17 @@ export default function EventsScreen() {
     setRefreshing(false);
   }, [paginatedRefresh]);
 
-  // Detect when ScrollView is near the bottom to trigger loadMore
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
-      const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
-      if (distanceFromBottom < layoutMeasurement.height * 0.5) {
-        loadMore();
-      }
-    },
-    [loadMore],
-  );
+  // SectionList sections for upcoming + past events
+  const sections = useMemo(() => {
+    const result: { title: string; isPast: boolean; data: CollectorsEvent[] }[] = [];
+    if (filteredUpcoming.length > 0) {
+      result.push({ title: `Upcoming (${filteredUpcoming.length})`, isPast: false, data: filteredUpcoming });
+    }
+    if (filteredPast.length > 0) {
+      result.push({ title: `Past Events (${filteredPast.length})`, isPast: true, data: filteredPast });
+    }
+    return result;
+  }, [filteredUpcoming, filteredPast]);
 
   // Optimistic RSVP: toggles attendance state immediately, reverts on error
   const optimisticRsvp = useOptimisticRsvpList(setEvents, paginatedRefresh);
@@ -292,109 +292,87 @@ export default function EventsScreen() {
     );
   };
 
-  return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={400}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
-          />
-        }
-      >
-        <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <View style={styles.headerLeft}>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>
-                Events
-              </Text>
-              <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-                Collection drops, meetups, and streams.
-              </Text>
-            </View>
-            <View style={styles.headerIcons}>
-              <InboxHeaderButton color={colors.text} size={22} />
-              <ThemeToggleButton size={22} />
-            </View>
-          </View>
+  const headerElement = (
+    <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            Events
+          </Text>
+          <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
+            Collection drops, meetups, and streams.
+          </Text>
+        </View>
+        <View style={styles.headerIcons}>
+          <InboxHeaderButton color={colors.text} size={22} />
+          <ThemeToggleButton size={22} />
+        </View>
+      </View>
 
-          {/* Category Filter Chips */}
-          {followedCategories.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+      {/* Category Filter Chips */}
+      {followedCategories.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setActiveFilter(null);
+            }}
+            style={[
+              styles.filterChip,
+              { borderColor: !activeFilter ? colors.accent : colors.border },
+              !activeFilter && { backgroundColor: colors.accent + '15' },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Show all categories"
+          >
+            <Text style={[styles.filterChipText, { color: !activeFilter ? colors.accent : colors.muted }]}>
+              All
+            </Text>
+          </AnimatedPressable>
+          {followedCategories.map((catId) => {
+            const cat = ALL_CATS.find((c) => c.slug === catId);
+            const isActive = activeFilter === catId;
+            return (
               <AnimatedPressable
+                key={catId}
                 onPress={() => {
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  setActiveFilter(null);
+                  setActiveFilter(isActive ? null : catId);
                 }}
                 style={[
                   styles.filterChip,
-                  { borderColor: !activeFilter ? colors.accent : colors.border },
-                  !activeFilter && { backgroundColor: colors.accent + '15' },
+                  { borderColor: isActive ? colors.accent : colors.border },
+                  isActive && { backgroundColor: colors.accent + '15' },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Show all categories"
+                accessibilityLabel={`Filter by ${cat?.name || catId}`}
               >
-                <Text style={[styles.filterChipText, { color: !activeFilter ? colors.accent : colors.muted }]}>
-                  All
+                <Text style={[styles.filterChipText, { color: isActive ? colors.accent : colors.muted }]}>
+                  {cat?.name || catId}
                 </Text>
               </AnimatedPressable>
-              {followedCategories.map((catId) => {
-                const cat = ALL_CATS.find((c) => c.slug === catId);
-                const isActive = activeFilter === catId;
-                return (
-                  <AnimatedPressable
-                    key={catId}
-                    onPress={() => {
-                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      setActiveFilter(isActive ? null : catId);
-                    }}
-                    style={[
-                      styles.filterChip,
-                      { borderColor: isActive ? colors.accent : colors.border },
-                      isActive && { backgroundColor: colors.accent + '15' },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Filter by ${cat?.name || catId}`}
-                  >
-                    <Text style={[styles.filterChipText, { color: isActive ? colors.accent : colors.muted }]}>
-                      {cat?.name || catId}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
-            </ScrollView>
-          )}
+            );
+          })}
+        </ScrollView>
+      )}
+    </Animated.View>
+  );
 
-          {/* Upcoming Events */}
-          {filteredUpcoming.length > 0 && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Upcoming ({filteredUpcoming.length})
-              </Text>
-              {filteredUpcoming.map((event) => renderEventCard(event, true))}
-            </View>
-          )}
-
-          {/* Past Events */}
-          {filteredPast.length > 0 && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.muted }]}>
-                Past Events ({filteredPast.length})
-              </Text>
-              {filteredPast.map((event) => renderEventCard(event, false))}
-            </View>
-          )}
-
-          {/* Empty state */}
-          {events.length === 0 && !loading && (
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        renderSectionHeader={({ section }) => (
+          <Text style={[styles.sectionTitle, { color: section.isPast ? colors.muted : colors.text, marginTop: 16 }]}>
+            {section.title}
+          </Text>
+        )}
+        renderItem={({ item, section }) => renderEventCard(item, !section.isPast)}
+        ListHeaderComponent={headerElement}
+        ListEmptyComponent={
+          !loading ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="calendar-outline" size={48} color={colors.muted} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>
@@ -404,19 +382,33 @@ export default function EventsScreen() {
                 Check back later for drops, meetups, and streams.
               </Text>
             </View>
-          )}
-
-          {/* Loading-more spinner at bottom of list */}
-          {isLoadingMore && (
-            <View style={styles.loadingMoreContainer}>
-              <ActivityIndicator size="small" color={colors.accent} />
-            </View>
-          )}
-
-          {/* Bottom spacing */}
-          <View style={{ height: 24 }} />
-        </Animated.View>
-      </ScrollView>
+          ) : null
+        }
+        ListFooterComponent={
+          <>
+            {isLoadingMore && (
+              <View style={styles.loadingMoreContainer}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            )}
+            <View style={{ height: 24 }} />
+          </>
+        }
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
+      />
 
       {/* Create Event FAB */}
       <AnimatedPressable
@@ -589,3 +581,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
+export default function EventsScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Events">
+      <EventsScreen />
+    </ScreenErrorBoundary>
+  );
+}

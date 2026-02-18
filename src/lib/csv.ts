@@ -121,9 +121,9 @@ export function parseCSV(text: string): {
       continue;
     }
     rows.push({
-      title: obj.title,
-      category: obj.category,
-      priceEUR: obj.priceEUR,
+      title: obj.title!,
+      category: obj.category!,
+      priceEUR: obj.priceEUR!,
       changePct: typeof obj.changePct === 'number' ? obj.changePct : undefined,
       notes: obj.notes || undefined,
       imageUri: obj.imageUri || undefined,

@@ -87,7 +87,7 @@ export const ProgressRing = forwardRef<ProgressRingRef, ProgressRingProps>(
             fill="none"
             strokeLinecap="round"
             strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
+            strokeDashoffset={strokeDashoffset as any}
             rotation={-90}
             origin={`${size / 2}, ${size / 2}`}
           />

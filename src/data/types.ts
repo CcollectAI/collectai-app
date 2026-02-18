@@ -277,7 +277,7 @@ export type CategoryStoreData = {
   upcomingEvents: {
     id: string;
     title: string;
-    kind: 'collection_drop' | 'meetup' | 'stream';
+    kind: 'collection_drop' | 'meetup' | 'stream' | 'convention' | 'release';
     date: string;
     time?: string;
   }[];

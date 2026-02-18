@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Text, View, ViewStyle, TextStyle } from "react-native";
 import { color, radius, space, text as T } from "../theme/tokens";
 type Props = { children: React.ReactNode; style?: ViewStyle; textStyle?: TextStyle; variant?: "default" | "success" | "danger" };
@@ -7,7 +7,7 @@ const palette = {
   success: { bg: "#ecfdf5", fg: "#065f46", border: "#a7f3d0" },
   danger:  { bg: "#fef2f2", fg: "#991b1b", border: "#fecaca" },
 };
-export default function Badge({ children, style, textStyle, variant="default" }: Props) {
+function Badge({ children, style, textStyle, variant="default" }: Props) {
   const c = palette[variant];
   return (
     <View style={[{
@@ -18,3 +18,5 @@ export default function Badge({ children, style, textStyle, variant="default" }:
     </View>
   );
 }
+
+export default memo(Badge);

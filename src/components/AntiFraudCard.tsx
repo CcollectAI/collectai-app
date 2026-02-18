@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, Text } from 'react-native';
 import {
   AntiFraudInput,
@@ -78,25 +78,22 @@ export const AntiFraudCard: React.FC<Props> = ({
 
   const { risk, score, summary, details } = result;
 
-  let bg = '#dcfce7';
-  let titleColor = '#166534';
+  const { bg, titleColor, riskLabel } = useMemo(() => {
+    let bg = '#dcfce7';
+    let titleColor = '#166534';
+    if (risk === 'medium') {
+      bg = '#fef9c3';
+      titleColor = '#92400e';
+    } else if (risk === 'high') {
+      bg = '#fee2e2';
+      titleColor = '#b91c1c';
+    }
+    const riskLabel =
+      risk === 'low' ? 'Low risk' : risk === 'medium' ? 'Medium risk' : 'High risk';
+    return { bg, titleColor, riskLabel };
+  }, [risk]);
 
-  if (risk === 'medium') {
-    bg = '#fef9c3';
-    titleColor = '#92400e';
-  } else if (risk === 'high') {
-    bg = '#fee2e2';
-    titleColor = '#b91c1c';
-  }
-
-  const riskLabel =
-    risk === 'low'
-      ? 'Low risk'
-      : risk === 'medium'
-      ? 'Medium risk'
-      : 'High risk';
-
-  const handleDecision = async (decision: AntiFraudUserDecision) => {
+  const handleDecision = useCallback(async (decision: AntiFraudUserDecision) => {
     const eventPayload = buildAntiFraudEventFromResult({
       result,
       decision,
@@ -110,7 +107,7 @@ export const AntiFraudCard: React.FC<Props> = ({
     if (onDecision) {
       onDecision(decision, result);
     }
-  };
+  }, [result, itemName, category, quickscanId, currency, onDecision]);
 
   return (
     <View

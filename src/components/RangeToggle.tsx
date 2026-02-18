@@ -1,5 +1,6 @@
 import { View, Pressable, Text } from 'react-native';
 import { theme } from '@/theme';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 type Props = { options: string[]; value: string; onChange: (v: string) => void; };
 export default function RangeToggle({ options, value, onChange }: Props) {
@@ -8,7 +9,7 @@ export default function RangeToggle({ options, value, onChange }: Props) {
       {options.map((opt) => {
         const active = opt === value;
         return (
-          <Pressable key={opt} onPress={() => onChange(opt)} accessibilityRole="button" accessibilityLabel={`${opt}${active ? ', selected' : ''}`} style={{ paddingVertical: theme.spacing.xs }}>
+          <Pressable key={opt} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onChange(opt); }} accessibilityRole="button" accessibilityLabel={`${opt}${active ? ', selected' : ''}`} style={{ paddingVertical: theme.spacing.xs }}>
             <Text style={{ fontWeight: active ? '700' : '500', color: active ? theme.colors.navy : theme.colors.subtext }}>{opt}</Text>
             <View style={{ height: 2, marginTop: 4, backgroundColor: active ? theme.colors.navy : 'transparent' }} />
           </Pressable>

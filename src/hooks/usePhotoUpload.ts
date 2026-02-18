@@ -20,7 +20,7 @@ import { useState, useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { collectorsApi } from "@/api/collectorsApi";
 import type { ServerUploadResponse } from "@/api/collectorsApi";
-import { useSession } from "./useSession";
+import { useAuthContext } from "@/providers/useAuthContext";
 import { logger } from "@/lib/logger";
 
 /** MIME type mapping from expo-image-picker type field */
@@ -55,7 +55,7 @@ export type PhotoUploadResult = {
 };
 
 export function usePhotoUpload(itemId: string): PhotoUploadResult {
-  const { user } = useSession();
+  const { user } = useAuthContext();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);

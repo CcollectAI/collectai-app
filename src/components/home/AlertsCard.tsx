@@ -112,7 +112,7 @@ export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, 
     return (
       <View
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        accessibilityRole="region"
+        accessibilityRole={"region" as any}
         accessibilityLabel="Watchlist section"
       >
         {/* Header */}

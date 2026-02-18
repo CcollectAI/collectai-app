@@ -8,9 +8,15 @@ export function rowsToCSV(rows: Row[]): string {
 }
 export async function saveCSVAndShare(filename: string, csv: string): Promise<string> {
   try {
-    const FS = await import('expo-file-system'); const path = FS.FileSystem.cacheDirectory! + filename;
-    await FS.FileSystem.writeAsStringAsync(path, csv, { encoding: FS.FileSystem.EncodingType.UTF8 });
-    try { const SH = await import('expo-sharing'); if (await SH.Sharing.isAvailableAsync()) await SH.Sharing.shareAsync(path, { mimeType:'text/csv', dialogTitle: filename }); else Alert.alert('Saved', `CSV: ${path}`); }
+    const FS = await import('expo-file-system');
+    const cacheDir = FS.Paths.cache.uri;
+    const path = cacheDir + '/' + filename;
+    await FS.writeAsStringAsync(path, csv, { encoding: 'utf8' });
+    try {
+      const SH = await import('expo-sharing');
+      if (await SH.isAvailableAsync()) await SH.shareAsync(path, { mimeType:'text/csv', dialogTitle: filename });
+      else Alert.alert('Saved', `CSV: ${path}`);
+    }
     catch { Alert.alert('Saved (no sharing module)', `CSV: ${path}`); }
     return path;
   } catch { Alert.alert('Export unavailable', 'FileSystem/Sharing not installed yet.'); return 'unavailable'; }

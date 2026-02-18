@@ -7,7 +7,7 @@ export function usePredictionSession() {
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
-  const authHeader = async () => {
+  const authHeader = async (): Promise<Record<string, string>> => {
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;

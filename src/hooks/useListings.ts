@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { useMemo } from "react";
 import { useSWR } from "../cache/useSWR";
 

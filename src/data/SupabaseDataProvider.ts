@@ -224,15 +224,15 @@ export class SupabaseDataProvider implements DataProvider {
     }
 
     return {
-      id: r.id,
-      title: r.title,
-      priority: r.priority || 'medium',
-      owned: r.owned ?? false,
-      targetPrice: r.target_price ?? null,
-      currency: r.currency || 'EUR',
-      category: r.category,
-      notes: r.notes,
-      createdAt: r.created_at,
+      id: r.id as string,
+      title: r.title as string,
+      priority: (r.priority as 'high' | 'medium' | 'low') || 'medium',
+      owned: (r.owned as boolean) ?? false,
+      targetPrice: (r.target_price as number | null) ?? null,
+      currency: (r.currency as string) || 'EUR',
+      category: r.category as string | undefined,
+      notes: r.notes as string | undefined,
+      createdAt: r.created_at as string | undefined,
     };
   }
 
@@ -318,7 +318,6 @@ export class SupabaseDataProvider implements DataProvider {
 
   async archiveItem(itemId: string): Promise<void> {
     // Merge _archived: true into the existing attributes_json via JSONB concat
-    // @ts-expect-error – RPC not in generated Supabase types
     const { error } = await supabase.rpc('rpc_archive_item_v1', {
       p_item_id: itemId,
     });
@@ -328,17 +327,15 @@ export class SupabaseDataProvider implements DataProvider {
       const { error: updateError } = await supabase
         .from('items')
         .update({
-          // @ts-expect-error – RPC not in generated Supabase types; used as inline value expression
-          attributes_json: supabase.rpc('jsonb_set_archived', { p_item_id: itemId }),
-        })
+          attributes_json: supabase.rpc('jsonb_set_archived', { p_item_id: itemId }) as unknown,
+        } as Record<string, unknown>)
         .eq('id', itemId);
 
       // If RPC fallback also fails, try raw SQL-style update
       if (updateError) {
         const { error: rawError } = await supabase
           .from('items')
-          // @ts-expect-error – archived_at column not in generated Supabase types yet
-          .update({ archived_at: new Date().toISOString() })
+          .update({ archived_at: new Date().toISOString() } as Record<string, unknown>)
           .eq('id', itemId);
 
         if (rawError) {
@@ -377,25 +374,28 @@ export class SupabaseDataProvider implements DataProvider {
 
   async quickscanSingle(): Promise<QuickScanResult> {
     // Call HTTP endpoint via collectorsApi
-    const res = await collectorsApi.quickscanSingle();
+    const res = await collectorsApi.quickscanSingle() as Record<string, unknown>;
 
     // Map snake_case response to camelCase
+    const attrs = (res.attributes ?? {}) as Record<string, unknown>;
+    const pred = (res.prediction ?? {}) as Record<string, unknown>;
+
     return {
-      itemId: res.item_id ?? null,
+      itemId: (res.item_id as string | null) ?? null,
       attributes: {
-        category: res.attributes?.category ?? '',
-        editionGuess: res.attributes?.edition_guess ?? null,
-        conditionGuess: res.attributes?.condition_guess ?? null,
-        rarityScore: res.attributes?.rarity_score ?? null,
+        category: (attrs.category as string | null) ?? '',
+        editionGuess: (attrs.edition_guess as string | null) ?? null,
+        conditionGuess: (attrs.condition_guess as string | null) ?? null,
+        rarityScore: (attrs.rarity_score as number | null) ?? null,
       },
       prediction: {
-        name: res.prediction?.name ?? '',
-        estimatedLow: res.prediction?.estimated_low ?? 0,
-        estimatedMid: res.prediction?.estimated_mid ?? 0,
-        estimatedHigh: res.prediction?.estimated_high ?? 0,
-        currency: res.prediction?.currency ?? 'EUR',
-        confidence: res.prediction?.confidence ?? 0,
-        explanation: res.prediction?.explanation ?? null,
+        name: (pred.name as string | null) ?? '',
+        estimatedLow: (pred.estimated_low as number | null) ?? 0,
+        estimatedMid: (pred.estimated_mid as number | null) ?? 0,
+        estimatedHigh: (pred.estimated_high as number | null) ?? 0,
+        currency: (pred.currency as string | null) ?? 'EUR',
+        confidence: (pred.confidence as number | null) ?? 0,
+        explanation: (pred.explanation as string | null) ?? null,
       },
     };
   }
@@ -557,7 +557,7 @@ export class SupabaseDataProvider implements DataProvider {
     const upcomingEvents = (eventsData ?? []).map((e: EventRow) => ({
       id: e.id,
       title: e.title,
-      kind: e.kind,
+      kind: e.kind as 'collection_drop' | 'meetup' | 'stream',
       date: e.date,
       time: e.time,
     }));
@@ -946,8 +946,8 @@ export class SupabaseDataProvider implements DataProvider {
       percent: row.percent_complete ?? 0,
       isCompleted: row.is_completed ?? false,
       notes: row.notes,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
+      createdAt: row.created_at ?? new Date().toISOString(),
+      updatedAt: row.updated_at ?? new Date().toISOString(),
     }));
   }
 
@@ -971,8 +971,8 @@ export class SupabaseDataProvider implements DataProvider {
       percent: (row.percent_complete as number | null) ?? 0,
       isCompleted: (row.is_completed as boolean | null) ?? false,
       notes: (row.notes as string | null) || null,
-      createdAt: row.created_at as string | undefined,
-      updatedAt: row.updated_at as string | undefined,
+      createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
+      updatedAt: (row.updated_at as string | null) ?? new Date().toISOString(),
     };
   }
 
@@ -1020,7 +1020,7 @@ export class SupabaseDataProvider implements DataProvider {
       title: row.title,
       isDone: row.is_done ?? false,
       sortOrder: row.sort_order ?? 0,
-      createdAt: row.created_at,
+      createdAt: row.created_at ?? new Date().toISOString(),
     }));
   }
 
@@ -1042,7 +1042,7 @@ export class SupabaseDataProvider implements DataProvider {
       title: row.title as string,
       isDone: (row.is_done as boolean | null) ?? false,
       sortOrder: (row.sort_order as number | null) ?? 0,
-      createdAt: row.created_at as string | undefined,
+      createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
     };
   }
 
@@ -1075,7 +1075,7 @@ export class SupabaseDataProvider implements DataProvider {
       id: row.id,
       projectId: row.project_id,
       body: row.body,
-      createdAt: row.created_at,
+      createdAt: row.created_at ?? new Date().toISOString(),
     }));
   }
 
@@ -1095,7 +1095,7 @@ export class SupabaseDataProvider implements DataProvider {
       id: row.id as string,
       projectId: row.project_id as string,
       body: row.body as string,
-      createdAt: row.created_at as string | undefined,
+      createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
     };
   }
 
@@ -1113,10 +1113,10 @@ export class SupabaseDataProvider implements DataProvider {
         item_id: itemId,
         feedback_type: feedbackType,
         value,
-      });
+      }) as Record<string, unknown>;
       return {
-        success: res.success ?? true,
-        feedbackId: res.feedback_id,
+        success: (res.success as boolean | undefined) ?? true,
+        feedbackId: res.feedback_id as string | undefined,
       };
     } catch (err: unknown) {
       logger.error('[SupabaseDataProvider] submitFeedback error:', err);
@@ -1140,8 +1140,8 @@ export class SupabaseDataProvider implements DataProvider {
         corrected_condition: corrections.correctedCondition,
         corrected_category: corrections.correctedCategory,
         notes: corrections.notes,
-      });
-      return { success: res.success ?? true };
+      }) as Record<string, unknown>;
+      return { success: (res.success as boolean | undefined) ?? true };
     } catch (err: unknown) {
       logger.error('[SupabaseDataProvider] submitCorrection error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to submit correction');
@@ -1199,7 +1199,7 @@ export class SupabaseDataProvider implements DataProvider {
       name: ((row.name ?? row.title) as string | null) ?? 'Untitled',
       category: (row.category as string | null) ?? 'Other',
       price: (row.price as number | null) ?? actualPrice ?? 0,
-      imageUrl: (row.image_url as string | null) ?? null,
+      imageUrl: (row.image_url as string | null) ?? undefined,
       updatedAt: (row.updated_at as string | null) ?? new Date().toISOString(),
     };
   }
@@ -1415,27 +1415,28 @@ export class SupabaseDataProvider implements DataProvider {
     // This will query product databases (Open Library, Google Books, etc.)
     // and market sources for pricing
     try {
-      const res = await collectorsApi.lookupByBarcode(barcode, opts?.codeType);
+      const res = await collectorsApi.lookupByBarcode(barcode, opts?.codeType) as Record<string, unknown>;
 
+      const priceBandRaw = res.price_band as Record<string, unknown> | null | undefined;
       return {
-        title: res.title ?? null,
-        categoryId: res.category_id ?? res.categoryId ?? null,
-        subtypeId: res.subtype_id ?? res.subtypeId ?? null,
-        taxonomyVersion: res.taxonomy_version ?? 'v1.0',
-        collections: res.collections ?? [],
-        attributes: res.attributes ?? {},
-        missingRequired: res.missing_required ?? [],
-        priceBand: res.price_band ? {
-          q10: res.price_band.q10,
-          q50: res.price_band.q50,
-          q90: res.price_band.q90,
-          confidence: res.price_band.confidence,
-          currency: res.price_band.currency ?? 'EUR',
+        title: (res.title as string | null) ?? null,
+        categoryId: (res.category_id ?? res.categoryId) as string | null ?? null,
+        subtypeId: (res.subtype_id ?? res.subtypeId) as string | null ?? null,
+        taxonomyVersion: (res.taxonomy_version as string | null) ?? 'v1.0',
+        collections: (res.collections as string[] | null) ?? [],
+        attributes: (res.attributes as Record<string, unknown> | null) ?? {},
+        missingRequired: (res.missing_required as string[] | null) ?? [],
+        priceBand: priceBandRaw ? {
+          q10: priceBandRaw.q10 as number,
+          q50: priceBandRaw.q50 as number,
+          q90: priceBandRaw.q90 as number,
+          confidence: priceBandRaw.confidence as number,
+          currency: (priceBandRaw.currency as string | null) ?? 'EUR',
         } : null,
-        rationale: res.rationale ?? [],
+        rationale: (res.rationale as string[] | null) ?? [],
         barcode,
         barcodeType: opts?.codeType ?? 'unknown',
-        imageUrl: res.image_url ?? null,
+        imageUrl: (res.image_url as string | null) ?? null,
       };
     } catch (err: unknown) {
       logger.warn('[SupabaseDataProvider] lookupByBarcode API error:', err);
@@ -1475,10 +1476,10 @@ export class SupabaseDataProvider implements DataProvider {
         sold_only: opts?.soldOnly,
         min_price: opts?.minPrice,
         max_price: opts?.maxPrice,
-      });
+      }) as Record<string, unknown>;
 
       return {
-        hits: (res.hits ?? []).map((hit: Record<string, unknown>) => ({
+        hits: ((res.hits as Record<string, unknown>[] | null) ?? []).map((hit: Record<string, unknown>) => ({
           source: hit.source as string,
           rawId: (hit.raw_id ?? hit.rawId) as string,
           title: hit.title as string,
@@ -1488,11 +1489,11 @@ export class SupabaseDataProvider implements DataProvider {
           url: (hit.url ?? null) as string | null,
           condition: (hit.condition ?? null) as string | null,
           imageUrl: (hit.image_url ?? hit.imageUrl ?? null) as string | null,
-          rawPayloadHash: (hit.raw_payload_hash ?? hit.rawPayloadHash ?? null) as string | null,
+          rawPayloadHash: ((hit.raw_payload_hash ?? hit.rawPayloadHash) as string | undefined) ?? undefined,
         })),
-        providers: res.providers ?? [],
-        totalRaw: res.total_raw ?? res.totalRaw ?? 0,
-        confidence: res.confidence ?? 0.5,
+        providers: (res.providers as string[] | null) ?? [],
+        totalRaw: (res.total_raw ?? res.totalRaw) as number ?? 0,
+        confidence: (res.confidence as number | null) ?? 0.5,
       };
     } catch (err: unknown) {
       logger.warn('[SupabaseDataProvider] marketSearch API error:', err);

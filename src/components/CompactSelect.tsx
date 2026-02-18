@@ -21,7 +21,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
   const filtered = query ? options.filter(o=>o.toLowerCase().includes(query.toLowerCase())) : options;
   const { width:SW, height:SH } = Dimensions.get('window'); const POPOVER_W=280; const left=Math.max(8, Math.min((anch?.x ?? 16), SW-POPOVER_W-8)); const topBase=(anch ? anch.y+anch.h+6 : 120); const maxH=Math.max(160, Math.min(360, SH-topBase-16)); const top=Math.min(topBase, SH-maxH-8);
   return (<>
-    <AnimatedPressable ref={triggerRef} onPress={show} style={{ alignSelf: 'flex-start' }} accessibilityRole="button" accessibilityLabel={`${title || 'Select'}: ${value || placeholder}`}>
+    <View ref={triggerRef} collapsable={false}><AnimatedPressable onPress={show} style={{ alignSelf: 'flex-start' }} accessibilityRole="button" accessibilityLabel={`${title || 'Select'}: ${value || placeholder}`}>
       <View style={{
         backgroundColor: theme.colors.card,
         borderWidth: 1,
@@ -36,7 +36,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
         <Text style={{ color: theme.colors.navy, fontWeight: '600', fontSize: 14 }}>{value || placeholder}</Text>
         <Icon name="chevron-down" />
       </View>
-    </AnimatedPressable>
+    </AnimatedPressable></View>
     <Modal visible={open} transparent animationType="fade" onRequestClose={hide}>
       <Pressable onPress={hide} style={{ flex:1, backgroundColor:'rgba(0,0,0,0.15)' }} accessibilityRole="button" accessibilityLabel="Close dropdown">
         <Pressable onPress={()=>{}} accessibilityRole="none" style={{

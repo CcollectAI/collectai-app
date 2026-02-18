@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Text, ViewStyle, TextStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/motion';
@@ -14,7 +14,7 @@ type CategoryPillProps = {
  * Small pill that navigates to /categories/[categoryId]
  * when tapped. Does NOT depend on your custom theme to avoid crashes.
  */
-export const CategoryPill: React.FC<CategoryPillProps> = ({
+const CategoryPillInner: React.FC<CategoryPillProps> = ({
   id,
   label,
   style,
@@ -62,4 +62,5 @@ export const CategoryPill: React.FC<CategoryPillProps> = ({
   );
 };
 
+export const CategoryPill = memo(CategoryPillInner);
 export default CategoryPill;

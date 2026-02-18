@@ -139,7 +139,7 @@ const TwitchLeaderboardCard: React.FC = () => {
             style={{
               marginTop: 4,
               fontSize: 12,
-              color: theme.colors.mutedText,
+              color: theme.colors.muted,
             }}
           >
             Streams ranked by completion & rarity scores — great sources of comp prices,
@@ -149,7 +149,7 @@ const TwitchLeaderboardCard: React.FC = () => {
         <AnimatedPressable
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push('/analytics-metrics-debug');
+            router.push('/analytics-metrics-debug' as any);
           }}
           style={{
             paddingHorizontal: 10,
@@ -162,7 +162,7 @@ const TwitchLeaderboardCard: React.FC = () => {
             style={{
               fontSize: 11,
               fontWeight: '600',
-              color: theme.colors.onPrimary,
+              color: '#FFFFFF',
             }}
           >
             View metrics
@@ -210,7 +210,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                 <Text
                   style={{
                     fontSize: 11,
-                    color: theme.colors.mutedText,
+                    color: theme.colors.muted,
                   }}
                 >
                   @{s.handle}
@@ -254,7 +254,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                   <Text
                     style={{
                       fontSize: 11,
-                      color: theme.colors.mutedText,
+                      color: theme.colors.muted,
                     }}
                   >
                     {s.isLive ? 'Live now' : 'Offline'}
@@ -293,7 +293,7 @@ const TwitchLeaderboardCard: React.FC = () => {
               <Text
                 style={{
                   fontSize: 11,
-                  color: theme.colors.mutedText,
+                  color: theme.colors.muted,
                 }}
               >
                 {formatViewers(s.viewers)} viewers
@@ -312,7 +312,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                 <Text
                   style={{
                     fontSize: 11,
-                    color: theme.colors.mutedText,
+                    color: theme.colors.muted,
                   }}
                 >
                   Completion score
@@ -331,7 +331,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                 <Text
                   style={{
                     fontSize: 11,
-                    color: theme.colors.mutedText,
+                    color: theme.colors.muted,
                   }}
                 >
                   Rarity signal
@@ -363,7 +363,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                 style={{
                   marginTop: 2,
                   fontSize: 11,
-                  color: theme.colors.mutedText,
+                  color: theme.colors.muted,
                 }}
                 numberOfLines={3}
               >
@@ -373,7 +373,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                 style={{
                   marginTop: 2,
                   fontSize: 11,
-                  color: theme.colors.mutedText,
+                  color: theme.colors.muted,
                   fontStyle: 'italic',
                 }}
               >
@@ -408,7 +408,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                   style={{
                     fontSize: 11,
                     fontWeight: '600',
-                    color: theme.colors.onPrimary,
+                    color: '#FFFFFF',
                   }}
                 >
                   Open on Twitch
@@ -420,7 +420,7 @@ const TwitchLeaderboardCard: React.FC = () => {
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                   // Future: create event or watchlist suggestion
                   logger.info('[Twitch] suggest event/watchlist for', s.handle);
-                  router.push('/calendar'); // or an events route if you prefer
+                  router.push('/calendar' as any); // or an events route if you prefer
                 }}
                 style={{
                   flex: 1,

@@ -1,4 +1,3 @@
-cat > types/category.ts <<'TS'
 import { z } from 'zod';
 
 export const CategoryList = [
@@ -453,4 +452,3 @@ export const CategoryLabels: Record<Category, string> = {
   sportscards: 'Sports Cards',
   retro_handhelds: 'Retro Handhelds',
 };
-TS

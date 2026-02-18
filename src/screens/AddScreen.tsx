@@ -2,13 +2,16 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { View, Text, TextInput, Button, ActivityIndicator, Alert } from 'react-native'
 import { callEdge } from '@/lib/api'
 import { predictPrice } from '@/lib/predict'
-import { useSession } from '@/hooks/useSession' // assume you have a safe stub that never returns undefined
+import { useAuthContext } from '@/providers/useAuthContext'
+import { SUPABASE_ANON_KEY } from '@/api/config'
 import { logger } from '@/lib/logger'
 
 type PrefillResp = { ok: true; prefill: { title: string|null; category: string; guess_confidence: number; attrs: Record<string, unknown> } }
 
 export default function AddScreen() {
-  const { jwt, anonKey } = useSession()
+  const { session } = useAuthContext()
+  const jwt = session?.access_token ?? ''
+  const anonKey = SUPABASE_ANON_KEY ?? ''
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [category, setCategory] = useState<string>('Pokemon')
   const [title, setTitle] = useState<string>('')

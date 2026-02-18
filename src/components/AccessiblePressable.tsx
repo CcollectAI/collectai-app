@@ -3,8 +3,9 @@
  * Pressable with built-in accessibility support.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Pressable, PressableProps, ViewStyle, StyleProp } from 'react-native';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 export type AccessiblePressableProps = PressableProps & {
   /** Accessible label describing the button */
@@ -24,9 +25,14 @@ export function AccessiblePressable({
   accessibilityHint,
   accessibilityRole = 'button',
   disabled,
+  onPress,
   children,
   ...props
 }: AccessiblePressableProps) {
+  const handlePress = useCallback((e: any) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+    onPress?.(e);
+  }, [onPress]);
   return (
     <Pressable
       accessible
@@ -35,6 +41,7 @@ export function AccessiblePressable({
       accessibilityRole={accessibilityRole}
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
+      onPress={handlePress}
       {...props}
     >
       {children}

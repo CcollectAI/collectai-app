@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { fireHaptic, HapticIntent } from '@/haptics';
 import type { SwipeAction } from './SwipeableRow';
 
 type ContextMenuProps = {
@@ -35,6 +36,7 @@ export function ContextMenu({
   const { colors } = useAppTheme();
 
   const handleActionPress = (action: SwipeAction) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
     onClose();
     // Small delay to let modal close animation complete
     setTimeout(() => {

@@ -4,6 +4,7 @@ import { AddImportCard } from '@/components/AddImportCard';
 import { API_BASE } from '@/api/config';
 import * as DocumentPicker from 'expo-document-picker';
 import React from "react";
+import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
   View,
   Text,
@@ -416,4 +417,12 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddScreen;
+function AddScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Add">
+      <AddScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+export default AddScreenWithBoundary;

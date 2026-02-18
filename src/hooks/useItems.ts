@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { useSWR } from "../cache/useSWR";
 
 export type ItemRow = {

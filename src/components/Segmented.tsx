@@ -1,5 +1,6 @@
 import { View, Pressable, Text } from 'react-native';
 import { theme } from '@/theme';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 type Props = { segments: string[]; value: string; onChange: (v: string) => void; };
 export default function Segmented({ segments, value, onChange }: Props) {
@@ -10,7 +11,7 @@ export default function Segmented({ segments, value, onChange }: Props) {
         return (
           <Pressable
             key={s}
-            onPress={() => onChange(s)}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onChange(s); }}
             accessibilityRole="button"
             accessibilityLabel={`${s}${active ? ', selected' : ''}`}
             style={{

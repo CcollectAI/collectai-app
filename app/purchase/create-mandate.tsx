@@ -28,6 +28,8 @@ import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { collectorsApi } from "@/api/collectorsApi";
 import { useToast } from "@/components/Toast";
+import { useFormField, validateAll } from "@/hooks/useFormField";
+import { compose, required, maxLength, positiveNumber } from "@/lib/validate";
 
 const CATEGORIES = [
   "pokemon", "mtg", "yugioh", "lorcana", "funko", "lego",
@@ -63,9 +65,9 @@ export default function CreateMandateScreen() {
   const [saving, setSaving] = useState(false);
 
   // Form state
-  const [name, setName] = useState("");
+  const nameField = useFormField(compose(required("Name"), maxLength("Name", 255)));
   const [category, setCategory] = useState<string | null>(null);
-  const [maxPrice, setMaxPrice] = useState("");
+  const maxPriceField = useFormField(compose(required("Max price"), positiveNumber("Max price")));
   const [minTrust, setMinTrust] = useState(0.6);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [region, setRegion] = useState("");
@@ -77,9 +79,9 @@ export default function CreateMandateScreen() {
     (async () => {
       try {
         const m = await collectorsApi.getMandate(params.id!);
-        setName(m.name);
+        nameField.setValue(m.name);
         setCategory(m.category ?? null);
-        setMaxPrice(String(m.max_price));
+        maxPriceField.setValue(String(m.max_price));
         setMinTrust(m.min_trust_score ?? 0.6);
         setSelectedSources(m.allowed_sources ?? []);
         setRegion(m.region ?? "");
@@ -179,10 +181,7 @@ export default function CreateMandateScreen() {
   };
 
   const handleSave = useCallback(async () => {
-    if (!name.trim() || !maxPrice) {
-      showToast({ message: "Please fill in required fields", type: "error" });
-      return;
-    }
+    if (!validateAll(nameField, maxPriceField)) return;
 
     setSaving(true);
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -190,10 +189,10 @@ export default function CreateMandateScreen() {
     try {
       if (isEdit && params.id) {
         await collectorsApi.updateMandate(params.id, {
-          name: name.trim(),
+          name: nameField.value.trim(),
           status,
           category: category || undefined,
-          max_price: parseFloat(maxPrice),
+          max_price: parseFloat(maxPriceField.value),
           min_trust_score: minTrust,
           allowed_sources: selectedSources.length ? selectedSources : undefined,
           region: region || undefined,
@@ -201,10 +200,10 @@ export default function CreateMandateScreen() {
         showToast({ message: "Search updated", type: "success" });
       } else {
         await collectorsApi.createMandate({
-          name: name.trim(),
-          search_query: name.trim(),
+          name: nameField.value.trim(),
+          search_query: nameField.value.trim(),
           category: category || undefined,
-          max_price: parseFloat(maxPrice),
+          max_price: parseFloat(maxPriceField.value),
           min_trust_score: minTrust,
           allowed_sources: selectedSources.length ? selectedSources : undefined,
           region: region || undefined,
@@ -218,7 +217,7 @@ export default function CreateMandateScreen() {
     } finally {
       setSaving(false);
     }
-  }, [name, maxPrice, minTrust, selectedSources, region, category, status, isEdit, params.id]);
+  }, [nameField, maxPriceField, minTrust, selectedSources, region, category, status, isEdit, params.id]);
 
   // Derive display label for current region
   const regionLabel = REGIONS.find((r) => r.value === region)?.label ?? "Any Region";
@@ -252,12 +251,15 @@ export default function CreateMandateScreen() {
         {/* Name */}
         <Text style={[styles.label, { color: colors.muted }]}>NAME</Text>
         <TextInput
-          style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+          style={[styles.input, { backgroundColor: colors.card, borderColor: nameField.touched && nameField.error ? '#EF4444' : colors.border, color: colors.text }]}
           placeholder="e.g. Pokemon Grails under 200"
           placeholderTextColor={colors.muted}
-          value={name}
-          onChangeText={setName}
+          value={nameField.value}
+          onChangeText={nameField.onChange}
+          onBlur={nameField.onBlur}
+          accessibilityLabel="Search name"
         />
+        {nameField.touched && nameField.error && <Text style={styles.fieldError}>{nameField.error}</Text>}
 
         {/* Category */}
         <Text style={[styles.label, { color: colors.muted }]}>CATEGORY (OPTIONAL)</Text>
@@ -274,13 +276,16 @@ export default function CreateMandateScreen() {
         {/* Max Price */}
         <Text style={[styles.label, { color: colors.muted }]}>MAX PRICE PER ITEM (EUR)</Text>
         <TextInput
-          style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+          style={[styles.input, { backgroundColor: colors.card, borderColor: maxPriceField.touched && maxPriceField.error ? '#EF4444' : colors.border, color: colors.text }]}
           placeholder="e.g. 400"
           placeholderTextColor={colors.muted}
           keyboardType="decimal-pad"
-          value={maxPrice}
-          onChangeText={setMaxPrice}
+          value={maxPriceField.value}
+          onChangeText={maxPriceField.onChange}
+          onBlur={maxPriceField.onBlur}
+          accessibilityLabel="Maximum price per item"
         />
+        {maxPriceField.touched && maxPriceField.error && <Text style={styles.fieldError}>{maxPriceField.error}</Text>}
 
         {/* Min Trust Score */}
         <Text style={[styles.label, { color: colors.muted }]}>
@@ -468,4 +473,5 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   deleteBtnText: { fontSize: 14, fontWeight: "600" },
+  fieldError: { fontSize: 12, color: "#EF4444", marginTop: 4, marginLeft: 4 },
 });

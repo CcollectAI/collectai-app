@@ -49,7 +49,7 @@ export default function AnchoredSelect({
   const menuW = Math.max(typeof trigW === 'number' ? trigW : pos.w, estOptWidth);
 
   return (
-    <View style={{ width: width ?? undefined, alignSelf: 'flex-start' }}>
+    <View style={{ width: (width ?? undefined) as any, alignSelf: 'flex-start' }}>
       {label ? (
         <Text style={{ color: theme.colors.navy, fontWeight: '800', marginBottom: 6 }}>{label}</Text>
       ) : null}

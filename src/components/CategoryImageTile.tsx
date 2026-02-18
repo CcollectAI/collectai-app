@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Image, ImageSource } from "expo-image";
 
@@ -8,7 +8,7 @@ type Props = {
   subtitle?: string;
 };
 
-export const CategoryImageTile: React.FC<Props> = ({ label, image, subtitle }) => {
+const CategoryImageTileInner: React.FC<Props> = ({ label, image, subtitle }) => {
   const theme = {
     colors: {
       card: "#FFFFFF",
@@ -57,6 +57,7 @@ export const CategoryImageTile: React.FC<Props> = ({ label, image, subtitle }) =
     </View>
   );
 };
+export const CategoryImageTile = memo(CategoryImageTileInner);
 
 const styles = StyleSheet.create({
   card: {

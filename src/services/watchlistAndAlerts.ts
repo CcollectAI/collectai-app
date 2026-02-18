@@ -102,24 +102,20 @@ export async function upsertWatchlistItem(
     currency: payload.currency ?? 'EUR',
   };
 
-  let query = supabase.from('watchlist_items').upsert(
+  const base = supabase.from('watchlist_items').upsert(
     payload.id ? { id: payload.id, ...body } : body,
   );
 
-  if (!payload.id) {
-    query = query.select('*').single();
-  } else {
-    query = query.select('*').eq('id', payload.id).single();
-  }
-
-  const { data, error } = await query;
+  const { data, error } = payload.id
+    ? await base.select('*').eq('id', payload.id).single()
+    : await base.select('*').single();
 
   if (error) {
     logger.warn('[upsertWatchlistItem] error', error);
     return null;
   }
 
-  return data as WatchlistItem;
+  return (data ?? null) as WatchlistItem | null;
 }
 
 export async function deleteWatchlistItem(id: string): Promise<boolean> {

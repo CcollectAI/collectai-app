@@ -30,7 +30,7 @@ import { useSettings } from "@/lib/settings";
 import logger from "@/utils/logger";
 import { formatPrice } from "@/lib/format";
 
-import { useSession } from "@/hooks/useSession";
+import { useAuthContext } from "@/providers/useAuthContext";
 import {
   fetchWatchlistForUser,
   upsertWatchlistItem,
@@ -74,7 +74,7 @@ const PRIORITY_CONFIG: Record<WatchlistPriority, { label: string; color: string;
 
 export default function WatchlistBuilderScreen() {
   const router = useRouter();
-  const { user } = useSession();
+  const { user } = useAuthContext();
   const userId = user?.id ?? "";
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();

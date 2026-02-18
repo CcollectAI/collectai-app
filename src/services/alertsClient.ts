@@ -38,7 +38,7 @@ export interface AlertConfig {
  */
 export async function getAlerts(): Promise<AlertConfig[]> {
   const res = await client.get('/alerts');
-  const data = res.data ?? [];
+  const data = (res.data ?? []) as Record<string, unknown>;
   const raw =
     (data && (data.alerts || data.items || data.rows || data)) ?? [];
   return raw as AlertConfig[];

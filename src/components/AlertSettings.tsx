@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Switch, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { fireHaptic, HapticIntent } from '@/haptics';
 import { AlertPreferences, DEFAULT_ALERT_PREFERENCES } from '@/types/insights';
 import { featureFlags } from '@/config/featureFlags';
 
@@ -75,7 +76,7 @@ function ThresholdRow({ label, value, onValueChange, enabled, colors }: Threshol
               value === opt && { backgroundColor: colors.accent },
               value !== opt && { borderColor: colors.border, borderWidth: 1 },
             ]}
-            onPress={() => onValueChange(opt)}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onValueChange(opt); }}
             accessibilityRole="radio"
             accessibilityState={{ checked: value === opt }}
             accessibilityLabel={`${opt}%`}
@@ -193,7 +194,7 @@ export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
               { borderColor: colors.border },
               prefs.frequency === opt.value && { backgroundColor: colors.accent, borderColor: colors.accent },
             ]}
-            onPress={() => updatePref('frequency', opt.value)}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); updatePref('frequency', opt.value); }}
             accessibilityRole="radio"
             accessibilityState={{ checked: prefs.frequency === opt.value }}
             accessibilityLabel={opt.label}

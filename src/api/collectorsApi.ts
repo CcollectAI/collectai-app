@@ -521,3 +521,40 @@ export type IntakeResultResponse = {
   image_url: string | null;
   rationale: string[];
 };
+
+// ---------------------------------------------------------------------------
+// Account Management
+// ---------------------------------------------------------------------------
+
+export async function deleteAccount(): Promise<{ success: boolean; message: string }> {
+  return del("/account");
+}
+
+// ---------------------------------------------------------------------------
+// Billing / Subscriptions
+// ---------------------------------------------------------------------------
+
+export interface BillingStatus {
+  plan: "free" | "pro" | "premium";
+  status: "active" | "past_due" | "canceled" | "unpaid" | "trialing";
+  current_period_end?: string | null;
+  cancel_at_period_end: boolean;
+  limits: {
+    max_mandates: number;
+    deal_discovery: boolean;
+    dossier_pdf: boolean;
+    advanced_analytics: boolean;
+  };
+}
+
+export async function getBillingStatus(): Promise<BillingStatus> {
+  return get("/billing/status");
+}
+
+export async function createCheckoutSession(plan: "pro" | "premium"): Promise<{ url: string; session_id: string }> {
+  return post("/billing/checkout-session", { plan });
+}
+
+export async function createPortalSession(): Promise<{ url: string }> {
+  return post("/billing/portal-session", {});
+}

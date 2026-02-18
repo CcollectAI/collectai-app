@@ -33,6 +33,8 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useFormField, validateAll } from '@/hooks/useFormField';
+import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
 import CompactSelect from '@/components/CompactSelect';
 import logger from '@/utils/logger';
 
@@ -76,16 +78,16 @@ const CreateEventScreen: React.FC = () => {
   const { settings } = useSettings();
 
   /* ---- form state ---- */
-  const [title, setTitle] = useState('');
+  const titleField = useFormField(compose(required('Title'), maxLength('Title', 255)));
   const [kind, setKind] = useState<EventKind>('meetup');
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [format, setFormat] = useState<EventFormat>('in_person');
-  const [date, setDate] = useState('');
+  const dateField = useFormField(compose(required('Date'), dateYMD('Date')));
   const [time, setTime] = useState('');
   const [endDate, setEndDate] = useState('');
   const [location, setLocation] = useState('');
-  const [onlineUrl, setOnlineUrl] = useState('');
-  const [description, setDescription] = useState('');
+  const onlineUrlField = useFormField(url('Online URL'));
+  const descriptionField = useFormField(compose(required('Description'), maxLength('Description', 2000)));
   const [isPublic, setIsPublic] = useState(true);
 
   /* ---- geolocation state ---- */
@@ -100,9 +102,10 @@ const CreateEventScreen: React.FC = () => {
   const showOnlineUrl = format === 'online' || format === 'hybrid';
 
   const canSubmit =
-    title.trim().length > 0 &&
-    date.trim().length > 0 &&
-    description.trim().length > 0 &&
+    titleField.value.trim().length > 0 &&
+    dateField.value.trim().length > 0 &&
+    descriptionField.value.trim().length > 0 &&
+    !titleField.error && !dateField.error && !descriptionField.error && !onlineUrlField.error &&
     saveState !== 'saving';
 
   /* ---- geolocation handler ---- */
@@ -146,23 +149,24 @@ const CreateEventScreen: React.FC = () => {
 
   /* ---- submit ---- */
   const handleSubmit = async () => {
+    if (!validateAll(titleField, dateField, descriptionField, onlineUrlField)) return;
     if (!canSubmit) return;
 
     setSaveState('saving');
 
     try {
       const input: CreateEventInput = {
-        title: title.trim(),
+        title: titleField.value.trim(),
         kind,
-        date: date.trim(),
-        description: description.trim(),
+        date: dateField.value.trim(),
+        description: descriptionField.value.trim(),
         format,
         isPublic,
         ...(categoryId ? { categoryId } : {}),
         ...(time.trim() ? { time: time.trim() } : {}),
         ...(endDate.trim() ? { endDate: endDate.trim() } : {}),
         ...(location.trim() ? { location: location.trim() } : {}),
-        ...(onlineUrl.trim() ? { onlineUrl: onlineUrl.trim() } : {}),
+        ...(onlineUrlField.value.trim() ? { onlineUrl: onlineUrlField.value.trim() } : {}),
         ...(latitude !== undefined ? { latitude } : {}),
         ...(longitude !== undefined ? { longitude } : {}),
       };
@@ -220,17 +224,19 @@ const CreateEventScreen: React.FC = () => {
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>
                   Title <Text style={{ color: colors.accent }}>*</Text>
                 </Text>
-                <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                   <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
-                    value={title}
-                    onChangeText={setTitle}
+                    value={titleField.value}
+                    onChangeText={titleField.onChange}
+                    onBlur={titleField.onBlur}
                     placeholder="e.g. Rotterdam TCG Meetup"
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
                     accessibilityLabel="Event title"
                   />
                 </View>
+                {titleField.touched && titleField.error && <Text style={styles.fieldError}>{titleField.error}</Text>}
               </View>
 
               {/* Kind dropdown */}
@@ -330,17 +336,19 @@ const CreateEventScreen: React.FC = () => {
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>
                   Date <Text style={{ color: colors.accent }}>*</Text>
                 </Text>
-                <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.inputWrap, { borderColor: dateField.touched && dateField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                   <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
-                    value={date}
-                    onChangeText={setDate}
+                    value={dateField.value}
+                    onChangeText={dateField.onChange}
+                    onBlur={dateField.onBlur}
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
                     accessibilityLabel="Event date"
                   />
                 </View>
+                {dateField.touched && dateField.error && <Text style={styles.fieldError}>{dateField.error}</Text>}
               </View>
 
               {/* Time */}
@@ -451,11 +459,12 @@ const CreateEventScreen: React.FC = () => {
                 {showOnlineUrl && (
                   <View style={showLocation ? styles.fieldBlock : undefined}>
                     <Text style={[styles.fieldLabel, { color: colors.text }]}>Online URL</Text>
-                    <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                    <View style={[styles.inputWrap, { borderColor: onlineUrlField.touched && onlineUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                       <Ionicons name="link-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                       <TextInput
-                        value={onlineUrl}
-                        onChangeText={setOnlineUrl}
+                        value={onlineUrlField.value}
+                        onChangeText={onlineUrlField.onChange}
+                        onBlur={onlineUrlField.onBlur}
                         placeholder="https://..."
                         placeholderTextColor={colors.muted}
                         style={[styles.input, { color: colors.text }]}
@@ -464,6 +473,7 @@ const CreateEventScreen: React.FC = () => {
                         accessibilityLabel="Online event URL"
                       />
                     </View>
+                    {onlineUrlField.touched && onlineUrlField.error && <Text style={styles.fieldError}>{onlineUrlField.error}</Text>}
                   </View>
                 )}
               </View>
@@ -484,10 +494,11 @@ const CreateEventScreen: React.FC = () => {
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>
                   Description <Text style={{ color: colors.accent }}>*</Text>
                 </Text>
-                <View style={[styles.inputWrapMultiline, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.inputWrapMultiline, { borderColor: descriptionField.touched && descriptionField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                   <TextInput
-                    value={description}
-                    onChangeText={setDescription}
+                    value={descriptionField.value}
+                    onChangeText={descriptionField.onChange}
+                    onBlur={descriptionField.onBlur}
                     multiline
                     numberOfLines={4}
                     placeholder="What should attendees know about this event?"
@@ -497,6 +508,7 @@ const CreateEventScreen: React.FC = () => {
                     accessibilityLabel="Event description"
                   />
                 </View>
+                {descriptionField.touched && descriptionField.error && <Text style={styles.fieldError}>{descriptionField.error}</Text>}
               </View>
             </View>
           </View>
@@ -799,6 +811,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'center',
     marginTop: 6,
+  },
+  fieldError: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

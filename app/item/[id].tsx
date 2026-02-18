@@ -21,7 +21,7 @@ import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
-import { useSession } from "@/hooks/useSession";
+import { useAuthContext } from "@/providers/useAuthContext";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useToast } from "@/components/Toast";
@@ -143,7 +143,7 @@ export default function ItemDetailScreen() {
   const isDraft = id === 'draft' || draft === '1';
 
   // Photo upload
-  const { user } = useSession();
+  const { user } = useAuthContext();
   const {
     pickAndUpload,
     uploading: photoUploading,

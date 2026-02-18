@@ -1,9 +1,9 @@
-import React from "react";
+import React, { memo } from "react";
 import { View, Text } from "react-native";
 import { theme } from "../theme";
 import { AnimatedPressable } from "@/motion";
 
-export default function ActionTile({
+function ActionTile({
   label,
   emoji = "⭐",
   onPress,
@@ -45,3 +45,5 @@ export default function ActionTile({
     </AnimatedPressable>
   );
 }
+
+export default memo(ActionTile);

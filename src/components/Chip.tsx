@@ -1,7 +1,9 @@
+import React, { memo, useCallback } from 'react';
 import { Pressable, Text } from 'react-native';
 import { theme } from '@/theme';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
-export default function Chip({
+function Chip({
   label,
   selected,
   onPress,
@@ -10,9 +12,14 @@ export default function Chip({
   selected?: boolean;
   onPress?: () => void;
 }) {
+  const handlePress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+    onPress?.();
+  }, [onPress]);
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={`${label}${selected ? ', selected' : ''}`}
       style={{
@@ -29,3 +36,5 @@ export default function Chip({
     </Pressable>
   );
 }
+
+export default memo(Chip);

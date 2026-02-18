@@ -9,6 +9,7 @@
  */
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
   View,
   Text,
@@ -156,7 +157,7 @@ function extractItems(raw: unknown): ItemRow[] {
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function PortfolioScreen() {
+function PortfolioScreen() {
   const router = useRouter();
   const watchlist = useWatchlist();
   const { colors } = useAppTheme();
@@ -1010,3 +1011,11 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
   },
 });
+
+export default function PortfolioScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Portfolio">
+      <PortfolioScreen />
+    </ScreenErrorBoundary>
+  );
+}
