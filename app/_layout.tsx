@@ -1,9 +1,37 @@
 import React, { useEffect, useState } from "react";
-import { View, Pressable, ActivityIndicator } from "react-native";
+import { View, Pressable, ActivityIndicator, Text, TextInput } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
+import {
+  useFonts,
+  Roboto_400Regular,
+  Roboto_500Medium,
+  Roboto_700Bold,
+  Roboto_900Black,
+} from "@expo-google-fonts/roboto";
+
+/* ---------- Global font defaults ---------- */
+const defaultTextStyle = { fontFamily: "Roboto_400Regular" };
+const origTextRender = (Text as any).render;
+if (origTextRender) {
+  (Text as any).render = function (props: any, ref: any) {
+    const style = props.style
+      ? [defaultTextStyle, props.style]
+      : defaultTextStyle;
+    return origTextRender.call(this, { ...props, style }, ref);
+  };
+}
+const origInputRender = (TextInput as any).render;
+if (origInputRender) {
+  (TextInput as any).render = function (props: any, ref: any) {
+    const style = props.style
+      ? [defaultTextStyle, props.style]
+      : defaultTextStyle;
+    return origInputRender.call(this, { ...props, style }, ref);
+  };
+}
 import { SettingsProvider } from "@/lib/settings";
 import { ToastProvider } from "@/components/Toast";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
@@ -197,6 +225,17 @@ function RootStack() {
 }
 
 function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Roboto_400Regular,
+    Roboto_500Medium,
+    Roboto_700Bold,
+    Roboto_900Black,
+  });
+
+  if (!fontsLoaded) {
+    return null; // Splash screen stays visible via preventAutoHideAsync
+  }
+
   return (
     <ErrorBoundary>
       <SettingsProvider>
