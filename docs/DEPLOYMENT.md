@@ -223,7 +223,7 @@ psql $DATABASE_URL -f supabase/migrations/20260218_beta_signups.sql
 
 The landing page at `web/index.html` (with `web/icon.png`) collects beta signups
 at `collectai.app`. It posts to `POST /api/beta-signup` on the backend. Deploy the
-entire `web/` directory — the page loads the icon image and Inter font from Google Fonts.
+entire `web/` directory — the page loads the icon image and Roboto font from Google Fonts.
 
 ### Deploying the Landing Page
 
