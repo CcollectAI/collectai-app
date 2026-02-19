@@ -5,7 +5,7 @@ import { Link, usePathname } from "expo-router";
 export default function NotFoundScreen() {
   const pathname = usePathname();
 
-  console.log("[SRC/+not-found] unmatched path:", pathname);
+  if (__DEV__) console.log("[+not-found] unmatched path:", pathname);
 
   return (
     <View
