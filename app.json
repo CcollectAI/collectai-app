@@ -3,6 +3,9 @@
     "name": "CollectAI",
     "slug": "collectai",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "scheme": "collectai",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
