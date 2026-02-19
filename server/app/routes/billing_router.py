@@ -85,18 +85,47 @@ _SEEN_EVENTS: OrderedDict[str, float] = OrderedDict()
 _MAX_SEEN = 500
 
 
-def _event_already_processed(event_id: str) -> bool:
-    """Return True if this Stripe event was already handled (dedup).
-
-    WARNING: In-memory dedup only works for single-worker deployments.
-    Multi-worker setups need a ``processed_webhook_events`` DB table.
-    """
+def _event_already_processed_mem(event_id: str) -> bool:
+    """In-memory LRU check (single-worker fallback)."""
     if event_id in _SEEN_EVENTS:
         return True
     _SEEN_EVENTS[event_id] = time.monotonic()
     while len(_SEEN_EVENTS) > _MAX_SEEN:
         _SEEN_EVENTS.popitem(last=False)
     return False
+
+
+async def _event_already_processed(event_id: str, event_type: str, pool: Any | None) -> bool:
+    """Check Stripe webhook idempotency — DB first, in-memory fallback.
+
+    Uses the ``processed_webhook_events`` table for multi-worker dedup.
+    Falls back to in-memory LRU if the table doesn't exist yet.
+    """
+    # Fast in-memory check first
+    if event_id in _SEEN_EVENTS:
+        return True
+
+    if pool is not None:
+        try:
+            row = await pool.fetchrow(
+                "SELECT 1 FROM processed_webhook_events WHERE event_id = $1",
+                event_id,
+            )
+            if row:
+                _SEEN_EVENTS[event_id] = time.monotonic()
+                return True
+            # Insert to claim this event
+            await pool.execute(
+                "INSERT INTO processed_webhook_events (event_id, event_type) "
+                "VALUES ($1, $2) ON CONFLICT (event_id) DO NOTHING",
+                event_id,
+                event_type,
+            )
+        except Exception as e:
+            # Table may not exist yet — fall through to in-memory
+            _log.debug("DB webhook dedup unavailable, using in-memory: %s", e)
+
+    return _event_already_processed_mem(event_id)
 
 
 def _safe_timestamp(ts: int | float | None) -> datetime | None:
@@ -330,15 +359,17 @@ async def stripe_webhook(
         raise
 
     event_id = event.get("id", "")
-    if _event_already_processed(event_id):
+    event_type = event["type"]
+
+    pool = get_pool()
+
+    if await _event_already_processed(event_id, event_type, pool):
         _log.info("Stripe webhook duplicate skipped: %s", event_id)
         return JSONResponse({"received": True, "duplicate": True})
 
-    event_type = event["type"]
     data = event["data"]["object"]
     _log.info("Stripe webhook: %s (id=%s)", event_type, event_id)
 
-    pool = get_pool()
     if pool is None:
         _log.warning("Stripe webhook received but DB is not available")
         return JSONResponse({"received": True})
