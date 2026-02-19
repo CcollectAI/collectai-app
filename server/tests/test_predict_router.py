@@ -41,3 +41,40 @@ class TestPriceEvidence:
         assert "q50" in data
         assert "q90" in data
         assert "confidence_score" in data
+
+
+class TestPriceTrend:
+    """GET /predict/trend/{item_id}."""
+
+    def test_returns_empty_when_db_disabled(self):
+        resp = client.get("/predict/trend/00000000-0000-0000-0000-000000000001")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["data_points"] == []
+        assert data["direction"] is None
+        assert data["pct_change"] is None
+
+    def test_response_schema(self):
+        resp = client.get("/predict/trend/test-item")
+        data = resp.json()
+        assert "item_ref" in data
+        assert "period_days" in data
+        assert "data_points" in data
+        assert "direction" in data
+        assert "pct_change" in data
+        assert "current_q50" in data
+        assert "earliest_q50" in data
+
+    def test_custom_period_days(self):
+        resp = client.get("/predict/trend/test-item?days=30")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["period_days"] == 30
+
+    def test_invalid_days_rejected(self):
+        resp = client.get("/predict/trend/test-item?days=3")
+        assert resp.status_code == 422  # Below ge=7
+
+    def test_max_days_rejected(self):
+        resp = client.get("/predict/trend/test-item?days=999")
+        assert resp.status_code == 422  # Above le=365

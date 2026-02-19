@@ -193,6 +193,11 @@ STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 STRIPE_PRICE_ID_PRO: str = os.getenv("STRIPE_PRICE_ID_PRO", "")
 STRIPE_PRICE_ID_PREMIUM: str = os.getenv("STRIPE_PRICE_ID_PREMIUM", "")
 
+# Sponsored events tiers (one-time payments)
+STRIPE_PRICE_ID_SPONSOR_FEATURED: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_FEATURED", "")
+STRIPE_PRICE_ID_SPONSOR_PROMOTED: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_PROMOTED", "")
+STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT", "")
+
 
 # ---------------------------------------------------------------------------
 # Startup validation

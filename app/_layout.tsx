@@ -12,7 +12,13 @@ import {
   Roboto_900Black,
 } from "@expo-google-fonts/roboto";
 
-/* ---------- Global font defaults ---------- */
+/* ---------- Global font defaults ----------
+ * This monkey-patch runs at import time (before fonts are loaded).
+ * The RootLayout component returns null until fontsLoaded is true,
+ * keeping the splash screen visible, so users never see unstyled text.
+ * If rendering Text outside RootLayout before fonts load, it will
+ * fall back to the system font gracefully.
+ */
 const defaultTextStyle = { fontFamily: "Roboto_400Regular" };
 const origTextRender = (Text as any).render;
 if (origTextRender) {

@@ -11,6 +11,8 @@ import {
   Modal,
   ScrollView,
   SafeAreaView,
+  Pressable,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -24,12 +26,20 @@ import {
 } from '@/types/priceExplanation';
 import { RangeBar } from './RangeBar';
 
+type AffiliateLink = {
+  source: string;
+  url: string;
+  affiliate_url: string;
+  label: string;
+};
+
 type PriceExplanationSheetProps = {
   visible: boolean;
   onClose: () => void;
   explanation: PriceExplanation | null;
   priceBand?: PriceBand;
   currency?: string;
+  affiliateLinks?: AffiliateLink[];
 };
 
 function formatPrice(value: number, currency: string = 'EUR'): string {
@@ -47,6 +57,7 @@ export function PriceExplanationSheet({
   explanation,
   priceBand,
   currency = 'EUR',
+  affiliateLinks = [],
 }: PriceExplanationSheetProps) {
   const { colors } = useAppTheme();
 
@@ -156,29 +167,48 @@ export function PriceExplanationSheet({
                 <Ionicons name="layers-outline" size={20} color={colors.accent} />
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Data Sources</Text>
               </View>
-              {explanation.compSources.map((source, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.sourceRow,
-                    index < explanation.compSources.length - 1 && {
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                      borderBottomColor: colors.border,
-                    },
-                  ]}
-                >
-                  <View style={styles.sourceInfo}>
-                    <Text style={[styles.sourceName, { color: colors.text }]}>{source.source}</Text>
-                    <Text style={[styles.sourceCount, { color: colors.muted }]}>
-                      {source.count} comparable sales
-                      {source.dateRange && ` • ${source.dateRange}`}
+              {explanation.compSources.map((source, index) => {
+                const matchedLink = affiliateLinks.find(
+                  (l) => source.source.toLowerCase().includes(l.source.toLowerCase())
+                );
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.sourceRow,
+                      index < explanation.compSources.length - 1 && {
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <View style={styles.sourceInfo}>
+                      {matchedLink ? (
+                        <Pressable
+                          onPress={() => {
+                            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                            Linking.openURL(matchedLink.affiliate_url).catch(() => {});
+                          }}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                          accessibilityRole="link"
+                        >
+                          <Text style={[styles.sourceName, { color: colors.accent }]}>{source.source}</Text>
+                          <Text style={{ color: colors.accent, fontSize: 12 }}>↗</Text>
+                        </Pressable>
+                      ) : (
+                        <Text style={[styles.sourceName, { color: colors.text }]}>{source.source}</Text>
+                      )}
+                      <Text style={[styles.sourceCount, { color: colors.muted }]}>
+                        {source.count} comparable sales
+                        {source.dateRange && ` • ${source.dateRange}`}
+                      </Text>
+                    </View>
+                    <Text style={[styles.sourcePrice, { color: colors.text }]}>
+                      {formatPrice(source.avgPrice, currency)}
                     </Text>
                   </View>
-                  <Text style={[styles.sourcePrice, { color: colors.text }]}>
-                    {formatPrice(source.avgPrice, currency)}
-                  </Text>
-                </View>
-              ))}
+                );
+              })}
             </View>
           )}
 

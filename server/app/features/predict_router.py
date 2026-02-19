@@ -12,7 +12,7 @@ import json
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
@@ -21,6 +21,23 @@ from app.db import db_configured, get_conn
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/predict", tags=["predict"])
+
+
+class TrendDataPoint(BaseModel):
+    date: str
+    q50: float
+    q10: Optional[float] = None
+    q90: Optional[float] = None
+
+
+class PriceTrendResponse(BaseModel):
+    item_ref: str
+    period_days: int = 90
+    data_points: list[TrendDataPoint] = Field(default_factory=list)
+    direction: Optional[str] = None  # "up", "down", "flat"
+    pct_change: Optional[float] = None  # % change over period
+    current_q50: Optional[float] = None
+    earliest_q50: Optional[float] = None
 
 
 class EvidenceSourceResponse(BaseModel):
@@ -144,6 +161,89 @@ async def get_price_evidence(
                 q90=float(pred["q90"]) if pred.get("q90") is not None else None,
                 confidence_score=float(pred["conf_score"]) if pred.get("conf_score") is not None else None,
             )
-    except RuntimeError as exc:
-        logger.warning("[predict] DB pool unavailable: %s", exc)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("[predict] DB error for evidence: %s", exc)
         return PriceEvidenceResponse()
+
+
+@router.get("/trend/{item_id}", response_model=PriceTrendResponse)
+async def get_price_trend(
+    item_id: str,
+    days: int = Query(default=90, ge=7, le=365, description="Lookback period in days"),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Return price history trend for an item over the specified period.
+
+    Returns data points, direction (up/down/flat), and percentage change.
+    """
+    if not db_configured():
+        return PriceTrendResponse(item_ref=item_id, period_days=days)
+
+    try:
+        async with get_conn() as conn:
+            # Verify item ownership
+            owner_check = await conn.fetchval(
+                "SELECT 1 FROM public.items WHERE id = $1::uuid AND user_id = $2::uuid",
+                item_id, user_id,
+            )
+            if owner_check is None:
+                raise HTTPException(status_code=404, detail="Item not found")
+
+            # Fetch price history snapshots
+            rows = await conn.fetch(
+                """
+                SELECT price_q50, price_q10, price_q90, snapshot_at
+                FROM public.price_history
+                WHERE item_ref = $1
+                  AND snapshot_at >= now() - ($2 || ' days')::interval
+                ORDER BY snapshot_at ASC
+                """,
+                item_id, str(days),
+            )
+
+            if not rows:
+                return PriceTrendResponse(item_ref=item_id, period_days=days)
+
+            data_points = [
+                TrendDataPoint(
+                    date=row["snapshot_at"].strftime("%Y-%m-%d"),
+                    q50=float(row["price_q50"]),
+                    q10=float(row["price_q10"]) if row.get("price_q10") is not None else None,
+                    q90=float(row["price_q90"]) if row.get("price_q90") is not None else None,
+                )
+                for row in rows
+            ]
+
+            earliest_q50 = float(rows[0]["price_q50"])
+            current_q50 = float(rows[-1]["price_q50"])
+
+            # Calculate trend
+            if earliest_q50 > 0:
+                pct_change = round(((current_q50 - earliest_q50) / earliest_q50) * 100.0, 1)
+            else:
+                pct_change = 0.0
+
+            if pct_change > 2.0:
+                direction = "up"
+            elif pct_change < -2.0:
+                direction = "down"
+            else:
+                direction = "flat"
+
+            return PriceTrendResponse(
+                item_ref=item_id,
+                period_days=days,
+                data_points=data_points,
+                direction=direction,
+                pct_change=pct_change,
+                current_q50=current_q50,
+                earliest_q50=earliest_q50,
+            )
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("[predict] DB error for trend: %s", exc)
+        return PriceTrendResponse(item_ref=item_id, period_days=days)

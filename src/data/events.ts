@@ -2,6 +2,9 @@ import type { CategoryId } from './categories';
 import type { UserId } from './users';
 
 export type EventKind = 'collection_drop' | 'meetup' | 'stream' | 'convention' | 'release';
+export type EventStatus = 'draft' | 'published' | 'cancelled';
+
+export type SponsorTier = 'featured' | 'promoted' | 'spotlight';
 
 export type CollectorsEvent = {
   id: string;
@@ -24,9 +27,15 @@ export type CollectorsEvent = {
   imageUrl?: string;
   createdBy?: string;
   format?: 'in_person' | 'online' | 'hybrid';
+  status?: EventStatus;   // 'draft' | 'published' | 'cancelled'
   isPublic?: boolean;
   latitude?: number;
   longitude?: number;
+  // Sponsor fields
+  isSponsored?: boolean;
+  sponsorName?: string;
+  sponsorLogoUrl?: string;
+  sponsorTier?: SponsorTier;
 };
 
 export type CreateEventInput = {
@@ -40,7 +49,9 @@ export type CreateEventInput = {
   onlineUrl?: string;
   description: string;
   format?: 'in_person' | 'online' | 'hybrid';
+  status?: EventStatus;
   isPublic?: boolean;
+  imageUrl?: string;
   latitude?: number;
   longitude?: number;
 };

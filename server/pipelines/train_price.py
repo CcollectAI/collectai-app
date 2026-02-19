@@ -200,53 +200,48 @@ def load_user_feedback(category: str) -> tuple[list[dict], list[float]]:
     prices_list = []
 
     try:
-        client = httpx.Client(timeout=15.0)
-
-        # Fetch sale_price and price_correction feedback for this category
-        # Join with items table to get category and attributes
-        resp = client.get(
-            f"{supabase_url}/rest/v1/user_feedback_events_v1",
-            params={
-                "select": "feedback_type,value_json,item_id,created_at",
-                "feedback_type": "in.(sale_price,price_correction)",
-                "order": "created_at.desc",
-                "limit": "5000",
-            },
-            headers=headers,
-        )
-
-        if resp.status_code != 200:
-            logger.warning(f"Failed to fetch feedback: {resp.status_code}")
-            client.close()
-            return [], []
-
-        events = resp.json()
-
-        # Also fetch the items to get category + attributes
-        item_ids = list({e.get("item_id") for e in events if e.get("item_id")})
-        if not item_ids:
-            client.close()
-            return [], []
-
-        # Fetch items in batches of 100
-        items_by_id: dict[str, dict] = {}
-        for i in range(0, len(item_ids), 100):
-            batch_ids = item_ids[i:i + 100]
-            id_filter = ",".join(batch_ids)
-            items_resp = client.get(
-                f"{supabase_url}/rest/v1/items",
+        with httpx.Client(timeout=15.0) as client:
+            # Fetch sale_price and price_correction feedback for this category
+            # Join with items table to get category and attributes
+            resp = client.get(
+                f"{supabase_url}/rest/v1/user_feedback_events_v1",
                 params={
-                    "select": "id,category,condition,grade,attributes_json",
-                    "id": f"in.({id_filter})",
-                    "category": f"eq.{category}",
+                    "select": "feedback_type,value_json,item_id,created_at",
+                    "feedback_type": "in.(sale_price,price_correction)",
+                    "order": "created_at.desc",
+                    "limit": "5000",
                 },
                 headers=headers,
             )
-            if items_resp.status_code == 200:
-                for item in items_resp.json():
-                    items_by_id[item["id"]] = item
 
-        client.close()
+            if resp.status_code != 200:
+                logger.warning(f"Failed to fetch feedback: {resp.status_code}")
+                return [], []
+
+            events = resp.json()
+
+            # Also fetch the items to get category + attributes
+            item_ids = list({e.get("item_id") for e in events if e.get("item_id")})
+            if not item_ids:
+                return [], []
+
+            # Fetch items in batches of 100
+            items_by_id: dict[str, dict] = {}
+            for i in range(0, len(item_ids), 100):
+                batch_ids = item_ids[i:i + 100]
+                id_filter = ",".join(batch_ids)
+                items_resp = client.get(
+                    f"{supabase_url}/rest/v1/items",
+                    params={
+                        "select": "id,category,condition,grade,attributes_json",
+                        "id": f"in.({id_filter})",
+                        "category": f"eq.{category}",
+                    },
+                    headers=headers,
+                )
+                if items_resp.status_code == 200:
+                    for item in items_resp.json():
+                        items_by_id[item["id"]] = item
 
         # Convert feedback events to training samples
         for event in events:
@@ -292,6 +287,110 @@ def load_user_feedback(category: str) -> tuple[list[dict], list[float]]:
 
     except Exception as e:
         logger.warning(f"Error loading feedback for {category}: {e}")
+
+    return features_list, prices_list
+
+
+def load_verified_sales(category: str) -> tuple[list[dict], list[float]]:
+    """
+    Load verified sales from the verified_sales table.
+
+    These are user-reported actual sale prices — high-quality ground truth.
+    Each sample gets source='verified_sale' in its features dict so the
+    recency weighting system can apply a 2x bonus.
+
+    Returns additional (features_list, prices_list) to merge.
+    """
+    import httpx
+
+    supabase_url = os.getenv("SUPABASE_URL", "")
+    supabase_key = os.getenv("SUPABASE_SERVICE_KEY", "")
+
+    if not supabase_url or not supabase_key:
+        return [], []
+
+    headers = {
+        "apikey": supabase_key,
+        "Authorization": f"Bearer {supabase_key}",
+    }
+
+    features_list: list[dict] = []
+    prices_list: list[float] = []
+
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.get(
+                f"{supabase_url}/rest/v1/verified_sales",
+                params={
+                    "select": "item_id,sale_price,currency,condition,sold_at,created_at",
+                    "category": f"eq.{category}",
+                    "order": "created_at.desc",
+                    "limit": "10000",
+                },
+                headers=headers,
+            )
+
+            if resp.status_code != 200:
+                return [], []
+
+            sales = resp.json()
+
+            # Fetch item attributes for the sold items
+            item_ids = list({s["item_id"] for s in sales if s.get("item_id")})
+            items_by_id: dict[str, dict] = {}
+
+            for i in range(0, len(item_ids), 100):
+                batch = item_ids[i:i + 100]
+                items_resp = client.get(
+                    f"{supabase_url}/rest/v1/items",
+                    params={
+                        "select": "id,attributes_json",
+                        "id": f"in.({','.join(batch)})",
+                    },
+                    headers=headers,
+                )
+                if items_resp.status_code == 200:
+                    for item in items_resp.json():
+                        items_by_id[item["id"]] = item
+
+        # EUR conversion rates (approximate)
+        fx_to_eur = {"EUR": 1.0, "USD": 0.92, "GBP": 1.17, "JPY": 0.006}
+
+        for sale in sales:
+            price_eur = float(sale["sale_price"])
+            currency = sale.get("currency", "EUR")
+            if currency != "EUR":
+                price_eur *= fx_to_eur.get(currency, 1.0)
+
+            if price_eur <= 0:
+                continue
+
+            item = items_by_id.get(sale.get("item_id", ""), {})
+            attrs = item.get("attributes_json", {})
+            if isinstance(attrs, str):
+                try:
+                    attrs = json.loads(attrs)
+                except json.JSONDecodeError:
+                    attrs = {}
+
+            features: dict[str, Any] = {
+                "condition_score": attrs.get("condition_score", 0.7),
+                "rarity_score": attrs.get("rarity_score", 0.5),
+                "edition_score": attrs.get("edition_score", 0.5),
+                "source": "verified_sale",
+                "observed_at": sale.get("sold_at") or sale.get("created_at"),
+            }
+            for k, v in attrs.items():
+                if k not in features and isinstance(v, (int, float)):
+                    features[k] = v
+
+            features_list.append(features)
+            prices_list.append(price_eur)
+
+        logger.info(f"Loaded {len(prices_list)} verified sales for {category}")
+
+    except Exception as e:
+        logger.warning(f"Error loading verified sales for {category}: {e}")
 
     return features_list, prices_list
 
@@ -471,12 +570,61 @@ class RidgeModelPack:
         }
 
 
+def compute_recency_weights(
+    features_list: list[dict],
+    half_life_days: float = 90.0,
+) -> np.ndarray:
+    """
+    Compute sample weights based on observation recency.
+
+    Observations with an 'observed_at' timestamp get exponential decay weighting:
+    weight = 2^(-age_days / half_life_days)
+
+    Samples without timestamps get weight 0.5 (neutral).
+    Verified sales (source='verified_sale') get a 2x bonus.
+
+    Args:
+        features_list: List of feature dicts (may contain 'observed_at', 'source')
+        half_life_days: Half-life in days (default 90 = 3 months)
+
+    Returns:
+        Array of sample weights (same length as features_list)
+    """
+    now_ts = datetime.now(timezone.utc).timestamp()
+    weights = np.ones(len(features_list), dtype=np.float64)
+
+    for i, feat in enumerate(features_list):
+        observed_at = feat.get("observed_at")
+        if observed_at:
+            try:
+                if isinstance(observed_at, str):
+                    obs_dt = datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+                elif isinstance(observed_at, (int, float)):
+                    obs_dt = datetime.fromtimestamp(observed_at, tz=timezone.utc)
+                else:
+                    weights[i] = 0.5
+                    continue
+                age_days = max(0.0, (now_ts - obs_dt.timestamp()) / 86400.0)
+                weights[i] = max(0.1, 2.0 ** (-age_days / half_life_days))
+            except (ValueError, TypeError, OSError):
+                weights[i] = 0.5
+        else:
+            weights[i] = 0.5
+
+        # Verified sales get 2x weight bonus
+        if feat.get("source") == "verified_sale":
+            weights[i] *= 2.0
+
+    return weights
+
+
 def train_ridge_model(
     category: str,
     features_list: list[dict],
     prices: list[float],
     version: str,
     alpha: float | None = None,
+    use_recency_weights: bool = True,
 ) -> RidgeModelPack:
     """
     Train Ridge regression models for q50, q10, q90.
@@ -523,35 +671,50 @@ def train_ridge_model(
         best_alpha = alpha
         cv_mae = float("inf")
 
+    # Compute recency weights (Item 15: price recency weighting)
+    sample_weights = None
+    if use_recency_weights:
+        sample_weights = compute_recency_weights(features_list)
+        # Align with valid_mask filtering
+        if len(sample_weights) > len(y):
+            sample_weights = sample_weights[valid_mask]
+        if n_clipped > 0:
+            # Weights array already matches after valid_mask
+            pass
+        logger.info(
+            f"[{category}] Recency weights: min={sample_weights.min():.2f}, "
+            f"max={sample_weights.max():.2f}, mean={sample_weights.mean():.2f}"
+        )
+
     # Standardize features (full dataset for final model)
     mean = X.mean(axis=0)
     std = X.std(axis=0)
     std[std == 0] = 1.0  # Avoid division by zero
     X_scaled = (X - mean) / std
 
-    # Train median model (q50)
+    # Train median model (q50) — weighted if available
     ridge_q50 = Ridge(alpha=best_alpha, random_state=42)
-    ridge_q50.fit(X_scaled, y)
+    ridge_q50.fit(X_scaled, y, sample_weight=sample_weights)
 
     # Train quantile models (#3)
     if HAS_QUANTILE_REGRESSOR and len(y) >= 30:
-        # Proper quantile regression
+        # Proper quantile regression — with sample weights for recency/verified bonus
         logger.info(f"[{category}] Using QuantileRegressor for q10/q90")
         try:
             ridge_q10 = QuantileRegressor(quantile=0.10, alpha=best_alpha, solver="highs")
-            ridge_q10.fit(X_scaled, y)
+            ridge_q10.fit(X_scaled, y, sample_weight=sample_weights)
         except Exception as e:
             logger.warning(f"QuantileRegressor q10 failed ({e}), falling back to scaled Ridge")
             ridge_q10 = Ridge(alpha=best_alpha, random_state=42)
-            ridge_q10.fit(X_scaled, y * 0.7)
+            ridge_q10.fit(X_scaled, y * 0.7, sample_weight=sample_weights)
 
         try:
             ridge_q90 = QuantileRegressor(quantile=0.90, alpha=best_alpha, solver="highs")
-            ridge_q90.fit(X_scaled, y)
+            ridge_q90.fit(X_scaled, y, sample_weight=sample_weights)
         except Exception as e:
             logger.warning(f"QuantileRegressor q90 failed ({e}), falling back to scaled Ridge")
             ridge_q90 = Ridge(alpha=best_alpha, random_state=42)
-            ridge_q90.fit(X_scaled, y * 1.4)
+            ridge_q90.fit(X_scaled, y * 1.4, sample_weight=sample_weights)
     else:
         # Fallback: scaled Ridge (for small datasets or missing dependency)
         if not HAS_QUANTILE_REGRESSOR:
@@ -559,9 +722,9 @@ def train_ridge_model(
         else:
             logger.info(f"[{category}] Too few samples ({len(y)}) for quantile regression, using scaled Ridge")
         ridge_q10 = Ridge(alpha=best_alpha, random_state=42)
-        ridge_q10.fit(X_scaled, y * 0.7)
+        ridge_q10.fit(X_scaled, y * 0.7, sample_weight=sample_weights)
         ridge_q90 = Ridge(alpha=best_alpha, random_state=42)
-        ridge_q90.fit(X_scaled, y * 1.4)
+        ridge_q90.fit(X_scaled, y * 1.4, sample_weight=sample_weights)
 
     # Compute training MAE
     y_pred = ridge_q50.predict(X_scaled)
@@ -652,7 +815,6 @@ def register_model_to_supabase(model: RidgeModelPack, model_path: Path) -> bool:
     }
 
     try:
-        client = httpx.Client(timeout=30.0)
         headers = {
             "apikey": supabase_key,
             "Authorization": f"Bearer {supabase_key}",
@@ -660,11 +822,12 @@ def register_model_to_supabase(model: RidgeModelPack, model_path: Path) -> bool:
             "Prefer": "resolution=merge-duplicates",
         }
 
-        response = client.post(
-            f"{supabase_url}/rest/v1/model_registry",
-            headers=headers,
-            json=[row],
-        )
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                f"{supabase_url}/rest/v1/model_registry",
+                headers=headers,
+                json=[row],
+            )
 
         if response.status_code in (200, 201):
             logger.info(f"Registered model to Supabase: {model.category}/{model.version}")
@@ -677,9 +840,6 @@ def register_model_to_supabase(model: RidgeModelPack, model_path: Path) -> bool:
     except Exception as e:
         logger.error(f"Supabase registration failed: {e}")
         return False
-
-    finally:
-        client.close()
 
 
 # ---------------------------------------------------------------------------
@@ -711,6 +871,16 @@ def train_category(
             features_list.extend(fb_features)
             prices.extend(fb_prices)
             logger.info(f"[{category}] Merged {len(fb_prices)} feedback samples "
+                        f"(total: {len(prices)})")
+
+    # Merge verified sales (data moat — 2x weight via recency weighting)
+    if include_feedback:
+        logger.info(f"[{category}] Loading verified sales...")
+        vs_features, vs_prices = load_verified_sales(category)
+        if vs_features:
+            features_list.extend(vs_features)
+            prices.extend(vs_prices)
+            logger.info(f"[{category}] Merged {len(vs_prices)} verified sales "
                         f"(total: {len(prices)})")
 
     logger.info(f"[{category}] Training Ridge regression (n={len(prices)})...")

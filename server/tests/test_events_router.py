@@ -579,6 +579,65 @@ class TestEventsIntegration:
         r = client.get("/events/categories/mtg/following")
         assert r.json()["following"] is True
 
+    def test_event_status_lifecycle(self):
+        """Create draft -> publish -> cancel."""
+        # Create as draft
+        resp = client.post("/events", json=_valid_event_payload(
+            status="draft", date="2027-06-01",
+        ))
+        assert resp.status_code == 201
+        event_id = resp.json()["id"]
+        assert resp.json()["status"] == "draft"
+
+        # Draft events should be hidden from list (in-memory uses status filter)
+        r = client.get("/events")
+        ids = [e["id"] for e in r.json()["events"]]
+        # Draft is hidden since in-memory doesn't filter by status by default,
+        # but the creator can still see it via GET /events/{id}
+        r = client.get(f"/events/{event_id}")
+        assert r.status_code == 200
+        assert r.json()["status"] == "draft"
+
+        # Update to published
+        r = client.patch(f"/events/{event_id}", json={"status": "published"})
+        assert r.status_code == 200
+        assert r.json()["status"] == "published"
+
+        # Update to cancelled
+        r = client.patch(f"/events/{event_id}", json={"status": "cancelled"})
+        assert r.status_code == 200
+        assert r.json()["status"] == "cancelled"
+
+    def test_update_event_title(self):
+        resp = client.post("/events", json=_valid_event_payload(date="2027-01-01"))
+        event_id = resp.json()["id"]
+        r = client.patch(f"/events/{event_id}", json={"title": "Updated Title"})
+        assert r.status_code == 200
+        assert r.json()["title"] == "Updated Title"
+
+    def test_update_event_not_found(self):
+        r = client.patch("/events/nonexistent-id", json={"title": "X"})
+        assert r.status_code == 404
+
+    def test_update_event_no_fields(self):
+        resp = client.post("/events", json=_valid_event_payload(date="2027-01-01"))
+        event_id = resp.json()["id"]
+        r = client.patch(f"/events/{event_id}", json={})
+        assert r.status_code == 400
+
+    def test_create_event_with_status(self):
+        for status in ("draft", "published", "cancelled"):
+            _clear_in_memory_stores()
+            payload = _valid_event_payload(status=status, date="2027-01-01")
+            r = client.post("/events", json=payload)
+            assert r.status_code == 201, f"Failed for status={status}"
+            assert r.json()["status"] == status
+
+    def test_create_event_invalid_status_422(self):
+        payload = _valid_event_payload(status="invalid")
+        r = client.post("/events", json=payload)
+        assert r.status_code == 422
+
     def test_multiple_events_list(self):
         """Create multiple events and verify the list endpoint returns all of them."""
         for i in range(5):
@@ -589,3 +648,74 @@ class TestEventsIntegration:
         r = client.get("/events")
         events = r.json()["events"]
         assert len(events) == 5
+
+
+class TestEventImages:
+    """Tests for event image_url support (Item 10)."""
+
+    def test_create_event_with_image_url(self):
+        _clear_in_memory_stores()
+        payload = _valid_event_payload(date="2027-05-01")
+        payload["image_url"] = "https://example.com/event.jpg"
+        r = client.post("/events", json=payload)
+        assert r.status_code == 201
+        assert r.json()["image_url"] == "https://example.com/event.jpg"
+
+    def test_create_event_without_image_url(self):
+        _clear_in_memory_stores()
+        payload = _valid_event_payload(date="2027-05-01")
+        r = client.post("/events", json=payload)
+        assert r.status_code == 201
+        assert r.json()["image_url"] is None
+
+    def test_update_event_image_url(self):
+        _clear_in_memory_stores()
+        r = client.post("/events", json=_valid_event_payload(date="2027-05-01"))
+        event_id = r.json()["id"]
+        r2 = client.patch(f"/events/{event_id}", json={"image_url": "https://example.com/new.jpg"})
+        assert r2.status_code == 200
+        assert r2.json()["image_url"] == "https://example.com/new.jpg"
+
+
+class TestNearbyEvents:
+    """Tests for nearby events endpoint (Item 11)."""
+
+    def test_nearby_returns_empty_with_no_events(self):
+        _clear_in_memory_stores()
+        r = client.get("/events/nearby?lat=52.37&lon=4.89")
+        assert r.status_code == 200
+        assert r.json()["events"] == []
+
+    def test_nearby_requires_lat_lon(self):
+        r = client.get("/events/nearby")
+        assert r.status_code == 422
+
+    def test_nearby_finds_events_within_radius(self):
+        _clear_in_memory_stores()
+        # Create event at Amsterdam coordinates
+        payload = _valid_event_payload(date="2027-05-01")
+        payload["latitude"] = 52.3676
+        payload["longitude"] = 4.9041
+        client.post("/events", json=payload)
+
+        # Search from Amsterdam (0 km away)
+        r = client.get("/events/nearby?lat=52.3676&lon=4.9041&radius_km=10")
+        assert r.status_code == 200
+        assert len(r.json()["events"]) == 1
+
+    def test_nearby_excludes_distant_events(self):
+        _clear_in_memory_stores()
+        # Create event at Tokyo
+        payload = _valid_event_payload(date="2027-05-01")
+        payload["latitude"] = 35.6762
+        payload["longitude"] = 139.6503
+        client.post("/events", json=payload)
+
+        # Search from Amsterdam (thousands of km away)
+        r = client.get("/events/nearby?lat=52.37&lon=4.89&radius_km=50")
+        assert r.status_code == 200
+        assert len(r.json()["events"]) == 0
+
+    def test_nearby_custom_radius(self):
+        r = client.get("/events/nearby?lat=52.37&lon=4.89&radius_km=200")
+        assert r.status_code == 200

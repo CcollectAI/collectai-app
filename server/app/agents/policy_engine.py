@@ -122,7 +122,18 @@ def evaluate(
             reasons.append(f"FAIL: source '{source}' not in {allowed_sources}")
             failed = True
 
-    # ── Check 6: Not expired ───────────────────────────────────────────────
+    # ── Check 6: Exclude keywords ────────────────────────────────────────
+    exclude_keywords = mandate.get("exclude_keywords") or []
+    if exclude_keywords:
+        title_lower = str(hit.get("title", "")).lower()
+        matched = [kw for kw in exclude_keywords if kw.lower() in title_lower]
+        if matched:
+            reasons.append(f"FAIL: title contains excluded keyword(s): {matched}")
+            failed = True
+        else:
+            reasons.append("no excluded keywords found in title")
+
+    # ── Check 7: Not expired ───────────────────────────────────────────────
     if expires_at is not None:
         if isinstance(expires_at, str):
             try:
@@ -142,7 +153,7 @@ def evaluate(
                 failed = True
 
     # ── Compute deal_score ─────────────────────────────────────────────────
-    # deal_score = 0.4 * provenance + 0.3 * price_discount + 0.3 * recency
+    # deal_score = 0.35 * provenance + 0.30 * price_discount + 0.20 * recency + 0.15 * scarcity
     price_discount = 0.0
     price_vs_q50_pct = 0.0
 
@@ -157,7 +168,20 @@ def evaluate(
     # For now, all current hits get a 0.5 recency baseline
     recency_score = 0.5
 
-    deal_score = min(1.0, 0.4 * provenance + 0.3 * price_discount + 0.3 * recency_score)
+    # Scarcity/urgency — low quantity_available boosts deal score
+    quantity = int(hit.get("quantity_available", 0) or 0)
+    if quantity == 1:
+        scarcity_score = 1.0
+    elif quantity == 2:
+        scarcity_score = 0.8
+    elif 3 <= quantity <= 5:
+        scarcity_score = 0.5
+    elif quantity > 5:
+        scarcity_score = 0.2
+    else:
+        scarcity_score = 0.5  # unknown quantity — neutral
+
+    deal_score = min(1.0, 0.35 * provenance + 0.30 * price_discount + 0.20 * recency_score + 0.15 * scarcity_score)
 
     return PolicyVerdict(
         passed=not failed,

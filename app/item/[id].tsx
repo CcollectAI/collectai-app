@@ -250,6 +250,10 @@ export default function ItemDetailScreen() {
   const [marketExpanded, setMarketExpanded] = useState(false);
   const [marketScannedAt, setMarketScannedAt] = useState<string | null>(null);
 
+  // Affiliate links state
+  type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
+  const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
+
   // AI Intelligence refresh state
   const [aiRefreshing, setAiRefreshing] = useState(false);
 
@@ -384,27 +388,7 @@ export default function ItemDetailScreen() {
     }).catch((err) => logger.warn('[ItemDetail] item attributes fetch error:', err));
   }, [id, isDraft]);
 
-  // Mock fallback data for previewing sections when API is empty
-  const MOCK_PROVENANCE_EVENTS = [
-    { id: 'mock-1', eventType: 'purchase', timestamp: new Date(Date.now() - 90 * 86400000).toISOString(), note: 'Purchased from local card shop', source: 'manual', metadata: {} },
-    { id: 'mock-2', eventType: 'graded', timestamp: new Date(Date.now() - 60 * 86400000).toISOString(), note: 'Sent to PSA for grading — returned PSA 9', source: 'receipt', metadata: {} },
-    { id: 'mock-3', eventType: 'added', timestamp: new Date(Date.now() - 30 * 86400000).toISOString(), note: 'Added to CcollectAI collection', source: 'barcode', metadata: {} },
-  ];
-  const MOCK_AUTH_SIGNALS = ['receipt_on_file', 'professionally_graded'];
-  const EMPTY_MARKET_RESULTS: MarketHit[] = [];
-  const MOCK_DOSSIER: DossierData = {
-    item_id: id || '',
-    generated_at: new Date().toISOString(),
-    identity: { name: editableName, category: editableCategory },
-    valuation: { q50: toNum(editableValue) ?? 35, explanation: 'Based on 24 comparable sales across eBay and TCGPlayer over the last 90 days.' },
-    provenance: [],
-    price_history: [],
-    market_comps: [{ source: 'eBay', price: 42 }, { source: 'TCGPlayer', price: 38 }, { source: 'Cardmarket', price: 35 }],
-    photos: [],
-    collections: [],
-    authenticity_signals: ['receipt_on_file', 'professionally_graded'],
-    completeness_score: 0.72,
-  };
+  // Empty fallback data — no fabricated mock data shown to users
 
   // Load provenance history
   useEffect(() => {
@@ -420,17 +404,24 @@ export default function ItemDetailScreen() {
           source: e.source,
           metadata: e.metadata || {},
         }));
-        // Fall back to mock data if API returns empty
-        setProvenanceEvents(events.length > 0 ? events : MOCK_PROVENANCE_EVENTS);
-        setAuthenticitySignals(data.authenticity_signals?.length ? data.authenticity_signals : MOCK_AUTH_SIGNALS);
+        setProvenanceEvents(events);
+        setAuthenticitySignals(data.authenticity_signals || []);
       })
       .catch((err) => {
         logger.warn('[ItemDetail] provenance fetch error:', err);
-        setProvenanceEvents(MOCK_PROVENANCE_EVENTS);
-        setAuthenticitySignals(MOCK_AUTH_SIGNALS);
+        setProvenanceEvents([]);
+        setAuthenticitySignals([]);
       })
       .finally(() => setProvenanceLoading(false));
   }, [id, isDraft]);
+
+  // Fetch affiliate links on mount (non-draft items)
+  useEffect(() => {
+    if (!id || isDraft || !name || name === 'Unknown item') return;
+    collectorsApi.getAffiliateLinks(name, editableCategory)
+      .then((data) => setAffiliateLinks(data.links))
+      .catch((err) => logger.warn('[ItemDetail] affiliate links fetch error:', err));
+  }, [id, isDraft, name, editableCategory]);
 
   // Load dossier on demand
   const loadDossier = async () => {
@@ -438,14 +429,11 @@ export default function ItemDetailScreen() {
     setDossierLoading(true);
     try {
       const data = await collectorsApi.getDossier(id);
-      // Use mock if API returns empty/minimal data
-      const hasContent = data && (data.valuation?.q50 != null || data.market_comps?.length > 0);
-      setDossierData(hasContent ? data : MOCK_DOSSIER);
+      setDossierData(data || null);
       setDossierExpanded(true);
     } catch (err) {
       logger.warn('[ItemDetail] dossier fetch error:', err);
-      setDossierData(MOCK_DOSSIER);
-      setDossierExpanded(true);
+      setDossierData(null);
     } finally {
       setDossierLoading(false);
     }
@@ -458,13 +446,12 @@ export default function ItemDetailScreen() {
     try {
       const data = await collectorsApi.marketplaceSearch(editableName, editableCategory);
       const results = data.results || data.hits || [];
-      // Fall back to mock data if API returns empty
-      setMarketResults(results.length > 0 ? results : EMPTY_MARKET_RESULTS);
+      setMarketResults(results);
       setMarketScannedAt(new Date().toISOString());
       setMarketExpanded(true);
     } catch (err) {
       logger.warn('[ItemDetail] marketplace search error:', err);
-      setMarketResults(EMPTY_MARKET_RESULTS);
+      setMarketResults([]);
       setMarketScannedAt(new Date().toISOString());
       setMarketExpanded(true);
     } finally {
@@ -1223,6 +1210,40 @@ export default function ItemDetailScreen() {
               </View>
             )}
 
+            {/* Shop this Item — affiliate links */}
+            {!isDraft && affiliateLinks.length > 0 && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="open-outline" size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Shop this Item</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 8 }}>
+                  {affiliateLinks.map((link) => (
+                    <Pressable
+                      key={link.source}
+                      onPress={() => {
+                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                        Linking.openURL(link.affiliate_url).catch((err) =>
+                          logger.warn('[ItemDetail] Failed to open affiliate URL', err)
+                        );
+                      }}
+                      style={[
+                        styles.affiliateLinkBtn,
+                        { borderColor: theme.border },
+                      ]}
+                      accessibilityRole="link"
+                      accessibilityLabel={link.label}
+                    >
+                      <Ionicons name="open-outline" size={14} color={theme.accent} />
+                      <Text style={[styles.affiliateLinkText, { color: theme.text }]}>{link.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+
             {/* Marketplace Section */}
             {!isDraft && id && (
               <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
@@ -1388,6 +1409,7 @@ export default function ItemDetailScreen() {
           explanation={priceExplanationData}
           priceBand={priceEstimate.priceBand}
           currency={priceEstimate.currency}
+          affiliateLinks={affiliateLinks}
         />
       )}
     </KeyboardAvoidingView>
@@ -1808,6 +1830,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 8,
     fontStyle: 'italic',
+  },
+  affiliateLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  affiliateLinkText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   dossierCard: {
     padding: 12,

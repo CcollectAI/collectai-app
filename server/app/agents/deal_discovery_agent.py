@@ -13,6 +13,7 @@ Usage:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import uuid
@@ -78,11 +79,34 @@ class DealDiscoveryAgent:
             await self._update_last_scan(conn, mandate_id)
             return []
 
+        # 1b. Filter price outliers (> 3 std from median)
+        filtered_hits = self._filter_outliers(result.hits)
+        if len(filtered_hits) < len(result.hits):
+            logger.info(
+                "[DealDiscovery] Filtered %d outlier(s) from %d hits",
+                len(result.hits) - len(filtered_hits), len(result.hits),
+            )
+            result = type(result)(
+                hits=filtered_hits,
+                total_sources_queried=result.total_sources_queried,
+                successful_sources=result.successful_sources,
+                aggregate_confidence=result.aggregate_confidence,
+                dedup_count=result.dedup_count,
+                query_metadata=result.query_metadata,
+            )
+
         # 2. Fetch price prediction (if available)
         prediction = await self._get_prediction(conn, query, category)
 
-        # 3. Get existing deal URLs for dedup
+        # 3. Get existing deal URLs for dedup (mandate-level + user-level cooldown)
         existing_urls = await self._get_existing_urls(conn, mandate_id)
+
+        # 3b. Item-level cooldown: skip URLs notified to this user across ANY mandate
+        #     within the cooldown window (prevents same listing triggering multiple mandates)
+        user_cooldown_urls = await self._get_user_recent_deal_urls(
+            conn, user_id, cooldown_hours=int(mandate.get("cooldown_hours", 24) or 24)
+        )
+        existing_urls = existing_urls | user_cooldown_urls
 
         new_deals: List[Dict[str, Any]] = []
         batch_rows: List[tuple] = []
@@ -138,6 +162,38 @@ class DealDiscoveryAgent:
         # 6b. Batch persist all deals at once
         if batch_rows:
             await self._persist_deals_batch(conn, batch_rows)
+
+        # 6c. Cache listing images to S3 (non-blocking, best-effort)
+        if batch_rows:
+            await self._cache_deal_images(conn, batch_rows, category)
+
+        # 6d. Feed discovered listings into market_hits for future price predictions
+        if result.hits:
+            await self._feed_market_hits(conn, result.hits, query, category)
+
+        # 6e. Record supply snapshot (data moat: listing count per query)
+        if result.hits:
+            try:
+                from app.features.data_moat import record_supply_snapshot
+                prices = [
+                    float(h.hit.get("price", 0) or 0)
+                    for h in result.hits
+                    if float(h.hit.get("price", 0) or 0) > 0
+                ]
+                avg_p = sum(prices) / len(prices) if prices else None
+                min_p = min(prices) if prices else None
+                max_p = max(prices) if prices else None
+                await record_supply_snapshot(
+                    category=category or "unknown",
+                    item_key=query,
+                    listing_count=len(result.hits),
+                    avg_price_eur=avg_p,
+                    min_price_eur=min_p,
+                    max_price_eur=max_p,
+                    source=result.hits[0].hit.get("source", "firecrawl"),
+                )
+            except Exception as exc:
+                logger.debug("[DealDiscovery] Supply snapshot failed: %s", exc)
 
         # 7. Update mandate counters
         await self._update_mandate_counters(conn, mandate_id, len(new_deals))
@@ -198,10 +254,62 @@ class DealDiscoveryAgent:
     # Helpers
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _filter_outliers(hits, mad_threshold: float = 3.0):
+        """Remove price outliers using Median Absolute Deviation (MAD).
+
+        MAD is more robust than standard deviation because outliers don't
+        inflate the spread metric itself.
+        """
+        if len(hits) < 3:
+            return hits
+
+        prices = [float(h.hit.get("price", 0) or 0) for h in hits]
+        prices_valid = [p for p in prices if p > 0]
+
+        if len(prices_valid) < 3:
+            return hits
+
+        sorted_p = sorted(prices_valid)
+        mid = len(sorted_p) // 2
+        median = (sorted_p[mid] + sorted_p[~mid]) / 2.0
+
+        # MAD = median of absolute deviations from median
+        abs_devs = sorted(abs(p - median) for p in prices_valid)
+        mad_mid = len(abs_devs) // 2
+        mad = (abs_devs[mad_mid] + abs_devs[~mad_mid]) / 2.0
+
+        if mad == 0:
+            return hits
+
+        low = median - mad_threshold * mad
+        high = median + mad_threshold * mad
+
+        filtered = []
+        dropped = 0
+        for h in hits:
+            price = float(h.hit.get("price", 0) or 0)
+            if price <= 0:
+                dropped += 1
+                continue
+            if low <= price <= high:
+                filtered.append(h)
+            else:
+                dropped += 1
+        if dropped:
+            logger.debug(
+                "[outlier_filter] Dropped %d/%d hits (range %.2f–%.2f, median %.2f)",
+                dropped, len(hits), low, high, median,
+            )
+        return filtered
+
     async def _get_prediction(
         self, conn, query: str, category: Optional[str]
     ) -> Optional[Dict[str, Any]]:
-        """Try to fetch a price prediction for the mandate's search query."""
+        """Try to fetch a price prediction for the mandate's search query.
+
+        Falls back to category median if no direct match is found.
+        """
         try:
             # Escape ILIKE special chars to prevent wildcard injection
             escaped_q = query[:50].replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
@@ -223,6 +331,35 @@ class DealDiscoveryAgent:
                 }
         except Exception as exc:
             logger.debug("[DealDiscovery] Prediction lookup failed: %s", exc)
+
+        # Fallback: category median from price_predictions
+        if category:
+            try:
+                row = await conn.fetchrow(
+                    """
+                    SELECT
+                        percentile_cont(0.10) WITHIN GROUP (ORDER BY q50) AS cat_q10,
+                        percentile_cont(0.50) WITHIN GROUP (ORDER BY q50) AS cat_q50,
+                        percentile_cont(0.90) WITHIN GROUP (ORDER BY q50) AS cat_q90
+                    FROM public.price_predictions
+                    WHERE normalized_key ILIKE $1
+                      AND q50 IS NOT NULL
+                    """,
+                    f"%{category}%",
+                )
+                if row and row["cat_q50"] is not None:
+                    logger.debug(
+                        "[DealDiscovery] Using category median fallback for %s: q50=%.2f",
+                        category, float(row["cat_q50"]),
+                    )
+                    return {
+                        "q10": float(row["cat_q10"]) if row["cat_q10"] else None,
+                        "q50": float(row["cat_q50"]),
+                        "q90": float(row["cat_q90"]) if row["cat_q90"] else None,
+                    }
+            except Exception as exc:
+                logger.debug("[DealDiscovery] Category median fallback failed: %s", exc)
+
         return None
 
     async def _get_existing_urls(self, conn, mandate_id: str) -> set[str]:
@@ -237,6 +374,32 @@ class DealDiscoveryAgent:
             uuid.UUID(mandate_id),
         )
         return {r["listing_url"] for r in rows}
+
+    async def _get_user_recent_deal_urls(
+        self, conn, user_id: str, cooldown_hours: int = 24
+    ) -> set[str]:
+        """Return listing URLs notified to this user across all mandates within cooldown window.
+
+        This implements item-level cooldown: the same listing URL won't trigger
+        notifications from multiple mandates within the cooldown period.
+        """
+        try:
+            uid = uuid.UUID(user_id) if _is_uuid(user_id) else user_id
+            rows = await conn.fetch(
+                """
+                SELECT listing_url
+                FROM public.mandate_deals
+                WHERE user_id = $1
+                  AND status NOT IN ('expired', 'declined')
+                  AND discovered_at >= now() - ($2 || ' hours')::interval
+                """,
+                uid,
+                str(cooldown_hours),
+            )
+            return {r["listing_url"] for r in rows}
+        except Exception as exc:
+            logger.debug("[DealDiscovery] User URL cooldown lookup failed: %s", exc)
+            return set()
 
     def _build_deal_row(
         self,
@@ -304,6 +467,118 @@ class DealDiscoveryAgent:
             )
         except Exception as exc:
             logger.warning("[DealDiscovery] Batch persist failed: %s", exc)
+
+    async def _feed_market_hits(self, conn, hits, query: str, category: Optional[str]) -> None:
+        """Persist deal discoveries into market_hits for future price predictions.
+
+        Uses ON CONFLICT to skip duplicates (same provider + listing_id).
+        """
+        rows = []
+        for scored_hit in hits:
+            hit = scored_hit.hit
+            url = hit.get("url", "")
+            source = hit.get("source", "unknown")
+            price = float(hit.get("price", 0) or 0)
+            if not url or price <= 0:
+                continue
+
+            # Use URL as listing_id since marketplace listing IDs may not be available
+            listing_id = url[:500]
+            normalized_key = f"{category or ''}/{query[:100]}" if query else None
+
+            rows.append((
+                source,
+                listing_id,
+                hit.get("title", "")[:500],
+                price,
+                hit.get("currency", "EUR"),
+                hit.get("condition"),
+                url,
+                normalized_key,
+            ))
+
+        if not rows:
+            return
+
+        try:
+            await conn.executemany(
+                """
+                INSERT INTO public.market_hits
+                    (provider, listing_id, title, price, currency, condition, url, normalized_key)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                ON CONFLICT (provider, listing_id) DO NOTHING
+                """,
+                rows,
+            )
+            logger.info("[DealDiscovery] Fed %d listings into market_hits", len(rows))
+        except Exception as exc:
+            logger.debug("[DealDiscovery] market_hits feed failed (non-critical): %s", exc)
+
+    async def _cache_deal_images(
+        self, conn, batch_rows: List[tuple], category: Optional[str]
+    ) -> None:
+        """Cache deal listing images to S3 for reliable serving.
+
+        Runs the synchronous S3ImageCache in a thread pool to avoid blocking
+        the event loop. Updates listing_image_url with cached CDN/S3 URLs.
+        Best-effort: failures are logged but don't break the deal flow.
+        """
+        try:
+            from pipelines.s3_image_cache import S3ImageCache
+        except ImportError:
+            return
+
+        cache = S3ImageCache()
+        if not cache.enabled:
+            cache.close()
+            return
+
+        # Build (image_url, category, item_key) tuples from batch_rows
+        # batch_rows layout: (deal_id, mandate_id, user_id, source, url, affiliate_url,
+        #                     title, price, currency, condition, image_url, ...)
+        items_to_cache: list[tuple[str, str, str]] = []
+        deal_image_map: dict[str, str] = {}  # deal_id -> original_image_url
+
+        for row in batch_rows:
+            deal_id = str(row[0])
+            image_url = row[10]  # listing_image_url position
+            if not image_url:
+                continue
+            # Use deal_id as item_key for deterministic S3 path
+            cat = category or "uncategorized"
+            items_to_cache.append((image_url, cat, deal_id))
+            deal_image_map[deal_id] = image_url
+
+        if not items_to_cache:
+            cache.close()
+            return
+
+        try:
+            # Run synchronous cache_batch in thread pool
+            url_map = await asyncio.to_thread(cache.cache_batch, items_to_cache, 0.05)
+
+            # Update DB rows where image was successfully cached
+            updates = []
+            for deal_id, orig_url in deal_image_map.items():
+                cached_url = url_map.get(orig_url)
+                if cached_url and cached_url != orig_url:
+                    updates.append((uuid.UUID(deal_id), cached_url))
+
+            if updates:
+                await conn.executemany(
+                    """
+                    UPDATE public.mandate_deals
+                    SET listing_image_url = $2
+                    WHERE id = $1
+                    """,
+                    updates,
+                )
+                logger.info("[DealDiscovery] Cached %d deal images to S3", len(updates))
+
+        except Exception as exc:
+            logger.debug("[DealDiscovery] Image caching failed (non-critical): %s", exc)
+        finally:
+            cache.close()
 
     async def _update_mandate_counters(self, conn, mandate_id: str, new_deal_count: int) -> None:
         """Update last_scan_at and increment deals_found."""

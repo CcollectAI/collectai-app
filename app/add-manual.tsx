@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -294,7 +294,7 @@ const ManualAddScreen: React.FC = () => {
                 </View>
 
                 {/* Category Picker Modal */}
-                <Modal visible={categoryPickerOpen} animationType="slide" transparent>
+                <Modal visible={categoryPickerOpen} animationType="slide" transparent onRequestClose={() => setCategoryPickerOpen(false)}>
                   <View style={styles.modalOverlay}>
                     <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
                       <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
@@ -324,6 +324,22 @@ const ManualAddScreen: React.FC = () => {
                         keyExtractor={(item) => item.slug}
                         keyboardShouldPersistTaps="handled"
                         style={styles.modalList}
+                        ListHeaderComponent={
+                          category && !categorySearch ? (
+                            <TouchableOpacity
+                              activeOpacity={0.6}
+                              onPress={() => {
+                                fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                                setCategory("");
+                                setCategoryPickerOpen(false);
+                              }}
+                              style={[styles.modalRow, { borderBottomColor: colors.border }]}
+                            >
+                              <Ionicons name="close-circle-outline" size={18} color={colors.muted} style={{ marginRight: 12 }} />
+                              <Text style={[styles.modalRowText, { color: colors.muted, fontStyle: 'italic' }]}>None (clear selection)</Text>
+                            </TouchableOpacity>
+                          ) : null
+                        }
                         renderItem={({ item }) => {
                           const isSelected = category === item.label;
                           return (

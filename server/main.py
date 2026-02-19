@@ -91,6 +91,14 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logging.getLogger("uvicorn").warning("[startup] Failed to start deal discovery: %s", e)
 
+    if os.getenv("MATVIEW_REFRESH_ENABLED", "true").lower() in ("true", "1"):
+        try:
+            from workers.matview_refresh_worker import scheduler_loop as matview_scheduler_loop
+            asyncio.create_task(matview_scheduler_loop())
+            logging.getLogger("uvicorn").info("[startup] Matview refresh scheduler started")
+        except Exception as e:
+            logging.getLogger("uvicorn").warning("[startup] Failed to start matview refresh: %s", e)
+
     yield
 
     # ---- Shutdown ----
@@ -169,6 +177,7 @@ from app.features import barcode_lookup_router
 from app.features import storage_router
 from app.features import taxonomy_router
 from app.features import notification_router
+from app.features import collections_router
 from app.features.predict_router import router as predict_router
 
 from app.agents.marketplace_router import router as marketplace_agg_router
@@ -180,6 +189,8 @@ from app.routes.admin_dashboard import router as admin_dashboard_router
 from app.routes.mfa_router import router as mfa_router
 from app.routes.beta_signup_router import router as beta_signup_router
 from app.routes.seed_router import router as seed_router
+from app.routes.affiliate_links_router import router as affiliate_links_router
+from app.features.sponsor_router import router as sponsor_router
 
 # ---------------------------------------------------------------------------
 # Register routers
@@ -226,6 +237,7 @@ app.include_router(events_router.router)
 app.include_router(barcode_lookup_router.router)
 app.include_router(taxonomy_router.router)
 app.include_router(notification_router.router)
+app.include_router(collections_router.router)
 
 # Agent routers
 app.include_router(marketplace_agg_router)
@@ -242,6 +254,8 @@ app.include_router(admin_dashboard_router)
 app.include_router(mfa_router)
 app.include_router(beta_signup_router)
 app.include_router(seed_router)
+app.include_router(affiliate_links_router)
+app.include_router(sponsor_router)
 
 # Twitch (optional)
 try:
@@ -270,6 +284,7 @@ _v1.include_router(events_router.router)
 _v1.include_router(barcode_lookup_router.router)
 _v1.include_router(taxonomy_router.router)
 _v1.include_router(notification_router.router)
+_v1.include_router(collections_router.router)
 _v1.include_router(marketplace_agg_router)
 _v1.include_router(dossier_router)
 _v1.include_router(intake_router)
@@ -281,6 +296,8 @@ _v1.include_router(account_router)
 _v1.include_router(pipeline_status_router)
 _v1.include_router(billing_router)
 _v1.include_router(mfa_router)
+_v1.include_router(affiliate_links_router)
+_v1.include_router(sponsor_router)
 app.include_router(_v1)
 
 # ---------------------------------------------------------------------------

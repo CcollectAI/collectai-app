@@ -63,6 +63,27 @@ class FeedbackSubmitResponse(BaseModel):
     message: str
 
 
+ALLOWED_CURRENCIES = {"EUR", "USD", "GBP", "JPY"}
+
+
+class VerifiedSaleRequest(BaseModel):
+    """Request body for reporting a verified sale."""
+    item_id: str = Field(..., max_length=64, description="UUID of the item sold")
+    sale_price: float = Field(..., gt=0, le=1_000_000, description="Actual sale price")
+    currency: str = Field("EUR", max_length=3, description="ISO currency code (EUR/USD/GBP/JPY)")
+    platform: str | None = Field(None, max_length=100, description="Where the sale happened (eBay, Mercari, etc.)")
+    condition: str | None = Field(None, max_length=100, description="Item condition at time of sale")
+    sold_at: str | None = Field(None, description="When the sale happened (ISO 8601)")
+    notes: str | None = Field(None, max_length=2000, description="Additional details about the sale")
+
+
+class VerifiedSaleResponse(BaseModel):
+    """Response from verified sale submission."""
+    success: bool
+    sale_id: str | None = None
+    message: str
+
+
 class CorrectionRequest(BaseModel):
     """Request body for submitting a correction to training data."""
     item_id: str = Field(..., max_length=64, description="UUID of the training item")
@@ -314,6 +335,132 @@ async def submit_feedback(request: FeedbackSubmitRequest, user_id: str = Depends
         raise error_response(500, "Failed to save feedback", code="INTERNAL_ERROR")
 
 
+@router.post("/verified-sale", response_model=VerifiedSaleResponse)
+async def submit_verified_sale(
+    request: VerifiedSaleRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Report a verified sale for an item you own.
+
+    Verified sales are high-quality ground-truth data points that receive
+    2x weight in ML model training. This builds the data moat by capturing
+    real transaction prices that competitors cannot access.
+    """
+    # Validate currency (before DB check so offline mode also validates)
+    if request.currency not in ALLOWED_CURRENCIES:
+        raise error_response(
+            400,
+            f"Invalid currency. Allowed: {', '.join(sorted(ALLOWED_CURRENCIES))}",
+            code="VALIDATION_ERROR",
+        )
+
+    # Parse and validate sold_at (before DB check)
+    sold_at_ts = None
+    if request.sold_at:
+        try:
+            sold_at_ts = datetime.fromisoformat(
+                request.sold_at.replace("Z", "+00:00")
+            )
+        except ValueError:
+            raise error_response(400, "Invalid sold_at format", code="VALIDATION_ERROR")
+        if sold_at_ts > datetime.now(timezone.utc):
+            raise error_response(400, "sold_at cannot be in the future", code="VALIDATION_ERROR")
+
+    pool = _get_db_pool()
+
+    if pool is None:
+        logger.info(
+            "[feedback/verified-sale] Offline mode: item=%s, price=%s %s",
+            request.item_id, request.sale_price, request.currency,
+        )
+        return VerifiedSaleResponse(
+            success=True, sale_id=None,
+            message="Verified sale recorded (offline mode)",
+        )
+
+    try:
+
+        try:
+            item_uuid = UUID(request.item_id)
+        except ValueError:
+            raise error_response(400, "Invalid item_id format", code="VALIDATION_ERROR")
+
+        async with pool.acquire() as conn:
+            # Verify item ownership
+            item_row = await conn.fetchrow(
+                "SELECT category FROM public.items WHERE id = $1::uuid AND user_id = $2::uuid",
+                str(item_uuid), user_id,
+            )
+            if item_row is None:
+                raise error_response(404, "Item not found", code="NOT_FOUND")
+
+            # Rate limit: max 1 verified sale per item per 24h per user
+            recent = await conn.fetchval(
+                """
+                SELECT 1 FROM public.verified_sales
+                WHERE item_id = $1 AND user_id = $2::uuid
+                  AND created_at > now() - interval '24 hours'
+                LIMIT 1
+                """,
+                item_uuid, user_id,
+            )
+            if recent:
+                raise error_response(
+                    429, "Already submitted a sale for this item in the last 24 hours",
+                    code="RATE_LIMITED",
+                )
+
+            category = item_row["category"] or "unknown"
+
+            row = await conn.fetchrow(
+                """
+                INSERT INTO public.verified_sales
+                    (item_id, user_id, category, sale_price, currency,
+                     platform, condition, sold_at, notes)
+                VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING id
+                """,
+                item_uuid, user_id, category, request.sale_price,
+                request.currency, request.platform, request.condition,
+                sold_at_ts, request.notes,
+            )
+            sale_id = str(row["id"]) if row else None
+
+        # Log provenance event
+        sale_note = f"Verified sale at {request.sale_price} {request.currency}"
+        if request.platform:
+            sale_note += f" on {request.platform}"
+        await _log_provenance_event(
+            pool, item_id=request.item_id, user_id=user_id,
+            event_type="verified_sale", note=sale_note, source="user",
+            metadata={
+                "sale_price": request.sale_price,
+                "currency": request.currency,
+                "platform": request.platform,
+                "sale_id": sale_id,
+            },
+        )
+
+        logger.info(
+            "[feedback/verified-sale] Recorded: id=%s, item=%s, %s %s",
+            sale_id, request.item_id, request.sale_price, request.currency,
+        )
+        return VerifiedSaleResponse(
+            success=True, sale_id=sale_id,
+            message="Verified sale recorded successfully",
+        )
+
+    except HTTPException:
+        raise
+    except asyncpg.PostgresError as e:
+        logger.error("[feedback/verified-sale] DB error: %s", e)
+        raise error_response(500, "Failed to record sale", code="DB_ERROR")
+    except Exception as e:
+        logger.error("[feedback/verified-sale] Error: %s", e)
+        raise error_response(500, "Failed to record sale", code="INTERNAL_ERROR")
+
+
 @router.post("/correction", response_model=CorrectionResponse)
 async def submit_correction(request: CorrectionRequest, user_id: str = Depends(get_current_user_id)):
     """
@@ -380,9 +527,13 @@ async def submit_correction(request: CorrectionRequest, user_id: str = Depends(g
         if not updates:
             raise error_response(400, "No correction fields provided", code="VALIDATION_ERROR")
 
-        # Always update corrected_at timestamp
+        # Always update corrected_at timestamp and corrected_by user for audit trail
         updates.append(f"corrected_at = ${param_idx}")
         params.append(datetime.now(timezone.utc))
+        param_idx += 1
+
+        updates.append(f"corrected_by = ${param_idx}")
+        params.append(user_id)
         param_idx += 1
 
         # Add item_id as final parameter

@@ -132,7 +132,8 @@ CATEGORY_PATTERNS = {
     'pop_fandom': [
         r'ariana\s*grande|olivia\s*rodrigo|billie\s*eilish',
         r'harry\s*styles|dua\s*lipa|doja\s*cat',
-        r'tour\s*merch|concert\s*exclusive',
+        r'stray\s*kids|skz\b|straykids|felix\s*lee|hyunjin\s*hwang',
+        r'tour\s*merch|concert\s*exclusive|fan\s*meeting',
     ],
     'kpop_lightsticks': [
         r'lightstick|light\s*stick|k-?pop.*stick',

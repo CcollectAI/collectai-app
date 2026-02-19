@@ -48,6 +48,7 @@ def _mandate_row(**overrides):
         "spent_total": 0.0,
         "cooldown_hours": 24,
         "allowed_sources": [],
+        "exclude_keywords": [],
         "region": None,
         "expires_at": None,
         "last_scan_at": None,
@@ -492,3 +493,104 @@ class TestStats:
         assert data["total_deals_clicked"] == 5
         assert data["total_deals_purchased"] == 3
         assert data["total_saved_vs_q50"] == 150.50
+
+
+# ---------------------------------------------------------------------------
+# Exclude Keywords Tests (Item 1)
+# ---------------------------------------------------------------------------
+
+
+class TestExcludeKeywords:
+    def test_create_mandate_with_exclude_keywords(self):
+        row = _mandate_row(exclude_keywords=["replica", "fake"])
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=0)
+        conn.fetchrow = AsyncMock(return_value=row)
+
+        with _patch_db(conn)[0], _patch_db(conn)[1]:
+            resp = client.post("/purchase/mandates", json={
+                "name": "Test",
+                "search_query": "Charizard PSA 10",
+                "max_price": 400,
+                "exclude_keywords": ["replica", "fake"],
+            })
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["exclude_keywords"] == ["replica", "fake"]
+
+    def test_update_mandate_exclude_keywords(self):
+        row = _mandate_row(exclude_keywords=["damaged"])
+        conn = AsyncMock()
+        conn.fetchrow = AsyncMock(return_value=row)
+
+        with _patch_db(conn)[0], _patch_db(conn)[1]:
+            resp = client.patch(f"/purchase/mandates/{row['id']}", json={
+                "exclude_keywords": ["damaged"],
+            })
+
+        assert resp.status_code == 200
+        assert resp.json()["exclude_keywords"] == ["damaged"]
+
+    def test_mandate_response_includes_exclude_keywords(self):
+        row = _mandate_row(exclude_keywords=["reprint"])
+        conn = AsyncMock()
+        conn.fetchrow = AsyncMock(return_value=row)
+
+        with _patch_db(conn)[0], _patch_db(conn)[1]:
+            resp = client.get(f"/purchase/mandates/{row['id']}")
+
+        assert resp.status_code == 200
+        assert resp.json()["exclude_keywords"] == ["reprint"]
+
+
+# ---------------------------------------------------------------------------
+# Budget Forecast Tests (Item 2)
+# ---------------------------------------------------------------------------
+
+
+class TestForecast:
+    def test_forecast_with_budget(self):
+        mandate = _mandate_row(max_total_budget=1000.0, spent_total=200.0, deals_found=5)
+        conn = AsyncMock()
+        conn.fetchrow = AsyncMock(side_effect=[
+            mandate,
+            {"avg_price": 100.0, "deal_count": 2},
+        ])
+
+        with _patch_db(conn)[0], _patch_db(conn)[1]:
+            resp = client.get(f"/purchase/mandates/{mandate['id']}/forecast")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["remaining_budget"] == 800.0
+        assert data["avg_deal_price"] == 100.0
+        assert data["estimated_deals_left"] == 8
+        assert data["spent_total"] == 200.0
+        assert data["max_total_budget"] == 1000.0
+
+    def test_forecast_no_budget(self):
+        mandate = _mandate_row(max_total_budget=None, spent_total=0)
+        conn = AsyncMock()
+        conn.fetchrow = AsyncMock(side_effect=[
+            mandate,
+            {"avg_price": None, "deal_count": 0},
+        ])
+
+        with _patch_db(conn)[0], _patch_db(conn)[1]:
+            resp = client.get(f"/purchase/mandates/{mandate['id']}/forecast")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["remaining_budget"] is None
+        assert data["avg_deal_price"] is None
+        assert data["estimated_deals_left"] is None
+
+    def test_forecast_not_found(self):
+        conn = AsyncMock()
+        conn.fetchrow = AsyncMock(return_value=None)
+
+        with _patch_db(conn)[0], _patch_db(conn)[1]:
+            resp = client.get(f"/purchase/mandates/{uuid.uuid4()}/forecast")
+
+        assert resp.status_code == 404

@@ -56,7 +56,7 @@ CATEGORY_SITE_TARGETS: Dict[str, List[str]] = {
     # Music / Fandom
     "kpop_merch": ["mercari.com", "weverse.io", "ktown4u.com"],
     "taylor_swift": ["mercari.com", "stockx.com"],
-    "pop_fandom": ["mercari.com", "stockx.com"],
+    "pop_fandom": ["mercari.com", "stockx.com", "weverse.io", "ktown4u.com"],
     "kpop_lightsticks": ["ktown4u.com", "mercari.com"],
     # Disney / Theme Parks
     "disney": ["shopdisney.com", "mercari.com"],
@@ -314,6 +314,149 @@ class FirecrawlCaller:
         except Exception:
             logger.error("[FirecrawlCaller] sold_comps failed", exc_info=True)
             return []
+
+    # ------------------------------------------------------------------
+    # Structured extraction schema for ML-enriched price extraction
+    # ------------------------------------------------------------------
+
+    LISTING_EXTRACT_SCHEMA: Dict[str, Any] = {
+        "type": "object",
+        "properties": {
+            "title": {"type": "string", "description": "Item title or name"},
+            "price": {"type": "number", "description": "Listed price in original currency"},
+            "currency": {"type": "string", "description": "Currency code (USD, EUR, GBP, JPY)"},
+            "condition": {
+                "type": "string",
+                "description": "Item condition (Mint, Near Mint, Excellent, Good, Fair, Poor)",
+            },
+            "seller_name": {"type": "string", "description": "Seller username or store name"},
+            "seller_rating": {"type": "number", "description": "Seller rating 0-5"},
+            "shipping_cost": {"type": "number", "description": "Shipping cost in same currency"},
+            "quantity_available": {"type": "integer", "description": "Number available"},
+            "is_sold": {"type": "boolean", "description": "Whether the item has been sold"},
+            "attributes": {
+                "type": "object",
+                "description": "Item-specific attributes",
+                "properties": {
+                    "set": {"type": "string"},
+                    "number": {"type": "string"},
+                    "rarity": {"type": "string"},
+                    "grade": {"type": "string"},
+                    "edition": {"type": "string"},
+                    "variant": {"type": "string"},
+                },
+            },
+        },
+        "required": ["title"],
+    }
+
+    async def search_with_extraction(
+        self,
+        query: str,
+        category: Optional[str] = None,
+        limit: int = 5,
+    ) -> List[Dict[str, Any]]:
+        """Search and extract structured listing data from top results.
+
+        Uses Firecrawl's extract_structured API to pull detailed listing
+        information (condition, seller rating, attributes) that regex-based
+        extraction would miss. More expensive (1 API call per result) so
+        use sparingly on high-value queries.
+        """
+        if not self.configured:
+            return []
+
+        from app.lib.firecrawl_client import extract_structured, search_web
+
+        # Fetch live FX rates
+        try:
+            from app.lib.fx_service import get_rates
+            rates = await get_rates()
+        except Exception:
+            rates = None
+
+        # First do a quick search to get URLs
+        sites = None
+        if category and category in CATEGORY_SITE_TARGETS:
+            sites = CATEGORY_SITE_TARGETS[category]
+
+        search_query = query
+        if sites:
+            site_filter = " OR ".join(f"site:{s}" for s in sites[:3])
+            search_query = f"{query} ({site_filter})"
+
+        try:
+            results = await search_web(search_query, limit=min(limit, 5))
+        except Exception:
+            logger.error("[FirecrawlCaller] search_with_extraction search failed", exc_info=True)
+            return []
+
+        hits = []
+        for result in results:
+            url = result.get("url", "")
+            if not url:
+                continue
+
+            try:
+                extracted = await extract_structured(url, self.LISTING_EXTRACT_SCHEMA)
+                if not extracted:
+                    # Fall back to regex-based extraction
+                    hits.append(_normalize_search_result(result, query, rates))
+                    continue
+
+                # Build enriched hit from structured data
+                title = extracted.get("title", result.get("title", query))
+                raw_price = extracted.get("price")
+                raw_currency = (extracted.get("currency") or "EUR").upper()
+
+                if raw_price and raw_price > 0:
+                    _rates = rates or {}
+                    if raw_currency == "USD":
+                        price_eur = round(raw_price * _rates.get("USD", USD_TO_EUR), 2)
+                    elif raw_currency == "GBP":
+                        price_eur = round(raw_price * _rates.get("GBP", GBP_TO_EUR), 2)
+                    elif raw_currency == "JPY":
+                        price_eur = round(raw_price * _rates.get("JPY", JPY_TO_EUR), 2)
+                    else:
+                        price_eur = raw_price
+                else:
+                    # Fall back to regex extraction
+                    price_text = f"{title} {result.get('markdown', '')[:500]}"
+                    price_eur, _, _, _ = _extract_price(price_text, rates)
+
+                if price_eur is None or price_eur <= 0:
+                    continue
+
+                hit = {
+                    "source": "firecrawl_ml",
+                    "raw_id": _content_hash("firecrawl_ml", url),
+                    "title": title[:500],
+                    "price": price_eur,
+                    "currency": "EUR",
+                    "source_price": raw_price,
+                    "source_currency": raw_currency,
+                    "url": url,
+                    "condition": extracted.get("condition"),
+                    "seller": extracted.get("seller_name"),
+                    "seller_rating": extracted.get("seller_rating"),
+                    "shipping_cost": extracted.get("shipping_cost"),
+                    "quantity_available": extracted.get("quantity_available"),
+                    "is_sold": extracted.get("is_sold", False),
+                    "image_url": _extract_image_url(result.get("markdown", "")),
+                    "content_hash": _content_hash("firecrawl_ml", url),
+                    "attributes": extracted.get("attributes", {}),
+                    "extraction_method": "structured",
+                }
+                hits.append(hit)
+
+            except Exception:
+                logger.debug("[FirecrawlCaller] extraction failed for %s", url, exc_info=True)
+                # Fall back to regex
+                fallback = _normalize_search_result(result, query, rates)
+                if fallback.get("price") is not None:
+                    hits.append(fallback)
+
+        return hits
 
     async def health_check(self) -> bool:
         """Check if Firecrawl API is reachable."""

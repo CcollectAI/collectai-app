@@ -17,6 +17,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -54,6 +55,7 @@ export default function BarcodeScanScreen() {
   const [inputMode, setInputMode] = useState<InputMode>('camera');
   const [urlInput, setUrlInput] = useState('');
   const [isUrlSubmitting, setIsUrlSubmitting] = useState(false);
+  const [affiliateLink, setAffiliateLink] = useState<{ url: string; label: string } | null>(null);
 
   // Handle barcode detection
   const handleBarcodeScanned = async (result: BarcodeScanningResult) => {
@@ -209,6 +211,21 @@ export default function BarcodeScanScreen() {
     }
   };
 
+  // Fetch affiliate link when a product is identified
+  useEffect(() => {
+    if (scanState !== 'result' || !lookupResult?.title) {
+      setAffiliateLink(null);
+      return;
+    }
+    collectorsApi.getAffiliateLinks(lookupResult.title, lookupResult.categoryId || undefined, 1)
+      .then((data) => {
+        if (data.links.length > 0) {
+          setAffiliateLink({ url: data.links[0].affiliate_url, label: data.links[0].label });
+        }
+      })
+      .catch(() => {});
+  }, [scanState, lookupResult?.title, lookupResult?.categoryId]);
+
   // Reset to scanning state
   const handleRescan = () => {
     setScannedCode(null);
@@ -217,6 +234,7 @@ export default function BarcodeScanScreen() {
     setErrorMessage(null);
     setManualIsbn('');
     setUrlInput('');
+    setAffiliateLink(null);
     setScanState('scanning');
   };
 
@@ -637,6 +655,21 @@ export default function BarcodeScanScreen() {
             <Ionicons name="eye-outline" size={18} color={colors.muted} />
             <Text style={[styles.watchlistButtonText, { color: colors.muted }]}>Add to Watchlist Instead</Text>
           </AnimatedPressable>
+
+          {affiliateLink && (
+            <AnimatedPressable
+              style={[styles.watchlistButton, { borderColor: colors.border, marginTop: 8 }]}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                Linking.openURL(affiliateLink.url).catch(() => {});
+              }}
+              accessibilityRole="link"
+              accessibilityLabel={affiliateLink.label}
+            >
+              <Ionicons name="open-outline" size={18} color={colors.accent} />
+              <Text style={[styles.watchlistButtonText, { color: colors.accent }]}>{affiliateLink.label}</Text>
+            </AnimatedPressable>
+          )}
         </ScrollView>
       )}
 

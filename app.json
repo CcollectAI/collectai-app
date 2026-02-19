@@ -24,14 +24,30 @@
       "expo-sqlite",
       "expo-web-browser",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "CollectAI needs camera access to scan barcodes and photograph collectibles."
+        }
+      ],
+      [
         "expo-calendar",
         {
           "calendarPermission": "CollectAI needs access to your calendar to add collection events and drops."
         }
       ],
-"expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#81D8D0"
+        }
+      ],
       "expo-apple-authentication"
     ],
+    "notification": {
+      "iosDisplayInForeground": true,
+      "color": "#81D8D0"
+    },
     "ios": {
       "bundleIdentifier": "com.collectai.app",
       "buildNumber": "1",
@@ -43,7 +59,8 @@
       ],
       "infoPlist": {
         "NSCalendarsUsageDescription": "CollectAI needs access to your calendar to add collection events, drops, and meetups.",
-        "NSRemindersUsageDescription": "CollectAI needs access to reminders to notify you about upcoming events."
+        "NSRemindersUsageDescription": "CollectAI needs access to reminders to notify you about upcoming events.",
+        "NSCameraUsageDescription": "CollectAI needs camera access to scan barcodes and photograph collectibles."
       }
     },
     "android": {
@@ -53,6 +70,11 @@
         "backgroundColor": "#81D8D0"
       },
       "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",

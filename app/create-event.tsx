@@ -87,6 +87,7 @@ const CreateEventScreen: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [location, setLocation] = useState('');
   const onlineUrlField = useFormField(url('Online URL'));
+  const imageUrlField = useFormField(url('Image URL'));
   const descriptionField = useFormField(compose(required('Description'), maxLength('Description', 2000)));
   const [isPublic, setIsPublic] = useState(true);
 
@@ -105,7 +106,7 @@ const CreateEventScreen: React.FC = () => {
     titleField.value.trim().length > 0 &&
     dateField.value.trim().length > 0 &&
     descriptionField.value.trim().length > 0 &&
-    !titleField.error && !dateField.error && !descriptionField.error && !onlineUrlField.error &&
+    !titleField.error && !dateField.error && !descriptionField.error && !onlineUrlField.error && !imageUrlField.error &&
     saveState !== 'saving';
 
   /* ---- geolocation handler ---- */
@@ -149,7 +150,7 @@ const CreateEventScreen: React.FC = () => {
 
   /* ---- submit ---- */
   const handleSubmit = async () => {
-    if (!validateAll(titleField, dateField, descriptionField, onlineUrlField)) return;
+    if (!validateAll(titleField, dateField, descriptionField, onlineUrlField, imageUrlField)) return;
     if (!canSubmit) return;
 
     setSaveState('saving');
@@ -167,6 +168,7 @@ const CreateEventScreen: React.FC = () => {
         ...(endDate.trim() ? { endDate: endDate.trim() } : {}),
         ...(location.trim() ? { location: location.trim() } : {}),
         ...(onlineUrlField.value.trim() ? { onlineUrl: onlineUrlField.value.trim() } : {}),
+        ...(imageUrlField.value.trim() ? { imageUrl: imageUrlField.value.trim() } : {}),
         ...(latitude !== undefined ? { latitude } : {}),
         ...(longitude !== undefined ? { longitude } : {}),
       };
@@ -509,6 +511,37 @@ const CreateEventScreen: React.FC = () => {
                   />
                 </View>
                 {descriptionField.touched && descriptionField.error && <Text style={styles.fieldError}>{descriptionField.error}</Text>}
+              </View>
+            </View>
+          </View>
+
+          {/* ============================================================== */}
+          {/*  Section: Event Image                                           */}
+          {/* ============================================================== */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="image-outline" size={16} color={colors.accent} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Event Image (optional)</Text>
+            </View>
+
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View>
+                <Text style={[styles.fieldLabel, { color: colors.text }]}>Image URL</Text>
+                <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                  <Ionicons name="image-outline" size={16} color={colors.muted} style={styles.inputIcon} />
+                  <TextInput
+                    value={imageUrlField.value}
+                    onChangeText={imageUrlField.onChange}
+                    onBlur={imageUrlField.onBlur}
+                    placeholder="https://example.com/event-image.jpg"
+                    placeholderTextColor={colors.muted}
+                    style={[styles.input, { color: colors.text }]}
+                    autoCapitalize="none"
+                    keyboardType="url"
+                    accessibilityLabel="Event image URL"
+                  />
+                </View>
+                {imageUrlField.touched && imageUrlField.error && <Text style={styles.fieldError}>{imageUrlField.error}</Text>}
               </View>
             </View>
           </View>

@@ -24,6 +24,7 @@ SCHEDULES = {
     "vision_ingest": 0,            # on-demand only
     "valuation_worker": 6 * 3600,  # every 6 hours
     "deal_discovery": 1800,        # every 30 minutes
+    "matview_refresh": 3600,       # every 1 hour
 }
 
 

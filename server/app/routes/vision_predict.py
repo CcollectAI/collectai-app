@@ -40,6 +40,7 @@ class ClassificationResponse(BaseModel):
     category_confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence 0.0-1.0")
     condition: Optional[str] = Field(None, description="Detected condition, e.g. near_mint")
     condition_confidence: float = Field(0.0, ge=0.0, le=1.0)
+    condition_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="Numeric condition score 0.0-1.0")
     suggested_name: Optional[str] = Field(None, description="Suggested item name")
     attributes: dict[str, Any] = Field(default_factory=dict, description="Extracted attributes")
     embedding_vector: Optional[list[float]] = Field(None, description="Image embedding vector if generated")
@@ -153,6 +154,7 @@ async def classify_image(file: UploadFile = File(..., description="Image of a co
             category_confidence=result.category_confidence,
             condition=result.condition,
             condition_confidence=result.condition_confidence,
+            condition_score=_condition_to_score(result.condition),
             suggested_name=result.suggested_name,
             attributes=result.attributes,
             embedding_vector=result.embedding_vector,
@@ -166,6 +168,30 @@ async def classify_image(file: UploadFile = File(..., description="Image of a co
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _condition_to_score(condition: Optional[str]) -> Optional[float]:
+    """Convert categorical condition label to numeric 0.0-1.0 score."""
+    if not condition:
+        return None
+    cond_lower = condition.lower().replace("_", " ")
+    if "gem" in cond_lower or "pristine" in cond_lower:
+        return 0.95
+    if "near mint" in cond_lower or cond_lower == "nm":
+        return 0.85
+    if "mint" in cond_lower:
+        return 0.95
+    if "excellent" in cond_lower or cond_lower == "ex":
+        return 0.75
+    if "very good" in cond_lower or cond_lower == "vg":
+        return 0.65
+    if "good" in cond_lower or cond_lower == "lp":
+        return 0.60
+    if "fair" in cond_lower or "played" in cond_lower or cond_lower == "mp":
+        return 0.45
+    if "poor" in cond_lower or cond_lower == "hp" or "damaged" in cond_lower:
+        return 0.25
+    return 0.50
+
 
 def _is_valid_image(data: bytes) -> bool:
     """Check magic bytes to verify the data is a valid image."""

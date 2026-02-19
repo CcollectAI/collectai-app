@@ -16,6 +16,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
+import math
 from datetime import date, datetime, timezone
 from typing import Any, List, Optional
 from uuid import UUID, uuid4
@@ -31,6 +32,10 @@ logger = logging.getLogger(__name__)
 
 ALLOWED_EVENT_KINDS = {"collection_drop", "meetup", "stream", "convention", "release"}
 ALLOWED_EVENT_FORMATS = {"in_person", "online", "hybrid"}
+ALLOWED_EVENT_STATUSES = {"draft", "published", "cancelled"}
+
+# Explicit whitelist of columns that can be updated via PATCH /{event_id}
+_UPDATABLE_EVENT_COLUMNS = {"title", "status", "description", "location", "online_url", "image_url"}
 
 
 # ---------------------------------------------------------------------------
@@ -63,11 +68,22 @@ class CreateEventRequest(BaseModel):
     end_date: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     location: Optional[str] = Field(None, max_length=500)
     online_url: Optional[str] = Field(None, max_length=2048)
+    image_url: Optional[str] = Field(None, max_length=2048)
     description: str = Field(default="", max_length=5000)
     format: str = Field(default="in_person", pattern=r"^(in_person|online|hybrid)$")
+    status: str = Field(default="published", pattern=r"^(draft|published|cancelled)$")
     is_public: bool = True
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
+
+
+class UpdateEventRequest(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    status: Optional[str] = Field(None, pattern=r"^(draft|published|cancelled)$")
+    description: Optional[str] = Field(None, max_length=5000)
+    location: Optional[str] = Field(None, max_length=500)
+    online_url: Optional[str] = Field(None, max_length=2048)
+    image_url: Optional[str] = Field(None, max_length=2048)
 
 
 class RsvpRequest(BaseModel):
@@ -88,8 +104,10 @@ class EventResponse(BaseModel):
     end_date: Optional[str] = None
     location: Optional[str] = None
     online_url: Optional[str] = None
+    image_url: Optional[str] = None
     description: str = ""
     format: str = "in_person"
+    status: str = "published"
     is_public: bool = True
     latitude: Optional[float] = None
     longitude: Optional[float] = None
@@ -98,6 +116,11 @@ class EventResponse(BaseModel):
     attendee_count: int = 0
     user_rsvp_status: Optional[str] = None
     created_at: Optional[str] = None
+    # Sponsor fields
+    is_sponsored: bool = False
+    sponsor_name: Optional[str] = None
+    sponsor_logo_url: Optional[str] = None
+    sponsor_tier: Optional[str] = None
 
 
 class EventListResponse(BaseModel):
@@ -111,6 +134,8 @@ class EventListResponse(BaseModel):
 _IN_MEMORY_EVENTS: dict[str, dict[str, Any]] = {}
 _IN_MEMORY_RSVPS: dict[str, dict[str, str]] = {}  # event_id -> {user_id: status}
 _IN_MEMORY_FOLLOWS: dict[str, set[str]] = {}  # user_id -> set of category_ids
+_MAX_IN_MEMORY_EVENTS = 1000  # eviction cap to prevent unbounded memory growth
+_MAX_IN_MEMORY_FOLLOWS = 500
 
 
 # ---------------------------------------------------------------------------
@@ -177,6 +202,10 @@ async def list_events(
             continue
         if category_id and ev.get("category_id") != category_id:
             continue
+        # Only show published events (unless creator sees their own drafts)
+        ev_status = ev.get("status", "published")
+        if ev_status != "published" and ev.get("created_by") != user_id:
+            continue
         # Hide non-public events unless the user is the creator
         if not ev.get("is_public", True) and ev.get("created_by") != user_id:
             continue
@@ -185,6 +214,8 @@ async def list_events(
         if user_id:
             ev_copy["user_rsvp_status"] = rsvps.get(user_id)
         events.append(EventResponse(**ev_copy))
+    # Sort: sponsored first, then by date
+    events.sort(key=lambda e: (not e.is_sponsored, e.date))
     return EventListResponse(events=events[offset:offset + limit])
 
 
@@ -231,11 +262,11 @@ async def create_event(
                     """
                     INSERT INTO events (
                         title, kind, category_id, date, time, end_date,
-                        location, online_url, description, created_by, source,
-                        format, is_public, latitude, longitude
+                        location, online_url, image_url, description, created_by, source,
+                        format, status, is_public, latitude, longitude
                     )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'user',
-                            $11, $12, $13, $14)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'user',
+                            $12, $13, $14, $15, $16)
                     RETURNING *
                     """,
                     request.title,
@@ -246,9 +277,11 @@ async def create_event(
                     request.end_date,
                     request.location,
                     request.online_url,
+                    request.image_url,
                     request.description,
                     user_id,
                     request.format,
+                    request.status,
                     request.is_public,
                     request.latitude,
                     request.longitude,
@@ -274,8 +307,10 @@ async def create_event(
         "end_date": request.end_date,
         "location": request.location,
         "online_url": request.online_url,
+        "image_url": request.image_url,
         "description": request.description,
         "format": request.format,
+        "status": request.status,
         "is_public": request.is_public,
         "latitude": request.latitude,
         "longitude": request.longitude,
@@ -285,9 +320,224 @@ async def create_event(
         "created_at": now,
     }
     _IN_MEMORY_EVENTS[event_id] = event_data
+    # Evict oldest entries if over capacity
+    while len(_IN_MEMORY_EVENTS) > _MAX_IN_MEMORY_EVENTS:
+        _IN_MEMORY_EVENTS.pop(next(iter(_IN_MEMORY_EVENTS)))
     logger.info("[events] Created event (in-memory): id=%s, title=%s", event_id, request.title)
     return EventResponse(**event_data)
 
+
+@router.get("/nearby", response_model=EventListResponse)
+async def list_nearby_events(
+    lat: float = Query(..., ge=-90, le=90, description="User latitude"),
+    lon: float = Query(..., ge=-180, le=180, description="User longitude"),
+    radius_km: float = Query(default=50, ge=1, le=500, description="Search radius in km"),
+    user_id: Optional[str] = Depends(get_optional_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
+):
+    """List upcoming published events within a radius of the given coordinates.
+
+    Uses the Haversine formula for distance calculation.
+    """
+    limit, offset = pagination
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT *,
+                        (6371 * acos(LEAST(1.0, GREATEST(-1.0,
+                            cos(radians($1)) * cos(radians(latitude))
+                            * cos(radians(longitude) - radians($2))
+                            + sin(radians($1)) * sin(radians(latitude))
+                        )))) AS distance_km
+                    FROM events
+                    WHERE latitude IS NOT NULL
+                      AND longitude IS NOT NULL
+                      AND status = 'published'
+                      AND is_public = true
+                      AND date >= CURRENT_DATE
+                      AND (6371 * acos(LEAST(1.0, GREATEST(-1.0,
+                            cos(radians($1)) * cos(radians(latitude))
+                            * cos(radians(longitude) - radians($2))
+                            + sin(radians($1)) * sin(radians(latitude))
+                        )))) <= $3
+                    ORDER BY distance_km ASC
+                    LIMIT $4 OFFSET $5
+                    """,
+                    lat, lon, radius_km, limit, offset,
+                )
+                events = [_row_to_event(dict(r), user_id=user_id) for r in rows]
+                return EventListResponse(events=events)
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error listing nearby events: %s", e)
+            raise error_response(500, "Failed to list nearby events", code="EVENT_NEARBY_ERROR")
+
+    # Offline / in-memory fallback with Haversine
+    today_str = date.today().isoformat()
+    events_with_dist = []
+    for ev in _IN_MEMORY_EVENTS.values():
+        ev_lat = ev.get("latitude")
+        ev_lon = ev.get("longitude")
+        if ev_lat is None or ev_lon is None:
+            continue
+        if ev.get("date", "") < today_str:
+            continue
+        if ev.get("status", "published") != "published":
+            continue
+        if not ev.get("is_public", True):
+            continue
+        dist = _haversine(lat, lon, ev_lat, ev_lon)
+        if dist <= radius_km:
+            events_with_dist.append((dist, ev))
+
+    events_with_dist.sort(key=lambda x: x[0])
+    events = [
+        EventResponse(**{**ev, "attendee_count": len(_IN_MEMORY_RSVPS.get(ev["id"], {}))})
+        for _, ev in events_with_dist[offset:offset + limit]
+    ]
+    return EventListResponse(events=events)
+
+
+# ---------------------------------------------------------------------------
+# Endpoints — Category follows
+# NOTE: These MUST be registered before /{event_id} to avoid route shadowing.
+# ---------------------------------------------------------------------------
+
+@router.get("/categories/followed")
+async def list_followed_categories(
+    user_id: str = Depends(get_current_user_id),
+):
+    """List all category IDs the current user follows."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(
+                    "SELECT category_id FROM user_category_follows WHERE user_id = $1",
+                    user_id,
+                )
+                return {"categories": [row["category_id"] for row in rows]}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error listing followed categories: %s", e)
+            raise error_response(500, "Failed to list followed categories", code="FOLLOW_LIST_ERROR")
+
+    # Offline / in-memory fallback
+    follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
+    return {"categories": sorted(follows)}
+
+
+@router.post("/categories/{category_id}/follow")
+async def follow_category(
+    category_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Follow a category for event notifications."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO user_category_follows (user_id, category_id)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id, category_id) DO NOTHING
+                    """,
+                    user_id,
+                    category_id,
+                )
+                logger.info("[events] Follow category: user=%s, category=%s", user_id, category_id)
+                return {"success": True, "category_id": category_id}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error following category %s: %s", category_id, e)
+            raise error_response(500, "Failed to follow category", code="FOLLOW_ERROR")
+
+    # Offline / in-memory fallback
+    _IN_MEMORY_FOLLOWS.setdefault(user_id, set()).add(category_id)
+    # Evict oldest user entries if over capacity
+    while len(_IN_MEMORY_FOLLOWS) > _MAX_IN_MEMORY_FOLLOWS:
+        _IN_MEMORY_FOLLOWS.pop(next(iter(_IN_MEMORY_FOLLOWS)))
+    logger.info("[events] Follow category (in-memory): user=%s, category=%s", user_id, category_id)
+    return {"success": True, "category_id": category_id}
+
+
+@router.delete("/categories/{category_id}/follow")
+async def unfollow_category(
+    category_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Unfollow a category."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    "DELETE FROM user_category_follows WHERE user_id = $1 AND category_id = $2",
+                    user_id,
+                    category_id,
+                )
+                logger.info("[events] Unfollow category: user=%s, category=%s", user_id, category_id)
+                return {"success": True, "message": "Category unfollowed"}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error unfollowing category %s: %s", category_id, e)
+            raise error_response(500, "Failed to unfollow category", code="FOLLOW_ERROR")
+
+    # Offline / in-memory fallback
+    follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
+    follows.discard(category_id)
+    logger.info("[events] Unfollow category (in-memory): user=%s, category=%s", user_id, category_id)
+    return {"success": True, "message": "Category unfollowed"}
+
+
+@router.get("/categories/{category_id}/following")
+async def check_following_category(
+    category_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Check whether the current user follows a given category."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    "SELECT 1 FROM user_category_follows WHERE user_id = $1 AND category_id = $2",
+                    user_id,
+                    category_id,
+                )
+                return {"following": row is not None}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error checking follow status: %s", e)
+            raise error_response(500, "Failed to check follow status", code="FOLLOW_CHECK_ERROR")
+
+    # Offline / in-memory fallback
+    follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
+    return {"following": category_id in follows}
+
+
+# ---------------------------------------------------------------------------
+# Endpoints — Single event + RSVP (parameterized routes last)
+# ---------------------------------------------------------------------------
 
 @router.get("/{event_id}", response_model=EventResponse)
 async def get_event(
@@ -357,6 +607,73 @@ async def get_event(
     if user_id:
         ev_copy["user_rsvp_status"] = rsvps.get(user_id)
     return EventResponse(**ev_copy)
+
+
+@router.patch("/{event_id}", response_model=EventResponse)
+async def update_event(
+    event_id: str,
+    request: UpdateEventRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Update an event (title, status, description, location, online_url). Creator only."""
+    updates = request.model_dump(exclude_none=True)
+    if not updates:
+        raise error_response(400, "No fields to update", code="NO_FIELDS")
+
+    # Validate against column whitelist to prevent injection via future model changes
+    bad_keys = set(updates.keys()) - _UPDATABLE_EVENT_COLUMNS
+    if bad_keys:
+        raise error_response(400, f"Cannot update fields: {', '.join(sorted(bad_keys))}", code="INVALID_FIELDS")
+
+    if request.status and request.status not in ALLOWED_EVENT_STATUSES:
+        raise error_response(400, f"Invalid status: {request.status}", code="INVALID_STATUS")
+
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                # Verify ownership
+                row = await conn.fetchrow(
+                    "SELECT * FROM events WHERE id = $1 AND created_by = $2",
+                    event_id, user_id,
+                )
+                if not row:
+                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+
+                set_parts = []
+                params = [event_id, user_id]
+                idx = 3
+                for key, val in updates.items():
+                    set_parts.append(f"{key} = ${idx}")
+                    params.append(val)
+                    idx += 1
+                set_parts.append(f"updated_at = ${idx}")
+                params.append(datetime.now(timezone.utc))
+
+                query = f"""
+                    UPDATE events SET {', '.join(set_parts)}
+                    WHERE id = $1 AND created_by = $2
+                    RETURNING *
+                """
+                updated = await conn.fetchrow(query, *params)
+                if not updated:
+                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+                return _row_to_event(dict(updated), user_id=user_id)
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error updating event %s: %s", event_id, e)
+            raise error_response(500, "Failed to update event", code="EVENT_UPDATE_ERROR")
+
+    # Offline / in-memory fallback
+    ev = _IN_MEMORY_EVENTS.get(event_id)
+    if ev is None or ev.get("created_by") != user_id:
+        raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+
+    ev.update(updates)
+    return EventResponse(**ev)
 
 
 # ---------------------------------------------------------------------------
@@ -441,139 +758,12 @@ async def unrsvp_event(
 
 
 # ---------------------------------------------------------------------------
-# Endpoints — Category follows
-# ---------------------------------------------------------------------------
-
-@router.get("/categories/followed")
-async def list_followed_categories(
-    user_id: str = Depends(get_current_user_id),
-):
-    """List all category IDs the current user follows."""
-    pool = _get_db_pool()
-
-    if pool is not None:
-        try:
-            async with pool.acquire() as conn:
-                rows = await conn.fetch(
-                    "SELECT category_id FROM user_category_follows WHERE user_id = $1",
-                    user_id,
-                )
-                return {"categories": [row["category_id"] for row in rows]}
-
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error("[events] Error listing followed categories: %s", e)
-            raise error_response(500, "Failed to list followed categories", code="FOLLOW_LIST_ERROR")
-
-    # Offline / in-memory fallback
-    follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
-    return {"categories": sorted(follows)}
-
-
-@router.post("/categories/{category_id}/follow")
-async def follow_category(
-    category_id: str,
-    user_id: str = Depends(get_current_user_id),
-):
-    """Follow a category for event notifications."""
-    pool = _get_db_pool()
-
-    if pool is not None:
-        try:
-            async with pool.acquire() as conn:
-                await conn.execute(
-                    """
-                    INSERT INTO user_category_follows (user_id, category_id)
-                    VALUES ($1, $2)
-                    ON CONFLICT (user_id, category_id) DO NOTHING
-                    """,
-                    user_id,
-                    category_id,
-                )
-                logger.info("[events] Follow category: user=%s, category=%s", user_id, category_id)
-                return {"success": True, "category_id": category_id}
-
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error("[events] Error following category %s: %s", category_id, e)
-            raise error_response(500, "Failed to follow category", code="FOLLOW_ERROR")
-
-    # Offline / in-memory fallback
-    _IN_MEMORY_FOLLOWS.setdefault(user_id, set()).add(category_id)
-    logger.info("[events] Follow category (in-memory): user=%s, category=%s", user_id, category_id)
-    return {"success": True, "category_id": category_id}
-
-
-@router.delete("/categories/{category_id}/follow")
-async def unfollow_category(
-    category_id: str,
-    user_id: str = Depends(get_current_user_id),
-):
-    """Unfollow a category."""
-    pool = _get_db_pool()
-
-    if pool is not None:
-        try:
-            async with pool.acquire() as conn:
-                await conn.execute(
-                    "DELETE FROM user_category_follows WHERE user_id = $1 AND category_id = $2",
-                    user_id,
-                    category_id,
-                )
-                logger.info("[events] Unfollow category: user=%s, category=%s", user_id, category_id)
-                return {"success": True, "message": "Category unfollowed"}
-
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error("[events] Error unfollowing category %s: %s", category_id, e)
-            raise error_response(500, "Failed to unfollow category", code="FOLLOW_ERROR")
-
-    # Offline / in-memory fallback
-    follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
-    follows.discard(category_id)
-    logger.info("[events] Unfollow category (in-memory): user=%s, category=%s", user_id, category_id)
-    return {"success": True, "message": "Category unfollowed"}
-
-
-@router.get("/categories/{category_id}/following")
-async def check_following_category(
-    category_id: str,
-    user_id: str = Depends(get_current_user_id),
-):
-    """Check whether the current user follows a given category."""
-    pool = _get_db_pool()
-
-    if pool is not None:
-        try:
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow(
-                    "SELECT 1 FROM user_category_follows WHERE user_id = $1 AND category_id = $2",
-                    user_id,
-                    category_id,
-                )
-                return {"following": row is not None}
-
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error("[events] Error checking follow status: %s", e)
-            raise error_response(500, "Failed to check follow status", code="FOLLOW_CHECK_ERROR")
-
-    # Offline / in-memory fallback
-    follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
-    return {"following": category_id in follows}
-
-
-# ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
 
 async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bool, limit: int = 50, offset: int = 0):
     """Fetch events from the events table with optional filters."""
-    conditions = []
+    conditions = ["status = 'published'"]
     params = []
     param_idx = 1
 
@@ -587,8 +777,13 @@ async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bo
         params.append(category_id)
         param_idx += 1
 
-    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-    query = f"SELECT * FROM events {where} ORDER BY date ASC LIMIT ${param_idx} OFFSET ${param_idx + 1}"
+    where = f"WHERE {' AND '.join(conditions)}"
+    query = (
+        f"SELECT * FROM events {where} "
+        f"ORDER BY (is_sponsored AND (sponsor_expires_at IS NULL OR sponsor_expires_at > now())) DESC, "
+        f"date ASC "
+        f"LIMIT ${param_idx} OFFSET ${param_idx + 1}"
+    )
     params.append(limit)
     params.append(offset)
     return await conn.fetch(query, *params)
@@ -596,6 +791,20 @@ async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bo
 
 def _row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventResponse:
     """Convert a database row dict to an EventResponse model."""
+    # Filter out expired sponsors
+    is_sponsored = bool(row.get("is_sponsored", False))
+    sponsor_expires = row.get("sponsor_expires_at")
+    if is_sponsored and sponsor_expires is not None:
+        from datetime import datetime as _dt, timezone as _tz
+        try:
+            exp = sponsor_expires if isinstance(sponsor_expires, _dt) else _dt.fromisoformat(str(sponsor_expires))
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=_tz.utc)
+            if exp < _dt.now(_tz.utc):
+                is_sponsored = False
+        except (ValueError, TypeError):
+            pass
+
     return EventResponse(
         id=str(row.get("id", "")),
         title=row.get("title", ""),
@@ -606,8 +815,10 @@ def _row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRe
         end_date=str(row["end_date"]) if row.get("end_date") else None,
         location=row.get("location"),
         online_url=row.get("online_url"),
+        image_url=row.get("image_url"),
         description=row.get("description", ""),
         format=row.get("format", "in_person"),
+        status=row.get("status", "published"),
         is_public=row.get("is_public", True),
         latitude=row.get("latitude"),
         longitude=row.get("longitude"),
@@ -616,4 +827,21 @@ def _row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRe
         attendee_count=row.get("attendee_count", 0),
         user_rsvp_status=row.get("user_rsvp_status"),
         created_at=str(row["created_at"]) if row.get("created_at") else None,
+        is_sponsored=is_sponsored,
+        sponsor_name=row.get("sponsor_name") if is_sponsored else None,
+        sponsor_logo_url=row.get("sponsor_logo_url") if is_sponsored else None,
+        sponsor_tier=row.get("sponsor_tier") if is_sponsored else None,
     )
+
+
+def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate distance between two points on Earth in km."""
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))

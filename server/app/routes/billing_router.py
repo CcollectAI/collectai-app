@@ -10,6 +10,7 @@ Endpoints:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections import OrderedDict
@@ -75,6 +76,9 @@ PLAN_LIMITS = {
 
 # ---------------------------------------------------------------------------
 # Webhook idempotency — bounded LRU of processed event IDs
+# NOTE: This is per-process only. With multiple workers (uvicorn --workers N),
+# duplicate events can still be processed by different workers. For production
+# multi-worker deployments, use a DB-based idempotency table instead.
 # ---------------------------------------------------------------------------
 
 _SEEN_EVENTS: OrderedDict[str, float] = OrderedDict()
@@ -82,7 +86,11 @@ _MAX_SEEN = 500
 
 
 def _event_already_processed(event_id: str) -> bool:
-    """Return True if this Stripe event was already handled (dedup)."""
+    """Return True if this Stripe event was already handled (dedup).
+
+    WARNING: In-memory dedup only works for single-worker deployments.
+    Multi-worker setups need a ``processed_webhook_events`` DB table.
+    """
     if event_id in _SEEN_EVENTS:
         return True
     _SEEN_EVENTS[event_id] = time.monotonic()
@@ -142,27 +150,37 @@ async def _ensure_subscription_row(user_id: str) -> dict:
 
 
 async def _get_or_create_stripe_customer(user_id: str, stripe_mod: Any) -> str:
-    """Return existing Stripe customer ID or create one."""
+    """Return existing Stripe customer ID or create one.
+
+    Uses SELECT FOR UPDATE to prevent race conditions that could create
+    duplicate Stripe customers when two requests arrive concurrently.
+    """
     pool = get_pool()
     if pool is None:
         raise ValueError("Database not available")
-    row = await pool.fetchrow(
-        "SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1",
-        user_id,
-    )
-    if row and row["stripe_customer_id"]:
-        return row["stripe_customer_id"]
 
-    # Create Stripe customer
-    customer = stripe_mod.Customer.create(metadata={"user_id": user_id})
-    await pool.execute(
-        "INSERT INTO subscriptions (user_id, stripe_customer_id, plan, status) "
-        "VALUES ($1, $2, 'free', 'active') "
-        "ON CONFLICT (user_id) DO UPDATE SET stripe_customer_id = $2, updated_at = now()",
-        user_id,
-        customer.id,
-    )
-    return customer.id
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # Lock the row to prevent concurrent creation
+            row = await conn.fetchrow(
+                "SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1 FOR UPDATE",
+                user_id,
+            )
+            if row and row["stripe_customer_id"]:
+                return row["stripe_customer_id"]
+
+            # No row or no stripe_customer_id — create Stripe customer off-thread
+            customer = await asyncio.to_thread(
+                stripe_mod.Customer.create, metadata={"user_id": user_id}
+            )
+            await conn.execute(
+                "INSERT INTO subscriptions (user_id, stripe_customer_id, plan, status) "
+                "VALUES ($1, $2, 'free', 'active') "
+                "ON CONFLICT (user_id) DO UPDATE SET stripe_customer_id = $2, updated_at = now()",
+                user_id,
+                customer.id,
+            )
+            return customer.id
 
 
 # ---------------------------------------------------------------------------
@@ -200,7 +218,8 @@ async def create_checkout_session(
     try:
         customer_id = await _get_or_create_stripe_customer(user_id, stripe_mod)
 
-        session = stripe_mod.checkout.Session.create(
+        session = await asyncio.to_thread(
+            stripe_mod.checkout.Session.create,
             customer=customer_id,
             payment_method_types=["card"],
             line_items=[{"price": price_id, "quantity": 1}],
@@ -237,7 +256,8 @@ async def create_portal_session(
         raise error_response(404, "No billing account found. Subscribe first.")
 
     try:
-        session = stripe_mod.billing_portal.Session.create(
+        session = await asyncio.to_thread(
+            stripe_mod.billing_portal.Session.create,
             customer=sub["stripe_customer_id"],
             return_url="collectai://settings",
         )
@@ -324,7 +344,11 @@ async def stripe_webhook(
         return JSONResponse({"received": True})
 
     if event_type == "checkout.session.completed":
-        await _handle_checkout_completed(pool, data)
+        # Route sponsor checkouts separately from subscription checkouts
+        if data.get("metadata", {}).get("type") == "event_sponsor":
+            await _handle_sponsor_checkout_completed(pool, data)
+        else:
+            await _handle_checkout_completed(pool, data)
     elif event_type == "customer.subscription.updated":
         await _handle_subscription_updated(pool, data)
     elif event_type == "customer.subscription.deleted":
@@ -430,3 +454,82 @@ async def _handle_payment_failed(pool: Any, invoice: dict):
             sub_id,
         )
         _log.warning("Payment failed for subscription %s", sub_id)
+
+
+async def _handle_sponsor_checkout_completed(pool: Any, session: dict):
+    """After successful sponsor checkout, activate event sponsorship."""
+    metadata = session.get("metadata", {})
+    event_id = metadata.get("event_id")
+    tier = metadata.get("tier", "featured")
+    sponsor_name = metadata.get("sponsor_name", "")
+    user_id = metadata.get("user_id")
+
+    if not event_id:
+        _log.warning("sponsor checkout.session.completed missing event_id in metadata")
+        return
+
+    from datetime import timedelta
+
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(days=30)
+
+    # Use a transaction to ensure atomicity of sponsorship activation + analytics
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # Activate sponsorship on the event
+            await conn.execute(
+                """
+                UPDATE events SET
+                    is_sponsored = true,
+                    sponsor_name = $2,
+                    sponsor_tier = $3,
+                    sponsor_paid_at = $4,
+                    sponsor_expires_at = $5,
+                    updated_at = $4
+                WHERE id = $1
+                """,
+                event_id, sponsor_name, tier, now, expires_at,
+            )
+
+            # Create analytics row
+            await conn.execute(
+                """
+                INSERT INTO event_sponsor_analytics (event_id)
+                VALUES ($1)
+                ON CONFLICT (event_id) DO NOTHING
+                """,
+                event_id,
+            )
+
+    _log.info("Event %s sponsored: tier=%s, sponsor=%s, expires=%s", event_id, tier, sponsor_name, expires_at)
+
+    # For promoted/spotlight tiers: send push notifications to category followers
+    # (outside the transaction — push failures should not roll back sponsorship)
+    if tier in ("promoted", "spotlight"):
+        try:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    "SELECT title, category_id FROM events WHERE id = $1", event_id
+                )
+                if row and row["category_id"]:
+                    follower_rows = await conn.fetch(
+                        """
+                        SELECT DISTINCT dt.push_token
+                        FROM user_category_follows ucf
+                        JOIN device_tokens dt ON dt.user_id = ucf.user_id
+                        WHERE ucf.category_id = $1 AND dt.active = true
+                        """,
+                        row["category_id"],
+                    )
+                    from app.push import send_push
+                    title = row["title"] or "Sponsored Event"
+                    for fr in follower_rows:
+                        await send_push(
+                            fr["push_token"],
+                            f"New {tier.title()} Event",
+                            f"{sponsor_name} presents: {title}",
+                            data={"event_id": event_id, "type": "sponsored_event"},
+                        )
+                    _log.info("Sent push to %d category followers for event %s", len(follower_rows), event_id)
+        except Exception as push_err:
+            _log.warning("Failed to send sponsor push notifications: %s", push_err)

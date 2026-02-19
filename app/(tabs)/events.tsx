@@ -183,6 +183,7 @@ function EventsScreen() {
 
     const eventDate = parseEventDate(event.date, event.time);
     const isPast = eventDate < now;
+    const isSponsored = !!event.isSponsored;
 
     return (
       <AnimatedPressable
@@ -195,12 +196,29 @@ function EventsScreen() {
           styles.eventCard,
           {
             backgroundColor: colors.card,
-            borderColor: isPast ? colors.border : colors.accent + '40',
+            borderColor: isSponsored
+              ? colors.accent
+              : isPast ? colors.border : colors.accent + '40',
           },
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`${event.title}, ${kindLabel[event.kind]}, ${event.date}`}
+        accessibilityLabel={`${isSponsored ? 'Sponsored: ' : ''}${event.title}, ${kindLabel[event.kind]}, ${event.date}`}
       >
+        {/* Sponsored badge */}
+        {isSponsored && (
+          <View style={[styles.sponsoredBadgeRow]}>
+            <View style={[styles.sponsoredBadge, { backgroundColor: colors.accent + '15' }]}>
+              <Ionicons name="megaphone-outline" size={12} color={colors.accent} />
+              <Text style={[styles.sponsoredBadgeText, { color: colors.accent }]}>Sponsored</Text>
+            </View>
+            {event.sponsorName && (
+              <Text style={[styles.sponsorNameText, { color: colors.muted }]} numberOfLines={1}>
+                by {event.sponsorName}
+              </Text>
+            )}
+          </View>
+        )}
+
         <View style={styles.eventHeader}>
           <View
             style={[
@@ -473,6 +491,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
     marginBottom: 10,
+  },
+  sponsoredBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  sponsoredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  sponsoredBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  sponsorNameText: {
+    fontSize: 11,
+    flex: 1,
   },
   eventHeader: {
     flexDirection: 'row',

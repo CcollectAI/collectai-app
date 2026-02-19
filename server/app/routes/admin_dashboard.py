@@ -151,6 +151,52 @@ async def dashboard_users(
 
 
 # ---------------------------------------------------------------------------
+# Sponsor analytics endpoint
+# ---------------------------------------------------------------------------
+
+
+@router.get("/sponsor-analytics", tags=["ops"])
+async def sponsor_analytics(_: bool = Depends(require_ops_key)):
+    """List all sponsored events with analytics data."""
+    pool = get_pool()
+    if pool is None:
+        return JSONResponse({"sponsored_events": [], "error": "DB not available"})
+
+    try:
+        rows = await pool.fetch(
+            """
+            SELECT e.id, e.title, e.sponsor_name, e.sponsor_tier,
+                   e.sponsor_paid_at, e.sponsor_expires_at, e.category_id,
+                   COALESCE(sa.impressions, 0) AS impressions,
+                   COALESCE(sa.clicks, 0) AS clicks,
+                   COALESCE(sa.rsvps, 0) AS rsvps
+            FROM events e
+            LEFT JOIN event_sponsor_analytics sa ON sa.event_id = e.id
+            WHERE e.is_sponsored = true
+            ORDER BY e.sponsor_paid_at DESC NULLS LAST
+            """
+        )
+        events = []
+        for r in rows:
+            events.append({
+                "id": str(r["id"]),
+                "title": r["title"],
+                "sponsor_name": r["sponsor_name"],
+                "sponsor_tier": r["sponsor_tier"],
+                "category_id": r["category_id"],
+                "sponsor_paid_at": str(r["sponsor_paid_at"]) if r["sponsor_paid_at"] else None,
+                "sponsor_expires_at": str(r["sponsor_expires_at"]) if r["sponsor_expires_at"] else None,
+                "impressions": r["impressions"],
+                "clicks": r["clicks"],
+                "rsvps": r["rsvps"],
+            })
+        return JSONResponse({"sponsored_events": events, "total": len(events)})
+    except Exception as exc:
+        _log.error("Failed to fetch sponsor analytics: %s", exc)
+        return JSONResponse({"sponsored_events": [], "error": str(exc)})
+
+
+# ---------------------------------------------------------------------------
 # Main dashboard HTML
 # ---------------------------------------------------------------------------
 

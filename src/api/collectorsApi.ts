@@ -489,6 +489,17 @@ export const collectorsApi = {
 
   // Stats
   getDealStats: () => get("/purchase/stats"),
+
+  // Affiliate links (no auth required — works for all users)
+  getAffiliateLinks: (query: string, category?: string, limit = 3) =>
+    get<{
+      links: Array<{
+        source: string;
+        url: string;
+        affiliate_url: string;
+        label: string;
+      }>;
+    }>(`/marketplace/affiliate-links?query=${encodeURIComponent(query)}${category ? `&category=${encodeURIComponent(category)}` : ""}&limit=${limit}`),
 };
 
 // Intake result type returned by the intake agent endpoints

@@ -172,6 +172,75 @@ class TestDealScore:
         assert v.price_vs_q50_pct == -15.0
 
 
+class TestExcludeKeywords:
+    def test_no_keywords_passes(self):
+        v = evaluate(_base_mandate(exclude_keywords=[]), _base_hit())
+        assert v.passed
+
+    def test_keyword_not_in_title_passes(self):
+        v = evaluate(
+            _base_mandate(exclude_keywords=["replica", "fake"]),
+            _base_hit(title="Charizard PSA 10 Holo"),
+        )
+        assert v.passed
+
+    def test_keyword_in_title_fails(self):
+        v = evaluate(
+            _base_mandate(exclude_keywords=["replica", "fake"]),
+            _base_hit(title="Charizard REPLICA PSA 10"),
+        )
+        assert not v.passed
+        assert any("FAIL" in r and "excluded keyword" in r for r in v.reasons)
+
+    def test_keyword_case_insensitive(self):
+        v = evaluate(
+            _base_mandate(exclude_keywords=["FAKE"]),
+            _base_hit(title="This is a fake card"),
+        )
+        assert not v.passed
+
+    def test_multiple_keywords_matched(self):
+        v = evaluate(
+            _base_mandate(exclude_keywords=["replica", "damaged"]),
+            _base_hit(title="Replica card slightly damaged"),
+        )
+        assert not v.passed
+        assert any("replica" in r and "damaged" in r for r in v.reasons)
+
+
+class TestScarcityScoring:
+    def test_single_quantity_highest_score(self):
+        pred = {"q10": 300, "q50": 400, "q90": 500}
+        v = evaluate(_base_mandate(), _base_hit(price=300, quantity_available=1), pred)
+        assert v.passed
+        score_single = v.deal_score
+
+        v2 = evaluate(_base_mandate(), _base_hit(price=300, quantity_available=10), pred)
+        score_bulk = v2.deal_score
+
+        assert score_single > score_bulk
+
+    def test_no_quantity_neutral(self):
+        pred = {"q10": 300, "q50": 400, "q90": 500}
+        v = evaluate(_base_mandate(), _base_hit(price=300), pred)
+        assert v.passed
+        # Score should include 0.5 scarcity baseline (neutral)
+        assert v.deal_score > 0
+
+    def test_quantity_two_high_urgency(self):
+        pred = {"q10": 300, "q50": 400, "q90": 500}
+        v = evaluate(_base_mandate(), _base_hit(price=300, quantity_available=2), pred)
+        v5 = evaluate(_base_mandate(), _base_hit(price=300, quantity_available=5), pred)
+        assert v.deal_score > v5.deal_score
+
+    def test_bulk_quantity_low_urgency(self):
+        pred = {"q10": 300, "q50": 400, "q90": 500}
+        v = evaluate(_base_mandate(), _base_hit(price=300, quantity_available=20), pred)
+        assert v.passed
+        # Still valid, just lower score
+        assert v.deal_score > 0
+
+
 class TestMultipleFailures:
     def test_several_failures_at_once(self):
         past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()

@@ -40,6 +40,7 @@ class MandateCreate(BaseModel):
     max_total_budget: Optional[float] = Field(None, gt=0, le=10_000_000)
     cooldown_hours: int = Field(default=24, ge=1, le=720)
     allowed_sources: List[str] = Field(default_factory=list)
+    exclude_keywords: List[str] = Field(default_factory=list)
     region: Optional[str] = None
     expires_at: Optional[str] = None
 
@@ -54,6 +55,7 @@ class MandateUpdate(BaseModel):
     max_total_budget: Optional[float] = Field(None, gt=0, le=10_000_000)
     cooldown_hours: Optional[int] = Field(None, ge=1, le=720)
     allowed_sources: Optional[List[str]] = None
+    exclude_keywords: Optional[List[str]] = None
     region: Optional[str] = None
     expires_at: Optional[str] = None
 
@@ -71,6 +73,7 @@ class MandateResponse(BaseModel):
     spent_total: float = 0.0
     cooldown_hours: int = 24
     allowed_sources: List[str] = Field(default_factory=list)
+    exclude_keywords: List[str] = Field(default_factory=list)
     region: Optional[str] = None
     expires_at: Optional[str] = None
     last_scan_at: Optional[str] = None
@@ -138,7 +141,7 @@ _DECLINABLE_STATUSES = {"discovered", "notified", "clicked"}
 _UPDATABLE_MANDATE_COLUMNS = frozenset({
     "name", "status", "category", "condition_filter", "min_trust_score",
     "max_price", "max_total_budget", "cooldown_hours", "allowed_sources",
-    "region", "expires_at",
+    "exclude_keywords", "region", "expires_at",
 })
 
 # Allowed deal status values for filtering
@@ -182,6 +185,7 @@ def _row_to_mandate(row) -> dict:
         spent_total=float(row.get("spent_total") or 0),
         cooldown_hours=int(row.get("cooldown_hours") or 24),
         allowed_sources=list(row.get("allowed_sources") or []),
+        exclude_keywords=list(row.get("exclude_keywords") or []),
         region=row.get("region"),
         expires_at=_ts(row.get("expires_at")),
         last_scan_at=_ts(row.get("last_scan_at")),
@@ -243,6 +247,14 @@ def _require_db():
         raise HTTPException(status_code=503, detail="Database not configured")
 
 
+def _parse_uuid(value: str, label: str = "ID") -> uuid.UUID:
+    """Parse a string as UUID, raising 400 if invalid."""
+    try:
+        return uuid.UUID(value)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail=f"Invalid {label}: {value}")
+
+
 # ---------------------------------------------------------------------------
 # Mandate CRUD
 # ---------------------------------------------------------------------------
@@ -283,8 +295,8 @@ async def create_mandate(
                 user_id, name, search_query, category,
                 condition_filter, min_trust_score,
                 max_price, max_total_budget, cooldown_hours,
-                allowed_sources, region, expires_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                allowed_sources, exclude_keywords, region, expires_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING *
             """,
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
@@ -297,9 +309,22 @@ async def create_mandate(
             body.max_total_budget,
             body.cooldown_hours,
             body.allowed_sources,
+            body.exclude_keywords,
             body.region,
             expires_at,
         )
+
+    # Record demand signal (best-effort, non-blocking)
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="mandate_created",
+            category=body.category,
+            item_key=body.search_query,
+            user_id=user_id,
+        )
+    except Exception as exc:
+        logger.debug("[purchase] Demand signal recording failed: %s", exc)
 
     return _row_to_mandate(row)
 
@@ -346,7 +371,7 @@ async def get_mandate(
     async with get_conn() as conn:
         row = await conn.fetchrow(
             "SELECT * FROM public.purchase_mandates WHERE id = $1 AND user_id = $2",
-            uuid.UUID(mandate_id),
+            _parse_uuid(mandate_id, "mandate_id"),
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
         )
 
@@ -406,7 +431,7 @@ async def update_mandate(
     async with get_conn() as conn:
         row = await conn.fetchrow(
             query,
-            uuid.UUID(mandate_id),
+            _parse_uuid(mandate_id, "mandate_id"),
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
             *params,
         )
@@ -431,7 +456,7 @@ async def delete_mandate(
             SET status = 'paused', updated_at = now()
             WHERE id = $1 AND user_id = $2
             """,
-            uuid.UUID(mandate_id),
+            _parse_uuid(mandate_id, "mandate_id"),
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
         )
 
@@ -504,7 +529,7 @@ async def get_deal(
     async with get_conn() as conn:
         row = await conn.fetchrow(
             "SELECT * FROM public.mandate_deals WHERE id = $1 AND user_id = $2",
-            uuid.UUID(deal_id),
+            _parse_uuid(deal_id, "deal_id"),
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
         )
 
@@ -532,7 +557,7 @@ async def click_deal(
               AND status = ANY($3::text[])
             RETURNING id, affiliate_url, listing_url
             """,
-            uuid.UUID(deal_id),
+            _parse_uuid(deal_id, "deal_id"),
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
             list(_CLICKABLE_STATUSES),
         )
@@ -563,7 +588,7 @@ async def confirm_deal(
             SELECT * FROM public.mandate_deals
             WHERE id = $1 AND user_id = $2 AND status = ANY($3::text[])
             """,
-            uuid.UUID(deal_id),
+            _parse_uuid(deal_id, "deal_id"),
             uid,
             list(_CONFIRMABLE_STATUSES),
         )
@@ -586,7 +611,7 @@ async def confirm_deal(
             WHERE id = $1 AND user_id = $2
               AND status = ANY($4::text[])
             """,
-            uuid.UUID(deal_id),
+            _parse_uuid(deal_id, "deal_id"),
             uid,
             confirmed_price,
             list(_CONFIRMABLE_STATUSES),
@@ -647,7 +672,7 @@ async def decline_deal(
             WHERE id = $1 AND user_id = $2
               AND status = ANY($3::text[])
             """,
-            uuid.UUID(deal_id),
+            _parse_uuid(deal_id, "deal_id"),
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
             list(_DECLINABLE_STATUSES),
         )
@@ -697,6 +722,69 @@ async def get_stats(
         total_deals_clicked=deal_stats["total_clicked"] if deal_stats else 0,
         total_deals_purchased=deal_stats["total_purchased"] if deal_stats else 0,
         total_saved_vs_q50=round(float(deal_stats["saved_vs_q50"]), 2) if deal_stats else 0.0,
+    ).model_dump()
+
+
+class ForecastResponse(BaseModel):
+    mandate_id: str
+    remaining_budget: Optional[float] = None
+    avg_deal_price: Optional[float] = None
+    estimated_deals_left: Optional[int] = None
+    total_deals_found: int = 0
+    total_deals_purchased: int = 0
+    spent_total: float = 0.0
+    max_total_budget: Optional[float] = None
+
+
+@router.get("/mandates/{mandate_id}/forecast")
+async def forecast_mandate(
+    mandate_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Budget forecast for a mandate: remaining budget, avg deal price, estimated deals left."""
+    _require_db()
+    uid = uuid.UUID(user_id) if _is_uuid(user_id) else user_id
+
+    async with get_conn() as conn:
+        mandate = await conn.fetchrow(
+            "SELECT * FROM public.purchase_mandates WHERE id = $1 AND user_id = $2",
+            _parse_uuid(mandate_id, "mandate_id"), uid,
+        )
+        if not mandate:
+            raise HTTPException(status_code=404, detail="Mandate not found")
+
+        # Calculate avg deal price from purchased deals
+        avg_row = await conn.fetchrow(
+            """
+            SELECT
+                avg(coalesce(confirmed_price, listing_price)) AS avg_price,
+                count(*) AS deal_count
+            FROM public.mandate_deals
+            WHERE mandate_id = $1 AND status = 'purchased'
+            """,
+            _parse_uuid(mandate_id, "mandate_id"),
+        )
+
+    spent = float(mandate.get("spent_total") or 0)
+    max_budget = float(mandate["max_total_budget"]) if mandate.get("max_total_budget") else None
+    remaining = (max_budget - spent) if max_budget is not None else None
+
+    avg_price = float(avg_row["avg_price"]) if avg_row and avg_row["avg_price"] else None
+    deal_count = int(avg_row["deal_count"]) if avg_row else 0
+
+    estimated_left = None
+    if remaining is not None and avg_price and avg_price > 0:
+        estimated_left = max(0, int(remaining / avg_price))
+
+    return ForecastResponse(
+        mandate_id=mandate_id,
+        remaining_budget=round(remaining, 2) if remaining is not None else None,
+        avg_deal_price=round(avg_price, 2) if avg_price else None,
+        estimated_deals_left=estimated_left,
+        total_deals_found=int(mandate.get("deals_found") or 0),
+        total_deals_purchased=deal_count,
+        spent_total=round(spent, 2),
+        max_total_budget=round(max_budget, 2) if max_budget is not None else None,
     ).model_dump()
 
 

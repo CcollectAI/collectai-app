@@ -188,8 +188,11 @@ class TestScanAllActive:
         mock_conn.fetch = AsyncMock(side_effect=[
             mandates,          # first call: scan_all_active fetches mandates
             [],                # scan_mandate 1: get_existing_urls
+            [],                # scan_mandate 1: _get_user_recent_deal_urls
             [],                # scan_mandate 2: get_existing_urls
+            [],                # scan_mandate 2: _get_user_recent_deal_urls
         ])
+        mock_conn.executemany = AsyncMock()  # for _feed_market_hits
 
         result = _mock_result([_mock_hit(price=200)])
 
@@ -255,12 +258,13 @@ class TestGetPrediction:
         # Query containing ILIKE wildcards that must be escaped
         await agent._get_prediction(mock_conn, "100% mint_condition\\special", "pokemon")
 
-        # Verify fetchrow was called
-        mock_conn.fetchrow.assert_awaited_once()
-        call_args = mock_conn.fetchrow.call_args
+        # First call is the direct lookup, second is category fallback
+        assert mock_conn.fetchrow.await_count >= 1
+        # Check the first call (direct lookup) for proper escaping
+        first_call = mock_conn.fetchrow.call_args_list[0]
 
         # The second positional arg is the ILIKE pattern
-        ilike_param = call_args[0][1]
+        ilike_param = first_call[0][1]
 
         # The literal %, _, and \ from the query must be escaped
         assert "\\%" in ilike_param, f"Expected escaped % in {ilike_param!r}"
@@ -344,6 +348,197 @@ class TestPersistDealsBatch:
         await agent._persist_deals_batch(mock_conn, rows)
 
 
+class TestOutlierFiltering:
+    """Tests for DealDiscoveryAgent._filter_outliers (Item 4)."""
+
+    def test_no_outliers_unchanged(self):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        hits = [_mock_hit(price=100), _mock_hit(price=110), _mock_hit(price=105)]
+        filtered = DealDiscoveryAgent._filter_outliers(hits)
+        assert len(filtered) == 3
+
+    def test_extreme_outlier_removed(self):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        hits = [
+            _mock_hit(price=100),
+            _mock_hit(price=105),
+            _mock_hit(price=110),
+            _mock_hit(price=10000),  # extreme outlier
+        ]
+        filtered = DealDiscoveryAgent._filter_outliers(hits)
+        assert len(filtered) == 3
+        prices = [float(h.hit["price"]) for h in filtered]
+        assert 10000 not in prices
+
+    def test_too_few_hits_not_filtered(self):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        hits = [_mock_hit(price=100), _mock_hit(price=10000)]
+        filtered = DealDiscoveryAgent._filter_outliers(hits)
+        assert len(filtered) == 2
+
+    def test_all_same_price_not_filtered(self):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        hits = [_mock_hit(price=100), _mock_hit(price=100), _mock_hit(price=100)]
+        filtered = DealDiscoveryAgent._filter_outliers(hits)
+        assert len(filtered) == 3
+
+
+class TestCategoryMedianFallback:
+    """Tests for category median fallback in _get_prediction (Item 3)."""
+
+    @pytest.mark.asyncio
+    async def test_fallback_to_category_median(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+
+        # First fetchrow returns None (no direct match)
+        # Second fetchrow returns category median
+        mock_conn.fetchrow = AsyncMock(side_effect=[
+            None,
+            {"cat_q10": 200.0, "cat_q50": 350.0, "cat_q90": 500.0},
+        ])
+
+        result = await agent._get_prediction(mock_conn, "nonexistent item", "pokemon")
+
+        assert result is not None
+        assert result["q50"] == 350.0
+        assert result["q10"] == 200.0
+        assert result["q90"] == 500.0
+
+    @pytest.mark.asyncio
+    async def test_no_fallback_without_category(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        mock_conn.fetchrow = AsyncMock(return_value=None)
+
+        result = await agent._get_prediction(mock_conn, "test", None)
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_direct_match_skips_fallback(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+
+        # Direct match found on first call
+        mock_conn.fetchrow = AsyncMock(return_value={
+            "q10": 300.0, "q50": 400.0, "q90": 500.0,
+        })
+
+        result = await agent._get_prediction(mock_conn, "exact match", "pokemon")
+
+        assert result is not None
+        assert result["q50"] == 400.0
+        # Only one fetchrow call (no fallback)
+        assert mock_conn.fetchrow.await_count == 1
+
+
+class TestItemLevelCooldown:
+    """Tests for _get_user_recent_deal_urls (Item 9: item-level cooldown)."""
+
+    @pytest.mark.asyncio
+    async def test_returns_recent_urls(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        user_id = str(uuid.uuid4())
+
+        mock_conn.fetch = AsyncMock(return_value=[
+            {"listing_url": "https://ebay.com/itm/1"},
+            {"listing_url": "https://ebay.com/itm/2"},
+        ])
+
+        urls = await agent._get_user_recent_deal_urls(mock_conn, user_id, cooldown_hours=24)
+
+        assert len(urls) == 2
+        assert "https://ebay.com/itm/1" in urls
+        assert "https://ebay.com/itm/2" in urls
+
+    @pytest.mark.asyncio
+    async def test_empty_when_no_recent_deals(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        user_id = str(uuid.uuid4())
+        mock_conn.fetch = AsyncMock(return_value=[])
+
+        urls = await agent._get_user_recent_deal_urls(mock_conn, user_id)
+        assert len(urls) == 0
+
+    @pytest.mark.asyncio
+    async def test_handles_db_error(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        mock_conn.fetch = AsyncMock(side_effect=Exception("connection lost"))
+
+        urls = await agent._get_user_recent_deal_urls(mock_conn, "invalid-id")
+        assert len(urls) == 0  # Returns empty set on error
+
+
+class TestFeedMarketHits:
+    """Tests for _feed_market_hits (Item 13: feed discoveries into market_hits)."""
+
+    @pytest.mark.asyncio
+    async def test_feeds_valid_hits(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        mock_conn.executemany = AsyncMock()
+
+        hits = [
+            _mock_hit(price=100, url="https://ebay.com/itm/1", title="Item A"),
+            _mock_hit(price=200, url="https://ebay.com/itm/2", title="Item B"),
+        ]
+
+        await agent._feed_market_hits(mock_conn, hits, "Charizard PSA 10", "pokemon")
+
+        mock_conn.executemany.assert_awaited_once()
+        call_args = mock_conn.executemany.call_args
+        sql = call_args[0][0]
+        assert "INSERT INTO public.market_hits" in sql
+        assert "ON CONFLICT" in sql
+        rows = call_args[0][1]
+        assert len(rows) == 2
+
+    @pytest.mark.asyncio
+    async def test_skips_zero_price_hits(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        mock_conn.executemany = AsyncMock()
+
+        hits = [
+            _mock_hit(price=0, url="https://ebay.com/itm/1"),
+            _mock_hit(price=100, url="https://ebay.com/itm/2"),
+        ]
+
+        await agent._feed_market_hits(mock_conn, hits, "test", "pokemon")
+
+        call_args = mock_conn.executemany.call_args
+        rows = call_args[0][1]
+        assert len(rows) == 1  # Only the non-zero price hit
+
+    @pytest.mark.asyncio
+    async def test_handles_db_error_gracefully(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        mock_conn.executemany = AsyncMock(side_effect=Exception("constraint error"))
+
+        hits = [_mock_hit(price=100)]
+
+        # Should not raise
+        await agent._feed_market_hits(mock_conn, hits, "test", "pokemon")
+
+
 class TestBoundedScan:
     """Tests that scan_all_active passes a LIMIT parameter."""
 
@@ -368,3 +563,98 @@ class TestBoundedScan:
         limit_param = call_args[0][1]
         assert limit_param == DealDiscoveryAgent.MAX_MANDATES_PER_CYCLE
         assert limit_param == 50
+
+
+class TestImageCaching:
+    """Tests for _cache_deal_images in DealDiscoveryAgent (Item 14)."""
+
+    @pytest.mark.asyncio
+    async def test_cache_images_skips_when_no_s3(self, mock_conn):
+        """When S3ImageCache is not enabled, no DB updates happen."""
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        deal_id = uuid.uuid4()
+        batch_rows = [
+            (deal_id, uuid.uuid4(), uuid.uuid4(), "ebay", "https://ebay.com/1",
+             "https://ebay.com/1", "Test Item", 100.0, "EUR", "NM",
+             "https://i.ebayimg.com/images/g/xyz.jpg", "seller1",
+             0.8, 0.75, -15.0, 90.0, 80.0, 100.0, True, '["ok"]', "ebay"),
+        ]
+
+        mock_cache_instance = MagicMock()
+        mock_cache_instance.enabled = False
+
+        mock_cache_module = MagicMock()
+        mock_cache_module.S3ImageCache.return_value = mock_cache_instance
+
+        with patch.dict("sys.modules", {"pipelines.s3_image_cache": mock_cache_module}):
+            await agent._cache_deal_images(mock_conn, batch_rows, "pokemon")
+            mock_cache_instance.close.assert_called_once()
+            # No executemany called since cache is disabled
+            mock_conn.executemany.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_cache_images_updates_db_on_success(self, mock_conn):
+        """When S3 caching succeeds, listing_image_url is updated in DB."""
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        deal_id = uuid.uuid4()
+        orig_url = "https://i.ebayimg.com/images/g/xyz.jpg"
+        cached_url = "https://d1234.cloudfront.net/catalog-images/pokemon/test.jpg"
+
+        batch_rows = [
+            (deal_id, uuid.uuid4(), uuid.uuid4(), "ebay", "https://ebay.com/1",
+             "https://ebay.com/1", "Test Item", 100.0, "EUR", "NM",
+             orig_url, "seller1",
+             0.8, 0.75, -15.0, 90.0, 80.0, 100.0, True, '["ok"]', "ebay"),
+        ]
+
+        mock_cache_instance = MagicMock()
+        mock_cache_instance.enabled = True
+        mock_cache_instance.cache_batch.return_value = {orig_url: cached_url}
+
+        mock_cache_module = MagicMock()
+        mock_cache_module.S3ImageCache.return_value = mock_cache_instance
+
+        mock_conn.executemany = AsyncMock()
+
+        import asyncio
+        with patch.dict("sys.modules", {"pipelines.s3_image_cache": mock_cache_module}):
+            await agent._cache_deal_images(mock_conn, batch_rows, "pokemon")
+
+        # DB should be updated with cached URL
+        mock_conn.executemany.assert_awaited_once()
+        update_args = mock_conn.executemany.call_args[0]
+        assert "listing_image_url" in update_args[0]
+        assert update_args[1][0][1] == cached_url
+
+    @pytest.mark.asyncio
+    async def test_cache_images_skips_rows_without_image(self, mock_conn):
+        """Rows with no image_url are skipped."""
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        deal_id = uuid.uuid4()
+
+        # image_url (index 10) is None
+        batch_rows = [
+            (deal_id, uuid.uuid4(), uuid.uuid4(), "ebay", "https://ebay.com/1",
+             "https://ebay.com/1", "Test Item", 100.0, "EUR", "NM",
+             None, "seller1",
+             0.8, 0.75, -15.0, 90.0, 80.0, 100.0, True, '["ok"]', "ebay"),
+        ]
+
+        mock_cache_instance = MagicMock()
+        mock_cache_instance.enabled = True
+
+        mock_cache_module = MagicMock()
+        mock_cache_module.S3ImageCache.return_value = mock_cache_instance
+
+        with patch.dict("sys.modules", {"pipelines.s3_image_cache": mock_cache_module}):
+            await agent._cache_deal_images(mock_conn, batch_rows, "pokemon")
+
+        # cache_batch should not be called since no images to cache
+        mock_cache_instance.cache_batch.assert_not_called()
+        mock_cache_instance.close.assert_called_once()
