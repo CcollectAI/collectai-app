@@ -391,12 +391,7 @@ export default function ItemDetailScreen() {
     { id: 'mock-3', eventType: 'added', timestamp: new Date(Date.now() - 30 * 86400000).toISOString(), note: 'Added to CcollectAI collection', source: 'barcode', metadata: {} },
   ];
   const MOCK_AUTH_SIGNALS = ['receipt_on_file', 'professionally_graded'];
-  const MOCK_MARKET_RESULTS: MarketHit[] = [
-    { title: `${editableName} — Near Mint`, price: toNum(editableValue) ? toNum(editableValue)! * 1.12 : 45, source: 'eBay', condition: 'Near Mint' },
-    { title: `${editableName} — Excellent`, price: toNum(editableValue) ? toNum(editableValue)! * 0.95 : 38, source: 'TCGPlayer', condition: 'Excellent' },
-    { title: `${editableName} — Good`, price: toNum(editableValue) ? toNum(editableValue)! * 0.78 : 30, source: 'Cardmarket', condition: 'Good' },
-    { title: `${editableName} — PSA 9`, price: toNum(editableValue) ? toNum(editableValue)! * 1.45 : 58, source: 'eBay', condition: 'PSA 9' },
-  ];
+  const EMPTY_MARKET_RESULTS: MarketHit[] = [];
   const MOCK_DOSSIER: DossierData = {
     item_id: id || '',
     generated_at: new Date().toISOString(),
@@ -464,12 +459,12 @@ export default function ItemDetailScreen() {
       const data = await collectorsApi.marketplaceSearch(editableName, editableCategory);
       const results = data.results || data.hits || [];
       // Fall back to mock data if API returns empty
-      setMarketResults(results.length > 0 ? results : MOCK_MARKET_RESULTS);
+      setMarketResults(results.length > 0 ? results : EMPTY_MARKET_RESULTS);
       setMarketScannedAt(new Date().toISOString());
       setMarketExpanded(true);
     } catch (err) {
       logger.warn('[ItemDetail] marketplace search error:', err);
-      setMarketResults(MOCK_MARKET_RESULTS);
+      setMarketResults(EMPTY_MARKET_RESULTS);
       setMarketScannedAt(new Date().toISOString());
       setMarketExpanded(true);
     } finally {
