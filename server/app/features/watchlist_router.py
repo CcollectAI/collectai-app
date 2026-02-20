@@ -7,6 +7,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
+from app.errors import error_response
 from app.features.pagination import pagination_params
 
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
@@ -68,6 +69,6 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
     items = _WATCHLIST.get(user_id, [])
     new_items = [it for it in items if it.id != watch_id]
     if len(new_items) == len(items):
-        raise HTTPException(status_code=404, detail="Watchlist item not found")
+        raise error_response(404, "Watchlist item not found", code="NOT_FOUND")
     _WATCHLIST[user_id] = new_items
     return WatchlistResponse(items=new_items)

@@ -473,6 +473,41 @@ export interface DataProvider {
   shareEventViaDm(eventId: string, recipientUserId: string): Promise<void>;
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // User Blocking
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Block a user. Auto-declines pending DM threads between the pair.
+   * Mock: adds to in-memory set.
+   * Real: calls rpc_block_user_v1.
+   * @param userId - The user ID to block
+   */
+  blockUser(userId: string): Promise<void>;
+
+  /**
+   * Unblock a user.
+   * Mock: removes from in-memory set.
+   * Real: calls rpc_unblock_user_v1.
+   * @param userId - The user ID to unblock
+   */
+  unblockUser(userId: string): Promise<void>;
+
+  /**
+   * List all blocked users with display names.
+   * Mock: returns from in-memory set.
+   * Real: calls rpc_list_blocked_v1 + profile lookup.
+   */
+  listBlockedUsers(): Promise<{ id: string; name: string }[]>;
+
+  /**
+   * Check if a block exists between current user and another user (either direction).
+   * Mock: checks in-memory set.
+   * Real: calls rpc_is_blocked_v1.
+   * @param userId - The other user's ID
+   */
+  isBlocked(userId: string): Promise<boolean>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // Barcode / Market Data
   // ─────────────────────────────────────────────────────────────────────────────
 

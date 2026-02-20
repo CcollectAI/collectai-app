@@ -21,7 +21,7 @@ def _get_db_pool():
         from app.db import get_pool
         return get_pool()
     except (ImportError, RuntimeError, OSError) as e:
-        logger.debug(f"DB pool not available: {e}")
+        logger.debug("DB pool not available: %s", e)
         return None
 
 
@@ -76,7 +76,7 @@ async def get_seller_reputation(user_id: str):
     """
     pool = _get_db_pool()
     if not pool:
-        logger.info(f"[trust/seller] No DB pool -- returning empty stub for user_id={user_id}")
+        logger.info("[trust/seller] No DB pool -- returning empty stub for user_id=%s", user_id)
         return _empty_seller(user_id)
 
     try:
@@ -121,7 +121,7 @@ async def get_seller_reputation(user_id: str):
             )
 
     except asyncpg.PostgresError as e:
-        logger.error(f"[trust/seller] DB error: {e}")
+        logger.error("[trust/seller] DB error: %s", e)
         return _empty_seller(user_id)
 
 
@@ -135,7 +135,7 @@ async def get_listing_trust_snapshot(listing_id: str):
     """
     pool = _get_db_pool()
     if not pool:
-        logger.info(f"[trust/listing] No DB pool -- returning empty stub for listing_id={listing_id}")
+        logger.info("[trust/listing] No DB pool -- returning empty stub for listing_id=%s", listing_id)
         return MarketplaceTrustSnapshot(
             seller=_empty_seller("unknown"),
             listing_flags=[],
@@ -229,7 +229,7 @@ async def get_listing_trust_snapshot(listing_id: str):
             return MarketplaceTrustSnapshot(seller=seller, listing_flags=flags)
 
     except asyncpg.PostgresError as e:
-        logger.error(f"[trust/listing] DB error: {e}")
+        logger.error("[trust/listing] DB error: %s", e)
         return MarketplaceTrustSnapshot(
             seller=_empty_seller("unknown"),
             listing_flags=[],

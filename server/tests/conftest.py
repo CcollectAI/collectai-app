@@ -10,6 +10,11 @@ _server_dir = str(Path(__file__).resolve().parent.parent)
 if _server_dir not in sys.path:
     sys.path.insert(0, _server_dir)
 
+# Also add project root so top-level modules like inference.py are importable
+_project_root = str(Path(__file__).resolve().parent.parent.parent)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 # Force mock DB mode, dev auth bypass, and disable rate limiting in tests
 os.environ.setdefault("DB_ENABLED", "false")
 os.environ.setdefault("DATABASE_URL", "mock://localhost")

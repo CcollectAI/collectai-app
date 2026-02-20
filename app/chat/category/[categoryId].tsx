@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,9 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getCategoryById } from '@/data/categories';
@@ -16,17 +18,11 @@ import {
   getMessagesForRoom,
   CategoryChatMessage,
 } from '@/data/chat';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import logger from '@/utils/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
-
-const BG = '#0f172a';
-const CARD = '#020617';
-const BORDER = '#1f2933';
-const TEXT = '#e5e7eb';
-const MUTED = '#9ca3af';
-const PRIMARY = '#0ea5e9';
 
 const AvatarSmall: React.FC<{ name: string; color: string }> = ({ name, color }) => {
   const initials =
@@ -38,23 +34,9 @@ const AvatarSmall: React.FC<{ name: string; color: string }> = ({ name, color })
       .toUpperCase() || '?';
   return (
     <View
-      style={{
-        width: 26,
-        height: 26,
-        borderRadius: 13,
-        backgroundColor: color,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 8,
-      }}
+      style={[styles.avatarSmall, { backgroundColor: color }]}
     >
-      <Text
-        style={{
-          fontSize: 11,
-          fontWeight: '700',
-          color: '#ffffff',
-        }}
-      >
+      <Text style={styles.avatarSmallText}>
         {initials}
       </Text>
     </View>
@@ -64,7 +46,9 @@ const AvatarSmall: React.FC<{ name: string; color: string }> = ({ name, color })
 const CategoryChatScreen: React.FC = () => {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
   const router = useRouter();
+  const { colors } = useAppTheme();
   const { settings } = useSettings();
+  const scrollRef = useRef<ScrollView>(null);
 
   const category = useMemo(
     () => (categoryId ? getCategoryById(categoryId) : undefined),
@@ -84,61 +68,36 @@ const CategoryChatScreen: React.FC = () => {
 
   if (!category || !room) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: BG,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: '600',
-            color: TEXT,
-            marginBottom: 8,
-          }}
-        >
-          Category chat not found
-        </Text>
-        <Text
-          style={{
-            fontSize: 13,
-            color: MUTED,
-            textAlign: 'center',
-          }}
-        >
-          This category doesn&apos;t have a chat room yet.
-        </Text>
-        <AnimatedPressable
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.back();
-          }}
-          style={{
-            marginTop: 16,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderRadius: 999,
-            borderWidth: 1,
-            borderColor: BORDER,
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="chatbubbles-outline" size={48} color={colors.muted} />
           <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '500',
-              color: TEXT,
-            }}
+            style={[styles.emptyTitle, { color: colors.text }]}
           >
-            Go back
+            Category chat not found
           </Text>
-        </AnimatedPressable>
-      </View>
+          <Text
+            style={[styles.emptySubtitle, { color: colors.muted }]}
+          >
+            This category doesn&apos;t have a chat room yet.
+          </Text>
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.back();
+            }}
+            style={[styles.emptyBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text
+              style={[styles.emptyBtnText, { color: colors.text }]}
+            >
+              Go back
+            </Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -158,235 +117,135 @@ const CategoryChatScreen: React.FC = () => {
     setMessages((prev) => [...prev, newMessage]);
     setDraft('');
     logger.info('[CategoryChat] send message', newMessage);
+
+    // Scroll to bottom after new message
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: BG }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={80}
-    >
-      <View style={{ flex: 1 }}>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            paddingTop: 48,
-            paddingBottom: 80,
-            paddingHorizontal: 16,
-          }}
-        >
-          {/* Header */}
-          <View
-            style={{
-              marginBottom: 12,
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.back();
             }}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <AnimatedPressable
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  router.back();
-                }}
-                style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: BORDER,
-                  marginRight: 8,
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Go back"
-              >
-                <Text
-                  style={{
-                    fontSize: 11,
-                    color: MUTED,
-                  }}
-                >
-                  Back
-                </Text>
-              </AnimatedPressable>
-              <View>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: '700',
-                    color: TEXT,
-                  }}
-                >
-                  {room.title}
-                </Text>
-                <Text
-                  style={{
-                    marginTop: 2,
-                    fontSize: 11,
-                    color: MUTED,
-                  }}
-                  numberOfLines={1}
-                >
-                  Category: {category.name}
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+              {room.title}
+            </Text>
+            <Text style={[styles.headerSubtitle, { color: colors.muted }]} numberOfLines={1}>
+              {category.name}
+            </Text>
+          </View>
+          <View style={{ width: 32 }} />
+        </View>
+
+        <View style={styles.flex1}>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.flex1}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* Room description */}
+            <View
+              style={[styles.descriptionCard, { borderColor: colors.border, backgroundColor: colors.card }]}
+            >
+              <Text style={[styles.descriptionText, { color: colors.muted }]}>
+                {room.description}
+              </Text>
+            </View>
+
+            {/* Messages */}
+            {messages.length === 0 ? (
+              <View style={styles.noMessagesContainer}>
+                <Ionicons name="chatbubble-outline" size={32} color={colors.muted} />
+                <Text style={[styles.noMessagesText, { color: colors.muted }]}>
+                  No messages yet. Start the conversation!
                 </Text>
               </View>
-            </View>
-          </View>
-
-          {/* Room description */}
-          <View
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: BORDER,
-              backgroundColor: CARD,
-              padding: 10,
-              marginBottom: 12,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                color: MUTED,
-              }}
-            >
-              {room.description}
-            </Text>
-          </View>
-
-          {/* Messages */}
-          {messages.length === 0 ? (
-            <Text
-              style={{
-                fontSize: 12,
-                color: MUTED,
-              }}
-            >
-              No messages yet. Start the conversation for this category.
-            </Text>
-          ) : (
-            messages.map((m) => {
-              const author = getUserById(m.authorUserId);
-              return (
-                <View
-                  key={m.id}
-                  style={{
-                    marginBottom: 10,
-                    flexDirection: 'row',
-                    alignItems: 'flex-start',
-                  }}
-                >
-                  {author && (
-                    <AnimatedPressable
-                      onPress={() => {
-                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                        router.push(`/users/${encodeURIComponent(author.id)}`);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`View ${author.displayName}'s profile`}
-                    >
-                      <AvatarSmall
-                        name={author.displayName}
-                        color={author.avatarColor}
-                      />
-                    </AnimatedPressable>
-                  )}
+            ) : (
+              messages.map((m) => {
+                const author = getUserById(m.authorUserId);
+                return (
                   <View
-                    style={{
-                      flex: 1,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: BORDER,
-                      backgroundColor: CARD,
-                      padding: 8,
-                    }}
+                    key={m.id}
+                    style={styles.messageRow}
                   >
+                    {author && (
+                      <AnimatedPressable
+                        onPress={() => {
+                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                          router.push(`/users/${encodeURIComponent(author.id)}`);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`View ${author.displayName}'s profile`}
+                      >
+                        <AvatarSmall
+                          name={author.displayName}
+                          color={author.avatarColor}
+                        />
+                      </AnimatedPressable>
+                    )}
                     <View
-                      style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        marginBottom: 2,
-                      }}
+                      style={[styles.messageBubble, { borderColor: colors.border, backgroundColor: colors.card }]}
                     >
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          fontWeight: '600',
-                          color: TEXT,
-                        }}
-                        numberOfLines={1}
-                      >
-                        {author ? author.displayName : 'Unknown collector'}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          color: MUTED,
-                          marginLeft: 8,
-                        }}
-                        numberOfLines={1}
-                      >
-                        {new Date(m.createdAt).toLocaleString('en-GB', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                      <View style={styles.messageHeader}>
+                        <Text
+                          style={[styles.messageAuthor, { color: colors.text }]}
+                          numberOfLines={1}
+                        >
+                          {author ? author.displayName : 'Unknown collector'}
+                        </Text>
+                        <Text
+                          style={[styles.messageTime, { color: colors.muted }]}
+                          numberOfLines={1}
+                        >
+                          {new Date(m.createdAt).toLocaleString('en-GB', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </Text>
+                      </View>
+                      <Text style={[styles.messageText, { color: colors.text }]}>
+                        {m.text}
                       </Text>
                     </View>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: TEXT,
-                      }}
-                    >
-                      {m.text}
-                    </Text>
                   </View>
-                </View>
-              );
-            })
-          )}
-        </ScrollView>
+                );
+              })
+            )}
+          </ScrollView>
 
-        {/* Input row */}
-        <View
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            borderTopWidth: 1,
-            borderTopColor: BORDER,
-            backgroundColor: BG,
-          }}
-        >
+          {/* Input row */}
           <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
+            style={[styles.composer, { borderTopColor: colors.border, backgroundColor: colors.background }]}
           >
             <TextInput
               value={draft}
               onChangeText={setDraft}
-              placeholder="Share a thought, tip, or question…"
-              placeholderTextColor={MUTED}
+              placeholder="Share a thought, tip, or question..."
+              placeholderTextColor={colors.muted}
               accessibilityLabel="Chat message"
-              style={{
-                flex: 1,
-                borderRadius: 999,
-                borderWidth: 1,
-                borderColor: BORDER,
-                backgroundColor: CARD,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                fontSize: 13,
-                color: TEXT,
-              }}
+              maxLength={500}
+              style={[
+                styles.composerInput,
+                { borderColor: colors.border, backgroundColor: colors.card, color: colors.text },
+              ]}
             />
             <AnimatedPressable
               onPress={() => {
@@ -394,16 +253,13 @@ const CategoryChatScreen: React.FC = () => {
                 handleSend();
               }}
               disabled={!draft.trim()}
-              style={{
-                marginLeft: 8,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 999,
-                backgroundColor: draft.trim() ? PRIMARY : BORDER,
-                opacity: draft.trim() ? 1 : 0.6,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
+              style={[
+                styles.sendBtn,
+                {
+                  backgroundColor: draft.trim() ? colors.accent : colors.border,
+                  opacity: draft.trim() ? 1 : 0.6,
+                },
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Send message"
             >
@@ -411,9 +267,156 @@ const CategoryChatScreen: React.FC = () => {
             </AnimatedPressable>
           </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+  flex1: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  backBtn: {
+    padding: 4,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    marginTop: 1,
+    fontSize: 11,
+  },
+  scrollContent: {
+    paddingTop: 12,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+  },
+  descriptionCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 12,
+  },
+  descriptionText: {
+    fontSize: 12,
+  },
+  noMessagesContainer: {
+    alignItems: 'center',
+    paddingTop: 40,
+    gap: 8,
+  },
+  noMessagesText: {
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  messageRow: {
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  messageBubble: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 8,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  messageAuthor: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  messageTime: {
+    fontSize: 10,
+    marginLeft: 8,
+  },
+  messageText: {
+    fontSize: 12,
+  },
+  avatarSmall: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  avatarSmallText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  emptyBtn: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  emptyBtnText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  composer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  composerInput: {
+    flex: 1,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+  },
+  sendBtn: {
+    marginLeft: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+});
 
 export default CategoryChatScreen;

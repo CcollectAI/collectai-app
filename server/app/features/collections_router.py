@@ -272,7 +272,7 @@ async def get_collection_detail(
         try:
             cid = _to_uuid_or_none(collection_id)
             if cid is None:
-                raise HTTPException(status_code=404, detail="Collection not found")
+                raise error_response(404, "Collection not found", code="NOT_FOUND")
 
             uid = _to_uuid_or_none(user_id)
 
@@ -287,7 +287,7 @@ async def get_collection_detail(
                     cid,
                 )
                 if not row:
-                    raise HTTPException(status_code=404, detail="Collection not found")
+                    raise error_response(404, "Collection not found", code="NOT_FOUND")
 
                 if uid is not None:
                     item_rows = await conn.fetch(
@@ -347,7 +347,7 @@ async def get_collection_detail(
     for c in _mem_collections:
         if c.get("id") == collection_id:
             return CollectionDetail(**c, items=[])
-    raise HTTPException(status_code=404, detail="Collection not found")
+    raise error_response(404, "Collection not found", code="NOT_FOUND")
 
 
 @router.get("/{collection_id}/progress", response_model=UserCollectionProgress)
@@ -362,11 +362,11 @@ async def get_collection_progress(
         try:
             cid = _to_uuid_or_none(collection_id)
             if cid is None:
-                raise HTTPException(status_code=404, detail="Collection not found")
+                raise error_response(404, "Collection not found", code="NOT_FOUND")
 
             uid = _to_uuid_or_none(user_id)
             if uid is None:
-                raise HTTPException(status_code=404, detail="Collection not found")
+                raise error_response(404, "Collection not found", code="NOT_FOUND")
 
             async with pool.acquire() as conn:
                 coll = await conn.fetchrow(
@@ -377,7 +377,7 @@ async def get_collection_progress(
                     cid,
                 )
                 if not coll:
-                    raise HTTPException(status_code=404, detail="Collection not found")
+                    raise error_response(404, "Collection not found", code="NOT_FOUND")
 
                 missing_rows = await conn.fetch(
                     """
@@ -426,7 +426,7 @@ async def get_collection_progress(
             logger.error("Failed to get collection progress: %s", exc)
             raise error_response(500, "Failed to get collection progress")
 
-    raise HTTPException(status_code=404, detail="Collection not found")
+    raise error_response(404, "Collection not found", code="NOT_FOUND")
 
 
 # ---------------------------------------------------------------------------

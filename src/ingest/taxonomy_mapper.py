@@ -85,6 +85,9 @@ CATEGORY_PATTERNS = {
         r'warhammer|40k|40,?000|age\s*of\s*sigmar|aos',
         r'space\s*marine|primarch|forge\s*world|games\s*workshop',
         r'kill\s*team|necromunda|blood\s*bowl',
+        r'black\s*library|horus\s*heresy|codex\s*\w+|battletome',
+        r'gaunt.?s\s*ghosts|eisenhorn|ciaphas\s*cain|ravenor',
+        r'imperial\s*armou?r|liber\s*chaotica',
     ],
 
     # --- Gaming ---
@@ -94,12 +97,29 @@ CATEGORY_PATTERNS = {
         r'retro\s*game|retro\s*console|cartridge',
         r'ps1\b|playstation\s*1|psp\b',
     ],
+    'retro_handhelds': [
+        r'game\s*boy\s*(color|advance|sp|micro|pocket)',
+        r'\bds\s*lite\b|nintendo\s*ds|3ds\b|new\s*3ds',
+        r'\bpsp\b|ps\s*vita|playstation\s*portable',
+        r'game\s*&?\s*watch|tamagotchi|neo\s*geo\s*pocket',
+        r'atari\s*lynx|sega\s*game\s*gear|wonderswan',
+        r'retro\s*handheld|portable\s*console|modded.*handheld',
+    ],
 
     # --- Media ---
     'manga': [
         r'\bmanga\b|manga\s*vol|out\s*of\s*print.*manga',
         r'viz\s*media|kodansha|dark\s*horse.*manga|tokyopop',
         r'tankoubon|tankobon',
+    ],
+    'comic_books': [
+        r'\bcomic\s*book\b|graphic\s*novel|comic\s*issue',
+        r'\bcgc\b.*\d|cbcs\s*\d|graded\s*comic',
+        r'marvel\s*comics|dc\s*comics|image\s*comics|dark\s*horse\s*comics',
+        r'omnibus.*comic|absolute\s*edition|variant\s*cover',
+        r'key\s*issue|first\s*appearance|first\s*print.*comic',
+        r'\bspawn\b.*#|\bsaga\b.*#|walking\s*dead.*#',
+        r'spider-?man.*#|batman.*#|superman.*#|x-?men.*#',
     ],
     'bluray_steelbook': [
         r'steelbook|4k\s*uhd|criterion|arrow\s*video',
@@ -122,8 +142,13 @@ CATEGORY_PATTERNS = {
     # --- Music / Fandom ---
     'kpop_merch': [
         r'bts\b|blackpink|stray\s*kids|twice|ateez|enhypen',
+        r'seventeen\b|nct\b|aespa|le\s*sserafim|ive\b|itzy\b',
+        r'red\s*velvet|got7|txt\b|tomorrow\s*x\s*together',
+        r'g\W?i-?dle|nmixx|dreamcatcher|mamamoo|shinee|bigbang',
+        r'super\s*junior|2ne1|exo\b|newjeans|gi-?dle',
         r'k-?pop.*photocard|k-?pop.*album|fansign|weverse',
-        r'hybe|sm\s*entertainment|jyp|yg\s*entertainment',
+        r'hybe|sm\s*entertainment|jyp|yg\s*entertainment|starship',
+        r'ktown4u|yes24.*kpop|aladin.*kpop|cokodive',
     ],
     'taylor_swift': [
         r'taylor\s*swift|swiftie|eras\s*tour',
@@ -200,6 +225,35 @@ CATEGORY_PATTERNS = {
     ],
     'loungefly': [
         r'loungefly|loungefly.*backpack|loungefly.*wallet',
+    ],
+
+    # --- Lifestyle ---
+    'vinyl_records': [
+        r'\bvinyl\b|vinyl\s*record|\blp\b.*record|vinyl\s*press',
+        r'discogs|vinyl\s*me\s*please|vmp\b|mondo\s*vinyl',
+        r'colored\s*vinyl|splatter\s*vinyl|picture\s*disc|limited\s*press',
+        r'first\s*press|1st\s*press|original\s*press|audiophile',
+        r'gatefold|180\s*g|half.?speed\s*master',
+    ],
+    'sneakers': [
+        r'\bjordan\s*\d|air\s*jordan|retro\s*jordan',
+        r'\bnike\s*dunk|nike\s*sb|air\s*max|air\s*force\s*1',
+        r'\byeezy\b|adidas\s*yeezy|yeezy\s*(boost|slide|foam)',
+        r'new\s*balance\s*\d{3,4}|nb\s*\d{3,4}',
+        r'deadstock|vnds\b|\bds\b.*sneaker|stockx|goat\.com',
+        r'travis\s*scott.*shoe|off.?white.*nike|fragment.*jordan',
+        r'sneaker\s*collect|sneakerhead|grail.*shoe|hyped\s*sneaker',
+    ],
+    'watches': [
+        r'\brolex\b|submariner|daytona|datejust|gmt.?master',
+        r'\bomega\b|speedmaster|seamaster|moonwatch',
+        r'\bseiko\b|skx\d{3}|presage|grand\s*seiko',
+        r'\btudor\b|black\s*bay|pelagos',
+        r'\bpatek\b|patek\s*philippe|nautilus|calatrava',
+        r'audemars\s*piguet|royal\s*oak',
+        r'\bcasio\b|g.?shock|ga-?\d{3,4}|dw-?\d{4}',
+        r'chrono24|hodinkee|watch\s*collect|horology',
+        r'automatic\s*watch|chronograph|diver.?s?\s*watch',
     ],
 
     # --- Legacy ---

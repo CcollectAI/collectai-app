@@ -1402,6 +1402,62 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // User Blocking
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async blockUser(userId: string): Promise<void> {
+    const { error } = await supabase.rpc('rpc_block_user_v1', {
+      p_target_id: userId,
+    });
+    if (error) {
+      logger.error('[SupabaseDataProvider] blockUser error:', error);
+      throw new Error(error.message || 'Failed to block user');
+    }
+  }
+
+  async unblockUser(userId: string): Promise<void> {
+    const { error } = await supabase.rpc('rpc_unblock_user_v1', {
+      p_target_id: userId,
+    });
+    if (error) {
+      logger.error('[SupabaseDataProvider] unblockUser error:', error);
+      throw new Error(error.message || 'Failed to unblock user');
+    }
+  }
+
+  async listBlockedUsers(): Promise<{ id: string; name: string }[]> {
+    const { data, error } = await supabase.rpc('rpc_list_blocked_v1');
+    if (error) {
+      logger.warn('[SupabaseDataProvider] listBlockedUsers error:', error);
+      return [];
+    }
+
+    const rows = (data ?? []) as { blocked_id: string }[];
+    const results: { id: string; name: string }[] = [];
+
+    for (const row of rows) {
+      const profile = await this.getPublicUserProfile(row.blocked_id);
+      results.push({
+        id: row.blocked_id,
+        name: profile?.displayName ?? 'Unknown',
+      });
+    }
+
+    return results;
+  }
+
+  async isBlocked(userId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('rpc_is_blocked_v1', {
+      p_other_id: userId,
+    });
+    if (error) {
+      logger.warn('[SupabaseDataProvider] isBlocked error:', error);
+      return false;
+    }
+    return data === true;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // Barcode / Market Data
   // ─────────────────────────────────────────────────────────────────────────────
 

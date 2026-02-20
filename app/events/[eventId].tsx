@@ -23,6 +23,8 @@ import { getUserById } from '@/data/users';
 import { PublicUserProfileCard } from '@/components/PublicUserProfileCard';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
 
 const kindLabel: Record<EventKind, string> = {
@@ -64,6 +66,7 @@ export default function EventDetailScreen() {
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
 
   const [event, setEvent] = useState<CollectorsEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -199,6 +202,17 @@ export default function EventDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Back button */}
+        <AnimatedPressable
+          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Text style={[styles.backBtnText, { color: colors.text }]}>Back</Text>
+        </AnimatedPressable>
+
         {/* Event Kind Badge */}
         <View style={[styles.kindBadge, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
           <Ionicons
@@ -280,6 +294,7 @@ export default function EventDetailScreen() {
           {isDrop && (
             <AnimatedPressable
               onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 setAlertsOn(!alertsOn);
                 logger.info('[EventDetail] toggle drop alerts', event.id, !alertsOn);
               }}
@@ -308,6 +323,7 @@ export default function EventDetailScreen() {
           {isStream && (
             <AnimatedPressable
               onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 setFollowingStream(!followingStream);
                 logger.info('[EventDetail] toggle stream follow', event.id, !followingStream);
               }}
@@ -334,7 +350,7 @@ export default function EventDetailScreen() {
           )}
 
           <AnimatedPressable
-            onPress={handleRsvp}
+            onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled }); handleRsvp(); }}
             style={[
               styles.actionBtn,
               {
@@ -511,6 +527,17 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  backBtnText: {
+    fontSize: 15,
+    fontWeight: '500',
+    marginLeft: 2,
   },
   scrollContent: {
     paddingHorizontal: 20,

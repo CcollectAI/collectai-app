@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Animated,
   ActionSheetIOS,
+  RefreshControl,
 } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
@@ -256,6 +257,7 @@ export default function ItemDetailScreen() {
 
   // AI Intelligence refresh state
   const [aiRefreshing, setAiRefreshing] = useState(false);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
 
   // (Price Alert section removed)
 
@@ -648,6 +650,13 @@ export default function ItemDetailScreen() {
     }
   };
 
+  const handlePullRefresh = async () => {
+    if (isDraft || !id) return;
+    setPullRefreshing(true);
+    await refreshAllIntelligence();
+    setPullRefreshing(false);
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -664,6 +673,16 @@ export default function ItemDetailScreen() {
             { paddingBottom: keyboardVisible ? keyboardHeight + 40 : 100 },
           ]}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            !isDraft ? (
+              <RefreshControl
+                refreshing={pullRefreshing}
+                onRefresh={handlePullRefresh}
+                tintColor={theme.accent}
+                colors={[theme.accent]}
+              />
+            ) : undefined
+          }
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
             {
@@ -901,6 +920,7 @@ export default function ItemDetailScreen() {
             {/* Item Attributes Section — from attributes_json */}
             <ItemAttributesSection
               attributes={itemAttributes}
+              category={editableCategory}
               taxonomyVersion={taxonomyVersion}
               subtypeId={subtypeId}
               collections={itemCollections}

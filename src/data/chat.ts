@@ -1,69 +1,95 @@
-import type { CategoryId } from './categories';
-import type { UserId } from './users';
+/**
+ * Category Chat — mock room data for category-level chat rooms.
+ * Used by app/chat/category/[categoryId].tsx.
+ */
+
+export type CategoryChatMessage = {
+  id: string;
+  roomId: string;
+  authorUserId: string;
+  text: string;
+  createdAt: string;
+};
 
 export type CategoryChatRoom = {
-  id: string;          // same as categoryId for now
-  categoryId: CategoryId;
+  id: string;
+  categoryId: string;
   title: string;
   description: string;
 };
 
-export type CategoryChatMessage = {
-  id: string;
-  roomId: string;      // categoryId
-  authorUserId: UserId;
-  text: string;
-  createdAt: string;   // ISO
-};
-
-export const CATEGORY_CHAT_ROOMS: CategoryChatRoom[] = [
+// Mock rooms keyed by categoryId
+const ROOMS: CategoryChatRoom[] = [
   {
-    id: 'pokemon',
+    id: 'room-pokemon',
     categoryId: 'pokemon',
-    title: 'Pokémon collectors chat',
-    description:
-      'Talk about modern & vintage Pokémon, grails, grading, and upcoming drops.',
+    title: 'Pokemon Collectors',
+    description: 'Discuss pulls, trades, and grading tips for Pokemon TCG.',
   },
   {
-    id: 'warhammer',
+    id: 'room-mtg',
+    categoryId: 'mtg',
+    title: 'Magic: The Gathering',
+    description: 'Deck building, card values, and set releases.',
+  },
+  {
+    id: 'room-kpop',
+    categoryId: 'kpop_merch',
+    title: 'K-pop Collectors',
+    description: 'Photocards, albums, lightsticks, and group buys.',
+  },
+  {
+    id: 'room-warhammer',
     categoryId: 'warhammer',
-    title: 'Warhammer minis & painting',
-    description:
-      'Share paint schemes, build logs, and discuss how hobby time affects collection value.',
+    title: 'Warhammer Enthusiasts',
+    description: 'Minis, paints, books, and army lists.',
+  },
+  {
+    id: 'room-lego',
+    categoryId: 'lego',
+    title: 'LEGO Builders',
+    description: 'Sets, MOCs, retired sets, and investment tips.',
+  },
+  {
+    id: 'room-funko',
+    categoryId: 'funko',
+    title: 'Funko Pop Collectors',
+    description: 'Chases, exclusives, vaulted pops, and collection showcases.',
   },
 ];
 
-export const CATEGORY_CHAT_MESSAGES: CategoryChatMessage[] = [
+// Mock messages
+const MESSAGES: CategoryChatMessage[] = [
   {
     id: 'msg-1',
-    roomId: 'pokemon',
+    roomId: 'room-pokemon',
     authorUserId: 'collector-aurora',
-    text: 'Anyone tracking the next wave of modern alt arts? Curious how they might affect Moonbreon prices.',
-    createdAt: '2025-12-10T20:00:00Z',
+    text: 'Just pulled a Charizard VMAX from a random pack! 🔥',
+    createdAt: '2025-12-15T10:30:00Z',
   },
   {
     id: 'msg-2',
-    roomId: 'pokemon',
-    authorUserId: 'collector-rune',
-    text: 'Watching prices closely, but I think high-end slabs will hold as long as print runs stay sane.',
-    createdAt: '2025-12-10T20:10:00Z',
+    roomId: 'room-pokemon',
+    authorUserId: 'collector-kai',
+    text: 'Nice pull! Are you going to get it graded?',
+    createdAt: '2025-12-15T10:45:00Z',
   },
   {
     id: 'msg-3',
-    roomId: 'warhammer',
-    authorUserId: 'collector-mini',
-    text: 'What is everyone using to track the value of fully painted squads? Feels weird to price hours of work.',
-    createdAt: '2025-12-09T18:30:00Z',
+    roomId: 'room-kpop',
+    authorUserId: 'collector-miko',
+    text: 'Anyone doing a group order for the new SEVENTEEN album?',
+    createdAt: '2025-12-14T16:00:00Z',
   },
 ];
 
-export function getCategoryRoomById(categoryId: CategoryId | undefined | null) {
+export function getCategoryRoomById(categoryId: string | null): CategoryChatRoom | undefined {
   if (!categoryId) return undefined;
-  return CATEGORY_CHAT_ROOMS.find((r) => r.categoryId === categoryId);
+  return ROOMS.find((r) => r.categoryId === categoryId);
 }
 
 export function getMessagesForRoom(roomId: string): CategoryChatMessage[] {
-  return CATEGORY_CHAT_MESSAGES.filter((m) => m.roomId === roomId).sort((a, b) =>
-    a.createdAt.localeCompare(b.createdAt),
+  return MESSAGES.filter((m) => m.roomId === roomId).sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 }

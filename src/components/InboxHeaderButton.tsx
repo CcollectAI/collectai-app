@@ -12,18 +12,21 @@ import { dataProvider } from '@/data';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type Props = {
-  /** Icon color, defaults to navy */
+  /** Icon color — falls back to theme text color */
   color?: string;
   /** Icon size, defaults to 24 */
   size?: number;
 };
 
 export const InboxHeaderButton: React.FC<Props> = ({
-  color = '#0B1F3A',
+  color,
   size = 24,
 }) => {
+  const { colors } = useAppTheme();
+  const iconColor = color ?? colors.text;
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState<number>(0);
 
@@ -62,7 +65,7 @@ export const InboxHeaderButton: React.FC<Props> = ({
       accessibilityRole="button"
       accessibilityLabel={`Inbox${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
     >
-      <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
+      <Ionicons name="chatbubble-ellipses-outline" size={size} color={iconColor} />
       {unreadCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>

@@ -75,6 +75,7 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         "hot_toys":         ["sideshow.com", "ebay.de", "zavvi.com"],
         # Media
         "manga":            ["mangacollectors.com", "ebay.de", "bookdepository.com"],
+        "comic_books":      ["ebay.de", "comicbookrealm.com", "amazon.de"],
         "bluray_steelbook": ["blu-ray.com", "ebay.de", "zavvi.com"],
         "anime_bluray":     ["blu-ray.com", "ebay.de", "zavvi.com"],
         # Gaming
@@ -104,6 +105,10 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         "kpop_lightsticks": ["ebay.de", "ktown4u.com", "cokodive.com"],
         "anime_soundtrack": ["vgmdb.net", "ebay.de", "discogs.com"],
         "anime_ost_vinyl":  ["discogs.com", "ebay.de", "amazon.de"],
+        # Lifestyle
+        "vinyl_records":    ["discogs.com", "ebay.de", "jpc.de"],
+        "sneakers":         ["stockx.com", "ebay.de", "vinted.de", "klekt.com"],
+        "watches":          ["chrono24.de", "ebay.de", "watchfinder.de"],
     },
     "japan": {
         # TCG — Mercari JP / Yahoo Auctions
@@ -122,6 +127,7 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         "scale_models":     ["hlj.com", "suruga-ya.jp", "mercari.com/jp"],
         # Media
         "manga":            ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
+        "comic_books":      ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
         "anime_bluray":     ["mandarake.co.jp", "suruga-ya.jp", "mercari.com/jp"],
         "bluray_steelbook": ["suruga-ya.jp", "mercari.com/jp", "mandarake.co.jp"],
         "anime_soundtrack": ["suruga-ya.jp", "mandarake.co.jp", "mercari.com/jp"],
@@ -153,6 +159,10 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         # Disney
         "disney":           ["mercari.com/jp", "mandarake.co.jp", "yahoo.co.jp/auctions"],
         "theme_park":       ["mercari.com/jp", "yahoo.co.jp/auctions", "mandarake.co.jp"],
+        # Lifestyle
+        "vinyl_records":    ["discogs.com", "mercari.com/jp", "suruga-ya.jp"],
+        "sneakers":         ["mercari.com/jp", "yahoo.co.jp/auctions", "snkrdunk.com"],
+        "watches":          ["mercari.com/jp", "yahoo.co.jp/auctions", "jackroad.co.jp"],
         # Legacy
         "diecast":          ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
         "sportscards":      ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
@@ -179,6 +189,7 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         "scale_models":     ["scalemates.com", "yes24.com", "bunjang.co.kr"],
         # Media
         "manga":            ["yes24.com", "aladin.co.kr", "bunjang.co.kr"],
+        "comic_books":      ["yes24.com", "aladin.co.kr", "bunjang.co.kr"],
         "anime_bluray":     ["yes24.com", "cdjapan.co.jp", "aladin.co.kr"],
         "bluray_steelbook": ["yes24.com", "ebay.com", "aladin.co.kr"],
         "anime_soundtrack": ["yes24.com", "vgmdb.net", "aladin.co.kr"],
@@ -207,6 +218,10 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         "diecast":          ["yes24.com", "ebay.com", "bunjang.co.kr"],
         "sportscards":      ["yes24.com", "ebay.com", "bunjang.co.kr"],
         "taylor_swift":     ["yes24.com", "ebay.com", "bunjang.co.kr"],
+        # Lifestyle
+        "vinyl_records":    ["discogs.com", "yes24.com", "bunjang.co.kr"],
+        "sneakers":         ["stockx.com", "kream.co.kr", "bunjang.co.kr"],
+        "watches":          ["chrono24.com", "ebay.com", "bunjang.co.kr"],
     },
     # "americas" intentionally omitted — falls through to global defaults
     # in firecrawl_caller.py CATEGORY_SITE_TARGETS.

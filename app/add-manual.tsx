@@ -13,6 +13,7 @@ import {
   Modal,
   FlatList,
   TouchableOpacity,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -24,25 +25,16 @@ import { useSettings } from "@/lib/settings";
 import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
+import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
 
 type SaveState = "idle" | "saving" | "success" | "error";
 
-import { CATEGORIES as ALL_CATS } from '@/constants/categories';
-
-const ICON_MAP: Record<string, string> = {
-  pokemon: 'flash-outline', mtg: 'sparkles-outline', yugioh: 'layers-outline',
-  lorcana: 'star-outline', funko: 'cube-outline', lego: 'grid-outline',
-  warhammer: 'skull-outline', gunpla: 'rocket-outline', retro_games: 'game-controller-outline',
-  manga: 'book-outline', sportscards: 'football-outline', designer_toys: 'color-palette-outline',
-  anime_figures: 'person-outline', hot_toys: 'flame-outline', diecast: 'car-outline',
-  kpop_merch: 'musical-notes-outline', taylor_swift: 'musical-note-outline',
-  disney: 'heart-outline', keycaps: 'keypad-outline', one_piece: 'boat-outline',
-};
+import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
+import { getCategoryFields, type CategoryField } from '@/constants/categoryFields';
 
 const CATEGORY_OPTIONS = ALL_CATS.map((c) => ({
   label: c.name,
   slug: c.slug,
-  icon: ICON_MAP[c.slug] ?? 'pricetag-outline',
 }));
 
 // Common condition grades for quick selection
@@ -71,11 +63,21 @@ const ManualAddScreen: React.FC = () => {
   const [source, setSource] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Category-specific attribute values (keyed by attribute key)
+  const [categoryAttrs, setCategoryAttrs] = useState<Record<string, string | boolean>>({});
+
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
 
+  // Catalog suggestion modal state
+  const [catalogModalVisible, setCatalogModalVisible] = useState(false);
+
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
+
+  // Resolve current category slug + specific fields
+  const categorySlug = useMemo(() => CATEGORY_NAME_TO_SLUG[category] ?? '', [category]);
+  const categoryFields = useMemo(() => getCategoryFields(categorySlug), [categorySlug]);
 
   const canSubmit = nameField.value.trim().length > 0 && saveState !== "saving" && !nameField.error && !purchasePriceField.error && !estimatedValueField.error;
 
@@ -85,10 +87,9 @@ const ManualAddScreen: React.FC = () => {
     return CATEGORY_OPTIONS.filter((c) => c.label.toLowerCase().includes(q));
   }, [categorySearch]);
 
-  const selectedCategoryIcon = useMemo(() => {
-    const match = CATEGORY_OPTIONS.find((c) => c.label === category);
-    return match?.icon ?? 'pricetag-outline';
-  }, [category]);
+  // Condition dropdown state
+  const [conditionPickerOpen, setConditionPickerOpen] = useState(false);
+  const [customCondition, setCustomCondition] = useState('');
 
   const handleSubmit = async () => {
     if (!validateAll(nameField, purchasePriceField, estimatedValueField)) return;
@@ -109,10 +110,16 @@ const ManualAddScreen: React.FC = () => {
       const purchase = purchasePriceField.value ? Number(purchasePriceField.value) : null;
       const estimated = estimatedValueField.value ? Number(estimatedValueField.value) : null;
 
+      // Build attributes_json from category-specific fields
+      const attrs: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(categoryAttrs)) {
+        if (v !== '' && v !== false && v !== undefined) attrs[k] = v;
+      }
+
       const { error } = await supabase.from("portfolio_items").insert([
         {
           name: nameField.value.trim(),
-          category: category.trim() || null,
+          category: categorySlug || category.trim() || null,
           game_or_series: gameOrSeries.trim() || null,
           condition_grade: conditionGrade.trim() || null,
           purchase_price: Number.isNaN(purchase as number) ? null : purchase,
@@ -120,6 +127,7 @@ const ManualAddScreen: React.FC = () => {
           currency: "EUR",
           source: source.trim() || null,
           notes: notes.trim() || null,
+          attributes_json: Object.keys(attrs).length > 0 ? attrs : null,
         },
       ]);
 
@@ -133,6 +141,7 @@ const ManualAddScreen: React.FC = () => {
       setSaveState("success");
       nameField.reset();
       setCategory("");
+      setCategoryAttrs({});
       setGameOrSeries("");
       setConditionGrade("");
       purchasePriceField.reset();
@@ -275,17 +284,11 @@ const ManualAddScreen: React.FC = () => {
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>Category</Text>
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setCategoryPickerOpen(true); setCategorySearch(""); }}
+                    onPress={() => { Keyboard.dismiss(); fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setCategoryPickerOpen(true); setCategorySearch(""); }}
                     style={[styles.dropdownTrigger, { borderColor: category ? colors.accent : colors.border, backgroundColor: colors.background }]}
                     accessibilityRole="button"
                     accessibilityLabel={category ? `Category: ${category}` : "Select a category"}
                   >
-                    <Ionicons
-                      name={(category ? selectedCategoryIcon : 'pricetag-outline') as keyof typeof Ionicons.glyphMap}
-                      size={16}
-                      color={category ? colors.accent : colors.muted}
-                      style={styles.inputIcon}
-                    />
                     <Text style={[styles.dropdownText, { color: category ? colors.text : colors.muted }]} numberOfLines={1}>
                       {category || "Select a category"}
                     </Text>
@@ -331,6 +334,7 @@ const ManualAddScreen: React.FC = () => {
                               onPress={() => {
                                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
                                 setCategory("");
+                                setCategoryAttrs({});
                                 setCategoryPickerOpen(false);
                               }}
                               style={[styles.modalRow, { borderBottomColor: colors.border }]}
@@ -347,6 +351,7 @@ const ManualAddScreen: React.FC = () => {
                               activeOpacity={0.6}
                               onPress={() => {
                                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                                if (item.label !== category) setCategoryAttrs({});
                                 setCategory(item.label);
                                 setCategoryPickerOpen(false);
                               }}
@@ -356,12 +361,6 @@ const ManualAddScreen: React.FC = () => {
                                 isSelected && { backgroundColor: colors.accent + '12' },
                               ]}
                             >
-                              <Ionicons
-                                name={item.icon as keyof typeof Ionicons.glyphMap}
-                                size={18}
-                                color={isSelected ? colors.accent : colors.muted}
-                                style={{ marginRight: 12 }}
-                              />
                               <Text style={[styles.modalRowText, { color: isSelected ? colors.accent : colors.text }]}>
                                 {item.label}
                               </Text>
@@ -375,6 +374,22 @@ const ManualAddScreen: React.FC = () => {
                           <View style={styles.modalEmpty}>
                             <Text style={[styles.modalEmptyText, { color: colors.muted }]}>No categories match "{categorySearch}"</Text>
                           </View>
+                        }
+                        ListFooterComponent={
+                          <TouchableOpacity
+                            activeOpacity={0.6}
+                            onPress={() => {
+                              fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                              setCategoryPickerOpen(false);
+                              setCatalogModalVisible(true);
+                            }}
+                            style={[styles.modalRow, { borderBottomColor: colors.border }]}
+                          >
+                            <Ionicons name="add-circle-outline" size={18} color={colors.accent} style={{ marginRight: 12 }} />
+                            <Text style={[styles.modalRowText, { color: colors.accent, fontWeight: '600' }]}>
+                              Suggest a new category
+                            </Text>
+                          </TouchableOpacity>
                         }
                       />
                     </View>
@@ -399,6 +414,117 @@ const ManualAddScreen: React.FC = () => {
               </View>
             </View>
 
+            {/* Category-Specific Details (dynamic based on selected category) */}
+            {categoryFields.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons name="options-outline" size={16} color={colors.accent} />
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                    {category} Details
+                  </Text>
+                </View>
+
+                <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  {categoryFields.map((field: CategoryField) => {
+                    const val = categoryAttrs[field.key];
+
+                    // Boolean toggle field
+                    if (field.type === 'boolean') {
+                      return (
+                        <TouchableOpacity
+                          key={field.key}
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                            setCategoryAttrs((prev) => ({ ...prev, [field.key]: !prev[field.key] }));
+                          }}
+                          style={[styles.booleanRow, { borderBottomColor: colors.border }]}
+                          accessibilityRole="switch"
+                          accessibilityLabel={field.label}
+                          accessibilityState={{ checked: !!val }}
+                        >
+                          <View style={styles.booleanLeft}>
+                            <Ionicons
+                              name={(field.icon ?? 'checkbox-outline') as keyof typeof Ionicons.glyphMap}
+                              size={16}
+                              color={val ? colors.accent : colors.muted}
+                              style={{ marginRight: 8 }}
+                            />
+                            <Text style={[styles.fieldLabel, { color: colors.text, marginBottom: 0 }]}>{field.label}</Text>
+                          </View>
+                          <View style={[styles.toggleTrack, val ? { backgroundColor: colors.accent } : { backgroundColor: colors.border }]}>
+                            <View style={[styles.toggleThumb, val ? styles.toggleThumbOn : undefined]} />
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    }
+
+                    // Select field (chips for few options, dropdown for many)
+                    if (field.type === 'select' && field.options) {
+                      return (
+                        <View key={field.key} style={styles.fieldBlock}>
+                          <Text style={[styles.fieldLabel, { color: colors.text }]}>{field.label}</Text>
+                          <View style={styles.chipRow}>
+                            {field.options.map((opt) => {
+                              const isSelected = val === opt;
+                              return (
+                                <AnimatedPressable
+                                  key={opt}
+                                  style={[
+                                    styles.selectChip,
+                                    {
+                                      backgroundColor: isSelected ? colors.accent + '20' : colors.background,
+                                      borderColor: isSelected ? colors.accent : colors.border,
+                                    },
+                                  ]}
+                                  onPress={() => {
+                                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                                    setCategoryAttrs((prev) => ({
+                                      ...prev,
+                                      [field.key]: prev[field.key] === opt ? '' : opt,
+                                    }));
+                                  }}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`${field.label}: ${opt}${isSelected ? ', selected' : ''}`}
+                                >
+                                  <Text style={[styles.selectChipText, { color: isSelected ? colors.accent : colors.text }]}>
+                                    {opt}
+                                  </Text>
+                                </AnimatedPressable>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      );
+                    }
+
+                    // Default: text input
+                    return (
+                      <View key={field.key} style={styles.fieldBlock}>
+                        <Text style={[styles.fieldLabel, { color: colors.text }]}>{field.label}</Text>
+                        <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                          <Ionicons
+                            name={(field.icon ?? 'text-outline') as keyof typeof Ionicons.glyphMap}
+                            size={16}
+                            color={colors.muted}
+                            style={styles.inputIcon}
+                          />
+                          <TextInput
+                            value={typeof val === 'string' ? val : ''}
+                            onChangeText={(text) => setCategoryAttrs((prev) => ({ ...prev, [field.key]: text }))}
+                            placeholder={field.placeholder ?? ''}
+                            placeholderTextColor={colors.muted}
+                            style={[styles.input, { color: colors.text }]}
+                            accessibilityLabel={field.label}
+                          />
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
             {/* Section: Condition & Value */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -407,51 +533,108 @@ const ManualAddScreen: React.FC = () => {
               </View>
 
               <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {/* Condition */}
+                {/* Condition Dropdown */}
                 <View style={styles.fieldBlock}>
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>Condition / Grade</Text>
-                  <View style={styles.chipRow}>
-                    {CONDITION_CHIPS.map((chip) => {
-                      const isSelected = conditionGrade === chip.label;
-                      return (
-                        <AnimatedPressable
-                          key={chip.label}
-                          style={[
-                            styles.conditionChip,
-                            {
-                              backgroundColor: isSelected ? colors.accent + '20' : colors.background,
-                              borderColor: isSelected ? colors.accent : colors.border,
-                            },
-                          ]}
-                          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setConditionGrade(chip.label); }}
-                          accessibilityRole="button"
-                          accessibilityLabel={`${chip.label} condition${isSelected ? ', selected' : ''}`}
-                        >
-                          <Text
-                            style={[
-                              styles.conditionChipText,
-                              { color: isSelected ? colors.accent : colors.text },
-                            ]}
-                          >
-                            {chip.short}
-                          </Text>
-                        </AnimatedPressable>
-                      );
-                    })}
-                  </View>
-                  {conditionGrade && !CONDITION_CHIPS.find(c => c.label === conditionGrade) && (
-                    <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background, marginTop: 8 }]}>
-                      <Ionicons name="ribbon-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                      <TextInput
-                        value={conditionGrade}
-                        onChangeText={setConditionGrade}
-                        placeholder="Custom condition"
-                        placeholderTextColor={colors.muted}
-                        style={[styles.input, { color: colors.text }]}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => { Keyboard.dismiss(); fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setConditionPickerOpen(true); }}
+                    style={[styles.dropdownTrigger, { borderColor: conditionGrade ? colors.accent : colors.border, backgroundColor: colors.background }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={conditionGrade ? `Condition: ${conditionGrade}` : "Select condition"}
+                  >
+                    <Text style={[styles.dropdownText, { color: conditionGrade ? colors.text : colors.muted }]} numberOfLines={1}>
+                      {conditionGrade || "Select condition"}
+                    </Text>
+                    <Ionicons name="chevron-down" size={16} color={colors.muted} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Condition Picker Modal */}
+                <Modal visible={conditionPickerOpen} animationType="slide" transparent onRequestClose={() => setConditionPickerOpen(false)}>
+                  <View style={styles.modalOverlay}>
+                    <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
+                      <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>Select Condition</Text>
+                        <TouchableOpacity onPress={() => setConditionPickerOpen(false)} hitSlop={12}>
+                          <Ionicons name="close" size={22} color={colors.muted} />
+                        </TouchableOpacity>
+                      </View>
+                      <FlatList
+                        data={CONDITION_CHIPS}
+                        keyExtractor={(item) => item.label}
+                        keyboardShouldPersistTaps="handled"
+                        style={styles.modalList}
+                        ListHeaderComponent={
+                          conditionGrade && !CONDITION_CHIPS.find(c => c.label === conditionGrade) ? null : (
+                            conditionGrade ? (
+                              <TouchableOpacity
+                                activeOpacity={0.6}
+                                onPress={() => {
+                                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                                  setConditionGrade("");
+                                  setConditionPickerOpen(false);
+                                }}
+                                style={[styles.modalRow, { borderBottomColor: colors.border }]}
+                              >
+                                <Text style={[styles.modalRowText, { color: colors.muted, fontStyle: 'italic' }]}>None (clear selection)</Text>
+                              </TouchableOpacity>
+                            ) : null
+                          )
+                        }
+                        renderItem={({ item }) => {
+                          const isSelected = conditionGrade === item.label;
+                          return (
+                            <TouchableOpacity
+                              activeOpacity={0.6}
+                              onPress={() => {
+                                fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                                setConditionGrade(item.label);
+                                setCustomCondition('');
+                                setConditionPickerOpen(false);
+                              }}
+                              style={[
+                                styles.modalRow,
+                                { borderBottomColor: colors.border },
+                                isSelected && { backgroundColor: colors.accent + '12' },
+                              ]}
+                            >
+                              <Text style={[styles.modalRowText, { color: isSelected ? colors.accent : colors.text }]}>
+                                {item.label}
+                              </Text>
+                              {isSelected && (
+                                <Ionicons name="checkmark" size={18} color={colors.accent} />
+                              )}
+                            </TouchableOpacity>
+                          );
+                        }}
+                        ListFooterComponent={
+                          <View style={{ paddingHorizontal: 20, paddingVertical: 14 }}>
+                            <Text style={[styles.fieldLabel, { color: colors.muted }]}>Custom</Text>
+                            <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                              <TextInput
+                                value={customCondition}
+                                onChangeText={setCustomCondition}
+                                placeholder="Enter custom condition..."
+                                placeholderTextColor={colors.muted}
+                                style={[styles.input, { color: colors.text }]}
+                                returnKeyType="done"
+                                onSubmitEditing={() => {
+                                  if (customCondition.trim()) {
+                                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                                    setConditionGrade(customCondition.trim());
+                                    setCustomCondition('');
+                                    setConditionPickerOpen(false);
+                                  }
+                                }}
+                              />
+                            </View>
+                          </View>
+                        }
                       />
                     </View>
-                  )}
-                </View>
+                  </View>
+                </Modal>
 
                 {/* Prices */}
                 <View style={styles.fieldRow}>
@@ -576,6 +759,15 @@ const ManualAddScreen: React.FC = () => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Catalog Learning Suggestion Modal */}
+      <CatalogSuggestionModal
+        visible={catalogModalVisible}
+        onDismiss={() => setCatalogModalVisible(false)}
+        source="manual"
+        prefillName={nameField.value}
+        inputData={{ name: nameField.value, category: category || undefined }}
+      />
     </SafeAreaView>
   );
 };
@@ -831,6 +1023,45 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
+  },
+  // Category-specific field styles
+  booleanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  booleanLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  toggleTrack: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  toggleThumbOn: {
+    alignSelf: 'flex-end',
+  },
+  selectChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  selectChipText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
 

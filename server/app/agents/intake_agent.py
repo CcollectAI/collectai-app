@@ -64,6 +64,9 @@ class IntakeResult:
     # Image
     image_url: Optional[str] = None
 
+    # Catalog learning
+    catalog_miss: bool = False
+
     # Rationale trail
     rationale: list[str] = field(default_factory=list)
 
@@ -84,6 +87,7 @@ class IntakeResult:
             "price_source": self.price_source,
             "price_band": self.price_band,
             "image_url": self.image_url,
+            "catalog_miss": self.catalog_miss,
             "rationale": self.rationale,
         }
 
@@ -420,6 +424,59 @@ async def _estimate_price(
 
 
 # ---------------------------------------------------------------------------
+# Catalog Learning — log misses (best-effort, fire-and-forget)
+# ---------------------------------------------------------------------------
+
+def _fire_catalog_miss(**kwargs) -> None:
+    """Fire-and-forget wrapper for _log_catalog_miss (non-blocking)."""
+    import asyncio
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_log_catalog_miss(**kwargs))
+    except RuntimeError:
+        pass  # No running event loop — skip silently
+
+
+async def _log_catalog_miss(
+    user_id: Optional[str],
+    source: str,
+    input_data: dict[str, Any],
+    suggested_name: Optional[str] = None,
+) -> None:
+    """Best-effort insert into catalog_suggestions for learning pipeline."""
+    try:
+        from app.config import CATALOG_LEARNING_ENABLED
+        if not CATALOG_LEARNING_ENABLED or not user_id:
+            return
+
+        import json
+        pool = _get_db_pool()
+        if pool is None:
+            return
+
+        name = (suggested_name or "").strip() or "Unknown item"
+        input_json = json.dumps(input_data, sort_keys=True, default=str)
+
+        await pool.execute(
+            """
+            INSERT INTO catalog_suggestions (
+                id, user_id, source, input_data, suggested_name, status
+            ) VALUES (
+                gen_random_uuid(), $1::uuid, $2, $3::jsonb, $4, 'pending'
+            )
+            ON CONFLICT (user_id, source, md5(input_data::text)) DO NOTHING
+            """,
+            user_id,
+            source,
+            input_json,
+            name[:500],
+        )
+        logger.debug("[catalog-miss] Logged %s miss for user %s", source, user_id)
+    except Exception as exc:
+        logger.debug("[catalog-miss] Failed to log miss: %s", exc)
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
@@ -428,6 +485,7 @@ async def process_intake(
     barcode: Optional[str] = None,
     barcode_type: Optional[str] = None,
     user_hints: Optional[dict[str, Any]] = None,
+    user_id: Optional[str] = None,
     conn=None,
 ) -> IntakeResult:
     """
@@ -606,6 +664,18 @@ async def process_intake(
         # Timestamp the intake
         result.attributes["intake_timestamp"] = datetime.now(timezone.utc).isoformat()
 
+        # Mark as catalog miss if no category or low confidence
+        # (check BEFORE user hints override, but after all automated steps)
+        if not result.category_id or result.category_confidence < 0.3:
+            result.catalog_miss = True
+            miss_source = "barcode" if barcode else ("photo" if image_bytes else "manual")
+            _fire_catalog_miss(
+                user_id=user_id,
+                source=miss_source,
+                input_data={"barcode": barcode, "barcode_type": barcode_type, "name": result.name},
+                suggested_name=result.name,
+            )
+
     except Exception as e:
         logger.error("Intake agent error: %s", e, exc_info=True)
         result.rationale.append(f"Intake processing error - partial result returned")
@@ -734,6 +804,7 @@ def _guess_category_from_url(url: str, extracted: dict[str, Any]) -> Optional[st
 async def process_url_import(
     url: str,
     user_hints: Optional[dict[str, Any]] = None,
+    user_id: Optional[str] = None,
 ) -> IntakeResult:
     """
     Import a collectible item from a marketplace URL.
@@ -909,6 +980,16 @@ async def process_url_import(
             result.rationale.append(f"User specified condition: {hints['condition']}")
 
         result.attributes["intake_timestamp"] = datetime.now(timezone.utc).isoformat()
+
+        # Mark as catalog miss if no category or low confidence
+        if not result.category_id or result.category_confidence < 0.3:
+            result.catalog_miss = True
+            _fire_catalog_miss(
+                user_id=user_id,
+                source="url",
+                input_data={"url": url, "name": result.name},
+                suggested_name=result.name,
+            )
 
     except Exception as e:
         logger.error("URL import error: %s", e, exc_info=True)

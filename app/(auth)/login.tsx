@@ -186,7 +186,6 @@ export default function LoginScreen() {
             <View style={styles.iconCircle}>
               <Ionicons name="diamond-outline" size={36} color={TIFFANY_DARK} />
             </View>
-            <Text style={styles.brandTitle}>CollectAI</Text>
             <Text style={styles.brandSubtitle}>Welcome back</Text>
           </View>
 
@@ -340,11 +339,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-  },
-  brandTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: NAVY,
   },
   brandSubtitle: {
     fontSize: 16,

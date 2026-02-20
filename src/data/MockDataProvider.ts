@@ -152,6 +152,9 @@ const mockDmMessages: Map<string, DmMessage[]> = new Map([
   ]],
 ]);
 
+// In-memory blocked users store
+const mockBlockedUsers: Set<string> = new Set();
+
 // Track DM status by other user ID (for getDmStatus)
 const mockDmStatusByUser: Map<string, 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined'> = new Map([
   ['collector-rune', 'accepted'],
@@ -740,9 +743,9 @@ export class MockDataProvider implements DataProvider {
   // ─────────────────────────────────────────────────────────────────────────────
 
   async listInboxThreads(): Promise<DmThread[]> {
-    // Return accepted threads sorted by last message
+    // Return accepted + pending outgoing threads sorted by last message
     const threads = Array.from(mockDmThreads.values())
-      .filter((t) => t.status === 'accepted')
+      .filter((t) => t.status === 'accepted' || (t.status === 'pending' && !t.isIncoming))
       .sort((a, b) => {
         const aTime = a.lastMessageAt || '';
         const bTime = b.lastMessageAt || '';
@@ -1202,6 +1205,40 @@ export class MockDataProvider implements DataProvider {
 
   async shareEventViaDm(eventId: string, recipientUserId: string): Promise<void> {
     logger.info('[MockDataProvider] shareEventViaDm (no-op)', { eventId, recipientUserId });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // User Blocking
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async blockUser(userId: string): Promise<void> {
+    mockBlockedUsers.add(userId);
+    // Auto-decline pending DM requests from this user
+    for (const [threadId, req] of mockDmRequests.entries()) {
+      if (req.fromUserId === userId) {
+        mockDmRequests.delete(threadId);
+        mockDmStatusByUser.set(userId, 'declined');
+      }
+    }
+    logger.info('[MockDataProvider] blockUser', { userId });
+  }
+
+  async unblockUser(userId: string): Promise<void> {
+    mockBlockedUsers.delete(userId);
+    logger.info('[MockDataProvider] unblockUser', { userId });
+  }
+
+  async listBlockedUsers(): Promise<{ id: string; name: string }[]> {
+    const results: { id: string; name: string }[] = [];
+    for (const userId of mockBlockedUsers) {
+      const profile = await this.getPublicUserProfile(userId);
+      results.push({ id: userId, name: profile?.displayName ?? 'Unknown' });
+    }
+    return results;
+  }
+
+  async isBlocked(userId: string): Promise<boolean> {
+    return mockBlockedUsers.has(userId);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

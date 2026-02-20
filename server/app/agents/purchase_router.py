@@ -18,7 +18,6 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.db import db_configured, get_conn
 from app.features.pagination import pagination_params
-from app.config import MAX_MANDATES_PER_USER
 from app.subscription import get_user_mandate_limit
 
 logger = logging.getLogger(__name__)

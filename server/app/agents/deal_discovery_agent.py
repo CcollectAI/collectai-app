@@ -215,15 +215,21 @@ class DealDiscoveryAgent:
     async def scan_all_active(self, conn) -> List[Dict[str, Any]]:
         """Fetch active mandates due for scan (bounded) and process each.
 
+        Only scans mandates belonging to users on pro or premium plans
+        (deal_discovery is a paid feature).
+
         Returns a flat list of all new deals across all mandates.
         """
         rows = await conn.fetch(
             """
-            SELECT *
-            FROM public.purchase_mandates
-            WHERE status = 'active'
-              AND (expires_at IS NULL OR expires_at > now())
-            ORDER BY last_scan_at ASC NULLS FIRST
+            SELECT pm.*
+            FROM public.purchase_mandates pm
+            JOIN public.subscriptions s ON s.user_id = pm.user_id::text
+            WHERE pm.status = 'active'
+              AND (pm.expires_at IS NULL OR pm.expires_at > now())
+              AND s.plan IN ('pro', 'premium')
+              AND s.status IN ('active', 'trialing')
+            ORDER BY pm.last_scan_at ASC NULLS FIRST
             LIMIT $1
             """,
             self.MAX_MANDATES_PER_CYCLE,

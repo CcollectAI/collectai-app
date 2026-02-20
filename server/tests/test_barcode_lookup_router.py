@@ -37,7 +37,7 @@ class TestIsIsbn:
         assert _is_isbn("9781421504902") is True
 
     def test_isbn13_979(self):
-        assert _is_isbn("9791234567890") is True
+        assert _is_isbn("9791234567896") is True  # valid check digit
 
     def test_isbn13_with_dashes(self):
         assert _is_isbn("978-1-4215-0490-2") is True
@@ -287,7 +287,7 @@ class TestBarcodeLookup:
             "subjects": ["cooking"],
             "cover_url": None,
             "pages": 300,
-            "isbn": "9780000000001",
+            "isbn": "9780000000002",
             "publish_date": "2020",
             "source": "open_library",
         }
@@ -300,7 +300,7 @@ class TestBarcodeLookup:
             new_callable=AsyncMock,
             return_value=None,
         ):
-            r = client.post("/barcode/lookup", json={"barcode": "9780000000001"})
+            r = client.post("/barcode/lookup", json={"barcode": "9780000000002"})
 
         assert r.status_code == 200
         data = r.json()

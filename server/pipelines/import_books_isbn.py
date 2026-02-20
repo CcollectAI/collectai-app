@@ -1,9 +1,9 @@
 """
 Bulk ISBN Book Import Pipeline — Multi-Category Collectible Books.
 
-Imports curated book catalogs for collectible books across 10 categories:
-  manga, retro_games, lego, anime_figures, scale_models,
-  funko, sportscards, disney, ghibli, nintendo_merch
+Imports curated book catalogs for collectible books across 11 categories:
+  manga, anime_figures, ghibli, comic_books (NEW),
+  retro_games, lego, scale_models, funko, sportscards, disney, nintendo_merch
 
 Each book has a real ISBN-13, category assignment, estimated EUR secondary
 market price, and book-type rarity scoring.
@@ -62,6 +62,15 @@ BOOK_RARITY_SCORES: dict[str, float] = {
     "Technique Book": 0.40,
     "Companion Guide": 0.35,
     "Design Book": 0.55,
+    # Anime/manga specific
+    "Key Animation Book": 0.75,
+    "Settei Collection": 0.70,
+    "Storyboard Collection": 0.70,
+    "Production Art Book": 0.75,
+    "Groundwork Book": 0.70,
+    "Light Novel Special Edition": 0.60,
+    "Anime Guide Book": 0.45,
+    "Artbook Collection": 0.65,
 }
 
 
@@ -144,6 +153,56 @@ def _manga_books() -> list[dict]:
          "9781421599618", "Viz Media", 20),
         ("Monster: The Perfect Edition Vol. 1", "Complete Edition",
          "9781421569062", "Viz Media", 18),
+        # More Box Sets
+        ("My Hero Academia Box Set 1: Volumes 1-20", "Box Set",
+         "9781974711611", "Viz Media", 110),
+        ("Chainsaw Man Box Set: Volumes 1-11", "Box Set",
+         "9781974741427", "Viz Media", 75),
+        ("Tokyo Ghoul Complete Box Set", "Box Set",
+         "9781974703180", "Viz Media", 120),
+        ("Hunter x Hunter Box Set 1: Volumes 1-26", "Box Set",
+         "9781421576268", "Viz Media", 130),
+        ("Spy x Family Box Set: Volumes 1-6", "Box Set",
+         "9781974740642", "Viz Media", 45),
+        ("Jujutsu Kaisen Box Set: Volumes 1-15", "Box Set",
+         "9781974743636", "Viz Media", 95),
+        ("Fruits Basket Collector's Edition Vol. 1", "Collector Edition",
+         "9780316360166", "Yen Press", 18),
+        ("Sailor Moon Eternal Edition Vol. 1", "Collector Edition",
+         "9781632369529", "Kodansha", 25),
+        # OOP / High-Value Singles
+        ("Goodnight Punpun Vol. 1", "Complete Edition",
+         "9781421586205", "Viz Media", 15),
+        ("Slam Dunk Vol. 1", "Complete Edition",
+         "9781421506791", "Viz Media", 12),
+        ("Pluto: Urasawa x Tezuka Vol. 1", "Complete Edition",
+         "9781421519180", "Viz Media", 14),
+        ("Dorohedoro Vol. 1", "Complete Edition",
+         "9781421533636", "Viz Media", 14),
+        # More Art Books
+        ("One Punch Man: The Hero Encyclopedia", "Art Book",
+         "9781421597201", "Viz Media", 22),
+        ("Haikyu!! Complete Illustration Book: Endings and Beginnings", "Art Book",
+         "9781974734979", "Viz Media", 30),
+        ("Demon Slayer: The Art of Kimetsu no Yaiba", "Art Book",
+         "9781974734474", "Viz Media", 35),
+        ("My Hero Academia: Ultra Analysis", "Art Book",
+         "9781974714940", "Viz Media", 18),
+        ("Jujutsu Kaisen Official Fan Book", "Art Book",
+         "9781974734245", "Viz Media", 15),
+        ("Attack on Titan: Art Book FLY", "Art Book",
+         "9781646514120", "Kodansha", 35),
+        ("Chainsaw Man: Dog and Chainsaw Art Book", "Art Book",
+         "9784088832883", "Shueisha", 40),
+        ("Tokyo Ghoul Illustrations: zakki", "Art Book",
+         "9781421597119", "Viz Media", 25),
+        # Japanese Imports (high-value art books)
+        ("Takehiko Inoue Illustrations", "Art Book",
+         "9784088591575", "Shueisha", 55),
+        ("Kentaro Miura Illustration File: Berserk", "Art Book",
+         "9784592731641", "Hakusensha", 65),
+        ("Eiichiro Oda: Color Walk 10 DRAGON", "Art Book",
+         "9784088833286", "Shueisha", 30),
     ]
     return [
         {
@@ -175,13 +234,13 @@ def _retro_games_books() -> list[dict]:
         ("The Art of the Last of Us Part II", "Art Book",
          "9781506713762", "Dark Horse", 38),
         ("The Art of Naughty Dog", "Art Book",
-         "9781616551643", "Dark Horse", 45),
+         "9781616559840", "Dark Horse", 45),
         ("Super Mario Encyclopedia: The Official Guide to the First 30 Years", "Encyclopedia",
          "9781506708973", "Dark Horse", 25),
         ("Mega Man: Official Complete Works", "Art Book",
          "9781927925485", "Udon Entertainment", 30),
         ("The Art of Street Fighter", "Art Book",
-         "9781927925485", "Udon Entertainment", 40),
+         "9781772940046", "Udon Entertainment", 40),
         # Strategy Guides (collectible vintage)
         ("The Legend of Zelda: Ocarina of Time Official Strategy Guide", "Strategy Guide",
          "9780744000207", "BradyGames", 25),
@@ -266,28 +325,87 @@ def _lego_books() -> list[dict]:
 
 
 def _anime_figures_books() -> list[dict]:
-    """~10 anime art books and character design references."""
+    """~35 anime art books, production art, key animation, and design references."""
     books = [
+        # Studio Art Books
         ("The Art of Studio Trigger", "Art Book",
          "9781772941142", "Udon Entertainment", 40),
-        ("Neon Genesis Evangelion: 2015 - Last Year", "Illustration Book",
-         "9784047292314", "Kadokawa", 45),
-        ("Gurren Lagann Art Works", "Art Book",
-         "9784758011396", "Ichijinsha", 55),
-        ("Kill la Kill Animation Originals Vol. 1", "Art Book",
-         "9784758013642", "Ichijinsha", 45),
         ("Yoshitaka Amano: The Illustrated Biography - Beyond the Fantasy", "Art Book",
          "9781506707549", "Dark Horse", 55),
-        ("The Art of Fire Emblem Awakening", "Art Book",
-         "9781616559373", "Dark Horse", 35),
-        ("Newtype Visual Collection: Cowboy Bebop", "Illustration Book",
-         "9784049251326", "Kadokawa", 60),
         ("The Art of Persona 5", "Art Book",
          "9781772941548", "Udon Entertainment", 40),
+        ("The Art of Fire Emblem Awakening", "Art Book",
+         "9781616559373", "Dark Horse", 35),
+        # Evangelion
+        ("Neon Genesis Evangelion: 2015 - Last Year", "Illustration Book",
+         "9784047292314", "Kadokawa", 45),
+        ("Evangelion Illustrations 2007-2017", "Illustration Book",
+         "9784905033691", "Khara/Groundworks", 50),
+        ("Groundwork of Evangelion 3.0+1.0", "Groundwork Book",
+         "9784905033714", "Khara/Groundworks", 55),
+        ("Groundwork of Evangelion 3.0 You Can (Not) Redo", "Groundwork Book",
+         "9784905033356", "Khara/Groundworks", 60),
+        # Key Animation / Production Art (high resale)
+        ("Gurren Lagann Art Works", "Art Book",
+         "9784758011396", "Ichijinsha", 55),
+        ("Kill la Kill Animation Originals Vol. 1", "Production Art Book",
+         "9784758013642", "Ichijinsha", 45),
+        ("FLCL Archives", "Production Art Book",
+         "9784903713342", "Style", 70),
+        ("Cowboy Bebop: The Wind", "Illustration Book",
+         "9784049251326", "Kadokawa", 60),
         ("Darling in the FranXX Design Works", "Design Book",
          "9784635450225", "Yama-kei Publishers", 50),
+        # Kyoto Animation
         ("Violet Evergarden: Chronicles of Letters", "Illustration Book",
          "9784907064778", "Kyoto Animation", 65),
+        ("Free! Illustration Works Vol. 1", "Illustration Book",
+         "9784907064457", "Kyoto Animation", 45),
+        ("A Silent Voice Official Fan Book", "Art Book",
+         "9784063955514", "Kodansha", 30),
+        # MAPPA / Modern Studios
+        ("Jujutsu Kaisen KEY ANIMATION Vol. 1", "Key Animation Book",
+         "9784088834634", "Shueisha", 40),
+        ("Jujutsu Kaisen KEY ANIMATION Vol. 2", "Key Animation Book",
+         "9784088834641", "Shueisha", 40),
+        ("Attack on Titan: Animation Side Guidebook", "Anime Guide Book",
+         "9784063770728", "Kodansha", 25),
+        ("Chainsaw Man: Anime Visual Book", "Art Book",
+         "9784088835051", "Shueisha", 35),
+        # Ufotable
+        ("Demon Slayer: Kimetsu no Yaiba Animation Art Book Vol. 1", "Production Art Book",
+         "9784088832722", "Shueisha", 35),
+        ("Demon Slayer: Kimetsu no Yaiba Animation Art Book Vol. 2", "Production Art Book",
+         "9784088833163", "Shueisha", 35),
+        ("Fate/stay night [UBW] Animation Material I", "Production Art Book",
+         "9784041027929", "Kadokawa", 55),
+        ("Fate/Zero Animation Material", "Production Art Book",
+         "9784041002483", "Kadokawa", 50),
+        # Makoto Shinkai
+        ("Makoto Shinkai Artworks: Your Name.", "Art Book",
+         "9784041047811", "Kadokawa", 35),
+        ("Weathering with You Art Book", "Art Book",
+         "9784041086483", "Kadokawa", 35),
+        ("Suzume Art Book", "Art Book",
+         "9784041130834", "Kadokawa", 38),
+        # Classic / Vintage (high resale)
+        ("Akira Animation Archives", "Production Art Book",
+         "9784063300550", "Kodansha", 120),
+        ("Ghost in the Shell: Anime Visual Book", "Art Book",
+         "9784063300574", "Kodansha", 80),
+        ("Studio Gainax Interviews", "Reference",
+         "9781935654575", "Vertical", 25),
+        # Artbook Collections
+        ("Range Murata: Futurhythm", "Artbook Collection",
+         "9784835449722", "Wani Magazine", 55),
+        ("Ilya Kuvshinov: Momentary Art Works", "Artbook Collection",
+         "9784756251046", "PIE International", 35),
+        ("Kim Jung Gi: Superani Sketchbook", "Artbook Collection",
+         "9791195223756", "Superani", 65),
+        ("Katsuya Terada: The Monkey King Vol. 1", "Artbook Collection",
+         "9781506703473", "Dark Horse", 30),
+        ("Posuka Demizu Art Book", "Art Book",
+         "9784088824093", "Shueisha", 28),
     ]
     return [
         {
@@ -431,8 +549,9 @@ def _disney_books() -> list[dict]:
 
 
 def _ghibli_books() -> list[dict]:
-    """~5 Studio Ghibli art books."""
+    """~15 Studio Ghibli art books, production art, and storyboards."""
     books = [
+        # Art Of series (English)
         ("The Art of Spirited Away", "Art Book",
          "9781569317778", "Viz Media", 28),
         ("The Art of Princess Mononoke", "Art Book",
@@ -443,6 +562,28 @@ def _ghibli_books() -> list[dict]:
          "9781421500492", "Viz Media", 28),
         ("The Art of Nausicaa of the Valley of the Wind Watercolor Impressions", "Art Book",
          "9781421514994", "Viz Media", 35),
+        ("The Art of Ponyo", "Art Book",
+         "9781421530642", "Viz Media", 25),
+        ("The Art of Kiki's Delivery Service", "Art Book",
+         "9781421505930", "Viz Media", 28),
+        ("The Art of Castle in the Sky", "Art Book",
+         "9781421582726", "Viz Media", 28),
+        ("The Art of The Wind Rises", "Art Book",
+         "9781421571676", "Viz Media", 28),
+        ("The Art of The Boy and the Heron", "Art Book",
+         "9781974743025", "Viz Media", 35),
+        # Storyboard collections (high resale — limited print runs)
+        ("Spirited Away Storyboards", "Storyboard Collection",
+         "9784198614720", "Tokuma Shoten", 55),
+        ("Princess Mononoke Storyboards", "Storyboard Collection",
+         "9784198607104", "Tokuma Shoten", 60),
+        ("Nausicaa of the Valley of the Wind Storyboards", "Storyboard Collection",
+         "9784198613358", "Tokuma Shoten", 65),
+        # Hayao Miyazaki collections
+        ("Hayao Miyazaki and the Art of Studio Ghibli", "Art Book",
+         "9781421587691", "Viz Media", 40),
+        ("Starting Point: 1979-1996 (Hayao Miyazaki)", "Reference",
+         "9781421505947", "Viz Media", 22),
     ]
     return [
         {
@@ -464,8 +605,8 @@ def _nintendo_merch_books() -> list[dict]:
          "9781506704005", "Dark Horse", 32),
         ("The Art of Splatoon 2", "Art Book",
          "9781506713748", "Dark Horse", 35),
-        ("The Art of Fire Emblem: Awakening", "Art Book",
-         "9781616559373", "Dark Horse", 35),
+        ("The Art of Super Mario Odyssey", "Art Book",
+         "9781506713755", "Dark Horse", 30),
         ("Super Smash Bros. Ultimate Official Guide", "Strategy Guide",
          "9780744019049", "Prima Games", 22),
         ("Nintendo Magic: Winning the Videogame Wars", "History Book",
@@ -487,8 +628,103 @@ def _nintendo_merch_books() -> list[dict]:
 # ---------------------------------------------------------------------------
 # All catalog functions in one place
 # ---------------------------------------------------------------------------
+def _comic_books() -> list[dict]:
+    """~40 collectible comic books: omnibuses, absolute editions, key TPBs, art books."""
+    books = [
+        # Marvel Omnibuses (high resale — heavy, expensive, go OOP fast)
+        ("Uncanny X-Men Omnibus Vol. 1", "Omnibus",
+         "9781302924805", "Marvel", 85),
+        ("Amazing Spider-Man Omnibus Vol. 1", "Omnibus",
+         "9781302930844", "Marvel", 90),
+        ("Fantastic Four Omnibus Vol. 1", "Omnibus",
+         "9780785185666", "Marvel", 80),
+        ("Avengers by Jonathan Hickman Omnibus Vol. 1", "Omnibus",
+         "9781302945893", "Marvel", 75),
+        ("Daredevil by Frank Miller Omnibus Companion", "Omnibus",
+         "9780785195382", "Marvel", 65),
+        ("Immortal Hulk Omnibus", "Omnibus",
+         "9781302953744", "Marvel", 80),
+        ("Thor by Jason Aaron Omnibus Vol. 1", "Omnibus",
+         "9781302933807", "Marvel", 75),
+        ("X-Men: Age of Apocalypse Omnibus", "Omnibus",
+         "9781302926151", "Marvel", 85),
+        # DC Omnibuses / Absolute Editions
+        ("Absolute Batman: The Long Halloween", "Omnibus",
+         "9781401212841", "DC Comics", 70),
+        ("Absolute Sandman Vol. 1", "Omnibus",
+         "9781401210823", "DC Comics", 80),
+        ("Batman: Knightfall Omnibus Vol. 1", "Omnibus",
+         "9781401270421", "DC Comics", 45),
+        ("Absolute Kingdom Come", "Omnibus",
+         "9781401207687", "DC Comics", 65),
+        ("Crisis on Infinite Earths Absolute Edition", "Omnibus",
+         "9781401258369", "DC Comics", 75),
+        ("Absolute Watchmen", "Omnibus",
+         "9781401232054", "DC Comics", 65),
+        ("Green Lantern by Geoff Johns Omnibus Vol. 1", "Omnibus",
+         "9781401258207", "DC Comics", 60),
+        # Image / Indie Collected Editions
+        ("Saga Compendium One", "Complete Edition",
+         "9781534312340", "Image Comics", 40),
+        ("Invincible Compendium Vol. 1", "Complete Edition",
+         "9781607064114", "Image Comics", 45),
+        ("The Walking Dead Compendium One", "Complete Edition",
+         "9781607060765", "Image Comics", 40),
+        ("East of West: The Complete Collection", "Complete Edition",
+         "9781534316980", "Image Comics", 45),
+        # Dark Horse
+        ("Hellboy Omnibus Vol. 1: Seed of Destruction", "Omnibus",
+         "9781506706665", "Dark Horse", 22),
+        ("Usagi Yojimbo: The Special Edition", "Collector Edition",
+         "9781506724874", "Dark Horse", 45),
+        # Key Graphic Novels (perennial sellers)
+        ("Maus: A Survivor's Tale Complete", "Complete Edition",
+         "9780679748403", "Pantheon", 25),
+        ("Persepolis: The Complete Edition", "Complete Edition",
+         "9780375714832", "Pantheon", 18),
+        ("Fun Home: A Family Tragicomic", "Complete Edition",
+         "9780618871711", "Mariner Books", 16),
+        ("Blankets", "Complete Edition",
+         "9781891830433", "Top Shelf", 22),
+        # Art Books
+        ("Marvel Comics: 75 Years of Cover Art", "Art Book",
+         "9781465420404", "DK Publishing", 35),
+        ("DC Comics: The Art of the Cover", "Art Book",
+         "9781785657917", "Titan Books", 30),
+        ("The Art of Todd McFarlane", "Art Book",
+         "9781534310124", "Image Comics", 40),
+        ("The Marvel Art of the Movie", "Art Book",
+         "9780785168287", "Marvel", 35),
+        ("Jim Lee: Artist's Edition (IDW)", "Art Book",
+         "9781613776964", "IDW Publishing", 120),
+        # Manga crossovers (unique to comic_books — no ISBN overlap with manga category)
+        ("Battle Angel Alita Deluxe Complete Series Box Set", "Box Set",
+         "9781632367112", "Kodansha", 120),
+        # Japanese manga in original Weekly Shonen Jump format
+        ("Shonen Jump Manga: Dragon Ball Vol. 1 (JP 1st Print)", "Collector Edition",
+         "9784088518312", "Shueisha", 50),
+        ("Weekly Shonen Jump 1997 #34 (One Piece Ch.1)", "Collector Edition",
+         "9784088725390", "Shueisha", 200),
+        # Key collected editions (unique ISBNs)
+        ("One Punch Man Vol. 1-10 Box Set", "Box Set",
+         "9781974741410", "Viz Media", 70),
+    ]
+    return [
+        {
+            "category": "comic_books",
+            "name": name,
+            "book_type": bt,
+            "isbn": isbn,
+            "publisher": pub,
+            "secondary_eur": eur,
+        }
+        for name, bt, isbn, pub, eur in books
+    ]
+
+
 CATALOG_FUNCTIONS = [
     _manga_books,
+    _comic_books,
     _retro_games_books,
     _lego_books,
     _anime_figures_books,
@@ -581,6 +817,14 @@ def _book_to_price_observation(book: dict) -> PriceObservation:
         "Technique Book": 0.35,
         "Companion Guide": 0.30,
         "Design Book": 0.55,
+        "Key Animation Book": 0.80,
+        "Settei Collection": 0.75,
+        "Storyboard Collection": 0.80,
+        "Production Art Book": 0.75,
+        "Groundwork Book": 0.75,
+        "Light Novel Special Edition": 0.55,
+        "Anime Guide Book": 0.40,
+        "Artbook Collection": 0.65,
     }
     collectibility = collectibility_map.get(book_type, 0.35)
 

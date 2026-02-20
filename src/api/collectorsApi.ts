@@ -490,6 +490,19 @@ export const collectorsApi = {
   // Stats
   getDealStats: () => get("/purchase/stats"),
 
+  // Catalog Learning — submit suggestion for unrecognized items
+  submitCatalogSuggestion: (payload: {
+    source: "barcode" | "photo" | "manual" | "url";
+    input_data: Record<string, unknown>;
+    suggested_name: string;
+    suggested_category?: string;
+  }) =>
+    post<{
+      id: string;
+      status: string;
+      matched_existing: boolean;
+    }>("/catalog/suggest", payload),
+
   // Affiliate links (no auth required — works for all users)
   getAffiliateLinks: (query: string, category?: string, limit = 3) =>
     get<{
@@ -530,6 +543,7 @@ export type IntakeResultResponse = {
     currency: string;
   } | null;
   image_url: string | null;
+  catalog_miss: boolean;
   rationale: string[];
 };
 

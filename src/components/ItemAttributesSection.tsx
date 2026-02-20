@@ -8,9 +8,11 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { getCategoryFields } from '@/constants/categoryFields';
 
 type ItemAttributesSectionProps = {
   attributes: Record<string, unknown> | null;
+  category?: string;
   taxonomyVersion?: string;
   subtypeId?: string;
   collections?: string[];
@@ -46,7 +48,8 @@ const KNOWN_LABELS: Record<string, string> = {
   certification: 'Certification',
 };
 
-function formatLabel(key: string): string {
+function formatLabel(key: string, catLabels?: Record<string, string>): string {
+  if (catLabels?.[key]) return catLabels[key];
   if (KNOWN_LABELS[key]) return KNOWN_LABELS[key];
   // Capitalize first letter, replace underscores with spaces
   return key
@@ -66,6 +69,7 @@ function formatValue(val: unknown): string {
 
 export function ItemAttributesSection({
   attributes,
+  category,
   taxonomyVersion,
   subtypeId,
   collections,
@@ -79,11 +83,30 @@ export function ItemAttributesSection({
 
   if (!hasAttributes && !hasCollections && !hasSubtype) return null;
 
-  const attributeEntries = hasAttributes
+  // Get category-aware field ordering
+  const categoryFieldDefs = category ? getCategoryFields(category) : [];
+  const fieldOrder = categoryFieldDefs.map((f) => f.key);
+  // Build label lookup from category fields
+  const categoryLabels: Record<string, string> = {};
+  for (const f of categoryFieldDefs) {
+    categoryLabels[f.key] = f.label;
+  }
+
+  const rawEntries = hasAttributes
     ? Object.entries(attributes).filter(
         ([, val]) => val !== null && val !== undefined && val !== '',
       )
     : [];
+
+  // Sort: category-defined fields first (in config order), then remaining alphabetically
+  const attributeEntries = rawEntries.sort(([a], [b]) => {
+    const idxA = fieldOrder.indexOf(a);
+    const idxB = fieldOrder.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b);
+  });
 
   // If after filtering we still have nothing, bail out
   if (attributeEntries.length === 0 && !hasCollections && !hasSubtype) return null;
@@ -113,7 +136,7 @@ export function ItemAttributesSection({
       {attributeEntries.map(([key, val]) => (
         <View key={key} style={styles.attributeRow}>
           <Text style={[styles.attributeLabel, { color: colors.muted }]}>
-            {formatLabel(key)}
+            {formatLabel(key, categoryLabels)}
           </Text>
           <Text
             style={[styles.attributeValue, { color: colors.text }]}

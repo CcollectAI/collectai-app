@@ -494,6 +494,21 @@ const ItemsScreen: React.FC = () => {
     return groups;
   }, [query, filterCategory, advancedFilter, categoryParam, collectionParam, dataSource]);
 
+  // Memoize gallery-mode items to avoid recomputing flatMap on every render
+  const galleryItems = useMemo(
+    () =>
+      filteredAndSortedByCategory.flatMap((g) =>
+        g.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          value: item.value,
+          imageUrl: undefined,
+        }))
+      ),
+    [filteredAndSortedByCategory]
+  );
+
   const portfolioTotal = useMemo(
     () => dataSource.reduce((sum, item) => sum + item.value, 0),
     [dataSource]
@@ -965,15 +980,7 @@ const ItemsScreen: React.FC = () => {
             emptyElement
           ) : (
             <ItemGalleryGrid
-              items={filteredAndSortedByCategory.flatMap((g) =>
-                g.items.map((item) => ({
-                  id: item.id,
-                  name: item.name,
-                  category: item.category,
-                  value: item.value,
-                  imageUrl: undefined,
-                }))
-              )}
+              items={galleryItems}
               onItemPress={(item) => {
                 const fullItem = dataSource.find((i) => i.id === item.id);
                 if (fullItem) handleOpenItem(fullItem);
@@ -994,7 +1001,7 @@ const ItemsScreen: React.FC = () => {
           sections={sections}
           keyExtractor={(item) => item.id}
           renderSectionHeader={({ section }) => (
-            <View style={[styles.categoryBlock, { borderTopColor: colors.border }]}>
+            <View style={[styles.categoryBlock, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
               <View style={styles.categoryHeaderRow}>
                 <Text style={[styles.categoryTitle, { color: colors.text }]}>
                   {section.title}
@@ -1414,6 +1421,7 @@ const styles = StyleSheet.create({
   categoryBlock: {
     marginTop: 10,
     paddingVertical: 8,
+    paddingHorizontal: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#E2E8F0",
   },

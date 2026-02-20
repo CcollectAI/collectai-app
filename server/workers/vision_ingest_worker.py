@@ -91,6 +91,26 @@ async def _process_vision_queue(batch_size: int = DEFAULT_BATCH_SIZE) -> int:
     processed = 0
     try:
         # ------------------------------------------------------------------
+        # Step 0: Recover stale rows stuck in 'processing' for > 15 minutes
+        # (crashed workers that never completed). Reset them to 'pending'.
+        # ------------------------------------------------------------------
+        stale_recovered = await conn.execute(
+            """
+            UPDATE public.vision_queue
+            SET status = 'pending'
+            WHERE status = 'processing'
+              AND created_at < now() - interval '15 minutes'
+            """
+        )
+        # asyncpg returns "UPDATE N" — extract the count
+        try:
+            stale_count = int(str(stale_recovered).split()[-1])
+        except (ValueError, IndexError, AttributeError):
+            stale_count = 0
+        if stale_count > 0:
+            logger.warning("vision_queue: recovered %d stale 'processing' rows", stale_count)
+
+        # ------------------------------------------------------------------
         # Step 1: Atomically claim rows in a short transaction.
         # The UPDATE ... FOR UPDATE SKIP LOCKED inside an explicit
         # transaction ensures concurrent workers never claim the same rows.

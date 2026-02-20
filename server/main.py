@@ -24,6 +24,7 @@ from app.config import (
     DB_ENABLED,
     MONITOR_ENABLED,
     DEAL_DISCOVERY_ENABLED,
+    CATALOG_LEARNING_ENABLED,
     DEBUG,
 )
 from app.middleware_stack import install_middlewares
@@ -90,6 +91,14 @@ async def lifespan(app: FastAPI):
             logging.getLogger("uvicorn").info("[startup] Deal discovery scheduler started")
         except Exception as e:
             logging.getLogger("uvicorn").warning("[startup] Failed to start deal discovery: %s", e)
+
+    if CATALOG_LEARNING_ENABLED:
+        try:
+            from workers.catalog_learning_scheduler import scheduler_loop as catalog_learning_loop
+            asyncio.create_task(catalog_learning_loop())
+            logging.getLogger("uvicorn").info("[startup] Catalog learning scheduler started")
+        except Exception as e:
+            logging.getLogger("uvicorn").warning("[startup] Failed to start catalog learning: %s", e)
 
     if os.getenv("MATVIEW_REFRESH_ENABLED", "true").lower() in ("true", "1"):
         try:
@@ -191,6 +200,8 @@ from app.routes.beta_signup_router import router as beta_signup_router
 from app.routes.seed_router import router as seed_router
 from app.routes.affiliate_links_router import router as affiliate_links_router
 from app.features.sponsor_router import router as sponsor_router
+from app.features.catalog_learning_router import router as catalog_learning_router
+from app.features.social_router import router as social_router
 
 # ---------------------------------------------------------------------------
 # Register routers
@@ -256,6 +267,8 @@ app.include_router(beta_signup_router)
 app.include_router(seed_router)
 app.include_router(affiliate_links_router)
 app.include_router(sponsor_router)
+app.include_router(catalog_learning_router)
+app.include_router(social_router)
 
 # Twitch (optional)
 try:
@@ -298,6 +311,7 @@ _v1.include_router(billing_router)
 _v1.include_router(mfa_router)
 _v1.include_router(affiliate_links_router)
 _v1.include_router(sponsor_router)
+_v1.include_router(catalog_learning_router)
 app.include_router(_v1)
 
 # ---------------------------------------------------------------------------

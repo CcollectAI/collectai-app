@@ -74,7 +74,7 @@ class TestIntakeResult:
             "attributes", "identification_method", "barcode", "barcode_type",
             "taxonomy_version", "taxonomy_confidence", "suggested_corrections",
             "estimated_price", "price_source", "price_band", "image_url",
-            "rationale",
+            "catalog_miss", "rationale",
         }
         assert set(d.keys()) == expected_keys
 

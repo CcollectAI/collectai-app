@@ -7,6 +7,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
+from app.features.pagination import pagination_params
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 logger = logging.getLogger(__name__)
@@ -68,12 +69,15 @@ async def get_collection_trends(
     days: int = Query(30, ge=1, le=365),
     currency: str = Query("EUR"),
     user_id: str = Depends(get_current_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
 ):
     """
     Collection trend graph:
     - total value over time  (from price_predictions for user's items)
     - per-category gain/loss (earliest vs latest predicted value)
     """
+    limit, offset = pagination
+
     pool = _get_db_pool()
     if not pool:
         return CollectionTrendResponse(
@@ -151,7 +155,7 @@ async def get_collection_trends(
 
             return CollectionTrendResponse(
                 currency=currency,
-                total_history=total_history,
+                total_history=total_history[offset:offset + limit],
                 dca_history=None,  # TODO: track DCA cost basis
                 per_category_gain_loss=per_category,
             )
@@ -171,12 +175,15 @@ async def get_item_trends(
     item_id: str,
     days: int = Query(30, ge=1, le=365),
     currency: str = Query("EUR"),
+    pagination: tuple[int, int] = Depends(pagination_params),
 ):
     """
     Item-level trend for detail screen:
     - historical predicted value  (q50 from price_predictions)
     - model confidence over time  (conf_score from price_predictions)
     """
+    limit, offset = pagination
+
     pool = _get_db_pool()
     if not pool:
         return ItemTrendResponse(
@@ -215,8 +222,8 @@ async def get_item_trends(
             return ItemTrendResponse(
                 item_id=item_id,
                 currency=currency,
-                history=history,
-                model_confidence=confidence or None,
+                history=history[offset:offset + limit],
+                model_confidence=confidence[offset:offset + limit] if confidence else None,
             )
 
     except Exception as e:
@@ -234,6 +241,7 @@ async def get_category_deep_dive(
     category: str,
     days: int = Query(30, ge=7, le=365),
     currency: str = Query("EUR"),
+    pagination: tuple[int, int] = Depends(pagination_params),
 ):
     """
     Category deep dive:
@@ -243,6 +251,8 @@ async def get_category_deep_dive(
     - most-traded items         (normalized_key with highest listing count)
     - top movers                (biggest price delta over the period)
     """
+    limit, offset = pagination
+
     pool = _get_db_pool()
     if not pool:
         return CategoryDeepDiveResponse(
@@ -385,10 +395,10 @@ async def get_category_deep_dive(
                 category=category,
                 currency=currency,
                 avg_market_price=round(avg_market_price, 2),
-                value_distribution=value_distribution,
-                volume_trend=volume_trend,
-                top_traded_items=top_traded_items,
-                top_movers=top_movers,
+                value_distribution=value_distribution[offset:offset + limit],
+                volume_trend=volume_trend[offset:offset + limit],
+                top_traded_items=top_traded_items[offset:offset + limit],
+                top_movers=top_movers[offset:offset + limit],
             )
 
     except Exception as e:

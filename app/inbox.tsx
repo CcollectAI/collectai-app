@@ -1,6 +1,6 @@
 /**
  * Inbox Screen — WhatsApp-style DM inbox with requests inline.
- * Shows pending DM requests at top, followed by accepted message threads.
+ * Shows pending DM requests at top, sent requests, then accepted message threads.
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -87,6 +87,7 @@ export default function InboxScreen() {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
   const [threads, setThreads] = useState<DmThread[]>([]);
+  const [sentRequests, setSentRequests] = useState<DmThread[]>([]);
   const [requests, setRequests] = useState<DmRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -98,7 +99,13 @@ export default function InboxScreen() {
         dataProvider.listInboxThreads(),
         dataProvider.listIncomingRequests(),
       ]);
-      setThreads(inboxThreads);
+
+      // Separate accepted threads from pending outgoing (sent requests)
+      const accepted = inboxThreads.filter((t) => t.status === 'accepted');
+      const pending = inboxThreads.filter((t) => t.status === 'pending' && !t.isIncoming);
+
+      setThreads(accepted);
+      setSentRequests(pending);
       setRequests(incomingRequests);
     } catch (err) {
       logger.warn('[InboxScreen] loadInbox error:', err);
@@ -121,10 +128,10 @@ export default function InboxScreen() {
     setProcessingRequestId(threadId);
     try {
       await dataProvider.decideDmRequest(threadId, true);
-      // Reload to show thread in messages
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       await loadInbox();
     } catch (err: unknown) {
-      Alert.alert('Error', err?.message || 'Failed to accept request');
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to accept request');
     } finally {
       setProcessingRequestId(null);
     }
@@ -145,7 +152,36 @@ export default function InboxScreen() {
               await dataProvider.decideDmRequest(threadId, false);
               await loadInbox();
             } catch (err: unknown) {
-              Alert.alert('Error', err?.message || 'Failed to decline request');
+              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to decline request');
+            } finally {
+              setProcessingRequestId(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleBlockFromRequest = async (req: DmRequest) => {
+    Alert.alert(
+      'Block User',
+      `Block ${req.fromUserName}? This will also decline their request. You can unblock them later in Settings.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            setProcessingRequestId(req.threadId);
+            try {
+              await Promise.all([
+                dataProvider.blockUser(req.fromUserId),
+                dataProvider.decideDmRequest(req.threadId, false),
+              ]);
+              fireHaptic(HapticIntent.ALERT_TRIGGERED);
+              await loadInbox();
+            } catch (err: unknown) {
+              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to block user');
             } finally {
               setProcessingRequestId(null);
             }
@@ -182,7 +218,7 @@ export default function InboxScreen() {
     );
   }
 
-  const hasContent = requests.length > 0 || threads.length > 0;
+  const hasContent = requests.length > 0 || threads.length > 0 || sentRequests.length > 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -238,7 +274,7 @@ export default function InboxScreen() {
                   <View style={[styles.requestMessageWrap, { backgroundColor: colors.background }]}>
                     <Ionicons name="chatbubble-outline" size={14} color={colors.muted} style={{ marginRight: 8 }} />
                     <Text style={[styles.requestMessage, { color: colors.text }]} numberOfLines={2}>
-                      "{req.requestMessage}"
+                      &quot;{req.requestMessage}&quot;
                     </Text>
                   </View>
                 )}
@@ -268,6 +304,15 @@ export default function InboxScreen() {
                     ) : (
                       <Text style={styles.declineBtnText}>Decline</Text>
                     )}
+                  </AnimatedPressable>
+                  <AnimatedPressable
+                    style={[styles.blockBtn]}
+                    onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); handleBlockFromRequest(req); }}
+                    disabled={processingRequestId === req.threadId}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Block ${req.fromUserName}`}
+                  >
+                    <Ionicons name="ban-outline" size={18} color={colors.danger ?? FALLBACK_ERROR} />
                   </AnimatedPressable>
                 </View>
               </View>
@@ -331,6 +376,44 @@ export default function InboxScreen() {
                   </View>
                 </View>
               </AnimatedPressable>
+            ))}
+          </View>
+        )}
+
+        {/* Sent Requests Section */}
+        {sentRequests.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.muted }]}>Sent Requests</Text>
+            {sentRequests.map((thread, idx) => (
+              <View
+                key={thread.id}
+                style={[
+                  styles.threadRow,
+                  idx < sentRequests.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+                ]}
+              >
+                <UserAvatar
+                  name={thread.otherUserName}
+                  avatarColor={thread.otherUserAvatarColor}
+                  size={52}
+                />
+                <View style={styles.threadContent}>
+                  <View style={styles.threadHeader}>
+                    <Text style={[styles.threadName, { color: colors.text }]}>
+                      {thread.otherUserName}
+                    </Text>
+                    <View style={[styles.pendingBadge, { backgroundColor: colors.accent + '20' }]}>
+                      <Text style={[styles.pendingBadgeText, { color: colors.accent }]}>Pending</Text>
+                    </View>
+                  </View>
+                  <Text
+                    style={[styles.threadPreview, { color: colors.muted }]}
+                    numberOfLines={1}
+                  >
+                    {thread.lastMessagePreview || 'Awaiting response'}
+                  </Text>
+                </View>
+              </View>
             ))}
           </View>
         )}
@@ -450,6 +533,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 16,
     gap: 12,
+    alignItems: 'center',
   },
   actionBtn: {
     flex: 1,
@@ -461,9 +545,9 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   declineBtn: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: '#EF444415',
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: '#EF444440',
   },
   declineBtnText: {
     fontSize: 14,
@@ -477,6 +561,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  blockBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EF444410',
   },
 
   // Thread rows — cleaner WhatsApp-style
@@ -536,6 +628,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#ffffff',
+  },
+  pendingBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  pendingBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 
   // Empty state

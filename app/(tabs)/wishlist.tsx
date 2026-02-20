@@ -73,6 +73,7 @@ export default function WatchlistTabScreen() {
       setItems(data);
     } catch (err) {
       logger.warn('[Watchlist] loadItems error:', err);
+      Alert.alert('Error', 'Failed to load watchlist. Pull down to retry.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -379,7 +380,7 @@ export default function WatchlistTabScreen() {
       </Animated.View>
 
       {/* Add Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => { setModalVisible(false); resetForm(); }}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -461,7 +462,7 @@ export default function WatchlistTabScreen() {
       </Modal>
 
       {/* Category Picker Modal */}
-      <Modal visible={categoryPickerVisible} animationType="fade" transparent>
+      <Modal visible={categoryPickerVisible} animationType="slide" transparent onRequestClose={() => setCategoryPickerVisible(false)}>
         <AnimatedPressable
           style={styles.pickerOverlay}
           onPress={() => setCategoryPickerVisible(false)}
@@ -493,7 +494,7 @@ export default function WatchlistTabScreen() {
       </Modal>
 
       {/* "I Got It!" Acquisition Modal */}
-      <Modal visible={acquireModalVisible} animationType="slide" transparent>
+      <Modal visible={acquireModalVisible} animationType="slide" transparent onRequestClose={() => { setAcquireModalVisible(false); setAcquireItem(null); }}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}

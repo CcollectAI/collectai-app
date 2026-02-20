@@ -364,6 +364,21 @@ export default function Settings() {
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => router.push('/settings/blocked-users')}
+          accessibilityRole="link"
+          accessibilityLabel="Blocked Users"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Blocked Users</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Manage users you've blocked</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
           style={styles.signOutBtn}
           onPress={() => {
             fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });

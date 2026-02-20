@@ -60,6 +60,7 @@ types/                  # category.ts (36 categories)
 | Vision & Classification | 3-tier: CLIP → OpenAI → heuristic (36 categories) | `app/ml/vision_classifier.py` |
 | Marketplace Aggregation | Multi-source search, dedup, provenance scoring | `app/agents/marketplace_agent.py` |
 | Smart Deal | Purchase mandates, policy engine, deal discovery | `app/agents/deal_discovery_agent.py` |
+| Catalog Learning | Capture unrecognized items, auto-map by consensus, surface new category candidates | `features/catalog_learning_router.py` |
 
 ### Server Directory Structure
 
@@ -81,11 +82,13 @@ server/
   workers/               # Background workers
     price_monitor_worker.py
     deal_discovery_worker.py
+    catalog_learning_worker.py
+    catalog_learning_scheduler.py
     vision_ingest_worker.py
     alerts_worker.py
     retry.py             # Retry + dead letter infrastructure
   pipelines/             # Data ingestion and training pipelines
-  tests/                 # pytest test suite (1185+ tests)
+  tests/                 # pytest test suite (1478+ tests)
 ```
 
 ## Database Schema
@@ -104,6 +107,8 @@ Key tables in Supabase PostgreSQL:
 | `purchase_mandates` | Smart Deal Agent buy orders |
 | `mandate_deals` | Matched deals for mandates |
 | `user_settings` | Per-user preferences (currency, region, locale) |
+| `catalog_suggestions` | User-submitted unrecognized item signals |
+| `category_candidates` | Aggregated new category proposals |
 | `taxonomy_registry` | Category taxonomy versions |
 | `object_pointers` | S3 image references |
 
@@ -122,6 +127,14 @@ Scheduler → Price Monitor Worker → Marketplace Agent → Price Update → Al
 ### Deal Discovery
 ```
 Scheduler → Deal Discovery Worker → Marketplace Agent → Policy Engine → Score Deals → Notify User
+```
+
+### Catalog Learning
+```
+Intake Miss (barcode/photo/url/manual) → catalog_suggestions → Worker (30min cycle)
+  ├── 3+ users agree on name + existing category → Auto-map to category_items
+  ├── Free-text category, 10+ signals → Track in category_candidates (watching)
+  └── 25+ unique users in 30 days → Promote to candidate → Admin review
 ```
 
 ## Security

@@ -313,9 +313,16 @@ export default function CategoryStoreScreen() {
             }}
             renderItem={({ item: slide }) => (
               <View style={[styles.spotlightSlide, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.spotlightImagePlaceholder, { backgroundColor: colors.background }]}>
-                  <Ionicons name="sparkles" size={32} color={colors.accent} />
-                </View>
+                {slide.imageUrl ? (
+                  <View style={styles.spotlightImageWrap}>
+                    <Image source={{ uri: slide.imageUrl }} style={styles.spotlightImage} />
+                    <View style={styles.spotlightImageOverlay} />
+                  </View>
+                ) : (
+                  <View style={[styles.spotlightImagePlaceholder, { backgroundColor: colors.background }]}>
+                    <Ionicons name="sparkles" size={32} color={colors.accent} />
+                  </View>
+                )}
                 <Text style={[styles.spotlightTitle, { color: colors.text }]}>{slide.title}</Text>
                 {slide.subtitle && (
                   <Text style={[styles.spotlightSubtitle, { color: colors.muted }]}>{slide.subtitle}</Text>
@@ -427,21 +434,17 @@ export default function CategoryStoreScreen() {
         )}
       </View>
 
-      {/* 4.5. Missing Items Banner - above Friends */}
+      {/* 4.5. Missing Items Checklist - above Friends */}
       {missingItems.length > 0 && (
-        <View style={[styles.missingBanner, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
-          <View style={styles.missingBannerHeader}>
-            <Ionicons name="list-outline" size={18} color={colors.accent} />
-            <Text style={[styles.missingBannerTitle, { color: colors.text }]}>
-              Missing Items
+        <View style={[styles.missingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.missingCardHeader}>
+            <Text style={[styles.missingCardTitle, { color: colors.text }]}>
+              Complete Your Collection
             </Text>
-            <View style={[styles.missingBannerBadge, { backgroundColor: colors.accent }]}>
-              <Text style={styles.missingBannerBadgeText}>{missingItems.length}</Text>
-            </View>
+            <Text style={[styles.missingCardCount, { color: colors.muted }]}>
+              {missingItems.length} left
+            </Text>
           </View>
-          <Text style={[styles.missingBannerSubtitle, { color: colors.muted }]}>
-            {missingItems.length} item{missingItems.length > 1 ? 's' : ''} to complete your collection
-          </Text>
           {missingItems.slice(0, 3).map((item) => {
             const isOwned = recentlyOwned.has(item.id);
             const isMarking = markingOwned === item.id;
@@ -450,23 +453,29 @@ export default function CategoryStoreScreen() {
               <View
                 key={item.id}
                 style={[
-                  styles.missingRow,
-                  {
-                    backgroundColor: isOwned ? colors.accent + '20' : colors.card,
-                    borderColor: isOwned ? colors.accent : colors.border,
-                  },
+                  styles.missingChecklistRow,
+                  { borderBottomColor: colors.border },
                 ]}
               >
+                <View
+                  style={[
+                    styles.missingCheckbox,
+                    { borderColor: isOwned ? colors.accent : colors.border },
+                    isOwned && { backgroundColor: colors.accent },
+                  ]}
+                >
+                  {isOwned && <Ionicons name="checkmark" size={12} color="#fff" />}
+                </View>
                 <View style={styles.missingInfo}>
                   <Text
                     style={[
                       styles.missingTitle,
-                      { color: isOwned ? colors.accent : colors.text },
+                      { color: isOwned ? colors.muted : colors.text },
                       isOwned && styles.missingTitleOwned,
                     ]}
                     numberOfLines={1}
                   >
-                    {isOwned ? '✓ ' : ''}{item.title}
+                    {item.title}
                   </Text>
                   {item.brand && (
                     <Text style={[styles.missingBrand, { color: colors.muted }]} numberOfLines={1}>
@@ -474,43 +483,35 @@ export default function CategoryStoreScreen() {
                     </Text>
                   )}
                 </View>
-                <View style={styles.missingActions}>
-                  <AnimatedPressable
-                    style={[
-                      styles.missingBtn,
-                      {
-                        backgroundColor: isOwned || isMarking ? colors.accent : colors.accent + '15',
-                        borderWidth: 1,
-                        borderColor: colors.accent,
-                      },
-                    ]}
-                    disabled={isMarking || isOwned}
-                    onPress={() => handleMarkOwned(item.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={isOwned ? `${item.title} marked as owned` : `Mark ${item.title} as owned`}
-                  >
-                    {isMarking ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : isOwned ? (
-                      <>
-                        <Ionicons name="checkmark-circle" size={14} color="#fff" />
-                        <Text style={[styles.missingBtnText, { color: '#fff' }]}>Added!</Text>
-                      </>
-                    ) : (
-                      <>
-                        <Ionicons name="add-circle-outline" size={14} color={colors.accent} />
-                        <Text style={[styles.missingBtnText, { color: colors.accent }]}>I Own This</Text>
-                      </>
-                    )}
-                  </AnimatedPressable>
-                </View>
+                <AnimatedPressable
+                  style={[
+                    styles.missingAddBtn,
+                    {
+                      backgroundColor: isOwned ? 'transparent' : colors.accent,
+                    },
+                  ]}
+                  disabled={isMarking || isOwned}
+                  onPress={() => handleMarkOwned(item.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={isOwned ? `${item.title} marked as owned` : `Add ${item.title}`}
+                >
+                  {isMarking ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : isOwned ? (
+                    <Text style={[styles.missingAddBtnText, { color: colors.accent }]}>Added</Text>
+                  ) : (
+                    <Text style={styles.missingAddBtnText}>Add</Text>
+                  )}
+                </AnimatedPressable>
               </View>
             );
           })}
           {missingItems.length > 3 && (
-            <Text style={[styles.seeMore, { color: colors.accent }]}>
-              +{missingItems.length - 3} more to collect
-            </Text>
+            <AnimatedPressable style={styles.missingFooter}>
+              <Text style={[styles.seeMore, { color: colors.accent }]}>
+                +{missingItems.length - 3} more to collect
+              </Text>
+            </AnimatedPressable>
           )}
         </View>
       )}
@@ -662,46 +663,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  // Missing items banner
-  missingBanner: {
-    padding: 16,
+  // Missing items checklist card
+  missingCard: {
     borderRadius: 16,
     borderWidth: 1,
+    padding: 16,
     marginBottom: 20,
   },
-  missingBannerHeader: {
+  missingCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-  },
-  missingBannerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-    flex: 1,
-  },
-  missingBannerBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  missingBannerBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  missingBannerSubtitle: {
-    fontSize: 13,
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
-  // Missing items checklist
-  missingRow: {
+  missingCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  missingCardCount: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  missingChecklistRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  missingCheckbox: {
+    width: 20,
+    height: 20,
     borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
   missingInfo: {
     flex: 1,
@@ -711,38 +707,30 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   missingTitleOwned: {
-    fontWeight: '600',
+    textDecorationLine: 'line-through',
   },
   missingBrand: {
     fontSize: 12,
     marginTop: 2,
   },
-  missingActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  missingBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  missingAddBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 8,
-    gap: 4,
-    minWidth: 60,
+    marginLeft: 8,
   },
-  missingBtnText: {
+  missingAddBtnText: {
     fontSize: 12,
     fontWeight: '600',
+    color: '#fff',
   },
-  missingBtnDisabled: {
-    opacity: 0.5,
+  missingFooter: {
+    paddingTop: 10,
   },
   seeMore: {
     fontSize: 13,
     fontWeight: '500',
     textAlign: 'center',
-    marginTop: 4,
   },
 
   // Spotlight carousel
@@ -752,6 +740,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     alignItems: 'center',
+  },
+  spotlightImageWrap: {
+    width: '100%',
+    height: 100,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  spotlightImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  spotlightImageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.15)',
   },
   spotlightImagePlaceholder: {
     width: '100%',

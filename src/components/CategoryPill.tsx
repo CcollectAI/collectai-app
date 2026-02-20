@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { Text, ViewStyle, TextStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/motion';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type CategoryPillProps = {
   id?: string | null;
@@ -11,8 +12,8 @@ type CategoryPillProps = {
 };
 
 /**
- * Small pill that navigates to /categories/[categoryId]
- * when tapped. Does NOT depend on your custom theme to avoid crashes.
+ * Small pill that navigates to /categories/[categoryId] when tapped.
+ * Uses theme accent color for background.
  */
 const CategoryPillInner: React.FC<CategoryPillProps> = ({
   id,
@@ -21,6 +22,7 @@ const CategoryPillInner: React.FC<CategoryPillProps> = ({
   textStyle,
 }) => {
   const router = useRouter();
+  const { colors } = useAppTheme();
 
   if (!id && !label) {
     return null;
@@ -39,7 +41,7 @@ const CategoryPillInner: React.FC<CategoryPillProps> = ({
           paddingHorizontal: 10,
           paddingVertical: 5,
           borderRadius: 999,
-          backgroundColor: '#0ea5e9', // Tiffany-ish blue
+          backgroundColor: colors.accent,
           alignSelf: 'flex-start',
         },
         style,

@@ -266,7 +266,6 @@ return (
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
   },
   container: {
     paddingHorizontal: 16,
@@ -305,7 +304,6 @@ const styles = StyleSheet.create({
   quickScanCard: {
     borderRadius: 16,
     padding: 20,
-    backgroundColor: "#FFFFFF",
     elevation: 2, // Android
     shadowColor: "#000", // iOS shadow
     shadowOpacity: 0.05,
@@ -319,7 +317,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
-    backgroundColor: "#E6F7FF",
   },
   quickScanTitle: {
     fontSize: 18,
@@ -328,7 +325,6 @@ const styles = StyleSheet.create({
   },
   quickScanSubtitle: {
     fontSize: 14,
-    opacity: 0.75,
     marginBottom: 16,
   },
   quickScanButton: {
@@ -338,7 +334,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "#D0F0FF",
   },
   quickScanButtonText: {
     fontSize: 14,
@@ -353,19 +348,16 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#DDD",
   },
   dividerText: {
     marginHorizontal: 8,
     fontSize: 12,
-    opacity: 0.7,
   },
   manualCard: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 12,
     padding: 14,
-    backgroundColor: "#F5F5F5",
     gap: 10,
   },
   manualIconCircle: {
@@ -374,7 +366,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
   },
   manualTextBlock: {
     flex: 1,
@@ -386,7 +377,6 @@ const styles = StyleSheet.create({
   },
   manualSubtitle: {
     fontSize: 13,
-    opacity: 0.75,
   },
   barcodeCard: {
     flexDirection: "row",
@@ -413,7 +403,6 @@ const styles = StyleSheet.create({
   },
   barcodeSubtitle: {
     fontSize: 13,
-    opacity: 0.75,
   },
 });
 

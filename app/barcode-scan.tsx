@@ -25,12 +25,14 @@ import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-ca
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { dataProvider, type BarcodeLookupResult } from '@/data';
-import { collectorsApi, type IntakeResultResponse } from '@/api/collectorsApi';
+import { collectorsApi, type IntakeResultResponse, getBillingStatus, type BillingStatus } from '@/api/collectorsApi';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
+import CatalogSuggestionModal, { type CatalogSuggestionSource } from '@/components/CatalogSuggestionModal';
 
 /** Barcode types accepted by the scanner */
 const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
@@ -56,6 +58,20 @@ export default function BarcodeScanScreen() {
   const [urlInput, setUrlInput] = useState('');
   const [isUrlSubmitting, setIsUrlSubmitting] = useState(false);
   const [affiliateLink, setAffiliateLink] = useState<{ url: string; label: string } | null>(null);
+
+  // Billing / paywall state
+  const [userPlan, setUserPlan] = useState<BillingStatus['plan']>('free');
+  useEffect(() => {
+    getBillingStatus()
+      .then((b) => setUserPlan(b.plan))
+      .catch(() => {}); // default to 'free' on error
+  }, []);
+
+  // Catalog learning modal state
+  const [catalogModalVisible, setCatalogModalVisible] = useState(false);
+  const [catalogModalSource, setCatalogModalSource] = useState<CatalogSuggestionSource>('barcode');
+  const [catalogModalInputData, setCatalogModalInputData] = useState<Record<string, unknown>>({});
+  const [catalogModalPrefillName, setCatalogModalPrefillName] = useState('');
 
   // Handle barcode detection
   const handleBarcodeScanned = async (result: BarcodeScanningResult) => {
@@ -95,6 +111,14 @@ export default function BarcodeScanScreen() {
       };
       setLookupResult(prefill);
       setScanState('result');
+
+      // Show catalog suggestion modal if intake flagged a miss
+      if (intake.catalog_miss) {
+        setCatalogModalSource('barcode');
+        setCatalogModalInputData({ barcode: data, barcode_type: normalizedType });
+        setCatalogModalPrefillName(intake.name || '');
+        setCatalogModalVisible(true);
+      }
     } catch (err) {
       logger.error('[BarcodeScan] Intake error, falling back to direct lookup:', err);
       // Fallback to direct barcode lookup if intake agent fails
@@ -107,6 +131,11 @@ export default function BarcodeScanScreen() {
         logger.error('[BarcodeScan] Fallback lookup error:', fallbackErr);
         setErrorMessage('Could not find product information. Try manual search.');
         setScanState('error');
+        // Show catalog suggestion modal on complete failure
+        setCatalogModalSource('barcode');
+        setCatalogModalInputData({ barcode: data, barcode_type: normalizedType });
+        setCatalogModalPrefillName('');
+        setCatalogModalVisible(true);
       }
     }
   };
@@ -148,6 +177,14 @@ export default function BarcodeScanScreen() {
       };
       setLookupResult(prefill);
       setScanState('result');
+
+      // Show catalog suggestion modal if intake flagged a miss
+      if (intake.catalog_miss) {
+        setCatalogModalSource('barcode');
+        setCatalogModalInputData({ barcode: cleaned, barcode_type: 'isbn' });
+        setCatalogModalPrefillName(intake.name || '');
+        setCatalogModalVisible(true);
+      }
     } catch (err) {
       logger.error('[BarcodeScan] Intake manual error, falling back:', err);
       try {
@@ -162,6 +199,11 @@ export default function BarcodeScanScreen() {
         logger.error('[BarcodeScan] Fallback manual lookup error:', fallbackErr);
         setErrorMessage('Could not find product information. Check the ISBN and try again.');
         setScanState('error');
+        // Show catalog suggestion modal on complete failure
+        setCatalogModalSource('barcode');
+        setCatalogModalInputData({ barcode: cleaned, barcode_type: 'isbn' });
+        setCatalogModalPrefillName('');
+        setCatalogModalVisible(true);
       }
     } finally {
       setIsManualSubmitting(false);
@@ -202,10 +244,23 @@ export default function BarcodeScanScreen() {
       };
       setLookupResult(prefill);
       setScanState('result');
+
+      // Show catalog suggestion modal if intake flagged a miss
+      if (intake.catalog_miss) {
+        setCatalogModalSource('url');
+        setCatalogModalInputData({ url: trimmed });
+        setCatalogModalPrefillName(intake.name || '');
+        setCatalogModalVisible(true);
+      }
     } catch (err) {
       logger.error('[BarcodeScan] URL import error:', err);
       setErrorMessage('Could not import from this URL. Check the link and try again.');
       setScanState('error');
+      // Show catalog suggestion modal on URL import failure
+      setCatalogModalSource('url');
+      setCatalogModalInputData({ url: trimmed });
+      setCatalogModalPrefillName('');
+      setCatalogModalVisible(true);
     } finally {
       setIsUrlSubmitting(false);
     }
@@ -348,7 +403,7 @@ export default function BarcodeScanScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['left', 'right']}>
-      {/* Header - compact, no extra padding */}
+      {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.headerBack} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -356,7 +411,7 @@ export default function BarcodeScanScreen() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           {inputMode === 'camera' ? 'Scan Barcode' : 'Import from URL'}
         </Text>
-        <View style={styles.headerRight} />
+        <ThemeToggleButton size={22} />
       </View>
 
       {/* Mode Toggle */}
@@ -365,32 +420,45 @@ export default function BarcodeScanScreen() {
           <AnimatedPressable
             style={[
               styles.modeToggleButton,
-              inputMode === 'camera' && { backgroundColor: colors.accent },
-              inputMode !== 'camera' && { borderColor: colors.border, borderWidth: 1 },
+              inputMode === 'camera'
+                ? { backgroundColor: colors.accent }
+                : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
             ]}
             onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setInputMode('camera'); }}
             accessibilityRole="button"
             accessibilityLabel="Switch to camera scan mode"
           >
-            <Ionicons name="scan-outline" size={16} color={inputMode === 'camera' ? colors.card : colors.text} />
-            <Text style={[styles.modeToggleText, { color: inputMode === 'camera' ? colors.card : colors.text }]}>
+            <Ionicons name="scan-outline" size={16} color={inputMode === 'camera' ? '#fff' : colors.text} />
+            <Text style={[styles.modeToggleText, { color: inputMode === 'camera' ? '#fff' : colors.text }]}>
               Scan
             </Text>
           </AnimatedPressable>
           <AnimatedPressable
             style={[
               styles.modeToggleButton,
-              inputMode === 'url' && { backgroundColor: colors.accent },
-              inputMode !== 'url' && { borderColor: colors.border, borderWidth: 1 },
+              inputMode === 'url'
+                ? { backgroundColor: colors.accent }
+                : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
             ]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setInputMode('url'); }}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+              if (userPlan === 'free') {
+                showToast({ message: 'URL import requires a Pro plan', type: 'warning' });
+                router.push('/subscription');
+                return;
+              }
+              setInputMode('url');
+            }}
             accessibilityRole="button"
             accessibilityLabel="Switch to URL import mode"
           >
-            <Ionicons name="link-outline" size={16} color={inputMode === 'url' ? colors.card : colors.text} />
-            <Text style={[styles.modeToggleText, { color: inputMode === 'url' ? colors.card : colors.text }]}>
+            <Ionicons name="link-outline" size={16} color={inputMode === 'url' ? '#fff' : colors.text} />
+            <Text style={[styles.modeToggleText, { color: inputMode === 'url' ? '#fff' : colors.text }]}>
               Paste URL
             </Text>
+            {userPlan === 'free' && (
+              <Ionicons name="lock-closed" size={12} color={inputMode === 'url' ? '#fff' : colors.muted} />
+            )}
           </AnimatedPressable>
         </View>
       )}
@@ -706,6 +774,15 @@ export default function BarcodeScanScreen() {
           </View>
         </View>
       )}
+
+      {/* Catalog Learning Suggestion Modal */}
+      <CatalogSuggestionModal
+        visible={catalogModalVisible}
+        onDismiss={() => setCatalogModalVisible(false)}
+        source={catalogModalSource}
+        prefillName={catalogModalPrefillName}
+        inputData={catalogModalInputData}
+      />
     </SafeAreaView>
   );
 }
@@ -1022,8 +1099,8 @@ modeToggleRow: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 14,
+    borderRadius: 12,
   },
   modeToggleText: {
     fontSize: 14,

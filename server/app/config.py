@@ -165,6 +165,15 @@ JPY_TO_EUR: float = float(os.getenv("JPY_TO_EUR", "0.0061"))
 EBAY_CLIENT_ID: str = os.getenv("EBAY_CLIENT_ID", "")
 EBAY_CLIENT_SECRET: str = os.getenv("EBAY_CLIENT_SECRET", "")
 TCGPLAYER_BEARER_TOKEN: str = os.getenv("TCGPLAYER_BEARER_TOKEN", "")
+CARDMARKET_APP_TOKEN: str = os.getenv("CARDMARKET_APP_TOKEN", "")
+CARDMARKET_APP_SECRET: str = os.getenv("CARDMARKET_APP_SECRET", "")
+DISCOGS_PERSONAL_TOKEN: str = os.getenv("DISCOGS_PERSONAL_TOKEN", "")
+PRICECHARTING_API_KEY: str = os.getenv("PRICECHARTING_API_KEY", "")
+STOCKX_API_KEY: str = os.getenv("STOCKX_API_KEY", "")
+BRICKLINK_CONSUMER_KEY: str = os.getenv("BRICKLINK_CONSUMER_KEY", "")
+BRICKLINK_CONSUMER_SECRET: str = os.getenv("BRICKLINK_CONSUMER_SECRET", "")
+BRICKLINK_TOKEN: str = os.getenv("BRICKLINK_TOKEN", "")
+BRICKLINK_TOKEN_SECRET: str = os.getenv("BRICKLINK_TOKEN_SECRET", "")
 
 # ---------------------------------------------------------------------------
 # Price monitor
@@ -173,13 +182,20 @@ TCGPLAYER_BEARER_TOKEN: str = os.getenv("TCGPLAYER_BEARER_TOKEN", "")
 MONITOR_ENABLED: bool = os.getenv("MONITOR_ENABLED", "false").lower() in ("1", "true", "yes")
 
 # ---------------------------------------------------------------------------
+# Catalog Learning
+# ---------------------------------------------------------------------------
+
+CATALOG_LEARNING_ENABLED: bool = os.getenv("CATALOG_LEARNING_ENABLED", "false").lower() in ("1", "true", "yes")
+CATALOG_LEARNING_INTERVAL_SECS: int = int(os.getenv("CATALOG_LEARNING_INTERVAL_SECS", "1800"))
+CATALOG_AUTO_MAP_THRESHOLD: int = int(os.getenv("CATALOG_AUTO_MAP_THRESHOLD", "3"))
+CATALOG_NEW_CATEGORY_THRESHOLD: int = int(os.getenv("CATALOG_NEW_CATEGORY_THRESHOLD", "25"))
+
+# ---------------------------------------------------------------------------
 # Deal Discovery (Smart Deal Agent)
 # ---------------------------------------------------------------------------
 
 DEAL_DISCOVERY_ENABLED: bool = os.getenv("DEAL_DISCOVERY_ENABLED", "false").lower() in ("1", "true", "yes")
 DEAL_SCAN_INTERVAL_SECS: int = int(os.getenv("DEAL_SCAN_INTERVAL_SECS", "1800"))
-MAX_MANDATES_PER_USER: int = int(os.getenv("MAX_MANDATES_PER_USER", "5"))
-MAX_MANDATES_SUBSCRIBER: int = int(os.getenv("MAX_MANDATES_SUBSCRIBER", "20"))
 EBAY_AFFILIATE_CAMPAIGN_ID: str = os.getenv("EBAY_AFFILIATE_CAMPAIGN_ID", "")
 TCGPLAYER_AFFILIATE_ID: str = os.getenv("TCGPLAYER_AFFILIATE_ID", "")
 CARDMARKET_AFFILIATE_ID: str = os.getenv("CARDMARKET_AFFILIATE_ID", "")

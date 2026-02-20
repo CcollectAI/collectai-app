@@ -8,6 +8,7 @@ import asyncpg
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
+from app.features.pagination import pagination_params
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 logger = logging.getLogger(__name__)
@@ -80,7 +81,10 @@ class HomeWidgetResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.get("/personalized", response_model=PersonalizedInsightsResponse)
-async def get_personalized_insights(user_id: str = Depends(get_current_user_id)) -> PersonalizedInsightsResponse:
+async def get_personalized_insights(
+    user_id: str = Depends(get_current_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
+) -> PersonalizedInsightsResponse:
     """
     Personalized insights based on the user's actual portfolio composition:
     - Over-exposed categories (concentration risk)
@@ -88,6 +92,8 @@ async def get_personalized_insights(user_id: str = Depends(get_current_user_id))
     - Rare-set / retirement alerts   (TODO: needs catalogue metadata)
     - Trending items from market data
     """
+    limit, offset = pagination
+
     pool = _get_db_pool()
     if not pool:
         return PersonalizedInsightsResponse(
@@ -201,10 +207,10 @@ async def get_personalized_insights(user_id: str = Depends(get_current_user_id))
             rare_alerts: List[RareSetAlert] = []
 
             return PersonalizedInsightsResponse(
-                overexposed_categories=overexposed,
-                diversification_suggestions=suggestions,
-                rare_set_alerts=rare_alerts,
-                trending_items=trending,
+                overexposed_categories=overexposed[offset:offset + limit],
+                diversification_suggestions=suggestions[offset:offset + limit],
+                rare_set_alerts=rare_alerts[offset:offset + limit],
+                trending_items=trending[offset:offset + limit],
             )
 
     except asyncpg.PostgresError as e:

@@ -1,6 +1,7 @@
 import React, { memo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Image, ImageSource } from "expo-image";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 type Props = {
   label: string;
@@ -9,12 +10,13 @@ type Props = {
 };
 
 const CategoryImageTileInner: React.FC<Props> = ({ label, image, subtitle }) => {
+  const { colors: themeColors } = useAppTheme();
   const theme = {
     colors: {
-      card: "#FFFFFF",
-      text: "#1A202C",
-      muted: "#4A5568",
-      primary: "#02B5C4",
+      card: themeColors.card,
+      text: themeColors.text,
+      muted: themeColors.muted,
+      primary: themeColors.accent,
     },
   };
 
@@ -27,7 +29,7 @@ const CategoryImageTileInner: React.FC<Props> = ({ label, image, subtitle }) => 
         },
       ]}
     >
-      <Image source={image} style={styles.image} contentFit="cover" cachePolicy="disk" accessibilityLabel={`${label} category image`} />
+      <Image source={image} style={styles.image} contentFit="cover" cachePolicy="disk" transition={200} accessibilityLabel={`${label} category image`} />
       <View style={styles.textWrap}>
         <Text
           numberOfLines={1}

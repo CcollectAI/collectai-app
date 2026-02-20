@@ -8,7 +8,7 @@ Lookup cascade:
   1. Local catalog (category_items table) — fast, no network
   2. Open Library API (free, no key) — books, manga, art books
   3. Google Books API (free tier) — fallback for ISBNs
-  4. Category classifier — maps publisher/subject to our 36 categories
+  4. Category classifier — maps publisher/subject to our 41 categories
 """
 
 from __future__ import annotations
@@ -68,6 +68,15 @@ PUBLISHER_CATEGORY_MAP: list[tuple[str, str]] = [
     ("square enix", "manga"),
     ("vertical", "manga"),
     ("tokyopop", "manga"),
+    # Comic book publishers (before generic manga)
+    ("marvel", "comic_books"),
+    ("dc comics", "comic_books"),
+    ("image comics", "comic_books"),
+    ("idw publishing", "comic_books"),
+    ("boom! studios", "comic_books"),
+    ("dynamite entertainment", "comic_books"),
+    ("valiant", "comic_books"),
+    ("dark horse comics", "comic_books"),
     # One Piece (specific before generic manga)
     ("one piece", "one_piece"),
     # Pokemon
@@ -83,12 +92,18 @@ PUBLISHER_CATEGORY_MAP: list[tuple[str, str]] = [
     ("ghibli", "ghibli"),
     # Bandai
     ("bandai", "bandai_premium"),
-    # K-pop
+    # K-pop labels & distributors
     ("hybe", "kpop_merch"),
     ("sm entertainment", "kpop_merch"),
     ("jyp entertainment", "kpop_merch"),
     ("yg entertainment", "kpop_merch"),
     ("weverse", "kpop_merch"),
+    ("starship entertainment", "kpop_merch"),
+    ("pledis entertainment", "kpop_merch"),
+    ("cube entertainment", "kpop_merch"),
+    ("dreamus", "kpop_merch"),
+    ("kq entertainment", "kpop_merch"),
+    ("ador", "kpop_merch"),
     # Taylor Swift
     ("taylor swift", "taylor_swift"),
 ]
@@ -100,8 +115,17 @@ SUBJECT_CATEGORY_MAP: list[tuple[str, str]] = [
     ("40,000", "warhammer"),
     ("40k", "warhammer"),
     ("games workshop", "warhammer"),
+    ("horus heresy", "warhammer"),
+    ("black library", "warhammer"),
+    ("space marine", "warhammer"),
+    ("imperial armour", "warhammer"),
+    ("codex:", "warhammer"),
+    ("battletome:", "warhammer"),
     ("manga", "manga"),
-    ("graphic novel", "manga"),
+    ("graphic novel", "comic_books"),
+    ("comic book", "comic_books"),
+    ("cgc graded", "comic_books"),
+    ("omnibus", "comic_books"),
     ("anime", "anime_figures"),
     ("pokemon", "pokemon"),
     ("pokémon", "pokemon"),
@@ -116,6 +140,11 @@ SUBJECT_CATEGORY_MAP: list[tuple[str, str]] = [
     ("football card", "sportscards"),
     ("basketball card", "sportscards"),
     ("retro game", "retro_games"),
+    ("vinyl record", "vinyl_records"),
+    ("vinyl pressing", "vinyl_records"),
+    ("sneaker", "sneakers"),
+    ("horology", "watches"),
+    ("wristwatch", "watches"),
     ("video game", "retro_games"),
     ("one piece", "one_piece"),
     ("gundam", "gunpla"),
@@ -132,7 +161,7 @@ SUBJECT_CATEGORY_MAP: list[tuple[str, str]] = [
     ("taylor swift", "taylor_swift"),
     ("blu-ray", "bluray_steelbook"),
     ("steelbook", "bluray_steelbook"),
-    ("vinyl record", "anime_ost_vinyl"),
+    ("anime ost", "anime_ost_vinyl"),
     ("soundtrack", "anime_soundtrack"),
     ("vtuber", "vtuber"),
     ("hololive", "vtuber"),
@@ -147,7 +176,7 @@ def _classify_category(
     title: str,
     subjects: list[str],
 ) -> Optional[str]:
-    """Classify a book into one of our 36 categories based on metadata."""
+    """Classify a book into one of our 41 categories based on metadata."""
     combined_text = f"{publisher} {title} {' '.join(subjects)}".lower()
 
     # Check publisher first (more specific)
@@ -166,12 +195,26 @@ def _classify_category(
 
 
 def _is_isbn(code: str) -> bool:
-    """Check if a barcode looks like an ISBN (10 or 13 digits, 978/979 prefix)."""
+    """Check if a barcode looks like an ISBN (10 or 13 digits, 978/979 prefix).
+
+    Validates ISBN-10 check digit (modulo 11) and ISBN-13 check digit (modulo 10).
+    """
     cleaned = re.sub(r"[\s-]", "", code)
     if len(cleaned) == 13 and cleaned.startswith(("978", "979")):
-        return True
+        # ISBN-13 check digit: alternating weights 1,3
+        total = sum(
+            int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(cleaned[:12])
+        )
+        expected = (10 - (total % 10)) % 10
+        return int(cleaned[12]) == expected
     if len(cleaned) == 10:
-        return True
+        # ISBN-10 check digit: modulo 11 with weights 10..1
+        if not cleaned[:9].isdigit():
+            return False
+        total = sum(int(d) * (10 - i) for i, d in enumerate(cleaned[:9]))
+        remainder = (11 - (total % 11)) % 11
+        check = cleaned[9].upper()
+        return check == ("X" if remainder == 10 else str(remainder))
     return False
 
 

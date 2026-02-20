@@ -5,22 +5,21 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { MOCK_EVENTS, CollectionEvent, EventType } from "@/mockData";
 import { useAppTheme } from "@/hooks/useAppTheme";
-
-// Compatibility: replace old ./ui/theme usage with app theme hook
-const useAppColors = () => {
-  const { colors } = useAppTheme();
-  return colors;
-};
+import { AnimatedPressable } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 
 type FilterTab = "all" | EventType;
 
 const EventsDropsScreen: React.FC = () => {
-  const colors = useAppColors();
+  const { colors } = useAppTheme();
+  const router = useRouter();
+  const { settings } = useSettings();
   const [filter, setFilter] = useState<FilterTab>("all");
 
   const filteredEvents = useMemo(() => {
@@ -69,7 +68,10 @@ const EventsDropsScreen: React.FC = () => {
       >
         {/* Header */}
         <View style={styles.headerRow}>
-          <View>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: colors.text }]}>
               Events & drops (mock)
             </Text>
@@ -80,7 +82,7 @@ const EventsDropsScreen: React.FC = () => {
           <View
             style={[
               styles.headerIconCircle,
-              { backgroundColor: colors.chipBg },
+              { backgroundColor: colors.card },
             ]}
           >
             <Ionicons
@@ -148,13 +150,13 @@ const EventsDropsScreen: React.FC = () => {
           ].map((tab) => {
             const active = tab.id === filter;
             return (
-              <Pressable
+              <AnimatedPressable
                 key={tab.id}
-                onPress={() => setFilter(tab.id)}
+                onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setFilter(tab.id); }}
                 style={[
                   styles.filterChip,
                   {
-                    backgroundColor: active ? colors.accent : colors.chipBg,
+                    backgroundColor: active ? colors.accent : colors.card,
                     borderColor: active ? colors.accent : "transparent",
                   },
                 ]}
@@ -169,7 +171,7 @@ const EventsDropsScreen: React.FC = () => {
                 >
                   {tab.label}
                 </Text>
-              </Pressable>
+              </AnimatedPressable>
             );
           })}
         </View>
@@ -221,7 +223,7 @@ const EventsDropsScreen: React.FC = () => {
                       <View
                         style={[
                           styles.typeTag,
-                          { backgroundColor: colors.chipBg },
+                          { backgroundColor: colors.card },
                         ]}
                       >
                         <Text
@@ -254,13 +256,13 @@ const EventsDropsScreen: React.FC = () => {
                     </View>
                   </View>
                   <View style={styles.eventActions}>
-                    <Pressable style={styles.addButton} accessibilityRole="button" accessibilityLabel={`Add ${event.title} to calendar`}>
+                    <AnimatedPressable onPress={() => fireHaptic(HapticIntent.CONFIRMATION_LIGHT)} style={[styles.addButton, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel={`Add ${event.title} to calendar`}>
                       <Ionicons
                         name="calendar-outline"
                         size={14}
                         color="#FFFFFF"
                       />
-                    </Pressable>
+                    </AnimatedPressable>
                     <Text
                       style={[styles.addButtonLabel, { color: colors.muted }]}
                     >
@@ -298,6 +300,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  backBtn: {
+    padding: 4,
+    marginRight: 8,
   },
   headerRow: {
     flexDirection: "row",
@@ -420,7 +426,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#19A7AE",
   },
   addButtonLabel: {
     fontSize: 10,

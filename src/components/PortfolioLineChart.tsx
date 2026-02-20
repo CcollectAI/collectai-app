@@ -12,14 +12,23 @@ export type PortfolioLineChartProps = {
   series: TimeSeriesPoint[];
   accentColor?: string;
 
-  /** If false, removes internal “value header” inside chart */
+  /** If false, removes internal "value header" inside chart */
   showValueHeader?: boolean;
 
   /** If true, shows axis labels */
   showAxisLabels?: boolean;
 
-  /** Optional override */
+  /** Optional override for axis label color */
   axisLabelColor?: string;
+
+  /** Optional override for grid line color */
+  gridColor?: string;
+
+  /** Optional override for value/date header text */
+  textColor?: string;
+
+  /** Fill color for the hover dot (defaults to parent card background) */
+  dotFillColor?: string;
 };
 
 function formatDateShort(iso: string): string {
@@ -28,12 +37,15 @@ function formatDateShort(iso: string): string {
   return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
-export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = ({
+export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(({
   series,
   accentColor = "#14b8a6",
   showValueHeader = false,
   showAxisLabels = true,
   axisLabelColor = "#94a3b8",
+  gridColor = "#e5e7eb",
+  textColor = "#0b1f3a",
+  dotFillColor = "#ffffff",
 }) => {
   const [width, setWidth] = useState(0);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -46,7 +58,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = ({
     [series]
   );
 
-  const height = 190; // taller = more “real chart”
+  const height = 190; // taller = more "real chart"
 
   const { path, min, max } = useMemo(() => {
     if (!sorted.length || width <= 0) return { path: "", min: 0, max: 1 };
@@ -82,10 +94,13 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = ({
     setHoverIndex(safeIdx);
   };
 
+  // Lighter grid for the midline
+  const gridColorLight = gridColor + '60';
+
   if (!sorted.length) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>
+        <Text style={[styles.emptyText, { color: axisLabelColor }]}>
           No history yet. Add items to see your portfolio curve.
         </Text>
       </View>
@@ -126,8 +141,8 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = ({
     >
       {showValueHeader && (
         <View style={styles.valueRow}>
-          <Text style={styles.valueText}>{formatPrice(currentPoint.v)}</Text>
-          <Text style={styles.dateText}>{formatDateShort(currentPoint.t)}</Text>
+          <Text style={[styles.valueText, { color: textColor }]}>{formatPrice(currentPoint.v)}</Text>
+          <Text style={[styles.dateText, { color: axisLabelColor }]}>{formatDateShort(currentPoint.t)}</Text>
         </View>
       )}
 
@@ -157,8 +172,8 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = ({
 
           <Svg height={height} width={width}>
             {/* baseline + mid gridline */}
-            <Line x1={0} y1={height} x2={width} y2={height} stroke="#e5e7eb" strokeWidth={1} />
-            <Line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke="#f1f5f9" strokeWidth={1} />
+            <Line x1={0} y1={height} x2={width} y2={height} stroke={gridColor} strokeWidth={1} />
+            <Line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke={gridColorLight} strokeWidth={1} />
 
             {path ? (
               <Path d={path} fill="none" stroke={accentColor} strokeWidth={3} />
@@ -170,17 +185,17 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = ({
               y1={0}
               x2={hoverX}
               y2={height}
-              stroke="#d1d5db"
+              stroke={gridColor}
               strokeDasharray="3 4"
               strokeWidth={1}
             />
-            <Circle cx={hoverX} cy={hoverY} r={4} fill="#ffffff" stroke={accentColor} strokeWidth={2} />
+            <Circle cx={hoverX} cy={hoverY} r={4} fill={dotFillColor} stroke={accentColor} strokeWidth={2} />
           </Svg>
         </View>
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -194,11 +209,9 @@ const styles = StyleSheet.create({
   valueText: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0b1f3a",
   },
   dateText: {
     fontSize: 12,
-    color: "#64748b",
   },
   chartWrap: {
     position: "relative",
@@ -230,6 +243,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   emptyText: {
-    color: "#64748b",
+    fontSize: 14,
   },
 });
+
+PortfolioLineChart.displayName = "PortfolioLineChart";

@@ -75,6 +75,7 @@ class IntakeResultResponse(BaseModel):
     price_source: Optional[str] = None
     price_band: Optional[PriceBandResponse] = None
     image_url: Optional[str] = None
+    catalog_miss: bool = False
     rationale: list[str] = Field(default_factory=list)
 
 
@@ -140,6 +141,7 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
         price_source=result.price_source,
         price_band=price_band,
         image_url=result.image_url,
+        catalog_miss=result.catalog_miss,
         rationale=result.rationale,
     )
 
@@ -171,6 +173,7 @@ async def intake_process(
     category: Optional[str] = Form(None, max_length=64),
     name: Optional[str] = Form(None, max_length=500),
     condition: Optional[str] = Form(None, max_length=30),
+    user_id: str = Depends(get_current_user_id),
 ):
     """
     Full intake endpoint: accepts multipart form with optional image,
@@ -226,13 +229,17 @@ async def intake_process(
         barcode=barcode,
         barcode_type=barcode_type,
         user_hints=user_hints if user_hints else None,
+        user_id=user_id,
     )
 
     return _intake_to_response(result)
 
 
 @router.post("/barcode-only", response_model=IntakeResultResponse)
-async def intake_barcode_only(req: BarcodeOnlyRequest):
+async def intake_barcode_only(
+    req: BarcodeOnlyRequest,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     Barcode-only intake endpoint.
 
@@ -256,6 +263,7 @@ async def intake_barcode_only(req: BarcodeOnlyRequest):
         barcode=barcode,
         barcode_type=req.barcode_type,
         user_hints=user_hints if user_hints else None,
+        user_id=user_id,
     )
 
     return _intake_to_response(result)
@@ -267,6 +275,7 @@ async def intake_image_only(
     category: Optional[str] = Form(None, max_length=64),
     name: Optional[str] = Form(None, max_length=500),
     condition: Optional[str] = Form(None, max_length=30),
+    user_id: str = Depends(get_current_user_id),
 ):
     """
     Image-only intake endpoint.
@@ -312,13 +321,17 @@ async def intake_image_only(
         barcode=None,
         barcode_type=None,
         user_hints=user_hints if user_hints else None,
+        user_id=user_id,
     )
 
     return _intake_to_response(result)
 
 
 @router.post("/url", response_model=IntakeResultResponse)
-async def intake_url(req: UrlImportRequest):
+async def intake_url(
+    req: UrlImportRequest,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     URL import endpoint.
 
@@ -349,6 +362,7 @@ async def intake_url(req: UrlImportRequest):
     result = await process_url_import(
         url=url,
         user_hints=user_hints if user_hints else None,
+        user_id=user_id,
     )
 
     return _intake_to_response(result)

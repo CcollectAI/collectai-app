@@ -171,6 +171,11 @@ class CircuitBreaker:
 ebay_circuit = CircuitBreaker("ebay", max_failures=5, cooldown_seconds=60)
 tcgplayer_circuit = CircuitBreaker("tcgplayer", max_failures=5, cooldown_seconds=60)
 openai_circuit = CircuitBreaker("openai", max_failures=3, cooldown_seconds=120)
+cardmarket_circuit = CircuitBreaker("cardmarket", max_failures=5, cooldown_seconds=60)
+discogs_circuit = CircuitBreaker("discogs", max_failures=5, cooldown_seconds=60)
+pricecharting_circuit = CircuitBreaker("pricecharting", max_failures=5, cooldown_seconds=60)
+stockx_circuit = CircuitBreaker("stockx", max_failures=5, cooldown_seconds=60)
+bricklink_circuit = CircuitBreaker("bricklink", max_failures=5, cooldown_seconds=60)
 
 
 def all_circuit_status() -> list[dict]:

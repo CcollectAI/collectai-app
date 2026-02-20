@@ -12,12 +12,12 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import {
   getBillingStatus,
   createCheckoutSession,
@@ -25,11 +25,6 @@ import {
   type BillingStatus,
 } from '@/api/collectorsApi';
 
-const TIFFANY = '#81D8D0';
-const TIFFANY_DARK = '#5FBFB6';
-const NAVY = '#0F172A';
-const MUTED = '#64748B';
-const BORDER = '#E2E8F0';
 const SUCCESS = '#10B981';
 const WARNING = '#F59E0B';
 
@@ -41,33 +36,43 @@ interface PlanCardProps {
   recommended?: boolean;
   onSelect?: () => void;
   loading?: boolean;
+  colors: ReturnType<typeof useAppTheme>['colors'];
 }
 
-function PlanCard({ name, price, features, current, recommended, onSelect, loading }: PlanCardProps) {
+function PlanCard({ name, price, features, current, recommended, onSelect, loading, colors }: PlanCardProps) {
   return (
-    <View style={[styles.planCard, current && styles.planCardCurrent, recommended && styles.planCardRecommended]}>
+    <View style={[
+      styles.planCard,
+      { borderColor: colors.border },
+      current && { borderColor: colors.accent, borderWidth: 2, backgroundColor: colors.accent + '08' },
+      recommended && { borderColor: colors.brand.dark, borderWidth: 2 },
+    ]}>
       {recommended && (
-        <View style={styles.recommendedBadge}>
+        <View style={[styles.recommendedBadge, { backgroundColor: colors.brand.dark }]}>
           <Text style={styles.recommendedText}>RECOMMENDED</Text>
         </View>
       )}
-      <Text style={styles.planName}>{name}</Text>
-      <Text style={styles.planPrice}>{price}</Text>
+      <Text style={[styles.planName, { color: colors.text }]}>{name}</Text>
+      <Text style={[styles.planPrice, { color: colors.muted }]}>{price}</Text>
       <View style={styles.featureList}>
         {features.map((f) => (
           <View key={f} style={styles.featureRow}>
-            <Ionicons name="checkmark-circle" size={18} color={current ? TIFFANY_DARK : MUTED} />
-            <Text style={styles.featureText}>{f}</Text>
+            <Ionicons name="checkmark-circle" size={18} color={current ? colors.brand.dark : colors.muted} />
+            <Text style={[styles.featureText, { color: colors.text }]}>{f}</Text>
           </View>
         ))}
       </View>
       {current ? (
-        <View style={styles.currentBadge}>
-          <Text style={styles.currentBadgeText}>Current Plan</Text>
+        <View style={[styles.currentBadge, { backgroundColor: SUCCESS + '15' }]}>
+          <Text style={[styles.currentBadgeText, { color: SUCCESS }]}>Current Plan</Text>
         </View>
       ) : (
         <AnimatedPressable
-          style={[styles.selectBtn, recommended && styles.selectBtnRecommended]}
+          style={[
+            styles.selectBtn,
+            { backgroundColor: colors.brand.darker },
+            recommended && { backgroundColor: colors.brand.dark },
+          ]}
           onPress={onSelect}
           disabled={loading}
           accessibilityRole="button"
@@ -87,8 +92,8 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
 }
 
 export default function SubscriptionScreen() {
-  const router = useRouter();
   const { settings } = useSettings();
+  const { colors } = useAppTheme();
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<string | null>(null);
@@ -96,7 +101,9 @@ export default function SubscriptionScreen() {
   useEffect(() => {
     getBillingStatus()
       .then(setBilling)
-      .catch(() => {})
+      .catch(() => {
+        Alert.alert('Connection Error', 'Could not load subscription info. Please try again later.');
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -149,26 +156,26 @@ export default function SubscriptionScreen() {
   const currentPlan = billing?.plan ?? 'free';
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Subscription</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Subscription</Text>
 
         {billing?.status === 'past_due' && (
-          <View style={styles.warningBanner}>
+          <View style={[styles.warningBanner, { backgroundColor: WARNING + '15' }]}>
             <Ionicons name="warning" size={18} color={WARNING} />
-            <Text style={styles.warningText}>Payment past due. Update your payment method to avoid interruption.</Text>
+            <Text style={[styles.warningText, { color: colors.text }]}>Payment past due. Update your payment method to avoid interruption.</Text>
           </View>
         )}
 
         {billing?.cancel_at_period_end && (
-          <View style={styles.warningBanner}>
-            <Ionicons name="information-circle" size={18} color={MUTED} />
-            <Text style={styles.warningText}>Your plan will be downgraded at the end of the current period.</Text>
+          <View style={[styles.warningBanner, { backgroundColor: WARNING + '15' }]}>
+            <Ionicons name="information-circle" size={18} color={colors.muted} />
+            <Text style={[styles.warningText, { color: colors.text }]}>Your plan will be downgraded at the end of the current period.</Text>
           </View>
         )}
 
         {loading ? (
-          <ActivityIndicator size="large" color={TIFFANY} style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
         ) : (
           <View style={styles.plans}>
             <PlanCard
@@ -176,6 +183,7 @@ export default function SubscriptionScreen() {
               price="EUR 0/mo"
               features={['3 purchase mandates', 'Basic valuation', 'Community access']}
               current={currentPlan === 'free'}
+              colors={colors}
             />
             <PlanCard
               name="Pro"
@@ -190,6 +198,7 @@ export default function SubscriptionScreen() {
               recommended={currentPlan === 'free'}
               onSelect={() => handleUpgrade('pro')}
               loading={upgrading === 'pro'}
+              colors={colors}
             />
             <PlanCard
               name="Premium"
@@ -205,18 +214,19 @@ export default function SubscriptionScreen() {
               recommended={currentPlan === 'pro'}
               onSelect={() => handleUpgrade('premium')}
               loading={upgrading === 'premium'}
+              colors={colors}
             />
           </View>
         )}
 
         {billing && currentPlan !== 'free' && (
           <AnimatedPressable
-            style={styles.manageBtn}
+            style={[styles.manageBtn, { borderColor: colors.border }]}
             onPress={handleManage}
             accessibilityRole="button"
             accessibilityLabel="Manage subscription"
           >
-            <Text style={styles.manageBtnText}>Manage Subscription</Text>
+            <Text style={[styles.manageBtnText, { color: colors.brand.dark }]}>Manage Subscription</Text>
           </AnimatedPressable>
         )}
       </ScrollView>
@@ -227,7 +237,6 @@ export default function SubscriptionScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   scroll: {
     paddingHorizontal: 20,
@@ -236,14 +245,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: NAVY,
     marginBottom: 20,
   },
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: WARNING + '15',
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,
@@ -251,7 +258,6 @@ const styles = StyleSheet.create({
   warningText: {
     flex: 1,
     fontSize: 13,
-    color: NAVY,
     lineHeight: 19,
   },
   plans: {
@@ -259,24 +265,13 @@ const styles = StyleSheet.create({
   },
   planCard: {
     borderWidth: 1,
-    borderColor: BORDER,
     borderRadius: 16,
     padding: 20,
-  },
-  planCardCurrent: {
-    borderColor: TIFFANY,
-    borderWidth: 2,
-    backgroundColor: TIFFANY + '08',
-  },
-  planCardRecommended: {
-    borderColor: TIFFANY_DARK,
-    borderWidth: 2,
   },
   recommendedBadge: {
     position: 'absolute',
     top: -10,
     right: 16,
-    backgroundColor: TIFFANY_DARK,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 3,
@@ -290,13 +285,11 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: 20,
     fontWeight: '700',
-    color: NAVY,
     marginBottom: 4,
   },
   planPrice: {
     fontSize: 16,
     fontWeight: '600',
-    color: MUTED,
     marginBottom: 16,
   },
   featureList: {
@@ -310,10 +303,8 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
-    color: NAVY,
   },
   currentBadge: {
-    backgroundColor: SUCCESS + '15',
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
@@ -321,16 +312,11 @@ const styles = StyleSheet.create({
   currentBadgeText: {
     fontSize: 14,
     fontWeight: '700',
-    color: SUCCESS,
   },
   selectBtn: {
-    backgroundColor: NAVY,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-  },
-  selectBtnRecommended: {
-    backgroundColor: TIFFANY_DARK,
   },
   selectBtnText: {
     color: '#FFFFFF',
@@ -340,7 +326,6 @@ const styles = StyleSheet.create({
   manageBtn: {
     marginTop: 24,
     borderWidth: 1,
-    borderColor: BORDER,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -348,6 +333,5 @@ const styles = StyleSheet.create({
   manageBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: TIFFANY_DARK,
   },
 });

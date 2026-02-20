@@ -176,6 +176,16 @@ In `DEV_MODE=true`, JWT auth falls back to `DEV_USER_ID` without a token.
 | POST | `/purchase/deals/{deal_id}/decline` | JWT | Dismiss deal |
 | GET | `/purchase/stats` | JWT | Agent stats |
 
+## Catalog Learning
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/catalog/suggest` | JWT + Rate Limit | Submit unrecognized item suggestion (10/hr/user) |
+| GET | `/ops/catalog-suggestions` | Ops Key | List suggestions (paginated, filterable by status/source) |
+| POST | `/ops/catalog-suggestions/{id}/action` | Ops Key | Approve/reject/map a suggestion |
+| GET | `/ops/category-candidates` | Ops Key | List new category candidates |
+| POST | `/ops/category-candidates/{id}/action` | Ops Key | Approve/reject/merge a candidate |
+
 ## User Settings
 
 | Method | Path | Auth | Description |
@@ -221,6 +231,7 @@ All endpoints are available at both unversioned paths (`/items`, `/alerts/mine`,
 |-------|-------|
 | Vision classification | 20 req/min per user |
 | Intake endpoints | 30 req/min per user (shared) |
+| Catalog suggestions | 10 req/hr per user |
 
 ## Error Response Format
 

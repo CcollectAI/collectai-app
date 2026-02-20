@@ -8,16 +8,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { AnimatedPressable } from "@/motion";
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { useSettings } from "@/lib/settings";
 type LoadState = "idle" | "loading" | "loaded" | "error";
-
-// Compatibility: replace old ./ui/theme usage with app theme hook
-const useAppColors = () => {
-  const { colors } = useAppTheme();
-  return colors;
-};
 
 type CollectorEventType = "Drop" | "Tournament" | "Stream" | "Showcase";
 
@@ -93,7 +90,9 @@ const typeIcon = (type: CollectorEventType): keyof typeof Ionicons.glyphMap => {
 };
 
 const EventsAndDropsScreen: React.FC = () => {
-  const colors = useAppColors();
+  const router = useRouter();
+  const { colors } = useAppTheme();
+  const { settings } = useSettings();
 
   const [state, setState] = useState<LoadState>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -171,7 +170,10 @@ const EventsAndDropsScreen: React.FC = () => {
       >
         {/* Header */}
         <View style={styles.headerRow}>
-          <View>
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </AnimatedPressable>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.headerLabel, { color: colors.muted }]}>
               Calendar
             </Text>
@@ -183,7 +185,7 @@ const EventsAndDropsScreen: React.FC = () => {
               streams so you don&apos;t miss high-signal moments.
             </Text>
           </View>
-          <View style={styles.headerIcon}>
+          <View style={[styles.headerIcon, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons
               name="calendar-outline"
               size={20}
@@ -232,16 +234,16 @@ const EventsAndDropsScreen: React.FC = () => {
             {
               backgroundColor:
                 state === "error"
-                  ? "#FDECEC"
+                  ? "#EF444415"
                   : state === "loading"
-                  ? "#FFF7E6"
-                  : "#E7F6F8",
+                  ? "#F59E0B15"
+                  : colors.accent + "15",
               borderColor:
                 state === "error"
-                  ? "#D64545"
+                  ? "#EF4444"
                   : state === "loading"
                   ? "#F59E0B"
-                  : "#19A7AE",
+                  : colors.accent,
             },
           ]}
         >
@@ -258,8 +260,8 @@ const EventsAndDropsScreen: React.FC = () => {
                 size={18}
                 color={
                   state === "error"
-                    ? "#D64545"
-                    : "#19A7AE"
+                    ? "#EF4444"
+                    : colors.accent
                 }
               />
             )}
@@ -274,7 +276,7 @@ const EventsAndDropsScreen: React.FC = () => {
             </Text>
             {errorText ? (
               <Text
-                style={[styles.bannerError, { color: "#D64545" }]}
+                style={[styles.bannerError, { color: "#EF4444" }]}
                 numberOfLines={2}
               >
                 {errorText}
@@ -309,7 +311,7 @@ const EventsAndDropsScreen: React.FC = () => {
           {MOCK_EVENTS.map((ev, idx) => (
             <View key={ev.id}>
               <View style={styles.eventRow}>
-                <View style={styles.eventIconCircle}>
+                <View style={[styles.eventIconCircle, { backgroundColor: colors.accent + '15' }]}>
                   <Ionicons
                     name={typeIcon(ev.type)}
                     size={16}
@@ -393,8 +395,8 @@ const EventsAndDropsScreen: React.FC = () => {
             liveNow.slice(0, 4).map((c) => (
               <View key={c.id}>
                 <View style={styles.liveRow}>
-                  <View style={styles.liveAvatarCircle}>
-                    <Text style={styles.liveAvatarInitial}>
+                  <View style={[styles.liveAvatarCircle, { backgroundColor: colors.accent + '15' }]}>
+                    <Text style={[styles.liveAvatarInitial, { color: colors.text }]}>
                       {c.display_name?.charAt(0).toUpperCase() ?? "C"}
                     </Text>
                   </View>
@@ -418,7 +420,7 @@ const EventsAndDropsScreen: React.FC = () => {
                       <Ionicons
                         name="eye-outline"
                         size={12}
-                        color="#D64545"
+                        color="#EF4444"
                         style={{ marginRight: 4 }}
                       />
                       <Text style={styles.viewerPillText}>
@@ -452,11 +454,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
+  backBtn: {
+    padding: 4,
+    marginRight: 8,
+  },
   headerRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 16,
+    gap: 8,
+  },
+  backBtn: {
+    padding: 4,
+    marginTop: 2,
   },
   headerLabel: {
     fontSize: 12,
@@ -479,9 +489,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D6E4EC",
   },
   summaryCard: {
     flexDirection: "row",
@@ -570,7 +578,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E7F6F8",
     marginRight: 8,
   },
   eventTitle: {
@@ -597,7 +604,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#D64545",
+    backgroundColor: "#EF4444",
     marginRight: 6,
   },
   emptyText: {
@@ -614,13 +621,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E7F6F8",
     marginRight: 8,
   },
   liveAvatarInitial: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0C2233",
   },
   creatorName: {
     fontSize: 14,
@@ -640,12 +645,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: "#FDECEC",
+    backgroundColor: "#EF444415",
   },
   viewerPillText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#D64545",
+    color: "#EF4444",
   },
   partnerTag: {
     marginTop: 4,

@@ -1,13 +1,17 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getUserById } from '@/data/users';
 import { EVENTS } from '@/data/events';
+import { dataProvider } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { fireHaptic, HapticIntent } from '@/haptics';
 import logger from '@/utils/logger';
+
+type DmStatusState = 'loading' | 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined' | 'blocked';
 
 const NewChatScreen: React.FC = () => {
   const { toUserId, contextEventId } = useLocalSearchParams<{
@@ -29,17 +33,61 @@ const NewChatScreen: React.FC = () => {
       : '',
   );
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [dmStatus, setDmStatus] = useState<DmStatusState>('loading');
 
-  const handleSend = () => {
-    logger.info('[Chat] send connection message', {
-      toUserId,
-      contextEventId,
-      message,
-    });
-    setSent(true);
-    setTimeout(() => {
-      router.back();
-    }, 800);
+  // Check DM status and block state on mount
+  useEffect(() => {
+    if (!toUserId) return;
+
+    const checkStatus = async () => {
+      try {
+        const [blocked, status] = await Promise.all([
+          dataProvider.isBlocked(toUserId),
+          dataProvider.getDmStatus(toUserId),
+        ]);
+
+        if (blocked) {
+          setDmStatus('blocked');
+        } else {
+          setDmStatus(status);
+        }
+      } catch (err) {
+        logger.warn('[Chat/new] status check error:', err);
+        setDmStatus('none');
+      }
+    };
+
+    checkStatus();
+  }, [toUserId]);
+
+  // Redirect to existing thread if already accepted
+  useEffect(() => {
+    if (dmStatus === 'accepted' && toUserId) {
+      router.replace(`/inbox`);
+    }
+  }, [dmStatus, toUserId, router]);
+
+  const handleSend = async () => {
+    if (!toUserId || !message.trim() || sending) return;
+
+    setSending(true);
+    try {
+      await dataProvider.requestDm(toUserId, message.trim());
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED);
+      setSent(true);
+      setTimeout(() => {
+        router.back();
+      }, 800);
+    } catch (err: unknown) {
+      logger.error('[Chat/new] requestDm error:', err);
+      Alert.alert(
+        'Failed to send',
+        err instanceof Error ? err.message : 'Something went wrong. Please try again.',
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   if (!toUser) {
@@ -66,12 +114,97 @@ const NewChatScreen: React.FC = () => {
     );
   }
 
+  // Status-based UI states
+  if (dmStatus === 'loading') {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (dmStatus === 'blocked') {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="ban-outline" size={48} color={colors.muted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            Can&apos;t message this user
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+            You can&apos;t send a message to this collector.
+          </Text>
+          <AnimatedPressable
+            onPress={() => router.back()}
+            style={[styles.emptyBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (dmStatus === 'pending_outgoing') {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="hourglass-outline" size={48} color={colors.accent} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            Request already sent
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+            You&apos;ve already sent a connection request to {toUser.displayName}. They haven&apos;t responded yet.
+          </Text>
+          <AnimatedPressable
+            onPress={() => router.back()}
+            style={[styles.emptyBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (dmStatus === 'pending_incoming') {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="mail-unread-outline" size={48} color={colors.accent} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            You have a request from {toUser.displayName}
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+            Check your inbox to accept or decline their connection request.
+          </Text>
+          <AnimatedPressable
+            onPress={() => router.push('/inbox')}
+            style={[styles.emptyBtn, { borderColor: colors.accent, backgroundColor: colors.accent }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go to inbox"
+          >
+            <Text style={[styles.emptyBtnText, { color: '#ffffff' }]}>Go to Inbox</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const initials = toUser.displayName
     .split(' ')
     .map((p) => p[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
+
+  const canSend = message.trim().length > 0 && !sent && !sending;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -125,36 +258,42 @@ const NewChatScreen: React.FC = () => {
               onChangeText={setMessage}
               placeholder={
                 contextEvent
-                  ? 'Write a friendly message about this event…'
-                  : 'Write a friendly message…'
+                  ? 'Write a friendly message about this event\u2026'
+                  : 'Write a friendly message\u2026'
               }
               placeholderTextColor={colors.muted}
               accessibilityLabel="Connection message"
+              maxLength={1000}
+              editable={!sending && !sent}
               style={[styles.messageInput, { color: colors.text }]}
             />
           </View>
 
           {/* Send button */}
           <AnimatedPressable
-            disabled={!message.trim() || sent}
+            disabled={!canSend}
             onPress={handleSend}
             style={[
               styles.sendBtn,
               {
-                backgroundColor: message.trim() && !sent ? colors.accent : colors.border,
-                opacity: message.trim() && !sent ? 1 : 0.6,
+                backgroundColor: canSend ? colors.accent : colors.border,
+                opacity: canSend ? 1 : 0.6,
               },
             ]}
             accessibilityRole="button"
             accessibilityLabel={sent ? 'Request sent' : 'Send connection request'}
           >
-            <Ionicons
-              name={sent ? 'checkmark-circle' : 'send'}
-              size={18}
-              color="#ffffff"
-            />
+            {sending ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Ionicons
+                name={sent ? 'checkmark-circle' : 'send'}
+                size={18}
+                color="#ffffff"
+              />
+            )}
             <Text style={styles.sendBtnText}>
-              {sent ? 'Request sent!' : 'Send connection request'}
+              {sent ? 'Request sent!' : sending ? 'Sending...' : 'Send connection request'}
             </Text>
           </AnimatedPressable>
 
@@ -202,6 +341,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginTop: 16,
+    textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,

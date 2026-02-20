@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { USER_PROFILES } from '@/data/users';
-import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { AnimatedPressable, useEnterReveal, useStaggerReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
@@ -51,6 +51,12 @@ const LeaderboardScreen: React.FC = () => {
     [],
   );
 
+  const { getItemStyle } = useStaggerReveal({
+    count: rankedUsers.length,
+    staggerMs: 60,
+    enabled: settings.animationsEnabled,
+  });
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
@@ -77,16 +83,18 @@ const LeaderboardScreen: React.FC = () => {
         {/* Leaderboard list */}
         {rankedUsers.map((user, index) => {
           const medalColor = getMedalColor(index, colors.muted);
+          const staggerStyle = getItemStyle(index);
           return (
+            <Animated.View key={user.id} style={staggerStyle}>
             <AnimatedPressable
-              key={user.id}
               onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push(`/users/${encodeURIComponent(user.id)}`); }}
               style={[
                 styles.card,
                 { borderColor: colors.border, backgroundColor: colors.card },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${formatPrice(user.stats.totalEstimatedValueEur)}`}
+              accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${formatPrice(user.stats.totalEstimatedValueEur)}, ${user.stats.totalItems} items`}
+              accessibilityHint="Double tap to view collector profile"
             >
               {/* Rank */}
               <View style={styles.rankCol}>
@@ -122,6 +130,7 @@ const LeaderboardScreen: React.FC = () => {
                 </Text>
               </View>
             </AnimatedPressable>
+            </Animated.View>
           );
         })}
         </Animated.View>

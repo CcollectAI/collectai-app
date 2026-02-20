@@ -11,6 +11,8 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -23,6 +25,8 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import { getJSON, setJSON } from '@/lib/storage';
 import { ACHIEVEMENTS, type Achievement } from '@/lib/achievements';
+
+type DmStatusType = 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Avatar Component
@@ -119,6 +123,9 @@ export default function UserProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isUserBlocked, setIsUserBlocked] = useState(false);
+  const [dmStatus, setDmStatus] = useState<DmStatusType>('none');
+  const [showMenu, setShowMenu] = useState(false);
   const { showToast } = useToast();
 
   // Load follow state from AsyncStorage on mount
@@ -127,6 +134,26 @@ export default function UserProfileScreen() {
     getJSON<string[]>('followed_users', []).then((ids) => {
       setIsFollowing(ids.includes(userId));
     });
+  }, [userId]);
+
+  // Load DM status and block state on mount
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkState = async () => {
+      try {
+        const [blocked, status] = await Promise.all([
+          dataProvider.isBlocked(userId),
+          dataProvider.getDmStatus(userId),
+        ]);
+        setIsUserBlocked(blocked);
+        setDmStatus(status);
+      } catch (err) {
+        logger.warn('[UserProfile] checkState error:', err);
+      }
+    };
+
+    checkState();
   }, [userId]);
 
   const handleFollowToggle = useCallback(async () => {
@@ -145,6 +172,62 @@ export default function UserProfileScreen() {
     showToast({ message: next ? 'Following!' : 'Unfollowed', type: 'success' });
   }, [userId, isFollowing, showToast]);
 
+  const handleBlockToggle = useCallback(async () => {
+    if (!userId) return;
+    setShowMenu(false);
+
+    if (isUserBlocked) {
+      // Unblock
+      try {
+        await dataProvider.unblockUser(userId);
+        setIsUserBlocked(false);
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+        showToast({ message: 'Unblocked', type: 'success' });
+      } catch (err: unknown) {
+        Alert.alert('Error', err instanceof Error ? err.message : 'Failed to unblock user');
+      }
+    } else {
+      // Block
+      Alert.alert(
+        'Block User',
+        `Block ${profile?.displayName ?? 'this user'}? They won't be able to message you, and pending requests will be declined. You can unblock them later.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Block',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await dataProvider.blockUser(userId);
+                setIsUserBlocked(true);
+                setDmStatus('none');
+                fireHaptic(HapticIntent.ALERT_TRIGGERED);
+                showToast({ message: 'Blocked', type: 'success' });
+              } catch (err: unknown) {
+                Alert.alert('Error', err instanceof Error ? err.message : 'Failed to block user');
+              }
+            },
+          },
+        ]
+      );
+    }
+  }, [userId, isUserBlocked, profile, showToast]);
+
+  const handleMessagePress = useCallback(() => {
+    if (!userId || isUserBlocked) return;
+
+    if (dmStatus === 'accepted') {
+      router.push('/inbox');
+    } else if (dmStatus === 'pending_incoming') {
+      router.push('/inbox');
+    } else {
+      router.push({
+        pathname: '/chat/new',
+        params: { toUserId: userId },
+      });
+    }
+  }, [userId, dmStatus, isUserBlocked, router]);
+
   const loadProfile = useCallback(async () => {
     if (!userId) {
       setError('No user ID provided');
@@ -160,7 +243,7 @@ export default function UserProfileScreen() {
       setProfile(profileData);
     } catch (err: unknown) {
       logger.warn('[UserProfile] loadProfile error:', err);
-      setError(err?.message || 'Failed to load profile');
+      setError(err instanceof Error ? err.message : 'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -187,6 +270,19 @@ export default function UserProfileScreen() {
     const locked = ACHIEVEMENTS.filter((a) => !a.condition(stats)).slice(0, Math.max(0, 8 - earned.length));
     return [...earned.map((a) => ({ ...a, earned: true })), ...locked.map((a) => ({ ...a, earned: false }))].slice(0, 8);
   }, [profile]);
+
+  // Message button label based on DM status
+  const messageButtonLabel = useMemo(() => {
+    if (isUserBlocked) return 'Blocked';
+    switch (dmStatus) {
+      case 'pending_outgoing': return 'Request Sent';
+      case 'pending_incoming': return 'Respond';
+      case 'accepted': return 'Message';
+      default: return 'Message';
+    }
+  }, [dmStatus, isUserBlocked]);
+
+  const messageButtonDisabled = isUserBlocked || dmStatus === 'pending_outgoing';
 
   // Loading state
   if (loading) {
@@ -234,16 +330,35 @@ export default function UserProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Back button — scrolls with content */}
-        <AnimatedPressable
-          onPress={() => router.back()}
-          style={[styles.backRow]}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-          <Text style={[styles.backText, { color: colors.text }]}>Back</Text>
-        </AnimatedPressable>
+        {/* Top row with back + menu */}
+        <View style={styles.topRow}>
+          <AnimatedPressable
+            onPress={() => router.back()}
+            style={styles.backRow}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+            <Text style={[styles.backText, { color: colors.text }]}>Back</Text>
+          </AnimatedPressable>
+
+          <AnimatedPressable
+            onPress={() => setShowMenu(true)}
+            style={styles.menuBtn}
+            accessibilityRole="button"
+            accessibilityLabel="More options"
+          >
+            <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
+          </AnimatedPressable>
+        </View>
+
+        {/* Blocked banner */}
+        {isUserBlocked && (
+          <View style={[styles.blockedBanner, { backgroundColor: '#EF444415' }]}>
+            <Ionicons name="ban-outline" size={16} color="#EF4444" />
+            <Text style={styles.blockedBannerText}>You have blocked this user</Text>
+          </View>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════════
             A) Profile Header Card
@@ -284,7 +399,7 @@ export default function UserProfileScreen() {
             <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.quickStat}>
               <Text style={[styles.quickStatValue, { color: colors.text }]}>
-                {profile.collectionValueEur ? `€${Math.round(profile.collectionValueEur / 1000)}k` : '—'}
+                {profile.collectionValueEur ? `\u20AC${Math.round(profile.collectionValueEur / 1000)}k` : '\u2014'}
               </Text>
               <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Value</Text>
             </View>
@@ -296,45 +411,54 @@ export default function UserProfileScreen() {
           </View>
 
           {/* CTA Row */}
-          <View style={styles.ctaRow}>
-            <AnimatedPressable
-              style={[styles.ctaBtn, styles.ctaBtnPrimary, { backgroundColor: colors.accent }]}
-              onPress={() => {
-                router.push({
-                  pathname: '/chat/new',
-                  params: { toUserId: userId },
-                });
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={`Message ${profile.displayName}`}
-            >
-              <Ionicons name="chatbubble-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.ctaBtnTextLight}>Message</Text>
-            </AnimatedPressable>
+          {!isUserBlocked && (
+            <View style={styles.ctaRow}>
+              <AnimatedPressable
+                style={[
+                  styles.ctaBtn,
+                  styles.ctaBtnPrimary,
+                  {
+                    backgroundColor: messageButtonDisabled ? colors.border : colors.accent,
+                    opacity: messageButtonDisabled ? 0.6 : 1,
+                  },
+                ]}
+                onPress={handleMessagePress}
+                disabled={messageButtonDisabled}
+                accessibilityRole="button"
+                accessibilityLabel={`${messageButtonLabel} ${profile.displayName}`}
+              >
+                <Ionicons
+                  name={dmStatus === 'pending_outgoing' ? 'hourglass-outline' : 'chatbubble-outline'}
+                  size={18}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.ctaBtnTextLight}>{messageButtonLabel}</Text>
+              </AnimatedPressable>
 
-            <AnimatedPressable
-              style={[
-                styles.ctaBtn,
-                {
-                  backgroundColor: isFollowing ? colors.accent + '20' : colors.background,
-                  borderColor: isFollowing ? colors.accent : colors.border,
-                  borderWidth: 1,
-                },
-              ]}
-              onPress={handleFollowToggle}
-              accessibilityRole="button"
-              accessibilityLabel={isFollowing ? `Unfollow ${profile.displayName}` : `Follow ${profile.displayName}`}
-            >
-              <Ionicons
-                name={isFollowing ? 'person-remove-outline' : 'person-add-outline'}
-                size={16}
-                color={isFollowing ? colors.accent : colors.text}
-              />
-              <Text style={[styles.ctaBtnText, { color: isFollowing ? colors.accent : colors.text }]}>
-                {isFollowing ? 'Following' : 'Follow'}
-              </Text>
-            </AnimatedPressable>
-          </View>
+              <AnimatedPressable
+                style={[
+                  styles.ctaBtn,
+                  {
+                    backgroundColor: isFollowing ? colors.accent + '20' : colors.background,
+                    borderColor: isFollowing ? colors.accent : colors.border,
+                    borderWidth: 1,
+                  },
+                ]}
+                onPress={handleFollowToggle}
+                accessibilityRole="button"
+                accessibilityLabel={isFollowing ? `Unfollow ${profile.displayName}` : `Follow ${profile.displayName}`}
+              >
+                <Ionicons
+                  name={isFollowing ? 'person-remove-outline' : 'person-add-outline'}
+                  size={16}
+                  color={isFollowing ? colors.accent : colors.text}
+                />
+                <Text style={[styles.ctaBtnText, { color: isFollowing ? colors.accent : colors.text }]}>
+                  {isFollowing ? 'Following' : 'Follow'}
+                </Text>
+              </AnimatedPressable>
+            </View>
+          )}
         </View>
 
         {/* ═══════════════════════════════════════════════════════════════════
@@ -383,6 +507,50 @@ export default function UserProfileScreen() {
         {/* Bottom spacing */}
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      {/* 3-dot menu modal */}
+      <Modal
+        visible={showMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMenu(false)}
+      >
+        <AnimatedPressable
+          style={styles.menuOverlay}
+          onPress={() => setShowMenu(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close menu"
+        >
+          <View style={[styles.menuSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <AnimatedPressable
+              style={styles.menuItem}
+              onPress={handleBlockToggle}
+              accessibilityRole="button"
+              accessibilityLabel={isUserBlocked ? 'Unblock user' : 'Block user'}
+            >
+              <Ionicons
+                name={isUserBlocked ? 'checkmark-circle-outline' : 'ban-outline'}
+                size={20}
+                color={isUserBlocked ? colors.accent : '#EF4444'}
+              />
+              <Text style={[styles.menuItemText, { color: isUserBlocked ? colors.text : '#EF4444' }]}>
+                {isUserBlocked ? 'Unblock User' : 'Block User'}
+              </Text>
+            </AnimatedPressable>
+
+            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+
+            <AnimatedPressable
+              style={styles.menuItem}
+              onPress={() => setShowMenu(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={[styles.menuItemText, { color: colors.muted }]}>Cancel</Text>
+            </AnimatedPressable>
+          </View>
+        </AnimatedPressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -412,17 +580,39 @@ const styles = StyleSheet.create({
     left: 16,
     padding: 8,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 12,
     alignSelf: 'flex-start',
     padding: 4,
   },
   backText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  menuBtn: {
+    padding: 8,
+  },
+  blockedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  blockedBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#EF4444',
   },
   errorTitle: {
     fontSize: 18,
@@ -621,4 +811,33 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
+  // Menu modal
+  menuOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  menuSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    paddingVertical: 8,
+    paddingBottom: 32,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  menuDivider: {
+    height: 1,
+    marginHorizontal: 16,
+  },
 });

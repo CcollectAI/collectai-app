@@ -83,10 +83,11 @@ Primary action buttons with scale feedback:
       onPress={() => setRange(k)}
       style={[
         styles.rangeBtn,
-        active && styles.rangeBtnActive,
+        { backgroundColor: colors.card, borderColor: colors.border },
+        active && { backgroundColor: colors.accent + '20', borderColor: colors.accent },
       ]}
     >
-      <Text style={active ? styles.rangeTextActive : styles.rangeText}>
+      <Text style={[styles.rangeText, { color: colors.muted }, active && { color: colors.text }]}>
         {k}
       </Text>
     </AnimatedPressable>

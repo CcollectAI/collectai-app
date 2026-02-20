@@ -395,6 +395,23 @@ export class CachedDataProvider implements DataProvider {
     return this.inner.shareEventViaDm(eventId, recipientUserId);
   }
 
+  // User blocking — pass through (mutations, not cacheable)
+  blockUser(userId: string): Promise<void> {
+    return this.inner.blockUser(userId);
+  }
+
+  unblockUser(userId: string): Promise<void> {
+    return this.inner.unblockUser(userId);
+  }
+
+  listBlockedUsers(): Promise<{ id: string; name: string }[]> {
+    return this.inner.listBlockedUsers();
+  }
+
+  isBlocked(userId: string): Promise<boolean> {
+    return this.inner.isBlocked(userId);
+  }
+
   // Barcode / market — pass through (results vary per query)
   lookupByBarcode(
     barcode: string,

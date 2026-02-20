@@ -13,8 +13,8 @@ export const CategoryList = [
   // --- Gaming (1) ---
   'retro_games',
 
-  // --- Media (5) ---
-  'manga','bluray_steelbook','anime_bluray','anime_soundtrack','anime_ost_vinyl',
+  // --- Media (6) ---
+  'manga','comic_books','bluray_steelbook','anime_bluray','anime_soundtrack','anime_ost_vinyl',
 
   // --- Music / Fandom (4) ---
   'kpop_merch','taylor_swift','pop_fandom','kpop_lightsticks',
@@ -33,6 +33,9 @@ export const CategoryList = [
 
   // --- Niche (2) ---
   'keycaps','loungefly',
+
+  // --- Lifestyle (3) ---
+  'vinyl_records','sneakers','watches',
 
   // --- Legacy (3) ---
   'diecast','sportscards','retro_handhelds',
@@ -141,11 +144,17 @@ export const AttrSchemas: Record<Category, z.ZodObject<any>> = {
     condition: z.string().optional(),
   }),
   warhammer: z.object({
+    item_category: z.string().optional(),   // miniature, book, codex, rulebook, art_book
     game_system: z.string().optional(),     // 40k, aos, horus_heresy, kill_team
     faction: z.string().optional(),
     kit_name: z.string().optional(),
     kit_type: z.string().optional(),        // HQ, troops, elite, vehicle, centerpiece, titan
-    condition: z.string().optional(),       // new_on_sprue, built, painted, pro_painted
+    isbn: z.string().optional(),            // ISBN for books/codexes
+    author: z.string().optional(),          // Book author (e.g. Dan Abnett)
+    publisher: z.string().optional(),       // Black Library, Games Workshop, Forge World
+    book_type: z.string().optional(),       // novel, omnibus, codex, battletome, rulebook, art_book
+    condition: z.string().optional(),       // new_sealed, new_on_sprue, built, painted, pro_painted
+    edition: z.string().optional(),         // standard, limited, special, collector, numbered, oop
     points: z.string().optional(),
   }),
 
@@ -171,6 +180,18 @@ export const AttrSchemas: Record<Category, z.ZodObject<any>> = {
     language: z.string().optional(),
     printing: z.string().optional(),        // 1st, later, OOP
     condition: z.string().optional(),
+  }),
+  comic_books: z.object({
+    publisher: z.string().optional(),       // Marvel, DC, Image, Dark Horse, IDW, Boom
+    series: z.string().optional(),          // Spider-Man, Batman, Saga, etc.
+    issue: z.string().optional(),           // #1, #300, Annual #1
+    variant: z.string().optional(),         // 1:25, 1:50, virgin, foil, sketch
+    grade: z.string().optional(),           // CGC 9.8, CBCS 9.6, raw NM
+    key_issue: z.string().optional(),       // first appearance, death of, origin
+    format: z.string().optional(),          // single, TPB, omnibus, hardcover, absolute
+    isbn: z.string().optional(),            // ISBN for collected editions
+    year: z.string().optional(),
+    signed: z.boolean().optional(),
   }),
   bluray_steelbook: z.object({
     title: z.string().optional(),
@@ -362,6 +383,45 @@ export const AttrSchemas: Record<Category, z.ZodObject<any>> = {
   }),
 
   // =========================================================================
+  // Lifestyle
+  // =========================================================================
+  vinyl_records: z.object({
+    artist: z.string().optional(),
+    album: z.string().optional(),
+    label: z.string().optional(),           // Vinyl Me Please, Mondo, Warp, etc.
+    pressing: z.string().optional(),        // 1st pressing, repress, limited, numbered
+    color: z.string().optional(),           // black, colored, splatter, picture disc
+    format: z.string().optional(),          // LP, 2xLP, 7", 10", box set
+    rpm: z.string().optional(),             // 33, 45, 78
+    genre: z.string().optional(),           // rock, hip-hop, jazz, electronic, soul
+    year: z.string().optional(),
+    condition: z.string().optional(),       // M, NM, VG+, VG, G+, G, F, P (Goldmine)
+    sealed: z.boolean().optional(),
+  }),
+  sneakers: z.object({
+    brand: z.string().optional(),           // Nike, Jordan, Adidas, New Balance, Asics
+    model: z.string().optional(),           // Air Jordan 1, Dunk Low, Yeezy 350, etc.
+    colorway: z.string().optional(),        // Chicago, Bred, Panda, etc.
+    size: z.string().optional(),            // US size
+    condition: z.string().optional(),       // DS (deadstock), VNDS, used
+    collaboration: z.string().optional(),   // Travis Scott, Off-White, Fragment, etc.
+    year: z.string().optional(),
+    retail_price: z.string().optional(),
+    sku: z.string().optional(),             // style code e.g. DQ8583-100
+  }),
+  watches: z.object({
+    brand: z.string().optional(),           // Rolex, Omega, Seiko, Tudor, Casio, etc.
+    model: z.string().optional(),           // Submariner, Speedmaster, SKX007, etc.
+    reference: z.string().optional(),       // ref number e.g. 126610LN
+    movement: z.string().optional(),        // automatic, manual, quartz, solar
+    case_size: z.string().optional(),       // 36mm, 40mm, 42mm
+    material: z.string().optional(),        // steel, gold, titanium, ceramic
+    year: z.string().optional(),
+    box_papers: z.boolean().optional(),     // includes box and papers
+    condition: z.string().optional(),       // BNIB, excellent, good, fair, serviced
+  }),
+
+  // =========================================================================
   // Legacy (kept from original app)
   // =========================================================================
   diecast: z.object({
@@ -414,6 +474,7 @@ export const CategoryLabels: Record<Category, string> = {
 
   // Media
   manga: 'Manga',
+  comic_books: 'Comic Books & Graphic Novels',
   bluray_steelbook: 'Blu-ray & Steelbooks',
   anime_bluray: 'Anime Blu-ray Box Sets',
   anime_soundtrack: 'Anime Soundtracks',
@@ -446,6 +507,11 @@ export const CategoryLabels: Record<Category, string> = {
   // Niche
   keycaps: 'Artisan Keycaps',
   loungefly: 'Loungefly',
+
+  // Lifestyle
+  vinyl_records: 'Vinyl Records',
+  sneakers: 'Sneakers & Kicks',
+  watches: 'Watches',
 
   // Legacy
   diecast: 'Diecast',

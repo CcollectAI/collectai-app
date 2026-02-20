@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
   SafeAreaView,
@@ -13,6 +14,8 @@ import {
   Linking,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -92,6 +95,7 @@ const SearchScreen: React.FC = () => {
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [marketplaceResults, setMarketplaceResults] = useState<SearchResult[]>([]);
   const [collectionResults, setCollectionResults] = useState<SearchResult[]>([]);
   const searchIdRef = useRef(0);
@@ -102,6 +106,17 @@ const SearchScreen: React.FC = () => {
   }, []);
 
   const trimmedQuery = query.trim();
+  const debouncedQuery = useDebounce(trimmedQuery, 350);
+
+  // Auto-search when debounced query changes (avoids firing on every keystroke)
+  useEffect(() => {
+    if (debouncedQuery) {
+      executeSearch(debouncedQuery);
+    } else {
+      setMarketplaceResults([]);
+      setCollectionResults([]);
+    }
+  }, [debouncedQuery, executeSearch]);
 
   const allResults = useMemo(
     () => [...marketplaceResults, ...collectionResults],
@@ -179,10 +194,25 @@ const SearchScreen: React.FC = () => {
       value: item.price ?? item.priceBand?.q50 ?? 0,
     }));
 
+    // Notify user if both searches failed
+    if (mktResult.status === 'rejected' && colResult.status === 'rejected') {
+      Alert.alert('Search Error', 'Could not reach the marketplace. Check your connection and try again.');
+    }
+
     setMarketplaceResults(mktResults);
     setCollectionResults(colResults);
     setSearchLoading(false);
+    setRefreshing(false);
   }, []);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    if (trimmedQuery) {
+      executeSearch(trimmedQuery);
+    } else {
+      setRefreshing(false);
+    }
+  }, [trimmedQuery, executeSearch]);
 
   const handleSubmitSearch = useCallback(() => {
     if (!trimmedQuery) return;
@@ -251,6 +281,14 @@ const SearchScreen: React.FC = () => {
           { backgroundColor: colors.background },
         ]}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
       >
         <Animated.View style={animatedStyle}>
         {/* Header */}
@@ -427,9 +465,15 @@ const SearchScreen: React.FC = () => {
                     </Text>
                   </AnimatedPressable>
                 ) : (
-                  <Text style={[styles.emptyText, { color: colors.muted }]}>
-                    No results yet. Try another search.
-                  </Text>
+                  <View style={styles.noResultsBlock}>
+                    <Ionicons name="search-outline" size={32} color={colors.muted} style={{ marginBottom: 8 }} />
+                    <Text style={[styles.noResultsTitle, { color: colors.text }]}>
+                      No results found
+                    </Text>
+                    <Text style={[styles.emptyText, { color: colors.muted }]}>
+                      Try a different search term or browse by category below.
+                    </Text>
+                  </View>
                 )}
 
                 {otherResults.length > 0 && (
@@ -563,7 +607,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: undefined,
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginBottom: 12,
@@ -590,7 +634,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: undefined,
   },
   chipText: {
     fontSize: 12,
@@ -617,7 +661,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: undefined,
   },
   resultIcon: {
     width: 32,
@@ -626,7 +670,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 8,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: undefined,
   },
   resultTitle: {
     fontSize: 14,
@@ -644,6 +688,16 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 13,
     marginTop: 4,
+    textAlign: "center",
+  },
+  noResultsBlock: {
+    alignItems: "center",
+    paddingVertical: 24,
+  },
+  noResultsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
   },
   collectionRow: {
     flexDirection: "row",
@@ -657,7 +711,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 8,
-    backgroundColor: "#ECFEFF",
+    backgroundColor: undefined,
   },
   collectionTitle: {
     fontSize: 13,

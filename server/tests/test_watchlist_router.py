@@ -204,7 +204,9 @@ class TestRemoveFromWatchlist:
     def test_remove_item_not_found_404(self):
         r = client.delete("/watchlist/mine/nonexistent-id")
         assert r.status_code == 404
-        assert "not found" in r.json()["detail"].lower()
+        detail = r.json()["detail"]
+        msg = detail["message"] if isinstance(detail, dict) else detail
+        assert "not found" in msg.lower()
 
     def test_remove_item_from_multiple(self):
         r1 = _add_item(name="Item 1")

@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { fireHaptic, HapticIntent } from "@/haptics";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
@@ -25,6 +26,11 @@ export default function TabsLayout() {
           backgroundColor: colors.card,
           borderTopWidth: 1,
           borderTopColor: colors.border,
+        },
+      }}
+      screenListeners={{
+        tabPress: () => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
         },
       }}
     >

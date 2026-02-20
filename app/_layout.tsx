@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { View, Pressable, ActivityIndicator, Text, TextInput } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Pressable, ActivityIndicator, Text, TextInput, Animated as RNAnimated } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -115,10 +116,19 @@ function useProtectedRoute() {
       .finally(() => setOnboardingChecked(true));
   }, [loading, user]);
 
-  // Hide splash once we know auth + onboarding state
+  // Hide splash once we know auth + onboarding state (with fade transition)
+  const splashFade = useRef(new RNAnimated.Value(1)).current;
+  const [splashHidden, setSplashHidden] = useState(false);
+
   useEffect(() => {
     if (!loading && onboardingChecked) {
       SplashScreen.hideAsync().catch(() => {});
+      // Animate the loading overlay out with a fade
+      RNAnimated.timing(splashFade, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }).start(() => setSplashHidden(true));
     }
   }, [loading, onboardingChecked]);
 
@@ -140,13 +150,13 @@ function useProtectedRoute() {
     }
   }, [loading, onboardingChecked, user, onboardingComplete, segments]);
 
-  return { loading, onboardingChecked };
+  return { loading, onboardingChecked, splashFade, splashHidden };
 }
 
 function RootStack() {
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
   const { user } = useAuthContext();
-  const { loading, onboardingChecked } = useProtectedRoute();
+  const { loading, onboardingChecked, splashFade, splashHidden } = useProtectedRoute();
 
   // Register push notifications once auth has resolved
   usePushNotifications(user?.id ?? null);
@@ -162,6 +172,7 @@ function RootStack() {
   // so Expo Router can register all routes
   return (
     <View style={{ flex: 1 }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerShown: true,
@@ -171,6 +182,7 @@ function RootStack() {
           headerStyle: { backgroundColor: colors.card },
           headerTintColor: colors.text,
           headerShadowVisible: false,
+          animation: 'slide_from_right',
         }}
       >
         {/* Auth group — no header */}
@@ -212,19 +224,21 @@ function RootStack() {
         <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
       </Stack>
 
-      {/* Loading overlay — covers content while auth is resolving */}
-      {(loading || !onboardingChecked) && (
-        <View
+      {/* Loading overlay — covers content while auth is resolving, fades out */}
+      {!splashHidden && (
+        <RNAnimated.View
           style={{
-            ...({ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as const),
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: colors.background,
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 100,
+            opacity: splashFade,
           }}
+          pointerEvents={loading || !onboardingChecked ? 'auto' : 'none'}
         >
           <ActivityIndicator size="large" color={colors.accent} />
-        </View>
+        </RNAnimated.View>
       )}
     </View>
   );

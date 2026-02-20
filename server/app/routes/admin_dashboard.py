@@ -86,6 +86,27 @@ async def dashboard_stats(_: bool = Depends(require_ops_key)):
             "SELECT count(*) FROM auth.users WHERE created_at > now() - interval '7 days'"
         ) or 0
 
+        # Catalog learning stats
+        try:
+            stats["catalog_suggestions_pending"] = await pool.fetchval(
+                "SELECT count(*) FROM catalog_suggestions WHERE status = 'pending'"
+            ) or 0
+            stats["catalog_suggestions_mapped_week"] = await pool.fetchval(
+                "SELECT count(*) FROM catalog_suggestions WHERE status = 'mapped' AND updated_at > now() - interval '7 days'"
+            ) or 0
+            stats["category_candidates_watching"] = await pool.fetchval(
+                "SELECT count(*) FROM category_candidates WHERE status = 'watching'"
+            ) or 0
+            stats["category_candidates_candidate"] = await pool.fetchval(
+                "SELECT count(*) FROM category_candidates WHERE status = 'candidate'"
+            ) or 0
+        except Exception:
+            # Tables may not exist yet
+            stats["catalog_suggestions_pending"] = 0
+            stats["catalog_suggestions_mapped_week"] = 0
+            stats["category_candidates_watching"] = 0
+            stats["category_candidates_candidate"] = 0
+
     except Exception as exc:
         _log.warning("Dashboard stats query failed: %s", exc)
         stats["db_error"] = str(exc)
@@ -120,10 +141,16 @@ async def dashboard_users(
                 u.id, u.email, u.created_at,
                 COALESCE(s.plan, 'free') as plan,
                 COALESCE(s.status, 'active') as sub_status,
-                (SELECT count(*) FROM purchase_mandates m WHERE m.user_id = u.id) as mandate_count,
-                (SELECT count(*) FROM category_items ci WHERE ci.user_id = u.id::text) as item_count
+                COALESCE(mc.cnt, 0) as mandate_count,
+                COALESCE(ic.cnt, 0) as item_count
             FROM auth.users u
             LEFT JOIN subscriptions s ON s.user_id = u.id
+            LEFT JOIN LATERAL (
+                SELECT count(*) AS cnt FROM purchase_mandates m WHERE m.user_id = u.id
+            ) mc ON true
+            LEFT JOIN LATERAL (
+                SELECT count(*) AS cnt FROM category_items ci WHERE ci.user_id = u.id::text
+            ) ic ON true
             ORDER BY u.created_at DESC
             LIMIT $1 OFFSET $2
             """,
@@ -289,6 +316,8 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
                     <div class="card"><div class="label">Events</div><div class="value">${esc(d.total_events ?? 0)}</div></div>
                     <div class="card"><div class="label">DB Status</div><div class="value" style="font-size:16px">${esc(d.db_status ?? 'unknown')}</div></div>
                     <div class="card"><div class="label">Beta Signups</div><div class="value">${esc(d.beta_signups ?? 0)}</div><div class="sub">Pre-launch waitlist</div></div>
+                    <div class="card"><div class="label">Catalog Queue</div><div class="value">${esc(d.catalog_suggestions_pending ?? 0)}</div><div class="sub">Mapped this week: ${esc(d.catalog_suggestions_mapped_week ?? 0)}</div></div>
+                    <div class="card"><div class="label">Category Candidates</div><div class="value">${esc((d.category_candidates_watching ?? 0) + (d.category_candidates_candidate ?? 0))}</div><div class="sub">Watching: ${esc(d.category_candidates_watching ?? 0)} | Candidate: ${esc(d.category_candidates_candidate ?? 0)}</div></div>
                 `;
             } catch(e) {
                 document.getElementById('stats-grid').innerHTML = '<div class="error">Failed to load stats: ' + esc(e.message) + '</div>';

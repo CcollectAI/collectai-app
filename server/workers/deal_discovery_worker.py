@@ -54,11 +54,17 @@ async def run_once():
         async with pool.acquire() as conn:
             for deal in new_deals:
                 try:
+                    deal_uuid = _uuid.UUID(deal["id"])
+                except (ValueError, AttributeError) as exc:
+                    logger.warning("[deal_discovery] Invalid deal UUID %r: %s", deal.get("id"), exc)
+                    continue
+
+                try:
                     sent = await send_push_to_user(
                         conn,
                         deal["user_id"],
                         title="Deal Found!",
-                        body=f"{deal['listing_title'][:80]} — \u20ac{deal['listing_price']:.2f}",
+                        body=f"{deal['listing_title'][:80]} \u2014 \u20ac{deal['listing_price']:.2f}",
                         data={
                             "type": "deal_alert",
                             "deal_id": deal["id"],
@@ -73,7 +79,7 @@ async def run_once():
                             SET status = 'notified', notified_at = now()
                             WHERE id = $1
                             """,
-                            _uuid.UUID(deal["id"]),
+                            deal_uuid,
                         )
                         notified += 1
                 except Exception as exc:

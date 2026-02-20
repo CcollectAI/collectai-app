@@ -12,12 +12,20 @@
 // ---------------------------------------------------------------------------
 
 /** FastAPI backend base URL */
-export const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-
-if (!process.env.EXPO_PUBLIC_API_BASE_URL && typeof __DEV__ !== 'undefined' && __DEV__) {
-  // eslint-disable-next-line no-console
-  console.warn('[config] EXPO_PUBLIC_API_BASE_URL is not set — using localhost fallback');
-}
+export const API_BASE: string = (() => {
+  const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  if (envUrl) return envUrl;
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    // eslint-disable-next-line no-console
+    console.warn('[config] EXPO_PUBLIC_API_BASE_URL is not set — using localhost fallback');
+    return 'http://localhost:8000';
+  }
+  // Production: fail loudly rather than silently calling localhost
+  throw new Error(
+    '[config] EXPO_PUBLIC_API_BASE_URL must be set in production builds. ' +
+    'Add it to your eas.json env or .env file.',
+  );
+})();
 
 // ---------------------------------------------------------------------------
 // Supabase

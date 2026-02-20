@@ -1,0 +1,102 @@
+"""Tests for app/features/social_router.py — block/unblock user endpoints.
+
+All tests use the in-memory fallback (DB_ENABLED=false) so no real database is needed.
+The social_router endpoints require a DB pool, so these tests verify:
+- Input validation (UUID format, self-block)
+- Auth dependency (dev mode bypass)
+- Offline mode responses when pool is None
+"""
+import os
+import sys
+from pathlib import Path
+from unittest.mock import patch, AsyncMock, MagicMock
+
+import pytest
+
+# Ensure project root is importable
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+os.environ.setdefault("DB_ENABLED", "false")
+os.environ.setdefault("DATABASE_URL", "mock://localhost")
+os.environ.setdefault("DEV_MODE", "true")
+
+from starlette.testclient import TestClient
+from main import app  # noqa: E402
+
+client = TestClient(app)
+
+DEV_USER_ID = os.environ.get("DEV_USER_ID", "dev-user-local")
+TARGET_USER_ID = "00000000-0000-0000-0000-000000000099"
+
+
+# ---------------------------------------------------------------------------
+# Block endpoint tests
+# ---------------------------------------------------------------------------
+
+class TestBlockUser:
+    def test_block_user_offline_mode(self):
+        """Block succeeds in offline mode (no DB pool)."""
+        resp = client.post(f"/social/block/{TARGET_USER_ID}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["success"] is True
+        assert "offline" in data["message"].lower() or "blocked" in data["message"].lower()
+
+    def test_block_invalid_uuid(self):
+        """Block rejects invalid UUID."""
+        resp = client.post("/social/block/not-a-uuid")
+        assert resp.status_code == 400
+
+    def test_block_self(self):
+        """Block rejects self-block."""
+        resp = client.post(f"/social/block/{DEV_USER_ID}")
+        assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Unblock endpoint tests
+# ---------------------------------------------------------------------------
+
+class TestUnblockUser:
+    def test_unblock_user_offline_mode(self):
+        """Unblock succeeds in offline mode."""
+        resp = client.delete(f"/social/block/{TARGET_USER_ID}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["success"] is True
+
+    def test_unblock_invalid_uuid(self):
+        """Unblock rejects invalid UUID."""
+        resp = client.delete("/social/block/not-a-uuid")
+        assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# List blocked endpoint tests
+# ---------------------------------------------------------------------------
+
+class TestListBlocked:
+    def test_list_blocked_offline_mode(self):
+        """List blocked returns empty list in offline mode."""
+        resp = client.get("/social/blocked")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["blocked"] == []
+
+
+# ---------------------------------------------------------------------------
+# Edge cases
+# ---------------------------------------------------------------------------
+
+class TestEdgeCases:
+    def test_block_same_user_twice_offline(self):
+        """Blocking the same user twice should not error (idempotent)."""
+        resp1 = client.post(f"/social/block/{TARGET_USER_ID}")
+        assert resp1.status_code == 200
+        resp2 = client.post(f"/social/block/{TARGET_USER_ID}")
+        assert resp2.status_code == 200
+
+    def test_unblock_without_prior_block(self):
+        """Unblocking a user not blocked should succeed gracefully."""
+        resp = client.delete(f"/social/block/{TARGET_USER_ID}")
+        assert resp.status_code == 200

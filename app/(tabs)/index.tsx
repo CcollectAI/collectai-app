@@ -18,6 +18,7 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,6 +38,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/format";
 import { useToast } from "@/components/Toast";
+import { useBillingLimits } from "@/hooks/useBillingLimits";
 import logger from "@/utils/logger";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
@@ -163,12 +165,14 @@ function PortfolioScreen() {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
+  const { limits } = useBillingLimits();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [range, setRange] = useState<RangeKey>("7D");
   const [series, setSeries] = useState<TimeSeriesPoint[]>([]);
   const [items, setItems] = useState<ItemRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tierSummary, setTierSummary] = useState<{ tier: string; rarityScore: number; completenessScore: number; diversificationScore: number } | null>(null);
 
@@ -284,6 +288,13 @@ function PortfolioScreen() {
     loadData();
   }, [loadData]);
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setRefreshing(false);
+  }, [loadData, settings.hapticsEnabled]);
+
   // Determine if positive or negative
   const isPositive = deltaPct >= 0;
 
@@ -317,6 +328,14 @@ function PortfolioScreen() {
       <ScrollView
         contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header */}
@@ -397,13 +416,16 @@ function PortfolioScreen() {
               showValueHeader={true}
               showAxisLabels={true}
               axisLabelColor={colors.muted}
+              gridColor={colors.border}
+              textColor={colors.text}
+              dotFillColor={colors.card}
             />
           )}
         </View>
 
         {/* Error message (if any) */}
         {error && (
-          <View style={[styles.errorBanner, { backgroundColor: '#FEF2F2' }]}>
+          <View style={[styles.errorBanner, { backgroundColor: '#EF4444' + '15' }]}>
             <Ionicons name="warning-outline" size={14} color="#EF4444" />
             <Text style={[styles.errorText, { color: '#EF4444' }]}>{error}</Text>
           </View>
@@ -436,28 +458,28 @@ function PortfolioScreen() {
           style={[styles.analyticsBanner, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push("/purchase");
+            router.push(limits.deal_discovery ? "/purchase" : "/subscription");
           }}
           accessibilityRole="button"
-          accessibilityLabel="Open Deal Agent"
+          accessibilityLabel={limits.deal_discovery ? "Open Deal Agent" : "Upgrade to unlock Deal Agent"}
         >
           <View style={styles.analyticsBannerLeft}>
             <View style={[styles.analyticsIconWrap, { backgroundColor: colors.accent + '15' }]}>
-              <Ionicons name="flash" size={18} color={colors.accent} />
+              <Ionicons name={limits.deal_discovery ? "flash" : "lock-closed"} size={18} color={colors.accent} />
             </View>
             <View style={styles.analyticsBannerText}>
               <Text style={[styles.analyticsBannerTitle, { color: colors.text }]}>Deal Agent</Text>
               <Text style={[styles.analyticsBannerSubtitle, { color: colors.muted }]}>
-                Always-on deal discovery
+                {limits.deal_discovery ? "Always-on deal discovery" : "Upgrade to Pro to unlock"}
               </Text>
             </View>
           </View>
           <View style={[styles.analyticsBannerBtn, { backgroundColor: colors.accent }]}>
-            <Text style={styles.analyticsBannerBtnText}>View</Text>
+            <Text style={styles.analyticsBannerBtnText}>{limits.deal_discovery ? "View" : "Upgrade"}</Text>
           </View>
         </AnimatedPressable>
 
-        {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && (
+        {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && limits.advanced_analytics && (
           <InsightsCard
             insights={insights}
             tierSummary={tierSummary}
@@ -635,37 +657,12 @@ function PortfolioScreen() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Colors & Styles (Collectr Design Tokens)
+// Styles (layout only — colors applied inline via useAppTheme)
 // ─────────────────────────────────────────────────────────────────────────────
-
-const COLORS = {
-  // Brand
-  tiffany: "#81D8D0",
-  tiffanyDark: "#5FBFB6",
-  tiffanyLight: "#E6F7F5",
-
-  // Core
-  background: "#F7FAF9",
-  card: "#FFFFFF",
-  navy: "#0F172A",
-  muted: "#64748B",
-  border: "#E2E8F0",
-
-  // Status
-  success: "#10B981",
-  warning: "#F59E0B",
-  danger: "#EF4444",
-
-  // Banners
-  analyticsBg: "#E5F4F8",
-  analyticsBorder: "#B4DDE7",
-  analyticsAccent: "#00A3C4",
-};
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   container: {
     paddingHorizontal: 16,
@@ -700,7 +697,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerLabel: {
-    color: COLORS.muted,
     fontSize: 12,
     fontWeight: "600",
     marginBottom: 4,
@@ -708,7 +704,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   totalValue: {
-    color: COLORS.navy,
     fontSize: 36,
     fontWeight: "800",
     letterSpacing: -0.5,
@@ -717,12 +712,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     marginTop: 4,
-  },
-  deltaUp: {
-    color: COLORS.success,
-  },
-  deltaDown: {
-    color: COLORS.danger,
   },
 
   // Range toggles
@@ -735,29 +724,17 @@ const styles = StyleSheet.create({
   rangeBtn: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
     borderRadius: 8,
   },
-  rangeBtnActive: {
-    backgroundColor: COLORS.tiffanyLight,
-    borderColor: COLORS.tiffany,
-  },
   rangeText: {
-    color: COLORS.muted,
     fontWeight: "700",
     fontSize: 13,
-  },
-  rangeTextActive: {
-    color: COLORS.navy,
   },
 
   // Chart card
   chartCard: {
-    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -775,7 +752,6 @@ const styles = StyleSheet.create({
     minHeight: 190,
   },
   loadingText: {
-    color: COLORS.muted,
     fontSize: 12,
     marginTop: 8,
   },
@@ -785,14 +761,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#FEF2F2",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     marginBottom: 12,
   },
   errorText: {
-    color: COLORS.danger,
     fontSize: 12,
     fontWeight: "500",
   },
@@ -800,16 +774,13 @@ const styles = StyleSheet.create({
   // Mode indicator (dev)
   modeIndicator: {
     fontSize: 10,
-    color: COLORS.muted,
     textAlign: "center",
     marginBottom: 8,
   },
 
   // Analytics Banner
   analyticsBanner: {
-    backgroundColor: COLORS.analyticsBg,
     borderWidth: 1,
-    borderColor: COLORS.analyticsBorder,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -826,7 +797,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: COLORS.card,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -837,22 +807,19 @@ const styles = StyleSheet.create({
   analyticsBannerTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: COLORS.navy,
     marginBottom: 2,
   },
   analyticsBannerSubtitle: {
     fontSize: 12,
-    color: COLORS.muted,
   },
   analyticsBannerBtn: {
-    backgroundColor: COLORS.analyticsAccent,
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 8,
     marginLeft: 12,
   },
   analyticsBannerBtnText: {
-    color: COLORS.card,
+    color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "600",
   },
@@ -867,24 +834,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: COLORS.navy,
-  },
-  sectionCount: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.muted,
   },
   seeAllLink: {
     fontSize: 13,
     fontWeight: "600",
-    color: COLORS.tiffanyDark,
   },
 
   // Items list
   listCard: {
-    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
     borderRadius: 12,
     overflow: "hidden",
     shadowColor: "#000",
@@ -900,13 +858,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 14,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
   },
   itemRowFirst: {
     borderTopWidth: 0,
-  },
-  itemRowPressed: {
-    backgroundColor: COLORS.tiffanyLight,
   },
   itemLeft: {
     flex: 1,
@@ -918,12 +872,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   itemName: {
-    color: COLORS.navy,
     fontWeight: "700",
     fontSize: 14,
   },
   itemCategory: {
-    color: COLORS.muted,
     fontWeight: "600",
     fontSize: 12,
     marginTop: 2,
@@ -933,7 +885,6 @@ const styles = StyleSheet.create({
     minWidth: 90,
   },
   itemValue: {
-    color: COLORS.navy,
     fontWeight: "800",
     fontSize: 14,
   },
@@ -941,12 +892,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
     marginTop: 2,
-  },
-  pctUp: {
-    color: COLORS.success,
-  },
-  pctDown: {
-    color: COLORS.danger,
   },
 
   // Watchlist rows
@@ -956,7 +901,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 14,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
   },
   watchlistLeft: {
     flex: 1,
@@ -974,41 +918,13 @@ const styles = StyleSheet.create({
     minWidth: 100,
   },
   targetPrice: {
-    color: COLORS.tiffanyDark,
     fontWeight: "700",
     fontSize: 13,
   },
   currentPrice: {
-    color: COLORS.muted,
     fontWeight: "600",
     fontSize: 12,
     marginTop: 2,
-  },
-
-  // Watchlist empty state
-  watchlistEmptyBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  watchlistEmptyText: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  watchlistEmptyTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.navy,
-    marginBottom: 2,
-  },
-  watchlistEmptySubtitle: {
-    fontSize: 12,
-    color: COLORS.muted,
   },
 });
 

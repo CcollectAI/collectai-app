@@ -49,6 +49,7 @@ CATEGORY_SITE_TARGETS: Dict[str, List[str]] = {
     "retro_handhelds": ["pricecharting.com", "mercari.com", "ebay.com", "gamevaluenow.com"],
     # Media
     "manga": ["mangacollectors.com", "mercari.com", "ebay.com", "bookdepository.com"],
+    "comic_books": ["mycomicshop.com", "comicbookrealm.com", "ebay.com", "mercari.com"],
     "bluray_steelbook": ["blu-ray.com", "mercari.com", "ebay.com", "zavvi.com"],
     "anime_bluray": ["blu-ray.com", "cdjapan.co.jp", "amiami.com", "ebay.com"],
     "anime_soundtrack": ["vgmdb.net", "cdjapan.co.jp", "discogs.com", "mercari.com"],
@@ -75,6 +76,10 @@ CATEGORY_SITE_TARGETS: Dict[str, List[str]] = {
     # Niche
     "keycaps": ["reddit.com/r/mechmarket", "drop.com", "ebay.com", "geekhack.org"],
     "loungefly": ["mercari.com", "stockx.com", "ebay.com", "boxlunch.com"],
+    # Lifestyle
+    "vinyl_records": ["discogs.com", "vinylmeplease.com", "ebay.com", "reverblp.com"],
+    "sneakers": ["stockx.com", "goat.com", "ebay.com", "grailed.com"],
+    "watches": ["chrono24.com", "watchrecon.com", "ebay.com", "hodinkee.com"],
     # Legacy
     "diecast": ["ebay.com", "diecastmodelswholesale.com", "modelcollect.com", "ebay.co.uk"],
     "sportscards": ["130point.com", "comc.com", "ebay.com", "pwccmarketplace.com"],
