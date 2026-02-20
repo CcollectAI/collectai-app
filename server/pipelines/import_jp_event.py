@@ -6,11 +6,14 @@ Layer 2 (Prices):   Estimated market prices → train.jsonl
 
 Covers:
 - Wonder Festival (WonFes): garage kits, exclusive figures
-- Comiket: doujinshi, tapestries, acrylic stands
-- AnimeJapan: exclusive goods, clear files, badges
-- Tamashii Nations event: exclusive figures
+- Comiket: doujinshi, tapestries, acrylic stands, exclusive goods
+- AnimeJapan: exclusive goods, clear files, badges, stage goods
+- Tamashii Nations event: exclusive figures, anniversary items
 - Jump Festa exclusives
-- Key franchises: Fate, Vocaloid, Love Live, Gundam
+- Tokyo Game Show (TGS): game merch, collab goods
+- Character1 / Chara Expo: acrylic stands, trading cards
+- Anime Expo (US crossover): JP publisher collab exclusives
+- Key franchises: Fate, Vocaloid, Love Live, Gundam, Hololive, Touhou
 
 Usage:
     python -m pipelines.import_jp_event [--dry-run]
@@ -38,7 +41,7 @@ CATEGORY = "jp_event"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Japanese event exclusives catalog."""
+    """Curated Japanese event exclusives catalog (65+ items)."""
 
     # (event, franchise, item_type, name, rarity_tier, price_eur)
     # rarity_tier: grail (>300), high (100-300), mid (30-100), standard (<30)
@@ -84,6 +87,59 @@ def get_curated_catalog() -> list[dict]:
         ("Jump Festa", "My Hero Academia", "Acrylic Stand", "Deku vs Shigaraki Jump Festa Acrylic Stand", "mid", 35),
         ("Jump Festa", "Jujutsu Kaisen", "Poster Set", "JJK Jump Festa 2024 Exclusive Poster Set", "mid", 40),
         ("Jump Festa", "Chainsaw Man", "Badge Set", "CSM Jump Festa Random Badge Set (6pc)", "standard", 20),
+
+        # === NEW ITEMS (35+) ===
+
+        # More WonFes – garage kits & exclusive figures (+6)
+        ("WonFes", "Touhou Project", "Garage Kit", "Reimu Hakurei 1/6 Resin GK WonFes Limited", "grail", 380),
+        ("WonFes", "Kantai Collection", "Exclusive Figure", "Shimakaze WonFes Exclusive 1/7 Painted GK", "high", 220),
+        ("WonFes", "Re:Zero", "Garage Kit", "Rem Oni Form 1/6 GK WonFes Unpainted", "high", 260),
+        ("WonFes", "Chainsaw Man", "Garage Kit", "Makima Control Devil 1/7 Resin GK Limited 30pcs", "grail", 420),
+        ("WonFes", "Spy x Family", "Exclusive Figure", "Yor Forger Thorn Princess WonFes Exclusive 1/7", "high", 190),
+        ("WonFes", "Jujutsu Kaisen", "Exclusive Figure", "Gojo Satoru Hollow Purple WonFes Limited GK", "high", 280),
+
+        # More Comiket – doujinshi, music, tapestries, exclusive goods (+6)
+        ("Comiket", "Hololive", "Doujinshi Set", "Hololive C104 Popular Circle Doujinshi Bundle (5)", "mid", 50),
+        ("Comiket", "Touhou Project", "Music Album", "Touhou Arrange Album C103 Compilation CD Set (3)", "mid", 35),
+        ("Comiket", "Fate/Grand Order", "Doujinshi Set", "FGO Comiket 104 Top Circle Doujinshi Bundle (5)", "mid", 55),
+        ("Comiket", "Various", "Tapestry", "Comiket C104 Corporate Exclusive B1 Tapestry", "high", 100),
+        ("Comiket", "Type-Moon", "Exclusive Goods", "Type-Moon C103 Limited Goods Set (Poster + Clearfile + Badge)", "high", 120),
+        ("Comiket", "Various", "Goods Set", "C104 Limited Corporate Booth Exclusive Goods Bag", "mid", 65),
+
+        # Jump Festa – exclusive figures, cards, goods (+5)
+        ("Jump Festa", "One Piece", "Exclusive Figure", "Shanks Film Red Jump Festa 2024 Exclusive Figure", "high", 130),
+        ("Jump Festa", "Dragon Ball Super", "Exclusive Card", "DBS Card Game Jump Festa Promo SP Pack (5 cards)", "mid", 60),
+        ("Jump Festa", "My Hero Academia", "Exclusive Figure", "All Might Jump Festa 2024 Exclusive Mini Figure", "mid", 45),
+        ("Jump Festa", "Jujutsu Kaisen", "Goods Set", "JJK Jump Festa 2024 Exclusive Goods Set (Towel + Badge + Clearfile)", "mid", 50),
+        ("Jump Festa", "Bleach", "Exclusive Figure", "Ichigo TYBW Bankai Jump Festa Exclusive Figure", "high", 110),
+
+        # AnimeJapan – stage goods, clear files, exhibit goods (+5)
+        ("AnimeJapan", "Demon Slayer", "Stage Goods", "Demon Slayer Hashira Stage Event Exclusive Towel Set", "mid", 40),
+        ("AnimeJapan", "Chainsaw Man", "Clear File Set", "CSM AnimeJapan 2024 Clear File Collection (6pc)", "standard", 22),
+        ("AnimeJapan", "Spy x Family", "Exclusive Figure", "Anya Forger AnimeJapan Exclusive Chibi Figure", "mid", 55),
+        ("AnimeJapan", "Gundam", "Exhibit Goods", "Gundam NEXT FUTURE Exhibition Exclusive Model Kit", "high", 150),
+        ("AnimeJapan", "Attack on Titan", "Exhibit Goods", "AoT Final Exhibition Memorial Acrylic Art Panel", "high", 120),
+
+        # Tamashii Nations Event – exclusive figures, anniversary items (+4)
+        ("Tamashii Nations", "Dragon Ball Z", "S.H.Figuarts", "SSGSS Gogeta Event Exclusive S.H.Figuarts", "high", 160),
+        ("Tamashii Nations", "Gundam", "Metal Build", "Strike Freedom Metal Build Event Prototype Color", "grail", 400),
+        ("Tamashii Nations", "Kamen Rider", "Robot Spirits", "Kamen Rider Geats Boost Mk.IX Robot Spirits Limited", "high", 120),
+        ("Tamashii Nations", "Various", "Anniversary Figure", "Tamashii Nations 25th Anniversary Exclusive Figure Set", "grail", 320),
+
+        # Tokyo Game Show (TGS) – game merch, figure exclusives, collab goods (+4)
+        ("Tokyo Game Show", "Final Fantasy", "Exclusive Figure", "Cloud Strife TGS 2024 Exclusive Play Arts Kai Mini", "high", 140),
+        ("Tokyo Game Show", "Persona 5", "Exclusive Merch", "Persona 5 Royal TGS Exclusive Acrylic Stand Set (4)", "mid", 35),
+        ("Tokyo Game Show", "Monster Hunter", "Collab Goods", "Monster Hunter Wilds TGS Limited Plush Palico", "mid", 45),
+        ("Tokyo Game Show", "NieR:Automata", "Exclusive Figure", "2B TGS Exclusive Mini Figure with Base", "high", 110),
+
+        # Character1 / Chara Expo – cosplay prizes, acrylic stands, trading cards (+3)
+        ("Character1", "Various", "Acrylic Stand Set", "Character1 2024 Limited Acrylic Stand Collection (8pc)", "mid", 40),
+        ("Character1", "Various", "Trading Cards", "Character1 Exclusive Trading Card Sealed Box (20 packs)", "mid", 55),
+        ("Chara Expo", "Various", "Cosplay Prize", "Chara Expo Grand Prix Winner Exclusive Signed Print", "high", 180),
+
+        # Anime Expo (US crossover with JP publishers) (+2)
+        ("Anime Expo", "Fate/Grand Order", "Exclusive Figure", "Saber Alter AX 2024 Exclusive 1/7 (Aniplex Booth)", "high", 200),
+        ("Anime Expo", "Demon Slayer", "Collab Goods", "Demon Slayer x Anime Expo Exclusive Art Print Set (3)", "mid", 65),
     ]
 
     catalog = []

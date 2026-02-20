@@ -37,7 +37,7 @@ CATEGORY = "bandai_premium"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Bandai Premium / P-Bandai exclusives catalog."""
+    """Curated Bandai Premium / P-Bandai exclusives catalog (65+ items)."""
 
     # (line, name, franchise, exclusive_type, rarity_tier, price_eur)
     # rarity_tier: grail (>300), high (150-300), mid (60-150), standard (<60)
@@ -89,6 +89,70 @@ def get_curated_catalog() -> list[dict]:
         ("Metal Build", "Astray Red Frame Kai", "Gundam SEED Astray", "Standard", "high", 300),
         ("Metal Build", "Hi-Nu Gundam", "Gundam CCA", "Standard", "grail", 420),
         ("Metal Build", "Crossbone Gundam X1", "Crossbone Gundam", "P-Bandai", "high", 280),
+
+        # ── New items below ──────────────────────────────────────────────
+
+        # S.H.Figuarts – Kamen Rider (additional)
+        ("S.H.Figuarts", "Kamen Rider Black Sun", "Kamen Rider Black Sun", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Kamen Rider Kuuga Ultimate Form", "Kamen Rider Kuuga", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Kamen Rider Decade Violent Emotion", "Kamen Rider Decade", "P-Bandai", "mid", 85),
+        ("S.H.Figuarts", "Kamen Rider W CycloneJokerXtreme", "Kamen Rider W", "P-Bandai", "mid", 80),
+
+        # S.H.Figuarts – Naruto (additional)
+        ("S.H.Figuarts", "Itachi Uchiha -Narutop99-", "Naruto Shippuden", "P-Bandai", "mid", 85),
+        ("S.H.Figuarts", "Kakashi Hatake Anbu Black Ops", "Naruto Shippuden", "P-Bandai", "mid", 95),
+
+        # S.H.Figuarts – One Piece
+        ("S.H.Figuarts", "Monkey D. Luffy Gear 5", "One Piece", "Standard", "mid", 75),
+        ("S.H.Figuarts", "Roronoa Zoro -Wano Kuni-", "One Piece", "P-Bandai", "mid", 80),
+
+        # S.H.Figuarts – Ultraman
+        ("S.H.Figuarts", "Ultraman (Shin Ultraman)", "Shin Ultraman", "P-Bandai", "mid", 70),
+
+        # Robot Spirits – Gundam (additional)
+        ("Robot Spirits", "RX-78-2 Gundam ver. A.N.I.M.E.", "Mobile Suit Gundam", "Standard", "mid", 65),
+        ("Robot Spirits", "MS-06S Zaku II Char Custom ver. A.N.I.M.E.", "Mobile Suit Gundam", "Standard", "mid", 65),
+        ("Robot Spirits", "RX-93 Nu Gundam ver. A.N.I.M.E.", "Gundam CCA", "Standard", "mid", 85),
+        ("Robot Spirits", "MSN-04 Sazabi ver. A.N.I.M.E.", "Gundam CCA", "Standard", "mid", 90),
+
+        # Robot Spirits – Evangelion (additional)
+        ("Robot Spirits", "EVA Unit-01 Test Type", "Evangelion", "Standard", "mid", 70),
+        ("Robot Spirits", "EVA Unit-02 Production Model", "Evangelion", "Standard", "mid", 70),
+
+        # Metal Build (additional)
+        ("Metal Build", "Strike Freedom Gundam Soul Blue Ver.", "Gundam SEED Destiny", "P-Bandai", "grail", 450),
+        ("Metal Build", "00 Raiser Designer's Blue Ver.", "Gundam 00", "P-Bandai", "grail", 350),
+        ("Metal Build", "Destiny Gundam Heine Custom", "Gundam SEED Destiny", "P-Bandai", "high", 300),
+        ("Metal Build", "Crossbone Gundam X1 Full Cloth", "Crossbone Gundam", "P-Bandai", "grail", 380),
+        ("Metal Build", "Hi-Nu Gundam Marking Plus Ver.", "Gundam CCA", "P-Bandai", "grail", 480),
+
+        # Soul of Chogokin (additional)
+        ("Soul of Chogokin", "GX-70 Mazinger Z D.C.", "Mazinger Z", "Standard", "high", 180),
+        ("Soul of Chogokin", "GX-73 Great Mazinger D.C.", "Great Mazinger", "Standard", "high", 200),
+        ("Soul of Chogokin", "GX-76 Grendizer D.C.", "UFO Robot Grendizer", "Standard", "high", 190),
+        ("Soul of Chogokin", "GX-71SP GoLion (Voltron)", "Beast King GoLion", "P-Bandai", "grail", 380),
+        ("Soul of Chogokin", "GX-72B Daizyujin (Megazord) Black Ver.", "Super Sentai", "P-Bandai", "high", 290),
+
+        # Tamashii Nations Event Exclusives (additional)
+        ("S.H.Figuarts", "Vegito Super Saiyan Blue (SDCC)", "Dragon Ball Super", "Event Exclusive", "high", 180),
+        ("S.H.Figuarts", "Son Goku Super Saiyan (SDCC 2019)", "Dragon Ball Z", "Event Exclusive", "high", 170),
+        ("S.H.Figuarts", "Kamen Rider Ichigo (50th Anniversary)", "Kamen Rider", "TNE", "high", 150),
+        ("Robot Spirits", "Wing Gundam Zero (EW) Pearl Coating", "Gundam Wing", "TNE", "high", 160),
+        ("Metal Build", "Strike Gundam (Tamashii Nations Tokyo)", "Gundam SEED", "Event Exclusive", "grail", 400),
+
+        # DX Chogokin – Macross
+        ("DX Chogokin", "VF-1S Strike Valkyrie (Hikaru)", "Macross", "Standard", "high", 280),
+        ("DX Chogokin", "VF-25F Messiah Valkyrie (Alto)", "Macross Frontier", "Standard", "high", 250),
+        ("DX Chogokin", "YF-29 Durandal Valkyrie (Alto)", "Macross Frontier", "Standard", "high", 260),
+
+        # Figuarts ZERO – One Piece
+        ("Figuarts ZERO", "Monkey D. Luffy -Gomu Gomu no Red Roc-", "One Piece", "Standard", "mid", 90),
+        ("Figuarts ZERO", "Kaido King of the Beasts -Twin Dragons-", "One Piece", "Standard", "mid", 120),
+        ("Figuarts ZERO", "Portgas D. Ace -Fire Fist-", "One Piece", "Standard", "mid", 85),
+
+        # Figuarts ZERO – Dragon Ball
+        ("Figuarts ZERO", "Super Saiyan Son Goku -The Burning Battles-", "Dragon Ball Z", "Standard", "mid", 75),
+        ("Figuarts ZERO", "Vegeta Galick Gun", "Dragon Ball Z", "Standard", "mid", 70),
     ]
 
     catalog = []

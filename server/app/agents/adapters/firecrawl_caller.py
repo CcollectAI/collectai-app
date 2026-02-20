@@ -29,55 +29,55 @@ logger = logging.getLogger(__name__)
 
 # Maps CollectAI category IDs to Firecrawl search site: filters
 CATEGORY_SITE_TARGETS: Dict[str, List[str]] = {
-    # TCGs (Americas defaults — TCGPlayer handles primary search)
-    "pokemon": ["tcgplayer.com", "pricecharting.com"],
-    "mtg": ["tcgplayer.com", "scryfall.com"],
-    "yugioh": ["tcgplayer.com", "pricecharting.com"],
-    "lorcana": ["tcgplayer.com", "pricecharting.com"],
+    # TCGs (Americas + Europe via Cardmarket)
+    "pokemon": ["tcgplayer.com", "pricecharting.com", "cardmarket.com", "ebay.com"],
+    "mtg": ["tcgplayer.com", "scryfall.com", "cardmarket.com", "ebay.com"],
+    "yugioh": ["tcgplayer.com", "pricecharting.com", "cardmarket.com", "ebay.com"],
+    "lorcana": ["tcgplayer.com", "pricecharting.com", "cardmarket.com", "ebay.com"],
     # Toys / Figures
-    "anime_figures": ["myfigurecollection.net", "amiami.com", "solarisjapan.com"],
-    "hot_toys": ["sideshow.com", "onesixthwarriors.com"],
-    "designer_toys": ["stockx.com", "whatnot.com"],
-    "funko": ["hobbydb.com", "mercari.com"],
+    "anime_figures": ["myfigurecollection.net", "amiami.com", "solarisjapan.com", "ebay.com"],
+    "hot_toys": ["sideshow.com", "onesixthwarriors.com", "ebay.com", "collectsideshow.com"],
+    "designer_toys": ["stockx.com", "whatnot.com", "ebay.com", "myfigurecollection.net"],
+    "funko": ["hobbydb.com", "mercari.com", "poppriceguide.com", "ebay.com"],
     # Building / Models
-    "lego": ["bricklink.com", "brickset.com"],
-    "gunpla": ["hlj.com", "gundamplanet.com"],
-    "scale_models": ["scalemates.com", "hlj.com"],
-    "warhammer": ["thetrolltrader.com", "ebay.com"],
+    "lego": ["bricklink.com", "brickset.com", "ebay.com", "rebrickable.com"],
+    "gunpla": ["hlj.com", "gundamplanet.com", "amiami.com", "ebay.com"],
+    "scale_models": ["scalemates.com", "hlj.com", "ebay.com", "hannants.co.uk"],
+    "warhammer": ["thetrolltrader.com", "ebay.com", "blacklibrary.com", "abebooks.com"],
     # Gaming
-    "retro_games": ["pricecharting.com", "mercari.com"],
-    "retro_handhelds": ["pricecharting.com", "mercari.com"],
+    "retro_games": ["pricecharting.com", "mercari.com", "ebay.com", "gamevaluenow.com"],
+    "retro_handhelds": ["pricecharting.com", "mercari.com", "ebay.com", "gamevaluenow.com"],
     # Media
-    "manga": ["mangacollectors.com", "mercari.com"],
-    "bluray_steelbook": ["blu-ray.com", "mercari.com"],
-    "anime_bluray": ["blu-ray.com", "cdjapan.co.jp"],
-    "anime_soundtrack": ["vgmdb.net", "cdjapan.co.jp"],
-    "anime_ost_vinyl": ["vgmdb.net", "discogs.com"],
+    "manga": ["mangacollectors.com", "mercari.com", "ebay.com", "bookdepository.com"],
+    "bluray_steelbook": ["blu-ray.com", "mercari.com", "ebay.com", "zavvi.com"],
+    "anime_bluray": ["blu-ray.com", "cdjapan.co.jp", "amiami.com", "ebay.com"],
+    "anime_soundtrack": ["vgmdb.net", "cdjapan.co.jp", "discogs.com", "mercari.com"],
+    "anime_ost_vinyl": ["vgmdb.net", "discogs.com", "ebay.com", "merchbar.com"],
     # Music / Fandom
-    "kpop_merch": ["mercari.com", "weverse.io", "ktown4u.com"],
-    "taylor_swift": ["mercari.com", "stockx.com"],
+    "kpop_merch": ["mercari.com", "weverse.io", "ktown4u.com", "cokodive.com"],
+    "taylor_swift": ["mercari.com", "stockx.com", "ebay.com", "discogs.com"],
     "pop_fandom": ["mercari.com", "stockx.com", "weverse.io", "ktown4u.com"],
-    "kpop_lightsticks": ["ktown4u.com", "mercari.com"],
+    "kpop_lightsticks": ["ktown4u.com", "cokodive.com", "mercari.com", "ebay.com"],
     # Disney / Theme Parks
-    "disney": ["shopdisney.com", "mercari.com"],
-    "theme_park": ["ebay.com", "mercari.com"],
-    "ghibli": ["myfigurecollection.net", "ebay.com"],
+    "disney": ["shopdisney.com", "mercari.com", "ebay.com", "boxlunch.com"],
+    "theme_park": ["ebay.com", "mercari.com", "shopdisney.com", "mercari.com/jp"],
+    "ghibli": ["myfigurecollection.net", "ebay.com", "amiami.com", "suruga-ya.jp"],
     # Japan Exclusives
-    "bandai_premium": ["myfigurecollection.net", "ebay.com"],
-    "jp_magazine": ["ebay.com", "buyee.jp"],
-    "jp_event": ["ebay.com", "buyee.jp"],
+    "bandai_premium": ["myfigurecollection.net", "ebay.com", "amiami.com", "suruga-ya.jp"],
+    "jp_magazine": ["ebay.com", "buyee.jp", "mercari.com", "suruga-ya.jp"],
+    "jp_event": ["ebay.com", "buyee.jp", "mercari.com", "suruga-ya.jp"],
     # Nintendo / Pokemon Merch
-    "nintendo_merch": ["ebay.com", "mercari.com"],
-    "retro_pokemon": ["ebay.com", "mercari.com"],
+    "nintendo_merch": ["ebay.com", "mercari.com", "amiami.com", "buyee.jp"],
+    "retro_pokemon": ["ebay.com", "mercari.com", "amiami.com", "buyee.jp"],
     # IP-Specific
-    "one_piece": ["myfigurecollection.net", "mercari.com"],
-    "vtuber": ["buyee.jp", "mercari.com"],
+    "one_piece": ["myfigurecollection.net", "mercari.com", "amiami.com", "suruga-ya.jp"],
+    "vtuber": ["buyee.jp", "mercari.com", "booth.pm", "mandarake.co.jp"],
     # Niche
-    "keycaps": ["reddit.com/r/mechmarket", "drop.com"],
-    "loungefly": ["mercari.com", "stockx.com"],
+    "keycaps": ["reddit.com/r/mechmarket", "drop.com", "ebay.com", "geekhack.org"],
+    "loungefly": ["mercari.com", "stockx.com", "ebay.com", "boxlunch.com"],
     # Legacy
-    "diecast": ["ebay.com", "diecastmodelswholesale.com"],
-    "sportscards": ["130point.com", "comc.com"],
+    "diecast": ["ebay.com", "diecastmodelswholesale.com", "modelcollect.com", "ebay.co.uk"],
+    "sportscards": ["130point.com", "comc.com", "ebay.com", "pwccmarketplace.com"],
 }
 
 # Provenance score for Firecrawl web-scraped results (lower than direct APIs)

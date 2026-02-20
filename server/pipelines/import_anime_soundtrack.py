@@ -4,12 +4,17 @@ Import anime soundtrack / limited media catalog.
 Layer 1 (Catalog):  Curated anime OSTs & limited media → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
-Covers:
+Covers (65+ items):
 - Studio Ghibli soundtracks by Joe Hisaishi (CD, vinyl)
 - Evangelion OST limited editions
 - Cowboy Bebop / Yoko Kanno
-- Makoto Shinkai films (Your Name, Weathering With You)
+- Makoto Shinkai films (Your Name, Weathering With You, Suzume)
+- Hiroyuki Sawano works (AoT, Kill la Kill, Guilty Crown, Aldnoah.Zero)
+- Yuki Kajiura works (Madoka Magica, SAO, Fate/Zero, Tsubasa)
+- Modern hit anime (JJK, Chainsaw Man, Spy x Family, Frieren, etc.)
+- Classic/vintage anime (Urusei Yatsura, City Hunter, Macross, Lupin III, Saint Seiya)
 - Limited box sets with art books
+- Premium complete box sets (Evangelion 12CD, Bebop Sessions, Gundam UC, etc.)
 - Event-exclusive CDs
 - Preorder bonus discs
 
@@ -39,7 +44,7 @@ CATEGORY = "anime_soundtrack"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated anime soundtrack / limited media catalog."""
+    """Curated anime soundtrack / limited media catalog (65+ items)."""
 
     # (franchise, composer, title, format, edition, rarity_tier, price_eur)
     # rarity_tier: grail (>100), high (50-100), mid (20-50), standard (<20)
@@ -95,6 +100,51 @@ def get_curated_catalog() -> list[dict]:
         ("Jujutsu Kaisen", "Various", "JJK S2 Blu-ray Preorder Bonus CD (Soundtrack Sampler)", "CD", "Preorder Bonus", "mid", 30),
         ("Chainsaw Man", "Kensuke Ushio", "CSM Episode 1-4 Preorder Bonus Sound Collection", "CD", "Preorder Bonus", "mid", 35),
         ("Bocchi the Rock!", "Various", "Bocchi the Rock! BD Vol.1 Bonus Live CD", "CD", "Preorder Bonus", "mid", 25),
+
+        # ── NEW ITEMS BELOW ──────────────────────────────────────────────
+
+        # More Studio Ghibli (+4)
+        ("Porco Rosso", "Joe Hisaishi", "Porco Rosso OST", "CD", "Standard", "mid", 24),
+        ("The Wind Rises", "Joe Hisaishi", "The Wind Rises Soundtrack", "CD", "Standard", "standard", 18),
+        ("Tales from Earthsea", "Tamiya Terashima", "Tales from Earthsea OST", "CD", "Standard", "standard", 16),
+        ("The Cat Returns", "Yuji Nomi", "The Cat Returns Soundtrack", "CD", "Standard", "standard", 15),
+
+        # Modern Hit Anime (+8)
+        ("Jujutsu Kaisen", "Hiroaki Tsutsumi / Yoshimasa Terui", "Jujutsu Kaisen Season 1 OST", "CD", "Standard", "standard", 18),
+        ("Chainsaw Man", "Kensuke Ushio", "Chainsaw Man Original Soundtrack Complete Edition", "CD", "Standard", "mid", 22),
+        ("Spy x Family", "K)NoW_NAME", "SPY x FAMILY Original Soundtrack", "CD", "Standard", "standard", 16),
+        ("Bocchi the Rock!", "Various", "Bocchi the Rock! Original Soundtrack", "CD", "Standard", "standard", 15),
+        ("Frieren", "Evan Call", "Frieren: Beyond Journey's End OST", "CD", "Standard", "mid", 20),
+        ("Oshi no Ko", "Masaru Yokoyama", "Oshi no Ko Original Soundtrack", "CD", "Standard", "standard", 17),
+        ("Vinland Saga", "Yutaka Yamada", "Vinland Saga Original Soundtrack", "CD", "Standard", "mid", 22),
+        ("86: Eighty-Six", "Hiroyuki Sawano / KOHTA YAMAMOTO", "86: Eighty-Six OST", "CD", "Standard", "mid", 24),
+
+        # Classic / Vintage (+5)
+        ("Urusei Yatsura", "Various", "Urusei Yatsura Music Capsule (OG Pressing)", "CD", "OG Japanese Pressing", "high", 65),
+        ("City Hunter", "Various", "City Hunter Original Soundtrack", "CD", "Standard", "mid", 35),
+        ("Macross", "Kentaro Haneda", "Macross: Do You Remember Love? OST", "CD", "Standard", "high", 55),
+        ("Lupin III", "Yuji Ohno", "Lupin the Third '79 Original Soundtrack", "CD", "Standard", "mid", 38),
+        ("Saint Seiya", "Seiji Yokoyama", "Saint Seiya Original Soundtrack I", "CD", "Standard", "mid", 32),
+
+        # Hiroyuki Sawano (+4)
+        ("Attack on Titan", "Hiroyuki Sawano", "Attack on Titan OST Box Set (Season 1-3, 6CD)", "CD Box", "Limited", "grail", 130),
+        ("Kill la Kill", "Hiroyuki Sawano", "Kill la Kill Original Soundtrack", "CD", "Standard", "mid", 28),
+        ("Guilty Crown", "Hiroyuki Sawano", "Guilty Crown Complete Soundtrack", "CD", "Standard", "mid", 30),
+        ("Aldnoah.Zero", "Hiroyuki Sawano", "Aldnoah.Zero Original Soundtrack", "CD", "Standard", "mid", 25),
+
+        # Yuki Kajiura (+4)
+        ("Madoka Magica", "Yuki Kajiura", "Puella Magi Madoka Magica Complete OST (3CD)", "CD Box", "Limited", "high", 75),
+        ("Sword Art Online", "Yuki Kajiura", "Sword Art Online Music Collection", "CD", "Standard", "mid", 22),
+        ("Fate/Zero", "Yuki Kajiura", "Fate/Zero Original Soundtrack (2CD Limited Edition)", "CD", "Limited", "high", 60),
+        ("Tsubasa Chronicle", "Yuki Kajiura", "Tsubasa Chronicle Original Soundtrack Future Soundscape", "CD", "Standard", "mid", 28),
+
+        # Box Sets / Premium (+6)
+        ("Evangelion", "Shiro Sagisu", "Evangelion Complete Soundtrack Box (12CD)", "CD Box", "Limited", "grail", 250),
+        ("Cowboy Bebop", "Yoko Kanno", "Cowboy Bebop Complete Sessions Box (8CD)", "CD Box", "Limited", "grail", 180),
+        ("Gundam UC", "Hiroyuki Sawano", "Mobile Suit Gundam Unicorn Complete Soundtrack (5CD)", "CD Box", "Limited", "grail", 140),
+        ("Your Name / Weathering With You", "RADWIMPS", "Shinkai x RADWIMPS OST Box (Your Name + Weathering, 3CD)", "CD Box", "Limited", "high", 70),
+        ("Dragon Ball Z", "Shunsuke Kikuchi", "Dragon Ball Z Complete Song Collection Box (18CD)", "CD Box", "Limited", "grail", 200),
+        ("Naruto Shippuden", "Yasuharu Takanashi / Various", "Naruto Shippuden Complete Soundtrack (10CD)", "CD Box", "Limited", "grail", 160),
     ]
 
     catalog = []

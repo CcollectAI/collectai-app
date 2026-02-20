@@ -35,7 +35,7 @@ CATEGORY = "theme_park"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated theme park exclusives catalog."""
+    """Curated theme park exclusives catalog (66 items)."""
 
     # (park, subcategory, name, edition, rarity_tier, price_eur)
     # rarity_tier: grail (>150), high (60-150), mid (25-60), standard (<25)
@@ -86,6 +86,52 @@ def get_curated_catalog() -> list[dict]:
         ("Disney Parks", "anniversary", "EPCOT 40th Anniversary Figment Figure", "Anniversary LE", "high", 95),
         ("Disney Parks", "anniversary", "Disney100 Platinum Celebration Pin", "D100 Exclusive", "mid", 45),
         ("USJ", "anniversary", "USJ 20th Anniversary Exclusive Pin Set", "Anniversary LE", "high", 70),
+
+        # --- Additional Disney Parks Popcorn Buckets ---
+        ("Disney Parks", "popcorn_bucket", "Dumbo Popcorn Bucket (Magic Kingdom)", "Park Exclusive", "high", 75),
+        ("Disney Parks", "popcorn_bucket", "Little Mermaid Shell Popcorn Bucket", "Park Exclusive", "mid", 50),
+        ("Disney Parks", "popcorn_bucket", "Ratatouille Remy Popcorn Bucket (Epcot)", "Park Exclusive", "high", 65),
+        ("Disney Parks", "popcorn_bucket", "Nightmare Before Christmas Popcorn Bucket", "Limited Release", "high", 110),
+
+        # --- Universal Studios (expanded) ---
+        ("USJ", "popcorn_bucket", "USJ Jaws Popcorn Bucket", "Park Exclusive", "high", 70),
+        ("USJ", "merch", "Super Nintendo World Power Star Popcorn Tin", "Park Exclusive", "mid", 45),
+        ("Universal Orlando", "merch", "Wizarding World Butterbeer Stein Mug", "Park Exclusive", "mid", 35),
+        ("Universal Orlando", "merch", "Jurassic World Raptor Popcorn Bucket", "Park Exclusive", "mid", 40),
+        ("Universal Orlando", "merch", "Halloween Horror Nights 2024 Exclusive Tee", "Limited Release", "high", 60),
+        ("Universal Orlando", "merch", "VelociCoaster Grand Opening Pin Set", "Grand Opening", "high", 85),
+
+        # --- Tokyo DisneySea (expanded) ---
+        ("Tokyo Disney", "plush", "Duffy Exclusive Plush (TDS 2024)", "Tokyo Exclusive", "high", 95),
+        ("Tokyo Disney", "plush", "ShellieMay Plush (TDS Exclusive)", "Tokyo Exclusive", "high", 80),
+        ("Tokyo Disney", "plush", "Gelatoni Plush (TDS Exclusive)", "Tokyo Exclusive", "high", 75),
+        ("Tokyo Disney", "plush", "StellaLou Plush (TDS Exclusive)", "Tokyo Exclusive", "high", 80),
+        ("Tokyo Disney", "merch", "Tokyo DisneySea 20th Anniversary Exclusive Set", "Anniversary LE", "grail", 160),
+
+        # --- Shanghai Disneyland ---
+        ("Shanghai Disney", "merch", "Shanghai Disneyland Grand Opening Pin Set (2016)", "Grand Opening", "grail", 200),
+        ("Shanghai Disney", "merch", "Zootopia Land Grand Opening Exclusive Set", "Grand Opening", "high", 110),
+        ("Shanghai Disney", "merch", "Chinese New Year Exclusive Mickey Plush", "Limited Release", "high", 65),
+
+        # --- Disney Pin Events (expanded) ---
+        ("Disney Parks", "pin_event", "Epcot International Food & Wine Festival Pin Set", "Festival LE", "high", 85),
+        ("Disney Parks", "pin_event", "Mickey's Not-So-Scary Halloween Party Pin Set", "LE", "high", 95),
+        ("Disney Parks", "pin_event", "Disney After Hours BOO Bash Event Pin", "LE", "high", 75),
+        ("Disney Parks", "pin_event", "runDisney Marathon Weekend Medal Set", "Limited Release", "high", 110),
+
+        # --- Vintage Park Collectibles ---
+        ("Disney Parks", "vintage", "Vintage Disneyland Ticket Book (A-E Tickets)", "Vintage", "grail", 350),
+        ("Disney Parks", "vintage", "1971 Walt Disney World Opening Day Guide Map", "Vintage", "grail", 280),
+        ("Disney Parks", "vintage", "Vintage Disney Park Souvenir Glass Set (1970s)", "Vintage", "high", 90),
+        ("Disney Parks", "vintage", "Disney on Ice Program Booklet (1980s)", "Vintage", "mid", 30),
+        ("Disney Parks", "vintage", "Disneyland Hotel Vintage Ashtray (1960s)", "Vintage", "high", 120),
+
+        # --- Grand Opening / Anniversary (expanded) ---
+        ("Disney Parks", "anniversary", "Star Wars Galaxy's Edge Grand Opening Pin Set", "Grand Opening", "high", 130),
+        ("Disney Parks", "anniversary", "Pandora World of Avatar Grand Opening Banshee Figure", "Grand Opening", "high", 100),
+        ("Disney Parks", "anniversary", "Tron Lightcycle Run Grand Opening Tee", "Grand Opening", "high", 70),
+        ("Disney Parks", "anniversary", "Guardians Cosmic Rewind Grand Opening Pin", "Grand Opening", "high", 65),
+        ("Disney Parks", "anniversary", "Disney100 Celebration Exclusive Collectible Set", "D100 Exclusive", "grail", 175),
     ]
 
     catalog = []

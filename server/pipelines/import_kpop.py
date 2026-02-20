@@ -5,8 +5,11 @@ Layer 1 (Catalog):  Curated K-pop photocards, albums & exclusives → category_i
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
 Sources:
-- Curated data from secondary market (albums, photocards, fansign items)
-- Covers BTS, Blackpink, Stray Kids, ATEEZ, Enhypen, Weverse exclusives
+- Curated data from secondary market (Mercari, eBay, ktown4u resale)
+- 300+ items covering 25+ groups: BTS, Blackpink, Stray Kids, ATEEZ, Enhypen,
+  Seventeen, NewJeans, EXO, TWICE, NCT, aespa, Le Sserafim, IVE, ITZY,
+  Red Velvet, GOT7, TXT, (G)I-DLE, NMIXX, Dreamcatcher, Mamamoo, SHINee,
+  BIGBANG, 2NE1, Super Junior — albums, photocards, merch, tour exclusives
 
 Usage:
     python -m pipelines.import_kpop [--dry-run]
@@ -40,7 +43,9 @@ def get_curated_catalog() -> list[dict]:
     # rarity_tier: grail (>200), high (80-200), mid (30-80), standard (<30)
 
     items = [
-        # BTS Photocards
+        # ═══════════════════════════════════════════════════════════════════
+        # BTS — Photocards
+        # ═══════════════════════════════════════════════════════════════════
         ("BTS", "photocard", "Jungkook Fansign Photocard", "Fansign Event", "grail", 450),
         ("BTS", "photocard", "V Fansign Photocard", "Fansign Event", "grail", 420),
         ("BTS", "photocard", "Jimin Butter Lucky Draw", "Lucky Draw", "grail", 380),
@@ -50,7 +55,7 @@ def get_curated_catalog() -> list[dict]:
         ("BTS", "photocard", "J-Hope Jack In The Box POB", "Album POB", "mid", 50),
         ("BTS", "photocard", "BTS Proof Standard Photocard", "Standard", "standard", 8),
 
-        # BTS Albums
+        # BTS — Albums
         ("BTS", "album", "BTS Proof Collector's Edition", "Collector's Edition", "high", 180),
         ("BTS", "album", "BTS Proof Standard", "Standard", "standard", 22),
         ("BTS", "album", "Map of the Soul: 7 (Version 4)", "Limited Version", "high", 85),
@@ -60,16 +65,68 @@ def get_curated_catalog() -> list[dict]:
         ("BTS", "album", "BTS Wings", "Standard", "mid", 45),
         ("BTS", "album", "BTS Young Forever Night Version", "Night Ver.", "high", 120),
 
-        # Blackpink
+        # BTS — Solo Albums (NEW)
+        ("BTS", "album", "V - Layover", "Standard", "standard", 20),
+        ("BTS", "album", "V - Layover Weverse Albums Ver.", "Weverse Exclusive", "mid", 35),
+        ("BTS", "album", "Jimin - FACE", "Standard", "standard", 18),
+        ("BTS", "album", "Jimin - FACE Weverse Albums Ver.", "Weverse Exclusive", "mid", 32),
+        ("BTS", "album", "SUGA - D-Day", "Standard", "standard", 20),
+        ("BTS", "album", "SUGA - D-Day Weverse Albums Ver.", "Weverse Exclusive", "mid", 35),
+        ("BTS", "album", "j-hope - Jack In The Box", "Standard", "standard", 22),
+        ("BTS", "album", "j-hope - Jack In The Box LP", "Limited Vinyl", "high", 95),
+        ("BTS", "album", "RM - Indigo", "Standard", "standard", 20),
+        ("BTS", "album", "RM - Indigo Postcard Edition", "Limited", "mid", 40),
+        ("BTS", "album", "Jin - The Astronaut", "Standard", "standard", 18),
+        ("BTS", "album", "Jungkook - GOLDEN", "Standard", "standard", 20),
+        ("BTS", "album", "Jungkook - GOLDEN Weverse Albums Ver.", "Weverse Exclusive", "mid", 38),
+
+        # BTS — Merch & Collectibles
+        ("BTS", "merch", "BTS Artist Made Collection V Bag", "Weverse Exclusive", "high", 80),
+        ("BTS", "merch", "BTS Official Light Stick SE", "Weverse Exclusive", "mid", 65),
+        ("BTS", "merch", "BTS Season's Greetings 2024", "Official", "mid", 55),
+        ("BTS", "merch", "BTS Memories of 2022 DVD", "Limited", "high", 85),
+        ("BTS", "merch", "BTS Memories of 2021 Blu-ray", "Limited", "high", 95),
+        ("BTS", "merch", "BTS Season's Greetings 2023", "Official", "mid", 50),
+        ("BTS", "merch", "BTS Map of the Soul ON:E DVD", "Limited", "high", 80),
+        ("BTS", "merch", "BTS Permission to Dance Concert DVD", "Limited", "high", 75),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Blackpink — Albums
+        # ═══════════════════════════════════════════════════════════════════
         ("Blackpink", "album", "The Album Version 3 (Lisa)", "Limited", "mid", 55),
         ("Blackpink", "album", "The Album Standard", "Standard", "standard", 20),
         ("Blackpink", "album", "Born Pink Digipack Lisa", "Digipack", "mid", 35),
         ("Blackpink", "album", "Born Pink Limited Edition Vinyl", "Limited Vinyl", "high", 130),
         ("Blackpink", "album", "Born Pink Standard", "Standard", "standard", 18),
+
+        # Blackpink — Photocards
         ("Blackpink", "photocard", "Jennie Fansign Photocard", "Fansign Event", "grail", 500),
         ("Blackpink", "photocard", "Lisa Signed Polaroid", "Signed", "grail", 350),
 
+        # Blackpink — Solo Albums (NEW)
+        ("Blackpink", "album", "ROSE - R", "Standard", "standard", 22),
+        ("Blackpink", "album", "ROSE - R Vinyl LP", "Limited Vinyl", "high", 85),
+        ("Blackpink", "album", "Lisa - LALISA", "Standard", "standard", 20),
+        ("Blackpink", "album", "Lisa - LALISA Vinyl LP", "Limited Vinyl", "high", 90),
+        ("Blackpink", "album", "Jennie - Solo Photobook Special Ed.", "Limited", "high", 110),
+        ("Blackpink", "album", "Jisoo - ME (Red Ver.)", "Limited", "mid", 40),
+        ("Blackpink", "album", "Jisoo - ME Standard", "Standard", "standard", 20),
+
+        # Blackpink — Photocards (NEW)
+        ("Blackpink", "photocard", "Rose Video Call Fansign", "Fansign Event", "grail", 400),
+        ("Blackpink", "photocard", "Jisoo ME Lucky Draw", "Lucky Draw", "high", 150),
+        ("Blackpink", "photocard", "Lisa LALISA POB Photocard", "Pre-order Benefit", "mid", 60),
+        ("Blackpink", "photocard", "Blackpink Born Pink Standard Photocard", "Standard", "standard", 12),
+
+        # Blackpink — Merch (NEW)
+        ("Blackpink", "merch", "Blackpink Official Lightstick Ver.2", "Official", "mid", 55),
+        ("Blackpink", "merch", "Born Pink World Tour Hoodie", "Tour Exclusive", "mid", 75),
+        ("Blackpink", "merch", "Born Pink World Tour Photobook", "Tour Exclusive", "high", 90),
+        ("Blackpink", "merch", "Blackpink The Movie DVD", "Limited", "mid", 45),
+
+        # ═══════════════════════════════════════════════════════════════════
         # Stray Kids — Albums
+        # ═══════════════════════════════════════════════════════════════════
         ("Stray Kids", "album", "ATE Limited Edition", "Limited", "mid", 45),
         ("Stray Kids", "album", "ATE Standard", "Standard", "standard", 18),
         ("Stray Kids", "album", "5-STAR Limited Star Ver.", "Limited Star", "mid", 42),
@@ -114,21 +171,525 @@ def get_curated_catalog() -> list[dict]:
         ("Stray Kids", "merch", "SKZ REPLAY DVD Limited", "Limited", "high", 90),
         ("Stray Kids", "merch", "Stray Kids SKZOO Standing Doll Set", "Official", "mid", 55),
 
+        # ═══════════════════════════════════════════════════════════════════
         # ATEEZ
+        # ═══════════════════════════════════════════════════════════════════
         ("ATEEZ", "album", "The World EP.2: Outlaw", "Standard", "standard", 18),
         ("ATEEZ", "album", "Treasure EP.FIN Limited", "Limited", "mid", 35),
         ("ATEEZ", "photocard", "Hongjoong Fansign Photocard", "Fansign Event", "high", 180),
+        ("ATEEZ", "album", "The World EP.1: Movement", "Standard", "standard", 18),
+        ("ATEEZ", "album", "ZERO: FEVER Part.3", "Standard", "standard", 16),
+        ("ATEEZ", "album", "ZERO: FEVER Epilogue", "Standard", "standard", 16),
+        ("ATEEZ", "album", "Treasure EP.3 Limited", "Limited", "mid", 40),
+        ("ATEEZ", "album", "GOLDEN HOUR Part.1", "Standard", "standard", 20),
+        ("ATEEZ", "album", "GOLDEN HOUR Part.1 Diary Ver.", "Limited", "mid", 38),
+        ("ATEEZ", "photocard", "San Video Call Fansign", "Fansign Event", "grail", 280),
+        ("ATEEZ", "photocard", "Wooyoung Video Call Fansign", "Fansign Event", "grail", 260),
+        ("ATEEZ", "photocard", "Seonghwa Lucky Draw", "Lucky Draw", "high", 140),
+        ("ATEEZ", "photocard", "Mingi POB Photocard", "Pre-order Benefit", "mid", 45),
+        ("ATEEZ", "photocard", "ATEEZ Standard Album Photocard", "Standard", "standard", 8),
+        ("ATEEZ", "merch", "ATEEZ Official Lightstick Ver.2", "Official", "mid", 50),
+        ("ATEEZ", "merch", "THE FELLOWSHIP Tour Photobook", "Tour Exclusive", "high", 85),
+        ("ATEEZ", "merch", "ATEEZ x ANITEEZ Plush Set", "Collaboration", "mid", 40),
 
-        # Enhypen
+        # ═══════════════════════════════════════════════════════════════════
+        # Enhypen (expanded)
+        # ═══════════════════════════════════════════════════════════════════
         ("Enhypen", "album", "Dark Blood ENGENE Ver.", "Limited", "mid", 30),
         ("Enhypen", "album", "Dimension: Dilemma", "Standard", "standard", 16),
         ("Enhypen", "photocard", "Sunghoon Lucky Draw", "Lucky Draw", "high", 100),
+        ("Enhypen", "album", "DARK BLOOD Standard", "Standard", "standard", 18),
+        ("Enhypen", "album", "ORANGE BLOOD Standard", "Standard", "standard", 18),
+        ("Enhypen", "album", "ORANGE BLOOD ENGENE Ver.", "Limited", "mid", 32),
+        ("Enhypen", "album", "ROMANCE: UNTOLD", "Standard", "standard", 20),
+        ("Enhypen", "album", "ROMANCE: UNTOLD Weverse Albums Ver.", "Weverse Exclusive", "mid", 35),
+        ("Enhypen", "album", "Dimension: Answer Limited", "Limited", "mid", 35),
+        ("Enhypen", "album", "BORDER: CARNIVAL", "Standard", "standard", 16),
+        ("Enhypen", "album", "BORDER: DAY ONE", "Standard", "standard", 18),
+        ("Enhypen", "photocard", "Ni-ki Video Call Fansign", "Fansign Event", "grail", 220),
+        ("Enhypen", "photocard", "Sunoo Video Call Fansign", "Fansign Event", "grail", 200),
+        ("Enhypen", "photocard", "Heeseung Lucky Draw", "Lucky Draw", "high", 120),
+        ("Enhypen", "photocard", "Jay POB Photocard", "Pre-order Benefit", "mid", 40),
+        ("Enhypen", "photocard", "Jake POB Photocard", "Pre-order Benefit", "mid", 45),
+        ("Enhypen", "photocard", "Jungwon POB Photocard", "Pre-order Benefit", "mid", 42),
+        ("Enhypen", "photocard", "Enhypen Standard Photocard", "Standard", "standard", 7),
+        ("Enhypen", "merch", "Enhypen Official Lightstick", "Official", "mid", 48),
+        ("Enhypen", "merch", "MANIFESTO World Tour Merch Set", "Tour Exclusive", "high", 85),
 
-        # Weverse Exclusives
-        ("BTS", "merch", "BTS Artist Made Collection V Bag", "Weverse Exclusive", "high", 80),
-        ("BTS", "merch", "BTS Official Light Stick SE", "Weverse Exclusive", "mid", 65),
+        # ═══════════════════════════════════════════════════════════════════
+        # Seventeen (expanded)
+        # ═══════════════════════════════════════════════════════════════════
         ("Seventeen", "album", "FML Weverse Albums Ver.", "Weverse Exclusive", "standard", 22),
+        ("Seventeen", "album", "FML Standard", "Standard", "standard", 20),
+        ("Seventeen", "album", "FML Deluxe Ver.", "Deluxe", "mid", 45),
+        ("Seventeen", "album", "SEVENTEENTH HEAVEN Standard", "Standard", "standard", 20),
+        ("Seventeen", "album", "SEVENTEENTH HEAVEN Carat Ver.", "Limited", "mid", 42),
+        ("Seventeen", "album", "Attacca Standard", "Standard", "standard", 18),
+        ("Seventeen", "album", "Attacca Op.3", "Limited", "mid", 35),
+        ("Seventeen", "album", "Face the Sun Carat Ver.", "Limited", "mid", 40),
+        ("Seventeen", "album", "Face the Sun Standard", "Standard", "standard", 18),
+        ("Seventeen", "album", "Sector 17 Compact Ver.", "Standard", "standard", 16),
+        ("Seventeen", "album", "An Ode Limited", "Limited", "high", 80),
+        ("Seventeen", "album", "You Make My Day Follow Ver.", "Standard", "standard", 22),
+        ("Seventeen", "album", "SEVENTEEN BEST ALBUM 17 IS RIGHT HERE", "Standard", "standard", 22),
+        ("Seventeen", "photocard", "Mingyu Video Call Fansign", "Fansign Event", "grail", 350),
+        ("Seventeen", "photocard", "Wonwoo Video Call Fansign", "Fansign Event", "grail", 320),
+        ("Seventeen", "photocard", "Vernon Video Call Fansign", "Fansign Event", "grail", 280),
+        ("Seventeen", "photocard", "Jeonghan Lucky Draw", "Lucky Draw", "high", 180),
+        ("Seventeen", "photocard", "Joshua Lucky Draw", "Lucky Draw", "high", 150),
+        ("Seventeen", "photocard", "S.Coups POB Photocard", "Pre-order Benefit", "mid", 45),
+        ("Seventeen", "photocard", "Hoshi POB Photocard", "Pre-order Benefit", "mid", 50),
+        ("Seventeen", "photocard", "Woozi POB Photocard", "Pre-order Benefit", "mid", 48),
+        ("Seventeen", "photocard", "DK POB Photocard", "Pre-order Benefit", "mid", 35),
+        ("Seventeen", "photocard", "Seventeen Standard Photocard", "Standard", "standard", 8),
+        ("Seventeen", "merch", "Caratbong Ver.3 Lightstick", "Official", "mid", 55),
+        ("Seventeen", "merch", "FOLLOW AGAIN Tour Photobook", "Tour Exclusive", "high", 85),
+        ("Seventeen", "merch", "Going Seventeen 2024 DVD", "Limited", "mid", 60),
+        ("Seventeen", "merch", "Seventeen x Bongbongee Plush Set", "Collaboration", "mid", 40),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # NewJeans (expanded)
+        # ═══════════════════════════════════════════════════════════════════
         ("NewJeans", "album", "Get Up Bunny Beach Bag Ver.", "Weverse Exclusive", "mid", 45),
+        ("NewJeans", "album", "NewJeans 1st EP", "Standard", "standard", 20),
+        ("NewJeans", "album", "NewJeans 1st EP Bluebook Ver.", "Limited", "mid", 55),
+        ("NewJeans", "album", "Get Up Standard", "Standard", "standard", 18),
+        ("NewJeans", "album", "How Sweet Weverse Albums Ver.", "Weverse Exclusive", "mid", 32),
+        ("NewJeans", "album", "How Sweet Standard", "Standard", "standard", 18),
+        ("NewJeans", "album", "Supernatural Weverse Ver.", "Weverse Exclusive", "mid", 35),
+        ("NewJeans", "photocard", "Minji Video Call Fansign", "Fansign Event", "grail", 400),
+        ("NewJeans", "photocard", "Hanni Video Call Fansign", "Fansign Event", "grail", 450),
+        ("NewJeans", "photocard", "Danielle Lucky Draw", "Lucky Draw", "high", 180),
+        ("NewJeans", "photocard", "Haerin Lucky Draw", "Lucky Draw", "high", 200),
+        ("NewJeans", "photocard", "Hyein POB Photocard", "Pre-order Benefit", "mid", 55),
+        ("NewJeans", "photocard", "NewJeans Standard Photocard", "Standard", "standard", 10),
+        ("NewJeans", "merch", "NewJeans Bunnies Official Plush", "Official", "mid", 35),
+        ("NewJeans", "merch", "NewJeans Fan Meeting Merch Set", "Tour Exclusive", "high", 90),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # EXO
+        # ═══════════════════════════════════════════════════════════════════
+        ("EXO", "album", "XOXO Repackage Growl", "Standard", "mid", 55),
+        ("EXO", "album", "Exodus Korean Ver.", "Standard", "mid", 40),
+        ("EXO", "album", "The War Regular A", "Standard", "standard", 22),
+        ("EXO", "album", "The War Private Ver.", "Limited", "mid", 50),
+        ("EXO", "album", "Don't Mess Up My Tempo Vivace Ver.", "Standard", "standard", 20),
+        ("EXO", "album", "Don't Mess Up My Tempo Moderato Ver.", "Limited", "mid", 35),
+        ("EXO", "album", "Obsession EXO Ver.", "Standard", "standard", 22),
+        ("EXO", "album", "Obsession X-EXO Ver.", "Limited", "mid", 38),
+        ("EXO", "album", "Don't Fight the Feeling Expansion Ver.", "Limited", "mid", 45),
+        ("EXO", "album", "EXIST Standard", "Standard", "standard", 20),
+        ("EXO", "album", "EXIST Photobook Ver.", "Limited", "mid", 40),
+        ("EXO", "album", "Love Shot Repackage", "Standard", "standard", 24),
+        ("EXO", "album", "Sing for You Winter Special", "Limited", "mid", 55),
+        ("EXO", "photocard", "Baekhyun Fansign Photocard", "Fansign Event", "grail", 400),
+        ("EXO", "photocard", "Kai Fansign Photocard", "Fansign Event", "grail", 380),
+        ("EXO", "photocard", "D.O. Fansign Photocard", "Fansign Event", "grail", 350),
+        ("EXO", "photocard", "Sehun Lucky Draw", "Lucky Draw", "high", 160),
+        ("EXO", "photocard", "Chanyeol Lucky Draw", "Lucky Draw", "high", 150),
+        ("EXO", "photocard", "Suho EXIST POB", "Pre-order Benefit", "mid", 45),
+        ("EXO", "photocard", "Xiumin POB Photocard", "Pre-order Benefit", "mid", 40),
+        ("EXO", "photocard", "Chen POB Photocard", "Pre-order Benefit", "mid", 38),
+        ("EXO", "photocard", "EXO Standard Photocard", "Standard", "standard", 10),
+        ("EXO", "merch", "EXO Official Lightstick Ver.3", "Official", "mid", 55),
+        ("EXO", "merch", "EXO Planet #5 Concert Photobook", "Tour Exclusive", "high", 90),
+        ("EXO", "merch", "EXO Fanmeeting Merch Set", "Tour Exclusive", "high", 80),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # TWICE
+        # ═══════════════════════════════════════════════════════════════════
+        ("TWICE", "album", "Formula of Love Standard", "Standard", "standard", 18),
+        ("TWICE", "album", "Formula of Love Result File Ver.", "Limited", "mid", 35),
+        ("TWICE", "album", "Between 1&2 Standard", "Standard", "standard", 18),
+        ("TWICE", "album", "Between 1&2 Archive Ver.", "Limited", "mid", 38),
+        ("TWICE", "album", "Ready to Be Standard", "Standard", "standard", 20),
+        ("TWICE", "album", "Ready to Be TO Ver.", "Limited", "mid", 40),
+        ("TWICE", "album", "With YOU-th Standard", "Standard", "standard", 20),
+        ("TWICE", "album", "With YOU-th Digipack", "Digipack", "standard", 16),
+        ("TWICE", "album", "STRATEGY Standard", "Standard", "standard", 20),
+        ("TWICE", "album", "Eyes Wide Open Standard", "Standard", "standard", 18),
+        ("TWICE", "album", "Taste of Love Standard", "Standard", "standard", 18),
+        ("TWICE", "album", "More & More Standard", "Standard", "standard", 20),
+        ("TWICE", "album", "Feel Special Standard", "Standard", "standard", 22),
+        ("TWICE", "album", "Twicetagram Standard", "Standard", "mid", 35),
+        ("TWICE", "photocard", "Nayeon Video Call Fansign", "Fansign Event", "grail", 350),
+        ("TWICE", "photocard", "Momo Video Call Fansign", "Fansign Event", "grail", 300),
+        ("TWICE", "photocard", "Sana Video Call Fansign", "Fansign Event", "grail", 380),
+        ("TWICE", "photocard", "Dahyun Lucky Draw", "Lucky Draw", "high", 140),
+        ("TWICE", "photocard", "Tzuyu Lucky Draw", "Lucky Draw", "high", 160),
+        ("TWICE", "photocard", "Jihyo POB Photocard", "Pre-order Benefit", "mid", 45),
+        ("TWICE", "photocard", "Mina POB Photocard", "Pre-order Benefit", "mid", 50),
+        ("TWICE", "photocard", "Chaeyoung POB Photocard", "Pre-order Benefit", "mid", 38),
+        ("TWICE", "photocard", "Jeongyeon POB Photocard", "Pre-order Benefit", "mid", 35),
+        ("TWICE", "photocard", "TWICE Standard Photocard", "Standard", "standard", 8),
+        ("TWICE", "merch", "Candybong Infinity Lightstick", "Official", "mid", 60),
+        ("TWICE", "merch", "READY TO BE World Tour Photobook", "Tour Exclusive", "high", 85),
+        ("TWICE", "merch", "TWICE 5th World Tour Merch Set", "Tour Exclusive", "high", 95),
+        ("TWICE", "merch", "TWICE x Lovelys Official Plush", "Collaboration", "mid", 35),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # NCT (NCT 127, NCT Dream, WayV)
+        # ═══════════════════════════════════════════════════════════════════
+        ("NCT 127", "album", "Sticker Standard", "Standard", "standard", 18),
+        ("NCT 127", "album", "Sticker Sticky Ver.", "Limited", "mid", 38),
+        ("NCT 127", "album", "2 Baddies Standard", "Standard", "standard", 18),
+        ("NCT 127", "album", "2 Baddies Digipack", "Digipack", "standard", 14),
+        ("NCT 127", "album", "Fact Check Storage Ver.", "Limited", "mid", 42),
+        ("NCT 127", "album", "Fact Check Standard", "Standard", "standard", 20),
+        ("NCT 127", "album", "Ay-Yo Repackage", "Standard", "standard", 18),
+        ("NCT 127", "album", "Walk Standard", "Standard", "standard", 20),
+        ("NCT 127", "photocard", "Taeyong Video Call Fansign", "Fansign Event", "grail", 300),
+        ("NCT 127", "photocard", "Jaehyun Video Call Fansign", "Fansign Event", "grail", 280),
+        ("NCT 127", "photocard", "Mark Lucky Draw", "Lucky Draw", "high", 140),
+        ("NCT 127", "photocard", "Haechan Lucky Draw", "Lucky Draw", "high", 180),
+        ("NCT 127", "photocard", "Doyoung POB Photocard", "Pre-order Benefit", "mid", 45),
+        ("NCT 127", "photocard", "Jungwoo POB Photocard", "Pre-order Benefit", "mid", 38),
+        ("NCT 127", "photocard", "NCT 127 Standard Photocard", "Standard", "standard", 8),
+        ("NCT Dream", "album", "ISTJ Standard", "Standard", "standard", 18),
+        ("NCT Dream", "album", "ISTJ Poster Ver.", "Limited", "mid", 35),
+        ("NCT Dream", "album", "Glitch Mode Digipack", "Digipack", "standard", 14),
+        ("NCT Dream", "album", "Hot Sauce Boring Jalapeño Ver.", "Limited", "mid", 38),
+        ("NCT Dream", "album", "Beatbox Digipack", "Digipack", "standard", 14),
+        ("NCT Dream", "album", "Dream( )Scape Standard", "Standard", "standard", 20),
+        ("NCT Dream", "photocard", "Jaemin Video Call Fansign", "Fansign Event", "grail", 350),
+        ("NCT Dream", "photocard", "Haechan Dream Lucky Draw", "Lucky Draw", "high", 170),
+        ("NCT Dream", "photocard", "Jeno Lucky Draw", "Lucky Draw", "high", 130),
+        ("NCT Dream", "photocard", "Renjun POB Photocard", "Pre-order Benefit", "mid", 40),
+        ("NCT Dream", "photocard", "Chenle POB Photocard", "Pre-order Benefit", "mid", 38),
+        ("NCT Dream", "photocard", "Jisung POB Photocard", "Pre-order Benefit", "mid", 35),
+        ("NCT Dream", "photocard", "NCT Dream Standard Photocard", "Standard", "standard", 8),
+        ("WayV", "album", "On My Youth Standard", "Standard", "standard", 18),
+        ("WayV", "album", "Phantom Standard", "Standard", "standard", 20),
+        ("WayV", "album", "Give Me That Standard", "Standard", "standard", 18),
+        ("WayV", "photocard", "Xiaojun Video Call Fansign", "Fansign Event", "high", 180),
+        ("WayV", "photocard", "Ten Lucky Draw", "Lucky Draw", "high", 120),
+        ("NCT", "merch", "NCT Official Lightstick", "Official", "mid", 50),
+        ("NCT", "album", "Universe Standard", "Standard", "standard", 18),
+        ("NCT", "album", "Golden Age Standard", "Standard", "standard", 20),
+        ("NCT", "album", "Golden Age Collecting Ver.", "Limited", "mid", 42),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # aespa
+        # ═══════════════════════════════════════════════════════════════════
+        ("aespa", "album", "MY WORLD Poster Ver.", "Limited", "mid", 38),
+        ("aespa", "album", "MY WORLD Standard", "Standard", "standard", 18),
+        ("aespa", "album", "Drama Standard", "Standard", "standard", 18),
+        ("aespa", "album", "Drama Giant Ver.", "Limited", "mid", 45),
+        ("aespa", "album", "Armageddon Standard", "Standard", "standard", 20),
+        ("aespa", "album", "Armageddon Warn Ver.", "Limited", "mid", 40),
+        ("aespa", "album", "Savage Standard", "Standard", "standard", 22),
+        ("aespa", "album", "Girls Standard", "Standard", "standard", 18),
+        ("aespa", "album", "Girls Real World Ver.", "Limited", "mid", 35),
+        ("aespa", "album", "Whiplash Standard", "Standard", "standard", 20),
+        ("aespa", "photocard", "Karina Video Call Fansign", "Fansign Event", "grail", 450),
+        ("aespa", "photocard", "Winter Video Call Fansign", "Fansign Event", "grail", 380),
+        ("aespa", "photocard", "Giselle Lucky Draw", "Lucky Draw", "high", 130),
+        ("aespa", "photocard", "NingNing Lucky Draw", "Lucky Draw", "high", 120),
+        ("aespa", "photocard", "Karina POB Photocard", "Pre-order Benefit", "mid", 60),
+        ("aespa", "photocard", "Winter POB Photocard", "Pre-order Benefit", "mid", 55),
+        ("aespa", "photocard", "aespa Standard Photocard", "Standard", "standard", 10),
+        ("aespa", "merch", "aespa Official Lightstick", "Official", "mid", 50),
+        ("aespa", "merch", "SYNK: HYPER LINE Concert Photobook", "Tour Exclusive", "high", 80),
+        ("aespa", "merch", "aespa ae-Key Ring Set", "Official", "mid", 30),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Le Sserafim
+        # ═══════════════════════════════════════════════════════════════════
+        ("Le Sserafim", "album", "FEARLESS Standard", "Standard", "standard", 18),
+        ("Le Sserafim", "album", "FEARLESS Blue Chypre Ver.", "Limited", "mid", 35),
+        ("Le Sserafim", "album", "ANTIFRAGILE Standard", "Standard", "standard", 18),
+        ("Le Sserafim", "album", "UNFORGIVEN Standard", "Standard", "standard", 20),
+        ("Le Sserafim", "album", "UNFORGIVEN Compact Ver.", "Digipack", "standard", 14),
+        ("Le Sserafim", "album", "EASY Standard", "Standard", "standard", 20),
+        ("Le Sserafim", "album", "EASY Compact Ver.", "Digipack", "standard", 14),
+        ("Le Sserafim", "album", "CRAZY Standard", "Standard", "standard", 20),
+        ("Le Sserafim", "album", "CRAZY Compact Ver.", "Digipack", "standard", 14),
+        ("Le Sserafim", "photocard", "Kazuha Video Call Fansign", "Fansign Event", "grail", 350),
+        ("Le Sserafim", "photocard", "Sakura Video Call Fansign", "Fansign Event", "grail", 320),
+        ("Le Sserafim", "photocard", "Chaewon Lucky Draw", "Lucky Draw", "high", 180),
+        ("Le Sserafim", "photocard", "Yunjin Lucky Draw", "Lucky Draw", "high", 150),
+        ("Le Sserafim", "photocard", "Eunchae POB Photocard", "Pre-order Benefit", "mid", 45),
+        ("Le Sserafim", "photocard", "Kazuha POB Photocard", "Pre-order Benefit", "mid", 55),
+        ("Le Sserafim", "photocard", "Le Sserafim Standard Photocard", "Standard", "standard", 10),
+        ("Le Sserafim", "merch", "Le Sserafim Official Lightstick", "Official", "mid", 52),
+        ("Le Sserafim", "merch", "FLAME RISES Tour Merch Set", "Tour Exclusive", "high", 85),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # IVE
+        # ═══════════════════════════════════════════════════════════════════
+        ("IVE", "album", "ELEVEN Standard", "Standard", "standard", 18),
+        ("IVE", "album", "After Like Standard", "Standard", "standard", 18),
+        ("IVE", "album", "I've IVE Standard", "Standard", "standard", 20),
+        ("IVE", "album", "I've IVE Photobook Ver.", "Limited", "mid", 42),
+        ("IVE", "album", "I WANT Standard", "Standard", "standard", 20),
+        ("IVE", "album", "IVE SWITCH Standard", "Standard", "standard", 20),
+        ("IVE", "album", "IVE SWITCH Plve Ver.", "Weverse Exclusive", "mid", 32),
+        ("IVE", "photocard", "Wonyoung Video Call Fansign", "Fansign Event", "grail", 500),
+        ("IVE", "photocard", "Yujin Video Call Fansign", "Fansign Event", "grail", 350),
+        ("IVE", "photocard", "Gaeul Lucky Draw", "Lucky Draw", "high", 130),
+        ("IVE", "photocard", "Rei Lucky Draw", "Lucky Draw", "high", 140),
+        ("IVE", "photocard", "Liz POB Photocard", "Pre-order Benefit", "mid", 40),
+        ("IVE", "photocard", "Leeseo POB Photocard", "Pre-order Benefit", "mid", 38),
+        ("IVE", "photocard", "Wonyoung POB Photocard", "Pre-order Benefit", "mid", 65),
+        ("IVE", "photocard", "IVE Standard Photocard", "Standard", "standard", 10),
+        ("IVE", "merch", "IVE Official Lightstick", "Official", "mid", 50),
+        ("IVE", "merch", "IVE THE 1ST WORLD TOUR Merch Set", "Tour Exclusive", "high", 85),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # ITZY
+        # ═══════════════════════════════════════════════════════════════════
+        ("ITZY", "album", "Crazy in Love Standard", "Standard", "standard", 18),
+        ("ITZY", "album", "Crazy in Love Special Ed.", "Limited", "mid", 40),
+        ("ITZY", "album", "CHECKMATE Standard", "Standard", "standard", 18),
+        ("ITZY", "album", "CHECKMATE Limited", "Limited", "mid", 35),
+        ("ITZY", "album", "KILL MY DOUBT Standard", "Standard", "standard", 20),
+        ("ITZY", "album", "KILL MY DOUBT Limited Ver.", "Limited", "mid", 38),
+        ("ITZY", "album", "BORN TO BE Standard", "Standard", "standard", 20),
+        ("ITZY", "album", "IT'z ME Standard", "Standard", "standard", 22),
+        ("ITZY", "album", "IT'z ICY Standard", "Standard", "standard", 24),
+        ("ITZY", "album", "GUESS WHO Standard", "Standard", "standard", 20),
+        ("ITZY", "photocard", "Yeji Video Call Fansign", "Fansign Event", "grail", 280),
+        ("ITZY", "photocard", "Ryujin Video Call Fansign", "Fansign Event", "grail", 320),
+        ("ITZY", "photocard", "Yuna Lucky Draw", "Lucky Draw", "high", 140),
+        ("ITZY", "photocard", "Lia Lucky Draw", "Lucky Draw", "high", 110),
+        ("ITZY", "photocard", "Chaeryeong POB Photocard", "Pre-order Benefit", "mid", 35),
+        ("ITZY", "photocard", "ITZY Standard Photocard", "Standard", "standard", 8),
+        ("ITZY", "merch", "ITZY Official Lightstick", "Official", "mid", 48),
+        ("ITZY", "merch", "ITZY 2nd World Tour Merch Set", "Tour Exclusive", "high", 80),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Red Velvet
+        # ═══════════════════════════════════════════════════════════════════
+        ("Red Velvet", "album", "The ReVe Festival Day 1", "Standard", "standard", 22),
+        ("Red Velvet", "album", "The ReVe Festival Finale", "Standard", "standard", 25),
+        ("Red Velvet", "album", "Queendom Standard", "Standard", "standard", 20),
+        ("Red Velvet", "album", "Queendom Queens Ver.", "Limited", "mid", 38),
+        ("Red Velvet", "album", "Chill Kill Standard", "Standard", "standard", 20),
+        ("Red Velvet", "album", "Chill Kill Special Ver.", "Limited", "mid", 40),
+        ("Red Velvet", "album", "Cosmic Standard", "Standard", "standard", 20),
+        ("Red Velvet", "album", "The Red Standard", "Standard", "mid", 40),
+        ("Red Velvet", "album", "Perfect Velvet Standard", "Standard", "mid", 35),
+        ("Red Velvet", "album", "RBB Standard", "Standard", "standard", 22),
+        ("Red Velvet", "photocard", "Irene Video Call Fansign", "Fansign Event", "grail", 350),
+        ("Red Velvet", "photocard", "Joy Video Call Fansign", "Fansign Event", "grail", 280),
+        ("Red Velvet", "photocard", "Seulgi Lucky Draw", "Lucky Draw", "high", 150),
+        ("Red Velvet", "photocard", "Wendy Lucky Draw", "Lucky Draw", "high", 130),
+        ("Red Velvet", "photocard", "Yeri POB Photocard", "Pre-order Benefit", "mid", 40),
+        ("Red Velvet", "photocard", "Red Velvet Standard Photocard", "Standard", "standard", 8),
+        ("Red Velvet", "merch", "Red Velvet Official Lightstick", "Official", "mid", 55),
+        ("Red Velvet", "merch", "R to V Concert Photobook", "Tour Exclusive", "high", 85),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # GOT7
+        # ═══════════════════════════════════════════════════════════════════
+        ("GOT7", "album", "DYE Standard", "Standard", "standard", 22),
+        ("GOT7", "album", "DYE Limited Ver.", "Limited", "mid", 45),
+        ("GOT7", "album", "Breath of Love: Last Piece", "Standard", "standard", 22),
+        ("GOT7", "album", "GOT7 Self-Titled Standard", "Standard", "standard", 22),
+        ("GOT7", "album", "Present: YOU Standard", "Standard", "standard", 20),
+        ("GOT7", "album", "Spinning Top Standard", "Standard", "standard", 22),
+        ("GOT7", "album", "Eyes On You Standard", "Standard", "standard", 24),
+        ("GOT7", "album", "Flight Log: Arrival Standard", "Standard", "mid", 35),
+        ("GOT7", "album", "7 for 7 Standard", "Standard", "standard", 22),
+        ("GOT7", "photocard", "Jackson Video Call Fansign", "Fansign Event", "grail", 350),
+        ("GOT7", "photocard", "Jinyoung Video Call Fansign", "Fansign Event", "grail", 300),
+        ("GOT7", "photocard", "BamBam Lucky Draw", "Lucky Draw", "high", 130),
+        ("GOT7", "photocard", "Yugyeom Lucky Draw", "Lucky Draw", "high", 110),
+        ("GOT7", "photocard", "Mark POB Photocard", "Pre-order Benefit", "mid", 45),
+        ("GOT7", "photocard", "Youngjae POB Photocard", "Pre-order Benefit", "mid", 35),
+        ("GOT7", "photocard", "JB/Jay B POB Photocard", "Pre-order Benefit", "mid", 50),
+        ("GOT7", "photocard", "GOT7 Standard Photocard", "Standard", "standard", 10),
+        ("GOT7", "merch", "GOT7 Official Lightstick Ver.3", "Official", "mid", 55),
+        ("GOT7", "merch", "GOT7 Homecoming Fanmeet Photobook", "Tour Exclusive", "high", 80),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # TXT (Tomorrow X Together)
+        # ═══════════════════════════════════════════════════════════════════
+        ("TXT", "album", "minisode 3: TOMORROW Standard", "Standard", "standard", 20),
+        ("TXT", "album", "minisode 3: TOMORROW Weverse Ver.", "Weverse Exclusive", "mid", 35),
+        ("TXT", "album", "The Name Chapter: FREEFALL Standard", "Standard", "standard", 20),
+        ("TXT", "album", "The Name Chapter: FREEFALL Gravity Ver.", "Limited", "mid", 42),
+        ("TXT", "album", "The Name Chapter: TEMPTATION Standard", "Standard", "standard", 20),
+        ("TXT", "album", "DREAM CHAPTER: MAGIC Standard", "Standard", "standard", 22),
+        ("TXT", "album", "DREAM CHAPTER: ETERNITY Standard", "Standard", "standard", 22),
+        ("TXT", "album", "DREAM CHAPTER: STAR Standard", "Standard", "mid", 35),
+        ("TXT", "album", "The Chaos Chapter: FREEZE Standard", "Standard", "standard", 20),
+        ("TXT", "album", "minisode 2: Thursday's Child Standard", "Standard", "standard", 18),
+        ("TXT", "photocard", "Yeonjun Video Call Fansign", "Fansign Event", "grail", 320),
+        ("TXT", "photocard", "Soobin Video Call Fansign", "Fansign Event", "grail", 300),
+        ("TXT", "photocard", "Beomgyu Lucky Draw", "Lucky Draw", "high", 160),
+        ("TXT", "photocard", "Taehyun Lucky Draw", "Lucky Draw", "high", 130),
+        ("TXT", "photocard", "Hueningkai POB Photocard", "Pre-order Benefit", "mid", 45),
+        ("TXT", "photocard", "TXT Standard Photocard", "Standard", "standard", 8),
+        ("TXT", "merch", "TXT Official Lightstick (MOA Bong)", "Official", "mid", 50),
+        ("TXT", "merch", "ACT: PROMISE Tour Photobook", "Tour Exclusive", "high", 85),
+        ("TXT", "merch", "TXT Memories: Second Story DVD", "Limited", "mid", 60),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # (G)I-DLE
+        # ═══════════════════════════════════════════════════════════════════
+        ("(G)I-DLE", "album", "I FEEL Standard", "Standard", "standard", 18),
+        ("(G)I-DLE", "album", "I FEEL Queen Ver.", "Limited", "mid", 38),
+        ("(G)I-DLE", "album", "I burn Standard", "Standard", "standard", 20),
+        ("(G)I-DLE", "album", "2 Standard", "Standard", "standard", 20),
+        ("(G)I-DLE", "album", "2 (2-2 Ver.)", "Limited", "mid", 38),
+        ("(G)I-DLE", "album", "I LOVE Standard", "Standard", "standard", 18),
+        ("(G)I-DLE", "album", "I SWAY Standard", "Standard", "standard", 20),
+        ("(G)I-DLE", "album", "I MADE Standard", "Standard", "standard", 22),
+        ("(G)I-DLE", "album", "I AM Standard", "Standard", "standard", 22),
+        ("(G)I-DLE", "photocard", "Miyeon Video Call Fansign", "Fansign Event", "grail", 280),
+        ("(G)I-DLE", "photocard", "Shuhua Video Call Fansign", "Fansign Event", "grail", 250),
+        ("(G)I-DLE", "photocard", "Minnie Lucky Draw", "Lucky Draw", "high", 140),
+        ("(G)I-DLE", "photocard", "Yuqi Lucky Draw", "Lucky Draw", "high", 150),
+        ("(G)I-DLE", "photocard", "Soyeon POB Photocard", "Pre-order Benefit", "mid", 40),
+        ("(G)I-DLE", "photocard", "(G)I-DLE Standard Photocard", "Standard", "standard", 8),
+        ("(G)I-DLE", "merch", "(G)I-DLE Official Lightstick Ver.2", "Official", "mid", 50),
+        ("(G)I-DLE", "merch", "(G)I-DLE World Tour Merch Set", "Tour Exclusive", "high", 80),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # NMIXX
+        # ═══════════════════════════════════════════════════════════════════
+        ("NMIXX", "album", "expergo Standard", "Standard", "standard", 18),
+        ("NMIXX", "album", "expergo Digipack", "Digipack", "standard", 14),
+        ("NMIXX", "album", "Fe3O4: BREAK Standard", "Standard", "standard", 18),
+        ("NMIXX", "album", "Fe3O4: BREAK Limited", "Limited", "mid", 35),
+        ("NMIXX", "album", "A Midsummer NMIXX's Dream Standard", "Standard", "standard", 18),
+        ("NMIXX", "album", "ENTWURF Standard", "Standard", "standard", 18),
+        ("NMIXX", "album", "Fe3O4: STICK Standard", "Standard", "standard", 20),
+        ("NMIXX", "photocard", "Sullyoon Video Call Fansign", "Fansign Event", "grail", 280),
+        ("NMIXX", "photocard", "Haewon Video Call Fansign", "Fansign Event", "grail", 250),
+        ("NMIXX", "photocard", "Lily Lucky Draw", "Lucky Draw", "high", 120),
+        ("NMIXX", "photocard", "Bae Lucky Draw", "Lucky Draw", "high", 110),
+        ("NMIXX", "photocard", "Kyujin POB Photocard", "Pre-order Benefit", "mid", 40),
+        ("NMIXX", "photocard", "Jiwoo POB Photocard", "Pre-order Benefit", "mid", 35),
+        ("NMIXX", "photocard", "NMIXX Standard Photocard", "Standard", "standard", 8),
+        ("NMIXX", "merch", "NMIXX Official Lightstick", "Official", "mid", 48),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Dreamcatcher
+        # ═══════════════════════════════════════════════════════════════════
+        ("Dreamcatcher", "album", "Apocalypse: Save Us Standard", "Standard", "standard", 22),
+        ("Dreamcatcher", "album", "Apocalypse: Follow Us Standard", "Standard", "standard", 22),
+        ("Dreamcatcher", "album", "Apocalypse: From Us Limited", "Limited", "mid", 50),
+        ("Dreamcatcher", "album", "VillainS Standard", "Standard", "standard", 22),
+        ("Dreamcatcher", "album", "VillainS Limited", "Limited", "mid", 45),
+        ("Dreamcatcher", "album", "Dystopia: The Tree of Language", "Standard", "mid", 40),
+        ("Dreamcatcher", "album", "Dystopia: Lose Myself", "Standard", "standard", 25),
+        ("Dreamcatcher", "album", "Raid of Dream Standard", "Standard", "mid", 55),
+        ("Dreamcatcher", "album", "Nightmare: Escape The ERA", "Standard", "mid", 60),
+        ("Dreamcatcher", "album", "SSTORM Standard", "Standard", "standard", 20),
+        ("Dreamcatcher", "photocard", "JiU Video Call Fansign", "Fansign Event", "grail", 250),
+        ("Dreamcatcher", "photocard", "Yoohyeon Video Call Fansign", "Fansign Event", "grail", 230),
+        ("Dreamcatcher", "photocard", "SuA Lucky Draw", "Lucky Draw", "high", 120),
+        ("Dreamcatcher", "photocard", "Siyeon POB Photocard", "Pre-order Benefit", "mid", 40),
+        ("Dreamcatcher", "photocard", "Handong POB Photocard", "Pre-order Benefit", "mid", 35),
+        ("Dreamcatcher", "photocard", "Dami POB Photocard", "Pre-order Benefit", "mid", 35),
+        ("Dreamcatcher", "photocard", "Gahyeon POB Photocard", "Pre-order Benefit", "mid", 32),
+        ("Dreamcatcher", "photocard", "Dreamcatcher Standard Photocard", "Standard", "standard", 10),
+        ("Dreamcatcher", "merch", "Dreamcatcher Official Lightstick", "Official", "mid", 55),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Mamamoo
+        # ═══════════════════════════════════════════════════════════════════
+        ("Mamamoo", "album", "reality in BLACK Standard", "Standard", "standard", 22),
+        ("Mamamoo", "album", "Travel Standard", "Standard", "standard", 20),
+        ("Mamamoo", "album", "MIC ON Standard", "Standard", "standard", 20),
+        ("Mamamoo", "album", "WAW Standard", "Standard", "standard", 22),
+        ("Mamamoo", "album", "White Wind Standard", "Standard", "standard", 22),
+        ("Mamamoo", "album", "Red Moon Standard", "Standard", "standard", 24),
+        ("Mamamoo", "album", "Hwasa - Maria", "Standard", "standard", 20),
+        ("Mamamoo", "album", "Hwasa - Guilty Pleasure", "Standard", "standard", 18),
+        ("Mamamoo", "album", "Solar - COLOURS", "Standard", "standard", 18),
+        ("Mamamoo", "album", "Solar - FACE", "Standard", "standard", 20),
+        ("Mamamoo", "album", "Moonbyul - Starlit of Muse", "Standard", "standard", 20),
+        ("Mamamoo", "album", "Wheein - WHEE", "Standard", "standard", 18),
+        ("Mamamoo", "photocard", "Hwasa Video Call Fansign", "Fansign Event", "grail", 250),
+        ("Mamamoo", "photocard", "Solar Video Call Fansign", "Fansign Event", "grail", 220),
+        ("Mamamoo", "photocard", "Moonbyul Lucky Draw", "Lucky Draw", "high", 110),
+        ("Mamamoo", "photocard", "Wheein Lucky Draw", "Lucky Draw", "high", 100),
+        ("Mamamoo", "photocard", "Mamamoo Standard Photocard", "Standard", "standard", 8),
+        ("Mamamoo", "merch", "Mamamoo Official Lightstick Ver.2.5", "Official", "mid", 50),
+        ("Mamamoo", "merch", "Mamamoo My Con Tour Photobook", "Tour Exclusive", "high", 80),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # SHINee
+        # ═══════════════════════════════════════════════════════════════════
+        ("SHINee", "album", "Don't Call Me Standard", "Standard", "standard", 22),
+        ("SHINee", "album", "Don't Call Me Jewel Case", "Jewel Case", "standard", 14),
+        ("SHINee", "album", "Atlantis Standard", "Standard", "standard", 22),
+        ("SHINee", "album", "HARD Standard", "Standard", "standard", 20),
+        ("SHINee", "album", "HARD Photobook Ver.", "Limited", "mid", 40),
+        ("SHINee", "album", "1 of 1 Limited", "Limited", "high", 90),
+        ("SHINee", "album", "Lucifer Standard", "Standard", "mid", 55),
+        ("SHINee", "album", "The Misconceptions of Us", "Standard", "mid", 45),
+        ("SHINee", "album", "Odd Standard", "Standard", "mid", 35),
+        ("SHINee", "photocard", "Taemin Fansign Photocard", "Fansign Event", "grail", 380),
+        ("SHINee", "photocard", "Key Fansign Photocard", "Fansign Event", "grail", 280),
+        ("SHINee", "photocard", "Minho Lucky Draw", "Lucky Draw", "high", 150),
+        ("SHINee", "photocard", "Onew Lucky Draw", "Lucky Draw", "high", 130),
+        ("SHINee", "photocard", "SHINee Vintage Replay PC", "Vintage", "high", 180),
+        ("SHINee", "photocard", "SHINee Standard Photocard", "Standard", "standard", 12),
+        ("SHINee", "merch", "SHINee Official Lightstick", "Official", "mid", 55),
+        ("SHINee", "merch", "SHINee World VI Concert DVD", "Tour Exclusive", "high", 85),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # BIGBANG
+        # ═══════════════════════════════════════════════════════════════════
+        ("BIGBANG", "album", "MADE Standard", "Standard", "mid", 50),
+        ("BIGBANG", "album", "MADE Full Album Limited", "Limited", "high", 120),
+        ("BIGBANG", "album", "Still Life Single", "Standard", "mid", 35),
+        ("BIGBANG", "album", "ALIVE Standard", "Standard", "mid", 45),
+        ("BIGBANG", "album", "BIGBANG (Self-Titled) Standard", "Standard", "mid", 55),
+        ("BIGBANG", "album", "G-Dragon - KWON JI YONG USB", "Limited", "high", 150),
+        ("BIGBANG", "album", "G-Dragon - Coup D'Etat", "Standard", "mid", 45),
+        ("BIGBANG", "album", "Taeyang - SOLAR International", "Standard", "mid", 40),
+        ("BIGBANG", "album", "T.O.P - DOOM DADA Single", "Standard", "mid", 35),
+        ("BIGBANG", "photocard", "G-Dragon Vintage Photocard", "Vintage", "grail", 350),
+        ("BIGBANG", "photocard", "T.O.P Vintage Photocard", "Vintage", "grail", 300),
+        ("BIGBANG", "photocard", "Taeyang Vintage Photocard", "Vintage", "high", 200),
+        ("BIGBANG", "photocard", "Daesung Vintage Photocard", "Vintage", "high", 150),
+        ("BIGBANG", "photocard", "Seungri Vintage Photocard", "Vintage", "high", 80),
+        ("BIGBANG", "merch", "BIGBANG Official Lightstick Ver.4", "Official", "high", 80),
+        ("BIGBANG", "merch", "BIGBANG MADE World Tour DVD", "Tour Exclusive", "high", 95),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # 2NE1 (all OOP/collector tier)
+        # ═══════════════════════════════════════════════════════════════════
+        ("2NE1", "album", "Crush Standard", "OOP", "high", 120),
+        ("2NE1", "album", "Crush Pink Edition", "OOP Limited", "high", 180),
+        ("2NE1", "album", "To Anyone Standard", "OOP", "high", 110),
+        ("2NE1", "album", "2NE1 1st Mini Album", "OOP", "high", 150),
+        ("2NE1", "album", "2NE1 Collection", "OOP", "high", 130),
+        ("2NE1", "photocard", "CL Vintage Photocard", "Vintage", "grail", 300),
+        ("2NE1", "photocard", "Park Bom Vintage Photocard", "Vintage", "grail", 250),
+        ("2NE1", "photocard", "Dara Vintage Photocard", "Vintage", "high", 180),
+        ("2NE1", "photocard", "Minzy Vintage Photocard", "Vintage", "high", 150),
+        ("2NE1", "merch", "2NE1 Official Lightstick", "OOP", "high", 120),
+        ("2NE1", "merch", "2NE1 2014 World Tour DVD", "OOP", "high", 100),
+        ("2NE1", "merch", "2NE1 Crush Era Poster Set", "OOP", "mid", 60),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Super Junior
+        # ═══════════════════════════════════════════════════════════════════
+        ("Super Junior", "album", "The Renaissance Standard", "Standard", "standard", 22),
+        ("Super Junior", "album", "The Renaissance Passion Ver.", "Limited", "mid", 40),
+        ("Super Junior", "album", "House Party Standard", "Standard", "standard", 20),
+        ("Super Junior", "album", "Timeless Standard", "Standard", "standard", 22),
+        ("Super Junior", "album", "Time Slip Standard", "Standard", "standard", 22),
+        ("Super Junior", "album", "Play Standard", "Standard", "standard", 24),
+        ("Super Junior", "album", "Devil Standard", "Standard", "mid", 35),
+        ("Super Junior", "album", "Sorry Sorry Repackage", "Standard", "mid", 55),
+        ("Super Junior", "album", "Super Show 9 Concert Album", "Tour Exclusive", "mid", 45),
+        ("Super Junior", "photocard", "Heechul Fansign Photocard", "Fansign Event", "grail", 280),
+        ("Super Junior", "photocard", "Leeteuk Fansign Photocard", "Fansign Event", "grail", 250),
+        ("Super Junior", "photocard", "Donghae Lucky Draw", "Lucky Draw", "high", 130),
+        ("Super Junior", "photocard", "Eunhyuk Lucky Draw", "Lucky Draw", "high", 120),
+        ("Super Junior", "photocard", "Siwon Vintage Photocard", "Vintage", "high", 160),
+        ("Super Junior", "photocard", "Kyuhyun POB Photocard", "Pre-order Benefit", "mid", 40),
+        ("Super Junior", "photocard", "Ryeowook POB Photocard", "Pre-order Benefit", "mid", 35),
+        ("Super Junior", "photocard", "Super Junior Standard Photocard", "Standard", "standard", 10),
+        ("Super Junior", "merch", "Super Junior Official Lightstick", "Official", "mid", 55),
+        ("Super Junior", "merch", "Super Show 8 DVD", "Tour Exclusive", "high", 85),
     ]
 
     catalog = []
@@ -176,6 +737,9 @@ def item_to_price_observation(item: dict) -> PriceObservation:
         "Weverse Exclusive": 0.6, "Pre-order Benefit": 0.55,
         "Night Ver.": 0.65, "Digipack": 0.4, "Jewel Case": 0.3,
         "Standard": 0.2, "Album POB": 0.5,
+        "Vintage": 0.9, "OOP": 0.8, "OOP Limited": 0.85,
+        "Limited Star": 0.7, "Official": 0.5,
+        "Tour Exclusive": 0.75, "Collaboration": 0.55,
     }
 
     return PriceObservation(

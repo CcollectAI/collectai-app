@@ -35,7 +35,7 @@ CATEGORY = "kpop_lightsticks"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated K-pop lightstick catalog."""
+    """Curated K-pop lightstick catalog (67 items)."""
 
     # (group, name, version, variant, rarity_tier, price_eur)
     # rarity_tier: grail (>100), high (60-100), mid (30-60), standard (<30)
@@ -90,7 +90,50 @@ def get_curated_catalog() -> list[dict]:
         ("ENHYPEN", "ENHYPEN Official Lightstick", "v1", "Standard", "mid", 35),
         ("TXT", "MOA Lightstick", "v1", "Standard", "mid", 38),
 
-        # Vintage / Discontinued
+        # ── 3rd/4th Gen Groups (expanded) ──
+        ("(G)I-DLE", "(G)I-DLE Official Lightstick", "v1", "Standard", "mid", 35),
+        ("(G)I-DLE", "(G)I-DLE Official Lightstick Ver. 2", "v2", "Standard", "mid", 40),
+        ("NMIXX", "NMIXX Official Lightstick", "v1", "Standard", "standard", 28),
+        ("LE SSERAFIM", "LE SSERAFIM Official Lightstick", "v1", "Standard", "mid", 35),
+        ("TREASURE", "TREASURE Official Lightstick", "v1", "Standard", "mid", 32),
+        ("IVE", "IVE Official Lightstick Ver. 2", "v2", "Standard", "mid", 35),
+        ("aespa", "aespa Official Lightstick Ver. 2", "v2", "Standard", "mid", 42),
+        ("ITZY", "ITZY Official Lightstick Ver. 2", "v2", "Standard", "mid", 38),
+        ("TXT", "MOA Lightstick Ver. 2", "v2", "Standard", "mid", 42),
+        ("ENHYPEN", "ENHYPEN Official Lightstick Ver. 2", "v2", "Standard", "mid", 38),
+
+        # ── 2nd Gen Groups ──
+        ("SHINee", "SHINee Official Lightstick Ver. 2", "v2", "Standard", "high", 75),
+        ("Super Junior", "Super Junior Official Lightstick", "v1", "Standard", "high", 65),
+        ("Super Junior", "Super Junior Super Show Lightstick", "v2", "Original", "high", 80),
+        ("2PM", "2PM Official Lightstick", "v1", "Discontinued", "high", 70),
+        ("BEAST/Highlight", "Highlight Official Lightstick", "v1", "Standard", "mid", 45),
+        ("INFINITE", "INFINITE Official Lightstick", "v1", "Discontinued", "high", 75),
+        ("f(x)", "f(x) Official Lightstick", "v1", "Discontinued", "high", 90),
+
+        # ── Tour-Exclusive Versions ──
+        ("Stray Kids", "Nachimbong 5-STAR Tour Edition", "v2-tour", "Tour Exclusive", "high", 85),
+        ("ATEEZ", "Lightiny THE WORLD Tour Edition", "v2-world", "Tour Exclusive", "high", 80),
+        ("ENHYPEN", "ENHYPEN FATE Tour Lightstick", "v1-tour", "Tour Exclusive", "high", 70),
+        ("TXT", "MOA Lightstick ACT: PROMISE Tour Edition", "v1-tour", "Tour Exclusive", "high", 75),
+        ("IVE", "IVE World Tour Lightstick", "v1-tour", "Tour Exclusive", "high", 68),
+
+        # ── Solo Artists ──
+        ("IU", "IU Official Lightstick", "v1", "Standard", "high", 60),
+        ("Taeyeon", "Taeyeon Official Lightstick", "v1", "Standard", "high", 65),
+        ("Jungkook", "Jungkook Official Lightstick", "v1", "Standard", "high", 70),
+        ("Lisa", "Lisa Official Lightstick", "v1", "Standard", "high", 60),
+
+        # ── Vintage / 1st Gen ──
+        ("TVXQ", "TVXQ Official Lightstick", "v1", "Discontinued", "grail", 105),
+        ("BoA", "BoA Official Lightstick", "v1", "Discontinued", "grail", 115),
+        ("BIGBANG", "BIGBANG Crown Lightstick Ver. 1", "v1-og", "Discontinued", "grail", 130),
+
+        # ── Special Editions ──
+        ("HYBE", "HYBE Insight Museum Lightstick", "collab", "Standard", "high", 75),
+        ("SM Town", "SM Town Live Concert Lightstick", "v1", "Standard", "high", 65),
+
+        # ── Vintage / Discontinued (original entries) ──
         ("SHINee", "SHINee Official Lightstick", "v1", "Discontinued", "high", 85),
         ("2NE1", "2NE1 Official Lightstick", "v1", "Discontinued", "grail", 110),
         ("BIGBANG", "BIGBANG Crown Lightstick", "v1", "Discontinued", "grail", 100),

@@ -35,7 +35,7 @@ CATEGORY = "diecast"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated diecast vehicle collector catalog."""
+    """Curated diecast vehicle collector catalog (85+ items)."""
 
     # Format: (brand, name, scale, variant, rarity_tier, price_eur)
     # rarity_tier: grail (>200), high (100-200), mid (40-100), standard (<40)
@@ -107,6 +107,57 @@ def get_curated_catalog() -> list[dict]:
         ("Greenlight", "1979 Pontiac Firebird Trans Am", "1:64", "Chase Green Machine", "mid", 50),
         ("Greenlight", "1971 Plymouth Hemi Cuda", "1:64", "Chase Green Machine", "mid", 55),
         ("Greenlight", "Ford Bronco (2021)", "1:64", "Chase Green Machine", "standard", 35),
+
+        # AUTOart 1:18 Scale (additional)
+        ("AUTOart", "BMW M3 (E30) Sport Evolution", "1:18", "Composite", "grail", 320),
+        ("AUTOart", "Lamborghini Countach LP400", "1:18", "Composite", "grail", 360),
+        ("AUTOart", "McLaren F1", "1:18", "Composite", "grail", 450),
+        ("AUTOart", "Ferrari F40", "1:18", "Composite", "grail", 380),
+        ("AUTOart", "Porsche 918 Spyder", "1:18", "Composite", "grail", 290),
+        ("AUTOart", "Pagani Huayra", "1:18", "Composite", "grail", 340),
+
+        # Kyosho 1:43 Scale (additional)
+        ("Kyosho", "Honda NSX (NA1)", "1:43", "High-End", "mid", 55),
+        ("Kyosho", "Lamborghini Miura P400 SV", "1:43", "High-End", "mid", 65),
+        ("Kyosho", "Ferrari 250 GTO (1962)", "1:43", "High-End", "high", 130),
+        ("Kyosho", "Shelby Cobra 427", "1:43", "High-End", "mid", 75),
+        ("Kyosho", "Porsche 911 Carrera RS 2.7", "1:43", "High-End", "mid", 70),
+
+        # Minichamps F1 Cars (additional)
+        ("Minichamps", "McLaren MP4/4 Senna 1988 World Champion", "1:18", "F1 1:18 Collection", "grail", 350),
+        ("Minichamps", "Ferrari F2004 Schumacher Belgian GP 2004", "1:18", "F1 1:18 Collection", "grail", 280),
+        ("Minichamps", "Mercedes W11 Hamilton Turkish GP 2020", "1:18", "F1 1:18 Collection", "grail", 260),
+        ("Minichamps", "Red Bull RB16B Verstappen Abu Dhabi 2021", "1:43", "F1 Collection", "high", 140),
+        ("Minichamps", "McLaren MP4/2C Prost 1986", "1:43", "F1 Collection", "high", 160),
+
+        # Tomica Limited Vintage
+        ("Tomica LV", "Nissan Skyline GT-R (R32) V-Spec", "1:64", "Limited Vintage Neo", "high", 90),
+        ("Tomica LV", "Toyota Sprinter Trueno (AE86)", "1:64", "Limited Vintage Neo", "high", 85),
+        ("Tomica LV", "Mazda RX-7 (FD3S) Spirit R", "1:64", "Limited Vintage Neo", "mid", 75),
+        ("Tomica LV", "Honda Civic Type R (EK9)", "1:64", "Limited Vintage Neo", "mid", 70),
+        ("Tomica LV", "Mitsubishi Lancer Evolution VI TME", "1:64", "Limited Vintage Neo", "mid", 65),
+
+        # M2 Machines
+        ("M2 Machines", "1970 Nissan Fairlady Z (S30)", "1:64", "Auto-Japan Chase", "mid", 55),
+        ("M2 Machines", "1969 Pontiac GTO Judge", "1:64", "Detroit Muscle Chase", "mid", 50),
+        ("M2 Machines", "1957 Chevrolet Bel Air", "1:64", "Clearly Auto-Thentics", "mid", 45),
+        ("M2 Machines", "1971 Plymouth Hemi Cuda", "1:64", "Auto-Drivers Chase", "mid", 60),
+
+        # Johnny Lightning
+        ("Johnny Lightning", "1970 Chevrolet Chevelle SS 454", "1:64", "White Lightning Chase", "mid", 65),
+        ("Johnny Lightning", "1969 Ford Mustang Boss 429", "1:64", "White Lightning Chase", "mid", 60),
+        ("Johnny Lightning", "1967 Chevrolet Corvette Stingray", "1:64", "Classic Gold", "standard", 25),
+
+        # Spark 1:43 Scale
+        ("Spark", "Porsche 917K Le Mans Winner 1971", "1:43", "Le Mans Collection", "high", 110),
+        ("Spark", "Ford GT40 Mk II Le Mans Winner 1966", "1:43", "Le Mans Collection", "high", 120),
+        ("Spark", "Toyota TS050 Le Mans Winner 2020", "1:43", "Le Mans Collection", "mid", 85),
+        ("Spark", "Mercedes W196 Fangio 1954", "1:43", "F1 Collection", "grail", 220),
+
+        # Tarmac Works 1:64 Scale
+        ("Tarmac Works", "Nissan Skyline GT-R (R34) V-Spec II", "1:64", "Global64", "mid", 40),
+        ("Tarmac Works", "Honda NSX GT3 Evo", "1:64", "Hobby64", "standard", 30),
+        ("Tarmac Works", "Toyota GR Supra Racing Concept", "1:64", "Global64", "standard", 28),
     ]
 
     catalog = []

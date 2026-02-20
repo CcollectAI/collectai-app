@@ -38,7 +38,7 @@ CATEGORY = "jp_magazine"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Japanese magazine exclusives catalog."""
+    """Curated Japanese magazine exclusives catalog (66 items)."""
 
     # (magazine, franchise, item_type, name, era, rarity_tier, price_eur)
     # rarity_tier: grail (>100), high (50-100), mid (15-50), standard (<15)
@@ -85,6 +85,60 @@ def get_curated_catalog() -> list[dict]:
         ("Animage", "Saint Seiya", "Pin-up Set", "Saint Seiya Gold Saints Pin-up Set 1988", "1980s", "high", 65),
         ("Newtype", "Ghost in the Shell", "Insert Poster", "Ghost in the Shell Movie A3 Poster 1995", "1990s", "high", 75),
         ("Animedia", "Neon Genesis Evangelion", "Pin-up Poster", "EVA Rei & Asuka Double-Sided A3 Poster", "1990s", "high", 55),
+
+        # --- New items below (36 additions) ---
+
+        # More Newtype (+6)
+        ("Newtype", "Evangelion", "Insert Poster Set", "Evangelion Rebuild 4-Poster Set (Unit 01/02/08/13)", "2020s", "high", 55),
+        ("Newtype", "Evangelion", "B2 Poster", "Evangelion Death & Rebirth Theatrical B2 Poster Insert", "1990s", "high", 70),
+        ("Newtype", "Gundam SEED", "Insert Poster", "Gundam SEED Destiny Freedom vs Justice A2 Poster", "2000s", "mid", 28),
+        ("Newtype", "Gundam 00", "Insert Poster", "Gundam 00 Movie Key Visual A3 Poster Insert", "2010s", "mid", 22),
+        ("Newtype", "Fate/stay night", "Clear File", "Fate/stay night UBW Saber & Rin Clear File Set", "2010s", "mid", 16),
+        ("Newtype", "Code Geass", "B2 Poster", "Code Geass R2 Lelouch & C.C. B2 Poster Insert", "2000s", "mid", 32),
+
+        # More Dengeki (+5)
+        ("Dengeki G's Magazine", "Sword Art Online", "Insert Poster", "SAO Alicization War of Underworld A2 Poster", "2010s", "mid", 20),
+        ("Dengeki G's Magazine", "Date A Live", "Clear File", "Date A Live IV Tohka & Kurumi Clear File", "2020s", "standard", 14),
+        ("Dengeki G's Magazine", "Oreimo", "Insert Poster", "Ore no Imouto Kirino & Kuroneko A3 Poster", "2010s", "mid", 18),
+        ("Dengeki G's Magazine", "Oregairu", "Clear File", "Oregairu Kan Yukino & Yui Clear File Set", "2020s", "standard", 12),
+        ("Dengeki G's Magazine", "Toaru Kagaku no Railgun", "Insert Poster", "Railgun T Misaka Mikoto A2 Poster Insert", "2020s", "mid", 16),
+
+        # Famitsu (+5)
+        ("Famitsu", "Final Fantasy XVI", "DLC Code", "FF16 Exclusive Weapon DLC Code Card Insert", "2020s", "standard", 8),
+        ("Famitsu", "Dragon Quest XI", "Mini Strategy Guide", "DQ XI S Mini Strategy Guide Booklet Insert", "2010s", "standard", 10),
+        ("Famitsu", "Tales of Arise", "Mini Figure", "Tales of Arise Shionne Mini Figure Appendix", "2020s", "mid", 22),
+        ("Famitsu", "Final Fantasy XIV", "Insert Poster", "FF XIV Endwalker Key Art A3 Poster Insert", "2020s", "standard", 12),
+        ("Famitsu", "Dragon Quest", "Illustration Card", "Dragon Quest 35th Anniversary Toriyama Art Card Set", "2020s", "mid", 25),
+
+        # Animedia / Animage (+5)
+        ("Animage", "Mobile Suit Gundam", "B2 Poster", "Original Gundam TV Series Cast B2 Poster 1980", "1980s", "grail", 120),
+        ("Animedia", "Sailor Moon", "Pin-up Set", "Sailor Moon SuperS Inner Senshi Pin-up Set", "1990s", "mid", 38),
+        ("Animage", "Saint Seiya", "Insert Poster", "Saint Seiya Hades Chapter A3 Poster Insert 1990", "1990s", "high", 50),
+        ("Animedia", "Macross", "Insert Poster", "Macross 7 Basara & Mylene A3 Poster Insert", "1990s", "mid", 30),
+        ("Animedia", "Dragon Ball", "Pin-up Poster", "Dragon Ball Piccolo Daimao Arc A3 Pin-up 1988", "1980s", "high", 60),
+
+        # Megami Magazine (+4)
+        ("Megami Magazine", "Fate/Grand Order", "Tapestry", "FGO Mash Kyrielight B2 Tapestry Appendix", "2020s", "mid", 35),
+        ("Megami Magazine", "Love Live! Sunshine!!", "Clear File", "Aqours Summer Uniform Clear File Set", "2010s", "mid", 18),
+        ("Megami Magazine", "Vocaloid", "Tapestry", "Hatsune Miku 10th Anniversary B2 Tapestry", "2010s", "mid", 40),
+        ("Megami Magazine", "Fate/stay night", "Clear File", "Fate/stay night Saber Alter Clear File Insert", "2010s", "mid", 15),
+
+        # Comptiq (+3)
+        ("Comptiq", "Clannad", "Illustration Card", "Clannad After Story Nagisa Illustration Card Set", "2000s", "mid", 22),
+        ("Comptiq", "Kanon", "Illustration Card", "Kanon 2006 Ayu & Nayuki Illustration Card Insert", "2000s", "mid", 20),
+        ("Comptiq", "Fate/stay night", "Insert Poster", "Fate/hollow ataraxia A3 Poster Insert", "2000s", "mid", 18),
+
+        # PASH! (+3)
+        ("PASH!", "The Idolmaster SideM", "Insert Poster", "iDOLM@STER SideM Jupiter A3 Poster Insert", "2010s", "standard", 14),
+        ("PASH!", "Ensemble Stars!", "Clear File", "Ensemble Stars! Trickstar Clear File Appendix", "2020s", "standard", 12),
+        ("PASH!", "Given", "Insert Poster", "Given Mafuyu & Ritsuka A3 Poster Insert", "2020s", "mid", 16),
+
+        # Vintage 80s/90s (+5)
+        ("Animage", "Urusei Yatsura", "B2 Poster", "Urusei Yatsura Lum B2 Poster Insert 1983", "1980s", "grail", 140),
+        ("Animage", "Macross", "Pin-up Set", "SDF Macross Lynn Minmay Pin-up Set 1983", "1980s", "grail", 160),
+        ("Newtype", "Akira", "Production Art", "Akira Kaneda Motorcycle Settei Reprint Insert", "1980s", "grail", 190),
+        ("Newtype", "Ghost in the Shell", "B2 Poster", "Ghost in the Shell Motoko Kusanagi B2 Poster 1995", "1990s", "high", 85),
+        ("Newtype", "Evangelion", "Insert Poster", "Neon Genesis Evangelion TV Series A2 Poster 1996", "1990s", "high", 90),
     ]
 
     catalog = []

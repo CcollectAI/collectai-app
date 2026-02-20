@@ -1,15 +1,17 @@
 """
 Import Scale Model Kits catalog.
 
-Layer 1 (Catalog):  Curated scale model kits → category_items
+Layer 1 (Catalog):  Curated scale model kits (85+ items) → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
 Covers:
-- Aircraft: Tamiya 1/48, Hasegawa, Eduard (WWII fighters, jets)
-- Armor: Tamiya 1/35 tanks (Tiger, Sherman, Leopard)
-- Ships: 1/350 Yamato, Bismarck, carriers
-- Cars: Tamiya 1/24 sports cars
-- Sci-fi: Bandai Star Wars kits, Moebius
+- Aircraft: Tamiya 1/32 & 1/48, Hasegawa, Eduard, Trumpeter, Revell, Airfix, Academy, ICM
+- Armor: Tamiya, Trumpeter, Dragon, Meng, Rye Field, Takom 1/35 tanks
+- Ships: Tamiya, Trumpeter, Revell, Fujimi, Academy 1/200–1/570
+- Cars: Tamiya 1/12 & 1/24, Hasegawa, Beemax, NuNu, Aoshima, Fujimi
+- Sci-fi: Bandai Star Wars, Moebius, Pegasus, Kotobukiya, Fine Molds
+- Figures: Tamiya, MasterBox, Alpine Miniatures, Nutsplanet
+- Diorama/Accessories: Tamiya, MiniArt
 
 Usage:
     python -m pipelines.import_scale_models [--dry-run]
@@ -37,7 +39,7 @@ CATEGORY = "scale_models"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated scale model kit catalog covering key categories and manufacturers."""
+    """Curated scale model kit catalog — 88 items across 7 subcategories."""
 
     # (manufacturer, model_type, name, scale, rarity_tier, price_eur)
     # rarity_tier: grail (>150), high (80-150), mid (40-80), standard (<40)
@@ -102,6 +104,60 @@ def get_curated_catalog() -> list[dict]:
         ("Moebius", "Sci-fi", "Battlestar Galactica", "1/4105", "high", 120),
         ("Moebius", "Sci-fi", "1966 Batmobile", "1/25", "mid", 45),
         ("Bandai", "Sci-fi", "Star Wars Y-Wing Starfighter", "1/72", "mid", 42),
+
+        # === NEW ITEMS (38 additions below) ===
+
+        # More Aircraft (+8)
+        ("Tamiya", "Aircraft", "Supermarine Spitfire Mk.I", "1/32", "high", 95),
+        ("Hasegawa", "Aircraft", "F-14A Tomcat High Visibility", "1/48", "mid", 52),
+        ("Trumpeter", "Aircraft", "Su-27 Flanker B", "1/32", "grail", 160),
+        ("Eduard", "Aircraft", "Bf 109 G-6 Late ProfiPACK", "1/48", "mid", 46),
+        ("Revell", "Aircraft", "B-17G Flying Fortress", "1/72", "mid", 42),
+        ("Airfix", "Aircraft", "Supermarine Spitfire Mk.IXc", "1/24", "high", 130),
+        ("Academy", "Aircraft", "F-22A Raptor", "1/72", "standard", 28),
+        ("ICM", "Aircraft", "P-51D-15 Mustang", "1/48", "mid", 38),
+
+        # More Armor (+6)
+        ("Tamiya", "Armor", "Panther Ausf.D", "1/35", "mid", 52),
+        ("Trumpeter", "Armor", "T-34/76 Model 1943", "1/35", "mid", 42),
+        ("Dragon", "Armor", "King Tiger Henschel Turret", "1/35", "high", 85),
+        ("Meng Model", "Armor", "Merkava Mk.4/4LIC", "1/35", "high", 82),
+        ("RFM (Rye Field Model)", "Armor", "M1A1 Abrams w/ Full Interior", "1/35", "high", 90),
+        ("Takom", "Armor", "Panzer III Ausf.M w/ Schurzen", "1/35", "mid", 55),
+
+        # More Ships (+6)
+        ("Tamiya", "Ship", "USS Enterprise CVN-65", "1/350", "grail", 190),
+        ("Trumpeter", "Ship", "HMS Hood", "1/200", "grail", 250),
+        ("Revell", "Ship", "RMS Titanic", "1/570", "mid", 45),
+        ("Pontos", "Ship", "Yamato Detail-Up Set", "1/350", "grail", 280),
+        ("Fujimi", "Ship", "IJN Akagi (Full Hull)", "1/350", "grail", 165),
+        ("Academy", "Ship", "USS Missouri BB-63", "1/350", "high", 110),
+
+        # More Cars (+6)
+        ("Tamiya", "Car", "Ferrari 312T", "1/12", "grail", 220),
+        ("Hasegawa", "Car", "Lancia Stratos HF", "1/24", "mid", 48),
+        ("Beemax", "Car", "Audi Quattro S1 E2", "1/24", "mid", 55),
+        ("NuNu", "Car", "BMW M3 E30 Gr.A 1988 Spa", "1/24", "mid", 45),
+        ("Aoshima", "Car", "Toyota AE86 Sprinter Trueno", "1/24", "standard", 35),
+        ("Fujimi", "Car", "Honda Civic EF9 Gr.A", "1/24", "mid", 40),
+
+        # More Sci-Fi (+6)
+        ("Bandai", "Sci-fi", "Star Wars X-Wing Starfighter (Red Five)", "1/72", "mid", 44),
+        ("Bandai", "Sci-fi", "Star Wars AT-AT (Empire Strikes Back)", "1/144", "mid", 58),
+        ("Moebius", "Sci-fi", "USS Enterprise NCC-1701 Refit", "1/350", "high", 140),
+        ("Pegasus", "Sci-fi", "War of the Worlds Alien Machine", "1/32", "high", 85),
+        ("Kotobukiya", "Sci-fi", "Frame Arms Baselard", "1/100", "mid", 52),
+        ("Fine Molds", "Sci-fi", "Millennium Falcon", "1/72", "grail", 195),
+
+        # Figures (+4)
+        ("Tamiya", "Figure", "German Infantry Set (Late WWII)", "1/35", "standard", 18),
+        ("MasterBox", "Figure", "US Paratroopers 1944", "1/35", "standard", 22),
+        ("Alpine Miniatures", "Figure", "WSS Panzer Officer Resin Bust", "1/16", "high", 85),
+        ("Nutsplanet", "Figure", "Fantasy Barbarian Resin Bust", "1/10", "high", 95),
+
+        # Diorama / Accessories (+2)
+        ("Tamiya", "Diorama", "Diorama Texture Paint Soil Effect Set", "N/A", "standard", 15),
+        ("MiniArt", "Diorama", "European Village Building Ruins", "1/35", "standard", 32),
     ]
 
     catalog = []

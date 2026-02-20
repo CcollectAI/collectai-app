@@ -38,7 +38,7 @@ CATEGORY = "vtuber"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated VTuber merchandise catalog."""
+    """Curated VTuber merchandise catalog — 66 items across Hololive, Nijisanji, collabs, concerts & high-value goods."""
 
     # (agency, talent, item_type, name, exclusive_type, rarity_tier, price_eur)
     # rarity_tier: grail (>100), high (50-100), mid (20-50), standard (<20)
@@ -87,6 +87,62 @@ def get_curated_catalog() -> list[dict]:
         ("Hololive", "Various", "Concert Goods", "Hololive 3rd Fes. Link Your Wish Full Merch Set", "Concert", "grail", 140),
         ("Hololive", "Mori Calliope", "Concert Goods", "Mori Calliope New Underworld Order Tour Hoodie", "Solo Concert", "high", 70),
         ("Hololive", "Various", "Concert Goods", "HoloEN Connect the World Stage Acrylic Set", "Concert", "high", 60),
+
+        # ──────────────────────────────────────────────────────────────
+        # NEW ITEMS (36 additions below)
+        # ──────────────────────────────────────────────────────────────
+
+        # Hololive EN – IRyS, Fauna, Kronii, Mumei, Baelz, Nerissa (+6)
+        ("Hololive", "IRyS", "Birthday Set", "IRyS Birthday 2024 Merch Set", "Birthday", "high", 75),
+        ("Hololive", "Ceres Fauna", "Acrylic Stand", "Ceres Fauna 2nd Anniversary Acrylic Stand", "Anniversary", "mid", 26),
+        ("Hololive", "Ouro Kronii", "Tapestry", "Ouro Kronii Birthday 2024 B2 Tapestry", "Birthday", "mid", 32),
+        ("Hololive", "Nanashi Mumei", "Birthday Set", "Nanashi Mumei Birthday 2024 Complete Set", "Birthday", "high", 70),
+        ("Hololive", "Hakos Baelz", "Acrylic Stand", "Hakos Baelz 2nd Anniversary Acrylic Stand", "Anniversary", "mid", 24),
+        ("Hololive", "Nerissa Ravencroft", "Anniversary Set", "Nerissa Ravencroft 1st Anniversary Box", "Anniversary", "high", 65),
+
+        # Hololive JP – Towa, Fubuki, Flare, Aki, Subaru, Matsuri (+6)
+        ("Hololive", "Tokoyami Towa", "Acrylic Stand", "Tokoyami Towa Birthday 2024 Acrylic Stand", "Birthday", "mid", 28),
+        ("Hololive", "Shirakami Fubuki", "Birthday Set", "Shirakami Fubuki Birthday 2024 Full Set", "Birthday", "high", 72),
+        ("Hololive", "Shiranui Flare", "Anniversary Set", "Shiranui Flare 4th Anniversary Merch Box", "Anniversary", "high", 60),
+        ("Hololive", "Aki Rosenthal", "Tapestry", "Aki Rosenthal Birthday 2024 B2 Tapestry", "Birthday", "mid", 22),
+        ("Hololive", "Oozora Subaru", "Birthday Set", "Oozora Subaru Birthday 2024 Complete Set", "Birthday", "high", 78),
+        ("Hololive", "Natsuiro Matsuri", "Acrylic Stand", "Natsuiro Matsuri Summer Festival Acrylic Stand", "Seasonal", "mid", 20),
+
+        # Hololive ID – Moona, Kobo, Reine (+3)
+        ("Hololive", "Moona Hoshinova", "Birthday Set", "Moona Hoshinova Birthday 2024 Merch Set", "Birthday", "mid", 45),
+        ("Hololive", "Kobo Kanaeru", "Acrylic Stand", "Kobo Kanaeru 2nd Anniversary Acrylic Stand", "Anniversary", "mid", 28),
+        ("Hololive", "Pavolia Reine", "Tapestry", "Pavolia Reine Birthday 2024 B2 Tapestry", "Birthday", "mid", 24),
+
+        # Nijisanji EN – Vox, Ike, Shu, Elira, Pomu (+5)
+        ("Nijisanji", "Vox Akuma", "Birthday Set", "Vox Akuma Birthday 2024 Complete Set", "Birthday", "high", 80),
+        ("Nijisanji", "Ike Eveland", "Acrylic Stand", "Ike Eveland Birthday 2024 Acrylic Stand", "Birthday", "mid", 24),
+        ("Nijisanji", "Shu Yamino", "Tapestry", "Shu Yamino Anniversary B2 Tapestry", "Anniversary", "mid", 28),
+        ("Nijisanji", "Elira Pendora", "Birthday Set", "Elira Pendora Birthday 2024 Complete Set", "Birthday", "high", 68),
+        ("Nijisanji", "Pomu Rainpuff", "Acrylic Stand", "Pomu Rainpuff Farewell Memorial Acrylic Stand", "Anniversary", "high", 85),
+
+        # Nijisanji JP – Kuzuha, Kanae, Lize, Ange (+4)
+        ("Nijisanji", "Kuzuha", "Birthday Set", "Kuzuha Birthday 2024 Premium Merch Set", "Birthday", "high", 95),
+        ("Nijisanji", "Kanae", "Acrylic Stand", "Kanae Birthday 2024 Acrylic Stand", "Birthday", "mid", 30),
+        ("Nijisanji", "Lize Helesta", "Tapestry", "Lize Helesta Anniversary B2 Tapestry", "Anniversary", "mid", 26),
+        ("Nijisanji", "Ange Katrina", "Birthday Set", "Ange Katrina Birthday 2024 Complete Set", "Birthday", "high", 62),
+
+        # Concert/Event Goods (+5)
+        ("Hololive", "Various", "Concert Goods", "Hololive 5th Fes. Capture the Moment Penlight", "Concert", "mid", 45),
+        ("Hololive", "Various", "Concert Goods", "Holofes 5th Exclusive Acrylic Stand Set (12pc)", "Concert", "grail", 180),
+        ("Nijisanji", "Various", "Concert Goods", "Nijisanji JP AR LIVE Concert Tapestry", "Concert", "high", 55),
+        ("Hololive", "Various", "Concert Goods", "Hololive EXPO 2024 Venue-Limited Goods Set", "Concert", "grail", 120),
+        ("Hololive", "Various", "Concert Goods", "VTuber Fes Japan 2024 Exclusive Badge Collection", "Concert", "mid", 38),
+
+        # Collab Goods (+4)
+        ("Hololive", "Various", "Collab Clear File", "Hololive x Lawson Christmas Clear File Set", "Lawson Collab", "mid", 28),
+        ("Hololive", "Various", "Collab Acrylic", "Hololive x Don Quijote Limited Acrylic Stand Set", "Lawson Collab", "high", 52),
+        ("Nijisanji", "Various", "Collab Clear File", "Nijisanji x Animate Fair Clear File Collection", "Standard", "mid", 22),
+        ("VShojo", "Various", "Merch Box", "VShojo Spring 2024 Merch Drop Bundle", "Group", "mid", 42),
+
+        # High-Value Items (+3)
+        ("Hololive", "Gawr Gura", "Signed Shikishi", "Gawr Gura Hand-Signed Shikishi Board", "Birthday", "grail", 220),
+        ("Hololive", "Hoshimachi Suisei", "Art Print", "Hoshimachi Suisei Original Art Print (Numbered)", "Solo Concert", "grail", 160),
+        ("Hololive", "Usada Pekora", "Anniversary Set", "Usada Pekora 1st Anniversary Milestone Goods Set", "Anniversary", "grail", 135),
     ]
 
     catalog = []

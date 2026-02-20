@@ -1,11 +1,12 @@
 """
 Import anime Blu-ray collector data.
 
-Layer 1 (Catalog):  Curated anime Blu-ray limited editions → category_items
+Layer 1 (Catalog):  Curated anime Blu-ray limited editions → category_items (85+ items)
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
 Sources:
 - Curated catalog of Aniplex USA, JP box sets, Funimation/Crunchyroll LEs
+- GKIDS/Shout Factory, Sentai Filmworks, vintage/OOP titles, 4K UHD editions
 - Can be augmented with MyAnimeList, AniList, or CDJapan later
 
 Usage:
@@ -34,7 +35,7 @@ CATEGORY = "anime_bluray"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated anime Blu-ray collector catalog: Aniplex, JP imports, LE sets."""
+    """Curated anime Blu-ray collector catalog: 87 items across Aniplex, JP imports, Funimation/Crunchyroll, GKIDS, Sentai, vintage/OOP, and 4K UHD."""
 
     # Format: (publisher, title, format, edition, rarity_tier, price_eur)
     # rarity_tier: grail (>300), high (100-300), mid (50-100), standard (<50)
@@ -87,6 +88,71 @@ def get_curated_catalog() -> list[dict]:
         # Key Individual Titles
         ("GKIDS", "Spirited Away", "4K UHD", "GKIDS Collector's", "mid", 45),
         ("GKIDS", "Princess Mononoke", "4K UHD", "GKIDS Collector's", "mid", 42),
+
+        # ── New items below ──────────────────────────────────────────────
+
+        # More Aniplex USA (+6)
+        ("Aniplex USA", "Kaguya-sama: Love Is War", "Blu-ray", "Aniplex LE Box Set", "high", 220),
+        ("Aniplex USA", "Rascal Does Not Dream of Bunny Girl Senpai", "Blu-ray", "Aniplex LE Box Set", "high", 260),
+        ("Aniplex USA", "86: Eighty-Six", "Blu-ray", "Aniplex LE Box Set", "high", 190),
+        ("Aniplex USA", "Lycoris Recoil", "Blu-ray", "Aniplex LE Box Set", "high", 170),
+        ("Aniplex USA", "My Dress-Up Darling", "Blu-ray", "Aniplex LE Box Set", "high", 160),
+        ("Aniplex USA", "Bocchi the Rock!", "Blu-ray", "Aniplex LE Box Set", "high", 175),
+
+        # JP Import Box Sets (+10)
+        ("JP Import", "Dragon Ball Z", "Blu-ray", "JP Blu-ray Box Season Set", "grail", 550),
+        ("JP Import", "One Piece", "Blu-ray", "JP BD Collection Box", "grail", 480),
+        ("JP Import", "Naruto Shippuden", "Blu-ray", "JP BD Box Set", "grail", 420),
+        ("JP Import", "Evangelion 3.0+1.0 Thrice Upon a Time", "Blu-ray", "JP Limited Edition", "high", 180),
+        ("JP Import", "Cowboy Bebop Remix", "Blu-ray", "JP BD Remix Complete", "grail", 320),
+        ("JP Import", "FLCL Complete", "Blu-ray", "JP BD Box Complete", "high", 200),
+        ("JP Import", "Serial Experiments Lain Complete", "Blu-ray", "JP BD Restored Edition", "high", 270),
+        ("JP Import", "Steins;Gate Complete", "Blu-ray", "JP BD Complete Box", "high", 230),
+        ("JP Import", "Ghost in the Shell: SAC 2nd GIG", "Blu-ray", "JP BD Box Set", "high", 210),
+        ("JP Import", "Mobile Suit Gundam Unicorn", "Blu-ray", "JP BD Complete Box", "high", 280),
+
+        # Funimation/Crunchyroll LEs (+8)
+        ("Funimation", "Attack on Titan Final Season Part 1", "Blu-ray", "Funimation LE", "high", 110),
+        ("Funimation", "My Hero Academia Season 5", "Blu-ray", "Funimation LE", "mid", 75),
+        ("Crunchyroll", "Dragon Ball Super: Super Hero", "Blu-ray", "Crunchyroll LE", "mid", 55),
+        ("Crunchyroll", "One Piece Film Red", "Blu-ray", "Crunchyroll LE", "mid", 65),
+        ("Crunchyroll", "Jujutsu Kaisen Season 2", "Blu-ray", "Crunchyroll LE", "mid", 95),
+        ("Crunchyroll", "Chainsaw Man Complete", "Blu-ray", "Crunchyroll LE Box Set", "high", 110),
+        ("Crunchyroll", "Spy x Family Complete Season 1", "Blu-ray", "Crunchyroll LE Box Set", "high", 105),
+        ("Crunchyroll", "Vinland Saga Season 1", "Blu-ray", "Crunchyroll LE Box Set", "high", 115),
+
+        # GKIDS / Shout Factory (+6)
+        ("GKIDS", "Studio Ghibli Complete Collection", "Blu-ray", "GKIDS Collector's Box Set", "grail", 450),
+        ("GKIDS", "My Neighbor Totoro", "Blu-ray", "GKIDS Steelbook", "mid", 55),
+        ("GKIDS", "Princess Mononoke", "Blu-ray", "GKIDS Steelbook", "mid", 55),
+        ("GKIDS", "Spirited Away", "Blu-ray", "GKIDS Steelbook", "mid", 58),
+        ("Shout Factory", "Akira", "4K UHD", "Shout Factory 4K LE", "high", 120),
+        ("Shout Factory", "Perfect Blue", "Blu-ray", "Shout Factory Limited Edition", "high", 140),
+
+        # Vintage / OOP (+8)
+        ("Bandai Visual", "Mobile Suit Gundam 0079", "Blu-ray", "Bandai Visual LE Box Set", "grail", 380),
+        ("FUNimation", "Dragon Ball Z", "Blu-ray", "Orange Brick Complete Set", "high", 200),
+        ("ADV Films", "Neon Genesis Evangelion", "Blu-ray", "Platinum Complete Collection", "grail", 350),
+        ("Geneon", "Tenchi Muyo! Ryo-Ohki", "Blu-ray", "Geneon OOP Box Set", "high", 220),
+        ("Geneon", "Serial Experiments Lain", "Blu-ray", "Geneon Pioneer LE", "high", 280),
+        ("Viz Media", "Dragon Ball Z", "Blu-ray", "Viz Dragon Box Set", "grail", 600),
+        ("Discotek Media", "Lupin the Third Part II", "Blu-ray", "Discotek Complete Collection", "high", 160),
+        ("Discotek Media", "Mazinger Z", "Blu-ray", "Discotek Complete Collection", "high", 140),
+
+        # Sentai Filmworks (+6)
+        ("Sentai Filmworks", "CLANNAD Complete Collection", "Blu-ray", "Sentai LE Box Set", "high", 130),
+        ("Sentai Filmworks", "Parasyte -the maxim-", "Blu-ray", "Sentai LE", "mid", 85),
+        ("Sentai Filmworks", "No Game No Life", "Blu-ray", "Sentai LE", "mid", 90),
+        ("Sentai Filmworks", "Log Horizon Complete", "Blu-ray", "Sentai LE Box Set", "mid", 80),
+        ("Sentai Filmworks", "Chihayafuru Complete", "Blu-ray", "Sentai LE Box Set", "high", 110),
+        ("Sentai Filmworks", "Made in Abyss", "Blu-ray", "Sentai LE", "mid", 95),
+
+        # 4K UHD Anime (+5)
+        ("Funimation", "Dragon Ball Super: Broly", "4K UHD", "Funimation 4K Steelbook", "mid", 65),
+        ("GKIDS", "Your Name", "4K UHD", "GKIDS 4K Collector's", "mid", 55),
+        ("GKIDS", "Weathering With You", "4K UHD", "GKIDS 4K Collector's", "mid", 50),
+        ("Lionsgate", "Ghost in the Shell (1995)", "4K UHD", "Lionsgate 4K LE Steelbook", "high", 100),
+        ("Funimation", "Akira", "4K UHD", "Funimation 4K LE", "high", 110),
     ]
 
     catalog = []

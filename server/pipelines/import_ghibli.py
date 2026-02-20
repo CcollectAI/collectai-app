@@ -8,7 +8,8 @@ Sources:
 - Curated data from secondary market (Yahoo Auctions JP, eBay, Mercari JP)
 - Covers Donguri Sora figures, Benelic, music boxes, animation cels,
   Ghibli Museum exclusives, and JP-only merchandise
-- Films: Totoro, Spirited Away, Princess Mononoke, Howl's, Kiki's
+- Films: Totoro, Spirited Away, Princess Mononoke, Howl's, Kiki's,
+  Castle in the Sky, Nausicaa, Porco Rosso, The Wind Rises, The Boy and the Heron
 
 Usage:
     python -m pipelines.import_ghibli [--dry-run]
@@ -36,7 +37,7 @@ CATEGORY = "ghibli"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Studio Ghibli collectibles catalog."""
+    """Curated Studio Ghibli collectibles catalog (66 items)."""
 
     # (film, subcategory, name, edition, rarity_tier, price_eur)
     # rarity_tier: grail (>200), high (80-200), mid (30-80), standard (<30)
@@ -93,6 +94,48 @@ def get_curated_catalog() -> list[dict]:
         ("Princess Mononoke", "jp_merch", "Mononoke Hime Exhibition Poster", "Exhibition", "high", 85),
         ("Kiki's Delivery Service", "jp_merch", "Kiki's Bakery Cookie Tin (JP Seasonal)", "JP Exclusive", "mid", 35),
         ("Spirited Away", "jp_merch", "Spirited Away Kabuki Collaboration Towel", "Collab Exclusive", "mid", 45),
+
+        # --- New items below (26 additions) ---
+
+        # Howl's Moving Castle (+5)
+        ("Howl's Moving Castle", "figure", "Howl's Castle Mechanical Model Kit", "Sankei", "high", 130),
+        ("Howl's Moving Castle", "figure", "Calcifer LED Lamp", "Benelic", "mid", 55),
+        ("Howl's Moving Castle", "accessory", "Howl's Ring Replica (Sterling Silver)", "JP Exclusive", "high", 95),
+        ("Howl's Moving Castle", "figure", "Sophie Plush (Old & Young Reversible)", "Donguri Sora", "mid", 42),
+        ("Howl's Moving Castle", "figure", "Turnip Head Prince Figure", "Donguri Sora", "mid", 38),
+
+        # Castle in the Sky / Laputa (+4)
+        ("Castle in the Sky", "figure", "Robot Soldier Figure (Large 30cm)", "Benelic", "high", 110),
+        ("Castle in the Sky", "accessory", "Crystal Necklace Replica (Levistone)", "JP Exclusive", "mid", 65),
+        ("Castle in the Sky", "figure", "Sheeta & Pazu Escaping Diorama", "Donguri Sora", "high", 85),
+        ("Castle in the Sky", "tapestry", "Laputa Crest Woven Tapestry", "Museum Exclusive", "high", 140),
+
+        # Nausicaa (+3)
+        ("Nausicaa", "figure", "Ohmu Figure (Large with LED Eyes)", "Bandai", "high", 160),
+        ("Nausicaa", "figure", "Nausicaa on Mehve Glider Diorama", "Cominica", "high", 180),
+        ("Nausicaa", "cel", "Nausicaa Valley of the Wind Anime Cel", "Original Cel", "grail", 3200),
+
+        # Porco Rosso / The Wind Rises (+3)
+        ("Porco Rosso", "model", "Savoia S.21 Seaplane Model (1:48)", "Fine Molds", "high", 90),
+        ("The Wind Rises", "figure", "Jiro & Nahoko Hillside Scene Figure", "Donguri Sora", "mid", 55),
+        ("Porco Rosso", "poster", "Porco Rosso Original Theatrical Poster (1992 JP)", "Vintage", "high", 175),
+
+        # The Boy and the Heron (+3)
+        ("The Boy and the Heron", "figure", "Grey Heron Figure", "Donguri Sora", "mid", 48),
+        ("The Boy and the Heron", "figure", "Mahito & Warawara Figure Set", "Donguri Sora", "mid", 52),
+        ("The Boy and the Heron", "jp_merch", "Theatrical Exclusive Pamphlet & Clear File Set", "JP Exclusive", "mid", 35),
+
+        # Ghibli Museum Exclusives (additional +4)
+        ("Ghibli Museum", "museum", "Catbus Plush (Large Museum Exclusive)", "Museum Exclusive", "high", 180),
+        ("Ghibli Museum", "museum", "Robot Soldier Garden Statue (Resin 40cm)", "Museum Exclusive", "grail", 350),
+        ("Ghibli Museum", "museum", "Museum-Only Stained Glass Light Frame", "Museum Exclusive", "high", 165),
+        ("Ghibli Museum", "museum", "Museum Ticket Book Collector Set (2001-2020)", "Museum Exclusive", "grail", 280),
+
+        # Vintage / Art (+4)
+        ("Porco Rosso", "cel", "Porco Rosso Cockpit Animation Cel", "Original Cel", "grail", 2200),
+        ("Castle in the Sky", "cel", "Laputa Floating City Animation Cel", "Original Cel", "grail", 2800),
+        ("Multi-Film", "art_book", "Hayao Miyazaki Art Book Limited Edition (Signed)", "JP Exclusive", "grail", 450),
+        ("Multi-Film", "calendar", "Studio Ghibli Vintage Calendar (1995 Complete)", "Vintage", "high", 120),
     ]
 
     catalog = []

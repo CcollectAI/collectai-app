@@ -6,8 +6,17 @@ Layer 2 (Prices):   Market estimates for OOP volumes → train.jsonl
 
 Sources:
 - MyAnimeList API (series metadata)
-- Curated OOP manga price data
+- Curated OOP manga price data (100+ hand-picked collectible series)
 - Can be augmented with MangaDex, AniList later
+
+Curated catalog covers:
+- OOP grails (Tokyopop/VIZ/Dark Horse out-of-print singles)
+- Horror/seinen OOP (MPD Psycho, Parasyte singles, Junji Ito, etc.)
+- Josei/shoujo OOP (Basara, Banana Fish singles, Mars, etc.)
+- Modern collector/deluxe editions (Berserk Deluxe, Blade Deluxe, etc.)
+- Box sets in print (Demon Slayer, MHA, AoT, etc.)
+- Japanese tankobon collector items (first prints, Jump specials)
+- Light novels (Overlord, Mushoku Tensei, Re:Zero, etc.)
 
 Usage:
     python -m pipelines.import_manga [--dry-run]
@@ -64,11 +73,21 @@ def fetch_top_manga(limit: int = 200) -> list[dict]:
 
 
 def get_curated_oop_manga() -> list[dict]:
-    """Curated out-of-print and collectible manga with price data."""
+    """Curated out-of-print and collectible manga with price data.
+
+    100+ hand-picked series across seven categories:
+    - OOP grails (Tokyopop/VIZ/Dark Horse out-of-print singles)
+    - Horror/seinen OOP
+    - Josei/shoujo OOP
+    - Modern collector/deluxe editions
+    - Box sets in print
+    - Japanese tankobon collector items (first prints, Jump specials)
+    - Light novels
+    """
 
     # (title, publisher, volumes, status, avg_vol_price, complete_set_price, rarity)
     oop_manga = [
-        # Highly sought after OOP manga
+        # ── Highly sought after OOP manga (original 42) ─────────────────
         ("Blade of the Immortal (Singles)", "Dark Horse", 31, "OOP", 25, 800, "High"),
         ("Berserk (Deluxe)", "Dark Horse", 14, "In Print", 50, 700, "Standard"),
         ("Berserk (Singles)", "Dark Horse", 42, "OOP", 15, 600, "Mid"),
@@ -109,6 +128,86 @@ def get_curated_oop_manga() -> list[dict]:
         ("Flowers of Evil", "Vertical", 11, "OOP", 18, 200, "Mid"),
         ("Sundome", "Yen Press", 8, "OOP", 25, 200, "Mid"),
         ("I''s", "VIZ", 15, "OOP", 15, 225, "Mid"),
+
+        # ── More OOP Grails ────────────────────────────────────────────
+        ("Rave Master", "Tokyopop", 35, "OOP", 18, 630, "High"),
+        ("Fist of the North Star (Singles)", "VIZ", 27, "OOP", 35, 950, "High"),
+        ("Initial D", "Tokyopop", 33, "OOP", 20, 660, "High"),
+        ("Maison Ikkoku (VIZ Old)", "VIZ", 15, "OOP", 18, 270, "Mid"),
+        ("Ranma 1/2 (VIZ Old Singles)", "VIZ", 36, "OOP", 12, 430, "Mid"),
+        ("Flame of Recca", "VIZ", 33, "OOP", 10, 330, "Mid"),
+        ("GetBackers", "Tokyopop", 39, "OOP", 12, 470, "Mid"),
+        ("Shaman King (Singles)", "VIZ", 32, "OOP", 14, 450, "Mid"),
+        ("Black Cat", "VIZ", 20, "OOP", 10, 200, "Mid"),
+        ("Mar", "VIZ", 15, "OOP", 10, 150, "Mid"),
+        ("Air Gear", "Kodansha/Del Rey", 37, "OOP", 15, 555, "Mid"),
+        ("Skip Beat (Singles)", "VIZ", 49, "Partial OOP", 8, 390, "Mid"),
+        ("Rurouni Kenshin (VizBig)", "VIZ", 9, "Partial OOP", 18, 162, "Mid"),
+        ("Yu Yu Hakusho", "VIZ", 19, "OOP", 12, 228, "Mid"),
+        ("Inu-Yasha (VIZ Singles)", "VIZ", 56, "OOP", 8, 450, "Mid"),
+        ("Hikaru no Go", "VIZ", 23, "OOP", 10, 230, "Mid"),
+        ("Prince of Tennis", "VIZ", 42, "OOP", 8, 336, "Mid"),
+        ("Zatch Bell", "VIZ", 25, "OOP", 15, 375, "High"),
+        ("Cross Game", "VIZ", 8, "OOP", 14, 112, "Mid"),
+
+        # ── Horror / Seinen OOP ────────────────────────────────────────
+        ("MPD Psycho", "Dark Horse", 11, "OOP", 30, 330, "High"),
+        ("Parasyte (Del Rey Singles)", "Del Rey", 8, "OOP", 35, 280, "High"),
+        ("Gyo (Deluxe)", "VIZ", 1, "In Print", 23, 23, "Standard"),
+        ("Hideout", "Dark Horse", 1, "OOP", 30, 30, "Mid"),
+        ("Junji Ito's Cat Diary", "Kodansha", 1, "In Print", 13, 13, "Standard"),
+        ("Drifting Classroom (Perfect)", "VIZ", 3, "In Print", 28, 84, "Standard"),
+        ("Drifting Classroom (Singles)", "VIZ", 11, "OOP", 25, 275, "High"),
+        ("Franken Fran", "Seven Seas", 8, "OOP", 20, 160, "Mid"),
+        ("Kurosagi Corpse Delivery Service", "Dark Horse", 14, "OOP", 18, 252, "Mid"),
+        ("Ichi the Killer", "n/a (fan translated)", 10, "OOP", 60, 600, "High"),
+        ("Old Boy", "Dark Horse", 8, "OOP", 25, 200, "Mid"),
+
+        # ── Josei / Shoujo OOP ─────────────────────────────────────────
+        ("Basara", "VIZ", 27, "OOP", 15, 405, "High"),
+        ("Banana Fish (Singles)", "VIZ", 19, "OOP", 18, 340, "High"),
+        ("Mars", "Tokyopop", 15, "OOP", 20, 300, "High"),
+        ("Hana-Kimi", "VIZ", 23, "OOP", 10, 230, "Mid"),
+        ("Boys Over Flowers", "VIZ", 37, "OOP", 8, 296, "Mid"),
+        ("Kimi ni Todoke", "VIZ", 30, "Partial OOP", 8, 240, "Mid"),
+        ("Fruits Basket (Singles)", "Tokyopop", 23, "OOP", 12, 276, "Mid"),
+        ("Please Save My Earth", "VIZ", 21, "OOP", 15, 315, "High"),
+
+        # ── Modern Collector / Deluxe Editions ─────────────────────────
+        ("Berserk Deluxe Edition vol 1", "Dark Horse", 1, "In Print", 50, 50, "Standard"),
+        ("Berserk Deluxe Edition vol 2", "Dark Horse", 1, "In Print", 50, 50, "Standard"),
+        ("Berserk Deluxe Edition vol 3", "Dark Horse", 1, "In Print", 50, 50, "Standard"),
+        ("Blade of the Immortal Deluxe", "Dark Horse", 10, "In Print", 50, 500, "Standard"),
+        ("Vinland Saga Deluxe", "Kodansha", 7, "In Print", 50, 350, "Standard"),
+        ("Uzumaki (3-in-1 Deluxe)", "VIZ", 1, "In Print", 28, 28, "Standard"),
+        ("Sensor", "VIZ", 1, "In Print", 16, 16, "Standard"),
+        ("Remina", "VIZ", 1, "In Print", 16, 16, "Standard"),
+        ("Hellsing Deluxe", "Dark Horse", 3, "In Print", 50, 150, "Standard"),
+        ("Trigun Deluxe", "Dark Horse", 2, "In Print", 45, 90, "Standard"),
+
+        # ── Box Sets In Print ──────────────────────────────────────────
+        ("Demon Slayer Box Set", "VIZ", 23, "In Print", 9, 200, "Standard"),
+        ("My Hero Academia Box Set 1", "VIZ", 20, "In Print", 8, 160, "Standard"),
+        ("Attack on Titan Box Set", "Kodansha", 34, "In Print", 8, 270, "Standard"),
+        ("Tokyo Ghoul Box Set", "VIZ", 14, "In Print", 10, 140, "Standard"),
+        ("Promised Neverland Box Set", "VIZ", 20, "In Print", 8, 160, "Standard"),
+
+        # ── Japanese Tankobon Collector Items ──────────────────────────
+        ("Dragon Ball vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 120, 120, "High"),
+        ("One Piece vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 200, 200, "High"),
+        ("Naruto vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 80, 80, "High"),
+        ("Slam Dunk vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 90, 90, "High"),
+        ("Weekly Shonen Jump #1-2 1968 (reprint)", "Shueisha", 1, "OOP", 150, 150, "High"),
+        ("Akira vol 1 (1st Print JP)", "Kodansha", 1, "OOP", 100, 100, "High"),
+        ("JoJo's Bizarre Adventure vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 70, 70, "High"),
+        ("Dragon Ball 30th Anniversary Super History Book", "Shueisha", 1, "OOP", 60, 60, "Mid"),
+
+        # ── Light Novels ───────────────────────────────────────────────
+        ("Overlord (Light Novel)", "Yen Press", 16, "In Print", 14, 224, "Standard"),
+        ("Mushoku Tensei (Light Novel)", "Seven Seas", 26, "In Print", 14, 364, "Standard"),
+        ("Re:Zero (Light Novel)", "Yen Press", 35, "In Print", 14, 490, "Standard"),
+        ("That Time I Got Reincarnated as a Slime (LN)", "Yen Press", 22, "In Print", 14, 308, "Standard"),
+        ("Sword Art Online Progressive (Light Novel)", "Yen Press", 8, "In Print", 14, 112, "Standard"),
     ]
 
     items = []

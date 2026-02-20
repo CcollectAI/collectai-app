@@ -6,8 +6,10 @@ Layer 2 (Prices):   Estimated market prices → train.jsonl
 
 Sources:
 - Curated catalog of Tiger Electronics, Game Boy accessories,
-  TOMY figures, Burger King promos, Hasbro, vintage accessories
-- Focus on 1990s-2000s era Pokemon merchandise
+  TOMY figures, Burger King promos, Hasbro, vintage accessories,
+  Bandai figures, fast food promos, vintage plush, electronic toys,
+  Japanese exclusives, VHS/DVD media, stationery & school supplies
+- Focus on 1990s-2000s era Pokemon merchandise (90+ items)
 
 Usage:
     python -m pipelines.import_retro_pokemon [--dry-run]
@@ -35,7 +37,7 @@ CATEGORY = "retro_pokemon"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated retro Pokemon accessories & merch catalog."""
+    """Curated retro Pokemon accessories & merch catalog (90+ items)."""
 
     # Format: (brand, name, condition_note, rarity_tier, price_loose, price_boxed)
     # rarity_tier: grail (>100), high (50-100), mid (20-50), standard (<20)
@@ -99,6 +101,69 @@ def get_curated_catalog() -> list[dict]:
         ("Official", "Pokemon Center Deck Box (Vintage)", "Good condition", "mid", 20, 55),
         ("Official", "Pokemon VHS Cassette: Indigo League Vol 1", "With case", "standard", 10, 25),
         ("Official", "Pokemon Movie 2000 Promo Card Set", "Sealed", "mid", 25, 60),
+
+        # Bandai Pokemon Figures
+        ("Bandai", "Pokemon Scale World Kanto Set (10 figures)", "Sealed", "high", 65, 120),
+        ("Bandai", "Pokemon Scale World Johto Set (10 figures)", "Sealed", "high", 60, 110),
+        ("Bandai", "Shodo Pokemon Vol.1 (Mewtwo/Mew/Pikachu)", "Sealed", "mid", 35, 70),
+        ("Bandai", "Shodo Pokemon Vol.2 (Charizard/Dragonite)", "Sealed", "mid", 40, 75),
+        ("Bandai", "Pokemon Plamo Mewtwo Model Kit", "Sealed", "mid", 25, 50),
+        ("Bandai", "Pokemon Plamo Charizard Model Kit", "Sealed", "mid", 30, 55),
+        ("Bandai", "Pokemon Plamo Rayquaza Model Kit", "Sealed", "mid", 35, 60),
+
+        # KFC / McDonald's / Fast Food Promo Items
+        ("KFC", "Pokemon Promo Box Set (Australia 1999)", "Complete", "grail", 120, 280),
+        ("McDonald's", "Pokemon 25th Anniversary Promo Card Set (Sealed)", "Sealed", "mid", 25, 55),
+        ("McDonald's", "Pokemon Happy Meal Toys Complete Set (1999)", "Loose", "mid", 30, 70),
+        ("Wendy's", "Pokemon Toys Complete Set (2002)", "Loose", "mid", 20, 50),
+        ("McDonald's", "Pikachu Plush (Happy Meal Exclusive 2000)", "With tag", "standard", 10, 30),
+        ("Burger King", "Pokemon Beanbag Plush Set (1999)", "Complete set", "mid", 25, 60),
+
+        # Vintage Plush
+        ("TOMY", "Talking Pikachu Plush (1998)", "Working", "mid", 25, 65),
+        ("Hasbro", "Dancing Pikachu Plush (Electronic)", "Working", "mid", 30, 70),
+        ("Hasbro", "Large Pikachu Plush (20 inch, 1999)", "Good condition", "mid", 20, 50),
+        ("Pokemon Center", "Mewtwo Plush (Tokyo Exclusive 1999)", "With tag", "high", 60, 140),
+        ("Pokemon Center", "Mew Plush (Tokyo Exclusive 1999)", "With tag", "high", 55, 130),
+        ("Banpresto", "UFO Catcher Prize Pikachu (Large 1999)", "Good condition", "mid", 30, 70),
+        ("Banpresto", "UFO Catcher Prize Eevee (Large 2000)", "Good condition", "mid", 35, 75),
+        ("Tomy", "Pocket Monsters Plush Pikachu (Japan 1996)", "With tag", "grail", 100, 250),
+        ("Tomy", "Pocket Monsters Plush Charizard (Japan 1996)", "With tag", "grail", 110, 280),
+
+        # Electronic Toys
+        ("Tiger Electronics", "Pokemon Cyclone 2 Pinball Game", "Working", "mid", 25, 60),
+        ("Tiger Electronics", "Pokemon Thunderbolt Game", "Working", "standard", 18, 45),
+        ("Hasbro", "Pokemon Battle Stadium DX", "Working", "mid", 30, 70),
+        ("Tiger Electronics", "Pokemon Electronic Catch Em All", "Working", "standard", 15, 40),
+        ("Tiger Electronics", "Hit Clips Pokemon (Pikachu Player)", "Working", "mid", 20, 55),
+
+        # Japanese Exclusive Merchandise
+        ("Pokemon Center", "Japan Shop Bag (Vintage 1998)", "Good condition", "mid", 25, 55),
+        ("Pokemon Center", "Japan Shop Bag (Pikachu Birthday 1999)", "Good condition", "mid", 30, 65),
+        ("Shogakukan", "Corocoro Magazine Pokemon Promo Cards (1997)", "Sealed", "high", 50, 120),
+        ("Shogakukan", "Corocoro Magazine Mew Promo Attachment", "Sealed", "grail", 80, 200),
+        ("TOMY", "Pokemon Zukan 3D Encyclopedia (Kanto Set)", "Complete", "high", 70, 160),
+        ("TOMY", "Pokemon Zukan 3D Encyclopedia (Johto Set)", "Complete", "high", 65, 150),
+        ("Bandai", "Pokemon Kids Figures Gen 1 Complete Set", "Loose", "grail", 150, 350),
+        ("Bandai", "Pokemon Kids Figures (Pikachu/Eevee/Mewtwo)", "Loose", "standard", 8, 25),
+        ("Takara Tomy", "MONCOLLE Pikachu (Japan Exclusive)", "Sealed", "standard", 12, 30),
+        ("Takara Tomy", "MONCOLLE Charizard (Japan Exclusive)", "Sealed", "standard", 15, 35),
+        ("JR East", "Masuda Stamp Rally Prize Pikachu (2001)", "Good condition", "high", 55, 130),
+
+        # VHS / DVD / Media
+        ("Viz Video", "Pokemon Indigo League VHS Complete Set (13 tapes)", "With cases", "high", 50, 120),
+        ("Warner Bros", "Pokemon The First Movie VHS (Original 1999)", "With case", "standard", 8, 25),
+        ("Warner Bros", "Pokemon 2000 The Movie DVD (First Press)", "Sealed", "mid", 20, 45),
+        ("Warner Bros", "Mewtwo Returns VHS", "With case", "standard", 10, 30),
+        ("Shogakukan", "Pokemon Japanese LaserDisc Box Set", "Complete", "grail", 150, 400),
+
+        # Stationery & School Supplies
+        ("Mead", "Pokemon Trapper Keeper Binder (1999)", "Good condition", "mid", 25, 65),
+        ("Official", "Pokemon Pencil Case (Japan Exclusive 1998)", "Good condition", "mid", 20, 50),
+        ("Merlin", "Pokemon Sticker Album Complete (1999)", "All stickers", "mid", 30, 70),
+        ("Topps", "Pokemon Sticker Album Series 1 (Complete)", "All stickers", "mid", 25, 60),
+        ("Thermos", "Pokemon Lunchbox (Pikachu 1999)", "Good condition", "mid", 20, 50),
+        ("Burger King", "Pokemon Watch (Promo 1999)", "Working", "standard", 12, 35),
     ]
 
     catalog = []

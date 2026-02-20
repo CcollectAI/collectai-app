@@ -7,7 +7,9 @@ Layer 2 (Prices):   Estimated market prices → train.jsonl
 Sources:
 - Curated data from secondary market (Discogs, eBay sold listings)
 - Covers Ariana Grande, Olivia Rodrigo, Harry Styles, Billie Eilish,
-  Dua Lipa, and K-pop soloists (IU, Lisa, Jungkook)
+  Dua Lipa, K-pop soloists (IU, Lisa, Jungkook), The Weeknd, SZA,
+  Bad Bunny, Beyonce, Tyler The Creator, Lana Del Rey, Sabrina Carpenter,
+  and Chappell Roan
 
 Usage:
     python -m pipelines.import_pop_fandom [--dry-run]
@@ -35,7 +37,7 @@ CATEGORY = "pop_fandom"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated pop music fandom collectibles catalog."""
+    """Curated pop music fandom collectibles catalog (68 items)."""
 
     # (artist, item_type, name, variant, rarity_tier, price_eur)
     # rarity_tier: grail (>100), high (50-100), mid (25-50), standard (<25)
@@ -89,6 +91,53 @@ def get_curated_catalog() -> list[dict]:
         ("Lisa", "album", "Lisa LALISA Standard", "Standard", "standard", 16),
         ("Jungkook", "album", "Jungkook GOLDEN Set (Both Vers.)", "Set", "mid", 35),
         ("Jungkook", "album", "Jungkook GOLDEN Weverse POB", "Weverse Exclusive", "mid", 40),
+
+        # The Weeknd
+        ("The Weeknd", "vinyl", "After Hours Holographic Vinyl", "Holographic (Limited Edition)", "grail", 160),
+        ("The Weeknd", "vinyl", "Starboy Standard Vinyl", "Standard", "standard", 24),
+        ("The Weeknd", "vinyl", "Dawn FM Collector's Edition Vinyl", "Collector's Edition", "high", 70),
+        ("The Weeknd", "vinyl", "Kiss Land OG Pressing Vinyl", "Original Pressing", "grail", 220),
+        ("The Weeknd", "merch", "After Hours Til Dawn Tour Jacket", "Tour Exclusive", "high", 95),
+
+        # SZA
+        ("SZA", "vinyl", "SOS Lenticular Cover Vinyl", "Lenticular (Limited Edition)", "grail", 130),
+        ("SZA", "vinyl", "CTRL Anniversary Edition Vinyl", "Anniversary Edition", "high", 65),
+        ("SZA", "merch", "SOS Tour Glastonbury Poster", "Tour Exclusive", "high", 55),
+        ("SZA", "merch", "SOS Signed CD", "Signed", "high", 85),
+
+        # Bad Bunny
+        ("Bad Bunny", "vinyl", "Un Verano Sin Ti Vinyl", "Standard", "mid", 40),
+        ("Bad Bunny", "vinyl", "YHLQMDLG Vinyl", "Standard", "mid", 45),
+        ("Bad Bunny", "vinyl", "El Ultimo Tour Del Mundo Vinyl", "Standard", "high", 55),
+        ("Bad Bunny", "merch", "Most Wanted Tour Hoodie", "Tour Exclusive", "high", 75),
+
+        # Beyonce
+        ("Beyonce", "vinyl", "Renaissance Collector's Box Set Vinyl", "Collector Box Set", "grail", 180),
+        ("Beyonce", "vinyl", "Lemonade Yellow Vinyl", "Yellow", "grail", 250),
+        ("Beyonce", "vinyl", "Homecoming Live Album Vinyl", "Standard", "high", 60),
+        ("Beyonce", "merch", "Renaissance World Tour Jacket", "Tour Exclusive", "high", 95),
+
+        # Tyler, The Creator
+        ("Tyler, The Creator", "vinyl", "Igor Mint Green Vinyl", "Mint Green (Limited)", "grail", 140),
+        ("Tyler, The Creator", "vinyl", "Call Me If You Get Lost Vinyl", "Standard", "mid", 32),
+        ("Tyler, The Creator", "vinyl", "Flower Boy Bee Yellow Vinyl", "Bee Yellow", "high", 70),
+        ("Tyler, The Creator", "merch", "Golf Wang Box Logo Hoodie", "Golf Wang Exclusive", "high", 90),
+
+        # Lana Del Rey
+        ("Lana Del Rey", "vinyl", "Norman F***ing Rockwell Lime Green Vinyl", "Lime Green", "high", 85),
+        ("Lana Del Rey", "vinyl", "Chemtrails Over The Country Club Transparent Vinyl", "Transparent (Limited Edition)", "high", 65),
+        ("Lana Del Rey", "vinyl", "Ultraviolence Violet Vinyl", "Violet (UO Exclusive)", "grail", 150),
+        ("Lana Del Rey", "merch", "Did You Know Signed Art Print", "Signed", "high", 75),
+
+        # Sabrina Carpenter
+        ("Sabrina Carpenter", "vinyl", "Short n' Sweet Pink Vinyl", "Pink (UO Exclusive)", "mid", 38),
+        ("Sabrina Carpenter", "vinyl", "Short n' Sweet Heart-Shaped Vinyl", "Heart-Shaped (Limited Edition)", "high", 65),
+        ("Sabrina Carpenter", "vinyl", "emails i can't send Lavender Vinyl", "Lavender (Limited Edition)", "mid", 42),
+
+        # Chappell Roan
+        ("Chappell Roan", "vinyl", "The Rise and Fall of a Midwest Princess Vinyl", "Red (UO Exclusive)", "high", 75),
+        ("Chappell Roan", "merch", "Midwest Princess Signed CD", "Signed", "high", 90),
+        ("Chappell Roan", "merch", "Midwest Princess Tour Poster", "Tour Exclusive", "mid", 45),
     ]
 
     catalog = []
