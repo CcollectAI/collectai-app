@@ -16,12 +16,15 @@ import {
   Platform,
   RefreshControl,
   Alert,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatDualPrice } from "@/lib/format";
+import { useSettings as useSettingsHook } from "@/lib/settings";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { CATEGORIES } from "@/data/categories";
@@ -36,6 +39,8 @@ type MarketplaceHit = {
   title: string;
   price: number | null;
   currency: string;
+  source_price: number | null;
+  source_currency: string | null;
   url: string;
   affiliate_url: string | null;
   affiliate_source: string | null;
@@ -45,6 +50,17 @@ type MarketplaceHit = {
   provenance_score: number;
   source_reliability: number;
   recency_score: number;
+  shipping_cost: number | null;
+  ships_from: string | null;
+  domestic_only: boolean;
+  listing_region: string | null;
+  shipping_estimate: {
+    min_eur: number;
+    max_eur: number;
+    exact_eur: number | null;
+    is_domestic: boolean;
+    disclaimer: string | null;
+  } | null;
 };
 
 // Unified result type for rendering (same visual as before)
@@ -60,6 +76,11 @@ type SearchResult = {
   affiliateUrl?: string;
   source?: string;
   condition?: string;
+  // Shipping & cross-border
+  domesticOnly?: boolean;
+  shippingHint?: string;
+  secondaryPrice?: string | null;
+  sourceCurrency?: string | null;
 };
 
 const RECENT_SEARCHES_KEY = "collectai_recent_searches";
@@ -79,6 +100,16 @@ const TRENDING_CATEGORIES = [
   { id: 'gunpla', name: 'Gunpla & Model Kits', meta: 'Steady growth' },
 ] as const;
 
+// Filter options
+const SOURCE_OPTIONS = ["eBay", "TCGPlayer", "Mercari", "Cardmarket", "Discogs", "StockX", "BrickLink"] as const;
+const CONDITION_OPTIONS = ["Near Mint", "Lightly Played", "Played", "Poor"] as const;
+const SORT_OPTIONS = [
+  { value: "relevance", label: "Relevance" },
+  { value: "price_asc", label: "Price: Low\u2192High" },
+  { value: "price_desc", label: "Price: High\u2192Low" },
+  { value: "newest", label: "Newest" },
+] as const;
+
 // Tile colors now come from theme.tileScale (Tiffany brand scale)
 
 // Compute uniform tile dimensions for 2-col grid
@@ -92,6 +123,7 @@ const SearchScreen: React.FC = () => {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { settings } = useSettingsHook();
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -99,6 +131,24 @@ const SearchScreen: React.FC = () => {
   const [marketplaceResults, setMarketplaceResults] = useState<SearchResult[]>([]);
   const [collectionResults, setCollectionResults] = useState<SearchResult[]>([]);
   const searchIdRef = useRef(0);
+
+  // Filter state
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [filterSources, setFilterSources] = useState<string[]>([]);
+  const [filterConditions, setFilterConditions] = useState<string[]>([]);
+  const [filterMinPrice, setFilterMinPrice] = useState("");
+  const [filterMaxPrice, setFilterMaxPrice] = useState("");
+  const [filterSort, setFilterSort] = useState("relevance");
+
+  // Count of active filters for badge
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filterSources.length > 0) count++;
+    if (filterConditions.length > 0) count++;
+    if (filterMinPrice || filterMaxPrice) count++;
+    if (filterSort !== "relevance") count++;
+    return count;
+  }, [filterSources, filterConditions, filterMinPrice, filterMaxPrice, filterSort]);
 
   // Load persisted recent searches on mount
   useEffect(() => {
@@ -150,9 +200,24 @@ const SearchScreen: React.FC = () => {
     const searchId = ++searchIdRef.current;
     setSearchLoading(true);
 
+    // Build filter options for marketplace API
+    const searchOpts: Parameters<typeof collectorsApi.marketplaceSearch>[1] = {};
+    if (filterSources.length > 0) searchOpts.source = filterSources;
+    if (filterConditions.length > 0) searchOpts.condition = filterConditions;
+    if (filterMinPrice) {
+      const val = parseFloat(filterMinPrice);
+      if (!isNaN(val)) searchOpts.min_price = val;
+    }
+    if (filterMaxPrice) {
+      const val = parseFloat(filterMaxPrice);
+      if (!isNaN(val)) searchOpts.max_price = val;
+    }
+    if (filterSort && filterSort !== "relevance") searchOpts.sort = filterSort;
+    if (settings.region) searchOpts.region = settings.region;
+
     // Run marketplace API + local collection search in parallel
     const [mktResult, colResult] = await Promise.allSettled([
-      collectorsApi.marketplaceSearch(q.trim()).catch((err: unknown) => {
+      collectorsApi.marketplaceSearch(q.trim(), searchOpts).catch((err: unknown) => {
         logger.warn("[Search] marketplace search error:", err);
         return null;
       }),
@@ -171,18 +236,44 @@ const SearchScreen: React.FC = () => {
     const mktResults: SearchResult[] = hits
       .filter((h) => !h.is_sold)
       .slice(0, 10)
-      .map((h, i) => ({
-        id: `mkt_${i}_${h.url}`,
-        name: h.title || "Untitled",
-        category: h.source || "",
-        collectionName: h.condition || "-",
-        value: h.price ?? 0,
-        isMarketplace: true,
-        externalUrl: h.url,
-        affiliateUrl: h.affiliate_url ?? undefined,
-        source: h.source,
-        condition: h.condition ?? undefined,
-      }));
+      .map((h, i) => {
+        // Build shipping hint
+        let shippingHint: string | undefined;
+        const est = h.shipping_estimate;
+        if (est) {
+          if (est.exact_eur != null) {
+            shippingHint = est.exact_eur === 0
+              ? "+Free shipping"
+              : `+${formatPrice(est.exact_eur)} shipping`;
+          } else {
+            shippingHint = `+${formatPrice(est.min_eur)}-${formatPrice(est.max_eur)} est. shipping`;
+          }
+        }
+
+        // Build secondary price (original currency)
+        let secondaryPrice: string | null = null;
+        if (h.price != null && h.source_currency && h.source_currency !== settings.currency) {
+          const dual = formatDualPrice(h.price, h.source_currency, settings);
+          secondaryPrice = dual.secondary;
+        }
+
+        return {
+          id: `mkt_${i}_${h.url}`,
+          name: h.title || "Untitled",
+          category: h.source || "",
+          collectionName: h.condition || "-",
+          value: h.price ?? 0,
+          isMarketplace: true,
+          externalUrl: h.url,
+          affiliateUrl: h.affiliate_url ?? undefined,
+          source: h.source,
+          condition: h.condition ?? undefined,
+          domesticOnly: h.domestic_only,
+          shippingHint,
+          secondaryPrice,
+          sourceCurrency: h.source_currency,
+        };
+      });
 
     // Map collection items
     const colData = colResult.status === "fulfilled" ? colResult.value : [];
@@ -203,7 +294,7 @@ const SearchScreen: React.FC = () => {
     setCollectionResults(colResults);
     setSearchLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [filterSources, filterConditions, filterMinPrice, filterMaxPrice, filterSort, settings]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -235,6 +326,7 @@ const SearchScreen: React.FC = () => {
   }, [executeSearch]);
 
   const handleOpenResult = useCallback((item: SearchResult) => {
+    if (item.domesticOnly) return; // Domestic-only items are not clickable
     if (item.isMarketplace) {
       const openUrl = item.affiliateUrl || item.externalUrl;
       if (openUrl) Linking.openURL(openUrl).catch((err) => {
@@ -307,23 +399,36 @@ const SearchScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Search input */}
-        <View style={[styles.searchRow, { borderColor: colors.border }]}>
-          <Ionicons
-            name="search-outline"
-            size={18}
-            color={colors.muted}
-            style={{ marginRight: 8 }}
-          />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            onSubmitEditing={handleSubmitSearch}
-            placeholder="Search items & collections"
-            placeholderTextColor={colors.muted}
-            accessibilityLabel="Search items and collections"
-            style={[styles.searchInput, { color: colors.text }]}
-          />
+        {/* Search input + filter button */}
+        <View style={styles.searchFilterRow}>
+          <View style={[styles.searchRow, { borderColor: colors.border, flex: 1 }]}>
+            <Ionicons
+              name="search-outline"
+              size={18}
+              color={colors.muted}
+              style={{ marginRight: 8 }}
+            />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              onSubmitEditing={handleSubmitSearch}
+              placeholder="Search items & collections"
+              placeholderTextColor={colors.muted}
+              accessibilityLabel="Search items and collections"
+              style={[styles.searchInput, { color: colors.text }]}
+            />
+          </View>
+          <TouchableOpacity
+            onPress={() => setFilterVisible(true)}
+            style={[styles.filterButton, { borderColor: colors.border, backgroundColor: activeFilterCount > 0 ? colors.accent + '15' : 'transparent' }]}
+            accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
+            accessibilityRole="button"
+          >
+            <Ionicons name="options-outline" size={20} color={activeFilterCount > 0 ? colors.accent : colors.muted} />
+            {activeFilterCount > 0 && (
+              <View style={[styles.filterBadge, { backgroundColor: colors.accent }]} />
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Recent searches */}
@@ -393,6 +498,18 @@ const SearchScreen: React.FC = () => {
               </View>
             </View>
 
+            {/* Browse All Categories Button */}
+            <AnimatedPressable
+              style={[styles.browseAllButton, { borderColor: colors.accent }]}
+              onPress={() => router.push('/categories/')}
+              accessibilityRole="button"
+              accessibilityLabel="Browse all categories"
+            >
+              <Ionicons name="grid-outline" size={16} color={colors.accent} />
+              <Text style={[styles.browseAllText, { color: colors.accent }]}>Browse All Categories</Text>
+              <Ionicons name="arrow-forward" size={14} color={colors.accent} />
+            </AnimatedPressable>
+
             {/* Trending categories */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -426,6 +543,160 @@ const SearchScreen: React.FC = () => {
           </>
         )}
 
+        {/* Filter bottom sheet */}
+        <Modal
+          visible={filterVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setFilterVisible(false)}
+        >
+          <SafeAreaView style={[styles.filterModal, { backgroundColor: colors.background }]}>
+            {/* Filter header */}
+            <View style={[styles.filterHeader, { borderBottomColor: colors.border }]}>
+              <TouchableOpacity onPress={() => setFilterVisible(false)} accessibilityLabel="Close filters">
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.filterHeaderTitle, { color: colors.text }]}>Filters</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setFilterSources([]);
+                  setFilterConditions([]);
+                  setFilterMinPrice("");
+                  setFilterMaxPrice("");
+                  setFilterSort("relevance");
+                }}
+                accessibilityLabel="Reset all filters"
+              >
+                <Text style={[styles.filterResetText, { color: colors.accent }]}>Reset</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.filterContent} contentContainerStyle={{ paddingBottom: 32 }}>
+              {/* Source filter */}
+              <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Source</Text>
+              <View style={styles.filterChipRow}>
+                {SOURCE_OPTIONS.map((src) => {
+                  const active = filterSources.includes(src);
+                  return (
+                    <TouchableOpacity
+                      key={src}
+                      style={[
+                        styles.filterChip,
+                        { borderColor: active ? colors.accent : colors.border, backgroundColor: active ? colors.accent + '20' : 'transparent' },
+                      ]}
+                      onPress={() => {
+                        setFilterSources((prev) =>
+                          active ? prev.filter((s) => s !== src) : [...prev, src]
+                        );
+                      }}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: active }}
+                      accessibilityLabel={src}
+                    >
+                      <Text style={[styles.filterChipText, { color: active ? colors.accent : colors.text }]}>
+                        {src}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Condition filter */}
+              <Text style={[styles.filterSectionTitle, { color: colors.text, marginTop: 20 }]}>Condition</Text>
+              <View style={styles.filterChipRow}>
+                {CONDITION_OPTIONS.map((cond) => {
+                  const active = filterConditions.includes(cond);
+                  return (
+                    <TouchableOpacity
+                      key={cond}
+                      style={[
+                        styles.filterChip,
+                        { borderColor: active ? colors.accent : colors.border, backgroundColor: active ? colors.accent + '20' : 'transparent' },
+                      ]}
+                      onPress={() => {
+                        setFilterConditions((prev) =>
+                          active ? prev.filter((c) => c !== cond) : [...prev, cond]
+                        );
+                      }}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: active }}
+                      accessibilityLabel={cond}
+                    >
+                      <Text style={[styles.filterChipText, { color: active ? colors.accent : colors.text }]}>
+                        {cond}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Price range */}
+              <Text style={[styles.filterSectionTitle, { color: colors.text, marginTop: 20 }]}>Price range</Text>
+              <View style={styles.filterPriceRow}>
+                <TextInput
+                  value={filterMinPrice}
+                  onChangeText={setFilterMinPrice}
+                  placeholder="Min"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="numeric"
+                  style={[styles.filterPriceInput, { color: colors.text, borderColor: colors.border }]}
+                  accessibilityLabel="Minimum price"
+                />
+                <Text style={[styles.filterPriceDash, { color: colors.muted }]}>{"\u2013"}</Text>
+                <TextInput
+                  value={filterMaxPrice}
+                  onChangeText={setFilterMaxPrice}
+                  placeholder="Max"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="numeric"
+                  style={[styles.filterPriceInput, { color: colors.text, borderColor: colors.border }]}
+                  accessibilityLabel="Maximum price"
+                />
+              </View>
+
+              {/* Sort order */}
+              <Text style={[styles.filterSectionTitle, { color: colors.text, marginTop: 20 }]}>Sort by</Text>
+              <View style={styles.filterChipRow}>
+                {SORT_OPTIONS.map((opt) => {
+                  const active = filterSort === opt.value;
+                  return (
+                    <TouchableOpacity
+                      key={opt.value}
+                      style={[
+                        styles.filterChip,
+                        { borderColor: active ? colors.accent : colors.border, backgroundColor: active ? colors.accent + '20' : 'transparent' },
+                      ]}
+                      onPress={() => setFilterSort(opt.value)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: active }}
+                      accessibilityLabel={opt.label}
+                    >
+                      <Text style={[styles.filterChipText, { color: active ? colors.accent : colors.text }]}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            {/* Apply button */}
+            <View style={[styles.filterFooter, { borderTopColor: colors.border }]}>
+              <TouchableOpacity
+                style={[styles.filterApplyButton, { backgroundColor: colors.accent }]}
+                onPress={() => {
+                  setFilterVisible(false);
+                  if (trimmedQuery) executeSearch(trimmedQuery);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Apply filters"
+              >
+                <Text style={styles.filterApplyText}>Apply filters</Text>
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </Modal>
+
         {/* Results when searching */}
         {trimmedQuery ? (
           <View style={styles.section}>
@@ -438,16 +709,21 @@ const SearchScreen: React.FC = () => {
                 </Text>
                 {topResult ? (
                   <AnimatedPressable
-                    style={[styles.resultRow, { borderBottomColor: colors.border }]}
+                    style={[
+                      styles.resultRow,
+                      { borderBottomColor: colors.border },
+                      topResult.domesticOnly && { opacity: 0.5 },
+                    ]}
                     onPress={() => handleOpenResult(topResult)}
+                    disabled={topResult.domesticOnly}
                     accessibilityRole={topResult.isMarketplace ? "link" : "button"}
                     accessibilityLabel={`${topResult.name}, ${formatPrice(topResult.value)}`}
                   >
                     <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
                       <Ionicons
-                        name={topResult.isMarketplace ? "cart-outline" : "star-outline"}
+                        name={topResult.domesticOnly ? "ban-outline" : topResult.isMarketplace ? "cart-outline" : "star-outline"}
                         size={18}
-                        color={colors.accent}
+                        color={topResult.domesticOnly ? colors.muted : colors.accent}
                       />
                     </View>
                     <View style={{ flex: 1 }}>
@@ -459,6 +735,21 @@ const SearchScreen: React.FC = () => {
                           ? `${topResult.source || "Marketplace"}${topResult.condition ? ` \u00B7 ${topResult.condition}` : ""}`
                           : `${topResult.category} \u2022 ${topResult.collectionName}`}
                       </Text>
+                      {topResult.secondaryPrice && (
+                        <Text style={[styles.resultSecondary, { color: colors.muted }]}>
+                          {topResult.secondaryPrice}
+                        </Text>
+                      )}
+                      {topResult.shippingHint && (
+                        <Text style={[styles.resultShipping, { color: colors.muted }]}>
+                          {topResult.shippingHint}
+                        </Text>
+                      )}
+                      {topResult.domesticOnly && (
+                        <View style={[styles.domesticBadge, { backgroundColor: colors.muted + '20' }]}>
+                          <Text style={[styles.domesticBadgeText, { color: colors.muted }]}>Domestic only</Text>
+                        </View>
+                      )}
                     </View>
                     <Text style={[styles.resultValue, { color: colors.text }]}>
                       {formatPrice(topResult.value)}
@@ -489,16 +780,21 @@ const SearchScreen: React.FC = () => {
                     {otherResults.map((item) => (
                       <AnimatedPressable
                         key={item.id}
-                        style={[styles.resultRow, { borderBottomColor: colors.border }]}
+                        style={[
+                          styles.resultRow,
+                          { borderBottomColor: colors.border },
+                          item.domesticOnly && { opacity: 0.5 },
+                        ]}
                         onPress={() => handleOpenResult(item)}
+                        disabled={item.domesticOnly}
                         accessibilityRole={item.isMarketplace ? "link" : "button"}
                         accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
                       >
                         <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
                           <Ionicons
-                            name={item.isMarketplace ? "cart-outline" : "card-outline"}
+                            name={item.domesticOnly ? "ban-outline" : item.isMarketplace ? "cart-outline" : "card-outline"}
                             size={18}
-                            color={item.isMarketplace ? colors.accent : colors.muted}
+                            color={item.domesticOnly ? colors.muted : item.isMarketplace ? colors.accent : colors.muted}
                           />
                         </View>
                         <View style={{ flex: 1 }}>
@@ -510,6 +806,21 @@ const SearchScreen: React.FC = () => {
                               ? `${item.source || "Marketplace"}${item.condition ? ` \u00B7 ${item.condition}` : ""}`
                               : `${item.category} \u2022 ${item.collectionName}`}
                           </Text>
+                          {item.secondaryPrice && (
+                            <Text style={[styles.resultSecondary, { color: colors.muted }]}>
+                              {item.secondaryPrice}
+                            </Text>
+                          )}
+                          {item.shippingHint && (
+                            <Text style={[styles.resultShipping, { color: colors.muted }]}>
+                              {item.shippingHint}
+                            </Text>
+                          )}
+                          {item.domesticOnly && (
+                            <View style={[styles.domesticBadge, { backgroundColor: colors.muted + '20' }]}>
+                              <Text style={[styles.domesticBadgeText, { color: colors.muted }]}>Domestic only</Text>
+                            </View>
+                          )}
                         </View>
                         <Text style={[styles.resultValue, { color: colors.text }]}>
                           {formatPrice(item.value)}
@@ -517,6 +828,13 @@ const SearchScreen: React.FC = () => {
                       </AnimatedPressable>
                     ))}
                   </>
+                )}
+
+                {/* Cross-border disclaimer */}
+                {marketplaceResults.some((r) => r.shippingHint || r.secondaryPrice) && (
+                  <Text style={[styles.crossBorderDisclaimer, { color: colors.muted }]}>
+                    Customs/duties may apply for international purchases
+                  </Text>
                 )}
 
                 {/* Collections section */}
@@ -610,7 +928,6 @@ const styles = StyleSheet.create({
     borderColor: undefined,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
@@ -685,6 +1002,32 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginLeft: 8,
   },
+  resultSecondary: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  resultShipping: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  domesticBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 4,
+  },
+  domesticBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  crossBorderDisclaimer: {
+    fontSize: 11,
+    textAlign: "center",
+    marginTop: 12,
+    marginBottom: 4,
+    fontStyle: "italic",
+  },
   emptyText: {
     fontSize: 13,
     marginTop: 4,
@@ -721,6 +1064,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
+  browseAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  browseAllText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
   trendingList: {
     gap: 8,
   },
@@ -753,6 +1111,106 @@ const styles = StyleSheet.create({
   trendingMeta: {
     fontSize: 11,
     marginTop: 2,
+  },
+  // Filter UI styles
+  searchFilterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  filterBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  filterModal: {
+    flex: 1,
+  },
+  filterHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  filterHeaderTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  filterResetText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  filterContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  filterSectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  filterChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  filterChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  filterPriceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  filterPriceInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  filterPriceDash: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  filterFooter: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  filterApplyButton: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  filterApplyText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
   },
 });
 

@@ -306,7 +306,7 @@ async def submit_feedback(request: FeedbackSubmitRequest, user_id: str = Depends
 
         # Task 3: Auto-log provenance event for sale_price feedback
         if feedback_type == "sale_price" and request.value:
-            sale_note = f"Sale reported at {request.value} EUR"
+            sale_note = f"Sale reported at {request.value}"
             if request.notes:
                 sale_note += f" - {request.notes}"
             await _log_provenance_event(
@@ -598,3 +598,72 @@ async def submit_correction(request: CorrectionRequest, user_id: str = Depends(g
     except Exception as e:
         logger.error("[feedback/correction] Unexpected error: %s", e)
         raise error_response(500, "Failed to save correction", code="INTERNAL_ERROR")
+
+
+class VerifiedSaleListItem(BaseModel):
+    """A single verified sale entry."""
+    id: str
+    item_id: str
+    sale_price: float
+    currency: str
+    platform: str | None = None
+    condition: str | None = None
+    sold_at: str | None = None
+    notes: str | None = None
+    created_at: str
+
+
+class VerifiedSaleListResponse(BaseModel):
+    """Response for listing verified sales."""
+    sales: list[VerifiedSaleListItem]
+
+
+@router.get("/verified-sales", response_model=VerifiedSaleListResponse)
+async def list_verified_sales(
+    user_id: str = Depends(get_current_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
+):
+    """
+    List the current user's verified sales history.
+
+    Returns sales ordered by sold_at (most recent first), paginated.
+    """
+    limit, offset = pagination
+    pool = _get_db_pool()
+
+    if pool is None:
+        return VerifiedSaleListResponse(sales=[])
+
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, item_id, sale_price, currency, platform,
+                       condition, sold_at, notes, created_at
+                FROM verified_sales
+                WHERE user_id = $1::uuid
+                ORDER BY COALESCE(sold_at, created_at) DESC
+                LIMIT $2 OFFSET $3
+                """,
+                user_id, limit, offset,
+            )
+
+        sales = [
+            VerifiedSaleListItem(
+                id=str(row["id"]),
+                item_id=str(row["item_id"]),
+                sale_price=float(row["sale_price"]),
+                currency=row["currency"] or "EUR",
+                platform=row["platform"],
+                condition=row["condition"],
+                sold_at=row["sold_at"].isoformat() if row["sold_at"] else None,
+                notes=row["notes"],
+                created_at=row["created_at"].isoformat() if row["created_at"] else "",
+            )
+            for row in rows
+        ]
+        return VerifiedSaleListResponse(sales=sales)
+
+    except asyncpg.PostgresError as e:
+        logger.error("[feedback/verified-sales] DB error: %s", e)
+        return VerifiedSaleListResponse(sales=[])

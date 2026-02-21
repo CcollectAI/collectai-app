@@ -168,6 +168,7 @@ const mockBuildPaintProjects: Map<string, BuildPaintProject> = new Map([
     id: 'bp-mock-1',
     title: 'Warhammer Kill Team squad',
     category: 'Warhammer minis',
+    categoryId: 'warhammer',
     status: 'active',
     percent: 40,
     isCompleted: false,
@@ -179,6 +180,7 @@ const mockBuildPaintProjects: Map<string, BuildPaintProject> = new Map([
     id: 'bp-mock-2',
     title: 'Gunpla MG RX-78-2 (Ver. 3.0)',
     category: 'Gunpla & model kits',
+    categoryId: 'gunpla',
     status: 'active',
     percent: 65,
     isCompleted: false,
@@ -190,6 +192,7 @@ const mockBuildPaintProjects: Map<string, BuildPaintProject> = new Map([
     id: 'bp-mock-3',
     title: 'LEGO UCS Millennium Falcon',
     category: 'Bricks & kits',
+    categoryId: 'lego',
     status: 'completed',
     percent: 100,
     isCompleted: true,
@@ -201,6 +204,7 @@ const mockBuildPaintProjects: Map<string, BuildPaintProject> = new Map([
     id: 'bp-mock-4',
     title: 'Blood Angels Sanguinary Guard',
     category: 'Warhammer minis',
+    categoryId: 'warhammer',
     status: 'backlog',
     percent: 0,
     isCompleted: false,
@@ -337,6 +341,11 @@ export class MockDataProvider implements DataProvider {
     if (idx !== -1) {
       mockCreatedItems.splice(idx, 1);
     }
+  }
+
+  async unarchiveItem(_itemId: string): Promise<void> {
+    // Mock: no-op (items aren't really archived in mock mode)
+    logger.info('[MockDataProvider] unarchiveItem', { itemId: _itemId });
   }
 
   async persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
@@ -921,6 +930,8 @@ export class MockDataProvider implements DataProvider {
       id,
       title: input.title,
       category: input.category || null,
+      categoryId: input.categoryId || null,
+      itemId: input.itemId || null,
       status: 'backlog',
       percent: 0,
       isCompleted: false,
@@ -1028,6 +1039,27 @@ export class MockDataProvider implements DataProvider {
     }
     logger.info('[MockDataProvider] addBuildPaintNote', { projectId, noteId: note.id });
     return note;
+  }
+
+  async listBuildPaintProjectsByCategory(categoryId: string): Promise<BuildPaintProject[]> {
+    const all = await this.listBuildPaintProjects();
+    return all.filter((p) => p.categoryId === categoryId);
+  }
+
+  async listBuildPaintProjectsByItem(itemId: string): Promise<BuildPaintProject[]> {
+    const all = await this.listBuildPaintProjects();
+    return all.filter((p) => p.itemId === itemId);
+  }
+
+  async applyStepTemplate(projectId: string, categoryId: string): Promise<BuildPaintStep[]> {
+    const { getStepTemplateForCategory } = await import('../constants/buildStepTemplates');
+    const template = getStepTemplateForCategory(categoryId);
+    const steps: BuildPaintStep[] = [];
+    for (const s of template.steps) {
+      const step = await this.addBuildPaintStep(projectId, s.label);
+      steps.push(step);
+    }
+    return steps;
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1205,6 +1237,97 @@ export class MockDataProvider implements DataProvider {
 
   async shareEventViaDm(eventId: string, recipientUserId: string): Promise<void> {
     logger.info('[MockDataProvider] shareEventViaDm (no-op)', { eventId, recipientUserId });
+  }
+
+  async updateEvent(eventId: string, patch: Partial<CreateEventInput & { status?: string }>): Promise<CollectorsEvent> {
+    const event = EVENTS.find((e) => e.id === eventId);
+    if (!event) throw new Error(`Event not found: ${eventId}`);
+    Object.assign(event, patch);
+    logger.info('[MockDataProvider] updateEvent', { eventId });
+    return event;
+  }
+
+  async cancelEvent(eventId: string): Promise<void> {
+    const idx = EVENTS.findIndex((e) => e.id === eventId);
+    if (idx >= 0) EVENTS.splice(idx, 1);
+    logger.info('[MockDataProvider] cancelEvent', { eventId });
+  }
+
+  async duplicateEvent(eventId: string): Promise<CollectorsEvent> {
+    const event = EVENTS.find((e) => e.id === eventId);
+    if (!event) throw new Error(`Event not found: ${eventId}`);
+    const dup: CollectorsEvent = { ...event, id: `event-dup-${Date.now()}`, title: `${event.title} (Copy)` };
+    EVENTS.push(dup);
+    return dup;
+  }
+
+  async listEventTemplates(): Promise<import('./events').EventTemplate[]> {
+    return [];
+  }
+
+  async createEventTemplate(name: string, _fromEventId?: string): Promise<import('./events').EventTemplate> {
+    return { id: `tpl-mock-${Date.now()}`, name, templateData: {}, useCount: 0 };
+  }
+
+  async deleteEventTemplate(_templateId: string): Promise<void> {}
+
+  async registerSponsorCompany(input: {
+    name: string; logoUrl?: string; websiteUrl?: string;
+    contactEmail: string; description?: string;
+  }): Promise<import('./events').SponsorCompany> {
+    return {
+      id: `sponsor-mock-${Date.now()}`,
+      name: input.name,
+      logoUrl: input.logoUrl,
+      websiteUrl: input.websiteUrl,
+      contactEmail: input.contactEmail,
+      description: input.description,
+      adminUserId: 'collector-aurora',
+      isVerified: false,
+    };
+  }
+
+  async getMySponsorCompanies(): Promise<import('./events').SponsorCompany[]> {
+    return [];
+  }
+
+  async updateSponsorCompany(id: string, _patch: Partial<{
+    name: string; logoUrl: string; websiteUrl: string;
+    contactEmail: string; description: string;
+  }>): Promise<import('./events').SponsorCompany> {
+    return { id, name: 'Mock Company', contactEmail: 'mock@test.com', adminUserId: 'collector-aurora', isVerified: false };
+  }
+
+  async createSponsorEventCheckout(_companyId: string, _tier: string, _eventData: CreateEventInput): Promise<{ url: string; sessionId: string; eventId: string }> {
+    return { url: 'https://checkout.stripe.com/mock', sessionId: 'cs_mock', eventId: `event-sponsor-${Date.now()}` };
+  }
+
+  async listEventAnnouncements(_eventId: string): Promise<import('./events').EventAnnouncement[]> {
+    return [];
+  }
+
+  async postEventAnnouncement(eventId: string, body: string, title?: string, imageUrl?: string): Promise<import('./events').EventAnnouncement> {
+    return { id: `ann-mock-${Date.now()}`, eventId, authorUserId: 'collector-aurora', body, title, imageUrl, isRead: false };
+  }
+
+  async markAnnouncementRead(_eventId: string, _announcementId: string): Promise<void> {}
+
+  async getUnreadAnnouncementCount(): Promise<number> {
+    return 0;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Category Deep Dive Analytics
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async getCategoryDeepDive(_categoryId: string, _days?: number): Promise<Record<string, unknown>> {
+    // Return empty mock data
+    return {
+      average_market_price: 0,
+      value_distribution: {},
+      top_traded_items: [],
+      top_movers: [],
+    };
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

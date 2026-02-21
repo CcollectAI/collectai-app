@@ -39,6 +39,7 @@ import { useSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/format";
 import { useToast } from "@/components/Toast";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
+import { collectorsApi } from "@/api/collectorsApi";
 import logger from "@/utils/logger";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
@@ -176,6 +177,11 @@ function PortfolioScreen() {
   const [error, setError] = useState<string | null>(null);
   const [tierSummary, setTierSummary] = useState<{ tier: string; rarityScore: number; completenessScore: number; diversificationScore: number } | null>(null);
 
+  // Category breakdown state
+  type CategoryBreakdownItem = { category: string; item_count: number; total_value: number; percentage: number };
+  const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
+  const [breakdownLoading, setBreakdownLoading] = useState(false);
+
   // Data insights & alerts (feature flagged)
   const { insights } = usePortfolioInsights({
     period: range.toLowerCase() as '7d' | '30d',
@@ -287,6 +293,22 @@ function PortfolioScreen() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Load category breakdown
+  useEffect(() => {
+    setBreakdownLoading(true);
+    collectorsApi.get('/analytics/portfolio/category-breakdown')
+      .then((res: unknown) => {
+        const data = res as Record<string, unknown>;
+        const cats = Array.isArray(data?.categories) ? data.categories as CategoryBreakdownItem[] : [];
+        setCategoryBreakdown(cats);
+      })
+      .catch((err: unknown) => {
+        logger.warn('[Portfolio] category breakdown fetch failed:', err);
+        setCategoryBreakdown([]);
+      })
+      .finally(() => setBreakdownLoading(false));
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -428,6 +450,78 @@ function PortfolioScreen() {
           <View style={[styles.errorBanner, { backgroundColor: '#EF4444' + '15' }]}>
             <Ionicons name="warning-outline" size={14} color="#EF4444" />
             <Text style={[styles.errorText, { color: '#EF4444' }]}>{error}</Text>
+          </View>
+        )}
+
+        {/* Category Breakdown */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Category Breakdown</Text>
+        </View>
+        {breakdownLoading ? (
+          <View style={[styles.breakdownCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 16 }} />
+          </View>
+        ) : categoryBreakdown.length > 0 ? (
+          <View style={[styles.breakdownCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {/* Horizontal bar chart for top 5 */}
+            {categoryBreakdown.slice(0, 5).map((cat, idx) => {
+              const barColors = [colors.accent, colors.accent + 'CC', colors.accent + '99', colors.accent + '66', colors.accent + '44'];
+              const barColor = barColors[idx] || colors.accent;
+              return (
+                <View key={cat.category} style={styles.breakdownBarRow}>
+                  <Text style={[styles.breakdownBarLabel, { color: colors.text }]} numberOfLines={1}>
+                    {cat.category}
+                  </Text>
+                  <View style={styles.breakdownBarTrack}>
+                    <View
+                      style={[
+                        styles.breakdownBarFill,
+                        { backgroundColor: barColor, width: `${Math.max(cat.percentage, 2)}%` },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[styles.breakdownBarPct, { color: colors.muted }]}>
+                    {cat.percentage.toFixed(0)}%
+                  </Text>
+                </View>
+              );
+            })}
+
+            {/* Scrollable category cards */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.breakdownCardsRow}
+              style={styles.breakdownCardsScroll}
+            >
+              {categoryBreakdown.map((cat) => (
+                <View
+                  key={cat.category}
+                  style={[styles.breakdownCategoryCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+                >
+                  <Text style={[styles.breakdownCatName, { color: colors.text }]} numberOfLines={1}>
+                    {cat.category}
+                  </Text>
+                  <Text style={[styles.breakdownCatItems, { color: colors.muted }]}>
+                    {cat.item_count} item{cat.item_count !== 1 ? 's' : ''}
+                  </Text>
+                  <Text style={[styles.breakdownCatValue, { color: colors.text }]}>
+                    {formatPrice(cat.total_value)}
+                  </Text>
+                  <View style={[styles.breakdownPctBadge, { backgroundColor: colors.accent + '15' }]}>
+                    <Text style={[styles.breakdownPctBadgeText, { color: colors.accent }]}>
+                      {cat.percentage.toFixed(0)}%
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        ) : (
+          <View style={[styles.breakdownCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.breakdownEmpty, { color: colors.muted }]}>
+              Add items to see your category breakdown.
+            </Text>
           </View>
         )}
 
@@ -925,6 +1019,84 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 12,
     marginTop: 2,
+  },
+
+  // Category Breakdown
+  breakdownCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+  },
+  breakdownBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  breakdownBarLabel: {
+    width: 80,
+    fontSize: 12,
+    fontWeight: "600",
+    marginRight: 8,
+  },
+  breakdownBarTrack: {
+    flex: 1,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#E2E8F020",
+    overflow: "hidden",
+    marginRight: 8,
+  },
+  breakdownBarFill: {
+    height: "100%",
+    borderRadius: 5,
+  },
+  breakdownBarPct: {
+    width: 36,
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "right",
+  },
+  breakdownCardsScroll: {
+    marginTop: 10,
+  },
+  breakdownCardsRow: {
+    gap: 10,
+  },
+  breakdownCategoryCard: {
+    width: 130,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 10,
+  },
+  breakdownCatName: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  breakdownCatItems: {
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  breakdownCatValue: {
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: 6,
+  },
+  breakdownPctBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  breakdownPctBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  breakdownEmpty: {
+    fontSize: 13,
+    textAlign: "center",
+    paddingVertical: 16,
   },
 });
 

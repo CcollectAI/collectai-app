@@ -51,8 +51,12 @@ def evaluate(
     failed = False
 
     price = float(hit.get("price", 0) or 0)
+    shipping_cost = float(hit.get("shipping_cost", 0) or 0)
+    total_cost = price + shipping_cost
     source = str(hit.get("source", ""))
     provenance = float(hit.get("provenance_score", 0) or 0)
+    listing_region = hit.get("listing_region")
+    is_domestic_only = bool(hit.get("domestic_only", False))
 
     max_price = float(mandate.get("max_price", 0) or 0)
     max_budget = mandate.get("max_total_budget")
@@ -62,25 +66,36 @@ def evaluate(
     allowed_sources = mandate.get("allowed_sources") or []
     expires_at = mandate.get("expires_at")
     last_deal_at = mandate.get("last_deal_at")
+    mandate_region = mandate.get("region")
 
     now = datetime.now(timezone.utc)
 
-    # ── Check 1: Price within max_price ────────────────────────────────────
-    if price <= max_price:
-        reasons.append(f"price {_fmt_eur(price)} <= max {_fmt_eur(max_price)}")
+    # ── Check 1: Total cost (price + shipping) within max_price ────────────
+    if total_cost <= max_price:
+        if shipping_cost > 0:
+            reasons.append(
+                f"total {_fmt_eur(total_cost)} (price {_fmt_eur(price)} + shipping {_fmt_eur(shipping_cost)}) <= max {_fmt_eur(max_price)}"
+            )
+        else:
+            reasons.append(f"price {_fmt_eur(price)} <= max {_fmt_eur(max_price)}")
     else:
-        reasons.append(f"FAIL: price {_fmt_eur(price)} > max {_fmt_eur(max_price)}")
+        if shipping_cost > 0:
+            reasons.append(
+                f"FAIL: total {_fmt_eur(total_cost)} (price {_fmt_eur(price)} + shipping {_fmt_eur(shipping_cost)}) > max {_fmt_eur(max_price)}"
+            )
+        else:
+            reasons.append(f"FAIL: price {_fmt_eur(price)} > max {_fmt_eur(max_price)}")
         failed = True
 
-    # ── Check 2: Budget not exceeded ───────────────────────────────────────
+    # ── Check 2: Budget not exceeded (using total cost) ────────────────────
     if max_budget is not None:
         max_budget_f = float(max_budget)
         remaining = max_budget_f - spent
-        if spent + price <= max_budget_f:
+        if spent + total_cost <= max_budget_f:
             reasons.append(f"budget OK: {_fmt_eur(remaining)} remaining")
         else:
             reasons.append(
-                f"FAIL: budget exceeded ({_fmt_eur(spent)} + {_fmt_eur(price)} > {_fmt_eur(max_budget_f)})"
+                f"FAIL: budget exceeded ({_fmt_eur(spent)} + {_fmt_eur(total_cost)} > {_fmt_eur(max_budget_f)})"
             )
             failed = True
 
@@ -151,6 +166,13 @@ def evaluate(
             else:
                 reasons.append("FAIL: mandate expired")
                 failed = True
+
+    # ── Check 8: Cross-border availability ─────────────────────────────────
+    if is_domestic_only and listing_region and mandate_region and listing_region != mandate_region:
+        reasons.append(
+            f"FAIL: domestic-only listing (ships from {listing_region}, user in {mandate_region})"
+        )
+        failed = True
 
     # ── Compute deal_score ─────────────────────────────────────────────────
     # deal_score = 0.35 * provenance + 0.30 * price_discount + 0.20 * recency + 0.15 * scarcity

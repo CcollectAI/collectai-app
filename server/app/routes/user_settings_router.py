@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Allowed values
 # ---------------------------------------------------------------------------
-VALID_CURRENCIES = {"EUR", "USD", "JPY", "GBP"}
-VALID_REGIONS = {"americas", "europe", "japan", "other"}
-VALID_LOCALES = {"en-US", "de-DE", "ja-JP", "nl-NL"}
+VALID_CURRENCIES = {"EUR", "USD", "JPY", "GBP", "KRW", "AUD", "CAD"}
+VALID_REGIONS = {"americas", "europe", "japan", "korea", "oceania", "other"}
+VALID_LOCALES = {"en-US", "de-DE", "ja-JP", "nl-NL", "ko-KR", "en-AU"}
 
 # Defaults (match the DB column defaults)
 DEFAULT_CURRENCY = "EUR"

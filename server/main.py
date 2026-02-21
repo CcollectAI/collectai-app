@@ -202,6 +202,9 @@ from app.routes.affiliate_links_router import router as affiliate_links_router
 from app.features.sponsor_router import router as sponsor_router
 from app.features.catalog_learning_router import router as catalog_learning_router
 from app.features.social_router import router as social_router
+from app.routes.geo_router import router as geo_router
+from app.features.sponsor_company_router import router as sponsor_company_router
+from app.features.build_paint_router import router as build_paint_router
 
 # ---------------------------------------------------------------------------
 # Register routers
@@ -269,6 +272,9 @@ app.include_router(affiliate_links_router)
 app.include_router(sponsor_router)
 app.include_router(catalog_learning_router)
 app.include_router(social_router)
+app.include_router(geo_router)
+app.include_router(sponsor_company_router)
+app.include_router(build_paint_router)
 
 # Twitch (optional)
 try:
@@ -312,6 +318,7 @@ _v1.include_router(mfa_router)
 _v1.include_router(affiliate_links_router)
 _v1.include_router(sponsor_router)
 _v1.include_router(catalog_learning_router)
+_v1.include_router(geo_router)
 app.include_router(_v1)
 
 # ---------------------------------------------------------------------------

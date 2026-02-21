@@ -10,7 +10,10 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.features.pagination import pagination_params
 
+import logging
+
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
+logger = logging.getLogger(__name__)
 
 
 class WatchlistItem(BaseModel):
@@ -36,8 +39,18 @@ class WatchlistResponse(BaseModel):
     items: List[WatchlistItem]
 
 
-# In-memory store keyed by user_id
+# In-memory fallback store keyed by user_id (used when DB is unavailable)
 _WATCHLIST: dict[str, list[WatchlistItem]] = {}
+
+
+def _get_db_pool():
+    """Get database pool if available."""
+    try:
+        from app.db import get_pool
+        return get_pool()
+    except Exception as e:
+        logger.debug("DB pool not available: %s", e)
+        return None
 
 
 @router.get("/mine", response_model=WatchlistResponse)
@@ -46,12 +59,49 @@ async def get_my_watchlist(
     pagination: tuple[int, int] = Depends(pagination_params),
 ) -> WatchlistResponse:
     limit, offset = pagination
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT id, user_id, item_id, name, category,
+                           created_at, predicted_value, currency
+                    FROM watchlist
+                    WHERE user_id = $1
+                    ORDER BY created_at DESC
+                    LIMIT $2 OFFSET $3
+                    """,
+                    user_id, limit, offset,
+                )
+                items = [
+                    WatchlistItem(
+                        id=str(r["id"]),
+                        user_id=r["user_id"],
+                        item_id=r["item_id"],
+                        name=r["name"],
+                        category=r["category"],
+                        created_at=r["created_at"],
+                        predicted_value=float(r["predicted_value"]) if r["predicted_value"] else None,
+                        currency=r["currency"] or "EUR",
+                    )
+                    for r in rows
+                ]
+                return WatchlistResponse(items=items)
+        except Exception as e:
+            logger.error("[watchlist] DB error listing watchlist: %s", e)
+            raise error_response(500, "Failed to list watchlist", code="DB_ERROR")
+
+    # In-memory fallback
     items = _WATCHLIST.get(user_id, [])
     return WatchlistResponse(items=items[offset:offset + limit])
 
 
 @router.post("/mine", response_model=WatchlistItem)
 async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_current_user_id)) -> WatchlistItem:
+    pool = _get_db_pool()
+
     item = WatchlistItem(
         user_id=user_id,
         item_id=payload.item_id,
@@ -60,12 +110,77 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
         predicted_value=payload.predicted_value,
         currency=payload.currency,
     )
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO watchlist (id, user_id, item_id, name, category,
+                                           created_at, predicted_value, currency)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    """,
+                    item.id, user_id, payload.item_id, payload.name,
+                    payload.category, item.created_at,
+                    payload.predicted_value, payload.currency,
+                )
+                logger.info("[watchlist] Added item: id=%s, user=%s", item.id, user_id)
+                return item
+        except Exception as e:
+            logger.error("[watchlist] DB error adding to watchlist: %s", e)
+            raise error_response(500, "Failed to add to watchlist", code="DB_ERROR")
+
+    # In-memory fallback
     _WATCHLIST.setdefault(user_id, []).append(item)
     return item
 
 
 @router.delete("/mine/{watch_id}", response_model=WatchlistResponse)
 async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_current_user_id)) -> WatchlistResponse:
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                result = await conn.execute(
+                    "DELETE FROM watchlist WHERE id = $1 AND user_id = $2",
+                    watch_id, user_id,
+                )
+                if result.endswith(" 0"):
+                    raise error_response(404, "Watchlist item not found", code="NOT_FOUND")
+
+                # Return remaining items
+                rows = await conn.fetch(
+                    """
+                    SELECT id, user_id, item_id, name, category,
+                           created_at, predicted_value, currency
+                    FROM watchlist
+                    WHERE user_id = $1
+                    ORDER BY created_at DESC
+                    """,
+                    user_id,
+                )
+                items = [
+                    WatchlistItem(
+                        id=str(r["id"]),
+                        user_id=r["user_id"],
+                        item_id=r["item_id"],
+                        name=r["name"],
+                        category=r["category"],
+                        created_at=r["created_at"],
+                        predicted_value=float(r["predicted_value"]) if r["predicted_value"] else None,
+                        currency=r["currency"] or "EUR",
+                    )
+                    for r in rows
+                ]
+                return WatchlistResponse(items=items)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[watchlist] DB error removing from watchlist: %s", e)
+            raise error_response(500, "Failed to remove from watchlist", code="DB_ERROR")
+
+    # In-memory fallback
     items = _WATCHLIST.get(user_id, [])
     new_items = [it for it in items if it.id != watch_id]
     if len(new_items) == len(items):

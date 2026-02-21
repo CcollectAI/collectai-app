@@ -101,6 +101,36 @@ def _normalize_browse_item(item: Dict[str, Any], rates: Dict[str, float] | None 
     converted = _convert_price(raw_price, raw_currency, rates)
     raw_id = item.get("itemId", "")
 
+    # Extract shipping data
+    shipping_cost = None
+    domestic_only = False
+    ships_from = None
+
+    shipping_opts = item.get("shippingOptions") or []
+    if shipping_opts:
+        first = shipping_opts[0]
+        cost_type = (first.get("shippingCostType") or "").upper()
+        if cost_type == "FREE":
+            shipping_cost = 0.0
+        elif cost_type == "FIXED":
+            sc = first.get("shippingCost") or {}
+            sc_val = float(sc.get("value", 0) or 0)
+            sc_cur = sc.get("currency", "USD")
+            if sc_val > 0:
+                # Convert shipping to EUR
+                sc_converted = _convert_price(sc_val, sc_cur, rates)
+                shipping_cost = sc_converted["price"]
+
+    ship_to = item.get("shipToLocations") or {}
+    regions_included = ship_to.get("regionIncluded") or []
+    if regions_included:
+        region_ids = [r.get("regionId", "") for r in regions_included if isinstance(r, dict)]
+        if region_ids == ["DOMESTIC"]:
+            domestic_only = True
+
+    item_location = item.get("itemLocation") or {}
+    ships_from = item_location.get("country")
+
     return {
         "source": "ebay",
         "raw_id": str(raw_id),
@@ -114,6 +144,9 @@ def _normalize_browse_item(item: Dict[str, Any], rates: Dict[str, float] | None 
         "condition": item.get("condition") or item.get("conditionId"),
         "image_url": (item.get("image") or {}).get("imageUrl"),
         "is_sold": False,
+        "shipping_cost": shipping_cost,
+        "domestic_only": domestic_only,
+        "ships_from": ships_from,
     }
 
 

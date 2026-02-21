@@ -178,11 +178,25 @@ async def get_listing_trust_snapshot(listing_id: str):
             elif seller_score >= 80:
                 badge = "regular"
 
+            # TODO: Replace with real trades table once P2P marketplace ships
+            trade_count = 0
+            try:
+                trade_row = await conn.fetchval(
+                    """
+                    SELECT COUNT(*) FROM market_hits
+                    WHERE provider = $1 AND seller_score IS NOT NULL
+                    """,
+                    row["provider"],
+                )
+                trade_count = trade_row or 0
+            except Exception:
+                pass
+
             seller = SellerReputation(
                 user_id=f"{row['provider']}:{listing_id}",
                 score=round(seller_score, 1),
                 badge=badge,
-                total_trades=0,  # TODO: aggregate across listings
+                total_trades=trade_count,
                 disputes=0,
                 dispute_rate=0.0,
             )

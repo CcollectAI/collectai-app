@@ -7,7 +7,7 @@ sold comparables, and checking adapter health.
 
 import json
 import logging
-from typing import Optional
+from typing import List, Optional
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,6 +17,7 @@ from app.auth import get_current_user_id
 from app.db import db_configured, get_conn
 from app.errors import error_response
 from app.lib.affiliate import build_affiliate_url
+from app.lib.shipping_service import detect_listing_region, estimate_shipping
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,9 @@ class MarketSearchRequest(BaseModel):
     min_price: Optional[float] = Field(None, ge=0)
     max_price: Optional[float] = Field(None, ge=0)
     region: Optional[str] = Field(None, max_length=16, description="User region: americas/europe/japan/other")
+    source: Optional[List[str]] = Field(None, description="Filter to only these marketplace sources")
+    condition: Optional[List[str]] = Field(None, description="Filter to only these conditions")
+    sort: Optional[str] = Field(None, description="Sort order: relevance/price_asc/price_desc/newest")
 
 
 class CompsRequest(BaseModel):
@@ -86,17 +90,38 @@ async def marketplace_search(
             except asyncpg.PostgresError:
                 logger.warning("Failed to persist market hits to DB")
 
-        # Build affiliate URLs for each hit
+        # Build affiliate URLs + shipping estimates for each hit
         hits_out = []
         for h in result.hits:
             raw_url = h.hit.get("url") or ""
             source_name = h.hit.get("source") or ""
             aff_url, aff_source = build_affiliate_url(raw_url, source_name)
+
+            # Detect listing region & estimate shipping
+            listing_region = detect_listing_region(
+                source=source_name,
+                ships_from=h.hit.get("ships_from"),
+                url=raw_url,
+            )
+            adapter_shipping = h.hit.get("shipping_cost")
+            shipping_estimate = None
+            if region or listing_region:
+                est = estimate_shipping(listing_region, region)
+                shipping_estimate = {
+                    "min_eur": est.min_cost_eur,
+                    "max_eur": est.max_cost_eur,
+                    "exact_eur": adapter_shipping,
+                    "is_domestic": est.is_domestic,
+                    "disclaimer": est.disclaimer,
+                }
+
             hits_out.append({
                 "source": source_name,
                 "title": h.hit.get("title"),
                 "price": h.hit.get("price"),
                 "currency": h.hit.get("currency", "EUR"),
+                "source_price": h.hit.get("source_price"),
+                "source_currency": h.hit.get("source_currency"),
                 "url": raw_url,
                 "affiliate_url": aff_url if aff_url != raw_url else None,
                 "affiliate_source": aff_source or None,
@@ -106,7 +131,37 @@ async def marketplace_search(
                 "provenance_score": round(h.provenance_score, 3),
                 "source_reliability": round(h.source_reliability, 3),
                 "recency_score": round(h.recency_score, 3),
+                "shipping_cost": adapter_shipping,
+                "ships_from": h.hit.get("ships_from"),
+                "domestic_only": h.hit.get("domestic_only", False),
+                "listing_region": listing_region,
+                "shipping_estimate": shipping_estimate,
             })
+
+        # ── Post-query filters ────────────────────────────────────────────
+        if request.source:
+            allowed = {s.lower() for s in request.source}
+            hits_out = [h for h in hits_out if (h.get("source") or "").lower() in allowed]
+
+        if request.condition:
+            cond_lower = {c.lower() for c in request.condition}
+            hits_out = [
+                h for h in hits_out
+                if h.get("condition") and any(c in (h["condition"] or "").lower() for c in cond_lower)
+            ]
+
+        if request.min_price is not None:
+            hits_out = [h for h in hits_out if h.get("price") is not None and h["price"] >= request.min_price]
+
+        if request.max_price is not None:
+            hits_out = [h for h in hits_out if h.get("price") is not None and h["price"] <= request.max_price]
+
+        if request.sort:
+            if request.sort == "price_asc":
+                hits_out.sort(key=lambda h: (h.get("price") is None, h.get("price") or 0))
+            elif request.sort == "price_desc":
+                hits_out.sort(key=lambda h: (h.get("price") is None, -(h.get("price") or 0)))
+            # "newest" and "relevance" keep the default order from the agent
 
         return {
             "hits": hits_out,
@@ -114,7 +169,7 @@ async def marketplace_search(
             "successful_sources": result.successful_sources,
             "aggregate_confidence": round(result.aggregate_confidence, 3),
             "dedup_count": result.dedup_count,
-            "total_results": len(result.hits),
+            "total_results": len(hits_out),
         }
     except HTTPException:
         raise
@@ -224,7 +279,8 @@ async def _persist_hits(scored_hits, user_id: str):
     """Write scored market hits into the market_hits table.
 
     Schema columns: provider, listing_id, title, price, currency,
-    condition, ended_at, url, normalized_key, features_json.
+    condition, ended_at, url, normalized_key, features_json,
+    shipping, ships_from, domestic_only.
     """
     async with get_conn() as conn:
         async with conn.transaction():
@@ -234,8 +290,10 @@ async def _persist_hits(scored_hits, user_id: str):
                     """
                     INSERT INTO public.market_hits
                         (provider, listing_id, title, price, currency,
-                         condition, ended_at, url, normalized_key, features_json)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+                         condition, ended_at, url, normalized_key, features_json,
+                         shipping, ships_from, domestic_only)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb,
+                            $11, $12, $13)
                     ON CONFLICT (provider, listing_id) DO NOTHING
                     """,
                     h.get("source", "unknown"),
@@ -248,4 +306,7 @@ async def _persist_hits(scored_hits, user_id: str):
                     (h.get("url", "") or "")[:1000],
                     (h.get("normalized_key", "") or "")[:255],
                     json.dumps({"image_url": h.get("image_url"), "user_id": user_id}),
+                    h.get("shipping_cost"),
+                    h.get("ships_from"),
+                    h.get("domestic_only", False),
                 )

@@ -419,10 +419,15 @@ export type BuildPaintProject = {
   id: string;
   title: string;
   category?: string | null;
+  categoryId?: string | null;
+  itemId?: string | null;
+  itemName?: string | null;
+  itemImageUrl?: string | null;
   status?: string | null;
   percent: number;
   isCompleted: boolean;
   notes?: string | null;
+  imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -455,6 +460,8 @@ export type BuildPaintNote = {
 export type CreateBuildPaintProjectInput = {
   title: string;
   category?: string | null;
+  categoryId?: string | null;
+  itemId?: string | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

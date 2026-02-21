@@ -7,7 +7,7 @@
 import { convertEUR, convertCurrency } from '../fx';
 import type { Settings } from '../settings';
 
-const FX_RATES: Settings['fxRates'] = { USD: 1.08, GBP: 0.86, JPY: 164.0 };
+const FX_RATES: Settings['fxRates'] = { USD: 1.08, GBP: 0.86, JPY: 164.0, KRW: 1490, AUD: 1.67, CAD: 1.52 };
 
 // ---------------------------------------------------------------------------
 // convertEUR

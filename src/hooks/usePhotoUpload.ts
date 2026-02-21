@@ -117,7 +117,6 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
         try {
           const response: ServerUploadResponse = await collectorsApi.uploadPhoto(
             itemId,
-            user.id,
             uri,
             contentType,
           );
@@ -142,7 +141,6 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
         const presignResponse = await collectorsApi.getPresignedUploadUrl(
           itemId,
           contentType,
-          user.id,
         );
 
         const imageResponse = await fetch(uri);

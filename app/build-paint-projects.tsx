@@ -1,9 +1,9 @@
 /**
  * Build & Paint Projects Screen — List view with Current/Completed sections.
- * Uses DataProvider for all data access.
+ * Category-aware with structured pickers and step template preview.
  */
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   ScrollView,
   View,
@@ -15,11 +15,15 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  FlatList,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { dataProvider, type BuildPaintProject } from "@/data";
+import { dataProvider, type BuildPaintProject, type Item } from "@/data";
+import { CATEGORIES, CATEGORY_VISUAL } from "@/data/categories";
+import { BUILDABLE_CATEGORIES, getStepTemplateForCategory } from "@/constants/buildStepTemplates";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import logger from "@/utils/logger";
@@ -39,14 +43,20 @@ export default function BuildPaintProjectsScreen() {
 
   const [projects, setProjects] = useState<BuildPaintProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Create modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [creating, setCreating] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showItemPicker, setShowItemPicker] = useState(false);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [categoryItems, setCategoryItems] = useState<Item[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [showStepPreview, setShowStepPreview] = useState(false);
 
   const loadProjects = useCallback(async () => {
     try {
@@ -55,10 +65,9 @@ export default function BuildPaintProjectsScreen() {
       setError(null);
     } catch (err: unknown) {
       logger.warn("[BuildPaintProjects] loadProjects error:", err);
-      setError(err?.message || "Failed to load projects");
+      setError((err as Error)?.message || "Failed to load projects");
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
@@ -66,24 +75,78 @@ export default function BuildPaintProjectsScreen() {
     loadProjects();
   }, [loadProjects]);
 
+  // Categories sorted: buildable first, then all others
+  const sortedCategories = useMemo(() => {
+    const buildable = CATEGORIES.filter((c) =>
+      (BUILDABLE_CATEGORIES as readonly string[]).includes(c.id)
+    );
+    const others = CATEGORIES.filter(
+      (c) => !(BUILDABLE_CATEGORIES as readonly string[]).includes(c.id)
+    );
+    return showAllCategories ? [...buildable, ...others] : buildable;
+  }, [showAllCategories]);
+
+  // Step template preview for selected category
+  const selectedTemplate = useMemo(() => {
+    if (!selectedCategoryId) return null;
+    return getStepTemplateForCategory(selectedCategoryId);
+  }, [selectedCategoryId]);
+
+  // Load items when category is selected
+  const handleSelectCategory = useCallback(async (catId: string) => {
+    setSelectedCategoryId(catId);
+    setSelectedItem(null);
+    setShowCategoryPicker(false);
+
+    // Load portfolio items for this category
+    setLoadingItems(true);
+    try {
+      const items = await dataProvider.listItems();
+      setCategoryItems(items.filter((i) => i.category === catId));
+    } catch {
+      setCategoryItems([]);
+    } finally {
+      setLoadingItems(false);
+    }
+  }, []);
+
+  const handleSelectItem = useCallback((item: Item) => {
+    setSelectedItem(item);
+    setNewTitle(item.name);
+    setShowItemPicker(false);
+  }, []);
+
   const handleCreateProject = async () => {
     if (!newTitle.trim() || creating) return;
 
     setCreating(true);
     try {
+      const catName = selectedCategoryId
+        ? CATEGORIES.find((c) => c.id === selectedCategoryId)?.name ?? null
+        : null;
+
       await dataProvider.createBuildPaintProject({
         title: newTitle.trim(),
-        category: newCategory.trim() || null,
+        category: catName,
+        categoryId: selectedCategoryId,
+        itemId: selectedItem?.id ?? null,
       });
-      setNewTitle("");
-      setNewCategory("");
-      setShowCreateModal(false);
+      resetCreateModal();
       await loadProjects();
     } catch (err: unknown) {
       logger.warn("[BuildPaintProjects] create error:", err);
     } finally {
       setCreating(false);
     }
+  };
+
+  const resetCreateModal = () => {
+    setNewTitle("");
+    setSelectedCategoryId(null);
+    setSelectedItem(null);
+    setShowCreateModal(false);
+    setShowAllCategories(false);
+    setShowStepPreview(false);
   };
 
   const handleProjectPress = (project: BuildPaintProject) => {
@@ -184,69 +247,283 @@ export default function BuildPaintProjectsScreen() {
         visible={showCreateModal}
         animationType="slide"
         transparent
-        onRequestClose={() => setShowCreateModal(false)}
+        onRequestClose={resetCreateModal}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>New Project</Text>
+                <AnimatedPressable onPress={resetCreateModal} accessibilityRole="button" accessibilityLabel="Close">
+                  <Ionicons name="close" size={24} color={colors.muted} />
+                </AnimatedPressable>
+              </View>
+
+              {/* Category Picker */}
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Category</Text>
+              <AnimatedPressable
+                onPress={() => setShowCategoryPicker(true)}
+                style={[styles.pickerBtn, { borderColor: colors.border, backgroundColor: colors.background }]}
+                accessibilityRole="button"
+                accessibilityLabel="Select category"
+              >
+                {selectedCategoryId ? (
+                  <View style={styles.pickerSelected}>
+                    <View style={[styles.catDot, { backgroundColor: CATEGORY_VISUAL[selectedCategoryId]?.accent || colors.accent }]} />
+                    <Text style={[styles.pickerText, { color: colors.text }]}>
+                      {CATEGORIES.find((c) => c.id === selectedCategoryId)?.name ?? selectedCategoryId}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={[styles.pickerPlaceholder, { color: colors.muted }]}>
+                    Select a category...
+                  </Text>
+                )}
+                <Ionicons name="chevron-down" size={18} color={colors.muted} />
+              </AnimatedPressable>
+
+              {/* Item Picker (only when category is selected) */}
+              {selectedCategoryId && (
+                <>
+                  <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>
+                    Link to Item (optional)
+                  </Text>
+                  {loadingItems ? (
+                    <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 8 }} />
+                  ) : selectedItem ? (
+                    <View style={[styles.linkedItemRow, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                      {selectedItem.imageUrl && (
+                        <Image source={{ uri: selectedItem.imageUrl }} style={styles.linkedItemImg} />
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.linkedItemName, { color: colors.text }]} numberOfLines={1}>
+                          {selectedItem.name}
+                        </Text>
+                        {selectedItem.price > 0 && (
+                          <Text style={[styles.linkedItemPrice, { color: colors.muted }]}>
+                            ~{selectedItem.price.toFixed(0)} EUR
+                          </Text>
+                        )}
+                      </View>
+                      <AnimatedPressable onPress={() => setSelectedItem(null)} accessibilityRole="button" accessibilityLabel="Remove linked item">
+                        <Ionicons name="close-circle" size={20} color={colors.muted} />
+                      </AnimatedPressable>
+                    </View>
+                  ) : categoryItems.length > 0 ? (
+                    <AnimatedPressable
+                      onPress={() => setShowItemPicker(true)}
+                      style={[styles.pickerBtn, { borderColor: colors.border, backgroundColor: colors.background }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Link to portfolio item"
+                    >
+                      <Text style={[styles.pickerPlaceholder, { color: colors.muted }]}>
+                        Link to a portfolio item ({categoryItems.length} items)
+                      </Text>
+                      <Ionicons name="chevron-down" size={18} color={colors.muted} />
+                    </AnimatedPressable>
+                  ) : (
+                    <Text style={[styles.noItemsText, { color: colors.muted }]}>
+                      No portfolio items in this category
+                    </Text>
+                  )}
+                </>
+              )}
+
+              {/* Title */}
+              <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>Title *</Text>
+              <TextInput
+                value={newTitle}
+                onChangeText={setNewTitle}
+                placeholder="e.g., Warhammer Kill Team squad"
+                placeholderTextColor={colors.muted}
+                accessibilityLabel="Project title"
+                style={[
+                  styles.textInput,
+                  { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
+                ]}
+              />
+
+              {/* Step template preview */}
+              {selectedTemplate && selectedTemplate.steps.length > 0 && (
+                <View style={styles.templatePreview}>
+                  <AnimatedPressable
+                    onPress={() => setShowStepPreview(!showStepPreview)}
+                    style={styles.templateHeader}
+                    accessibilityRole="button"
+                    accessibilityLabel={showStepPreview ? "Collapse step preview" : "Expand step preview"}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.templateTitle, { color: colors.text }]}>
+                        {selectedTemplate.steps.length} steps for {selectedTemplate.displayName}
+                      </Text>
+                      <Text style={[styles.templateHint, { color: colors.muted }]}>
+                        Template steps will be added after creation
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name={showStepPreview ? "chevron-up" : "chevron-down"}
+                      size={18}
+                      color={colors.muted}
+                    />
+                  </AnimatedPressable>
+                  {showStepPreview && (
+                    <View style={[styles.templateSteps, { borderTopColor: colors.border }]}>
+                      {selectedTemplate.steps.map((s) => (
+                        <View key={s.id} style={styles.templateStepRow}>
+                          <Text style={[styles.templateStepNum, { color: colors.muted }]}>{s.order}.</Text>
+                          <Text style={[styles.templateStepLabel, { color: colors.text }]}>{s.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              <AnimatedPressable
+                onPress={handleCreateProject}
+                disabled={!newTitle.trim() || creating}
+                style={[
+                  styles.createBtn,
+                  {
+                    backgroundColor: newTitle.trim() ? colors.accent : colors.border,
+                    opacity: creating ? 0.7 : 1,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={creating ? 'Creating project' : 'Create project'}
+              >
+                {creating ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.createBtnText}>Create Project</Text>
+                )}
+              </AnimatedPressable>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Category Picker Modal */}
+      <Modal
+        visible={showCategoryPicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowCategoryPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.pickerModalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>New Project</Text>
-              <AnimatedPressable onPress={() => setShowCreateModal(false)} accessibilityRole="button" accessibilityLabel="Close create project modal">
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Select Category</Text>
+              <AnimatedPressable onPress={() => setShowCategoryPicker(false)} accessibilityRole="button" accessibilityLabel="Close">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
-
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Title *</Text>
-            <TextInput
-              value={newTitle}
-              onChangeText={setNewTitle}
-              placeholder="e.g., Warhammer Kill Team squad"
-              placeholderTextColor={colors.muted}
-              accessibilityLabel="Project title"
-              style={[
-                styles.textInput,
-                { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
-              ]}
+            <FlatList
+              data={sortedCategories}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item: cat }) => {
+                const vis = CATEGORY_VISUAL[cat.id];
+                const isBuildable = (BUILDABLE_CATEGORIES as readonly string[]).includes(cat.id);
+                return (
+                  <AnimatedPressable
+                    onPress={() => handleSelectCategory(cat.id)}
+                    style={[styles.catPickerRow, { borderBottomColor: colors.border }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={cat.name}
+                  >
+                    <View style={[styles.catDot, { backgroundColor: vis?.accent || colors.accent }]} />
+                    <Ionicons name={(vis?.icon || 'cube-outline') as any} size={20} color={vis?.accent || colors.accent} />
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={[styles.catPickerName, { color: colors.text }]}>{cat.name}</Text>
+                    </View>
+                    {isBuildable && (
+                      <View style={[styles.buildBadge, { backgroundColor: colors.accent + '20' }]}>
+                        <Text style={[styles.buildBadgeText, { color: colors.accent }]}>Build</Text>
+                      </View>
+                    )}
+                  </AnimatedPressable>
+                );
+              }}
+              ListFooterComponent={
+                !showAllCategories ? (
+                  <AnimatedPressable
+                    onPress={() => setShowAllCategories(true)}
+                    style={styles.showAllBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Show all categories"
+                  >
+                    <Text style={[styles.showAllText, { color: colors.accent }]}>
+                      Show All Categories ({CATEGORIES.length - BUILDABLE_CATEGORIES.length} more)
+                    </Text>
+                  </AnimatedPressable>
+                ) : null
+              }
             />
-
-            <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>
-              Category (optional)
-            </Text>
-            <TextInput
-              value={newCategory}
-              onChangeText={setNewCategory}
-              placeholder="e.g., Warhammer, Gunpla, LEGO"
-              placeholderTextColor={colors.muted}
-              accessibilityLabel="Project category"
-              style={[
-                styles.textInput,
-                { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
-              ]}
-            />
-
-            <AnimatedPressable
-              onPress={handleCreateProject}
-              disabled={!newTitle.trim() || creating}
-              style={[
-                styles.createBtn,
-                {
-                  backgroundColor: newTitle.trim() ? colors.accent : colors.border,
-                  opacity: creating ? 0.7 : 1,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={creating ? 'Creating project' : 'Create project'}
-            >
-              {creating ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.createBtnText}>Create Project</Text>
-              )}
-            </AnimatedPressable>
           </View>
-        </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* Item Picker Modal */}
+      <Modal
+        visible={showItemPicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowItemPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.pickerModalContent, { backgroundColor: colors.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Link Item</Text>
+              <AnimatedPressable onPress={() => setShowItemPicker(false)} accessibilityRole="button" accessibilityLabel="Close">
+                <Ionicons name="close" size={24} color={colors.muted} />
+              </AnimatedPressable>
+            </View>
+            <FlatList
+              data={categoryItems}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <AnimatedPressable
+                  onPress={() => handleSelectItem(item)}
+                  style={[styles.itemPickerRow, { borderBottomColor: colors.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.name}
+                >
+                  {item.imageUrl ? (
+                    <Image source={{ uri: item.imageUrl }} style={styles.itemPickerImg} />
+                  ) : (
+                    <View style={[styles.itemPickerImgPlaceholder, { backgroundColor: colors.border }]}>
+                      <Ionicons name="cube-outline" size={20} color={colors.muted} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.itemPickerName, { color: colors.text }]} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    {item.price > 0 && (
+                      <Text style={[styles.itemPickerPrice, { color: colors.muted }]}>
+                        ~{item.price.toFixed(0)} EUR
+                      </Text>
+                    )}
+                  </View>
+                </AnimatedPressable>
+              )}
+              ListHeaderComponent={
+                <AnimatedPressable
+                  onPress={() => setShowItemPicker(false)}
+                  style={[styles.itemPickerRow, { borderBottomColor: colors.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Skip"
+                >
+                  <Ionicons name="remove-circle-outline" size={20} color={colors.muted} style={{ marginRight: 12 }} />
+                  <Text style={[styles.itemPickerName, { color: colors.muted }]}>Skip — no linked item</Text>
+                </AnimatedPressable>
+              }
+            />
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -263,6 +540,7 @@ function ProjectCard({
   onPress: () => void;
 }) {
   const statusColors = statusColor(project.status, project.isCompleted);
+  const accentColor = project.categoryId ? CATEGORY_VISUAL[project.categoryId]?.accent : undefined;
 
   return (
     <AnimatedPressable
@@ -271,51 +549,77 @@ function ProjectCard({
       accessibilityRole="button"
       accessibilityLabel={`${project.title}, ${project.percent}% complete, ${project.isCompleted ? 'completed' : project.status || 'backlog'}`}
     >
-      <View style={styles.projectCardHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.projectTitle, { color: colors.text }]} numberOfLines={1}>
-            {project.title}
-          </Text>
-          {project.category && (
-            <Text style={[styles.projectCategory, { color: colors.muted }]} numberOfLines={1}>
-              {project.category}
+      {/* Category accent strip */}
+      {accentColor && <View style={[styles.accentStrip, { backgroundColor: accentColor }]} />}
+
+      <View style={[styles.projectCardInner, accentColor ? { paddingLeft: 12 } : undefined]}>
+        <View style={styles.projectCardHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.projectTitle, { color: colors.text }]} numberOfLines={1}>
+              {project.title}
             </Text>
+            <View style={styles.projectMeta}>
+              {project.categoryId && (
+                <View style={styles.catPillRow}>
+                  <View style={[styles.catDotSm, { backgroundColor: accentColor || colors.accent }]} />
+                  <Text style={[styles.projectCategory, { color: colors.muted }]} numberOfLines={1}>
+                    {CATEGORIES.find((c) => c.id === project.categoryId)?.name ?? project.category}
+                  </Text>
+                </View>
+              )}
+              {!project.categoryId && project.category && (
+                <Text style={[styles.projectCategory, { color: colors.muted }]} numberOfLines={1}>
+                  {project.category}
+                </Text>
+              )}
+              {project.itemName && (
+                <View style={styles.linkedBadge}>
+                  <Ionicons name="link-outline" size={12} color={colors.muted} />
+                  <Text style={[styles.linkedBadgeText, { color: colors.muted }]} numberOfLines={1}>
+                    {project.itemName}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+          {project.itemImageUrl && (
+            <Image source={{ uri: project.itemImageUrl }} style={styles.projectThumb} />
           )}
+          <View style={[styles.statusPill, { backgroundColor: statusColors.bg }]}>
+            <Text style={[styles.statusPillText, { color: statusColors.text }]}>
+              {project.isCompleted ? "Completed" : project.status || "Backlog"}
+            </Text>
+          </View>
         </View>
-        <View style={[styles.statusPill, { backgroundColor: statusColors.bg }]}>
-          <Text style={[styles.statusPillText, { color: statusColors.text }]}>
-            {project.isCompleted ? "Completed" : project.status || "Backlog"}
+
+        {/* Progress bar */}
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${Math.min(Math.max(project.percent, 0), 100)}%`,
+                  backgroundColor: project.isCompleted ? "#0BA86C" : accentColor || colors.accent,
+                },
+              ]}
+            />
+          </View>
+          <Text style={[styles.progressText, { color: colors.muted }]}>{project.percent}%</Text>
+        </View>
+
+        {project.notes && (
+          <Text style={[styles.projectNotes, { color: colors.muted }]} numberOfLines={2}>
+            {project.notes}
           </Text>
+        )}
+
+        <View style={styles.projectFooter}>
+          <Text style={[styles.projectDate, { color: colors.muted }]}>
+            Updated {formatRelativeDate(project.updatedAt)}
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </View>
-      </View>
-
-      {/* Progress bar */}
-      <View style={styles.progressContainer}>
-        <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: `${Math.min(Math.max(project.percent, 0), 100)}%`,
-                backgroundColor: project.isCompleted ? "#0BA86C" : colors.accent,
-              },
-            ]}
-          />
-        </View>
-        <Text style={[styles.progressText, { color: colors.muted }]}>{project.percent}%</Text>
-      </View>
-
-      {project.notes && (
-        <Text style={[styles.projectNotes, { color: colors.muted }]} numberOfLines={2}>
-          {project.notes}
-        </Text>
-      )}
-
-      <View style={styles.projectFooter}>
-        <Text style={[styles.projectDate, { color: colors.muted }]}>
-          Updated {formatRelativeDate(project.updatedAt)}
-        </Text>
-        <Ionicons name="chevron-forward" size={16} color={colors.muted} />
       </View>
     </AnimatedPressable>
   );
@@ -411,10 +715,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   projectCard: {
+    flexDirection: "row",
     borderRadius: 12,
     borderWidth: 1,
-    padding: 16,
     marginBottom: 12,
+    overflow: "hidden",
+  },
+  accentStrip: {
+    width: 4,
+  },
+  projectCardInner: {
+    flex: 1,
+    padding: 16,
   },
   projectCardHeader: {
     flexDirection: "row",
@@ -426,15 +738,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  projectMeta: {
+    marginTop: 4,
+    gap: 4,
+  },
+  catPillRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  catDotSm: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   projectCategory: {
     fontSize: 12,
-    marginTop: 2,
+  },
+  linkedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  linkedBadgeText: {
+    fontSize: 11,
+  },
+  projectThumb: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+    marginLeft: 8,
   },
   statusPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    marginLeft: 12,
+    marginLeft: 8,
   },
   statusPillText: {
     fontSize: 11,
@@ -487,6 +826,14 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 24,
     paddingBottom: 40,
+    maxHeight: "85%",
+  },
+  pickerModalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 40,
+    maxHeight: "70%",
   },
   modalHeader: {
     flexDirection: "row",
@@ -509,6 +856,149 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
+  },
+  pickerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  pickerSelected: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  pickerText: {
+    fontSize: 15,
+  },
+  pickerPlaceholder: {
+    fontSize: 15,
+  },
+  catDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  catPickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    gap: 8,
+  },
+  catPickerName: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  buildBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  buildBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  showAllBtn: {
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  showAllText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  linkedItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    gap: 10,
+  },
+  linkedItemImg: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  linkedItemName: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  linkedItemPrice: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  noItemsText: {
+    fontSize: 13,
+    fontStyle: "italic",
+    marginVertical: 4,
+  },
+  itemPickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  itemPickerImg: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  itemPickerImgPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  itemPickerName: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  itemPickerPrice: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  templatePreview: {
+    marginTop: 16,
+  },
+  templateHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  templateTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  templateHint: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  templateSteps: {
+    borderTopWidth: 1,
+    paddingTop: 8,
+    marginTop: 4,
+  },
+  templateStepRow: {
+    flexDirection: "row",
+    paddingVertical: 4,
+    gap: 8,
+  },
+  templateStepNum: {
+    fontSize: 12,
+    width: 20,
+    textAlign: "right",
+  },
+  templateStepLabel: {
+    fontSize: 13,
+    flex: 1,
   },
   createBtn: {
     marginTop: 24,

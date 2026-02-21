@@ -1,6 +1,13 @@
 /**
- * Event Detail Screen — View event details, host, and attendees.
+ * Event Detail Screen -- View event details, host, attendees, announcements.
  * Route: /events/[eventId]
+ *
+ * Features:
+ *  - 3-dot menu for event creator (Edit, Duplicate, Cancel)
+ *  - Announcements card with unread badge
+ *  - Dual RSVP buttons: Going / Interested
+ *  - Waitlist support when event is full
+ *  - Past event "Attended" badge
  */
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
@@ -11,13 +18,14 @@ import {
   StyleSheet,
   Linking,
   ActivityIndicator,
+  Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type PublicUserProfile } from '@/data';
 import type { CollectorsEvent, EventKind } from '@/data/events';
-import { useOptimisticRsvpDetail } from '@/hooks/useOptimisticRsvp';
 import { getCategoryById } from '@/data/categories';
 import { getUserById } from '@/data/users';
 import { PublicUserProfileCard } from '@/components/PublicUserProfileCard';
@@ -25,6 +33,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useAuthContext } from '@/providers/useAuthContext';
 import logger from '@/utils/logger';
 
 const kindLabel: Record<EventKind, string> = {
@@ -67,6 +76,9 @@ export default function EventDetailScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
+  const { user } = useAuthContext();
+
+  const currentUserId = user?.id ?? null;
 
   const [event, setEvent] = useState<CollectorsEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,6 +88,12 @@ export default function EventDetailScreen() {
   const [alertsOn, setAlertsOn] = useState(false);
   const [followingStream, setFollowingStream] = useState(false);
   const [rsvpStatus, setRsvpStatus] = useState<string | undefined>(undefined);
+
+  // 3-dot menu state
+  const [showMenu, setShowMenu] = useState(false);
+
+  // Announcement unread count
+  const [unreadAnnouncementCount, setUnreadAnnouncementCount] = useState(0);
 
   // Load event data
   const loadEvent = useCallback(async () => {
@@ -113,18 +131,171 @@ export default function EventDetailScreen() {
     }
   }, [event?.myRsvpStatus]);
 
-  // Optimistic RSVP: toggles state immediately, reverts on server error
-  const optimisticRsvp = useOptimisticRsvpDetail(
-    { setRsvpStatus, setEvent },
-    loadEvent,
+  // Load announcement unread count
+  useEffect(() => {
+    if (!eventId) return;
+    dataProvider.listEventAnnouncements(eventId)
+      .then((announcements) => {
+        const unread = announcements.filter((a) => !a.isRead).length;
+        setUnreadAnnouncementCount(unread);
+      })
+      .catch(() => setUnreadAnnouncementCount(0));
+  }, [eventId]);
+
+  /* ---- derived values ---- */
+  const isCreator = !!(
+    currentUserId &&
+    event &&
+    (event.createdBy === currentUserId || event.hostUserId === currentUserId)
   );
 
-  const handleRsvp = async () => {
-    if (!event) return;
-    await optimisticRsvp.mutate({
-      eventId: event.id,
-      currentlyAttending: rsvpStatus === 'going',
-    });
+  const isPastEvent = useMemo(() => {
+    if (!event) return false;
+    try {
+      const eventDate = new Date(event.endDate || event.date);
+      return eventDate < new Date();
+    } catch {
+      return false;
+    }
+  }, [event?.date, event?.endDate]);
+
+  const goingCount = event?.goingCount ?? 0;
+  const interestedCount = event?.interestedCount ?? 0;
+
+  const isStream = event?.kind === 'stream';
+  const isDrop = event?.kind === 'collection_drop';
+
+  /* ---- RSVP handlers ---- */
+  const handleRsvpGoing = async () => {
+    if (!event || !eventId) return;
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    try {
+      if (rsvpStatus === 'going') {
+        // Un-RSVP
+        setRsvpStatus(undefined);
+        setEvent((prev) => prev ? {
+          ...prev,
+          myRsvpStatus: undefined,
+          goingCount: Math.max(0, (prev.goingCount ?? 0) - 1),
+          attendeeCount: Math.max(0, (prev.attendeeCount ?? 0) - 1),
+        } : prev);
+        await dataProvider.unrsvpEvent(eventId);
+      } else {
+        // RSVP as going
+        const prevStatus = rsvpStatus;
+        setRsvpStatus('going');
+        setEvent((prev) => prev ? {
+          ...prev,
+          myRsvpStatus: 'going',
+          goingCount: (prev.goingCount ?? 0) + 1,
+          interestedCount: prevStatus === 'interested'
+            ? Math.max(0, (prev.interestedCount ?? 0) - 1)
+            : (prev.interestedCount ?? 0),
+          attendeeCount: prevStatus
+            ? (prev.attendeeCount ?? 0)
+            : (prev.attendeeCount ?? 0) + 1,
+        } : prev);
+        await dataProvider.rsvpEvent(eventId, 'going');
+      }
+    } catch (err) {
+      logger.warn('[EventDetail] rsvp going error:', err);
+      loadEvent(); // rollback
+    }
+  };
+
+  const handleRsvpInterested = async () => {
+    if (!event || !eventId) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    try {
+      if (rsvpStatus === 'interested') {
+        // Un-RSVP
+        setRsvpStatus(undefined);
+        setEvent((prev) => prev ? {
+          ...prev,
+          myRsvpStatus: undefined,
+          interestedCount: Math.max(0, (prev.interestedCount ?? 0) - 1),
+          attendeeCount: Math.max(0, (prev.attendeeCount ?? 0) - 1),
+        } : prev);
+        await dataProvider.unrsvpEvent(eventId);
+      } else {
+        // RSVP as interested
+        const prevStatus = rsvpStatus;
+        setRsvpStatus('interested');
+        setEvent((prev) => prev ? {
+          ...prev,
+          myRsvpStatus: 'interested',
+          interestedCount: (prev.interestedCount ?? 0) + 1,
+          goingCount: prevStatus === 'going'
+            ? Math.max(0, (prev.goingCount ?? 0) - 1)
+            : (prev.goingCount ?? 0),
+          attendeeCount: prevStatus
+            ? (prev.attendeeCount ?? 0)
+            : (prev.attendeeCount ?? 0) + 1,
+        } : prev);
+        await dataProvider.rsvpEvent(eventId, 'interested');
+      }
+    } catch (err) {
+      logger.warn('[EventDetail] rsvp interested error:', err);
+      loadEvent(); // rollback
+    }
+  };
+
+  const handleJoinWaitlist = async () => {
+    if (!event || !eventId) return;
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    try {
+      setRsvpStatus('waitlist');
+      await dataProvider.rsvpEvent(eventId, 'waitlist');
+    } catch (err) {
+      logger.warn('[EventDetail] waitlist error:', err);
+      loadEvent();
+    }
+  };
+
+  /* ---- 3-dot menu handlers ---- */
+  const handleEditEvent = () => {
+    setShowMenu(false);
+    if (!eventId) return;
+    router.push({ pathname: '/edit-event', params: { eventId } });
+  };
+
+  const handleDuplicateEvent = async () => {
+    setShowMenu(false);
+    if (!eventId) return;
+    try {
+      const duplicated = await dataProvider.duplicateEvent(eventId);
+      router.push({ pathname: '/edit-event', params: { eventId: duplicated.id } });
+    } catch (err) {
+      logger.warn('[EventDetail] duplicate error:', err);
+      Alert.alert('Error', 'Failed to duplicate event.');
+    }
+  };
+
+  const handleCancelEvent = () => {
+    setShowMenu(false);
+    if (!eventId) return;
+
+    Alert.alert(
+      'Cancel Event',
+      'Are you sure you want to cancel this event? This action cannot be undone and all attendees will be notified.',
+      [
+        { text: 'Keep Event', style: 'cancel' },
+        {
+          text: 'Cancel Event',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dataProvider.cancelEvent(eventId);
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.back();
+            } catch (err) {
+              logger.warn('[EventDetail] cancel error:', err);
+              Alert.alert('Error', 'Failed to cancel event.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const relatedCategory = useMemo(
@@ -146,10 +317,6 @@ export default function EventDetailScreen() {
       logger.info('[EventDetail] failed to open url', err),
     );
   };
-
-  const isStream = event?.kind === 'stream';
-  const isDrop = event?.kind === 'collection_drop';
-  const isMeetup = event?.kind === 'meetup';
 
   const handleAskToConnect = (userId: string) => {
     router.push({
@@ -202,16 +369,37 @@ export default function EventDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Back button */}
-        <AnimatedPressable
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-          <Text style={[styles.backBtnText, { color: colors.text }]}>Back</Text>
-        </AnimatedPressable>
+        {/* Top row: Back + 3-dot menu */}
+        <View style={styles.topRow}>
+          <AnimatedPressable
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+            <Text style={[styles.backBtnText, { color: colors.text }]}>Back</Text>
+          </AnimatedPressable>
+
+          {isCreator && (
+            <AnimatedPressable
+              onPress={() => setShowMenu(true)}
+              style={styles.menuBtn}
+              accessibilityRole="button"
+              accessibilityLabel="More options"
+            >
+              <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
+            </AnimatedPressable>
+          )}
+        </View>
+
+        {/* Cancelled banner */}
+        {event.status === 'cancelled' && (
+          <View style={[styles.cancelledBanner, { backgroundColor: '#EF444415' }]}>
+            <Ionicons name="close-circle-outline" size={16} color="#EF4444" />
+            <Text style={styles.cancelledBannerText}>This event has been cancelled</Text>
+          </View>
+        )}
 
         {/* Event Kind Badge */}
         <View style={[styles.kindBadge, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
@@ -245,7 +433,7 @@ export default function EventDetailScreen() {
           <Ionicons name="calendar-outline" size={16} color={colors.muted} style={{ marginRight: 6 }} />
           <Text style={[styles.metaText, { color: colors.muted }]}>
             {event.date}
-            {event.time ? ` • ${event.time}` : ''}
+            {event.time ? ` \u2022 ${event.time}` : ''}
           </Text>
         </View>
 
@@ -289,96 +477,223 @@ export default function EventDetailScreen() {
           </AnimatedPressable>
         )}
 
-        {/* Participation controls */}
-        <View style={styles.actionsRow}>
-          {isDrop && (
+        {/* ============================================================== */}
+        {/*  RSVP Section                                                   */}
+        {/* ============================================================== */}
+        {isPastEvent ? (
+          /* Past event: show "Attended" badge if the user went */
+          rsvpStatus === 'going' ? (
+            <View style={[styles.attendedBadge, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+              <Text style={[styles.attendedBadgeText, { color: colors.accent }]}>Attended</Text>
+            </View>
+          ) : rsvpStatus === 'interested' ? (
+            <View style={[styles.attendedBadge, { backgroundColor: colors.border + '40', borderColor: colors.border }]}>
+              <Ionicons name="star" size={16} color={colors.muted} style={{ marginRight: 6 }} />
+              <Text style={[styles.attendedBadgeText, { color: colors.muted }]}>Was interested</Text>
+            </View>
+          ) : null
+        ) : (
+          /* Active event: show RSVP buttons */
+          <View style={styles.actionsRow}>
+            {isDrop && (
+              <AnimatedPressable
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  setAlertsOn(!alertsOn);
+                  logger.info('[EventDetail] toggle drop alerts', event.id, !alertsOn);
+                }}
+                style={[
+                  styles.actionBtn,
+                  {
+                    backgroundColor: alertsOn ? `${colors.accent}15` : colors.card,
+                    borderColor: alertsOn ? colors.accent : colors.border,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={alertsOn ? 'Turn off drop alerts' : 'Alert me about this drop'}
+              >
+                <Ionicons
+                  name={alertsOn ? 'notifications' : 'notifications-outline'}
+                  size={16}
+                  color={alertsOn ? colors.accent : colors.muted}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.actionBtnText, { color: alertsOn ? colors.accent : colors.muted }]}>
+                  {alertsOn ? 'Alerts on' : 'Alert me'}
+                </Text>
+              </AnimatedPressable>
+            )}
+
+            {isStream && (
+              <AnimatedPressable
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  setFollowingStream(!followingStream);
+                  logger.info('[EventDetail] toggle stream follow', event.id, !followingStream);
+                }}
+                style={[
+                  styles.actionBtn,
+                  {
+                    backgroundColor: followingStream ? `${colors.accent}15` : colors.card,
+                    borderColor: followingStream ? colors.accent : colors.border,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={followingStream ? 'Unfollow stream' : 'Follow stream'}
+              >
+                <Ionicons
+                  name={followingStream ? 'checkmark-circle' : 'add-circle-outline'}
+                  size={16}
+                  color={followingStream ? colors.accent : colors.muted}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.actionBtnText, { color: followingStream ? colors.accent : colors.muted }]}>
+                  {followingStream ? 'Following' : 'Follow stream'}
+                </Text>
+              </AnimatedPressable>
+            )}
+
+            {/* Going / Join Waitlist button */}
+            {event.isFull && rsvpStatus !== 'going' ? (
+              <AnimatedPressable
+                onPress={handleJoinWaitlist}
+                style={[
+                  styles.actionBtn,
+                  {
+                    backgroundColor: rsvpStatus === 'waitlist' ? `${colors.accent}15` : colors.card,
+                    borderColor: rsvpStatus === 'waitlist' ? colors.accent : colors.border,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={rsvpStatus === 'waitlist' ? 'On waitlist' : 'Join waitlist'}
+              >
+                <Ionicons
+                  name={rsvpStatus === 'waitlist' ? 'time' : 'hourglass-outline'}
+                  size={16}
+                  color={rsvpStatus === 'waitlist' ? colors.accent : colors.muted}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.actionBtnText, { color: rsvpStatus === 'waitlist' ? colors.accent : colors.muted }]}>
+                  {rsvpStatus === 'waitlist' ? 'On Waitlist' : 'Join Waitlist'}
+                </Text>
+              </AnimatedPressable>
+            ) : (
+              <AnimatedPressable
+                onPress={handleRsvpGoing}
+                style={[
+                  styles.actionBtn,
+                  {
+                    backgroundColor: rsvpStatus === 'going' ? `${colors.accent}15` : colors.card,
+                    borderColor: rsvpStatus === 'going' ? colors.accent : colors.border,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={rsvpStatus === 'going' ? 'Cancel going' : 'Mark as going'}
+              >
+                <Ionicons
+                  name={rsvpStatus === 'going' ? 'checkmark-circle' : 'person-add-outline'}
+                  size={16}
+                  color={rsvpStatus === 'going' ? colors.accent : colors.muted}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.actionBtnText, { color: rsvpStatus === 'going' ? colors.accent : colors.muted }]}>
+                  Going
+                </Text>
+              </AnimatedPressable>
+            )}
+
+            {/* Interested button */}
             <AnimatedPressable
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                setAlertsOn(!alertsOn);
-                logger.info('[EventDetail] toggle drop alerts', event.id, !alertsOn);
-              }}
+              onPress={handleRsvpInterested}
               style={[
                 styles.actionBtn,
                 {
-                  backgroundColor: alertsOn ? `${colors.accent}15` : colors.card,
-                  borderColor: alertsOn ? colors.accent : colors.border,
+                  backgroundColor: rsvpStatus === 'interested' ? `${colors.accent}15` : colors.card,
+                  borderColor: rsvpStatus === 'interested' ? colors.accent : colors.border,
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={alertsOn ? 'Turn off drop alerts' : 'Alert me about this drop'}
+              accessibilityLabel={rsvpStatus === 'interested' ? 'Remove interest' : 'Mark as interested'}
             >
               <Ionicons
-                name={alertsOn ? 'notifications' : 'notifications-outline'}
+                name={rsvpStatus === 'interested' ? 'star' : 'star-outline'}
                 size={16}
-                color={alertsOn ? colors.accent : colors.muted}
+                color={rsvpStatus === 'interested' ? colors.accent : colors.muted}
                 style={{ marginRight: 6 }}
               />
-              <Text style={[styles.actionBtnText, { color: alertsOn ? colors.accent : colors.muted }]}>
-                {alertsOn ? 'Alerts on' : 'Alert me'}
+              <Text style={[styles.actionBtnText, { color: rsvpStatus === 'interested' ? colors.accent : colors.muted }]}>
+                Interested
               </Text>
             </AnimatedPressable>
-          )}
+          </View>
+        )}
 
-          {isStream && (
-            <AnimatedPressable
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                setFollowingStream(!followingStream);
-                logger.info('[EventDetail] toggle stream follow', event.id, !followingStream);
-              }}
-              style={[
-                styles.actionBtn,
-                {
-                  backgroundColor: followingStream ? `${colors.accent}15` : colors.card,
-                  borderColor: followingStream ? colors.accent : colors.border,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={followingStream ? 'Unfollow stream' : 'Follow stream'}
-            >
-              <Ionicons
-                name={followingStream ? 'checkmark-circle' : 'add-circle-outline'}
-                size={16}
-                color={followingStream ? colors.accent : colors.muted}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={[styles.actionBtnText, { color: followingStream ? colors.accent : colors.muted }]}>
-                {followingStream ? 'Following' : 'Follow stream'}
-              </Text>
-            </AnimatedPressable>
-          )}
+        {/* RSVP counts */}
+        {(goingCount > 0 || interestedCount > 0) && (
+          <Text style={[styles.rsvpCountText, { color: colors.muted }]}>
+            {goingCount} going{interestedCount > 0 ? ` \u00B7 ${interestedCount} interested` : ''}
+          </Text>
+        )}
 
-          <AnimatedPressable
-            onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled }); handleRsvp(); }}
-            style={[
-              styles.actionBtn,
-              {
-                backgroundColor: rsvpStatus === 'going' ? `${colors.accent}15` : colors.card,
-                borderColor: rsvpStatus === 'going' ? colors.accent : colors.border,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={rsvpStatus === 'going' ? 'Cancel attendance' : 'Attend this event'}
-          >
-            <Ionicons
-              name={rsvpStatus === 'going' ? 'checkmark-circle' : 'person-add-outline'}
-              size={16}
-              color={rsvpStatus === 'going' ? colors.accent : colors.muted}
-              style={{ marginRight: 6 }}
-            />
-            <Text style={[styles.actionBtnText, { color: rsvpStatus === 'going' ? colors.accent : colors.muted }]}>
-              {rsvpStatus === 'going' ? 'Going' : 'Attend'}
-            </Text>
-          </AnimatedPressable>
-        </View>
-
-        {/* Attendee count */}
-        {event.attendeeCount != null && event.attendeeCount > 0 && (
-          <Text style={[styles.attendeeCountText, { color: colors.muted }]}>
+        {/* Fallback: old attendeeCount display when goingCount/interestedCount are not set */}
+        {goingCount === 0 && interestedCount === 0 && event.attendeeCount != null && event.attendeeCount > 0 && (
+          <Text style={[styles.rsvpCountText, { color: colors.muted }]}>
             {event.attendeeCount} {event.attendeeCount === 1 ? 'collector' : 'collectors'} attending
           </Text>
         )}
+
+        {/* ============================================================== */}
+        {/*  Announcements Card                                             */}
+        {/* ============================================================== */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Announcements
+          </Text>
+
+          <AnimatedPressable
+            onPress={() => router.push(`/events/${encodeURIComponent(event.id)}/announcements`)}
+            style={[styles.announcementsCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={`View announcements${unreadAnnouncementCount > 0 ? `, ${unreadAnnouncementCount} unread` : ''}`}
+          >
+            <View style={styles.announcementsLeft}>
+              <Ionicons name="megaphone-outline" size={20} color={colors.accent} />
+              <View style={styles.announcementsInfo}>
+                <Text style={[styles.announcementsTitle, { color: colors.text }]}>
+                  Event Announcements
+                </Text>
+                <Text style={[styles.announcementsSubtitle, { color: colors.muted }]}>
+                  Updates from the host
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.announcementsRight}>
+              {unreadAnnouncementCount > 0 && (
+                <View style={[styles.unreadBadge, { backgroundColor: colors.accent }]}>
+                  <Text style={styles.unreadBadgeText}>
+                    {unreadAnnouncementCount > 99 ? '99+' : unreadAnnouncementCount}
+                  </Text>
+                </View>
+              )}
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            </View>
+          </AnimatedPressable>
+
+          {/* Post Announcement button for host/sponsor */}
+          {isCreator && (
+            <AnimatedPressable
+              onPress={() => router.push(`/events/${encodeURIComponent(event.id)}/announcements`)}
+              style={[styles.postAnnouncementBtn, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Post announcement"
+            >
+              <Ionicons name="add-circle-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+              <Text style={[styles.postAnnouncementText, { color: colors.accent }]}>Post Announcement</Text>
+            </AnimatedPressable>
+          )}
+        </View>
 
         {/* Related category */}
         {relatedCategory && (
@@ -484,6 +799,74 @@ export default function EventDetailScreen() {
         {/* Bottom spacing */}
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* ================================================================ */}
+      {/*  3-dot Menu Modal                                                 */}
+      {/* ================================================================ */}
+      <Modal
+        visible={showMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMenu(false)}
+      >
+        <AnimatedPressable
+          style={styles.menuOverlay}
+          onPress={() => setShowMenu(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close menu"
+        >
+          <View style={[styles.menuSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {/* Edit Event */}
+            <AnimatedPressable
+              style={styles.menuItem}
+              onPress={handleEditEvent}
+              accessibilityRole="button"
+              accessibilityLabel="Edit event"
+            >
+              <Ionicons name="create-outline" size={20} color={colors.accent} />
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Edit Event</Text>
+            </AnimatedPressable>
+
+            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+
+            {/* Duplicate Event */}
+            <AnimatedPressable
+              style={styles.menuItem}
+              onPress={handleDuplicateEvent}
+              accessibilityRole="button"
+              accessibilityLabel="Duplicate event"
+            >
+              <Ionicons name="copy-outline" size={20} color={colors.accent} />
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Duplicate Event</Text>
+            </AnimatedPressable>
+
+            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+
+            {/* Cancel Event */}
+            <AnimatedPressable
+              style={styles.menuItem}
+              onPress={handleCancelEvent}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel event"
+            >
+              <Ionicons name="close-circle-outline" size={20} color="#EF4444" />
+              <Text style={[styles.menuItemText, { color: '#EF4444' }]}>Cancel Event</Text>
+            </AnimatedPressable>
+
+            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+
+            {/* Dismiss */}
+            <AnimatedPressable
+              style={styles.menuItem}
+              onPress={() => setShowMenu(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={[styles.menuItemText, { color: colors.muted }]}>Cancel</Text>
+            </AnimatedPressable>
+          </View>
+        </AnimatedPressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -528,21 +911,48 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+
+  /* Top row: back + menu */
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 4,
-    marginBottom: 8,
   },
   backBtnText: {
     fontSize: 15,
     fontWeight: '500',
     marginLeft: 2,
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
+  menuBtn: {
+    padding: 8,
   },
+
+  /* Cancelled banner */
+  cancelledBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  cancelledBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
+
   kindBadge: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -598,7 +1008,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   actionBtn: {
     flexDirection: 'row',
@@ -612,6 +1022,88 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
+
+  /* Attended badge (past events) */
+  attendedBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  attendedBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  /* RSVP count text */
+  rsvpCountText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+
+  /* Announcements card */
+  announcementsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+  },
+  announcementsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  announcementsInfo: {
+    flex: 1,
+  },
+  announcementsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  announcementsSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  announcementsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  unreadBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  unreadBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  postAnnouncementBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  postAnnouncementText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
   section: {
     marginBottom: 16,
   },
@@ -690,11 +1182,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
-  attendeeCountText: {
-    fontSize: 12,
-    marginTop: 4,
-    marginBottom: 8,
-  },
   sourceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -707,5 +1194,35 @@ const styles = StyleSheet.create({
   },
   sourceText: {
     fontSize: 11,
+  },
+
+  /* 3-dot menu modal */
+  menuOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  menuSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    paddingVertical: 8,
+    paddingBottom: 32,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  menuDivider: {
+    height: 1,
+    marginHorizontal: 16,
   },
 });

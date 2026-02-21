@@ -3,9 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collectorsApi } from '@/api/collectorsApi';
 
 export type ChartRange = '1D'|'7D'|'30D';
-export type Currency = 'EUR'|'USD'|'JPY'|'GBP';
-export type NumberLocale = 'en-US'|'de-DE'|'ja-JP'|'nl-NL';
-export type Region = 'americas'|'europe'|'japan'|'other';
+export type Currency = 'EUR'|'USD'|'JPY'|'GBP'|'KRW'|'AUD'|'CAD';
+export type NumberLocale = 'en-US'|'de-DE'|'ja-JP'|'nl-NL'|'ko-KR'|'en-AU';
+export type Region = 'americas'|'europe'|'japan'|'korea'|'oceania'|'other';
 
 export type Settings = {
   currency: Currency;
@@ -13,7 +13,7 @@ export type Settings = {
   density: 'cozy'|'compact';
   defaultRange: ChartRange;
   /** FX rates per 1 EUR */
-  fxRates: { USD: number; GBP: number; JPY: number };
+  fxRates: { USD: number; GBP: number; JPY: number; KRW: number; AUD: number; CAD: number };
   /** User region (geolocation opt-in) — drives default currency + market pricing */
   region: Region;
   /** Dark mode toggle */
@@ -29,6 +29,8 @@ export const REGION_DEFAULTS: Record<Region, { currency: Currency; numberLocale:
   americas: { currency: 'USD', numberLocale: 'en-US' },
   europe:   { currency: 'EUR', numberLocale: 'de-DE' },
   japan:    { currency: 'JPY', numberLocale: 'ja-JP' },
+  korea:    { currency: 'KRW', numberLocale: 'ko-KR' },
+  oceania:  { currency: 'AUD', numberLocale: 'en-AU' },
   other:    { currency: 'EUR', numberLocale: 'en-US' },
 };
 
@@ -37,7 +39,7 @@ const DEFAULTS: Settings = {
   numberLocale: 'de-DE',
   density: 'cozy',
   defaultRange: '7D',
-  fxRates: { USD: 1.08, GBP: 0.86, JPY: 164.0 },
+  fxRates: { USD: 1.08, GBP: 0.86, JPY: 164.0, KRW: 1490, AUD: 1.67, CAD: 1.52 },
   region: 'europe',
   isDark: false,
   hapticsEnabled: true,
@@ -52,7 +54,7 @@ type Ctx = {
 
 const SettingsCtx = createContext<Ctx>({ settings: DEFAULTS, updateSettings: ()=>{}, ready:false });
 
-const FX_REFRESH_MS = 60 * 60 * 1000; // 1 hour
+const FX_REFRESH_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
@@ -63,10 +65,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await collectorsApi.getFxRates();
       if (data?.rates_from_eur) {
+        const r = data.rates_from_eur;
         const next: Settings['fxRates'] = {
-          USD: data.rates_from_eur.USD ?? DEFAULTS.fxRates.USD,
-          GBP: data.rates_from_eur.GBP ?? DEFAULTS.fxRates.GBP,
-          JPY: data.rates_from_eur.JPY ?? DEFAULTS.fxRates.JPY,
+          USD: r.USD ?? DEFAULTS.fxRates.USD,
+          GBP: r.GBP ?? DEFAULTS.fxRates.GBP,
+          JPY: r.JPY ?? DEFAULTS.fxRates.JPY,
+          KRW: r.KRW ?? DEFAULTS.fxRates.KRW,
+          AUD: r.AUD ?? DEFAULTS.fxRates.AUD,
+          CAD: r.CAD ?? DEFAULTS.fxRates.CAD,
         };
         setSettings((prev) => ({ ...prev, fxRates: next }));
       }

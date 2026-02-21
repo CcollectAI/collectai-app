@@ -7,6 +7,9 @@ const CURRENCY_LOCALE: Record<Currency, NumberLocale> = {
   USD: 'en-US',
   JPY: 'ja-JP',
   GBP: 'en-US',
+  KRW: 'ko-KR',
+  AUD: 'en-AU',
+  CAD: 'en-US',
 };
 
 /* ------------------------------------------------------------------ */
@@ -75,4 +78,37 @@ export function formatNumber(value: number | null | undefined, locale: NumberLoc
   if (value == null || !Number.isFinite(value)) return '—';
   const fmt = getFormatter(locale, { maximumFractionDigits: 0 });
   return fmt.format(value);
+}
+
+/**
+ * Format a dual-price display: primary (user currency) + secondary (original listing currency).
+ *
+ * Returns { primary, secondary } where secondary is null if same currency.
+ * The secondary string is prefixed with "~" to indicate conversion.
+ */
+export function formatDualPrice(
+  amountEUR: number,
+  originalCurrency: Currency | string,
+  s: Pick<Settings, 'currency' | 'numberLocale' | 'fxRates'>,
+): { primary: string; secondary: string | null } {
+  const primary = fmtCurrency(amountEUR, s);
+
+  // If the listing currency matches the user's currency, no secondary needed
+  if (originalCurrency === s.currency) {
+    return { primary, secondary: null };
+  }
+
+  // If the original currency is EUR, format directly
+  if (originalCurrency === 'EUR') {
+    const origFormatted = formatPrice(amountEUR, 'EUR');
+    return { primary, secondary: `~${origFormatted}` };
+  }
+
+  // Convert EUR amount to original currency for display
+  const origCur = originalCurrency as Currency;
+  const origLocale = CURRENCY_LOCALE[origCur] ?? 'en-US';
+  const origRate = (s.fxRates as Record<string, number>)?.[origCur] ?? 1;
+  const origAmount = amountEUR * origRate;
+  const origFormatted = formatPrice(origAmount, origCur, origLocale);
+  return { primary, secondary: `~${origFormatted}` };
 }

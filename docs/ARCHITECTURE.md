@@ -88,7 +88,7 @@ server/
     alerts_worker.py
     retry.py             # Retry + dead letter infrastructure
   pipelines/             # Data ingestion and training pipelines
-  tests/                 # pytest test suite (1478+ tests)
+  tests/                 # pytest test suite (1486+ tests)
 ```
 
 ## Database Schema
@@ -109,6 +109,10 @@ Key tables in Supabase PostgreSQL:
 | `user_settings` | Per-user preferences (currency, region, locale) |
 | `catalog_suggestions` | User-submitted unrecognized item signals |
 | `category_candidates` | Aggregated new category proposals |
+| `event_templates` | Reusable event templates (save-as-template / create-from-template) |
+| `sponsor_companies` | Sponsor company registrations + Stripe checkout |
+| `event_announcements` | One-way broadcast messages from event hosts to attendees |
+| `event_announcement_reads` | Read receipts for announcements (auto-mark-read) |
 | `taxonomy_registry` | Category taxonomy versions |
 | `object_pointers` | S3 image references |
 

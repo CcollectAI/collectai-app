@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Optional
 from app.agents.marketplace_agent import MarketplaceAgent
 from app.agents.policy_engine import evaluate as policy_evaluate
 from app.lib.affiliate import build_affiliate_url
+from app.lib.shipping_service import detect_listing_region, estimate_shipping
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +95,23 @@ class DealDiscoveryAgent:
                 dedup_count=result.dedup_count,
                 query_metadata=result.query_metadata,
             )
+
+        # 1c. Enrich hits with shipping estimates
+        for scored_hit in result.hits:
+            hit = scored_hit.hit
+            listing_region = detect_listing_region(
+                source=hit.get("source"),
+                ships_from=hit.get("ships_from"),
+                url=hit.get("url"),
+            )
+            hit["listing_region"] = listing_region
+
+            # Use adapter shipping if available, otherwise estimate midpoint
+            if hit.get("shipping_cost") is None and listing_region:
+                est = estimate_shipping(listing_region, region)
+                midpoint = (est.min_cost_eur + est.max_cost_eur) / 2.0
+                hit["shipping_cost"] = round(midpoint, 2)
+                hit["shipping_estimated"] = True
 
         # 2. Fetch price prediction (if available)
         prediction = await self._get_prediction(conn, query, category)
@@ -501,6 +519,9 @@ class DealDiscoveryAgent:
                 hit.get("condition"),
                 url,
                 normalized_key,
+                hit.get("shipping_cost"),
+                hit.get("ships_from"),
+                hit.get("domestic_only", False),
             ))
 
         if not rows:
@@ -510,8 +531,9 @@ class DealDiscoveryAgent:
             await conn.executemany(
                 """
                 INSERT INTO public.market_hits
-                    (provider, listing_id, title, price, currency, condition, url, normalized_key)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    (provider, listing_id, title, price, currency, condition, url, normalized_key,
+                     shipping, ships_from, domestic_only)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 ON CONFLICT (provider, listing_id) DO NOTHING
                 """,
                 rows,

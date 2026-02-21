@@ -229,7 +229,7 @@ async def presign_upload(request: PresignUploadRequest, user_id: str = Depends(g
                     request.related_category,
                     created_by,
                     datetime.now(timezone.utc),
-                    "{}",
+                    None,
                 )
         except Exception as e:
             logger.warning("Failed to insert object pointer into DB: %s", e)

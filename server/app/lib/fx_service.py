@@ -19,18 +19,21 @@ from typing import Dict
 import httpx
 
 from app.cache import cache_get, cache_set
-from app.config import USD_TO_EUR, GBP_TO_EUR, JPY_TO_EUR
+from app.config import USD_TO_EUR, GBP_TO_EUR, JPY_TO_EUR, KRW_TO_EUR, AUD_TO_EUR, CAD_TO_EUR
 
 logger = logging.getLogger(__name__)
 
 _CACHE_KEY = "fx:rates"
-_CACHE_TTL = 3600  # 1 hour
+_CACHE_TTL = 28800  # 8 hours
 
 # Hardcoded fallback rates (foreign → EUR)
 _FALLBACK_TO_EUR: Dict[str, float] = {
     "USD": USD_TO_EUR,
     "GBP": GBP_TO_EUR,
     "JPY": JPY_TO_EUR,
+    "KRW": KRW_TO_EUR,
+    "AUD": AUD_TO_EUR,
+    "CAD": CAD_TO_EUR,
     "EUR": 1.0,
 }
 
@@ -41,7 +44,7 @@ async def _fetch_live_rates() -> Dict[str, float] | None:
     """Fetch live rates from exchangerate.host.  Returns foreign→EUR dict or None."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(_API_URL, params={"base": "EUR", "symbols": "USD,GBP,JPY"})
+            resp = await client.get(_API_URL, params={"base": "EUR", "symbols": "USD,GBP,JPY,KRW,AUD,CAD"})
             resp.raise_for_status()
             data = resp.json()
 

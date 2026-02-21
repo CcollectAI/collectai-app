@@ -200,19 +200,18 @@ export const collectorsApi = {
     }>(`/predict/evidence/${encodeURIComponent(itemId)}`),
 
   // Photo upload — server-side optimized (preferred)
-  uploadPhoto: (itemId: string, userId: string, uri: string, mimeType: string) => {
+  uploadPhoto: (itemId: string, uri: string, mimeType: string) => {
     const formData = new FormData();
     const filename = uri.split("/").pop() || "photo.jpg";
     // React Native's FormData accepts this shape for file uploads
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     formData.append("file", { uri, name: filename, type: mimeType } as any);
     formData.append("item_id", itemId);
-    formData.append("user_id", userId);
     return postMultipart<ServerUploadResponse>("/photos/upload", formData);
   },
 
   // Photo upload — presigned URL fallback (client-side upload)
-  getPresignedUploadUrl: (itemId: string, contentType: string, userId: string) =>
+  getPresignedUploadUrl: (itemId: string, contentType: string) =>
     post<{
       upload_url: string;
       photo_key: string;
@@ -220,13 +219,12 @@ export const collectorsApi = {
     }>("/photos/presign-upload", {
       item_id: itemId,
       content_type: contentType,
-      user_id: userId,
     }),
 
-  deletePhoto: (photoKey: string, userId: string) =>
-    del(`/photos/${photoKey}?user_id=${encodeURIComponent(userId)}`),
+  deletePhoto: (photoKey: string) =>
+    del(`/photos/${photoKey}`),
 
-  listItemPhotos: (itemId: string, userId: string) =>
+  listItemPhotos: (itemId: string) =>
     get<{
       photos: Array<{
         photo_key: string;
@@ -235,7 +233,7 @@ export const collectorsApi = {
         last_modified?: string;
       }>;
       item_id: string;
-    }>(`/photos/list/${itemId}?user_id=${encodeURIComponent(userId)}`),
+    }>(`/photos/list/${itemId}`),
 
   // Provenance
   getProvenance: (itemId: string) =>
@@ -307,8 +305,17 @@ export const collectorsApi = {
   }>("/fx/rates"),
 
   // Marketplace aggregation
-  marketplaceSearch: (query: string, category?: string, limit = 20, region?: string) =>
-    post("/marketplace/search", { query, category, limit, region }),
+  marketplaceSearch: (query: string, opts?: {
+    category?: string;
+    limit?: number;
+    region?: string;
+    source?: string[];
+    condition?: string[];
+    min_price?: number;
+    max_price?: number;
+    sort?: string;
+  }) =>
+    post("/marketplace/search", { query, ...opts }),
 
   marketplaceComps: (itemRef: string, category?: string, region?: string) =>
     post(`/marketplace/comps/${encodeURIComponent(itemRef)}`, { category, region }),
@@ -503,6 +510,14 @@ export const collectorsApi = {
       matched_existing: boolean;
     }>("/catalog/suggest", payload),
 
+  // Geolocation (no auth required — called during onboarding)
+  detectRegion: () =>
+    get<{
+      region: string;
+      currency: string;
+      country_code: string | null;
+    }>("/geo/detect"),
+
   // Affiliate links (no auth required — works for all users)
   getAffiliateLinks: (query: string, category?: string, limit = 3) =>
     get<{
@@ -513,6 +528,12 @@ export const collectorsApi = {
         label: string;
       }>;
     }>(`/marketplace/affiliate-links?query=${encodeURIComponent(query)}${category ? `&category=${encodeURIComponent(category)}` : ""}&limit=${limit}`),
+
+  // ── Generic HTTP helpers (used by DataProvider implementations) ──────────
+  get: <T = unknown>(path: string) => get<T>(path),
+  post: <T = unknown>(path: string, body: Record<string, unknown> = {}) => post<T>(path, body),
+  patch: <T = unknown>(path: string, body: Record<string, unknown> = {}) => patch<T>(path, body),
+  delete: <T = unknown>(path: string) => del<T>(path),
 };
 
 // Intake result type returned by the intake agent endpoints

@@ -1,9 +1,9 @@
 /**
  * Project Detail Screen — View and edit build/paint project.
- * Uses DataProvider for all data access.
+ * Category-aware with linked item card, template steps, and accent colors.
  */
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -25,6 +26,8 @@ import {
   type BuildPaintStep,
   type BuildPaintNote,
 } from "@/data";
+import { CATEGORIES, CATEGORY_VISUAL } from "@/data/categories";
+import { isBuildableCategory, getStepTemplateForCategory } from "@/constants/buildStepTemplates";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable } from "@/motion";
 import logger from "@/utils/logger";
@@ -56,6 +59,20 @@ export default function ProjectDetailScreen() {
   // Toggle completing
   const [togglingComplete, setTogglingComplete] = useState(false);
 
+  // Apply template
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
+
+  // Category accent color
+  const accentColor = useMemo(() => {
+    if (!project?.categoryId) return undefined;
+    return CATEGORY_VISUAL[project.categoryId]?.accent;
+  }, [project?.categoryId]);
+
+  const categoryName = useMemo(() => {
+    if (!project?.categoryId) return project?.category;
+    return CATEGORIES.find((c) => c.id === project.categoryId)?.name ?? project.category;
+  }, [project?.categoryId, project?.category]);
+
   const loadProject = useCallback(async () => {
     if (!projectId) {
       setError("No project ID provided");
@@ -82,7 +99,7 @@ export default function ProjectDetailScreen() {
       setError(null);
     } catch (err: unknown) {
       logger.warn("[ProjectDetail] loadProject error:", err);
-      setError(err?.message || "Failed to load project");
+      setError((err as Error)?.message || "Failed to load project");
     } finally {
       setLoading(false);
     }
@@ -100,7 +117,7 @@ export default function ProjectDetailScreen() {
       await dataProvider.setBuildPaintProgress(project.id, pendingPercent, newStatus);
       await loadProject();
     } catch (err: unknown) {
-      Alert.alert("Error", err?.message || "Failed to save progress");
+      Alert.alert("Error", (err as Error)?.message || "Failed to save progress");
     } finally {
       setSavingProgress(false);
     }
@@ -113,7 +130,7 @@ export default function ProjectDetailScreen() {
       await dataProvider.markBuildPaintProjectComplete(project.id, !project.isCompleted);
       await loadProject();
     } catch (err: unknown) {
-      Alert.alert("Error", err?.message || "Failed to toggle complete");
+      Alert.alert("Error", (err as Error)?.message || "Failed to toggle complete");
     } finally {
       setTogglingComplete(false);
     }
@@ -128,7 +145,7 @@ export default function ProjectDetailScreen() {
       const stepsData = await dataProvider.listBuildPaintSteps(project.id);
       setSteps(stepsData);
     } catch (err: unknown) {
-      Alert.alert("Error", err?.message || "Failed to add step");
+      Alert.alert("Error", (err as Error)?.message || "Failed to add step");
     } finally {
       setAddingStep(false);
     }
@@ -140,7 +157,7 @@ export default function ProjectDetailScreen() {
       const stepsData = await dataProvider.listBuildPaintSteps(projectId);
       setSteps(stepsData);
     } catch (err: unknown) {
-      Alert.alert("Error", err?.message || "Failed to toggle step");
+      Alert.alert("Error", (err as Error)?.message || "Failed to toggle step");
     }
   };
 
@@ -153,11 +170,34 @@ export default function ProjectDetailScreen() {
       const notesData = await dataProvider.listBuildPaintNotes(project.id);
       setNotes(notesData);
     } catch (err: unknown) {
-      Alert.alert("Error", err?.message || "Failed to add note");
+      Alert.alert("Error", (err as Error)?.message || "Failed to add note");
     } finally {
       setAddingNote(false);
     }
   };
+
+  const handleApplyTemplate = async () => {
+    if (!project?.categoryId || applyingTemplate) return;
+    setApplyingTemplate(true);
+    try {
+      await dataProvider.applyStepTemplate(project.id, project.categoryId);
+      const stepsData = await dataProvider.listBuildPaintSteps(project.id);
+      setSteps(stepsData);
+    } catch (err: unknown) {
+      Alert.alert("Error", (err as Error)?.message || "Failed to apply template");
+    } finally {
+      setApplyingTemplate(false);
+    }
+  };
+
+  // Whether to show "Apply Template" button
+  const canApplyTemplate = project?.categoryId &&
+    isBuildableCategory(project.categoryId) &&
+    steps.length === 0;
+
+  const templateForCategory = canApplyTemplate
+    ? getStepTemplateForCategory(project?.categoryId)
+    : null;
 
   if (loading) {
     return (
@@ -196,6 +236,7 @@ export default function ProjectDetailScreen() {
 
   const doneSteps = steps.filter((s) => s.isDone).length;
   const totalSteps = steps.length;
+  const progressBarColor = project.isCompleted ? "#34D399" : accentColor || colors.accent;
 
   return (
     <>
@@ -216,8 +257,14 @@ export default function ProjectDetailScreen() {
             <View style={styles.headerRow}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.projectTitle, { color: colors.text }]}>{project.title}</Text>
-                {project.category && (
-                  <Text style={[styles.projectCategory, { color: colors.muted }]}>{project.category}</Text>
+                {/* Category pill */}
+                {categoryName && (
+                  <View style={styles.categoryRow}>
+                    {accentColor && <View style={[styles.catDot, { backgroundColor: accentColor }]} />}
+                    <Text style={[styles.projectCategory, { color: accentColor || colors.muted }]}>
+                      {categoryName}
+                    </Text>
+                  </View>
                 )}
               </View>
               <View style={styles.completeToggle}>
@@ -229,7 +276,7 @@ export default function ProjectDetailScreen() {
                     value={project.isCompleted}
                     onValueChange={handleToggleComplete}
                     trackColor={{ false: colors.border, true: "#34D399" }}
-                    thumbColor={project.isCompleted ? "#fff" : "#fff"}
+                    thumbColor="#fff"
                     accessibilityLabel="Mark project as complete"
                   />
                 )}
@@ -240,7 +287,7 @@ export default function ProjectDetailScreen() {
             <View style={styles.progressSection}>
               <View style={styles.progressHeader}>
                 <Text style={[styles.progressLabel, { color: colors.text }]}>Progress</Text>
-                <Text style={[styles.progressValue, { color: colors.accent }]}>{pendingPercent}%</Text>
+                <Text style={[styles.progressValue, { color: progressBarColor }]}>{pendingPercent}%</Text>
               </View>
               <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
                 <View
@@ -248,7 +295,7 @@ export default function ProjectDetailScreen() {
                     styles.progressFill,
                     {
                       width: `${Math.min(Math.max(pendingPercent, 0), 100)}%`,
-                      backgroundColor: project.isCompleted ? "#34D399" : colors.accent,
+                      backgroundColor: progressBarColor,
                     },
                   ]}
                 />
@@ -282,7 +329,7 @@ export default function ProjectDetailScreen() {
                   style={[
                     styles.saveBtn,
                     {
-                      backgroundColor: pendingPercent !== project.percent ? colors.accent : colors.border,
+                      backgroundColor: pendingPercent !== project.percent ? (accentColor || colors.accent) : colors.border,
                       opacity: savingProgress ? 0.7 : 1,
                     },
                   ]}
@@ -309,6 +356,32 @@ export default function ProjectDetailScreen() {
             )}
           </View>
 
+          {/* Linked Item Card */}
+          {project.itemId && (project.itemName || project.itemImageUrl) && (
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.cardHeader}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Linked Item</Text>
+                <Ionicons name="link-outline" size={16} color={colors.muted} />
+              </View>
+              <View style={styles.linkedItemRow}>
+                {project.itemImageUrl && (
+                  <Image source={{ uri: project.itemImageUrl }} style={styles.linkedItemImg} />
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.linkedItemName, { color: colors.text }]} numberOfLines={2}>
+                    {project.itemName ?? "Linked item"}
+                  </Text>
+                  {categoryName && (
+                    <View style={styles.linkedItemMeta}>
+                      {accentColor && <View style={[styles.catDotSm, { backgroundColor: accentColor }]} />}
+                      <Text style={[styles.linkedItemCat, { color: colors.muted }]}>{categoryName}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Steps Card */}
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
@@ -318,9 +391,37 @@ export default function ProjectDetailScreen() {
               </Text>
             </View>
 
-            {steps.length === 0 ? (
+            {/* Apply Template button (shown when no steps + has category template) */}
+            {canApplyTemplate && templateForCategory && (
+              <AnimatedPressable
+                onPress={handleApplyTemplate}
+                disabled={applyingTemplate}
+                style={[styles.applyTemplateBtn, { backgroundColor: (accentColor || colors.accent) + '15', borderColor: accentColor || colors.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Apply ${templateForCategory.displayName} workflow with ${templateForCategory.steps.length} steps`}
+              >
+                {applyingTemplate ? (
+                  <ActivityIndicator size="small" color={accentColor || colors.accent} />
+                ) : (
+                  <>
+                    <Ionicons name="flash-outline" size={18} color={accentColor || colors.accent} />
+                    <View style={{ flex: 1, marginLeft: 8 }}>
+                      <Text style={[styles.applyTemplateTitle, { color: accentColor || colors.accent }]}>
+                        Use {templateForCategory.displayName} workflow?
+                      </Text>
+                      <Text style={[styles.applyTemplateHint, { color: colors.muted }]}>
+                        {templateForCategory.steps.length} steps will be added
+                      </Text>
+                    </View>
+                    <Ionicons name="arrow-forward" size={16} color={accentColor || colors.accent} />
+                  </>
+                )}
+              </AnimatedPressable>
+            )}
+
+            {steps.length === 0 && !canApplyTemplate ? (
               <Text style={[styles.emptyText, { color: colors.muted }]}>No steps added yet</Text>
-            ) : (
+            ) : steps.length > 0 ? (
               <View style={styles.stepsList}>
                 {steps.map((step) => (
                   <AnimatedPressable
@@ -334,8 +435,8 @@ export default function ProjectDetailScreen() {
                       style={[
                         styles.stepCheckbox,
                         {
-                          backgroundColor: step.isDone ? colors.accent : "transparent",
-                          borderColor: step.isDone ? colors.accent : colors.border,
+                          backgroundColor: step.isDone ? (accentColor || colors.accent) : "transparent",
+                          borderColor: step.isDone ? (accentColor || colors.accent) : colors.border,
                         },
                       ]}
                     >
@@ -353,7 +454,7 @@ export default function ProjectDetailScreen() {
                   </AnimatedPressable>
                 ))}
               </View>
-            )}
+            ) : null}
 
             {/* Add step input */}
             <View style={styles.addRow}>
@@ -372,7 +473,7 @@ export default function ProjectDetailScreen() {
                 style={[
                   styles.addBtn,
                   {
-                    backgroundColor: newStepTitle.trim() ? colors.accent : colors.border,
+                    backgroundColor: newStepTitle.trim() ? (accentColor || colors.accent) : colors.border,
                     opacity: addingStep ? 0.7 : 1,
                   },
                 ]}
@@ -436,7 +537,7 @@ export default function ProjectDetailScreen() {
                 style={[
                   styles.addNoteBtn,
                   {
-                    backgroundColor: newNoteBody.trim() ? colors.accent : colors.border,
+                    backgroundColor: newNoteBody.trim() ? (accentColor || colors.accent) : colors.border,
                     opacity: addingNote ? 0.7 : 1,
                   },
                 ]}
@@ -519,9 +620,25 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
   },
+  categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 6,
+  },
+  catDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  catDotSm: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   projectCategory: {
     fontSize: 13,
-    marginTop: 4,
+    fontWeight: "500",
   },
   completeToggle: {
     alignItems: "center",
@@ -596,6 +713,47 @@ const styles = StyleSheet.create({
   notesText: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  // Linked item card
+  linkedItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  linkedItemImg: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+  },
+  linkedItemName: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  linkedItemMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  linkedItemCat: {
+    fontSize: 12,
+  },
+  // Apply template
+  applyTemplateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  applyTemplateTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  applyTemplateHint: {
+    fontSize: 12,
+    marginTop: 2,
   },
   cardHeader: {
     flexDirection: "row",

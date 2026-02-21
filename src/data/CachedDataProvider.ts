@@ -37,7 +37,7 @@ import type {
   MarketSearchOptions,
   MarketSearchResult,
 } from './types';
-import type { CollectorsEvent, CreateEventInput } from './events';
+import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 import { cacheGet, cacheSet, cacheClear } from './offlineCache';
 import logger from '../utils/logger';
 
@@ -180,6 +180,14 @@ export class CachedDataProvider implements DataProvider {
     ]);
   }
 
+  async unarchiveItem(itemId: string): Promise<void> {
+    await this.inner.unarchiveItem(itemId);
+    await Promise.all([
+      cacheClear(CK.ITEMS_LIST),
+      cacheClear(CK.PORTFOLIO_SUMMARY),
+    ]);
+  }
+
   async addWatchlistItem(input: CreateWatchlistInput): Promise<WatchlistItem> {
     const result = await this.inner.addWatchlistItem(input);
     await cacheClear(CK.WATCHLIST);
@@ -264,12 +272,18 @@ export class CachedDataProvider implements DataProvider {
 
   async followCategory(categoryId: string): Promise<void> {
     await this.inner.followCategory(categoryId);
-    await cacheClear(CK.EVENTS);
+    await Promise.all([
+      cacheClear(CK.EVENTS),
+      cacheClear(CK.CATEGORY_SUMMARIES),
+    ]);
   }
 
   async unfollowCategory(categoryId: string): Promise<void> {
     await this.inner.unfollowCategory(categoryId);
-    await cacheClear(CK.EVENTS);
+    await Promise.all([
+      cacheClear(CK.EVENTS),
+      cacheClear(CK.CATEGORY_SUMMARIES),
+    ]);
   }
 
   // ── Pass-through reads (not cached — too dynamic or user-scoped) ────────
@@ -283,7 +297,7 @@ export class CachedDataProvider implements DataProvider {
   }
 
   getPublicUserProfile(userId: string): Promise<PublicUserProfile | null> {
-    return this.inner.getPublicUserProfile(userId);
+    return swr(`profile:${userId}`, () => this.inner.getPublicUserProfile(userId), TTL_SHORT);
   }
 
   getMyProfile(): Promise<PublicUserProfile | null> {
@@ -291,7 +305,7 @@ export class CachedDataProvider implements DataProvider {
   }
 
   getCategoryStore(categoryId: string): Promise<CategoryStoreData | null> {
-    return this.inner.getCategoryStore(categoryId);
+    return swr(`category:store:${categoryId}`, () => this.inner.getCategoryStore(categoryId), TTL_MEDIUM);
   }
 
   listCategoryMissing(categoryId: string): Promise<CategoryMissingItem[]> {
@@ -356,6 +370,20 @@ export class CachedDataProvider implements DataProvider {
     return this.inner.addBuildPaintNote(projectId, body);
   }
 
+  listBuildPaintProjectsByCategory(categoryId: string): Promise<BuildPaintProject[]> {
+    return this.inner.listBuildPaintProjectsByCategory(categoryId);
+  }
+
+  listBuildPaintProjectsByItem(itemId: string): Promise<BuildPaintProject[]> {
+    return this.inner.listBuildPaintProjectsByItem(itemId);
+  }
+
+  async applyStepTemplate(projectId: string, categoryId: string): Promise<BuildPaintStep[]> {
+    const result = await this.inner.applyStepTemplate(projectId, categoryId);
+    await cacheClear(CK.BUILD_PAINT_PROJECTS);
+    return result;
+  }
+
   // Feedback — pass through
   submitFeedback(
     itemId: string,
@@ -410,6 +438,76 @@ export class CachedDataProvider implements DataProvider {
 
   isBlocked(userId: string): Promise<boolean> {
     return this.inner.isBlocked(userId);
+  }
+
+  // Events — host actions (mutations, pass through with cache invalidation)
+  async updateEvent(eventId: string, patch: Partial<CreateEventInput & { status?: string }>): Promise<CollectorsEvent> {
+    const result = await this.inner.updateEvent(eventId, patch);
+    await cacheClear(CK.EVENTS);
+    return result;
+  }
+
+  async cancelEvent(eventId: string): Promise<void> {
+    await this.inner.cancelEvent(eventId);
+    await cacheClear(CK.EVENTS);
+  }
+
+  async duplicateEvent(eventId: string): Promise<CollectorsEvent> {
+    const result = await this.inner.duplicateEvent(eventId);
+    await cacheClear(CK.EVENTS);
+    return result;
+  }
+
+  // Event templates — pass through
+  listEventTemplates(): Promise<EventTemplate[]> {
+    return this.inner.listEventTemplates();
+  }
+
+  createEventTemplate(name: string, fromEventId?: string): Promise<EventTemplate> {
+    return this.inner.createEventTemplate(name, fromEventId);
+  }
+
+  deleteEventTemplate(templateId: string): Promise<void> {
+    return this.inner.deleteEventTemplate(templateId);
+  }
+
+  // Sponsor companies — pass through
+  registerSponsorCompany(input: { name: string; logoUrl?: string; websiteUrl?: string; contactEmail: string; description?: string }): Promise<SponsorCompany> {
+    return this.inner.registerSponsorCompany(input);
+  }
+
+  getMySponsorCompanies(): Promise<SponsorCompany[]> {
+    return this.inner.getMySponsorCompanies();
+  }
+
+  updateSponsorCompany(id: string, patch: Partial<{ name: string; logoUrl: string; websiteUrl: string; contactEmail: string; description: string }>): Promise<SponsorCompany> {
+    return this.inner.updateSponsorCompany(id, patch);
+  }
+
+  createSponsorEventCheckout(companyId: string, tier: string, eventData: CreateEventInput): Promise<{ url: string; sessionId: string; eventId: string }> {
+    return this.inner.createSponsorEventCheckout(companyId, tier, eventData);
+  }
+
+  // Event announcements — pass through (real-time)
+  listEventAnnouncements(eventId: string): Promise<EventAnnouncement[]> {
+    return this.inner.listEventAnnouncements(eventId);
+  }
+
+  postEventAnnouncement(eventId: string, body: string, title?: string, imageUrl?: string): Promise<EventAnnouncement> {
+    return this.inner.postEventAnnouncement(eventId, body, title, imageUrl);
+  }
+
+  markAnnouncementRead(eventId: string, announcementId: string): Promise<void> {
+    return this.inner.markAnnouncementRead(eventId, announcementId);
+  }
+
+  getUnreadAnnouncementCount(): Promise<number> {
+    return this.inner.getUnreadAnnouncementCount();
+  }
+
+  // Category deep dive — pass through
+  getCategoryDeepDive(categoryId: string, days?: number): Promise<Record<string, unknown>> {
+    return this.inner.getCategoryDeepDive(categoryId, days);
   }
 
   // Barcode / market — pass through (results vary per query)

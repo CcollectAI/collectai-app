@@ -15,7 +15,7 @@ function makeSettings(
   return {
     currency: 'EUR',
     numberLocale: 'de-DE',
-    fxRates: { USD: 1.08, GBP: 0.86, JPY: 164.0 },
+    fxRates: { USD: 1.08, GBP: 0.86, JPY: 164.0, KRW: 1490, AUD: 1.67, CAD: 1.52 },
     ...overrides,
   };
 }

@@ -217,6 +217,12 @@ psql $DATABASE_URL -f supabase/migrations/20260210_object_pointers.sql
 psql $DATABASE_URL -f supabase/migrations/20260213_smart_deal_agent.sql
 psql $DATABASE_URL -f supabase/migrations/20260218_subscriptions.sql
 psql $DATABASE_URL -f supabase/migrations/20260218_beta_signups.sql
+psql $DATABASE_URL -f supabase/migrations/20260219_portfolio_attributes.sql
+psql $DATABASE_URL -f supabase/migrations/20260219_bugfix_audit.sql
+psql $DATABASE_URL -f supabase/migrations/20260220_catalog_learning.sql
+psql $DATABASE_URL -f supabase/migrations/20260221_user_blocks.sql
+psql $DATABASE_URL -f supabase/migrations/20260222_currency_geo_shipping.sql
+psql $DATABASE_URL -f supabase/migrations/20260222_events_improvements.sql
 ```
 
 ## Beta Landing Page
@@ -306,6 +312,8 @@ eas submit --platform android --profile production
 - **Ops dashboard**: `GET /ops/status` (requires `X-Ops-Key` header)
 - **Beta signups**: `GET /ops/beta-signups` (requires `X-Ops-Key` header)
 - **Worker status**: `GET /ops/worker-status` (requires `X-Ops-Key` header)
+- **Catalog suggestions**: `GET /ops/catalog-suggestions` (requires `X-Ops-Key` header)
+- **Category candidates**: `GET /ops/category-candidates` (requires `X-Ops-Key` header)
 - **Logs**: `docker compose logs -f api` or CloudWatch if configured
 - **Sentry**: Set `SENTRY_DSN` for error tracking
 

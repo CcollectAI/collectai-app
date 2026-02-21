@@ -20,6 +20,10 @@ export type CollectorsEvent = {
   hostUserId?: string;    // was UserId
   attendeeIds: string[];  // kept for backwards compat with mock
   attendeeCount?: number; // real count from DB
+  goingCount?: number;
+  interestedCount?: number;
+  maxAttendees?: number | null;
+  isFull?: boolean;
   isAttending?: boolean;  // current user's attendance status
   myRsvpStatus?: string;  // 'going' | 'interested' | null
   source?: string;        // 'user' | 'admin' | 'scraper' | 'newsletter'
@@ -36,6 +40,7 @@ export type CollectorsEvent = {
   sponsorName?: string;
   sponsorLogoUrl?: string;
   sponsorTier?: SponsorTier;
+  sponsorCompanyId?: string;
 };
 
 export type CreateEventInput = {
@@ -54,6 +59,38 @@ export type CreateEventInput = {
   imageUrl?: string;
   latitude?: number;
   longitude?: number;
+  maxAttendees?: number;
+};
+
+export type EventTemplate = {
+  id: string;
+  name: string;
+  templateData: Record<string, unknown>;
+  useCount: number;
+  createdAt?: string;
+};
+
+export type EventAnnouncement = {
+  id: string;
+  eventId: string;
+  authorUserId: string;
+  title?: string;
+  body: string;
+  imageUrl?: string;
+  isRead: boolean;
+  createdAt?: string;
+};
+
+export type SponsorCompany = {
+  id: string;
+  name: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  contactEmail: string;
+  description?: string;
+  adminUserId: string;
+  isVerified: boolean;
+  createdAt?: string;
 };
 
 export const EVENTS: CollectorsEvent[] = [

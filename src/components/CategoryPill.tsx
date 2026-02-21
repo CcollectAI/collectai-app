@@ -3,6 +3,7 @@ import { Text, ViewStyle, TextStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { CATEGORY_VISUAL, type CategoryId } from '@/data/categories';
 
 type CategoryPillProps = {
   id?: string | null;
@@ -13,7 +14,7 @@ type CategoryPillProps = {
 
 /**
  * Small pill that navigates to /categories/[categoryId] when tapped.
- * Uses theme accent color for background.
+ * Uses category-specific accent color when available, falls back to theme accent.
  */
 const CategoryPillInner: React.FC<CategoryPillProps> = ({
   id,
@@ -28,6 +29,9 @@ const CategoryPillInner: React.FC<CategoryPillProps> = ({
     return null;
   }
 
+  const visual = id ? CATEGORY_VISUAL[id as CategoryId] : undefined;
+  const pillColor = visual?.accentColor ?? colors.accent;
+
   const handlePress = () => {
     if (!id) return;
     router.push(`/categories/${encodeURIComponent(id)}`);
@@ -41,7 +45,7 @@ const CategoryPillInner: React.FC<CategoryPillProps> = ({
           paddingHorizontal: 10,
           paddingVertical: 5,
           borderRadius: 999,
-          backgroundColor: colors.accent,
+          backgroundColor: pillColor,
           alignSelf: 'flex-start',
         },
         style,

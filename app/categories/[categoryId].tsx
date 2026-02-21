@@ -13,16 +13,20 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { dataProvider, type CategoryStoreData, type Item, type MiniUserProfile, type CategoryMissingItem } from '@/data';
+import { dataProvider, type CategoryStoreData, type Item, type MiniUserProfile, type CategoryMissingItem, type BuildPaintProject } from '@/data';
+import { getCategoryById, getRelatedCategories } from '@/data/categories';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
+import { isBuildableCategory } from '@/constants/buildStepTemplates';
+import { CATEGORY_VISUAL } from '@/constants/categoryVisuals';
 import logger from '@/utils/logger';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -90,7 +94,21 @@ export default function CategoryStoreScreen() {
   const [markingOwned, setMarkingOwned] = useState<string | null>(null);
   const [recentlyOwned, setRecentlyOwned] = useState<Set<string>>(new Set());
 
+  // Market insights state
+  const [deepDive, setDeepDive] = useState<Record<string, unknown> | null>(null);
+  const [deepDiveLoading, setDeepDiveLoading] = useState(false);
+
+  // Build projects state (for buildable categories)
+  const [buildProjects, setBuildProjects] = useState<BuildPaintProject[]>([]);
+  const [buildProjectsLoading, setBuildProjectsLoading] = useState(false);
+  const isBuildable = categoryId ? isBuildableCategory(categoryId) : false;
+  const accentColor = categoryId ? (CATEGORY_VISUAL[categoryId]?.color ?? colors.accent) : colors.accent;
+
   const spotlightRef = useRef<FlatList>(null);
+
+  // Resolve category metadata for external marketplaces and related categories
+  const categoryMeta = categoryId ? getCategoryById(categoryId) : undefined;
+  const relatedCategories = categoryMeta ? getRelatedCategories(categoryMeta) : [];
 
   useEffect(() => {
     if (!categoryId) return;
@@ -124,6 +142,32 @@ export default function CategoryStoreScreen() {
     dataProvider.isFollowingCategory(categoryId)
       .then(setFollowing)
       .catch(() => {}); // Non-critical
+  }, [categoryId]);
+
+  // Load build projects for buildable categories
+  useEffect(() => {
+    if (!categoryId || !isBuildable) return;
+    setBuildProjectsLoading(true);
+    dataProvider.listBuildPaintProjectsByCategory(categoryId)
+      .then(setBuildProjects)
+      .catch((err) => {
+        logger.warn('[CategoryStore] build projects fetch failed:', err);
+        setBuildProjects([]);
+      })
+      .finally(() => setBuildProjectsLoading(false));
+  }, [categoryId, isBuildable]);
+
+  // Load market insights (deep dive)
+  useEffect(() => {
+    if (!categoryId) return;
+    setDeepDiveLoading(true);
+    dataProvider.getCategoryDeepDive(categoryId)
+      .then(setDeepDive)
+      .catch((err) => {
+        logger.warn('[CategoryStore] deep dive fetch failed:', err);
+        setDeepDive(null);
+      })
+      .finally(() => setDeepDiveLoading(false));
   }, [categoryId]);
 
   // Auto-rotate spotlight carousel
@@ -393,6 +437,115 @@ export default function CategoryStoreScreen() {
         )}
       </View>
 
+      {/* 3.5. Market Insights (Deep Dive) */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Market Insights</Text>
+        {deepDiveLoading ? (
+          <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 12 }} />
+        ) : deepDive ? (
+          <>
+            {/* Average Market Price */}
+            {typeof deepDive.average_market_price === 'number' && deepDive.average_market_price > 0 && (
+              <View style={[styles.insightCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.insightLabel, { color: colors.muted }]}>Average Market Price</Text>
+                <Text style={[styles.insightValue, { color: colors.text }]}>
+                  {formatPrice(deepDive.average_market_price as number)}
+                </Text>
+              </View>
+            )}
+
+            {/* Price Trend */}
+            {deepDive.value_distribution && typeof deepDive.value_distribution === 'object' && (
+              <View style={[styles.insightCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.insightLabel, { color: colors.muted }]}>Price Trend</Text>
+                <View style={styles.trendRow}>
+                  <Ionicons
+                    name={
+                      (deepDive.value_distribution as Record<string, unknown>).trend === 'up'
+                        ? 'trending-up'
+                        : (deepDive.value_distribution as Record<string, unknown>).trend === 'down'
+                        ? 'trending-down'
+                        : 'remove-outline'
+                    }
+                    size={18}
+                    color={
+                      (deepDive.value_distribution as Record<string, unknown>).trend === 'up'
+                        ? '#10B981'
+                        : (deepDive.value_distribution as Record<string, unknown>).trend === 'down'
+                        ? '#EF4444'
+                        : colors.muted
+                    }
+                  />
+                  <Text style={[styles.trendText, {
+                    color: (deepDive.value_distribution as Record<string, unknown>).trend === 'up'
+                      ? '#10B981'
+                      : (deepDive.value_distribution as Record<string, unknown>).trend === 'down'
+                      ? '#EF4444'
+                      : colors.muted,
+                  }]}>
+                    {(deepDive.value_distribution as Record<string, unknown>).trend === 'up'
+                      ? 'Prices trending up'
+                      : (deepDive.value_distribution as Record<string, unknown>).trend === 'down'
+                      ? 'Prices trending down'
+                      : 'Prices stable'}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Top Traded Items */}
+            {Array.isArray(deepDive.top_traded_items) && (deepDive.top_traded_items as Array<Record<string, unknown>>).length > 0 && (
+              <View style={styles.insightSubSection}>
+                <Text style={[styles.insightSubTitle, { color: colors.text }]}>Top Traded Items</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topTradedRow}>
+                  {(deepDive.top_traded_items as Array<Record<string, unknown>>).map((item, idx) => (
+                    <View
+                      key={String(item.id ?? idx)}
+                      style={[styles.topTradedCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    >
+                      <Text style={[styles.topTradedName, { color: colors.text }]} numberOfLines={2}>
+                        {String(item.name ?? item.title ?? 'Unknown')}
+                      </Text>
+                      <Text style={[styles.topTradedCount, { color: colors.muted }]}>
+                        {String(item.trade_count ?? item.tradeCount ?? 0)} trades
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Top Movers */}
+            {Array.isArray(deepDive.top_movers) && (deepDive.top_movers as Array<Record<string, unknown>>).length > 0 && (
+              <View style={styles.insightSubSection}>
+                <Text style={[styles.insightSubTitle, { color: colors.text }]}>Top Movers</Text>
+                {(deepDive.top_movers as Array<Record<string, unknown>>).map((mover, idx) => {
+                  const changePct = Number(mover.change_pct ?? mover.changePct ?? 0);
+                  const isPositive = changePct >= 0;
+                  return (
+                    <View
+                      key={String(mover.id ?? idx)}
+                      style={[styles.moverRow, { borderBottomColor: colors.border }]}
+                    >
+                      <Text style={[styles.moverName, { color: colors.text }]} numberOfLines={1}>
+                        {String(mover.name ?? mover.title ?? 'Unknown')}
+                      </Text>
+                      <Text style={[styles.moverPct, { color: isPositive ? '#10B981' : '#EF4444' }]}>
+                        {isPositive ? '+' : ''}{changePct.toFixed(1)}%
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </>
+        ) : (
+          <Text style={[styles.emptyText, { color: colors.muted }]}>
+            No market insights available for this category yet.
+          </Text>
+        )}
+      </View>
+
       {/* 4. Upcoming Events / Drops */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Events & Drops</Text>
@@ -516,6 +669,81 @@ export default function CategoryStoreScreen() {
         </View>
       )}
 
+      {/* 4.6. Build Projects — for buildable categories */}
+      {isBuildable && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Build & Paint Projects</Text>
+            {buildProjects.length > 0 && (
+              <Text style={[styles.sectionCount, { color: colors.muted }]}>
+                {buildProjects.length} project{buildProjects.length !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </View>
+          {buildProjectsLoading ? (
+            <ActivityIndicator size="small" color={accentColor} style={{ marginVertical: 12 }} />
+          ) : buildProjects.length > 0 ? (
+            <>
+              {buildProjects.slice(0, 3).map((project) => {
+                const completedSteps = project.steps?.filter((s) => s.done).length ?? 0;
+                const totalSteps = project.steps?.length ?? 0;
+                const pct = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+
+                return (
+                  <AnimatedPressable
+                    key={project.id}
+                    style={[styles.buildProjectCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => router.push(`/projects/${encodeURIComponent(project.id)}`)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${project.title}, ${pct}% complete`}
+                  >
+                    <View style={[styles.buildProjectAccent, { backgroundColor: accentColor }]} />
+                    <View style={styles.buildProjectInfo}>
+                      <Text style={[styles.buildProjectTitle, { color: colors.text }]} numberOfLines={1}>
+                        {project.title}
+                      </Text>
+                      <View style={styles.buildProjectProgressRow}>
+                        <View style={[styles.buildProjectProgressBg, { backgroundColor: colors.border }]}>
+                          <View style={[styles.buildProjectProgressFill, { backgroundColor: accentColor, width: `${pct}%` }]} />
+                        </View>
+                        <Text style={[styles.buildProjectPct, { color: colors.muted }]}>{pct}%</Text>
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                  </AnimatedPressable>
+                );
+              })}
+              {buildProjects.length > 3 && (
+                <AnimatedPressable
+                  style={styles.seeAllButton}
+                  onPress={() => router.push('/build-paint-projects')}
+                  accessibilityRole="link"
+                  accessibilityLabel={`See all ${buildProjects.length} build projects`}
+                >
+                  <Text style={[styles.seeAllText, { color: accentColor }]}>
+                    See all {buildProjects.length} projects
+                  </Text>
+                  <Ionicons name="arrow-forward" size={14} color={accentColor} />
+                </AnimatedPressable>
+              )}
+            </>
+          ) : (
+            <Text style={[styles.emptyText, { color: colors.muted }]}>
+              No build projects in this category yet.
+            </Text>
+          )}
+          <AnimatedPressable
+            style={[styles.startBuildBtn, { backgroundColor: accentColor }]}
+            onPress={() => router.push('/build-paint-projects')}
+            accessibilityRole="button"
+            accessibilityLabel="Start a new build project"
+          >
+            <Ionicons name="construct-outline" size={16} color="#fff" />
+            <Text style={styles.startBuildBtnText}>Start New Build</Text>
+          </AnimatedPressable>
+        </View>
+      )}
+
       {/* 5. Friends Who Follow */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Friends Who Follow</Text>
@@ -541,6 +769,48 @@ export default function CategoryStoreScreen() {
           </ScrollView>
         )}
       </View>
+
+      {/* 6. External Marketplace Links */}
+      {categoryMeta && categoryMeta.externalMarketplaces.length > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>External Marketplaces</Text>
+          <View style={styles.marketplaceRow}>
+            {categoryMeta.externalMarketplaces.map((mp) => (
+              <AnimatedPressable
+                key={mp.id}
+                style={[styles.marketplaceBtn, { backgroundColor: colors.accent + '15', borderColor: colors.accent }]}
+                onPress={() => Linking.openURL(mp.url).catch((err) => logger.warn('[CategoryStore] open URL error:', err))}
+                accessibilityRole="link"
+                accessibilityLabel={`Open ${mp.label}`}
+              >
+                <Ionicons name="open-outline" size={14} color={colors.accent} />
+                <Text style={[styles.marketplaceBtnText, { color: colors.accent }]}>{mp.label}</Text>
+              </AnimatedPressable>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* 7. Related Categories */}
+      {relatedCategories.length > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Related Categories</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedRow}>
+            {relatedCategories.map((rc) => (
+              <AnimatedPressable
+                key={rc.id}
+                style={[styles.relatedCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => router.push(`/categories/${encodeURIComponent(rc.id)}`)}
+                accessibilityRole="button"
+                accessibilityLabel={`Browse ${rc.name}`}
+              >
+                <Text style={[styles.relatedName, { color: colors.text }]} numberOfLines={2}>{rc.name}</Text>
+                <Text style={[styles.relatedTagline, { color: colors.muted }]} numberOfLines={2}>{rc.tagline}</Text>
+              </AnimatedPressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Bottom spacing */}
       <View style={{ height: 32 }} />
@@ -905,5 +1175,176 @@ const styles = StyleSheet.create({
   },
   sponsoredText: {
     fontSize: 12,
+  },
+
+  // Market Insights
+  insightCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 8,
+  },
+  insightLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  insightValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  trendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  trendText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  insightSubSection: {
+    marginTop: 8,
+  },
+  insightSubTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  topTradedRow: {
+    gap: 10,
+  },
+  topTradedCard: {
+    width: 140,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 10,
+  },
+  topTradedName: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  topTradedCount: {
+    fontSize: 11,
+  },
+  moverRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  moverName: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500',
+    marginRight: 8,
+  },
+  moverPct: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // External Marketplace Links
+  marketplaceRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  marketplaceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  marketplaceBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // Build project cards
+  buildProjectCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  buildProjectAccent: {
+    width: 4,
+    alignSelf: 'stretch',
+  },
+  buildProjectInfo: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  buildProjectTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  buildProjectProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  buildProjectProgressBg: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  buildProjectProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  buildProjectPct: {
+    fontSize: 11,
+    fontWeight: '600',
+    minWidth: 28,
+    textAlign: 'right',
+  },
+  startBuildBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 8,
+  },
+  startBuildBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // Related Categories
+  relatedRow: {
+    gap: 10,
+  },
+  relatedCard: {
+    width: 160,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+  },
+  relatedName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  relatedTagline: {
+    fontSize: 11,
+    lineHeight: 15,
   },
 });

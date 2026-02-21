@@ -35,7 +35,7 @@ ALLOWED_EVENT_FORMATS = {"in_person", "online", "hybrid"}
 ALLOWED_EVENT_STATUSES = {"draft", "published", "cancelled"}
 
 # Explicit whitelist of columns that can be updated via PATCH /{event_id}
-_UPDATABLE_EVENT_COLUMNS = {"title", "status", "description", "location", "online_url", "image_url"}
+_UPDATABLE_EVENT_COLUMNS = {"title", "status", "description", "location", "online_url", "image_url", "date", "time", "end_date", "format", "is_public", "max_attendees"}
 
 
 # ---------------------------------------------------------------------------
@@ -84,6 +84,12 @@ class UpdateEventRequest(BaseModel):
     location: Optional[str] = Field(None, max_length=500)
     online_url: Optional[str] = Field(None, max_length=2048)
     image_url: Optional[str] = Field(None, max_length=2048)
+    date: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    time: Optional[str] = Field(None, max_length=10)
+    end_date: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    format: Optional[str] = Field(None, pattern=r"^(in_person|online|hybrid)$")
+    is_public: Optional[bool] = None
+    max_attendees: Optional[int] = Field(None, ge=1)
 
 
 class RsvpRequest(BaseModel):
@@ -114,6 +120,10 @@ class EventResponse(BaseModel):
     created_by: Optional[str] = None
     source: str = "user"
     attendee_count: int = 0
+    going_count: int = 0
+    interested_count: int = 0
+    max_attendees: Optional[int] = None
+    is_full: bool = False
     user_rsvp_status: Optional[str] = None
     created_at: Optional[str] = None
     # Sponsor fields
@@ -121,6 +131,38 @@ class EventResponse(BaseModel):
     sponsor_name: Optional[str] = None
     sponsor_logo_url: Optional[str] = None
     sponsor_tier: Optional[str] = None
+    sponsor_company_id: Optional[str] = None
+
+
+class CreateTemplateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    from_event_id: Optional[str] = None
+    template_data: Optional[dict] = None
+
+
+class TemplateResponse(BaseModel):
+    id: str
+    name: str
+    template_data: dict
+    use_count: int = 0
+    created_at: Optional[str] = None
+
+
+class AnnouncementRequest(BaseModel):
+    title: Optional[str] = Field(None, max_length=255)
+    body: str = Field(..., min_length=1, max_length=2000)
+    image_url: Optional[str] = Field(None, max_length=2048)
+
+
+class AnnouncementResponse(BaseModel):
+    id: str
+    event_id: str
+    author_user_id: str
+    title: Optional[str] = None
+    body: str
+    image_url: Optional[str] = None
+    is_read: bool = False
+    created_at: Optional[str] = None
 
 
 class EventListResponse(BaseModel):
@@ -536,6 +578,171 @@ async def check_following_category(
 
 
 # ---------------------------------------------------------------------------
+# Endpoints — Templates (MUST be registered before /{event_id})
+# ---------------------------------------------------------------------------
+
+_TEMPLATE_FIELDS = {"title", "kind", "category_id", "format", "location", "online_url",
+                    "description", "time", "image_url", "is_public", "max_attendees"}
+
+
+@router.get("/templates", response_model=List[TemplateResponse])
+async def list_templates(
+    user_id: str = Depends(get_current_user_id),
+):
+    """List the current user's event templates, ordered by use_count DESC."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(
+                    "SELECT * FROM event_templates WHERE user_id = $1 ORDER BY use_count DESC, created_at DESC",
+                    user_id,
+                )
+                return [
+                    TemplateResponse(
+                        id=str(r["id"]),
+                        name=r["name"],
+                        template_data=r["template_data"] if isinstance(r["template_data"], dict) else {},
+                        use_count=r.get("use_count", 0),
+                        created_at=str(r["created_at"]) if r.get("created_at") else None,
+                    )
+                    for r in rows
+                ]
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error listing templates: %s", e)
+            raise error_response(500, "Failed to list templates", code="TEMPLATE_LIST_ERROR")
+
+    return []
+
+
+@router.post("/templates", response_model=TemplateResponse, status_code=201)
+async def create_template(
+    request: CreateTemplateRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Create an event template from explicit data or by copying from an existing event."""
+    pool = _get_db_pool()
+
+    template_data = request.template_data or {}
+
+    if request.from_event_id and pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                ev_row = await conn.fetchrow(
+                    "SELECT * FROM events WHERE id = $1 AND created_by = $2",
+                    request.from_event_id, user_id,
+                )
+                if not ev_row:
+                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+                ev = dict(ev_row)
+                template_data = {k: ev[k] for k in _TEMPLATE_FIELDS if ev.get(k) is not None}
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error copying event for template: %s", e)
+            raise error_response(500, "Failed to create template", code="TEMPLATE_CREATE_ERROR")
+
+    if pool is not None:
+        try:
+            import json
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    """
+                    INSERT INTO event_templates (user_id, name, template_data)
+                    VALUES ($1, $2, $3::jsonb)
+                    RETURNING *
+                    """,
+                    user_id,
+                    request.name,
+                    json.dumps(template_data),
+                )
+                return TemplateResponse(
+                    id=str(row["id"]),
+                    name=row["name"],
+                    template_data=row["template_data"] if isinstance(row["template_data"], dict) else {},
+                    use_count=row.get("use_count", 0),
+                    created_at=str(row["created_at"]) if row.get("created_at") else None,
+                )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error creating template: %s", e)
+            raise error_response(500, "Failed to create template", code="TEMPLATE_CREATE_ERROR")
+
+    raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+
+
+@router.delete("/templates/{template_id}")
+async def delete_template(
+    template_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Delete an event template (owner only)."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                result = await conn.execute(
+                    "DELETE FROM event_templates WHERE id = $1 AND user_id = $2",
+                    template_id, user_id,
+                )
+                if result.endswith(" 0"):
+                    raise error_response(404, "Template not found", code="TEMPLATE_NOT_FOUND")
+                return {"success": True, "message": "Template deleted"}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error deleting template: %s", e)
+            raise error_response(500, "Failed to delete template", code="TEMPLATE_DELETE_ERROR")
+
+    raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+
+
+# ---------------------------------------------------------------------------
+# Endpoints — Unread announcement count (MUST be before /{event_id})
+# ---------------------------------------------------------------------------
+
+@router.get("/my-announcements/unread-count")
+async def get_unread_announcement_count(
+    user_id: str = Depends(get_current_user_id),
+):
+    """Get total unread announcement count across all events the user attends."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    """
+                    SELECT COUNT(*) AS cnt
+                    FROM event_announcements ea
+                    JOIN event_attendees att ON att.event_id = ea.event_id
+                        AND att.user_id = $1 AND att.status IN ('going', 'interested')
+                    LEFT JOIN event_announcement_reads ear
+                        ON ear.announcement_id = ea.id AND ear.user_id = $1
+                    WHERE ear.user_id IS NULL
+                    """,
+                    user_id,
+                )
+                return {"unread_count": row["cnt"] if row else 0}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error fetching unread count: %s", e)
+            raise error_response(500, "Failed to get unread count", code="ANNOUNCEMENT_COUNT_ERROR")
+
+    return {"unread_count": 0}
+
+
+# ---------------------------------------------------------------------------
 # Endpoints — Single event + RSVP (parameterized routes last)
 # ---------------------------------------------------------------------------
 
@@ -676,6 +883,44 @@ async def update_event(
     return EventResponse(**ev)
 
 
+@router.delete("/{event_id}")
+async def delete_event(
+    event_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Soft-delete an event by setting status to 'cancelled'. Creator only."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                result = await conn.execute(
+                    """
+                    UPDATE events SET status = 'cancelled', updated_at = $3
+                    WHERE id = $1 AND created_by = $2
+                    """,
+                    event_id, user_id, datetime.now(timezone.utc),
+                )
+                if result.endswith(" 0"):
+                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+                logger.info("[events] Soft-deleted event: id=%s, user=%s", event_id, user_id)
+                return {"success": True, "message": "Event cancelled"}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error deleting event %s: %s", event_id, e)
+            raise error_response(500, "Failed to delete event", code="EVENT_DELETE_ERROR")
+
+    # Offline / in-memory fallback
+    ev = _IN_MEMORY_EVENTS.get(event_id)
+    if ev is None or ev.get("created_by") != user_id:
+        raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+    ev["status"] = "cancelled"
+    logger.info("[events] Soft-deleted event (in-memory): id=%s", event_id)
+    return {"success": True, "message": "Event cancelled"}
+
+
 # ---------------------------------------------------------------------------
 # Endpoints — RSVP
 # ---------------------------------------------------------------------------
@@ -686,7 +931,7 @@ async def rsvp_event(
     request: RsvpRequest,
     user_id: str = Depends(get_current_user_id),
 ):
-    """RSVP to an event (going, interested, not_going)."""
+    """RSVP to an event (going, interested, not_going). Auto-waitlists if event is full."""
     if request.status not in {"going", "interested", "not_going"}:
         raise error_response(
             400,
@@ -695,23 +940,44 @@ async def rsvp_event(
         )
 
     pool = _get_db_pool()
+    actual_status = request.status
+    waitlisted = False
 
     if pool is not None:
         try:
             async with pool.acquire() as conn:
+                # Check capacity if trying to go
+                if request.status == "going":
+                    cap_row = await conn.fetchrow(
+                        """
+                        SELECT e.max_attendees,
+                               COUNT(*) FILTER (WHERE ea.status = 'going') AS going_count
+                        FROM events e
+                        LEFT JOIN event_attendees ea ON ea.event_id = e.id
+                            AND ea.user_id != $2
+                        WHERE e.id = $1
+                        GROUP BY e.max_attendees
+                        """,
+                        event_id, user_id,
+                    )
+                    if cap_row and cap_row["max_attendees"] is not None:
+                        if cap_row["going_count"] >= cap_row["max_attendees"]:
+                            actual_status = "interested"
+                            waitlisted = True
+
                 await conn.execute(
                     """
                     INSERT INTO event_attendees (event_id, user_id, status)
                     VALUES ($1, $2, $3)
                     ON CONFLICT (event_id, user_id)
-                    DO UPDATE SET status = $3, updated_at = now()
+                    DO UPDATE SET status = $3
                     """,
                     event_id,
                     user_id,
-                    request.status,
+                    actual_status,
                 )
-                logger.info("[events] RSVP: user=%s, event=%s, status=%s", user_id, event_id, request.status)
-                return {"success": True, "status": request.status}
+                logger.info("[events] RSVP: user=%s, event=%s, status=%s, waitlisted=%s", user_id, event_id, actual_status, waitlisted)
+                return {"success": True, "status": actual_status, "waitlisted": waitlisted}
 
         except HTTPException:
             raise
@@ -720,9 +986,9 @@ async def rsvp_event(
             raise error_response(500, "Failed to RSVP", code="RSVP_ERROR")
 
     # Offline / in-memory fallback
-    _IN_MEMORY_RSVPS.setdefault(event_id, {})[user_id] = request.status
-    logger.info("[events] RSVP (in-memory): user=%s, event=%s, status=%s", user_id, event_id, request.status)
-    return {"success": True, "status": request.status}
+    _IN_MEMORY_RSVPS.setdefault(event_id, {})[user_id] = actual_status
+    logger.info("[events] RSVP (in-memory): user=%s, event=%s, status=%s", user_id, event_id, actual_status)
+    return {"success": True, "status": actual_status, "waitlisted": waitlisted}
 
 
 @router.delete("/{event_id}/rsvp")
@@ -755,6 +1021,222 @@ async def unrsvp_event(
     rsvps.pop(user_id, None)
     logger.info("[events] Un-RSVP (in-memory): user=%s, event=%s", user_id, event_id)
     return {"success": True, "message": "RSVP removed"}
+
+
+# ---------------------------------------------------------------------------
+# Endpoints — Duplicate
+# ---------------------------------------------------------------------------
+
+@router.post("/{event_id}/duplicate", response_model=EventResponse, status_code=201)
+async def duplicate_event(
+    event_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Duplicate an event (creator only). Copies all fields except date, attendees, status."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    "SELECT * FROM events WHERE id = $1 AND created_by = $2",
+                    event_id, user_id,
+                )
+                if not row:
+                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+
+                new_row = await conn.fetchrow(
+                    """
+                    INSERT INTO events (
+                        title, kind, category_id, location, online_url, description,
+                        image_url, format, status, is_public, latitude, longitude,
+                        date, source, created_by, max_attendees
+                    )
+                    VALUES (
+                        $1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9, $10, $11,
+                        CURRENT_DATE, 'user', $12, $13
+                    )
+                    RETURNING *
+                    """,
+                    row["title"],
+                    row["kind"],
+                    row["category_id"],
+                    row["location"],
+                    row["online_url"],
+                    row["description"],
+                    row["image_url"],
+                    row["format"],
+                    row.get("is_public", True),
+                    row.get("latitude"),
+                    row.get("longitude"),
+                    user_id,
+                    row.get("max_attendees"),
+                )
+                return _row_to_event(dict(new_row), user_id=user_id)
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error duplicating event %s: %s", event_id, e)
+            raise error_response(500, "Failed to duplicate event", code="EVENT_DUPLICATE_ERROR")
+
+    # Offline / in-memory fallback
+    ev = _IN_MEMORY_EVENTS.get(event_id)
+    if ev is None or ev.get("created_by") != user_id:
+        raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+
+    new_id = str(uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    dup = {**ev, "id": new_id, "status": "draft", "date": date.today().isoformat(),
+           "attendee_count": 0, "created_at": now}
+    _IN_MEMORY_EVENTS[new_id] = dup
+    return EventResponse(**dup)
+
+
+@router.post("/{event_id}/announcements", response_model=AnnouncementResponse, status_code=201)
+async def post_announcement(
+    event_id: str,
+    request: AnnouncementRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Post an announcement to event attendees (host or sponsor admin only)."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                # Verify caller is event creator or sponsor company admin
+                auth_row = await conn.fetchrow(
+                    """
+                    SELECT 1 FROM events e WHERE e.id = $1 AND e.created_by = $2
+                    UNION ALL
+                    SELECT 1 FROM events e
+                    JOIN sponsor_companies sc ON sc.id = e.sponsor_company_id
+                    WHERE e.id = $1 AND sc.admin_user_id = $2
+                    """,
+                    event_id, user_id,
+                )
+                if not auth_row:
+                    raise error_response(403, "Only event host or sponsor admin can post announcements", code="FORBIDDEN")
+
+                row = await conn.fetchrow(
+                    """
+                    INSERT INTO event_announcements (event_id, author_user_id, title, body, image_url)
+                    VALUES ($1, $2, $3, $4, $5)
+                    RETURNING *
+                    """,
+                    event_id, user_id, request.title, request.body, request.image_url,
+                )
+                return AnnouncementResponse(
+                    id=str(row["id"]),
+                    event_id=str(row["event_id"]),
+                    author_user_id=str(row["author_user_id"]),
+                    title=row.get("title"),
+                    body=row["body"],
+                    image_url=row.get("image_url"),
+                    created_at=str(row["created_at"]) if row.get("created_at") else None,
+                )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error posting announcement for event %s: %s", event_id, e)
+            raise error_response(500, "Failed to post announcement", code="ANNOUNCEMENT_ERROR")
+
+    raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+
+
+@router.get("/{event_id}/announcements", response_model=List[AnnouncementResponse])
+async def list_announcements(
+    event_id: str,
+    user_id: str = Depends(get_current_user_id),
+    pagination: tuple[int, int] = Depends(pagination_params),
+):
+    """List announcements for an event (attendees only). Includes is_read status."""
+    limit, offset = pagination
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                # Verify caller is attendee or host
+                access_row = await conn.fetchrow(
+                    """
+                    SELECT 1 FROM event_attendees WHERE event_id = $1 AND user_id = $2
+                        AND status IN ('going', 'interested')
+                    UNION ALL
+                    SELECT 1 FROM events WHERE id = $1 AND created_by = $2
+                    """,
+                    event_id, user_id,
+                )
+                if not access_row:
+                    raise error_response(403, "Only attendees can view announcements", code="FORBIDDEN")
+
+                rows = await conn.fetch(
+                    """
+                    SELECT ea.*,
+                           (ear.user_id IS NOT NULL) AS is_read
+                    FROM event_announcements ea
+                    LEFT JOIN event_announcement_reads ear
+                        ON ear.announcement_id = ea.id AND ear.user_id = $2
+                    WHERE ea.event_id = $1
+                    ORDER BY ea.created_at DESC
+                    LIMIT $3 OFFSET $4
+                    """,
+                    event_id, user_id, limit, offset,
+                )
+                return [
+                    AnnouncementResponse(
+                        id=str(r["id"]),
+                        event_id=str(r["event_id"]),
+                        author_user_id=str(r["author_user_id"]),
+                        title=r.get("title"),
+                        body=r["body"],
+                        image_url=r.get("image_url"),
+                        is_read=r.get("is_read", False),
+                        created_at=str(r["created_at"]) if r.get("created_at") else None,
+                    )
+                    for r in rows
+                ]
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error listing announcements for event %s: %s", event_id, e)
+            raise error_response(500, "Failed to list announcements", code="ANNOUNCEMENT_ERROR")
+
+    return []
+
+
+@router.post("/{event_id}/announcements/{announcement_id}/read")
+async def mark_announcement_read(
+    event_id: str,
+    announcement_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Mark a single announcement as read."""
+    pool = _get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO event_announcement_reads (announcement_id, user_id)
+                    VALUES ($1, $2)
+                    ON CONFLICT (announcement_id, user_id) DO NOTHING
+                    """,
+                    announcement_id, user_id,
+                )
+                return {"success": True}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error marking announcement read: %s", e)
+            raise error_response(500, "Failed to mark announcement read", code="ANNOUNCEMENT_READ_ERROR")
+
+    return {"success": True}
 
 
 # ---------------------------------------------------------------------------
@@ -805,6 +1287,11 @@ def _row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRe
         except (ValueError, TypeError):
             pass
 
+    going_count = row.get("going_count", 0) or 0
+    interested_count = row.get("interested_count", 0) or 0
+    max_attendees = row.get("max_attendees")
+    is_full = bool(max_attendees and going_count >= max_attendees)
+
     return EventResponse(
         id=str(row.get("id", "")),
         title=row.get("title", ""),
@@ -825,12 +1312,17 @@ def _row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRe
         created_by=row.get("created_by"),
         source=row.get("source", "user"),
         attendee_count=row.get("attendee_count", 0),
+        going_count=going_count,
+        interested_count=interested_count,
+        max_attendees=max_attendees,
+        is_full=is_full,
         user_rsvp_status=row.get("user_rsvp_status"),
         created_at=str(row["created_at"]) if row.get("created_at") else None,
         is_sponsored=is_sponsored,
         sponsor_name=row.get("sponsor_name") if is_sponsored else None,
         sponsor_logo_url=row.get("sponsor_logo_url") if is_sponsored else None,
         sponsor_tier=row.get("sponsor_tier") if is_sponsored else None,
+        sponsor_company_id=str(row["sponsor_company_id"]) if row.get("sponsor_company_id") else None,
     )
 
 

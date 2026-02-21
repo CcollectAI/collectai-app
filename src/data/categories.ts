@@ -56,9 +56,52 @@ export type Category = {
   name: string;
   tagline: string;
   bannerImageUrl: string;
+  accentColor: string;
+  iconName: string;
   collections: CategoryCollection[];
   externalMarketplaces: ExternalMarketplaceLink[];
   relatedCategoryIds: CategoryId[];
+};
+
+/** Accent color + icon lookup by category ID */
+export const CATEGORY_VISUAL: Record<CategoryId, { accentColor: string; iconName: string }> = {
+  pokemon: { accentColor: '#FFD700', iconName: 'flash' },
+  mtg: { accentColor: '#4B0082', iconName: 'flame' },
+  yugioh: { accentColor: '#8B4513', iconName: 'triangle' },
+  lorcana: { accentColor: '#6A5ACD', iconName: 'sparkles' },
+  funko: { accentColor: '#FF6B35', iconName: 'happy' },
+  designer_toys: { accentColor: '#E91E63', iconName: 'color-palette' },
+  anime_figures: { accentColor: '#FF69B4', iconName: 'body' },
+  hot_toys: { accentColor: '#C41E3A', iconName: 'shield' },
+  lego: { accentColor: '#FFC107', iconName: 'cube' },
+  gunpla: { accentColor: '#1E88E5', iconName: 'rocket' },
+  scale_models: { accentColor: '#607D8B', iconName: 'car-sport' },
+  warhammer: { accentColor: '#8D0226', iconName: 'skull' },
+  retro_games: { accentColor: '#9C27B0', iconName: 'game-controller' },
+  manga: { accentColor: '#2196F3', iconName: 'book' },
+  bluray_steelbook: { accentColor: '#37474F', iconName: 'disc' },
+  anime_bluray: { accentColor: '#00BCD4', iconName: 'film' },
+  anime_soundtrack: { accentColor: '#F06292', iconName: 'musical-notes' },
+  anime_ost_vinyl: { accentColor: '#AB47BC', iconName: 'vinyl' },
+  kpop_merch: { accentColor: '#FF69B4', iconName: 'heart' },
+  taylor_swift: { accentColor: '#E040FB', iconName: 'mic' },
+  pop_fandom: { accentColor: '#FF7043', iconName: 'star' },
+  kpop_lightsticks: { accentColor: '#FFD54F', iconName: 'flashlight' },
+  disney: { accentColor: '#1565C0', iconName: 'planet' },
+  theme_park: { accentColor: '#4CAF50', iconName: 'ticket' },
+  ghibli: { accentColor: '#66BB6A', iconName: 'leaf' },
+  bandai_premium: { accentColor: '#E53935', iconName: 'diamond' },
+  jp_magazine: { accentColor: '#FF8A65', iconName: 'newspaper' },
+  jp_event: { accentColor: '#EF5350', iconName: 'calendar' },
+  nintendo_merch: { accentColor: '#E53935', iconName: 'logo-nintendo' },
+  retro_pokemon: { accentColor: '#FBC02D', iconName: 'time' },
+  one_piece: { accentColor: '#D32F2F', iconName: 'boat' },
+  vtuber: { accentColor: '#7C4DFF', iconName: 'videocam' },
+  keycaps: { accentColor: '#78909C', iconName: 'keypad' },
+  loungefly: { accentColor: '#F48FB1', iconName: 'bag' },
+  diecast: { accentColor: '#546E7A', iconName: 'speedometer' },
+  sportscards: { accentColor: '#43A047', iconName: 'trophy' },
+  retro_handhelds: { accentColor: '#7E57C2', iconName: 'phone-portrait' },
 };
 
 export const CATEGORIES: Category[] = [
@@ -68,6 +111,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Modern & vintage Pokémon TCG, tracked like a real portfolio.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1310845/pexels-photo-1310845.jpeg',
+    accentColor: '#FFD700',
+    iconName: 'flash',
     collections: [
       {
         id: 'pokemon-modern-grails',
@@ -107,6 +152,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Reserve list, modern staples, and Commander all-stars.',
     bannerImageUrl:
       'https://images.pexels.com/photos/785707/pexels-photo-785707.jpeg',
+    accentColor: '#4B0082',
+    iconName: 'flame',
     collections: [],
     externalMarketplaces: [
       {
@@ -133,6 +180,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'First editions, ghost rares, and competitive staples.',
     bannerImageUrl:
       'https://images.pexels.com/photos/4507272/pexels-photo-4507272.jpeg',
+    accentColor: '#8B4513',
+    iconName: 'triangle',
     collections: [],
     externalMarketplaces: [
       {
@@ -159,6 +208,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Storyborn, Dreamborn, and Enchanted foils.',
     bannerImageUrl:
       'https://images.pexels.com/photos/4785441/pexels-photo-4785441.jpeg',
+    accentColor: '#6A5ACD',
+    iconName: 'sparkles',
     collections: [],
     externalMarketplaces: [
       {
@@ -185,6 +236,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Vaulted Pops, con exclusives, and chase variants.',
     bannerImageUrl:
       'https://images.pexels.com/photos/5809715/pexels-photo-5809715.jpeg',
+    accentColor: '#FF6B35',
+    iconName: 'happy',
     collections: [
       {
         id: 'funko-vaulted',
@@ -219,6 +272,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Limited drops, sofubi, and collab runs.',
     bannerImageUrl:
       'https://images.pexels.com/photos/6006941/pexels-photo-6006941.jpeg',
+    accentColor: '#E91E63',
+    iconName: 'color-palette',
     collections: [],
     externalMarketplaces: [
       {
@@ -240,6 +295,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Scale figures, nendoroids, and limited edition statues.',
     bannerImageUrl:
       'https://images.pexels.com/photos/7869252/pexels-photo-7869252.jpeg',
+    accentColor: '#FF69B4',
+    iconName: 'body',
     collections: [],
     externalMarketplaces: [
       {
@@ -261,6 +318,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Premium 1/6 scale collectibles from Marvel, Star Wars & more.',
     bannerImageUrl:
       'https://images.pexels.com/photos/163036/mario-luigi-yoschi-figures-163036.jpeg',
+    accentColor: '#C41E3A',
+    iconName: 'shield',
     collections: [],
     externalMarketplaces: [
       {
@@ -282,6 +341,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'UCS sets, retired exclusives, and minifigure collections.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1472386/pexels-photo-1472386.jpeg',
+    accentColor: '#FFC107',
+    iconName: 'cube',
     collections: [
       {
         id: 'lego-ucs',
@@ -316,6 +377,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'HG, MG, PG builds tracked like art pieces.',
     bannerImageUrl:
       'https://images.pexels.com/photos/2261169/pexels-photo-2261169.jpeg',
+    accentColor: '#1E88E5',
+    iconName: 'rocket',
     collections: [],
     externalMarketplaces: [
       {
@@ -337,6 +400,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Aircraft, tanks, ships, and automotive scale kits.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1409999/pexels-photo-1409999.jpeg',
+    accentColor: '#607D8B',
+    iconName: 'car-sport',
     collections: [],
     externalMarketplaces: [
       {
@@ -353,6 +418,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Painted squads with provenance and pedigree.',
     bannerImageUrl:
       'https://images.pexels.com/photos/106127/pexels-photo-106127.jpeg',
+    accentColor: '#8D0226',
+    iconName: 'skull',
     collections: [],
     externalMarketplaces: [
       {
@@ -369,6 +436,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Sealed classics, graded cartridges, and CIB treasures.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1637438/pexels-photo-1637438.jpeg',
+    accentColor: '#9C27B0',
+    iconName: 'game-controller',
     collections: [],
     externalMarketplaces: [
       {
@@ -390,6 +459,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'First prints, box sets, and out-of-print volumes.',
     bannerImageUrl:
       'https://images.pexels.com/photos/4350099/pexels-photo-4350099.jpeg',
+    accentColor: '#2196F3',
+    iconName: 'book',
     collections: [],
     externalMarketplaces: [
       {
@@ -406,6 +477,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Limited edition steelbooks and premium releases.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1040160/pexels-photo-1040160.jpeg',
+    accentColor: '#37474F',
+    iconName: 'disc',
     collections: [],
     externalMarketplaces: [
       {
@@ -422,6 +495,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Limited editions, Japanese imports, and rare box sets.',
     bannerImageUrl:
       'https://images.pexels.com/photos/3945683/pexels-photo-3945683.jpeg',
+    accentColor: '#00BCD4',
+    iconName: 'film',
     collections: [],
     externalMarketplaces: [
       {
@@ -443,6 +518,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Original soundtracks and character song CDs.',
     bannerImageUrl:
       'https://images.pexels.com/photos/164934/pexels-photo-164934.jpeg',
+    accentColor: '#F06292',
+    iconName: 'musical-notes',
     collections: [],
     externalMarketplaces: [
       {
@@ -464,6 +541,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Limited pressing vinyl soundtracks from classic and modern anime.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1389429/pexels-photo-1389429.jpeg',
+    accentColor: '#AB47BC',
+    iconName: 'vinyl',
     collections: [],
     externalMarketplaces: [
       {
@@ -485,6 +564,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Albums, photocards, and official merchandise.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg',
+    accentColor: '#FF69B4',
+    iconName: 'heart',
     collections: [],
     externalMarketplaces: [
       {
@@ -501,6 +582,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Limited vinyls, signed editions, and tour exclusives.',
     bannerImageUrl:
       'https://images.pexels.com/photos/167491/pexels-photo-167491.jpeg',
+    accentColor: '#E040FB',
+    iconName: 'mic',
     collections: [],
     externalMarketplaces: [
       {
@@ -522,6 +605,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Music memorabilia, tour merch, and limited artist drops.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg',
+    accentColor: '#FF7043',
+    iconName: 'star',
     collections: [],
     externalMarketplaces: [
       {
@@ -538,6 +623,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Official lightsticks from every generation and group.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg',
+    accentColor: '#FFD54F',
+    iconName: 'flashlight',
     collections: [],
     externalMarketplaces: [
       {
@@ -554,6 +641,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Vintage pins, park exclusives, and limited editions.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1629236/pexels-photo-1629236.jpeg',
+    accentColor: '#1565C0',
+    iconName: 'planet',
     collections: [],
     externalMarketplaces: [
       {
@@ -570,6 +659,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Park exclusives, vintage souvenirs, and limited merch.',
     bannerImageUrl:
       'https://images.pexels.com/photos/2884842/pexels-photo-2884842.jpeg',
+    accentColor: '#4CAF50',
+    iconName: 'ticket',
     collections: [],
     externalMarketplaces: [
       {
@@ -586,6 +677,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Official merch, art books, and limited museum exclusives.',
     bannerImageUrl:
       'https://images.pexels.com/photos/7869264/pexels-photo-7869264.jpeg',
+    accentColor: '#66BB6A',
+    iconName: 'leaf',
     collections: [],
     externalMarketplaces: [
       {
@@ -602,6 +695,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'P-Bandai exclusives, limited kits, and premium releases.',
     bannerImageUrl:
       'https://images.pexels.com/photos/2261169/pexels-photo-2261169.jpeg',
+    accentColor: '#E53935',
+    iconName: 'diamond',
     collections: [],
     externalMarketplaces: [
       {
@@ -618,6 +713,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Limited edition magazines, mooks, and collector issues.',
     bannerImageUrl:
       'https://images.pexels.com/photos/235985/pexels-photo-235985.jpeg',
+    accentColor: '#FF8A65',
+    iconName: 'newspaper',
     collections: [],
     externalMarketplaces: [
       {
@@ -634,6 +731,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Comiket, Wonder Festival, and event-only items.',
     bannerImageUrl:
       'https://images.pexels.com/photos/2774556/pexels-photo-2774556.jpeg',
+    accentColor: '#EF5350',
+    iconName: 'calendar',
     collections: [],
     externalMarketplaces: [
       {
@@ -650,6 +749,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Official Nintendo collectibles, plushies, and exclusives.',
     bannerImageUrl:
       'https://images.pexels.com/photos/371924/pexels-photo-371924.jpeg',
+    accentColor: '#E53935',
+    iconName: 'logo-nintendo',
     collections: [],
     externalMarketplaces: [
       {
@@ -666,6 +767,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Vintage toys, promo items, and classic Pokémon collectibles.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1310845/pexels-photo-1310845.jpeg',
+    accentColor: '#FBC02D',
+    iconName: 'time',
     collections: [],
     externalMarketplaces: [
       {
@@ -682,6 +785,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Figures, manga, and exclusive One Piece collectibles.',
     bannerImageUrl:
       'https://images.pexels.com/photos/7869252/pexels-photo-7869252.jpeg',
+    accentColor: '#D32F2F',
+    iconName: 'boat',
     collections: [],
     externalMarketplaces: [
       {
@@ -698,6 +803,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Hololive, Nijisanji, and indie VTuber official goods.',
     bannerImageUrl:
       'https://images.pexels.com/photos/3945683/pexels-photo-3945683.jpeg',
+    accentColor: '#7C4DFF',
+    iconName: 'videocam',
     collections: [],
     externalMarketplaces: [
       {
@@ -714,6 +821,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Artisan keycaps, limited group buys, and rare sets.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1772123/pexels-photo-1772123.jpeg',
+    accentColor: '#78909C',
+    iconName: 'keypad',
     collections: [],
     externalMarketplaces: [
       {
@@ -735,6 +844,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Limited edition bags, backpacks, and accessories.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1038000/pexels-photo-1038000.jpeg',
+    accentColor: '#F48FB1',
+    iconName: 'bag',
     collections: [],
     externalMarketplaces: [
       {
@@ -751,6 +862,8 @@ export const CATEGORIES: Category[] = [
     tagline: '1:64, 1:24, and premium diecast with real comps.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1409999/pexels-photo-1409999.jpeg',
+    accentColor: '#546E7A',
+    iconName: 'speedometer',
     collections: [
       {
         id: 'diecast-premium',
@@ -774,6 +887,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Graded rookies, vintage cards, and investment-grade collectibles.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1111597/pexels-photo-1111597.jpeg',
+    accentColor: '#43A047',
+    iconName: 'trophy',
     collections: [],
     externalMarketplaces: [
       {
@@ -795,6 +910,8 @@ export const CATEGORIES: Category[] = [
     tagline: 'Classic portable gaming hardware from Game Boy to PSP.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1298601/pexels-photo-1298601.jpeg',
+    accentColor: '#7E57C2',
+    iconName: 'phone-portrait',
     collections: [],
     externalMarketplaces: [
       {

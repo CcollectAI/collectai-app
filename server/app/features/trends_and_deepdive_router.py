@@ -236,6 +236,94 @@ async def get_item_trends(
         )
 
 
+class CategoryBreakdownItem(BaseModel):
+    category: str
+    item_count: int
+    total_value: float
+    pct_of_portfolio: float
+    gain_pct: float
+
+
+class PortfolioCategoryBreakdownResponse(BaseModel):
+    breakdown: List[CategoryBreakdownItem]
+    total_value: float
+
+
+@router.get("/portfolio/category-breakdown", response_model=PortfolioCategoryBreakdownResponse)
+async def get_portfolio_category_breakdown(
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Portfolio value broken down by category.
+    Uses latest q50 price prediction per item.
+    """
+    pool = _get_db_pool()
+    if not pool:
+        return PortfolioCategoryBreakdownResponse(breakdown=[], total_value=0.0)
+
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                WITH latest_pred AS (
+                    SELECT DISTINCT ON (pp.item_id)
+                        pp.item_id,
+                        pp.q50,
+                        pp.asof
+                    FROM price_predictions pp
+                    JOIN items i ON i.id = pp.item_id
+                    WHERE i.user_id = $1
+                    ORDER BY pp.item_id, pp.asof DESC
+                ),
+                earliest_pred AS (
+                    SELECT DISTINCT ON (pp.item_id)
+                        pp.item_id,
+                        pp.q50 AS first_q50
+                    FROM price_predictions pp
+                    JOIN items i ON i.id = pp.item_id
+                    WHERE i.user_id = $1
+                    ORDER BY pp.item_id, pp.asof ASC
+                )
+                SELECT
+                    i.category,
+                    COUNT(*) AS item_count,
+                    COALESCE(SUM(lp.q50), 0) AS total_value,
+                    COALESCE(SUM(ep.first_q50), 0) AS first_total
+                FROM items i
+                LEFT JOIN latest_pred lp ON lp.item_id = i.id
+                LEFT JOIN earliest_pred ep ON ep.item_id = i.id
+                WHERE i.user_id = $1
+                  AND i.category IS NOT NULL
+                GROUP BY i.category
+                ORDER BY total_value DESC
+                """,
+                user_id,
+            )
+
+            total_value = sum(float(r["total_value"] or 0) for r in rows)
+            breakdown = []
+            for r in rows:
+                val = float(r["total_value"] or 0)
+                first = float(r["first_total"] or 0)
+                gain_pct = ((val - first) / first) if first > 0 else 0.0
+                breakdown.append(CategoryBreakdownItem(
+                    category=r["category"],
+                    item_count=r["item_count"],
+                    total_value=round(val, 2),
+                    pct_of_portfolio=round(val / total_value, 4) if total_value > 0 else 0.0,
+                    gain_pct=round(gain_pct, 4),
+                ))
+
+            return PortfolioCategoryBreakdownResponse(
+                breakdown=breakdown,
+                total_value=round(total_value, 2),
+            )
+
+    except Exception as e:
+        logger.error(f"[portfolio/category-breakdown] DB error: {e}")
+        return PortfolioCategoryBreakdownResponse(breakdown=[], total_value=0.0)
+
+
 @router.get("/categories/{category}/deep-dive", response_model=CategoryDeepDiveResponse)
 async def get_category_deep_dive(
     category: str,

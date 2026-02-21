@@ -43,6 +43,8 @@ import { Linking } from "react-native";
 import logger from "@/utils/logger";
 import { ItemAttributesSection } from "@/components/ItemAttributesSection";
 import { formatPrice, formatNumber } from "@/lib/format";
+import { isBuildableCategory } from "@/constants/buildStepTemplates";
+import { CATEGORY_VISUAL } from "@/constants/categoryVisuals";
 
 // Dossier data shape (mirrors collectorsApi.getDossier return type)
 interface DossierData {
@@ -259,6 +261,12 @@ export default function ItemDetailScreen() {
   const [aiRefreshing, setAiRefreshing] = useState(false);
   const [pullRefreshing, setPullRefreshing] = useState(false);
 
+  // Build project state — for buildable categories
+  const categorySlug = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const itemIsBuildable = isBuildableCategory(categorySlug);
+  const buildAccent = CATEGORY_VISUAL[categorySlug]?.color;
+  const [linkedProject, setLinkedProject] = useState<{ id: string; title: string; pct: number } | null>(null);
+
   // (Price Alert section removed)
 
   // ActionSheet handlers for iOS dropdowns
@@ -416,6 +424,21 @@ export default function ItemDetailScreen() {
       })
       .finally(() => setProvenanceLoading(false));
   }, [id, isDraft]);
+
+  // Fetch linked build project (if buildable category)
+  useEffect(() => {
+    if (!id || isDraft || !itemIsBuildable) return;
+    dataProvider.listBuildPaintProjectsByItem(id)
+      .then((projects) => {
+        if (projects.length > 0) {
+          const p = projects[0];
+          const done = p.steps?.filter((s) => s.done).length ?? 0;
+          const total = p.steps?.length ?? 0;
+          setLinkedProject({ id: p.id, title: p.title, pct: total > 0 ? Math.round((done / total) * 100) : 0 });
+        }
+      })
+      .catch(() => {});
+  }, [id, isDraft, itemIsBuildable]);
 
   // Fetch affiliate links on mount (non-draft items)
   useEffect(() => {
@@ -1230,6 +1253,57 @@ export default function ItemDetailScreen() {
               </View>
             )}
 
+            {/* Build Project — for buildable categories */}
+            {!isDraft && id && itemIsBuildable && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="construct-outline" size={20} color={buildAccent ?? theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Build & Paint</Text>
+                  </View>
+                </View>
+                {linkedProject ? (
+                  <Pressable
+                    onPress={() => router.push(`/projects/${encodeURIComponent(linkedProject.id)}`)}
+                    style={[styles.buildProjectLink, { backgroundColor: theme.background, borderColor: theme.border }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View build project: ${linkedProject.title}, ${linkedProject.pct}% complete`}
+                  >
+                    <View style={[styles.buildProjectLinkAccent, { backgroundColor: buildAccent ?? theme.accent }]} />
+                    <View style={styles.buildProjectLinkInfo}>
+                      <Text style={[styles.buildProjectLinkTitle, { color: theme.text }]} numberOfLines={1}>
+                        {linkedProject.title}
+                      </Text>
+                      <View style={styles.buildProjectLinkProgressRow}>
+                        <View style={[styles.buildProjectLinkProgressBg, { backgroundColor: theme.border }]}>
+                          <View
+                            style={[
+                              styles.buildProjectLinkProgressFill,
+                              { backgroundColor: buildAccent ?? theme.accent, width: `${linkedProject.pct}%` },
+                            ]}
+                          />
+                        </View>
+                        <Text style={[styles.buildProjectLinkPct, { color: theme.muted }]}>
+                          {linkedProject.pct}%
+                        </Text>
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={theme.muted} />
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={() => router.push('/build-paint-projects')}
+                    style={[styles.startBuildButton, { backgroundColor: buildAccent ?? theme.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Start a build project for this item"
+                  >
+                    <Ionicons name="add-circle-outline" size={18} color="#fff" />
+                    <Text style={styles.startBuildButtonText}>Start Build Project</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
+
             {/* Shop this Item — affiliate links */}
             {!isDraft && affiliateLinks.length > 0 && (
               <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
@@ -1850,6 +1924,64 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 8,
     fontStyle: 'italic',
+  },
+  // Build project link card
+  buildProjectLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  buildProjectLinkAccent: {
+    width: 4,
+    alignSelf: 'stretch',
+  },
+  buildProjectLinkInfo: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  buildProjectLinkTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  buildProjectLinkProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  buildProjectLinkProgressBg: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  buildProjectLinkProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  buildProjectLinkPct: {
+    fontSize: 11,
+    fontWeight: '600',
+    minWidth: 28,
+    textAlign: 'right',
+  },
+  startBuildButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 8,
+  },
+  startBuildButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
   affiliateLinkBtn: {
     flexDirection: 'row',

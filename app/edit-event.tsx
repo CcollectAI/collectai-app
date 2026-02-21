@@ -1,12 +1,14 @@
 /**
- * Create Event Screen -- Form to submit a new community event.
- * Route: /create-event
+ * Edit Event Screen -- Form to update an existing community event.
+ * Route: /edit-event?eventId=X
  *
  * Features:
+ *  - Loads existing event by ID and verifies current user is the creator
+ *  - Pre-populates all form fields from existing event
  *  - Format selector (In-Person / Online / Hybrid) with chip UI
  *  - Geolocation support for in-person/hybrid events
  *  - Public / Private toggle
- *  - Invite-friends placeholder (post-creation)
+ *  - "Cancel Event" destructive button at bottom
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -23,14 +25,11 @@ import {
   Alert,
   Switch,
   Animated,
-  Modal,
-  FlatList,
-  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { dataProvider } from '@/data';
-import type { EventKind, CreateEventInput, EventTemplate } from '@/data/events';
+import type { EventKind, CreateEventInput, CollectorsEvent } from '@/data/events';
 import { CATEGORIES } from '@/constants/categories';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
@@ -38,6 +37,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useFormField, validateAll } from '@/hooks/useFormField';
 import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
+import { useAuthContext } from '@/providers/useAuthContext';
 import CompactSelect from '@/components/CompactSelect';
 import logger from '@/utils/logger';
 
@@ -56,14 +56,6 @@ const EVENT_KINDS: { label: string; value: EventKind }[] = [
   { label: 'Release', value: 'release' },
 ];
 
-const KIND_ICON: Record<EventKind, keyof typeof Ionicons.glyphMap> = {
-  meetup: 'people-outline',
-  collection_drop: 'cube-outline',
-  stream: 'logo-twitch',
-  convention: 'map-outline',
-  release: 'rocket-outline',
-};
-
 const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ionicons.glyphMap }[] = [
   { label: 'In-Person', value: 'in_person', icon: 'location-outline' },
   { label: 'Online', value: 'online', icon: 'globe-outline' },
@@ -74,11 +66,18 @@ const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ion
 /*  Component                                                                  */
 /* -------------------------------------------------------------------------- */
 
-const CreateEventScreen: React.FC = () => {
+const EditEventScreen: React.FC = () => {
   const router = useRouter();
+  const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { user } = useAuthContext();
+
+  /* ---- loading / auth state ---- */
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [originalEvent, setOriginalEvent] = useState<CollectorsEvent | null>(null);
 
   /* ---- form state ---- */
   const titleField = useFormField(compose(required('Title'), maxLength('Title', 255)));
@@ -101,32 +100,6 @@ const CreateEventScreen: React.FC = () => {
 
   const [saveState, setSaveState] = useState<SaveState>('idle');
 
-  /* ---- template state ---- */
-  const [templates, setTemplates] = useState<EventTemplate[]>([]);
-  const [templateSheetOpen, setTemplateSheetOpen] = useState(false);
-  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
-  const [templateName, setTemplateName] = useState('');
-
-  useEffect(() => {
-    dataProvider.listEventTemplates().then(setTemplates).catch(() => {});
-  }, []);
-
-  const applyTemplate = useCallback((tpl: EventTemplate) => {
-    const d = tpl.templateData as Record<string, unknown>;
-    if (d.title) titleField.onChange(d.title as string);
-    if (d.kind) setKind(d.kind as EventKind);
-    if (d.category_id) setCategoryId(d.category_id as string);
-    if (d.format) setFormat(d.format as EventFormat);
-    if (d.location) setLocation(d.location as string);
-    if (d.time) setTime(d.time as string);
-    if (d.description) descriptionField.onChange(d.description as string);
-    if (d.image_url) imageUrlField.onChange(d.image_url as string);
-    if (d.online_url) onlineUrlField.onChange(d.online_url as string);
-    if (d.is_public !== undefined) setIsPublic(d.is_public as boolean);
-    setTemplateSheetOpen(false);
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-  }, [titleField, descriptionField, imageUrlField, onlineUrlField]);
-
   /* ---- derived ---- */
   const showLocation = format === 'in_person' || format === 'hybrid';
   const showOnlineUrl = format === 'online' || format === 'hybrid';
@@ -137,6 +110,57 @@ const CreateEventScreen: React.FC = () => {
     descriptionField.value.trim().length > 0 &&
     !titleField.error && !dateField.error && !descriptionField.error && !onlineUrlField.error && !imageUrlField.error &&
     saveState !== 'saving';
+
+  /* ---- load existing event ---- */
+  useEffect(() => {
+    if (!eventId) {
+      setAuthError('No event ID provided.');
+      setInitialLoading(false);
+      return;
+    }
+
+    (async () => {
+      try {
+        const evt = await dataProvider.getEventById(eventId);
+        if (!evt) {
+          setAuthError('Event not found.');
+          setInitialLoading(false);
+          return;
+        }
+
+        // Verify current user is the creator
+        const currentUserId = user?.id;
+        if (!currentUserId || (evt.createdBy !== currentUserId && evt.hostUserId !== currentUserId)) {
+          setAuthError('You do not have permission to edit this event.');
+          setInitialLoading(false);
+          return;
+        }
+
+        setOriginalEvent(evt);
+
+        // Pre-populate form fields
+        titleField.onChange(evt.title);
+        setKind(evt.kind);
+        setCategoryId(evt.categoryId ?? undefined);
+        setFormat((evt.format as EventFormat) ?? 'in_person');
+        dateField.onChange(evt.date);
+        setTime(evt.time ?? '');
+        setEndDate(evt.endDate ?? '');
+        setLocation(evt.location ?? '');
+        onlineUrlField.onChange(evt.onlineUrl ?? '');
+        imageUrlField.onChange(evt.imageUrl ?? '');
+        descriptionField.onChange(evt.description);
+        setIsPublic(evt.isPublic ?? true);
+        setLatitude(evt.latitude);
+        setLongitude(evt.longitude);
+      } catch (err: unknown) {
+        logger.warn('[EditEvent] load error:', err);
+        setAuthError('Failed to load event.');
+      } finally {
+        setInitialLoading(false);
+      }
+    })();
+  }, [eventId, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---- geolocation handler ---- */
   const handleUseMyLocation = useCallback(async () => {
@@ -170,7 +194,7 @@ const CreateEventScreen: React.FC = () => {
         if (name) setLocation(name);
       }
     } catch (err: unknown) {
-      logger.warn('[CreateEvent] geolocation error:', err);
+      logger.warn('[EditEvent] geolocation error:', err);
       Alert.alert('Location Error', 'Could not retrieve your location. Please enter it manually.');
     } finally {
       setGeoLoading(false);
@@ -180,47 +204,98 @@ const CreateEventScreen: React.FC = () => {
   /* ---- submit ---- */
   const handleSubmit = async () => {
     if (!validateAll(titleField, dateField, descriptionField, onlineUrlField, imageUrlField)) return;
-    if (!canSubmit) return;
+    if (!canSubmit || !eventId) return;
 
     setSaveState('saving');
 
     try {
-      const input: CreateEventInput = {
+      const patch: Partial<CreateEventInput> = {
         title: titleField.value.trim(),
         kind,
         date: dateField.value.trim(),
         description: descriptionField.value.trim(),
         format,
         isPublic,
-        ...(categoryId ? { categoryId } : {}),
-        ...(time.trim() ? { time: time.trim() } : {}),
-        ...(endDate.trim() ? { endDate: endDate.trim() } : {}),
-        ...(location.trim() ? { location: location.trim() } : {}),
-        ...(onlineUrlField.value.trim() ? { onlineUrl: onlineUrlField.value.trim() } : {}),
-        ...(imageUrlField.value.trim() ? { imageUrl: imageUrlField.value.trim() } : {}),
+        ...(categoryId ? { categoryId } : { categoryId: undefined }),
+        ...(time.trim() ? { time: time.trim() } : { time: undefined }),
+        ...(endDate.trim() ? { endDate: endDate.trim() } : { endDate: undefined }),
+        ...(location.trim() ? { location: location.trim() } : { location: undefined }),
+        ...(onlineUrlField.value.trim() ? { onlineUrl: onlineUrlField.value.trim() } : { onlineUrl: undefined }),
+        ...(imageUrlField.value.trim() ? { imageUrl: imageUrlField.value.trim() } : { imageUrl: undefined }),
         ...(latitude !== undefined ? { latitude } : {}),
         ...(longitude !== undefined ? { longitude } : {}),
       };
 
-      const created = await dataProvider.createEvent(input);
-
-      // Save as template if toggled on
-      if (saveAsTemplate && templateName.trim()) {
-        try {
-          await dataProvider.createEventTemplate(templateName.trim(), created.id);
-        } catch (tplErr: unknown) {
-          logger.warn('[CreateEvent] template save error:', tplErr);
-        }
-      }
-
+      await dataProvider.updateEvent(eventId, patch);
       router.back();
     } catch (err: unknown) {
-      logger.warn('[CreateEvent] error:', err);
-      Alert.alert('Error', err?.message || 'Failed to create event. Please try again.');
+      logger.warn('[EditEvent] error:', err);
+      Alert.alert('Error', (err as Error)?.message || 'Failed to update event. Please try again.');
     } finally {
       setSaveState('idle');
     }
   };
+
+  /* ---- cancel event ---- */
+  const handleCancelEvent = () => {
+    if (!eventId) return;
+
+    Alert.alert(
+      'Cancel Event',
+      'Are you sure you want to cancel this event? This action cannot be undone and all attendees will be notified.',
+      [
+        { text: 'Keep Event', style: 'cancel' },
+        {
+          text: 'Cancel Event',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dataProvider.cancelEvent(eventId);
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+              router.back();
+            } catch (err: unknown) {
+              logger.warn('[EditEvent] cancel error:', err);
+              Alert.alert('Error', (err as Error)?.message || 'Failed to cancel event.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  /* ======================================================================== */
+  /*  Loading / Error states                                                   */
+  /* ======================================================================== */
+
+  if (initialLoading) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading event...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (authError) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <View style={styles.centerContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>{authError}</Text>
+          <AnimatedPressable
+            onPress={() => router.back()}
+            style={[styles.errorBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={[styles.errorBtnText, { color: colors.text }]}>Go Back</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   /* ======================================================================== */
   /*  Render                                                                   */
@@ -239,40 +314,9 @@ const CreateEventScreen: React.FC = () => {
           <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Create Event</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Event</Text>
           <View style={{ width: 32 }} />
         </View>
-
-        {/* Template picker modal */}
-        <Modal visible={templateSheetOpen} animationType="slide" transparent>
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>From Template</Text>
-                <TouchableOpacity onPress={() => setTemplateSheetOpen(false)}>
-                  <Ionicons name="close" size={24} color={colors.text} />
-                </TouchableOpacity>
-              </View>
-              {templates.length === 0 ? (
-                <Text style={[styles.inviteNote, { color: colors.muted, padding: 20 }]}>No templates yet. Create events and save them as templates.</Text>
-              ) : (
-                <FlatList
-                  data={templates}
-                  keyExtractor={(t) => t.id}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={[styles.templateItem, { borderColor: colors.border }]}
-                      onPress={() => applyTemplate(item)}
-                    >
-                      <Text style={[styles.templateName, { color: colors.text }]}>{item.name}</Text>
-                      <Text style={[styles.templateMeta, { color: colors.muted }]}>Used {item.useCount} times</Text>
-                    </TouchableOpacity>
-                  )}
-                />
-              )}
-            </View>
-          </View>
-        </Modal>
 
         <ScrollView
           style={styles.scroll}
@@ -281,20 +325,6 @@ const CreateEventScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
-
-          {/* From Template button */}
-          {templates.length > 0 && (
-            <AnimatedPressable
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setTemplateSheetOpen(true); }}
-              style={[styles.fromTemplateBtn, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
-              accessibilityRole="button"
-              accessibilityLabel="Create from template"
-            >
-              <Ionicons name="copy-outline" size={16} color={colors.accent} />
-              <Text style={[styles.fromTemplateBtnText, { color: colors.accent }]}>From Template</Text>
-            </AnimatedPressable>
-          )}
-
           {/* ============================================================== */}
           {/*  Section: Basic Information                                     */}
           {/* ============================================================== */}
@@ -671,47 +701,7 @@ const CreateEventScreen: React.FC = () => {
           </View>
 
           {/* ============================================================== */}
-          {/*  Section: Save as Template                                      */}
-          {/* ============================================================== */}
-          <View style={styles.section}>
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.toggleRow}>
-                <View style={styles.toggleLeft}>
-                  <Ionicons name="bookmark-outline" size={20} color={colors.accent} />
-                  <View style={styles.toggleTextBlock}>
-                    <Text style={[styles.toggleLabel, { color: colors.text }]}>Save as Template</Text>
-                    <Text style={[styles.toggleHint, { color: colors.muted }]}>Reuse this event setup for future events</Text>
-                  </View>
-                </View>
-                <Switch
-                  value={saveAsTemplate}
-                  onValueChange={setSaveAsTemplate}
-                  trackColor={{ false: colors.border, true: colors.accent + '60' }}
-                  thumbColor={saveAsTemplate ? colors.accent : colors.muted}
-                  ios_backgroundColor={colors.border}
-                  accessibilityLabel="Save as template"
-                />
-              </View>
-              {saveAsTemplate && (
-                <View style={[styles.fieldBlock, { marginTop: 12 }]}>
-                  <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                    <Ionicons name="bookmark-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                    <TextInput
-                      value={templateName}
-                      onChangeText={setTemplateName}
-                      placeholder="Template name"
-                      placeholderTextColor={colors.muted}
-                      style={[styles.input, { color: colors.text }]}
-                      accessibilityLabel="Template name"
-                    />
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* ============================================================== */}
-          {/*  Submit Button                                                  */}
+          {/*  Save Changes Button                                            */}
           {/* ============================================================== */}
           <AnimatedPressable
             onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSubmit(); }}
@@ -723,48 +713,40 @@ const CreateEventScreen: React.FC = () => {
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Create event"
+            accessibilityLabel="Save changes"
           >
             {saveState === 'saving' ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
                 <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.submitButtonText}>Create Event</Text>
+                <Text style={styles.submitButtonText}>Save Changes</Text>
               </>
             )}
           </AnimatedPressable>
 
           {/* ============================================================== */}
-          {/*  Invite Friends (post-creation placeholder)                     */}
+          {/*  Cancel Event (Destructive)                                     */}
           {/* ============================================================== */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Invite Friends</Text>
+              <Ionicons name="warning-outline" size={16} color="#EF4444" />
+              <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>Danger Zone</Text>
             </View>
 
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.inviteNote, { color: colors.muted }]}>
-                You can invite friends after creating the event.
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: '#EF444430' }]}>
+              <Text style={[styles.dangerHint, { color: colors.muted }]}>
+                Cancelling this event is permanent. All attendees will be notified.
               </Text>
-              <View
-                style={[
-                  styles.inviteButton,
-                  {
-                    backgroundColor: colors.border + '60',
-                    borderColor: colors.border,
-                  },
-                ]}
+              <AnimatedPressable
+                onPress={handleCancelEvent}
+                style={styles.cancelEventButton}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel event"
               >
-                <Ionicons name="chatbubbles-outline" size={18} color={colors.muted} />
-                <Text style={[styles.inviteButtonText, { color: colors.muted }]}>
-                  Invite Friends via Chat
-                </Text>
-              </View>
-              <Text style={[styles.inviteSubtext, { color: colors.muted }]}>
-                Available after event creation
-              </Text>
+                <Ionicons name="close-circle-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.cancelEventButtonText}>Cancel Event</Text>
+              </AnimatedPressable>
             </View>
           </View>
 
@@ -786,6 +768,33 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  loadingText: {
+    fontSize: 14,
+    marginTop: 12,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorBtn: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  errorBtnText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   header: {
     flexDirection: 'row',
@@ -946,90 +955,33 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  /* Invite friends placeholder */
-  inviteNote: {
+  /* Cancel Event button (destructive) */
+  dangerHint: {
     fontSize: 13,
     marginBottom: 12,
+    lineHeight: 18,
   },
-  inviteButton: {
+  cancelEventButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
   },
-  inviteButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
+  cancelEventButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
-  inviteSubtext: {
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 6,
-  },
+
   fieldError: {
     fontSize: 12,
     color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
   },
-
-  /* From Template button */
-  fromTemplateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  fromTemplateBtnText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-
-  /* Template picker modal */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '60%',
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E2E8F0',
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  templateItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  templateName: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  templateMeta: {
-    fontSize: 12,
-    marginTop: 2,
-  },
 });
 
-export default CreateEventScreen;
+export default EditEventScreen;

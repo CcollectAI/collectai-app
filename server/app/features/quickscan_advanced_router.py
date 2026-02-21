@@ -6,6 +6,8 @@ from typing import List
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from app.errors import error_response
+
 router = APIRouter(prefix="/quickscan-advanced", tags=["quickscan-advanced"])
 logger = logging.getLogger(__name__)
 
@@ -55,25 +57,6 @@ class BatchQuickScanRequest(BaseModel):
 
 class BatchQuickScanResponse(BaseModel):
     results: List[QuickScanResult]
-
-
-# Demo fallback data
-DEMO_ATTRS = QuickScanAttributes(
-    category="mtg",
-    edition_guess="Unlimited",
-    condition_guess="Near Mint",
-    rarity_score=0.82,
-)
-
-DEMO_PREDICTION = QuickScanPrediction(
-    name="Demo Black Lotus",
-    estimated_low=18000.0,
-    estimated_mid=22000.0,
-    estimated_high=26000.0,
-    currency="EUR",
-    confidence=0.91,
-    explanation="Priced based on excellent condition, rarity, and strong market demand.",
-)
 
 
 async def _get_real_prediction(
@@ -220,35 +203,38 @@ async def quickscan_single(request: QuickScanSingleRequest | None = None):
     """
     Enriched QuickScan: edition, condition, rarity, q10/q50/q90 band.
 
-    Accepts category and optional attributes. Attempts real model first,
-    falls back to demo data if no model available.
+    Accepts category and optional attributes. Returns HTTP 422 if no ML
+    model is available for the requested category.
     """
-    if request:
-        attrs = QuickScanAttributes(
-            category=request.category,
-            edition_guess=request.edition_guess,
-            condition_guess=request.condition_guess,
-            rarity_score=request.rarity_score,
+    if not request:
+        raise error_response(
+            422,
+            "Request body with category is required",
+            code="MISSING_REQUEST_BODY",
         )
-    else:
-        # Backwards-compatible: use demo attrs if no request body
-        attrs = DEMO_ATTRS
 
-    # Try real model first
+    attrs = QuickScanAttributes(
+        category=request.category,
+        edition_guess=request.edition_guess,
+        condition_guess=request.condition_guess,
+        rarity_score=request.rarity_score,
+    )
+
+    # Try real model
     real_pred = await _get_real_prediction(attrs.category, attrs)
 
-    if real_pred:
-        return QuickScanResult(
-            item_id=None,
-            attributes=attrs,
-            prediction=real_pred,
+    if not real_pred:
+        raise error_response(
+            422,
+            f"No ML model available for category '{attrs.category}'. "
+            "Price prediction is not yet supported for this category.",
+            code="NO_MODEL_AVAILABLE",
         )
 
-    # Fallback to demo
     return QuickScanResult(
         item_id=None,
         attributes=attrs,
-        prediction=DEMO_PREDICTION,
+        prediction=real_pred,
     )
 
 
@@ -257,8 +243,9 @@ async def quickscan_batch(payload: BatchQuickScanRequest):
     """
     Multi-item batch scanning (Advanced D).
 
-    Pass category in the request body. If omitted, falls back to demo.
-    Attempts real model per image, falls back to demo prediction.
+    Pass category in the request body. Attempts real model per image.
+    Items without a model get confidence=0 and price 0/0/0 so the
+    frontend can distinguish unsupported results.
     """
     results: list[QuickScanResult] = []
     category = payload.category or "funko"  # fallback for backwards compat
@@ -284,15 +271,17 @@ async def quickscan_batch(payload: BatchQuickScanRequest):
                 )
             )
         else:
-            # Fallback to generic demo
+            # No model available -- include with zero prices and confidence
+            # so the frontend can distinguish real vs unsupported results
             pred = QuickScanPrediction(
                 name=f"Detected item from {image_id}",
-                estimated_low=35.0,
-                estimated_mid=45.0,
-                estimated_high=60.0,
+                estimated_low=0.0,
+                estimated_mid=0.0,
+                estimated_high=0.0,
                 currency="EUR",
-                confidence=0.5,
-                explanation=f"Estimate based on {category} market data.",
+                confidence=0.0,
+                explanation=f"No ML model available for category '{category}'. "
+                "Price prediction is not yet supported for this category.",
             )
             results.append(
                 QuickScanResult(

@@ -35,7 +35,7 @@ import type {
 } from './types';
 import { getCategoryById } from './categories';
 import logger from '../utils/logger';
-import type { CollectorsEvent, CreateEventInput } from './events';
+import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 import { supabase } from '../lib/supabase';
 import { collectorsApi } from '../api/collectorsApi';
 
@@ -117,7 +117,7 @@ export class SupabaseDataProvider implements DataProvider {
     // JOIN price_predictions via FK (item_id → items.id)
     const { data, error } = await supabase
       .from('items')
-      .select('id, title, category, updated_at, attributes_json, taxonomy_version, subtype_id, collections, price_predictions(q10, q50, q90, conf_score, asof)')
+      .select('id, title, category, updated_at, attributes_json, taxonomy_version, subtype_id, collections, images, price_predictions(q10, q50, q90, conf_score, asof)')
       .order('updated_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -136,6 +136,7 @@ export class SupabaseDataProvider implements DataProvider {
       taxonomy_version?: string | null;
       subtype_id?: string | null;
       collections?: string[] | null;
+      images?: string[] | null;
       price_predictions?: PredRow[];
     };
 
@@ -160,7 +161,7 @@ export class SupabaseDataProvider implements DataProvider {
         priceBand: latest
           ? { q10: latest.q10 ?? 0, q50: latest.q50 ?? 0, q90: latest.q90 ?? 0, confidence: latest.conf_score ?? 0, currency: 'EUR' }
           : undefined,
-        imageUrl: undefined,
+        imageUrl: r.images?.[0] ?? undefined,
         updatedAt: r.updated_at ?? undefined,
       };
     });
@@ -289,16 +290,16 @@ export class SupabaseDataProvider implements DataProvider {
 
   async updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item> {
     const updatePayload: Record<string, unknown> = {};
-    if (patch.name !== undefined) updatePayload.name = patch.name;
+    if (patch.name !== undefined) updatePayload.title = patch.name;
     if (patch.category !== undefined) updatePayload.category = patch.category;
-    if (patch.price !== undefined) updatePayload.price = patch.price;
     if (patch.imageUrl !== undefined) updatePayload.image_url = patch.imageUrl;
+    // Note: price is not stored in items table — it comes from price_predictions
 
     const { data, error } = await supabase
       .from('items')
       .update(updatePayload)
       .eq('id', itemId)
-      .select('id, name, category, price, image_url, updated_at')
+      .select('id, title, category, image_url, updated_at, images')
       .single();
 
     if (error || !data) {
@@ -306,42 +307,71 @@ export class SupabaseDataProvider implements DataProvider {
       throw new Error(error?.message || 'Failed to update item');
     }
 
+    const images = (data as Record<string, unknown>).images as string[] | null;
+
     return {
       id: data.id,
-      name: data.name,
+      name: (data as Record<string, unknown>).title as string ?? 'Untitled',
       category: data.category,
-      price: data.price,
-      imageUrl: data.image_url,
-      updatedAt: data.updated_at,
+      price: 0,
+      imageUrl: images?.[0] ?? (data as Record<string, unknown>).image_url as string ?? undefined,
+      updatedAt: (data as Record<string, unknown>).updated_at as string,
     };
   }
 
   async archiveItem(itemId: string): Promise<void> {
-    // Merge _archived: true into the existing attributes_json via JSONB concat
+    // Try dedicated archive RPC first
     const { error } = await supabase.rpc('rpc_archive_item_v1', {
       p_item_id: itemId,
     });
 
     if (error) {
-      // Fallback: direct update if RPC not yet deployed
+      // Fallback: direct attribute update to mark as archived
+      logger.warn('[SupabaseDataProvider] archiveItem RPC unavailable, trying direct update:', error);
+      const { data: current } = await supabase
+        .from('items')
+        .select('attributes_json')
+        .eq('id', itemId)
+        .single();
+
+      const attrs = (current?.attributes_json as Record<string, unknown>) ?? {};
       const { error: updateError } = await supabase
         .from('items')
-        .update({
-          attributes_json: supabase.rpc('jsonb_set_archived', { p_item_id: itemId }) as unknown,
-        } as Record<string, unknown>)
+        .update({ attributes_json: { ...attrs, _archived: true } })
         .eq('id', itemId);
 
-      // If RPC fallback also fails, try raw SQL-style update
       if (updateError) {
-        const { error: rawError } = await supabase
-          .from('items')
-          .update({ archived_at: new Date().toISOString() } as Record<string, unknown>)
-          .eq('id', itemId);
+        logger.error('[SupabaseDataProvider] archiveItem error:', updateError);
+        throw new Error(updateError.message || 'Failed to archive item');
+      }
+    }
+  }
 
-        if (rawError) {
-          logger.error('[SupabaseDataProvider] archiveItem error:', rawError);
-          throw new Error(rawError.message || 'Failed to archive item');
-        }
+  async unarchiveItem(itemId: string): Promise<void> {
+    // Try dedicated unarchive RPC first
+    const { error } = await supabase.rpc('rpc_unarchive_item_v1', {
+      p_item_id: itemId,
+    });
+
+    if (error) {
+      // Fallback: remove _archived flag from attributes_json
+      logger.warn('[SupabaseDataProvider] unarchiveItem RPC unavailable, trying direct update:', error);
+      const { data: current } = await supabase
+        .from('items')
+        .select('attributes_json')
+        .eq('id', itemId)
+        .single();
+
+      const attrs = { ...((current?.attributes_json as Record<string, unknown>) ?? {}) };
+      delete attrs._archived;
+      const { error: updateError } = await supabase
+        .from('items')
+        .update({ attributes_json: attrs })
+        .eq('id', itemId);
+
+      if (updateError) {
+        logger.error('[SupabaseDataProvider] unarchiveItem error:', updateError);
+        throw new Error(updateError.message || 'Failed to unarchive item');
       }
     }
   }
@@ -406,7 +436,7 @@ export class SupabaseDataProvider implements DataProvider {
     // JOIN price_predictions via FK (item_id → items.id)
     const { data, error } = await supabase
       .from('items')
-      .select('id, title, category, updated_at, attributes_json, taxonomy_version, subtype_id, collections, price_predictions(q10, q50, q90, conf_score, asof)')
+      .select('id, title, category, updated_at, attributes_json, taxonomy_version, subtype_id, collections, images, price_predictions(q10, q50, q90, conf_score, asof)')
       .ilike('title', `%${query}%`)
       .order('updated_at', { ascending: false })
       .limit(25);
@@ -426,6 +456,7 @@ export class SupabaseDataProvider implements DataProvider {
       taxonomy_version?: string | null;
       subtype_id?: string | null;
       collections?: string[] | null;
+      images?: string[] | null;
       price_predictions?: PredRow[];
     };
 
@@ -449,7 +480,7 @@ export class SupabaseDataProvider implements DataProvider {
         priceBand: latest
           ? { q10: latest.q10 ?? 0, q50: latest.q50 ?? 0, q90: latest.q90 ?? 0, confidence: latest.conf_score ?? 0, currency: 'EUR' }
           : undefined,
-        imageUrl: undefined,
+        imageUrl: r.images?.[0] ?? undefined,
         updatedAt: r.updated_at ?? undefined,
       };
     });
@@ -777,6 +808,10 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   async sendMessage(threadId: string, body: string): Promise<DmMessage> {
+    // Get current user ID for the response
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id ?? 'unknown';
+
     // Writes via RPC only (per backend blueprint)
     const { data, error } = await supabase.rpc('rpc_send_message_v1', {
       p_thread_id: threadId,
@@ -794,7 +829,7 @@ export class SupabaseDataProvider implements DataProvider {
       return {
         id: (row.id ?? row.message_id ?? `msg-${Date.now()}`) as string,
         threadId: (row.thread_id as string | null) ?? threadId,
-        authorUserId: (row.author_user_id as string | null) ?? 'current-user',
+        authorUserId: (row.author_user_id as string | null) ?? currentUserId,
         text: (row.text as string | null) ?? body,
         createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
       };
@@ -804,7 +839,7 @@ export class SupabaseDataProvider implements DataProvider {
     return {
       id: `msg-${Date.now()}`,
       threadId,
-      authorUserId: 'current-user',
+      authorUserId: currentUserId,
       text: body,
       createdAt: new Date().toISOString(),
     };
@@ -924,7 +959,7 @@ export class SupabaseDataProvider implements DataProvider {
   async listBuildPaintProjects(): Promise<BuildPaintProject[]> {
     const { data, error } = await supabase
       .from('v_build_paint_projects_v1')
-      .select('id, title, category, status, percent_complete, is_completed, notes, created_at, updated_at')
+      .select('id, title, category, category_id, item_id, item_name, item_images, status, percent_complete, is_completed, notes, image_url, created_at, updated_at')
       .order('updated_at', { ascending: false })
       .limit(200);
 
@@ -934,18 +969,24 @@ export class SupabaseDataProvider implements DataProvider {
     }
 
     type ProjectRow = {
-      id: string; title: string; category?: string; status?: string;
-      percent_complete?: number; is_completed?: boolean; notes?: string;
-      created_at?: string; updated_at?: string;
+      id: string; title: string; category?: string; category_id?: string;
+      item_id?: string; item_name?: string; item_images?: string[];
+      status?: string; percent_complete?: number; is_completed?: boolean;
+      notes?: string; image_url?: string; created_at?: string; updated_at?: string;
     };
     return (data ?? []).map((row: ProjectRow) => ({
       id: row.id,
       title: row.title,
       category: row.category,
+      categoryId: row.category_id ?? undefined,
+      itemId: row.item_id ?? undefined,
+      itemName: row.item_name ?? undefined,
+      itemImageUrl: row.item_images?.[0] ?? undefined,
       status: row.status,
       percent: row.percent_complete ?? 0,
       isCompleted: row.is_completed ?? false,
       notes: row.notes,
+      imageUrl: row.image_url ?? undefined,
       createdAt: row.created_at ?? new Date().toISOString(),
       updatedAt: row.updated_at ?? new Date().toISOString(),
     }));
@@ -955,6 +996,8 @@ export class SupabaseDataProvider implements DataProvider {
     const { data, error } = await supabase.rpc('rpc_create_build_paint_project_v1', {
       p_title: input.title,
       p_category: input.category || null,
+      p_category_id: input.categoryId || null,
+      p_item_id: input.itemId || null,
     });
 
     if (error) {
@@ -967,6 +1010,8 @@ export class SupabaseDataProvider implements DataProvider {
       id: row.id as string,
       title: row.title as string,
       category: row.category as string | undefined,
+      categoryId: (row.category_id as string | null) ?? undefined,
+      itemId: (row.item_id as string | null) ?? undefined,
       status: row.status as string | undefined,
       percent: (row.percent_complete as number | null) ?? 0,
       isCompleted: (row.is_completed as boolean | null) ?? false,
@@ -1097,6 +1142,27 @@ export class SupabaseDataProvider implements DataProvider {
       body: row.body as string,
       createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
     };
+  }
+
+  async listBuildPaintProjectsByCategory(categoryId: string): Promise<BuildPaintProject[]> {
+    const all = await this.listBuildPaintProjects();
+    return all.filter((p) => p.categoryId === categoryId);
+  }
+
+  async listBuildPaintProjectsByItem(itemId: string): Promise<BuildPaintProject[]> {
+    const all = await this.listBuildPaintProjects();
+    return all.filter((p) => p.itemId === itemId);
+  }
+
+  async applyStepTemplate(projectId: string, categoryId: string): Promise<BuildPaintStep[]> {
+    const { getStepTemplateForCategory } = await import('../constants/buildStepTemplates');
+    const template = getStepTemplateForCategory(categoryId);
+    const steps: BuildPaintStep[] = [];
+    for (const s of template.steps) {
+      const step = await this.addBuildPaintStep(projectId, s.label);
+      steps.push(step);
+    }
+    return steps;
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1388,6 +1454,10 @@ export class SupabaseDataProvider implements DataProvider {
       hostUserId: (row.created_by as string | null) ?? undefined,
       attendeeIds: [],
       attendeeCount: (row.attendee_count as number | null) ?? 0,
+      goingCount: (row.going_count as number | null) ?? 0,
+      interestedCount: (row.interested_count as number | null) ?? 0,
+      maxAttendees: (row.max_attendees as number | null) ?? undefined,
+      isFull: (row.is_full as boolean | null) ?? false,
       isAttending: (row.is_attending as boolean | null) ?? false,
       myRsvpStatus: (row.my_rsvp_status as string | null) ?? undefined,
       source: (row.source as string | null) ?? undefined,
@@ -1398,7 +1468,243 @@ export class SupabaseDataProvider implements DataProvider {
       isPublic: (row.is_public as boolean | null) ?? undefined,
       latitude: (row.latitude as number | null) ?? undefined,
       longitude: (row.longitude as number | null) ?? undefined,
+      isSponsored: (row.is_sponsored as boolean | null) ?? false,
+      sponsorName: (row.sponsor_name as string | null) ?? undefined,
+      sponsorLogoUrl: (row.sponsor_logo_url as string | null) ?? undefined,
+      sponsorTier: (row.sponsor_tier as CollectorsEvent['sponsorTier']) ?? undefined,
+      sponsorCompanyId: (row.sponsor_company_id as string | null) ?? undefined,
     };
+  }
+
+  // Helper to map API response to CollectorsEvent (camelCase keys from backend)
+  private mapEventApiResponse(row: Record<string, unknown>): CollectorsEvent {
+    return {
+      id: row.id as string,
+      title: row.title as string,
+      kind: row.kind as CollectorsEvent['kind'],
+      date: row.date as string,
+      time: (row.time as string | null) ?? undefined,
+      endDate: (row.end_date as string | null) ?? undefined,
+      location: (row.location as string | null) ?? undefined,
+      onlineUrl: (row.online_url as string | null) ?? undefined,
+      description: (row.description as string | null) ?? '',
+      categoryId: (row.category_id as string | null) ?? undefined,
+      hostUserId: (row.created_by as string | null) ?? undefined,
+      attendeeIds: [],
+      attendeeCount: (row.attendee_count as number | null) ?? 0,
+      goingCount: (row.going_count as number | null) ?? 0,
+      interestedCount: (row.interested_count as number | null) ?? 0,
+      maxAttendees: (row.max_attendees as number | null) ?? undefined,
+      isFull: (row.is_full as boolean | null) ?? false,
+      isAttending: (row.user_rsvp_status as string | null) != null,
+      myRsvpStatus: (row.user_rsvp_status as string | null) ?? undefined,
+      source: (row.source as string | null) ?? undefined,
+      imageUrl: (row.image_url as string | null) ?? undefined,
+      createdBy: (row.created_by as string | null) ?? undefined,
+      format: (row.format as CollectorsEvent['format']) ?? undefined,
+      status: (row.status as CollectorsEvent['status']) ?? undefined,
+      isPublic: (row.is_public as boolean | null) ?? undefined,
+      latitude: (row.latitude as number | null) ?? undefined,
+      longitude: (row.longitude as number | null) ?? undefined,
+      isSponsored: (row.is_sponsored as boolean | null) ?? false,
+      sponsorName: (row.sponsor_name as string | null) ?? undefined,
+      sponsorLogoUrl: (row.sponsor_logo_url as string | null) ?? undefined,
+      sponsorTier: (row.sponsor_tier as CollectorsEvent['sponsorTier']) ?? undefined,
+      sponsorCompanyId: (row.sponsor_company_id as string | null) ?? undefined,
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Event Host Actions
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async updateEvent(eventId: string, patch: Partial<CreateEventInput & { status?: string }>): Promise<CollectorsEvent> {
+    const snakePatch: Record<string, unknown> = {};
+    if (patch.title !== undefined) snakePatch.title = patch.title;
+    if (patch.description !== undefined) snakePatch.description = patch.description;
+    if (patch.location !== undefined) snakePatch.location = patch.location;
+    if (patch.onlineUrl !== undefined) snakePatch.online_url = patch.onlineUrl;
+    if (patch.imageUrl !== undefined) snakePatch.image_url = patch.imageUrl;
+    if (patch.date !== undefined) snakePatch.date = patch.date;
+    if (patch.time !== undefined) snakePatch.time = patch.time;
+    if (patch.endDate !== undefined) snakePatch.end_date = patch.endDate;
+    if (patch.format !== undefined) snakePatch.format = patch.format;
+    if (patch.isPublic !== undefined) snakePatch.is_public = patch.isPublic;
+    if (patch.status !== undefined) snakePatch.status = patch.status;
+    if (patch.maxAttendees !== undefined) snakePatch.max_attendees = patch.maxAttendees;
+
+    const resp = await collectorsApi.patch(`/events/${eventId}`, snakePatch);
+    return this.mapEventApiResponse(resp as Record<string, unknown>);
+  }
+
+  async cancelEvent(eventId: string): Promise<void> {
+    await collectorsApi.delete(`/events/${eventId}`);
+  }
+
+  async duplicateEvent(eventId: string): Promise<CollectorsEvent> {
+    const resp = await collectorsApi.post(`/events/${eventId}/duplicate`);
+    return this.mapEventApiResponse(resp as Record<string, unknown>);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Event Templates
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async listEventTemplates(): Promise<import('./events').EventTemplate[]> {
+    const resp = await collectorsApi.get('/events/templates') as Record<string, unknown>[];
+    return resp.map((r) => ({
+      id: r.id as string,
+      name: r.name as string,
+      templateData: (r.template_data as Record<string, unknown>) ?? {},
+      useCount: (r.use_count as number) ?? 0,
+      createdAt: (r.created_at as string | null) ?? undefined,
+    }));
+  }
+
+  async createEventTemplate(name: string, fromEventId?: string): Promise<import('./events').EventTemplate> {
+    const body: Record<string, unknown> = { name };
+    if (fromEventId) body.from_event_id = fromEventId;
+    const r = await collectorsApi.post('/events/templates', body) as Record<string, unknown>;
+    return {
+      id: r.id as string,
+      name: r.name as string,
+      templateData: (r.template_data as Record<string, unknown>) ?? {},
+      useCount: (r.use_count as number) ?? 0,
+      createdAt: (r.created_at as string | null) ?? undefined,
+    };
+  }
+
+  async deleteEventTemplate(templateId: string): Promise<void> {
+    await collectorsApi.delete(`/events/templates/${templateId}`);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Sponsor Companies
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async registerSponsorCompany(input: {
+    name: string; logoUrl?: string; websiteUrl?: string;
+    contactEmail: string; description?: string;
+  }): Promise<import('./events').SponsorCompany> {
+    const body = {
+      name: input.name,
+      logo_url: input.logoUrl,
+      website_url: input.websiteUrl,
+      contact_email: input.contactEmail,
+      description: input.description,
+    };
+    const r = await collectorsApi.post('/sponsor-companies', body) as Record<string, unknown>;
+    return this._mapSponsorCompany(r);
+  }
+
+  async getMySponsorCompanies(): Promise<import('./events').SponsorCompany[]> {
+    const resp = await collectorsApi.get('/sponsor-companies/mine') as Record<string, unknown>[];
+    return resp.map((r) => this._mapSponsorCompany(r));
+  }
+
+  async updateSponsorCompany(id: string, patch: Partial<{
+    name: string; logoUrl: string; websiteUrl: string;
+    contactEmail: string; description: string;
+  }>): Promise<import('./events').SponsorCompany> {
+    const body: Record<string, unknown> = {};
+    if (patch.name !== undefined) body.name = patch.name;
+    if (patch.logoUrl !== undefined) body.logo_url = patch.logoUrl;
+    if (patch.websiteUrl !== undefined) body.website_url = patch.websiteUrl;
+    if (patch.contactEmail !== undefined) body.contact_email = patch.contactEmail;
+    if (patch.description !== undefined) body.description = patch.description;
+    const r = await collectorsApi.patch(`/sponsor-companies/${id}`, body) as Record<string, unknown>;
+    return this._mapSponsorCompany(r);
+  }
+
+  async createSponsorEventCheckout(companyId: string, tier: string, eventData: CreateEventInput) {
+    const body = {
+      tier,
+      event_title: eventData.title,
+      event_kind: eventData.kind,
+      event_category_id: eventData.categoryId,
+      event_date: eventData.date,
+      event_time: eventData.time,
+      event_end_date: eventData.endDate,
+      event_location: eventData.location,
+      event_online_url: eventData.onlineUrl,
+      event_description: eventData.description,
+      event_image_url: eventData.imageUrl,
+      event_format: eventData.format,
+      event_max_attendees: eventData.maxAttendees,
+    };
+    const r = await collectorsApi.post(`/sponsor-companies/${companyId}/create-event-checkout`, body) as Record<string, unknown>;
+    return {
+      url: r.url as string,
+      sessionId: r.session_id as string,
+      eventId: r.event_id as string,
+    };
+  }
+
+  private _mapSponsorCompany(r: Record<string, unknown>): import('./events').SponsorCompany {
+    return {
+      id: r.id as string,
+      name: r.name as string,
+      logoUrl: (r.logo_url as string | null) ?? undefined,
+      websiteUrl: (r.website_url as string | null) ?? undefined,
+      contactEmail: r.contact_email as string,
+      description: (r.description as string | null) ?? undefined,
+      adminUserId: r.admin_user_id as string,
+      isVerified: (r.is_verified as boolean) ?? false,
+      createdAt: (r.created_at as string | null) ?? undefined,
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Event Announcements
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async listEventAnnouncements(eventId: string): Promise<import('./events').EventAnnouncement[]> {
+    const resp = await collectorsApi.get(`/events/${eventId}/announcements`) as Record<string, unknown>[];
+    return resp.map((r) => ({
+      id: r.id as string,
+      eventId: r.event_id as string,
+      authorUserId: r.author_user_id as string,
+      title: (r.title as string | null) ?? undefined,
+      body: r.body as string,
+      imageUrl: (r.image_url as string | null) ?? undefined,
+      isRead: (r.is_read as boolean) ?? false,
+      createdAt: (r.created_at as string | null) ?? undefined,
+    }));
+  }
+
+  async postEventAnnouncement(eventId: string, body: string, title?: string, imageUrl?: string): Promise<import('./events').EventAnnouncement> {
+    const payload: Record<string, unknown> = { body };
+    if (title) payload.title = title;
+    if (imageUrl) payload.image_url = imageUrl;
+    const r = await collectorsApi.post(`/events/${eventId}/announcements`, payload) as Record<string, unknown>;
+    return {
+      id: r.id as string,
+      eventId: r.event_id as string,
+      authorUserId: r.author_user_id as string,
+      title: (r.title as string | null) ?? undefined,
+      body: r.body as string,
+      imageUrl: (r.image_url as string | null) ?? undefined,
+      isRead: false,
+      createdAt: (r.created_at as string | null) ?? undefined,
+    };
+  }
+
+  async markAnnouncementRead(eventId: string, announcementId: string): Promise<void> {
+    await collectorsApi.post(`/events/${eventId}/announcements/${announcementId}/read`);
+  }
+
+  async getUnreadAnnouncementCount(): Promise<number> {
+    const r = await collectorsApi.get('/events/my-announcements/unread-count') as Record<string, unknown>;
+    return (r.unread_count as number) ?? 0;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Category Deep Dive Analytics
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async getCategoryDeepDive(categoryId: string, days?: number): Promise<Record<string, unknown>> {
+    const params = days ? `?days=${days}` : '';
+    return await collectorsApi.get(`/analytics/categories/${categoryId}/deep-dive${params}`) as Record<string, unknown>;
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

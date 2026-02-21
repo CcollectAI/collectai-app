@@ -157,6 +157,9 @@ CRAWL4AI_HEADLESS: bool = os.getenv("CRAWL4AI_HEADLESS", "true").lower() in ("1"
 USD_TO_EUR: float = float(os.getenv("USD_TO_EUR", "0.92"))
 GBP_TO_EUR: float = float(os.getenv("GBP_TO_EUR", "1.16"))
 JPY_TO_EUR: float = float(os.getenv("JPY_TO_EUR", "0.0061"))
+KRW_TO_EUR: float = float(os.getenv("KRW_TO_EUR", "0.00067"))
+AUD_TO_EUR: float = float(os.getenv("AUD_TO_EUR", "0.60"))
+CAD_TO_EUR: float = float(os.getenv("CAD_TO_EUR", "0.66"))
 
 # ---------------------------------------------------------------------------
 # Marketplace API credentials

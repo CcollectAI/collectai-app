@@ -32,7 +32,7 @@ import type {
   MarketSearchOptions,
   MarketSearchResult,
 } from './types';
-import type { CollectorsEvent, CreateEventInput } from './events';
+import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 
 export interface DataProvider {
   /**
@@ -95,6 +95,12 @@ export interface DataProvider {
    * @param itemId - The item's UUID
    */
   archiveItem(itemId: string): Promise<void>;
+
+  /**
+   * Unarchive an item (restore from archive).
+   * @param itemId - The item's UUID
+   */
+  unarchiveItem(itemId: string): Promise<void>;
 
   /**
    * Persist a QuickScan draft as a new item.
@@ -315,6 +321,25 @@ export interface DataProvider {
    */
   addBuildPaintNote(projectId: string, body: string): Promise<BuildPaintNote>;
 
+  /**
+   * List build projects filtered by category.
+   * @param categoryId - The category ID to filter by
+   */
+  listBuildPaintProjectsByCategory(categoryId: string): Promise<BuildPaintProject[]>;
+
+  /**
+   * List build projects linked to a specific item.
+   * @param itemId - The item ID to filter by
+   */
+  listBuildPaintProjectsByItem(itemId: string): Promise<BuildPaintProject[]>;
+
+  /**
+   * Apply a step template to a project (batch-add all template steps).
+   * @param projectId - The project ID
+   * @param categoryId - The category whose template to apply
+   */
+  applyStepTemplate(projectId: string, categoryId: string): Promise<BuildPaintStep[]>;
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Feedback
   // ─────────────────────────────────────────────────────────────────────────────
@@ -471,6 +496,111 @@ export interface DataProvider {
    * @param recipientUserId - The user ID of the recipient
    */
   shareEventViaDm(eventId: string, recipientUserId: string): Promise<void>;
+
+  /**
+   * Update an event (creator only).
+   * @param eventId - The event ID
+   * @param patch - Partial event fields to update
+   */
+  updateEvent(eventId: string, patch: Partial<CreateEventInput & { status?: string }>): Promise<CollectorsEvent>;
+
+  /**
+   * Cancel an event (soft-delete by setting status to 'cancelled').
+   * @param eventId - The event ID
+   */
+  cancelEvent(eventId: string): Promise<void>;
+
+  /**
+   * Duplicate an event (creator only). Returns the new draft event.
+   * @param eventId - The event ID to duplicate
+   */
+  duplicateEvent(eventId: string): Promise<CollectorsEvent>;
+
+  /**
+   * List the current user's event templates.
+   */
+  listEventTemplates(): Promise<EventTemplate[]>;
+
+  /**
+   * Create an event template from explicit data or by copying from an event.
+   * @param name - Template name
+   * @param fromEventId - Optional event ID to copy fields from
+   */
+  createEventTemplate(name: string, fromEventId?: string): Promise<EventTemplate>;
+
+  /**
+   * Delete an event template.
+   * @param templateId - The template ID
+   */
+  deleteEventTemplate(templateId: string): Promise<void>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Sponsor Companies
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Register a new sponsor company.
+   */
+  registerSponsorCompany(input: {
+    name: string;
+    logoUrl?: string;
+    websiteUrl?: string;
+    contactEmail: string;
+    description?: string;
+  }): Promise<SponsorCompany>;
+
+  /**
+   * List sponsor companies owned by the current user.
+   */
+  getMySponsorCompanies(): Promise<SponsorCompany[]>;
+
+  /**
+   * Update a sponsor company.
+   */
+  updateSponsorCompany(id: string, patch: Partial<{
+    name: string;
+    logoUrl: string;
+    websiteUrl: string;
+    contactEmail: string;
+    description: string;
+  }>): Promise<SponsorCompany>;
+
+  /**
+   * Create a Stripe checkout session for a sponsored event.
+   */
+  createSponsorEventCheckout(companyId: string, tier: string, eventData: CreateEventInput): Promise<{ url: string; sessionId: string; eventId: string }>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Event Announcements
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * List announcements for an event (attendees only).
+   */
+  listEventAnnouncements(eventId: string): Promise<EventAnnouncement[]>;
+
+  /**
+   * Post an announcement to event attendees (host/sponsor admin only).
+   */
+  postEventAnnouncement(eventId: string, body: string, title?: string, imageUrl?: string): Promise<EventAnnouncement>;
+
+  /**
+   * Mark an announcement as read.
+   */
+  markAnnouncementRead(eventId: string, announcementId: string): Promise<void>;
+
+  /**
+   * Get total unread announcement count across all attended events.
+   */
+  getUnreadAnnouncementCount(): Promise<number>;
+
+  /**
+   * Get deep-dive analytics for a category (market insights, top movers, etc.).
+   * Fetches from /analytics/categories/:categoryId/deep-dive.
+   * @param categoryId - The category ID
+   * @param days - Optional lookback window in days
+   */
+  getCategoryDeepDive(categoryId: string, days?: number): Promise<Record<string, unknown>>;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // User Blocking

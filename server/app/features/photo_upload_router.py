@@ -20,9 +20,10 @@ import logging
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 
+from app.auth import get_current_user_id
 from app.config import (
     USER_UPLOADS_S3_BUCKET as S3_BUCKET,
     USER_UPLOADS_CDN_URL as CDN_URL,
@@ -81,7 +82,6 @@ class PresignUploadRequest(BaseModel):
     """Request body for generating a presigned upload URL."""
     item_id: str = Field(..., description="UUID of the item to attach the photo to")
     content_type: str = Field(..., description="MIME type of the image (image/jpeg, image/png, image/webp)")
-    user_id: str = Field(..., description="UUID of the user uploading the photo")
 
 
 class PresignUploadResponse(BaseModel):
@@ -131,7 +131,7 @@ MAX_RAW_UPLOAD = 10 * 1024 * 1024
 # ---------------------------------------------------------------------------
 
 @router.post("/presign-upload", response_model=PresignUploadResponse)
-async def presign_upload(request: PresignUploadRequest):
+async def presign_upload(request: PresignUploadRequest, user_id: str = Depends(get_current_user_id)):
     """
     Generate a presigned S3 PUT URL for direct upload from the mobile app.
 
@@ -150,9 +150,7 @@ async def presign_upload(request: PresignUploadRequest):
             code="VALIDATION_ERROR",
         )
 
-    # Validate user_id and item_id are non-empty
-    if not request.user_id.strip():
-        raise error_response(400, "user_id is required", code="VALIDATION_ERROR")
+    # Validate item_id is non-empty
     if not request.item_id.strip():
         raise error_response(400, "item_id is required", code="VALIDATION_ERROR")
 
@@ -167,7 +165,7 @@ async def presign_upload(request: PresignUploadRequest):
     # Generate unique filename
     ext = ALLOWED_CONTENT_TYPES[request.content_type]
     filename = f"{uuid.uuid4().hex}.{ext}"
-    photo_key = f"user-uploads/{request.user_id}/{request.item_id}/{filename}"
+    photo_key = f"user-uploads/{user_id}/{request.item_id}/{filename}"
 
     try:
         from botocore.exceptions import BotoCoreError, ClientError
@@ -188,7 +186,7 @@ async def presign_upload(request: PresignUploadRequest):
     cdn_url = _public_url(photo_key)
 
     logger.info(
-        f"[photo_upload] Presigned URL generated: user={request.user_id}, "
+        f"[photo_upload] Presigned URL generated: user={user_id}, "
         f"item={request.item_id}, key={photo_key}"
     )
 
@@ -203,7 +201,7 @@ async def presign_upload(request: PresignUploadRequest):
 async def upload_photo(
     file: UploadFile = File(..., description="Image file (JPEG, PNG, or WebP)"),
     item_id: str = Form(..., description="UUID of the item to attach the photo to"),
-    user_id: str = Form(..., description="UUID of the user uploading the photo"),
+    user_id: str = Depends(get_current_user_id),
 ):
     """
     Server-side optimized photo upload.
@@ -215,9 +213,7 @@ async def upload_photo(
     The frontend should prefer this endpoint over presign-upload to benefit
     from automatic image optimization and blurhash generation.
     """
-    # Validate user_id and item_id
-    if not user_id.strip():
-        raise error_response(400, "user_id is required", code="VALIDATION_ERROR")
+    # Validate item_id
     if not item_id.strip():
         raise error_response(400, "item_id is required", code="VALIDATION_ERROR")
 
@@ -309,7 +305,7 @@ async def upload_photo(
 
 
 @router.delete("/{photo_key:path}", response_model=DeletePhotoResponse)
-async def delete_photo(photo_key: str, user_id: str = Query(..., description="User ID for ownership verification")):
+async def delete_photo(photo_key: str, user_id: str = Depends(get_current_user_id)):
     """
     Delete a user's photo from S3.
 
@@ -349,14 +345,12 @@ async def delete_photo(photo_key: str, user_id: str = Query(..., description="Us
 
 
 @router.get("/list/{item_id}", response_model=PhotoListResponse)
-async def list_photos(item_id: str, user_id: str = Query(..., description="User ID to scope photo listing")):
+async def list_photos(item_id: str, user_id: str = Depends(get_current_user_id)):
     """
     List all photos for an item belonging to a specific user.
 
     Uses S3 list_objects_v2 with prefix `user-uploads/{user_id}/{item_id}/`.
     """
-    if not user_id.strip():
-        raise error_response(400, "user_id is required", code="VALIDATION_ERROR")
     if not item_id.strip():
         raise error_response(400, "item_id is required", code="VALIDATION_ERROR")
 
