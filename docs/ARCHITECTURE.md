@@ -31,12 +31,16 @@ Mobile App (Expo/React Native)
 app/                    # Screens (file-based routing)
   (tabs)/               # Tab navigator (home, search, scan, events, profile)
   purchase/             # Smart Deal Agent screens
+  projects/[id].tsx     # Build & Paint project detail (category-aware)
+  build-paint-projects  # Build & Paint project list + create
+  categories/           # Category store screens
   analytics.tsx         # Portfolio analytics
   barcode-scan.tsx      # Camera scanner
 src/
   api/                  # API client
   components/           # Reusable UI (Skeleton, Toast, LoadingButton, OfflineBanner)
-  data/                 # SupabaseDataProvider, types
+  constants/            # buildStepTemplates.ts, categoryFields.ts
+  data/                 # SupabaseDataProvider, types, categories (CATEGORY_VISUAL)
   hooks/                # useFormField, useEnterReveal, useNetworkStatus
   lib/                  # validate.ts, marketProviders/
   theme/                # colors, useAppTheme
@@ -113,6 +117,8 @@ Key tables in Supabase PostgreSQL:
 | `sponsor_companies` | Sponsor company registrations + Stripe checkout |
 | `event_announcements` | One-way broadcast messages from event hosts to attendees |
 | `event_announcement_reads` | Read receipts for announcements (auto-mark-read) |
+| `build_paint_projects` | Build & paint project tracking (category-aware, item-linked) |
+| `build_step_templates` | Category-specific build workflow step templates |
 | `taxonomy_registry` | Category taxonomy versions |
 | `object_pointers` | S3 image references |
 

@@ -272,7 +272,7 @@ export default function BuildPaintProjectsScreen() {
               >
                 {selectedCategoryId ? (
                   <View style={styles.pickerSelected}>
-                    <View style={[styles.catDot, { backgroundColor: CATEGORY_VISUAL[selectedCategoryId]?.accent || colors.accent }]} />
+                    <View style={[styles.catDot, { backgroundColor: CATEGORY_VISUAL[selectedCategoryId]?.accentColor || colors.accent }]} />
                     <Text style={[styles.pickerText, { color: colors.text }]}>
                       {CATEGORIES.find((c) => c.id === selectedCategoryId)?.name ?? selectedCategoryId}
                     </Text>
@@ -434,8 +434,8 @@ export default function BuildPaintProjectsScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={cat.name}
                   >
-                    <View style={[styles.catDot, { backgroundColor: vis?.accent || colors.accent }]} />
-                    <Ionicons name={(vis?.icon || 'cube-outline') as any} size={20} color={vis?.accent || colors.accent} />
+                    <View style={[styles.catDot, { backgroundColor: vis?.accentColor || colors.accent }]} />
+                    <Ionicons name={(vis?.iconName || 'cube-outline') as any} size={20} color={vis?.accentColor || colors.accent} />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={[styles.catPickerName, { color: colors.text }]}>{cat.name}</Text>
                     </View>
@@ -540,7 +540,7 @@ function ProjectCard({
   onPress: () => void;
 }) {
   const statusColors = statusColor(project.status, project.isCompleted);
-  const accentColor = project.categoryId ? CATEGORY_VISUAL[project.categoryId]?.accent : undefined;
+  const accentColor = project.categoryId ? CATEGORY_VISUAL[project.categoryId]?.accentColor : undefined;
 
   return (
     <AnimatedPressable

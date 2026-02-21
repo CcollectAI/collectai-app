@@ -65,7 +65,7 @@ export default function ProjectDetailScreen() {
   // Category accent color
   const accentColor = useMemo(() => {
     if (!project?.categoryId) return undefined;
-    return CATEGORY_VISUAL[project.categoryId]?.accent;
+    return CATEGORY_VISUAL[project.categoryId]?.accentColor;
   }, [project?.categoryId]);
 
   const categoryName = useMemo(() => {

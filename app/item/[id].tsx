@@ -264,7 +264,7 @@ export default function ItemDetailScreen() {
   // Build project state — for buildable categories
   const categorySlug = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9_]/g, '');
   const itemIsBuildable = isBuildableCategory(categorySlug);
-  const buildAccent = CATEGORY_VISUAL[categorySlug]?.color;
+  const buildAccent = CATEGORY_VISUAL[categorySlug]?.accentColor;
   const [linkedProject, setLinkedProject] = useState<{ id: string; title: string; pct: number } | null>(null);
 
   // (Price Alert section removed)
@@ -432,9 +432,7 @@ export default function ItemDetailScreen() {
       .then((projects) => {
         if (projects.length > 0) {
           const p = projects[0];
-          const done = p.steps?.filter((s) => s.done).length ?? 0;
-          const total = p.steps?.length ?? 0;
-          setLinkedProject({ id: p.id, title: p.title, pct: total > 0 ? Math.round((done / total) * 100) : 0 });
+          setLinkedProject({ id: p.id, title: p.title, pct: p.percent ?? 0 });
         }
       })
       .catch(() => {});

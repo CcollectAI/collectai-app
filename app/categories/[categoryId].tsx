@@ -102,7 +102,7 @@ export default function CategoryStoreScreen() {
   const [buildProjects, setBuildProjects] = useState<BuildPaintProject[]>([]);
   const [buildProjectsLoading, setBuildProjectsLoading] = useState(false);
   const isBuildable = categoryId ? isBuildableCategory(categoryId) : false;
-  const accentColor = categoryId ? (CATEGORY_VISUAL[categoryId]?.color ?? colors.accent) : colors.accent;
+  const accentColor = categoryId ? (CATEGORY_VISUAL[categoryId]?.accentColor ?? colors.accent) : colors.accent;
 
   const spotlightRef = useRef<FlatList>(null);
 
@@ -685,9 +685,7 @@ export default function CategoryStoreScreen() {
           ) : buildProjects.length > 0 ? (
             <>
               {buildProjects.slice(0, 3).map((project) => {
-                const completedSteps = project.steps?.filter((s) => s.done).length ?? 0;
-                const totalSteps = project.steps?.length ?? 0;
-                const pct = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+                const pct = project.percent ?? 0;
 
                 return (
                   <AnimatedPressable
