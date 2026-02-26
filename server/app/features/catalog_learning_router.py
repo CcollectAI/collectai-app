@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id, require_ops_key
@@ -433,7 +433,7 @@ async def action_category_candidate(
         candidate_id,
     )
     if not row:
-        raise HTTPException(status_code=404, detail="Candidate not found")
+        raise error_response(404, "Candidate not found", code="NOT_FOUND")
 
     if req.action == "approve":
         await pool.execute(
@@ -449,7 +449,7 @@ async def action_category_candidate(
         )
     elif req.action == "merge":
         if not req.merge_into_slug:
-            raise HTTPException(status_code=400, detail="merge_into_slug required for merge action")
+            raise error_response(400, "merge_into_slug required for merge action", code="VALIDATION_ERROR")
         # Update all suggestions with this category to point to the merge target
         await pool.execute(
             """

@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   SafeAreaView,
   ScrollView,
@@ -40,6 +41,7 @@ import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
 import { useAuthContext } from '@/providers/useAuthContext';
 import CompactSelect from '@/components/CompactSelect';
 import logger from '@/utils/logger';
+import { useToast } from '@/components/Toast';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -72,6 +74,7 @@ const EditEventScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const { user } = useAuthContext();
 
   /* ---- loading / auth state ---- */
@@ -170,7 +173,7 @@ const EditEventScreen: React.FC = () => {
 
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Location permission is required to use this feature.');
+        showToast({ message: 'Location permission is required to use this feature.', type: 'warning' });
         return;
       }
 
@@ -195,7 +198,7 @@ const EditEventScreen: React.FC = () => {
       }
     } catch (err: unknown) {
       logger.warn('[EditEvent] geolocation error:', err);
-      Alert.alert('Location Error', 'Could not retrieve your location. Please enter it manually.');
+      showToast({ message: 'Could not retrieve your location. Please enter it manually.', type: 'error' });
     } finally {
       setGeoLoading(false);
     }
@@ -230,7 +233,7 @@ const EditEventScreen: React.FC = () => {
       router.back();
     } catch (err: unknown) {
       logger.warn('[EditEvent] error:', err);
-      Alert.alert('Error', (err as Error)?.message || 'Failed to update event. Please try again.');
+      showToast({ message: (err as Error)?.message || 'Failed to update event. Please try again.', type: 'error' });
     } finally {
       setSaveState('idle');
     }
@@ -255,7 +258,7 @@ const EditEventScreen: React.FC = () => {
               router.back();
             } catch (err: unknown) {
               logger.warn('[EditEvent] cancel error:', err);
-              Alert.alert('Error', (err as Error)?.message || 'Failed to cancel event.');
+              showToast({ message: (err as Error)?.message || 'Failed to cancel event.', type: 'error' });
             }
           },
         },
@@ -984,4 +987,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EditEventScreen;
+export default function EditEventScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Edit Event">
+      <EditEventScreen />
+    </ScreenErrorBoundary>
+  );
+}

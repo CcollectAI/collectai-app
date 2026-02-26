@@ -223,6 +223,10 @@ psql $DATABASE_URL -f supabase/migrations/20260220_catalog_learning.sql
 psql $DATABASE_URL -f supabase/migrations/20260221_user_blocks.sql
 psql $DATABASE_URL -f supabase/migrations/20260222_currency_geo_shipping.sql
 psql $DATABASE_URL -f supabase/migrations/20260222_events_improvements.sql
+psql $DATABASE_URL -f supabase/migrations/20260222_build_paint_improvements.sql
+psql $DATABASE_URL -f supabase/migrations/20260223_add_performance_indexes.sql
+psql $DATABASE_URL -f supabase/migrations/20260224_user_privacy_settings.sql
+psql $DATABASE_URL -f supabase/migrations/20260224_add_indexes_v2.sql
 ```
 
 ## Beta Landing Page
@@ -268,6 +272,57 @@ location /legal/ {
 | `GET /ops/beta-signups` | Ops key | Paginated signup list |
 
 Rate limited to 5 signups per IP per hour (in-memory).
+
+## OTA Updates (expo-updates)
+
+CollectAI supports over-the-air updates via `expo-updates`. This allows pushing
+JavaScript/asset changes without a full store resubmission.
+
+### Configuration
+
+The update URL is set in `app.json` under `expo.updates`:
+
+```json
+{
+  "updates": {
+    "enabled": true,
+    "fallbackToCacheTimeout": 0,
+    "url": "https://u.expo.dev/YOUR_PROJECT_ID",
+    "checkAutomatically": "ON_LOAD"
+  }
+}
+```
+
+Replace `YOUR_PROJECT_ID` with the actual EAS project ID (set after `eas init`).
+
+### How it works
+
+1. On app launch, `_layout.tsx` calls `Updates.checkForUpdateAsync()` (non-blocking)
+2. If an update is available, it is fetched in the background
+3. The update applies on the next app restart
+
+### Publishing an OTA update
+
+```bash
+# Publish to all users on the default branch
+eas update --branch production --message "Fix: marketplace price display"
+```
+
+### Limitations
+
+OTA updates can only change JavaScript and assets. Native module changes
+(new permissions, new native libraries) require a full store build.
+
+## Store Review Prompt
+
+The app includes a store review prompt (`src/hooks/useStoreReview.ts`) that uses
+the native iOS/Android review dialog. It triggers when:
+
+- User has 10+ items in their collection
+- App has been used on 3+ separate days
+- Haven't been prompted in the last 90 days
+
+This is non-intrusive and uses `expo-store-review` (wraps StoreKit/Play In-App Review).
 
 ## Mobile App Build
 
@@ -581,6 +636,10 @@ Subsequent submissions can use `eas submit`.
 - [ ] First Android AAB uploaded manually to Play Console
 - [ ] Backend deployed and healthy (`/healthz` returning OK)
 - [ ] Database migrations applied (all files in `supabase/migrations/`)
+
+For detailed submission steps, see:
+- `docs/APP_STORE_SUBMISSION.md` — EAS build, screenshots, privacy labels, common rejections
+- `docs/APP_REVIEW_NOTES.md` — Demo account, feature walkthrough, affiliate link explanation
 
 ## Production Checklist
 

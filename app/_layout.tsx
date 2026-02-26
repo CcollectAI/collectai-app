@@ -45,10 +45,25 @@ import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { useAuthContext } from "@/providers/useAuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { initOfflineQueue } from "@/data/OfflineDataProvider";
+import { SplashScreen as BrandedSplash } from "@/components/SplashScreen";
+import { recordActiveDay } from "@/hooks/useStoreReview";
+
+/* ---------- OTA Updates (guarded so dev builds work) ---------- */
+let Updates: {
+  checkForUpdateAsync?: () => Promise<{ isAvailable: boolean }>;
+  fetchUpdateAsync?: () => Promise<unknown>;
+} | null = null;
+try {
+  Updates = require("expo-updates");
+} catch (_) {
+  // expo-updates not installed or in dev — skip
+}
 
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 let Sentry: { init: (opts: Record<string, unknown>) => void; wrap: (component: React.ComponentType) => React.ComponentType } | null = null;
@@ -161,6 +176,9 @@ function RootStack() {
   // Register push notifications once auth has resolved
   usePushNotifications(user?.id ?? null);
 
+  // Heartbeat for online presence tracking
+  usePresenceHeartbeat(user?.id ?? null);
+
   // Shared screen options with icon-only header
   const iconOnlyHeader = {
     headerTitle: '',
@@ -196,6 +214,7 @@ function RootStack() {
         <Stack.Screen name="chat/[threadId]" options={{ headerShown: false }} />
         <Stack.Screen name="chat/new" options={{ headerShown: false }} />
         <Stack.Screen name="users/[userId]" options={{ headerShown: false }} />
+        <Stack.Screen name="search" options={{ headerShown: false }} />
 
         {/* All other screens: icon-only header (no text) */}
         <Stack.Screen name="item/[id]" options={iconOnlyHeader} />
@@ -210,10 +229,20 @@ function RootStack() {
         <Stack.Screen name="quickscan" options={iconOnlyHeader} />
         <Stack.Screen name="add-manual" options={iconOnlyHeader} />
         <Stack.Screen name="events/[eventId]" options={iconOnlyHeader} />
+        <Stack.Screen name="events/[eventId]/announcements" options={iconOnlyHeader} />
+        <Stack.Screen name="events/compose-announcement" options={iconOnlyHeader} />
+        <Stack.Screen name="create-event" options={iconOnlyHeader} />
+        <Stack.Screen name="edit-event" options={iconOnlyHeader} />
+        <Stack.Screen name="sponsor/register" options={iconOnlyHeader} />
+        <Stack.Screen name="sponsor/dashboard" options={iconOnlyHeader} />
         <Stack.Screen name="watchlist-builder" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/index" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/create-mandate" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/deal/[dealId]" options={iconOnlyHeader} />
+
+        {/* Deal Desk / P2P Selling */}
+        <Stack.Screen name="sell/offers" options={iconOnlyHeader} />
+        <Stack.Screen name="sell/[offerId]" options={iconOnlyHeader} />
 
         {/* Subscription & Security */}
         <Stack.Screen name="subscription" options={iconOnlyHeader} />
@@ -224,20 +253,17 @@ function RootStack() {
         <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
       </Stack>
 
-      {/* Loading overlay — covers content while auth is resolving, fades out */}
+      {/* Branded splash overlay — covers content while auth is resolving, fades out */}
       {!splashHidden && (
         <RNAnimated.View
           style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: colors.background,
-            justifyContent: 'center',
-            alignItems: 'center',
             zIndex: 100,
             opacity: splashFade,
           }}
           pointerEvents={loading || !onboardingChecked ? 'auto' : 'none'}
         >
-          <ActivityIndicator size="large" color={colors.accent} />
+          <BrandedSplash />
         </RNAnimated.View>
       )}
     </View>
@@ -245,14 +271,40 @@ function RootStack() {
 }
 
 function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Roboto_400Regular,
     Roboto_500Medium,
     Roboto_700Bold,
     Roboto_900Black,
   });
 
-  if (!fontsLoaded) {
+  // Initialise the offline mutation queue once on mount.
+  // This loads any persisted mutations and wires up auto-replay on reconnect.
+  useEffect(() => {
+    initOfflineQueue();
+  }, []);
+
+  // Record active day for store review eligibility
+  useEffect(() => {
+    recordActiveDay().catch(() => {});
+  }, []);
+
+  // Check for OTA updates (non-blocking)
+  useEffect(() => {
+    if (!Updates?.checkForUpdateAsync) return;
+    Updates.checkForUpdateAsync()
+      .then((result) => {
+        if (result.isAvailable && Updates?.fetchUpdateAsync) {
+          return Updates.fetchUpdateAsync();
+        }
+      })
+      .catch(() => {
+        // Silently ignore update check failures
+      });
+  }, []);
+
+  // If fonts fail to load, continue with system fonts rather than hang forever
+  if (!fontsLoaded && !fontError) {
     return null; // Splash screen stays visible via preventAutoHideAsync
   }
 

@@ -4,27 +4,25 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
+from app.errors import error_response
+from app.rate_limit import per_user_rate_limit
+from app.cache import cache_get, cache_set
 from app.features.pagination import pagination_params
+from app.lib.db_helpers import get_db_pool
+from app.lib.error_codes import ErrorCode
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 logger = logging.getLogger(__name__)
 
+# Per-user: 30 analytics requests per minute
+_analytics_limit = per_user_rate_limit(30, window_seconds=60, scope="analytics")
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except Exception as e:
-        logger.debug(f"DB pool not available: {e}")
-        return None
+_DEEPDIVE_CACHE_TTL = 21600  # 6 hours
 
 
 # ---------------------------------------------------------------------------
@@ -78,7 +76,7 @@ async def get_collection_trends(
     """
     limit, offset = pagination
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if not pool:
         return CollectionTrendResponse(
             currency=currency,
@@ -119,6 +117,7 @@ async def get_collection_trends(
                 """
                 WITH earliest AS (
                     SELECT DISTINCT ON (i.id)
+                        i.id AS item_id,
                         i.category,
                         pp.q50 AS first_value
                     FROM price_predictions pp
@@ -128,6 +127,7 @@ async def get_collection_trends(
                 ),
                 latest AS (
                     SELECT DISTINCT ON (i.id)
+                        i.id AS item_id,
                         i.category,
                         pp.q50 AS last_value
                     FROM price_predictions pp
@@ -140,7 +140,7 @@ async def get_collection_trends(
                     SUM(e.first_value) AS sum_first,
                     SUM(l.last_value)  AS sum_last
                 FROM earliest e
-                JOIN latest l USING (category)
+                JOIN latest l ON l.item_id = e.item_id
                 GROUP BY e.category
                 """,
                 user_id,
@@ -176,7 +176,12 @@ async def get_item_trends(
     days: int = Query(30, ge=1, le=365),
     currency: str = Query("EUR"),
     pagination: tuple[int, int] = Depends(pagination_params),
+    user_id: str = Depends(get_current_user_id),
 ):
+    try:
+        UUID(item_id)
+    except ValueError:
+        raise error_response(400, "Invalid item_id format", code=ErrorCode.VALIDATION_ERROR)
     """
     Item-level trend for detail screen:
     - historical predicted value  (q50 from price_predictions)
@@ -184,7 +189,7 @@ async def get_item_trends(
     """
     limit, offset = pagination
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if not pool:
         return ItemTrendResponse(
             item_id=item_id,
@@ -257,7 +262,13 @@ async def get_portfolio_category_breakdown(
     Portfolio value broken down by category.
     Uses latest q50 price prediction per item.
     """
-    pool = _get_db_pool()
+    # Check cache (user-specific)
+    cache_key = f"portfolio_breakdown:{user_id}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    pool = get_db_pool()
     if not pool:
         return PortfolioCategoryBreakdownResponse(breakdown=[], total_value=0.0)
 
@@ -314,10 +325,12 @@ async def get_portfolio_category_breakdown(
                     gain_pct=round(gain_pct, 4),
                 ))
 
-            return PortfolioCategoryBreakdownResponse(
+            result = PortfolioCategoryBreakdownResponse(
                 breakdown=breakdown,
                 total_value=round(total_value, 2),
             )
+            cache_set(cache_key, result, ttl=_DEEPDIVE_CACHE_TTL)
+            return result
 
     except Exception as e:
         logger.error(f"[portfolio/category-breakdown] DB error: {e}")
@@ -330,6 +343,8 @@ async def get_category_deep_dive(
     days: int = Query(30, ge=7, le=365),
     currency: str = Query("EUR"),
     pagination: tuple[int, int] = Depends(pagination_params),
+    _rl: None = Depends(_analytics_limit),
+    user_id: str = Depends(get_current_user_id),
 ):
     """
     Category deep dive:
@@ -341,7 +356,13 @@ async def get_category_deep_dive(
     """
     limit, offset = pagination
 
-    pool = _get_db_pool()
+    # Check cache
+    cache_key = f"deepdive:{category}:{days}:{currency}:{limit}:{offset}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    pool = get_db_pool()
     if not pool:
         return CategoryDeepDiveResponse(
             category=category,
@@ -357,129 +378,103 @@ async def get_category_deep_dive(
 
     try:
         async with pool.acquire() as conn:
-            # ------- avg market price -------
-            avg_row = await conn.fetchrow(
-                """
-                SELECT AVG(price) AS avg_price
-                FROM market_hits
-                WHERE normalized_key LIKE $1 || '%'
-                  AND created_at >= $2
-                  AND price IS NOT NULL
-                """,
-                category.lower(),
-                cutoff,
-            )
-            avg_market_price = float(avg_row["avg_price"] or 0) if avg_row else 0.0
-
-            # ------- value distribution (daily avg) -------
-            val_rows = await conn.fetch(
+            # ------- combined daily stats: avg price, volume, and overall avg -------
+            # Single scan of market_hits instead of 3 separate queries.
+            daily_rows = await conn.fetch(
                 """
                 SELECT
-                    date_trunc('day', created_at) AS day,
-                    AVG(price)                    AS avg_price
+                    date_trunc('day', created_at)                    AS day,
+                    AVG(price) FILTER (WHERE price IS NOT NULL)      AS avg_price,
+                    COUNT(*)                                         AS cnt,
+                    SUM(COUNT(*)) OVER ()                            AS grand_count,
+                    SUM(SUM(CASE WHEN price IS NOT NULL THEN price ELSE 0 END)) OVER ()
+                        / NULLIF(SUM(COUNT(price)) OVER (), 0)      AS overall_avg
                 FROM market_hits
                 WHERE normalized_key LIKE $1 || '%'
                   AND created_at >= $2
-                  AND price IS NOT NULL
                 GROUP BY date_trunc('day', created_at)
                 ORDER BY day
                 """,
                 category.lower(),
                 cutoff,
             )
+
+            avg_market_price = float(daily_rows[0]["overall_avg"] or 0) if daily_rows else 0.0
             value_distribution = [
                 TimeseriesPoint(ts=row["day"], value=float(row["avg_price"] or 0))
-                for row in val_rows
+                for row in daily_rows
             ]
-
-            # ------- volume trend (daily count) -------
-            vol_rows = await conn.fetch(
-                """
-                SELECT
-                    date_trunc('day', created_at) AS day,
-                    COUNT(*)                      AS cnt
-                FROM market_hits
-                WHERE normalized_key LIKE $1 || '%'
-                  AND created_at >= $2
-                GROUP BY date_trunc('day', created_at)
-                ORDER BY day
-                """,
-                category.lower(),
-                cutoff,
-            )
             volume_trend = [
                 TimeseriesPoint(ts=row["day"], value=float(row["cnt"]))
-                for row in vol_rows
+                for row in daily_rows
             ]
 
-            # ------- top traded items -------
-            traded_rows = await conn.fetch(
+            # ------- top traded + top movers in a single query -------
+            # Uses one CTE scan to compute both rankings.
+            combo_rows = await conn.fetch(
                 """
-                SELECT
-                    normalized_key,
-                    COALESCE(MAX(title), normalized_key) AS name,
-                    COUNT(*) AS trades
-                FROM market_hits
-                WHERE normalized_key LIKE $1 || '%'
-                  AND created_at >= $2
-                GROUP BY normalized_key
-                ORDER BY trades DESC
-                LIMIT 10
-                """,
-                category.lower(),
-                cutoff,
-            )
-            top_traded_items = [
-                {
-                    "item_id": row["normalized_key"],
-                    "name": row["name"],
-                    "trades": row["trades"],
-                }
-                for row in traded_rows
-            ]
-
-            # ------- top movers (biggest price change) -------
-            mover_rows = await conn.fetch(
-                """
-                WITH first_last AS (
+                WITH per_key AS (
                     SELECT
                         normalized_key,
                         COALESCE(MAX(title), normalized_key) AS name,
-                        (ARRAY_AGG(price ORDER BY created_at ASC))[1]  AS first_price,
-                        (ARRAY_AGG(price ORDER BY created_at DESC))[1] AS last_price
+                        COUNT(*)                             AS trades,
+                        (ARRAY_AGG(price ORDER BY created_at ASC)  FILTER (WHERE price IS NOT NULL))[1]  AS first_price,
+                        (ARRAY_AGG(price ORDER BY created_at DESC) FILTER (WHERE price IS NOT NULL))[1] AS last_price,
+                        COUNT(price)                         AS price_cnt
                     FROM market_hits
                     WHERE normalized_key LIKE $1 || '%'
                       AND created_at >= $2
-                      AND price IS NOT NULL
                     GROUP BY normalized_key
-                    HAVING COUNT(*) >= 2
+                ),
+                ranked AS (
+                    SELECT
+                        *,
+                        CASE WHEN first_price > 0 AND price_cnt >= 2
+                             THEN (last_price - first_price) / first_price
+                             ELSE 0
+                        END AS change_pct,
+                        ROW_NUMBER() OVER (ORDER BY trades DESC)                                                                        AS trade_rank,
+                        ROW_NUMBER() OVER (ORDER BY ABS(CASE WHEN first_price > 0 AND price_cnt >= 2
+                                                             THEN (last_price - first_price) / first_price
+                                                             ELSE 0 END) DESC)                                                          AS mover_rank
+                    FROM per_key
                 )
-                SELECT
-                    normalized_key,
-                    name,
-                    first_price,
-                    last_price,
-                    CASE WHEN first_price > 0
-                         THEN (last_price - first_price) / first_price
-                         ELSE 0
-                    END AS change_pct
-                FROM first_last
-                ORDER BY ABS(change_pct) DESC
-                LIMIT 10
+                SELECT *
+                FROM ranked
+                WHERE trade_rank <= 10 OR mover_rank <= 10
                 """,
                 category.lower(),
                 cutoff,
             )
-            top_movers = [
-                {
-                    "item_id": row["normalized_key"],
-                    "name": row["name"],
-                    "change_pct": round(float(row["change_pct"] or 0), 4),
-                }
-                for row in mover_rows
-            ]
 
-            return CategoryDeepDiveResponse(
+            top_traded_items = sorted(
+                [
+                    {
+                        "item_id": row["normalized_key"],
+                        "name": row["name"],
+                        "trades": row["trades"],
+                    }
+                    for row in combo_rows
+                    if row["trade_rank"] <= 10
+                ],
+                key=lambda x: x["trades"],
+                reverse=True,
+            )
+            top_movers = sorted(
+                [
+                    {
+                        "item_id": row["normalized_key"],
+                        "name": row["name"],
+                        "change_pct": round(float(row["change_pct"] or 0), 4),
+                    }
+                    for row in combo_rows
+                    if row["mover_rank"] <= 10
+                ],
+                key=lambda x: abs(x["change_pct"]),
+                reverse=True,
+            )
+
+            result = CategoryDeepDiveResponse(
                 category=category,
                 currency=currency,
                 avg_market_price=round(avg_market_price, 2),
@@ -488,6 +483,8 @@ async def get_category_deep_dive(
                 top_traded_items=top_traded_items[offset:offset + limit],
                 top_movers=top_movers[offset:offset + limit],
             )
+            cache_set(cache_key, result, ttl=_DEEPDIVE_CACHE_TTL)
+            return result
 
     except Exception as e:
         logger.error(f"[categories/{category}/deep-dive] DB error: {e}")

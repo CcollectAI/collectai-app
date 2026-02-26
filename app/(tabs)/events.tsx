@@ -12,7 +12,6 @@ import {
   SectionList,
   StyleSheet,
   Animated,
-  Alert,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
@@ -32,6 +31,7 @@ import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { CountdownBadge } from '@/components/EventCountdown';
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 import calendar, { parseEventDate, getCountdown } from '@/lib/calendar';
+import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 
 const kindLabel: Record<CollectorsEvent['kind'], string> = {
@@ -55,6 +55,7 @@ function EventsScreen() {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const [refreshing, setRefreshing] = useState(false);
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
@@ -150,7 +151,7 @@ function EventsScreen() {
     const countdown = getCountdown(eventDate);
 
     if (countdown.isPast) {
-      Alert.alert('Event Ended', 'This event has already passed.');
+      showToast({ message: 'This event has already passed.', type: 'info' });
       return;
     }
 
@@ -167,9 +168,9 @@ function EventsScreen() {
     });
 
     if (result.success) {
-      Alert.alert('Reminder Set', `You'll be notified before "${event.title}".`);
+      showToast({ message: `Reminder set for "${event.title}".`, type: 'success' });
     } else if (result.error !== 'Permission denied') {
-      Alert.alert('Error', result.error || 'Could not set reminder.');
+      showToast({ message: result.error || 'Could not set reminder.', type: 'error' });
     }
   };
 
@@ -278,6 +279,7 @@ function EventsScreen() {
               }}
               accessibilityRole="button"
               accessibilityLabel={event.isAttending ? 'Cancel attendance' : 'Attend event'}
+              accessibilityHint={event.isAttending ? 'Removes your RSVP from this event' : 'RSVPs you to this event and adds it to your calendar'}
             >
               <Ionicons
                 name={event.isAttending ? 'checkmark-circle' : 'person-add-outline'}
@@ -298,6 +300,7 @@ function EventsScreen() {
               }}
               accessibilityRole="button"
               accessibilityLabel="Set reminder for event"
+              accessibilityHint="Schedules a notification one hour before the event"
             >
               <Ionicons name="notifications-outline" size={16} color={colors.accent} />
               <Text style={[styles.actionBtnText, { color: colors.text }]}>
@@ -328,6 +331,35 @@ function EventsScreen() {
         </View>
       </View>
 
+      {/* Action Row: Create + Sponsor */}
+      <View style={styles.actionRow}>
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push('/create-event');
+          }}
+          style={[styles.createEventPill, { backgroundColor: colors.accent }]}
+          accessibilityRole="button"
+          accessibilityLabel="Create new event"
+        >
+          <Ionicons name="add" size={16} color="#fff" />
+          <Text style={styles.createEventPillText}>Create Event</Text>
+        </AnimatedPressable>
+
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push('/sponsor/dashboard');
+          }}
+          style={[styles.sponsorPill, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
+          accessibilityRole="button"
+          accessibilityLabel="Sponsor events"
+        >
+          <Ionicons name="megaphone-outline" size={14} color={colors.accent} />
+          <Text style={[styles.sponsorPillText, { color: colors.accent }]}>Sponsor</Text>
+        </AnimatedPressable>
+      </View>
+
       {/* Category Filter Chips */}
       {followedCategories.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
@@ -343,6 +375,7 @@ function EventsScreen() {
             ]}
             accessibilityRole="button"
             accessibilityLabel="Show all categories"
+            accessibilityState={{ selected: !activeFilter }}
           >
             <Text style={[styles.filterChipText, { color: !activeFilter ? colors.accent : colors.muted }]}>
               All
@@ -365,6 +398,7 @@ function EventsScreen() {
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={`Filter by ${cat?.name || catId}`}
+                accessibilityState={{ selected: isActive }}
               >
                 <Text style={[styles.filterChipText, { color: isActive ? colors.accent : colors.muted }]}>
                   {cat?.name || catId}
@@ -428,18 +462,6 @@ function EventsScreen() {
         }
       />
 
-      {/* Create Event FAB */}
-      <AnimatedPressable
-        onPress={() => {
-          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-          router.push('/create-event');
-        }}
-        style={[styles.fab, { backgroundColor: colors.accent }]}
-        accessibilityRole="button"
-        accessibilityLabel="Create new event"
-      >
-        <Ionicons name="add" size={28} color="#ffffff" />
-      </AnimatedPressable>
     </SafeAreaView>
   );
 }
@@ -570,20 +592,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  actionRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    gap: 10,
+    marginBottom: 14,
+  },
+  createEventPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  createEventPillText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sponsorPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  sponsorPillText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   filterRow: {
     marginBottom: 12,

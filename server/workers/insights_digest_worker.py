@@ -1,0 +1,324 @@
+#!/usr/bin/env python3
+"""
+Weekly insights digest worker.
+
+Runs once per week — compiles portfolio highlights for each user:
+  - Total portfolio value and change
+  - Top gainer item
+  - Top loser item
+  - New items added this week
+
+Creates a single digest notification per user.
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import os
+from datetime import datetime, timedelta, timezone
+
+import asyncpg
+
+from app.worker_registry import record_run
+from workers.retry import with_async_retry, log_dead_letter
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [insights_digest_worker] %(levelname)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+DSN = os.getenv("DB_DSN")
+
+LOOKBACK_DAYS = 7
+
+# -- Queries --
+
+# Users with items
+_USERS_WITH_ITEMS_QUERY = """
+SELECT DISTINCT user_id
+FROM public.items
+WHERE user_id IS NOT NULL
+"""
+
+# Current portfolio value for a user
+_CURRENT_VALUE_QUERY = """
+SELECT COALESCE(SUM(lp.q50), 0)::numeric AS total_value
+FROM (
+    SELECT DISTINCT ON (pp.item_id)
+        pp.q50
+    FROM public.price_predictions pp
+    JOIN public.items i ON i.id = pp.item_id
+    WHERE i.user_id = $1
+      AND pp.q50 IS NOT NULL
+    ORDER BY pp.item_id, pp.asof DESC
+) lp
+"""
+
+# Historical portfolio value
+_HISTORICAL_VALUE_QUERY = """
+SELECT COALESCE(SUM(hp.q50), 0)::numeric AS total_value
+FROM (
+    SELECT DISTINCT ON (pp.item_id)
+        pp.q50
+    FROM public.price_predictions pp
+    JOIN public.items i ON i.id = pp.item_id
+    WHERE i.user_id = $1
+      AND pp.q50 IS NOT NULL
+      AND pp.asof <= $2
+    ORDER BY pp.item_id, pp.asof DESC
+) hp
+"""
+
+# Top gainer and loser for a user this week
+_TOP_MOVERS_QUERY = """
+WITH current_vals AS (
+    SELECT DISTINCT ON (pp.item_id)
+        pp.item_id,
+        pp.q50 AS current_q50,
+        i.name AS item_name
+    FROM public.price_predictions pp
+    JOIN public.items i ON i.id = pp.item_id
+    WHERE i.user_id = $1
+      AND pp.q50 IS NOT NULL
+    ORDER BY pp.item_id, pp.asof DESC
+),
+historical_vals AS (
+    SELECT DISTINCT ON (pp.item_id)
+        pp.item_id,
+        pp.q50 AS old_q50
+    FROM public.price_predictions pp
+    JOIN public.items i ON i.id = pp.item_id
+    WHERE i.user_id = $1
+      AND pp.q50 IS NOT NULL
+      AND pp.asof <= $2
+    ORDER BY pp.item_id, pp.asof DESC
+)
+SELECT
+    c.item_id,
+    c.item_name,
+    c.current_q50,
+    h.old_q50,
+    CASE WHEN h.old_q50 > 0 THEN
+        ((c.current_q50 - h.old_q50) / h.old_q50 * 100)
+    ELSE 0 END AS pct_change
+FROM current_vals c
+JOIN historical_vals h ON h.item_id = c.item_id
+WHERE h.old_q50 > 0
+ORDER BY pct_change DESC
+LIMIT 50
+"""
+
+# New items added this week
+_NEW_ITEMS_QUERY = """
+SELECT COUNT(*) AS new_count
+FROM public.items
+WHERE user_id = $1
+  AND created_at >= $2
+"""
+
+# Check user notification preferences
+_CHECK_PREFS_QUERY = """
+SELECT notification_preferences
+FROM public.user_settings
+WHERE user_id = $1
+"""
+
+# Dedup: don't send digest twice in the same week
+_DIGEST_DEDUP_QUERY = """
+SELECT 1 FROM public.alert_trigger_history
+WHERE user_id = $1
+  AND trigger_type = 'weekly_digest'
+  AND created_at > now() - interval '7 days'
+LIMIT 1
+"""
+
+
+def _format_price(value: float) -> str:
+    """Format a price value for display."""
+    if value >= 1000:
+        return f"{value:,.0f}"
+    return f"{value:,.2f}"
+
+
+def _is_digest_enabled(prefs_row) -> bool:
+    """Check if the user has weekly_digest notifications enabled."""
+    if prefs_row is None:
+        return True
+    prefs = prefs_row.get("notification_preferences")
+    if prefs is None:
+        return True
+    if isinstance(prefs, str):
+        try:
+            prefs = json.loads(prefs)
+        except (json.JSONDecodeError, TypeError):
+            return True
+    return prefs.get("weekly_digest", True)
+
+
+@with_async_retry(max_retries=3, base_delay=2.0, max_delay=120.0)
+async def run_once():
+    """Execute a single cycle of the insights digest worker."""
+    if not DSN:
+        logger.error("No DB_DSN env")
+        return
+
+    conn = await asyncpg.connect(DSN)
+    try:
+        # Get all users with items
+        user_rows = await conn.fetch(_USERS_WITH_ITEMS_QUERY)
+        if not user_rows:
+            logger.info("No users with items found")
+            return
+
+        logger.info("Generating weekly digests for %d users", len(user_rows))
+
+        now = datetime.now(timezone.utc)
+        lookback_date = now - timedelta(days=LOOKBACK_DAYS)
+        digests_sent = 0
+
+        for user_row in user_rows:
+            user_id = user_row["user_id"]
+
+            # Check preferences
+            prefs_row = await conn.fetchrow(_CHECK_PREFS_QUERY, user_id)
+            if not _is_digest_enabled(prefs_row):
+                continue
+
+            # Dedup check
+            existing = await conn.fetchrow(_DIGEST_DEDUP_QUERY, str(user_id))
+            if existing is not None:
+                continue
+
+            # Get current value
+            current_row = await conn.fetchrow(_CURRENT_VALUE_QUERY, user_id)
+            current_value = float(current_row["total_value"]) if current_row else 0
+
+            if current_value <= 0:
+                continue
+
+            # Get historical value
+            hist_row = await conn.fetchrow(
+                _HISTORICAL_VALUE_QUERY, user_id, lookback_date
+            )
+            historical_value = float(hist_row["total_value"]) if hist_row else 0
+
+            # Calculate change
+            pct_change = 0.0
+            if historical_value > 0:
+                pct_change = ((current_value - historical_value) / historical_value) * 100
+
+            # Get top movers
+            movers = await conn.fetch(_TOP_MOVERS_QUERY, user_id, lookback_date)
+            top_gainer = None
+            top_loser = None
+            if movers:
+                first = movers[0]
+                if float(first["pct_change"]) > 0:
+                    top_gainer = {
+                        "item_id": str(first["item_id"]),
+                        "item_name": first["item_name"] or f"Item {str(first['item_id'])[:8]}",
+                        "pct_change": round(float(first["pct_change"]), 1),
+                    }
+                last = movers[-1]
+                if float(last["pct_change"]) < 0:
+                    top_loser = {
+                        "item_id": str(last["item_id"]),
+                        "item_name": last["item_name"] or f"Item {str(last['item_id'])[:8]}",
+                        "pct_change": round(float(last["pct_change"]), 1),
+                    }
+
+            # Get new items count
+            new_items_row = await conn.fetchrow(
+                _NEW_ITEMS_QUERY, user_id, lookback_date
+            )
+            new_items_count = new_items_row["new_count"] if new_items_row else 0
+
+            # Build digest message
+            change_str = f"+{pct_change:.1f}%" if pct_change >= 0 else f"{pct_change:.1f}%"
+
+            parts = [
+                f"Weekly digest: Collection worth {_format_price(current_value)} ({change_str})."
+            ]
+
+            if top_gainer:
+                parts.append(
+                    f"Top gainer: {top_gainer['item_name']} (+{top_gainer['pct_change']:.0f}%)"
+                )
+
+            if top_loser:
+                parts.append(
+                    f"Top loser: {top_loser['item_name']} ({top_loser['pct_change']:.0f}%)"
+                )
+
+            if new_items_count > 0:
+                parts.append(
+                    f"{new_items_count} new item{'s' if new_items_count != 1 else ''} added"
+                )
+
+            message = " ".join(parts)
+
+            # Build trigger value for storage
+            trigger_data = {
+                "current_value": current_value,
+                "previous_value": historical_value,
+                "pct_change": round(pct_change, 2),
+                "new_items_count": new_items_count,
+                "top_gainer": top_gainer,
+                "top_loser": top_loser,
+                "lookback_days": LOOKBACK_DAYS,
+                "generated_at": now.isoformat(),
+            }
+
+            await conn.execute(
+                """
+                INSERT INTO public.alert_trigger_history
+                    (user_id, trigger_type, trigger_value, message)
+                VALUES ($1, 'weekly_digest', $2::jsonb, $3)
+                """,
+                str(user_id),
+                json.dumps(trigger_data),
+                message,
+            )
+
+            # Send push notification
+            try:
+                from app.push import send_push_to_user
+                await send_push_to_user(
+                    conn,
+                    str(user_id),
+                    "Weekly Collection Digest",
+                    message,
+                    data={
+                        "type": "weekly_digest",
+                        "pct_change": round(pct_change, 2),
+                        "current_value": current_value,
+                    },
+                )
+            except Exception as push_err:
+                logger.debug("Push notification skipped: %s", push_err)
+
+            digests_sent += 1
+            logger.info(
+                "Digest sent: user=%s value=%.2f change=%.1f%%",
+                user_id, current_value, pct_change,
+            )
+
+        logger.info("Insights digest worker complete: %d digests sent", digests_sent)
+    finally:
+        await conn.close()
+    record_run("insights_digest_worker", "ok")
+
+
+async def main():
+    try:
+        await run_once()
+    except Exception as e:
+        record_run("insights_digest_worker", "error")
+        log_dead_letter("insights_digest_worker", {}, e)
+        logger.exception("insights_digest_worker crashed: %r", e)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -142,6 +144,7 @@ const SetsToCompleteScreen: React.FC = () => {
             );
           })}
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 };
@@ -206,4 +209,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SetsToCompleteScreen;
+export default function SetsToCompleteScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Sets to Complete">
+      <SetsToCompleteScreen />
+    </ScreenErrorBoundary>
+  );
+}

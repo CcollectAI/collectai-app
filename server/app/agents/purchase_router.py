@@ -12,10 +12,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
+from app.rate_limit import per_user_rate_limit
+from app.errors import error_response
 from app.db import db_configured, get_conn
 from app.features.pagination import pagination_params
 from app.subscription import get_user_mandate_limit
@@ -23,6 +25,9 @@ from app.subscription import get_user_mandate_limit
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/purchase", tags=["purchase"])
+
+# Per-user: 10 deal confirm requests per minute
+_deal_confirm_limit = per_user_rate_limit(10, window_seconds=60, scope="deal_confirm")
 
 
 # ---------------------------------------------------------------------------
@@ -243,7 +248,7 @@ def _row_to_deal(row) -> dict:
 
 def _require_db():
     if not db_configured():
-        raise HTTPException(status_code=503, detail="Database not configured")
+        raise error_response(503, "Database not configured")
 
 
 def _parse_uuid(value: str, label: str = "ID") -> uuid.UUID:
@@ -251,7 +256,7 @@ def _parse_uuid(value: str, label: str = "ID") -> uuid.UUID:
     try:
         return uuid.UUID(value)
     except (ValueError, AttributeError):
-        raise HTTPException(status_code=400, detail=f"Invalid {label}: {value}")
+        raise error_response(400, f"Invalid {label}: {value}")
 
 
 # ---------------------------------------------------------------------------
@@ -276,17 +281,14 @@ async def create_mandate(
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
         )
         if count >= mandate_limit:
-            raise HTTPException(
-                status_code=409,
-                detail=f"Mandate limit reached ({mandate_limit}). Upgrade your plan or delete existing mandates.",
-            )
+            raise error_response(409, f"Mandate limit reached ({mandate_limit}). Upgrade your plan or delete existing mandates.")
 
         expires_at = None
         if body.expires_at:
             try:
                 expires_at = datetime.fromisoformat(body.expires_at.replace("Z", "+00:00"))
             except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid expires_at format")
+                raise error_response(400, "Invalid expires_at format")
 
         row = await conn.fetchrow(
             """
@@ -375,7 +377,7 @@ async def get_mandate(
         )
 
     if not row:
-        raise HTTPException(status_code=404, detail="Mandate not found")
+        raise error_response(404, "Mandate not found")
     return _row_to_mandate(row)
 
 
@@ -391,12 +393,12 @@ async def update_mandate(
     # Build dynamic SET clause from non-None fields (whitelist only)
     updates = body.model_dump(exclude_none=True)
     if not updates:
-        raise HTTPException(status_code=400, detail="No fields to update")
+        raise error_response(400, "No fields to update")
 
     # Reject any keys not in the whitelist
     bad_keys = set(updates.keys()) - _UPDATABLE_MANDATE_COLUMNS
     if bad_keys:
-        raise HTTPException(status_code=400, detail=f"Cannot update fields: {bad_keys}")
+        raise error_response(400, f"Cannot update fields: {bad_keys}")
 
     # Handle expires_at parsing
     if "expires_at" in updates and updates["expires_at"]:
@@ -405,7 +407,7 @@ async def update_mandate(
                 updates["expires_at"].replace("Z", "+00:00")
             )
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid expires_at format")
+            raise error_response(400, "Invalid expires_at format")
 
     set_parts = []
     params = []
@@ -436,7 +438,7 @@ async def update_mandate(
         )
 
     if not row:
-        raise HTTPException(status_code=404, detail="Mandate not found")
+        raise error_response(404, "Mandate not found")
     return _row_to_mandate(row)
 
 
@@ -460,7 +462,7 @@ async def delete_mandate(
         )
 
     if result == "UPDATE 0":
-        raise HTTPException(status_code=404, detail="Mandate not found")
+        raise error_response(404, "Mandate not found")
     return {"ok": True, "id": mandate_id, "status": "paused"}
 
 
@@ -482,7 +484,7 @@ async def list_deals(
     async with get_conn() as conn:
         if status:
             if status not in _VALID_DEAL_STATUSES:
-                raise HTTPException(status_code=400, detail=f"Invalid status filter: {status}")
+                raise error_response(400, f"Invalid status filter: {status}")
             total = await conn.fetchval(
                 "SELECT count(*) FROM public.mandate_deals WHERE user_id = $1 AND status = $2",
                 uid, status,
@@ -533,7 +535,7 @@ async def get_deal(
         )
 
     if not row:
-        raise HTTPException(status_code=404, detail="Deal not found")
+        raise error_response(404, "Deal not found")
     return _row_to_deal(row)
 
 
@@ -562,7 +564,7 @@ async def click_deal(
         )
 
     if not row:
-        raise HTTPException(status_code=404, detail="Deal not found or not clickable")
+        raise error_response(404, "Deal not found or not clickable")
     return {
         "ok": True,
         "id": str(row["id"]),
@@ -575,6 +577,7 @@ async def confirm_deal(
     deal_id: str,
     body: DealConfirmBody,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_deal_confirm_limit),
 ):
     """User confirms purchase ('I got it' + optional price paid)."""
     _require_db()
@@ -593,10 +596,7 @@ async def confirm_deal(
         )
 
         if not row:
-            raise HTTPException(
-                status_code=404,
-                detail="Deal not found or already purchased/declined",
-            )
+            raise error_response(404, "Deal not found or already purchased/declined")
 
         confirmed_price = body.confirmed_price if body.confirmed_price is not None else float(row["listing_price"])
 
@@ -617,7 +617,7 @@ async def confirm_deal(
         )
 
         if result == "UPDATE 0":
-            raise HTTPException(status_code=409, detail="Deal state changed concurrently")
+            raise error_response(409, "Deal state changed concurrently")
 
         # Update mandate counters — IDOR fix: verify user_id owns the mandate
         await conn.execute(
@@ -677,7 +677,7 @@ async def decline_deal(
         )
 
     if result == "UPDATE 0":
-        raise HTTPException(status_code=404, detail="Deal not found or not declinable")
+        raise error_response(404, "Deal not found or not declinable")
     return {"ok": True, "id": deal_id, "status": "declined"}
 
 
@@ -750,7 +750,7 @@ async def forecast_mandate(
             _parse_uuid(mandate_id, "mandate_id"), uid,
         )
         if not mandate:
-            raise HTTPException(status_code=404, detail="Mandate not found")
+            raise error_response(404, "Mandate not found")
 
         # Calculate avg deal price from purchased deals
         avg_row = await conn.fetchrow(

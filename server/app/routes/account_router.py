@@ -15,19 +15,10 @@ from pydantic import BaseModel
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.db_helpers import get_db_pool
 
 router = APIRouter(prefix="/account", tags=["account"])
 logger = logging.getLogger(__name__)
-
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except (ImportError, RuntimeError, OSError) as e:
-        logger.debug("DB pool not available: %s", e)
-        return None
 
 
 def _get_supabase_admin():
@@ -60,7 +51,7 @@ async def delete_account(user_id: str = Depends(get_current_user_id)):
 
     Required by Apple App Store and Google Play Store policies.
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is None:
         raise error_response(

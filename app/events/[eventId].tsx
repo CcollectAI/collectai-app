@@ -17,9 +17,9 @@ import {
   ScrollView,
   StyleSheet,
   Linking,
-  ActivityIndicator,
   Alert,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -35,6 +35,11 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useAuthContext } from '@/providers/useAuthContext';
 import logger from '@/utils/logger';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { useToast } from '@/components/Toast';
+import { SkeletonEventCard } from '@/components/Skeleton';
+import { QuickNavBar } from '@/components/QuickNavBar';
+import { collectorsApi } from '@/api/collectorsApi';
 
 const kindLabel: Record<EventKind, string> = {
   collection_drop: 'Collection drop',
@@ -50,6 +55,42 @@ const kindIcon: Record<EventKind, keyof typeof Ionicons.glyphMap> = {
   stream: 'videocam-outline',
   convention: 'map-outline',
   release: 'rocket-outline',
+};
+
+function getEventCountdown(dateStr: string): { text: string; isUpcoming: boolean } {
+  const eventDate = new Date(dateStr);
+  const now = new Date();
+  const diff = eventDate.getTime() - now.getTime();
+
+  if (diff < 0) {
+    return { text: 'Event ended', isUpcoming: false };
+  }
+
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+
+  if (days > 7) {
+    return { text: eventDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }), isUpcoming: true };
+  }
+  if (days > 0) {
+    return { text: `Starts in ${days} day${days > 1 ? 's' : ''}, ${hours} hour${hours !== 1 ? 's' : ''}`, isUpcoming: true };
+  }
+  if (hours > 0) {
+    return { text: `Starts in ${hours} hour${hours !== 1 ? 's' : ''}`, isUpcoming: true };
+  }
+  const mins = Math.floor(diff / 60000);
+  if (mins > 0) {
+    return { text: `Starts in ${mins} minute${mins !== 1 ? 's' : ''}`, isUpcoming: true };
+  }
+  return { text: 'Starting now!', isUpcoming: true };
+}
+
+const EVENT_SOURCE_LABELS: Record<string, string> = {
+  admin: 'Official',
+  newsletter: 'Newsletter',
+  community: 'Community',
+  scraped: 'Scraped',
+  user: 'Community',
 };
 
 const AvatarSmall: React.FC<{ name: string; color: string; textColor: string }> = ({ name, color, textColor }) => {
@@ -71,11 +112,12 @@ const AvatarSmall: React.FC<{ name: string; color: string; textColor: string }> 
   );
 };
 
-export default function EventDetailScreen() {
+function EventDetailScreen() {
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const { user } = useAuthContext();
 
   const currentUserId = user?.id ?? null;
@@ -86,6 +128,7 @@ export default function EventDetailScreen() {
   const [hostProfileLoading, setHostProfileLoading] = useState(false);
 
   const [alertsOn, setAlertsOn] = useState(false);
+  const [alertsLoading, setAlertsLoading] = useState(false);
   const [followingStream, setFollowingStream] = useState(false);
   const [rsvpStatus, setRsvpStatus] = useState<string | undefined>(undefined);
 
@@ -94,6 +137,9 @@ export default function EventDetailScreen() {
 
   // Announcement unread count
   const [unreadAnnouncementCount, setUnreadAnnouncementCount] = useState(0);
+
+  // Pull-to-refresh
+  const [refreshing, setRefreshing] = useState(false);
 
   // Load event data
   const loadEvent = useCallback(async () => {
@@ -113,6 +159,12 @@ export default function EventDetailScreen() {
     loadEvent();
   }, [loadEvent]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadEvent();
+    setRefreshing(false);
+  }, [loadEvent]);
+
   // Load host profile when event loads
   useEffect(() => {
     if (event?.hostUserId) {
@@ -130,6 +182,17 @@ export default function EventDetailScreen() {
       setRsvpStatus(event.myRsvpStatus);
     }
   }, [event?.myRsvpStatus]);
+
+  // Load drop alert status for this event
+  useEffect(() => {
+    if (!eventId || !currentUserId) return;
+    collectorsApi.listMyDropAlerts()
+      .then((alerts) => {
+        const hasAlert = Array.isArray(alerts) && alerts.some((a) => a.event_id === eventId);
+        setAlertsOn(hasAlert);
+      })
+      .catch(() => setAlertsOn(false));
+  }, [eventId, currentUserId]);
 
   // Load announcement unread count
   useEffect(() => {
@@ -267,7 +330,7 @@ export default function EventDetailScreen() {
       router.push({ pathname: '/edit-event', params: { eventId: duplicated.id } });
     } catch (err) {
       logger.warn('[EventDetail] duplicate error:', err);
-      Alert.alert('Error', 'Failed to duplicate event.');
+      showToast({ message: 'Failed to duplicate event.', type: 'error' });
     }
   };
 
@@ -290,7 +353,7 @@ export default function EventDetailScreen() {
               router.back();
             } catch (err) {
               logger.warn('[EventDetail] cancel error:', err);
-              Alert.alert('Error', 'Failed to cancel event.');
+              showToast({ message: 'Failed to cancel event.', type: 'error' });
             }
           },
         },
@@ -333,7 +396,7 @@ export default function EventDetailScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <SkeletonEventCard />
         </View>
       </SafeAreaView>
     );
@@ -368,6 +431,7 @@ export default function EventDetailScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
       >
         {/* Top row: Back + 3-dot menu */}
         <View style={styles.topRow}>
@@ -419,7 +483,7 @@ export default function EventDetailScreen() {
           <View style={[styles.sourceBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons name="globe-outline" size={12} color={colors.muted} style={{ marginRight: 4 }} />
             <Text style={[styles.sourceText, { color: colors.muted }]}>
-              {event.source === 'admin' ? 'Official' : event.source === 'newsletter' ? 'From newsletter' : 'Auto-discovered'}
+              {EVENT_SOURCE_LABELS[event.source] || event.source}
             </Text>
           </View>
         )}
@@ -436,6 +500,16 @@ export default function EventDetailScreen() {
             {event.time ? ` \u2022 ${event.time}` : ''}
           </Text>
         </View>
+
+        {event.date && (() => {
+          const countdown = getEventCountdown(event.date);
+          return (
+            <View style={[styles.countdownBadge, { backgroundColor: countdown.isUpcoming ? colors.accent + '15' : colors.border + '40' }]}>
+              <Ionicons name={countdown.isUpcoming ? 'time-outline' : 'checkmark-circle-outline'} size={14} color={countdown.isUpcoming ? colors.accent : colors.muted} />
+              <Text style={[styles.countdownText, { color: countdown.isUpcoming ? colors.accent : colors.muted }]}>{countdown.text}</Text>
+            </View>
+          );
+        })()}
 
         {event.location && (
           <View style={styles.metaRow}>
@@ -498,16 +572,34 @@ export default function EventDetailScreen() {
           <View style={styles.actionsRow}>
             {isDrop && (
               <AnimatedPressable
-                onPress={() => {
+                onPress={async () => {
+                  if (!eventId || alertsLoading) return;
+                  setAlertsLoading(true);
                   fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  setAlertsOn(!alertsOn);
-                  logger.info('[EventDetail] toggle drop alerts', event.id, !alertsOn);
+                  try {
+                    if (alertsOn) {
+                      await collectorsApi.unsubscribeDropAlert(eventId);
+                      setAlertsOn(false);
+                      showToast({ message: 'Drop alert removed', type: 'info' });
+                    } else {
+                      await collectorsApi.subscribeDropAlert(eventId, 24);
+                      setAlertsOn(true);
+                      showToast({ message: "Alert set \u2014 we'll notify you before this drop", type: 'success' });
+                    }
+                  } catch (err) {
+                    logger.warn('[EventDetail] toggle drop alert error:', err);
+                    showToast({ message: 'Failed to update drop alert', type: 'error' });
+                  } finally {
+                    setAlertsLoading(false);
+                  }
                 }}
+                disabled={alertsLoading}
                 style={[
                   styles.actionBtn,
                   {
                     backgroundColor: alertsOn ? `${colors.accent}15` : colors.card,
                     borderColor: alertsOn ? colors.accent : colors.border,
+                    opacity: alertsLoading ? 0.6 : 1,
                   },
                 ]}
                 accessibilityRole="button"
@@ -867,7 +959,16 @@ export default function EventDetailScreen() {
           </View>
         </AnimatedPressable>
       </Modal>
+      <QuickNavBar />
     </SafeAreaView>
+  );
+}
+
+export default function EventDetailScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Event Detail">
+      <EventDetailScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -979,6 +1080,20 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 14,
+  },
+  countdownBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  countdownText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   descriptionCard: {
     borderRadius: 12,

@@ -2,12 +2,13 @@
  * Subscription screen — shows current plan and upgrade options.
  */
 
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
 import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   ActivityIndicator,
-  Alert,
   StyleSheet,
   ScrollView,
 } from 'react-native';
@@ -24,6 +25,7 @@ import {
   createPortalSession,
   type BillingStatus,
 } from '@/api/collectorsApi';
+import { useToast } from '@/components/Toast';
 
 const SUCCESS = '#10B981';
 const WARNING = '#F59E0B';
@@ -41,12 +43,17 @@ interface PlanCardProps {
 
 function PlanCard({ name, price, features, current, recommended, onSelect, loading, colors }: PlanCardProps) {
   return (
-    <View style={[
-      styles.planCard,
-      { borderColor: colors.border },
-      current && { borderColor: colors.accent, borderWidth: 2, backgroundColor: colors.accent + '08' },
-      recommended && { borderColor: colors.brand.dark, borderWidth: 2 },
-    ]}>
+    <View
+      style={[
+        styles.planCard,
+        { borderColor: colors.border },
+        current && { borderColor: colors.accent, borderWidth: 2, backgroundColor: colors.accent + '08' },
+        recommended && { borderColor: colors.brand.dark, borderWidth: 2 },
+      ]}
+      accessible={true}
+      accessibilityRole="summary"
+      accessibilityLabel={`${name} plan, ${price}${current ? ', current plan' : ''}${recommended ? ', recommended' : ''}`}
+    >
       {recommended && (
         <View style={[styles.recommendedBadge, { backgroundColor: colors.brand.dark }]}>
           <Text style={styles.recommendedText}>RECOMMENDED</Text>
@@ -54,9 +61,9 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
       )}
       <Text style={[styles.planName, { color: colors.text }]}>{name}</Text>
       <Text style={[styles.planPrice, { color: colors.muted }]}>{price}</Text>
-      <View style={styles.featureList}>
+      <View style={styles.featureList} accessibilityRole="list" accessibilityLabel="Plan features">
         {features.map((f) => (
-          <View key={f} style={styles.featureRow}>
+          <View key={f} style={styles.featureRow} accessibilityLabel={f}>
             <Ionicons name="checkmark-circle" size={18} color={current ? colors.brand.dark : colors.muted} />
             <Text style={[styles.featureText, { color: colors.text }]}>{f}</Text>
           </View>
@@ -91,9 +98,10 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
   );
 }
 
-export default function SubscriptionScreen() {
+function SubscriptionScreen() {
   const { settings } = useSettings();
   const { colors } = useAppTheme();
+  const { showToast } = useToast();
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<string | null>(null);
@@ -102,7 +110,7 @@ export default function SubscriptionScreen() {
     getBillingStatus()
       .then(setBilling)
       .catch(() => {
-        Alert.alert('Connection Error', 'Could not load subscription info. Please try again later.');
+        showToast({ message: 'Could not load subscription info. Please try again later.', type: 'error' });
       })
       .finally(() => setLoading(false));
   }, []);
@@ -123,7 +131,7 @@ export default function SubscriptionScreen() {
     try {
       const { url } = await createCheckoutSession(plan);
       if (!isValidUrl(url)) {
-        Alert.alert('Error', 'Invalid checkout URL received.');
+        showToast({ message: 'Invalid checkout URL received.', type: 'error' });
         return;
       }
       await WebBrowser.openBrowserAsync(url);
@@ -131,7 +139,7 @@ export default function SubscriptionScreen() {
       const updated = await getBillingStatus();
       setBilling(updated);
     } catch (e: unknown) {
-      Alert.alert('Upgrade failed', e instanceof Error ? e.message : 'Please try again.');
+      showToast({ message: e instanceof Error ? e.message : 'Upgrade failed. Please try again.', type: 'error' });
     } finally {
       setUpgrading(null);
     }
@@ -142,14 +150,14 @@ export default function SubscriptionScreen() {
     try {
       const { url } = await createPortalSession();
       if (!isValidUrl(url)) {
-        Alert.alert('Error', 'Invalid portal URL received.');
+        showToast({ message: 'Invalid portal URL received.', type: 'error' });
         return;
       }
       await WebBrowser.openBrowserAsync(url);
       const updated = await getBillingStatus();
       setBilling(updated);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not open billing portal.');
+      showToast({ message: e instanceof Error ? e.message : 'Could not open billing portal.', type: 'error' });
     }
   }
 
@@ -180,14 +188,14 @@ export default function SubscriptionScreen() {
           <View style={styles.plans}>
             <PlanCard
               name="Free"
-              price="EUR 0/mo"
+              price={`${settings.currency} 0/mo`}
               features={['3 purchase mandates', 'Basic valuation', 'Community access']}
               current={currentPlan === 'free'}
               colors={colors}
             />
             <PlanCard
               name="Pro"
-              price="EUR 4.99/mo"
+              price={`${settings.currency} 4.99/mo`}
               features={[
                 '10 purchase mandates',
                 'Deal discovery',
@@ -202,7 +210,7 @@ export default function SubscriptionScreen() {
             />
             <PlanCard
               name="Premium"
-              price="EUR 9.99/mo"
+              price={`${settings.currency} 9.99/mo`}
               features={[
                 '50 purchase mandates',
                 'Deal discovery',
@@ -230,7 +238,16 @@ export default function SubscriptionScreen() {
           </AnimatedPressable>
         )}
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
+  );
+}
+
+export default function SubscriptionScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Subscription">
+      <SubscriptionScreen />
+    </ScreenErrorBoundary>
   );
 }
 

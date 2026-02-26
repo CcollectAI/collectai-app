@@ -8,12 +8,14 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   useWindowDimensions,
   StyleSheet,
   ViewToken,
   ActivityIndicator,
   TouchableOpacity,
   Modal,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -21,11 +23,15 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useToast } from '@/components/Toast';
 import { useSettings, REGION_DEFAULTS } from '@/lib/settings';
 import type { Region } from '@/lib/settings';
 import { collectorsApi } from '@/api/collectorsApi';
 import { API_BASE } from '@/api/config';
 import { supabase } from '@/lib/supabase';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { CATEGORY_VISUAL, type CategoryId } from '@/data/categories';
+import { CATEGORIES as ALL_CATEGORIES } from '@/constants/categories';
 
 const TIFFANY = '#81D8D0';
 const TIFFANY_DARK = '#5FBFB6';
@@ -62,6 +68,12 @@ const SLIDES: Slide[] = [
   },
   {
     id: '4',
+    icon: 'heart-outline',
+    title: 'What Do You Collect?',
+    subtitle: 'Pick your favorite categories so we can personalize your experience.',
+  },
+  {
+    id: '5',
     icon: 'globe-outline',
     title: 'Set Your Region',
     subtitle: 'We\'ll show prices in your local currency and prioritize nearby marketplaces.',
@@ -77,7 +89,192 @@ const REGION_OPTIONS: { value: Region; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
-export default function OnboardingScreen() {
+/** Animated scan demonstration for onboarding slide 2 */
+function ScanAnimation() {
+  const scanLineY = useRef(new Animated.Value(0)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Scan line moves up and down inside the viewfinder
+    const lineAnim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanLineY, {
+          toValue: 1,
+          duration: 1600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scanLineY, {
+          toValue: 0,
+          duration: 1600,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    lineAnim.start();
+
+    // Pulsing "Identifying..." text
+    const textAnim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(textOpacity, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(textOpacity, {
+          toValue: 0.2,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    textAnim.start();
+
+    return () => {
+      lineAnim.stop();
+      textAnim.stop();
+    };
+  }, [scanLineY, textOpacity]);
+
+  // The viewfinder area is 60x60, so the scan line travels ~56px (with 2px padding)
+  const VIEWFINDER_INNER = 56;
+  const scanLineTranslate = scanLineY.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, VIEWFINDER_INNER],
+  });
+
+  return (
+    <View style={scanStyles.container}>
+      {/* Phone outline */}
+      <View style={scanStyles.phoneOutline}>
+        {/* Notch / speaker bar */}
+        <View style={scanStyles.phoneSpeaker} />
+
+        {/* Screen area */}
+        <View style={scanStyles.phoneScreen}>
+          {/* Viewfinder frame */}
+          <View style={scanStyles.viewfinder}>
+            {/* Corner brackets */}
+            <View style={[scanStyles.vfCorner, scanStyles.vfCornerTL]} />
+            <View style={[scanStyles.vfCorner, scanStyles.vfCornerTR]} />
+            <View style={[scanStyles.vfCorner, scanStyles.vfCornerBL]} />
+            <View style={[scanStyles.vfCorner, scanStyles.vfCornerBR]} />
+
+            {/* Animated scan line */}
+            <Animated.View
+              style={[
+                scanStyles.scanLine,
+                { transform: [{ translateY: scanLineTranslate }] },
+              ]}
+            />
+          </View>
+        </View>
+
+        {/* Home indicator bar */}
+        <View style={scanStyles.phoneHomeBar} />
+      </View>
+
+      {/* Pulsing text */}
+      <Animated.Text style={[scanStyles.identifyingText, { opacity: textOpacity }]}>
+        Identifying...
+      </Animated.Text>
+    </View>
+  );
+}
+
+const scanStyles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  phoneOutline: {
+    width: 88,
+    height: 140,
+    borderRadius: 16,
+    borderWidth: 3,
+    borderColor: TIFFANY_DARK,
+    backgroundColor: TIFFANY + '10',
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 6,
+  },
+  phoneSpeaker: {
+    width: 28,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: TIFFANY_DARK + '60',
+    marginBottom: 8,
+  },
+  phoneScreen: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewfinder: {
+    width: 60,
+    height: 60,
+    position: 'relative',
+  },
+  vfCorner: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderColor: TIFFANY_DARK,
+  },
+  vfCornerTL: {
+    top: 0,
+    left: 0,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderTopLeftRadius: 4,
+  },
+  vfCornerTR: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    borderTopRightRadius: 4,
+  },
+  vfCornerBL: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: 2,
+    borderLeftWidth: 2,
+    borderBottomLeftRadius: 4,
+  },
+  vfCornerBR: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    borderBottomRightRadius: 4,
+  },
+  scanLine: {
+    position: 'absolute',
+    top: 2,
+    left: 4,
+    right: 4,
+    height: 2,
+    backgroundColor: TIFFANY,
+    borderRadius: 1,
+  },
+  phoneHomeBar: {
+    width: 32,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: TIFFANY_DARK + '40',
+    marginTop: 4,
+  },
+  identifyingText: {
+    marginTop: 14,
+    fontSize: 14,
+    fontWeight: '600',
+    color: TIFFANY_DARK,
+    letterSpacing: 0.3,
+  },
+});
+
+function OnboardingScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { settings, updateSettings } = useSettings();
@@ -86,6 +283,22 @@ export default function OnboardingScreen() {
   const [detectedRegion, setDetectedRegion] = useState<Region>('europe');
   const [detecting, setDetecting] = useState(false);
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const { showToast } = useToast();
+
+  const toggleCategory = useCallback((catSlug: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(catSlug)) {
+        next.delete(catSlug);
+      } else {
+        next.add(catSlug);
+      }
+      return next;
+    });
+  }, [settings.hapticsEnabled]);
 
   // Auto-detect region on mount
   useEffect(() => {
@@ -137,10 +350,26 @@ export default function OnboardingScreen() {
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   async function completeOnboarding() {
+    if (!ageConfirmed) {
+      showToast({ message: 'You must confirm your age to continue.', type: 'warning' });
+      return;
+    }
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     await confirmRegion(detectedRegion);
+
+    // Save followed categories (best-effort)
+    if (selectedCategories.size > 0) {
+      try {
+        await collectorsApi.saveFollowedCategories(Array.from(selectedCategories));
+      } catch {
+        // Non-blocking — categories will be empty on first load
+      }
+      // Also persist locally for immediate use
+      await AsyncStorage.setItem('@collectai/followed_categories', JSON.stringify(Array.from(selectedCategories)));
+    }
+
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/add');
   }
 
   function handleNext() {
@@ -153,7 +382,8 @@ export default function OnboardingScreen() {
   }
 
   const isLast = currentIndex === SLIDES.length - 1;
-  const isRegionSlide = currentIndex === 3;
+  const isCategorySlide = currentIndex === 3;
+  const isRegionSlide = currentIndex === 4;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -181,14 +411,73 @@ export default function OnboardingScreen() {
         viewabilityConfig={viewabilityConfig}
         renderItem={({ item, index }) => (
           <View style={[styles.slide, { width }]}>
-            <View style={styles.iconCircle}>
-              <Ionicons name={item.icon} size={48} color={TIFFANY_DARK} />
-            </View>
+            {index === 1 ? (
+              <ScanAnimation />
+            ) : (
+              <View style={styles.iconCircle}>
+                <Ionicons name={item.icon} size={48} color={TIFFANY_DARK} />
+              </View>
+            )}
             <Text style={styles.slideTitle}>{item.title}</Text>
             <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
 
-            {/* Region detection UI on slide 4 */}
+            {/* Category picker on slide 4 (index 3) */}
             {index === 3 && (
+              <ScrollView
+                style={styles.categoryScrollView}
+                contentContainerStyle={styles.categoryGrid}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
+              >
+                {ALL_CATEGORIES.map((cat) => {
+                  const visual = CATEGORY_VISUAL[cat.slug as CategoryId];
+                  const isSelected = selectedCategories.has(cat.slug);
+                  return (
+                    <TouchableOpacity
+                      key={cat.slug}
+                      onPress={() => toggleCategory(cat.slug)}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.categoryPill,
+                        {
+                          borderColor: isSelected ? (visual?.accentColor || TIFFANY) : '#E2E8F0',
+                          backgroundColor: isSelected ? (visual?.accentColor || TIFFANY) + '20' : '#F8FAFC',
+                        },
+                      ]}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isSelected }}
+                      accessibilityLabel={`${cat.name}${isSelected ? ', selected' : ''}`}
+                    >
+                      <Ionicons
+                        name={(visual?.iconName || 'cube-outline') as keyof typeof Ionicons.glyphMap}
+                        size={16}
+                        color={isSelected ? (visual?.accentColor || TIFFANY) : MUTED}
+                      />
+                      <Text
+                        style={[
+                          styles.categoryPillText,
+                          { color: isSelected ? (visual?.accentColor || TIFFANY_DARK) : NAVY },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {cat.name}
+                      </Text>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={14} color={visual?.accentColor || TIFFANY} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+                {selectedCategories.size > 0 && (
+                  <Text style={styles.categoryCountText}>
+                    {selectedCategories.size} selected
+                  </Text>
+                )}
+              </ScrollView>
+            )}
+
+            {/* Region detection UI on slide 5 (index 4) */}
+            {index === 4 && (
               <View style={styles.regionContainer}>
                 {detecting ? (
                   <ActivityIndicator size="small" color={TIFFANY} style={{ marginTop: 24 }} />
@@ -210,6 +499,23 @@ export default function OnboardingScreen() {
                     </TouchableOpacity>
                   </>
                 )}
+
+                {/* Age confirmation */}
+                <TouchableOpacity
+                  style={styles.ageRow}
+                  onPress={() => setAgeConfirmed(!ageConfirmed)}
+                  activeOpacity={0.7}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: ageConfirmed }}
+                  accessibilityLabel="Confirm age requirement"
+                >
+                  <View style={[styles.ageCheckbox, ageConfirmed && styles.ageCheckboxChecked]}>
+                    {ageConfirmed && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                  </View>
+                  <Text style={styles.ageText}>
+                    I confirm I am at least 13 years old (16 in the EU)
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -282,6 +588,14 @@ export default function OnboardingScreen() {
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+export default function OnboardingScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Onboarding">
+      <OnboardingScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -431,5 +745,68 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: NAVY,
+  },
+  ageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginTop: 20,
+    paddingHorizontal: 4,
+  },
+  ageCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  ageCheckboxChecked: {
+    backgroundColor: TIFFANY,
+    borderColor: TIFFANY,
+  },
+  ageText: {
+    flex: 1,
+    fontSize: 13,
+    color: MUTED,
+    lineHeight: 20,
+  },
+  // Category grid styles
+  categoryScrollView: {
+    marginTop: 20,
+    maxHeight: 260,
+    width: '100%',
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 4,
+    paddingBottom: 8,
+  },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    gap: 6,
+  },
+  categoryPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    maxWidth: 100,
+  },
+  categoryCountText: {
+    width: '100%',
+    textAlign: 'center',
+    fontSize: 13,
+    color: TIFFANY_DARK,
+    fontWeight: '600',
+    marginTop: 4,
   },
 });

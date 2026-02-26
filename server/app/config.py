@@ -202,6 +202,17 @@ DEAL_SCAN_INTERVAL_SECS: int = int(os.getenv("DEAL_SCAN_INTERVAL_SECS", "1800"))
 EBAY_AFFILIATE_CAMPAIGN_ID: str = os.getenv("EBAY_AFFILIATE_CAMPAIGN_ID", "")
 TCGPLAYER_AFFILIATE_ID: str = os.getenv("TCGPLAYER_AFFILIATE_ID", "")
 CARDMARKET_AFFILIATE_ID: str = os.getenv("CARDMARKET_AFFILIATE_ID", "")
+MERCARI_AFFILIATE_ID: str = os.getenv("MERCARI_AFFILIATE_ID", "")
+DISCOGS_AFFILIATE_TOKEN: str = os.getenv("DISCOGS_AFFILIATE_TOKEN", "")
+STOCKX_AFFILIATE_ID: str = os.getenv("STOCKX_AFFILIATE_ID", "")
+BRICKLINK_AFFILIATE_ID: str = os.getenv("BRICKLINK_AFFILIATE_ID", "")
+
+# ---------------------------------------------------------------------------
+# Task Queue Worker
+# ---------------------------------------------------------------------------
+
+TASK_WORKER_ENABLED: bool = os.getenv("TASK_WORKER_ENABLED", "false").lower() in ("1", "true", "yes")
+TASK_WORKER_POLL_INTERVAL: float = float(os.getenv("TASK_WORKER_POLL_INTERVAL", "5.0"))
 
 # ---------------------------------------------------------------------------
 # Stripe (Payments / Subscriptions)
@@ -216,6 +227,31 @@ STRIPE_PRICE_ID_PREMIUM: str = os.getenv("STRIPE_PRICE_ID_PREMIUM", "")
 STRIPE_PRICE_ID_SPONSOR_FEATURED: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_FEATURED", "")
 STRIPE_PRICE_ID_SPONSOR_PROMOTED: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_PROMOTED", "")
 STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT", "")
+
+# ---------------------------------------------------------------------------
+# Redis (optional — falls back to in-memory cache when absent)
+# ---------------------------------------------------------------------------
+
+REDIS_URL: str | None = os.environ.get("REDIS_URL")
+
+# ---------------------------------------------------------------------------
+# Cache TTLs & thresholds
+# ---------------------------------------------------------------------------
+
+CACHE_TTL: int = int(os.environ.get("CACHE_TTL", "300"))
+PRESIGN_EXPIRY: int = int(os.environ.get("PRESIGN_EXPIRY", "300"))
+FX_CACHE_TTL: int = int(os.environ.get("FX_CACHE_TTL", "28800"))
+GEO_CACHE_TTL: int = int(os.environ.get("GEO_CACHE_TTL", "86400"))
+BARCODE_CACHE_TTL: int = int(os.environ.get("BARCODE_CACHE_TTL", "86400"))
+
+# Sponsor tier prices (EUR cents)
+SPONSOR_TIER_BASIC: int = int(os.environ.get("SPONSOR_TIER_BASIC", "2900"))
+SPONSOR_TIER_PRO: int = int(os.environ.get("SPONSOR_TIER_PRO", "7900"))
+SPONSOR_TIER_PREMIUM: int = int(os.environ.get("SPONSOR_TIER_PREMIUM", "19900"))
+
+# Portfolio insight thresholds
+OVEREXPOSURE_THRESHOLD: float = float(os.environ.get("OVEREXPOSURE_THRESHOLD", "0.40"))
+HIGH_RISK_THRESHOLD: float = float(os.environ.get("HIGH_RISK_THRESHOLD", "0.50"))
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -16,7 +16,8 @@ import { Stack } from 'expo-router';
 
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatPrice } from '@/lib/format';
-import type { Currency } from '@/lib/settings';
+import { useSettings, type Currency } from '@/lib/settings';
+import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import { dataProvider, type QuickScanResult } from '@/data';
 
@@ -155,8 +156,10 @@ function analyzeDeal(
   };
 }
 
-export default function AddAuthCheckScreen() {
+function AddAuthCheckScreen() {
   const { colors, spacing, radius } = useAppTheme();
+  const { settings } = useSettings();
+  const { showToast } = useToast();
 
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [quickScan, setQuickScan] = useState<QuickScanResult | null>(
@@ -175,10 +178,7 @@ export default function AddAuthCheckScreen() {
     const { status } =
       await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        'Camera permission required',
-        'Enable camera access to scan collectibles in-store.',
-      );
+      showToast({ message: 'Camera permission required. Enable camera access to scan collectibles in-store.', type: 'error' });
       return;
     }
 
@@ -201,7 +201,7 @@ export default function AddAuthCheckScreen() {
     setAnalysisError(null);
 
     try {
-      const result = await dataProvider.quickscanSingle();
+      const result = await dataProvider.quickscanSingle(uri ?? undefined);
       setQuickScan(result);
       setScanStatus('QuickScan results loaded.');
     } catch (err: unknown) {
@@ -237,7 +237,7 @@ export default function AddAuthCheckScreen() {
 
   const prediction = quickScan?.prediction;
   const attributes = quickScan?.attributes;
-  const currency = prediction?.currency ?? 'EUR';
+  const currency = prediction?.currency ?? settings.currency;
 
   let dealLabel = 'Waiting for analysis';
   let dealColor = colors.mutedText;
@@ -596,7 +596,7 @@ export default function AddAuthCheckScreen() {
                     analysis?.fairValue ??
                       prediction?.estimatedMid ??
                       null,
-                    (currency ?? 'EUR') as Currency,
+                    currency as Currency,
                   )}
                 </Text>
                 {analysis?.diffAbs != null &&
@@ -609,7 +609,7 @@ export default function AddAuthCheckScreen() {
                     >
                       Seller is {formatPrice(
                         Math.abs(analysis.diffAbs),
-                        (currency ?? 'EUR') as Currency,
+                        currency as Currency,
                       )}{' '}
                       {analysis.diffAbs > 0 ? 'above' : 'below'} our
                       estimate ({formatPct(analysis.diffPct)}).
@@ -715,5 +715,13 @@ export default function AddAuthCheckScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </>
+  );
+}
+
+export default function AddAuthCheckScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Add Auth Check">
+      <AddAuthCheckScreen />
+    </ScreenErrorBoundary>
   );
 }

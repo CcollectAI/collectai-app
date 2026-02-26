@@ -14,11 +14,24 @@ import httpx
 from fastapi import APIRouter, Request
 
 from app.cache import cache_get, cache_set
+from app.config import GEO_CACHE_TTL
+
+import hashlib
 
 router = APIRouter(prefix="/geo", tags=["geo"])
 logger = logging.getLogger(__name__)
 
-_CACHE_TTL = 86400  # 24 hours
+
+def _mask_ip(ip: str) -> str:
+    """Mask an IP address for safe logging (GDPR-friendly)."""
+    if ":" in ip:
+        # IPv6: use hashed prefix
+        return hashlib.sha256(ip.encode()).hexdigest()[:12]
+    # IPv4: mask last octet
+    parts = ip.rsplit(".", 1)
+    return f"{parts[0]}.xxx" if len(parts) == 2 else ip
+
+_CACHE_TTL = GEO_CACHE_TTL
 
 # Country code → (region, default currency)
 _COUNTRY_MAP: Dict[str, Tuple[str, str]] = {
@@ -95,7 +108,7 @@ async def detect_region(request: Request):
             data = resp.json()
 
             if data.get("status") != "success":
-                logger.debug("[geo] ip-api returned non-success for %s: %s", ip, data)
+                logger.debug("[geo] ip-api returned non-success for %s: %s", _mask_ip(ip), data)
                 cache_set(cache_key, _FALLBACK, ttl=_CACHE_TTL)
                 return _FALLBACK
 
@@ -111,6 +124,6 @@ async def detect_region(request: Request):
             return result
 
     except Exception:
-        logger.warning("[geo] Failed to detect region for IP %s", ip, exc_info=True)
+        logger.warning("[geo] Failed to detect region for IP %s", _mask_ip(ip), exc_info=True)
         cache_set(cache_key, _FALLBACK, ttl=_CACHE_TTL)
         return _FALLBACK

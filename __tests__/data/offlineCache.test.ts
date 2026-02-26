@@ -6,12 +6,13 @@
  * - Expired entries return null
  * - cacheClear removes entries (all or by prefix)
  *
- * expo-sqlite is fully mocked so no native binaries are needed.
+ * Uses __setDbForTesting to inject a mock db directly, avoiding
+ * issues with jest.mock and dynamic import().
  */
-import { cacheGet, cacheSet, cacheClear, cacheEvictExpired } from '../../src/data/offlineCache';
+import { cacheGet, cacheSet, cacheClear, cacheEvictExpired, __setDbForTesting } from '../../src/data/offlineCache';
 
 // ---------------------------------------------------------------------------
-// In-memory mock for expo-sqlite
+// In-memory mock for the SQLite db object
 // ---------------------------------------------------------------------------
 
 type Row = { key: string; data: string; expires_at: number };
@@ -21,14 +22,6 @@ let store: Map<string, Row>;
 const mockExecAsync = jest.fn();
 const mockGetFirstAsync = jest.fn();
 const mockRunAsync = jest.fn();
-
-jest.mock('expo-sqlite', () => ({
-  openDatabaseAsync: jest.fn().mockResolvedValue({
-    execAsync: (...args: any[]) => mockExecAsync(...args),
-    getFirstAsync: (...args: any[]) => mockGetFirstAsync(...args),
-    runAsync: (...args: any[]) => mockRunAsync(...args),
-  }),
-}));
 
 jest.mock('../../src/utils/logger', () => ({
   __esModule: true,
@@ -97,6 +90,13 @@ beforeEach(() => {
       return Promise.resolve({ changes: size });
     }
     return Promise.resolve({ changes: 0 });
+  });
+
+  // Inject mock db directly — bypasses dynamic import('expo-sqlite')
+  __setDbForTesting({
+    execAsync: (...args: any[]) => mockExecAsync(...args),
+    getFirstAsync: (...args: any[]) => mockGetFirstAsync(...args),
+    runAsync: (...args: any[]) => mockRunAsync(...args),
   });
 });
 

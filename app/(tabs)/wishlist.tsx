@@ -16,6 +16,8 @@ import {
   Animated,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -25,7 +27,12 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { useAuthContext } from '@/providers/useAuthContext';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { formatPrice } from '@/lib/format';
-import * as Haptics from 'expo-haptics';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
+import { useToast } from '@/components/Toast';
+import { collectorsApi } from '@/api/collectorsApi';
+import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
+import { getMarketplacesForCategory } from '@/data/categories';
 import logger from '@/utils/logger';
 
 // Pull from single source of truth — all 36 categories + "Other"
@@ -42,6 +49,8 @@ export default function WatchlistTabScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { user } = useAuthContext();
+  const { settings } = useSettings();
+  const { showToast } = useToast();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [items, setItems] = useState<WatchlistItem[]>([]);
@@ -57,6 +66,12 @@ export default function WatchlistTabScreen() {
   const [formNotes, setFormNotes] = useState('');
   const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
 
+  // Edit target price state
+  const [editTargetModalVisible, setEditTargetModalVisible] = useState(false);
+  const [editTargetItem, setEditTargetItem] = useState<WatchlistItem | null>(null);
+  const [editTargetValue, setEditTargetValue] = useState('');
+  const [editTargetSaving, setEditTargetSaving] = useState(false);
+
   // "I Got It!" acquisition state
   const [acquireModalVisible, setAcquireModalVisible] = useState(false);
   const [acquireItem, setAcquireItem] = useState<WatchlistItem | null>(null);
@@ -67,13 +82,17 @@ export default function WatchlistTabScreen() {
   const congratsScale = useRef(new Animated.Value(0)).current;
   const congratsOpacity = useRef(new Animated.Value(0)).current;
 
+  // Shop sheet state
+  const [shopItem, setShopItem] = useState<WatchlistItem | null>(null);
+  const [shopSheetVisible, setShopSheetVisible] = useState(false);
+
   const loadItems = useCallback(async () => {
     try {
       const data = await dataProvider.listWatchlist(user?.id ?? 'current-user');
       setItems(data);
     } catch (err) {
       logger.warn('[Watchlist] loadItems error:', err);
-      Alert.alert('Error', 'Failed to load watchlist. Pull down to retry.');
+      showToast({ message: 'Failed to load watchlist. Pull down to retry.', type: 'error' });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -98,11 +117,11 @@ export default function WatchlistTabScreen() {
 
   const handleAdd = async () => {
     if (!formTitle.trim()) {
-      Alert.alert('Required', 'Please enter a title');
+      showToast({ message: 'Please enter a title.', type: 'warning' });
       return;
     }
     if (!formCategory) {
-      Alert.alert('Required', 'Please select a category');
+      showToast({ message: 'Please select a category.', type: 'warning' });
       return;
     }
 
@@ -119,11 +138,31 @@ export default function WatchlistTabScreen() {
         notes: formNotes.trim() || undefined,
       });
 
+      // Auto-create price alert when a target price is set
+      if (targetPrice && !isNaN(targetPrice) && targetPrice > 0) {
+        try {
+          await collectorsApi.createAlert({
+            category: formCategory,
+            trigger_type: 'below_threshold',
+            threshold_value: targetPrice,
+            direction: 'below',
+            metadata: { watchlist_title: formTitle.trim() },
+          });
+          showToast({
+            message: `Price alert created \u2014 we'll notify you when the price drops below ${formatPrice(targetPrice, settings.currency)}`,
+            type: 'success',
+          });
+        } catch (alertErr: unknown) {
+          logger.warn('[Watchlist] auto-alert creation failed:', alertErr);
+          // Don't fail the add if alert creation fails
+        }
+      }
+
       setModalVisible(false);
       resetForm();
       loadItems();
     } catch (err: unknown) {
-      Alert.alert('Error', err?.message || 'Failed to add item');
+      showToast({ message: err?.message || 'Failed to add item.', type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -143,12 +182,86 @@ export default function WatchlistTabScreen() {
               await dataProvider.removeWatchlistItem(item.id);
               loadItems();
             } catch (err: unknown) {
-              Alert.alert('Error', err?.message || 'Failed to remove item');
+              showToast({ message: err?.message || 'Failed to remove item.', type: 'error' });
             }
           },
         },
       ]
     );
+  };
+
+  // Edit target price flow
+  const handleEditTarget = (item: WatchlistItem) => {
+    setEditTargetItem(item);
+    setEditTargetValue(item.targetPrice?.toString() || '');
+    setEditTargetModalVisible(true);
+  };
+
+  const handleSaveTargetPrice = async () => {
+    if (!editTargetItem) return;
+    setEditTargetSaving(true);
+    try {
+      const newTarget = editTargetValue.trim()
+        ? parseFloat(editTargetValue.replace(/[^0-9.]/g, ''))
+        : null;
+
+      await dataProvider.updateWatchlistItem(editTargetItem.id, {
+        targetPrice: newTarget && !isNaN(newTarget) ? newTarget : null,
+      });
+
+      // Auto-create price alert when target price is set
+      if (newTarget && !isNaN(newTarget) && newTarget > 0) {
+        try {
+          await collectorsApi.createAlert({
+            category: editTargetItem.category || undefined,
+            trigger_type: 'below_threshold',
+            threshold_value: newTarget,
+            direction: 'below',
+            metadata: { watchlist_title: editTargetItem.title, watchlist_id: editTargetItem.id },
+          });
+          fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+          showToast({
+            message: `Price alert created \u2014 we'll notify you when the price drops below ${formatPrice(newTarget, settings.currency)}`,
+            type: 'success',
+          });
+        } catch (alertErr: unknown) {
+          logger.warn('[Watchlist] auto-alert creation failed:', alertErr);
+          showToast({ message: 'Target price saved', type: 'success' });
+        }
+      } else {
+        showToast({ message: 'Target price updated', type: 'success' });
+      }
+
+      setEditTargetModalVisible(false);
+      setEditTargetItem(null);
+      setEditTargetValue('');
+      loadItems();
+    } catch (err: unknown) {
+      showToast({ message: err?.message || 'Failed to update target price.', type: 'error' });
+    } finally {
+      setEditTargetSaving(false);
+    }
+  };
+
+  // Shop flow
+  const handleShop = async (item: WatchlistItem) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    const marketplaces = getMarketplacesForCategory(item.category);
+
+    if (marketplaces.length === 1) {
+      // Single marketplace — go directly via affiliate link
+      try {
+        const res = await collectorsApi.getAffiliateLinks(item.title, item.category);
+        const url = res.links?.[0]?.affiliate_url || `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`;
+        Linking.openURL(url).catch(() => {});
+      } catch {
+        Linking.openURL(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`).catch(() => {});
+      }
+    } else {
+      // Multiple marketplaces — show picker sheet
+      setShopItem(item);
+      setShopSheetVisible(true);
+    }
   };
 
   // "I Got It!" flow
@@ -161,7 +274,7 @@ export default function WatchlistTabScreen() {
 
   const playCongrats = () => {
     setShowCongrats(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
 
     // Animate in
     Animated.parallel([
@@ -225,7 +338,7 @@ export default function WatchlistTabScreen() {
       // Reload list
       loadItems();
     } catch (err: unknown) {
-      Alert.alert('Error', err?.message || 'Failed to add to collection');
+      showToast({ message: err?.message || 'Failed to add to collection.', type: 'error' });
     } finally {
       setAcquiring(false);
     }
@@ -259,11 +372,23 @@ export default function WatchlistTabScreen() {
               <Text style={[styles.categoryText, { color: colors.accent }]}>{item.category}</Text>
             </View>
           )}
-          {item.targetPrice !== null && (
-            <Text style={[styles.targetPrice, { color: colors.text }]}>
-              Target: {formatPrice(item.targetPrice)}
-            </Text>
-          )}
+          <AnimatedPressable
+            onPress={() => handleEditTarget(item)}
+            style={styles.targetPressable}
+            accessibilityRole="button"
+            accessibilityLabel={item.targetPrice !== null ? `Target: ${formatPrice(item.targetPrice, settings.currency)}. Tap to edit` : 'Set target price'}
+          >
+            {item.targetPrice !== null ? (
+              <Text style={[styles.targetPrice, { color: colors.text }]}>
+                Target: {formatPrice(item.targetPrice, settings.currency)}
+              </Text>
+            ) : (
+              <Text style={[styles.setTargetText, { color: colors.accent }]}>
+                Set target price
+              </Text>
+            )}
+            <Ionicons name="pencil-outline" size={12} color={colors.muted} />
+          </AnimatedPressable>
         </View>
 
         {item.notes && (
@@ -278,16 +403,27 @@ export default function WatchlistTabScreen() {
           </Text>
         )}
 
-        {/* "I Got It!" button */}
-        <AnimatedPressable
-          style={[styles.gotItBtn, { backgroundColor: colors.accent }]}
-          onPress={() => handleGotIt(item)}
-          accessibilityRole="button"
-          accessibilityLabel={`Mark ${item.title} as acquired`}
-        >
-          <Ionicons name="checkmark-circle" size={18} color="#fff" />
-          <Text style={styles.gotItBtnText}>I Got It!</Text>
-        </AnimatedPressable>
+        {/* Action buttons */}
+        <View style={styles.cardActions}>
+          <AnimatedPressable
+            style={[styles.shopBtn, { borderColor: colors.accent }]}
+            onPress={() => handleShop(item)}
+            accessibilityRole="button"
+            accessibilityLabel={`Shop for ${item.title}`}
+          >
+            <Ionicons name="cart-outline" size={16} color={colors.accent} />
+            <Text style={[styles.shopBtnText, { color: colors.accent }]}>Shop</Text>
+          </AnimatedPressable>
+          <AnimatedPressable
+            style={[styles.gotItBtn, { backgroundColor: colors.accent }]}
+            onPress={() => handleGotIt(item)}
+            accessibilityRole="button"
+            accessibilityLabel={`Mark ${item.title} as acquired`}
+          >
+            <Ionicons name="checkmark-circle" size={18} color="#fff" />
+            <Text style={styles.gotItBtnText}>I Got It!</Text>
+          </AnimatedPressable>
+        </View>
       </View>
     );
   };
@@ -373,8 +509,7 @@ export default function WatchlistTabScreen() {
             styles.listContent,
             items.length === 0 && styles.listContentEmpty,
           ]}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#81D8D0" />}
           ListEmptyComponent={renderEmpty}
         />
       </Animated.View>
@@ -419,7 +554,7 @@ export default function WatchlistTabScreen() {
             </AnimatedPressable>
 
             {/* Target Price */}
-            <Text style={[styles.label, { color: colors.text }]}>Target Price (EUR)</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Target Price ({settings.currency})</Text>
             <TextInput
               value={formTargetPrice}
               onChangeText={setFormTargetPrice}
@@ -520,7 +655,7 @@ export default function WatchlistTabScreen() {
                   )}
                 </View>
 
-                <Text style={[styles.label, { color: colors.text }]}>What did you pay? (EUR)</Text>
+                <Text style={[styles.label, { color: colors.text }]}>What did you pay? ({settings.currency})</Text>
                 <TextInput
                   value={acquirePrice}
                   onChangeText={setAcquirePrice}
@@ -567,6 +702,75 @@ export default function WatchlistTabScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Edit Target Price Modal */}
+      <Modal visible={editTargetModalVisible} animationType="slide" transparent onRequestClose={() => { setEditTargetModalVisible(false); setEditTargetItem(null); }}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Set Target Price</Text>
+              <AnimatedPressable onPress={() => { setEditTargetModalVisible(false); setEditTargetItem(null); }} accessibilityRole="button" accessibilityLabel="Close target price editor">
+                <Ionicons name="close" size={24} color={colors.muted} />
+              </AnimatedPressable>
+            </View>
+
+            {editTargetItem && (
+              <>
+                <View style={[styles.acquireItemPreview, { backgroundColor: colors.background }]}>
+                  <Text style={[styles.acquireItemTitle, { color: colors.text }]} numberOfLines={2}>
+                    {editTargetItem.title}
+                  </Text>
+                  {editTargetItem.category && (
+                    <View style={[styles.categoryBadge, { backgroundColor: colors.accent + '20' }]}>
+                      <Text style={[styles.categoryText, { color: colors.accent }]}>{editTargetItem.category}</Text>
+                    </View>
+                  )}
+                </View>
+
+                <Text style={[styles.label, { color: colors.text }]}>Target Price ({settings.currency})</Text>
+                <TextInput
+                  value={editTargetValue}
+                  onChangeText={setEditTargetValue}
+                  placeholder="e.g. 350"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="numeric"
+                  autoFocus
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                  accessibilityLabel="Target price"
+                />
+                <Text style={[styles.helperText, { color: colors.muted }]}>
+                  A price alert will be created automatically when you set a target price.
+                </Text>
+
+                <AnimatedPressable
+                  style={[styles.saveBtn, { backgroundColor: colors.accent }]}
+                  onPress={handleSaveTargetPrice}
+                  disabled={editTargetSaving}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save target price"
+                >
+                  {editTargetSaving ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.saveBtnText}>Save Target Price</Text>
+                  )}
+                </AnimatedPressable>
+              </>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Marketplace Picker Sheet */}
+      <MarketplacePickerSheet
+        visible={shopSheetVisible}
+        onClose={() => { setShopSheetVisible(false); setShopItem(null); }}
+        itemTitle={shopItem?.title ?? ''}
+        categoryId={shopItem?.category ?? undefined}
+      />
 
       {/* Congrats Overlay */}
       {showCongrats && (
@@ -691,6 +895,15 @@ const styles = StyleSheet.create({
   targetPrice: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  targetPressable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  setTargetText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   notes: {
     fontSize: 13,
@@ -835,14 +1048,34 @@ const styles = StyleSheet.create({
   pickerItemText: {
     fontSize: 15,
   },
-  // "I Got It!" button styles
-  gotItBtn: {
+  // Action button row
+  cardActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  shopBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 6,
+  },
+  shopBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  gotItBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 20,
     gap: 6,
   },

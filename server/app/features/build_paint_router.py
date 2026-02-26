@@ -1,12 +1,17 @@
 """
 Build & Paint — step template endpoints.
-Read-only reference data, no auth required.
+Read-only reference data with rate limiting.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
 from typing import List, Dict, Any
 
+from app.errors import error_response
+from app.rate_limit import per_user_rate_limit
+
 router = APIRouter(prefix="/build-paint", tags=["build-paint"])
+
+_build_paint_limit = per_user_rate_limit(30, window_seconds=60, scope="build_paint")
 
 # Step templates (mirrors build_step_templates DB table + frontend constants)
 STEP_TEMPLATES: Dict[str, Dict[str, Any]] = {
@@ -95,17 +100,17 @@ STEP_TEMPLATES: Dict[str, Dict[str, Any]] = {
 
 
 @router.get("/step-templates")
-async def list_step_templates() -> List[Dict[str, Any]]:
+async def list_step_templates(_rl: None = Depends(_build_paint_limit)) -> List[Dict[str, Any]]:
     """Return all available step templates."""
     return list(STEP_TEMPLATES.values())
 
 
 @router.get("/step-templates/{category_id}")
-async def get_step_template(category_id: str) -> Dict[str, Any]:
+async def get_step_template(category_id: str, _rl: None = Depends(_build_paint_limit)) -> Dict[str, Any]:
     """Return step template for a specific category. Falls back to generic."""
     template = STEP_TEMPLATES.get(category_id)
     if not template:
         template = STEP_TEMPLATES.get("generic")
     if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise error_response(404, "Template not found")
     return template

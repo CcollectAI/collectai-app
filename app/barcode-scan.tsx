@@ -5,6 +5,7 @@
  * Flow: scan → detect codeType + value → show prefill card → confirm → save
  */
 
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -30,6 +31,7 @@ import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import CatalogSuggestionModal, { type CatalogSuggestionSource } from '@/components/CatalogSuggestionModal';
@@ -40,7 +42,7 @@ const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', '
 type ScanState = 'scanning' | 'loading' | 'result' | 'error';
 type InputMode = 'camera' | 'url';
 
-export default function BarcodeScanScreen() {
+function BarcodeScanScreen() {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
@@ -387,13 +389,13 @@ export default function BarcodeScanScreen() {
           </Text>
           <AnimatedPressable
             style={[styles.permissionButton, { backgroundColor: colors.accent }]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); requestPermission(); }}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); requestPermission(); }}
             accessibilityRole="button"
             accessibilityLabel="Grant camera permission"
           >
             <Text style={[styles.permissionButtonText, { color: colors.card }]}>Grant Permission</Text>
           </AnimatedPressable>
-          <AnimatedPressable style={styles.backButton} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} accessibilityRole="button" accessibilityLabel="Go back">
+          <AnimatedPressable style={styles.backButton} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }} accessibilityRole="button" accessibilityLabel="Go back">
             <Text style={[styles.backButtonText, { color: colors.muted }]}>Go Back</Text>
           </AnimatedPressable>
         </View>
@@ -405,11 +407,11 @@ export default function BarcodeScanScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.headerBack} accessibilityRole="button" accessibilityLabel="Go back">
+        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }} style={styles.headerBack} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>
-          {inputMode === 'camera' ? 'Scan Barcode' : 'Import from URL'}
+          {inputMode === 'camera' ? 'Scan EAN Barcode / ISBN' : 'Import from URL'}
         </Text>
         <ThemeToggleButton size={22} />
       </View>
@@ -424,13 +426,15 @@ export default function BarcodeScanScreen() {
                 ? { backgroundColor: colors.accent }
                 : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
             ]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setInputMode('camera'); }}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); setInputMode('camera'); }}
             accessibilityRole="button"
             accessibilityLabel="Switch to camera scan mode"
           >
-            <Ionicons name="scan-outline" size={16} color={inputMode === 'camera' ? '#fff' : colors.text} />
-            <Text style={[styles.modeToggleText, { color: inputMode === 'camera' ? '#fff' : colors.text }]}>
-              Scan
+            <Ionicons name="scan-outline" size={22} color={inputMode === 'camera' ? '#fff' : colors.text} />
+            <Text style={[styles.modeToggleText, { color: inputMode === 'camera' ? '#fff' : colors.text }]}
+              allowFontScaling={false}
+            >
+              EAN / ISBN
             </Text>
           </AnimatedPressable>
           <AnimatedPressable
@@ -441,7 +445,7 @@ export default function BarcodeScanScreen() {
                 : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
             ]}
             onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
               if (userPlan === 'free') {
                 showToast({ message: 'URL import requires a Pro plan', type: 'warning' });
                 router.push('/subscription');
@@ -452,12 +456,14 @@ export default function BarcodeScanScreen() {
             accessibilityRole="button"
             accessibilityLabel="Switch to URL import mode"
           >
-            <Ionicons name="link-outline" size={16} color={inputMode === 'url' ? '#fff' : colors.text} />
-            <Text style={[styles.modeToggleText, { color: inputMode === 'url' ? '#fff' : colors.text }]}>
+            <Ionicons name="link-outline" size={22} color={inputMode === 'url' ? '#fff' : colors.text} />
+            <Text style={[styles.modeToggleText, { color: inputMode === 'url' ? '#fff' : colors.text }]}
+              allowFontScaling={false}
+            >
               Paste URL
             </Text>
             {userPlan === 'free' && (
-              <Ionicons name="lock-closed" size={12} color={inputMode === 'url' ? '#fff' : colors.muted} />
+              <Ionicons name="lock-closed" size={15} color={inputMode === 'url' ? '#fff' : colors.muted} />
             )}
           </AnimatedPressable>
         </View>
@@ -500,7 +506,7 @@ export default function BarcodeScanScreen() {
                   backgroundColor: colors.accent,
                   opacity: !urlInput.startsWith('http') || isUrlSubmitting ? 0.5 : 1,
                 }]}
-                onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleUrlSubmit(); }}
+                onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled }); handleUrlSubmit(); }}
                 disabled={!urlInput.startsWith('http') || isUrlSubmitting}
                 accessibilityLabel="Import from URL"
                 accessibilityRole="button"
@@ -592,7 +598,7 @@ export default function BarcodeScanScreen() {
                     backgroundColor: colors.accent,
                     opacity: manualIsbn.length < 10 || isManualSubmitting ? 0.5 : 1
                   }]}
-                  onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleManualSubmit(); }}
+                  onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled }); handleManualSubmit(); }}
                   disabled={manualIsbn.length < 10 || isManualSubmitting}
                   accessibilityLabel="Look up ISBN"
                   accessibilityRole="button"
@@ -669,10 +675,10 @@ export default function BarcodeScanScreen() {
               <View style={[styles.priceCard, { backgroundColor: colors.background }]}>
                 <Text style={[styles.priceLabel, { color: colors.muted }]}>Estimated Price</Text>
                 <Text style={[styles.priceValue, { color: colors.text }]}>
-                  €{lookupResult.priceBand.q50.toFixed(2)}
+                  {formatPrice(lookupResult.priceBand.q50, settings.currency)}
                 </Text>
                 <Text style={[styles.priceRange, { color: colors.muted }]}>
-                  Range: €{lookupResult.priceBand.q10.toFixed(2)} – €{lookupResult.priceBand.q90.toFixed(2)}
+                  Range: {formatPrice(lookupResult.priceBand.q10, settings.currency)} – {formatPrice(lookupResult.priceBand.q90, settings.currency)}
                 </Text>
               </View>
             )}
@@ -688,7 +694,7 @@ export default function BarcodeScanScreen() {
           <View style={styles.actionButtonsRow}>
             <AnimatedPressable
               style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleRescan(); }}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); handleRescan(); }}
               accessibilityRole="button"
               accessibilityLabel="Scan another barcode"
             >
@@ -698,7 +704,7 @@ export default function BarcodeScanScreen() {
 
             <AnimatedPressable
               style={[styles.primaryButtonHalf, { backgroundColor: colors.accent, opacity: isSaving ? 0.7 : 1 }]}
-              onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSaveToCollection(); }}
+              onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled }); handleSaveToCollection(); }}
               disabled={isSaving}
               accessibilityRole="button"
               accessibilityLabel="Save to collection"
@@ -716,7 +722,7 @@ export default function BarcodeScanScreen() {
 
           <AnimatedPressable
             style={[styles.watchlistButton, { borderColor: colors.border }]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleAddToWatchlist(); }}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); handleAddToWatchlist(); }}
             accessibilityRole="button"
             accessibilityLabel="Add to watchlist instead"
           >
@@ -728,7 +734,7 @@ export default function BarcodeScanScreen() {
             <AnimatedPressable
               style={[styles.watchlistButton, { borderColor: colors.border, marginTop: 8 }]}
               onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                 Linking.openURL(affiliateLink.url).catch(() => {});
               }}
               accessibilityRole="link"
@@ -756,7 +762,7 @@ export default function BarcodeScanScreen() {
           <View style={styles.errorActions}>
             <AnimatedPressable
               style={[styles.primaryButton, { backgroundColor: colors.accent }]}
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleRescan(); }}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); handleRescan(); }}
               accessibilityRole="button"
               accessibilityLabel="Try scanning again"
             >
@@ -765,7 +771,7 @@ export default function BarcodeScanScreen() {
             </AnimatedPressable>
             <AnimatedPressable
               style={[styles.secondaryButton, { borderColor: colors.border }]}
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/add-manual'); }}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/add-manual'); }}
               accessibilityRole="button"
               accessibilityLabel="Add item manually"
             >
@@ -784,6 +790,14 @@ export default function BarcodeScanScreen() {
         inputData={catalogModalInputData}
       />
     </SafeAreaView>
+  );
+}
+
+export default function BarcodeScanScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Barcode Scan">
+      <BarcodeScanScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -830,12 +844,12 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   permissionButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: 28,
+    paddingVertical: 16,
+    borderRadius: 12,
   },
   permissionButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   backButton: {
@@ -999,8 +1013,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: 16,
+    borderRadius: 12,
   },
   primaryButtonHalf: {
     flex: 1,
@@ -1008,11 +1022,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: 16,
+    borderRadius: 12,
   },
   primaryButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   secondaryButton: {
@@ -1020,8 +1034,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: 16,
+    borderRadius: 12,
     borderWidth: 1,
   },
   secondaryButtonHalf: {
@@ -1030,12 +1044,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: 16,
+    borderRadius: 12,
     borderWidth: 1,
   },
   secondaryButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '500',
   },
   watchlistButton: {
@@ -1089,22 +1103,23 @@ const styles = StyleSheet.create({
   },
 modeToggleRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
   },
   modeToggleButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 14,
+    gap: 8,
+    paddingVertical: 16,
     borderRadius: 12,
   },
   modeToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   urlImportContainer: {
     flex: 1,
@@ -1175,9 +1190,9 @@ modeToggleRow: {
     letterSpacing: 1,
   },
   manualSubmitButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
+    width: 56,
+    height: 56,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Alert, Text, StyleSheet, Switch, ActivityIndicator, Linking, Modal, TouchableOpacity } from 'react-native';
+import { View, ScrollView, Alert, Text, TextInput, StyleSheet, Switch, ActivityIndicator, Linking, Modal, TouchableOpacity } from 'react-native';
+import { useToast } from '@/components/Toast';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -37,12 +38,22 @@ export default function Settings() {
   const { colors } = useAppTheme();
   const { settings, updateSettings } = useSettings();
   const { user, profile, signOut } = useAuthContext();
+  const { showToast } = useToast();
   const [alertPrefs, setAlertPrefs] = useState<AlertPreferences>(DEFAULT_ALERT_PREFERENCES);
   const [privacy, setPrivacy] = useState<PrivacySettings>(DEFAULT_PRIVACY);
   const [loadingPrivacy, setLoadingPrivacy] = useState(true);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
   const [currencyPickerVisible, setCurrencyPickerVisible] = useState(false);
+  const [editProfileVisible, setEditProfileVisible] = useState(false);
+  const [editUsername, setEditUsername] = useState(profile?.username ?? '');
+  const [editBio, setEditBio] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [changePasswordVisible, setChangePasswordVisible] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const REGION_OPTIONS: { value: Region; label: string }[] = [
     { value: 'americas', label: 'Americas' },
@@ -98,6 +109,56 @@ export default function Settings() {
     }
   };
 
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      const auth = await supabase.auth.getSession();
+      if (auth.data?.session) {
+        await fetch(`${API_BASE}/settings/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${auth.data.session.access_token}`,
+          },
+          body: JSON.stringify({ username: editUsername.trim(), bio: editBio.trim() }),
+        });
+      }
+      setEditProfileVisible(false);
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    } catch (e) {
+      logger.warn('[Settings] Failed to save profile:', e);
+      showToast({ message: 'Failed to save profile changes', type: 'error' });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) {
+      showToast({ message: 'New password must be at least 8 characters', type: 'error' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast({ message: 'Passwords do not match', type: 'error' });
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setChangePasswordVisible(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Password updated successfully', type: 'success' });
+    } catch (e) {
+      showToast({ message: e instanceof Error ? e.message : 'Failed to change password', type: 'error' });
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   // Load privacy settings from Supabase on mount
   useEffect(() => {
     const loadPrivacySettings = async () => {
@@ -132,9 +193,23 @@ export default function Settings() {
     loadPrivacySettings();
   }, []);
 
-  const handleAlertPrefsUpdate = (prefs: AlertPreferences) => {
+  const handleAlertPrefsUpdate = async (prefs: AlertPreferences) => {
     setAlertPrefs(prefs);
-    // TODO: Persist to backend
+    try {
+      const auth = await supabase.auth.getSession();
+      if (auth.data?.session) {
+        await fetch(`${API_BASE}/settings/alert-preferences`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${auth.data.session.access_token}`,
+          },
+          body: JSON.stringify(prefs),
+        });
+      }
+    } catch (e) {
+      logger.warn('[Settings] Failed to persist alert preferences:', e);
+    }
   };
 
   const updatePrivacy = async (key: keyof PrivacySettings, value: boolean) => {
@@ -172,7 +247,7 @@ export default function Settings() {
         logger.warn('[Settings] Failed to save privacy setting:', error);
         // Revert on error
         setPrivacy(prevPrivacy);
-        Alert.alert('Error', 'Failed to save privacy setting');
+        showToast({ message: 'Failed to save privacy setting', type: 'error' });
       }
     } catch (err) {
       logger.warn('[Settings] Privacy update error:', err);
@@ -478,6 +553,39 @@ export default function Settings() {
         {user && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
 
         <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => {
+            setEditUsername(profile?.username ?? '');
+            setEditProfileVisible(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Edit profile"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Edit Profile</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Change your username and bio</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => setChangePasswordVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Change password"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Change Password</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Update your account password</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
           style={styles.signOutBtn}
           onPress={() => {
             fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
@@ -535,6 +643,21 @@ export default function Settings() {
 
         <AnimatedPressable
           style={styles.settingRow}
+          onPress={() => router.push('/sell/offers')}
+          accessibilityRole="link"
+          accessibilityLabel="My Listings and Offers"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>My Listings & Offers</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Manage items for sale and P2P offers</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
           onPress={() => router.push('/settings/blocked-users')}
           accessibilityRole="link"
           accessibilityLabel="Blocked Users"
@@ -544,6 +667,25 @@ export default function Settings() {
             <Text style={[styles.settingHint, { color: colors.muted }]}>Manage users you've blocked</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            const url = collectorsApi.getInsuranceReportUrl('html', settings.currency);
+            Linking.openURL(url);
+          }}
+          accessibilityRole="link"
+          accessibilityLabel="Export insurance valuation report"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Export Insurance Report</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Generate a PDF-ready valuation report for insurance</Text>
+          </View>
+          <Ionicons name="document-text-outline" size={16} color={colors.accent} />
         </AnimatedPressable>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -642,6 +784,105 @@ export default function Settings() {
         </AnimatedPressable>
       </View>
 
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={editProfileVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setEditProfileVisible(false)}
+      >
+        <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+            <TouchableOpacity onPress={() => setEditProfileVisible(false)} accessibilityLabel="Close">
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>Edit Profile</Text>
+            <TouchableOpacity onPress={handleSaveProfile} disabled={savingProfile} accessibilityLabel="Save">
+              {savingProfile ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <Text style={[{ fontSize: 16, fontWeight: '600', color: colors.accent }]}>Save</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          <View style={{ padding: 16, gap: 16 }}>
+            <View>
+              <Text style={[styles.settingLabel, { color: colors.text, marginBottom: 6 }]}>Username</Text>
+              <TextInput
+                style={[styles.profileInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
+                value={editUsername}
+                onChangeText={setEditUsername}
+                placeholder="Username"
+                placeholderTextColor={colors.muted}
+                autoCapitalize="none"
+                autoFocus
+              />
+            </View>
+            <View>
+              <Text style={[styles.settingLabel, { color: colors.text, marginBottom: 6 }]}>Bio</Text>
+              <TextInput
+                style={[styles.profileInput, styles.profileBioInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
+                value={editBio}
+                onChangeText={setEditBio}
+                placeholder="Tell other collectors about yourself"
+                placeholderTextColor={colors.muted}
+                multiline
+                maxLength={200}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={changePasswordVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setChangePasswordVisible(false)}
+      >
+        <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+            <TouchableOpacity onPress={() => setChangePasswordVisible(false)} accessibilityLabel="Close">
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>Change Password</Text>
+            <TouchableOpacity onPress={handleChangePassword} disabled={savingPassword} accessibilityLabel="Save">
+              {savingPassword ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <Text style={[{ fontSize: 16, fontWeight: '600', color: colors.accent }]}>Save</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          <View style={{ padding: 16, gap: 16 }}>
+            <View>
+              <Text style={[styles.settingLabel, { color: colors.text, marginBottom: 6 }]}>New Password</Text>
+              <TextInput
+                style={[styles.profileInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="At least 8 characters"
+                placeholderTextColor={colors.muted}
+                secureTextEntry
+                autoFocus
+              />
+            </View>
+            <View>
+              <Text style={[styles.settingLabel, { color: colors.text, marginBottom: 6 }]}>Confirm New Password</Text>
+              <TextInput
+                style={[styles.profileInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Confirm new password"
+                placeholderTextColor={colors.muted}
+                secureTextEntry
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </ScrollView>
   );
 }
@@ -739,5 +980,16 @@ const styles = StyleSheet.create({
   pickerRowText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  profileInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  profileBioInput: {
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
 });

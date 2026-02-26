@@ -937,6 +937,13 @@ export function getCategoryByName(name: string | null | undefined): Category | u
   );
 }
 
+export function getMarketplacesForCategory(catNameOrId: string | null | undefined): ExternalMarketplaceLink[] {
+  const fallback: ExternalMarketplaceLink[] = [{ id: 'ebay', label: 'eBay', url: 'https://www.ebay.com' }];
+  if (!catNameOrId) return fallback;
+  const cat = getCategoryById(catNameOrId as CategoryId) ?? getCategoryByName(catNameOrId);
+  return cat?.externalMarketplaces?.length ? cat.externalMarketplaces : fallback;
+}
+
 export function getRelatedCategories(category: Category): Category[] {
   return category.relatedCategoryIds
     .map((id) => CATEGORIES.find((c) => c.id === id))

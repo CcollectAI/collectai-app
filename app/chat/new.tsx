@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +10,8 @@ import { dataProvider } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useToast } from '@/components/Toast';
+import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
 
 type DmStatusState = 'loading' | 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined' | 'blocked';
@@ -20,6 +23,7 @@ const NewChatScreen: React.FC = () => {
   }>();
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { showToast } = useToast();
 
   const toUser = useMemo(() => getUserById(toUserId ?? null), [toUserId]);
   const contextEvent = useMemo(
@@ -81,10 +85,7 @@ const NewChatScreen: React.FC = () => {
       }, 800);
     } catch (err: unknown) {
       logger.error('[Chat/new] requestDm error:', err);
-      Alert.alert(
-        'Failed to send',
-        err instanceof Error ? err.message : 'Something went wrong. Please try again.',
-      );
+      showToast({ message: err instanceof Error ? err.message : 'Failed to send. Please try again.', type: 'error' });
     } finally {
       setSending(false);
     }
@@ -93,23 +94,22 @@ const NewChatScreen: React.FC = () => {
   if (!toUser) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={styles.emptyContainer}>
-          <Ionicons name="person-outline" size={48} color={colors.muted} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            Collector not found
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-            This chat can&apos;t be started because the collector profile is missing.
-          </Text>
-          <AnimatedPressable
-            onPress={() => router.back()}
-            style={[styles.emptyBtn, { borderColor: colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
-          </AnimatedPressable>
-        </View>
+        <EmptyState
+          icon="person-outline"
+          title="Collector not found"
+          subtitle="This chat can't be started because the collector profile is missing."
+          colors={colors}
+          action={
+            <AnimatedPressable
+              onPress={() => router.back()}
+              style={[styles.emptyBtn, { borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+            </AnimatedPressable>
+          }
+        />
       </SafeAreaView>
     );
   }
@@ -118,7 +118,7 @@ const NewChatScreen: React.FC = () => {
   if (dmStatus === 'loading') {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={styles.emptyContainer}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
       </SafeAreaView>
@@ -128,23 +128,22 @@ const NewChatScreen: React.FC = () => {
   if (dmStatus === 'blocked') {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={styles.emptyContainer}>
-          <Ionicons name="ban-outline" size={48} color={colors.muted} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            Can&apos;t message this user
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-            You can&apos;t send a message to this collector.
-          </Text>
-          <AnimatedPressable
-            onPress={() => router.back()}
-            style={[styles.emptyBtn, { borderColor: colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
-          </AnimatedPressable>
-        </View>
+        <EmptyState
+          icon="ban-outline"
+          title="Can't message this user"
+          subtitle="You can't send a message to this collector."
+          colors={colors}
+          action={
+            <AnimatedPressable
+              onPress={() => router.back()}
+              style={[styles.emptyBtn, { borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+            </AnimatedPressable>
+          }
+        />
       </SafeAreaView>
     );
   }
@@ -152,23 +151,23 @@ const NewChatScreen: React.FC = () => {
   if (dmStatus === 'pending_outgoing') {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={styles.emptyContainer}>
-          <Ionicons name="hourglass-outline" size={48} color={colors.accent} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            Request already sent
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-            You&apos;ve already sent a connection request to {toUser.displayName}. They haven&apos;t responded yet.
-          </Text>
-          <AnimatedPressable
-            onPress={() => router.back()}
-            style={[styles.emptyBtn, { borderColor: colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
-          </AnimatedPressable>
-        </View>
+        <EmptyState
+          icon="hourglass-outline"
+          title="Request already sent"
+          subtitle={`You've already sent a connection request to ${toUser.displayName}. They haven't responded yet.`}
+          iconColor={colors.accent}
+          colors={colors}
+          action={
+            <AnimatedPressable
+              onPress={() => router.back()}
+              style={[styles.emptyBtn, { borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+            </AnimatedPressable>
+          }
+        />
       </SafeAreaView>
     );
   }
@@ -176,23 +175,23 @@ const NewChatScreen: React.FC = () => {
   if (dmStatus === 'pending_incoming') {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={styles.emptyContainer}>
-          <Ionicons name="mail-unread-outline" size={48} color={colors.accent} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            You have a request from {toUser.displayName}
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-            Check your inbox to accept or decline their connection request.
-          </Text>
-          <AnimatedPressable
-            onPress={() => router.push('/inbox')}
-            style={[styles.emptyBtn, { borderColor: colors.accent, backgroundColor: colors.accent }]}
-            accessibilityRole="button"
-            accessibilityLabel="Go to inbox"
-          >
-            <Text style={[styles.emptyBtnText, { color: '#ffffff' }]}>Go to Inbox</Text>
-          </AnimatedPressable>
-        </View>
+        <EmptyState
+          icon="mail-unread-outline"
+          title={`You have a request from ${toUser.displayName}`}
+          subtitle="Check your inbox to accept or decline their connection request."
+          iconColor={colors.accent}
+          colors={colors}
+          action={
+            <AnimatedPressable
+              onPress={() => router.push('/inbox')}
+              style={[styles.emptyBtn, { borderColor: colors.accent, backgroundColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel="Go to inbox"
+            >
+              <Text style={[styles.emptyBtnText, { color: '#ffffff' }]}>Go to Inbox</Text>
+            </AnimatedPressable>
+          }
+        />
       </SafeAreaView>
     );
   }
@@ -331,23 +330,11 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
   },
-  emptyContainer: {
+  loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
   },
   emptyBtn: {
     marginTop: 20,
@@ -447,4 +434,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NewChatScreen;
+export default function NewChatScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="New Chat">
+      <NewChatScreen />
+    </ScreenErrorBoundary>
+  );
+}

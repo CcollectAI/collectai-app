@@ -18,6 +18,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Image,
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
@@ -42,6 +43,7 @@ import { useSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/format";
 import { useToast } from "@/components/Toast";
 import { FilterSheet, FilterConfig, SortOption } from "@/components/FilterSheet";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from "@/utils/logger";
 
 type Item = {
@@ -52,6 +54,7 @@ type Item = {
   value: number;
   condition?: string;
   notes?: string;
+  imageUrl?: string;
 };
 
 // Semantic action colors (theme-independent)
@@ -63,6 +66,8 @@ const ACTION_COLORS = {
 } as const;
 
 type SortKey = "value_desc" | "value_asc" | "title";
+
+const VIEW_MODE_KEY = '@collectai/items_view_mode';
 
 const ItemsScreen: React.FC = () => {
   const router = useRouter();
@@ -87,6 +92,7 @@ const ItemsScreen: React.FC = () => {
         value: it.price,
         condition: undefined,
         notes: undefined,
+        imageUrl: (it as any).imageUrl,
       }));
     },
     [],
@@ -124,6 +130,21 @@ const ItemsScreen: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
+
+  // Restore persisted view mode on mount
+  useEffect(() => {
+    AsyncStorage.getItem(VIEW_MODE_KEY).then((stored) => {
+      if (stored === 'list' || stored === 'gallery') setViewMode(stored);
+    }).catch(() => {});
+  }, []);
+
+  // Toggle handler that persists the preference
+  const toggleViewMode = useCallback(() => {
+    const next = viewMode === 'list' ? 'gallery' : 'list';
+    setViewMode(next);
+    AsyncStorage.setItem(VIEW_MODE_KEY, next).catch(() => {});
+  }, [viewMode]);
+
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
@@ -203,9 +224,16 @@ const ItemsScreen: React.FC = () => {
       // Generate filename with date
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CollectAI_Collection_${dateStr}.csv`;
+
+      if (!FileSystem.documentDirectory) {
+        showToast({ message: 'File storage not available on this platform', type: 'error' });
+        setExporting(false);
+        return;
+      }
+
       const filePath = `${FileSystem.documentDirectory}${filename}`;
 
-      // Write file (use string 'utf8' for encoding)
+      // Write file
       await FileSystem.writeAsStringAsync(filePath, csvContent);
 
       // Check if sharing is available
@@ -230,7 +258,7 @@ const ItemsScreen: React.FC = () => {
       // Clear status after 3 seconds
       setTimeout(() => setExportStatus(null), 3000);
     }
-  }, []);
+  }, [showToast]);
 
   // Bulk export selected items
   const handleBulkExport = useCallback(async () => {
@@ -272,7 +300,7 @@ const ItemsScreen: React.FC = () => {
       exitMultiSelectMode();
     } catch (err: unknown) {
       logger.warn('[Items] bulk export error:', err);
-      Alert.alert('Export Error', err?.message || 'Failed to export selected items');
+      showToast({ message: (err as Error)?.message || 'Failed to export selected items', type: 'error' });
       haptics.error();
     } finally {
       setBulkActionLoading(false);
@@ -299,7 +327,7 @@ const ItemsScreen: React.FC = () => {
             if (!optimisticBulkArchive.error) {
               haptics.success();
             } else {
-              Alert.alert('Archive Error', optimisticBulkArchive.error.message || 'Failed to archive items');
+              showToast({ message: optimisticBulkArchive.error.message || 'Failed to archive items', type: 'error' });
               haptics.error();
             }
           },
@@ -328,7 +356,7 @@ const ItemsScreen: React.FC = () => {
             if (!optimisticBulkDelete.error) {
               haptics.success();
             } else {
-              Alert.alert('Delete Error', optimisticBulkDelete.error.message || 'Failed to delete items');
+              showToast({ message: optimisticBulkDelete.error.message || 'Failed to delete items', type: 'error' });
               haptics.error();
             }
           },
@@ -351,11 +379,11 @@ const ItemsScreen: React.FC = () => {
       }
       haptics.success();
       exitMultiSelectMode();
-      Alert.alert('Category Updated', `${count} item${count > 1 ? 's' : ''} moved to ${newCategory}`);
+      showToast({ message: `${count} item${count > 1 ? 's' : ''} moved to ${newCategory}`, type: 'success' });
       await paginatedRefresh();
     } catch (err: unknown) {
       logger.warn('[Items] bulk category change error:', err);
-      Alert.alert('Error', 'Could not update items');
+      showToast({ message: 'Could not update items', type: 'error' });
       haptics.error();
     } finally {
       setBulkActionLoading(false);
@@ -503,7 +531,7 @@ const ItemsScreen: React.FC = () => {
           name: item.name,
           category: item.category,
           value: item.value,
-          imageUrl: undefined,
+          imageUrl: item.imageUrl,
         }))
       ),
     [filteredAndSortedByCategory]
@@ -547,6 +575,12 @@ const ItemsScreen: React.FC = () => {
       }
     },
     [loadMore],
+  );
+
+  // Compute total filtered items count for display
+  const filteredItemCount = useMemo(
+    () => filteredAndSortedByCategory.reduce((sum, g) => sum + g.items.length, 0),
+    [filteredAndSortedByCategory]
   );
 
   const clearFilters = () => {
@@ -767,10 +801,11 @@ const ItemsScreen: React.FC = () => {
             ]}
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              setViewMode('list');
+              if (viewMode !== 'list') toggleViewMode();
             }}
             accessibilityRole="button"
             accessibilityLabel="List view"
+            accessibilityState={{ selected: viewMode === 'list' }}
           >
             <Ionicons
               name="list"
@@ -786,10 +821,11 @@ const ItemsScreen: React.FC = () => {
             ]}
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              setViewMode('gallery');
+              if (viewMode !== 'gallery') toggleViewMode();
             }}
             accessibilityRole="button"
             accessibilityLabel="Gallery view"
+            accessibilityState={{ selected: viewMode === 'gallery' }}
           >
             <Ionicons
               name="grid"
@@ -869,6 +905,11 @@ const ItemsScreen: React.FC = () => {
           </AnimatedPressable>
         </View>
       )}
+
+      {/* Item count */}
+      <Text style={[styles.itemCount, { color: colors.muted }]}>
+        {filteredItemCount} item{filteredItemCount !== 1 ? 's' : ''}
+      </Text>
     </Animated.View>
   );
 
@@ -945,9 +986,38 @@ const ItemsScreen: React.FC = () => {
   );
 
   const emptyElement = (
-    <Text style={[styles.emptyText, { color: colors.muted }]}>
-      No items match your filters yet.
-    </Text>
+    <View style={styles.emptyContainer}>
+      <Text style={[styles.emptyText, { color: colors.muted }]}>
+        No items match your filters yet.
+      </Text>
+      <AnimatedPressable
+        onPress={() => router.push('/quickscan')}
+        style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
+        accessibilityRole="button"
+        accessibilityLabel="QuickScan AI"
+      >
+        <Ionicons name="camera-outline" size={18} color="#fff" />
+        <Text style={styles.emptyCtaBtnText}>QuickScan AI</Text>
+      </AnimatedPressable>
+      <AnimatedPressable
+        onPress={() => router.push('/add-manual')}
+        style={[styles.emptyCtaBtn, { borderColor: colors.border, borderWidth: 1, backgroundColor: colors.card }]}
+        accessibilityRole="button"
+        accessibilityLabel="Add item manually"
+      >
+        <Ionicons name="add-circle-outline" size={18} color={colors.text} />
+        <Text style={[styles.emptyCtaBtnTextSecondary, { color: colors.text }]}>Add Item Manually</Text>
+      </AnimatedPressable>
+      <AnimatedPressable
+        onPress={() => router.push('/barcode-scan')}
+        style={[styles.emptyCtaBtn, { borderColor: colors.border, borderWidth: 1, backgroundColor: colors.card }]}
+        accessibilityRole="button"
+        accessibilityLabel="Scan a barcode"
+      >
+        <Ionicons name="barcode-outline" size={18} color={colors.text} />
+        <Text style={[styles.emptyCtaBtnTextSecondary, { color: colors.text }]}>Scan Barcode</Text>
+      </AnimatedPressable>
+    </View>
   );
 
   const refreshCtrl = (
@@ -1040,6 +1110,7 @@ const ItemsScreen: React.FC = () => {
                 delayLongPress={400}
                 accessibilityRole="button"
                 accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
+                accessibilityHint={isMultiSelectMode ? "Tap to select or deselect" : "Long press to select multiple items"}
               >
                 {isMultiSelectMode && (
                   <View style={styles.checkboxContainer}>
@@ -1057,6 +1128,13 @@ const ItemsScreen: React.FC = () => {
                         <Ionicons name="checkmark" size={14} color="#fff" />
                       )}
                     </View>
+                  </View>
+                )}
+                {item.imageUrl ? (
+                  <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} />
+                ) : (
+                  <View style={[styles.itemThumbPlaceholder, { backgroundColor: colors.accent + '10' }]}>
+                    <Ionicons name="image-outline" size={18} color={colors.accent + '40'} />
                   </View>
                 )}
                 <View style={{ flex: 1 }}>
@@ -1121,7 +1199,7 @@ const ItemsScreen: React.FC = () => {
             setCategoryModalVisible(false);
           }}
         >
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]} accessibilityRole="menu">
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 Change Category
@@ -1418,6 +1496,35 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 16,
   },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  emptyCtaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginTop: 12,
+  },
+  emptyCtaBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  emptyCtaBtnTextSecondary: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  itemCount: {
+    fontSize: 13,
+    fontWeight: '500',
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
   categoryBlock: {
     marginTop: 10,
     paddingVertical: 8,
@@ -1455,6 +1562,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginTop: 6,
+  },
+  itemThumb: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  itemThumbPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   itemName: {
     fontSize: 14,

@@ -33,6 +33,9 @@ import type {
   MarketSearchOptions,
   MarketSearchResult,
   MarketHit,
+  Offer,
+  OfferEvent,
+  UserReputation,
 } from './types';
 import { getCategoryById, CATEGORIES, type Category } from './categories';
 import { EVENTS, type CollectorsEvent, type CreateEventInput } from './events';
@@ -298,6 +301,15 @@ export class MockDataProvider implements DataProvider {
     return newItem;
   }
 
+  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string }): Promise<WatchlistItem> {
+    const item = mockWatchlistItems.find((i) => i.id === id);
+    if (!item) throw new Error('Watchlist item not found');
+    if (updates.targetPrice !== undefined) item.targetPrice = updates.targetPrice;
+    if (updates.notes !== undefined) item.notes = updates.notes;
+    logger.info('[MockDataProvider] updateWatchlistItem', { id, updates });
+    return item;
+  }
+
   async removeWatchlistItem(id: string): Promise<void> {
     const index = mockWatchlistItems.findIndex((item) => item.id === id);
     if (index !== -1) {
@@ -328,12 +340,23 @@ export class MockDataProvider implements DataProvider {
 
   async updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item> {
     const idx = mockCreatedItems.findIndex((it) => it.id === itemId);
-    if (idx === -1) {
-      throw new Error(`Item ${itemId} not found`);
+    if (idx !== -1) {
+      const updated = { ...mockCreatedItems[idx], ...patch, updatedAt: new Date().toISOString() };
+      mockCreatedItems[idx] = updated;
+      return updated;
     }
-    const updated = { ...mockCreatedItems[idx], ...patch, updatedAt: new Date().toISOString() };
-    mockCreatedItems[idx] = updated;
-    return updated;
+    // Handle demo/seed items by promoting them into mockCreatedItems
+    const demoItem: Item = {
+      id: itemId,
+      name: patch.name ?? 'Demo Item',
+      category: patch.category ?? 'uncategorized',
+      price: patch.price ?? 0,
+      imageUrl: patch.imageUrl ?? undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    const merged = { ...demoItem, ...patch, updatedAt: new Date().toISOString() };
+    mockCreatedItems.push(merged);
+    return merged;
   }
 
   async archiveItem(itemId: string): Promise<void> {
@@ -376,7 +399,8 @@ export class MockDataProvider implements DataProvider {
     };
   }
 
-  async quickscanSingle(): Promise<QuickScanResult> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async quickscanSingle(_imageUri?: string): Promise<QuickScanResult> {
     // Deterministic mock matching backend schema
     return {
       itemId: null,
@@ -872,6 +896,18 @@ export class MockDataProvider implements DataProvider {
     return newMessage;
   }
 
+  async setTyping(_threadId: string): Promise<void> {
+    // No-op in mock
+  }
+
+  async clearTyping(_threadId: string): Promise<void> {
+    // No-op in mock
+  }
+
+  async isOtherUserTyping(_threadId: string): Promise<boolean> {
+    return false;
+  }
+
   async getDmStatus(otherUserId: string): Promise<'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined'> {
     return mockDmStatusByUser.get(otherUserId) || 'none';
   }
@@ -1062,6 +1098,13 @@ export class MockDataProvider implements DataProvider {
     return steps;
   }
 
+  async updateBuildPaintProject(projectId: string, patch: { paintRecipes?: unknown[] }): Promise<void> {
+    const project = mockBuildPaintProjects.get(projectId);
+    if (project && patch.paintRecipes !== undefined) {
+      (project as Record<string, unknown>).paintRecipes = patch.paintRecipes;
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Feedback
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1219,6 +1262,14 @@ export class MockDataProvider implements DataProvider {
       isPublic: input.isPublic,
       latitude: input.latitude,
       longitude: input.longitude,
+      // Sponsor fields
+      ...(input.sponsorCompanyId ? {
+        isSponsored: true,
+        sponsorCompanyId: input.sponsorCompanyId,
+        sponsorTier: input.sponsorTier ?? 'featured',
+        sponsorName: this._sponsorCompanies.find((c) => c.id === input.sponsorCompanyId)?.name,
+        sponsorLogoUrl: this._sponsorCompanies.find((c) => c.id === input.sponsorCompanyId)?.logoUrl,
+      } : {}),
     };
     EVENTS.push(event);
     logger.info('[MockDataProvider] createEvent', { id: event.id, title: event.title });
@@ -1271,11 +1322,26 @@ export class MockDataProvider implements DataProvider {
 
   async deleteEventTemplate(_templateId: string): Promise<void> {}
 
+  /** In-memory sponsor companies for demo flow */
+  private _sponsorCompanies: import('./events').SponsorCompany[] = [
+    {
+      id: 'sponsor-demo-1',
+      name: 'CollectAI Demo Sponsor',
+      logoUrl: undefined,
+      websiteUrl: 'https://ccollect.ai',
+      contactEmail: 'sponsor@ccollect.ai',
+      description: 'Demo sponsor company for testing the full dashboard experience. Edit this profile, create sponsored events, and explore all sponsor features.',
+      adminUserId: 'collector-aurora',
+      isVerified: true,
+      createdAt: '2026-01-15T10:00:00Z',
+    },
+  ];
+
   async registerSponsorCompany(input: {
     name: string; logoUrl?: string; websiteUrl?: string;
     contactEmail: string; description?: string;
   }): Promise<import('./events').SponsorCompany> {
-    return {
+    const company: import('./events').SponsorCompany = {
       id: `sponsor-mock-${Date.now()}`,
       name: input.name,
       logoUrl: input.logoUrl,
@@ -1285,21 +1351,30 @@ export class MockDataProvider implements DataProvider {
       adminUserId: 'collector-aurora',
       isVerified: false,
     };
+    this._sponsorCompanies.push(company);
+    return company;
   }
 
   async getMySponsorCompanies(): Promise<import('./events').SponsorCompany[]> {
-    return [];
+    return this._sponsorCompanies;
   }
 
-  async updateSponsorCompany(id: string, _patch: Partial<{
+  async updateSponsorCompany(id: string, patch: Partial<{
     name: string; logoUrl: string; websiteUrl: string;
     contactEmail: string; description: string;
   }>): Promise<import('./events').SponsorCompany> {
-    return { id, name: 'Mock Company', contactEmail: 'mock@test.com', adminUserId: 'collector-aurora', isVerified: false };
+    const idx = this._sponsorCompanies.findIndex((c) => c.id === id);
+    if (idx >= 0) {
+      this._sponsorCompanies[idx] = { ...this._sponsorCompanies[idx], ...patch };
+      return this._sponsorCompanies[idx];
+    }
+    return { id, name: patch.name ?? 'Mock Company', contactEmail: patch.contactEmail ?? 'mock@test.com', adminUserId: 'collector-aurora', isVerified: false };
   }
 
   async createSponsorEventCheckout(_companyId: string, _tier: string, _eventData: CreateEventInput): Promise<{ url: string; sessionId: string; eventId: string }> {
-    return { url: 'https://checkout.stripe.com/mock', sessionId: 'cs_mock', eventId: `event-sponsor-${Date.now()}` };
+    // Demo bypass: skip Stripe, create event directly
+    const eventId = `event-sponsor-${Date.now()}`;
+    return { url: '', sessionId: 'cs_demo_bypass', eventId };
   }
 
   async listEventAnnouncements(_eventId: string): Promise<import('./events').EventAnnouncement[]> {
@@ -1328,6 +1403,76 @@ export class MockDataProvider implements DataProvider {
       top_traded_items: [],
       top_movers: [],
     };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // User Search
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async searchUsers(query: string): Promise<PublicUserProfile[]> {
+    if (!query.trim()) return [];
+
+    const lowerQuery = query.toLowerCase();
+
+    // All mock profiles to search against
+    const allProfiles: PublicUserProfile[] = [
+      {
+        id: 'collector-aurora',
+        displayName: 'Aurora',
+        handle: 'aurora.cards',
+        avatarUrl: null,
+        bio: 'Modern + vintage Pokemon with a side of Disney Lorcana.',
+        interests: ['Pokemon Cards', 'Disney Lorcana', 'Funko Pops'],
+        collectionCount: 186,
+        collectionValueEur: 12450,
+      },
+      {
+        id: 'collector-rune',
+        displayName: 'Rune',
+        handle: 'rune.mtgguy',
+        avatarUrl: null,
+        bio: 'MTG reserve list and Flesh and Blood legendaries.',
+        interests: ['Magic: The Gathering', 'Flesh and Blood'],
+        collectionCount: 210,
+        collectionValueEur: 18400,
+      },
+      {
+        id: 'collector-mini',
+        displayName: 'Mini Martian',
+        handle: 'mini.martian',
+        avatarUrl: null,
+        bio: 'Warhammer and Gunpla painter.',
+        interests: ['Warhammer Minis', 'Gunpla & Model Kits'],
+        collectionCount: 95,
+        collectionValueEur: 6200,
+      },
+      {
+        id: 'collector-alex',
+        displayName: 'Alex TCG',
+        handle: 'alex.tcg',
+        avatarUrl: null,
+        bio: 'Trading card games enthusiast.',
+        interests: ['Pokemon Cards', 'Magic: The Gathering'],
+        collectionCount: 340,
+        collectionValueEur: 22000,
+      },
+      {
+        id: 'collector-kai',
+        displayName: 'Kai Bricks',
+        handle: 'kai.bricks',
+        avatarUrl: null,
+        bio: 'LEGO builder and collector.',
+        interests: ['LEGO', 'Hot Wheels'],
+        collectionCount: 120,
+        collectionValueEur: 8900,
+      },
+    ];
+
+    return allProfiles.filter(
+      (p) =>
+        p.displayName.toLowerCase().includes(lowerQuery) ||
+        (p.handle && p.handle.toLowerCase().includes(lowerQuery))
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1700,6 +1845,182 @@ export class MockDataProvider implements DataProvider {
       totalRaw: mockHits.length,
       confidence: mockHits.length > 0 ? 0.8 : 0.2,
     };
+  }
+  // ─── Presence ───────────────────────────────────────────────────────────────
+
+  async sendHeartbeat(): Promise<void> { /* no-op */ }
+  async goOffline(): Promise<void> { /* no-op */ }
+
+  async getUserPresence(userId: string): Promise<import('./types').UserPresence | null> {
+    return { userId, lastSeenAt: new Date().toISOString(), isOnline: true };
+  }
+
+  async getBatchPresence(userIds: string[]): Promise<import('./types').UserPresence[]> {
+    return userIds.map((userId) => ({ userId, lastSeenAt: new Date().toISOString(), isOnline: true }));
+  }
+
+  // ─── Activity Feed ─────────────────────────────────────────────────────────
+
+  async getUserActivity(userId: string, limit = 20, offset = 0): Promise<import('./types').ActivityFeedItem[]> {
+    return [
+      { id: '1', userId, activityType: 'item_added' as const, title: 'Added Charizard Base Set', description: null, metadata: {}, isPublic: true, createdAt: new Date().toISOString() },
+      { id: '2', userId, activityType: 'event_rsvp' as const, title: "RSVP'd to Pokemon TCG Night", description: null, metadata: {}, isPublic: true, createdAt: new Date(Date.now() - 86400000).toISOString() },
+      { id: '3', userId, activityType: 'achievement_earned' as const, title: 'Earned "Collector" badge', description: 'Reached 10 items', metadata: {}, isPublic: true, createdAt: new Date(Date.now() - 172800000).toISOString() },
+    ].slice(offset, offset + limit);
+  }
+
+  async logActivity(_activityType: string, _title: string, _description?: string, _metadata?: Record<string, unknown>, _isPublic?: boolean): Promise<void> { /* no-op */ }
+
+  // ─── Unified Search ────────────────────────────────────────────────────────
+
+  async unifiedSearch(query: string, limit = 5) {
+    const q = query.toLowerCase();
+    return {
+      items: [
+        { id: '1', name: 'Charizard Base Set', category: 'pokemon_tcg', imageUrl: null as string | null, price: 450 },
+        { id: '2', name: 'Black Lotus', category: 'mtg', imageUrl: null as string | null, price: 25000 },
+      ].filter((i) => i.name.toLowerCase().includes(q)).slice(0, limit),
+      catalog: [
+        { id: 'cat-1', category: 'pokemon_tcg', itemKey: 'base-charizard-holo', title: 'Charizard Holo (Base Set)', brand: 'Pokemon', imageUrl: null as string | null },
+        { id: 'cat-2', category: 'mtg', itemKey: 'alpha-black-lotus', title: 'Black Lotus (Alpha)', brand: 'Magic: The Gathering', imageUrl: null as string | null },
+        { id: 'cat-3', category: 'lego', itemKey: 'lego-millennium-falcon', title: 'Millennium Falcon UCS', brand: 'LEGO', imageUrl: null as string | null },
+      ].filter((c) => c.title.toLowerCase().includes(q)).slice(0, limit),
+      users: [
+        { id: 'u1', displayName: 'CollectorPro', handle: 'collectorpro', avatarUrl: null as string | null },
+      ].filter((u) => u.displayName.toLowerCase().includes(q)).slice(0, limit),
+      events: [] as Array<{ id: string; title: string; startDate?: string; location?: string; category?: string }>,
+      categories: [] as Array<{ id: string; name: string }>,
+    };
+  }
+
+  // ─── Event Search ──────────────────────────────────────────────────────────
+
+  async searchEvents(params: {
+    q?: string;
+    category?: string;
+    eventType?: string;
+    location?: string;
+    upcomingOnly?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<import('./events').CollectorsEvent[]> {
+    let results = [...EVENTS];
+    if (params.q) {
+      const q = params.q.toLowerCase();
+      results = results.filter((e) => e.title.toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q));
+    }
+    if (params.category) {
+      results = results.filter((e) => e.categoryId === params.category);
+    }
+    return results.slice(params.offset || 0, (params.offset || 0) + (params.limit || 20));
+  }
+
+  // ─── Deal Desk (P2P Offers) ───────────────────────────────────────────────
+
+  async proposeOffer(itemId: string, price: number, message?: string): Promise<Offer> {
+    const now = new Date().toISOString();
+    return {
+      id: `offer-${Date.now()}`,
+      itemId,
+      itemTitle: 'Mock Item',
+      itemImageUrl: null,
+      sellerId: 'seller-mock',
+      buyerId: 'buyer-mock',
+      status: 'proposed',
+      currentPrice: price,
+      currency: 'EUR',
+      otherUserId: 'seller-mock',
+      otherUserName: 'MockSeller',
+      otherUserAvatarUrl: null,
+      dmThreadId: `thread-${Date.now()}`,
+      createdAt: now,
+      updatedAt: now,
+      expiresAt: null,
+    };
+  }
+
+  async counterOffer(offerId: string, price: number, message?: string): Promise<Offer> {
+    const now = new Date().toISOString();
+    return {
+      id: offerId,
+      itemId: 'item-mock',
+      itemTitle: 'Mock Item',
+      itemImageUrl: null,
+      sellerId: 'seller-mock',
+      buyerId: 'buyer-mock',
+      status: 'countered',
+      currentPrice: price,
+      currency: 'EUR',
+      otherUserId: 'buyer-mock',
+      otherUserName: 'MockBuyer',
+      otherUserAvatarUrl: null,
+      dmThreadId: `thread-${Date.now()}`,
+      createdAt: now,
+      updatedAt: now,
+      expiresAt: null,
+    };
+  }
+
+  async respondToOffer(_offerId: string, _accept: boolean, _message?: string): Promise<void> {
+    /* no-op */
+  }
+
+  async cancelOffer(_offerId: string): Promise<void> {
+    /* no-op */
+  }
+
+  async listActiveOffers(): Promise<Offer[]> {
+    return [];
+  }
+
+  async listDealHistory(): Promise<Offer[]> {
+    return [];
+  }
+
+  async getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }> {
+    const now = new Date().toISOString();
+    return {
+      offer: {
+        id: offerId,
+        itemId: 'item-mock',
+        itemTitle: 'Mock Item',
+        itemImageUrl: null,
+        sellerId: 'seller-mock',
+        buyerId: 'buyer-mock',
+        status: 'proposed',
+        currentPrice: 100,
+        currency: 'EUR',
+        otherUserId: 'seller-mock',
+        otherUserName: 'MockSeller',
+        otherUserAvatarUrl: null,
+        dmThreadId: `thread-mock`,
+        createdAt: now,
+        updatedAt: now,
+        expiresAt: null,
+      },
+      events: [],
+    };
+  }
+
+  async getUserReputation(userId: string): Promise<UserReputation> {
+    return {
+      userId,
+      avgStars: 4.5,
+      totalRatings: 0,
+      completedDeals: 0,
+    };
+  }
+
+  async toggleForSale(_itemId: string, _forSale: boolean, _askingPrice?: number): Promise<void> {
+    /* no-op */
+  }
+
+  async markShipped(_offerId: string, _trackingInfo?: string): Promise<void> {
+    /* no-op */
+  }
+
+  async completeDeal(_offerId: string, _stars: number, _comment?: string): Promise<void> {
+    /* no-op */
   }
 }
 

@@ -13,10 +13,11 @@ import os
 import re
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
+from app.errors import error_response
 from app.config import VISION_MAX_IMAGE_BYTES as MAX_IMAGE_BYTES
 from app.rate_limit import per_user_rate_limit
 
@@ -114,30 +115,24 @@ async def classify_image(file: UploadFile = File(..., description="Image of a co
     # Validate content type
     content_type = (file.content_type or "").lower()
     if content_type and content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported image type. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}",
-        )
+        raise error_response(400, f"Unsupported image type. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}")
 
     # Read and validate file size
     try:
         image_bytes = await file.read()
     except Exception:
         logger.warning("Failed to read uploaded file")
-        raise HTTPException(status_code=400, detail="Failed to read uploaded file")
+        raise error_response(400, "Failed to read uploaded file")
 
     if not image_bytes:
-        raise HTTPException(status_code=400, detail="Empty file uploaded")
+        raise error_response(400, "Empty file uploaded")
 
     if len(image_bytes) > MAX_IMAGE_BYTES:
-        raise HTTPException(
-            status_code=413,
-            detail=f"Image too large. Maximum size: {MAX_IMAGE_BYTES // (1024 * 1024)} MB",
-        )
+        raise error_response(413, f"Image too large. Maximum size: {MAX_IMAGE_BYTES // (1024 * 1024)} MB")
 
     # Validate image magic bytes
     if not _is_valid_image(image_bytes):
-        raise HTTPException(status_code=400, detail="File does not appear to be a valid image")
+        raise error_response(400, "File does not appear to be a valid image")
 
     # Sanitize filename
     raw_filename = os.path.basename(file.filename or "upload.jpg")
@@ -162,7 +157,7 @@ async def classify_image(file: UploadFile = File(..., description="Image of a co
         )
     except Exception as e:
         logger.error("Classification failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Classification failed")
+        raise error_response(500, "Classification failed")
 
 
 # ---------------------------------------------------------------------------

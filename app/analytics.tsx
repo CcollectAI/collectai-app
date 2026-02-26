@@ -9,14 +9,15 @@
  * - Full items breakdown
  */
 
-import React, { useEffect, useState, useMemo } from "react";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   Animated,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
@@ -24,8 +25,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { SkeletonList } from "@/components/Skeleton";
 import { formatPrice } from "@/lib/format";
 import logger from "@/utils/logger";
+import { QuickNavBar } from "@/components/QuickNavBar";
 
 // Import analytics store
 import {
@@ -88,7 +91,7 @@ function formatScore(s: number): string {
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function AnalyticsScreen() {
+function AnalyticsScreen() {
   const router = useRouter();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
@@ -97,6 +100,7 @@ export default function AnalyticsScreen() {
   const [snapshot, setSnapshot] = useState<PortfolioSnapshot | null>(null);
   const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -119,6 +123,12 @@ export default function AnalyticsScreen() {
       setLoading(false);
     }
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, []);
 
   // Derived data
   const { pl, allocations, winnersLosers, tierSummary, items } = snapshot ?? {
@@ -153,8 +163,7 @@ export default function AnalyticsScreen() {
       <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.tiffany} />
-          <Text style={styles.loadingText}>Loading analytics...</Text>
+          <SkeletonList count={3} type="analytics" />
         </View>
       </SafeAreaView>
     );
@@ -166,6 +175,7 @@ export default function AnalyticsScreen() {
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header */}
@@ -495,7 +505,16 @@ export default function AnalyticsScreen() {
         <View style={{ height: 32 }} />
         </Animated.View>
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
+  );
+}
+
+export default function AnalyticsScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Analytics">
+      <AnalyticsScreen />
+    </ScreenErrorBoundary>
   );
 }
 

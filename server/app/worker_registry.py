@@ -19,12 +19,15 @@ _registry: dict[str, dict] = {}
 
 # Default schedule intervals (seconds)
 SCHEDULES = {
-    "price_monitor": 6 * 3600,    # every 6 hours
-    "alerts_worker": 3600,         # every 1 hour
-    "vision_ingest": 0,            # on-demand only
-    "valuation_worker": 6 * 3600,  # every 6 hours
-    "deal_discovery": 1800,        # every 30 minutes
-    "matview_refresh": 3600,       # every 1 hour
+    "price_monitor": 6 * 3600,          # every 6 hours
+    "alerts_worker": 3600,               # every 1 hour
+    "vision_ingest": 0,                  # on-demand only
+    "valuation_worker": 6 * 3600,        # every 6 hours
+    "deal_discovery": 1800,              # every 30 minutes
+    "matview_refresh": 3600,             # every 1 hour
+    "task_worker": 5,                    # polls every 5 seconds
+    "value_change_worker": 24 * 3600,    # daily
+    "insights_digest_worker": 7 * 24 * 3600,  # weekly
 }
 
 

@@ -8,6 +8,10 @@ Supported programmes:
   - eBay Partner Network (EPN) — campid + customid params
   - TCGPlayer Affiliate — partner + utm params
   - Cardmarket Affiliate — referrer param
+  - Mercari (Impact/Awin) — ref + utm params
+  - Discogs Affiliate — anv + utm params
+  - StockX (Impact) — utm params
+  - BrickLink Referral — ref + utm params
 
 URLs from unknown sources (e.g. Firecrawl scrape hits) are returned unchanged.
 
@@ -24,6 +28,10 @@ from app.config import (
     EBAY_AFFILIATE_CAMPAIGN_ID,
     TCGPLAYER_AFFILIATE_ID,
     CARDMARKET_AFFILIATE_ID,
+    MERCARI_AFFILIATE_ID,
+    DISCOGS_AFFILIATE_TOKEN,
+    STOCKX_AFFILIATE_ID,
+    BRICKLINK_AFFILIATE_ID,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,6 +72,18 @@ def build_affiliate_url(original_url: str, source: str) -> tuple[str, str]:
     if source_lower == "cardmarket" and CARDMARKET_AFFILIATE_ID:
         return _tag_cardmarket(original_url), "cardmarket_affiliate"
 
+    if source_lower == "mercari" and MERCARI_AFFILIATE_ID:
+        return _tag_mercari(original_url), "mercari"
+
+    if source_lower == "discogs" and DISCOGS_AFFILIATE_TOKEN:
+        return _tag_discogs(original_url), "discogs"
+
+    if source_lower == "stockx" and STOCKX_AFFILIATE_ID:
+        return _tag_stockx(original_url), "stockx"
+
+    if source_lower == "bricklink" and BRICKLINK_AFFILIATE_ID:
+        return _tag_bricklink(original_url), "bricklink"
+
     # No affiliate programme available for this source
     return original_url, ""
 
@@ -93,6 +113,43 @@ def _tag_cardmarket(url: str) -> str:
     return _append_params(url, {
         "referrer": CARDMARKET_AFFILIATE_ID,
         "utm_source": "collectai",
+    })
+
+
+def _tag_mercari(url: str) -> str:
+    """Append Mercari (Impact/Awin) affiliate params."""
+    return _append_params(url, {
+        "ref": "collectai",
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+    })
+
+
+def _tag_discogs(url: str) -> str:
+    """Append Discogs affiliate params."""
+    return _append_params(url, {
+        "anv": "collectai",
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+    })
+
+
+def _tag_stockx(url: str) -> str:
+    """Append StockX (Impact) affiliate params."""
+    return _append_params(url, {
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+    })
+
+
+def _tag_bricklink(url: str) -> str:
+    """Append BrickLink referral params."""
+    return _append_params(url, {
+        "ref": "collectai",
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
     })
 
 

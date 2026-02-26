@@ -7,6 +7,7 @@
  *   "Rules"   — configured alert rules from v_alerts_feed_v1 / user_price_alerts
  */
 
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -14,6 +15,7 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  Linking,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,7 +26,12 @@ import { collectorsApi } from '@/api/collectorsApi';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
 import { AnimatedPressable } from '@/motion';
+import { SkeletonList } from '@/components/Skeleton';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
+import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,13 +55,13 @@ type ActiveTab = 'triggers' | 'rules';
 // ---------------------------------------------------------------------------
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  price_drop: { bg: '#dcfce7', text: '#166534' },
-  price_spike: { bg: '#fef3c7', text: '#92400e' },
-  below_threshold: { bg: '#dcfce7', text: '#166534' },
-  restock: { bg: '#dbeafe', text: '#1e40af' },
-  drop_detected: { bg: '#f3e8ff', text: '#6b21a8' },
-  completeness: { bg: '#e0f2fe', text: '#0369a1' },
-  rarity: { bg: '#fce7f3', text: '#9d174d' },
+  price_drop: { bg: '#16653420', text: '#166534' },
+  price_spike: { bg: '#92400e20', text: '#92400e' },
+  below_threshold: { bg: '#16653420', text: '#166534' },
+  restock: { bg: '#1e40af20', text: '#1e40af' },
+  drop_detected: { bg: '#6b21a820', text: '#6b21a8' },
+  completeness: { bg: '#0369a120', text: '#0369a1' },
+  rarity: { bg: '#9d174d20', text: '#9d174d' },
 };
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -90,9 +97,10 @@ function formatRelativeTime(dateStr: string): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function AlertsScreen() {
+function AlertsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
 
   const [triggerHistory, setTriggerHistory] = useState<TriggerHistoryItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -166,7 +174,8 @@ export default function AlertsScreen() {
     setRefreshing(true);
     await Promise.all([loadTriggers(), alertsRefresh()]);
     setRefreshing(false);
-  }, [loadTriggers, alertsRefresh]);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+  }, [loadTriggers, alertsRefresh, settings.hapticsEnabled]);
 
   // Combined loading state for initial render
   const loading = triggersLoading && alertsLoading;
@@ -212,7 +221,7 @@ export default function AlertsScreen() {
 
   const renderTrigger = ({ item }: { item: TriggerHistoryItem }) => {
     const typeColor =
-      TYPE_COLORS[item.triggerType] || { bg: '#f1f5f9', text: '#475569' };
+      TYPE_COLORS[item.triggerType] || { bg: '#47556920', text: '#475569' };
     const typeIcon: keyof typeof Ionicons.glyphMap =
       TYPE_ICONS[item.triggerType] || 'notifications-outline';
     const typeLabel = item.triggerType
@@ -260,6 +269,39 @@ export default function AlertsScreen() {
           <Text style={[styles.cardTime, { color: colors.muted }]}>
             {formatRelativeTime(item.createdAt)}
           </Text>
+
+          {/* View Listing / View Item link */}
+          {(typeof item.triggerValue?.listing_url === 'string' || typeof item.triggerValue?.affiliate_url === 'string') ? (
+            <AnimatedPressable
+              onPress={() => {
+                handleMarkRead(item.id);
+                const url = String(item.triggerValue.affiliate_url || item.triggerValue.listing_url);
+                Linking.openURL(url).catch(() => {});
+              }}
+              style={[styles.viewListingBtn, { borderColor: colors.accent + '40' }]}
+              accessibilityRole="link"
+              accessibilityLabel={`View on ${String(item.triggerValue.listing_source || 'Marketplace')}`}
+            >
+              <Ionicons name="open-outline" size={13} color={colors.accent} />
+              <Text style={[styles.viewListingText, { color: colors.accent }]}>
+                View on {String(item.triggerValue.listing_source || 'Marketplace')}
+                {typeof item.triggerValue.listing_price === 'number' ? ` · ${formatPrice(item.triggerValue.listing_price)}` : ''}
+              </Text>
+            </AnimatedPressable>
+          ) : item.itemId ? (
+            <AnimatedPressable
+              onPress={() => {
+                handleMarkRead(item.id);
+                router.push(`/item/${item.itemId}` as never);
+              }}
+              style={[styles.viewListingBtn, { borderColor: colors.accent + '40' }]}
+              accessibilityRole="link"
+              accessibilityLabel="View item details"
+            >
+              <Ionicons name="eye-outline" size={13} color={colors.accent} />
+              <Text style={[styles.viewListingText, { color: colors.accent }]}>View Item</Text>
+            </AnimatedPressable>
+          ) : null}
         </View>
       </AnimatedPressable>
     );
@@ -270,7 +312,7 @@ export default function AlertsScreen() {
   // -----------------------------------------------------------------------
 
   const renderAlert = ({ item }: { item: AlertFeedItem }) => {
-    const typeColor = TYPE_COLORS[item.type] || { bg: '#f1f5f9', text: '#475569' };
+    const typeColor = TYPE_COLORS[item.type] || { bg: '#47556920', text: '#475569' };
     const typeIcon: keyof typeof Ionicons.glyphMap =
       TYPE_ICONS[item.type] || 'notifications-outline';
     const typeLabel = item.type
@@ -418,7 +460,7 @@ export default function AlertsScreen() {
       >
         {renderHeader()}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <SkeletonList count={5} type="row" />
         </View>
       </SafeAreaView>
     );
@@ -478,6 +520,16 @@ export default function AlertsScreen() {
               <Text style={[styles.emptySubtext, { color: colors.muted }]}>
                 When your price alerts fire, they will appear here.
               </Text>
+              <View style={styles.emptyCtaContainer}>
+                <AnimatedPressable
+                  onPress={() => router.push('/watchlist-builder')}
+                  style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create an alert"
+                >
+                  <Text style={styles.emptyCtaBtnText}>Create an Alert</Text>
+                </AnimatedPressable>
+              </View>
             </View>
           }
         />
@@ -510,11 +562,30 @@ export default function AlertsScreen() {
               <Text style={[styles.emptySubtext, { color: colors.muted }]}>
                 Add items to your watchlist to get price and restock alerts.
               </Text>
+              <View style={styles.emptyCtaContainer}>
+                <AnimatedPressable
+                  onPress={() => router.push('/watchlist-builder')}
+                  style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create an alert"
+                >
+                  <Text style={styles.emptyCtaBtnText}>Create an Alert</Text>
+                </AnimatedPressable>
+              </View>
             </View>
           }
         />
       )}
+      <QuickNavBar />
     </SafeAreaView>
+  );
+}
+
+export default function AlertsScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Alerts">
+      <AlertsScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -642,6 +713,21 @@ const styles = StyleSheet.create({
   cardTime: {
     fontSize: 12,
   },
+  viewListingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  viewListingText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
 
   // Empty / Error states
   emptyContainer: {
@@ -660,6 +746,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
     paddingHorizontal: 32,
+  },
+  emptyCtaContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  emptyCtaBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  emptyCtaBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   errorContainer: {
     flex: 1,

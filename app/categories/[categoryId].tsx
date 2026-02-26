@@ -2,9 +2,8 @@
  * Category Store — Amazon Brand Store style layout for a category.
  * Shows: header, spotlight carousel, items, events, friends, sponsored slot.
  */
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
-  Alert,
   View,
   Text,
   ScrollView,
@@ -14,6 +13,8 @@ import {
   FlatList,
   Image,
   Linking,
+  RefreshControl,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -26,8 +27,15 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import { isBuildableCategory } from '@/constants/buildStepTemplates';
-import { CATEGORY_VISUAL } from '@/constants/categoryVisuals';
+import { CATEGORY_VISUAL } from '@/data/categories';
 import logger from '@/utils/logger';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { useToast } from '@/components/Toast';
+import { SkeletonList } from '@/components/Skeleton';
+import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
+import { collectorsApi } from '@/api/collectorsApi';
+import { buildItemAffiliateUrl, openAffiliateUrl } from '@/utils/affiliateHelpers';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -79,11 +87,12 @@ const FriendAvatar: React.FC<{ profile: MiniUserProfile; onPress: () => void; ac
   );
 };
 
-export default function CategoryStoreScreen() {
+function CategoryStoreScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
+  const { showToast } = useToast();
 
   const [data, setData] = useState<CategoryStoreData | null>(null);
   const [missingItems, setMissingItems] = useState<CategoryMissingItem[]>([]);
@@ -93,6 +102,13 @@ export default function CategoryStoreScreen() {
   const [spotlightIndex, setSpotlightIndex] = useState(0);
   const [markingOwned, setMarkingOwned] = useState<string | null>(null);
   const [recentlyOwned, setRecentlyOwned] = useState<Set<string>>(new Set());
+
+  // Shop sheet state for missing items
+  const [shopMissingItem, setShopMissingItem] = useState<CategoryMissingItem | null>(null);
+  const [shopSheetVisible, setShopSheetVisible] = useState(false);
+
+  // Affiliate links for external marketplace buttons
+  const [affiliateLinks, setAffiliateLinks] = useState<Array<{ source: string; url: string; affiliate_url: string; label: string }>>([]);
 
   // Market insights state
   const [deepDive, setDeepDive] = useState<Record<string, unknown> | null>(null);
@@ -104,37 +120,133 @@ export default function CategoryStoreScreen() {
   const isBuildable = categoryId ? isBuildableCategory(categoryId) : false;
   const accentColor = categoryId ? (CATEGORY_VISUAL[categoryId]?.accentColor ?? colors.accent) : colors.accent;
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  // ── Catalog Browser state ────────────────────────────────────────────
+  type CatalogItemData = {
+    id: string;
+    category: string;
+    item_key: string;
+    title: string;
+    brand: string | null;
+    rarity: string | null;
+    notes: string | null;
+    image_url: string | null;
+    external_id: string | null;
+    set_code: string | null;
+    estimated_price: number | null;
+  };
+  const [catalogItems, setCatalogItems] = useState<CatalogItemData[]>([]);
+  const [catalogTotal, setCatalogTotal] = useState(0);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogLoadingMore, setCatalogLoadingMore] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogOffset, setCatalogOffset] = useState(0);
+  const [catalogExpanded, setCatalogExpanded] = useState(false);
+  const CATALOG_PAGE_SIZE = 30;
+
+  const loadCatalogItems = useCallback(async (search: string, offset: number, append = false) => {
+    if (!categoryId) return;
+    if (offset === 0) setCatalogLoading(true);
+    else setCatalogLoadingMore(true);
+
+    try {
+      const result = await collectorsApi.browseCatalogItems(categoryId, {
+        q: search || undefined,
+        limit: CATALOG_PAGE_SIZE,
+        offset,
+      });
+      if (append) {
+        setCatalogItems((prev) => [...prev, ...result.items]);
+      } else {
+        setCatalogItems(result.items);
+      }
+      setCatalogTotal(result.total);
+      setCatalogOffset(offset + result.items.length);
+    } catch (err: unknown) {
+      logger.warn('[CategoryStore] catalog browse error:', err);
+    } finally {
+      setCatalogLoading(false);
+      setCatalogLoadingMore(false);
+    }
+  }, [categoryId]);
+
+  // Debounced catalog search
+  const catalogSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleCatalogSearchChange = (text: string) => {
+    setCatalogSearch(text);
+    if (catalogSearchTimer.current) clearTimeout(catalogSearchTimer.current);
+    catalogSearchTimer.current = setTimeout(() => {
+      setCatalogOffset(0);
+      loadCatalogItems(text, 0, false);
+    }, 400);
+  };
+
+  const handleCatalogLoadMore = () => {
+    if (catalogLoadingMore || catalogLoading || catalogItems.length >= catalogTotal) return;
+    loadCatalogItems(catalogSearch, catalogOffset, true);
+  };
+
+  // Load catalog when expanded
+  useEffect(() => {
+    if (catalogExpanded && catalogItems.length === 0 && !catalogLoading) {
+      loadCatalogItems('', 0, false);
+    }
+  }, [catalogExpanded, catalogItems.length, catalogLoading, loadCatalogItems]);
+
   const spotlightRef = useRef<FlatList>(null);
 
   // Resolve category metadata for external marketplaces and related categories
   const categoryMeta = categoryId ? getCategoryById(categoryId) : undefined;
   const relatedCategories = categoryMeta ? getRelatedCategories(categoryMeta) : [];
 
-  useEffect(() => {
+  const loadCategoryData = useCallback(async () => {
     if (!categoryId) return;
 
-    setLoading(true);
     setError(null);
 
-    // Load both category store data and missing items
-    Promise.all([
-      dataProvider.getCategoryStore(categoryId),
-      dataProvider.listCategoryMissing(categoryId).catch(() => []), // Graceful fallback
-    ])
-      .then(([storeResult, missingResult]) => {
-        if (storeResult) {
-          setData(storeResult);
-          setMissingItems(missingResult);
-        } else {
-          setError('Category not found');
-        }
-      })
-      .catch((err) => {
-        logger.warn('[CategoryStore] error:', err);
-        setError(err?.message || 'Failed to load category');
-      })
-      .finally(() => setLoading(false));
-  }, [categoryId]);
+    try {
+      const [storeResult, missingResult] = await Promise.all([
+        dataProvider.getCategoryStore(categoryId),
+        dataProvider.listCategoryMissing(categoryId).catch(() => []),
+      ]);
+
+      if (storeResult) {
+        setData(storeResult);
+        setMissingItems(missingResult);
+      } else {
+        setError('Category not found');
+      }
+
+      // Also reload deep dive and build projects
+      dataProvider.getCategoryDeepDive(categoryId)
+        .then(setDeepDive)
+        .catch(() => setDeepDive(null));
+
+      if (isBuildable) {
+        dataProvider.listBuildPaintProjectsByCategory(categoryId)
+          .then(setBuildProjects)
+          .catch(() => setBuildProjects([]));
+      }
+    } catch (err: unknown) {
+      logger.warn('[CategoryStore] error:', err);
+      setError((err as Error)?.message || 'Failed to load category');
+    } finally {
+      setLoading(false);
+    }
+  }, [categoryId, isBuildable]);
+
+  useEffect(() => {
+    if (!categoryId) return;
+    setLoading(true);
+    loadCategoryData();
+  }, [categoryId, loadCategoryData]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadCategoryData();
+    setRefreshing(false);
+  }, [loadCategoryData]);
 
   // Load follow state
   useEffect(() => {
@@ -170,6 +282,15 @@ export default function CategoryStoreScreen() {
       .finally(() => setDeepDiveLoading(false));
   }, [categoryId]);
 
+  // Pre-fetch affiliate links for external marketplace section
+  useEffect(() => {
+    if (!categoryId || !categoryMeta) return;
+    collectorsApi
+      .getAffiliateLinks(categoryMeta.name, categoryId, 6, settings.region)
+      .then((res) => setAffiliateLinks(res.links ?? []))
+      .catch(() => setAffiliateLinks([]));
+  }, [categoryId, categoryMeta, settings.region]);
+
   // Auto-rotate spotlight carousel
   useEffect(() => {
     if (!data || data.spotlightSlides.length <= 1) return;
@@ -185,17 +306,20 @@ export default function CategoryStoreScreen() {
     return () => clearInterval(interval);
   }, [data]);
 
+  // Discovery-mode: tap opens best affiliate URL directly; long-press opens picker sheet
+  const [longPressItem, setLongPressItem] = useState<Item | null>(null);
+  const [longPressSheetVisible, setLongPressSheetVisible] = useState(false);
+
   const handleItemPress = (item: Item) => {
-    router.push({
-      pathname: '/item/[id]',
-      params: {
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        value: String(item.price),
-        imageUri: item.imageUrl || '',
-      },
-    });
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    const url = buildItemAffiliateUrl(item.name, affiliateLinks);
+    openAffiliateUrl(url);
+  };
+
+  const handleItemLongPress = (item: Item) => {
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    setLongPressItem(item);
+    setLongPressSheetVisible(true);
   };
 
   const handleEventPress = (eventId: string) => {
@@ -220,7 +344,7 @@ export default function CategoryStoreScreen() {
       // Revert on error
       setFollowing(!newFollowing);
       logger.warn('[Category] Follow toggle failed', err);
-      Alert.alert('Error', 'Could not update follow status. Please try again.');
+      showToast({ message: 'Could not update follow status. Please try again.', type: 'error' });
     }
   };
 
@@ -255,15 +379,14 @@ export default function CategoryStoreScreen() {
   // Loading state
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
           <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
         </View>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading category...</Text>
+          <SkeletonList count={4} type="card" />
         </View>
       </SafeAreaView>
     );
@@ -272,7 +395,7 @@ export default function CategoryStoreScreen() {
   // Error / not found state
   if (error || !data) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
           <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -293,7 +416,7 @@ export default function CategoryStoreScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header row with back button */}
       <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
         <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
@@ -304,6 +427,7 @@ export default function CategoryStoreScreen() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
       >
         {/* 1. Category Header Card */}
         <View style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -403,37 +527,313 @@ export default function CategoryStoreScreen() {
               key={item.id}
               style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => handleItemPress(item)}
+              onLongPress={() => handleItemLongPress(item)}
               accessibilityRole="button"
-              accessibilityLabel={`${item.name}, ${formatPrice(item.price)}`}
+              accessibilityLabel={`Shop for ${item.name}, ${formatPrice(item.price)}. Long press for more marketplaces.`}
             >
+              {item.imageUrl ? (
+                <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} />
+              ) : (
+                <View style={[styles.itemThumbPlaceholder, { backgroundColor: '#81D8D0' + '10' }]}>
+                  <Ionicons name="cube-outline" size={18} color="#81D8D0" />
+                </View>
+              )}
               <View style={styles.itemInfo}>
                 <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text style={[styles.itemCategory, { color: colors.muted }]}>{item.category}</Text>
+                <Text style={[styles.itemCategory, { color: colors.muted }]}>
+                  {formatPrice(item.price)}
+                </Text>
               </View>
-              <Text style={[styles.itemPrice, { color: colors.text }]}>{formatPrice(item.price)}</Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+              <AnimatedPressable
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  const url = buildItemAffiliateUrl(item.name, affiliateLinks);
+                  openAffiliateUrl(url);
+                }}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`Shop for ${item.name} on marketplaces`}
+              >
+                <Ionicons name="open-outline" size={20} color="#81D8D0" />
+              </AnimatedPressable>
             </AnimatedPressable>
           ))
         )}
         {data.items.length > 6 && (
           <AnimatedPressable
             style={styles.seeAllButton}
-            onPress={() =>
-              router.push({
-                pathname: '/(tabs)/items',
-                params: { category: data.categoryName },
-              })
-            }
+            onPress={() => {
+              showToast({ message: 'Browse external marketplaces below for more items', type: 'info' });
+            }}
             accessibilityRole="link"
-            accessibilityLabel={`See all ${data.items.length} items`}
+            accessibilityLabel={`See all ${data.items.length} items in catalog`}
           >
-            <Text style={[styles.seeAllText, { color: colors.accent }]}>
+            <Text style={[styles.seeAllText, { color: accentColor }]}>
               See all {data.items.length} items
             </Text>
-            <Ionicons name="arrow-forward" size={14} color={colors.accent} />
+            <Ionicons name="arrow-forward" size={14} color={accentColor} />
           </AnimatedPressable>
+        )}
+      </View>
+
+      {/* 3.15. Manga Series Progress — shows per-series volume counts */}
+      {categoryId === 'manga' && data.items.length > 0 && (() => {
+        // Group items by series title (from attributes or name prefix)
+        const seriesMap: Record<string, { count: number; total?: number; items: typeof data.items }> = {};
+        for (const item of data.items) {
+          // Try to extract series name from attributes or item name
+          const attrs = (item as Record<string, unknown>).attributesJson as Record<string, unknown> | undefined;
+          const seriesName = (attrs?.title as string) || item.name.replace(/\s*vol\.?\s*\d+.*/i, '').replace(/\s*#\d+.*/i, '').trim();
+          if (!seriesName) continue;
+          if (!seriesMap[seriesName]) {
+            seriesMap[seriesName] = { count: 0, total: undefined, items: [] };
+          }
+          seriesMap[seriesName].count += 1;
+          seriesMap[seriesName].items.push(item);
+          // Try to get total_volumes from attributes
+          const totalVols = attrs?.total_volumes;
+          if (totalVols && typeof totalVols === 'string' && parseInt(totalVols, 10) > 0) {
+            seriesMap[seriesName].total = parseInt(totalVols, 10);
+          }
+        }
+
+        const seriesEntries = Object.entries(seriesMap)
+          .filter(([_, s]) => s.count > 0)
+          .sort((a, b) => b[1].count - a[1].count);
+
+        if (seriesEntries.length === 0) return null;
+
+        return (
+          <View style={styles.section}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <Ionicons name="library-outline" size={18} color={accentColor} />
+              <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Series Progress</Text>
+            </View>
+            {seriesEntries.slice(0, 8).map(([seriesName, series]) => {
+              const pct = series.total ? Math.min(100, Math.round((series.count / series.total) * 100)) : null;
+              return (
+                <View key={seriesName} style={[styles.seriesProgressCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.seriesProgressHeader}>
+                    <Text style={[styles.seriesProgressName, { color: colors.text }]} numberOfLines={1}>
+                      {seriesName}
+                    </Text>
+                    <Text style={[styles.seriesProgressCount, { color: accentColor }]}>
+                      {series.count}{series.total ? `/${series.total}` : ''} vol
+                    </Text>
+                  </View>
+                  {pct !== null && (
+                    <View style={[styles.seriesProgressBarBg, { backgroundColor: colors.border }]}>
+                      <View
+                        style={[
+                          styles.seriesProgressBarFill,
+                          { backgroundColor: pct >= 100 ? '#22C55E' : accentColor, width: `${pct}%` },
+                        ]}
+                      />
+                    </View>
+                  )}
+                  {pct !== null && pct >= 100 && (
+                    <View style={[styles.seriesCompleteBadge, { backgroundColor: '#D1FAE5' }]}>
+                      <Ionicons name="checkmark-circle" size={14} color="#065F46" />
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: '#065F46' }}>Complete!</Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+            {seriesEntries.length > 8 && (
+              <Text style={[styles.emptyText, { color: colors.muted }]}>
+                +{seriesEntries.length - 8} more series
+              </Text>
+            )}
+          </View>
+        );
+      })()}
+
+      {/* 3.25. Browse Catalog — full category_items database browser */}
+      <View style={styles.section}>
+        <AnimatedPressable
+          style={styles.catalogHeaderRow}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            setCatalogExpanded(!catalogExpanded);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Browse catalog, ${catalogExpanded ? 'collapse' : 'expand'}`}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="library-outline" size={18} color={accentColor} />
+            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Browse Catalog</Text>
+            {catalogTotal > 0 && (
+              <View style={[styles.catalogCountBadge, { backgroundColor: accentColor + '20' }]}>
+                <Text style={[styles.catalogCountText, { color: accentColor }]}>{catalogTotal}</Text>
+              </View>
+            )}
+          </View>
+          <Ionicons
+            name={catalogExpanded ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={colors.muted}
+          />
+        </AnimatedPressable>
+
+        {catalogExpanded && (
+          <View style={styles.catalogBrowser}>
+            {/* Search bar */}
+            <View style={[styles.catalogSearchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Ionicons name="search" size={16} color={colors.muted} />
+              <TextInput
+                style={[styles.catalogSearchInput, { color: colors.text }]}
+                placeholder="Search catalog items..."
+                placeholderTextColor={colors.muted}
+                value={catalogSearch}
+                onChangeText={handleCatalogSearchChange}
+                returnKeyType="search"
+                accessibilityLabel="Search catalog items"
+              />
+              {catalogSearch.length > 0 && (
+                <AnimatedPressable
+                  onPress={() => {
+                    setCatalogSearch('');
+                    setCatalogOffset(0);
+                    loadCatalogItems('', 0, false);
+                  }}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                >
+                  <Ionicons name="close-circle" size={16} color={colors.muted} />
+                </AnimatedPressable>
+              )}
+            </View>
+
+            {/* Catalog items list */}
+            {catalogLoading ? (
+              <ActivityIndicator size="small" color={accentColor} style={{ marginVertical: 16 }} />
+            ) : catalogItems.length === 0 ? (
+              <Text style={[styles.emptyText, { color: colors.muted, marginTop: 8 }]}>
+                {catalogSearch ? 'No items matching your search.' : 'No catalog items for this category.'}
+              </Text>
+            ) : (
+              <>
+                {catalogItems.map((cItem) => (
+                  <View
+                    key={cItem.id}
+                    style={[styles.catalogItemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  >
+                    {/* Thumbnail */}
+                    {cItem.image_url ? (
+                      <Image source={{ uri: cItem.image_url }} style={styles.catalogItemThumb} />
+                    ) : (
+                      <View style={[styles.catalogItemThumbPlaceholder, { backgroundColor: accentColor + '10' }]}>
+                        <Ionicons name="cube-outline" size={18} color={accentColor} />
+                      </View>
+                    )}
+
+                    {/* Item info */}
+                    <View style={styles.catalogItemInfo}>
+                      <Text style={[styles.catalogItemTitle, { color: colors.text }]} numberOfLines={1}>
+                        {cItem.title}
+                      </Text>
+                      <View style={styles.catalogItemMetaRow}>
+                        {cItem.estimated_price != null && (
+                          <Text style={[styles.catalogItemPrice, { color: colors.text }]}>
+                            {formatPrice(cItem.estimated_price)}
+                          </Text>
+                        )}
+                        {cItem.rarity && (
+                          <View style={[styles.catalogRarityBadge, {
+                            backgroundColor:
+                              cItem.rarity === 'grail' ? '#F59E0B20' :
+                              cItem.rarity === 'high' ? '#EF444420' :
+                              cItem.rarity === 'mid' ? '#3B82F620' :
+                              colors.border,
+                          }]}>
+                            <Text style={[styles.catalogRarityText, {
+                              color:
+                                cItem.rarity === 'grail' ? '#D97706' :
+                                cItem.rarity === 'high' ? '#DC2626' :
+                                cItem.rarity === 'mid' ? '#2563EB' :
+                                colors.muted,
+                            }]}>
+                              {cItem.rarity}
+                            </Text>
+                          </View>
+                        )}
+                        {cItem.brand && (
+                          <Text style={[styles.catalogItemBrand, { color: colors.muted }]} numberOfLines={1}>
+                            {cItem.brand}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Action buttons */}
+                    <View style={styles.catalogItemActions}>
+                      <AnimatedPressable
+                        style={[styles.catalogActionBtn, { backgroundColor: accentColor }]}
+                        onPress={() => {
+                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                          router.push({
+                            pathname: '/add-manual',
+                            params: {
+                              name: cItem.title,
+                              category: categoryId,
+                              imageUri: cItem.image_url || '',
+                            },
+                          });
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Add ${cItem.title} to collection`}
+                      >
+                        <Ionicons name="add" size={16} color="#fff" />
+                      </AnimatedPressable>
+                      <AnimatedPressable
+                        style={[styles.catalogActionBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: accentColor }]}
+                        onPress={async () => {
+                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                          try {
+                            await collectorsApi.addToWatchlist({
+                              title: cItem.title,
+                              category: categoryId || cItem.category,
+                              target_price: cItem.estimated_price,
+                            });
+                            showToast({ message: `${cItem.title} added to want list`, type: 'success' });
+                          } catch {
+                            showToast({ message: 'Failed to add to want list', type: 'error' });
+                          }
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Add ${cItem.title} to want list`}
+                      >
+                        <Ionicons name="heart-outline" size={14} color={accentColor} />
+                      </AnimatedPressable>
+                    </View>
+                  </View>
+                ))}
+
+                {/* Load more / infinite scroll trigger */}
+                {catalogItems.length < catalogTotal && (
+                  <AnimatedPressable
+                    style={[styles.catalogLoadMoreBtn, { borderColor: accentColor }]}
+                    onPress={handleCatalogLoadMore}
+                    disabled={catalogLoadingMore}
+                    accessibilityRole="button"
+                    accessibilityLabel="Load more catalog items"
+                  >
+                    {catalogLoadingMore ? (
+                      <ActivityIndicator size="small" color={accentColor} />
+                    ) : (
+                      <Text style={[styles.catalogLoadMoreText, { color: accentColor }]}>
+                        Load more ({catalogItems.length} of {catalogTotal})
+                      </Text>
+                    )}
+                  </AnimatedPressable>
+                )}
+              </>
+            )}
+          </View>
         )}
       </View>
 
@@ -636,6 +1036,20 @@ export default function CategoryStoreScreen() {
                     </Text>
                   )}
                 </View>
+                {!isOwned && (
+                  <AnimatedPressable
+                    style={[styles.missingFindBtn, { borderColor: accentColor }]}
+                    onPress={() => {
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      const url = buildItemAffiliateUrl(item.title, affiliateLinks);
+                      openAffiliateUrl(url);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Shop for ${item.title} on marketplaces`}
+                  >
+                    <Ionicons name="open-outline" size={16} color={accentColor} />
+                  </AnimatedPressable>
+                )}
                 <AnimatedPressable
                   style={[
                     styles.missingAddBtn,
@@ -660,10 +1074,19 @@ export default function CategoryStoreScreen() {
             );
           })}
           {missingItems.length > 3 && (
-            <AnimatedPressable style={styles.missingFooter}>
+            <AnimatedPressable
+              style={styles.missingFooter}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                router.push('/categories/');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${missingItems.length - 3} more items to collect across categories`}
+            >
               <Text style={[styles.seeMore, { color: colors.accent }]}>
                 +{missingItems.length - 3} more to collect
               </Text>
+              <Ionicons name="arrow-forward" size={14} color={colors.accent} />
             </AnimatedPressable>
           )}
         </View>
@@ -768,23 +1191,33 @@ export default function CategoryStoreScreen() {
         )}
       </View>
 
-      {/* 6. External Marketplace Links */}
+      {/* 6. External Marketplace Links (affiliate-tagged) */}
       {categoryMeta && categoryMeta.externalMarketplaces.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>External Marketplaces</Text>
           <View style={styles.marketplaceRow}>
-            {categoryMeta.externalMarketplaces.map((mp) => (
-              <AnimatedPressable
-                key={mp.id}
-                style={[styles.marketplaceBtn, { backgroundColor: colors.accent + '15', borderColor: colors.accent }]}
-                onPress={() => Linking.openURL(mp.url).catch((err) => logger.warn('[CategoryStore] open URL error:', err))}
-                accessibilityRole="link"
-                accessibilityLabel={`Open ${mp.label}`}
-              >
-                <Ionicons name="open-outline" size={14} color={colors.accent} />
-                <Text style={[styles.marketplaceBtnText, { color: colors.accent }]}>{mp.label}</Text>
-              </AnimatedPressable>
-            ))}
+            {categoryMeta.externalMarketplaces.map((mp) => {
+              // Use pre-fetched affiliate URL if available, otherwise fall back to raw URL
+              const affiliateMatch = affiliateLinks.find(
+                (al) => al.source.toLowerCase() === mp.id.toLowerCase()
+              );
+              const url = affiliateMatch?.affiliate_url ?? mp.url;
+              return (
+                <AnimatedPressable
+                  key={mp.id}
+                  style={[styles.marketplaceBtn, { backgroundColor: '#81D8D0' + '15', borderColor: '#81D8D0' }]}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                    Linking.openURL(url).catch((err) => logger.warn('[CategoryStore] open URL error:', err));
+                  }}
+                  accessibilityRole="link"
+                  accessibilityLabel={`Shop ${mp.label}`}
+                >
+                  <Ionicons name="open-outline" size={14} color="#81D8D0" />
+                  <Text style={[styles.marketplaceBtnText, { color: '#81D8D0' }]}>{mp.label}</Text>
+                </AnimatedPressable>
+              );
+            })}
           </View>
         </View>
       )}
@@ -813,7 +1246,33 @@ export default function CategoryStoreScreen() {
       {/* Bottom spacing */}
       <View style={{ height: 32 }} />
     </ScrollView>
+
+    {/* Marketplace picker sheet for missing item "Find" button */}
+    <MarketplacePickerSheet
+      visible={shopSheetVisible}
+      onClose={() => { setShopSheetVisible(false); setShopMissingItem(null); }}
+      itemTitle={shopMissingItem?.title ?? ''}
+      categoryId={categoryId}
+    />
+
+    {/* Marketplace picker sheet for catalog item long-press */}
+    <MarketplacePickerSheet
+      visible={longPressSheetVisible}
+      onClose={() => { setLongPressSheetVisible(false); setLongPressItem(null); }}
+      itemTitle={longPressItem?.name ?? ''}
+      categoryId={categoryId}
+    />
+
+    <QuickNavBar />
     </SafeAreaView>
+  );
+}
+
+export default function CategoryStoreScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Category Store">
+      <CategoryStoreScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -832,7 +1291,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: 4,
   },
   backBtn: {
@@ -981,6 +1440,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  missingFindBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
   missingAddBtn: {
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -993,6 +1461,10 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   missingFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     paddingTop: 10,
   },
   seeMore: {
@@ -1062,6 +1534,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
     marginBottom: 8,
+  },
+  itemThumb: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  itemThumbPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   itemInfo: {
     flex: 1,
@@ -1344,5 +1830,159 @@ const styles = StyleSheet.create({
   relatedTagline: {
     fontSize: 11,
     lineHeight: 15,
+  },
+
+  // ── Catalog Browser ───────────────────────────────────────────────────
+  catalogHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  catalogCountBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  catalogCountText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  catalogBrowser: {
+    marginTop: 4,
+  },
+  catalogSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 8,
+    marginBottom: 10,
+  },
+  catalogSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    padding: 0,
+    margin: 0,
+  },
+  catalogItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 8,
+  },
+  catalogItemThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  catalogItemThumbPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  catalogItemInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  catalogItemTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  catalogItemMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 3,
+    flexWrap: 'wrap',
+  },
+  catalogItemPrice: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  catalogRarityBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  catalogRarityText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  catalogItemBrand: {
+    fontSize: 11,
+  },
+  catalogItemActions: {
+    flexDirection: 'column',
+    gap: 4,
+  },
+  catalogActionBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  catalogLoadMoreBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  catalogLoadMoreText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  seriesProgressCard: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 8,
+  },
+  seriesProgressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  seriesProgressName: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
+  },
+  seriesProgressCount: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  seriesProgressBarBg: {
+    height: 6,
+    borderRadius: 3,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  seriesProgressBarFill: {
+    height: 6,
+    borderRadius: 3,
+  },
+  seriesCompleteBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginTop: 6,
   },
 });

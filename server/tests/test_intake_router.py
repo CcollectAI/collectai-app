@@ -314,7 +314,7 @@ class TestIntakeUrl:
             "url": "www.ebay.com/itm/12345",
         })
         assert resp.status_code == 400
-        assert "http" in resp.json()["detail"].lower()
+        assert "http" in resp.json()["detail"]["message"].lower()
 
     def test_url_import_ssrf_blocked(self):
         """Internal IP URLs should be blocked by SSRF protection."""
@@ -327,7 +327,7 @@ class TestIntakeUrl:
             })
 
         assert resp.status_code == 400
-        assert "private" in resp.json()["detail"].lower() or "internal" in resp.json()["detail"].lower()
+        assert "private" in resp.json()["detail"]["message"].lower() or "internal" in resp.json()["detail"]["message"].lower()
 
     def test_url_import_url_too_long_422(self):
         """URL exceeding 2048 chars should be rejected."""
@@ -438,7 +438,7 @@ class TestIntakeProcess:
         """Process without barcode or image should return 400."""
         resp = client.post("/intake/process", data={})
         assert resp.status_code == 400
-        assert "barcode" in resp.json()["detail"].lower() or "image" in resp.json()["detail"].lower()
+        assert "barcode" in resp.json()["detail"]["message"].lower() or "image" in resp.json()["detail"]["message"].lower()
 
     def test_process_with_image(self):
         """Process endpoint with a valid PNG image."""
@@ -464,7 +464,7 @@ class TestIntakeProcess:
             files={"file": ("test.pdf", b"fake pdf content", "application/pdf")},
         )
         assert resp.status_code == 400
-        assert "Unsupported image type" in resp.json()["detail"]
+        assert "Unsupported image type" in resp.json()["detail"]["message"]
 
     def test_process_invalid_magic_bytes_400(self):
         """File with wrong magic bytes should return 400."""
@@ -473,7 +473,7 @@ class TestIntakeProcess:
             files={"file": ("test.png", b"not a real image at all", "image/png")},
         )
         assert resp.status_code == 400
-        assert "valid image" in resp.json()["detail"].lower()
+        assert "valid image" in resp.json()["detail"]["message"].lower()
 
 
 # ===========================================================================

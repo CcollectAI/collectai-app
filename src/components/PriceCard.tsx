@@ -14,6 +14,7 @@ import {
   getConfidenceLabel,
   getConfidenceColor,
 } from '@/types/priceExplanation';
+import type { CurrencyCode } from '@/data/types';
 
 type PriceCardProps = {
   estimate: PriceEstimate;
@@ -22,7 +23,7 @@ type PriceCardProps = {
   compact?: boolean;
 };
 
-function formatPrice(value: number, currency: string = 'EUR'): string {
+function formatPrice(value: number, currency: CurrencyCode = 'EUR'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,

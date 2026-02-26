@@ -17,6 +17,7 @@ os.environ.setdefault("DATABASE_URL", "mock://localhost")
 
 from starlette.testclient import TestClient
 from main import app  # noqa: E402
+from app.cache import cache_clear
 from app.features.events_router import (
     _IN_MEMORY_EVENTS,
     _IN_MEMORY_RSVPS,
@@ -31,10 +32,11 @@ client = TestClient(app)
 # ---------------------------------------------------------------------------
 
 def _clear_in_memory_stores():
-    """Reset all in-memory stores between tests."""
+    """Reset all in-memory stores and cache between tests."""
     _IN_MEMORY_EVENTS.clear()
     _IN_MEMORY_RSVPS.clear()
     _IN_MEMORY_FOLLOWS.clear()
+    cache_clear()
 
 
 def _valid_event_payload(**overrides):
@@ -297,8 +299,12 @@ class TestGetEvent:
         assert r.json()["id"] == event_id
         assert r.json()["title"] == "Pokemon Booster Draft Night"
 
-    def test_get_event_not_found_404(self):
+    def test_get_event_invalid_id_400(self):
         r = client.get("/events/nonexistent-id")
+        assert r.status_code == 400
+
+    def test_get_event_not_found_404(self):
+        r = client.get("/events/00000000-0000-0000-0000-000000000000")
         assert r.status_code == 404
 
     def test_get_event_includes_rsvp_status(self):
@@ -615,8 +621,12 @@ class TestEventsIntegration:
         assert r.status_code == 200
         assert r.json()["title"] == "Updated Title"
 
-    def test_update_event_not_found(self):
+    def test_update_event_invalid_id_400(self):
         r = client.patch("/events/nonexistent-id", json={"title": "X"})
+        assert r.status_code == 400
+
+    def test_update_event_not_found(self):
+        r = client.patch("/events/00000000-0000-0000-0000-000000000000", json={"title": "X"})
         assert r.status_code == 404
 
     def test_update_event_no_fields(self):

@@ -6,13 +6,19 @@ import {
   View,
 } from 'react-native';
 import { Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatPrice } from '@/lib/format';
 
-function NotAvailableScreen() {
+function ComingSoonScreen() {
+  const { colors } = useAppTheme();
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: 16, color: '#666' }}>Not available</Text>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: 32 }}>
+      <Ionicons name="construct-outline" size={48} color={colors.muted} />
+      <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, marginTop: 16 }}>Coming Soon</Text>
+      <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+        This feature is under development. Check back in the next update.
+      </Text>
     </View>
   );
 }
@@ -312,4 +318,4 @@ function ScanResultDemoScreen() {
   );
 }
 
-export default __DEV__ ? ScanResultDemoScreen : NotAvailableScreen;
+export default __DEV__ ? ScanResultDemoScreen : ComingSoonScreen;

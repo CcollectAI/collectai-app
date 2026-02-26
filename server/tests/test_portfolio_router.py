@@ -212,7 +212,7 @@ class TestPortfolioProxy:
                 headers={"X-API-Key": _VALID_SECRET},
             )
         assert r.status_code == 502
-        assert "Upstream service error" in r.json()["detail"]
+        assert "Upstream service error" in r.json()["detail"]["message"]
 
     def test_upstream_unreachable_returns_503(self):
         mock_client = AsyncMock()
@@ -228,7 +228,7 @@ class TestPortfolioProxy:
                 headers={"X-API-Key": _VALID_SECRET},
             )
         assert r.status_code == 503
-        assert "Upstream service unavailable" in r.json()["detail"]
+        assert "Upstream service unavailable" in r.json()["detail"]["message"]
 
     def test_upstream_timeout_returns_503(self):
         mock_client = AsyncMock()

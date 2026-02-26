@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
@@ -14,6 +15,7 @@ import {
   Alert,
   Animated,
 } from 'react-native';
+import { useToast } from '@/components/Toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +24,10 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { SkeletonList } from '@/components/Skeleton';
+import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 // Semantic color fallback — used in the static StyleSheet where hooks are not accessible.
 // Inside the component, prefer `colors.danger` from the theme instead.
@@ -57,6 +62,7 @@ function UserAvatar({
   avatarColor?: string;
   size?: number;
 }) {
+  const { colors } = useAppTheme();
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -72,7 +78,7 @@ function UserAvatar({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: avatarColor || '#6b7280',
+          backgroundColor: avatarColor || colors.muted,
         },
       ]}
     >
@@ -81,11 +87,12 @@ function UserAvatar({
   );
 }
 
-export default function InboxScreen() {
+function InboxScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const [threads, setThreads] = useState<DmThread[]>([]);
   const [sentRequests, setSentRequests] = useState<DmThread[]>([]);
   const [requests, setRequests] = useState<DmRequest[]>([]);
@@ -131,7 +138,7 @@ export default function InboxScreen() {
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       await loadInbox();
     } catch (err: unknown) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to accept request');
+      showToast({ message: err instanceof Error ? err.message : 'Failed to accept request', type: 'error' });
     } finally {
       setProcessingRequestId(null);
     }
@@ -152,7 +159,7 @@ export default function InboxScreen() {
               await dataProvider.decideDmRequest(threadId, false);
               await loadInbox();
             } catch (err: unknown) {
-              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to decline request');
+              showToast({ message: err instanceof Error ? err.message : 'Failed to decline request', type: 'error' });
             } finally {
               setProcessingRequestId(null);
             }
@@ -181,7 +188,7 @@ export default function InboxScreen() {
               fireHaptic(HapticIntent.ALERT_TRIGGERED);
               await loadInbox();
             } catch (err: unknown) {
-              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to block user');
+              showToast({ message: err instanceof Error ? err.message : 'Failed to block user', type: 'error' });
             } finally {
               setProcessingRequestId(null);
             }
@@ -212,7 +219,7 @@ export default function InboxScreen() {
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <SkeletonList count={5} type="row" />
         </View>
       </SafeAreaView>
     );
@@ -312,7 +319,7 @@ export default function InboxScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={`Block ${req.fromUserName}`}
                   >
-                    <Ionicons name="ban-outline" size={18} color={colors.danger ?? FALLBACK_ERROR} />
+                    <Text style={[styles.blockBtnText, { color: colors.danger ?? FALLBACK_ERROR }]}>Block</Text>
                   </AnimatedPressable>
                 </View>
               </View>
@@ -420,16 +427,17 @@ export default function InboxScreen() {
 
         {/* Empty State */}
         {!hasContent && (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubbles-outline" size={64} color={colors.muted} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No messages yet</Text>
-            <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Start a conversation by visiting someone's profile
-            </Text>
-          </View>
+          <EmptyState
+            icon="chatbubbles-outline"
+            title="No messages yet"
+            subtitle="Start a conversation by visiting someone's profile"
+            colors={colors}
+            style={{ paddingTop: 80 }}
+          />
         )}
         </Animated.View>
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 }
@@ -563,12 +571,16 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   blockBtn: {
-    width: 44,
-    height: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#EF444410',
+  },
+  blockBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 
   // Thread rows — cleaner WhatsApp-style
@@ -639,23 +651,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Empty state
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 80,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
-  },
 });
+
+export default function InboxScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Inbox">
+      <InboxScreen />
+    </ScreenErrorBoundary>
+  );
+}

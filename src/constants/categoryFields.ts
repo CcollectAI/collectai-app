@@ -69,6 +69,7 @@ const FUNKO_FIELDS: CategoryField[] = [
   { key: 'exclusive', label: 'Exclusive', placeholder: 'e.g. Hot Topic, SDCC', type: 'text', icon: 'lock-closed-outline' },
   { key: 'sticker_variant', label: 'Sticker Variant', placeholder: 'e.g. GITD, Flocked, Chase', type: 'text', icon: 'pricetag-outline' },
   { key: 'box_condition', label: 'Box Condition', type: 'select', icon: 'cube-outline', options: ['Mint', 'Near Mint', 'Good', 'Fair', 'Damaged', 'Out of Box'] },
+  { key: 'vaulted', label: 'Vaulted', type: 'boolean', icon: 'lock-closed-outline' },
 ];
 
 const DESIGNER_TOYS_FIELDS: CategoryField[] = [
@@ -107,7 +108,9 @@ const HOT_TOYS_FIELDS: CategoryField[] = [
 const LEGO_FIELDS: CategoryField[] = [
   { key: 'set_number', label: 'Set Number', placeholder: 'e.g. 75192', type: 'text', icon: 'barcode-outline' },
   { key: 'theme', label: 'Theme', placeholder: 'e.g. Star Wars, Technic, City', type: 'text', icon: 'grid-outline' },
+  { key: 'piece_count', label: 'Piece Count', placeholder: 'e.g. 7541', type: 'text', icon: 'apps-outline' },
   { key: 'year', label: 'Year', placeholder: 'e.g. 2024', type: 'text', icon: 'calendar-outline' },
+  { key: 'retirement_date', label: 'Retirement Date', placeholder: 'e.g. 2025-12', type: 'text', icon: 'time-outline' },
   { key: 'sealed', label: 'Sealed / New in Box', type: 'boolean', icon: 'lock-closed-outline' },
 ];
 
@@ -165,6 +168,7 @@ const MANGA_FIELDS: CategoryField[] = [
   { key: 'title', label: 'Series Title', placeholder: 'e.g. One Piece, Berserk', type: 'text', icon: 'book-outline' },
   { key: 'publisher', label: 'Publisher', type: 'select', icon: 'business-outline', options: ['VIZ Media', 'Kodansha', 'Dark Horse', 'Tokyopop', 'Yen Press', 'Seven Seas', 'Square Enix', 'Shogakukan', 'Other'] },
   { key: 'volume', label: 'Volume', placeholder: 'e.g. Vol. 1, Complete Set', type: 'text', icon: 'layers-outline' },
+  { key: 'total_volumes', label: 'Total Volumes in Series', placeholder: 'e.g. 37', type: 'text', icon: 'stats-chart-outline' },
   { key: 'language', label: 'Language', type: 'select', icon: 'language-outline', options: ['English', 'Japanese', 'French', 'German', 'Spanish'] },
   { key: 'printing', label: 'Printing', type: 'select', icon: 'print-outline', options: ['1st Printing', 'Later Printing', 'OOP (Out of Print)'] },
   { key: 'condition', label: 'Condition', type: 'select', icon: 'shield-outline', options: ['Mint', 'Like New', 'Good', 'Acceptable', 'Ex-Library'] },
@@ -379,6 +383,35 @@ const LOUNGEFLY_FIELDS: CategoryField[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Lifestyle — Sneakers & Watches
+// ---------------------------------------------------------------------------
+
+const SNEAKERS_FIELDS: CategoryField[] = [
+  { key: 'brand', label: 'Brand', type: 'select', icon: 'business-outline', options: ['Nike', 'Jordan', 'Adidas', 'New Balance', 'Asics', 'Puma', 'Reebok', 'Converse', 'Vans', 'Other'] },
+  { key: 'model', label: 'Model', placeholder: 'e.g. Air Jordan 1, Dunk Low', type: 'text', icon: 'footsteps-outline' },
+  { key: 'colorway', label: 'Colorway', placeholder: 'e.g. Chicago, Panda, Bred', type: 'text', icon: 'color-palette-outline' },
+  { key: 'size', label: 'Size', placeholder: 'e.g. 10, 10.5', type: 'text', icon: 'resize-outline' },
+  { key: 'size_system', label: 'Size System', type: 'select', icon: 'globe-outline', options: ['US', 'EU', 'UK'] },
+  { key: 'condition', label: 'Condition', type: 'select', icon: 'shield-outline', options: ['DS (Deadstock)', 'VNDS', 'Used - Excellent', 'Used - Good', 'Used - Fair', 'Beaters'] },
+  { key: 'collaboration', label: 'Collaboration', placeholder: 'e.g. Travis Scott, Off-White', type: 'text', icon: 'people-outline' },
+  { key: 'sku', label: 'SKU / Style Code', placeholder: 'e.g. DQ8583-100', type: 'text', icon: 'barcode-outline' },
+  { key: 'year', label: 'Release Year', placeholder: 'e.g. 2024', type: 'text', icon: 'calendar-outline' },
+  { key: 'retail_price', label: 'Retail Price', placeholder: 'e.g. 170', type: 'text', icon: 'cash-outline' },
+];
+
+const WATCHES_FIELDS: CategoryField[] = [
+  { key: 'brand', label: 'Brand', type: 'select', icon: 'business-outline', options: ['Rolex', 'Omega', 'Seiko', 'Tudor', 'Casio', 'G-Shock', 'Grand Seiko', 'TAG Heuer', 'Cartier', 'Patek Philippe', 'Audemars Piguet', 'Other'] },
+  { key: 'model', label: 'Model', placeholder: 'e.g. Submariner, Speedmaster', type: 'text', icon: 'watch-outline' },
+  { key: 'reference', label: 'Reference Number', placeholder: 'e.g. 126610LN', type: 'text', icon: 'barcode-outline' },
+  { key: 'case_size', label: 'Case Diameter', type: 'select', icon: 'resize-outline', options: ['34mm', '36mm', '38mm', '39mm', '40mm', '41mm', '42mm', '43mm', '44mm', '45mm', '46mm'] },
+  { key: 'movement', label: 'Movement', type: 'select', icon: 'cog-outline', options: ['Automatic', 'Manual', 'Quartz', 'Solar', 'Spring Drive', 'Eco-Drive'] },
+  { key: 'material', label: 'Case Material', type: 'select', icon: 'diamond-outline', options: ['Stainless Steel', 'Gold', 'Rose Gold', 'Titanium', 'Ceramic', 'Carbon', 'Platinum', 'Two-Tone'] },
+  { key: 'condition', label: 'Condition', type: 'select', icon: 'shield-outline', options: ['BNIB', 'Excellent', 'Good', 'Fair', 'Serviced', 'Needs Service'] },
+  { key: 'box_papers', label: 'Box & Papers', type: 'boolean', icon: 'documents-outline' },
+  { key: 'year', label: 'Year', placeholder: 'e.g. 2024', type: 'text', icon: 'calendar-outline' },
+];
+
+// ---------------------------------------------------------------------------
 // Legacy
 // ---------------------------------------------------------------------------
 
@@ -468,6 +501,10 @@ export const CATEGORY_FIELDS: Partial<Record<Category, CategoryField[]>> = {
   // Niche
   keycaps: KEYCAPS_FIELDS,
   loungefly: LOUNGEFLY_FIELDS,
+
+  // Lifestyle
+  sneakers: SNEAKERS_FIELDS,
+  watches: WATCHES_FIELDS,
 
   // Legacy
   diecast: DIECAST_FIELDS,

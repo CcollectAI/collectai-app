@@ -1,17 +1,25 @@
-"""Tests for app.cache — in-memory TTL cache."""
+"""Tests for app.cache — pluggable cache backends (InMemory + Redis adapter)."""
 
+import asyncio
+import json
 import time
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 import app.cache as cache_mod
 from app.cache import (
+    CacheBackend,
+    InMemoryCache,
+    RedisCache,
+    cache_clear,
+    cache_delete,
     cache_get,
     cache_set,
-    cache_delete,
-    cache_clear,
     cache_stats,
+    create_cache,
+    get_backend,
+    reset_backend,
     ttl_cache,
 )
 
@@ -19,18 +27,28 @@ from app.cache import (
 @pytest.fixture(autouse=True)
 def _clean_cache():
     """Reset cache state before each test."""
-    cache_mod._store.clear()
-    cache_mod._hits = 0
-    cache_mod._misses = 0
+    reset_backend(None)
+    # Ensure an InMemoryCache is the default for every test
+    backend = get_backend()
+    assert isinstance(backend, InMemoryCache)
     yield
-    cache_mod._store.clear()
-    cache_mod._hits = 0
-    cache_mod._misses = 0
+    reset_backend(None)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _backend() -> InMemoryCache:
+    b = get_backend()
+    assert isinstance(b, InMemoryCache)
+    return b
 
 
 # ---------------------------------------------------------------------------
 # cache_get / cache_set
 # ---------------------------------------------------------------------------
+
 
 class TestCacheGetSet:
     def test_get_missing_key_returns_none(self):
@@ -57,15 +75,13 @@ class TestCacheGetSet:
 
     def test_expired_entry_returns_none(self):
         """An entry past its TTL should return None and be evicted."""
-        # Insert with TTL=0 effectively: set expiry in the past
         cache_set("expiring", "value", ttl=1)
-        # Patch monotonic to simulate time passing
         real_time = time.monotonic()
         with patch("app.cache.time.monotonic", return_value=real_time + 2):
             result = cache_get("expiring")
         assert result is None
         # Entry should have been evicted
-        assert "expiring" not in cache_mod._store
+        assert "expiring" not in _backend()._store
 
     def test_not_yet_expired_returns_value(self):
         cache_set("fresh", "value", ttl=300)
@@ -75,6 +91,7 @@ class TestCacheGetSet:
 # ---------------------------------------------------------------------------
 # cache_delete
 # ---------------------------------------------------------------------------
+
 
 class TestCacheDelete:
     def test_delete_existing_key(self):
@@ -89,6 +106,7 @@ class TestCacheDelete:
 # ---------------------------------------------------------------------------
 # cache_clear
 # ---------------------------------------------------------------------------
+
 
 class TestCacheClear:
     def test_clear_removes_all(self):
@@ -107,6 +125,7 @@ class TestCacheClear:
 # ---------------------------------------------------------------------------
 # cache_stats
 # ---------------------------------------------------------------------------
+
 
 class TestCacheStats:
     def test_initial_stats(self):
@@ -148,6 +167,7 @@ class TestCacheStats:
 # ---------------------------------------------------------------------------
 # ttl_cache decorator
 # ---------------------------------------------------------------------------
+
 
 class TestTtlCacheDecorator:
     @pytest.mark.asyncio
@@ -238,3 +258,241 @@ class TestTtlCacheDecorator:
             return 42
 
         assert original_name.__name__ == "original_name"
+
+
+# ---------------------------------------------------------------------------
+# InMemoryCache class (direct)
+# ---------------------------------------------------------------------------
+
+
+class TestInMemoryCache:
+    @pytest.mark.asyncio
+    async def test_get_set_delete(self):
+        cache = InMemoryCache()
+        await cache.set("k", "v", ttl=60)
+        assert await cache.get("k") == "v"
+        await cache.delete("k")
+        assert await cache.get("k") is None
+
+    @pytest.mark.asyncio
+    async def test_clear(self):
+        cache = InMemoryCache()
+        await cache.set("a", 1)
+        await cache.set("b", 2)
+        await cache.clear()
+        assert await cache.get("a") is None
+
+    @pytest.mark.asyncio
+    async def test_stats(self):
+        cache = InMemoryCache()
+        await cache.set("x", 10)
+        await cache.get("x")  # hit
+        await cache.get("y")  # miss
+        stats = await cache.stats()
+        assert stats == {"hits": 1, "misses": 1, "size": 1}
+
+    def test_cleanup_removes_expired(self):
+        cache = InMemoryCache()
+        # Manually insert an expired entry
+        cache._store["old"] = ("val", time.monotonic() - 10)
+        cache._store["fresh"] = ("val", time.monotonic() + 300)
+        evicted = cache.cleanup()
+        assert evicted == 1
+        assert "old" not in cache._store
+        assert "fresh" in cache._store
+
+    @pytest.mark.asyncio
+    async def test_ttl_expiry(self):
+        cache = InMemoryCache()
+        await cache.set("temp", "data", ttl=1)
+        real_time = time.monotonic()
+        with patch("app.cache.time.monotonic", return_value=real_time + 2):
+            assert await cache.get("temp") is None
+
+
+# ---------------------------------------------------------------------------
+# RedisCache class (mocked)
+# ---------------------------------------------------------------------------
+
+
+class TestRedisCache:
+    def _make_mock_client(self):
+        client = AsyncMock()
+        client.get = AsyncMock(return_value=None)
+        client.setex = AsyncMock()
+        client.delete = AsyncMock()
+        client.scan = AsyncMock(return_value=(0, []))
+        client.dbsize = AsyncMock(return_value=0)
+        client.ping = AsyncMock(return_value=True)
+        client.aclose = AsyncMock()
+        return client
+
+    @pytest.mark.asyncio
+    async def test_get_miss(self):
+        client = self._make_mock_client()
+        cache = RedisCache(client)
+        result = await cache.get("missing")
+        assert result is None
+        client.get.assert_awaited_once_with("collectai:missing")
+
+    @pytest.mark.asyncio
+    async def test_get_hit(self):
+        client = self._make_mock_client()
+        client.get.return_value = json.dumps({"price": 42})
+        cache = RedisCache(client)
+        result = await cache.get("item")
+        assert result == {"price": 42}
+        stats = await cache.stats()
+        assert stats["hits"] == 1
+
+    @pytest.mark.asyncio
+    async def test_set_calls_setex(self):
+        client = self._make_mock_client()
+        cache = RedisCache(client)
+        await cache.set("k", {"a": 1}, ttl=120)
+        client.setex.assert_awaited_once_with(
+            "collectai:k", 120, json.dumps({"a": 1})
+        )
+
+    @pytest.mark.asyncio
+    async def test_delete(self):
+        client = self._make_mock_client()
+        cache = RedisCache(client)
+        await cache.delete("k")
+        client.delete.assert_awaited_once_with("collectai:k")
+
+    @pytest.mark.asyncio
+    async def test_clear_uses_scan(self):
+        client = self._make_mock_client()
+        client.scan.return_value = (0, ["collectai:a", "collectai:b"])
+        cache = RedisCache(client)
+        await cache.clear()
+        client.scan.assert_awaited()
+        client.delete.assert_awaited_once_with("collectai:a", "collectai:b")
+
+    @pytest.mark.asyncio
+    async def test_ping_success(self):
+        client = self._make_mock_client()
+        cache = RedisCache(client)
+        assert await cache.ping() is True
+
+    @pytest.mark.asyncio
+    async def test_ping_failure(self):
+        client = self._make_mock_client()
+        client.ping.side_effect = ConnectionError("refused")
+        cache = RedisCache(client)
+        assert await cache.ping() is False
+
+    @pytest.mark.asyncio
+    async def test_get_handles_connection_error(self):
+        client = self._make_mock_client()
+        client.get.side_effect = ConnectionError("refused")
+        cache = RedisCache(client)
+        result = await cache.get("k")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_set_handles_connection_error(self):
+        client = self._make_mock_client()
+        client.setex.side_effect = ConnectionError("refused")
+        cache = RedisCache(client)
+        # Should not raise
+        await cache.set("k", "v")
+
+    @pytest.mark.asyncio
+    async def test_get_handles_bad_json(self):
+        client = self._make_mock_client()
+        client.get.return_value = "not-valid-json{{"
+        cache = RedisCache(client)
+        result = await cache.get("k")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_close(self):
+        client = self._make_mock_client()
+        cache = RedisCache(client)
+        await cache.close()
+        client.aclose.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_key_prefix(self):
+        client = self._make_mock_client()
+        cache = RedisCache(client)
+        assert cache._prefixed("foo") == "collectai:foo"
+
+
+# ---------------------------------------------------------------------------
+# Factory (create_cache)
+# ---------------------------------------------------------------------------
+
+
+class TestCreateCache:
+    @pytest.mark.asyncio
+    async def test_no_redis_url_returns_inmemory(self):
+        reset_backend(None)
+        backend = await create_cache(redis_url=None)
+        assert isinstance(backend, InMemoryCache)
+
+    @pytest.mark.asyncio
+    async def test_redis_url_without_library_returns_inmemory(self):
+        reset_backend(None)
+        with patch.object(cache_mod, "HAS_REDIS", False):
+            backend = await create_cache(redis_url="redis://localhost:6379")
+        assert isinstance(backend, InMemoryCache)
+
+    @pytest.mark.asyncio
+    async def test_redis_connection_failure_falls_back(self):
+        reset_backend(None)
+        with patch.object(cache_mod, "HAS_REDIS", True):
+            mock_from_url = MagicMock()
+            mock_client = AsyncMock()
+            mock_client.ping.side_effect = ConnectionError("refused")
+            mock_from_url.return_value = mock_client
+            with patch.object(cache_mod, "aioredis") as mock_redis_mod:
+                mock_redis_mod.from_url = mock_from_url
+                backend = await create_cache(redis_url="redis://localhost:6379")
+        assert isinstance(backend, InMemoryCache)
+
+    @pytest.mark.asyncio
+    async def test_returns_existing_backend(self):
+        """Calling create_cache twice returns the same instance."""
+        reset_backend(None)
+        b1 = await create_cache(redis_url=None)
+        b2 = await create_cache(redis_url=None)
+        assert b1 is b2
+
+    @pytest.mark.asyncio
+    async def test_redis_success_returns_redis_cache(self):
+        reset_backend(None)
+        with patch.object(cache_mod, "HAS_REDIS", True):
+            mock_from_url = MagicMock()
+            mock_client = AsyncMock()
+            mock_client.ping = AsyncMock(return_value=True)
+            mock_from_url.return_value = mock_client
+            with patch.object(cache_mod, "aioredis") as mock_redis_mod:
+                mock_redis_mod.from_url = mock_from_url
+                backend = await create_cache(redis_url="redis://localhost:6379")
+        assert isinstance(backend, RedisCache)
+
+
+# ---------------------------------------------------------------------------
+# reset_backend / get_backend
+# ---------------------------------------------------------------------------
+
+
+class TestBackendManagement:
+    def test_get_backend_creates_inmemory_if_none(self):
+        reset_backend(None)
+        b = get_backend()
+        assert isinstance(b, InMemoryCache)
+
+    def test_reset_backend(self):
+        new = InMemoryCache()
+        reset_backend(new)
+        assert get_backend() is new
+
+    def test_reset_to_none(self):
+        reset_backend(None)
+        # get_backend should auto-create a new one
+        b = get_backend()
+        assert isinstance(b, InMemoryCache)

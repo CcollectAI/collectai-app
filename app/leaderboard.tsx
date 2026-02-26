@@ -1,5 +1,7 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Animated } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
+import { View, Text, ScrollView, StyleSheet, Animated, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -42,6 +44,15 @@ const LeaderboardScreen: React.FC = () => {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    // Data is derived from USER_PROFILES; allow UI to settle
+    await new Promise((r) => setTimeout(r, 300));
+    setRefreshing(false);
+  }, []);
+
   const rankedUsers = useMemo(
     () =>
       [...USER_PROFILES].sort(
@@ -63,6 +74,7 @@ const LeaderboardScreen: React.FC = () => {
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
         {/* Header */}
@@ -135,6 +147,7 @@ const LeaderboardScreen: React.FC = () => {
         })}
         </Animated.View>
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 };
@@ -225,4 +238,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LeaderboardScreen;
+export default function LeaderboardScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Leaderboard">
+      <LeaderboardScreen />
+    </ScreenErrorBoundary>
+  );
+}

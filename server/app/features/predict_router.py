@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
+from app.errors import error_response
 from app.db import db_configured, get_conn
 
 logger = logging.getLogger(__name__)
@@ -101,7 +102,7 @@ async def get_price_evidence(
                 user_id,
             )
             if owner_check is None:
-                raise HTTPException(status_code=404, detail="Item not found")
+                raise error_response(404, "Item not found")
 
             # Fetch latest prediction
             pred = await conn.fetchrow(
@@ -189,7 +190,7 @@ async def get_price_trend(
                 item_id, user_id,
             )
             if owner_check is None:
-                raise HTTPException(status_code=404, detail="Item not found")
+                raise error_response(404, "Item not found")
 
             # Fetch price history snapshots
             rows = await conn.fetch(

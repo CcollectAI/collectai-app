@@ -21,19 +21,14 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.features.pagination import pagination_params
+from app.lib.db_helpers import get_db_pool
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 logger = logging.getLogger(__name__)
 
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except (ImportError, RuntimeError, OSError) as e:
-        logger.debug(f"DB pool not available: {e}")
-        return None
+# Per-user: 10 feedback submissions per hour
+_feedback_user_limit = per_user_rate_limit(10, window_seconds=3600, scope="feedback")
 
 
 class FeedbackSubmitRequest(BaseModel):
@@ -181,7 +176,7 @@ async def list_corrections(
     ordered by most recently corrected first.
     """
     limit, offset = pagination
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is None:
         return CorrectionListResponse(corrections=[])
@@ -231,7 +226,11 @@ async def list_corrections(
 
 
 @router.post("/submit", response_model=FeedbackSubmitResponse)
-async def submit_feedback(request: FeedbackSubmitRequest, user_id: str = Depends(get_current_user_id)):
+async def submit_feedback(
+    request: FeedbackSubmitRequest,
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_feedback_user_limit),
+):
     """
     Submit feedback on an item's prediction.
 
@@ -247,7 +246,7 @@ async def submit_feedback(request: FeedbackSubmitRequest, user_id: str = Depends
     - For accurate: "accurate:confirmed"
     - For custom: "custom:{notes}"
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     # Build label based on feedback type
     feedback_type = request.feedback_type.lower()
@@ -339,6 +338,7 @@ async def submit_feedback(request: FeedbackSubmitRequest, user_id: str = Depends
 async def submit_verified_sale(
     request: VerifiedSaleRequest,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_feedback_user_limit),
 ):
     """
     Report a verified sale for an item you own.
@@ -367,7 +367,7 @@ async def submit_verified_sale(
         if sold_at_ts > datetime.now(timezone.utc):
             raise error_response(400, "sold_at cannot be in the future", code="VALIDATION_ERROR")
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is None:
         logger.info(
@@ -462,7 +462,11 @@ async def submit_verified_sale(
 
 
 @router.post("/correction", response_model=CorrectionResponse)
-async def submit_correction(request: CorrectionRequest, user_id: str = Depends(get_current_user_id)):
+async def submit_correction(
+    request: CorrectionRequest,
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_feedback_user_limit),
+):
     """
     Submit a correction to training item data.
 
@@ -474,7 +478,7 @@ async def submit_correction(request: CorrectionRequest, user_id: str = Depends(g
     - correction_notes
     - corrected_at (timestamp)
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is None:
         # Offline mode
@@ -629,7 +633,7 @@ async def list_verified_sales(
     Returns sales ordered by sold_at (most recent first), paginated.
     """
     limit, offset = pagination
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is None:
         return VerifiedSaleListResponse(sales=[])

@@ -13,6 +13,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
+import asyncpg
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -78,7 +79,8 @@ async def dashboard_stats(_: bool = Depends(require_ops_key)):
             stats["beta_signups"] = await pool.fetchval(
                 "SELECT count(*) FROM beta_signups"
             ) or 0
-        except Exception:
+        except asyncpg.PostgresError:
+            _log.warning("beta_signups table query failed (table may not exist)")
             stats["beta_signups"] = 0
 
         # Recent signups (last 7 days)
@@ -100,8 +102,9 @@ async def dashboard_stats(_: bool = Depends(require_ops_key)):
             stats["category_candidates_candidate"] = await pool.fetchval(
                 "SELECT count(*) FROM category_candidates WHERE status = 'candidate'"
             ) or 0
-        except Exception:
+        except asyncpg.PostgresError:
             # Tables may not exist yet
+            _log.warning("Catalog learning tables query failed (tables may not exist yet)")
             stats["catalog_suggestions_pending"] = 0
             stats["catalog_suggestions_mapped_week"] = 0
             stats["category_candidates_watching"] = 0

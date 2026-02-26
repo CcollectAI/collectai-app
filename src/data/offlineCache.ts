@@ -4,6 +4,8 @@
  * Uses expo-sqlite to persist cached responses locally so the app can serve
  * stale data while the network is unavailable.
  *
+ * On web, SQLite is not available — all operations gracefully no-op.
+ *
  * Schema:
  *   CREATE TABLE IF NOT EXISTS cache (
  *     key        TEXT PRIMARY KEY,
@@ -17,7 +19,7 @@
  *   cacheClear(prefix?)       — deletes matching entries (all if no prefix)
  */
 
-import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 import logger from '../utils/logger';
 
 // ---------------------------------------------------------------------------
@@ -26,15 +28,17 @@ import logger from '../utils/logger';
 
 const DB_NAME = 'collectai_cache.db';
 const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const IS_WEB = Platform.OS === 'web';
 
 // ---------------------------------------------------------------------------
-// Database singleton
+// Database singleton (native only)
 // ---------------------------------------------------------------------------
 
-let _db: SQLite.SQLiteDatabase | null = null;
+let _db: any = null;
 let _initPromise: Promise<void> | null = null;
 
-async function getDb(): Promise<SQLite.SQLiteDatabase> {
+async function getDb(): Promise<any> {
+  if (IS_WEB) return null;
   if (_db) return _db;
   if (_initPromise) {
     await _initPromise;
@@ -43,6 +47,7 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
 
   _initPromise = (async () => {
     try {
+      const SQLite = await import('expo-sqlite');
       _db = await SQLite.openDatabaseAsync(DB_NAME);
       await _db.execAsync(
         `CREATE TABLE IF NOT EXISTS cache (
@@ -72,11 +77,13 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
  * Expired rows are deleted lazily on read.
  */
 export async function cacheGet<T = unknown>(key: string): Promise<T | null> {
+  if (IS_WEB) return null;
   try {
     const db = await getDb();
+    if (!db) return null;
     const now = Date.now();
 
-    const row = await db.getFirstAsync<{ data: string; expires_at: number }>(
+    const row = await (db.getFirstAsync as any)(
       'SELECT data, expires_at FROM cache WHERE key = ?',
       [key],
     );
@@ -108,8 +115,10 @@ export async function cacheSet(
   data: unknown,
   ttlMs: number = DEFAULT_TTL_MS,
 ): Promise<void> {
+  if (IS_WEB) return;
   try {
     const db = await getDb();
+    if (!db) return;
     const expiresAt = Date.now() + ttlMs;
     const serialised = JSON.stringify(data);
 
@@ -129,8 +138,10 @@ export async function cacheSet(
  *                If omitted, the entire cache is wiped.
  */
 export async function cacheClear(prefix?: string): Promise<void> {
+  if (IS_WEB) return;
   try {
     const db = await getDb();
+    if (!db) return;
 
     if (prefix) {
       // Delete all keys that start with the given prefix
@@ -153,9 +164,17 @@ export async function cacheClear(prefix?: string): Promise<void> {
  * database tidy, but is not required — expired entries are also pruned
  * lazily by `cacheGet`.
  */
+/** @internal Inject a mock db and reset state — for testing only. */
+export function __setDbForTesting(db: any): void {
+  _db = db;
+  _initPromise = Promise.resolve();
+}
+
 export async function cacheEvictExpired(): Promise<number> {
+  if (IS_WEB) return 0;
   try {
     const db = await getDb();
+    if (!db) return 0;
     const result = await db.runAsync(
       'DELETE FROM cache WHERE expires_at <= ?',
       [Date.now()],

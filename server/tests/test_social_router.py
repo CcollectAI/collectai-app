@@ -100,3 +100,40 @@ class TestEdgeCases:
         """Unblocking a user not blocked should succeed gracefully."""
         resp = client.delete(f"/social/block/{TARGET_USER_ID}")
         assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# User search endpoint tests
+# ---------------------------------------------------------------------------
+
+class TestSearchUsers:
+    def test_search_users_offline_mode(self):
+        """Search returns empty list in offline mode (no DB pool)."""
+        resp = client.get("/social/users/search", params={"q": "alice"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["users"] == []
+
+    def test_search_users_missing_query(self):
+        """Search requires 'q' query param."""
+        resp = client.get("/social/users/search")
+        assert resp.status_code == 422  # FastAPI validation error
+
+    def test_search_users_empty_query(self):
+        """Search rejects empty query (min_length=1)."""
+        resp = client.get("/social/users/search", params={"q": ""})
+        assert resp.status_code == 422
+
+    def test_search_users_with_limit(self):
+        """Search accepts custom limit parameter."""
+        resp = client.get("/social/users/search", params={"q": "test", "limit": 5})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data["users"], list)
+
+    def test_search_users_limit_bounds(self):
+        """Search rejects limit out of bounds."""
+        resp = client.get("/social/users/search", params={"q": "test", "limit": 0})
+        assert resp.status_code == 422
+        resp2 = client.get("/social/users/search", params={"q": "test", "limit": 100})
+        assert resp2.status_code == 422

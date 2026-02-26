@@ -1,3 +1,4 @@
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import React, { useState, useMemo } from "react";
 import {
   SafeAreaView,
@@ -14,6 +15,9 @@ import {
   FlatList,
   TouchableOpacity,
   Keyboard,
+  Image,
+  ActionSheetIOS,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -26,6 +30,7 @@ import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 
 type SaveState = "idle" | "saving" | "success" | "error";
 
@@ -54,6 +59,12 @@ const ManualAddScreen: React.FC = () => {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
 
+  // Photo upload
+  const { pickAndUpload, uploading: photoUploading, error: photoError, photoUrl, clearError: clearPhotoError } = usePhotoUpload("manual-draft");
+
+  // Currency symbol helper
+  const currencySymbol = settings.currency === 'EUR' ? '€' : settings.currency === 'USD' ? '$' : settings.currency === 'GBP' ? '£' : settings.currency === 'JPY' ? '¥' : settings.currency === 'KRW' ? '₩' : settings.currency === 'AUD' ? 'A$' : settings.currency === 'CAD' ? 'C$' : settings.currency;
+
   const nameField = useFormField(compose(required("Item name"), maxLength("Item name", 255)));
   const [category, setCategory] = useState("");
   const [gameOrSeries, setGameOrSeries] = useState("");
@@ -79,13 +90,45 @@ const ManualAddScreen: React.FC = () => {
   const categorySlug = useMemo(() => CATEGORY_NAME_TO_SLUG[category] ?? '', [category]);
   const categoryFields = useMemo(() => getCategoryFields(categorySlug), [categorySlug]);
 
-  const canSubmit = nameField.value.trim().length > 0 && saveState !== "saving" && !nameField.error && !purchasePriceField.error && !estimatedValueField.error;
+  const canSubmit = nameField.value.trim().length > 0 && saveState !== "saving" && !photoUploading && !nameField.error && !purchasePriceField.error && !estimatedValueField.error;
+
+  const handlePhotoUpload = async (source: "camera" | "gallery") => {
+    clearPhotoError();
+    await pickAndUpload(source);
+  };
+
+  const showPhotoSourcePicker = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", "Take Photo", "Choose from Library"],
+          cancelButtonIndex: 0,
+          title: "Add Photo",
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) handlePhotoUpload("camera");
+          if (buttonIndex === 2) handlePhotoUpload("gallery");
+        },
+      );
+    } else {
+      Alert.alert("Add Photo", "Choose a source", [
+        { text: "Take Photo", onPress: () => handlePhotoUpload("camera") },
+        { text: "Choose from Library", onPress: () => handlePhotoUpload("gallery") },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
+  };
 
   const filteredCategories = useMemo(() => {
     const q = categorySearch.toLowerCase().trim();
     if (!q) return CATEGORY_OPTIONS;
     return CATEGORY_OPTIONS.filter((c) => c.label.toLowerCase().includes(q));
   }, [categorySearch]);
+
+  const POPULAR_CATEGORIES = [
+    'Pokemon TCG', 'Magic: The Gathering', 'Funko Pop', 'LEGO',
+    'Sports Cards', 'Manga', 'Anime Figures', 'Yu-Gi-Oh!',
+  ];
 
   // Condition dropdown state
   const [conditionPickerOpen, setConditionPickerOpen] = useState(false);
@@ -124,10 +167,11 @@ const ManualAddScreen: React.FC = () => {
           condition_grade: conditionGrade.trim() || null,
           purchase_price: Number.isNaN(purchase as number) ? null : purchase,
           estimated_value: Number.isNaN(estimated as number) ? null : estimated,
-          currency: "EUR",
+          currency: settings.currency,
           source: source.trim() || null,
           notes: notes.trim() || null,
           attributes_json: Object.keys(attrs).length > 0 ? attrs : null,
+          user_photo_url: photoUrl || null,
         },
       ]);
 
@@ -221,6 +265,47 @@ const ManualAddScreen: React.FC = () => {
               </View>
             </View>
 
+            {/* Photo Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="camera-outline" size={16} color={colors.accent} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Photo (Optional)</Text>
+              </View>
+
+              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.photoContent}>
+                  {photoUrl ? (
+                    <Image source={{ uri: photoUrl }} style={styles.photoPreview} />
+                  ) : (
+                    <View style={[styles.photoPlaceholder, { borderColor: colors.border }]}>
+                      <Ionicons name="camera-outline" size={32} color={colors.muted} />
+                    </View>
+                  )}
+
+                  {photoUploading ? (
+                    <View style={styles.photoUploadingRow}>
+                      <ActivityIndicator size="small" color={colors.accent} />
+                      <Text style={[styles.photoUploadingText, { color: colors.muted }]}>Uploading…</Text>
+                    </View>
+                  ) : (
+                    <AnimatedPressable
+                      onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); showPhotoSourcePicker(); }}
+                      style={[styles.addPhotoBtn, { borderColor: colors.accent }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={photoUrl ? "Change photo" : "Add photo"}
+                    >
+                      <Ionicons name={photoUrl ? "swap-horizontal-outline" : "camera-outline"} size={16} color={colors.accent} />
+                      <Text style={[styles.addPhotoBtnText, { color: colors.accent }]}>{photoUrl ? "Change" : "Add Photo"}</Text>
+                    </AnimatedPressable>
+                  )}
+
+                  {photoError && (
+                    <Text style={styles.photoError}>{photoError}</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+
             {/* Status banner */}
             {bannerContent && (
               <View
@@ -282,15 +367,48 @@ const ManualAddScreen: React.FC = () => {
                 {/* Category Dropdown */}
                 <View style={styles.fieldBlock}>
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>Category</Text>
+                  {/* Quick-pick category chips */}
+                  <View style={styles.categoryChipsRow}>
+                    {POPULAR_CATEGORIES.map((cat) => {
+                      const isActive = category === cat;
+                      return (
+                        <TouchableOpacity
+                          key={cat}
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                            if (isActive) {
+                              setCategory("");
+                              setCategoryAttrs({});
+                            } else {
+                              if (cat !== category) setCategoryAttrs({});
+                              setCategory(cat);
+                            }
+                          }}
+                          style={[
+                            styles.categoryChip,
+                            { borderColor: isActive ? colors.accent : colors.border, backgroundColor: isActive ? colors.accent + '15' : colors.background },
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${cat}${isActive ? ', selected' : ''}`}
+                          accessibilityState={{ selected: isActive }}
+                        >
+                          <Text style={[styles.categoryChipText, { color: isActive ? colors.accent : colors.text }]} numberOfLines={1}>
+                            {cat}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
                   <TouchableOpacity
                     activeOpacity={0.7}
                     onPress={() => { Keyboard.dismiss(); fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setCategoryPickerOpen(true); setCategorySearch(""); }}
                     style={[styles.dropdownTrigger, { borderColor: category ? colors.accent : colors.border, backgroundColor: colors.background }]}
                     accessibilityRole="button"
-                    accessibilityLabel={category ? `Category: ${category}` : "Select a category"}
+                    accessibilityLabel={category ? `Category: ${category}` : "See All Categories"}
                   >
                     <Text style={[styles.dropdownText, { color: category ? colors.text : colors.muted }]} numberOfLines={1}>
-                      {category || "Select a category"}
+                      {category || "See All Categories"}
                     </Text>
                     <Ionicons name="chevron-down" size={16} color={colors.muted} />
                   </TouchableOpacity>
@@ -315,6 +433,7 @@ const ManualAddScreen: React.FC = () => {
                           placeholderTextColor={colors.muted}
                           style={[styles.input, { color: colors.text }]}
                           autoFocus
+                          accessibilityLabel="Search categories"
                         />
                         {categorySearch.length > 0 && (
                           <TouchableOpacity onPress={() => setCategorySearch("")} hitSlop={8}>
@@ -485,7 +604,8 @@ const ManualAddScreen: React.FC = () => {
                                     }));
                                   }}
                                   accessibilityRole="button"
-                                  accessibilityLabel={`${field.label}: ${opt}${isSelected ? ', selected' : ''}`}
+                                  accessibilityLabel={`${field.label}: ${opt}`}
+                                  accessibilityState={{ selected: isSelected }}
                                 >
                                   <Text style={[styles.selectChipText, { color: isSelected ? colors.accent : colors.text }]}>
                                     {opt}
@@ -618,6 +738,7 @@ const ManualAddScreen: React.FC = () => {
                                 placeholder="Enter custom condition..."
                                 placeholderTextColor={colors.muted}
                                 style={[styles.input, { color: colors.text }]}
+                                accessibilityLabel="Custom condition"
                                 returnKeyType="done"
                                 onSubmitEditing={() => {
                                   if (customCondition.trim()) {
@@ -641,7 +762,7 @@ const ManualAddScreen: React.FC = () => {
                   <View style={[styles.fieldBlock, { flex: 1, marginRight: 8 }]}>
                     <Text style={[styles.fieldLabel, { color: colors.text }]}>Purchase Price</Text>
                     <View style={[styles.inputWrap, { borderColor: purchasePriceField.touched && purchasePriceField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
-                      <Text style={[styles.currencyPrefix, { color: colors.muted }]}>€</Text>
+                      <Text style={[styles.currencyPrefix, { color: colors.muted }]}>{currencySymbol}</Text>
                       <TextInput
                         value={purchasePriceField.value}
                         onChangeText={purchasePriceField.onChange}
@@ -650,7 +771,7 @@ const ManualAddScreen: React.FC = () => {
                         placeholder="0.00"
                         placeholderTextColor={colors.muted}
                         style={[styles.input, { color: colors.text }]}
-                        accessibilityLabel="Purchase price in euros"
+                        accessibilityLabel="Purchase price"
                       />
                     </View>
                     {purchasePriceField.touched && purchasePriceField.error && (
@@ -660,7 +781,7 @@ const ManualAddScreen: React.FC = () => {
                   <View style={[styles.fieldBlock, { flex: 1 }]}>
                     <Text style={[styles.fieldLabel, { color: colors.text }]}>Estimated Value</Text>
                     <View style={[styles.inputWrap, { borderColor: estimatedValueField.touched && estimatedValueField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
-                      <Text style={[styles.currencyPrefix, { color: colors.muted }]}>€</Text>
+                      <Text style={[styles.currencyPrefix, { color: colors.muted }]}>{currencySymbol}</Text>
                       <TextInput
                         value={estimatedValueField.value}
                         onChangeText={estimatedValueField.onChange}
@@ -669,7 +790,7 @@ const ManualAddScreen: React.FC = () => {
                         placeholder="0.00"
                         placeholderTextColor={colors.muted}
                         style={[styles.input, { color: colors.text }]}
-                        accessibilityLabel="Estimated value in euros"
+                        accessibilityLabel="Estimated value"
                       />
                     </View>
                     {estimatedValueField.touched && estimatedValueField.error && (
@@ -719,6 +840,16 @@ const ManualAddScreen: React.FC = () => {
                       textAlignVertical="top"
                       accessibilityLabel="Notes"
                     />
+                    {notes.trim().length > 0 && (
+                      <TouchableOpacity
+                        onPress={() => Keyboard.dismiss()}
+                        style={[styles.notesDoneBtn, { backgroundColor: colors.accent }]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Done editing notes"
+                      >
+                        <Ionicons name="checkmark" size={18} color="#fff" />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               </View>
@@ -736,6 +867,7 @@ const ManualAddScreen: React.FC = () => {
               ]}
               accessibilityRole="button"
               accessibilityLabel="Save to collection"
+              accessibilityState={{ disabled: !canSubmit }}
             >
               {saveState === "saving" ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
@@ -910,6 +1042,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     minHeight: 64,
   },
+  notesDoneBtn: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1024,6 +1166,54 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 4,
   },
+  // Photo section styles
+  photoContent: {
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  photoPreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  photoPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  addPhotoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  addPhotoBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  photoUploadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  photoUploadingText: {
+    fontSize: 13,
+  },
+  photoError: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 8,
+    textAlign: 'center',
+  },
   // Category-specific field styles
   booleanRow: {
     flexDirection: 'row',
@@ -1063,6 +1253,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
+  categoryChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
+  },
+  categoryChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  categoryChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
 });
 
-export default ManualAddScreen;
+export default function ManualAddScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Add Manual">
+      <ManualAddScreen />
+    </ScreenErrorBoundary>
+  );
+}

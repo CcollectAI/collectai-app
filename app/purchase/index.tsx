@@ -5,12 +5,13 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
+  Linking,
   RefreshControl,
   Platform,
 } from "react-native";
@@ -23,9 +24,19 @@ import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { formatPrice } from "@/lib/format";
 import { collectorsApi } from "@/api/collectorsApi";
+import { SkeletonList } from "@/components/Skeleton";
+import { QuickNavBar } from "@/components/QuickNavBar";
 import type { PurchaseMandate, MandateDeal } from "@/data/types";
 
-export default function AgentHubScreen() {
+export default function AgentHubScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Smart Deal Agent">
+      <AgentHubScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+function AgentHubScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -86,7 +97,7 @@ export default function AgentHubScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <SkeletonList count={3} type="deal" />
         </View>
       </SafeAreaView>
     );
@@ -139,6 +150,19 @@ export default function AgentHubScreen() {
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
               Set up a search to find deals automatically.
             </Text>
+            <View style={styles.emptyCtaContainer}>
+              <AnimatedPressable
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  router.push("/purchase/create-mandate");
+                }}
+                style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel="Set up a deal mandate"
+              >
+                <Text style={styles.emptyCtaBtnText}>Set Up a Deal Mandate</Text>
+              </AnimatedPressable>
+            </View>
           </View>
         ) : (
           mandates.map((m) => {
@@ -261,10 +285,27 @@ export default function AgentHubScreen() {
                     <Text style={[styles.dealPrice, { color: colors.text }]}>
                       {formatPrice(deal.listingPrice)}
                     </Text>
-                    <View style={[styles.dealBadge, { backgroundColor: badge.color + "20" }]}>
-                      <Text style={[styles.dealBadgeText, { color: badge.color }]}>
-                        {badge.label}
-                      </Text>
+                    <View style={styles.dealRightRow}>
+                      <View style={[styles.dealBadge, { backgroundColor: badge.color + "20" }]}>
+                        <Text style={[styles.dealBadgeText, { color: badge.color }]}>
+                          {badge.label}
+                        </Text>
+                      </View>
+                      {(deal.status === "discovered" || deal.status === "notified") && (deal.affiliateUrl || deal.listingUrl) && (
+                        <AnimatedPressable
+                          onPress={() => {
+                            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                            collectorsApi.clickDeal(deal.id).catch(() => {});
+                            const url = deal.affiliateUrl || deal.listingUrl;
+                            if (url) Linking.openURL(url).catch(() => {});
+                          }}
+                          style={[styles.quickBuyBtn, { backgroundColor: colors.accent }]}
+                          accessibilityRole="link"
+                          accessibilityLabel={`Open ${deal.listingTitle} listing`}
+                        >
+                          <Ionicons name="open-outline" size={14} color="#FFFFFF" />
+                        </AnimatedPressable>
+                      )}
                     </View>
                   </View>
                 </AnimatedPressable>
@@ -275,6 +316,7 @@ export default function AgentHubScreen() {
 
         <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 }
@@ -315,6 +357,17 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 15, fontWeight: "600" },
   emptySubtitle: { fontSize: 13, textAlign: "center" },
+  emptyCtaContainer: { alignItems: "center", marginTop: 16 },
+  emptyCtaBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  emptyCtaBtnText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
 
   // Mandate card
   mandateCard: {
@@ -374,6 +427,14 @@ const styles = StyleSheet.create({
   dealDiscount: { fontSize: 12, fontWeight: "700" },
   dealRight: { alignItems: "flex-end" },
   dealPrice: { fontSize: 14, fontWeight: "800" },
-  dealBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, marginTop: 2 },
+  dealRightRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
+  dealBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
   dealBadgeText: { fontSize: 10, fontWeight: "700" },
+  quickBuyBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

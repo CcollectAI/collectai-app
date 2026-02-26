@@ -36,6 +36,9 @@ import type {
   BarcodeLookupResult,
   MarketSearchOptions,
   MarketSearchResult,
+  Offer,
+  OfferEvent,
+  UserReputation,
 } from './types';
 import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 import { cacheGet, cacheSet, cacheClear } from './offlineCache';
@@ -51,9 +54,12 @@ const CK = {
   WATCHLIST: 'watchlist:list',
   ALERTS_FEED: 'alerts:feed',
   CATEGORY_SUMMARIES: 'categories:summaries',
+  CATEGORY_MISSING: 'category:missing',        // prefix — keyed per category
   EVENTS: 'events:list',
+  EVENT_BY_ID: 'event:id',                      // prefix — keyed per event
   ANALYTICS: 'analytics:metrics',
   BUILD_PAINT_PROJECTS: 'buildpaint:projects',
+  FOLLOWED_CATEGORIES: 'categories:followed',
 } as const;
 
 // Default TTLs (milliseconds)
@@ -194,6 +200,12 @@ export class CachedDataProvider implements DataProvider {
     return result;
   }
 
+  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string }): Promise<WatchlistItem> {
+    const result = await this.inner.updateWatchlistItem(id, updates);
+    await cacheClear(CK.WATCHLIST);
+    return result;
+  }
+
   async removeWatchlistItem(id: string): Promise<void> {
     await this.inner.removeWatchlistItem(id);
     await cacheClear(CK.WATCHLIST);
@@ -230,12 +242,18 @@ export class CachedDataProvider implements DataProvider {
 
   async rsvpEvent(eventId: string, status?: string): Promise<void> {
     await this.inner.rsvpEvent(eventId, status);
-    await cacheClear(CK.EVENTS);
+    await Promise.all([
+      cacheClear(CK.EVENTS),
+      cacheClear(`${CK.EVENT_BY_ID}:${eventId}`),
+    ]);
   }
 
   async unrsvpEvent(eventId: string): Promise<void> {
     await this.inner.unrsvpEvent(eventId);
-    await cacheClear(CK.EVENTS);
+    await Promise.all([
+      cacheClear(CK.EVENTS),
+      cacheClear(`${CK.EVENT_BY_ID}:${eventId}`),
+    ]);
   }
 
   async createBuildPaintProject(input: CreateBuildPaintProjectInput): Promise<BuildPaintProject> {
@@ -266,7 +284,11 @@ export class CachedDataProvider implements DataProvider {
     notes?: string,
   ): Promise<{ success: boolean }> {
     const result = await this.inner.markCategoryItemOwned(categoryItemId, quantity, notes);
-    await cacheClear(CK.CATEGORY_SUMMARIES);
+    await Promise.all([
+      cacheClear(CK.CATEGORY_SUMMARIES),
+      // Clear all category-missing caches (we don't know which category this item belongs to)
+      cacheClear(CK.CATEGORY_MISSING),
+    ]);
     return result;
   }
 
@@ -275,6 +297,7 @@ export class CachedDataProvider implements DataProvider {
     await Promise.all([
       cacheClear(CK.EVENTS),
       cacheClear(CK.CATEGORY_SUMMARIES),
+      cacheClear(CK.FOLLOWED_CATEGORIES),
     ]);
   }
 
@@ -283,6 +306,7 @@ export class CachedDataProvider implements DataProvider {
     await Promise.all([
       cacheClear(CK.EVENTS),
       cacheClear(CK.CATEGORY_SUMMARIES),
+      cacheClear(CK.FOLLOWED_CATEGORIES),
     ]);
   }
 
@@ -292,8 +316,8 @@ export class CachedDataProvider implements DataProvider {
     return this.inner.searchItems(query);
   }
 
-  quickscanSingle(): Promise<QuickScanResult> {
-    return this.inner.quickscanSingle();
+  quickscanSingle(imageUri?: string): Promise<QuickScanResult> {
+    return this.inner.quickscanSingle(imageUri);
   }
 
   getPublicUserProfile(userId: string): Promise<PublicUserProfile | null> {
@@ -309,7 +333,11 @@ export class CachedDataProvider implements DataProvider {
   }
 
   listCategoryMissing(categoryId: string): Promise<CategoryMissingItem[]> {
-    return this.inner.listCategoryMissing(categoryId);
+    return swr(
+      `${CK.CATEGORY_MISSING}:${categoryId}`,
+      () => this.inner.listCategoryMissing(categoryId),
+      TTL_MEDIUM,
+    );
   }
 
   // DM / inbox — real-time, not cached
@@ -339,6 +367,18 @@ export class CachedDataProvider implements DataProvider {
 
   sendMessage(threadId: string, body: string): Promise<DmMessage> {
     return this.inner.sendMessage(threadId, body);
+  }
+
+  setTyping(threadId: string): Promise<void> {
+    return this.inner.setTyping(threadId);
+  }
+
+  clearTyping(threadId: string): Promise<void> {
+    return this.inner.clearTyping(threadId);
+  }
+
+  isOtherUserTyping(threadId: string): Promise<boolean> {
+    return this.inner.isOtherUserTyping(threadId);
   }
 
   getDmStatus(otherUserId: string): Promise<'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined'> {
@@ -384,6 +424,11 @@ export class CachedDataProvider implements DataProvider {
     return result;
   }
 
+  async updateBuildPaintProject(projectId: string, patch: { paintRecipes?: unknown[] }): Promise<void> {
+    await this.inner.updateBuildPaintProject(projectId, patch);
+    await cacheClear(CK.BUILD_PAINT_PROJECTS);
+  }
+
   // Feedback — pass through
   submitFeedback(
     itemId: string,
@@ -405,22 +450,31 @@ export class CachedDataProvider implements DataProvider {
     return this.inner.submitCorrection(itemId, corrections);
   }
 
-  // Category following — pass through (lightweight RPCs)
+  // Category following — cached (lightweight RPCs, rarely change)
   listFollowedCategories(): Promise<string[]> {
-    return this.inner.listFollowedCategories();
+    return swr(CK.FOLLOWED_CATEGORIES, () => this.inner.listFollowedCategories(), TTL_MEDIUM);
   }
 
   isFollowingCategory(categoryId: string): Promise<boolean> {
     return this.inner.isFollowingCategory(categoryId);
   }
 
-  // Events — single item lookup pass through
+  // Events — single item lookup (cached)
   getEventById(eventId: string): Promise<CollectorsEvent | null> {
-    return this.inner.getEventById(eventId);
+    return swr(
+      `${CK.EVENT_BY_ID}:${eventId}`,
+      () => this.inner.getEventById(eventId),
+      TTL_SHORT,
+    );
   }
 
   shareEventViaDm(eventId: string, recipientUserId: string): Promise<void> {
     return this.inner.shareEventViaDm(eventId, recipientUserId);
+  }
+
+  // User search — pass through (dynamic query results)
+  searchUsers(query: string): Promise<PublicUserProfile[]> {
+    return this.inner.searchUsers(query);
   }
 
   // User blocking — pass through (mutations, not cacheable)
@@ -443,13 +497,19 @@ export class CachedDataProvider implements DataProvider {
   // Events — host actions (mutations, pass through with cache invalidation)
   async updateEvent(eventId: string, patch: Partial<CreateEventInput & { status?: string }>): Promise<CollectorsEvent> {
     const result = await this.inner.updateEvent(eventId, patch);
-    await cacheClear(CK.EVENTS);
+    await Promise.all([
+      cacheClear(CK.EVENTS),
+      cacheClear(`${CK.EVENT_BY_ID}:${eventId}`),
+    ]);
     return result;
   }
 
   async cancelEvent(eventId: string): Promise<void> {
     await this.inner.cancelEvent(eventId);
-    await cacheClear(CK.EVENTS);
+    await Promise.all([
+      cacheClear(CK.EVENTS),
+      cacheClear(`${CK.EVENT_BY_ID}:${eventId}`),
+    ]);
   }
 
   async duplicateEvent(eventId: string): Promise<CollectorsEvent> {
@@ -524,4 +584,33 @@ export class CachedDataProvider implements DataProvider {
   ): Promise<MarketSearchResult> {
     return this.inner.marketSearch(query, opts);
   }
+
+  // Presence — pass through (real-time)
+  sendHeartbeat(): Promise<void> { return this.inner.sendHeartbeat(); }
+  goOffline(): Promise<void> { return this.inner.goOffline(); }
+  getUserPresence(userId: string) { return this.inner.getUserPresence(userId); }
+  getBatchPresence(userIds: string[]) { return this.inner.getBatchPresence(userIds); }
+
+  // Activity feed — pass through
+  getUserActivity(userId: string, limit?: number, offset?: number) { return this.inner.getUserActivity(userId, limit, offset); }
+  logActivity(activityType: string, title: string, description?: string, metadata?: Record<string, unknown>, isPublic?: boolean) { return this.inner.logActivity(activityType, title, description, metadata, isPublic); }
+
+  // Unified search — pass through
+  unifiedSearch(query: string, limit?: number) { return this.inner.unifiedSearch(query, limit); }
+
+  // Event search — pass through
+  searchEvents(params: { q?: string; category?: string; eventType?: string; location?: string; upcomingOnly?: boolean; limit?: number; offset?: number }) { return this.inner.searchEvents(params); }
+
+  // Deal Desk (P2P Offers) — pass through (real-time negotiations, not cached)
+  proposeOffer(itemId: string, price: number, message?: string): Promise<Offer> { return this.inner.proposeOffer(itemId, price, message); }
+  counterOffer(offerId: string, price: number, message?: string): Promise<Offer> { return this.inner.counterOffer(offerId, price, message); }
+  respondToOffer(offerId: string, accept: boolean, message?: string): Promise<void> { return this.inner.respondToOffer(offerId, accept, message); }
+  cancelOffer(offerId: string): Promise<void> { return this.inner.cancelOffer(offerId); }
+  listActiveOffers(): Promise<Offer[]> { return this.inner.listActiveOffers(); }
+  listDealHistory(): Promise<Offer[]> { return this.inner.listDealHistory(); }
+  getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }> { return this.inner.getOfferDetail(offerId); }
+  getUserReputation(userId: string): Promise<UserReputation> { return this.inner.getUserReputation(userId); }
+  toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void> { return this.inner.toggleForSale(itemId, forSale, askingPrice); }
+  markShipped(offerId: string, trackingInfo?: string): Promise<void> { return this.inner.markShipped(offerId, trackingInfo); }
+  completeDeal(offerId: string, stars: number, comment?: string): Promise<void> { return this.inner.completeDeal(offerId, stars, comment); }
 }

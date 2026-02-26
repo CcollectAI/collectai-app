@@ -9,12 +9,16 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
+from app.rate_limit import per_user_rate_limit
 from app.db import db_configured, get_conn
 from app.errors import error_response
 from app.features.pagination import pagination_params
 
 router = APIRouter(prefix="/provenance", tags=["provenance"])
 logger = logging.getLogger(__name__)
+
+# Per-user: 30 provenance requests per minute
+_provenance_limit = per_user_rate_limit(30, window_seconds=60, scope="provenance")
 
 
 class OwnershipEvent(BaseModel):
@@ -75,6 +79,7 @@ async def get_provenance(
     item_id: str,
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
+    _rl: None = Depends(_provenance_limit),
 ):
     """
     Return provenance for an item.
@@ -177,6 +182,7 @@ async def append_provenance_event(
     item_id: str,
     payload: OwnershipEventCreate,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_provenance_limit),
 ):
     """
     Append a provenance/ownership event (transfer, sale, receipt scan, etc.).

@@ -6,7 +6,7 @@ Covers:
   - PUT  /settings — valid upsert, invalid currency/region/locale,
     missing fields, partial update, offline mode
 
-All tests mock _get_db_pool() and override the auth dependency so no real
+All tests mock get_db_pool() and override the auth dependency so no real
 database or JWT is needed.
 """
 
@@ -62,7 +62,7 @@ def _mock_pool(fetchrow_return=None, fetchrow_side_effect=None):
 # ===========================================================================
 
 class TestGetSettingsOffline:
-    """When _get_db_pool() returns None, GET should return defaults."""
+    """When get_db_pool() returns None, GET should return defaults."""
 
     def test_returns_defaults_when_pool_unavailable(self):
         """GET /settings with no DB pool returns EUR/europe/de-DE."""
@@ -84,7 +84,7 @@ class TestGetSettingsWithDB:
     def test_returns_defaults_when_no_row_exists(self):
         """If no user_settings row exists, return defaults."""
         mock_pool, _conn = _mock_pool(fetchrow_return=None)
-        with patch("app.routes.user_settings_router._get_db_pool", return_value=mock_pool):
+        with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.get("/settings")
         assert r.status_code == 200
         data = r.json()
@@ -96,7 +96,7 @@ class TestGetSettingsWithDB:
         """If a user_settings row exists, return its values."""
         stored = {"currency": "USD", "region": "americas", "locale": "en-US"}
         mock_pool, _conn = _mock_pool(fetchrow_return=stored)
-        with patch("app.routes.user_settings_router._get_db_pool", return_value=mock_pool):
+        with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.get("/settings")
         assert r.status_code == 200
         data = r.json()
@@ -108,7 +108,7 @@ class TestGetSettingsWithDB:
         """Verify non-default stored values (JPY / japan / ja-JP) round-trip."""
         stored = {"currency": "JPY", "region": "japan", "locale": "ja-JP"}
         mock_pool, _conn = _mock_pool(fetchrow_return=stored)
-        with patch("app.routes.user_settings_router._get_db_pool", return_value=mock_pool):
+        with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.get("/settings")
         assert r.status_code == 200
         data = r.json()
@@ -121,7 +121,7 @@ class TestGetSettingsWithDB:
         mock_pool, _conn = _mock_pool(
             fetchrow_side_effect=asyncpg.PostgresError("connection lost"),
         )
-        with patch("app.routes.user_settings_router._get_db_pool", return_value=mock_pool):
+        with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.get("/settings")
         assert r.status_code == 500
         detail = r.json()["detail"]
@@ -177,7 +177,7 @@ class TestPutSettingsValidation:
 # ===========================================================================
 
 class TestPutSettingsOffline:
-    """PUT /settings when _get_db_pool() returns None (offline mode)."""
+    """PUT /settings when get_db_pool() returns None (offline mode)."""
 
     def test_offline_returns_merged_defaults(self):
         """Submitted values merged with defaults, success=True."""
@@ -215,7 +215,7 @@ class TestPutSettingsWithDB:
         """Full upsert with all three fields returns the upserted row."""
         returned_row = {"currency": "USD", "region": "americas", "locale": "en-US"}
         mock_pool, mock_conn = _mock_pool(fetchrow_return=returned_row)
-        with patch("app.routes.user_settings_router._get_db_pool", return_value=mock_pool):
+        with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.put("/settings", json={
                 "currency": "USD",
                 "region": "americas",
@@ -239,7 +239,7 @@ class TestPutSettingsWithDB:
         # The DB returns the merged row (existing region/locale preserved)
         returned_row = {"currency": "GBP", "region": "europe", "locale": "de-DE"}
         mock_pool, mock_conn = _mock_pool(fetchrow_return=returned_row)
-        with patch("app.routes.user_settings_router._get_db_pool", return_value=mock_pool):
+        with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.put("/settings", json={"currency": "GBP"})
         assert r.status_code == 200
         data = r.json()
@@ -256,7 +256,7 @@ class TestPutSettingsWithDB:
         mock_pool, _conn = _mock_pool(
             fetchrow_side_effect=asyncpg.PostgresError("disk full"),
         )
-        with patch("app.routes.user_settings_router._get_db_pool", return_value=mock_pool):
+        with patch("app.routes.user_settings_router.get_db_pool", return_value=mock_pool):
             r = client.put("/settings", json={"currency": "EUR"})
         assert r.status_code == 500
         detail = r.json()["detail"]

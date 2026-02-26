@@ -2,12 +2,11 @@
  * Login screen — email/password sign-in with magic link, Apple, and Google options.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -26,6 +25,8 @@ import { useAuthContext } from '@/providers/useAuthContext';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { useToast } from '@/components/Toast';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -40,14 +41,16 @@ const MUTED = '#64748B';
 const BORDER = '#E2E8F0';
 const INPUT_BG = '#F8FAFC';
 
-export default function LoginScreen() {
+function LoginScreen() {
   const router = useRouter();
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const { signInDemo } = useAuthContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
 
   // Check Apple Sign In availability (iOS only)
   useEffect(() => {
@@ -81,7 +84,7 @@ export default function LoginScreen() {
             router.replace('/(tabs)');
           })
           .catch((e: unknown) => {
-            Alert.alert('Google sign in failed', e instanceof Error ? e.message : 'Unknown error');
+            showToast({ message: e instanceof Error ? e.message : 'Google sign in failed', type: 'error' });
           })
           .finally(() => setLoading(false));
       }
@@ -98,7 +101,7 @@ export default function LoginScreen() {
         ],
       });
       if (!credential.identityToken) {
-        Alert.alert('Apple Sign In', 'No identity token received.');
+        showToast({ message: 'No identity token received.', type: 'error' });
         return;
       }
       setLoading(true);
@@ -111,7 +114,7 @@ export default function LoginScreen() {
     } catch (e: unknown) {
       const code = (e as { code?: string })?.code;
       if (code === 'ERR_REQUEST_CANCELED') return; // user cancelled
-      Alert.alert('Apple sign in failed', e instanceof Error ? e.message : 'Unknown error');
+      showToast({ message: e instanceof Error ? e.message : 'Apple sign in failed', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -127,7 +130,7 @@ export default function LoginScreen() {
   async function handleSignIn() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      Alert.alert('Missing fields', 'Please enter your email and password.');
+      showToast({ message: 'Please enter your email and password.', type: 'warning' });
       return;
     }
 
@@ -142,7 +145,7 @@ export default function LoginScreen() {
       // onAuthStateChange in AuthProvider handles the rest
       router.replace('/(tabs)');
     } catch (e: unknown) {
-      Alert.alert('Sign in failed', e instanceof Error ? e.message : 'Unknown error');
+      showToast({ message: e instanceof Error ? e.message : 'Sign in failed', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -151,7 +154,7 @@ export default function LoginScreen() {
   async function handleMagicLink() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      Alert.alert('Email required', 'Enter your email to receive a magic link.');
+      showToast({ message: 'Enter your email to receive a magic link.', type: 'warning' });
       return;
     }
 
@@ -163,9 +166,9 @@ export default function LoginScreen() {
         options: { shouldCreateUser: false },
       });
       if (error) throw error;
-      Alert.alert('Check your email', 'We sent you a magic sign-in link.');
+      showToast({ message: 'We sent you a magic sign-in link. Check your email.', type: 'success' });
     } catch (e: unknown) {
-      Alert.alert('Magic link failed', e instanceof Error ? e.message : 'Unknown error');
+      showToast({ message: e instanceof Error ? e.message : 'Magic link failed', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -202,10 +205,14 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoComplete="email"
               accessibilityLabel="Email"
+              autoFocus
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
             />
 
             <Text style={[styles.label, { marginTop: 16 }]}>Password</Text>
             <TextInput
+              ref={passwordRef}
               style={styles.input}
               value={password}
               onChangeText={setPassword}
@@ -214,6 +221,8 @@ export default function LoginScreen() {
               secureTextEntry
               autoComplete="password"
               accessibilityLabel="Password"
+              returnKeyType="go"
+              onSubmitEditing={handleSignIn}
             />
 
             {loading ? (
@@ -313,6 +322,14 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+export default function LoginScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Login">
+      <LoginScreen />
+    </ScreenErrorBoundary>
   );
 }
 

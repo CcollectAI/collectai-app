@@ -17,18 +17,35 @@ from __future__ import annotations
 
 import logging
 import math
+import time as _time
 from datetime import date, datetime, timezone
 from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id, get_optional_user_id
+from app.cache import cache_get, cache_set
 from app.errors import error_response
 from app.features.pagination import pagination_params
+from app.lib.db_helpers import get_db_pool
+from app.lib.error_codes import ErrorCode
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/events", tags=["events"])
 logger = logging.getLogger(__name__)
+
+# Per-user: 30 event search requests per minute (expensive DB queries)
+# Applied to auth-required search-like endpoints. For optional-auth listing
+# endpoints (search_events, list_nearby_events, list_events), the global
+# IP-based middleware rate limit provides protection.
+_event_search_limit = per_user_rate_limit(30, window_seconds=60, scope="event_search")
+# Per-user: 10 RSVP actions per minute (prevent toggle spam)
+_event_rsvp_limit = per_user_rate_limit(10, window_seconds=60, scope="event_rsvp")
+# Per-user: 5 announcements per hour (sends DMs to all attendees)
+_event_announce_limit = per_user_rate_limit(5, window_seconds=3600, scope="event_announce")
+
+_EVENTS_CACHE_TTL = 300  # 5 minutes
 
 ALLOWED_EVENT_KINDS = {"collection_drop", "meetup", "stream", "convention", "release"}
 ALLOWED_EVENT_FORMATS = {"in_person", "online", "hybrid"}
@@ -36,20 +53,6 @@ ALLOWED_EVENT_STATUSES = {"draft", "published", "cancelled"}
 
 # Explicit whitelist of columns that can be updated via PATCH /{event_id}
 _UPDATABLE_EVENT_COLUMNS = {"title", "status", "description", "location", "online_url", "image_url", "date", "time", "end_date", "format", "is_public", "max_attendees"}
-
-
-# ---------------------------------------------------------------------------
-# DB helper
-# ---------------------------------------------------------------------------
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except Exception as e:
-        logger.debug("DB pool not available: %s", e)
-        return None
 
 
 # get_optional_user_id imported from app.auth — returns None instead of 401
@@ -167,6 +170,7 @@ class AnnouncementResponse(BaseModel):
 
 class EventListResponse(BaseModel):
     events: List[EventResponse]
+    total: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +188,83 @@ _MAX_IN_MEMORY_FOLLOWS = 500
 # Endpoints — Events
 # ---------------------------------------------------------------------------
 
+
+@router.get("/search", response_model=EventListResponse)
+async def search_events(
+    q: str = "",
+    category: Optional[str] = None,
+    event_type: Optional[str] = None,
+    location: Optional[str] = None,
+    upcoming_only: bool = True,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    user_id: Optional[str] = Depends(get_optional_user_id),
+):
+    """Search events by name, category, type, or location."""
+    pool = get_db_pool()
+    if not pool:
+        return EventListResponse(events=[], total=0)
+
+    try:
+        async with pool.acquire() as conn:
+            conditions = []
+            params: list[Any] = []
+            idx = 1
+
+            if q.strip():
+                conditions.append(f"(title ILIKE ${idx} OR description ILIKE ${idx})")
+                params.append(f"%{q.strip()}%")
+                idx += 1
+
+            if category:
+                conditions.append(f"category_id = ${idx}")
+                params.append(category)
+                idx += 1
+
+            if event_type:
+                conditions.append(f"kind = ${idx}")
+                params.append(event_type)
+                idx += 1
+
+            if location:
+                conditions.append(f"location ILIKE ${idx}")
+                params.append(f"%{location}%")
+                idx += 1
+
+            if upcoming_only:
+                conditions.append("status != 'cancelled'")
+                conditions.append(f"date >= ${idx}")
+                params.append(date.today())
+                idx += 1
+
+            where = " AND ".join(conditions) if conditions else "TRUE"
+
+            # Count total matching rows (without LIMIT/OFFSET)
+            count_query = f"SELECT count(*) FROM events WHERE {where}"
+            total_count = await conn.fetchval(count_query, *params)
+
+            query_str = f"""
+                SELECT id, title, description, kind, category_id,
+                       date, time, end_date, location, online_url, image_url,
+                       created_by, status, format, is_public, max_attendees,
+                       created_at,
+                       (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going') AS going_count,
+                       (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'interested') AS interested_count
+                FROM events e
+                WHERE {where}
+                ORDER BY date ASC
+                LIMIT ${idx} OFFSET ${idx + 1}
+            """
+            params.extend([limit, offset])
+
+            rows = await conn.fetch(query_str, *params)
+            events = [_row_to_event(dict(r)) for r in rows] if rows else []
+            return EventListResponse(events=events, total=total_count or 0)
+    except Exception as e:
+        logger.warning("search_events error: %s", e)
+        raise error_response(500, "Event search failed", code=ErrorCode.INTERNAL_ERROR)
+
+
 @router.get("", response_model=EventListResponse)
 async def list_events(
     category_id: Optional[str] = Query(None, description="Filter by category"),
@@ -199,11 +280,22 @@ async def list_events(
     Otherwise returns all future events.
     """
     limit, offset = pagination
-    pool = _get_db_pool()
+
+    # Check cache
+    uid = user_id or "anon"
+    cache_key = f"events:list:{uid}:{category_id}:{include_past}:{limit}:{offset}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    pool = get_db_pool()
 
     if pool is not None:
         try:
             async with pool.acquire() as conn:
+                # Get total count for pagination
+                total_count = await _count_events_basic(conn, category_id, include_past, user_id=user_id)
+
                 if user_id:
                     # Try the personalized RPC first
                     try:
@@ -228,13 +320,15 @@ async def list_events(
                     if not ev.is_public and ev.created_by != user_id:
                         continue
                     events.append(ev)
-                return EventListResponse(events=events)
+                result = EventListResponse(events=events, total=total_count)
+                cache_set(cache_key, result, ttl=_EVENTS_CACHE_TTL)
+                return result
 
         except HTTPException:
             raise
         except Exception as e:
             logger.error("[events] Error listing events: %s", e)
-            raise error_response(500, "Failed to list events", code="EVENT_LIST_ERROR")
+            raise error_response(500, "Failed to list events", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     today_str = date.today().isoformat()
@@ -258,7 +352,10 @@ async def list_events(
         events.append(EventResponse(**ev_copy))
     # Sort: sponsored first, then by date
     events.sort(key=lambda e: (not e.is_sponsored, e.date))
-    return EventListResponse(events=events[offset:offset + limit])
+    total_count = len(events)
+    result = EventListResponse(events=events[offset:offset + limit], total=total_count)
+    cache_set(cache_key, result, ttl=_EVENTS_CACHE_TTL)
+    return result
 
 
 @router.post("", response_model=EventResponse, status_code=201)
@@ -272,7 +369,7 @@ async def create_event(
             400,
             f"Invalid event kind: {request.kind}. "
             f"Allowed: {', '.join(sorted(ALLOWED_EVENT_KINDS))}",
-            code="INVALID_EVENT_KIND",
+            code=ErrorCode.VALIDATION_ERROR,
         )
 
     if request.format not in ALLOWED_EVENT_FORMATS:
@@ -280,22 +377,22 @@ async def create_event(
             400,
             f"Invalid event format: {request.format}. "
             f"Allowed: {', '.join(sorted(ALLOWED_EVENT_FORMATS))}",
-            code="INVALID_EVENT_FORMAT",
+            code=ErrorCode.VALIDATION_ERROR,
         )
 
     # Validate date format
     try:
         datetime.strptime(request.date, "%Y-%m-%d")
     except ValueError:
-        raise error_response(400, "Invalid date format. Use YYYY-MM-DD.", code="INVALID_DATE")
+        raise error_response(400, "Invalid date format. Use YYYY-MM-DD.", code=ErrorCode.VALIDATION_ERROR)
 
     if request.end_date:
         try:
             datetime.strptime(request.end_date, "%Y-%m-%d")
         except ValueError:
-            raise error_response(400, "Invalid end_date format. Use YYYY-MM-DD.", code="INVALID_DATE")
+            raise error_response(400, "Invalid end_date format. Use YYYY-MM-DD.", code=ErrorCode.VALIDATION_ERROR)
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -334,7 +431,7 @@ async def create_event(
             raise
         except Exception as e:
             logger.error("[events] Error creating event: %s", e)
-            raise error_response(500, "Failed to create event", code="EVENT_CREATE_ERROR")
+            raise error_response(500, "Failed to create event", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     event_id = str(uuid4())
@@ -382,11 +479,40 @@ async def list_nearby_events(
     Uses the Haversine formula for distance calculation.
     """
     limit, offset = pagination
-    pool = _get_db_pool()
+
+    # Check cache (round lat/lon to 2 decimals to improve cache hit rate)
+    lat_r = round(lat, 2)
+    lon_r = round(lon, 2)
+    uid = user_id or "anon"
+    cache_key = f"events:nearby:{uid}:{lat_r}:{lon_r}:{radius_km}:{limit}:{offset}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    pool = get_db_pool()
 
     if pool is not None:
         try:
             async with pool.acquire() as conn:
+                # Count total matching rows (without LIMIT/OFFSET)
+                total_count = await conn.fetchval(
+                    """
+                    SELECT count(*)
+                    FROM events
+                    WHERE latitude IS NOT NULL
+                      AND longitude IS NOT NULL
+                      AND status = 'published'
+                      AND is_public = true
+                      AND date >= CURRENT_DATE
+                      AND (6371 * acos(LEAST(1.0, GREATEST(-1.0,
+                            cos(radians($1)) * cos(radians(latitude))
+                            * cos(radians(longitude) - radians($2))
+                            + sin(radians($1)) * sin(radians(latitude))
+                        )))) <= $3
+                    """,
+                    lat, lon, radius_km,
+                )
+
                 rows = await conn.fetch(
                     """
                     SELECT *,
@@ -412,13 +538,15 @@ async def list_nearby_events(
                     lat, lon, radius_km, limit, offset,
                 )
                 events = [_row_to_event(dict(r), user_id=user_id) for r in rows]
-                return EventListResponse(events=events)
+                result = EventListResponse(events=events, total=total_count or 0)
+                cache_set(cache_key, result, ttl=_EVENTS_CACHE_TTL)
+                return result
 
         except HTTPException:
             raise
         except Exception as e:
             logger.error("[events] Error listing nearby events: %s", e)
-            raise error_response(500, "Failed to list nearby events", code="EVENT_NEARBY_ERROR")
+            raise error_response(500, "Failed to list nearby events", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback with Haversine
     today_str = date.today().isoformat()
@@ -439,11 +567,14 @@ async def list_nearby_events(
             events_with_dist.append((dist, ev))
 
     events_with_dist.sort(key=lambda x: x[0])
+    total_count = len(events_with_dist)
     events = [
         EventResponse(**{**ev, "attendee_count": len(_IN_MEMORY_RSVPS.get(ev["id"], {}))})
         for _, ev in events_with_dist[offset:offset + limit]
     ]
-    return EventListResponse(events=events)
+    result = EventListResponse(events=events, total=total_count)
+    cache_set(cache_key, result, ttl=_EVENTS_CACHE_TTL)
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -456,7 +587,7 @@ async def list_followed_categories(
     user_id: str = Depends(get_current_user_id),
 ):
     """List all category IDs the current user follows."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -471,7 +602,7 @@ async def list_followed_categories(
             raise
         except Exception as e:
             logger.error("[events] Error listing followed categories: %s", e)
-            raise error_response(500, "Failed to list followed categories", code="FOLLOW_LIST_ERROR")
+            raise error_response(500, "Failed to list followed categories", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
@@ -484,7 +615,7 @@ async def follow_category(
     user_id: str = Depends(get_current_user_id),
 ):
     """Follow a category for event notifications."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -505,7 +636,7 @@ async def follow_category(
             raise
         except Exception as e:
             logger.error("[events] Error following category %s: %s", category_id, e)
-            raise error_response(500, "Failed to follow category", code="FOLLOW_ERROR")
+            raise error_response(500, "Failed to follow category", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     _IN_MEMORY_FOLLOWS.setdefault(user_id, set()).add(category_id)
@@ -522,7 +653,7 @@ async def unfollow_category(
     user_id: str = Depends(get_current_user_id),
 ):
     """Unfollow a category."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -539,7 +670,7 @@ async def unfollow_category(
             raise
         except Exception as e:
             logger.error("[events] Error unfollowing category %s: %s", category_id, e)
-            raise error_response(500, "Failed to unfollow category", code="FOLLOW_ERROR")
+            raise error_response(500, "Failed to unfollow category", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
@@ -554,7 +685,7 @@ async def check_following_category(
     user_id: str = Depends(get_current_user_id),
 ):
     """Check whether the current user follows a given category."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -570,11 +701,185 @@ async def check_following_category(
             raise
         except Exception as e:
             logger.error("[events] Error checking follow status: %s", e)
-            raise error_response(500, "Failed to check follow status", code="FOLLOW_CHECK_ERROR")
+            raise error_response(500, "Failed to check follow status", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     follows = _IN_MEMORY_FOLLOWS.get(user_id, set())
     return {"following": category_id in follows}
+
+
+# ---------------------------------------------------------------------------
+# Endpoints — Drop Alerts (MUST be registered before /{event_id})
+# ---------------------------------------------------------------------------
+
+# Per-user: 20 drop alert actions per minute
+_drop_alert_limit = per_user_rate_limit(20, window_seconds=60, scope="drop_alert")
+
+
+class DropAlertRequest(BaseModel):
+    notify_before_hours: int = Field(default=24, ge=1, le=168)
+
+
+class DropAlertResponse(BaseModel):
+    user_id: str
+    event_id: str
+    notify_before_hours: int = 24
+    created_at: Optional[str] = None
+
+
+# In-memory fallback for drop alerts
+_IN_MEMORY_DROP_ALERTS: dict[str, dict[str, dict]] = {}  # user_id -> {event_id: {...}}
+
+
+@router.get("/my-alerts", response_model=List[DropAlertResponse])
+async def list_my_drop_alerts(
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_drop_alert_limit),
+):
+    """List all drop alert subscriptions for the current user."""
+    pool = get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT user_id, event_id, notify_before_hours, created_at
+                    FROM user_drop_alerts
+                    WHERE user_id = $1
+                    ORDER BY created_at DESC
+                    """,
+                    user_id,
+                )
+                return [
+                    DropAlertResponse(
+                        user_id=str(r["user_id"]),
+                        event_id=str(r["event_id"]),
+                        notify_before_hours=r["notify_before_hours"],
+                        created_at=str(r["created_at"]) if r.get("created_at") else None,
+                    )
+                    for r in rows
+                ]
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error listing drop alerts: %s", e)
+            raise error_response(500, "Failed to list drop alerts", code=ErrorCode.INTERNAL_ERROR)
+
+    # In-memory fallback
+    alerts = _IN_MEMORY_DROP_ALERTS.get(user_id, {})
+    return [
+        DropAlertResponse(
+            user_id=user_id,
+            event_id=eid,
+            notify_before_hours=data.get("notify_before_hours", 24),
+            created_at=data.get("created_at"),
+        )
+        for eid, data in alerts.items()
+    ]
+
+
+@router.post("/{event_id}/alert", response_model=DropAlertResponse, status_code=201)
+async def subscribe_drop_alert(
+    event_id: str,
+    request: DropAlertRequest = DropAlertRequest(),
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_drop_alert_limit),
+):
+    """Subscribe to a drop alert for an event."""
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                # Verify event exists
+                ev_row = await conn.fetchrow("SELECT id FROM events WHERE id = $1", event_id)
+                if not ev_row:
+                    raise error_response(404, "Event not found", code=ErrorCode.NOT_FOUND)
+
+                row = await conn.fetchrow(
+                    """
+                    INSERT INTO user_drop_alerts (user_id, event_id, notify_before_hours)
+                    VALUES ($1, $2, $3)
+                    ON CONFLICT (user_id, event_id)
+                    DO UPDATE SET notify_before_hours = $3
+                    RETURNING user_id, event_id, notify_before_hours, created_at
+                    """,
+                    user_id,
+                    event_id,
+                    request.notify_before_hours,
+                )
+                logger.info("[events] Drop alert subscribed: user=%s, event=%s", user_id, event_id)
+                return DropAlertResponse(
+                    user_id=str(row["user_id"]),
+                    event_id=str(row["event_id"]),
+                    notify_before_hours=row["notify_before_hours"],
+                    created_at=str(row["created_at"]) if row.get("created_at") else None,
+                )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error subscribing drop alert: %s", e)
+            raise error_response(500, "Failed to subscribe to drop alert", code=ErrorCode.INTERNAL_ERROR)
+
+    # In-memory fallback
+    now = datetime.now(timezone.utc).isoformat()
+    _IN_MEMORY_DROP_ALERTS.setdefault(user_id, {})[event_id] = {
+        "notify_before_hours": request.notify_before_hours,
+        "created_at": now,
+    }
+    logger.info("[events] Drop alert subscribed (in-memory): user=%s, event=%s", user_id, event_id)
+    return DropAlertResponse(
+        user_id=user_id,
+        event_id=event_id,
+        notify_before_hours=request.notify_before_hours,
+        created_at=now,
+    )
+
+
+@router.delete("/{event_id}/alert")
+async def unsubscribe_drop_alert(
+    event_id: str,
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_drop_alert_limit),
+):
+    """Unsubscribe from a drop alert for an event."""
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
+
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                result = await conn.execute(
+                    "DELETE FROM user_drop_alerts WHERE user_id = $1 AND event_id = $2",
+                    user_id,
+                    event_id,
+                )
+                logger.info("[events] Drop alert unsubscribed: user=%s, event=%s", user_id, event_id)
+                return {"success": True, "message": "Drop alert removed"}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error unsubscribing drop alert: %s", e)
+            raise error_response(500, "Failed to unsubscribe from drop alert", code=ErrorCode.INTERNAL_ERROR)
+
+    # In-memory fallback
+    alerts = _IN_MEMORY_DROP_ALERTS.get(user_id, {})
+    alerts.pop(event_id, None)
+    logger.info("[events] Drop alert unsubscribed (in-memory): user=%s, event=%s", user_id, event_id)
+    return {"success": True, "message": "Drop alert removed"}
 
 
 # ---------------------------------------------------------------------------
@@ -588,16 +893,20 @@ _TEMPLATE_FIELDS = {"title", "kind", "category_id", "format", "location", "onlin
 @router.get("/templates", response_model=List[TemplateResponse])
 async def list_templates(
     user_id: str = Depends(get_current_user_id),
+    limit: int = Query(default=20, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
 ):
     """List the current user's event templates, ordered by use_count DESC."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
             async with pool.acquire() as conn:
                 rows = await conn.fetch(
-                    "SELECT * FROM event_templates WHERE user_id = $1 ORDER BY use_count DESC, created_at DESC",
+                    "SELECT * FROM event_templates WHERE user_id = $1 ORDER BY use_count DESC, created_at DESC LIMIT $2 OFFSET $3",
                     user_id,
+                    limit,
+                    offset,
                 )
                 return [
                     TemplateResponse(
@@ -614,7 +923,7 @@ async def list_templates(
             raise
         except Exception as e:
             logger.error("[events] Error listing templates: %s", e)
-            raise error_response(500, "Failed to list templates", code="TEMPLATE_LIST_ERROR")
+            raise error_response(500, "Failed to list templates", code=ErrorCode.INTERNAL_ERROR)
 
     return []
 
@@ -625,7 +934,7 @@ async def create_template(
     user_id: str = Depends(get_current_user_id),
 ):
     """Create an event template from explicit data or by copying from an existing event."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     template_data = request.template_data or {}
 
@@ -637,14 +946,14 @@ async def create_template(
                     request.from_event_id, user_id,
                 )
                 if not ev_row:
-                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+                    raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
                 ev = dict(ev_row)
                 template_data = {k: ev[k] for k in _TEMPLATE_FIELDS if ev.get(k) is not None}
         except HTTPException:
             raise
         except Exception as e:
             logger.error("[events] Error copying event for template: %s", e)
-            raise error_response(500, "Failed to create template", code="TEMPLATE_CREATE_ERROR")
+            raise error_response(500, "Failed to create template", code=ErrorCode.INTERNAL_ERROR)
 
     if pool is not None:
         try:
@@ -672,9 +981,9 @@ async def create_template(
             raise
         except Exception as e:
             logger.error("[events] Error creating template: %s", e)
-            raise error_response(500, "Failed to create template", code="TEMPLATE_CREATE_ERROR")
+            raise error_response(500, "Failed to create template", code=ErrorCode.INTERNAL_ERROR)
 
-    raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+    raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
 
 @router.delete("/templates/{template_id}")
@@ -683,7 +992,12 @@ async def delete_template(
     user_id: str = Depends(get_current_user_id),
 ):
     """Delete an event template (owner only)."""
-    pool = _get_db_pool()
+    try:
+        UUID(template_id)
+    except ValueError:
+        raise error_response(400, "Invalid template_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -693,16 +1007,16 @@ async def delete_template(
                     template_id, user_id,
                 )
                 if result.endswith(" 0"):
-                    raise error_response(404, "Template not found", code="TEMPLATE_NOT_FOUND")
+                    raise error_response(404, "Template not found", code=ErrorCode.NOT_FOUND)
                 return {"success": True, "message": "Template deleted"}
 
         except HTTPException:
             raise
         except Exception as e:
             logger.error("[events] Error deleting template: %s", e)
-            raise error_response(500, "Failed to delete template", code="TEMPLATE_DELETE_ERROR")
+            raise error_response(500, "Failed to delete template", code=ErrorCode.INTERNAL_ERROR)
 
-    raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+    raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
 
 # ---------------------------------------------------------------------------
@@ -714,7 +1028,7 @@ async def get_unread_announcement_count(
     user_id: str = Depends(get_current_user_id),
 ):
     """Get total unread announcement count across all events the user attends."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -737,7 +1051,7 @@ async def get_unread_announcement_count(
             raise
         except Exception as e:
             logger.error("[events] Error fetching unread count: %s", e)
-            raise error_response(500, "Failed to get unread count", code="ANNOUNCEMENT_COUNT_ERROR")
+            raise error_response(500, "Failed to get unread count", code=ErrorCode.INTERNAL_ERROR)
 
     return {"unread_count": 0}
 
@@ -752,7 +1066,12 @@ async def get_event(
     user_id: Optional[str] = Depends(get_optional_user_id),
 ):
     """Get a single event by ID, including attendee count and user RSVP status."""
-    pool = _get_db_pool()
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -771,13 +1090,13 @@ async def get_event(
                     )
 
                 if row is None:
-                    raise error_response(404, "Event not found", code="EVENT_NOT_FOUND")
+                    raise error_response(404, "Event not found", code=ErrorCode.NOT_FOUND)
 
                 event = _row_to_event(dict(row), user_id=user_id)
 
                 # Hide non-public events unless the user is the creator
                 if not event.is_public and event.created_by != user_id:
-                    raise error_response(404, "Event not found", code="EVENT_NOT_FOUND")
+                    raise error_response(404, "Event not found", code=ErrorCode.NOT_FOUND)
 
                 # If the view didn't include rsvp status, look it up separately
                 if user_id and event.user_rsvp_status is None:
@@ -798,16 +1117,16 @@ async def get_event(
             raise
         except Exception as e:
             logger.error("[events] Error fetching event %s: %s", event_id, e)
-            raise error_response(500, "Failed to fetch event", code="EVENT_FETCH_ERROR")
+            raise error_response(500, "Failed to fetch event", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     ev = _IN_MEMORY_EVENTS.get(event_id)
     if ev is None:
-        raise error_response(404, "Event not found", code="EVENT_NOT_FOUND")
+        raise error_response(404, "Event not found", code=ErrorCode.NOT_FOUND)
 
     # Hide non-public events unless the user is the creator
     if not ev.get("is_public", True) and ev.get("created_by") != user_id:
-        raise error_response(404, "Event not found", code="EVENT_NOT_FOUND")
+        raise error_response(404, "Event not found", code=ErrorCode.NOT_FOUND)
 
     rsvps = _IN_MEMORY_RSVPS.get(event_id, {})
     ev_copy = {**ev, "attendee_count": len(rsvps)}
@@ -823,19 +1142,24 @@ async def update_event(
     user_id: str = Depends(get_current_user_id),
 ):
     """Update an event (title, status, description, location, online_url). Creator only."""
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
     updates = request.model_dump(exclude_none=True)
     if not updates:
-        raise error_response(400, "No fields to update", code="NO_FIELDS")
+        raise error_response(400, "No fields to update", code=ErrorCode.VALIDATION_ERROR)
 
     # Validate against column whitelist to prevent injection via future model changes
     bad_keys = set(updates.keys()) - _UPDATABLE_EVENT_COLUMNS
     if bad_keys:
-        raise error_response(400, f"Cannot update fields: {', '.join(sorted(bad_keys))}", code="INVALID_FIELDS")
+        raise error_response(400, f"Cannot update fields: {', '.join(sorted(bad_keys))}", code=ErrorCode.VALIDATION_ERROR)
 
     if request.status and request.status not in ALLOWED_EVENT_STATUSES:
-        raise error_response(400, f"Invalid status: {request.status}", code="INVALID_STATUS")
+        raise error_response(400, f"Invalid status: {request.status}", code=ErrorCode.VALIDATION_ERROR)
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -846,7 +1170,7 @@ async def update_event(
                     event_id, user_id,
                 )
                 if not row:
-                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+                    raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
 
                 set_parts = []
                 params = [event_id, user_id]
@@ -865,19 +1189,19 @@ async def update_event(
                 """
                 updated = await conn.fetchrow(query, *params)
                 if not updated:
-                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+                    raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
                 return _row_to_event(dict(updated), user_id=user_id)
 
         except HTTPException:
             raise
         except Exception as e:
             logger.error("[events] Error updating event %s: %s", event_id, e)
-            raise error_response(500, "Failed to update event", code="EVENT_UPDATE_ERROR")
+            raise error_response(500, "Failed to update event", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     ev = _IN_MEMORY_EVENTS.get(event_id)
     if ev is None or ev.get("created_by") != user_id:
-        raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+        raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
 
     ev.update(updates)
     return EventResponse(**ev)
@@ -889,7 +1213,12 @@ async def delete_event(
     user_id: str = Depends(get_current_user_id),
 ):
     """Soft-delete an event by setting status to 'cancelled'. Creator only."""
-    pool = _get_db_pool()
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -902,7 +1231,7 @@ async def delete_event(
                     event_id, user_id, datetime.now(timezone.utc),
                 )
                 if result.endswith(" 0"):
-                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+                    raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
                 logger.info("[events] Soft-deleted event: id=%s, user=%s", event_id, user_id)
                 return {"success": True, "message": "Event cancelled"}
 
@@ -910,12 +1239,12 @@ async def delete_event(
             raise
         except Exception as e:
             logger.error("[events] Error deleting event %s: %s", event_id, e)
-            raise error_response(500, "Failed to delete event", code="EVENT_DELETE_ERROR")
+            raise error_response(500, "Failed to delete event", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     ev = _IN_MEMORY_EVENTS.get(event_id)
     if ev is None or ev.get("created_by") != user_id:
-        raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+        raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
     ev["status"] = "cancelled"
     logger.info("[events] Soft-deleted event (in-memory): id=%s", event_id)
     return {"success": True, "message": "Event cancelled"}
@@ -930,52 +1259,55 @@ async def rsvp_event(
     event_id: str,
     request: RsvpRequest,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_event_rsvp_limit),
 ):
     """RSVP to an event (going, interested, not_going). Auto-waitlists if event is full."""
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
     if request.status not in {"going", "interested", "not_going"}:
         raise error_response(
             400,
             "Invalid RSVP status. Must be one of: going, interested, not_going",
-            code="INVALID_RSVP_STATUS",
+            code=ErrorCode.VALIDATION_ERROR,
         )
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
     actual_status = request.status
     waitlisted = False
 
     if pool is not None:
         try:
             async with pool.acquire() as conn:
-                # Check capacity if trying to go
-                if request.status == "going":
-                    cap_row = await conn.fetchrow(
-                        """
-                        SELECT e.max_attendees,
-                               COUNT(*) FILTER (WHERE ea.status = 'going') AS going_count
-                        FROM events e
-                        LEFT JOIN event_attendees ea ON ea.event_id = e.id
-                            AND ea.user_id != $2
-                        WHERE e.id = $1
-                        GROUP BY e.max_attendees
-                        """,
-                        event_id, user_id,
-                    )
-                    if cap_row and cap_row["max_attendees"] is not None:
-                        if cap_row["going_count"] >= cap_row["max_attendees"]:
-                            actual_status = "interested"
-                            waitlisted = True
+                async with conn.transaction():
+                    # Check capacity if trying to go — lock event row to prevent race
+                    if request.status == "going":
+                        cap_row = await conn.fetchrow(
+                            "SELECT max_attendees FROM events WHERE id = $1 FOR UPDATE",
+                            event_id,
+                        )
+                        if cap_row and cap_row["max_attendees"] is not None:
+                            going_count = await conn.fetchval(
+                                "SELECT COUNT(*) FROM event_attendees WHERE event_id = $1 AND status = 'going' AND user_id != $2",
+                                event_id, user_id,
+                            )
+                            if going_count >= cap_row["max_attendees"]:
+                                actual_status = "interested"
+                                waitlisted = True
 
-                await conn.execute(
-                    """
-                    INSERT INTO event_attendees (event_id, user_id, status)
-                    VALUES ($1, $2, $3)
-                    ON CONFLICT (event_id, user_id)
-                    DO UPDATE SET status = $3
-                    """,
-                    event_id,
-                    user_id,
-                    actual_status,
-                )
+                    await conn.execute(
+                        """
+                        INSERT INTO event_attendees (event_id, user_id, status)
+                        VALUES ($1, $2, $3)
+                        ON CONFLICT (event_id, user_id)
+                        DO UPDATE SET status = $3
+                        """,
+                        event_id,
+                        user_id,
+                        actual_status,
+                    )
                 logger.info("[events] RSVP: user=%s, event=%s, status=%s, waitlisted=%s", user_id, event_id, actual_status, waitlisted)
                 return {"success": True, "status": actual_status, "waitlisted": waitlisted}
 
@@ -983,7 +1315,7 @@ async def rsvp_event(
             raise
         except Exception as e:
             logger.error("[events] Error RSVP event %s: %s", event_id, e)
-            raise error_response(500, "Failed to RSVP", code="RSVP_ERROR")
+            raise error_response(500, "Failed to RSVP", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     _IN_MEMORY_RSVPS.setdefault(event_id, {})[user_id] = actual_status
@@ -995,9 +1327,15 @@ async def rsvp_event(
 async def unrsvp_event(
     event_id: str,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_event_rsvp_limit),
 ):
     """Remove RSVP from an event."""
-    pool = _get_db_pool()
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -1014,7 +1352,7 @@ async def unrsvp_event(
             raise
         except Exception as e:
             logger.error("[events] Error un-RSVP event %s: %s", event_id, e)
-            raise error_response(500, "Failed to remove RSVP", code="RSVP_ERROR")
+            raise error_response(500, "Failed to remove RSVP", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     rsvps = _IN_MEMORY_RSVPS.get(event_id, {})
@@ -1031,9 +1369,15 @@ async def unrsvp_event(
 async def duplicate_event(
     event_id: str,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_event_search_limit),
 ):
     """Duplicate an event (creator only). Copies all fields except date, attendees, status."""
-    pool = _get_db_pool()
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -1043,7 +1387,7 @@ async def duplicate_event(
                     event_id, user_id,
                 )
                 if not row:
-                    raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+                    raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
 
                 new_row = await conn.fetchrow(
                     """
@@ -1078,12 +1422,12 @@ async def duplicate_event(
             raise
         except Exception as e:
             logger.error("[events] Error duplicating event %s: %s", event_id, e)
-            raise error_response(500, "Failed to duplicate event", code="EVENT_DUPLICATE_ERROR")
+            raise error_response(500, "Failed to duplicate event", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
     ev = _IN_MEMORY_EVENTS.get(event_id)
     if ev is None or ev.get("created_by") != user_id:
-        raise error_response(404, "Event not found or not owned by you", code="EVENT_NOT_FOUND")
+        raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
 
     new_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
@@ -1093,14 +1437,152 @@ async def duplicate_event(
     return EventResponse(**dup)
 
 
+async def _send_announcement_dms(
+    pool,
+    event_id: str,
+    author_user_id: str,
+    event_title: str,
+    announcement_title: str | None,
+    announcement_body: str,
+) -> None:
+    """Send a DM to every attendee (going/interested) for an event announcement.
+
+    For each attendee, this finds or creates a DM thread between the event host
+    (author) and the attendee, then inserts a chat message with the announcement
+    content. Runs as a background task so the announcement response is not delayed.
+
+    Errors are logged but never propagated — DM delivery is best-effort.
+    """
+    try:
+        async with pool.acquire() as conn:
+            # Fetch all attendees who are going or interested, excluding the author
+            attendee_rows = await conn.fetch(
+                """
+                SELECT user_id
+                FROM event_attendees
+                WHERE event_id = $1
+                  AND status IN ('going', 'interested')
+                  AND user_id != $2::uuid
+                """,
+                event_id,
+                author_user_id,
+            )
+
+            if not attendee_rows:
+                logger.info(
+                    "[events/dm] No attendees to notify for event %s announcement",
+                    event_id,
+                )
+                return
+
+            # Build the DM message text
+            subject = announcement_title or "Event Announcement"
+            dm_text = f"[{event_title}] {subject}\n\n{announcement_body}"
+            # Cap at 2000 chars to stay within typical message limits
+            if len(dm_text) > 2000:
+                dm_text = dm_text[:1997] + "..."
+
+            sent_count = 0
+            skip_count = 0
+
+            for att_row in attendee_rows:
+                attendee_id = str(att_row["user_id"])
+                try:
+                    # Check if a DM thread already exists between host and attendee
+                    thread_row = await conn.fetchrow(
+                        """
+                        SELECT id, status
+                        FROM dm_threads
+                        WHERE (requester_id = $1::uuid AND responder_id = $2::uuid)
+                           OR (requester_id = $2::uuid AND responder_id = $1::uuid)
+                        LIMIT 1
+                        """,
+                        author_user_id,
+                        attendee_id,
+                    )
+
+                    if thread_row is not None:
+                        # Skip declined threads — respect the user's choice
+                        if thread_row["status"] == "declined":
+                            skip_count += 1
+                            continue
+                        thread_id = str(thread_row["id"])
+                    else:
+                        # Create a new thread (auto-accepted since it's a host announcement)
+                        new_thread = await conn.fetchrow(
+                            """
+                            INSERT INTO dm_threads (requester_id, responder_id, status)
+                            VALUES ($1::uuid, $2::uuid, 'accepted')
+                            RETURNING id
+                            """,
+                            author_user_id,
+                            attendee_id,
+                        )
+                        thread_id = str(new_thread["id"])
+
+                    # Insert the announcement message
+                    await conn.execute(
+                        """
+                        INSERT INTO chat_messages (thread_id, author_user_id, text)
+                        VALUES ($1::uuid, $2::uuid, $3)
+                        """,
+                        thread_id,
+                        author_user_id,
+                        dm_text,
+                    )
+
+                    # Update thread timestamp so it surfaces in the inbox
+                    await conn.execute(
+                        "UPDATE dm_threads SET updated_at = now() WHERE id = $1::uuid",
+                        thread_id,
+                    )
+
+                    sent_count += 1
+
+                except Exception as per_user_err:
+                    logger.warning(
+                        "[events/dm] Failed to send announcement DM to user %s for event %s: %s",
+                        attendee_id,
+                        event_id,
+                        per_user_err,
+                    )
+
+            logger.info(
+                "[events/dm] Announcement DMs for event %s: sent=%d, skipped=%d, total_attendees=%d",
+                event_id,
+                sent_count,
+                skip_count,
+                len(attendee_rows),
+            )
+
+    except Exception as e:
+        logger.error(
+            "[events/dm] Failed to send announcement DMs for event %s: %s",
+            event_id,
+            e,
+        )
+
+
 @router.post("/{event_id}/announcements", response_model=AnnouncementResponse, status_code=201)
 async def post_announcement(
     event_id: str,
     request: AnnouncementRequest,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_event_announce_limit),
 ):
-    """Post an announcement to event attendees (host or sponsor admin only)."""
-    pool = _get_db_pool()
+    """Post an announcement to event attendees (host or sponsor admin only).
+
+    After creating the announcement record, a background task sends a DM to
+    every attendee (going/interested) so the announcement also appears in their
+    chat inbox.
+    """
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -1108,16 +1590,20 @@ async def post_announcement(
                 # Verify caller is event creator or sponsor company admin
                 auth_row = await conn.fetchrow(
                     """
-                    SELECT 1 FROM events e WHERE e.id = $1 AND e.created_by = $2
+                    SELECT e.title AS event_title
+                    FROM events e WHERE e.id = $1 AND e.created_by = $2
                     UNION ALL
-                    SELECT 1 FROM events e
+                    SELECT e.title AS event_title
+                    FROM events e
                     JOIN sponsor_companies sc ON sc.id = e.sponsor_company_id
                     WHERE e.id = $1 AND sc.admin_user_id = $2
                     """,
                     event_id, user_id,
                 )
                 if not auth_row:
-                    raise error_response(403, "Only event host or sponsor admin can post announcements", code="FORBIDDEN")
+                    raise error_response(403, "Only event host or sponsor admin can post announcements", code=ErrorCode.FORBIDDEN)
+
+                event_title = auth_row.get("event_title", "Event")
 
                 row = await conn.fetchrow(
                     """
@@ -1127,6 +1613,18 @@ async def post_announcement(
                     """,
                     event_id, user_id, request.title, request.body, request.image_url,
                 )
+
+                # Schedule DM delivery to all attendees as a background task
+                background_tasks.add_task(
+                    _send_announcement_dms,
+                    pool,
+                    event_id,
+                    user_id,
+                    event_title,
+                    request.title,
+                    request.body,
+                )
+
                 return AnnouncementResponse(
                     id=str(row["id"]),
                     event_id=str(row["event_id"]),
@@ -1141,9 +1639,9 @@ async def post_announcement(
             raise
         except Exception as e:
             logger.error("[events] Error posting announcement for event %s: %s", event_id, e)
-            raise error_response(500, "Failed to post announcement", code="ANNOUNCEMENT_ERROR")
+            raise error_response(500, "Failed to post announcement", code=ErrorCode.INTERNAL_ERROR)
 
-    raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+    raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
 
 @router.get("/{event_id}/announcements", response_model=List[AnnouncementResponse])
@@ -1153,8 +1651,13 @@ async def list_announcements(
     pagination: tuple[int, int] = Depends(pagination_params),
 ):
     """List announcements for an event (attendees only). Includes is_read status."""
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
     limit, offset = pagination
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -1170,7 +1673,7 @@ async def list_announcements(
                     event_id, user_id,
                 )
                 if not access_row:
-                    raise error_response(403, "Only attendees can view announcements", code="FORBIDDEN")
+                    raise error_response(403, "Only attendees can view announcements", code=ErrorCode.FORBIDDEN)
 
                 rows = await conn.fetch(
                     """
@@ -1203,7 +1706,7 @@ async def list_announcements(
             raise
         except Exception as e:
             logger.error("[events] Error listing announcements for event %s: %s", event_id, e)
-            raise error_response(500, "Failed to list announcements", code="ANNOUNCEMENT_ERROR")
+            raise error_response(500, "Failed to list announcements", code=ErrorCode.INTERNAL_ERROR)
 
     return []
 
@@ -1215,7 +1718,16 @@ async def mark_announcement_read(
     user_id: str = Depends(get_current_user_id),
 ):
     """Mark a single announcement as read."""
-    pool = _get_db_pool()
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+    try:
+        UUID(announcement_id)
+    except ValueError:
+        raise error_response(400, "Invalid announcement_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -1234,7 +1746,7 @@ async def mark_announcement_read(
             raise
         except Exception as e:
             logger.error("[events] Error marking announcement read: %s", e)
-            raise error_response(500, "Failed to mark announcement read", code="ANNOUNCEMENT_READ_ERROR")
+            raise error_response(500, "Failed to mark announcement read", code=ErrorCode.INTERNAL_ERROR)
 
     return {"success": True}
 
@@ -1269,6 +1781,35 @@ async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bo
     params.append(limit)
     params.append(offset)
     return await conn.fetch(query, *params)
+
+
+async def _count_events_basic(conn, category_id: Optional[str], include_past: bool, user_id: Optional[str] = None) -> int:
+    """Count total events matching filters (without LIMIT/OFFSET)."""
+    conditions = ["status = 'published'"]
+    params = []
+    param_idx = 1
+
+    if not include_past:
+        conditions.append(f"date >= ${param_idx}")
+        params.append(date.today().isoformat())
+        param_idx += 1
+
+    if category_id:
+        conditions.append(f"category_id = ${param_idx}")
+        params.append(category_id)
+        param_idx += 1
+
+    # Exclude private events unless user is the creator
+    if user_id:
+        conditions.append(f"(is_public = true OR created_by = ${param_idx})")
+        params.append(user_id)
+        param_idx += 1
+    else:
+        conditions.append("is_public = true")
+
+    where = f"WHERE {' AND '.join(conditions)}"
+    result = await conn.fetchval(f"SELECT count(*) FROM events {where}", *params)
+    return result or 0
 
 
 def _row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventResponse:

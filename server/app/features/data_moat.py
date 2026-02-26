@@ -15,6 +15,8 @@ import logging
 from typing import Optional
 from uuid import UUID
 
+from app.lib.db_helpers import get_db_pool
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,15 +27,6 @@ def _to_uuid_or_none(s: str | None) -> UUID | None:
     try:
         return UUID(s)
     except (ValueError, AttributeError):
-        return None
-
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except (ImportError, RuntimeError, OSError):
         return None
 
 
@@ -54,7 +47,7 @@ async def record_supply_snapshot(
 
     Returns True if recorded, False on failure.
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if pool is None:
         return False
 
@@ -103,7 +96,7 @@ async def record_demand_signal(
 
     Returns True if recorded, False on failure.
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if pool is None:
         return False
 
@@ -146,7 +139,7 @@ async def get_supply_trend(
 
     Returns list of {snap_date, avg_listings, avg_price} dicts.
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if pool is None:
         return []
 
@@ -186,7 +179,7 @@ async def get_demand_heat(
 
     Returns list of {category, item_key, signal_type, signal_count, unique_users}.
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if pool is None:
         return []
 

@@ -9,6 +9,7 @@
  * - SafeAreaView for notch support
  */
 
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
@@ -20,14 +21,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  RefreshControl,
 } from "react-native";
+import { useToast } from "@/components/Toast";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import logger from "@/utils/logger";
+import { QuickNavBar } from "@/components/QuickNavBar";
 import { formatPrice } from "@/lib/format";
 
 import { useAuthContext } from "@/providers/useAuthContext";
@@ -40,28 +45,13 @@ import {
 } from "@/services/watchlistAndAlerts";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design Tokens (Collectr)
+// Priority config (semantic colors — not theme-dependent)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const COLORS = {
-  tiffany: "#81D8D0",
-  tiffanyDark: "#5FBFB6",
-  tiffanyLight: "#E6F7F5",
-  background: "#F7FAF9",
-  card: "#FFFFFF",
-  navy: "#0F172A",
-  muted: "#64748B",
-  border: "#E2E8F0",
-  success: "#10B981",
-  warning: "#F59E0B",
-  danger: "#EF4444",
-  inputBg: "#F8FAFC",
-};
-
 const PRIORITY_CONFIG: Record<WatchlistPriority, { label: string; color: string; bg: string }> = {
-  high: { label: "High", color: "#DC2626", bg: "#FEF2F2" },
-  medium: { label: "Medium", color: "#D97706", bg: "#FFFBEB" },
-  low: { label: "Low", color: "#059669", bg: "#ECFDF5" },
+  high: { label: "High", color: "#DC2626", bg: "#DC262615" },
+  medium: { label: "Medium", color: "#D97706", bg: "#D9770615" },
+  low: { label: "Low", color: "#059669", bg: "#05966915" },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -72,18 +62,21 @@ const PRIORITY_CONFIG: Record<WatchlistPriority, { label: string; color: string;
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function WatchlistBuilderScreen() {
+function WatchlistBuilderScreen() {
   const router = useRouter();
   const { user } = useAuthContext();
   const userId = user?.id ?? "";
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
+  const { colors } = useAppTheme();
 
   // State
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Add form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -110,6 +103,15 @@ export default function WatchlistBuilderScreen() {
 
   useEffect(() => {
     loadWatchlist();
+  }, [loadWatchlist]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadWatchlist();
+    } finally {
+      setRefreshing(false);
+    }
   }, [loadWatchlist]);
 
   // Sort items by priority then by created date
@@ -142,19 +144,19 @@ export default function WatchlistBuilderScreen() {
   // Save new item
   const handleSave = useCallback(async () => {
     if (!userId) {
-      Alert.alert("Not signed in", "Please sign in to save watchlist items.");
+      showToast({ message: "Please sign in to save watchlist items.", type: "warning" });
       return;
     }
 
     const title = newTitle.trim();
     if (!title) {
-      Alert.alert("Missing title", "Please enter a name for this item.");
+      showToast({ message: "Please enter a name for this item.", type: "warning" });
       return;
     }
 
     let targetPrice: number | null = null;
     if (newTargetPrice.trim()) {
-      const parsed = parseFloat(newTargetPrice.replace(/[€,]/g, "").trim());
+      const parsed = parseFloat(newTargetPrice.replace(/[^\d.]/g, "").trim());
       if (Number.isFinite(parsed) && parsed > 0) {
         targetPrice = parsed;
       }
@@ -169,11 +171,11 @@ export default function WatchlistBuilderScreen() {
         priority: newPriority,
         notes: newNotes.trim() || null,
         owned: false,
-        currency: "EUR",
+        currency: settings.currency,
       });
 
       if (!created) {
-        Alert.alert("Save failed", "Could not save this item. Please try again.");
+        showToast({ message: "Could not save this item. Please try again.", type: "error" });
         return;
       }
 
@@ -181,7 +183,7 @@ export default function WatchlistBuilderScreen() {
       await loadWatchlist();
     } catch (err: unknown) {
       logger.warn("[watchlist-builder] save error", err);
-      Alert.alert("Save error", err?.message ?? "Unable to save this item.");
+      showToast({ message: err?.message ?? "Unable to save this item.", type: "error" });
     } finally {
       setSaving(false);
     }
@@ -201,7 +203,7 @@ export default function WatchlistBuilderScreen() {
             onPress: async () => {
               const ok = await deleteWatchlistItem(item.id);
               if (!ok) {
-                Alert.alert("Delete failed", "Could not remove this item.");
+                showToast({ message: "Could not remove this item.", type: "error" });
                 return;
               }
               await loadWatchlist();
@@ -214,31 +216,31 @@ export default function WatchlistBuilderScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.background }]}>
           <AnimatedPressable
             style={styles.backBtn}
             onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}
             accessibilityLabel="Go back"
           >
-            <Ionicons name="chevron-back" size={24} color={COLORS.navy} />
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <View style={styles.headerText}>
-            <Text style={styles.headerLabel}>COLLECTOR</Text>
-            <Text style={styles.headerTitle}>Watchlist</Text>
+            <Text style={[styles.headerLabel, { color: colors.muted }]}>COLLECTOR</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Watchlist</Text>
           </View>
           <AnimatedPressable
-            style={styles.addHeaderBtn}
+            style={[styles.addHeaderBtn, { backgroundColor: colors.accent + '15' }]}
             onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }}
             accessibilityLabel="Add item"
           >
-            <Ionicons name="add" size={24} color={COLORS.tiffanyDark} />
+            <Ionicons name="add" size={24} color={colors.brand?.dark ?? colors.accent} />
           </AnimatedPressable>
         </View>
 
@@ -247,30 +249,37 @@ export default function WatchlistBuilderScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.accent}
+            />
+          }
         >
           <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
           {/* Stats Banner */}
-          <View style={styles.statsBanner}>
+          <View style={[styles.statsBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.total}</Text>
-              <Text style={styles.statLabel}>Items</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.total}</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>Items</Text>
             </View>
-            <View style={styles.statDivider} />
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.high}</Text>
-              <Text style={styles.statLabel}>High Priority</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.high}</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>High Priority</Text>
             </View>
-            <View style={styles.statDivider} />
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.withTarget}</Text>
-              <Text style={styles.statLabel}>With Targets</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.withTarget}</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>With Targets</Text>
             </View>
           </View>
 
           {/* Error */}
           {error && (
             <View style={styles.errorBanner}>
-              <Ionicons name="warning-outline" size={16} color={COLORS.danger} />
+              <Ionicons name="warning-outline" size={16} color="#EF4444" />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
@@ -278,30 +287,30 @@ export default function WatchlistBuilderScreen() {
           {/* Loading */}
           {loading && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={COLORS.tiffany} />
-              <Text style={styles.loadingText}>Loading watchlist...</Text>
+              <ActivityIndicator size="small" color={colors.accent} />
+              <Text style={[styles.loadingText, { color: colors.muted }]}>Loading watchlist...</Text>
             </View>
           )}
 
           {/* Add Form (Expanded) */}
           {showAddForm && (
-            <View style={styles.addFormCard}>
+            <View style={[styles.addFormCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.addFormHeader}>
-                <Text style={styles.addFormTitle}>Add to Watchlist</Text>
+                <Text style={[styles.addFormTitle, { color: colors.text }]}>Add to Watchlist</Text>
                 <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); resetForm(); }} style={styles.closeFormBtn} accessibilityRole="button" accessibilityLabel="Close add form">
-                  <Ionicons name="close" size={20} color={COLORS.muted} />
+                  <Ionicons name="close" size={20} color={colors.muted} />
                 </AnimatedPressable>
               </View>
 
               {/* Title Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Item Name *</Text>
+                <Text style={[styles.inputLabel, { color: colors.text }]}>Item Name *</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                   value={newTitle}
                   onChangeText={setNewTitle}
                   placeholder="e.g., PSA 10 Charizard Base Set"
-                  placeholderTextColor={COLORS.muted}
+                  placeholderTextColor={colors.muted}
                   autoFocus
                   accessibilityLabel="Item name"
                 />
@@ -309,22 +318,22 @@ export default function WatchlistBuilderScreen() {
 
               {/* Target Price Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Target Price (optional)</Text>
+                <Text style={[styles.inputLabel, { color: colors.text }]}>Target Price (optional)</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                   value={newTargetPrice}
                   onChangeText={setNewTargetPrice}
                   placeholder="e.g., 500"
-                  placeholderTextColor={COLORS.muted}
+                  placeholderTextColor={colors.muted}
                   keyboardType="decimal-pad"
                   accessibilityLabel="Target price"
                 />
-                <Text style={styles.inputHint}>Get notified when price hits your target</Text>
+                <Text style={[styles.inputHint, { color: colors.muted }]}>Get notified when price hits your target</Text>
               </View>
 
               {/* Priority Selector */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Priority</Text>
+                <Text style={[styles.inputLabel, { color: colors.text }]}>Priority</Text>
                 <View style={styles.priorityRow}>
                   {(["high", "medium", "low"] as WatchlistPriority[]).map((p) => {
                     const config = PRIORITY_CONFIG[p];
@@ -334,6 +343,7 @@ export default function WatchlistBuilderScreen() {
                         key={p}
                         style={[
                           styles.priorityBtn,
+                          { borderColor: colors.border, backgroundColor: colors.card },
                           active && { backgroundColor: config.bg, borderColor: config.color },
                         ]}
                         onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setNewPriority(p); }}
@@ -343,6 +353,7 @@ export default function WatchlistBuilderScreen() {
                         <Text
                           style={[
                             styles.priorityBtnText,
+                            { color: colors.muted },
                             active && { color: config.color, fontWeight: "700" },
                           ]}
                         >
@@ -356,13 +367,13 @@ export default function WatchlistBuilderScreen() {
 
               {/* Notes Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Notes (optional)</Text>
+                <Text style={[styles.inputLabel, { color: colors.text }]}>Notes (optional)</Text>
                 <TextInput
-                  style={[styles.textInput, styles.textInputMultiline]}
+                  style={[styles.textInput, styles.textInputMultiline, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                   value={newNotes}
                   onChangeText={setNewNotes}
                   placeholder="Any notes about this item..."
-                  placeholderTextColor={COLORS.muted}
+                  placeholderTextColor={colors.muted}
                   multiline
                   numberOfLines={2}
                   accessibilityLabel="Notes"
@@ -371,7 +382,7 @@ export default function WatchlistBuilderScreen() {
 
               {/* Save Button */}
               <AnimatedPressable
-                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                style={[styles.saveBtn, { backgroundColor: colors.accent }, saving && styles.saveBtnDisabled]}
                 onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSave(); }}
                 disabled={saving}
                 accessibilityRole="button"
@@ -392,17 +403,17 @@ export default function WatchlistBuilderScreen() {
           {/* Empty State */}
           {!loading && items.length === 0 && !showAddForm && (
             <AnimatedPressable style={styles.emptyState} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }} accessibilityRole="button" accessibilityLabel="Start your watchlist, add your first item">
-              <View style={styles.emptyIconWrap}>
-                <Ionicons name="eye-outline" size={32} color={COLORS.tiffany} />
+              <View style={[styles.emptyIconWrap, { backgroundColor: colors.accent + '15' }]}>
+                <Ionicons name="eye-outline" size={32} color={colors.accent} />
               </View>
-              <Text style={styles.emptyTitle}>Start Your Watchlist</Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>Start Your Watchlist</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
                 Track items you want to buy and set price targets to get notified when
                 they hit your budget.
               </Text>
-              <View style={styles.emptyAddBtn}>
-                <Ionicons name="add" size={18} color={COLORS.tiffanyDark} />
-                <Text style={styles.emptyAddText}>Add Your First Item</Text>
+              <View style={[styles.emptyAddBtn, { backgroundColor: colors.accent + '15' }]}>
+                <Ionicons name="add" size={18} color={colors.brand?.dark ?? colors.accent} />
+                <Text style={[styles.emptyAddText, { color: colors.brand?.dark ?? colors.accent }]}>Add Your First Item</Text>
               </View>
             </AnimatedPressable>
           )}
@@ -410,18 +421,18 @@ export default function WatchlistBuilderScreen() {
           {/* Watchlist Items */}
           {!loading && sortedItems.length > 0 && (
             <View style={styles.listSection}>
-              <Text style={styles.listTitle}>
+              <Text style={[styles.listTitle, { color: colors.muted }]}>
                 {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"}
               </Text>
 
               {sortedItems.map((item) => {
                 const priorityConfig = PRIORITY_CONFIG[item.priority] ?? PRIORITY_CONFIG.medium;
                 return (
-                  <View key={item.id} style={styles.itemCard}>
+                  <View key={item.id} style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <View style={styles.itemCardMain}>
                       <View style={styles.itemCardLeft}>
                         <View style={styles.itemTitleRow}>
-                          <Text style={styles.itemTitle} numberOfLines={2}>
+                          <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={2}>
                             {item.title}
                           </Text>
                           <View
@@ -440,15 +451,15 @@ export default function WatchlistBuilderScreen() {
 
                         {item.target_price != null && (
                           <View style={styles.targetRow}>
-                            <Ionicons name="flag" size={14} color={COLORS.tiffanyDark} />
-                            <Text style={styles.targetText}>
+                            <Ionicons name="flag" size={14} color={colors.brand?.dark ?? colors.accent} />
+                            <Text style={[styles.targetText, { color: colors.brand?.dark ?? colors.accent }]}>
                               Target: {formatPrice(item.target_price)}
                             </Text>
                           </View>
                         )}
 
                         {item.notes && (
-                          <Text style={styles.itemNotes} numberOfLines={2}>
+                          <Text style={[styles.itemNotes, { color: colors.muted }]} numberOfLines={2}>
                             {item.notes}
                           </Text>
                         )}
@@ -460,7 +471,7 @@ export default function WatchlistBuilderScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={`Remove ${item.title} from watchlist`}
                       >
-                        <Ionicons name="trash-outline" size={18} color={COLORS.muted} />
+                        <Ionicons name="trash-outline" size={18} color={colors.muted} />
                       </AnimatedPressable>
                     </View>
                   </View>
@@ -471,7 +482,7 @@ export default function WatchlistBuilderScreen() {
 
           {/* Floating Add Button (when form is closed and list exists) */}
           {!showAddForm && items.length > 0 && (
-            <AnimatedPressable style={styles.floatingAddBtn} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }} accessibilityRole="button" accessibilityLabel="Add item to watchlist">
+            <AnimatedPressable style={[styles.floatingAddBtn, { backgroundColor: colors.accent, shadowColor: colors.accent }]} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }} accessibilityRole="button" accessibilityLabel="Add item to watchlist">
               <Ionicons name="add" size={20} color="#FFFFFF" />
               <Text style={styles.floatingAddText}>Add Item</Text>
             </AnimatedPressable>
@@ -482,18 +493,26 @@ export default function WatchlistBuilderScreen() {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 }
 
+export default function WatchlistBuilderScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Watchlist Builder">
+      <WatchlistBuilderScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Styles
+// Styles (structural only — colors applied inline via theme)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const styles = {
   safe: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scroll: {
     flex: 1,
@@ -509,7 +528,6 @@ const styles = {
     alignItems: "center" as const,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: COLORS.background,
   },
   backBtn: {
     width: 40,
@@ -525,30 +543,25 @@ const styles = {
   headerLabel: {
     fontSize: 11,
     fontWeight: "600" as const,
-    color: COLORS.muted,
     letterSpacing: 0.5,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "800" as const,
-    color: COLORS.navy,
   },
   addHeaderBtn: {
     width: 40,
     height: 40,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    backgroundColor: COLORS.tiffanyLight,
     borderRadius: 12,
   },
 
   // Stats Banner
   statsBanner: {
     flexDirection: "row" as const,
-    backgroundColor: COLORS.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: 16,
     marginBottom: 16,
   },
@@ -559,16 +572,13 @@ const styles = {
   statValue: {
     fontSize: 24,
     fontWeight: "800" as const,
-    color: COLORS.navy,
   },
   statLabel: {
     fontSize: 11,
-    color: COLORS.muted,
     marginTop: 2,
   },
   statDivider: {
     width: 1,
-    backgroundColor: COLORS.border,
     marginHorizontal: 8,
   },
 
@@ -583,7 +593,7 @@ const styles = {
     marginBottom: 16,
   },
   errorText: {
-    color: COLORS.danger,
+    color: "#EF4444",
     fontSize: 13,
     flex: 1,
   },
@@ -597,16 +607,13 @@ const styles = {
     gap: 10,
   },
   loadingText: {
-    color: COLORS.muted,
     fontSize: 14,
   },
 
   // Add Form
   addFormCard: {
-    backgroundColor: COLORS.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: 16,
     marginBottom: 16,
     shadowColor: "#000",
@@ -624,7 +631,6 @@ const styles = {
   addFormTitle: {
     fontSize: 18,
     fontWeight: "700" as const,
-    color: COLORS.navy,
   },
   closeFormBtn: {
     width: 32,
@@ -640,23 +646,18 @@ const styles = {
   inputLabel: {
     fontSize: 13,
     fontWeight: "600" as const,
-    color: COLORS.navy,
     marginBottom: 6,
   },
   inputHint: {
     fontSize: 11,
-    color: COLORS.muted,
     marginTop: 4,
   },
   textInput: {
-    backgroundColor: COLORS.inputBg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: COLORS.navy,
   },
   textInputMultiline: {
     minHeight: 60,
@@ -674,14 +675,11 @@ const styles = {
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.card,
     alignItems: "center" as const,
   },
   priorityBtnText: {
     fontSize: 13,
     fontWeight: "500" as const,
-    color: COLORS.muted,
   },
 
   // Save Button
@@ -690,7 +688,6 @@ const styles = {
     alignItems: "center" as const,
     justifyContent: "center" as const,
     gap: 8,
-    backgroundColor: COLORS.tiffany,
     borderRadius: 12,
     paddingVertical: 14,
     marginTop: 4,
@@ -714,7 +711,6 @@ const styles = {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: COLORS.tiffanyLight,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     marginBottom: 16,
@@ -722,13 +718,11 @@ const styles = {
   emptyTitle: {
     fontSize: 20,
     fontWeight: "700" as const,
-    color: COLORS.navy,
     marginBottom: 8,
     textAlign: "center" as const,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: COLORS.muted,
     textAlign: "center" as const,
     lineHeight: 20,
     marginBottom: 20,
@@ -739,13 +733,11 @@ const styles = {
     gap: 6,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: COLORS.tiffanyLight,
     borderRadius: 20,
   },
   emptyAddText: {
     fontSize: 14,
     fontWeight: "600" as const,
-    color: COLORS.tiffanyDark,
   },
 
   // List Section
@@ -755,7 +747,6 @@ const styles = {
   listTitle: {
     fontSize: 13,
     fontWeight: "600" as const,
-    color: COLORS.muted,
     marginBottom: 12,
     textTransform: "uppercase" as const,
     letterSpacing: 0.5,
@@ -763,10 +754,8 @@ const styles = {
 
   // Item Card
   itemCard: {
-    backgroundColor: COLORS.card,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: 14,
     marginBottom: 10,
   },
@@ -786,7 +775,6 @@ const styles = {
     flex: 1,
     fontSize: 15,
     fontWeight: "600" as const,
-    color: COLORS.navy,
     lineHeight: 20,
   },
   priorityBadge: {
@@ -807,11 +795,9 @@ const styles = {
   targetText: {
     fontSize: 13,
     fontWeight: "600" as const,
-    color: COLORS.tiffanyDark,
   },
   itemNotes: {
     fontSize: 12,
-    color: COLORS.muted,
     marginTop: 4,
     lineHeight: 16,
   },
@@ -829,13 +815,11 @@ const styles = {
     alignItems: "center" as const,
     justifyContent: "center" as const,
     gap: 6,
-    backgroundColor: COLORS.tiffany,
     borderRadius: 24,
     paddingVertical: 12,
     paddingHorizontal: 20,
     alignSelf: "center" as const,
     marginTop: 8,
-    shadowColor: COLORS.tiffany,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

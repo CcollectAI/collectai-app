@@ -13,8 +13,10 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, UploadFile
 from pydantic import BaseModel
+
+from app.errors import error_response
 
 router = APIRouter(tags=["quickscan"])
 
@@ -60,16 +62,19 @@ class QuickScanUploadResponse(BaseModel):
 async def quickscan_proxy(payload: QuickScanRequest):
     """
     Proxy QuickScan endpoint that delegates to quickscan-advanced.
-    If an image_id / image_ids are provided, we use the batch demo endpoint.
-    Otherwise we fall back to the single demo.
+    If an image_id / image_ids are provided, we use the batch endpoint.
+    Otherwise we fall back to the single endpoint.
     """
     from app.features.quickscan_advanced_router import (
-        quickscan_single_demo,
-        quickscan_batch_demo,
+        quickscan_single,
+        quickscan_batch,
         BatchQuickScanRequest,
+        QuickScanSingleRequest,
         QuickScanResult,
         BatchQuickScanResponse,
     )
+
+    category_hint = payload.category_hint or "funko"
 
     # Decide which advanced endpoint to call
     advanced_result: QuickScanResult
@@ -92,14 +97,16 @@ async def quickscan_proxy(payload: QuickScanRequest):
         deduped_ids.append(iid)
 
     if deduped_ids:
-        batch_req = BatchQuickScanRequest(image_ids=deduped_ids)
-        batch_resp: BatchQuickScanResponse = await quickscan_batch_demo(batch_req)
+        batch_req = BatchQuickScanRequest(image_ids=deduped_ids, category=category_hint)
+        batch_resp: BatchQuickScanResponse = await quickscan_batch(batch_req)
         if batch_resp.results:
             advanced_result = batch_resp.results[0]
         else:
-            advanced_result = await quickscan_single_demo()
+            single_req = QuickScanSingleRequest(category=category_hint)
+            advanced_result = await quickscan_single(single_req)
     else:
-        advanced_result = await quickscan_single_demo()
+        single_req = QuickScanSingleRequest(category=category_hint)
+        advanced_result = await quickscan_single(single_req)
 
     attrs = advanced_result.attributes
     pred = advanced_result.prediction
@@ -146,7 +153,7 @@ async def quickscan_upload_image(file: UploadFile = File(...)):
 
     contents = await file.read()
     if len(contents) > 20 * 1024 * 1024:  # 20 MB max for images
-        raise HTTPException(status_code=413, detail="Image too large (max 20 MB)")
+        raise error_response(413, "Image too large (max 20 MB)")
     out_path.write_bytes(contents)
 
     return {"image_id": image_id}

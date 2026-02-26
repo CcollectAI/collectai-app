@@ -15,9 +15,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
-  Alert,
   Modal,
   TouchableOpacity,
+  Image,
+  Share,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -29,8 +30,10 @@ import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { CATEGORIES } from "@/data/categories";
 import { collectorsApi } from "@/api/collectorsApi";
-import { dataProvider, type Item as DataItem } from "@/data";
+import { dataProvider, type Item as DataItem, type PublicUserProfile } from "@/data";
 import { getJSON, setJSON } from "@/lib/storage";
+import { useToast } from "@/components/Toast";
+import { fireHaptic, HapticIntent } from "@/haptics";
 import logger from "@/utils/logger";
 
 // --- Types for marketplace API results ---
@@ -76,6 +79,8 @@ type SearchResult = {
   affiliateUrl?: string;
   source?: string;
   condition?: string;
+  // Image
+  image_url?: string | null;
   // Shipping & cross-border
   domesticOnly?: boolean;
   shippingHint?: string;
@@ -91,14 +96,14 @@ const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
   name: cat.name,
 }));
 
-const TRENDING_CATEGORIES = [
+const FALLBACK_TRENDING = [
   { id: 'lorcana', name: 'Disney Lorcana', meta: 'Hot right now' },
   { id: 'pokemon', name: 'Pok\u00e9mon Cards', meta: 'Always popular' },
   { id: 'lego', name: 'LEGO', meta: 'Growing fast' },
   { id: 'one_piece', name: 'One Piece', meta: 'Rising demand' },
   { id: 'kpop_merch', name: 'K-pop Merch', meta: 'Surging' },
   { id: 'gunpla', name: 'Gunpla & Model Kits', meta: 'Steady growth' },
-] as const;
+];
 
 // Filter options
 const SOURCE_OPTIONS = ["eBay", "TCGPlayer", "Mercari", "Cardmarket", "Discogs", "StockX", "BrickLink"] as const;
@@ -124,6 +129,7 @@ const SearchScreen: React.FC = () => {
   const { colors, isDark } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettingsHook();
+  const { showToast } = useToast();
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -132,6 +138,45 @@ const SearchScreen: React.FC = () => {
   const [collectionResults, setCollectionResults] = useState<SearchResult[]>([]);
   const searchIdRef = useRef(0);
 
+  // User search state
+  const [userSearchVisible, setUserSearchVisible] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSearchResults, setUserSearchResults] = useState<PublicUserProfile[]>([]);
+  const [userSearchLoading, setUserSearchLoading] = useState(false);
+  const [quickViewItem, setQuickViewItem] = useState<SearchResult | null>(null);
+  const [quickViewVisible, setQuickViewVisible] = useState(false);
+  const debouncedUserQuery = useDebounce(userSearchQuery.trim(), 350);
+
+  useEffect(() => {
+    if (!debouncedUserQuery) {
+      setUserSearchResults([]);
+      setUserSearchLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setUserSearchLoading(true);
+    dataProvider.searchUsers(debouncedUserQuery).then((results) => {
+      if (!cancelled) {
+        setUserSearchResults(results);
+        setUserSearchLoading(false);
+      }
+    }).catch((err) => {
+      logger.warn("[UserSearch] error:", err);
+      if (!cancelled) {
+        setUserSearchResults([]);
+        setUserSearchLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [debouncedUserQuery]);
+
+  const handleOpenUserProfile = useCallback((userId: string) => {
+    setUserSearchVisible(false);
+    setUserSearchQuery("");
+    setUserSearchResults([]);
+    router.push(`/users/${userId}`);
+  }, [router]);
+
   // Filter state
   const [filterVisible, setFilterVisible] = useState(false);
   const [filterSources, setFilterSources] = useState<string[]>([]);
@@ -139,6 +184,34 @@ const SearchScreen: React.FC = () => {
   const [filterMinPrice, setFilterMinPrice] = useState("");
   const [filterMaxPrice, setFilterMaxPrice] = useState("");
   const [filterSort, setFilterSort] = useState("relevance");
+
+  // Trending categories — fetch from backend, fall back to hardcoded
+  type TrendingCategory = { id: string; name: string; meta: string };
+  const [trendingCategories, setTrendingCategories] = useState<TrendingCategory[]>(FALLBACK_TRENDING);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await collectorsApi.fetchInsights();
+        if (cancelled || !resp?.trending_items?.length) return;
+        const catMap = CATEGORIES.reduce<Record<string, string>>((m, c) => { m[c.id] = c.name; return m; }, {});
+        const seen = new Set<string>();
+        const items: TrendingCategory[] = [];
+        for (const t of resp.trending_items) {
+          if (!t.category || seen.has(t.category)) continue;
+          seen.add(t.category);
+          const name = catMap[t.category] ?? t.category;
+          const pct = Math.round((t.change_pct ?? 0) * 100);
+          items.push({ id: t.category, name, meta: pct > 0 ? `+${pct}% this month` : 'Popular' });
+        }
+        if (items.length >= 3) setTrendingCategories(items.slice(0, 6));
+      } catch {
+        // Keep fallback
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Count of active filters for badge
   const activeFilterCount = useMemo(() => {
@@ -157,16 +230,6 @@ const SearchScreen: React.FC = () => {
 
   const trimmedQuery = query.trim();
   const debouncedQuery = useDebounce(trimmedQuery, 350);
-
-  // Auto-search when debounced query changes (avoids firing on every keystroke)
-  useEffect(() => {
-    if (debouncedQuery) {
-      executeSearch(debouncedQuery);
-    } else {
-      setMarketplaceResults([]);
-      setCollectionResults([]);
-    }
-  }, [debouncedQuery, executeSearch]);
 
   const allResults = useMemo(
     () => [...marketplaceResults, ...collectionResults],
@@ -268,6 +331,7 @@ const SearchScreen: React.FC = () => {
           affiliateUrl: h.affiliate_url ?? undefined,
           source: h.source,
           condition: h.condition ?? undefined,
+          image_url: h.image_url,
           domesticOnly: h.domestic_only,
           shippingHint,
           secondaryPrice,
@@ -287,7 +351,7 @@ const SearchScreen: React.FC = () => {
 
     // Notify user if both searches failed
     if (mktResult.status === 'rejected' && colResult.status === 'rejected') {
-      Alert.alert('Search Error', 'Could not reach the marketplace. Check your connection and try again.');
+      showToast({ message: 'Could not reach the marketplace. Check your connection and try again.', type: 'error' });
     }
 
     setMarketplaceResults(mktResults);
@@ -296,6 +360,16 @@ const SearchScreen: React.FC = () => {
     setRefreshing(false);
   }, [filterSources, filterConditions, filterMinPrice, filterMaxPrice, filterSort, settings]);
 
+  // Auto-search when debounced query changes (avoids firing on every keystroke)
+  useEffect(() => {
+    if (debouncedQuery) {
+      executeSearch(debouncedQuery);
+    } else {
+      setMarketplaceResults([]);
+      setCollectionResults([]);
+    }
+  }, [debouncedQuery, executeSearch]);
+
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     if (trimmedQuery) {
@@ -303,7 +377,8 @@ const SearchScreen: React.FC = () => {
     } else {
       setRefreshing(false);
     }
-  }, [trimmedQuery, executeSearch]);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+  }, [trimmedQuery, executeSearch, settings.hapticsEnabled]);
 
   const handleSubmitSearch = useCallback(() => {
     if (!trimmedQuery) return;
@@ -326,12 +401,11 @@ const SearchScreen: React.FC = () => {
   }, [executeSearch]);
 
   const handleOpenResult = useCallback((item: SearchResult) => {
-    if (item.domesticOnly) return; // Domestic-only items are not clickable
+    if (item.domesticOnly) return;
     if (item.isMarketplace) {
-      const openUrl = item.affiliateUrl || item.externalUrl;
-      if (openUrl) Linking.openURL(openUrl).catch((err) => {
-        logger.warn('[Marketplace] Failed to open URL', err);
-      });
+      setQuickViewItem(item);
+      setQuickViewVisible(true);
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     } else {
       router.push({
         pathname: "/item/[id]",
@@ -344,7 +418,31 @@ const SearchScreen: React.FC = () => {
         },
       });
     }
-  }, [router]);
+  }, [router, settings.hapticsEnabled]);
+
+  const handleQuickViewOpen = useCallback(() => {
+    if (!quickViewItem) return;
+    const openUrl = quickViewItem.affiliateUrl || quickViewItem.externalUrl;
+    if (openUrl) {
+      Linking.openURL(openUrl).catch((err) => {
+        logger.warn('[Marketplace] Failed to open URL', err);
+      });
+    }
+    setQuickViewVisible(false);
+    setQuickViewItem(null);
+  }, [quickViewItem]);
+
+  const handleQuickViewShare = useCallback(async () => {
+    if (!quickViewItem) return;
+    try {
+      await Share.share({
+        message: `${quickViewItem.name} - ${formatPrice(quickViewItem.value)} on ${quickViewItem.source || 'Marketplace'}`,
+        url: quickViewItem.externalUrl,
+      });
+    } catch {
+      // User cancelled
+    }
+  }, [quickViewItem]);
 
   const handleOpenCategory = (categoryId: string) => {
     router.push(`/categories/${encodeURIComponent(categoryId)}`);
@@ -426,10 +524,26 @@ const SearchScreen: React.FC = () => {
           >
             <Ionicons name="options-outline" size={20} color={activeFilterCount > 0 ? colors.accent : colors.muted} />
             {activeFilterCount > 0 && (
-              <View style={[styles.filterBadge, { backgroundColor: colors.accent }]} />
+              <View style={styles.filterCountBadge}>
+                <Text style={styles.filterCountBadgeText}>{activeFilterCount}</Text>
+              </View>
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Find Collectors button */}
+        {!trimmedQuery && (
+          <AnimatedPressable
+            style={[styles.findCollectorsButton, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
+            onPress={() => setUserSearchVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Find collectors"
+          >
+            <Ionicons name="people-outline" size={18} color={colors.accent} />
+            <Text style={[styles.findCollectorsText, { color: colors.accent }]}>Find Collectors</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+          </AnimatedPressable>
+        )}
 
         {/* Recent searches */}
         {recent.length > 0 && !trimmedQuery && (
@@ -450,6 +564,27 @@ const SearchScreen: React.FC = () => {
                     {term}
                   </Text>
                 </AnimatedPressable>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Popular searches (preset chips) */}
+        {!trimmedQuery && (
+          <View style={styles.presetChipsSection}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Popular searches</Text>
+            <View style={styles.presetChipsRow}>
+              {['Charizard', 'Black Lotus', 'Funko Pop', 'Jordan 1', 'LEGO Star Wars', 'Pikachu'].map((term) => (
+                <TouchableOpacity
+                  key={term}
+                  onPress={() => handleChipPress(term)}
+                  style={[styles.presetChip, { borderColor: colors.border, backgroundColor: colors.card }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Search for ${term}`}
+                >
+                  <Ionicons name="search-outline" size={12} color={colors.muted} />
+                  <Text style={[styles.presetChipText, { color: colors.text }]}>{term}</Text>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
@@ -498,25 +633,13 @@ const SearchScreen: React.FC = () => {
               </View>
             </View>
 
-            {/* Browse All Categories Button */}
-            <AnimatedPressable
-              style={[styles.browseAllButton, { borderColor: colors.accent }]}
-              onPress={() => router.push('/categories/')}
-              accessibilityRole="button"
-              accessibilityLabel="Browse all categories"
-            >
-              <Ionicons name="grid-outline" size={16} color={colors.accent} />
-              <Text style={[styles.browseAllText, { color: colors.accent }]}>Browse All Categories</Text>
-              <Ionicons name="arrow-forward" size={14} color={colors.accent} />
-            </AnimatedPressable>
-
             {/* Trending categories */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Trending categories
               </Text>
               <View style={styles.trendingList}>
-                {TRENDING_CATEGORIES.map((cat, index) => (
+                {trendingCategories.map((cat, index) => (
                   <AnimatedPressable
                     key={cat.id}
                     style={[styles.trendingRow, { borderColor: colors.border }]}
@@ -697,6 +820,149 @@ const SearchScreen: React.FC = () => {
           </SafeAreaView>
         </Modal>
 
+        {/* User Search Modal */}
+        <Modal
+          visible={userSearchVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => {
+            setUserSearchVisible(false);
+            setUserSearchQuery("");
+            setUserSearchResults([]);
+          }}
+        >
+          <SafeAreaView style={[styles.filterModal, { backgroundColor: colors.background }]}>
+            {/* Header */}
+            <View style={[styles.filterHeader, { borderBottomColor: colors.border }]}>
+              <TouchableOpacity
+                onPress={() => {
+                  setUserSearchVisible(false);
+                  setUserSearchQuery("");
+                  setUserSearchResults([]);
+                }}
+                accessibilityLabel="Close user search"
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.filterHeaderTitle, { color: colors.text }]}>Find Collectors</Text>
+              <View style={{ width: 24 }} />
+            </View>
+
+            {/* Search input */}
+            <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
+              <View style={[styles.searchRow, { borderColor: colors.border }]}>
+                <Ionicons name="search-outline" size={18} color={colors.muted} style={{ marginRight: 8 }} />
+                <TextInput
+                  value={userSearchQuery}
+                  onChangeText={setUserSearchQuery}
+                  placeholder="Search by name or handle..."
+                  placeholderTextColor={colors.muted}
+                  autoFocus
+                  style={[styles.searchInput, { color: colors.text }]}
+                  accessibilityLabel="Search users by name or handle"
+                />
+                {userSearchQuery.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setUserSearchQuery("");
+                      setUserSearchResults([]);
+                    }}
+                    accessibilityLabel="Clear search"
+                  >
+                    <Ionicons name="close-circle" size={18} color={colors.muted} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Results */}
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {userSearchLoading && (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.accent}
+                  style={{ marginTop: 24 }}
+                />
+              )}
+
+              {!userSearchLoading && debouncedUserQuery.length > 0 && userSearchResults.length === 0 && (
+                <View style={{ alignItems: "center", paddingTop: 32 }}>
+                  <Ionicons name="people-outline" size={36} color={colors.muted} />
+                  <Text style={[styles.noResultsTitle, { color: colors.text, marginTop: 12 }]}>
+                    No collectors found
+                  </Text>
+                  <Text style={[styles.emptyText, { color: colors.muted }]}>
+                    Try a different name or handle.
+                  </Text>
+                </View>
+              )}
+
+              {!userSearchLoading && userSearchResults.length > 0 && (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={[styles.sectionTitle, { color: colors.muted, marginBottom: 8 }]}>
+                    {userSearchResults.length} {userSearchResults.length === 1 ? "collector" : "collectors"} found
+                  </Text>
+                  {userSearchResults.map((user) => {
+                    const initials = user.displayName
+                      .split(" ")
+                      .map((part) => part[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase() || "?";
+                    return (
+                      <AnimatedPressable
+                        key={user.id}
+                        style={[styles.userResultRow, { borderBottomColor: colors.border }]}
+                        onPress={() => handleOpenUserProfile(user.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`View profile of ${user.displayName}`}
+                      >
+                        {user.avatarUrl ? (
+                          <View style={[styles.userAvatar, { backgroundColor: colors.accent + "20" }]}>
+                            <Text style={[styles.userAvatarText, { color: colors.accent }]}>
+                              {initials}
+                            </Text>
+                          </View>
+                        ) : (
+                          <View style={[styles.userAvatar, { backgroundColor: colors.accent + "20" }]}>
+                            <Text style={[styles.userAvatarText, { color: colors.accent }]}>
+                              {initials}
+                            </Text>
+                          </View>
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.userResultName, { color: colors.text }]}>
+                            {user.displayName}
+                          </Text>
+                          {user.handle && (
+                            <Text style={[styles.userResultHandle, { color: colors.muted }]}>
+                              @{user.handle}
+                            </Text>
+                          )}
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+                      </AnimatedPressable>
+                    );
+                  })}
+                </View>
+              )}
+
+              {!userSearchLoading && !debouncedUserQuery && (
+                <View style={{ alignItems: "center", paddingTop: 40 }}>
+                  <Ionicons name="people-outline" size={40} color={colors.muted + "60"} />
+                  <Text style={[styles.emptyText, { color: colors.muted, marginTop: 12 }]}>
+                    Search for collectors by name or handle
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+
         {/* Results when searching */}
         {trimmedQuery ? (
           <View style={styles.section}>
@@ -719,13 +985,21 @@ const SearchScreen: React.FC = () => {
                     accessibilityRole={topResult.isMarketplace ? "link" : "button"}
                     accessibilityLabel={`${topResult.name}, ${formatPrice(topResult.value)}`}
                   >
-                    <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
-                      <Ionicons
-                        name={topResult.domesticOnly ? "ban-outline" : topResult.isMarketplace ? "cart-outline" : "star-outline"}
-                        size={18}
-                        color={topResult.domesticOnly ? colors.muted : colors.accent}
+                    {topResult.image_url ? (
+                      <Image
+                        source={{ uri: topResult.image_url }}
+                        style={styles.resultThumbnail}
+                        accessibilityLabel={`Image of ${topResult.name}`}
                       />
-                    </View>
+                    ) : (
+                      <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
+                        <Ionicons
+                          name={topResult.domesticOnly ? "ban-outline" : topResult.isMarketplace ? "cart-outline" : "star-outline"}
+                          size={18}
+                          color={topResult.domesticOnly ? colors.muted : colors.accent}
+                        />
+                      </View>
+                    )}
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.resultTitle, { color: colors.text }]}>
                         {topResult.name}
@@ -790,13 +1064,21 @@ const SearchScreen: React.FC = () => {
                         accessibilityRole={item.isMarketplace ? "link" : "button"}
                         accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
                       >
-                        <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
-                          <Ionicons
-                            name={item.domesticOnly ? "ban-outline" : item.isMarketplace ? "cart-outline" : "card-outline"}
-                            size={18}
-                            color={item.domesticOnly ? colors.muted : item.isMarketplace ? colors.accent : colors.muted}
+                        {item.image_url ? (
+                          <Image
+                            source={{ uri: item.image_url }}
+                            style={styles.resultThumbnail}
+                            accessibilityLabel={`Image of ${item.name}`}
                           />
-                        </View>
+                        ) : (
+                          <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
+                            <Ionicons
+                              name={item.domesticOnly ? "ban-outline" : item.isMarketplace ? "cart-outline" : "card-outline"}
+                              size={18}
+                              color={item.domesticOnly ? colors.muted : item.isMarketplace ? colors.accent : colors.muted}
+                            />
+                          </View>
+                        )}
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.resultTitle, { color: colors.text }]}>
                             {item.name}
@@ -882,6 +1164,91 @@ const SearchScreen: React.FC = () => {
         </Animated.View>
       </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Quick View Sheet */}
+      <Modal
+        visible={quickViewVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => { setQuickViewVisible(false); setQuickViewItem(null); }}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => { setQuickViewVisible(false); setQuickViewItem(null); }}
+          style={styles.quickViewOverlay}
+        >
+          <TouchableOpacity activeOpacity={1} style={[styles.quickViewSheet, { backgroundColor: colors.card }]}>
+            {quickViewItem && (
+              <>
+                <View style={[styles.quickViewHandle, { backgroundColor: colors.muted + '40' }]} />
+                <View style={styles.quickViewHeader}>
+                  {quickViewItem.image_url ? (
+                    <Image source={{ uri: quickViewItem.image_url }} style={styles.quickViewImage} />
+                  ) : (
+                    <View style={[styles.quickViewImagePlaceholder, { backgroundColor: colors.accent + '15' }]}>
+                      <Ionicons name="cart-outline" size={28} color={colors.accent} />
+                    </View>
+                  )}
+                  <View style={styles.quickViewInfo}>
+                    <Text style={[styles.quickViewTitle, { color: colors.text }]} numberOfLines={2}>
+                      {quickViewItem.name}
+                    </Text>
+                    <Text style={[styles.quickViewSource, { color: colors.muted }]}>
+                      {quickViewItem.source || 'Marketplace'}
+                      {quickViewItem.condition ? ` \u00b7 ${quickViewItem.condition}` : ''}
+                    </Text>
+                    <Text style={[styles.quickViewPrice, { color: colors.accent }]}>
+                      {formatPrice(quickViewItem.value)}
+                    </Text>
+                    {quickViewItem.secondaryPrice && (
+                      <Text style={[styles.quickViewSecondary, { color: colors.muted }]}>
+                        {quickViewItem.secondaryPrice}
+                      </Text>
+                    )}
+                    {quickViewItem.shippingHint && (
+                      <Text style={[styles.quickViewShipping, { color: colors.muted }]}>
+                        {quickViewItem.shippingHint}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.quickViewActions}>
+                  <TouchableOpacity
+                    onPress={handleQuickViewOpen}
+                    style={[styles.quickViewBtn, styles.quickViewBtnPrimary, { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open in browser"
+                  >
+                    <Ionicons name="open-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.quickViewBtnPrimaryText}>Open Listing</Text>
+                  </TouchableOpacity>
+                  <View style={styles.quickViewBtnRow}>
+                    <TouchableOpacity
+                      onPress={handleQuickViewShare}
+                      style={[styles.quickViewBtnSecondary, { borderColor: colors.border }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Share listing"
+                    >
+                      <Ionicons name="share-outline" size={16} color={colors.text} />
+                      <Text style={[styles.quickViewBtnSecondaryText, { color: colors.text }]}>Share</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => { setQuickViewVisible(false); setQuickViewItem(null); }}
+                      style={[styles.quickViewBtnSecondary, { borderColor: colors.border }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close quick view"
+                    >
+                      <Ionicons name="close" size={16} color={colors.muted} />
+                      <Text style={[styles.quickViewBtnSecondaryText, { color: colors.muted }]}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </>
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1064,21 +1431,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
-  browseAllButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  browseAllText: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
   trendingList: {
     gap: 8,
   },
@@ -1135,6 +1487,37 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  filterCountBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: '#EF4444',
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  filterCountBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  resultThumbnail: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  resultThumbnailPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    marginRight: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   filterModal: {
     flex: 1,
@@ -1211,6 +1594,163 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "700",
+  },
+  // Find Collectors styles
+  findCollectorsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: 4,
+  },
+  findCollectorsText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  userResultRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  userAvatarText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  userResultName: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  userResultHandle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  quickViewOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  quickViewSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 36,
+  },
+  quickViewHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  quickViewHeader: {
+    flexDirection: 'row',
+    gap: 14,
+    marginBottom: 20,
+  },
+  quickViewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+  },
+  quickViewImagePlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickViewInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  quickViewTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  quickViewSource: {
+    fontSize: 13,
+  },
+  quickViewPrice: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 4,
+  },
+  quickViewSecondary: {
+    fontSize: 12,
+  },
+  quickViewShipping: {
+    fontSize: 12,
+  },
+  quickViewActions: {
+    gap: 10,
+  },
+  quickViewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  quickViewBtnPrimary: {
+    // backgroundColor set inline
+  },
+  quickViewBtnPrimaryText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  quickViewBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quickViewBtnSecondary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  quickViewBtnSecondaryText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  presetChipsSection: {
+    marginBottom: 16,
+  },
+  presetChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  presetChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  presetChipText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
 

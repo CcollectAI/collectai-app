@@ -6,6 +6,8 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
 import {
   View,
   Text,
@@ -28,7 +30,15 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { useToast } from "@/components/Toast";
 import type { MandateDeal } from "@/data/types";
 
-export default function DealDetailScreen() {
+export default function DealDetailScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Deal Detail">
+      <DealDetailScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+function DealDetailScreen() {
   const router = useRouter();
   const { dealId } = useLocalSearchParams<{ dealId: string }>();
   const { colors } = useAppTheme();
@@ -311,6 +321,7 @@ export default function DealDetailScreen() {
 
         <View style={{ height: Platform.OS === "ios" ? 40 : 24 }} />
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 }

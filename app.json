@@ -15,6 +15,12 @@
       "backgroundColor": "#81D8D0"
     },
     "userInterfaceStyle": "automatic",
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/YOUR_PROJECT_ID",
+      "checkAutomatically": "ON_LOAD"
+    },
     "plugins": [
       [
         "expo-router",
@@ -45,7 +51,8 @@
           "color": "#81D8D0"
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "@sentry/react-native"
     ],
     "notification": {
       "iosDisplayInForeground": true,
@@ -134,7 +141,10 @@
               "pathPrefix": "/users"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },

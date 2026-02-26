@@ -3,6 +3,8 @@
  * Route: /wishlist (kept for URL stability)
  */
 
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -24,7 +26,10 @@ import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { formatPrice } from '@/lib/format';
+import { useSettings } from '@/lib/settings';
+import { useToast } from '@/components/Toast';
 import { CATEGORIES as CATEGORY_REGISTRY } from '@/constants/categories';
+import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
 
 const CATEGORIES = CATEGORY_REGISTRY.map((c) => c.name);
@@ -35,9 +40,11 @@ function formatDate(dateStr: string | undefined): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function WishlistScreen() {
+function WishlistScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
+  const { showToast } = useToast();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const [items, setItems] = useState<WatchlistItem[]>([]);
@@ -84,11 +91,11 @@ export default function WishlistScreen() {
 
   const handleAdd = async () => {
     if (!formTitle.trim()) {
-      Alert.alert('Required', 'Please enter a title');
+      showToast({ message: 'Please enter a title.', type: 'warning' });
       return;
     }
     if (!formCategory) {
-      Alert.alert('Required', 'Please select a category');
+      showToast({ message: 'Please select a category.', type: 'warning' });
       return;
     }
 
@@ -109,7 +116,7 @@ export default function WishlistScreen() {
       resetForm();
       loadItems();
     } catch (err: unknown) {
-      Alert.alert('Error', err?.message || 'Failed to add item');
+      showToast({ message: err?.message || 'Failed to add item.', type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -129,7 +136,7 @@ export default function WishlistScreen() {
               await dataProvider.removeWatchlistItem(item.id);
               loadItems();
             } catch (err: unknown) {
-              Alert.alert('Error', err?.message || 'Failed to remove item');
+              showToast({ message: err?.message || 'Failed to remove item.', type: 'error' });
             }
           },
         },
@@ -188,22 +195,23 @@ export default function WishlistScreen() {
   };
 
   const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="eye-outline" size={64} color={colors.muted} />
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>Your watchlist is empty</Text>
-      <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-        Track prices and drops for items you want
-      </Text>
-      <AnimatedPressable
-        style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
-        onPress={() => setModalVisible(true)}
-        accessibilityRole="button"
-        accessibilityLabel="Add to watchlist"
-      >
-        <Ionicons name="add" size={20} color="#fff" />
-        <Text style={styles.emptyBtnText}>Add to Watchlist</Text>
-      </AnimatedPressable>
-    </View>
+    <EmptyState
+      icon="eye-outline"
+      title="Your watchlist is empty"
+      subtitle="Track prices and drops for items you want"
+      colors={colors}
+      action={
+        <AnimatedPressable
+          style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
+          onPress={() => setModalVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Add to watchlist"
+        >
+          <Ionicons name="add" size={20} color="#fff" />
+          <Text style={styles.emptyBtnText}>Add to Watchlist</Text>
+        </AnimatedPressable>
+      }
+    />
   );
 
   if (loading) {
@@ -296,14 +304,14 @@ export default function WishlistScreen() {
             </AnimatedPressable>
 
             {/* Target Price */}
-            <Text style={[styles.label, { color: colors.text }]}>Target Price (EUR)</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Target Price ({settings.currency})</Text>
             <TextInput
               value={formTargetPrice}
               onChangeText={setFormTargetPrice}
               placeholder="e.g. 350"
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
-              accessibilityLabel="Target price in EUR"
+              accessibilityLabel="Target price"
               style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             />
 
@@ -371,7 +379,16 @@ export default function WishlistScreen() {
           </View>
         </AnimatedPressable>
       </Modal>
+      <QuickNavBar />
     </SafeAreaView>
+  );
+}
+
+export default function WishlistScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Wishlist">
+      <WishlistScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -474,23 +491,6 @@ const styles = StyleSheet.create({
   dateAdded: {
     fontSize: 11,
     marginTop: 6,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
   },
   emptyBtn: {
     flexDirection: 'row',

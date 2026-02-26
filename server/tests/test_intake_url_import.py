@@ -207,7 +207,7 @@ class TestProcessUrlImport:
     async def test_firecrawl_not_configured(self):
         from app.agents.intake_agent import process_url_import
 
-        with patch("app.agents.intake_agent._get_db_pool", return_value=None):
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None):
             with patch("app.lib.firecrawl_client.FIRECRAWL_API_KEY", ""):
                 result = await process_url_import("https://ebay.com/itm/123")
 
@@ -233,7 +233,7 @@ class TestProcessUrlImport:
             "metadata": {"title": "BTS Butter Album"},
         })
 
-        with patch("app.agents.intake_agent._get_db_pool", return_value=None):
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None):
             with patch("app.lib.firecrawl_client.scrape_url", mock_scrape):
                 with patch("app.lib.firecrawl_client.configured", return_value=True):
                     result = await process_url_import("https://ktown4u.com/item/123")
@@ -260,7 +260,7 @@ class TestProcessUrlImport:
             },
         })
 
-        with patch("app.agents.intake_agent._get_db_pool", return_value=None):
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None):
             with patch("app.lib.firecrawl_client.scrape_url", mock_scrape):
                 with patch("app.lib.firecrawl_client.configured", return_value=True):
                     result = await process_url_import("https://mercari.com/item/456")
@@ -276,7 +276,7 @@ class TestProcessUrlImport:
 
         mock_scrape = AsyncMock(return_value=None)
 
-        with patch("app.agents.intake_agent._get_db_pool", return_value=None):
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None):
             with patch("app.lib.firecrawl_client.scrape_url", mock_scrape):
                 with patch("app.lib.firecrawl_client.configured", return_value=True):
                     result = await process_url_import("https://ebay.com/itm/123")
@@ -293,7 +293,7 @@ class TestProcessUrlImport:
             "markdown": "content",
         })
 
-        with patch("app.agents.intake_agent._get_db_pool", return_value=None):
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None):
             with patch("app.lib.firecrawl_client.scrape_url", mock_scrape):
                 with patch("app.lib.firecrawl_client.configured", return_value=True):
                     result = await process_url_import(
@@ -310,7 +310,7 @@ class TestProcessUrlImport:
     async def test_exception_does_not_leak(self):
         from app.agents.intake_agent import process_url_import
 
-        with patch("app.agents.intake_agent._get_db_pool", return_value=None):
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None):
             with patch(
                 "app.lib.firecrawl_client.scrape_url",
                 AsyncMock(side_effect=RuntimeError("internal error details")),
@@ -347,7 +347,7 @@ class TestIntakeUrlEndpoint:
         """SSRF protection blocks private/internal IPs."""
         r = client.post("/intake/url", json={"url": "http://169.254.169.254/latest/meta-data/"})
         assert r.status_code == 400
-        assert "private" in r.json()["detail"].lower() or "internal" in r.json()["detail"].lower()
+        assert "private" in r.json()["detail"]["message"].lower() or "internal" in r.json()["detail"]["message"].lower()
 
     def test_ssrf_localhost_rejected(self, client):
         """SSRF protection blocks localhost."""

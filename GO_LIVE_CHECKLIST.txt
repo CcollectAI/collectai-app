@@ -6,9 +6,11 @@
 Use this file as a step-by-step checklist. Work through each section in order.
 Mark items [x] as you complete them.
 
-Current state: All code is written and tested (1234 backend + 104 frontend tests
-passing, 0 TypeScript errors). Everything below is configuration, credentials,
-assets, and manual setup needed to take the app from dev to production.
+Current state: All code is written and tested (1653 backend + 104 frontend tests
+passing, 0 TypeScript errors). Age verification (COPPA/GDPR), expo-store-review,
+and OTA updates (expo-updates) are code-complete. Everything below is
+configuration, credentials, assets, and manual setup needed to take the app from
+dev to production.
 
 
 ================================================================================
@@ -68,6 +70,17 @@ Apply all SQL migrations in order. Use Supabase SQL Editor or psql:
 [ ] 20260212_canonical_item_registry.sql
 [ ] 20260213_smart_deal_agent.sql         (purchase mandates + deals)
 [ ] 20260218_subscriptions.sql            (Stripe subscription tracking)
+[ ] 20260218_beta_signups.sql             (beta signup table)
+[ ] 20260219_portfolio_attributes.sql     (portfolio attributes)
+[ ] 20260219_bugfix_audit.sql             (bugfix audit)
+[ ] 20260220_catalog_learning.sql         (catalog suggestions + candidates)
+[ ] 20260221_user_blocks.sql              (user blocks + RLS)
+[ ] 20260222_currency_geo_shipping.sql    (currencies, geo, shipping)
+[ ] 20260222_events_improvements.sql      (event templates, sponsors, RSVP)
+[ ] 20260222_build_paint_improvements.sql (build & paint projects)
+[ ] 20260223_add_performance_indexes.sql  (performance indexes)
+[ ] 20260224_user_privacy_settings.sql    (privacy settings + RLS)
+[ ] 20260224_add_indexes_v2.sql           (category_follows + events indexes)
 
 --- Supabase Auth Configuration ---
 

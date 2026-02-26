@@ -1,8 +1,9 @@
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { router } from 'expo-router';
 import {
   SafeAreaView,
   ScrollView,
+  FlatList,
   View,
   Text,
   StyleSheet,
@@ -16,6 +17,9 @@ import {
   Animated,
   ActionSheetIOS,
   RefreshControl,
+  Share,
+  Modal,
+  useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
@@ -28,6 +32,7 @@ import { useSettings } from "@/lib/settings";
 import { useToast } from "@/components/Toast";
 import { dataProvider } from "@/data";
 import { PriceConfidenceGauge } from "@/components/PriceConfidenceGauge";
+import { ImageZoomModal } from "@/components/ImageZoomModal";
 import { PriceCard } from "@/components/PriceCard";
 import { PriceExplanationSheet } from "@/components/PriceExplanationSheet";
 import {
@@ -42,9 +47,15 @@ import { ProvenanceTimeline } from "@/components/ProvenanceTimeline";
 import { Linking } from "react-native";
 import logger from "@/utils/logger";
 import { ItemAttributesSection } from "@/components/ItemAttributesSection";
-import { formatPrice, formatNumber } from "@/lib/format";
+import { formatPrice, formatNumber, getCurrencySymbol } from "@/lib/format";
+import { AnimatedPressable } from "@/motion";
 import { isBuildableCategory } from "@/constants/buildStepTemplates";
-import { CATEGORY_VISUAL } from "@/constants/categoryVisuals";
+import { CATEGORY_VISUAL } from "@/data/categories";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
+import { ConfettiBurst, ConfettiBurstRef } from '@/components/ConfettiBurst';
+import InteractiveLineChart from '@/components/InteractiveLineChart';
+import { Skeleton } from '@/components/Skeleton';
 
 // Dossier data shape (mirrors collectorsApi.getDossier return type)
 interface DossierData {
@@ -71,6 +82,33 @@ interface MarketHit {
   provider?: string;
   condition?: string;
 }
+
+// Price trend data shape
+interface PriceTrendData {
+  data_points: Array<{ date: string; q50: number; q10: number; q90: number }>;
+  direction: 'up' | 'down' | 'flat';
+  pct_change: number;
+  current_q50: number;
+  period_days: number;
+}
+
+// Time range options for the price chart
+const PRICE_CHART_RANGES = [
+  { label: '1W', days: 7 },
+  { label: '1M', days: 30 },
+  { label: '3M', days: 90 },
+  { label: '6M', days: 180 },
+  { label: '1Y', days: 365 },
+] as const;
+
+// Sneaker size options (US sizing — can be mapped to EU/UK)
+const SNEAKER_SIZES = [
+  '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5',
+  '9', '9.5', '10', '10.5', '11', '11.5', '12', '12.5', '13', '14', '15',
+];
+
+// Watch case diameter options
+const WATCH_SIZES = ['34mm', '36mm', '38mm', '39mm', '40mm', '41mm', '42mm', '43mm', '44mm', '45mm', '46mm'];
 
 // Helper: parse string|number to number for formatPrice/formatNumber
 const toNum = (value: string | number | undefined | null): number | undefined => {
@@ -105,7 +143,7 @@ const CATEGORY_ID_MAP: Record<string, string> = {
   'Other': 'unknown',
 };
 
-export default function ItemDetailScreen() {
+function ItemDetailScreen() {
   const { colors: theme } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -144,6 +182,8 @@ export default function ItemDetailScreen() {
   } = params;
 
   const isDraft = id === 'draft' || draft === '1';
+  const [isEditing, setIsEditing] = useState(false);
+  const inlineEditPending = useRef(false);
 
   // Photo upload
   const { user } = useAuthContext();
@@ -154,41 +194,200 @@ export default function ItemDetailScreen() {
     photoUrl: userPhotoUrl,
   } = usePhotoUpload(id || "draft");
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
+  const [zoomVisible, setZoomVisible] = useState(false);
+  const [zoomImageUri, setZoomImageUri] = useState<string | null>(null);
 
-  // Resolved display image: user photo > imageUri (catalog) > placeholder
-  const displayImageUri = userPhoto || userPhotoUrl || imageUri;
+  // ── Multi-photo gallery state ──────────────────────────────────────────
+  type ItemImage = {
+    id: string;
+    item_id: string;
+    image_url: string;
+    label: string | null;
+    position: number;
+    created_at: string | null;
+  };
+  const [galleryImages, setGalleryImages] = useState<ItemImage[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [pendingLabel, setPendingLabel] = useState<string | null>(null);
+  const galleryFlatListRef = useRef<FlatList>(null);
+  const GALLERY_HEIGHT = 260;
+
+  const IMAGE_LABELS = ['front', 'back', 'detail', 'box', 'certificate', 'damage', 'other'] as const;
+  const LABEL_DISPLAY: Record<string, string> = {
+    front: 'Front',
+    back: 'Back',
+    detail: 'Detail',
+    box: 'Box',
+    certificate: 'Certificate',
+    damage: 'Damage',
+    other: 'Other',
+  };
+
+  // Resolved display image: first gallery image > userPhoto > imageUri > placeholder
+  const displayImageUri = galleryImages.length > 0
+    ? galleryImages[0].image_url
+    : (userPhoto || userPhotoUrl || imageUri);
+
+  // Effective gallery data: merge original imageUrl as synthetic entry when no gallery images exist
+  const effectiveGalleryImages = useMemo((): ItemImage[] => {
+    if (galleryImages.length > 0) return galleryImages;
+    // If no gallery images but the item has an original imageUrl, show it as the first entry
+    const fallbackUri = userPhoto || userPhotoUrl || imageUri;
+    if (fallbackUri) {
+      return [{
+        id: '__original__',
+        item_id: id || '',
+        image_url: fallbackUri,
+        label: null,
+        position: 0,
+        created_at: null,
+      }];
+    }
+    return [];
+  }, [galleryImages, userPhoto, userPhotoUrl, imageUri, id]);
+
+  // Load gallery images on mount (for saved items)
+  useEffect(() => {
+    if (!id || isDraft) return;
+    setGalleryLoading(true);
+    collectorsApi.listItemImages(id)
+      .then((data) => {
+        setGalleryImages(data.images || []);
+      })
+      .catch((err) => {
+        logger.warn('[ItemDetail] gallery images fetch error:', err);
+      })
+      .finally(() => setGalleryLoading(false));
+  }, [id, isDraft]);
+
+  // Upload a new gallery image
+  const handleGalleryUpload = useCallback(async (source: "camera" | "gallery", label?: string) => {
+    if (!id || isDraft) return;
+    setImageUploading(true);
+    try {
+      const url = await pickAndUpload(source);
+      if (url && id) {
+        // Also add to the item_images table via the API
+        const result = await collectorsApi.uploadItemImage(id, url, label || undefined);
+        setGalleryImages((prev) => [...prev, result]);
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+        showToast({ message: 'Photo added', type: 'success' });
+      }
+    } catch (err) {
+      logger.error('[ItemDetail] gallery upload error:', err);
+      showToast({ message: 'Failed to upload photo', type: 'error' });
+    } finally {
+      setImageUploading(false);
+      setPendingLabel(null);
+    }
+  }, [id, isDraft, pickAndUpload, settings.hapticsEnabled]);
+
+  // Delete a gallery image
+  const handleGalleryDelete = useCallback(async (imageId: string) => {
+    if (!id) return;
+    try {
+      await collectorsApi.deleteItemImage(id, imageId);
+      setGalleryImages((prev) => prev.filter((img) => img.id !== imageId));
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Photo removed', type: 'info' });
+    } catch (err) {
+      logger.error('[ItemDetail] gallery delete error:', err);
+      showToast({ message: 'Failed to remove photo', type: 'error' });
+    }
+  }, [id, settings.hapticsEnabled]);
 
   const handlePhotoUpload = async (source: "camera" | "gallery") => {
+    if (!isDraft && id) {
+      // For saved items, use gallery upload flow
+      handleGalleryUpload(source, pendingLabel || undefined);
+      return;
+    }
     const url = await pickAndUpload(source);
     if (url) {
       setUserPhoto(url);
     }
   };
 
+  const showLabelPicker = (callback: (label: string | null) => void) => {
+    const options = ['No Label', ...IMAGE_LABELS.map((l) => LABEL_DISPLAY[l])];
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", ...options],
+          cancelButtonIndex: 0,
+          title: "Choose Photo Label",
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) return; // Cancel
+          if (buttonIndex === 1) callback(null); // No Label
+          else callback(IMAGE_LABELS[buttonIndex - 2]);
+        },
+      );
+    } else {
+      Alert.alert("Choose Photo Label", undefined, [
+        { text: "No Label", onPress: () => callback(null) },
+        ...IMAGE_LABELS.map((l) => ({
+          text: LABEL_DISPLAY[l],
+          onPress: () => callback(l),
+        })),
+        { text: "Cancel", style: "cancel" as const },
+      ]);
+    }
+  };
+
   const showPhotoSourcePicker = () => {
+    const doUpload = (source: "camera" | "gallery") => {
+      if (!isDraft && id) {
+        // Show label picker first, then upload
+        showLabelPicker((label) => {
+          setPendingLabel(label);
+          handleGalleryUpload(source, label || undefined);
+        });
+      } else {
+        handlePhotoUpload(source);
+      }
+    };
+
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
           options: ["Cancel", "Take Photo", "Choose from Library"],
           cancelButtonIndex: 0,
-          title: "Add Your Photo",
+          title: "Add Photo",
         },
         (buttonIndex) => {
-          if (buttonIndex === 1) handlePhotoUpload("camera");
-          if (buttonIndex === 2) handlePhotoUpload("gallery");
+          if (buttonIndex === 1) doUpload("camera");
+          if (buttonIndex === 2) doUpload("gallery");
         },
       );
     } else {
-      Alert.alert("Add Your Photo", "Choose a source", [
-        { text: "Take Photo", onPress: () => handlePhotoUpload("camera") },
+      Alert.alert("Add Photo", "Choose a source", [
+        { text: "Take Photo", onPress: () => doUpload("camera") },
         {
           text: "Choose from Library",
-          onPress: () => handlePhotoUpload("gallery"),
+          onPress: () => doUpload("gallery"),
         },
         { text: "Cancel", style: "cancel" },
       ]);
     }
   };
+
+  // Confetti ref for draft result reveal
+  const confettiRef = useRef<ConfettiBurstRef>(null);
+
+  // Fire confetti + success haptic on draft result reveal
+  useEffect(() => {
+    if (isDraft && confidence && parseFloat(confidence) > 0) {
+      // Small delay to let the screen render first
+      const timer = setTimeout(() => {
+        confettiRef.current?.burst();
+        fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fire once on mount
 
   const [notes, setNotes] = useState(initialNotes || "");
   const [savingNotes, setSavingNotes] = useState(false);
@@ -247,6 +446,47 @@ export default function ItemDetailScreen() {
   const [dossierLoading, setDossierLoading] = useState(false);
   const [dossierExpanded, setDossierExpanded] = useState(false);
 
+  // ── Grading service state ────────────────────────────────────────────
+  const GRADING_ELIGIBLE = new Set(['pokemon', 'mtg', 'yugioh', 'sportscards', 'comic_books', 'retro_games']);
+  const isGradingEligible = GRADING_ELIGIBLE.has(categorySlug);
+
+  type GradingLookupResult = {
+    cert_number: string;
+    service: string;
+    service_name: string;
+    item_name: string | null;
+    grade: string | null;
+    grade_numeric: number | null;
+    sub_grades: Record<string, number> | null;
+    population_at_grade: number | null;
+    population_higher: number | null;
+    cert_verified: boolean;
+    cert_url: string | null;
+    label_type: string | null;
+    year: string | null;
+    error: string | null;
+  };
+  type PopulationEntry = { grade: string; count: number; pct_of_total: number | null };
+  type PopulationReport = {
+    item_name: string; category: string; service: string; total_graded: number;
+    population: PopulationEntry[]; avg_grade: number | null; highest_grade: string | null;
+  };
+  type GradingServiceInfo = {
+    id: string; name: string; short_name: string; website: string;
+    submission_url: string; grade_scale: string; categories: string[];
+    turnaround: string; price_range: string;
+  };
+
+  const [gradingExpanded, setGradingExpanded] = useState(false);
+  const [gradingLookupResult, setGradingLookupResult] = useState<GradingLookupResult | null>(null);
+  const [gradingLookupLoading, setGradingLookupLoading] = useState(false);
+  const [gradingPopulation, setGradingPopulation] = useState<PopulationReport | null>(null);
+  const [gradingPopLoading, setGradingPopLoading] = useState(false);
+  const [gradingServices, setGradingServices] = useState<GradingServiceInfo[]>([]);
+  const [gradingModalVisible, setGradingModalVisible] = useState(false);
+  const [gradingCertInput, setGradingCertInput] = useState('');
+  const [gradingServicePick, setGradingServicePick] = useState<'psa' | 'cgc' | 'bgs' | 'beckett'>('psa');
+
   // Marketplace state
   const [marketResults, setMarketResults] = useState<MarketHit[]>([]);
   const [marketLoading, setMarketLoading] = useState(false);
@@ -257,15 +497,198 @@ export default function ItemDetailScreen() {
   type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
   const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
 
+  // Price trend chart state
+  const [priceTrendData, setPriceTrendData] = useState<PriceTrendData | null>(null);
+  const [priceTrendLoading, setPriceTrendLoading] = useState(false);
+  const [priceTrendRange, setPriceTrendRange] = useState(90); // default 3M
+  const [priceTrendVisible, setPriceTrendVisible] = useState(false); // lazy load trigger
+  const [priceTrendHoverValue, setPriceTrendHoverValue] = useState<number | null>(null);
+  const [priceTrendHoverDate, setPriceTrendHoverDate] = useState<string | null>(null);
+  const { width: screenWidth } = useWindowDimensions();
+  const GALLERY_WIDTH = screenWidth - 32; // 16px padding on each side
+
   // AI Intelligence refresh state
   const [aiRefreshing, setAiRefreshing] = useState(false);
   const [pullRefreshing, setPullRefreshing] = useState(false);
+
+  // For-Sale listing state
+  const [isForSale, setIsForSale] = useState(false);
+  const [askingPriceValue, setAskingPriceValue] = useState('');
+  const [forSaleModalVisible, setForSaleModalVisible] = useState(false);
+  const [forSaleLoading, setForSaleLoading] = useState(false);
 
   // Build project state — for buildable categories
   const categorySlug = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9_]/g, '');
   const itemIsBuildable = isBuildableCategory(categorySlug);
   const buildAccent = CATEGORY_VISUAL[categorySlug]?.accentColor;
   const [linkedProject, setLinkedProject] = useState<{ id: string; title: string; pct: number } | null>(null);
+
+  // ── Size-specific pricing state (sneakers, watches) ──────────────────
+  const [itemSizeValue, setItemSizeValue] = useState<string>(
+    (itemAttributes?.size as string) || (itemAttributes?.case_size as string) || ''
+  );
+  const [sizeSystem, setSizeSystem] = useState<'us' | 'eu' | 'uk' | 'mm'>(
+    categorySlug === 'watches' ? 'mm' : ((itemAttributes?.size_system as string)?.toLowerCase() as 'us' | 'eu' | 'uk') || 'us'
+  );
+  const [sizeSaving, setSizeSaving] = useState(false);
+
+  // Save size change to backend
+  const handleSizeChange = useCallback(async (sizeVal: string, system: string) => {
+    if (!id || isDraft) return;
+    setSizeSaving(true);
+    try {
+      const sizeAttrs: Record<string, unknown> = {};
+      if (categorySlug === 'sneakers') {
+        sizeAttrs.size = sizeVal;
+        sizeAttrs.size_system = system;
+      } else if (categorySlug === 'watches') {
+        sizeAttrs.case_size = sizeVal;
+      }
+      await collectorsApi.updateItemAttributes(id, sizeAttrs, sizeVal, system);
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Size saved', type: 'success' });
+    } catch (err) {
+      logger.warn('[ItemDetail] size save error:', err);
+      showToast({ message: 'Failed to save size', type: 'error' });
+    } finally {
+      setSizeSaving(false);
+    }
+  }, [id, isDraft, categorySlug, settings.hapticsEnabled]);
+
+  // Sync size state when attributes load
+  useEffect(() => {
+    if (itemAttributes) {
+      const sizeVal = (itemAttributes.size as string) || (itemAttributes.case_size as string) || '';
+      if (sizeVal && sizeVal !== itemSizeValue) setItemSizeValue(sizeVal);
+      const sys = (itemAttributes.size_system as string)?.toLowerCase();
+      if (sys && ['us', 'eu', 'uk', 'mm'].includes(sys)) setSizeSystem(sys as typeof sizeSystem);
+    }
+  }, [itemAttributes]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Progress tracking state (manga, comics, games) ──────────────────
+  const PROGRESS_CATEGORIES: Record<string, { statuses: string[]; label: string; icon: string }> = {
+    manga: { statuses: ['unread', 'reading', 'read'], label: 'Reading Progress', icon: 'book-outline' },
+    comic_books: { statuses: ['unread', 'reading', 'read'], label: 'Reading Progress', icon: 'book-outline' },
+    retro_games: { statuses: ['unplayed', 'playing', 'played', 'completed'], label: 'Play Progress', icon: 'game-controller-outline' },
+    board_games: { statuses: ['unplayed', 'playing', 'played', 'completed'], label: 'Play Progress', icon: 'dice-outline' },
+  };
+  const progressConfig = PROGRESS_CATEGORIES[categorySlug] ?? null;
+  const hasProgressTracking = progressConfig !== null;
+
+  const STATUS_DISPLAY: Record<string, string> = {
+    unread: 'Unread',
+    reading: 'Reading',
+    read: 'Read',
+    unplayed: 'Unplayed',
+    playing: 'Playing',
+    played: 'Played',
+    completed: 'Completed',
+  };
+
+  const STATUS_COLORS: Record<string, string> = {
+    unread: '#94A3B8',
+    reading: '#3B82F6',
+    read: '#22C55E',
+    unplayed: '#94A3B8',
+    playing: '#F59E0B',
+    played: '#22C55E',
+    completed: '#8B5CF6',
+  };
+
+  const [progressStatus, setProgressStatus] = useState<string | null>(null);
+  const [progressPct, setProgressPct] = useState<number | null>(null);
+  const [progressNotes, setProgressNotes] = useState('');
+  const [progressLoading, setProgressLoading] = useState(false);
+  const [progressSaving, setProgressSaving] = useState(false);
+  const progressSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load progress on mount for progress-trackable items
+  useEffect(() => {
+    if (!id || isDraft || !hasProgressTracking) return;
+    setProgressLoading(true);
+    collectorsApi.getItemProgress(id)
+      .then((data) => {
+        setProgressStatus(data.progress_status);
+        setProgressPct(data.progress_pct);
+        setProgressNotes(data.progress_notes || '');
+      })
+      .catch((err) => {
+        logger.warn('[ItemDetail] progress fetch error:', err);
+      })
+      .finally(() => setProgressLoading(false));
+  }, [id, isDraft, hasProgressTracking]);
+
+  // Auto-save progress changes with debounce
+  const saveProgress = useCallback((status: string | null, pct: number | null, pNotes: string) => {
+    if (!id || isDraft) return;
+    if (progressSaveTimer.current) clearTimeout(progressSaveTimer.current);
+    progressSaveTimer.current = setTimeout(async () => {
+      setProgressSaving(true);
+      try {
+        const payload: Record<string, unknown> = {};
+        if (status !== undefined) payload.progress_status = status;
+        if (pct !== undefined && pct !== null) payload.progress_pct = pct;
+        if (pNotes !== undefined) payload.progress_notes = pNotes;
+        await collectorsApi.updateItemProgress(id, payload as {
+          progress_status?: string;
+          progress_pct?: number;
+          progress_notes?: string;
+        });
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+      } catch (err) {
+        logger.warn('[ItemDetail] progress save error:', err);
+        showToast({ message: 'Failed to save progress', type: 'error' });
+      } finally {
+        setProgressSaving(false);
+      }
+    }, 600);
+  }, [id, isDraft, settings.hapticsEnabled]);
+
+  const handleProgressStatusChange = (newStatus: string) => {
+    setProgressStatus(newStatus);
+    saveProgress(newStatus, progressPct, progressNotes);
+  };
+
+  const handleProgressPctChange = (pct: number) => {
+    setProgressPct(pct);
+    saveProgress(progressStatus, pct, progressNotes);
+  };
+
+  const handleProgressNotesChange = (text: string) => {
+    setProgressNotes(text);
+    saveProgress(progressStatus, progressPct, text);
+  };
+
+  // Add to Watchlist state
+  const [watchlistModalVisible, setWatchlistModalVisible] = useState(false);
+  const [watchlistTargetPrice, setWatchlistTargetPrice] = useState('');
+  const [watchlistSaving, setWatchlistSaving] = useState(false);
+
+  const handleAddToWatchlist = async () => {
+    setWatchlistSaving(true);
+    try {
+      const targetPrice = watchlistTargetPrice.trim()
+        ? parseFloat(watchlistTargetPrice.replace(/[^0-9.]/g, ''))
+        : null;
+
+      await dataProvider.addWatchlistItem({
+        title: editableName,
+        category: editableCategory,
+        targetPrice: targetPrice && !isNaN(targetPrice) ? targetPrice : null,
+        notes: `Added from item detail: ${id}`,
+      });
+
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Added to watchlist!', type: 'success' });
+      setWatchlistModalVisible(false);
+      setWatchlistTargetPrice('');
+    } catch (err: unknown) {
+      logger.error('[ItemDetail] add to watchlist error:', err);
+      showToast({ message: 'Failed to add to watchlist', type: 'error' });
+    } finally {
+      setWatchlistSaving(false);
+    }
+  };
 
   // (Price Alert section removed)
 
@@ -281,6 +704,13 @@ export default function ItemDetailScreen() {
         (buttonIndex) => {
           if (buttonIndex > 0) {
             setEditableCategory(CATEGORY_OPTIONS[buttonIndex - 1]);
+            if (inlineEditPending.current) {
+              inlineEditPending.current = false;
+              setTimeout(() => onSaveEdits(), 100);
+            }
+          } else if (inlineEditPending.current) {
+            inlineEditPending.current = false;
+            setIsEditing(false);
           }
         }
       );
@@ -291,8 +721,14 @@ export default function ItemDetailScreen() {
         undefined,
         CATEGORY_OPTIONS.map((opt) => ({
           text: opt,
-          onPress: () => setEditableCategory(opt),
-        })).concat([{ text: 'Cancel', style: 'cancel' }])
+          onPress: () => {
+            setEditableCategory(opt);
+            if (inlineEditPending.current) {
+              inlineEditPending.current = false;
+              setTimeout(() => onSaveEdits(), 100);
+            }
+          },
+        })).concat([{ text: 'Cancel', style: 'cancel', onPress: () => { if (inlineEditPending.current) { inlineEditPending.current = false; setIsEditing(false); } } }])
       );
     }
   };
@@ -308,6 +744,13 @@ export default function ItemDetailScreen() {
         (buttonIndex) => {
           if (buttonIndex > 0) {
             setEditableCollection(COLLECTION_OPTIONS[buttonIndex - 1]);
+            if (inlineEditPending.current) {
+              inlineEditPending.current = false;
+              setTimeout(() => onSaveEdits(), 100);
+            }
+          } else if (inlineEditPending.current) {
+            inlineEditPending.current = false;
+            setIsEditing(false);
           }
         }
       );
@@ -317,8 +760,14 @@ export default function ItemDetailScreen() {
         undefined,
         COLLECTION_OPTIONS.map((opt) => ({
           text: opt,
-          onPress: () => setEditableCollection(opt),
-        })).concat([{ text: 'Cancel', style: 'cancel' }])
+          onPress: () => {
+            setEditableCollection(opt);
+            if (inlineEditPending.current) {
+              inlineEditPending.current = false;
+              setTimeout(() => onSaveEdits(), 100);
+            }
+          },
+        })).concat([{ text: 'Cancel', style: 'cancel', onPress: () => { if (inlineEditPending.current) { inlineEditPending.current = false; setIsEditing(false); } } }])
       );
     }
   };
@@ -334,6 +783,13 @@ export default function ItemDetailScreen() {
         (buttonIndex) => {
           if (buttonIndex > 0) {
             setEditableCondition(CONDITION_OPTIONS[buttonIndex - 1]);
+            if (inlineEditPending.current) {
+              inlineEditPending.current = false;
+              setTimeout(() => onSaveEdits(), 100);
+            }
+          } else if (inlineEditPending.current) {
+            inlineEditPending.current = false;
+            setIsEditing(false);
           }
         }
       );
@@ -343,10 +799,39 @@ export default function ItemDetailScreen() {
         undefined,
         CONDITION_OPTIONS.map((opt) => ({
           text: opt,
-          onPress: () => setEditableCondition(opt),
-        })).concat([{ text: 'Cancel', style: 'cancel' }])
+          onPress: () => {
+            setEditableCondition(opt);
+            if (inlineEditPending.current) {
+              inlineEditPending.current = false;
+              setTimeout(() => onSaveEdits(), 100);
+            }
+          },
+        })).concat([{ text: 'Cancel', style: 'cancel', onPress: () => { if (inlineEditPending.current) { inlineEditPending.current = false; setIsEditing(false); } } }])
       );
     }
+  };
+
+  // Inline tap-to-edit handlers — auto-enter edit mode and open picker in one tap
+  const inlineEditCategory = () => {
+    if (!isDraft && !isEditing) {
+      setIsEditing(true);
+      inlineEditPending.current = true;
+    }
+    showCategoryPicker();
+  };
+  const inlineEditCollection = () => {
+    if (!isDraft && !isEditing) {
+      setIsEditing(true);
+      inlineEditPending.current = true;
+    }
+    showCollectionPicker();
+  };
+  const inlineEditCondition = () => {
+    if (!isDraft && !isEditing) {
+      setIsEditing(true);
+      inlineEditPending.current = true;
+    }
+    showConditionPicker();
   };
 
   // Scroll tracking for sticky save button
@@ -446,6 +931,51 @@ export default function ItemDetailScreen() {
       .catch((err) => logger.warn('[ItemDetail] affiliate links fetch error:', err));
   }, [id, isDraft, name, editableCategory]);
 
+  // Fetch price trend data (lazy — triggered when section scrolls into view)
+  const fetchPriceTrend = useCallback(async (days: number) => {
+    if (!id || isDraft) return;
+    setPriceTrendLoading(true);
+    try {
+      const data = await collectorsApi.getItemPriceTrend(id, days);
+      setPriceTrendData(data);
+      setPriceTrendHoverValue(null);
+      setPriceTrendHoverDate(null);
+    } catch (err) {
+      logger.warn('[ItemDetail] price trend fetch error:', err);
+      setPriceTrendData(null);
+    } finally {
+      setPriceTrendLoading(false);
+    }
+  }, [id, isDraft]);
+
+  // Lazy-load price trend when section becomes visible
+  useEffect(() => {
+    if (priceTrendVisible && !priceTrendData && !priceTrendLoading) {
+      fetchPriceTrend(priceTrendRange);
+    }
+  }, [priceTrendVisible, priceTrendData, priceTrendLoading, priceTrendRange, fetchPriceTrend]);
+
+  // Re-fetch when time range changes
+  const handlePriceTrendRangeChange = useCallback((days: number) => {
+    setPriceTrendRange(days);
+    fetchPriceTrend(days);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+  }, [fetchPriceTrend, settings.hapticsEnabled]);
+
+  // Price trend chart data (extracted q50 values for the line chart)
+  const priceTrendChartData = useMemo(() => {
+    if (!priceTrendData?.data_points?.length) return [];
+    return priceTrendData.data_points.map((dp) => dp.q50);
+  }, [priceTrendData]);
+
+  // Price trend hover callback
+  const handlePriceTrendHover = useCallback((index: number, value: number) => {
+    setPriceTrendHoverValue(value);
+    if (priceTrendData?.data_points?.[index]) {
+      setPriceTrendHoverDate(priceTrendData.data_points[index].date);
+    }
+  }, [priceTrendData]);
+
   // Load dossier on demand
   const loadDossier = async () => {
     if (!id || isDraft || dossierData) return;
@@ -462,12 +992,70 @@ export default function ItemDetailScreen() {
     }
   };
 
+  // ── Grading: auto-detect cert number from item attributes ──────────────
+  const itemCertNumber = useMemo(() => {
+    // Check common attribute names for cert/grade data
+    const attrs = params as Record<string, string | undefined>;
+    // Look in item attributes passed via URL params or local state
+    return null; // Will be populated from item data if available
+  }, [params]);
+
+  // Grading: load services on expand
+  const loadGradingServices = useCallback(async () => {
+    if (gradingServices.length > 0) return;
+    try {
+      const data = await collectorsApi.gradingServices(categorySlug);
+      setGradingServices(data.services || []);
+    } catch (err) {
+      logger.warn('[ItemDetail] grading services fetch error:', err);
+    }
+  }, [categorySlug, gradingServices.length]);
+
+  // Grading: cert lookup
+  const handleGradingLookup = useCallback(async () => {
+    if (!gradingCertInput.trim()) {
+      showToast('Please enter a certification number', 'warning');
+      return;
+    }
+    setGradingLookupLoading(true);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    try {
+      const result = await collectorsApi.gradingLookup(gradingCertInput.trim(), gradingServicePick);
+      setGradingLookupResult(result);
+      setGradingModalVisible(false);
+      if (result.cert_verified) {
+        showToast(`Verified: ${result.service_name} ${result.grade}`, 'success');
+      } else {
+        showToast('Certificate not found or not verified', 'warning');
+      }
+    } catch (err) {
+      logger.warn('[ItemDetail] grading lookup error:', err);
+      showToast('Failed to look up certificate', 'error');
+    } finally {
+      setGradingLookupLoading(false);
+    }
+  }, [gradingCertInput, gradingServicePick, settings.hapticsEnabled, showToast]);
+
+  // Grading: load population report
+  const loadGradingPopulation = useCallback(async () => {
+    if (!editableName || gradingPopulation) return;
+    setGradingPopLoading(true);
+    try {
+      const data = await collectorsApi.gradingPopulation(editableName, categorySlug);
+      setGradingPopulation(data);
+    } catch (err) {
+      logger.warn('[ItemDetail] grading population error:', err);
+    } finally {
+      setGradingPopLoading(false);
+    }
+  }, [editableName, categorySlug, gradingPopulation]);
+
   // Load marketplace results on demand
   const loadMarketResults = async () => {
     if (!editableName) return;
     setMarketLoading(true);
     try {
-      const data = await collectorsApi.marketplaceSearch(editableName, editableCategory);
+      const data = await collectorsApi.marketplaceSearch(editableName, { category: editableCategory });
       const results = data.results || data.hits || [];
       setMarketResults(results);
       setMarketScannedAt(new Date().toISOString());
@@ -492,7 +1080,7 @@ export default function ItemDetailScreen() {
         q50: parseFloat(q50),
         q90: parseFloat(q90),
       },
-      currency: 'EUR',
+      currency: settings.currency,
       confidenceTier: getConfidenceTier(confidenceValue),
       confidencePercent: Math.round(confidenceValue),
     };
@@ -591,6 +1179,27 @@ export default function ItemDetailScreen() {
     }
   };
 
+  const onSaveEdits = async () => {
+    if (!id || isDraft) return;
+    setSavingNotes(true);
+    try {
+      await dataProvider.updateItem(id, {
+        name: editableName,
+        category: editableCategory,
+        condition: editableCondition,
+        notes: notes || undefined,
+      });
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Changes saved', type: 'success' });
+      setIsEditing(false);
+    } catch (err: unknown) {
+      logger.error('[ItemDetail] save edits error:', err);
+      showToast({ message: 'Failed to save changes', type: 'error' });
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
   const scrollToNotes = () => {
     // Delay slightly to let keyboard height settle, then scroll notes into view
     setTimeout(() => {
@@ -650,6 +1259,7 @@ export default function ItemDetailScreen() {
     try {
       await Promise.all([
         collectorsApi.getPriceEvidence(id).then(setEvidenceData).catch(() => {}),
+        priceTrendVisible ? fetchPriceTrend(priceTrendRange) : Promise.resolve(),
         collectorsApi.getProvenance(id).then((data) => {
           setProvenanceEvents(data.events.map(e => ({
             id: e.id,
@@ -678,6 +1288,46 @@ export default function ItemDetailScreen() {
     setPullRefreshing(false);
   };
 
+  // ── For-Sale listing handlers ────────────────────────────────────────
+  const handleListForSale = async () => {
+    if (!id || isDraft || forSaleLoading) return;
+    const price = parseFloat(askingPriceValue);
+    if (isNaN(price) || price <= 0) {
+      showToast({ message: 'Enter a valid asking price', type: 'error' });
+      return;
+    }
+    setForSaleLoading(true);
+    try {
+      await dataProvider.toggleForSale(id, true, price);
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Item listed for sale!', type: 'success' });
+      setIsForSale(true);
+      setForSaleModalVisible(false);
+    } catch (err: unknown) {
+      logger.error('[ItemDetail] list for sale error:', err);
+      showToast({ message: 'Failed to list item for sale', type: 'error' });
+    } finally {
+      setForSaleLoading(false);
+    }
+  };
+
+  const handleUnlist = async () => {
+    if (!id || isDraft || forSaleLoading) return;
+    setForSaleLoading(true);
+    try {
+      await dataProvider.toggleForSale(id, false);
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Item unlisted', type: 'info' });
+      setIsForSale(false);
+      setAskingPriceValue('');
+    } catch (err: unknown) {
+      logger.error('[ItemDetail] unlist error:', err);
+      showToast({ message: 'Failed to unlist item', type: 'error' });
+    } finally {
+      setForSaleLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -685,6 +1335,9 @@ export default function ItemDetailScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
     >
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        {/* Confetti overlay for draft result reveal */}
+        {isDraft && <ConfettiBurst ref={confettiRef} particleCount={18} spread={120} duration={800} style={{ zIndex: 999 }} />}
+
         <Animated.ScrollView
           ref={scrollViewRef}
           style={styles.scroll}
@@ -716,60 +1369,343 @@ export default function ItemDetailScreen() {
           )}
           scrollEventThrottle={16}
         >
-          {/* Image — priority: user photo > catalog imageUri > placeholder */}
-          <View style={[styles.imageWrapper, { borderColor: theme.border }]}>
-            {displayImageUri ? (
-              <Image
-                source={{ uri: displayImageUri }}
-                style={styles.image}
-                contentFit="cover"
-                cachePolicy="disk"
-                transition={200}
-              />
-            ) : (
-              <Image
-                source={require("../../assets/placeholder.png")}
-                style={styles.image}
-                contentFit="cover"
-              />
-            )}
-
-            {/* Photo upload overlay button */}
-            <Pressable
-              onPress={showPhotoSourcePicker}
-              disabled={photoUploading}
-              style={[
-                styles.photoUploadOverlay,
-                !displayImageUri && styles.photoUploadOverlayEmpty,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={displayImageUri ? "Change photo" : "Add your photo"}
-            >
-              {photoUploading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Ionicons
-                    name={displayImageUri ? "camera" : "camera-outline"}
-                    size={displayImageUri ? 18 : 28}
-                    color="#FFFFFF"
-                  />
-                  {!displayImageUri && (
-                    <Text style={styles.photoUploadOverlayText}>
-                      Add your photo
-                    </Text>
-                  )}
-                </>
+          {/* ── Image Gallery ─────────────────────────────────────────── */}
+          {galleryLoading ? (
+            /* Skeleton while gallery images are loading */
+            <View style={styles.galleryContainer}>
+              <Skeleton width={GALLERY_WIDTH} height={GALLERY_HEIGHT} borderRadius={16} />
+            </View>
+          ) : (effectiveGalleryImages.length > 0 || (!isDraft && id)) ? (
+            <View style={styles.galleryContainer}>
+              {(() => {
+                // Build data array: real/effective images + "Add Photo" card for saved items
+                const galleryData: Array<
+                  | ({ type: 'image' } & ItemImage)
+                  | { type: 'add'; id: string; item_id: string; image_url: string; label: null; position: number; created_at: null }
+                > = [
+                  ...effectiveGalleryImages.map((img) => ({ type: 'image' as const, ...img })),
+                  ...(!isDraft && id
+                    ? [{ type: 'add' as const, id: '__add__', item_id: '', image_url: '', label: null as null, position: 999, created_at: null as null }]
+                    : []),
+                ];
+                const totalSlides = galleryData.length;
+                const imageCount = effectiveGalleryImages.length;
+                return (
+                  <>
+                    <FlatList
+                      ref={galleryFlatListRef}
+                      data={galleryData}
+                      horizontal
+                      pagingEnabled
+                      showsHorizontalScrollIndicator={false}
+                      keyExtractor={(item) => item.id}
+                      onMomentumScrollEnd={(e) => {
+                        const idx = Math.round(e.nativeEvent.contentOffset.x / GALLERY_WIDTH);
+                        setGalleryActiveIndex(idx);
+                      }}
+                      getItemLayout={(_data, index) => ({
+                        length: GALLERY_WIDTH,
+                        offset: GALLERY_WIDTH * index,
+                        index,
+                      })}
+                      renderItem={({ item, index }) => {
+                        if (item.type === 'add') {
+                          // "Add Photo" card at the end
+                          return (
+                            <Pressable
+                              onPress={showPhotoSourcePicker}
+                              disabled={imageUploading || photoUploading}
+                              style={[
+                                styles.gallerySlide,
+                                { width: GALLERY_WIDTH, height: GALLERY_HEIGHT, borderColor: theme.border },
+                              ]}
+                              accessibilityRole="button"
+                              accessibilityLabel="Add a new photo"
+                            >
+                              <View style={[styles.galleryAddCard, { backgroundColor: theme.card }]}>
+                                {imageUploading || photoUploading ? (
+                                  <ActivityIndicator size="large" color={theme.accent} />
+                                ) : (
+                                  <>
+                                    <Ionicons name="camera-outline" size={36} color={theme.accent} />
+                                    <Text style={[styles.galleryAddText, { color: theme.accent }]}>Add Photo</Text>
+                                  </>
+                                )}
+                              </View>
+                            </Pressable>
+                          );
+                        }
+                        // Normal image slide
+                        const isRealGalleryImage = item.id !== '__original__';
+                        return (
+                          <View style={[styles.gallerySlide, { width: GALLERY_WIDTH, height: GALLERY_HEIGHT }]}>
+                            <Pressable
+                              onPress={() => {
+                                setZoomImageUri(item.image_url);
+                                setZoomVisible(true);
+                              }}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Photo ${index + 1} of ${imageCount}${item.label ? ` (${LABEL_DISPLAY[item.label] || item.label})` : ''}. Tap to zoom`}
+                            >
+                              <Image
+                                source={{ uri: item.image_url }}
+                                style={{ width: GALLERY_WIDTH, height: GALLERY_HEIGHT }}
+                                contentFit="cover"
+                                cachePolicy="disk"
+                                transition={200}
+                              />
+                            </Pressable>
+                            {/* Label badge — bottom-left */}
+                            {item.label && (
+                              <View style={[styles.galleryLabelBadge, { backgroundColor: theme.accent }]}>
+                                <Text style={styles.galleryLabelText}>
+                                  {LABEL_DISPLAY[item.label] || item.label}
+                                </Text>
+                              </View>
+                            )}
+                            {/* Counter badge — bottom-right (only when multiple images) */}
+                            {imageCount > 1 && (
+                              <View style={styles.galleryCounterBadge}>
+                                <Text style={styles.galleryCounterText}>
+                                  {index + 1}/{imageCount}
+                                </Text>
+                              </View>
+                            )}
+                            {/* Delete button in edit mode — only for real gallery images */}
+                            {isEditing && isRealGalleryImage && (
+                              <Pressable
+                                onPress={() => {
+                                  fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+                                  Alert.alert(
+                                    'Delete Photo',
+                                    'Are you sure you want to remove this photo?',
+                                    [
+                                      { text: 'Cancel', style: 'cancel' },
+                                      {
+                                        text: 'Delete',
+                                        style: 'destructive',
+                                        onPress: () => handleGalleryDelete(item.id),
+                                      },
+                                    ],
+                                  );
+                                }}
+                                style={styles.galleryDeleteBtn}
+                                accessibilityRole="button"
+                                accessibilityLabel="Delete this photo"
+                              >
+                                <Ionicons name="close-circle" size={26} color="#FF3B30" />
+                              </Pressable>
+                            )}
+                          </View>
+                        );
+                      }}
+                    />
+                    {/* Page dots */}
+                    {totalSlides > 1 && (
+                      <View style={styles.galleryDots}>
+                        {galleryData.map((img, idx) => (
+                          <View
+                            key={img.id}
+                            style={[
+                              styles.galleryDot,
+                              {
+                                backgroundColor: idx === galleryActiveIndex
+                                  ? theme.accent
+                                  : theme.border,
+                              },
+                            ]}
+                          />
+                        ))}
+                      </View>
+                    )}
+                  </>
+                );
+              })()}
+              {/* Photo error */}
+              {photoError && (
+                <View style={styles.photoErrorBanner}>
+                  <Text style={styles.photoErrorText}>{photoError}</Text>
+                </View>
               )}
-            </Pressable>
+            </View>
+          ) : (
+            // Fallback: single image (draft mode or no images at all)
+            <View style={[styles.imageWrapper, { borderColor: theme.border }]}>
+              <Pressable
+                onPress={() => {
+                  if (displayImageUri) {
+                    setZoomImageUri(displayImageUri);
+                    setZoomVisible(true);
+                  }
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Tap to zoom image"
+              >
+                {displayImageUri ? (
+                  <Image
+                    source={{ uri: displayImageUri }}
+                    style={styles.image}
+                    contentFit="cover"
+                    cachePolicy="disk"
+                    transition={200}
+                    accessibilityRole="image"
+                    accessibilityLabel={`Photo of ${editableName}`}
+                  />
+                ) : (
+                  <Image
+                    source={require("../../assets/placeholder.png")}
+                    style={styles.image}
+                    contentFit="cover"
+                    accessibilityRole="image"
+                    accessibilityLabel={`Placeholder image for ${editableName}`}
+                  />
+                )}
+              </Pressable>
 
-            {/* Photo error */}
-            {photoError && (
-              <View style={styles.photoErrorBanner}>
-                <Text style={styles.photoErrorText}>{photoError}</Text>
-              </View>
-            )}
-          </View>
+              {/* Photo upload overlay button */}
+              <Pressable
+                onPress={showPhotoSourcePicker}
+                disabled={photoUploading}
+                style={[
+                  styles.photoUploadOverlay,
+                  !displayImageUri && styles.photoUploadOverlayEmpty,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={displayImageUri ? "Change photo" : "Add your photo"}
+              >
+                {photoUploading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons
+                      name={displayImageUri ? "camera" : "camera-outline"}
+                      size={displayImageUri ? 18 : 28}
+                      color="#FFFFFF"
+                    />
+                    {!displayImageUri && (
+                      <Text style={styles.photoUploadOverlayText}>
+                        Add your photo
+                      </Text>
+                    )}
+                  </>
+                )}
+              </Pressable>
+
+              {/* Photo error */}
+              {photoError && (
+                <View style={styles.photoErrorBanner}>
+                  <Text style={styles.photoErrorText}>{photoError}</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Save / Cancel bar — only in edit mode */}
+          {!isDraft && id && isEditing && (
+            <View style={styles.editBar}>
+              <AnimatedPressable
+                onPress={() => onSaveEdits()}
+                style={[styles.editBarBtnPrimary, { backgroundColor: theme.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel="Save changes"
+              >
+                <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                <Text style={styles.editBarBtnPrimaryText}>Save Changes</Text>
+              </AnimatedPressable>
+              <AnimatedPressable
+                onPress={() => setIsEditing(false)}
+                style={[styles.editBarBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel editing"
+              >
+                <Text style={[styles.editBarBtnText, { color: theme.muted }]}>Cancel</Text>
+              </AnimatedPressable>
+              <AnimatedPressable
+                onPress={async () => {
+                  try {
+                    await Share.share({
+                      message: `Check out ${editableName}${toNum(editableValue) ? ` - valued at ${formatPrice(toNum(editableValue))}` : ''} on CollectAI`,
+                    });
+                  } catch {
+                    // User cancelled
+                  }
+                }}
+                style={[styles.editBarBtn, { backgroundColor: theme.card, borderColor: theme.border, marginLeft: 'auto' }]}
+                accessibilityRole="button"
+                accessibilityLabel="Share this item"
+              >
+                <Ionicons name="share-outline" size={16} color={theme.text} />
+              </AnimatedPressable>
+            </View>
+          )}
+
+          {/* For Sale — listing controls for saved items */}
+          {!isDraft && id && !isEditing && (
+            <View style={styles.forSaleBar}>
+              {isForSale ? (
+                <>
+                  <View style={[styles.forSaleBadge, { backgroundColor: '#D1FAE5' }]}>
+                    <Ionicons name="pricetag" size={14} color="#065F46" />
+                    <Text style={[styles.forSaleBadgeText, { color: '#065F46' }]}>
+                      Listed for Sale{askingPriceValue ? ` - ${formatPrice(parseFloat(askingPriceValue), settings.currency)}` : ''}
+                    </Text>
+                  </View>
+                  <AnimatedPressable
+                    onPress={handleUnlist}
+                    disabled={forSaleLoading}
+                    style={[styles.editBarBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Unlist from sale"
+                  >
+                    {forSaleLoading ? (
+                      <ActivityIndicator size="small" color={theme.muted} />
+                    ) : (
+                      <Text style={[styles.editBarBtnText, { color: theme.muted }]}>Unlist</Text>
+                    )}
+                  </AnimatedPressable>
+                  <AnimatedPressable
+                    onPress={() => router.push('/sell/offers')}
+                    style={[styles.editBarBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="View offers"
+                  >
+                    <Ionicons name="pricetags-outline" size={14} color={theme.accent} />
+                    <Text style={[styles.editBarBtnText, { color: theme.accent }]}>Offers</Text>
+                  </AnimatedPressable>
+                </>
+              ) : (
+                <AnimatedPressable
+                  onPress={() => {
+                    setAskingPriceValue(editableValue || String(q50 || value || ''));
+                    setForSaleModalVisible(true);
+                  }}
+                  style={[styles.forSaleBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="List this item for sale"
+                >
+                  <Ionicons name="pricetag-outline" size={16} color={theme.accent} />
+                  <Text style={[styles.forSaleBtnText, { color: theme.accent }]}>List for Sale</Text>
+                </AnimatedPressable>
+              )}
+            </View>
+          )}
+
+          {/* Add to Watchlist — for saved (non-draft) items */}
+          {!isDraft && id && !isEditing && (
+            <AnimatedPressable
+              onPress={() => {
+                setWatchlistTargetPrice(editableValue || String(q50 || value || ''));
+                setWatchlistModalVisible(true);
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              }}
+              style={[styles.watchlistBtn, { backgroundColor: theme.card, borderColor: theme.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel="Add this item to your watchlist"
+            >
+              <Ionicons name="eye-outline" size={16} color={theme.accent} />
+              <Text style={[styles.watchlistBtnText, { color: theme.accent }]}>Add to Watchlist</Text>
+            </AnimatedPressable>
+          )}
 
           {/* Draft mode - Quick actions row */}
           {isDraft && (
@@ -824,8 +1760,8 @@ export default function ItemDetailScreen() {
               { backgroundColor: theme.card, borderColor: theme.border },
             ]}
           >
-            {/* Editable Name (draft mode) */}
-            {isDraft ? (
+            {/* Editable Name (draft or edit mode) */}
+            {isDraft || isEditing ? (
               <TextInput
                 style={[styles.editableNameInputSimple, { color: theme.text, borderBottomColor: theme.border }]}
                 value={editableName}
@@ -843,7 +1779,7 @@ export default function ItemDetailScreen() {
               <Text style={[styles.label, { color: theme.muted }]}>
                 Category
               </Text>
-              {isDraft ? (
+              {isDraft || isEditing ? (
                 <Pressable
                   onPress={showCategoryPicker}
                   style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
@@ -876,7 +1812,7 @@ export default function ItemDetailScreen() {
               <Text style={[styles.label, { color: theme.muted }]}>
                 Collection
               </Text>
-              {isDraft ? (
+              {isDraft || isEditing ? (
                 <Pressable
                   onPress={showCollectionPicker}
                   style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
@@ -897,7 +1833,7 @@ export default function ItemDetailScreen() {
               <Text style={[styles.label, { color: theme.muted }]}>
                 Condition
               </Text>
-              {isDraft ? (
+              {isDraft || isEditing ? (
                 <Pressable
                   onPress={showConditionPicker}
                   style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
@@ -910,7 +1846,7 @@ export default function ItemDetailScreen() {
                   <Ionicons name="chevron-down" size={14} color={theme.muted} />
                 </Pressable>
               ) : (
-                <Text style={[styles.value, { color: theme.text }]}>{editableCondition}</Text>
+                <Text style={[styles.value, { color: theme.text }]} accessibilityLabel={`Condition: ${editableCondition}`}>{editableCondition}</Text>
               )}
             </View>
 
@@ -918,9 +1854,9 @@ export default function ItemDetailScreen() {
               <Text style={[styles.label, { color: theme.muted }]}>
                 Estimated value
               </Text>
-              {isDraft ? (
+              {isDraft || isEditing ? (
                 <View style={styles.editableValueRow}>
-                  <Text style={[styles.currencySymbol, { color: theme.muted }]}>€</Text>
+                  <Text style={[styles.currencySymbol, { color: theme.muted }]}>{getCurrencySymbol(settings.currency)}</Text>
                   <TextInput
                     style={[styles.editableValueInput, { color: theme.text, borderBottomColor: theme.border, fontWeight: '700' }]}
                     value={editableValue}
@@ -928,11 +1864,15 @@ export default function ItemDetailScreen() {
                     placeholder="0"
                     placeholderTextColor={theme.muted ?? '#64748B'}
                     keyboardType="decimal-pad"
-                    accessibilityLabel="Estimated value in euros"
+                    accessibilityLabel={`Estimated value in ${settings.currency}`}
                   />
                 </View>
               ) : (
-                <Text style={[styles.valueHighlight, { color: theme.text }]}>
+                <Text
+                  style={[styles.valueHighlight, { color: theme.text }]}
+                  accessibilityRole="text"
+                  accessibilityLabel={`Estimated value: ${formatPrice(toNum(editableValue))}`}
+                >
                   {formatPrice(toNum(editableValue))}
                 </Text>
               )}
@@ -946,6 +1886,253 @@ export default function ItemDetailScreen() {
               subtypeId={subtypeId}
               collections={itemCollections}
             />
+
+            {/* ── Size-Specific Pricing — Sneakers ────────────────────────── */}
+            {categorySlug === 'sneakers' && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="footsteps-outline" size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Size</Text>
+                  </View>
+                  {sizeSaving && <ActivityIndicator size="small" color={theme.accent} />}
+                </View>
+                <View style={styles.sizeSelectorRow}>
+                  {/* Size system toggle */}
+                  <View style={styles.sizeSystemRow}>
+                    {(['US', 'EU', 'UK'] as const).map((sys) => (
+                      <Pressable
+                        key={sys}
+                        onPress={() => {
+                          setSizeSystem(sys.toLowerCase() as 'us' | 'eu' | 'uk');
+                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                        }}
+                        style={[
+                          styles.sizeSystemPill,
+                          {
+                            backgroundColor: sizeSystem === sys.toLowerCase() ? theme.accent : theme.background,
+                            borderColor: theme.border,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: sizeSystem === sys.toLowerCase() }}
+                        accessibilityLabel={`Size system: ${sys}`}
+                      >
+                        <Text style={[
+                          styles.sizeSystemPillText,
+                          { color: sizeSystem === sys.toLowerCase() ? '#fff' : theme.muted },
+                        ]}>{sys}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  {/* Size picker */}
+                  <View style={styles.sizePillsRow}>
+                    {SNEAKER_SIZES.map((sz) => (
+                      <Pressable
+                        key={sz}
+                        onPress={() => {
+                          setItemSizeValue(sz);
+                          handleSizeChange(sz, sizeSystem);
+                        }}
+                        style={[
+                          styles.sizePill,
+                          {
+                            backgroundColor: itemSizeValue === sz ? theme.accent : theme.background,
+                            borderColor: itemSizeValue === sz ? theme.accent : theme.border,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: itemSizeValue === sz }}
+                        accessibilityLabel={`Size ${sz}`}
+                      >
+                        <Text style={[
+                          styles.sizePillText,
+                          { color: itemSizeValue === sz ? '#fff' : theme.text },
+                        ]}>{sz}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+                <View style={[styles.sizeInfoNote, { backgroundColor: theme.accent + '10' }]}>
+                  <Ionicons name="information-circle-outline" size={14} color={theme.accent} />
+                  <Text style={[styles.sizeInfoNoteText, { color: theme.accent }]}>
+                    Size affects market value — prices vary by size
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* ── Size-Specific Pricing — Watches ─────────────────────────── */}
+            {categorySlug === 'watches' && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="watch-outline" size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Case Size</Text>
+                  </View>
+                  {sizeSaving && <ActivityIndicator size="small" color={theme.accent} />}
+                </View>
+                <View style={styles.sizePillsRow}>
+                  {WATCH_SIZES.map((sz) => (
+                    <Pressable
+                      key={sz}
+                      onPress={() => {
+                        setItemSizeValue(sz);
+                        handleSizeChange(sz, 'mm');
+                      }}
+                      style={[
+                        styles.sizePill,
+                        {
+                          backgroundColor: itemSizeValue === sz ? theme.accent : theme.background,
+                          borderColor: itemSizeValue === sz ? theme.accent : theme.border,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: itemSizeValue === sz }}
+                      accessibilityLabel={`Case diameter ${sz}`}
+                    >
+                      <Text style={[
+                        styles.sizePillText,
+                        { color: itemSizeValue === sz ? '#fff' : theme.text },
+                      ]}>{sz}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={[styles.sizeInfoNote, { backgroundColor: theme.accent + '10' }]}>
+                  <Ionicons name="information-circle-outline" size={14} color={theme.accent} />
+                  <Text style={[styles.sizeInfoNoteText, { color: theme.accent }]}>
+                    Size affects market value — prices vary by size
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* ── LEGO-Specific Features ──────────────────────────────────── */}
+            {categorySlug === 'lego' && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="cube-outline" size={20} color={CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>LEGO Details</Text>
+                  </View>
+                </View>
+                {/* Piece Count */}
+                {(itemAttributes?.piece_count || itemAttributes?.pieces) && (
+                  <View style={styles.legoDetailRow}>
+                    <Ionicons name="apps-outline" size={16} color={theme.muted} />
+                    <Text style={[styles.legoDetailLabel, { color: theme.muted }]}>Piece Count</Text>
+                    <Text style={[styles.legoDetailValue, { color: theme.text }]}>
+                      {String(itemAttributes?.piece_count || itemAttributes?.pieces)} pieces
+                    </Text>
+                  </View>
+                )}
+                {/* Set Number */}
+                {itemAttributes?.set_number && (
+                  <View style={styles.legoDetailRow}>
+                    <Ionicons name="barcode-outline" size={16} color={theme.muted} />
+                    <Text style={[styles.legoDetailLabel, { color: theme.muted }]}>Set</Text>
+                    <Text style={[styles.legoDetailValue, { color: theme.text }]}>
+                      #{String(itemAttributes.set_number)}
+                    </Text>
+                  </View>
+                )}
+                {/* Retirement Alert Badge */}
+                {itemAttributes?.retirement_date && (
+                  <View style={[styles.legoRetirementBadge, { backgroundColor: '#FEF3C7' }]}>
+                    <Ionicons name="alert-circle" size={16} color="#D97706" />
+                    <Text style={[styles.legoRetirementText, { color: '#92400E' }]}>
+                      Retiring {String(itemAttributes.retirement_date)}
+                      {new Date(String(itemAttributes.retirement_date)) <= new Date()
+                        ? ' — RETIRED'
+                        : ''}
+                    </Text>
+                  </View>
+                )}
+                {/* Build Instructions Link */}
+                {itemAttributes?.set_number && (
+                  <Pressable
+                    onPress={() => {
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      Linking.openURL(`https://www.lego.com/en-us/service/buildinginstructions/${String(itemAttributes.set_number)}`).catch((err) =>
+                        logger.warn('[ItemDetail] Failed to open LEGO instructions URL', err)
+                      );
+                    }}
+                    style={[styles.legoInstructionsBtn, { borderColor: CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent }]}
+                    accessibilityRole="link"
+                    accessibilityLabel={`Open build instructions for set ${String(itemAttributes.set_number)}`}
+                  >
+                    <Ionicons name="document-text-outline" size={16} color={CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent} />
+                    <Text style={[styles.legoInstructionsBtnText, { color: CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent }]}>
+                      Build Instructions
+                    </Text>
+                    <Ionicons name="open-outline" size={14} color={CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent} />
+                  </Pressable>
+                )}
+              </View>
+            )}
+
+            {/* ── Funko Vaulted Status ────────────────────────────────────── */}
+            {categorySlug === 'funko' && (
+              itemAttributes?.vaulted === true ||
+              (typeof notes === 'string' && notes.toLowerCase().includes('vaulted')) ||
+              (typeof itemAttributes?.notes === 'string' && String(itemAttributes.notes).toLowerCase().includes('vaulted'))
+            ) && (
+              <View style={[styles.vaultedBadgeContainer, { borderTopColor: theme.border }]}>
+                <View style={[styles.vaultedBadge, { backgroundColor: '#FEE2E2' }]}>
+                  <Ionicons name="lock-closed" size={16} color="#DC2626" />
+                  <Text style={[styles.vaultedBadgeText, { color: '#991B1B' }]}>
+                    Vaulted
+                  </Text>
+                </View>
+                <Text style={[styles.vaultedHint, { color: theme.muted }]}>
+                  This Pop! has been retired from production. Vaulted items often increase in value.
+                </Text>
+              </View>
+            )}
+
+            {/* ── Sneaker Authentication Links ────────────────────────────── */}
+            {categorySlug === 'sneakers' && !isDraft && id && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="shield-checkmark-outline" size={20} color="#22C55E" />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Verify Authenticity</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 8 }}>
+                  <Pressable
+                    onPress={() => {
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      Linking.openURL('https://checkcheck.com').catch((err) =>
+                        logger.warn('[ItemDetail] Failed to open CheckCheck URL', err)
+                      );
+                    }}
+                    style={[styles.authLinkBtn, { borderColor: '#22C55E' }]}
+                    accessibilityRole="link"
+                    accessibilityLabel="Verify with CheckCheck"
+                  >
+                    <Ionicons name="checkmark-circle-outline" size={16} color="#22C55E" />
+                    <Text style={[styles.authLinkBtnText, { color: '#22C55E' }]}>CheckCheck</Text>
+                    <Ionicons name="open-outline" size={12} color="#22C55E" />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      Linking.openURL('https://www.legitcheck.app').catch((err) =>
+                        logger.warn('[ItemDetail] Failed to open Legit Check URL', err)
+                      );
+                    }}
+                    style={[styles.authLinkBtn, { borderColor: '#3B82F6' }]}
+                    accessibilityRole="link"
+                    accessibilityLabel="Verify with Legit Check"
+                  >
+                    <Ionicons name="shield-checkmark-outline" size={16} color="#3B82F6" />
+                    <Text style={[styles.authLinkBtnText, { color: '#3B82F6' }]}>Legit Check</Text>
+                    <Ionicons name="open-outline" size={12} color="#3B82F6" />
+                  </Pressable>
+                </View>
+              </View>
+            )}
 
             {/* New Explainable AI Interface - PriceCard with visual RangeBar */}
             {featureFlags.FEATURE_EXPLAINABLE_AI_INTERFACES && priceEstimate && (
@@ -1136,6 +2323,151 @@ export default function ItemDetailScreen() {
               </View>
             )}
 
+            {/* Price History Chart — lazy loaded */}
+            {!isDraft && id && (
+              <View
+                style={[styles.sectionBlock, { borderTopColor: theme.border }]}
+                onLayout={() => {
+                  if (!priceTrendVisible) setPriceTrendVisible(true);
+                }}
+              >
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="trending-up-outline" size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Price History</Text>
+                  </View>
+                  {priceTrendData && (
+                    <View style={styles.trendDirectionBadge}>
+                      <Ionicons
+                        name={
+                          priceTrendData.direction === 'up'
+                            ? 'arrow-up'
+                            : priceTrendData.direction === 'down'
+                            ? 'arrow-down'
+                            : 'remove'
+                        }
+                        size={14}
+                        color={
+                          priceTrendData.direction === 'up'
+                            ? '#22C55E'
+                            : priceTrendData.direction === 'down'
+                            ? '#EF4444'
+                            : theme.muted
+                        }
+                      />
+                      <Text
+                        style={[
+                          styles.trendPctText,
+                          {
+                            color:
+                              priceTrendData.direction === 'up'
+                                ? '#22C55E'
+                                : priceTrendData.direction === 'down'
+                                ? '#EF4444'
+                                : theme.muted,
+                          },
+                        ]}
+                      >
+                        {priceTrendData.pct_change > 0 ? '+' : ''}
+                        {priceTrendData.pct_change.toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Time range pill buttons */}
+                <View style={styles.trendRangePills}>
+                  {PRICE_CHART_RANGES.map((range) => (
+                    <Pressable
+                      key={range.days}
+                      onPress={() => handlePriceTrendRangeChange(range.days)}
+                      style={[
+                        styles.trendRangePill,
+                        {
+                          backgroundColor:
+                            priceTrendRange === range.days
+                              ? theme.accent
+                              : theme.background,
+                          borderColor:
+                            priceTrendRange === range.days
+                              ? theme.accent
+                              : theme.border,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Show ${range.label} price history`}
+                      accessibilityState={{ selected: priceTrendRange === range.days }}
+                    >
+                      <Text
+                        style={[
+                          styles.trendRangePillText,
+                          {
+                            color:
+                              priceTrendRange === range.days
+                                ? '#FFFFFF'
+                                : theme.muted,
+                          },
+                        ]}
+                      >
+                        {range.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {/* Loading skeleton */}
+                {priceTrendLoading && (
+                  <View style={styles.trendChartContainer}>
+                    <Skeleton width="100%" height={160} borderRadius={12} />
+                  </View>
+                )}
+
+                {/* Chart */}
+                {!priceTrendLoading && priceTrendChartData.length > 1 && (
+                  <View style={styles.trendChartContainer}>
+                    {/* Hover info — shows hovered value or current price */}
+                    <View style={styles.trendHoverRow}>
+                      <Text style={[styles.trendHoverPrice, { color: theme.text }]}>
+                        {priceTrendHoverValue != null
+                          ? formatPrice(priceTrendHoverValue, settings.currency)
+                          : formatPrice(priceTrendData?.current_q50, settings.currency)}
+                      </Text>
+                      {priceTrendHoverDate && (
+                        <Text style={[styles.trendHoverDate, { color: theme.muted }]}>
+                          {new Date(priceTrendHoverDate).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </Text>
+                      )}
+                    </View>
+                    <InteractiveLineChart
+                      data={priceTrendChartData}
+                      width={screenWidth - 64 - 32}
+                      height={160}
+                      color="#81D8D0"
+                      textColor={theme.text}
+                      onHoverChange={handlePriceTrendHover}
+                    />
+                  </View>
+                )}
+
+                {/* Empty state */}
+                {!priceTrendLoading && priceTrendChartData.length <= 1 && priceTrendVisible && (
+                  <View style={styles.trendEmptyState}>
+                    <Ionicons name="analytics-outline" size={32} color={theme.muted} />
+                    <Text style={[styles.trendEmptyText, { color: theme.muted }]}>
+                      Not enough price data yet
+                    </Text>
+                    <Text style={[styles.trendEmptySubtext, { color: theme.muted }]}>
+                      Price history will appear as more market data is collected.
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
             {/* Provenance & History — collapsible */}
             {!isDraft && id && (
               <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
@@ -1170,6 +2502,265 @@ export default function ItemDetailScreen() {
                 )}
               </View>
             )}
+
+            {/* Grading Section — for eligible categories */}
+            {!isDraft && id && isGradingEligible && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <Pressable
+                  onPress={() => {
+                    if (!gradingExpanded) {
+                      loadGradingServices();
+                      if (!gradingPopulation) loadGradingPopulation();
+                    }
+                    setGradingExpanded(!gradingExpanded);
+                    fireHaptic(HapticIntent.TAP_LIGHT, { enabled: settings.hapticsEnabled });
+                  }}
+                  style={styles.sectionHeaderRow}
+                  accessibilityRole="button"
+                  accessibilityLabel="Toggle grading information"
+                >
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name="shield-checkmark-outline" size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Grading</Text>
+                  </View>
+                  {gradingLookupResult?.cert_verified && (
+                    <View style={[styles.gradingBadge, { backgroundColor: '#22C55E' + '20' }]}>
+                      <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
+                      <Text style={styles.gradingBadgeText}>
+                        {gradingLookupResult.service_name} {gradingLookupResult.grade}
+                      </Text>
+                    </View>
+                  )}
+                  <Ionicons
+                    name={gradingExpanded ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={theme.muted}
+                  />
+                </Pressable>
+
+                {gradingExpanded && (
+                  <View style={styles.sectionContent}>
+                    {/* Verified grade badge (if lookup was performed) */}
+                    {gradingLookupResult?.cert_verified && (
+                      <Pressable
+                        style={[styles.gradingVerifiedCard, { backgroundColor: theme.card, borderColor: '#22C55E' + '40' }]}
+                        onPress={() => {
+                          if (gradingLookupResult.cert_url) {
+                            Linking.openURL(gradingLookupResult.cert_url);
+                          }
+                        }}
+                        accessibilityRole="link"
+                        accessibilityLabel={`View ${gradingLookupResult.service_name} certificate`}
+                      >
+                        <View style={styles.gradingVerifiedHeader}>
+                          <Ionicons name="shield-checkmark" size={24} color="#22C55E" />
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.gradingVerifiedGrade, { color: theme.text }]}>
+                              {gradingLookupResult.service_name} {gradingLookupResult.grade}
+                            </Text>
+                            <Text style={[styles.gradingVerifiedMeta, { color: theme.muted }]}>
+                              Cert #{gradingLookupResult.cert_number}
+                              {gradingLookupResult.year ? ` \u00b7 ${gradingLookupResult.year}` : ''}
+                              {gradingLookupResult.label_type ? ` \u00b7 ${gradingLookupResult.label_type}` : ''}
+                            </Text>
+                          </View>
+                          <Ionicons name="open-outline" size={16} color={theme.accent} />
+                        </View>
+                        {gradingLookupResult.item_name && (
+                          <Text style={[styles.gradingVerifiedItemName, { color: theme.muted }]}>
+                            {gradingLookupResult.item_name}
+                          </Text>
+                        )}
+                        {gradingLookupResult.sub_grades && (
+                          <View style={styles.gradingSubGradesRow}>
+                            {Object.entries(gradingLookupResult.sub_grades).map(([key, val]) => (
+                              <View key={key} style={[styles.gradingSubGradeChip, { backgroundColor: theme.background }]}>
+                                <Text style={[styles.gradingSubGradeLabel, { color: theme.muted }]}>
+                                  {key.charAt(0).toUpperCase() + key.slice(1)}
+                                </Text>
+                                <Text style={[styles.gradingSubGradeValue, { color: theme.text }]}>{val}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+                        <View style={styles.gradingPopRow}>
+                          {gradingLookupResult.population_at_grade != null && (
+                            <Text style={[styles.gradingPopText, { color: theme.muted }]}>
+                              Pop at grade: {formatNumber(gradingLookupResult.population_at_grade)}
+                            </Text>
+                          )}
+                          {gradingLookupResult.population_higher != null && gradingLookupResult.population_higher > 0 && (
+                            <Text style={[styles.gradingPopText, { color: theme.muted }]}>
+                              {' \u00b7 '}Higher: {formatNumber(gradingLookupResult.population_higher)}
+                            </Text>
+                          )}
+                        </View>
+                      </Pressable>
+                    )}
+
+                    {/* Look Up Certificate button */}
+                    <Pressable
+                      style={[styles.gradingActionBtn, { borderColor: theme.accent, backgroundColor: theme.card }]}
+                      onPress={() => {
+                        setGradingModalVisible(true);
+                        fireHaptic(HapticIntent.TAP_LIGHT, { enabled: settings.hapticsEnabled });
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Look up grading certificate"
+                    >
+                      <Ionicons name="search-outline" size={16} color={theme.accent} />
+                      <Text style={[styles.gradingActionBtnText, { color: theme.accent }]}>Look Up Certificate</Text>
+                    </Pressable>
+
+                    {/* Population Report mini-table */}
+                    {gradingPopLoading && (
+                      <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                        <ActivityIndicator size="small" color={theme.accent} />
+                        <Text style={[{ fontSize: 12, marginTop: 6 }, { color: theme.muted }]}>Loading population data...</Text>
+                      </View>
+                    )}
+                    {!gradingPopLoading && gradingPopulation && (
+                      <View style={[styles.gradingPopTable, { borderColor: theme.border }]}>
+                        <View style={styles.gradingPopTableHeader}>
+                          <Text style={[styles.gradingPopTableTitle, { color: theme.text }]}>Population Report</Text>
+                          <Text style={[styles.gradingPopTableSub, { color: theme.muted }]}>
+                            {formatNumber(gradingPopulation.total_graded)} total graded
+                            {gradingPopulation.avg_grade != null ? ` \u00b7 Avg: ${gradingPopulation.avg_grade.toFixed(1)}` : ''}
+                          </Text>
+                        </View>
+                        <View style={[styles.gradingPopTableHeaderRow, { borderBottomColor: theme.border }]}>
+                          <Text style={[styles.gradingPopTableHeaderCell, { color: theme.muted, flex: 1 }]}>Grade</Text>
+                          <Text style={[styles.gradingPopTableHeaderCell, { color: theme.muted, flex: 1, textAlign: 'right' }]}>Count</Text>
+                          <Text style={[styles.gradingPopTableHeaderCell, { color: theme.muted, flex: 1, textAlign: 'right' }]}>%</Text>
+                        </View>
+                        {gradingPopulation.population
+                          .filter((p) => p.count > 0)
+                          .slice(-10)
+                          .reverse()
+                          .map((entry) => (
+                            <View key={entry.grade} style={[styles.gradingPopTableRow, { borderBottomColor: theme.border }]}>
+                              <Text style={[styles.gradingPopTableCell, { color: theme.text, flex: 1, fontWeight: '600' }]}>{entry.grade}</Text>
+                              <Text style={[styles.gradingPopTableCell, { color: theme.text, flex: 1, textAlign: 'right' }]}>{formatNumber(entry.count)}</Text>
+                              <Text style={[styles.gradingPopTableCell, { color: theme.muted, flex: 1, textAlign: 'right' }]}>
+                                {entry.pct_of_total != null ? `${entry.pct_of_total.toFixed(1)}%` : '-'}
+                              </Text>
+                            </View>
+                          ))}
+                      </View>
+                    )}
+
+                    {/* Submit for Grading buttons */}
+                    {gradingServices.length > 0 && (
+                      <View style={styles.gradingSubmitSection}>
+                        <Text style={[styles.gradingSubmitTitle, { color: theme.text }]}>Submit for Grading</Text>
+                        <View style={styles.gradingSubmitRow}>
+                          {gradingServices.slice(0, 4).map((svc) => (
+                            <Pressable
+                              key={svc.id}
+                              style={[styles.gradingSubmitBtn, { borderColor: theme.border, backgroundColor: theme.card }]}
+                              onPress={() => {
+                                Linking.openURL(svc.submission_url);
+                                fireHaptic(HapticIntent.TAP_LIGHT, { enabled: settings.hapticsEnabled });
+                              }}
+                              accessibilityRole="link"
+                              accessibilityLabel={`Submit to ${svc.short_name}`}
+                            >
+                              <Text style={[styles.gradingSubmitBtnName, { color: theme.text }]}>{svc.short_name}</Text>
+                              <Text style={[styles.gradingSubmitBtnMeta, { color: theme.muted }]}>{svc.price_range}</Text>
+                              <Ionicons name="open-outline" size={12} color={theme.muted} />
+                            </Pressable>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Grading Certificate Lookup Modal */}
+            <Modal
+              visible={gradingModalVisible}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setGradingModalVisible(false)}
+            >
+              <Pressable
+                style={styles.forSaleModalOverlay}
+                onPress={() => setGradingModalVisible(false)}
+              >
+                <Pressable
+                  style={[styles.forSaleModalSheet, { backgroundColor: theme.card }]}
+                  onPress={() => {}}
+                >
+                  <View style={styles.forSaleModalHeader}>
+                    <Text style={[styles.forSaleModalTitle, { color: theme.text }]}>Look Up Certificate</Text>
+                    <Pressable onPress={() => setGradingModalVisible(false)}>
+                      <Ionicons name="close" size={24} color={theme.muted} />
+                    </Pressable>
+                  </View>
+
+                  {/* Service picker */}
+                  <Text style={[styles.forSaleModalLabel, { color: theme.text }]}>Grading Service</Text>
+                  <View style={styles.gradingServicePickerRow}>
+                    {(['psa', 'cgc', 'bgs', 'beckett'] as const).map((svc) => (
+                      <Pressable
+                        key={svc}
+                        style={[
+                          styles.gradingServicePickerChip,
+                          {
+                            backgroundColor: gradingServicePick === svc ? theme.accent : theme.background,
+                            borderColor: gradingServicePick === svc ? theme.accent : theme.border,
+                          },
+                        ]}
+                        onPress={() => setGradingServicePick(svc)}
+                      >
+                        <Text
+                          style={[
+                            styles.gradingServicePickerText,
+                            { color: gradingServicePick === svc ? '#fff' : theme.text },
+                          ]}
+                        >
+                          {svc.toUpperCase()}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  {/* Cert number input */}
+                  <Text style={[styles.forSaleModalLabel, { color: theme.text, marginTop: 16 }]}>Certification Number</Text>
+                  <TextInput
+                    style={[styles.forSaleModalInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.background }]}
+                    value={gradingCertInput}
+                    onChangeText={setGradingCertInput}
+                    placeholder="e.g. 12345678"
+                    placeholderTextColor={theme.muted}
+                    keyboardType="number-pad"
+                    returnKeyType="search"
+                    onSubmitEditing={handleGradingLookup}
+                    autoFocus
+                  />
+                  <Text style={[styles.forSaleModalHint, { color: theme.muted }]}>
+                    Enter the number printed on your grading certificate or slab label.
+                  </Text>
+
+                  <Pressable
+                    style={[styles.forSaleModalConfirmBtn, { backgroundColor: theme.accent, opacity: gradingLookupLoading ? 0.6 : 1 }]}
+                    onPress={handleGradingLookup}
+                    disabled={gradingLookupLoading}
+                  >
+                    {gradingLookupLoading ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name="search" size={18} color="#fff" />
+                        <Text style={styles.forSaleModalConfirmBtnText}>Look Up</Text>
+                      </>
+                    )}
+                  </Pressable>
+                </Pressable>
+              </Pressable>
+            </Modal>
 
             {/* Dossier Section */}
             {!isDraft && id && (
@@ -1290,7 +2881,10 @@ export default function ItemDetailScreen() {
                   </Pressable>
                 ) : (
                   <Pressable
-                    onPress={() => router.push('/build-paint-projects')}
+                    onPress={() => router.push({
+                      pathname: '/build-paint-projects',
+                      params: { linkItemId: id, linkItemName: editableName, linkCategoryId: categorySlug },
+                    })}
                     style={[styles.startBuildButton, { backgroundColor: buildAccent ?? theme.accent }]}
                     accessibilityRole="button"
                     accessibilityLabel="Start a build project for this item"
@@ -1298,6 +2892,127 @@ export default function ItemDetailScreen() {
                     <Ionicons name="add-circle-outline" size={18} color="#fff" />
                     <Text style={styles.startBuildButtonText}>Start Build Project</Text>
                   </Pressable>
+                )}
+              </View>
+            )}
+
+            {/* Reading / Play Progress — for manga, comics, games */}
+            {!isDraft && id && hasProgressTracking && progressConfig && (
+              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <Ionicons name={(progressConfig.icon as keyof typeof Ionicons.glyphMap) || 'book-outline'} size={20} color={theme.accent} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>{progressConfig.label}</Text>
+                  </View>
+                  {progressSaving && (
+                    <ActivityIndicator size="small" color={theme.accent} />
+                  )}
+                </View>
+
+                {progressLoading ? (
+                  <ActivityIndicator size="small" color={theme.accent} style={{ marginVertical: 12 }} />
+                ) : (
+                  <>
+                    {/* Status pills */}
+                    <View style={styles.progressStatusRow}>
+                      {progressConfig.statuses.map((status) => {
+                        const isActive = progressStatus === status;
+                        const statusColor = STATUS_COLORS[status] || theme.accent;
+                        return (
+                          <Pressable
+                            key={status}
+                            onPress={() => handleProgressStatusChange(status)}
+                            style={[
+                              styles.progressStatusPill,
+                              {
+                                backgroundColor: isActive ? statusColor : statusColor + '15',
+                                borderColor: statusColor,
+                              },
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Set status to ${STATUS_DISPLAY[status]}`}
+                            accessibilityState={{ selected: isActive }}
+                          >
+                            <Text style={[
+                              styles.progressStatusPillText,
+                              { color: isActive ? '#fff' : statusColor },
+                            ]}>
+                              {STATUS_DISPLAY[status]}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+
+                    {/* Progress bar (percentage) */}
+                    <View style={styles.progressBarSection}>
+                      <Text style={[styles.progressBarLabel, { color: theme.muted }]}>
+                        Progress: {progressPct ?? 0}%
+                      </Text>
+                      <View style={styles.progressBarRow}>
+                        <View style={[styles.progressBarBg, { backgroundColor: theme.border }]}>
+                          <View
+                            style={[
+                              styles.progressBarFill,
+                              {
+                                backgroundColor: progressStatus ? (STATUS_COLORS[progressStatus] || theme.accent) : theme.accent,
+                                width: `${progressPct ?? 0}%`,
+                              },
+                            ]}
+                          />
+                        </View>
+                      </View>
+                      {/* Quick percentage buttons */}
+                      <View style={styles.progressPctButtons}>
+                        {[0, 25, 50, 75, 100].map((pct) => (
+                          <Pressable
+                            key={pct}
+                            onPress={() => handleProgressPctChange(pct)}
+                            style={[
+                              styles.progressPctBtn,
+                              {
+                                backgroundColor: progressPct === pct ? theme.accent : theme.background,
+                                borderColor: theme.border,
+                              },
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Set progress to ${pct}%`}
+                          >
+                            <Text style={[
+                              styles.progressPctBtnText,
+                              { color: progressPct === pct ? '#fff' : theme.muted },
+                            ]}>
+                              {pct}%
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    </View>
+
+                    {/* Progress notes */}
+                    <TextInput
+                      style={[
+                        styles.progressNotesInput,
+                        {
+                          color: theme.text,
+                          borderColor: theme.border,
+                          backgroundColor: theme.background,
+                        },
+                      ]}
+                      placeholder={
+                        categorySlug === 'manga' || categorySlug === 'comic_books'
+                          ? 'Reading notes (e.g., "Volume 14 of 37, love the arc!")'
+                          : 'Play notes (e.g., "Cleared World 5, need to replay boss")'
+                      }
+                      placeholderTextColor={theme.muted ?? '#64748B'}
+                      multiline
+                      value={progressNotes}
+                      onChangeText={handleProgressNotesChange}
+                      textAlignVertical="top"
+                      blurOnSubmit={false}
+                      accessibilityLabel={`${progressConfig.label} notes`}
+                    />
+                  </>
                 )}
               </View>
             )}
@@ -1375,6 +3090,7 @@ export default function ItemDetailScreen() {
                         }}
                         style={[styles.marketHitRow, { borderBottomColor: theme.border }]}
                         accessibilityRole="link"
+                        accessibilityLabel={`${hit.title}, ${formatPrice(toNum(hit.price))} on ${hit.source || hit.provider || 'marketplace'}`}
                       >
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.marketHitTitle, { color: theme.text }]} numberOfLines={1}>
@@ -1389,6 +3105,24 @@ export default function ItemDetailScreen() {
                         </Text>
                       </Pressable>
                     ))}
+                    {marketResults.length > 5 && (
+                      <AnimatedPressable
+                        onPress={() => {
+                          router.push({
+                            pathname: '/(tabs)/marketplace',
+                            params: { q: editableName },
+                          });
+                        }}
+                        style={styles.viewAllLink}
+                        accessibilityRole="link"
+                        accessibilityLabel={`View all ${marketResults.length} marketplace results`}
+                      >
+                        <Text style={[styles.viewAllLinkText, { color: theme.accent }]}>
+                          View all {marketResults.length} results
+                        </Text>
+                        <Ionicons name="arrow-forward" size={14} color={theme.accent} />
+                      </AnimatedPressable>
+                    )}
                   </View>
                 )}
                 {marketExpanded && marketResults.length === 0 && !marketLoading && (
@@ -1442,6 +3176,37 @@ export default function ItemDetailScreen() {
               />
             </View>
 
+            {/* Edit Item Details — full width button below all details */}
+            {!isDraft && id && !isEditing && (
+              <View style={styles.editDetailsFullBar}>
+                <AnimatedPressable
+                  onPress={() => setIsEditing(true)}
+                  style={[styles.editDetailsFullBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit item details"
+                >
+                  <Ionicons name="create-outline" size={18} color={theme.accent} />
+                  <Text style={[styles.editDetailsFullBtnText, { color: theme.accent }]}>Edit Item Details</Text>
+                </AnimatedPressable>
+                <AnimatedPressable
+                  onPress={async () => {
+                    try {
+                      await Share.share({
+                        message: `Check out ${editableName}${toNum(editableValue) ? ` - valued at ${formatPrice(toNum(editableValue))}` : ''} on CollectAI`,
+                      });
+                    } catch {
+                      // User cancelled
+                    }
+                  }}
+                  style={[styles.editDetailsShareBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share this item"
+                >
+                  <Ionicons name="share-outline" size={18} color={theme.text} />
+                </AnimatedPressable>
+              </View>
+            )}
+
           </View>
         </Animated.ScrollView>
 
@@ -1469,28 +3234,39 @@ export default function ItemDetailScreen() {
                 )}
               </Pressable>
             ) : (
-              <Pressable
-                onPress={onSaveNotes}
-                disabled={savingNotes}
-                style={[
-                  styles.stickyButton,
-                  { backgroundColor: theme.accent, opacity: savingNotes ? 0.7 : 1 },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Save changes"
-              >
-                {savingNotes ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Ionicons name="save-outline" size={18} color="#FFFFFF" />
-                    <Text style={styles.stickyButtonText}>Save Changes</Text>
-                  </>
-                )}
-              </Pressable>
+              <View style={styles.stickyButtonRow}>
+                <Pressable
+                  onPress={onSaveNotes}
+                  disabled={savingNotes}
+                  style={[
+                    styles.stickyButton,
+                    { backgroundColor: theme.accent, opacity: savingNotes ? 0.7 : 1, flex: 1 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save changes"
+                >
+                  {savingNotes ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="save-outline" size={18} color="#FFFFFF" />
+                      <Text style={styles.stickyButtonText}>Save Changes</Text>
+                    </>
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={() => router.push({ pathname: '/(tabs)/marketplace', params: { q: editableName } })}
+                  style={[styles.stickyButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.accent, paddingHorizontal: 16 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Find on marketplace"
+                >
+                  <Ionicons name="search-outline" size={18} color={theme.accent} />
+                </Pressable>
+              </View>
             )}
           </View>
         )}
+        <QuickNavBar />
       </SafeAreaView>
 
       {/* Price Explanation Bottom Sheet */}
@@ -1504,7 +3280,156 @@ export default function ItemDetailScreen() {
           affiliateLinks={affiliateLinks}
         />
       )}
+
+      {/* Image Zoom Modal */}
+      {(zoomImageUri || displayImageUri) && (
+        <ImageZoomModal
+          visible={zoomVisible}
+          imageUri={zoomImageUri || displayImageUri || ''}
+          onClose={() => { setZoomVisible(false); setZoomImageUri(null); }}
+        />
+      )}
+
+      {/* For-Sale Listing Modal */}
+      <Modal
+        visible={forSaleModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setForSaleModalVisible(false)}
+      >
+        <View style={styles.forSaleModalOverlay}>
+          <View style={[styles.forSaleModalSheet, { backgroundColor: theme.card }]}>
+            <View style={styles.forSaleModalHeader}>
+              <Text style={[styles.forSaleModalTitle, { color: theme.text }]}>List for Sale</Text>
+              <Pressable onPress={() => setForSaleModalVisible(false)}>
+                <Ionicons name="close" size={24} color={theme.muted} />
+              </Pressable>
+            </View>
+
+            <Text style={[styles.forSaleModalLabel, { color: theme.muted }]}>Asking price</Text>
+            <TextInput
+              style={[
+                styles.forSaleModalInput,
+                { backgroundColor: theme.background, color: theme.text, borderColor: theme.border },
+              ]}
+              value={askingPriceValue}
+              onChangeText={setAskingPriceValue}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor={theme.muted}
+              autoFocus
+            />
+
+            <Text style={[styles.forSaleModalHint, { color: theme.muted }]}>
+              Other collectors can make offers on this item. You can accept, decline, or counter any offer.
+            </Text>
+
+            <AnimatedPressable
+              onPress={handleListForSale}
+              disabled={forSaleLoading || !askingPriceValue.trim()}
+              style={[
+                styles.forSaleModalConfirmBtn,
+                {
+                  backgroundColor: theme.accent,
+                  opacity: forSaleLoading || !askingPriceValue.trim() ? 0.5 : 1,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Confirm listing for sale"
+            >
+              {forSaleLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="pricetag" size={18} color="#fff" />
+                  <Text style={styles.forSaleModalConfirmBtnText}>List for Sale</Text>
+                </>
+              )}
+            </AnimatedPressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add to Watchlist Modal */}
+      <Modal
+        visible={watchlistModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setWatchlistModalVisible(false)}
+      >
+        <View style={styles.forSaleModalOverlay}>
+          <View style={[styles.forSaleModalSheet, { backgroundColor: theme.card }]}>
+            <View style={styles.forSaleModalHeader}>
+              <Text style={[styles.forSaleModalTitle, { color: theme.text }]}>Add to Watchlist</Text>
+              <Pressable onPress={() => setWatchlistModalVisible(false)}>
+                <Ionicons name="close" size={24} color={theme.muted} />
+              </Pressable>
+            </View>
+
+            {/* Pre-filled item info */}
+            <View style={[styles.watchlistPreview, { backgroundColor: theme.background }]}>
+              <Text style={[styles.watchlistPreviewTitle, { color: theme.text }]} numberOfLines={2}>
+                {editableName}
+              </Text>
+              <View style={[styles.watchlistPreviewBadge, { backgroundColor: theme.accent + '20' }]}>
+                <Text style={[styles.watchlistPreviewBadgeText, { color: theme.accent }]}>{editableCategory}</Text>
+              </View>
+            </View>
+
+            <Text style={[styles.forSaleModalLabel, { color: theme.muted }]}>
+              Target Price ({settings.currency}) — optional
+            </Text>
+            <TextInput
+              style={[
+                styles.forSaleModalInput,
+                { backgroundColor: theme.background, color: theme.text, borderColor: theme.border },
+              ]}
+              value={watchlistTargetPrice}
+              onChangeText={setWatchlistTargetPrice}
+              keyboardType="decimal-pad"
+              placeholder="e.g. 350"
+              placeholderTextColor={theme.muted}
+              autoFocus
+            />
+
+            <Text style={[styles.forSaleModalHint, { color: theme.muted }]}>
+              We'll track this item and notify you when the price drops below your target.
+            </Text>
+
+            <AnimatedPressable
+              onPress={handleAddToWatchlist}
+              disabled={watchlistSaving}
+              style={[
+                styles.forSaleModalConfirmBtn,
+                {
+                  backgroundColor: theme.accent,
+                  opacity: watchlistSaving ? 0.5 : 1,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Confirm add to watchlist"
+            >
+              {watchlistSaving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="eye" size={18} color="#fff" />
+                  <Text style={styles.forSaleModalConfirmBtnText}>Add to Watchlist</Text>
+                </>
+              )}
+            </AnimatedPressable>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
+  );
+}
+
+export default function ItemDetailScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Item Detail">
+      <ItemDetailScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -2059,6 +3984,18 @@ const styles = StyleSheet.create({
     minWidth: 60,
     textAlign: 'right',
   },
+  viewAllLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  viewAllLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   stickyButtonContainer: {
     position: 'absolute',
     bottom: 0,
@@ -2068,6 +4005,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingBottom: 24,
     borderTopWidth: 1,
+  },
+  stickyButtonRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
   stickyButton: {
     flexDirection: 'row',
@@ -2113,5 +4054,709 @@ const styles = StyleSheet.create({
   refreshBarBtnText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  editBar: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  editBarBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  editBarBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  editBarBtnWide: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  editBarBtnWideText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  editBarBtnPrimary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  editBarBtnPrimaryText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  // Price History Chart styles
+  trendDirectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  trendPctText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  trendRangePills: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 10,
+  },
+  trendRangePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  trendRangePillText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  trendChartContainer: {
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  trendHoverRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    marginBottom: 8,
+  },
+  trendHoverPrice: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  trendHoverDate: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  trendEmptyState: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 6,
+  },
+  trendEmptyText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  trendEmptySubtext: {
+    fontSize: 12,
+    textAlign: 'center',
+    paddingHorizontal: 16,
+  },
+  // ── Image Gallery styles ─────────────────────────────────────────
+  galleryContainer: {
+    width: '100%',
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  gallerySlide: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  galleryAddCard: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#81D8D0',
+  },
+  galleryAddText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  galleryLabelBadge: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  galleryLabelText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'capitalize',
+  },
+  galleryDeleteBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  galleryCounterBadge: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  galleryCounterText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  galleryDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+  },
+  galleryDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  // For-Sale listing styles
+  forSaleBar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  forSaleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    flex: 1,
+  },
+  forSaleBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  forSaleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  forSaleBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  forSaleModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  forSaleModalSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  forSaleModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  forSaleModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  forSaleModalLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  forSaleModalInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  forSaleModalHint: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  forSaleModalConfirmBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  forSaleModalConfirmBtnText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  // Watchlist button & modal styles
+  watchlistBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  watchlistBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  watchlistPreview: {
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+  },
+  watchlistPreviewTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  watchlistPreviewBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  watchlistPreviewBadgeText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // ── Progress Tracking ────────────────────────────────────────────────
+  progressStatusRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  progressStatusPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  progressStatusPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  progressBarSection: {
+    paddingBottom: 10,
+  },
+  progressBarLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  progressBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  progressBarBg: {
+    flex: 1,
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressPctButtons: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 8,
+  },
+  progressPctBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  progressPctBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  progressNotesInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    minHeight: 60,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  // ── Grading styles ─────────────────────────────────────────────────────
+  gradingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginRight: 4,
+  },
+  gradingBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#22C55E',
+  },
+  gradingVerifiedCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 12,
+  },
+  gradingVerifiedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  gradingVerifiedGrade: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  gradingVerifiedMeta: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  gradingVerifiedItemName: {
+    fontSize: 12,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  gradingSubGradesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+  },
+  gradingSubGradeChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  gradingSubGradeLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  gradingSubGradeValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  gradingPopRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  gradingPopText: {
+    fontSize: 11,
+  },
+  gradingActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  gradingActionBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  gradingPopTable: {
+    borderRadius: 10,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  gradingPopTableHeader: {
+    padding: 12,
+  },
+  gradingPopTableTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  gradingPopTableSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  gradingPopTableHeaderRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+  gradingPopTableHeaderCell: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  gradingPopTableRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  gradingPopTableCell: {
+    fontSize: 13,
+  },
+  gradingSubmitSection: {
+    marginTop: 4,
+  },
+  gradingSubmitTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  gradingSubmitRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  gradingSubmitBtn: {
+    flex: 1,
+    minWidth: 120,
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 3,
+  },
+  gradingSubmitBtnName: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  gradingSubmitBtnMeta: {
+    fontSize: 10,
+  },
+  gradingServicePickerRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  gradingServicePickerChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  gradingServicePickerText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // ── Size-Specific Pricing ──────────────────────────────────────────────
+  sizeSelectorRow: {
+    paddingTop: 8,
+  },
+  sizeSystemRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  sizeSystemPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  sizeSystemPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sizePillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  sizePill: {
+    minWidth: 44,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  sizePillText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sizeInfoNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  sizeInfoNoteText: {
+    fontSize: 12,
+    fontWeight: '500',
+    flex: 1,
+  },
+
+  // ── LEGO-Specific ──────────────────────────────────────────────────────
+  legoDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 6,
+  },
+  legoDetailLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+  },
+  legoDetailValue: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  legoRetirementBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 6,
+  },
+  legoRetirementText: {
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  legoInstructionsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  legoInstructionsBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // ── Funko Vaulted ──────────────────────────────────────────────────────
+  vaultedBadgeContainer: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  vaultedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  vaultedBadgeText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  vaultedHint: {
+    fontSize: 12,
+    lineHeight: 17,
+  },
+
+  // ── Authentication Links ───────────────────────────────────────────────
+  authLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  authLinkBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  editDetailsFullBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 20,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  editDetailsFullBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  editDetailsFullBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  editDetailsShareBtn: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
   },
 });

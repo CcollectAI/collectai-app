@@ -17,6 +17,16 @@ export type PaginationParams = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Currency
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ISO 4217 currency codes supported by the app.
+ * The 7 supported currencies: EUR, USD, GBP, JPY, KRW, AUD, CAD.
+ */
+export type CurrencyCode = 'EUR' | 'USD' | 'GBP' | 'JPY' | 'KRW' | 'AUD' | 'CAD';
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Taxonomy Types (Hybrid Architecture)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -29,7 +39,7 @@ export type PriceBand = {
   q50: number;
   q90: number;
   confidence: number;  // 0.0 - 1.0
-  currency: string;
+  currency: CurrencyCode;
 };
 
 /**
@@ -75,7 +85,7 @@ export type WatchlistItem = {
   priority: 'high' | 'medium' | 'low';
   owned: boolean;
   targetPrice: number | null;
-  currency: string;
+  currency: CurrencyCode;
   category?: string;
   notes?: string;
   createdAt?: string;
@@ -133,7 +143,7 @@ export type QuickScanPrediction = {
   estimatedLow: number;
   estimatedMid: number;
   estimatedHigh: number;
-  currency: string;
+  currency: CurrencyCode;
   confidence: number;
   explanation?: string | null;
 };
@@ -193,8 +203,8 @@ export type MarketHit = {
   title: string;
   /** Price in source currency */
   price: number;
-  /** Currency code (EUR, USD, GBP) */
-  currency: string;
+  /** Currency code (EUR, USD, GBP, etc.) */
+  currency: CurrencyCode;
   /** Sale/end date if sold */
   soldAt?: string | null;
   /** Listing URL */
@@ -329,6 +339,7 @@ export type DmMessage = {
   authorUserId: string;
   text: string;
   createdAt: string;
+  readAt?: string | null;
 };
 
 /**
@@ -415,6 +426,9 @@ export type PersistedItem = {
 /**
  * Build & paint project — from v_build_paint_projects_v1 view.
  */
+export type PaintEntry = { brand: string; color: string; type: string };
+export type PaintRecipe = { name: string; paints: PaintEntry[]; notes: string };
+
 export type BuildPaintProject = {
   id: string;
   title: string;
@@ -428,6 +442,7 @@ export type BuildPaintProject = {
   isCompleted: boolean;
   notes?: string | null;
   imageUrl?: string | null;
+  paintRecipes?: PaintRecipe[] | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -542,7 +557,7 @@ export type MandateDeal = {
   affiliateUrl?: string | null;
   listingTitle: string;
   listingPrice: number;
-  listingCurrency: string;
+  listingCurrency: CurrencyCode;
   listingCondition?: string | null;
   listingImageUrl?: string | null;
   listingSeller?: string | null;
@@ -575,6 +590,80 @@ export type MandateDeal = {
   clickedAt?: string | null;
   purchasedAt?: string | null;
   createdAt: string;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User Presence
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * User online/offline presence status.
+ * Returned from heartbeat/presence RPCs.
+ */
+export type UserPresence = {
+  userId: string;
+  lastSeenAt: string;
+  isOnline: boolean;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Activity Feed
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ActivityType = 'item_added' | 'item_sold' | 'event_rsvp' | 'event_created' | 'project_completed' | 'achievement_earned' | 'category_followed' | 'collection_milestone';
+
+export type ActivityFeedItem = {
+  id: string;
+  userId: string;
+  activityType: ActivityType;
+  title: string;
+  description?: string | null;
+  metadata: Record<string, unknown>;
+  isPublic: boolean;
+  createdAt: string;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deal Desk (P2P Offers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type OfferStatus = 'proposed' | 'countered' | 'accepted' | 'declined' | 'expired' | 'completed' | 'cancelled';
+
+export type Offer = {
+  id: string;
+  itemId: string;
+  itemTitle: string;
+  itemImageUrl?: string | null;
+  sellerId: string;
+  buyerId: string;
+  status: OfferStatus;
+  currentPrice: number;
+  currency: string;
+  otherUserId: string;
+  otherUserName: string;
+  otherUserAvatarUrl?: string | null;
+  dmThreadId: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt?: string | null;
+};
+
+export type OfferEvent = {
+  id: string;
+  offerId: string;
+  actorId: string;
+  eventType: string;
+  price?: number | null;
+  message?: string | null;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type UserReputation = {
+  userId: string;
+  avgStars: number;
+  totalRatings: number;
+  completedDeals: number;
 };
 
 /**

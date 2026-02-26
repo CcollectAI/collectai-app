@@ -2,11 +2,12 @@
  * Sponsor Company Registration Screen
  * Route: /sponsor/register
  *
- * Form to register a new sponsor company with name, logo, website,
- * contact email, and description.
+ * Premium registration flow with hero, benefits grid, tier preview,
+ * image picker, keyboard chaining, and polished form.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   SafeAreaView,
   ScrollView,
@@ -17,8 +18,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Animated,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -30,6 +31,35 @@ import { useSettings } from '@/lib/settings';
 import { useFormField, validateAll } from '@/hooks/useFormField';
 import { compose, required, maxLength, email, url } from '@/lib/validate';
 import logger from '@/utils/logger';
+import { useToast } from '@/components/Toast';
+import { usePhotoUpload } from '@/hooks/usePhotoUpload';
+
+/* -------------------------------------------------------------------------- */
+/*  Static data                                                                */
+/* -------------------------------------------------------------------------- */
+
+const BENEFITS = [
+  { icon: 'people-outline' as const, title: 'Reach Fans', desc: 'Connect with thousands of dedicated collectors' },
+  { icon: 'megaphone-outline' as const, title: 'Announce Drops', desc: 'Notify fans about limited editions & releases' },
+  { icon: 'eye-outline' as const, title: 'Brand Visibility', desc: 'Feature your brand across collector feeds' },
+  { icon: 'analytics-outline' as const, title: 'Analytics', desc: 'Track engagement, attendance & conversions' },
+];
+
+const TIERS = [
+  {
+    name: 'Featured',
+    features: ['Event listing', 'Category placement', 'Basic analytics'],
+  },
+  {
+    name: 'Promoted',
+    badge: 'POPULAR',
+    features: ['Everything in Featured', 'Homepage banner', 'Push notifications', 'Priority support'],
+  },
+  {
+    name: 'Spotlight',
+    features: ['Everything in Promoted', 'Dedicated landing page', 'Custom branding', 'Advanced analytics'],
+  },
+];
 
 /* -------------------------------------------------------------------------- */
 /*  Component                                                                  */
@@ -42,6 +72,12 @@ const SponsorRegisterScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
+
+  /* ---- refs for keyboard chaining ---- */
+  const emailRef = useRef<TextInput>(null);
+  const websiteRef = useRef<TextInput>(null);
+  const descriptionRef = useRef<TextInput>(null);
 
   /* ---- form state ---- */
   const nameField = useFormField(compose(required('Company name'), maxLength('Company name', 255)));
@@ -52,7 +88,20 @@ const SponsorRegisterScreen: React.FC = () => {
 
   const [saveState, setSaveState] = useState<SaveState>('idle');
 
+  /* ---- photo upload for logo ---- */
+  const { pickAndUpload, uploading: logoUploading, photoUrl: uploadedLogoUrl, error: logoError } = usePhotoUpload('sponsor-logo');
+
+  const handlePickLogo = async () => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    const resultUrl = await pickAndUpload('gallery');
+    if (resultUrl) {
+      logoUrlField.onChange(resultUrl);
+    }
+  };
+
   /* ---- derived ---- */
+  const logoPreview = uploadedLogoUrl || (logoUrlField.value.trim() || null);
+
   const canSubmit =
     nameField.value.trim().length > 0 &&
     contactEmailField.value.trim().length > 0 &&
@@ -83,7 +132,7 @@ const SponsorRegisterScreen: React.FC = () => {
       router.replace('/sponsor/dashboard');
     } catch (err: unknown) {
       logger.warn('[SponsorRegister] error:', err);
-      Alert.alert('Error', (err as Error)?.message || 'Failed to register company. Please try again.');
+      showToast({ message: (err as Error)?.message || 'Failed to register company. Please try again.', type: 'error' });
     } finally {
       setSaveState('idle');
     }
@@ -111,7 +160,7 @@ const SponsorRegisterScreen: React.FC = () => {
           >
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Register Sponsor Company</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Become a Sponsor</Text>
           <View style={{ width: 32 }} />
         </View>
 
@@ -123,7 +172,79 @@ const SponsorRegisterScreen: React.FC = () => {
         >
           <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
             {/* ============================================================ */}
-            {/*  Section: Company Information                                 */}
+            {/*  Hero Section                                                */}
+            {/* ============================================================ */}
+            <View style={styles.heroSection}>
+              <View style={[styles.heroIconCircle, { backgroundColor: colors.accent + '20' }]}>
+                <Ionicons name="megaphone" size={36} color={colors.accent} />
+              </View>
+              <Text style={[styles.heroTitle, { color: colors.text }]}>
+                Sponsor on CollectAI
+              </Text>
+              <Text style={[styles.heroSubtitle, { color: colors.muted }]}>
+                Reach passionate collectors, announce exclusive drops, and grow your brand with the community that loves what you make.
+              </Text>
+            </View>
+
+            {/* ============================================================ */}
+            {/*  Benefits Grid (2x2)                                         */}
+            {/* ============================================================ */}
+            <View style={styles.benefitsGrid}>
+              {BENEFITS.map((b) => (
+                <View
+                  key={b.title}
+                  style={[styles.benefitCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                >
+                  <View style={[styles.benefitIconCircle, { backgroundColor: colors.accent + '15' }]}>
+                    <Ionicons name={b.icon} size={20} color={colors.accent} />
+                  </View>
+                  <Text style={[styles.benefitTitle, { color: colors.text }]}>{b.title}</Text>
+                  <Text style={[styles.benefitDesc, { color: colors.muted }]}>{b.desc}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* ============================================================ */}
+            {/*  Tier Preview (horizontal scroll)                            */}
+            {/* ============================================================ */}
+            <View style={styles.tierSection}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="ribbon-outline" size={16} color={colors.accent} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Sponsorship Tiers</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tierScroll}
+              >
+                {TIERS.map((tier) => (
+                  <View
+                    key={tier.name}
+                    style={[
+                      styles.tierCard,
+                      { backgroundColor: colors.card, borderColor: tier.badge ? colors.accent : colors.border },
+                      tier.badge && { borderWidth: 2 },
+                    ]}
+                  >
+                    {tier.badge && (
+                      <View style={[styles.tierBadge, { backgroundColor: colors.accent }]}>
+                        <Text style={styles.tierBadgeText}>{tier.badge}</Text>
+                      </View>
+                    )}
+                    <Text style={[styles.tierName, { color: colors.text }]}>{tier.name}</Text>
+                    {tier.features.map((f) => (
+                      <View key={f} style={styles.tierFeatureRow}>
+                        <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
+                        <Text style={[styles.tierFeatureText, { color: colors.muted }]}>{f}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* ============================================================ */}
+            {/*  Registration Form                                           */}
             {/* ============================================================ */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -143,10 +264,12 @@ const SponsorRegisterScreen: React.FC = () => {
                       value={nameField.value}
                       onChangeText={nameField.onChange}
                       onBlur={nameField.onBlur}
-                      placeholder="e.g. Acme Collectibles Inc."
+                      placeholder="Games Workshop, TOPPS, Bandai"
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
                       accessibilityLabel="Company name"
+                      returnKeyType="next"
+                      onSubmitEditing={() => emailRef.current?.focus()}
                     />
                   </View>
                   {nameField.touched && nameField.error && <Text style={styles.fieldError}>{nameField.error}</Text>}
@@ -160,38 +283,48 @@ const SponsorRegisterScreen: React.FC = () => {
                   <View style={[styles.inputWrap, { borderColor: contactEmailField.touched && contactEmailField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="mail-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
+                      ref={emailRef}
                       value={contactEmailField.value}
                       onChangeText={contactEmailField.onChange}
                       onBlur={contactEmailField.onBlur}
-                      placeholder="sponsor@example.com"
+                      placeholder="events@yourcompany.com"
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
                       autoCapitalize="none"
                       keyboardType="email-address"
                       accessibilityLabel="Contact email"
+                      returnKeyType="next"
+                      onSubmitEditing={() => websiteRef.current?.focus()}
                     />
                   </View>
                   {contactEmailField.touched && contactEmailField.error && <Text style={styles.fieldError}>{contactEmailField.error}</Text>}
                 </View>
 
-                {/* Logo URL */}
+                {/* Logo Picker */}
                 <View style={styles.fieldBlock}>
-                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Logo URL (optional)</Text>
-                  <View style={[styles.inputWrap, { borderColor: logoUrlField.touched && logoUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
-                    <Ionicons name="image-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                    <TextInput
-                      value={logoUrlField.value}
-                      onChangeText={logoUrlField.onChange}
-                      onBlur={logoUrlField.onBlur}
-                      placeholder="https://example.com/logo.png"
-                      placeholderTextColor={colors.muted}
-                      style={[styles.input, { color: colors.text }]}
-                      autoCapitalize="none"
-                      keyboardType="url"
-                      accessibilityLabel="Logo URL"
-                    />
-                  </View>
-                  {logoUrlField.touched && logoUrlField.error && <Text style={styles.fieldError}>{logoUrlField.error}</Text>}
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Company Logo (optional)</Text>
+                  <AnimatedPressable
+                    onPress={handlePickLogo}
+                    disabled={logoUploading}
+                    style={[styles.logoPicker, { borderColor: colors.border, backgroundColor: colors.background }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Pick company logo"
+                  >
+                    {logoUploading ? (
+                      <ActivityIndicator size="small" color={colors.accent} />
+                    ) : logoPreview ? (
+                      <View style={styles.logoPreviewWrap}>
+                        <Image source={{ uri: logoPreview }} style={styles.logoPreviewImg} />
+                        <Text style={[styles.logoChangeText, { color: colors.accent }]}>Tap to change</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.logoPickerContent}>
+                        <Ionicons name="camera-outline" size={28} color={colors.muted} />
+                        <Text style={[styles.logoPickerText, { color: colors.muted }]}>Tap to upload logo</Text>
+                      </View>
+                    )}
+                  </AnimatedPressable>
+                  {logoError && <Text style={styles.fieldError}>{logoError}</Text>}
                 </View>
 
                 {/* Website URL */}
@@ -200,15 +333,18 @@ const SponsorRegisterScreen: React.FC = () => {
                   <View style={[styles.inputWrap, { borderColor: websiteUrlField.touched && websiteUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="globe-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
+                      ref={websiteRef}
                       value={websiteUrlField.value}
                       onChangeText={websiteUrlField.onChange}
                       onBlur={websiteUrlField.onBlur}
-                      placeholder="https://example.com"
+                      placeholder="https://yourcompany.com"
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
                       autoCapitalize="none"
                       keyboardType="url"
                       accessibilityLabel="Website URL"
+                      returnKeyType="next"
+                      onSubmitEditing={() => descriptionRef.current?.focus()}
                     />
                   </View>
                   {websiteUrlField.touched && websiteUrlField.error && <Text style={styles.fieldError}>{websiteUrlField.error}</Text>}
@@ -219,12 +355,13 @@ const SponsorRegisterScreen: React.FC = () => {
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>Description (optional)</Text>
                   <View style={[styles.inputWrapMultiline, { borderColor: descriptionField.touched && descriptionField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                     <TextInput
+                      ref={descriptionRef}
                       value={descriptionField.value}
                       onChangeText={descriptionField.onChange}
                       onBlur={descriptionField.onBlur}
                       multiline
                       numberOfLines={4}
-                      placeholder="Tell us about your company and what you sponsor..."
+                      placeholder="Tell us about your company and what you'd like to sponsor..."
                       placeholderTextColor={colors.muted}
                       style={[styles.inputMultiline, { color: colors.text }]}
                       textAlignVertical="top"
@@ -249,17 +386,21 @@ const SponsorRegisterScreen: React.FC = () => {
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Register sponsor company"
+              accessibilityLabel="Get started as a sponsor"
             >
               {saveState === 'saving' ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-                  <Text style={styles.submitButtonText}>Register Company</Text>
+                  <Ionicons name="rocket-outline" size={20} color="#FFFFFF" />
+                  <Text style={styles.submitButtonText}>Get Started as a Sponsor</Text>
                 </>
               )}
             </AnimatedPressable>
+
+            <Text style={[styles.finePrint, { color: colors.muted }]}>
+              Registration is free. You'll choose a tier when creating your first event.
+            </Text>
 
             <View style={{ height: 32 }} />
           </Animated.View>
@@ -300,8 +441,112 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 20,
   },
+
+  /* Hero */
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  heroIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginTop: 8,
+    paddingHorizontal: 8,
+  },
+
+  /* Benefits grid */
+  benefitsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 24,
+  },
+  benefitCard: {
+    width: '48%' as unknown as number,
+    flexBasis: '47%',
+    flexGrow: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+  },
+  benefitIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  benefitTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  benefitDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+
+  /* Tier preview */
+  tierSection: {
+    marginBottom: 24,
+  },
+  tierScroll: {
+    gap: 10,
+    paddingRight: 4,
+  },
+  tierCard: {
+    width: 200,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+  },
+  tierBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  tierBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  tierName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  tierFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  tierFeatureText: {
+    fontSize: 12,
+    flex: 1,
+  },
+
+  /* Form sections */
   section: {
     marginBottom: 20,
   },
@@ -355,20 +600,60 @@ const styles = StyleSheet.create({
     fontSize: 14,
     minHeight: 76,
   },
+
+  /* Logo picker */
+  logoPicker: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  logoPreviewWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  logoPreviewImg: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+  },
+  logoChangeText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  logoPickerContent: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  logoPickerText: {
+    fontSize: 13,
+  },
+
+  /* Submit */
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderRadius: 12,
     marginTop: 4,
-    marginBottom: 20,
   },
   submitButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#FFFFFF',
+  },
+  finePrint: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 16,
+    paddingHorizontal: 16,
   },
   fieldError: {
     fontSize: 12,
@@ -378,4 +663,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SponsorRegisterScreen;
+export default function SponsorRegisterScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Sponsor Register">
+      <SponsorRegisterScreen />
+    </ScreenErrorBoundary>
+  );
+}

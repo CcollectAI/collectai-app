@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.auth import get_current_user_id
+from app.errors import error_response
 
 router = APIRouter(prefix="/api/imports", tags=["imports"])
 
@@ -71,10 +72,10 @@ async def import_collection(
     content = await file.read()
 
     if not content:
-        raise HTTPException(status_code=400, detail="Empty file")
+        raise error_response(400, "Empty file")
 
     if len(content) > 50 * 1024 * 1024:  # 50 MB max for CSV/Excel
-        raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
+        raise error_response(413, "File too large (max 50 MB)")
 
     # Decide how to parse based on extension
     lower_name = filename.lower()
@@ -89,22 +90,16 @@ async def import_collection(
             try:
                 import pandas as pd  # type: ignore
             except ImportError:
-                raise HTTPException(
-                    status_code=500,
-                    detail="Excel support is not installed. Please install pandas and openpyxl.",
-                )
+                raise error_response(500, "Excel support is not installed. Please install pandas and openpyxl.")
             df = pd.read_excel(io.BytesIO(content))
             rows = df.to_dict(orient="records")
         else:
-            raise HTTPException(
-                status_code=400,
-                detail="Unsupported file type. Please upload a CSV or Excel file.",
-            )
+            raise error_response(400, "Unsupported file type. Please upload a CSV or Excel file.")
     except HTTPException:
         raise
     except Exception as e:
         _logger.warning("Failed to parse uploaded file: %s", e)
-        raise HTTPException(status_code=400, detail="Failed to parse file")
+        raise error_response(400, "Failed to parse file")
 
     # Normalize keys (lowercase, strip spaces)
     norm_rows: List[Dict[str, Any]] = []

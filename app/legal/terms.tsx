@@ -9,10 +9,11 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 
-const LAST_UPDATED = 'February 18, 2026';
+const LAST_UPDATED = 'February 23, 2026';
 
-export default function TermsOfServiceScreen() {
+function TermsOfServiceScreenInner() {
   const router = useRouter();
   const { colors } = useAppTheme();
 
@@ -40,75 +41,165 @@ export default function TermsOfServiceScreen() {
 
         <Text style={[styles.heading, { color: colors.text }]}>1. Acceptance of Terms</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service.
+          By creating an account or using the Service, you agree to be bound by these Terms and our Privacy Policy. If you do not agree, do not use the Service.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>2. Account Registration</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          You must provide accurate and complete information when creating an account. You are responsible for maintaining the security of your account credentials. You must be at least 13 years old to use the Service.
+          You must provide accurate and complete information when creating an account. You are responsible for maintaining the security of your account credentials, including any multi-factor authentication (MFA) settings. You must be at least 13 years old (or 16 in the EU) to use the Service. You may register using email/password or social login (Google, Apple).
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>3. User Content</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          You retain ownership of all content you upload to the Service (photos, descriptions, collection data). By using the Service, you grant us a limited license to store, display, and process your content solely to provide the Service to you.{'\n\n'}
-          You agree not to upload content that is illegal, offensive, or infringes on third-party rights.
+          You retain ownership of all content you upload to the Service, including photos, descriptions, collection data, project notes, and messages. By using the Service, you grant us a limited, non-exclusive license to store, display, and process your content solely to provide the Service to you.{'\n\n'}
+          You agree not to upload content that:{'\n'}
+          {'\u2022'} Is illegal, offensive, defamatory, or harassing{'\n'}
+          {'\u2022'} Infringes on third-party intellectual property rights{'\n'}
+          {'\u2022'} Contains malware, viruses, or malicious code{'\n'}
+          {'\u2022'} Is deceptive, fraudulent, or misleading{'\n'}
+          {'\u2022'} Violates the privacy of other individuals
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>4. Price Estimates & Valuations</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          Price estimates provided by CollectAI are for informational purposes only. They are generated using machine learning models and marketplace data, and should not be relied upon as financial advice. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.
+          Price estimates provided by CollectAI are for informational purposes only. They are generated using machine learning models (Ridge regression with q10/q50/q90 quantile predictions) and aggregated marketplace data from multiple sources. These estimates should not be relied upon as financial advice, appraisals, or insurance valuations. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.{'\n\n'}
+          Currency conversions are approximate and based on exchange rates refreshed every 8 hours. Shipping cost estimates are approximations and may differ from actual shipping costs.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>5. Marketplace Integration</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>5. Marketplace Integration & Affiliate Links</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          CollectAI provides links to third-party marketplaces (eBay, TCGPlayer, Cardmarket) for reference. We are not responsible for transactions conducted on these platforms. Some marketplace links may contain affiliate tags.
+          CollectAI provides links to third-party marketplaces (including but not limited to eBay, TCGPlayer, Cardmarket, Discogs, StockX, BrickLink, Mercari, PriceCharting, Yahoo Auctions JP, and AmiAmi) for reference and price comparison. We are not responsible for:{'\n'}
+          {'\u2022'} Transactions conducted on these platforms{'\n'}
+          {'\u2022'} The accuracy of third-party listing information{'\n'}
+          {'\u2022'} Disputes between buyers and sellers{'\n'}
+          {'\u2022'} Changes to third-party platform terms or availability{'\n\n'}
+          Marketplace links contain affiliate tags where available (currently eBay, TCGPlayer, Cardmarket, Mercari, Discogs, StockX, and BrickLink). When you purchase through an affiliate link, we may receive a commission at no additional cost to you. Affiliate links appear on item detail pages, watchlist, category browse, marketplace search results, and deal notifications.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>6. Prohibited Uses</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>6. Smart Deal Agent</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          The Smart Deal Agent feature automatically scans marketplaces based on your purchase mandates (search criteria, price limits, budget). By creating a mandate, you authorize the Service to monitor marketplace listings on your behalf. The Deal Agent does not make purchases automatically — it notifies you of matching deals for your review. You are solely responsible for any purchase decisions.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>7. Events & Social Features</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          <Text style={styles.bold}>Events:</Text> Users may create, host, and attend collector events. Event hosts are responsible for the accuracy of event information. RSVP attendance may be limited by capacity settings. We are not responsible for the conduct of event hosts or attendees, or for events that are cancelled or modified.{'\n\n'}
+          <Text style={styles.bold}>Direct Messaging:</Text> Users may send direct messages to other users via the DM request system. Both parties must consent to a conversation. You agree not to use messaging for spam, harassment, or solicitation. We reserve the right to moderate or restrict messaging for users who violate these Terms.{'\n\n'}
+          <Text style={styles.bold}>User Blocking:</Text> You may block other users to prevent them from contacting you. Blocking is mutual — blocked users cannot view your profile or send you messages.{'\n\n'}
+          <Text style={styles.bold}>Announcements:</Text> Event hosts and sponsors may send announcements to event attendees. These are one-way communications for event-related information only.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>8. Sponsor Companies</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          Businesses may register as sponsor companies to sponsor collector events. Sponsor registration requires a company name, contact email, and optional details. Sponsored event payments are processed through Stripe. Sponsors agree to:{'\n'}
+          {'\u2022'} Provide accurate company information{'\n'}
+          {'\u2022'} Comply with all applicable advertising and consumer protection laws{'\n'}
+          {'\u2022'} Not use sponsor features for deceptive or misleading promotions{'\n\n'}
+          We reserve the right to remove sponsor companies that violate these Terms.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>9. Subscriptions & Payments</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          Certain features of the Service require a paid subscription. Payments are processed through Stripe. Subscription terms, pricing, and renewal conditions are presented at the time of purchase. You may cancel your subscription at any time through the app settings. Refunds are handled in accordance with applicable laws and Stripe's policies.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>10. Search & Discovery</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          The Service provides unified search across items, users, events, and categories. Search functionality is rate-limited to ensure fair usage. Search results are based on data available within the Service and may not include all collectibles or users. We do not guarantee the completeness or accuracy of search results.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>11. Activity Feed & Profile</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          Certain actions you take (adding items, attending events, completing projects) may be displayed in your public activity feed. You can control activity visibility in your privacy settings. Other users may view your public profile, collection statistics, and activity feed when not restricted.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>12. Rate Limits & Fair Usage</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          To maintain Service quality for all users, certain features are subject to rate limits (e.g., search queries, photo uploads, marketplace lookups, push token registration, event announcements). Exceeding these limits may result in temporary throttling. Persistent abuse may lead to account restrictions.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>13. Prohibited Uses</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           You agree not to:{'\n'}
           {'\u2022'} Use the Service for any unlawful purpose{'\n'}
-          {'\u2022'} Attempt to reverse-engineer or exploit the Service{'\n'}
-          {'\u2022'} Scrape or harvest data from the Service{'\n'}
-          {'\u2022'} Impersonate other users{'\n'}
-          {'\u2022'} Upload malicious content or malware{'\n'}
-          {'\u2022'} Use automated systems to access the Service without permission
+          {'\u2022'} Attempt to reverse-engineer, decompile, or exploit the Service{'\n'}
+          {'\u2022'} Scrape, harvest, or systematically extract data from the Service{'\n'}
+          {'\u2022'} Impersonate other users or misrepresent your identity{'\n'}
+          {'\u2022'} Upload malicious content, malware, or viruses{'\n'}
+          {'\u2022'} Use automated systems, bots, or scripts to access the Service without permission{'\n'}
+          {'\u2022'} Circumvent rate limits, security measures, or access controls{'\n'}
+          {'\u2022'} Use the messaging system for spam, harassment, or unsolicited commercial messages{'\n'}
+          {'\u2022'} Create fake accounts or fraudulent listings{'\n'}
+          {'\u2022'} Interfere with or disrupt the Service or its infrastructure
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>7. Account Termination</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>14. Account Termination</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          You may delete your account at any time through the app settings. We reserve the right to suspend or terminate accounts that violate these Terms. Upon termination, your data will be deleted in accordance with our Privacy Policy.
+          You may delete your account at any time through the app settings. Account deletion is permanent and will remove all associated data (collection, projects, messages, events) within 30 days, in accordance with our Privacy Policy.{'\n\n'}
+          We reserve the right to suspend or terminate accounts that:{'\n'}
+          {'\u2022'} Violate these Terms{'\n'}
+          {'\u2022'} Engage in abusive behavior toward other users{'\n'}
+          {'\u2022'} Attempt to exploit or compromise the Service{'\n'}
+          {'\u2022'} Are inactive for an extended period (with prior notice)
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>8. Intellectual Property</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>15. Intellectual Property</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          The Service, including its design, features, and underlying technology, is owned by CollectAI. You may not copy, modify, or distribute any part of the Service without our written consent.
+          The Service, including its design, features, machine learning models, category taxonomy, and underlying technology, is owned by CollectAI. The CollectAI name, logo, and brand elements are our trademarks. You may not copy, modify, distribute, or create derivative works of any part of the Service without our written consent.{'\n\n'}
+          Collectible product names, images, and trademarks referenced within the Service belong to their respective owners and are used for identification purposes only.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>9. Limitation of Liability</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>16. Limitation of Liability</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          The Service is provided "as is" without warranties of any kind. To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Service.
+          The Service is provided "as is" and "as available" without warranties of any kind, express or implied. To the maximum extent permitted by law, we shall not be liable for:{'\n'}
+          {'\u2022'} Any indirect, incidental, special, or consequential damages{'\n'}
+          {'\u2022'} Loss of profits, data, or business opportunities{'\n'}
+          {'\u2022'} Inaccurate price estimates or valuations{'\n'}
+          {'\u2022'} Failed or delayed marketplace transactions{'\n'}
+          {'\u2022'} Service interruptions or data loss{'\n'}
+          {'\u2022'} Actions of other users (messages, events, transactions){'\n\n'}
+          Our total liability to you for any claims arising from the Service shall not exceed the amount you paid us in the 12 months preceding the claim.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>10. Changes to Terms</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>17. Indemnification</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          We reserve the right to modify these Terms at any time. We will notify you of material changes through the app. Continued use of the Service after changes constitutes acceptance of the new Terms.
+          You agree to indemnify and hold harmless CollectAI from any claims, damages, or expenses arising from your use of the Service, your violation of these Terms, or your infringement of any third-party rights.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>11. Governing Law</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>18. Changes to Terms</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          These Terms shall be governed by the laws of the Netherlands. Any disputes arising from these Terms shall be resolved in the courts of the Netherlands.
+          We reserve the right to modify these Terms at any time. We will notify you of material changes through in-app notifications and by updating the "Last updated" date. Continued use of the Service after changes constitutes acceptance of the new Terms. If you do not agree with the changes, you should stop using the Service.
         </Text>
 
-        <Text style={[styles.heading, { color: colors.text }]}>12. Contact</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>19. Governing Law & Disputes</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          These Terms shall be governed by the laws of the Netherlands. Any disputes arising from these Terms or the Service shall be resolved in the courts of the Netherlands. For EU consumers, this does not affect your rights under mandatory consumer protection laws of your country of residence.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>20. Severability</Text>
+        <Text style={[styles.body, { color: colors.text }]}>
+          If any provision of these Terms is found to be unenforceable, the remaining provisions shall continue in full force and effect.
+        </Text>
+
+        <Text style={[styles.heading, { color: colors.text }]}>21. Contact</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           For questions about these Terms, contact us at:{'\n'}
-          support@collectai.app
+          legal@collectai.app{'\n\n'}
+          CollectAI{'\n'}
+          The Netherlands
         </Text>
 
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+export default function TermsOfServiceScreen() {
+  return (
+    <ScreenErrorBoundary screenName="Terms of Service">
+      <TermsOfServiceScreenInner />
+    </ScreenErrorBoundary>
   );
 }
 

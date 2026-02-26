@@ -87,7 +87,7 @@ async def rate_limit_middleware(
         logger.warning("Rate limit exceeded for %s on %s", ip, path)
         return JSONResponse(
             status_code=429,
-            content={"detail": "Too many requests. Please try again later."},
+            content={"detail": "Too many requests. Please try again later.", "code": "RATE_LIMITED"},
             headers={"Retry-After": str(WINDOW_SECONDS)},
         )
 
@@ -167,7 +167,7 @@ def per_user_rate_limit(
             raise HTTPException(
                 status_code=429,
                 detail="Per-user rate limit exceeded. Please try again later.",
-                headers={"Retry-After": str(retry_after)},
+                headers={"Retry-After": str(retry_after), "X-Error-Code": "RATE_LIMITED"},
             )
 
         _user_hits[key].append(now)

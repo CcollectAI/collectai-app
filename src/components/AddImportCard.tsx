@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type ImportSummary = {
   total: number;
@@ -29,24 +30,14 @@ export const AddImportCard: React.FC<Props> = ({
   onUploadFile,
   onDownloadTemplate,
 }) => {
-  // Local static theme so we don't depend on useAppTheme
-  const theme = {
-    colors: {
-      card: "#FFFFFF",
-      text: "#1A202C",
-      muted: "#4A5568",
-      primary: "#02B5C4",
-      border: "#E2E8F0",
-      background: "#F7FAFC",
-    },
-  };
+  const { colors } = useAppTheme();
 
   return (
     <View
       style={[
         styles.card,
         {
-          backgroundColor: theme.colors.card,
+          backgroundColor: colors.card,
         },
       ]}
     >
@@ -54,7 +45,7 @@ export const AddImportCard: React.FC<Props> = ({
         style={[
           styles.title,
           {
-            color: theme.colors.text,
+            color: colors.text,
           },
         ]}
       >
@@ -65,7 +56,7 @@ export const AddImportCard: React.FC<Props> = ({
         style={[
           styles.subtitle,
           {
-            color: theme.colors.muted,
+            color: colors.muted,
           },
         ]}
       >
@@ -82,7 +73,7 @@ export const AddImportCard: React.FC<Props> = ({
           style={[
             styles.primaryButton,
             {
-              backgroundColor: importBusy ? "#9ADFE6" : theme.colors.primary,
+              backgroundColor: importBusy ? colors.accent + '60' : colors.accent,
               opacity: importBusy ? 0.7 : 1,
             },
           ]}
@@ -103,8 +94,8 @@ export const AddImportCard: React.FC<Props> = ({
           style={[
             styles.secondaryButton,
             {
-              borderColor: theme.colors.border,
-              backgroundColor: theme.colors.background,
+              borderColor: colors.border,
+              backgroundColor: colors.background,
             },
           ]}
           accessibilityRole="button"
@@ -114,7 +105,7 @@ export const AddImportCard: React.FC<Props> = ({
             style={[
               styles.secondaryButtonText,
               {
-                color: theme.colors.primary,
+                color: colors.accent,
               },
             ]}
           >
@@ -129,7 +120,7 @@ export const AddImportCard: React.FC<Props> = ({
             style={[
               styles.summaryText,
               {
-                color: theme.colors.muted,
+                color: colors.muted,
               },
             ]}
           >
@@ -152,7 +143,7 @@ export const AddImportCard: React.FC<Props> = ({
                   </Text>
                 ))}
                 {importSummary.errors.length > 3 && (
-                  <Text style={styles.moreErrorsText}>
+                  <Text style={[styles.moreErrorsText, { color: colors.muted }]}>
                     + {importSummary.errors.length - 3} more issues
                   </Text>
                 )}
@@ -223,18 +214,17 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 4,
     fontSize: 12,
-    color: "#C53030",
+    color: "#EF4444",
   },
   errorList: {
     marginTop: 4,
   },
   errorItem: {
     fontSize: 11,
-    color: "#C53030",
+    color: "#EF4444",
   },
   moreErrorsText: {
     marginTop: 2,
     fontSize: 11,
-    color: "#4A5568",
   },
 });

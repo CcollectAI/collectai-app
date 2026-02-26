@@ -6,5 +6,5 @@ import { Redirect } from "expo-router";
  * Redirects into the Portfolio tab in the main tab layout.
  */
 export default function HomePortfolioRedirect() {
-  return <Redirect href="/(tabs)/portfolio" />;
+  return <Redirect href="/(tabs)" />;
 }

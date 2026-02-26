@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
 import {
   SafeAreaView,
   ScrollView,
@@ -6,6 +8,7 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
@@ -97,47 +100,57 @@ const EventsAndDropsScreen: React.FC = () => {
   const [state, setState] = useState<LoadState>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
   const [creators, setCreators] = useState<TwitchCreator[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Load Twitch creators (for live now section)
-  useEffect(() => {
-    const load = async () => {
-      setState("loading");
-      setErrorText(null);
+  const loadData = async () => {
+    setState("loading");
+    setErrorText(null);
 
-      try {
-        if (!supabase || typeof supabase.from !== "function") {
-          setState("error");
-          setErrorText(
-            "Supabase client not configured – Twitch section is running in demo mode."
-          );
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from("twitch_creators")
-          .select(
-            "id, twitch_login, display_name, avatar_url, category, is_partner, is_live, current_title, current_viewers"
-          )
-          .limit(50);
-
-        if (error) {
-          setState("error");
-          setErrorText(error.message ?? "Supabase error loading Twitch data.");
-          return;
-        }
-
-        setCreators((data ?? []) as TwitchCreator[]);
-        setState("loaded");
-      } catch (err: unknown) {
+    try {
+      if (!supabase || typeof supabase.from !== "function") {
         setState("error");
         setErrorText(
-          err?.message || "Unexpected error while loading Twitch creators."
+          "Supabase client not configured – Twitch section is running in demo mode."
         );
+        return;
       }
-    };
 
-    load();
+      const { data, error } = await supabase
+        .from("twitch_creators")
+        .select(
+          "id, twitch_login, display_name, avatar_url, category, is_partner, is_live, current_title, current_viewers"
+        )
+        .limit(50);
+
+      if (error) {
+        setState("error");
+        setErrorText(error.message ?? "Supabase error loading Twitch data.");
+        return;
+      }
+
+      setCreators((data ?? []) as TwitchCreator[]);
+      setState("loaded");
+    } catch (err: unknown) {
+      setState("error");
+      setErrorText(
+        err?.message || "Unexpected error while loading Twitch creators."
+      );
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadData();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const liveNow = useMemo(
     () =>
@@ -167,6 +180,13 @@ const EventsAndDropsScreen: React.FC = () => {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent ?? '#81D8D0'}
+          />
+        }
       >
         {/* Header */}
         <View style={styles.headerRow}>
@@ -443,6 +463,7 @@ const EventsAndDropsScreen: React.FC = () => {
           )}
         </View>
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 };
@@ -660,4 +681,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EventsAndDropsScreen;
+export default function EventsAndDropsScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Events & Drops">
+      <EventsAndDropsScreen />
+    </ScreenErrorBoundary>
+  );
+}

@@ -7,6 +7,7 @@
  */
 
 import React, { useState } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   SafeAreaView,
   ScrollView,
@@ -17,7 +18,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +30,7 @@ import { useSettings } from '@/lib/settings';
 import { useFormField, validateAll } from '@/hooks/useFormField';
 import { compose, required, maxLength, url } from '@/lib/validate';
 import logger from '@/utils/logger';
+import { useToast } from '@/components/Toast';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -49,6 +50,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
 
   /* ---- form state ---- */
   const titleField = useFormField(maxLength('Title', 255));
@@ -69,7 +71,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
   /* ---- submit ---- */
   const handleSubmit = async () => {
     if (!eventId) {
-      Alert.alert('Error', 'No event ID provided.');
+      showToast({ message: 'No event ID provided.', type: 'error' });
       return;
     }
     if (!validateAll(bodyField, titleField, imageUrlField)) return;
@@ -88,7 +90,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
       router.back();
     } catch (err: unknown) {
       logger.warn('[ComposeAnnouncement] error:', err);
-      Alert.alert('Error', (err as Error)?.message || 'Failed to send announcement. Please try again.');
+      showToast({ message: (err as Error)?.message || 'Failed to send announcement. Please try again.', type: 'error' });
     } finally {
       setSaveState('idle');
     }
@@ -383,4 +385,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ComposeAnnouncementScreen;
+export default function ComposeAnnouncementScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Compose Announcement">
+      <ComposeAnnouncementScreen />
+    </ScreenErrorBoundary>
+  );
+}

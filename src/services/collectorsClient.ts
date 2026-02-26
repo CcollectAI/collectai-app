@@ -1,8 +1,9 @@
 import { API_BASE_URL, API_KEY } from '@/config/api';
+import type { CurrencyCode } from '@/data/types';
 
 export interface PortfolioOverview {
   total_value: number;
-  currency: string;
+  currency: CurrencyCode;
   change_1d?: number;
   change_7d?: number;
   change_30d?: number;
@@ -53,7 +54,7 @@ export interface MarketplaceListing {
   id: string;
   title: string;
   price: number;
-  currency?: string;
+  currency?: CurrencyCode;
   category?: string;
   image_url?: string;
   [key: string]: unknown;
@@ -143,7 +144,7 @@ export function getHealth(): Promise<HealthStatus> {
 
 
 export interface ItemPredictionBand {
-  currency: string;
+  currency: CurrencyCode;
   low?: number;
   mid?: number;
   high?: number;
@@ -349,7 +350,7 @@ export type ItemDetailSummary = {
   category: string;
   category_label: string;
   estimated_value: number;
-  currency: string;
+  currency: CurrencyCode;
   condition: string;
   rarity: string;
   acquired_at: string;
@@ -410,7 +411,7 @@ export type WatchlistInsightItem = {
   category: string;
   category_label: string;
   latest_value: number;
-  currency: string;
+  currency: CurrencyCode;
   window: string;
   change_pct: number;
   category_health: number;
@@ -457,7 +458,7 @@ export type MarketplaceListingTrust = {
   title: string;
   category: string;
   category_label: string;
-  currency: string;
+  currency: CurrencyCode;
   seller_id: string;
   fair_price: { p10: number; p50: number; p90: number };
   model_confidence: number;
@@ -516,7 +517,7 @@ export type ScreenshotIntelDetectedItem = {
   category: string;
   category_label: string;
   estimated_value: number;
-  currency: string;
+  currency: CurrencyCode;
   confidence: number;
   thumb_url?: string | null;
   listing_url?: string | null;

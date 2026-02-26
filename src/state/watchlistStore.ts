@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "@/lib/logger";
+import type { CurrencyCode } from "@/data/types";
 
 // Adjust this import if your PortfolioItem type lives elsewhere
 import type { PortfolioItem } from "../services/collectorsClient";
@@ -10,7 +11,7 @@ export type AlertDirection = "below" | "above";
 export interface ItemAlert {
   itemId: string;
   threshold: number;
-  currency: string;
+  currency: CurrencyCode;
   direction: AlertDirection;
 }
 

@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
@@ -31,29 +32,39 @@ import { useToast } from "@/components/Toast";
 import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, positiveNumber } from "@/lib/validate";
 
-const CATEGORIES = [
-  "pokemon", "mtg", "yugioh", "lorcana", "funko", "lego",
-  "warhammer", "retro_games", "manga", "sportscards",
-  "designer_toys", "anime_figures", "hot_toys", "gunpla",
-  "diecast", "kpop_merch", "disney",
-];
+import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+
+const CATEGORIES = ALL_CATS.map((c) => c.slug);
 
 const CATEGORY_OPTIONS = ["Any", ...CATEGORIES];
 
-const SOURCES = ["ebay", "tcgplayer", "cardmarket"];
+const SOURCES = [
+  "ebay", "tcgplayer", "cardmarket", "mercari",
+  "discogs", "stockx", "bricklink",
+];
 
 const REGIONS = [
   { value: "", label: "Any Region" },
-  { value: "europe", label: "Europe" },
   { value: "americas", label: "Americas" },
+  { value: "europe", label: "Europe" },
   { value: "japan", label: "Japan" },
+  { value: "korea", label: "Korea" },
+  { value: "oceania", label: "Oceania" },
 ];
 
 const REGION_LABELS = REGIONS.map((r) => r.label);
 
 const TRUST_OPTIONS = ["0.5", "0.6", "0.7", "0.8", "0.9"];
 
-export default function CreateMandateScreen() {
+export default function CreateMandateScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Create Mandate">
+      <CreateMandateScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+function CreateMandateScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
   const { colors } = useAppTheme();
@@ -274,7 +285,7 @@ export default function CreateMandateScreen() {
         </AnimatedPressable>
 
         {/* Max Price */}
-        <Text style={[styles.label, { color: colors.muted }]}>MAX PRICE PER ITEM (EUR)</Text>
+        <Text style={[styles.label, { color: colors.muted }]}>MAX PRICE PER ITEM ({settings.currency})</Text>
         <TextInput
           style={[styles.input, { backgroundColor: colors.card, borderColor: maxPriceField.touched && maxPriceField.error ? '#EF4444' : colors.border, color: colors.text }]}
           placeholder="e.g. 400"

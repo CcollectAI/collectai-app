@@ -14,11 +14,12 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from pydantic import BaseModel, Field
 
 from app.agents.intake_agent import IntakeResult, process_intake, process_url_import
 from app.auth import get_current_user_id
+from app.errors import error_response
 from app.config import INTAKE_MAX_IMAGE_BYTES as MAX_IMAGE_BYTES
 from app.rate_limit import per_user_rate_limit
 from app.ssrf import validate_url
@@ -188,32 +189,23 @@ async def intake_process(
     if file is not None:
         content_type = (file.content_type or "").lower()
         if content_type and content_type not in ALLOWED_CONTENT_TYPES:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported image type. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}",
-            )
+            raise error_response(400, f"Unsupported image type. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}")
 
         try:
             image_bytes = await file.read()
         except Exception:
             logger.warning("Failed to read uploaded file for intake")
-            raise HTTPException(status_code=400, detail="Failed to read uploaded file")
+            raise error_response(400, "Failed to read uploaded file")
 
         if image_bytes and len(image_bytes) > MAX_IMAGE_BYTES:
-            raise HTTPException(
-                status_code=413,
-                detail=f"Image too large. Maximum size: {MAX_IMAGE_BYTES // (1024 * 1024)} MB",
-            )
+            raise error_response(413, f"Image too large. Maximum size: {MAX_IMAGE_BYTES // (1024 * 1024)} MB")
 
         if image_bytes and not _is_valid_image(image_bytes):
-            raise HTTPException(status_code=400, detail="File does not appear to be a valid image")
+            raise error_response(400, "File does not appear to be a valid image")
 
     # Must have at least barcode or image
     if not barcode and not image_bytes:
-        raise HTTPException(
-            status_code=400,
-            detail="At least one of barcode or image is required",
-        )
+        raise error_response(400, "At least one of barcode or image is required")
 
     # Build user hints
     user_hints: dict[str, Any] = {}
@@ -248,7 +240,7 @@ async def intake_barcode_only(
     """
     barcode = req.barcode.strip()
     if not barcode:
-        raise HTTPException(status_code=400, detail="Barcode is required")
+        raise error_response(400, "Barcode is required")
 
     user_hints: dict[str, Any] = {}
     if req.category:
@@ -285,28 +277,22 @@ async def intake_image_only(
     """
     content_type = (file.content_type or "").lower()
     if content_type and content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported image type. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}",
-        )
+        raise error_response(400, f"Unsupported image type. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}")
 
     try:
         image_bytes = await file.read()
     except Exception:
         logger.warning("Failed to read uploaded file for intake")
-        raise HTTPException(status_code=400, detail="Failed to read uploaded file")
+        raise error_response(400, "Failed to read uploaded file")
 
     if not image_bytes:
-        raise HTTPException(status_code=400, detail="Empty file uploaded")
+        raise error_response(400, "Empty file uploaded")
 
     if len(image_bytes) > MAX_IMAGE_BYTES:
-        raise HTTPException(
-            status_code=413,
-            detail=f"Image too large. Maximum size: {MAX_IMAGE_BYTES // (1024 * 1024)} MB",
-        )
+        raise error_response(413, f"Image too large. Maximum size: {MAX_IMAGE_BYTES // (1024 * 1024)} MB")
 
     if not _is_valid_image(image_bytes):
-        raise HTTPException(status_code=400, detail="File does not appear to be a valid image")
+        raise error_response(400, "File does not appear to be a valid image")
 
     user_hints: dict[str, Any] = {}
     if category:
@@ -340,16 +326,16 @@ async def intake_url(
     """
     url = req.url.strip()
     if not url:
-        raise HTTPException(status_code=400, detail="URL is required")
+        raise error_response(400, "URL is required")
 
     if not url.startswith(("http://", "https://")):
-        raise HTTPException(status_code=400, detail="URL must start with http:// or https://")
+        raise error_response(400, "URL must start with http:// or https://")
 
     # SSRF protection: block private/internal IPs
     try:
         validate_url(url)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise error_response(400, str(e))
 
     user_hints: dict[str, Any] = {}
     if req.category:

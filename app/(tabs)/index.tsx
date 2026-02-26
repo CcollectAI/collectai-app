@@ -19,6 +19,8 @@ import {
   ActivityIndicator,
   Animated,
   RefreshControl,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -41,6 +43,9 @@ import { useToast } from "@/components/Toast";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
 import { collectorsApi } from "@/api/collectorsApi";
 import logger from "@/utils/logger";
+import { useStoreReview } from "@/hooks/useStoreReview";
+import { CATEGORY_VISUAL, type CategoryId } from "@/data/categories";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
 const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
@@ -66,7 +71,7 @@ if (USE_REAL_BACKEND) {
   }
 }
 
-type RangeKey = "1D" | "7D" | "30D";
+type RangeKey = "1D" | "7D" | "30D" | "90D" | "1Y" | "ALL";
 
 type ItemRow = {
   id: string;
@@ -86,9 +91,9 @@ function formatPct(p?: number): string {
   return `${sign}${(p * 100).toFixed(2)}%`;
 }
 
-function formatDeltaEUR(n: number): string {
+function formatDelta(n: number, currency: import('@/lib/settings').Currency): string {
   const sign = n >= 0 ? "+" : "";
-  return `${sign}${formatPrice(n)}`;
+  return `${sign}${formatPrice(n, currency)}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -174,13 +179,20 @@ function PortfolioScreen() {
   const [items, setItems] = useState<ItemRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tierSummary, setTierSummary] = useState<{ tier: string; rarityScore: number; completenessScore: number; diversificationScore: number } | null>(null);
+
+  // Store review prompt (criteria: 10+ items, 3+ days, 90-day cooldown)
+  useStoreReview(items.length);
 
   // Category breakdown state
   type CategoryBreakdownItem = { category: string; item_count: number; total_value: number; percentage: number };
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
+
+  // Followed/personalized categories from onboarding
+  const [followedCategories, setFollowedCategories] = useState<string[]>([]);
 
   // Data insights & alerts (feature flagged)
   const { insights } = usePortfolioInsights({
@@ -224,7 +236,7 @@ function PortfolioScreen() {
       // Pass 2 (C): Real backend wiring
       if (USE_REAL_BACKEND && collectorsClient?.getPortfolioTimeseries) {
         try {
-          const rangeParam = range.toLowerCase() as "1d" | "7d" | "30d";
+          const rangeParam = range.toLowerCase() as "1d" | "7d" | "30d" | "90d" | "1y" | "all";
           const timeseriesData = await collectorsClient.getPortfolioTimeseries(rangeParam);
           const extractedSeries = extractSeries(timeseriesData);
           if (extractedSeries.length) {
@@ -271,7 +283,8 @@ function PortfolioScreen() {
 
         // Filter series by selected range
         const now = new Date();
-        const rangeDays = range === "1D" ? 1 : range === "7D" ? 7 : 30;
+        const RANGE_DAYS: Record<RangeKey, number> = { "1D": 1, "7D": 7, "30D": 30, "90D": 90, "1Y": 365, "ALL": 9999 };
+        const rangeDays = RANGE_DAYS[range] ?? 30;
         const cutoff = new Date(now.getTime() - rangeDays * 24 * 60 * 60 * 1000);
         const filtered = baseSeries.filter(
           (p) => new Date(p.t).getTime() >= cutoff.getTime()
@@ -300,14 +313,58 @@ function PortfolioScreen() {
     collectorsApi.get('/analytics/portfolio/category-breakdown')
       .then((res: unknown) => {
         const data = res as Record<string, unknown>;
-        const cats = Array.isArray(data?.categories) ? data.categories as CategoryBreakdownItem[] : [];
+        // Backend returns "breakdown", also check "categories" for compat
+        const cats = Array.isArray(data?.breakdown)
+          ? (data.breakdown as Array<Record<string, unknown>>).map((b) => ({
+              category: String(b.category ?? ''),
+              item_count: Number(b.item_count ?? 0),
+              total_value: Number(b.total_value ?? 0),
+              percentage: Number(b.pct_of_portfolio ?? b.percentage ?? 0),
+            }))
+          : Array.isArray(data?.categories)
+          ? data.categories as CategoryBreakdownItem[]
+          : [];
         setCategoryBreakdown(cats);
       })
       .catch((err: unknown) => {
-        logger.warn('[Portfolio] category breakdown fetch failed:', err);
-        setCategoryBreakdown([]);
+        logger.warn('[Portfolio] category breakdown fetch failed, using mock data:', err);
+        // Mock data for development/testing
+        setCategoryBreakdown([
+          { category: 'Pokemon Cards', item_count: 47, total_value: 3250, percentage: 35 },
+          { category: 'LEGO', item_count: 12, total_value: 1890, percentage: 20 },
+          { category: 'Manga', item_count: 86, total_value: 1420, percentage: 15 },
+          { category: 'Anime Figures', item_count: 8, total_value: 1200, percentage: 13 },
+          { category: 'Vinyl Records', item_count: 23, total_value: 980, percentage: 11 },
+          { category: 'K-pop Merch', item_count: 15, total_value: 560, percentage: 6 },
+        ]);
       })
       .finally(() => setBreakdownLoading(false));
+  }, []);
+
+  // Load followed categories from onboarding
+  useEffect(() => {
+    // Try local storage first (faster), then backend
+    AsyncStorage.getItem('@collectai/followed_categories')
+      .then((raw) => {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setFollowedCategories(parsed);
+            }
+          } catch {}
+        }
+      })
+      .catch(() => {});
+
+    // Also try backend (more authoritative)
+    collectorsApi.getFollowedCategories()
+      .then((data) => {
+        if (data?.followed_categories?.length) {
+          setFollowedCategories(data.followed_categories);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleRefresh = useCallback(async () => {
@@ -320,7 +377,7 @@ function PortfolioScreen() {
   // Determine if positive or negative
   const isPositive = deltaPct >= 0;
 
-  const rangeButtons: RangeKey[] = ["1D", "7D", "30D"];
+  const rangeButtons: RangeKey[] = ["1D", "7D", "30D", "90D", "1Y", "ALL"];
 
   // Navigate to item detail
   const handleItemPress = (item: ItemRow) => {
@@ -340,9 +397,9 @@ function PortfolioScreen() {
     router.push("/analytics");
   };
 
-  // Navigate to items tab from watchlist
+  // Navigate to watchlist builder
   const handleWatchlistPress = () => {
-    router.navigate("/(tabs)/items");
+    router.push("/watchlist-builder");
   };
 
   return (
@@ -380,70 +437,117 @@ function PortfolioScreen() {
           </View>
         </View>
 
-        {/* Collection Value */}
-        <View style={styles.valueSection}>
-          <Text style={[styles.headerLabel, { color: colors.muted }]}>COLLECTION VALUE</Text>
-          <AnimatedCounter
-            value={total}
-            format={(v) => formatPrice(v)}
-            style={[styles.totalValue, { color: colors.text }]}
-            enabled={settings.animationsEnabled}
-            accessibilityLabel={`Collection value: ${formatPrice(total)}`}
-          />
-          <Text style={[styles.deltaText, { color: isPositive ? '#10B981' : '#EF4444' }]}>
-            {formatDeltaEUR(delta)} ({formatPct(deltaPct)})
-          </Text>
-        </View>
-
-        {/* Range Toggles */}
-        <View style={styles.rangeRow}>
-          {rangeButtons.map((k) => {
-            const active = k === range;
-            return (
-              <AnimatedPressable
-                key={k}
-                accessibilityRole="button"
-                accessibilityLabel={`Show ${k} range`}
-                onPress={() => {
-                  if (k !== range) {
-                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  }
-                  setRange(k);
-                }}
-                style={[
-                  styles.rangeBtn,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                  active && { backgroundColor: colors.accent + '20', borderColor: colors.accent },
-                ]}
-              >
-                <Text style={[styles.rangeText, { color: colors.muted }, active && { color: colors.text }]}>
-                  {k}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
-        </View>
-
-        {/* Chart Card with Interactive Line Chart */}
-        <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={colors.accent} />
-              <Text style={[styles.loadingText, { color: colors.muted }]}>Loading...</Text>
+        {/* Empty portfolio state OR Collection value + chart */}
+        {items.length === 0 && !loading ? (
+          <View style={styles.emptyPortfolio}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: colors.accent + '15' }]}>
+              <Ionicons name="camera-outline" size={64} color={colors.accent} />
             </View>
-          ) : (
-            <PortfolioLineChart
-              series={series}
-              accentColor={colors.accent}
-              showValueHeader={true}
-              showAxisLabels={true}
-              axisLabelColor={colors.muted}
-              gridColor={colors.border}
-              textColor={colors.text}
-              dotFillColor={colors.card}
-            />
-          )}
-        </View>
+            <Text style={[styles.emptyHeadline, { color: colors.text }]}>Start Your Collection</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+              Snap a photo of any collectible to get an instant AI valuation
+            </Text>
+            <AnimatedPressable
+              style={[styles.emptyCta, { backgroundColor: colors.accent }]}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                router.push('/quickscan');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Open QuickScan AI to scan your first item"
+            >
+              <Ionicons name="camera" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={styles.emptyCtaText}>QuickScan AI</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.emptySecondary}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                router.push('/add-manual');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Add an item manually"
+            >
+              <Text style={[styles.emptySecondaryText, { color: colors.muted }]}>or add manually</Text>
+            </AnimatedPressable>
+          </View>
+        ) : (
+          <>
+            {/* Collection Value */}
+            <View style={styles.valueSection}>
+              <Text style={[styles.headerLabel, { color: colors.muted }]}>COLLECTION VALUE</Text>
+              <AnimatedCounter
+                value={total}
+                format={(v) => formatPrice(v)}
+                style={[styles.totalValue, { color: colors.text }]}
+                enabled={settings.animationsEnabled}
+                accessibilityLabel={`Collection value: ${formatPrice(total)}`}
+              />
+              <Text
+                style={[styles.deltaText, { color: isPositive ? '#10B981' : '#EF4444' }]}
+                accessibilityRole="text"
+                accessibilityLabel={`Change: ${formatDelta(delta, settings.currency)}, ${formatPct(deltaPct)}`}
+              >
+                {formatDelta(delta, settings.currency)} ({formatPct(deltaPct)})
+              </Text>
+            </View>
+
+            {/* Range Toggles */}
+            <View style={styles.rangeRow}>
+              {rangeButtons.map((k) => {
+                const active = k === range;
+                return (
+                  <AnimatedPressable
+                    key={k}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Show ${k} range`}
+                    accessibilityState={{ selected: active }}
+                    onPress={() => {
+                      if (k !== range) {
+                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      }
+                      setRange(k);
+                    }}
+                    style={[
+                      styles.rangeBtn,
+                      { backgroundColor: colors.card, borderColor: colors.border },
+                      active && { backgroundColor: colors.accent + '20', borderColor: colors.accent },
+                    ]}
+                  >
+                    <Text style={[styles.rangeText, { color: colors.muted }, active && { color: colors.text }]}>
+                      {k}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </View>
+
+            {/* Chart Card with Interactive Line Chart */}
+            <View
+              style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              accessibilityRole="image"
+              accessibilityLabel={`Portfolio chart: current value ${formatPrice(total)}, ${isPositive ? 'up' : 'down'} ${formatPct(deltaPct)} over ${range}`}
+            >
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={colors.accent} />
+                  <Text style={[styles.loadingText, { color: colors.muted }]}>Loading...</Text>
+                </View>
+              ) : (
+                <PortfolioLineChart
+                  series={series}
+                  accentColor={colors.accent}
+                  showValueHeader={true}
+                  showAxisLabels={true}
+                  axisLabelColor={colors.muted}
+                  gridColor={colors.border}
+                  textColor={colors.text}
+                  dotFillColor={colors.card}
+                />
+              )}
+            </View>
+          </>
+        )}
 
         {/* Error message (if any) */}
         {error && (
@@ -451,6 +555,55 @@ function PortfolioScreen() {
             <Ionicons name="warning-outline" size={14} color="#EF4444" />
             <Text style={[styles.errorText, { color: '#EF4444' }]}>{error}</Text>
           </View>
+        )}
+
+        {/* Personalized Categories (from onboarding) */}
+        {followedCategories.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Categories</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.followedCatsRow}
+              style={{ marginBottom: 12 }}
+            >
+              {followedCategories.map((catSlug) => {
+                const visual = CATEGORY_VISUAL[catSlug as CategoryId];
+                if (!visual) return null;
+                const displayName = catSlug
+                  .replace(/_/g, ' ')
+                  .replace(/\b\w/g, (c) => c.toUpperCase());
+                return (
+                  <AnimatedPressable
+                    key={catSlug}
+                    onPress={() => {
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                      router.push({ pathname: '/categories/[categoryId]', params: { categoryId: catSlug } });
+                    }}
+                    style={[
+                      styles.followedCatCard,
+                      { backgroundColor: visual.accentColor + '15', borderColor: visual.accentColor + '40' },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Browse ${displayName}`}
+                  >
+                    <View style={[styles.followedCatIcon, { backgroundColor: visual.accentColor + '25' }]}>
+                      <Ionicons
+                        name={(visual.iconName || 'cube') as keyof typeof Ionicons.glyphMap}
+                        size={20}
+                        color={visual.accentColor}
+                      />
+                    </View>
+                    <Text style={[styles.followedCatName, { color: colors.text }]} numberOfLines={1}>
+                      {displayName}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </ScrollView>
+          </>
         )}
 
         {/* Category Breakdown */}
@@ -468,7 +621,7 @@ function PortfolioScreen() {
               const barColors = [colors.accent, colors.accent + 'CC', colors.accent + '99', colors.accent + '66', colors.accent + '44'];
               const barColor = barColors[idx] || colors.accent;
               return (
-                <View key={cat.category} style={styles.breakdownBarRow}>
+                <View key={cat.category} style={styles.breakdownBarRow} accessibilityLabel={`${cat.category}: ${cat.percentage.toFixed(0)}% of portfolio`}>
                   <Text style={[styles.breakdownBarLabel, { color: colors.text }]} numberOfLines={1}>
                     {cat.category}
                   </Text>
@@ -498,6 +651,7 @@ function PortfolioScreen() {
                 <View
                   key={cat.category}
                   style={[styles.breakdownCategoryCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+                  accessibilityLabel={`${cat.category}: ${cat.item_count} item${cat.item_count !== 1 ? 's' : ''}, ${formatPrice(cat.total_value)}, ${cat.percentage.toFixed(0)}%`}
                 >
                   <Text style={[styles.breakdownCatName, { color: colors.text }]} numberOfLines={1}>
                     {cat.category}
@@ -524,6 +678,34 @@ function PortfolioScreen() {
             </Text>
           </View>
         )}
+
+        {/* Extended Portfolio Insights CTA */}
+        <AnimatedPressable
+          style={[styles.insightsCta, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push(limits.advanced_analytics ? '/analytics' : '/subscription');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={limits.advanced_analytics ? "View extended portfolio insights" : "Upgrade for extended portfolio insights"}
+        >
+          <View style={styles.insightsCtaLeft}>
+            <View style={[styles.insightsCtaIcon, { backgroundColor: colors.accent + '15' }]}>
+              <Ionicons name={limits.advanced_analytics ? "analytics" : "lock-closed"} size={18} color={colors.accent} />
+            </View>
+            <View style={styles.insightsCtaTextBlock}>
+              <Text style={[styles.insightsCtaTitle, { color: colors.text }]}>Extended Portfolio Insights</Text>
+              <Text style={[styles.insightsCtaSub, { color: colors.muted }]}>
+                {limits.advanced_analytics
+                  ? "Deep analytics, trend forecasts & price alerts"
+                  : "Unlock deep analytics, trend forecasts & price alerts"}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.insightsCtaBtn, { backgroundColor: colors.accent }]}>
+            <Text style={styles.insightsCtaBtnText}>{limits.advanced_analytics ? "View" : "Upgrade"}</Text>
+          </View>
+        </AnimatedPressable>
 
         {/* Watchlist Card (always show - has empty state) */}
         {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
@@ -704,7 +886,7 @@ function PortfolioScreen() {
                     ]}
                     onPress={() => {
                       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      router.navigate('/(tabs)/items');
+                      router.push('/watchlist-builder');
                     }}
                     accessibilityRole="button"
                     accessibilityLabel={`Watchlist item: ${it.name ?? it.title}`}
@@ -746,6 +928,80 @@ function PortfolioScreen() {
         <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />
         </Animated.View>
       </ScrollView>
+
+      {/* Floating Add Button */}
+      <AnimatedPressable
+        onPress={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          setFabOpen(true);
+        }}
+        style={styles.fab}
+        accessibilityRole="button"
+        accessibilityLabel="Add item"
+      >
+        <Ionicons name="add" size={28} color="#FFFFFF" />
+      </AnimatedPressable>
+
+      {/* FAB Menu */}
+      <Modal
+        visible={fabOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFabOpen(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setFabOpen(false)}
+          style={styles.fabOverlay}
+        >
+          <View style={[styles.fabMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <TouchableOpacity
+              onPress={() => { setFabOpen(false); router.push('/quickscan'); }}
+              style={styles.fabMenuItem}
+              accessibilityRole="button"
+              accessibilityLabel="QuickScan AI"
+            >
+              <View style={[styles.fabMenuIcon, { backgroundColor: colors.accent + '15' }]}>
+                <Ionicons name="camera-outline" size={20} color={colors.accent} />
+              </View>
+              <View>
+                <Text style={[styles.fabMenuTitle, { color: colors.text }]}>QuickScan AI</Text>
+                <Text style={[styles.fabMenuSubtitle, { color: colors.muted }]}>Snap a photo, get instant valuation</Text>
+              </View>
+            </TouchableOpacity>
+            <View style={[styles.fabMenuDivider, { backgroundColor: colors.border }]} />
+            <TouchableOpacity
+              onPress={() => { setFabOpen(false); router.push('/barcode-scan'); }}
+              style={styles.fabMenuItem}
+              accessibilityRole="button"
+              accessibilityLabel="Scan barcode"
+            >
+              <View style={[styles.fabMenuIcon, { backgroundColor: colors.accent + '15' }]}>
+                <Ionicons name="barcode-outline" size={20} color={colors.accent} />
+              </View>
+              <View>
+                <Text style={[styles.fabMenuTitle, { color: colors.text }]}>Scan Barcode</Text>
+                <Text style={[styles.fabMenuSubtitle, { color: colors.muted }]}>ISBN, EAN, or UPC</Text>
+              </View>
+            </TouchableOpacity>
+            <View style={[styles.fabMenuDivider, { backgroundColor: colors.border }]} />
+            <TouchableOpacity
+              onPress={() => { setFabOpen(false); router.push('/add-manual'); }}
+              style={styles.fabMenuItem}
+              accessibilityRole="button"
+              accessibilityLabel="Add manually"
+            >
+              <View style={[styles.fabMenuIcon, { backgroundColor: colors.accent + '15' }]}>
+                <Ionicons name="create-outline" size={20} color={colors.accent} />
+              </View>
+              <View>
+                <Text style={[styles.fabMenuTitle, { color: colors.text }]}>Add Manually</Text>
+                <Text style={[styles.fabMenuSubtitle, { color: colors.muted }]}>Enter item details</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -848,6 +1104,59 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 12,
     marginTop: 8,
+  },
+
+  // Empty portfolio state
+  emptyPortfolio: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+  },
+  emptyIconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  emptyHeadline: {
+    fontSize: 24,
+    fontWeight: "800",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center",
+    marginBottom: 28,
+    maxWidth: 280,
+  },
+  emptyCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 14,
+    width: "100%",
+    maxWidth: 280,
+  },
+  emptyCtaText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  emptySecondary: {
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  emptySecondaryText: {
+    fontSize: 15,
+    fontWeight: "500",
+    textDecorationLine: "underline",
   },
 
   // Error
@@ -1097,6 +1406,143 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
     paddingVertical: 16,
+  },
+
+  // Extended Portfolio Insights CTA
+  insightsCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+  },
+  insightsCtaLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 12,
+  },
+  insightsCtaIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  insightsCtaTextBlock: {
+    flex: 1,
+  },
+  insightsCtaTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  insightsCtaSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  insightsCtaBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  insightsCtaBtnText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  // FAB
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#81D8D0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 10,
+  },
+  fabOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    paddingRight: 20,
+    paddingBottom: 88,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  fabMenu: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+    minWidth: 220,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  fabMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  fabMenuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabMenuTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  fabMenuSubtitle: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  fabMenuDivider: {
+    height: 1,
+    marginHorizontal: 16,
+  },
+
+  // Followed Categories (from onboarding)
+  followedCatsRow: {
+    gap: 10,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+  },
+  followedCatCard: {
+    width: 100,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    alignItems: 'center',
+  },
+  followedCatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  followedCatName: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

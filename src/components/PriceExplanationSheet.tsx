@@ -24,6 +24,7 @@ import {
   getConfidenceLabel,
   getConfidenceColor,
 } from '@/types/priceExplanation';
+import type { CurrencyCode } from '@/data/types';
 import { RangeBar } from './RangeBar';
 
 type AffiliateLink = {
@@ -38,11 +39,11 @@ type PriceExplanationSheetProps = {
   onClose: () => void;
   explanation: PriceExplanation | null;
   priceBand?: PriceBand;
-  currency?: string;
+  currency?: CurrencyCode;
   affiliateLinks?: AffiliateLink[];
 };
 
-function formatPrice(value: number, currency: string = 'EUR'): string {
+function formatPrice(value: number, currency: CurrencyCode = 'EUR'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,

@@ -8,32 +8,20 @@ import asyncpg
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
+from app.config import OVEREXPOSURE_THRESHOLD, HIGH_RISK_THRESHOLD
 from app.features.pagination import pagination_params
+from app.lib.db_helpers import get_db_pool
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except (ImportError, RuntimeError, OSError) as e:
-        logger.debug(f"DB pool not available: {e}")
-        return None
-
-
-# ---------------------------------------------------------------------------
 # Thresholds for insight generation
 # ---------------------------------------------------------------------------
 
-_OVEREXPOSURE_THRESHOLD = 0.40   # category > 40% of portfolio -> flagged
-_HIGH_RISK_THRESHOLD = 0.50      # category > 50% -> "high" risk
+_OVEREXPOSURE_THRESHOLD = OVEREXPOSURE_THRESHOLD
+_HIGH_RISK_THRESHOLD = HIGH_RISK_THRESHOLD
 
 
 # ---------------------------------------------------------------------------
@@ -94,7 +82,7 @@ async def get_personalized_insights(
     """
     limit, offset = pagination
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if not pool:
         return PersonalizedInsightsResponse(
             overexposed_categories=[],
@@ -229,7 +217,7 @@ async def get_home_widget(user_id: str = Depends(get_current_user_id)) -> HomeWi
     'What's it worth today?' home widget snapshot.
     Computes real collection value and daily change from price_predictions.
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if not pool:
         return HomeWidgetResponse(
             collection_value=0.0,
@@ -240,45 +228,13 @@ async def get_home_widget(user_id: str = Depends(get_current_user_id)) -> HomeWi
         )
 
     try:
+        yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+
         async with pool.acquire() as conn:
-            # Latest predicted value for each item -> total collection value
-            value_row = await conn.fetchrow(
-                """
-                SELECT COALESCE(SUM(pp.q50), 0) AS total_value
-                FROM (
-                    SELECT DISTINCT ON (pp.item_id) pp.q50
-                    FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
-                    WHERE i.user_id = $1
-                    ORDER BY pp.item_id, pp.asof DESC
-                ) pp
-                """,
-                user_id,
-            )
-            collection_value = float(value_row["total_value"]) if value_row else 0.0
-
-            # Yesterday's total for change calculation
-            yesterday = datetime.now(timezone.utc) - timedelta(days=1)
-            yesterday_row = await conn.fetchrow(
-                """
-                SELECT COALESCE(SUM(pp.q50), 0) AS total_value
-                FROM (
-                    SELECT DISTINCT ON (pp.item_id) pp.q50
-                    FROM price_predictions pp
-                    JOIN items i ON i.id = pp.item_id
-                    WHERE i.user_id = $1
-                      AND pp.asof <= $2
-                    ORDER BY pp.item_id, pp.asof DESC
-                ) pp
-                """,
-                user_id,
-                yesterday,
-            )
-            yesterday_value = float(yesterday_row["total_value"]) if yesterday_row else 0.0
-            today_change = collection_value - yesterday_value
-
-            # Biggest mover: item with largest absolute q50 change today vs yesterday
-            mover_row = await conn.fetchrow(
+            # Single combined query: current total, yesterday total, and biggest mover.
+            # Uses two CTEs (latest + prev) that are referenced once for all three metrics,
+            # replacing the previous 3 separate round-trips.
+            row = await conn.fetchrow(
                 """
                 WITH latest AS (
                     SELECT DISTINCT ON (pp.item_id)
@@ -298,21 +254,45 @@ async def get_home_widget(user_id: str = Depends(get_current_user_id)) -> HomeWi
                     WHERE i.user_id = $1
                       AND pp.asof <= $2
                     ORDER BY pp.item_id, pp.asof DESC
+                ),
+                combined AS (
+                    SELECT
+                        l.item_id,
+                        l.latest_q50,
+                        COALESCE(p.prev_q50, l.latest_q50) AS prev_q50,
+                        ABS(l.latest_q50 - COALESCE(p.prev_q50, l.latest_q50)) AS abs_change
+                    FROM latest l
+                    LEFT JOIN prev p ON p.item_id = l.item_id
+                ),
+                mover AS (
+                    SELECT item_id, latest_q50, prev_q50
+                    FROM combined
+                    ORDER BY abs_change DESC
+                    LIMIT 1
                 )
                 SELECT
-                    COALESCE(i.title, i.normalized_key, i.id::text) AS item_name,
-                    (l.latest_q50 - COALESCE(p.prev_q50, l.latest_q50)) AS change
-                FROM latest l
-                JOIN items i ON i.id = l.item_id
-                LEFT JOIN prev p ON p.item_id = l.item_id
-                ORDER BY ABS(l.latest_q50 - COALESCE(p.prev_q50, l.latest_q50)) DESC
-                LIMIT 1
+                    COALESCE(SUM(c.latest_q50), 0)   AS collection_value,
+                    COALESCE(SUM(c.prev_q50), 0)     AS yesterday_value,
+                    COALESCE(
+                        (SELECT COALESCE(i.title, i.normalized_key, i.id::text)
+                         FROM mover m JOIN items i ON i.id = m.item_id),
+                        '--'
+                    ) AS biggest_mover_name,
+                    COALESCE(
+                        (SELECT m.latest_q50 - m.prev_q50 FROM mover m),
+                        0
+                    ) AS biggest_mover_change
+                FROM combined c
                 """,
                 user_id,
                 yesterday,
             )
-            biggest_name = mover_row["item_name"] if mover_row else "--"
-            biggest_change = float(mover_row["change"]) if mover_row else 0.0
+
+            collection_value = float(row["collection_value"]) if row else 0.0
+            yesterday_value = float(row["yesterday_value"]) if row else 0.0
+            today_change = collection_value - yesterday_value
+            biggest_name = row["biggest_mover_name"] if row else "--"
+            biggest_change = float(row["biggest_mover_change"]) if row else 0.0
 
             return HomeWidgetResponse(
                 collection_value=round(collection_value, 2),

@@ -1,4 +1,4 @@
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
 import { router } from 'expo-router';
 import { AddImportCard } from '@/components/AddImportCard';
 import { API_BASE } from '@/api/config';
@@ -20,6 +20,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
+import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 
 /**
@@ -37,6 +38,7 @@ const AddScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
 
   const handleQuickScanPress = () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -69,10 +71,7 @@ const AddScreen: React.FC = () => {
     const templateUrl = `${API_BASE}/api/imports/template`;
     Linking.openURL(templateUrl).catch((err) => {
       logger.error("[Add] Failed to open template URL", err);
-      Alert.alert(
-        "Could not open template",
-        "We couldn't open the template link. Please try again later."
-      );
+      showToast({ message: "Could not open template. Please try again later.", type: 'error' });
     });
   };
 
@@ -191,7 +190,7 @@ return (
             <View style={[styles.quickScanIconCircle, { backgroundColor: colors.accent + '20' }]}>
               <Ionicons name="scan-outline" size={32} color={colors.accent} />
             </View>
-            <Text style={[styles.quickScanTitle, { color: colors.text }]}>QuickScan (beta)</Text>
+            <Text style={[styles.quickScanTitle, { color: colors.text }]}>QuickScan AI</Text>
             <Text style={[styles.quickScanSubtitle, { color: colors.muted }]}>
               Snap a photo and we prefill the details. You can override anything
               before saving.

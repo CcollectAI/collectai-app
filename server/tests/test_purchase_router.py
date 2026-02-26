@@ -154,7 +154,7 @@ class TestCreateMandate:
             })
 
         assert resp.status_code == 409
-        assert "limit" in resp.json()["detail"].lower()
+        assert "limit" in resp.json()["detail"]["message"].lower()
 
     def test_create_validation_missing_name(self):
         conn = AsyncMock()
@@ -232,7 +232,7 @@ class TestUpdateMandate:
             resp = client.patch(f"/purchase/mandates/{uuid.uuid4()}", json={})
 
         assert resp.status_code == 400
-        assert "no fields" in resp.json()["detail"].lower()
+        assert "no fields" in resp.json()["detail"]["message"].lower()
 
     def test_update_whitelist_rejection(self):
         """Non-whitelisted keys in the body are rejected by Pydantic
@@ -321,7 +321,7 @@ class TestListDeals:
             resp = client.get("/purchase/deals?status=INVALID_STATUS")
 
         assert resp.status_code == 400
-        assert "invalid status" in resp.json()["detail"].lower()
+        assert "invalid status" in resp.json()["detail"]["message"].lower()
 
 
 class TestClickDeal:
@@ -354,7 +354,7 @@ class TestClickDeal:
             resp = client.post(f"/purchase/deals/{uuid.uuid4()}/click")
 
         assert resp.status_code == 404
-        assert "not clickable" in resp.json()["detail"].lower() or "not found" in resp.json()["detail"].lower()
+        assert "not clickable" in resp.json()["detail"]["message"].lower() or "not found" in resp.json()["detail"]["message"].lower()
 
 
 class TestConfirmDeal:
@@ -396,7 +396,7 @@ class TestConfirmDeal:
             })
 
         assert resp.status_code == 404
-        assert "not found" in resp.json()["detail"].lower() or "already" in resp.json()["detail"].lower()
+        assert "not found" in resp.json()["detail"]["message"].lower() or "already" in resp.json()["detail"]["message"].lower()
 
     def test_confirm_already_purchased_returns_404(self):
         """A deal with status 'purchased' is not in _CONFIRMABLE_STATUSES,
@@ -464,7 +464,7 @@ class TestDeclineDeal:
             resp = client.post(f"/purchase/deals/{uuid.uuid4()}/decline")
 
         assert resp.status_code == 404
-        assert "not found" in resp.json()["detail"].lower() or "not declinable" in resp.json()["detail"].lower()
+        assert "not found" in resp.json()["detail"]["message"].lower() or "not declinable" in resp.json()["detail"]["message"].lower()
 
 
 # ---------------------------------------------------------------------------

@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.db_helpers import get_db_pool
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 logger = logging.getLogger(__name__)
@@ -32,16 +33,6 @@ VALID_LOCALES = {"en-US", "de-DE", "ja-JP", "nl-NL", "ko-KR", "en-AU"}
 DEFAULT_CURRENCY = "EUR"
 DEFAULT_REGION = "europe"
 DEFAULT_LOCALE = "de-DE"
-
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except (ImportError, RuntimeError, OSError) as e:
-        logger.debug("DB pool not available: %s", e)
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +78,7 @@ async def get_user_settings(user_id: str = Depends(get_current_user_id)):
     If no row exists for this user, returns the defaults
     (EUR, europe, de-DE) without inserting anything.
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is None:
         # Offline / no-DB mode: return defaults
@@ -158,7 +149,7 @@ async def update_user_settings(
             code="VALIDATION_ERROR",
         )
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is None:
         # Offline mode: return the submitted values merged with defaults

@@ -11,9 +11,10 @@ from __future__ import annotations
 import logging
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from app.auth import require_api_key
+from app.errors import error_response
 from app.config import API_SHARED_SECRET, SIGNALS_BASE_URL
 
 router = APIRouter(tags=["portfolio"])
@@ -53,10 +54,10 @@ async def _proxy_signals(path: str) -> dict:
         return r.json()
     except httpx.HTTPStatusError as e:
         _logger.error("Upstream %s returned %d", path, e.response.status_code)
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise error_response(502, "Upstream service error")
     except httpx.RequestError as e:
         _logger.error("Upstream %s request failed: %s", path, e)
-        raise HTTPException(status_code=503, detail="Upstream service unavailable")
+        raise error_response(503, "Upstream service unavailable")
 
 
 # ---- Endpoints ----

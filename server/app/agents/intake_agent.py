@@ -119,14 +119,7 @@ def _price_band_to_dict(price_band) -> dict[str, Any]:
         }
 
 
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except Exception as e:
-        logger.debug("Intake agent: DB pool not available: %s", e)
-        return None
+from app.lib.db_helpers import get_db_pool
 
 
 async def _barcode_lookup_internal(
@@ -450,7 +443,7 @@ async def _log_catalog_miss(
             return
 
         import json
-        pool = _get_db_pool()
+        pool = get_db_pool()
         if pool is None:
             return
 
@@ -513,7 +506,7 @@ async def process_intake(
     result.barcode_type = barcode_type
     hints = user_hints or {}
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
     barcode_found = False
     barcode_partial = False
 
@@ -827,7 +820,7 @@ async def process_url_import(
     result.identification_method = "url_import"
     hints = user_hints or {}
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     try:
         # Validate URL

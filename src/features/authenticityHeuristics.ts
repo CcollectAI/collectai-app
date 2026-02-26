@@ -1,8 +1,10 @@
+import type { CurrencyCode } from '@/data/types';
+
 export type QuickScanPrediction = {
   name?: string;
   estimated_mid?: number;
   category?: string;
-  currency?: string;
+  currency?: CurrencyCode;
   confidence?: number;
   price_band?: string;
 };

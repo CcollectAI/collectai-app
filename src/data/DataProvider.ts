@@ -31,6 +31,9 @@ import type {
   MarketHit,
   MarketSearchOptions,
   MarketSearchResult,
+  Offer,
+  OfferEvent,
+  UserReputation,
 } from './types';
 import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 
@@ -60,6 +63,13 @@ export interface DataProvider {
    * @returns The created watchlist item
    */
   addWatchlistItem(input: CreateWatchlistInput): Promise<WatchlistItem>;
+
+  /**
+   * Update a watchlist item (e.g. target price, notes).
+   * @param id - Watchlist item ID
+   * @param updates - Fields to update
+   */
+  updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string }): Promise<WatchlistItem>;
 
   /**
    * Remove an item from the watchlist.
@@ -114,8 +124,10 @@ export interface DataProvider {
   /**
    * Run QuickScan on a single image.
    * Returns attributes + prediction (no save).
+   * @param imageUri - Optional local file URI of the captured photo.
+   *                   When provided, the image is sent to the AI vision pipeline (/intake/image-only).
    */
-  quickscanSingle(): Promise<QuickScanResult>;
+  quickscanSingle(imageUri?: string): Promise<QuickScanResult>;
 
   /**
    * Search items by query string.
@@ -233,6 +245,23 @@ export interface DataProvider {
   sendMessage(threadId: string, body: string): Promise<DmMessage>;
 
   /**
+   * Signal that the current user is typing in a thread.
+   * Upserts a row in chat_typing with the current timestamp.
+   */
+  setTyping(threadId: string): Promise<void>;
+
+  /**
+   * Clear typing indicator for the current user in a thread.
+   */
+  clearTyping(threadId: string): Promise<void>;
+
+  /**
+   * Check if the other user in a thread is currently typing.
+   * Returns true if they typed within the last 8 seconds.
+   */
+  isOtherUserTyping(threadId: string): Promise<boolean>;
+
+  /**
    * Get DM connection status with another user.
    * Returns: 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined'
    */
@@ -339,6 +368,11 @@ export interface DataProvider {
    * @param categoryId - The category whose template to apply
    */
   applyStepTemplate(projectId: string, categoryId: string): Promise<BuildPaintStep[]>;
+
+  /**
+   * Update build/paint project metadata (paint recipes, etc).
+   */
+  updateBuildPaintProject(projectId: string, patch: { paintRecipes?: unknown[] }): Promise<void>;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Feedback
@@ -603,6 +637,17 @@ export interface DataProvider {
   getCategoryDeepDive(categoryId: string, days?: number): Promise<Record<string, unknown>>;
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // User Search
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Search users by display name or handle.
+   * Returns up to 20 matching public profiles.
+   * @param query - Search term (case-insensitive)
+   */
+  searchUsers(query: string): Promise<PublicUserProfile[]>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // User Blocking
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -666,4 +711,95 @@ export interface DataProvider {
     query: string,
     opts?: MarketSearchOptions,
   ): Promise<MarketSearchResult>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // User Presence
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Send heartbeat to mark user online. Called every 60s from root layout. */
+  sendHeartbeat(): Promise<void>;
+
+  /** Mark user as offline (called on app background/close). */
+  goOffline(): Promise<void>;
+
+  /** Get presence for a single user. */
+  getUserPresence(userId: string): Promise<import('./types').UserPresence | null>;
+
+  /** Get batch presence for multiple users. */
+  getBatchPresence(userIds: string[]): Promise<import('./types').UserPresence[]>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Activity Feed
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Get activity feed for a user (public activities, or all if self). */
+  getUserActivity(userId: string, limit?: number, offset?: number): Promise<import('./types').ActivityFeedItem[]>;
+
+  /** Log an activity to the current user's feed. */
+  logActivity(activityType: string, title: string, description?: string, metadata?: Record<string, unknown>, isPublic?: boolean): Promise<void>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Unified Search
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Unified search across items, catalog, users, events, and categories. */
+  unifiedSearch(query: string, limit?: number): Promise<{
+    items: Array<{ id: string; name: string; category: string; imageUrl?: string | null; price?: number }>;
+    catalog: Array<{ id: string; category: string; itemKey: string; title: string; brand?: string | null; imageUrl?: string | null }>;
+    users: Array<{ id: string; displayName: string; handle?: string; avatarUrl?: string | null }>;
+    events: Array<{ id: string; title: string; startDate?: string; location?: string; category?: string }>;
+    categories: Array<{ id: string; name: string }>;
+  }>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Event Search
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Search events by query, category, type, or location. */
+  searchEvents(params: {
+    q?: string;
+    category?: string;
+    eventType?: string;
+    location?: string;
+    upcomingOnly?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<import('./events').CollectorsEvent[]>;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Deal Desk (P2P Offers)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Propose an offer on an item. */
+  proposeOffer(itemId: string, price: number, message?: string): Promise<Offer>;
+
+  /** Counter an existing offer with a new price. */
+  counterOffer(offerId: string, price: number, message?: string): Promise<Offer>;
+
+  /** Accept or decline an offer. */
+  respondToOffer(offerId: string, accept: boolean, message?: string): Promise<void>;
+
+  /** Cancel a pending offer (buyer only). */
+  cancelOffer(offerId: string): Promise<void>;
+
+  /** List active offers (proposed/countered/accepted). */
+  listActiveOffers(): Promise<Offer[]>;
+
+  /** List completed/cancelled/declined deals. */
+  listDealHistory(): Promise<Offer[]>;
+
+  /** Get offer detail with negotiation timeline. */
+  getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }>;
+
+  /** Get user's deal reputation (avg stars, total ratings, completed deals). */
+  getUserReputation(userId: string): Promise<UserReputation>;
+
+  /** Toggle an item's for-sale status and set asking price. */
+  toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void>;
+
+  /** Mark an accepted offer as shipped (seller only). */
+  markShipped(offerId: string, trackingInfo?: string): Promise<void>;
+
+  /** Confirm delivery and rate the seller (buyer only). */
+  completeDeal(offerId: string, stars: number, comment?: string): Promise<void>;
 }

@@ -18,10 +18,17 @@ from app.db import db_configured, get_conn
 from app.errors import error_response
 from app.lib.affiliate import build_affiliate_url
 from app.lib.shipping_service import detect_listing_region, estimate_shipping
+from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/marketplace", tags=["marketplace"])
+
+# Per-user: 60 search requests per minute
+_search_user_limit = per_user_rate_limit(60, window_seconds=60, scope="marketplace_search")
+
+# Per-user: 20 comps requests per minute
+_comps_user_limit = per_user_rate_limit(20, window_seconds=60, scope="marketplace_comps")
 
 
 # ---------------------------------------------------------------------------
@@ -55,6 +62,7 @@ class CompsRequest(BaseModel):
 async def marketplace_search(
     request: MarketSearchRequest,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_search_user_limit),
 ):
     """Aggregate search across all configured market adapters."""
     from app.agents.marketplace_agent import MarketplaceAgent
@@ -193,6 +201,7 @@ async def marketplace_comps(
     limit: int = 20,
     region: Optional[str] = None,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_comps_user_limit),
 ):
     """Find sold comparables for an item and persist to market_hits."""
     from app.agents.marketplace_agent import MarketplaceAgent

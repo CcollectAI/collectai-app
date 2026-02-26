@@ -8,13 +8,15 @@
  * rows into useful series for charts (per-item and portfolio).
  */
 
+import type { CurrencyCode } from '@/data/types';
+
 export type RawItemValuationRow = {
   id: string;
   user_id: string;
   item_id: string;
   as_of: string; // ISO timestamp
   estimated_value: number;
-  currency: string;
+  currency: CurrencyCode;
   source: string | null;
   confidence: number | null;
   created_at: string;

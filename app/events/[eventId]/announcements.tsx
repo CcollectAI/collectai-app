@@ -7,6 +7,8 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
 import {
   View,
   Text,
@@ -15,6 +17,7 @@ import {
   ActivityIndicator,
   ViewToken,
   Animated,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -156,12 +159,11 @@ const EventAnnouncementsScreen: React.FC = () => {
 
         {/* Image */}
         {item.imageUrl && (
-          <View style={[styles.imageContainer, { borderColor: colors.border }]}>
-            <Ionicons name="image-outline" size={20} color={colors.muted} />
-            <Text style={[styles.imageUrlText, { color: colors.muted }]} numberOfLines={1}>
-              {item.imageUrl}
-            </Text>
-          </View>
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.announcementImage}
+            accessibilityLabel="Announcement image"
+          />
         )}
 
         {/* Footer: timestamp + author */}
@@ -245,6 +247,7 @@ const EventAnnouncementsScreen: React.FC = () => {
           <Ionicons name="create-outline" size={24} color="#FFFFFF" />
         </AnimatedPressable>
       )}
+      <QuickNavBar />
     </SafeAreaView>
   );
 };
@@ -309,18 +312,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  imageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 10,
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  imageUrlText: {
-    fontSize: 12,
-    flex: 1,
+  announcementImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 10,
+    marginTop: 8,
   },
   announcementFooter: {
     flexDirection: 'row',
@@ -374,4 +370,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EventAnnouncementsScreen;
+export default function EventAnnouncementsScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Announcements">
+      <EventAnnouncementsScreen />
+    </ScreenErrorBoundary>
+  );
+}

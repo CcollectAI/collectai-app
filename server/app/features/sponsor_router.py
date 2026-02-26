@@ -21,6 +21,9 @@ from app.config import (
     STRIPE_PRICE_ID_SPONSOR_FEATURED,
     STRIPE_PRICE_ID_SPONSOR_PROMOTED,
     STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT,
+    SPONSOR_TIER_BASIC,
+    SPONSOR_TIER_PRO,
+    SPONSOR_TIER_PREMIUM,
 )
 from app.db import get_pool
 from app.errors import error_response
@@ -36,17 +39,17 @@ router = APIRouter(prefix="/events", tags=["events"])
 SPONSOR_TIERS = {
     "featured": {
         "label": "Featured Event",
-        "price_cents": 2900,  # EUR 29
+        "price_cents": SPONSOR_TIER_BASIC,
         "price_id_env": "STRIPE_PRICE_ID_SPONSOR_FEATURED",
     },
     "promoted": {
         "label": "Promoted Event",
-        "price_cents": 7900,  # EUR 79
+        "price_cents": SPONSOR_TIER_PRO,
         "price_id_env": "STRIPE_PRICE_ID_SPONSOR_PROMOTED",
     },
     "spotlight": {
         "label": "Spotlight Package",
-        "price_cents": 19900,  # EUR 199
+        "price_cents": SPONSOR_TIER_PREMIUM,
         "price_id_env": "STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT",
     },
 }

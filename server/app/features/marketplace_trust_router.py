@@ -2,27 +2,19 @@ from __future__ import annotations
 
 import logging
 from typing import List
+from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
+
+from app.auth import get_current_user_id
+from app.errors import error_response
+from app.lib.db_helpers import get_db_pool
+from app.lib.error_codes import ErrorCode
 
 router = APIRouter(prefix="/marketplace/trust2", tags=["marketplace-trust"])
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except (ImportError, RuntimeError, OSError) as e:
-        logger.debug("DB pool not available: %s", e)
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -66,7 +58,7 @@ def _empty_seller(user_id: str) -> SellerReputation:
 
 
 @router.get("/seller/{user_id}", response_model=SellerReputation)
-async def get_seller_reputation(user_id: str):
+async def get_seller_reputation(user_id: str, _caller: str = Depends(get_current_user_id)):
     """
     Seller reputation endpoint.
 
@@ -74,12 +66,19 @@ async def get_seller_reputation(user_id: str):
     feature ships.  Until then returns an honest empty stub so the frontend
     knows no data is available yet (score=0, badge='new').
     """
-    pool = _get_db_pool()
+    try:
+        UUID(user_id)
+    except ValueError:
+        raise error_response(400, "Invalid user_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
     if not pool:
         logger.info("[trust/seller] No DB pool -- returning empty stub for user_id=%s", user_id)
         return _empty_seller(user_id)
 
     try:
+        # Escape LIKE metacharacters to prevent pattern injection
+        safe_id = user_id.replace('%', r'\%').replace('_', r'\_')
         async with pool.acquire() as conn:
             # Attempt to read from a future `marketplace_trades` or similar table.
             # For now, check if seller has market_hits as a rough proxy.
@@ -92,7 +91,7 @@ async def get_seller_reputation(user_id: str):
                 WHERE seller_score IS NOT NULL
                   AND url ILIKE '%' || $1 || '%'
                 """,
-                user_id,
+                safe_id,
             )
 
             if not row or row["total_trades"] == 0:
@@ -126,14 +125,14 @@ async def get_seller_reputation(user_id: str):
 
 
 @router.get("/listing/{listing_id}", response_model=MarketplaceTrustSnapshot)
-async def get_listing_trust_snapshot(listing_id: str):
+async def get_listing_trust_snapshot(listing_id: str, _caller: str = Depends(get_current_user_id)):
     """
     Trust snapshot for a listing.
 
     Cross-references listing price against market_hits to detect outlier
     pricing (>2 std deviations) and low seller scores.
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if not pool:
         logger.info("[trust/listing] No DB pool -- returning empty stub for listing_id=%s", listing_id)
         return MarketplaceTrustSnapshot(

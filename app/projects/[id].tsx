@@ -12,10 +12,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   Switch,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Image,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -31,10 +31,14 @@ import { isBuildableCategory, getStepTemplateForCategory } from "@/constants/bui
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable } from "@/motion";
 import logger from "@/utils/logger";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
+import { useToast } from '@/components/Toast';
 
-export default function ProjectDetailScreen() {
+function ProjectDetailScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { showToast } = useToast();
   const params = useLocalSearchParams<{ id?: string }>();
   const projectId = params.id ?? "";
 
@@ -61,6 +65,31 @@ export default function ProjectDetailScreen() {
 
   // Apply template
   const [applyingTemplate, setApplyingTemplate] = useState(false);
+
+  // Pull-to-refresh
+  const [refreshing, setRefreshing] = useState(false);
+
+  // ── Paint Recipes state ─────────────────────────────────────────────
+  type PaintEntry = { brand: string; color: string; type: string };
+  type PaintRecipe = { name: string; paints: PaintEntry[]; notes: string };
+  const [paintRecipes, setPaintRecipes] = useState<PaintRecipe[]>([]);
+  const [recipeExpanded, setRecipeExpanded] = useState(false);
+  const [addingRecipe, setAddingRecipe] = useState(false);
+  const [savingRecipes, setSavingRecipes] = useState(false);
+  const [editingRecipeIdx, setEditingRecipeIdx] = useState<number | null>(null);
+  // New recipe form
+  const [newRecipeName, setNewRecipeName] = useState('');
+  const [newRecipePaints, setNewRecipePaints] = useState<PaintEntry[]>([]);
+  const [newRecipeNotes, setNewRecipeNotes] = useState('');
+  // New paint entry form
+  const [newPaintBrand, setNewPaintBrand] = useState('');
+  const [newPaintColor, setNewPaintColor] = useState('');
+  const [newPaintType, setNewPaintType] = useState<string>('base');
+
+  const PAINT_TYPES = ['base', 'layer', 'shade', 'technical', 'contrast', 'dry', 'texture', 'spray'] as const;
+  const PAINT_BRANDS = ['Citadel', 'Vallejo', 'Army Painter', 'AK Interactive', 'Scale75', 'Tamiya', 'Mr. Color', 'Other'] as const;
+  const PAINT_CATEGORIES = ['warhammer', 'gunpla', 'scale_models'] as const;
+  const showPaintRecipes = PAINT_CATEGORIES.includes(project?.categoryId as typeof PAINT_CATEGORIES[number]);
 
   // Category accent color
   const accentColor = useMemo(() => {
@@ -93,6 +122,10 @@ export default function ProjectDetailScreen() {
       } else {
         setProject(found);
         setPendingPercent(found.percent);
+        // Load paint recipes from project data
+        if (found.paintRecipes && Array.isArray(found.paintRecipes)) {
+          setPaintRecipes(found.paintRecipes as PaintRecipe[]);
+        }
       }
       setSteps(stepsData);
       setNotes(notesData);
@@ -109,6 +142,12 @@ export default function ProjectDetailScreen() {
     loadProject();
   }, [loadProject]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadProject();
+    setRefreshing(false);
+  }, [loadProject]);
+
   const handleSaveProgress = async () => {
     if (!project || savingProgress) return;
     setSavingProgress(true);
@@ -117,7 +156,7 @@ export default function ProjectDetailScreen() {
       await dataProvider.setBuildPaintProgress(project.id, pendingPercent, newStatus);
       await loadProject();
     } catch (err: unknown) {
-      Alert.alert("Error", (err as Error)?.message || "Failed to save progress");
+      showToast({ message: (err as Error)?.message || "Failed to save progress", type: 'error' });
     } finally {
       setSavingProgress(false);
     }
@@ -130,7 +169,7 @@ export default function ProjectDetailScreen() {
       await dataProvider.markBuildPaintProjectComplete(project.id, !project.isCompleted);
       await loadProject();
     } catch (err: unknown) {
-      Alert.alert("Error", (err as Error)?.message || "Failed to toggle complete");
+      showToast({ message: (err as Error)?.message || "Failed to toggle complete", type: 'error' });
     } finally {
       setTogglingComplete(false);
     }
@@ -145,7 +184,7 @@ export default function ProjectDetailScreen() {
       const stepsData = await dataProvider.listBuildPaintSteps(project.id);
       setSteps(stepsData);
     } catch (err: unknown) {
-      Alert.alert("Error", (err as Error)?.message || "Failed to add step");
+      showToast({ message: (err as Error)?.message || "Failed to add step", type: 'error' });
     } finally {
       setAddingStep(false);
     }
@@ -157,7 +196,7 @@ export default function ProjectDetailScreen() {
       const stepsData = await dataProvider.listBuildPaintSteps(projectId);
       setSteps(stepsData);
     } catch (err: unknown) {
-      Alert.alert("Error", (err as Error)?.message || "Failed to toggle step");
+      showToast({ message: (err as Error)?.message || "Failed to toggle step", type: 'error' });
     }
   };
 
@@ -170,7 +209,7 @@ export default function ProjectDetailScreen() {
       const notesData = await dataProvider.listBuildPaintNotes(project.id);
       setNotes(notesData);
     } catch (err: unknown) {
-      Alert.alert("Error", (err as Error)?.message || "Failed to add note");
+      showToast({ message: (err as Error)?.message || "Failed to add note", type: 'error' });
     } finally {
       setAddingNote(false);
     }
@@ -184,10 +223,60 @@ export default function ProjectDetailScreen() {
       const stepsData = await dataProvider.listBuildPaintSteps(project.id);
       setSteps(stepsData);
     } catch (err: unknown) {
-      Alert.alert("Error", (err as Error)?.message || "Failed to apply template");
+      showToast({ message: (err as Error)?.message || "Failed to apply template", type: 'error' });
     } finally {
       setApplyingTemplate(false);
     }
+  };
+
+  // ── Paint Recipes handlers ───────────────────────────────────────────
+  const savePaintRecipes = useCallback(async (recipes: PaintRecipe[]) => {
+    if (!project) return;
+    setSavingRecipes(true);
+    try {
+      await dataProvider.updateBuildPaintProject(project.id, { paintRecipes: recipes });
+      setPaintRecipes(recipes);
+      showToast({ message: 'Paint recipes saved', type: 'success' });
+    } catch (err: unknown) {
+      showToast({ message: (err as Error)?.message || 'Failed to save recipes', type: 'error' });
+    } finally {
+      setSavingRecipes(false);
+    }
+  }, [project]);
+
+  const handleAddRecipe = () => {
+    if (!newRecipeName.trim()) return;
+    const recipe: PaintRecipe = {
+      name: newRecipeName.trim(),
+      paints: newRecipePaints,
+      notes: newRecipeNotes.trim(),
+    };
+    const updated = [...paintRecipes, recipe];
+    savePaintRecipes(updated);
+    setNewRecipeName('');
+    setNewRecipePaints([]);
+    setNewRecipeNotes('');
+    setAddingRecipe(false);
+  };
+
+  const handleDeleteRecipe = (idx: number) => {
+    const updated = paintRecipes.filter((_, i) => i !== idx);
+    savePaintRecipes(updated);
+  };
+
+  const handleAddPaintToRecipe = () => {
+    if (!newPaintBrand.trim() || !newPaintColor.trim()) return;
+    setNewRecipePaints((prev) => [
+      ...prev,
+      { brand: newPaintBrand.trim(), color: newPaintColor.trim(), type: newPaintType },
+    ]);
+    setNewPaintBrand('');
+    setNewPaintColor('');
+    setNewPaintType('base');
+  };
+
+  const handleRemovePaintFromRecipe = (paintIdx: number) => {
+    setNewRecipePaints((prev) => prev.filter((_, i) => i !== paintIdx));
   };
 
   // Whether to show "Apply Template" button
@@ -251,6 +340,7 @@ export default function ProjectDetailScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
         >
           {/* Header Card */}
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -555,12 +645,260 @@ export default function ProjectDetailScreen() {
             </View>
           </View>
 
+          {/* Paint Recipes Card — for Warhammer, Gunpla, Scale Models */}
+          {showPaintRecipes && (
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.cardHeader}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Paint Recipes</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{paintRecipes.length} recipes</Text>
+              </View>
+
+              {paintRecipes.length === 0 && !addingRecipe ? (
+                <Text style={[styles.emptyText, { color: colors.muted }]}>
+                  No paint recipes yet. Add your paint lists and technique notes.
+                </Text>
+              ) : (
+                <View style={styles.recipesList}>
+                  {paintRecipes.map((recipe, idx) => (
+                    <View
+                      key={idx}
+                      style={[
+                        styles.recipeItem,
+                        idx < paintRecipes.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+                      ]}
+                    >
+                      <View style={styles.recipeHeader}>
+                        <View style={styles.recipeHeaderLeft}>
+                          <Ionicons name="color-palette-outline" size={16} color={accentColor || colors.accent} />
+                          <Text style={[styles.recipeName, { color: colors.text }]}>{recipe.name}</Text>
+                        </View>
+                        <AnimatedPressable
+                          onPress={() => handleDeleteRecipe(idx)}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Delete recipe: ${recipe.name}`}
+                        >
+                          <Ionicons name="close-circle-outline" size={18} color={colors.muted} />
+                        </AnimatedPressable>
+                      </View>
+                      {/* Paints list */}
+                      {recipe.paints.length > 0 && (
+                        <View style={styles.paintsList}>
+                          {recipe.paints.map((paint, pIdx) => (
+                            <View key={pIdx} style={styles.paintRow}>
+                              <View style={[styles.paintTypeDot, { backgroundColor: getPaintTypeColor(paint.type) }]} />
+                              <Text style={[styles.paintText, { color: colors.text }]}>
+                                {paint.brand} — {paint.color}
+                              </Text>
+                              <Text style={[styles.paintTypeLabel, { color: colors.muted }]}>
+                                {paint.type}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                      {recipe.notes ? (
+                        <Text style={[styles.recipeNotes, { color: colors.muted }]}>{recipe.notes}</Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Add recipe form */}
+              {addingRecipe ? (
+                <View style={[styles.addRecipeForm, { borderColor: colors.border }]}>
+                  <TextInput
+                    value={newRecipeName}
+                    onChangeText={setNewRecipeName}
+                    placeholder="Recipe name (e.g. Base Skin Tone)"
+                    placeholderTextColor={colors.muted}
+                    style={[styles.addInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
+                    accessibilityLabel="Recipe name"
+                  />
+
+                  {/* Paints added so far */}
+                  {newRecipePaints.length > 0 && (
+                    <View style={styles.paintsList}>
+                      {newRecipePaints.map((paint, pIdx) => (
+                        <View key={pIdx} style={styles.paintRow}>
+                          <View style={[styles.paintTypeDot, { backgroundColor: getPaintTypeColor(paint.type) }]} />
+                          <Text style={[styles.paintText, { color: colors.text }]}>
+                            {paint.brand} — {paint.color}
+                          </Text>
+                          <Text style={[styles.paintTypeLabel, { color: colors.muted }]}>{paint.type}</Text>
+                          <AnimatedPressable
+                            onPress={() => handleRemovePaintFromRecipe(pIdx)}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Remove ${paint.color}`}
+                          >
+                            <Ionicons name="close" size={14} color={colors.muted} />
+                          </AnimatedPressable>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Add paint entry row */}
+                  <View style={styles.addPaintRow}>
+                    <View style={{ flex: 1 }}>
+                      <TextInput
+                        value={newPaintBrand}
+                        onChangeText={setNewPaintBrand}
+                        placeholder="Brand"
+                        placeholderTextColor={colors.muted}
+                        style={[styles.paintInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
+                        accessibilityLabel="Paint brand"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <TextInput
+                        value={newPaintColor}
+                        onChangeText={setNewPaintColor}
+                        placeholder="Color name"
+                        placeholderTextColor={colors.muted}
+                        style={[styles.paintInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
+                        accessibilityLabel="Paint color"
+                      />
+                    </View>
+                  </View>
+
+                  {/* Paint type pills */}
+                  <View style={styles.paintTypePillsRow}>
+                    {PAINT_TYPES.map((pt) => (
+                      <AnimatedPressable
+                        key={pt}
+                        onPress={() => setNewPaintType(pt)}
+                        style={[
+                          styles.paintTypePill,
+                          {
+                            backgroundColor: newPaintType === pt ? (accentColor || colors.accent) : colors.background,
+                            borderColor: newPaintType === pt ? (accentColor || colors.accent) : colors.border,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: newPaintType === pt }}
+                        accessibilityLabel={`Paint type: ${pt}`}
+                      >
+                        <Text style={[
+                          styles.paintTypePillText,
+                          { color: newPaintType === pt ? '#fff' : colors.muted },
+                        ]}>{pt}</Text>
+                      </AnimatedPressable>
+                    ))}
+                  </View>
+
+                  <AnimatedPressable
+                    onPress={handleAddPaintToRecipe}
+                    disabled={!newPaintBrand.trim() || !newPaintColor.trim()}
+                    style={[
+                      styles.addPaintBtn,
+                      {
+                        backgroundColor: newPaintBrand.trim() && newPaintColor.trim() ? (accentColor || colors.accent) + '15' : colors.background,
+                        borderColor: newPaintBrand.trim() && newPaintColor.trim() ? (accentColor || colors.accent) : colors.border,
+                      },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add paint to recipe"
+                  >
+                    <Ionicons name="add" size={16} color={newPaintBrand.trim() && newPaintColor.trim() ? (accentColor || colors.accent) : colors.muted} />
+                    <Text style={[styles.addPaintBtnText, { color: newPaintBrand.trim() && newPaintColor.trim() ? (accentColor || colors.accent) : colors.muted }]}>Add Paint</Text>
+                  </AnimatedPressable>
+
+                  {/* Technique notes */}
+                  <TextInput
+                    value={newRecipeNotes}
+                    onChangeText={setNewRecipeNotes}
+                    placeholder="Technique notes (e.g. thin coats, wet blend)"
+                    placeholderTextColor={colors.muted}
+                    multiline
+                    style={[styles.addNoteInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
+                    accessibilityLabel="Technique notes"
+                  />
+
+                  {/* Save / Cancel */}
+                  <View style={styles.addRow}>
+                    <AnimatedPressable
+                      onPress={() => { setAddingRecipe(false); setNewRecipeName(''); setNewRecipePaints([]); setNewRecipeNotes(''); }}
+                      style={[styles.percentBtn, { borderColor: colors.border, flex: 1, alignItems: 'center' as const }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancel"
+                    >
+                      <Text style={[styles.percentBtnText, { color: colors.muted }]}>Cancel</Text>
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      onPress={handleAddRecipe}
+                      disabled={!newRecipeName.trim() || savingRecipes}
+                      style={[
+                        styles.saveBtn,
+                        {
+                          backgroundColor: newRecipeName.trim() ? (accentColor || colors.accent) : colors.border,
+                          opacity: savingRecipes ? 0.7 : 1,
+                          flex: 1,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Save recipe"
+                    >
+                      {savingRecipes ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.saveBtnText}>Save Recipe</Text>
+                      )}
+                    </AnimatedPressable>
+                  </View>
+                </View>
+              ) : (
+                <AnimatedPressable
+                  onPress={() => setAddingRecipe(true)}
+                  style={[styles.applyTemplateBtn, { backgroundColor: (accentColor || colors.accent) + '15', borderColor: accentColor || colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add a new paint recipe"
+                >
+                  <Ionicons name="add-circle-outline" size={18} color={accentColor || colors.accent} />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={[styles.applyTemplateTitle, { color: accentColor || colors.accent }]}>
+                      Add Paint Recipe
+                    </Text>
+                    <Text style={[styles.applyTemplateHint, { color: colors.muted }]}>
+                      Track paints, brands, and techniques
+                    </Text>
+                  </View>
+                </AnimatedPressable>
+              )}
+            </View>
+          )}
+
           <View style={{ height: 32 }} />
         </ScrollView>
         </KeyboardAvoidingView>
+        <QuickNavBar />
       </SafeAreaView>
     </>
   );
+}
+
+export default function ProjectDetailScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Project Detail">
+      <ProjectDetailScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+function getPaintTypeColor(type: string): string {
+  const map: Record<string, string> = {
+    base: '#3B82F6',
+    layer: '#22C55E',
+    shade: '#8B5CF6',
+    technical: '#F59E0B',
+    contrast: '#EC4899',
+    dry: '#94A3B8',
+    texture: '#D97706',
+    spray: '#6366F1',
+  };
+  return map[type] || '#94A3B8';
 }
 
 function formatDate(dateStr: string): string {
@@ -849,5 +1187,106 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#fff",
+  },
+
+  // ── Paint Recipes ──────────────────────────────────────────────────────
+  recipesList: {
+    marginBottom: 12,
+  },
+  recipeItem: {
+    paddingVertical: 12,
+  },
+  recipeHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  recipeHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  recipeName: {
+    fontSize: 15,
+    fontWeight: "700",
+    flex: 1,
+  },
+  paintsList: {
+    marginTop: 6,
+    gap: 4,
+  },
+  paintRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 3,
+  },
+  paintTypeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  paintText: {
+    fontSize: 13,
+    flex: 1,
+  },
+  paintTypeLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "capitalize" as const,
+  },
+  recipeNotes: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 6,
+    fontStyle: "italic" as const,
+  },
+  addRecipeForm: {
+    marginTop: 8,
+    gap: 8,
+    borderTopWidth: 1,
+    paddingTop: 12,
+  },
+  addPaintRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  paintInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+  },
+  paintTypePillsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  paintTypePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  paintTypePillText: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "capitalize" as const,
+  },
+  addPaintBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  addPaintBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

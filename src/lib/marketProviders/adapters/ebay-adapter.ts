@@ -10,7 +10,7 @@
 
 import Constants from 'expo-constants';
 import { logger } from '@/lib/logger';
-import type { MarketHit } from '@/data/types';
+import type { CurrencyCode, MarketHit } from '@/data/types';
 import type {
   MarketProviderAdapter,
   ProviderMetadata,
@@ -74,12 +74,12 @@ function makeErrorResult(error: string, latencyMs: number): ProviderSearchResult
   return { hits: [], totalAvailable: 0, success: false, error, latencyMs };
 }
 
-function convertPrice(price: number, fromCurrency: string): { price: number; currency: string } {
+function convertPrice(price: number, fromCurrency: string): { price: number; currency: CurrencyCode } {
   const upper = fromCurrency.toUpperCase();
   if (upper === 'EUR') return { price, currency: 'EUR' };
   if (upper === 'USD') return { price: Math.round(price * USD_TO_EUR * 100) / 100, currency: 'EUR' };
   // For other currencies, return as-is with original currency
-  return { price, currency: upper };
+  return { price, currency: upper as CurrencyCode };
 }
 
 // ---------------------------------------------------------------------------

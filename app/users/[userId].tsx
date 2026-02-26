@@ -13,11 +13,12 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { dataProvider, type PublicUserProfile } from '@/data';
+import { dataProvider, type PublicUserProfile, type ActivityFeedItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import logger from '@/utils/logger';
@@ -25,6 +26,9 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import { getJSON, setJSON } from '@/lib/storage';
 import { ACHIEVEMENTS, type Achievement } from '@/lib/achievements';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
+import { PresenceIndicator } from '@/components/PresenceIndicator';
 
 type DmStatusType = 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined';
 
@@ -112,9 +116,34 @@ const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean }> = ({ ac
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Activity Feed Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+const ACTIVITY_ICONS: Record<string, string> = {
+  item_added: 'add-circle-outline',
+  item_sold: 'cash-outline',
+  event_rsvp: 'calendar-outline',
+  event_created: 'megaphone-outline',
+  project_completed: 'checkmark-done-outline',
+  achievement_earned: 'ribbon-outline',
+  category_followed: 'heart-outline',
+  collection_milestone: 'trophy-outline',
+};
+
+function formatActivityTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Screen
 // ─────────────────────────────────────────────────────────────────────────────
-export default function UserProfileScreen() {
+function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -126,6 +155,8 @@ export default function UserProfileScreen() {
   const [isUserBlocked, setIsUserBlocked] = useState(false);
   const [dmStatus, setDmStatus] = useState<DmStatusType>('none');
   const [showMenu, setShowMenu] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activityFeed, setActivityFeed] = useState<ActivityFeedItem[]>([]);
   const { showToast } = useToast();
 
   // Load follow state from AsyncStorage on mount
@@ -184,7 +215,7 @@ export default function UserProfileScreen() {
         fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
         showToast({ message: 'Unblocked', type: 'success' });
       } catch (err: unknown) {
-        Alert.alert('Error', err instanceof Error ? err.message : 'Failed to unblock user');
+        showToast({ message: err instanceof Error ? err.message : 'Failed to unblock user', type: 'error' });
       }
     } else {
       // Block
@@ -204,7 +235,7 @@ export default function UserProfileScreen() {
                 fireHaptic(HapticIntent.ALERT_TRIGGERED);
                 showToast({ message: 'Blocked', type: 'success' });
               } catch (err: unknown) {
-                Alert.alert('Error', err instanceof Error ? err.message : 'Failed to block user');
+                showToast({ message: err instanceof Error ? err.message : 'Failed to block user', type: 'error' });
               }
             },
           },
@@ -239,8 +270,12 @@ export default function UserProfileScreen() {
     setError(null);
 
     try {
-      const profileData = await dataProvider.getPublicUserProfile(userId);
+      const [profileData, feed] = await Promise.all([
+        dataProvider.getPublicUserProfile(userId),
+        dataProvider.getUserActivity(userId, 5).catch(() => [] as ActivityFeedItem[]),
+      ]);
       setProfile(profileData);
+      setActivityFeed(feed);
     } catch (err: unknown) {
       logger.warn('[UserProfile] loadProfile error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load profile');
@@ -251,6 +286,12 @@ export default function UserProfileScreen() {
 
   useEffect(() => {
     loadProfile();
+  }, [loadProfile]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
   }, [loadProfile]);
 
   // Derive badges from profile data
@@ -329,6 +370,7 @@ export default function UserProfileScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
       >
         {/* Top row with back + menu */}
         <View style={styles.topRow}>
@@ -388,6 +430,7 @@ export default function UserProfileScreen() {
                 @{profile.handle}
               </Text>
             )}
+            {userId && <PresenceIndicator userId={userId} size={8} showLabel />}
           </View>
 
           {/* Quick stats row */}
@@ -504,6 +547,36 @@ export default function UserProfileScreen() {
           </SectionCard>
         )}
 
+        {/* ═══════════════════════════════════════════════════════════════════
+            E) Recent Activity
+        ═══════════════════════════════════════════════════════════════════ */}
+        {activityFeed.length > 0 && (
+          <SectionCard title="Recent Activity" icon="time-outline">
+            {activityFeed.map((item) => (
+              <View key={item.id} style={styles.activityRow}>
+                <Ionicons
+                  name={ACTIVITY_ICONS[item.activityType] ?? 'ellipse-outline'}
+                  size={16}
+                  color={colors.accent}
+                />
+                <View style={styles.activityInfo}>
+                  <Text style={[styles.activityTitle, { color: colors.text }]} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  {item.description && (
+                    <Text style={[styles.activityDesc, { color: colors.muted }]} numberOfLines={1}>
+                      {item.description}
+                    </Text>
+                  )}
+                </View>
+                <Text style={[styles.activityTime, { color: colors.muted }]}>
+                  {formatActivityTime(item.createdAt)}
+                </Text>
+              </View>
+            ))}
+          </SectionCard>
+        )}
+
         {/* Bottom spacing */}
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -551,7 +624,16 @@ export default function UserProfileScreen() {
           </View>
         </AnimatedPressable>
       </Modal>
+      <QuickNavBar />
     </SafeAreaView>
+  );
+}
+
+export default function UserProfileScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="User Profile">
+      <UserProfileScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -808,6 +890,29 @@ const styles = StyleSheet.create({
   },
   interestText: {
     fontSize: 13,
+    fontWeight: '500',
+  },
+
+  // Activity feed
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+  },
+  activityInfo: {
+    flex: 1,
+  },
+  activityTitle: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  activityDesc: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  activityTime: {
+    fontSize: 11,
     fontWeight: '500',
   },
 

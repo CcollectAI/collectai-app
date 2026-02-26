@@ -2,17 +2,17 @@
  * Register screen — username + email + password sign-up.
  */
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -21,6 +21,8 @@ import { supabase } from '@/lib/supabase';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { useToast } from '@/components/Toast';
 
 const TIFFANY = '#81D8D0';
 const TIFFANY_DARK = '#5FBFB6';
@@ -29,25 +31,49 @@ const MUTED = '#64748B';
 const BORDER = '#E2E8F0';
 const INPUT_BG = '#F8FAFC';
 
-export default function RegisterScreen() {
+function RegisterScreen() {
   const router = useRouter();
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+
+  const getPasswordStrength = (pw: string): { label: string; percent: number; color: string } => {
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (pw.length >= 12) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+    if (score <= 1) return { label: 'Weak', percent: 20, color: '#EF4444' };
+    if (score === 2) return { label: 'Fair', percent: 40, color: '#F59E0B' };
+    if (score === 3) return { label: 'Good', percent: 60, color: '#F59E0B' };
+    if (score === 4) return { label: 'Strong', percent: 80, color: '#22C55E' };
+    return { label: 'Excellent', percent: 100, color: '#22C55E' };
+  };
 
   async function handleSignUp() {
+    if (!termsAccepted) {
+      showToast({ message: 'Please accept the Terms of Service and Privacy Policy.', type: 'warning' });
+      return;
+    }
+
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim();
 
     if (!trimmedUsername || !trimmedEmail || !password) {
-      Alert.alert('Missing fields', 'Please fill in all fields.');
+      showToast({ message: 'Please fill in all fields.', type: 'warning' });
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert('Weak password', 'Password must be at least 6 characters.');
+    if (password.length < 8) {
+      showToast({ message: 'Password must be at least 8 characters.', type: 'warning' });
       return;
     }
 
@@ -78,7 +104,7 @@ export default function RegisterScreen() {
       if (profileError) {
         const code = (profileError as { code?: string }).code;
         if (code === '23505') {
-          Alert.alert('Username taken', 'Please choose another username.');
+          showToast({ message: 'Username taken. Please choose another.', type: 'warning' });
           return;
         }
         throw profileError;
@@ -88,7 +114,7 @@ export default function RegisterScreen() {
       // Root layout will redirect to onboarding since it's a new user.
       router.replace('/(auth)/onboarding');
     } catch (e: unknown) {
-      Alert.alert('Sign up failed', e instanceof Error ? e.message : 'Unknown error');
+      showToast({ message: e instanceof Error ? e.message : 'Sign up failed. Unknown error.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -125,10 +151,14 @@ export default function RegisterScreen() {
               autoCapitalize="none"
               autoComplete="username-new"
               accessibilityLabel="Username"
+              autoFocus
+              returnKeyType="next"
+              onSubmitEditing={() => emailRef.current?.focus()}
             />
 
             <Text style={[styles.label, { marginTop: 16 }]}>Email</Text>
             <TextInput
+              ref={emailRef}
               style={styles.input}
               value={email}
               onChangeText={setEmail}
@@ -138,19 +168,44 @@ export default function RegisterScreen() {
               keyboardType="email-address"
               autoComplete="email"
               accessibilityLabel="Email"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
             />
 
             <Text style={[styles.label, { marginTop: 16 }]}>Password</Text>
             <TextInput
+              ref={passwordRef}
               style={styles.input}
               value={password}
               onChangeText={setPassword}
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               placeholderTextColor={MUTED}
               secureTextEntry
               autoComplete="new-password"
               accessibilityLabel="Password"
+              returnKeyType="done"
+              onSubmitEditing={handleSignUp}
             />
+
+            {/* Password strength indicator */}
+            {password.length > 0 && (
+              <View style={styles.strengthContainer}>
+                <View style={styles.strengthBarBg}>
+                  <View
+                    style={[
+                      styles.strengthBarFill,
+                      {
+                        width: `${getPasswordStrength(password).percent}%`,
+                        backgroundColor: getPasswordStrength(password).color,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={[styles.strengthLabel, { color: getPasswordStrength(password).color }]}>
+                  {getPasswordStrength(password).label}
+                </Text>
+              </View>
+            )}
 
             {loading ? (
               <ActivityIndicator size="large" color={TIFFANY} style={{ marginTop: 24 }} />
@@ -166,26 +221,36 @@ export default function RegisterScreen() {
             )}
           </View>
 
-          {/* Legal links */}
-          <Text style={styles.legalText}>
-            By creating an account, you agree to our{' '}
-            <Text
-              style={styles.legalLink}
-              onPress={() => router.push('/legal/terms')}
-              accessibilityRole="link"
-            >
-              Terms of Service
+          {/* Terms checkbox */}
+          <AnimatedPressable
+            style={styles.termsRow}
+            onPress={() => setTermsAccepted(!termsAccepted)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: termsAccepted }}
+            accessibilityLabel="Accept Terms of Service and Privacy Policy"
+          >
+            <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+              {termsAccepted && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+            </View>
+            <Text style={styles.termsText}>
+              I agree to the{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() => router.push('/legal/terms')}
+                accessibilityRole="link"
+              >
+                Terms of Service
+              </Text>
+              {' '}and{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() => router.push('/legal/privacy-policy')}
+                accessibilityRole="link"
+              >
+                Privacy Policy
+              </Text>
             </Text>
-            {' '}and{' '}
-            <Text
-              style={styles.legalLink}
-              onPress={() => router.push('/legal/privacy-policy')}
-              accessibilityRole="link"
-            >
-              Privacy Policy
-            </Text>
-            .
-          </Text>
+          </AnimatedPressable>
 
           {/* Footer */}
           <AnimatedPressable
@@ -202,6 +267,14 @@ export default function RegisterScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+export default function RegisterScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Register">
+      <RegisterScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -270,12 +343,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  legalText: {
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginTop: 16,
+    paddingHorizontal: 4,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: BORDER,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  checkboxChecked: {
+    backgroundColor: TIFFANY,
+    borderColor: TIFFANY,
+  },
+  termsText: {
+    flex: 1,
     fontSize: 13,
     color: MUTED,
-    textAlign: 'center',
     lineHeight: 20,
-    marginTop: 16,
+  },
+  strengthContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  strengthBarBg: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  strengthBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  strengthLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    minWidth: 60,
   },
   legalLink: {
     color: TIFFANY_DARK,

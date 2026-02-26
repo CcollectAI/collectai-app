@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
@@ -20,13 +21,15 @@ import { dataProvider } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 
 type BlockedUser = { id: string; name: string };
 
-export default function BlockedUsersScreen() {
+function BlockedUsersScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { showToast } = useToast();
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -68,7 +71,7 @@ export default function BlockedUsersScreen() {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
               setBlockedUsers((prev) => prev.filter((u) => u.id !== user.id));
             } catch (err: unknown) {
-              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to unblock user');
+              showToast({ message: err instanceof Error ? err.message : 'Failed to unblock user.', type: 'error' });
             } finally {
               setUnblockingId(null);
             }
@@ -248,3 +251,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
+
+export default function BlockedUsersScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Blocked Users">
+      <BlockedUsersScreen />
+    </ScreenErrorBoundary>
+  );
+}

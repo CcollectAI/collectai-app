@@ -20,10 +20,12 @@ import uuid as _uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
+from app.errors import error_response
+from app.rate_limit import per_user_rate_limit
 
 from app.db import db_configured, get_conn
 from app.lib.s3_client import (
@@ -37,6 +39,9 @@ from app.lib.s3_client import (
 
 router = APIRouter(prefix="/storage", tags=["storage"])
 logger = logging.getLogger(__name__)
+
+# Per-user: 20 presign-upload requests per hour
+_storage_upload_limit = per_user_rate_limit(20, window_seconds=3600, scope="storage_upload")
 
 # ---------------------------------------------------------------------------
 # Allowed object types (whitelist)
@@ -160,7 +165,11 @@ def _build_s3_key(
 
 
 @router.post("/presign-upload", response_model=PresignUploadResponse)
-async def presign_upload(request: PresignUploadRequest, user_id: str = Depends(get_current_user_id)):
+async def presign_upload(
+    request: PresignUploadRequest,
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_storage_upload_limit),
+):
     """
     Generate a presigned PUT URL for direct upload to S3.
 
@@ -170,21 +179,15 @@ async def presign_upload(request: PresignUploadRequest, user_id: str = Depends(g
     """
     # Validate object_type
     if request.object_type not in ALLOWED_OBJECT_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid object_type. Allowed: {', '.join(sorted(ALLOWED_OBJECT_TYPES))}",
-        )
+        raise error_response(400, f"Invalid object_type. Allowed: {', '.join(sorted(ALLOWED_OBJECT_TYPES))}")
 
     # Validate content_type
     if request.content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported content_type. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}",
-        )
+        raise error_response(400, f"Unsupported content_type. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}")
 
     # Validate filename
     if not request.filename or not request.filename.strip():
-        raise HTTPException(status_code=400, detail="filename is required")
+        raise error_response(400, "filename is required")
 
     created_by = user_id
 
@@ -203,10 +206,7 @@ async def presign_upload(request: PresignUploadRequest, user_id: str = Depends(g
         expires_in=DEFAULT_EXPIRES_IN,
     )
     if upload_url is None:
-        raise HTTPException(
-            status_code=503,
-            detail="S3 is not configured or unavailable",
-        )
+        raise error_response(503, "S3 is not configured or unavailable")
 
     # Insert pointer into DB (if DB is available)
     pointer_id = str(_uuid.uuid4())
@@ -264,10 +264,10 @@ async def presign_download(pointer_id: str, user_id: str = Depends(get_current_u
     try:
         _uuid.UUID(pointer_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid pointer ID format")
+        raise error_response(400, "Invalid pointer ID format")
 
     if not db_configured():
-        raise HTTPException(status_code=503, detail="Database not configured")
+        raise error_response(503, "Database not configured")
 
     try:
         async with get_conn() as conn:
@@ -282,10 +282,10 @@ async def presign_download(pointer_id: str, user_id: str = Depends(get_current_u
             )
     except Exception as e:
         logger.error("Failed to look up object pointer %s: %s", pointer_id, e)
-        raise HTTPException(status_code=500, detail="Failed to look up object")
+        raise error_response(500, "Failed to look up object")
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Object not found")
+        raise error_response(404, "Object not found")
 
     s3_key = row["s3_key"]
     bucket = row["bucket"]
@@ -308,10 +308,7 @@ async def presign_download(pointer_id: str, user_id: str = Depends(get_current_u
         expires_in=DEFAULT_EXPIRES_IN,
     )
     if download_url is None:
-        raise HTTPException(
-            status_code=503,
-            detail="S3 is not configured or unavailable",
-        )
+        raise error_response(503, "S3 is not configured or unavailable")
 
     return PresignDownloadResponse(
         download_url=download_url,
@@ -334,14 +331,11 @@ async def list_objects(
     Only returns non-deleted pointers, ordered by creation time (newest first).
     """
     if not db_configured():
-        raise HTTPException(status_code=503, detail="Database not configured")
+        raise error_response(503, "Database not configured")
 
     # Validate object_type if provided
     if object_type and object_type not in ALLOWED_OBJECT_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid object_type. Allowed: {', '.join(sorted(ALLOWED_OBJECT_TYPES))}",
-        )
+        raise error_response(400, f"Invalid object_type. Allowed: {', '.join(sorted(ALLOWED_OBJECT_TYPES))}")
 
     # Build query dynamically — always scope to current user
     conditions = ["deleted_at IS NULL"]
@@ -385,7 +379,7 @@ async def list_objects(
             rows = await conn.fetch(query, *params)
     except Exception as e:
         logger.error("Failed to list object pointers: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to list objects")
+        raise error_response(500, "Failed to list objects")
 
     objects = []
     for row in rows:
@@ -421,10 +415,10 @@ async def delete_object(pointer_id: str, user_id: str = Depends(get_current_user
     try:
         _uuid.UUID(pointer_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid pointer ID format")
+        raise error_response(400, "Invalid pointer ID format")
 
     if not db_configured():
-        raise HTTPException(status_code=503, detail="Database not configured")
+        raise error_response(503, "Database not configured")
 
     try:
         async with get_conn() as conn:
@@ -440,11 +434,11 @@ async def delete_object(pointer_id: str, user_id: str = Depends(get_current_user
             )
     except Exception as e:
         logger.error("Failed to soft-delete object pointer %s: %s", pointer_id, e)
-        raise HTTPException(status_code=500, detail="Failed to delete object")
+        raise error_response(500, "Failed to delete object")
 
     # asyncpg returns "UPDATE N" where N is affected row count
     if result and result.endswith("0"):
-        raise HTTPException(status_code=404, detail="Object not found or already deleted")
+        raise error_response(404, "Object not found or already deleted")
 
     logger.info("Soft-deleted object pointer: %s", pointer_id)
 

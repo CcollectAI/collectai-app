@@ -8,23 +8,10 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from app.auth import get_current_user_id
+from app.lib.db_helpers import get_db_pool
 
 router = APIRouter(prefix="/items-export", tags=["items-export"])
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except Exception as e:
-        logger.debug(f"DB pool not available: {e}")
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -48,7 +35,7 @@ async def export_items_overview(user_id: str = Depends(get_current_user_id)) -> 
     Columns: id, title, category, condition, grade, estimated_value, currency
     estimated_value is the latest q50 from price_predictions (if available).
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if not pool:
         # No DB -- return empty CSV with header only
         return ItemsExportResponse(

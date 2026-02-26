@@ -18,31 +18,21 @@ import re
 from typing import Any, Optional
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
+from app.errors import error_response
+from app.lib.error_codes import ErrorCode
 from app.cache import cache_get, cache_set
+from app.config import BARCODE_CACHE_TTL
+from app.lib.db_helpers import get_db_pool
 
 router = APIRouter(prefix="/barcode", tags=["barcode"])
 logger = logging.getLogger(__name__)
 
 # Cache TTL for external barcode lookups (24 hours — ISBN data rarely changes)
-_BARCODE_CACHE_TTL = 86400
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except Exception as e:
-        logger.debug(f"DB pool not available: {e}")
-        return None
+_BARCODE_CACHE_TTL = BARCODE_CACHE_TTL
 
 
 # ---------------------------------------------------------------------------
@@ -506,9 +496,9 @@ async def barcode_lookup(
     code_type = (req.code_type or "").lower()
 
     if not barcode:
-        raise HTTPException(status_code=400, detail="Barcode is required")
+        raise error_response(400, "Barcode is required", code=ErrorCode.VALIDATION_ERROR)
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
     rationale: list[str] = []
 
     # ------------------------------------------------------------------

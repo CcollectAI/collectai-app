@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   SafeAreaView,
   View,
@@ -9,10 +10,15 @@ import {
   Pressable,
 } from "react-native";
 
-function NotAvailableScreen() {
+function ComingSoonScreen() {
+  const { colors } = useAppTheme();
   return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontSize: 16, color: "#666" }}>Not available</Text>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: 32 }}>
+      <Ionicons name="construct-outline" size={48} color={colors.muted} />
+      <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, marginTop: 16 }}>Coming Soon</Text>
+      <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+        This feature is under development. Check back in the next update.
+      </Text>
     </View>
   );
 }
@@ -301,4 +307,13 @@ const styles = StyleSheet.create({
   },
 });
 
-export default __DEV__ ? FraudCheckScreen : NotAvailableScreen;
+function FraudCheckScreenWithBoundary() {
+  const Inner = __DEV__ ? FraudCheckScreen : ComingSoonScreen;
+  return (
+    <ScreenErrorBoundary screenName="Fraud Check">
+      <Inner />
+    </ScreenErrorBoundary>
+  );
+}
+
+export default FraudCheckScreenWithBoundary;

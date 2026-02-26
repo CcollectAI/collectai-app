@@ -39,3 +39,20 @@ export const SUPABASE_ANON_KEY: string | undefined = process.env.EXPO_PUBLIC_SUP
 
 /** Supabase mode: 'strict' | 'mock' | 'off' (default: 'mock') */
 export const SUPABASE_MODE: string = (process.env.EXPO_PUBLIC_SUPABASE_MODE ?? 'mock').toLowerCase();
+
+// Warn if a non-dev build is running with mock data (likely a misconfigured release)
+if (SUPABASE_MODE === 'mock' && typeof __DEV__ !== 'undefined' && !__DEV__) {
+  // eslint-disable-next-line no-console
+  console.error(
+    '[config] WARNING: Production build running with SUPABASE_MODE=mock. ' +
+    'This is likely a misconfigured build. Set EXPO_PUBLIC_SUPABASE_MODE=strict for production.',
+  );
+  // Report to Sentry if available
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Sentry = require('@sentry/react-native');
+    Sentry.captureMessage('Production build running with SUPABASE_MODE=mock', 'warning');
+  } catch {
+    // Sentry not available — console.error above is sufficient
+  }
+}

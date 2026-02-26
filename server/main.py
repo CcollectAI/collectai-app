@@ -25,6 +25,7 @@ from app.config import (
     MONITOR_ENABLED,
     DEAL_DISCOVERY_ENABLED,
     CATALOG_LEARNING_ENABLED,
+    TASK_WORKER_ENABLED,
     DEBUG,
 )
 from app.middleware_stack import install_middlewares
@@ -108,6 +109,15 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logging.getLogger("uvicorn").warning("[startup] Failed to start matview refresh: %s", e)
 
+    if TASK_WORKER_ENABLED:
+        try:
+            from app.lib.task_worker import run_worker as task_worker_loop
+            from app.config import TASK_WORKER_POLL_INTERVAL
+            asyncio.create_task(task_worker_loop(poll_interval=TASK_WORKER_POLL_INTERVAL))
+            logging.getLogger("uvicorn").info("[startup] Task queue worker started")
+        except Exception as e:
+            logging.getLogger("uvicorn").warning("[startup] Failed to start task queue worker: %s", e)
+
     yield
 
     # ---- Shutdown ----
@@ -150,21 +160,13 @@ from app.routes.items_router import router as items_router
 from app.routes.portfolio_router import router as portfolio_router
 from app.features.import_router import router as import_router
 
-from app.routers.vision_commit import router as vision_commit_router
-from app.routers.vision_predict_log import router as vision_predict_log_router
-from app.routes.agent import router as agent_router
-from app.routes.spool import router as spool_router
 from app.routes.spool_ui import router as spool_ui_router
-from app.routes.webhook import router as webhook_router
-from app.routes.vision_debug import router as vision_debug_router
 from app.routes.vision_predict import router as vision_predict_router
 from app.routes.vision_ops import router as vision_ops_router
 from app.routes.vision_ingest import router as vision_ingest_router
-from app.routes.vision_search import router as vision_search_router
 from app.routes.spool_ops import router as spool_ops_router
 from app.routes.manifests import router as manifests_router
 from app.routes.ops import router as ops_router
-from app.routes.marketplace import router as marketplace_router
 from app.routes.user_settings_router import router as user_settings_router
 from app.routes.account_router import router as account_router
 from app.routes.fx_router import router as fx_router
@@ -205,6 +207,16 @@ from app.features.social_router import router as social_router
 from app.routes.geo_router import router as geo_router
 from app.features.sponsor_company_router import router as sponsor_company_router
 from app.features.build_paint_router import router as build_paint_router
+from app.features.set_router import router as set_router
+from app.features.task_queue_router import router as task_queue_router
+from app.features.activity_router import router as activity_router
+from app.features.search_router import router as search_router
+from app.agents.deal_desk_router import router as deal_desk_router
+from app.features.item_images_router import router as item_images_router
+from app.features.gamification_router import router as gamification_router
+from app.features.catalog_browser_router import router as catalog_browser_router
+from app.features.grading_router import router as grading_router
+from app.features.export_router import router as export_router
 
 # ---------------------------------------------------------------------------
 # Register routers
@@ -217,19 +229,10 @@ app.include_router(portfolio_router)
 app.include_router(import_router)
 
 # Core routers
-app.include_router(vision_commit_router)
-app.include_router(vision_predict_log_router)
-app.include_router(marketplace_router)
-app.include_router(agent_router)
-app.include_router(spool_router)
 app.include_router(spool_ui_router)
-app.include_router(webhook_router)
-if os.getenv("DEV_MODE", "false").lower() in ("true", "1", "yes"):
-    app.include_router(vision_debug_router)
 app.include_router(vision_predict_router)
 app.include_router(vision_ops_router)
 app.include_router(vision_ingest_router)
-app.include_router(vision_search_router)
 app.include_router(spool_ops_router)
 app.include_router(manifests_router)
 app.include_router(ops_router)
@@ -275,6 +278,16 @@ app.include_router(social_router)
 app.include_router(geo_router)
 app.include_router(sponsor_company_router)
 app.include_router(build_paint_router)
+app.include_router(set_router)
+app.include_router(task_queue_router)
+app.include_router(activity_router)
+app.include_router(search_router)
+app.include_router(deal_desk_router)
+app.include_router(item_images_router)
+app.include_router(gamification_router)
+app.include_router(catalog_browser_router)
+app.include_router(grading_router)
+app.include_router(export_router)
 
 # Twitch (optional)
 try:
@@ -319,6 +332,13 @@ _v1.include_router(affiliate_links_router)
 _v1.include_router(sponsor_router)
 _v1.include_router(catalog_learning_router)
 _v1.include_router(geo_router)
+_v1.include_router(task_queue_router)
+_v1.include_router(set_router)
+_v1.include_router(item_images_router)
+_v1.include_router(gamification_router)
+_v1.include_router(catalog_browser_router)
+_v1.include_router(grading_router)
+_v1.include_router(export_router)
 app.include_router(_v1)
 
 # ---------------------------------------------------------------------------

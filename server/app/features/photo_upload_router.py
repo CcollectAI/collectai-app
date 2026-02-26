@@ -29,13 +29,17 @@ from app.config import (
     USER_UPLOADS_CDN_URL as CDN_URL,
     AWS_REGION,
     USER_UPLOADS_MAX_SIZE as MAX_UPLOAD_SIZE,
+    PRESIGN_EXPIRY,
 )
 from app.errors import error_response
 from app.lib.image_optimizer import generate_blurhash, optimize_image
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 logger = logging.getLogger(__name__)
-PRESIGN_EXPIRY = 300  # 5 minutes
+
+# Per-user: 20 upload requests per hour (presign + server-side upload)
+_upload_user_limit = per_user_rate_limit(20, window_seconds=3600, scope="photo_upload")
 
 ALLOWED_CONTENT_TYPES = {
     "image/jpeg": "jpg",
@@ -131,7 +135,11 @@ MAX_RAW_UPLOAD = 10 * 1024 * 1024
 # ---------------------------------------------------------------------------
 
 @router.post("/presign-upload", response_model=PresignUploadResponse)
-async def presign_upload(request: PresignUploadRequest, user_id: str = Depends(get_current_user_id)):
+async def presign_upload(
+    request: PresignUploadRequest,
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_upload_user_limit),
+):
     """
     Generate a presigned S3 PUT URL for direct upload from the mobile app.
 
@@ -202,6 +210,7 @@ async def upload_photo(
     file: UploadFile = File(..., description="Image file (JPEG, PNG, or WebP)"),
     item_id: str = Form(..., description="UUID of the item to attach the photo to"),
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_upload_user_limit),
 ):
     """
     Server-side optimized photo upload.

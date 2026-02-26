@@ -51,6 +51,16 @@ export type {
   MarketHit,
   MarketSearchOptions,
   MarketSearchResult,
+  // Presence
+  UserPresence,
+  // Activity Feed
+  ActivityFeedItem,
+  ActivityType,
+  // Deal Desk
+  Offer,
+  OfferEvent,
+  OfferStatus,
+  UserReputation,
 } from './types';
 
 export type { DataProvider } from './DataProvider';

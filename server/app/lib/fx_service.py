@@ -19,12 +19,12 @@ from typing import Dict
 import httpx
 
 from app.cache import cache_get, cache_set
-from app.config import USD_TO_EUR, GBP_TO_EUR, JPY_TO_EUR, KRW_TO_EUR, AUD_TO_EUR, CAD_TO_EUR
+from app.config import USD_TO_EUR, GBP_TO_EUR, JPY_TO_EUR, KRW_TO_EUR, AUD_TO_EUR, CAD_TO_EUR, FX_CACHE_TTL
 
 logger = logging.getLogger(__name__)
 
 _CACHE_KEY = "fx:rates"
-_CACHE_TTL = 28800  # 8 hours
+_CACHE_TTL = FX_CACHE_TTL
 
 # Hardcoded fallback rates (foreign → EUR)
 _FALLBACK_TO_EUR: Dict[str, float] = {

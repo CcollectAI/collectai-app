@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
 import {
   SafeAreaView,
   ScrollView,
@@ -9,10 +11,15 @@ import {
   Image,
 } from "react-native";
 
-function NotAvailableScreen() {
+function ComingSoonScreen() {
+  const { colors } = useAppTheme();
   return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontSize: 16, color: "#666" }}>Not available</Text>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: 32 }}>
+      <Ionicons name="construct-outline" size={48} color={colors.muted} />
+      <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, marginTop: 16 }}>Coming Soon</Text>
+      <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+        This feature is under development. Check back in the next update.
+      </Text>
     </View>
   );
 }
@@ -457,6 +464,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
           )}
         </View>
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 };
@@ -691,4 +699,13 @@ const styles = StyleSheet.create({
   },
 });
 
-export default __DEV__ ? TwitchLeaderboardScreen : NotAvailableScreen;
+function TwitchLeaderboardScreenWithBoundary() {
+  const Inner = __DEV__ ? TwitchLeaderboardScreen : ComingSoonScreen;
+  return (
+    <ScreenErrorBoundary screenName="Twitch Leaderboard">
+      <Inner />
+    </ScreenErrorBoundary>
+  );
+}
+
+export default TwitchLeaderboardScreenWithBoundary;

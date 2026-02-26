@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collectorsApi } from '@/api/collectorsApi';
+import type { CurrencyCode } from '@/data/types';
 
 export type ChartRange = '1D'|'7D'|'30D';
-export type Currency = 'EUR'|'USD'|'JPY'|'GBP'|'KRW'|'AUD'|'CAD';
+/** @deprecated Use CurrencyCode from '@/data/types' for new code */
+export type Currency = CurrencyCode;
 export type NumberLocale = 'en-US'|'de-DE'|'ja-JP'|'nl-NL'|'ko-KR'|'en-AU';
 export type Region = 'americas'|'europe'|'japan'|'korea'|'oceania'|'other';
 

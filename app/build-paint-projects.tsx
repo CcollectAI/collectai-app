@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   ScrollView,
   View,
@@ -17,29 +18,54 @@ import {
   Platform,
   FlatList,
   Image,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { dataProvider, type BuildPaintProject, type Item } from "@/data";
 import { CATEGORIES, CATEGORY_VISUAL } from "@/data/categories";
 import { BUILDABLE_CATEGORIES, getStepTemplateForCategory } from "@/constants/buildStepTemplates";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
+import { useSettings } from "@/lib/settings";
+import { formatPrice } from "@/lib/format";
+import { SkeletonList } from "@/components/Skeleton";
+import { useToast } from "@/components/Toast";
+import { fireHaptic, HapticIntent } from "@/haptics";
 import logger from "@/utils/logger";
+import { QuickNavBar } from "@/components/QuickNavBar";
 
-const statusColor = (status: string | null | undefined, isCompleted: boolean) => {
-  if (isCompleted) return { bg: "#E6F7EF", text: "#0BA86C" };
+const statusColor = (
+  status: string | null | undefined,
+  isCompleted: boolean,
+  themeColors: { accent: string; muted: string; border: string },
+) => {
+  // Completed → success green tint
+  if (isCompleted) return { bg: "#10B981" + "20", text: "#10B981" };
   const s = (status || "").toLowerCase();
-  if (s === "active") return { bg: "#E7F6F8", text: "#19A7AE" };
-  if (s === "backlog") return { bg: "#F3F6F8", text: "#647589" };
-  return { bg: "#F3F6F8", text: "#647589" };
+  // Active → accent tint
+  if (s === "active") return { bg: themeColors.accent + "20", text: themeColors.accent };
+  // Backlog / default → muted tint
+  return { bg: themeColors.muted + "15", text: themeColors.muted };
 };
 
-export default function BuildPaintProjectsScreen() {
+export default function BuildPaintProjectsScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Build & Paint">
+      <BuildPaintProjectsScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+function BuildPaintProjectsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+
+  // Accept optional params from item detail "Start Build Project" button
+  const params = useLocalSearchParams<{ linkItemId?: string; linkItemName?: string; linkCategoryId?: string }>();
 
   const [projects, setProjects] = useState<BuildPaintProject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +84,9 @@ export default function BuildPaintProjectsScreen() {
   const [loadingItems, setLoadingItems] = useState(false);
   const [showStepPreview, setShowStepPreview] = useState(false);
 
+  const [refreshing, setRefreshing] = useState(false);
+  const { showToast } = useToast();
+
   const loadProjects = useCallback(async () => {
     try {
       const data = await dataProvider.listBuildPaintProjects();
@@ -71,9 +100,28 @@ export default function BuildPaintProjectsScreen() {
     }
   }, []);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadProjects();
+    setRefreshing(false);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+  }, [loadProjects, settings.hapticsEnabled]);
+
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
+
+  // Auto-open create modal when navigated from item detail with params
+  useEffect(() => {
+    if (params.linkItemId && params.linkItemName) {
+      setNewTitle(params.linkItemName);
+      setSelectedItem({ id: params.linkItemId, name: params.linkItemName } as Item);
+      if (params.linkCategoryId) {
+        setSelectedCategoryId(params.linkCategoryId);
+      }
+      setShowCreateModal(true);
+    }
+  }, [params.linkItemId, params.linkItemName, params.linkCategoryId]);
 
   // Categories sorted: buildable first, then all others
   const sortedCategories = useMemo(() => {
@@ -133,8 +181,10 @@ export default function BuildPaintProjectsScreen() {
       });
       resetCreateModal();
       await loadProjects();
+      showToast({ message: 'Project created!', type: 'success' });
     } catch (err: unknown) {
       logger.warn("[BuildPaintProjects] create error:", err);
+      showToast({ message: 'Failed to create project', type: 'error' });
     } finally {
       setCreating(false);
     }
@@ -161,8 +211,7 @@ export default function BuildPaintProjectsScreen() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading projects...</Text>
+          <SkeletonList count={4} type="card" />
         </View>
       </SafeAreaView>
     );
@@ -170,7 +219,7 @@ export default function BuildPaintProjectsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}>
         <Animated.View style={animatedStyle}>
           {/* Add button */}
           <View style={styles.actionRow}>
@@ -187,9 +236,9 @@ export default function BuildPaintProjectsScreen() {
 
           {/* Error state */}
           {error && (
-            <View style={[styles.errorBanner, { backgroundColor: "#FDECEC", borderColor: "#D64545" }]}>
-              <Ionicons name="warning-outline" size={18} color="#D64545" />
-              <Text style={[styles.errorText, { color: "#D64545" }]}>{error}</Text>
+            <View style={[styles.errorBanner, { backgroundColor: "#EF444420", borderColor: "#EF4444" }]}>
+              <Ionicons name="warning-outline" size={18} color="#EF4444" />
+              <Text style={[styles.errorText, { color: "#EF4444" }]}>{error}</Text>
             </View>
           )}
 
@@ -201,6 +250,16 @@ export default function BuildPaintProjectsScreen() {
               <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
                 Tap the + button to create your first build or paint project
               </Text>
+              <View style={styles.emptyCtaContainer}>
+                <AnimatedPressable
+                  onPress={() => setShowCreateModal(true)}
+                  style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create your first project"
+                >
+                  <Text style={styles.emptyCtaBtnText}>Create Your First Project</Text>
+                </AnimatedPressable>
+              </View>
             </View>
           )}
 
@@ -304,7 +363,7 @@ export default function BuildPaintProjectsScreen() {
                         </Text>
                         {selectedItem.price > 0 && (
                           <Text style={[styles.linkedItemPrice, { color: colors.muted }]}>
-                            ~{selectedItem.price.toFixed(0)} EUR
+                            ~{formatPrice(selectedItem.price, settings.currency)}
                           </Text>
                         )}
                       </View>
@@ -504,7 +563,7 @@ export default function BuildPaintProjectsScreen() {
                     </Text>
                     {item.price > 0 && (
                       <Text style={[styles.itemPickerPrice, { color: colors.muted }]}>
-                        ~{item.price.toFixed(0)} EUR
+                        ~{formatPrice(item.price, settings.currency)}
                       </Text>
                     )}
                   </View>
@@ -525,6 +584,7 @@ export default function BuildPaintProjectsScreen() {
           </View>
         </View>
       </Modal>
+      <QuickNavBar />
     </SafeAreaView>
   );
 }
@@ -539,7 +599,7 @@ function ProjectCard({
   colors: ReturnType<typeof useAppTheme>['colors'];
   onPress: () => void;
 }) {
-  const statusColors = statusColor(project.status, project.isCompleted);
+  const statusColors = statusColor(project.status, project.isCompleted, colors);
   const accentColor = project.categoryId ? CATEGORY_VISUAL[project.categoryId]?.accentColor : undefined;
 
   return (
@@ -600,7 +660,7 @@ function ProjectCard({
                 styles.progressFill,
                 {
                   width: `${Math.min(Math.max(project.percent, 0), 100)}%`,
-                  backgroundColor: project.isCompleted ? "#0BA86C" : accentColor || colors.accent,
+                  backgroundColor: project.isCompleted ? "#10B981" : accentColor || colors.accent,
                 },
               ]}
             />
@@ -703,6 +763,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginTop: 8,
+  },
+  emptyCtaContainer: {
+    alignItems: "center",
+    marginTop: 16,
+  },
+  emptyCtaBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  emptyCtaBtnText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   section: {
     marginBottom: 24,

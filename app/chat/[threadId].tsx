@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
@@ -14,6 +15,7 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -21,17 +23,41 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type DmMessage, type DmThread, type PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { SkeletonChat } from '@/components/Skeleton';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 // Message with local status for optimistic UI
 type LocalMessage = DmMessage & {
   localStatus?: 'sending' | 'sent' | 'failed';
 };
 
-export default function ThreadDetailScreen() {
+function formatDateSeparator(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.floor((today.getTime() - msgDate.getTime()) / 86400000);
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function shouldShowDateSeparator(current: string, previous: string | null): boolean {
+  if (!previous) return true;
+  const currentDate = new Date(current).toDateString();
+  const previousDate = new Date(previous).toDateString();
+  return currentDate !== previousDate;
+}
+
+function ThreadDetailScreen() {
   const router = useRouter();
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
 
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +65,12 @@ export default function ThreadDetailScreen() {
   const [sending, setSending] = useState(false);
   const [threadInfo, setThreadInfo] = useState<DmThread | null>(null);
   const [currentUser, setCurrentUser] = useState<PublicUserProfile | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [failedMessageIds, setFailedMessageIds] = useState<Set<string>>(new Set());
 
   const flatListRef = useRef<FlatList>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Current user ID (fallback for rendering before profile loads)
   const currentUserId = currentUser?.id ?? 'collector-aurora';
@@ -80,6 +110,13 @@ export default function ThreadDetailScreen() {
     }
   }, []);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadMessages();
+    setRefreshing(false);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+  }, [loadMessages, settings.hapticsEnabled]);
+
   useEffect(() => {
     loadMessages();
     loadThreadInfo();
@@ -90,6 +127,33 @@ export default function ThreadDetailScreen() {
     }
   }, [loadMessages, loadThreadInfo, loadCurrentUser, threadId]);
 
+  // Poll for other user's typing status every 3 seconds
+  useEffect(() => {
+    if (!threadId) return;
+    const interval = setInterval(async () => {
+      try {
+        const typing = await dataProvider.isOtherUserTyping(threadId);
+        setOtherTyping(typing);
+      } catch {
+        // Non-critical: silently ignore
+      }
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [threadId]);
+
+  // Signal typing when user types (debounced — only sends every 3 seconds)
+  const handleTextChange = useCallback((text: string) => {
+    setInputText(text);
+    if (!threadId || !text.trim()) return;
+
+    if (!typingTimeoutRef.current) {
+      dataProvider.setTyping(threadId).catch(() => {});
+      typingTimeoutRef.current = setTimeout(() => {
+        typingTimeoutRef.current = null;
+      }, 3000);
+    }
+  }, [threadId]);
+
   // Send message with optimistic UI
   const handleSend = async () => {
     if (!inputText.trim() || !threadId || sending) return;
@@ -98,6 +162,9 @@ export default function ThreadDetailScreen() {
     const text = inputText.trim();
     setInputText('');
     setSending(true);
+
+    // Clear typing indicator
+    if (threadId) dataProvider.clearTyping(threadId).catch(() => {});
 
     // Optimistic: add message with 'sending' status
     const optimisticMsg: LocalMessage = {
@@ -131,15 +198,45 @@ export default function ThreadDetailScreen() {
           m.id === tempId ? { ...m, localStatus: 'failed' } : m
         )
       );
+      setFailedMessageIds((prev) => new Set(prev).add(tempId));
     } finally {
       setSending(false);
     }
   };
 
-  const renderMessage = ({ item }: { item: LocalMessage }) => {
+  const handleRetryMessage = async (tempId: string, text: string) => {
+    // Remove from failed set and mark as sending again
+    setFailedMessageIds((prev) => { const next = new Set(prev); next.delete(tempId); return next; });
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === tempId ? { ...m, localStatus: 'sending' } : m
+      )
+    );
+
+    try {
+      const sentMsg = await dataProvider.sendMessage(threadId!, text);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...sentMsg, localStatus: 'sent' } : m
+        )
+      );
+    } catch (err: unknown) {
+      logger.warn('[ThreadDetail] retryMessage error:', err);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...m, localStatus: 'failed' } : m
+        )
+      );
+      setFailedMessageIds((prev) => new Set(prev).add(tempId));
+    }
+  };
+
+  const renderMessage = ({ item, index }: { item: LocalMessage; index: number }) => {
     const isMe = item.authorUserId === currentUserId;
     const isSending = item.localStatus === 'sending';
     const isFailed = item.localStatus === 'failed';
+    const previousMessage = index > 0 ? messages[index - 1] : null;
+    const showSeparator = shouldShowDateSeparator(item.createdAt, previousMessage?.createdAt ?? null);
 
     // Avatar for other user (from threadInfo)
     const otherAvatar = threadInfo?.otherUserAvatarUrl;
@@ -147,40 +244,74 @@ export default function ThreadDetailScreen() {
     const otherInitial = threadInfo?.otherUserName?.charAt(0).toUpperCase() ?? '?';
 
     return (
-      <View style={[styles.messageRow, isMe ? styles.messageRowRight : styles.messageRowLeft]}>
-        {/* Avatar for their messages */}
-        {!isMe && (
-          <View style={[styles.avatar, { backgroundColor: otherAvatar ? 'transparent' : otherAvatarColor }]}>
-            {otherAvatar ? (
-              <Image source={{ uri: otherAvatar }} style={styles.avatarImage} accessibilityLabel={`${threadInfo?.otherUserName || 'User'} avatar`} />
-            ) : (
-              <Text style={styles.avatarInitial}>{otherInitial}</Text>
-            )}
+      <View>
+        {showSeparator && (
+          <View style={styles.dateSeparator}>
+            <View style={[styles.dateSeparatorLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dateSeparatorText, { color: colors.muted }]}>
+              {formatDateSeparator(item.createdAt)}
+            </Text>
+            <View style={[styles.dateSeparatorLine, { backgroundColor: colors.border }]} />
           </View>
         )}
         <View
-          style={[
-            styles.messageBubble,
-            isMe
-              ? [styles.myMessage, { backgroundColor: colors.accent }]
-              : [styles.theirMessage, { backgroundColor: colors.card }],
-          ]}
+          style={[styles.messageRow, isMe ? styles.messageRowRight : styles.messageRowLeft]}
+          accessibilityLabel={`${isMe ? 'You' : (threadInfo?.otherUserName || 'User')}: ${item.text}${isSending ? ', sending' : ''}${isFailed ? ', failed to send' : ''}`}
         >
-          <Text style={[styles.messageText, { color: isMe ? '#fff' : colors.text }]}>
-            {item.text}
-          </Text>
-          <View style={styles.messageFooter}>
-            <Text style={[styles.messageTime, { color: isMe ? 'rgba(255,255,255,0.7)' : colors.muted }]}>
-              {formatTime(item.createdAt)}
+          {/* Avatar for their messages */}
+          {!isMe && (
+            <View style={[styles.avatar, { backgroundColor: otherAvatar ? 'transparent' : otherAvatarColor }]}>
+              {otherAvatar ? (
+                <Image source={{ uri: otherAvatar }} style={styles.avatarImage} accessibilityLabel={`${threadInfo?.otherUserName || 'User'} avatar`} />
+              ) : (
+                <Text style={styles.avatarInitial}>{otherInitial}</Text>
+              )}
+            </View>
+          )}
+          <View
+            style={[
+              styles.messageBubble,
+              isMe
+                ? [styles.myMessage, { backgroundColor: colors.accent }]
+                : [styles.theirMessage, { backgroundColor: colors.card }],
+            ]}
+          >
+            <Text style={[styles.messageText, { color: isMe ? '#fff' : colors.text }]}>
+              {item.text}
             </Text>
-            {isSending && (
-              <ActivityIndicator size="small" color={isMe ? '#fff' : colors.muted} style={{ marginLeft: 4 }} />
-            )}
-            {isFailed && (
-              <Ionicons name="alert-circle" size={14} color="#ef4444" style={{ marginLeft: 4 }} />
-            )}
+            <View style={styles.messageFooter}>
+              <Text style={[styles.messageTime, { color: isMe ? 'rgba(255,255,255,0.7)' : colors.muted }]}>
+                {formatTime(item.createdAt)}
+              </Text>
+              {isMe && item.localStatus === 'sent' && (
+                <Ionicons
+                  name={item.readAt ? 'checkmark-done' : 'checkmark'}
+                  size={14}
+                  color={item.readAt ? (isMe ? 'rgba(255,255,255,0.9)' : colors.accent) : (isMe ? 'rgba(255,255,255,0.5)' : colors.muted)}
+                  style={{ marginLeft: 4 }}
+                />
+              )}
+              {isSending && (
+                <ActivityIndicator size="small" color={isMe ? '#fff' : colors.muted} style={{ marginLeft: 4 }} />
+              )}
+              {isFailed && (
+                <Ionicons name="alert-circle" size={14} color="#ef4444" style={{ marginLeft: 4 }} />
+              )}
+            </View>
           </View>
         </View>
+        {isFailed && failedMessageIds.has(item.id) && (
+          <AnimatedPressable
+            onPress={() => handleRetryMessage(item.id, item.text)}
+            style={styles.retryRow}
+            accessibilityRole="button"
+            accessibilityLabel="Tap to retry sending message"
+          >
+            <Text style={styles.retryLabel}>Failed to send</Text>
+            <Ionicons name="refresh" size={12} color="#ef4444" style={{ marginLeft: 2 }} />
+            <Text style={styles.retryAction}>Tap to retry</Text>
+          </AnimatedPressable>
+        )}
       </View>
     );
   };
@@ -196,7 +327,7 @@ export default function ThreadDetailScreen() {
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <SkeletonChat />
         </View>
       </SafeAreaView>
     );
@@ -228,6 +359,7 @@ export default function ThreadDetailScreen() {
           renderItem={renderMessage}
           contentContainerStyle={styles.messageList}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="chatbubble-outline" size={48} color={colors.muted} />
@@ -237,14 +369,24 @@ export default function ThreadDetailScreen() {
           }
         />
 
+        {/* Typing Indicator */}
+        {otherTyping && (
+          <View style={[styles.typingBar, { backgroundColor: colors.card, borderTopColor: colors.border }]} accessibilityLiveRegion="polite">
+            <Text style={[styles.typingText, { color: colors.muted }]}>
+              {threadInfo?.otherUserName ?? 'User'} is typing...
+            </Text>
+          </View>
+        )}
+
         {/* Composer */}
         <View style={[styles.composer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
           <TextInput
             value={inputText}
-            onChangeText={setInputText}
+            onChangeText={handleTextChange}
             placeholder="Type a message..."
             placeholderTextColor={colors.muted}
             accessibilityLabel="Message input"
+            accessibilityHint="Type a message and press send"
             style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             multiline
             maxLength={1000}
@@ -267,6 +409,7 @@ export default function ThreadDetailScreen() {
           </AnimatedPressable>
         </View>
       </KeyboardAvoidingView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 }
@@ -385,6 +528,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
+  typingBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  typingText: {
+    fontSize: 13,
+    fontStyle: 'italic',
+  },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -410,4 +562,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  retryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingRight: 8,
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  retryLabel: {
+    fontSize: 12,
+    color: '#ef4444',
+    marginRight: 4,
+  },
+  retryAction: {
+    fontSize: 12,
+    color: '#ef4444',
+    fontWeight: '600',
+    marginLeft: 2,
+  },
+  dateSeparator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+  },
+  dateSeparatorLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  dateSeparatorText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
 });
+
+export default function ThreadDetailScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Chat">
+      <ThreadDetailScreen />
+    </ScreenErrorBoundary>
+  );
+}

@@ -6,6 +6,7 @@
 
 import type { DataProvider } from './DataProvider';
 import type {
+  CurrencyCode,
   PaginationParams,
   PortfolioSummary,
   Item,
@@ -28,16 +29,26 @@ import type {
   BuildPaintProject,
   BuildPaintStep,
   BuildPaintNote,
+  PaintRecipe,
   CreateBuildPaintProjectInput,
   BarcodeLookupResult,
   MarketSearchOptions,
   MarketSearchResult,
+  Offer,
+  OfferEvent,
+  UserReputation,
 } from './types';
 import { getCategoryById } from './categories';
 import logger from '../utils/logger';
 import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 import { supabase } from '../lib/supabase';
-import { collectorsApi } from '../api/collectorsApi';
+import {
+  collectorsApi,
+  getUserActivity as apiGetUserActivity,
+  logActivity as apiLogActivity,
+  unifiedSearch as apiUnifiedSearch,
+  searchEvents as apiSearchEvents,
+} from '../api/collectorsApi';
 
 export class SupabaseDataProvider implements DataProvider {
   // In-memory profile cache to prevent repeated lookups
@@ -184,7 +195,7 @@ export class SupabaseDataProvider implements DataProvider {
       priority: 'high' | 'medium' | 'low';
       owned: boolean;
       target_price: number | null;
-      currency: string;
+      currency: CurrencyCode;
       category?: string | null;
       notes?: string | null;
       created_at?: string | null;
@@ -230,7 +241,38 @@ export class SupabaseDataProvider implements DataProvider {
       priority: (r.priority as 'high' | 'medium' | 'low') || 'medium',
       owned: (r.owned as boolean) ?? false,
       targetPrice: (r.target_price as number | null) ?? null,
-      currency: (r.currency as string) || 'EUR',
+      currency: (r.currency as CurrencyCode) || 'EUR',
+      category: r.category as string | undefined,
+      notes: r.notes as string | undefined,
+      createdAt: r.created_at as string | undefined,
+    };
+  }
+
+  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string }): Promise<WatchlistItem> {
+    const updatePayload: Record<string, unknown> = {};
+    if (updates.targetPrice !== undefined) updatePayload.target_price = updates.targetPrice;
+    if (updates.notes !== undefined) updatePayload.notes = updates.notes;
+
+    const { data, error } = await supabase
+      .from('watchlist')
+      .update(updatePayload)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      logger.error('[SupabaseDataProvider] updateWatchlistItem error:', error);
+      throw new Error(error.message || 'Failed to update watchlist item');
+    }
+
+    const r = data as Record<string, unknown>;
+    return {
+      id: r.id as string,
+      title: r.title as string,
+      priority: (r.priority as 'low' | 'medium' | 'high') || 'medium',
+      owned: (r.owned as boolean) ?? false,
+      targetPrice: (r.target_price as number | null) ?? null,
+      currency: (r.currency as CurrencyCode) || 'EUR',
       category: r.category as string | undefined,
       notes: r.notes as string | undefined,
       createdAt: r.created_at as string | undefined,
@@ -292,14 +334,14 @@ export class SupabaseDataProvider implements DataProvider {
     const updatePayload: Record<string, unknown> = {};
     if (patch.name !== undefined) updatePayload.title = patch.name;
     if (patch.category !== undefined) updatePayload.category = patch.category;
-    if (patch.imageUrl !== undefined) updatePayload.image_url = patch.imageUrl;
+    if (patch.imageUrl !== undefined) updatePayload.images = patch.imageUrl ? [patch.imageUrl] : [];
     // Note: price is not stored in items table — it comes from price_predictions
 
     const { data, error } = await supabase
       .from('items')
       .update(updatePayload)
       .eq('id', itemId)
-      .select('id, title, category, image_url, updated_at, images')
+      .select('id, title, category, updated_at, images')
       .single();
 
     if (error || !data) {
@@ -402,8 +444,44 @@ export class SupabaseDataProvider implements DataProvider {
     };
   }
 
-  async quickscanSingle(): Promise<QuickScanResult> {
-    // Call HTTP endpoint via collectorsApi
+  async quickscanSingle(imageUri?: string): Promise<QuickScanResult> {
+    // ── Vision pipeline path (preferred when image is available) ────────
+    if (imageUri) {
+      const intake = await collectorsApi.intakeImageOnly(imageUri);
+
+      const priceBand = intake.price_band;
+      const q10 = priceBand?.q10 ?? 0;
+      const q50 = priceBand?.q50 ?? (intake.estimated_price ?? 0);
+      const q90 = priceBand?.q90 ?? 0;
+      const confidence = priceBand?.confidence ?? intake.category_confidence ?? 0;
+      const currency = (priceBand?.currency as CurrencyCode) ?? 'EUR';
+
+      // Extract condition from attributes if available
+      const condition = (intake.attributes?.condition as string | undefined)
+        ?? (intake.attributes?.condition_guess as string | undefined)
+        ?? null;
+
+      return {
+        itemId: null,
+        attributes: {
+          category: intake.category_id ?? '',
+          editionGuess: (intake.attributes?.edition as string | undefined) ?? null,
+          conditionGuess: condition,
+          rarityScore: (intake.attributes?.rarity_score as number | undefined) ?? null,
+        },
+        prediction: {
+          name: intake.name ?? '',
+          estimatedLow: q10,
+          estimatedMid: q50,
+          estimatedHigh: q90,
+          currency,
+          confidence,
+          explanation: intake.rationale?.length ? intake.rationale.join(' ') : null,
+        },
+      };
+    }
+
+    // ── Legacy fallback (no image) ─────────────────────────────────────
     const res = await collectorsApi.quickscanSingle() as Record<string, unknown>;
 
     // Map snake_case response to camelCase
@@ -423,7 +501,7 @@ export class SupabaseDataProvider implements DataProvider {
         estimatedLow: (pred.estimated_low as number | null) ?? 0,
         estimatedMid: (pred.estimated_mid as number | null) ?? 0,
         estimatedHigh: (pred.estimated_high as number | null) ?? 0,
-        currency: (pred.currency as string | null) ?? 'EUR',
+        currency: (pred.currency as CurrencyCode | null) ?? 'EUR',
         confidence: (pred.confidence as number | null) ?? 0,
         explanation: (pred.explanation as string | null) ?? null,
       },
@@ -433,11 +511,14 @@ export class SupabaseDataProvider implements DataProvider {
   async searchItems(query: string): Promise<Item[]> {
     if (!query.trim()) return [];
 
+    // Escape LIKE metacharacters to prevent pattern injection
+    const escaped = query.replace(/%/g, '\\%').replace(/_/g, '\\_');
+
     // JOIN price_predictions via FK (item_id → items.id)
     const { data, error } = await supabase
       .from('items')
       .select('id, title, category, updated_at, attributes_json, taxonomy_version, subtype_id, collections, images, price_predictions(q10, q50, q90, conf_score, asof)')
-      .ilike('title', `%${query}%`)
+      .ilike('title', `%${escaped}%`)
       .order('updated_at', { ascending: false })
       .limit(25);
 
@@ -572,8 +653,23 @@ export class SupabaseDataProvider implements DataProvider {
     const category = getCategoryById(categoryId);
     if (!category) return null;
 
-    // Fetch items matching category from Supabase
-    const items = await this.searchItems(category.name.split(' ')[0]);
+    // Fetch items matching category directly by category_id
+    const { data: itemsData } = await supabase
+      .from('items')
+      .select('id, title, category, updated_at, images')
+      .eq('category', categoryId)
+      .order('updated_at', { ascending: false })
+      .limit(20);
+
+    type CatItemRow = { id: string; title?: string | null; category?: string | null; updated_at?: string | null; images?: string[] | null };
+    const items: Item[] = (itemsData ?? []).map((r: CatItemRow) => ({
+      id: r.id,
+      name: r.title ?? 'Untitled',
+      category: r.category ?? categoryId,
+      price: 0,
+      imageUrl: r.images?.[0] ?? undefined,
+      updatedAt: r.updated_at ?? new Date().toISOString(),
+    }));
 
     // Fetch upcoming events for this category from Supabase
     const { data: eventsData } = await supabase
@@ -787,7 +883,7 @@ export class SupabaseDataProvider implements DataProvider {
   async getThreadMessages(threadId: string): Promise<DmMessage[]> {
     const { data, error } = await supabase
       .from('chat_messages_v1')
-      .select('id, thread_id, author_user_id, text, created_at')
+      .select('id, thread_id, author_user_id, text, created_at, read_at')
       .eq('thread_id', threadId)
       .order('created_at', { ascending: true });
 
@@ -804,6 +900,7 @@ export class SupabaseDataProvider implements DataProvider {
       authorUserId: (row.author_user_id ?? row.authorUserId) as string,
       text: (row.text as string | null) ?? '',
       createdAt: (row.created_at ?? row.createdAt ?? new Date().toISOString()) as string,
+      readAt: (row.read_at as string | null) ?? null,
     }));
   }
 
@@ -843,6 +940,33 @@ export class SupabaseDataProvider implements DataProvider {
       text: body,
       createdAt: new Date().toISOString(),
     };
+  }
+
+  async setTyping(threadId: string): Promise<void> {
+    const { error } = await supabase.rpc('rpc_set_typing_v1', {
+      p_thread_id: threadId,
+    });
+    if (error) {
+      logger.warn('[SupabaseDataProvider] setTyping error:', error);
+    }
+  }
+
+  async clearTyping(threadId: string): Promise<void> {
+    const { error } = await supabase.rpc('rpc_clear_typing_v1', {
+      p_thread_id: threadId,
+    });
+    if (error) {
+      logger.warn('[SupabaseDataProvider] clearTyping error:', error);
+    }
+  }
+
+  async isOtherUserTyping(threadId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('rpc_get_typing_v1', {
+      p_thread_id: threadId,
+    });
+    if (error || !data) return false;
+    const rows = data as { user_id: string; is_typing: boolean }[];
+    return rows.some((r) => r.is_typing);
   }
 
   async getDmStatus(otherUserId: string): Promise<'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined'> {
@@ -957,9 +1081,10 @@ export class SupabaseDataProvider implements DataProvider {
   // ─────────────────────────────────────────────────────────────────────────────
 
   async listBuildPaintProjects(): Promise<BuildPaintProject[]> {
+    // Try view first, then fall back to base table for paint_recipes
     const { data, error } = await supabase
-      .from('v_build_paint_projects_v1')
-      .select('id, title, category, category_id, item_id, item_name, item_images, status, percent_complete, is_completed, notes, image_url, created_at, updated_at')
+      .from('build_paint_projects')
+      .select('*')
       .order('updated_at', { ascending: false })
       .limit(200);
 
@@ -968,37 +1093,45 @@ export class SupabaseDataProvider implements DataProvider {
       return [];
     }
 
-    type ProjectRow = {
-      id: string; title: string; category?: string; category_id?: string;
-      item_id?: string; item_name?: string; item_images?: string[];
-      status?: string; percent_complete?: number; is_completed?: boolean;
-      notes?: string; image_url?: string; created_at?: string; updated_at?: string;
-    };
-    return (data ?? []).map((row: ProjectRow) => ({
-      id: row.id,
-      title: row.title,
-      category: row.category,
-      categoryId: row.category_id ?? undefined,
-      itemId: row.item_id ?? undefined,
-      itemName: row.item_name ?? undefined,
-      itemImageUrl: row.item_images?.[0] ?? undefined,
-      status: row.status,
-      percent: row.percent_complete ?? 0,
-      isCompleted: row.is_completed ?? false,
-      notes: row.notes,
-      imageUrl: row.image_url ?? undefined,
-      createdAt: row.created_at ?? new Date().toISOString(),
-      updatedAt: row.updated_at ?? new Date().toISOString(),
+    return (data ?? []).map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      title: (row.title as string) || 'Untitled',
+      category: row.category as string | undefined,
+      categoryId: (row.category_id as string) ?? undefined,
+      itemId: (row.item_id as string) ?? undefined,
+      itemName: (row.item_name as string) ?? undefined,
+      itemImageUrl: (row.item_images as string[])?.[0] ?? undefined,
+      status: row.status as string | undefined,
+      percent: (row.percent_complete as number) ?? 0,
+      isCompleted: (row.is_completed as boolean) ?? false,
+      notes: row.notes as string | undefined,
+      imageUrl: (row.image_url as string) ?? undefined,
+      paintRecipes: (row.paint_recipes as PaintRecipe[]) ?? [],
+      createdAt: (row.created_at as string) ?? new Date().toISOString(),
+      updatedAt: (row.updated_at as string) ?? new Date().toISOString(),
     }));
   }
 
   async createBuildPaintProject(input: CreateBuildPaintProjectInput): Promise<BuildPaintProject> {
-    const { data, error } = await supabase.rpc('rpc_create_build_paint_project_v1', {
+    // Try with extended params first, fall back to original 2-param RPC
+    let data: unknown;
+    let error: { message?: string } | null;
+
+    ({ data, error } = await supabase.rpc('rpc_create_build_paint_project_v1', {
       p_title: input.title,
       p_category: input.category || null,
       p_category_id: input.categoryId || null,
       p_item_id: input.itemId || null,
-    });
+    }));
+
+    // Fall back to original RPC signature if extra params not supported
+    if (error) {
+      logger.info('[SupabaseDataProvider] trying original RPC signature');
+      ({ data, error } = await supabase.rpc('rpc_create_build_paint_project_v1', {
+        p_title: input.title,
+        p_category: input.category || null,
+      }));
+    }
 
     if (error) {
       logger.warn('[SupabaseDataProvider] createBuildPaintProject error:', error);
@@ -1145,13 +1278,57 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   async listBuildPaintProjectsByCategory(categoryId: string): Promise<BuildPaintProject[]> {
-    const all = await this.listBuildPaintProjects();
-    return all.filter((p) => p.categoryId === categoryId);
+    const { data, error } = await supabase
+      .from('build_paint_projects')
+      .select('*')
+      .eq('category_id', categoryId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      logger.warn('[SupabaseDataProvider] listBuildPaintProjectsByCategory error:', error);
+      return [];
+    }
+
+    return (data ?? []).map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      title: (r.name as string) ?? 'Untitled',
+      status: (r.status as string) ?? 'in_progress',
+      categoryId: (r.category_id as string | null) ?? undefined,
+      itemId: (r.item_id as string | null) ?? undefined,
+      imageUrl: (r.cover_image_url as string | null) ?? undefined,
+      percent: 0,
+      isCompleted: (r.status as string) === 'completed',
+      paintRecipes: (r.paint_recipes as PaintRecipe[]) ?? [],
+      createdAt: (r.created_at as string | null) ?? new Date().toISOString(),
+      updatedAt: (r.updated_at as string | null) ?? new Date().toISOString(),
+    }));
   }
 
   async listBuildPaintProjectsByItem(itemId: string): Promise<BuildPaintProject[]> {
-    const all = await this.listBuildPaintProjects();
-    return all.filter((p) => p.itemId === itemId);
+    const { data, error } = await supabase
+      .from('build_paint_projects')
+      .select('*')
+      .eq('item_id', itemId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      logger.warn('[SupabaseDataProvider] listBuildPaintProjectsByItem error:', error);
+      return [];
+    }
+
+    return (data ?? []).map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      title: (r.name as string) ?? 'Untitled',
+      status: (r.status as string) ?? 'in_progress',
+      categoryId: (r.category_id as string | null) ?? undefined,
+      itemId: (r.item_id as string | null) ?? undefined,
+      imageUrl: (r.cover_image_url as string | null) ?? undefined,
+      percent: 0,
+      isCompleted: (r.status as string) === 'completed',
+      paintRecipes: (r.paint_recipes as PaintRecipe[]) ?? [],
+      createdAt: (r.created_at as string | null) ?? new Date().toISOString(),
+      updatedAt: (r.updated_at as string | null) ?? new Date().toISOString(),
+    }));
   }
 
   async applyStepTemplate(projectId: string, categoryId: string): Promise<BuildPaintStep[]> {
@@ -1163,6 +1340,21 @@ export class SupabaseDataProvider implements DataProvider {
       steps.push(step);
     }
     return steps;
+  }
+
+  async updateBuildPaintProject(projectId: string, patch: { paintRecipes?: unknown[] }): Promise<void> {
+    const updatePayload: Record<string, unknown> = {};
+    if (patch.paintRecipes !== undefined) {
+      updatePayload.paint_recipes = patch.paintRecipes;
+    }
+    const { error } = await supabase
+      .from('build_paint_projects')
+      .update(updatePayload)
+      .eq('id', projectId);
+    if (error) {
+      logger.error('[SupabaseDataProvider] updateBuildPaintProject error:', error);
+      throw new Error(error.message || 'Failed to update project');
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1708,6 +1900,39 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // User Search
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async searchUsers(query: string): Promise<PublicUserProfile[]> {
+    if (!query.trim()) return [];
+
+    const pattern = `%${query.trim()}%`;
+
+    // Search by display_name OR handle using case-insensitive ILIKE via .or()
+    const { data, error } = await supabase
+      .from('user_public_profiles')
+      .select('user_id, display_name, handle, avatar_url, bio, interests')
+      .or(`display_name.ilike.${pattern},handle.ilike.${pattern}`)
+      .limit(20);
+
+    if (error) {
+      logger.warn('[SupabaseDataProvider] searchUsers error:', error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: (row.user_id ?? row.id) as string,
+      displayName: (row.display_name as string | null) ?? 'Unknown',
+      handle: (row.handle as string | null) ?? null,
+      avatarUrl: (row.avatar_url as string | null) ?? null,
+      bio: (row.bio as string | null) ?? null,
+      interests: (row.interests as string[] | null) ?? null,
+    }));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // User Blocking
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1739,17 +1964,20 @@ export class SupabaseDataProvider implements DataProvider {
     }
 
     const rows = (data ?? []) as { blocked_id: string }[];
-    const results: { id: string; name: string }[] = [];
 
-    for (const row of rows) {
-      const profile = await this.getPublicUserProfile(row.blocked_id);
-      results.push({
+    // Fetch profiles in parallel instead of sequential loop
+    const settled = await Promise.allSettled(
+      rows.map((row) => this.getPublicUserProfile(row.blocked_id)),
+    );
+
+    return rows.map((row, i) => {
+      const result = settled[i];
+      const profile = result.status === 'fulfilled' ? result.value : null;
+      return {
         id: row.blocked_id,
-        name: profile?.displayName ?? 'Unknown',
-      });
-    }
-
-    return results;
+        name: (profile as { displayName?: string } | null)?.displayName ?? 'Unknown',
+      };
+    });
   }
 
   async isBlocked(userId: string): Promise<boolean> {
@@ -1793,7 +2021,7 @@ export class SupabaseDataProvider implements DataProvider {
           q50: priceBandRaw.q50 as number,
           q90: priceBandRaw.q90 as number,
           confidence: priceBandRaw.confidence as number,
-          currency: (priceBandRaw.currency as string | null) ?? 'EUR',
+          currency: (priceBandRaw.currency as CurrencyCode | null) ?? 'EUR',
         } : null,
         rationale: (res.rationale as string[] | null) ?? [],
         barcode,
@@ -1846,7 +2074,7 @@ export class SupabaseDataProvider implements DataProvider {
           rawId: (hit.raw_id ?? hit.rawId) as string,
           title: hit.title as string,
           price: hit.price as number,
-          currency: (hit.currency as string | null) ?? 'EUR',
+          currency: (hit.currency as CurrencyCode | null) ?? 'EUR',
           soldAt: (hit.sold_at ?? hit.soldAt ?? null) as string | null,
           url: (hit.url ?? null) as string | null,
           condition: (hit.condition ?? null) as string | null,
@@ -1868,6 +2096,208 @@ export class SupabaseDataProvider implements DataProvider {
         confidence: 0,
       };
     }
+  }
+  // ─── Presence ───────────────────────────────────────────────────────────────
+
+  async sendHeartbeat(): Promise<void> {
+    try {
+      await supabase.rpc('rpc_heartbeat_v1');
+    } catch (err: unknown) {
+      logger.warn('[SupabaseDataProvider] heartbeat error:', err);
+    }
+  }
+
+  async goOffline(): Promise<void> {
+    try {
+      await supabase.rpc('rpc_go_offline_v1');
+    } catch (err: unknown) {
+      logger.warn('[SupabaseDataProvider] goOffline error:', err);
+    }
+  }
+
+  async getUserPresence(userId: string): Promise<import('./types').UserPresence | null> {
+    try {
+      const { data } = await supabase.rpc('rpc_get_presence_v1', { p_user_id: userId });
+      if (!data || (Array.isArray(data) && data.length === 0)) return null;
+      const row = Array.isArray(data) ? data[0] : data;
+      return {
+        userId: row.user_id,
+        lastSeenAt: row.last_seen_at,
+        isOnline: row.is_online,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async getBatchPresence(userIds: string[]): Promise<import('./types').UserPresence[]> {
+    try {
+      const { data } = await supabase.rpc('rpc_get_batch_presence_v1', { p_user_ids: userIds });
+      return (data || []).map((row: Record<string, unknown>) => ({
+        userId: row.user_id as string,
+        lastSeenAt: row.last_seen_at as string,
+        isOnline: row.is_online as boolean,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // ─── Activity Feed ─────────────────────────────────────────────────────────
+
+  async getUserActivity(userId: string, limit = 20, offset = 0): Promise<import('./types').ActivityFeedItem[]> {
+    try {
+      const resp = await apiGetUserActivity(userId, limit, offset) as Record<string, unknown>;
+      return ((resp.activities as Record<string, unknown>[]) || []).map((a) => ({
+        id: a.id as string,
+        userId: a.user_id as string,
+        activityType: a.activity_type as import('./types').ActivityType,
+        title: a.title as string,
+        description: (a.description as string | null) ?? null,
+        metadata: (a.metadata as Record<string, unknown>) || {},
+        isPublic: a.is_public as boolean,
+        createdAt: a.created_at as string,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async logActivity(activityType: string, title: string, description?: string, metadata?: Record<string, unknown>, isPublic = true): Promise<void> {
+    try {
+      await apiLogActivity({
+        activity_type: activityType,
+        title,
+        description,
+        metadata: metadata || {},
+        is_public: isPublic,
+      });
+    } catch (err: unknown) {
+      logger.warn('[SupabaseDataProvider] logActivity error:', err);
+    }
+  }
+
+  // ─── Unified Search ────────────────────────────────────────────────────────
+
+  async unifiedSearch(query: string, limit = 5) {
+    try {
+      const resp = await apiUnifiedSearch(query, limit) as Record<string, unknown>;
+      return {
+        items: ((resp.items as Record<string, unknown>[]) || []).map((i) => ({
+          id: i.id as string,
+          name: i.name as string,
+          category: i.category as string,
+          imageUrl: (i.image_url ?? i.imageUrl ?? null) as string | null,
+          price: i.price as number | undefined,
+        })),
+        catalog: ((resp.catalog as Record<string, unknown>[]) || []).map((c) => ({
+          id: c.id as string,
+          category: c.category as string,
+          itemKey: (c.item_key ?? c.itemKey) as string,
+          title: c.title as string,
+          brand: (c.brand ?? null) as string | null,
+          imageUrl: (c.image_url ?? c.imageUrl ?? null) as string | null,
+        })),
+        users: ((resp.users as Record<string, unknown>[]) || []).map((u) => ({
+          id: u.id as string,
+          displayName: (u.display_name ?? u.displayName) as string,
+          handle: u.handle as string | undefined,
+          avatarUrl: (u.avatar_url ?? u.avatarUrl ?? null) as string | null,
+        })),
+        events: ((resp.events as Record<string, unknown>[]) || []).map((e) => ({
+          id: e.id as string,
+          title: e.title as string,
+          startDate: (e.start_date ?? e.startDate) as string | undefined,
+          location: e.location as string | undefined,
+          category: e.category as string | undefined,
+        })),
+        categories: (resp.categories as Array<{ id: string; name: string }>) || [],
+      };
+    } catch {
+      return { items: [], catalog: [], users: [], events: [], categories: [] };
+    }
+  }
+
+  // ─── Event Search ──────────────────────────────────────────────────────────
+
+  async searchEvents(params: {
+    q?: string;
+    category?: string;
+    eventType?: string;
+    location?: string;
+    upcomingOnly?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<import('./events').CollectorsEvent[]> {
+    try {
+      const resp = await apiSearchEvents(params) as Record<string, unknown>;
+      return ((resp.events as Record<string, unknown>[]) || []).map((e) => ({
+        id: e.id as string,
+        title: e.title as string,
+        description: (e.description ?? '') as string,
+        kind: (e.event_type ?? e.eventType ?? e.kind ?? 'meetup') as string,
+        date: (e.start_date ?? e.startDate ?? e.date ?? '') as string,
+        endDate: (e.end_date ?? e.endDate ?? undefined) as string | undefined,
+        location: (e.location ?? '') as string,
+        categoryId: (e.category ?? e.categoryId ?? undefined) as string | undefined,
+        hostUserId: (e.organizer_id ?? e.organizerId ?? undefined) as string | undefined,
+        attendeeIds: [],
+        attendeeCount: (e.attendee_count ?? e.attendeeCount ?? 0) as number,
+        interestedCount: (e.interested_count ?? e.interestedCount ?? 0) as number,
+        maxAttendees: (e.max_attendees ?? e.maxAttendees ?? null) as number | null,
+        isAttending: false,
+      })) as import('./events').CollectorsEvent[];
+    } catch {
+      return [];
+    }
+  }
+
+  // ─── Deal Desk (P2P Offers) ───────────────────────────────────────────────
+
+  async proposeOffer(itemId: string, price: number, message?: string): Promise<Offer> {
+    return collectorsApi.proposeOffer({ item_id: itemId, price, message }) as Promise<Offer>;
+  }
+
+  async counterOffer(offerId: string, price: number, message?: string): Promise<Offer> {
+    return collectorsApi.counterOffer(offerId, { price, message }) as Promise<Offer>;
+  }
+
+  async respondToOffer(offerId: string, accept: boolean, message?: string): Promise<void> {
+    await collectorsApi.respondToOffer(offerId, { accept, message });
+  }
+
+  async cancelOffer(offerId: string): Promise<void> {
+    await collectorsApi.cancelOffer(offerId);
+  }
+
+  async listActiveOffers(): Promise<Offer[]> {
+    const result = await collectorsApi.listActiveOffers() as { offers?: Offer[]; total_count?: number } | Offer[];
+    return Array.isArray(result) ? result : (result?.offers ?? []);
+  }
+
+  async listDealHistory(): Promise<Offer[]> {
+    const result = await collectorsApi.listDealHistory() as { offers?: Offer[]; total_count?: number } | Offer[];
+    return Array.isArray(result) ? result : (result?.offers ?? []);
+  }
+
+  async getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }> {
+    return collectorsApi.getOfferDetail(offerId) as Promise<{ offer: Offer; events: OfferEvent[] }>;
+  }
+
+  async getUserReputation(userId: string): Promise<UserReputation> {
+    return collectorsApi.getUserReputation(userId) as Promise<UserReputation>;
+  }
+
+  async toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void> {
+    await collectorsApi.toggleItemForSale(itemId, { for_sale: forSale, asking_price: askingPrice });
+  }
+
+  async markShipped(offerId: string, trackingInfo?: string): Promise<void> {
+    await collectorsApi.markShipped(offerId, { tracking_info: trackingInfo });
+  }
+
+  async completeDeal(offerId: string, stars: number, comment?: string): Promise<void> {
+    await collectorsApi.completeDeal(offerId, { stars, comment });
   }
 }
 

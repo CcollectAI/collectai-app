@@ -3,6 +3,8 @@
  * Structured data for explainable AI pricing interfaces.
  */
 
+import type { CurrencyCode } from '@/data/types';
+
 export type ConfidenceTier = 'high' | 'good' | 'medium' | 'low' | 'very_low';
 
 export type PriceBand = {
@@ -46,7 +48,7 @@ export type PriceEstimate = {
   /** Price band with q10/q50/q90 */
   priceBand: PriceBand;
   /** Currency code */
-  currency: string;
+  currency: CurrencyCode;
   /** Confidence tier */
   confidenceTier: ConfidenceTier;
   /** Confidence percentage (0-100) */

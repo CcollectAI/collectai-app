@@ -67,6 +67,7 @@ def install_middlewares(app: FastAPI) -> FastAPI:
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
         # HSTS — only in production (not DEV_MODE) to avoid localhost issues
         if not DEV_MODE:
             response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"

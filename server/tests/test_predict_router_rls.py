@@ -108,7 +108,7 @@ class TestPriceEvidenceOwnership:
             resp = client.get(f"/predict/evidence/{ITEM_ID}")
 
         assert resp.status_code == 404
-        assert "not found" in resp.json()["detail"].lower()
+        assert "not found" in resp.json()["detail"]["message"].lower()
 
     def test_owned_item_no_prediction(self):
         """When item belongs to user but has no prediction, return empty evidence."""

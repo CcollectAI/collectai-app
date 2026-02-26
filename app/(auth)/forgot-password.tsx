@@ -2,12 +2,11 @@
  * Forgot Password screen — sends password reset email via Supabase.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +20,8 @@ import { supabase } from '@/lib/supabase';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { useToast } from '@/components/Toast';
 
 const TIFFANY = '#81D8D0';
 const TIFFANY_DARK = '#5FBFB6';
@@ -29,17 +30,25 @@ const MUTED = '#64748B';
 const BORDER = '#E2E8F0';
 const INPUT_BG = '#F8FAFC';
 
-export default function ForgotPasswordScreen() {
+function ForgotPasswordScreen() {
   const router = useRouter();
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   async function handleReset() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      Alert.alert('Email required', 'Enter your email address to reset your password.');
+      showToast({ message: 'Enter your email address to reset your password.', type: 'warning' });
       return;
     }
 
@@ -51,8 +60,9 @@ export default function ForgotPasswordScreen() {
       });
       if (error) throw error;
       setSent(true);
+      setCooldown(60);
     } catch (e: unknown) {
-      Alert.alert('Reset failed', e instanceof Error ? e.message : 'Unknown error');
+      showToast({ message: e instanceof Error ? e.message : 'Reset failed. Unknown error.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -105,15 +115,19 @@ export default function ForgotPasswordScreen() {
               </Text>
 
               <AnimatedPressable
-                style={styles.primaryBtn}
+                style={[styles.primaryBtn, cooldown > 0 && { opacity: 0.6 }]}
                 onPress={() => {
+                  if (cooldown > 0) return;
                   setSent(false);
                   setEmail('');
                 }}
+                disabled={cooldown > 0}
                 accessibilityRole="button"
-                accessibilityLabel="Try again"
+                accessibilityLabel={cooldown > 0 ? `Try again in ${cooldown} seconds` : 'Try again'}
               >
-                <Text style={styles.primaryBtnText}>Try Again</Text>
+                <Text style={styles.primaryBtnText}>
+                  {cooldown > 0 ? `Try Again (${cooldown}s)` : 'Try Again'}
+                </Text>
               </AnimatedPressable>
 
               <AnimatedPressable
@@ -139,6 +153,8 @@ export default function ForgotPasswordScreen() {
                 autoComplete="email"
                 accessibilityLabel="Email"
                 autoFocus
+                returnKeyType="send"
+                onSubmitEditing={handleReset}
               />
 
               {loading ? (
@@ -170,6 +186,14 @@ export default function ForgotPasswordScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+export default function ForgotPasswordScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Forgot Password">
+      <ForgotPasswordScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -237,6 +261,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
+    alignSelf: 'stretch',
     marginTop: 24,
   },
   primaryBtnText: {
@@ -250,6 +275,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
+    alignSelf: 'stretch',
     marginTop: 12,
   },
   secondaryBtnText: {

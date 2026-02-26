@@ -163,7 +163,7 @@ class TestFeedbackSubmitWithDB:
 
     def test_submit_with_db_success(self):
         mock_pool, mock_conn = self._mock_pool()
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             r = client.post("/feedback/submit", json={
                 "item_id": VALID_ITEM_ID,
                 "feedback_type": "sale_price",
@@ -178,7 +178,7 @@ class TestFeedbackSubmitWithDB:
     def test_submit_with_db_invalid_uuid_400(self):
         """Non-UUID item_id should return 400 when DB is available."""
         mock_pool, _mock_conn = self._mock_pool()
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             r = client.post("/feedback/submit", json={
                 "item_id": "not-a-uuid",
                 "feedback_type": "sale_price",
@@ -193,7 +193,7 @@ class TestFeedbackSubmitWithDB:
         """Database errors should return 500."""
         mock_pool, mock_conn = self._mock_pool()
         mock_conn.fetchrow = AsyncMock(side_effect=Exception("DB connection lost"))
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             r = client.post("/feedback/submit", json={
                 "item_id": VALID_ITEM_ID,
                 "feedback_type": "disagree",
@@ -312,7 +312,7 @@ class TestCorrectionSubmitWithDB:
 
     def test_correction_with_db_success(self):
         mock_pool, mock_conn = self._mock_pool()
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             r = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
                 "corrected_price": 75.50,
@@ -326,7 +326,7 @@ class TestCorrectionSubmitWithDB:
     def test_correction_with_db_not_found_404(self):
         """When UPDATE returns 0 rows, return 404."""
         mock_pool, _mock_conn = self._mock_pool(execute_result="UPDATE 0")
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             r = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
                 "corrected_price": 75.50,
@@ -338,7 +338,7 @@ class TestCorrectionSubmitWithDB:
     def test_correction_with_db_no_fields_400(self):
         """When no correction fields are provided (only item_id), return 400."""
         mock_pool, _mock_conn = self._mock_pool()
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             r = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
             })
@@ -349,7 +349,7 @@ class TestCorrectionSubmitWithDB:
     def test_correction_with_db_invalid_uuid_400(self):
         """Non-UUID item_id should return 400 when DB is available."""
         mock_pool, _mock_conn = self._mock_pool()
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             r = client.post("/feedback/correction", json={
                 "item_id": "not-a-uuid",
                 "corrected_price": 10.00,
@@ -360,7 +360,7 @@ class TestCorrectionSubmitWithDB:
         """Database errors should return 500."""
         mock_pool, mock_conn = self._mock_pool()
         mock_conn.execute = AsyncMock(side_effect=Exception("DB timeout"))
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             r = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
                 "corrected_price": 10.00,
@@ -370,7 +370,7 @@ class TestCorrectionSubmitWithDB:
     def test_correction_builds_correct_update_query(self):
         """Verify the dynamic query builder adds all fields."""
         mock_pool, mock_conn = self._mock_pool()
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             r = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
                 "corrected_price": 100.00,

@@ -1,65 +1,208 @@
 /**
  * QuickScan capture screen.
- * Opens camera → captures image → calls dataProvider.quickscanSingle() → navigates to item card in draft mode.
+ * Custom branded camera viewfinder -> branded AI analysis screen -> navigates to item card in draft mode.
+ * Supports batch mode for scanning multiple items in sequence.
  */
-import React, { useCallback, useState, useEffect } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
-  Alert,
+  Image,
+  Animated,
+  Dimensions,
+  StatusBar,
+  ScrollView,
+  FlatList,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { dataProvider } from '@/data';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent, confidenceToIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useToast } from '@/components/Toast';
+import { AnimatedPressable } from '@/motion';
+import { useSettings } from '@/lib/settings';
+import { formatPrice } from '@/lib/format';
+import type { QuickScanResult } from '@/data/types';
 import logger from '@/utils/logger';
 
-export default function QuickScanScreen() {
+const TIFFANY = '#81D8D0';
+const TIFFANY_DARK = '#5FBFB6';
+const FRAME_SIZE = 260;
+const CORNER_LENGTH = 36;
+const CORNER_THICKNESS = 4;
+const CORNER_RADIUS = 16;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+type ScanPhase = 'camera' | 'analyzing' | 'done' | 'batch_result' | 'batch_summary';
+
+/** Analysis step for the branded loading screen */
+type AnalysisStep = {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+};
+
+/** A scanned item kept in batch session memory */
+type BatchScannedItem = {
+  id: string;
+  name: string;
+  category: string;
+  condition: string;
+  estimatedMid: number;
+  estimatedLow: number;
+  estimatedHigh: number;
+  confidence: number;
+  imageUri: string;
+  saved: boolean;
+};
+
+const ANALYSIS_STEPS: AnalysisStep[] = [
+  { icon: 'sparkles', label: 'Identifying your item...' },
+  { icon: 'trending-up', label: 'Checking marketplace prices...' },
+  { icon: 'calculator', label: 'Calculating valuation...' },
+];
+
+function QuickScanScreen() {
   const { colors } = useAppTheme();
-  const [status, setStatus] = useState('Requesting camera...');
-  const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
+  const { settings } = useSettings();
+  const cameraRef = useRef<CameraView>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [phase, setPhase] = useState<ScanPhase>('camera');
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
+  const [analysisStepIndex, setAnalysisStepIndex] = useState(0);
 
-  const runScan = useCallback(async () => {
-    // Request camera permission
-    const { status: permStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    if (permStatus !== 'granted') {
-      Alert.alert(
-        'Camera permission required',
-        'Enable camera access to scan collectibles.',
-        [{ text: 'OK', onPress: () => router.back() }]
+  // Batch mode state
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchItems, setBatchItems] = useState<BatchScannedItem[]>([]);
+  const [currentBatchResult, setCurrentBatchResult] = useState<BatchScannedItem | null>(null);
+  const [savingBatchItem, setSavingBatchItem] = useState(false);
+
+  // Slide-up animation for batch result overlay
+  const batchOverlayAnim = useRef(new Animated.Value(0)).current;
+
+  // Scanning line animation for analysis screen
+  const scanLineAnim = useRef(new Animated.Value(0)).current;
+
+  // Animate batch result overlay in
+  useEffect(() => {
+    if (phase === 'batch_result') {
+      Animated.spring(batchOverlayAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 9,
+      }).start();
+    } else {
+      batchOverlayAnim.setValue(0);
+    }
+  }, [phase, batchOverlayAnim]);
+
+  // Start scanning line animation when analyzing
+  useEffect(() => {
+    if (phase !== 'analyzing') return;
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanLineAnim, {
+          toValue: 1,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scanLineAnim, {
+          toValue: 0,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [phase, scanLineAnim]);
+
+  // Cycle through analysis steps
+  useEffect(() => {
+    if (phase !== 'analyzing') return;
+    const interval = setInterval(() => {
+      setAnalysisStepIndex((prev) =>
+        prev < ANALYSIS_STEPS.length - 1 ? prev + 1 : prev,
       );
-      return;
-    }
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [phase]);
 
-    setStatus('Opening camera...');
+  const resetCamera = useCallback(() => {
+    setPhase('camera');
+    setCapturedUri(null);
+    setCurrentBatchResult(null);
+    setAnalysisStepIndex(0);
+  }, []);
 
-    // Launch camera
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: false,
-      quality: 0.8,
-    });
-
-    if (result.canceled) {
-      router.back();
-      return;
-    }
-
-    const imageUri = result.assets?.[0]?.uri ?? null;
-    if (!imageUri) {
-      Alert.alert('Error', 'Failed to capture image.');
-      router.back();
-      return;
-    }
-
-    setStatus('Analyzing image...');
+  const handleSaveBatchItem = useCallback(async () => {
+    if (!currentBatchResult || savingBatchItem) return;
+    setSavingBatchItem(true);
 
     try {
-      const scanResult = await dataProvider.quickscanSingle();
+      await dataProvider.persistQuickscanDraft({
+        photoUri: currentBatchResult.imageUri,
+        categoryId: currentBatchResult.category,
+        title: currentBatchResult.name,
+        attributes: {
+          condition: currentBatchResult.condition,
+          estimatedLow: currentBatchResult.estimatedLow,
+          estimatedMid: currentBatchResult.estimatedMid,
+          estimatedHigh: currentBatchResult.estimatedHigh,
+          confidence: currentBatchResult.confidence,
+        },
+      });
+
+      const savedItem = { ...currentBatchResult, saved: true };
+      setBatchItems((prev) => [...prev, savedItem]);
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'Item saved to collection!', type: 'success' });
+      resetCamera();
+    } catch (err: unknown) {
+      logger.warn('[QuickScan] batch save error:', err);
+      showToast({
+        message: (err as Error)?.message ?? 'Failed to save item.',
+        type: 'error',
+      });
+    } finally {
+      setSavingBatchItem(false);
+    }
+  }, [currentBatchResult, savingBatchItem, settings.hapticsEnabled, showToast, resetCamera]);
+
+  const handleDiscardBatchItem = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    resetCamera();
+  }, [settings.hapticsEnabled, resetCamera]);
+
+  const handleCapture = useCallback(async () => {
+    if (!cameraRef.current) return;
+
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+      });
+
+      if (!photo?.uri) {
+        showToast({ message: 'Failed to capture image.', type: 'error' });
+        return;
+      }
+
+      setCapturedUri(photo.uri);
+      setPhase('analyzing');
+      setAnalysisStepIndex(0);
+
+      // Run AI analysis
+      const scanResult = await dataProvider.quickscanSingle(photo.uri);
 
       // Fire haptic based on confidence
       if (featureFlags.FEATURE_HAPTICS_MICRO_ANIMATIONS) {
@@ -67,53 +210,502 @@ export default function QuickScanScreen() {
         fireHaptic(intent);
       }
 
-      // Navigate to item card in draft mode with scan results
-      router.replace({
-        pathname: '/item/[id]',
-        params: {
-          id: 'draft',
-          draft: '1',
+      if (batchMode) {
+        // In batch mode: show compact overlay result card
+        const item: BatchScannedItem = {
+          id: `batch-${Date.now()}`,
           name: scanResult.prediction.name,
           category: scanResult.attributes.category,
           condition: scanResult.attributes.conditionGuess ?? 'Not graded',
-          value: String(scanResult.prediction.estimatedMid),
-          q10: String(scanResult.prediction.estimatedLow),
-          q50: String(scanResult.prediction.estimatedMid),
-          q90: String(scanResult.prediction.estimatedHigh),
-          confidence: String(Math.round(scanResult.prediction.confidence * 100)),
-          imageUri: imageUri,
-          notes: '',
-        },
-      });
+          estimatedMid: scanResult.prediction.estimatedMid,
+          estimatedLow: scanResult.prediction.estimatedLow,
+          estimatedHigh: scanResult.prediction.estimatedHigh,
+          confidence: scanResult.prediction.confidence,
+          imageUri: photo.uri,
+          saved: false,
+        };
+        setCurrentBatchResult(item);
+        setPhase('batch_result');
+      } else {
+        // Standard mode: navigate to item detail
+        setPhase('done');
+        router.replace({
+          pathname: '/item/[id]',
+          params: {
+            id: 'draft',
+            draft: '1',
+            name: scanResult.prediction.name,
+            category: scanResult.attributes.category,
+            condition: scanResult.attributes.conditionGuess ?? 'Not graded',
+            value: String(scanResult.prediction.estimatedMid),
+            q10: String(scanResult.prediction.estimatedLow),
+            q50: String(scanResult.prediction.estimatedMid),
+            q90: String(scanResult.prediction.estimatedHigh),
+            confidence: String(Math.round(scanResult.prediction.confidence * 100)),
+            imageUri: photo.uri,
+            notes: '',
+          },
+        });
+      }
     } catch (err: unknown) {
       logger.warn('[QuickScan] error:', err);
       if (featureFlags.FEATURE_HAPTICS_MICRO_ANIMATIONS) {
         fireHaptic(HapticIntent.ALERT_TRIGGERED);
       }
-      Alert.alert(
-        'Scan failed',
-        err?.message ?? 'Unable to analyze image. Please try again.',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      showToast({
+        message: (err as Error)?.message ?? 'Unable to analyze image. Please try again.',
+        type: 'error',
+      });
+      // Go back to camera on error
+      setPhase('camera');
+      setCapturedUri(null);
     }
-  }, []);
+  }, [settings.hapticsEnabled, showToast, batchMode]);
 
-  useEffect(() => {
-    runScan();
-  }, [runScan]);
+  const handleCancel = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    // If in batch mode with scanned items, show summary
+    if (batchMode && batchItems.length > 0) {
+      setPhase('batch_summary');
+      return;
+    }
+    router.back();
+  }, [settings.hapticsEnabled, batchMode, batchItems.length]);
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
-        <View style={[styles.loadingCard, { backgroundColor: colors.card }]}>
-          <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={[styles.status, { color: colors.text }]}>{status}</Text>
-          <Text style={[styles.hint, { color: colors.muted }]}>
-            Hold steady for best results
+  const handleBatchDone = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setPhase('batch_summary');
+  }, [settings.hapticsEnabled]);
+
+  const handleFinishBatch = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.back();
+  }, [settings.hapticsEnabled]);
+
+  const toggleBatchMode = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setBatchMode((prev) => !prev);
+    if (batchMode) {
+      // Turning off batch mode -- if items were scanned, show summary
+      if (batchItems.length > 0) {
+        setPhase('batch_summary');
+      }
+    }
+  }, [settings.hapticsEnabled, batchMode, batchItems.length]);
+
+  const savedBatchCount = batchItems.filter((i) => i.saved).length;
+  const totalBatchValue = batchItems
+    .filter((i) => i.saved)
+    .reduce((sum, i) => sum + i.estimatedMid, 0);
+
+  // Permission loading
+  if (!permission) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: '#000' }]}>
+        <ActivityIndicator size="large" color={TIFFANY} />
+      </SafeAreaView>
+    );
+  }
+
+  // Permission denied
+  if (!permission.granted) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.permissionContainer}>
+          <Ionicons name="camera-outline" size={64} color={colors.muted} />
+          <Text style={[styles.permissionTitle, { color: colors.text }]}>
+            Camera Permission Required
+          </Text>
+          <Text style={[styles.permissionText, { color: colors.muted }]}>
+            We need camera access to scan your collectibles with AI.
+          </Text>
+          <AnimatedPressable
+            style={[styles.permissionButton, { backgroundColor: TIFFANY }]}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              requestPermission();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Grant camera permission"
+          >
+            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+          </AnimatedPressable>
+          <AnimatedPressable
+            style={styles.backBtn}
+            onPress={handleCancel}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={[styles.backBtnText, { color: colors.muted }]}>Go Back</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ---- Batch Summary Screen ----
+  if (phase === 'batch_summary') {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle="dark-content" />
+        <View style={styles.summaryHeader}>
+          <Ionicons name="checkmark-circle" size={56} color={TIFFANY} />
+          <Text style={[styles.summaryTitle, { color: colors.text }]}>
+            Batch Scan Complete
+          </Text>
+          <Text style={[styles.summarySubtitle, { color: colors.muted }]}>
+            You scanned {savedBatchCount} item{savedBatchCount !== 1 ? 's' : ''}
+          </Text>
+          {savedBatchCount > 0 && (
+            <View style={[styles.summaryValueBadge, { backgroundColor: TIFFANY + '18' }]}>
+              <Text style={[styles.summaryValueLabel, { color: TIFFANY_DARK }]}>
+                Total estimated value
+              </Text>
+              <Text style={[styles.summaryValueAmount, { color: TIFFANY_DARK }]}>
+                {formatPrice(totalBatchValue, settings.currency)}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <FlatList
+          data={batchItems.filter((i) => i.saved)}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.summaryList}
+          renderItem={({ item }) => (
+            <View style={[styles.summaryItemCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Image
+                source={{ uri: item.imageUri }}
+                style={styles.summaryItemImage}
+                resizeMode="cover"
+              />
+              <View style={styles.summaryItemInfo}>
+                <Text style={[styles.summaryItemName, { color: colors.text }]} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={[styles.summaryItemCategory, { color: colors.muted }]} numberOfLines={1}>
+                  {item.category} -- {item.condition}
+                </Text>
+              </View>
+              <Text style={[styles.summaryItemPrice, { color: TIFFANY_DARK }]}>
+                {formatPrice(item.estimatedMid, settings.currency)}
+              </Text>
+            </View>
+          )}
+          ListEmptyComponent={
+            <View style={styles.summaryEmpty}>
+              <Text style={[styles.summaryEmptyText, { color: colors.muted }]}>
+                No items were saved during this session.
+              </Text>
+            </View>
+          }
+        />
+
+        <View style={styles.summaryBottomBar}>
+          <AnimatedPressable
+            style={[styles.summaryDoneBtn, { backgroundColor: TIFFANY }]}
+            onPress={handleFinishBatch}
+            accessibilityRole="button"
+            accessibilityLabel="Done, go back"
+          >
+            <Text style={styles.summaryDoneBtnText}>Done</Text>
+          </AnimatedPressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ---- Branded Analysis Screen ----
+  if (phase === 'analyzing' && capturedUri) {
+    const currentStep = ANALYSIS_STEPS[analysisStepIndex];
+    const imageHeight = SCREEN_WIDTH * 0.75;
+    const scanLineTranslate = scanLineAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, imageHeight - 4],
+    });
+
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle="light-content" />
+
+        {/* Captured image with scan line */}
+        <View style={[styles.analysisImageContainer, { height: imageHeight }]}>
+          <Image
+            source={{ uri: capturedUri }}
+            style={styles.analysisImage}
+            resizeMode="cover"
+          />
+          {/* Dark tint overlay */}
+          <View style={styles.analysisImageOverlay} />
+          {/* Animated scan line */}
+          <Animated.View
+            style={[
+              styles.scanLine,
+              { transform: [{ translateY: scanLineTranslate }] },
+            ]}
+          />
+          {/* Corner brackets on the image */}
+          <View style={styles.analysisFrameCorners}>
+            <View style={[styles.aCorner, styles.aCornerTL]} />
+            <View style={[styles.aCorner, styles.aCornerTR]} />
+            <View style={[styles.aCorner, styles.aCornerBL]} />
+            <View style={[styles.aCorner, styles.aCornerBR]} />
+          </View>
+        </View>
+
+        {/* Step progress */}
+        <View style={styles.analysisStepsContainer}>
+          {ANALYSIS_STEPS.map((step, idx) => {
+            const isActive = idx === analysisStepIndex;
+            const isDone = idx < analysisStepIndex;
+            const iconColor = isDone
+              ? TIFFANY
+              : isActive
+                ? TIFFANY
+                : colors.muted + '60';
+            const textColor = isDone
+              ? TIFFANY
+              : isActive
+                ? colors.text
+                : colors.muted + '60';
+
+            return (
+              <View key={idx} style={styles.analysisStepRow}>
+                {isDone ? (
+                  <Ionicons name="checkmark-circle" size={22} color={TIFFANY} />
+                ) : (
+                  <Ionicons name={step.icon} size={22} color={iconColor} />
+                )}
+                <Text style={[styles.analysisStepText, { color: textColor }]}>
+                  {step.label}
+                </Text>
+                {isActive && !isDone && (
+                  <ActivityIndicator
+                    size="small"
+                    color={TIFFANY}
+                    style={{ marginLeft: 8 }}
+                  />
+                )}
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Bottom hint */}
+        <View style={styles.analysisBottomHint}>
+          <Text style={[styles.analysisHintText, { color: colors.muted }]}>
+            Hold tight -- this usually takes a few seconds
           </Text>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    );
+  }
+
+  // ---- Camera Viewfinder (also serves as background for batch_result overlay) ----
+  return (
+    <View style={styles.cameraRoot}>
+      <StatusBar barStyle="light-content" />
+      <CameraView
+        ref={cameraRef}
+        style={StyleSheet.absoluteFill}
+        facing="back"
+      >
+        {/* Semi-transparent overlay with cutout */}
+        <View style={styles.overlay}>
+          {/* Top bar */}
+          <SafeAreaView style={styles.topBar} edges={['top']}>
+            <AnimatedPressable
+              onPress={handleCancel}
+              style={styles.cancelBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel and go back"
+            >
+              <Ionicons name="close" size={28} color="#FFFFFF" />
+            </AnimatedPressable>
+            <Text style={styles.topBarTitle}>QuickScan</Text>
+
+            {/* Batch mode toggle pill */}
+            <AnimatedPressable
+              onPress={toggleBatchMode}
+              style={[
+                styles.batchPill,
+                batchMode
+                  ? { backgroundColor: TIFFANY }
+                  : { backgroundColor: 'rgba(255,255,255,0.2)' },
+              ]}
+              accessibilityRole="switch"
+              accessibilityLabel={`Batch mode ${batchMode ? 'on' : 'off'}`}
+              accessibilityState={{ checked: batchMode }}
+            >
+              <Ionicons
+                name="layers-outline"
+                size={16}
+                color={batchMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)'}
+              />
+              <Text
+                style={[
+                  styles.batchPillText,
+                  { color: batchMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)' },
+                ]}
+              >
+                Batch
+              </Text>
+            </AnimatedPressable>
+          </SafeAreaView>
+
+          {/* Batch counter badge */}
+          {batchMode && savedBatchCount > 0 && (
+            <View style={styles.batchCounterRow}>
+              <View style={[styles.batchCounterBadge, { backgroundColor: TIFFANY }]}>
+                <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
+                <Text style={styles.batchCounterText}>
+                  {savedBatchCount} item{savedBatchCount !== 1 ? 's' : ''} scanned
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Center area: dark edges + clear frame */}
+          <View style={styles.centerRow}>
+            <View style={styles.overlayFill} />
+            <View style={styles.frameCutout}>
+              {/* Corner brackets */}
+              <View style={[styles.corner, styles.cornerTL]} />
+              <View style={[styles.corner, styles.cornerTR]} />
+              <View style={[styles.corner, styles.cornerBL]} />
+              <View style={[styles.corner, styles.cornerBR]} />
+            </View>
+            <View style={styles.overlayFill} />
+          </View>
+
+          {/* Hint text below frame */}
+          <View style={styles.hintArea}>
+            <Text style={styles.hintText}>
+              {batchMode ? 'Batch mode -- scan multiple items' : 'Point at your collectible'}
+            </Text>
+          </View>
+
+          {/* Bottom: capture button + batch done */}
+          <View style={styles.bottomBar}>
+            {batchMode && savedBatchCount > 0 && phase === 'camera' && (
+              <AnimatedPressable
+                onPress={handleBatchDone}
+                style={[styles.batchDoneBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+                accessibilityRole="button"
+                accessibilityLabel="Finish batch scanning"
+              >
+                <Text style={styles.batchDoneBtnText}>
+                  Done ({savedBatchCount})
+                </Text>
+              </AnimatedPressable>
+            )}
+            <AnimatedPressable
+              onPress={phase === 'camera' ? handleCapture : undefined}
+              style={[
+                styles.captureBtn,
+                phase !== 'camera' && { opacity: 0.5 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Take photo"
+              disabled={phase !== 'camera'}
+            >
+              <View style={styles.captureBtnInner}>
+                <Ionicons name="camera" size={32} color="#FFFFFF" />
+              </View>
+            </AnimatedPressable>
+          </View>
+
+          {/* Batch result overlay card -- slides up from bottom */}
+          {phase === 'batch_result' && currentBatchResult && (
+            <Animated.View
+              style={[
+                styles.batchOverlay,
+                {
+                  transform: [
+                    {
+                      translateY: batchOverlayAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [250, 0],
+                      }),
+                    },
+                  ],
+                  opacity: batchOverlayAnim,
+                },
+              ]}
+            >
+              <View style={[styles.batchOverlayCard, { backgroundColor: colors.card }]}>
+                <View style={styles.batchOverlayHandle} />
+                <View style={styles.batchOverlayContent}>
+                  <Image
+                    source={{ uri: currentBatchResult.imageUri }}
+                    style={styles.batchOverlayImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.batchOverlayInfo}>
+                    <Text
+                      style={[styles.batchOverlayName, { color: colors.text }]}
+                      numberOfLines={2}
+                    >
+                      {currentBatchResult.name}
+                    </Text>
+                    <Text
+                      style={[styles.batchOverlayCategory, { color: colors.muted }]}
+                      numberOfLines={1}
+                    >
+                      {currentBatchResult.category} -- {currentBatchResult.condition}
+                    </Text>
+                    <Text style={[styles.batchOverlayPrice, { color: TIFFANY_DARK }]}>
+                      {formatPrice(currentBatchResult.estimatedMid, settings.currency)}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.batchOverlayButtons}>
+                  <AnimatedPressable
+                    onPress={handleDiscardBatchItem}
+                    style={[styles.batchOverlayBtn, styles.batchDiscardBtn, { borderColor: colors.border }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Discard this item"
+                  >
+                    <Ionicons name="close-circle-outline" size={20} color={colors.muted} />
+                    <Text style={[styles.batchOverlayBtnText, { color: colors.muted }]}>
+                      Discard
+                    </Text>
+                  </AnimatedPressable>
+
+                  <AnimatedPressable
+                    onPress={handleSaveBatchItem}
+                    style={[styles.batchOverlayBtn, styles.batchSaveBtn, { backgroundColor: TIFFANY }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Save item and scan next"
+                    disabled={savingBatchItem}
+                  >
+                    {savingBatchItem ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+                        <Text style={[styles.batchOverlayBtnText, { color: '#FFFFFF' }]}>
+                          Save & Next
+                        </Text>
+                      </>
+                    )}
+                  </AnimatedPressable>
+                </View>
+              </View>
+            </Animated.View>
+          )}
+        </View>
+      </CameraView>
+    </View>
+  );
+}
+
+export default function QuickScanScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Quick Scan">
+      <QuickScanScreen />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -121,32 +713,476 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
+
+  // ---- Permission Screen ----
+  permissionContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  loadingCard: {
     padding: 32,
-    borderRadius: 20,
-    alignItems: 'center',
-    gap: 16,
-    width: '100%',
-    maxWidth: 280,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
   },
-  status: {
+  permissionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  permissionText: {
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  permissionButton: {
+    paddingHorizontal: 28,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  permissionButtonText: {
     fontSize: 17,
     fontWeight: '600',
-    textAlign: 'center',
+    color: '#FFFFFF',
   },
-  hint: {
+  backBtn: {
+    marginTop: 16,
+    padding: 8,
+  },
+  backBtnText: {
+    fontSize: 15,
+  },
+
+  // ---- Camera Viewfinder ----
+  cameraRoot: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  overlay: {
+    flex: 1,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  cancelBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topBarTitle: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+
+  // ---- Batch Mode Toggle ----
+  batchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  batchPillText: {
     fontSize: 13,
-    textAlign: 'center',
+    fontWeight: '600',
+  },
+
+  // ---- Batch Counter Badge ----
+  batchCounterRow: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  batchCounterBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  batchCounterText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  centerRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  overlayFill: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  frameCutout: {
+    width: FRAME_SIZE,
+    height: FRAME_SIZE,
+    borderRadius: CORNER_RADIUS,
+    position: 'relative',
+    // Transparent center -- the camera shows through here
+  },
+  corner: {
+    position: 'absolute',
+    width: CORNER_LENGTH,
+    height: CORNER_LENGTH,
+    borderColor: TIFFANY,
+  },
+  cornerTL: {
+    top: 0,
+    left: 0,
+    borderTopWidth: CORNER_THICKNESS,
+    borderLeftWidth: CORNER_THICKNESS,
+    borderTopLeftRadius: CORNER_RADIUS,
+  },
+  cornerTR: {
+    top: 0,
+    right: 0,
+    borderTopWidth: CORNER_THICKNESS,
+    borderRightWidth: CORNER_THICKNESS,
+    borderTopRightRadius: CORNER_RADIUS,
+  },
+  cornerBL: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: CORNER_THICKNESS,
+    borderLeftWidth: CORNER_THICKNESS,
+    borderBottomLeftRadius: CORNER_RADIUS,
+  },
+  cornerBR: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: CORNER_THICKNESS,
+    borderRightWidth: CORNER_THICKNESS,
+    borderBottomRightRadius: CORNER_RADIUS,
+  },
+  hintArea: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  hintText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+    opacity: 0.9,
+  },
+  bottomBar: {
+    alignItems: 'center',
+    paddingBottom: 48,
+    paddingTop: 16,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  captureBtn: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: TIFFANY,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Outer ring effect
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  captureBtnInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: TIFFANY,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ---- Batch Done Button ----
+  batchDoneBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  batchDoneBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  // ---- Batch Result Overlay ----
+  batchOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  batchOverlayCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingBottom: 36,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 8,
+  },
+  batchOverlayHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  batchOverlayContent: {
+    flexDirection: 'row',
+    gap: 14,
+    marginBottom: 16,
+  },
+  batchOverlayImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: '#E2E8F0',
+  },
+  batchOverlayInfo: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 3,
+  },
+  batchOverlayName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  batchOverlayCategory: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  batchOverlayPrice: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  batchOverlayButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  batchOverlayBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  batchDiscardBtn: {
+    borderWidth: 1,
+  },
+  batchSaveBtn: {
+    // backgroundColor set inline
+  },
+  batchOverlayBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  // ---- Batch Summary Screen ----
+  summaryHeader: {
+    alignItems: 'center',
+    paddingTop: 40,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  summaryTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: 12,
+  },
+  summarySubtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+  },
+  summaryValueBadge: {
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
+    alignItems: 'center',
+    gap: 4,
+  },
+  summaryValueLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  summaryValueAmount: {
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  summaryList: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+    gap: 10,
+  },
+  summaryItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+  },
+  summaryItemImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#E2E8F0',
+  },
+  summaryItemInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  summaryItemName: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  summaryItemCategory: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  summaryItemPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  summaryEmpty: {
+    alignItems: 'center',
+    paddingTop: 40,
+  },
+  summaryEmptyText: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  summaryBottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 16,
+  },
+  summaryDoneBtn: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderRadius: 14,
+  },
+  summaryDoneBtnText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+
+  // ---- Branded Analysis Screen ----
+  analysisImageContainer: {
+    width: '100%',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  analysisImage: {
+    width: '100%',
+    height: '100%',
+  },
+  analysisImageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  scanLine: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    height: 3,
+    backgroundColor: TIFFANY,
+    borderRadius: 2,
+    shadowColor: TIFFANY,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  analysisFrameCorners: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    bottom: 20,
+  },
+  aCorner: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderColor: TIFFANY,
+  },
+  aCornerTL: {
+    top: 0,
+    left: 0,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderTopLeftRadius: 10,
+  },
+  aCornerTR: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderTopRightRadius: 10,
+  },
+  aCornerBL: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    borderBottomLeftRadius: 10,
+  },
+  aCornerBR: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    borderBottomRightRadius: 10,
+  },
+  analysisStepsContainer: {
+    paddingHorizontal: 32,
+    paddingTop: 36,
+    gap: 20,
+  },
+  analysisStepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  analysisStepText: {
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+  analysisBottomHint: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 48,
+  },
+  analysisHintText: {
+    fontSize: 13,
+    fontWeight: '400',
   },
 });

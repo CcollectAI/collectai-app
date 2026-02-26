@@ -19,22 +19,10 @@ from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.db_helpers import get_db_pool
 
 router = APIRouter(prefix="/collections", tags=["collections"])
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# DB helper
-# ---------------------------------------------------------------------------
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except (ImportError, RuntimeError, OSError):
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +102,7 @@ async def list_collections(
     offset: int = Query(default=0, ge=0),
 ):
     """List all available collections, optionally filtered by category."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -174,7 +162,7 @@ async def get_user_progress(
     user_id: str = Depends(get_current_user_id),
 ):
     """Get the authenticated user's set completion progress."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -264,9 +252,11 @@ async def get_user_progress(
 async def get_collection_detail(
     collection_id: str,
     user_id: str = Depends(get_current_user_id),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
 ):
     """Get a specific collection with its items and user ownership status."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -305,8 +295,9 @@ async def get_collection_detail(
                             AND uco.user_id = $1
                         WHERE ci.collection_id = $2
                         ORDER BY ci.sequence_number ASC NULLS LAST, ci2.title ASC
+                        LIMIT $3 OFFSET $4
                         """,
-                        uid, cid,
+                        uid, cid, limit, offset,
                     )
                 else:
                     item_rows = await conn.fetch(
@@ -321,8 +312,9 @@ async def get_collection_detail(
                         JOIN public.category_items ci2 ON ci2.id = ci.category_item_id
                         WHERE ci.collection_id = $1
                         ORDER BY ci.sequence_number ASC NULLS LAST, ci2.title ASC
+                        LIMIT $2 OFFSET $3
                         """,
-                        cid,
+                        cid, limit, offset,
                     )
 
                 items = [
@@ -356,7 +348,7 @@ async def get_collection_progress(
     user_id: str = Depends(get_current_user_id),
 ):
     """Get user's completion progress for a specific collection, including missing items."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:

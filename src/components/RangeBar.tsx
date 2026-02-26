@@ -7,16 +7,17 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { PriceBand, ConfidenceTier, getConfidenceColor } from '@/types/priceExplanation';
+import type { CurrencyCode } from '@/data/types';
 
 type RangeBarProps = {
   priceBand: PriceBand;
   confidenceTier: ConfidenceTier;
-  currency?: string;
+  currency?: CurrencyCode;
   showLabels?: boolean;
   size?: 'small' | 'medium' | 'large';
 };
 
-function formatPrice(value: number, currency: string = 'EUR'): string {
+function formatPrice(value: number, currency: CurrencyCode = 'EUR'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,

@@ -103,7 +103,7 @@ class TestPresignUpload:
             "filename": "test.jpg",
         })
         assert resp.status_code == 400
-        assert "Invalid object_type" in resp.json()["detail"]
+        assert "Invalid object_type" in resp.json()["detail"]["message"]
 
     def test_invalid_content_type_returns_400(self):
         """An unsupported MIME content_type should return 400."""
@@ -113,7 +113,7 @@ class TestPresignUpload:
             "filename": "test.bin",
         })
         assert resp.status_code == 400
-        assert "Unsupported content_type" in resp.json()["detail"]
+        assert "Unsupported content_type" in resp.json()["detail"]["message"]
 
     def test_missing_filename_returns_422(self):
         """Missing filename in the body triggers 422."""
@@ -140,7 +140,7 @@ class TestPresignUpload:
                 "filename": "test.jpg",
             })
         assert resp.status_code == 503
-        assert "S3" in resp.json()["detail"]
+        assert "S3" in resp.json()["detail"]["message"]
 
     def test_all_allowed_object_types_accepted(self):
         """All five allowed object_type values should be accepted."""
@@ -279,7 +279,7 @@ class TestPresignDownload:
             resp = client.get(f"/storage/presign-download/{POINTER_ID}")
 
         assert resp.status_code == 404
-        assert "not found" in resp.json()["detail"].lower()
+        assert "not found" in resp.json()["detail"]["message"].lower()
 
     def test_download_cdn_url_preferred(self):
         """When CDN is configured, return CDN URL instead of presigned URL."""
@@ -307,7 +307,7 @@ class TestPresignDownload:
         with patch("app.features.storage_router.db_configured", return_value=True):
             resp = client.get("/storage/presign-download/not-a-uuid")
         assert resp.status_code == 400
-        assert "Invalid pointer ID" in resp.json()["detail"]
+        assert "Invalid pointer ID" in resp.json()["detail"]["message"]
 
     def test_download_db_not_configured_returns_503(self):
         """When DB is not configured, presign-download returns 503."""
@@ -352,14 +352,14 @@ class TestDeleteObject:
             resp = client.delete(f"/storage/objects/{POINTER_ID}")
 
         assert resp.status_code == 404
-        assert "not found" in resp.json()["detail"].lower()
+        assert "not found" in resp.json()["detail"]["message"].lower()
 
     def test_delete_invalid_pointer_id_returns_400(self):
         """A non-UUID pointer_id returns 400."""
         with patch("app.features.storage_router.db_configured", return_value=True):
             resp = client.delete("/storage/objects/not-a-uuid")
         assert resp.status_code == 400
-        assert "Invalid pointer ID" in resp.json()["detail"]
+        assert "Invalid pointer ID" in resp.json()["detail"]["message"]
 
     def test_delete_db_not_configured_returns_503(self):
         """When DB is not configured, delete returns 503."""

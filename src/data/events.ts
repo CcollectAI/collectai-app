@@ -60,6 +60,9 @@ export type CreateEventInput = {
   latitude?: number;
   longitude?: number;
   maxAttendees?: number;
+  // Sponsor fields
+  sponsorCompanyId?: string;
+  sponsorTier?: SponsorTier;
 };
 
 export type EventTemplate = {
@@ -145,5 +148,21 @@ export const EVENTS: CollectorsEvent[] = [
     categoryId: 'warhammer',
     hostUserId: 'collector-mini',
     attendeeIds: ['collector-aurora'],
+  },
+  {
+    id: 'event-sponsor-demo-1',
+    title: 'CollectAI Launch Party — Sponsored Showcase',
+    kind: 'meetup',
+    date: '2026-03-15',
+    time: '18:00 CET',
+    location: 'Amsterdam, Netherlands - Felix Meritis',
+    description:
+      'Demo sponsored event showcasing premium features. Browse exclusive items, meet fellow collectors, and explore sponsored highlights.',
+    categoryId: 'pokemon',
+    hostUserId: 'collector-aurora',
+    attendeeIds: ['collector-aurora', 'collector-rune', 'collector-mini'],
+    isSponsored: true,
+    sponsorName: 'CollectAI Demo Sponsor',
+    sponsorCompanyId: 'sponsor-demo-1',
   },
 ];

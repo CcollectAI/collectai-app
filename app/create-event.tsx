@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   SafeAreaView,
   ScrollView,
@@ -20,7 +21,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Switch,
   Animated,
   Modal,
@@ -28,7 +28,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { dataProvider } from '@/data';
 import type { EventKind, CreateEventInput, EventTemplate } from '@/data/events';
 import { CATEGORIES } from '@/constants/categories';
@@ -40,6 +40,7 @@ import { useFormField, validateAll } from '@/hooks/useFormField';
 import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
 import CompactSelect from '@/components/CompactSelect';
 import logger from '@/utils/logger';
+import { useToast } from '@/components/Toast';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -76,9 +77,12 @@ const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ion
 
 const CreateEventScreen: React.FC = () => {
   const router = useRouter();
+  const params = useLocalSearchParams<{ sponsorCompanyId?: string }>();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { showToast } = useToast();
+  const isSponsored = !!params.sponsorCompanyId;
 
   /* ---- form state ---- */
   const titleField = useFormField(compose(required('Title'), maxLength('Title', 255)));
@@ -93,6 +97,9 @@ const CreateEventScreen: React.FC = () => {
   const imageUrlField = useFormField(url('Image URL'));
   const descriptionField = useFormField(compose(required('Description'), maxLength('Description', 2000)));
   const [isPublic, setIsPublic] = useState(true);
+
+  /* ---- detail input draft ---- */
+  const [detailDraft, setDetailDraft] = useState('');
 
   /* ---- geolocation state ---- */
   const [latitude, setLatitude] = useState<number | undefined>(undefined);
@@ -146,7 +153,7 @@ const CreateEventScreen: React.FC = () => {
 
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Location permission is required to use this feature.');
+        showToast({ message: 'Location permission is required to use this feature.', type: 'warning' });
         return;
       }
 
@@ -171,7 +178,7 @@ const CreateEventScreen: React.FC = () => {
       }
     } catch (err: unknown) {
       logger.warn('[CreateEvent] geolocation error:', err);
-      Alert.alert('Location Error', 'Could not retrieve your location. Please enter it manually.');
+      showToast({ message: 'Could not retrieve your location. Please enter it manually.', type: 'error' });
     } finally {
       setGeoLoading(false);
     }
@@ -200,6 +207,7 @@ const CreateEventScreen: React.FC = () => {
         ...(imageUrlField.value.trim() ? { imageUrl: imageUrlField.value.trim() } : {}),
         ...(latitude !== undefined ? { latitude } : {}),
         ...(longitude !== undefined ? { longitude } : {}),
+        ...(params.sponsorCompanyId ? { sponsorCompanyId: params.sponsorCompanyId, sponsorTier: 'featured' as const } : {}),
       };
 
       const created = await dataProvider.createEvent(input);
@@ -216,7 +224,7 @@ const CreateEventScreen: React.FC = () => {
       router.back();
     } catch (err: unknown) {
       logger.warn('[CreateEvent] error:', err);
-      Alert.alert('Error', err?.message || 'Failed to create event. Please try again.');
+      showToast({ message: err?.message || 'Failed to create event. Please try again.', type: 'error' });
     } finally {
       setSaveState('idle');
     }
@@ -239,9 +247,21 @@ const CreateEventScreen: React.FC = () => {
           <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Create Event</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            {isSponsored ? 'Create Sponsored Event' : 'Create Event'}
+          </Text>
           <View style={{ width: 32 }} />
         </View>
+
+        {/* Sponsored badge */}
+        {isSponsored && (
+          <View style={[styles.sponsoredBanner, { backgroundColor: colors.accent + '12' }]}>
+            <Ionicons name="megaphone-outline" size={16} color={colors.accent} />
+            <Text style={[styles.sponsoredBannerText, { color: colors.accent }]}>
+              This event will be marked as sponsored and highlighted to collectors.
+            </Text>
+          </View>
+        )}
 
         {/* Template picker modal */}
         <Modal visible={templateSheetOpen} animationType="slide" transparent>
@@ -580,19 +600,62 @@ const CreateEventScreen: React.FC = () => {
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>
                   Description <Text style={{ color: colors.accent }}>*</Text>
                 </Text>
-                <View style={[styles.inputWrapMultiline, { borderColor: descriptionField.touched && descriptionField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                {/* Existing description lines as bullet points */}
+                {descriptionField.value.trim().length > 0 && (
+                  <View style={styles.bulletList}>
+                    {descriptionField.value.split('\n').filter(Boolean).map((line, idx) => (
+                      <View key={idx} style={styles.bulletRow}>
+                        <Text style={[styles.bulletDot, { color: colors.accent }]}>{'\u2022'}</Text>
+                        <Text style={[styles.bulletText, { color: colors.text }]}>{line.replace(/^[\u2022\-\*]\s*/, '')}</Text>
+                        <AnimatedPressable
+                          onPress={() => {
+                            const lines = descriptionField.value.split('\n').filter(Boolean);
+                            lines.splice(idx, 1);
+                            descriptionField.onChange(lines.join('\n'));
+                          }}
+                          style={styles.bulletRemove}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove detail: ${line}`}
+                        >
+                          <Ionicons name="close-circle" size={16} color={colors.muted} />
+                        </AnimatedPressable>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                {/* WhatsApp-style add detail input */}
+                <View style={[styles.detailInputRow, { borderColor: descriptionField.touched && descriptionField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
                   <TextInput
-                    value={descriptionField.value}
-                    onChangeText={descriptionField.onChange}
-                    onBlur={descriptionField.onBlur}
-                    multiline
-                    numberOfLines={4}
-                    placeholder="What should attendees know about this event?"
+                    value={detailDraft}
+                    onChangeText={setDetailDraft}
+                    placeholder="Add a detail..."
                     placeholderTextColor={colors.muted}
-                    style={[styles.inputMultiline, { color: colors.text }]}
-                    textAlignVertical="top"
-                    accessibilityLabel="Event description"
+                    style={[styles.detailInput, { color: colors.text }]}
+                    returnKeyType="send"
+                    onSubmitEditing={() => {
+                      const draft = detailDraft.trim();
+                      if (!draft) return;
+                      const current = descriptionField.value.trim();
+                      descriptionField.onChange(current ? `${current}\n${draft}` : draft);
+                      setDetailDraft('');
+                    }}
+                    accessibilityLabel="Add event detail"
                   />
+                  <AnimatedPressable
+                    onPress={() => {
+                      const draft = detailDraft.trim();
+                      if (!draft) return;
+                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                      const current = descriptionField.value.trim();
+                      descriptionField.onChange(current ? `${current}\n${draft}` : draft);
+                      setDetailDraft('');
+                    }}
+                    style={[styles.detailSendBtn, { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add detail to description"
+                  >
+                    <Ionicons name="arrow-up" size={18} color="#fff" />
+                  </AnimatedPressable>
                 </View>
                 {descriptionField.touched && descriptionField.error && <Text style={styles.fieldError}>{descriptionField.error}</Text>}
               </View>
@@ -802,6 +865,18 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
   },
+  sponsoredBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  sponsoredBannerText: {
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+  },
   scroll: {
     flex: 1,
   },
@@ -976,6 +1051,51 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
+  /* Bullet-point description */
+  bulletList: {
+    marginBottom: 10,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 4,
+    gap: 6,
+  },
+  bulletDot: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '700',
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  bulletRemove: {
+    padding: 2,
+  },
+  detailInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 24,
+    paddingLeft: 14,
+    paddingRight: 4,
+    height: 44,
+  },
+  detailInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  detailSendBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   /* From Template button */
   fromTemplateBtn: {
     flexDirection: 'row',
@@ -1032,4 +1152,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CreateEventScreen;
+export default function CreateEventScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Create Event">
+      <CreateEventScreen />
+    </ScreenErrorBoundary>
+  );
+}

@@ -1,6 +1,21 @@
 import type { Currency, NumberLocale, Settings } from './settings';
 import { convertEUR } from './fx';
 
+/** Map currency code to its symbol for inline display. */
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  EUR: '€',
+  USD: '$',
+  GBP: '£',
+  JPY: '¥',
+  KRW: '₩',
+  AUD: 'A$',
+  CAD: 'C$',
+};
+
+export function getCurrencySymbol(currency: Currency): string {
+  return CURRENCY_SYMBOLS[currency] ?? currency;
+}
+
 /** Locale lookup for each currency */
 const CURRENCY_LOCALE: Record<Currency, NumberLocale> = {
   EUR: 'de-DE',

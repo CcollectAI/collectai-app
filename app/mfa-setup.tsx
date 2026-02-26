@@ -7,6 +7,7 @@
  * - supabase.auth.mfa.unenroll() — remove factor
  */
 
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -23,6 +24,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { AnimatedPressable } from '@/motion';
+import { useToast } from '@/components/Toast';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 
@@ -42,9 +44,10 @@ type MFAFactor = {
   status: string;
 };
 
-export default function MFASetupScreen() {
+function MFASetupScreen() {
   const router = useRouter();
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [factors, setFactors] = useState<MFAFactor[]>([]);
   const [enrolling, setEnrolling] = useState(false);
@@ -84,7 +87,7 @@ export default function MFASetupScreen() {
       setQrUri(data.totp.qr_code);
       setFactorId(data.id);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to start MFA enrollment.');
+      showToast({ message: e instanceof Error ? e.message : 'Failed to start MFA enrollment.', type: 'error' });
     } finally {
       setEnrolling(false);
     }
@@ -92,7 +95,7 @@ export default function MFASetupScreen() {
 
   async function handleVerify() {
     if (!factorId || totpCode.length !== 6) {
-      Alert.alert('Invalid code', 'Please enter the 6-digit code from your authenticator app.');
+      showToast({ message: 'Please enter the 6-digit code from your authenticator app.', type: 'warning' });
       return;
     }
 
@@ -111,13 +114,13 @@ export default function MFASetupScreen() {
       });
       if (verifyError) throw verifyError;
 
-      Alert.alert('Success', 'Two-factor authentication has been enabled.');
+      showToast({ message: 'Two-factor authentication has been enabled.', type: 'success' });
       setQrUri(null);
       setFactorId(null);
       setTotpCode('');
       await loadFactors();
     } catch (e: unknown) {
-      Alert.alert('Verification failed', e instanceof Error ? e.message : 'Invalid code. Please try again.');
+      showToast({ message: e instanceof Error ? e.message : 'Invalid code. Please try again.', type: 'error' });
     } finally {
       setVerifying(false);
     }
@@ -136,10 +139,10 @@ export default function MFASetupScreen() {
             try {
               const { error } = await supabase.auth.mfa.unenroll({ factorId: fId });
               if (error) throw error;
-              Alert.alert('Disabled', 'Two-factor authentication has been removed.');
+              showToast({ message: 'Two-factor authentication has been removed.', type: 'success' });
               await loadFactors();
             } catch (e: unknown) {
-              Alert.alert('Error', e instanceof Error ? e.message : 'Failed to disable 2FA.');
+              showToast({ message: e instanceof Error ? e.message : 'Failed to disable 2FA.', type: 'error' });
             }
           },
         },
@@ -268,6 +271,14 @@ export default function MFASetupScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+export default function MFASetupScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="MFA Setup">
+      <MFASetupScreen />
+    </ScreenErrorBoundary>
   );
 }
 

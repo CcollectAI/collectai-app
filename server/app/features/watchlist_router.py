@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.features.pagination import pagination_params
+from app.lib.db_helpers import get_db_pool
 
 import logging
 
@@ -43,23 +44,13 @@ class WatchlistResponse(BaseModel):
 _WATCHLIST: dict[str, list[WatchlistItem]] = {}
 
 
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except Exception as e:
-        logger.debug("DB pool not available: %s", e)
-        return None
-
-
 @router.get("/mine", response_model=WatchlistResponse)
 async def get_my_watchlist(
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
 ) -> WatchlistResponse:
     limit, offset = pagination
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -100,7 +91,7 @@ async def get_my_watchlist(
 
 @router.post("/mine", response_model=WatchlistItem)
 async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_current_user_id)) -> WatchlistItem:
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     item = WatchlistItem(
         user_id=user_id,
@@ -137,7 +128,7 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
 
 @router.delete("/mine/{watch_id}", response_model=WatchlistResponse)
 async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_current_user_id)) -> WatchlistResponse:
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:

@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -90,6 +92,7 @@ const SearchStatusScreen: React.FC = () => {
           <SearchStatusPanel items={items} />
         )}
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 };
@@ -126,4 +129,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SearchStatusScreen;
+export default function SearchStatusScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Search Status">
+      <SearchStatusScreen />
+    </ScreenErrorBoundary>
+  );
+}

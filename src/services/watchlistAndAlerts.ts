@@ -11,6 +11,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import type { CurrencyCode } from '@/data/types';
 
 export type WatchlistPriority = 'high' | 'medium' | 'low';
 
@@ -24,7 +25,7 @@ export type WatchlistItem = {
   priority: WatchlistPriority;
   owned: boolean;
   target_price: number | null;
-  currency: string;
+  currency: CurrencyCode;
   created_at: string;
   updated_at: string;
 };
@@ -38,7 +39,7 @@ export type AlertRow = {
   watchlist_item_id: string | null;
   direction: AlertDirection;
   threshold: number;
-  currency: string;
+  currency: CurrencyCode;
   active: boolean;
   last_triggered_at: string | null;
   created_at: string;
@@ -75,7 +76,7 @@ export type UpsertWatchlistPayload = {
   priority?: WatchlistPriority;
   owned?: boolean;
   target_price?: number | null;
-  currency?: string;
+  currency?: CurrencyCode;
 };
 
 export async function upsertWatchlistItem(
@@ -158,7 +159,7 @@ export type CreateAlertPayload = {
   watchlist_item_id?: string | null;
   direction: AlertDirection;
   threshold: number;
-  currency?: string;
+  currency?: CurrencyCode;
 };
 
 export async function createAlert(

@@ -16,6 +16,7 @@ from functools import lru_cache
 from typing import Any
 
 from app.config import MODEL_CANARY_TRAFFIC_PCT as CANARY_TRAFFIC_PCT, ML_MODELS_S3_BUCKET, AWS_REGION
+from app.lib.db_helpers import get_db_pool
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +30,6 @@ except ImportError:
     logger.warning("boto3 not installed; S3 model loading disabled")
 
 
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except Exception as e:
-        logger.debug(f"DB pool not available: {e}")
-        return None
-
-
 async def _fetch_model_registry_entry(
     category: str,
     is_canary: bool = False,
@@ -48,7 +39,7 @@ async def _fetch_model_registry_entry(
     If is_canary=True, fetches the canary model instead.
     Returns the row as a dict, or None if not found.
     """
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if not pool:
         return None
 

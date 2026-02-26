@@ -69,7 +69,7 @@ class TestFeedbackSubmitOwnership:
         # fetchrow (INSERT RETURNING id) returns the new feedback row
         mock_conn.fetchrow = AsyncMock(return_value={"id": feedback_id})
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/submit", json={
                 "item_id": VALID_ITEM_ID,
                 "feedback_type": "sale_price",
@@ -94,7 +94,7 @@ class TestFeedbackSubmitOwnership:
         mock_pool, mock_conn = _mock_pool_with_conn()
         mock_conn.fetchval = AsyncMock(return_value=None)
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/submit", json={
                 "item_id": VALID_ITEM_ID,
                 "feedback_type": "disagree",
@@ -110,7 +110,7 @@ class TestFeedbackSubmitOwnership:
         mock_conn.fetchrow = AsyncMock(return_value={"id": feedback_id})
         mock_conn.execute = AsyncMock()
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/submit", json={
                 "item_id": VALID_ITEM_ID,
                 "feedback_type": "sale_price",
@@ -128,7 +128,7 @@ class TestFeedbackSubmitOwnership:
         mock_conn.fetchval = AsyncMock(return_value=1)
         mock_conn.fetchrow = AsyncMock(return_value={"id": str(uuid4())})
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/submit", json={
                 "item_id": VALID_ITEM_ID,
                 "feedback_type": "accurate",
@@ -144,7 +144,7 @@ class TestFeedbackSubmitOwnership:
         mock_conn.fetchval = AsyncMock(return_value=1)
         mock_conn.fetchrow = AsyncMock(return_value={"id": str(uuid4())})
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/submit", json={
                 "item_id": VALID_ITEM_ID,
                 "feedback_type": "sale_price",
@@ -163,7 +163,7 @@ class TestFeedbackSubmitOwnership:
         mock_conn.fetchval = AsyncMock(return_value=1)
         mock_conn.fetchrow = AsyncMock(return_value={"id": str(uuid4())})
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/submit", json={
                 "item_id": VALID_ITEM_ID,
                 "feedback_type": "disagree",
@@ -200,7 +200,7 @@ class TestListCorrectionsScoped:
         ]
         mock_conn.fetch = AsyncMock(return_value=rows)
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.get("/feedback/corrections")
 
         assert resp.status_code == 200
@@ -217,7 +217,7 @@ class TestListCorrectionsScoped:
 
     def test_corrections_empty_when_no_pool(self):
         """When pool is None (DB unavailable), return empty list."""
-        with patch("app.features.feedback_router._get_db_pool", return_value=None):
+        with patch("app.features.feedback_router.get_db_pool", return_value=None):
             resp = client.get("/feedback/corrections")
 
         assert resp.status_code == 200
@@ -228,7 +228,7 @@ class TestListCorrectionsScoped:
         mock_pool, mock_conn = _mock_pool_with_conn()
         mock_conn.fetch = AsyncMock(return_value=[])
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.get("/feedback/corrections?limit=10&offset=5")
 
         assert resp.status_code == 200
@@ -255,7 +255,7 @@ class TestListCorrectionsScoped:
         ]
         mock_conn.fetch = AsyncMock(return_value=rows)
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.get("/feedback/corrections")
 
         assert resp.status_code == 200
@@ -278,7 +278,7 @@ class TestCorrectionWithOwnership:
         mock_conn.execute = AsyncMock(return_value="UPDATE 1")
         mock_conn.fetchrow = AsyncMock(return_value={"category": "yugioh"})
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
                 "corrected_category": "pokemon",
@@ -301,7 +301,7 @@ class TestCorrectionWithOwnership:
         mock_pool, mock_conn = _mock_pool_with_conn()
         mock_conn.execute = AsyncMock(return_value="UPDATE 0")
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
                 "corrected_price": 99.99,
@@ -313,7 +313,7 @@ class TestCorrectionWithOwnership:
         """When no corrected fields are provided, return 400."""
         mock_pool, mock_conn = _mock_pool_with_conn()
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
             })
@@ -325,7 +325,7 @@ class TestCorrectionWithOwnership:
         mock_pool, mock_conn = _mock_pool_with_conn()
         mock_conn.execute = AsyncMock(return_value="UPDATE 1")
 
-        with patch("app.features.feedback_router._get_db_pool", return_value=mock_pool):
+        with patch("app.features.feedback_router.get_db_pool", return_value=mock_pool):
             resp = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
                 "corrected_price": 150.00,
@@ -342,7 +342,7 @@ class TestCorrectionWithOwnership:
 
     def test_correction_offline_mode(self):
         """When pool is None, return offline success without DB interaction."""
-        with patch("app.features.feedback_router._get_db_pool", return_value=None):
+        with patch("app.features.feedback_router.get_db_pool", return_value=None):
             resp = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
                 "corrected_price": 42.00,

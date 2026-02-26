@@ -258,8 +258,11 @@ async def create_checkout_session(
             metadata={"user_id": user_id, "plan": plan},
         )
         return JSONResponse({"url": session.url, "session_id": session.id})
+    except stripe_mod.error.StripeError as exc:
+        _log.exception("Stripe API error during checkout session creation: %s", exc)
+        raise error_response(502, "Payment provider error")
     except Exception as exc:
-        _log.exception("Stripe checkout session creation failed")
+        _log.exception("Unexpected error during checkout session creation")
         raise error_response(500, "Failed to create checkout session")
 
 
@@ -291,8 +294,11 @@ async def create_portal_session(
             return_url="collectai://settings",
         )
         return JSONResponse({"url": session.url})
+    except stripe_mod.error.StripeError as exc:
+        _log.exception("Stripe API error during portal session creation: %s", exc)
+        raise error_response(502, "Payment provider error")
     except Exception as exc:
-        _log.exception("Stripe portal session creation failed")
+        _log.exception("Unexpected error during portal session creation")
         raise error_response(500, "Failed to create portal session")
 
 
@@ -349,14 +355,14 @@ async def stripe_webhook(
             payload, stripe_signature, STRIPE_WEBHOOK_SECRET
         )
     except ValueError:
-        _log.warning("Invalid Stripe webhook signature")
+        _log.warning("Invalid Stripe webhook payload (malformed JSON)")
+        return JSONResponse({"error": "Invalid payload"}, status_code=400)
+    except stripe_mod.error.SignatureVerificationError as exc:
+        _log.warning("Stripe webhook signature verification failed: %s", exc)
         return JSONResponse({"error": "Invalid signature"}, status_code=400)
-    except Exception as exc:
-        # Covers stripe.error.SignatureVerificationError and other Stripe errors
-        if "Signature" in type(exc).__name__ or "signature" in str(exc).lower():
-            _log.warning("Invalid Stripe webhook signature: %s", exc)
-            return JSONResponse({"error": "Invalid signature"}, status_code=400)
-        raise
+    except stripe_mod.error.StripeError as exc:
+        _log.exception("Stripe error during webhook event construction: %s", exc)
+        return JSONResponse({"error": "Webhook processing error"}, status_code=400)
 
     event_id = event.get("id", "")
     event_type = event["type"]

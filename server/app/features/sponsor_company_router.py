@@ -6,6 +6,7 @@ Endpoints:
     GET    /sponsor-companies/mine        — List companies owned by current user
     GET    /sponsor-companies/{id}        — Public company profile
     PATCH  /sponsor-companies/{id}        — Update company (admin only)
+    DELETE /sponsor-companies/{id}        — Delete company (admin only)
     POST   /sponsor-companies/{id}/create-event-checkout — Stripe checkout for sponsored event
 """
 
@@ -14,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import uuid
 from datetime import datetime, timezone
 from typing import Any, List, Optional
 
@@ -22,21 +24,11 @@ from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.db_helpers import get_db_pool
+from app.lib.error_codes import ErrorCode
 
 router = APIRouter(prefix="/sponsor-companies", tags=["sponsor-companies"])
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# DB helper
-# ---------------------------------------------------------------------------
-
-def _get_db_pool():
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except Exception:
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +112,7 @@ async def list_my_companies(
     user_id: str = Depends(get_current_user_id),
 ):
     """List sponsor companies where current user is admin."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if pool is None:
         return []
 
@@ -133,7 +125,7 @@ async def list_my_companies(
             return [_row_to_company(dict(r)) for r in rows]
     except Exception as e:
         logger.error("[sponsor] Error listing companies: %s", e)
-        raise error_response(500, "Failed to list companies", code="SPONSOR_LIST_ERROR")
+        raise error_response(500, "Failed to list companies", code=ErrorCode.INTERNAL_ERROR)
 
 
 @router.post("", response_model=SponsorCompanyResponse, status_code=201)
@@ -142,9 +134,9 @@ async def register_company(
     user_id: str = Depends(get_current_user_id),
 ):
     """Register a new sponsor company."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if pool is None:
-        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
     try:
         async with pool.acquire() as conn:
@@ -160,15 +152,20 @@ async def register_company(
             return _row_to_company(dict(row))
     except Exception as e:
         logger.error("[sponsor] Error registering company: %s", e)
-        raise error_response(500, "Failed to register company", code="SPONSOR_CREATE_ERROR")
+        raise error_response(500, "Failed to register company", code=ErrorCode.INTERNAL_ERROR)
 
 
 @router.get("/{company_id}", response_model=SponsorCompanyResponse)
 async def get_company(company_id: str):
     """Get public sponsor company profile."""
-    pool = _get_db_pool()
+    try:
+        uuid.UUID(company_id)
+    except ValueError:
+        raise error_response(400, "Invalid company_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
     if pool is None:
-        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
     try:
         async with pool.acquire() as conn:
@@ -176,13 +173,13 @@ async def get_company(company_id: str):
                 "SELECT * FROM sponsor_companies WHERE id = $1", company_id,
             )
             if not row:
-                raise error_response(404, "Company not found", code="SPONSOR_NOT_FOUND")
+                raise error_response(404, "Company not found", code=ErrorCode.NOT_FOUND)
             return _row_to_company(dict(row))
     except HTTPException:
         raise
     except Exception as e:
         logger.error("[sponsor] Error fetching company %s: %s", company_id, e)
-        raise error_response(500, "Failed to fetch company", code="SPONSOR_FETCH_ERROR")
+        raise error_response(500, "Failed to fetch company", code=ErrorCode.INTERNAL_ERROR)
 
 
 @router.patch("/{company_id}", response_model=SponsorCompanyResponse)
@@ -192,17 +189,22 @@ async def update_company(
     user_id: str = Depends(get_current_user_id),
 ):
     """Update a sponsor company (admin_user_id only)."""
+    try:
+        uuid.UUID(company_id)
+    except ValueError:
+        raise error_response(400, "Invalid company_id format", code=ErrorCode.VALIDATION_ERROR)
+
     updates = request.model_dump(exclude_none=True)
     if not updates:
-        raise error_response(400, "No fields to update", code="NO_FIELDS")
+        raise error_response(400, "No fields to update", code=ErrorCode.VALIDATION_ERROR)
 
     bad_keys = set(updates.keys()) - _UPDATABLE_COLUMNS
     if bad_keys:
-        raise error_response(400, f"Cannot update: {', '.join(sorted(bad_keys))}", code="INVALID_FIELDS")
+        raise error_response(400, f"Cannot update: {', '.join(sorted(bad_keys))}", code=ErrorCode.VALIDATION_ERROR)
 
-    pool = _get_db_pool()
+    pool = get_db_pool()
     if pool is None:
-        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
     try:
         async with pool.acquire() as conn:
@@ -211,7 +213,7 @@ async def update_company(
                 company_id, user_id,
             )
             if not row:
-                raise error_response(404, "Company not found or not owned by you", code="SPONSOR_NOT_FOUND")
+                raise error_response(404, "Company not found or not owned by you", code=ErrorCode.NOT_FOUND)
 
             set_parts = []
             params = [company_id, user_id]
@@ -230,14 +232,54 @@ async def update_company(
             """
             updated = await conn.fetchrow(query, *params)
             if not updated:
-                raise error_response(404, "Company not found", code="SPONSOR_NOT_FOUND")
+                raise error_response(404, "Company not found", code=ErrorCode.NOT_FOUND)
             return _row_to_company(dict(updated))
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error("[sponsor] Error updating company %s: %s", company_id, e)
-        raise error_response(500, "Failed to update company", code="SPONSOR_UPDATE_ERROR")
+        raise error_response(500, "Failed to update company", code=ErrorCode.INTERNAL_ERROR)
+
+
+@router.delete("/{company_id}")
+async def delete_company(
+    company_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Delete a sponsor company (admin_user_id only)."""
+    try:
+        uuid.UUID(company_id)
+    except ValueError:
+        raise error_response(400, "Invalid company_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
+
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT * FROM sponsor_companies WHERE id = $1",
+                company_id,
+            )
+            if not row:
+                raise error_response(404, "Company not found", code=ErrorCode.NOT_FOUND)
+            if str(row["admin_user_id"]) != user_id:
+                raise error_response(403, "Only the company owner can delete this company", code=ErrorCode.FORBIDDEN)
+
+            await conn.execute(
+                "DELETE FROM sponsor_companies WHERE id = $1 AND admin_user_id = $2",
+                company_id, user_id,
+            )
+            logger.info("[sponsor] Deleted company: id=%s, user=%s", company_id, user_id)
+            return {"success": True, "message": "Company deleted"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[sponsor] Error deleting company %s: %s", company_id, e)
+        raise error_response(500, "Failed to delete company", code=ErrorCode.INTERNAL_ERROR)
 
 
 @router.post("/{company_id}/create-event-checkout")
@@ -247,9 +289,14 @@ async def create_event_checkout(
     user_id: str = Depends(get_current_user_id),
 ):
     """Create a Stripe Checkout Session for a sponsored event."""
-    pool = _get_db_pool()
+    try:
+        uuid.UUID(company_id)
+    except ValueError:
+        raise error_response(400, "Invalid company_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
     if pool is None:
-        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
     # Verify company ownership
     try:
@@ -259,14 +306,27 @@ async def create_event_checkout(
                 company_id, user_id,
             )
             if not row:
-                raise error_response(404, "Company not found or not owned by you", code="SPONSOR_NOT_FOUND")
+                raise error_response(404, "Company not found or not owned by you", code=ErrorCode.NOT_FOUND)
     except HTTPException:
         raise
     except Exception as e:
         logger.error("[sponsor] Error verifying company %s: %s", company_id, e)
-        raise error_response(500, "Failed to verify company", code="SPONSOR_VERIFY_ERROR")
+        raise error_response(500, "Failed to verify company", code=ErrorCode.INTERNAL_ERROR)
 
     company = dict(row)
+
+    # Validate Stripe configuration BEFORE creating the draft event
+    from app.config import STRIPE_SECRET_KEY
+    import stripe
+
+    if not STRIPE_SECRET_KEY:
+        raise error_response(503, "Billing not configured")
+
+    price_id = _TIER_PRICES.get(request.tier)
+    if not price_id:
+        raise error_response(400, f"Invalid tier: {request.tier}")
+
+    stripe.api_key = STRIPE_SECRET_KEY
 
     # Create the event first as draft
     try:
@@ -295,21 +355,10 @@ async def create_event_checkout(
             event_id = str(ev_row["id"])
     except Exception as e:
         logger.error("[sponsor] Error creating draft event: %s", e)
-        raise error_response(500, "Failed to create event", code="SPONSOR_EVENT_ERROR")
+        raise error_response(500, "Failed to create event", code=ErrorCode.INTERNAL_ERROR)
 
     # Create Stripe checkout session
     try:
-        from app.config import STRIPE_SECRET_KEY
-        import stripe
-        stripe.api_key = STRIPE_SECRET_KEY
-
-        if not STRIPE_SECRET_KEY:
-            raise error_response(503, "Billing not configured")
-
-        price_id = _TIER_PRICES.get(request.tier)
-        if not price_id:
-            raise error_response(400, f"Invalid tier: {request.tier}")
-
         session = await asyncio.to_thread(
             stripe.checkout.Session.create,
             payment_method_types=["card"],
@@ -331,5 +380,90 @@ async def create_event_checkout(
     except HTTPException:
         raise
     except Exception as e:
+        # Clean up the draft event if Stripe checkout creation fails
+        try:
+            async with pool.acquire() as cleanup_conn:
+                await cleanup_conn.execute("DELETE FROM events WHERE id = $1", event_id)
+        except Exception as cleanup_err:
+            logger.warning("[sponsor] Failed to clean up draft event %s: %s", event_id, cleanup_err)
         logger.error("[sponsor] Stripe checkout creation failed: %s", e)
-        raise error_response(500, "Failed to create checkout session", code="STRIPE_ERROR")
+        raise error_response(500, "Failed to create checkout session", code=ErrorCode.EXTERNAL_SERVICE_ERROR)
+
+
+@router.post("/{company_id}/create-event-demo")
+async def create_event_demo(
+    company_id: str,
+    request: CreateSponsorEventCheckoutRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Demo bypass — create a sponsored event without Stripe checkout.
+
+    Skips payment, directly publishes the event as sponsored.
+    Only works when STRIPE_SECRET_KEY is empty (dev/staging).
+    """
+    try:
+        uuid.UUID(company_id)
+    except ValueError:
+        raise error_response(400, "Invalid company_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    try:
+        from app.config import STRIPE_SECRET_KEY
+        if STRIPE_SECRET_KEY:
+            raise error_response(403, "Demo mode disabled — Stripe is configured", code=ErrorCode.FORBIDDEN)
+    except ImportError:
+        pass  # No Stripe config = demo OK
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
+
+    # Verify company ownership
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT * FROM sponsor_companies WHERE id = $1 AND admin_user_id = $2",
+                company_id, user_id,
+            )
+            if not row:
+                raise error_response(404, "Company not found or not owned by you", code=ErrorCode.NOT_FOUND)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[sponsor] Error verifying company %s: %s", company_id, e)
+        raise error_response(500, "Failed to verify company", code=ErrorCode.INTERNAL_ERROR)
+
+    company = dict(row)
+
+    # Create the event directly as published + sponsored
+    try:
+        async with pool.acquire() as conn:
+            ev_row = await conn.fetchrow(
+                """
+                INSERT INTO events (
+                    title, kind, category_id, date, time, end_date,
+                    location, online_url, description, image_url,
+                    format, status, is_public, max_attendees,
+                    source, created_by, sponsor_company_id,
+                    is_sponsored, sponsor_name, sponsor_logo_url, sponsor_tier
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                        $11, 'published', true, $12, 'sponsor', $13, $14,
+                        true, $15, $16, $17)
+                RETURNING id
+                """,
+                request.event_title, request.event_kind, request.event_category_id,
+                request.event_date, request.event_time, request.event_end_date,
+                request.event_location, request.event_online_url, request.event_description,
+                request.event_image_url, request.event_format, request.event_max_attendees,
+                user_id, company_id,
+                company["name"], company.get("logo_url"), request.tier,
+            )
+            event_id = str(ev_row["id"])
+            logger.info("[sponsor] Demo event created: id=%s, company=%s, tier=%s", event_id, company_id, request.tier)
+            return {"event_id": event_id, "status": "published", "demo": True}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[sponsor] Error creating demo event: %s", e)
+        raise error_response(500, "Failed to create event", code=ErrorCode.INTERNAL_ERROR)

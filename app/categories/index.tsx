@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
@@ -19,8 +20,17 @@ import { dataProvider, type CategorySummary } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import logger from '@/utils/logger';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
-export default function CategoriesListScreen() {
+export default function CategoriesListScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Categories">
+      <CategoriesListScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+function CategoriesListScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
 
@@ -92,7 +102,7 @@ export default function CategoriesListScreen() {
           </View>
 
           {/* Counts */}
-          <View style={styles.countsRow}>
+          <View style={styles.countsRow} accessibilityLabel={`${item.ownedCount} owned, ${item.missingCount} missing, ${item.totalCount} total`}>
             <View style={styles.countItem}>
               <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
               <Text style={[styles.countText, { color: colors.text }]}>{item.ownedCount}</Text>
@@ -161,6 +171,7 @@ export default function CategoriesListScreen() {
           }
         />
       )}
+      <QuickNavBar />
     </SafeAreaView>
   );
 }

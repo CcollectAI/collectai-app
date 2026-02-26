@@ -6,8 +6,9 @@ import Button from '@/components/Button';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { supabase } from "@/lib/supabase";
 import useOffers from '../hooks/useOffers';
+import type { CurrencyCode } from '@/data/types';
 
-export default function ListingDetail({ route }: { route: { params: { listing: { id: string; title: string; price: number; currency: string; seller_id: string; image_url?: string; condition?: string; description?: string } } } }){
+export default function ListingDetail({ route }: { route: { params: { listing: { id: string; title: string; price: number; currency: CurrencyCode; seller_id: string; image_url?: string; condition?: string; description?: string } } } }){
   const listing = route.params.listing;
   const { rows: offers, loading, make, setStatus, refresh } = useOffers(listing.id);
   const [offer, setOffer] = useState('');

@@ -6,14 +6,16 @@ Provides create/list endpoints for items. Also includes batch operations.
 
 from __future__ import annotations
 
+import json
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.db_helpers import get_db_pool
 
 router = APIRouter(tags=["items"])
 logger = logging.getLogger(__name__)
@@ -46,18 +48,6 @@ class BatchResponse(BaseModel):
     affected_count: int
 
 
-# ---- DB helper ----
-
-def _get_db_pool():
-    """Get database pool if available."""
-    try:
-        from app.db import get_pool
-        return get_pool()
-    except Exception as e:
-        logger.debug("DB pool not available: %s", e)
-        return None
-
-
 # ---- In-memory fallback store ----
 
 _DEMO_ITEMS: list[ItemResponse] = []
@@ -76,7 +66,7 @@ async def create_item(
     user_id: str = Depends(get_current_user_id),
 ):
     """Create a new item in the user's collection."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -84,10 +74,11 @@ async def create_item(
                 item_id = str(uuid4())
                 await conn.execute(
                     """
-                    INSERT INTO items (id, user_id, title, category, notes)
-                    VALUES ($1, $2::uuid, $3, $4, $5)
+                    INSERT INTO items (id, user_id, title, category, notes, collection_name, estimated_value)
+                    VALUES ($1, $2::uuid, $3, $4, $5, $6, $7)
                     """,
                     item_id, user_id, payload.name, payload.category, payload.notes,
+                    payload.collection_name, payload.estimated_value,
                 )
                 logger.info("[items] Created item: id=%s, user=%s", item_id, user_id)
                 return ItemResponse(
@@ -121,14 +112,14 @@ async def create_item(
 @router.get("/items", response_model=list[ItemResponse])
 async def list_items(user_id: str = Depends(get_current_user_id)):
     """List items in the user's collection."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
             async with pool.acquire() as conn:
                 rows = await conn.fetch(
                     """
-                    SELECT id, title, category, notes
+                    SELECT id, title, category, notes, collection_name, estimated_value
                     FROM items
                     WHERE user_id = $1::uuid
                     ORDER BY updated_at DESC
@@ -141,6 +132,8 @@ async def list_items(user_id: str = Depends(get_current_user_id)):
                         id=str(r["id"]),
                         name=r["title"] or "Untitled",
                         category=r["category"],
+                        collection_name=r.get("collection_name"),
+                        estimated_value=float(r["estimated_value"]) if r.get("estimated_value") is not None else None,
                         notes=r["notes"],
                     )
                     for r in rows
@@ -159,7 +152,7 @@ async def batch_archive_items(
     user_id: str = Depends(get_current_user_id),
 ):
     """Archive multiple items at once."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -195,7 +188,7 @@ async def batch_delete_items(
     user_id: str = Depends(get_current_user_id),
 ):
     """Delete multiple items at once."""
-    pool = _get_db_pool()
+    pool = get_db_pool()
 
     if pool is not None:
         try:
@@ -222,3 +215,65 @@ async def batch_delete_items(
     _DEMO_ITEMS.clear()
     _DEMO_ITEMS.extend(remaining)
     return BatchResponse(success=True, affected_count=before - len(_DEMO_ITEMS))
+
+
+# ---- Update item attributes / size ----
+
+class UpdateItemAttributesRequest(BaseModel):
+    attributes: Dict[str, Any] = Field(default_factory=dict)
+    item_size: Optional[str] = None
+    size_system: Optional[str] = Field(None, pattern=r"^(us|eu|uk|cm|mm)$")
+
+
+@router.patch("/items/{item_id}/attributes")
+async def update_item_attributes(
+    item_id: str,
+    payload: UpdateItemAttributesRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Merge attributes_json and optionally set item_size/size_system."""
+    pool = get_db_pool()
+
+    if pool is None:
+        return {"ok": True, "item_id": item_id}
+
+    try:
+        async with pool.acquire() as conn:
+            # Build SET clauses dynamically
+            set_parts = []
+            params: list = [user_id, item_id]
+            idx = 3  # next placeholder index
+
+            if payload.attributes:
+                set_parts.append(
+                    f"attributes_json = COALESCE(attributes_json, '{{}}'::jsonb) || ${idx}::jsonb"
+                )
+                params.append(json.dumps(payload.attributes))
+                idx += 1
+
+            if payload.item_size is not None:
+                set_parts.append(f"item_size = ${idx}")
+                params.append(payload.item_size)
+                idx += 1
+
+            if payload.size_system is not None:
+                set_parts.append(f"size_system = ${idx}")
+                params.append(payload.size_system)
+                idx += 1
+
+            if not set_parts:
+                return {"ok": True, "item_id": item_id}
+
+            set_parts.append("updated_at = NOW()")
+
+            query = f"""
+                UPDATE items
+                SET {', '.join(set_parts)}
+                WHERE id = $2::uuid AND user_id = $1::uuid
+            """
+            await conn.execute(query, *params)
+            logger.info("[items] Updated attributes for item=%s, user=%s", item_id, user_id)
+            return {"ok": True, "item_id": item_id}
+    except Exception as e:
+        logger.error("[items] DB error updating attributes: %s", e)
+        raise error_response(500, "Failed to update attributes", code="DB_ERROR")

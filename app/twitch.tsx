@@ -4,37 +4,47 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useEnterReveal } from "@/motion";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
+import { QuickNavBar } from '@/components/QuickNavBar';
 
-export default function TwitchScreen() {
+function TwitchScreenInner() {
+  const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   return (
-    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <Animated.View style={animatedStyle}>
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.row}>
-          <Ionicons name="logo-twitch" size={18} color="#14b8a6" />
-          <Text style={styles.cardTitle}>Creator & Drops Hub</Text>
+          <Ionicons name="logo-twitch" size={18} color={colors.accent} />
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Creator & Drops Hub</Text>
         </View>
-        <Text style={styles.cardText}>
+        <Text style={[styles.cardText, { color: colors.muted }]}>
           This is the Twitch landing page. We'll move the "Twitch creators" banner here and keep Portfolio clean.
         </Text>
       </View>
       </Animated.View>
+      <QuickNavBar />
     </SafeAreaView>
   );
 }
 
+export default function TwitchScreen() {
+  return (
+    <ScreenErrorBoundary screenName="Twitch">
+      <TwitchScreenInner />
+    </ScreenErrorBoundary>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f6f7f9", padding: 16 },
+  safe: { flex: 1, padding: 16 },
   card: {
-    backgroundColor: "#ffffff",
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: "rgba(11,31,58,0.08)",
   },
   row: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  cardTitle: { fontSize: 14, fontWeight: "900", color: "#0b1f3a" },
-  cardText: { fontSize: 13, fontWeight: "700", color: "rgba(11,31,58,0.72)", lineHeight: 18 },
+  cardTitle: { fontSize: 14, fontWeight: "900" },
+  cardText: { fontSize: 13, fontWeight: "700", lineHeight: 18 },
 });

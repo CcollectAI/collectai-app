@@ -1,5 +1,6 @@
 import { API_BASE } from "./config";
 import { supabase } from "@/lib/supabase";
+import type { CurrencyCode } from "@/data/types";
 
 const REQUEST_TIMEOUT_MS = 15_000; // 15 seconds
 const MAX_RETRIES = 2;
@@ -63,12 +64,37 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export class ApiError extends Error {
+  status: number;
+  code: string | null;
+  detail: string;
+
+  constructor(method: string, path: string, status: number, detail: string, code: string | null = null) {
+    super(`${method} ${path} failed (${status}): ${detail}`);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
+    this.code = code;
+  }
+}
+
+async function parseErrorResponse(method: string, path: string, res: Response): Promise<ApiError> {
+  try {
+    const body = await res.json();
+    const detail = typeof body?.detail === "string" ? body.detail : `${method} ${path} failed`;
+    const code = typeof body?.code === "string" ? body.code : null;
+    return new ApiError(method, path, res.status, detail, code);
+  } catch {
+    return new ApiError(method, path, res.status, `${method} ${path} failed`);
+  }
+}
+
 async function get<T = unknown>(path: string): Promise<T> {
   const auth = await getAuthHeaders();
   const res = await fetchWithRetry(`${API_BASE}${path}`, {
     headers: { ...auth },
   });
-  if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);
+  if (!res.ok) throw await parseErrorResponse("GET", path, res);
   return res.json() as Promise<T>;
 }
 
@@ -79,7 +105,7 @@ async function post<T = unknown>(path: string, body: Record<string, unknown> = {
     headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`POST ${path} failed (${res.status})`);
+  if (!res.ok) throw await parseErrorResponse("POST", path, res);
   return res.json() as Promise<T>;
 }
 
@@ -89,7 +115,8 @@ async function del<T = unknown>(path: string): Promise<T> {
     method: "DELETE",
     headers: { ...auth },
   });
-  if (!res.ok) throw new Error(`DELETE ${path} failed (${res.status})`);
+  if (!res.ok) throw await parseErrorResponse("DELETE", path, res);
+  if (res.status === 204) return {} as T;
   return res.json() as Promise<T>;
 }
 
@@ -100,7 +127,18 @@ async function patch<T = unknown>(path: string, body: Record<string, unknown> = 
     headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`PATCH ${path} failed (${res.status})`);
+  if (!res.ok) throw await parseErrorResponse("PATCH", path, res);
+  return res.json() as Promise<T>;
+}
+
+async function put<T = unknown>(path: string, body: Record<string, unknown> = {}): Promise<T> {
+  const auth = await getAuthHeaders();
+  const res = await fetchWithRetry(`${API_BASE}${path}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...auth },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw await parseErrorResponse("PUT", path, res);
   return res.json() as Promise<T>;
 }
 
@@ -112,7 +150,7 @@ async function postMultipart<T = unknown>(path: string, formData: FormData): Pro
     headers: { ...auth },
     body: formData,
   });
-  if (!res.ok) throw new Error(`POST ${path} failed (${res.status})`);
+  if (!res.ok) throw await parseErrorResponse("POST", path, res);
   return res.json() as Promise<T>;
 }
 
@@ -134,6 +172,16 @@ export const collectorsApi = {
 
   // QuickScan
   quickscanSingle: () => post("/quickscan-advanced/single"),
+
+  // Intake — image-only (vision pipeline: CLIP + GPT-4o-mini + heuristic)
+  intakeImageOnly: (imageUri: string) => {
+    const formData = new FormData();
+    const filename = imageUri.split("/").pop() || "scan.jpg";
+    // React Native's FormData accepts this shape for file uploads
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    formData.append("file", { uri: imageUri, name: filename, type: "image/jpeg" } as any);
+    return postMultipart<IntakeResultResponse>("/intake/image-only", formData);
+  },
   quickscanBatch: (image_ids: string[]) =>
     post("/quickscan-advanced/batch", { image_ids }),
 
@@ -186,6 +234,16 @@ export const collectorsApi = {
     q90: number;
     asof: string;
   }>("/predict_v2", payload),
+
+  // Price trend (per-item price history chart)
+  getItemPriceTrend: (itemId: string, days = 90) =>
+    get<{
+      data_points: Array<{ date: string; q50: number; q10: number; q90: number }>;
+      direction: 'up' | 'down' | 'flat';
+      pct_change: number;
+      current_q50: number;
+      period_days: number;
+    }>(`/predict/${encodeURIComponent(itemId)}/trend?days=${days}`),
 
   // Price evidence (for PriceExplanationSheet)
   getPriceEvidence: (itemId: string) =>
@@ -412,6 +470,12 @@ export const collectorsApi = {
   registerPushToken: (token: string, platform: string) =>
     post("/notifications/register", { push_token: token, platform }),
 
+  getNotificationPreferences: () =>
+    get("/notifications/preferences"),
+
+  updateNotificationPreferences: (prefs: Record<string, boolean>) =>
+    put("/notifications/preferences", prefs),
+
   unregisterPushToken: async (token: string) => {
     const auth = await getAuthHeaders();
     const res = await fetchWithRetry(`${API_BASE}/notifications/register`, {
@@ -419,7 +483,7 @@ export const collectorsApi = {
       headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ push_token: token }),
     });
-    if (!res.ok) throw new Error(`DELETE /notifications/register failed (${res.status})`);
+    if (!res.ok) throw await parseErrorResponse("DELETE", "/notifications/register", res);
     return res.json();
   },
 
@@ -434,7 +498,7 @@ export const collectorsApi = {
         body: formData,
         signal: controller.signal,
       });
-      if (!res.ok) throw new Error(`POST /intake/process failed (${res.status})`);
+      if (!res.ok) throw await parseErrorResponse("POST", "/intake/process", res);
       return res.json();
     } finally {
       clearTimeout(timer);
@@ -514,12 +578,12 @@ export const collectorsApi = {
   detectRegion: () =>
     get<{
       region: string;
-      currency: string;
+      currency: CurrencyCode;
       country_code: string | null;
     }>("/geo/detect"),
 
   // Affiliate links (no auth required — works for all users)
-  getAffiliateLinks: (query: string, category?: string, limit = 3) =>
+  getAffiliateLinks: (query: string, category?: string, limit = 6, region?: string) =>
     get<{
       links: Array<{
         source: string;
@@ -527,7 +591,250 @@ export const collectorsApi = {
         affiliate_url: string;
         label: string;
       }>;
-    }>(`/marketplace/affiliate-links?query=${encodeURIComponent(query)}${category ? `&category=${encodeURIComponent(category)}` : ""}&limit=${limit}`),
+    }>(`/marketplace/affiliate-links?query=${encodeURIComponent(query)}${category ? `&category=${encodeURIComponent(category)}` : ""}&limit=${limit}${region ? `&region=${encodeURIComponent(region)}` : ""}`),
+
+  // Tag any raw URL with affiliate params (no auth required)
+  tagAffiliateUrl: (url: string, source: string) =>
+    post<{ url: string; affiliate_url: string; source: string }>(
+      '/marketplace/affiliate-url', { url, source }
+    ),
+
+  // ── Deal Desk (P2P Offers) ──────────────────────────────────────────────
+
+  proposeOffer: (payload: { item_id: string; price: number; message?: string }) =>
+    post("/deals/offer", payload as Record<string, unknown>),
+
+  counterOffer: (offerId: string, payload: { price: number; message?: string }) =>
+    post(`/deals/${encodeURIComponent(offerId)}/counter`, payload as Record<string, unknown>),
+
+  respondToOffer: (offerId: string, payload: { accept: boolean; message?: string }) =>
+    post(`/deals/${encodeURIComponent(offerId)}/respond`, payload as Record<string, unknown>),
+
+  cancelOffer: (offerId: string) =>
+    post(`/deals/${encodeURIComponent(offerId)}/cancel`),
+
+  markShipped: (offerId: string, payload: { tracking_info?: string }) =>
+    post(`/deals/${encodeURIComponent(offerId)}/ship`, payload as Record<string, unknown>),
+
+  completeDeal: (offerId: string, payload: { stars: number; comment?: string }) =>
+    post(`/deals/${encodeURIComponent(offerId)}/complete`, payload as Record<string, unknown>),
+
+  listActiveOffers: () => get("/deals/active"),
+
+  listDealHistory: () => get("/deals/history"),
+
+  getOfferDetail: (offerId: string) =>
+    get(`/deals/${encodeURIComponent(offerId)}`),
+
+  getOfferEvidence: (offerId: string) =>
+    get(`/deals/${encodeURIComponent(offerId)}/evidence`),
+
+  getUserReputation: (userId: string) =>
+    get(`/deals/reputation/${encodeURIComponent(userId)}`),
+
+  toggleItemForSale: (itemId: string, payload: { for_sale: boolean; asking_price?: number }) =>
+    put(`/items/${encodeURIComponent(itemId)}/for-sale`, payload as Record<string, unknown>),
+
+  // ── Item Images (multi-photo per item) ───────────────────────────────────
+
+  listItemImages: (itemId: string) =>
+    get<{
+      images: Array<{
+        id: string;
+        item_id: string;
+        image_url: string;
+        label: string | null;
+        position: number;
+        created_at: string | null;
+      }>;
+      item_id: string;
+      total: number;
+    }>(`/items/${encodeURIComponent(itemId)}/images`),
+
+  uploadItemImage: (itemId: string, uri: string, label?: string) => {
+    const formData = new FormData();
+    const filename = uri.split("/").pop() || "photo.jpg";
+    // React Native's FormData accepts this shape for file uploads
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    formData.append("file", { uri, name: filename, type: "image/jpeg" } as any);
+    if (label) formData.append("label", label);
+    return postMultipart<{
+      id: string;
+      item_id: string;
+      image_url: string;
+      label: string | null;
+      position: number;
+      created_at: string | null;
+    }>(`/items/${encodeURIComponent(itemId)}/images`, formData);
+  },
+
+  deleteItemImage: (itemId: string, imageId: string) =>
+    del<{ success: boolean; message: string }>(
+      `/items/${encodeURIComponent(itemId)}/images/${encodeURIComponent(imageId)}`
+    ),
+
+  reorderItemImages: (itemId: string, imageIds: string[]) =>
+    put<{ success: boolean; reordered_count: number }>(
+      `/items/${encodeURIComponent(itemId)}/images/reorder`,
+      { image_ids: imageIds }
+    ),
+
+  // ── Drop Alerts ─────────────────────────────────────────────────────────
+
+  subscribeDropAlert: (eventId: string, notifyBeforeHours = 24) =>
+    post<{
+      user_id: string;
+      event_id: string;
+      notify_before_hours: number;
+      created_at: string | null;
+    }>(`/events/${encodeURIComponent(eventId)}/alert`, {
+      notify_before_hours: notifyBeforeHours,
+    }),
+
+  unsubscribeDropAlert: (eventId: string) =>
+    del(`/events/${encodeURIComponent(eventId)}/alert`),
+
+  listMyDropAlerts: () =>
+    get<Array<{
+      user_id: string;
+      event_id: string;
+      notify_before_hours: number;
+      created_at: string | null;
+    }>>("/events/my-alerts"),
+
+  // ── Onboarding / User Settings ─────────────────────────────────────────
+
+  saveFollowedCategories: (categories: string[]) =>
+    put("/settings", { followed_categories: categories }),
+
+  getFollowedCategories: () =>
+    get<{ followed_categories: string[] }>("/settings"),
+
+  // ── Catalog Browser ────────────────────────────────────────────────────
+  browseCatalogItems: (categoryId: string, opts?: {
+    q?: string;
+    limit?: number;
+    offset?: number;
+    rarity?: string;
+  }) => {
+    const sp = new URLSearchParams();
+    if (opts?.q) sp.set('q', opts.q);
+    if (opts?.limit) sp.set('limit', String(opts.limit));
+    if (opts?.offset) sp.set('offset', String(opts.offset));
+    if (opts?.rarity) sp.set('rarity', opts.rarity);
+    const query = sp.toString();
+    return get<{
+      items: Array<{
+        id: string;
+        category: string;
+        item_key: string;
+        title: string;
+        brand: string | null;
+        rarity: string | null;
+        notes: string | null;
+        image_url: string | null;
+        external_id: string | null;
+        set_code: string | null;
+        estimated_price: number | null;
+      }>;
+      total: number;
+      limit: number;
+      offset: number;
+      category_id: string;
+    }>(`/catalog/${encodeURIComponent(categoryId)}/items${query ? `?${query}` : ''}`);
+  },
+
+  // ── Progress Tracking ─────────────────────────────────────────────────
+  getItemProgress: (itemId: string) =>
+    get<{
+      item_id: string;
+      progress_status: string | null;
+      progress_pct: number | null;
+      progress_notes: string | null;
+    }>(`/items/${encodeURIComponent(itemId)}/progress`),
+
+  updateItemProgress: (itemId: string, payload: {
+    progress_status?: string;
+    progress_pct?: number;
+    progress_notes?: string;
+  }) =>
+    patch<{
+      item_id: string;
+      progress_status: string | null;
+      progress_pct: number | null;
+      progress_notes: string | null;
+    }>(`/items/${encodeURIComponent(itemId)}/progress`, payload as Record<string, unknown>),
+
+  // ── Item Attributes / Size ──────────────────────────────────────────────
+  updateItemAttributes: (itemId: string, attributes: Record<string, unknown>, itemSize?: string, sizeSystem?: string) =>
+    patch<{ ok: boolean; item_id: string }>(
+      `/items/${encodeURIComponent(itemId)}/attributes`,
+      {
+        attributes,
+        ...(itemSize !== undefined ? { item_size: itemSize } : {}),
+        ...(sizeSystem !== undefined ? { size_system: sizeSystem } : {}),
+      },
+    ),
+
+  // ── Grading Service Integration ─────────────────────────────────────────
+
+  gradingLookup: (certNumber: string, service: 'psa' | 'cgc' | 'bgs' | 'beckett') =>
+    get<{
+      cert_number: string;
+      service: string;
+      service_name: string;
+      item_name: string | null;
+      grade: string | null;
+      grade_numeric: number | null;
+      sub_grades: Record<string, number> | null;
+      population_at_grade: number | null;
+      population_higher: number | null;
+      cert_verified: boolean;
+      cert_url: string | null;
+      label_type: string | null;
+      year: string | null;
+      error: string | null;
+    }>(`/grading/lookup?cert_number=${encodeURIComponent(certNumber)}&service=${encodeURIComponent(service)}`),
+
+  gradingPopulation: (itemName: string, category: string, service?: string) =>
+    get<{
+      item_name: string;
+      category: string;
+      service: string;
+      total_graded: number;
+      population: Array<{
+        grade: string;
+        count: number;
+        pct_of_total: number | null;
+      }>;
+      avg_grade: number | null;
+      highest_grade: string | null;
+      last_updated: string | null;
+    }>(`/grading/population?item_name=${encodeURIComponent(itemName)}&category=${encodeURIComponent(category)}${service ? `&service=${encodeURIComponent(service)}` : ''}`),
+
+  gradingServices: (category?: string) =>
+    get<{
+      services: Array<{
+        id: string;
+        name: string;
+        short_name: string;
+        website: string;
+        submission_url: string;
+        grade_scale: string;
+        categories: string[];
+        turnaround: string;
+        price_range: string;
+      }>;
+      eligible_categories: string[];
+    }>(`/grading/services${category ? `?category=${encodeURIComponent(category)}` : ''}`),
+
+  // ── Insurance Valuation Export ─────────────────────────────────────────
+
+  getInsuranceReportUrl: (format: 'html' | 'json' = 'html', currency?: string) => {
+    const params = new URLSearchParams({ format });
+    if (currency) params.set('currency', currency);
+    return `${API_BASE}/export/insurance-report?${params.toString()}`;
+  },
 
   // ── Generic HTTP helpers (used by DataProvider implementations) ──────────
   get: <T = unknown>(path: string) => get<T>(path),
@@ -561,7 +868,7 @@ export type IntakeResultResponse = {
     q50: number;
     q90: number;
     confidence: number;
-    currency: string;
+    currency: CurrencyCode;
   } | null;
   image_url: string | null;
   catalog_miss: boolean;
@@ -603,4 +910,54 @@ export async function createCheckoutSession(plan: "pro" | "premium"): Promise<{ 
 
 export async function createPortalSession(): Promise<{ url: string }> {
   return post("/billing/portal-session", {});
+}
+
+// ---------------------------------------------------------------------------
+// Activity Feed
+// ---------------------------------------------------------------------------
+
+export async function getUserActivity(userId: string, limit = 20, offset = 0) {
+  return get(`/activity/${userId}?limit=${limit}&offset=${offset}`);
+}
+
+export async function logActivity(payload: {
+  activity_type: string;
+  title: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+  is_public?: boolean;
+}) {
+  return post("/activity/log", payload);
+}
+
+// ---------------------------------------------------------------------------
+// Unified Search
+// ---------------------------------------------------------------------------
+
+export async function unifiedSearch(q: string, limit = 5) {
+  return get(`/search/unified?q=${encodeURIComponent(q)}&limit=${limit}`);
+}
+
+// ---------------------------------------------------------------------------
+// Event Search
+// ---------------------------------------------------------------------------
+
+export async function searchEvents(params: {
+  q?: string;
+  category?: string;
+  eventType?: string;
+  location?: string;
+  upcomingOnly?: boolean;
+  limit?: number;
+  offset?: number;
+}) {
+  const sp = new URLSearchParams();
+  if (params.q) sp.set("q", params.q);
+  if (params.category) sp.set("category", params.category);
+  if (params.eventType) sp.set("event_type", params.eventType);
+  if (params.location) sp.set("location", params.location);
+  if (params.upcomingOnly !== undefined) sp.set("upcoming_only", String(params.upcomingOnly));
+  if (params.limit) sp.set("limit", String(params.limit));
+  if (params.offset) sp.set("offset", String(params.offset));
+  return get(`/events/search?${sp.toString()}`);
 }

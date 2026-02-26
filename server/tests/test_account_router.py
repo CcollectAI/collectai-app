@@ -7,7 +7,7 @@ Covers:
   - DELETE /account — Supabase auth failure doesn't block response
   - DELETE /account — tables that don't exist are silently skipped
 
-All tests mock _get_db_pool(), _get_supabase_admin(), and override the
+All tests mock get_db_pool(), _get_supabase_admin(), and override the
 auth dependency so no real database or Supabase is needed.
 """
 
@@ -94,7 +94,7 @@ class TestDeleteAccount:
         _clear_overrides()
 
     @patch("app.routes.account_router._get_supabase_admin")
-    @patch("app.routes.account_router._get_db_pool")
+    @patch("app.routes.account_router.get_db_pool")
     def test_successful_deletion(self, mock_get_pool, mock_get_admin):
         """Full deletion: DB data cleaned + Supabase auth removed."""
         pool, conn = _mock_pool()
@@ -116,7 +116,7 @@ class TestDeleteAccount:
         # Verify Supabase auth deletion
         mock_admin.auth.admin.delete_user.assert_called_once_with(TEST_USER_ID)
 
-    @patch("app.routes.account_router._get_db_pool")
+    @patch("app.routes.account_router.get_db_pool")
     def test_offline_mode_returns_503(self, mock_get_pool):
         """When DB is not available, return 503."""
         mock_get_pool.return_value = None
@@ -125,7 +125,7 @@ class TestDeleteAccount:
         assert resp.status_code == 503
 
     @patch("app.routes.account_router._get_supabase_admin")
-    @patch("app.routes.account_router._get_db_pool")
+    @patch("app.routes.account_router.get_db_pool")
     def test_supabase_auth_failure_doesnt_block(self, mock_get_pool, mock_get_admin):
         """If Supabase auth deletion fails, response still succeeds."""
         pool, conn = _mock_pool()
@@ -142,7 +142,7 @@ class TestDeleteAccount:
         assert resp.json()["success"] is True
 
     @patch("app.routes.account_router._get_supabase_admin")
-    @patch("app.routes.account_router._get_db_pool")
+    @patch("app.routes.account_router.get_db_pool")
     def test_no_supabase_admin_available(self, mock_get_pool, mock_get_admin):
         """When Supabase admin client is None, DB deletion still works."""
         pool, conn = _mock_pool()
@@ -154,7 +154,7 @@ class TestDeleteAccount:
         assert resp.json()["success"] is True
 
     @patch("app.routes.account_router._get_supabase_admin")
-    @patch("app.routes.account_router._get_db_pool")
+    @patch("app.routes.account_router.get_db_pool")
     def test_undefined_table_skipped(self, mock_get_pool, mock_get_admin):
         """Tables that don't exist should be silently skipped."""
         pool, conn = _mock_pool()
@@ -170,7 +170,7 @@ class TestDeleteAccount:
         assert resp.status_code == 200
 
     @patch("app.routes.account_router._get_supabase_admin")
-    @patch("app.routes.account_router._get_db_pool")
+    @patch("app.routes.account_router.get_db_pool")
     def test_db_error_returns_500(self, mock_get_pool, mock_get_admin):
         """PostgresError during deletion returns 500."""
         pool, conn = _mock_pool()
@@ -205,7 +205,7 @@ class TestDeleteAccountV1:
         _clear_overrides()
 
     @patch("app.routes.account_router._get_supabase_admin")
-    @patch("app.routes.account_router._get_db_pool")
+    @patch("app.routes.account_router.get_db_pool")
     def test_v1_endpoint_works(self, mock_get_pool, mock_get_admin):
         """V1 prefixed endpoint should work identically."""
         pool, conn = _mock_pool()

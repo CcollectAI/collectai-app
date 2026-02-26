@@ -35,7 +35,12 @@ Welcome to CollectAI — the smartest way to manage your collection.
 - Price trend analysis with 30 and 90-day history
 - Events and meetups near you
 - Portfolio analytics dashboard
-- Support for EUR, USD, GBP, and JPY
+- Build & paint project tracking for Warhammer, Gunpla, LEGO, and more
+- Direct messaging and chat with other collectors
+- Event announcements, sponsors, and RSVP with capacity management
+- Automatic region and currency detection
+- Category analytics with trends and biggest movers
+- Support for EUR, USD, GBP, JPY, KRW, AUD, and CAD
 - Free, Pro, and Premium subscription tiers
 ```
 
@@ -70,7 +75,7 @@ Browse collector events, conventions, and local meetups. Find gatherings near yo
 
 BUILT FOR GLOBAL COLLECTORS
 
-CollectAI supports four currencies: EUR, USD, GBP, and JPY. Wherever you collect, you see prices in the currency that matters to you.
+CollectAI supports seven currencies: EUR, USD, GBP, JPY, KRW, AUD, and CAD. Your region and currency are auto-detected on first launch, and you can change them anytime. Wherever you collect, you see prices in the currency that matters to you.
 
 SECURE AND PRIVATE
 
@@ -131,7 +136,7 @@ Browse collector events, conventions, and local meetups. Find gatherings near yo
 
 BUILT FOR GLOBAL COLLECTORS
 
-CollectAI supports four currencies: EUR, USD, GBP, and JPY. Wherever you collect, you see prices in the currency that matters to you.
+CollectAI supports seven currencies: EUR, USD, GBP, JPY, KRW, AUD, and CAD. Your region and currency are auto-detected on first launch, and you can change them anytime. Wherever you collect, you see prices in the currency that matters to you.
 
 SECURE AND PRIVATE
 
