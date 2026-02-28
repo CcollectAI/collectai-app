@@ -67,6 +67,13 @@ class IntakeResult:
     # Catalog learning
     catalog_miss: bool = False
 
+    # Catalog matching (RAG)
+    catalog_match_id: Optional[str] = None
+    catalog_match_key: Optional[str] = None
+    alternatives: list[dict[str, Any]] = field(default_factory=list)
+    field_confidence: Optional[dict[str, float]] = None
+    chain_of_thought: Optional[str] = None
+
     # Rationale trail
     rationale: list[str] = field(default_factory=list)
 
@@ -88,6 +95,11 @@ class IntakeResult:
             "price_band": self.price_band,
             "image_url": self.image_url,
             "catalog_miss": self.catalog_miss,
+            "catalog_match_id": self.catalog_match_id,
+            "catalog_match_key": self.catalog_match_key,
+            "alternatives": self.alternatives,
+            "field_confidence": self.field_confidence,
+            "chain_of_thought": self.chain_of_thought,
             "rationale": self.rationale,
         }
 
@@ -120,6 +132,355 @@ def _price_band_to_dict(price_band) -> dict[str, Any]:
 
 
 from app.lib.db_helpers import get_db_pool
+
+
+# ---------------------------------------------------------------------------
+# Catalog matching helpers (RAG step)
+# ---------------------------------------------------------------------------
+
+def _normalize_for_search(text: str) -> str:
+    """Lowercase, strip punctuation, truncate to 100 chars."""
+    t = text.lower().strip()
+    t = re.sub(r"[^a-z0-9\s]", "", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t[:100]
+
+
+def _text_similarity(a: str, b: str) -> float:
+    """Jaccard token overlap (word-level) between two strings."""
+    tokens_a = set(_normalize_for_search(a).split())
+    tokens_b = set(_normalize_for_search(b).split())
+    if not tokens_a or not tokens_b:
+        return 0.0
+    intersection = tokens_a & tokens_b
+    union = tokens_a | tokens_b
+    return len(intersection) / len(union)
+
+
+async def _match_catalog_items(
+    category_id: Optional[str],
+    suggested_name: Optional[str],
+    search_keywords: list[str],
+    brand: Optional[str],
+    set_code: Optional[str],
+    pool,
+) -> list[dict[str, Any]]:
+    """
+    Multi-strategy catalog search against category_items table.
+
+    Returns top 5 matches ranked by match_score (descending).
+    """
+    if not pool or not category_id:
+        return []
+
+    seen_ids: set[str] = set()
+    matches: list[dict[str, Any]] = []
+
+    try:
+        async with pool.acquire() as conn:
+            # Strategy 1: Exact item_key match (highest confidence)
+            if suggested_name:
+                normalized = _normalize_for_search(suggested_name)
+                if normalized:
+                    rows = await conn.fetch(
+                        """
+                        SELECT id, category, item_key, title, brand, rarity,
+                               set_code, image_url, notes
+                        FROM category_items
+                        WHERE category = $1
+                          AND lower(item_key) ILIKE $2
+                        LIMIT 3
+                        """,
+                        category_id,
+                        f"%{normalized[:60]}%",
+                    )
+                    for row in rows:
+                        rid = str(row["id"])
+                        if rid not in seen_ids:
+                            seen_ids.add(rid)
+                            matches.append({
+                                "catalog_item_id": rid,
+                                "item_key": row["item_key"],
+                                "title": row["title"],
+                                "category": row["category"],
+                                "brand": row["brand"],
+                                "rarity": row["rarity"],
+                                "set_code": row["set_code"],
+                                "image_url": row["image_url"],
+                                "match_score": 0.9,
+                                "match_reason": "item_key_match",
+                            })
+
+            # Strategy 2: Title match (first 4 significant words)
+            if suggested_name:
+                words = _normalize_for_search(suggested_name).split()[:4]
+                title_query = " ".join(words)
+                if title_query:
+                    rows = await conn.fetch(
+                        """
+                        SELECT id, category, item_key, title, brand, rarity,
+                               set_code, image_url, notes
+                        FROM category_items
+                        WHERE category = $1
+                          AND title ILIKE $2
+                        LIMIT 5
+                        """,
+                        category_id,
+                        f"%{title_query}%",
+                    )
+                    for row in rows:
+                        rid = str(row["id"])
+                        if rid not in seen_ids:
+                            seen_ids.add(rid)
+                            sim = _text_similarity(suggested_name, row["title"] or "")
+                            matches.append({
+                                "catalog_item_id": rid,
+                                "item_key": row["item_key"],
+                                "title": row["title"],
+                                "category": row["category"],
+                                "brand": row["brand"],
+                                "rarity": row["rarity"],
+                                "set_code": row["set_code"],
+                                "image_url": row["image_url"],
+                                "match_score": round(sim, 4),
+                                "match_reason": "title_match",
+                            })
+
+            # Strategy 3: Keyword search from vision
+            for kw in search_keywords[:5]:
+                kw_clean = _normalize_for_search(kw)
+                if not kw_clean or len(kw_clean) < 2:
+                    continue
+                rows = await conn.fetch(
+                    """
+                    SELECT id, category, item_key, title, brand, rarity,
+                           set_code, image_url, notes
+                    FROM category_items
+                    WHERE category = $1
+                      AND (title ILIKE $2 OR item_key ILIKE $2 OR brand ILIKE $2)
+                    LIMIT 3
+                    """,
+                    category_id,
+                    f"%{kw_clean}%",
+                )
+                for row in rows:
+                    rid = str(row["id"])
+                    if rid not in seen_ids:
+                        seen_ids.add(rid)
+                        sim = _text_similarity(
+                            suggested_name or kw, row["title"] or ""
+                        )
+                        matches.append({
+                            "catalog_item_id": rid,
+                            "item_key": row["item_key"],
+                            "title": row["title"],
+                            "category": row["category"],
+                            "brand": row["brand"],
+                            "rarity": row["rarity"],
+                            "set_code": row["set_code"],
+                            "image_url": row["image_url"],
+                            "match_score": round(max(0.3, sim), 4),
+                            "match_reason": f"keyword:{kw_clean}",
+                        })
+
+            # Strategy 4: Brand + set_code combined filter
+            if brand and set_code:
+                rows = await conn.fetch(
+                    """
+                    SELECT id, category, item_key, title, brand, rarity,
+                           set_code, image_url, notes
+                    FROM category_items
+                    WHERE category = $1
+                      AND brand ILIKE $2
+                      AND set_code ILIKE $3
+                    LIMIT 5
+                    """,
+                    category_id,
+                    f"%{_normalize_for_search(brand)}%",
+                    f"%{_normalize_for_search(set_code)}%",
+                )
+                for row in rows:
+                    rid = str(row["id"])
+                    if rid not in seen_ids:
+                        seen_ids.add(rid)
+                        sim = _text_similarity(
+                            suggested_name or "", row["title"] or ""
+                        )
+                        matches.append({
+                            "catalog_item_id": rid,
+                            "item_key": row["item_key"],
+                            "title": row["title"],
+                            "category": row["category"],
+                            "brand": row["brand"],
+                            "rarity": row["rarity"],
+                            "set_code": row["set_code"],
+                            "image_url": row["image_url"],
+                            "match_score": round(max(0.5, sim), 4),
+                            "match_reason": "brand_set_match",
+                        })
+
+    except Exception as e:
+        logger.debug("Catalog matching error: %s", e)
+        return []
+
+    # Sort by match_score descending, return top 5
+    matches.sort(key=lambda m: m["match_score"], reverse=True)
+    return matches[:5]
+
+
+# ---------------------------------------------------------------------------
+# Re-prompt validation — Step 2.6
+# ---------------------------------------------------------------------------
+
+_REPROMPT_SCHEMA: dict[str, Any] = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "reprompt_validation",
+        "strict": False,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "selected_index": {
+                    "type": "integer",
+                    "description": (
+                        "0 = none match (original is better), "
+                        "1-N = catalog candidate number"
+                    ),
+                },
+                "confidence": {
+                    "type": "number",
+                    "description": "Confidence in this selection (0.0-1.0)",
+                },
+                "reasoning": {
+                    "type": "string",
+                    "description": "Brief explanation of why this candidate was chosen",
+                },
+            },
+            "required": ["selected_index", "confidence", "reasoning"],
+        },
+    },
+}
+
+
+async def _validate_with_reprompt(
+    image_bytes: bytes,
+    initial_name: str,
+    initial_category: str,
+    catalog_candidates: list[dict[str, Any]],
+) -> Optional[dict[str, Any]]:
+    """
+    Send the image + top catalog candidates back to OpenAI Vision for a
+    focused validation pass.  Returns {"selected_index", "confidence",
+    "reasoning"} or None on any error (graceful degradation).
+    """
+    import base64
+    import json
+
+    import httpx
+
+    from app.config import OPENAI_API_KEY, OPENAI_VISION_MODEL
+
+    if not OPENAI_API_KEY:
+        return None
+
+    try:
+        # Build numbered candidates text
+        lines: list[str] = []
+        for i, c in enumerate(catalog_candidates, 1):
+            parts = [f"{i}. {c.get('title', '?')}"]
+            if c.get("brand"):
+                parts.append(f"brand={c['brand']}")
+            if c.get("rarity"):
+                parts.append(f"rarity={c['rarity']}")
+            if c.get("set_code"):
+                parts.append(f"set={c['set_code']}")
+            if c.get("item_key"):
+                parts.append(f"key={c['item_key']}")
+            lines.append(" | ".join(parts))
+        candidates_text = "\n".join(lines)
+
+        system_prompt = (
+            "You are verifying a collectible item identification. "
+            f'You previously identified this item as:\n'
+            f'"{initial_name}" (category: {initial_category})\n\n'
+            f"Compare the image against these catalog candidates:\n"
+            f"{candidates_text}\n\n"
+            "Rules:\n"
+            "- Select the number (1-N) of the catalog item that BEST matches the image\n"
+            "- Select 0 if NONE of the catalog items match — your original identification is better\n"
+            "- Focus on visual details: art, text, packaging, colors, logos\n"
+            "- Be decisive — pick the single best match"
+        )
+
+        b64_image = base64.b64encode(image_bytes).decode("utf-8")
+        mime = "image/jpeg"
+        if image_bytes[:4] == b"\x89PNG":
+            mime = "image/png"
+        elif image_bytes[:4] == b"RIFF" and image_bytes[8:12] == b"WEBP":
+            mime = "image/webp"
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {OPENAI_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": OPENAI_VISION_MODEL,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:{mime};base64,{b64_image}",
+                                        "detail": "auto",
+                                    },
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "Which catalog candidate best matches this image?",
+                                },
+                            ],
+                        },
+                    ],
+                    "response_format": _REPROMPT_SCHEMA,
+                    "max_tokens": 300,
+                    "temperature": 0.1,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        content = (
+            data.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+        )
+        if not content:
+            return None
+
+        parsed = json.loads(content.strip())
+        idx = int(parsed.get("selected_index", -1))
+        conf = max(0.0, min(1.0, float(parsed.get("confidence", 0.0))))
+        reasoning = str(parsed.get("reasoning", ""))
+
+        if idx < 0 or idx > len(catalog_candidates):
+            logger.warning("Reprompt returned out-of-range index %d", idx)
+            return None
+
+        return {
+            "selected_index": idx,
+            "confidence": conf,
+            "reasoning": reasoning,
+        }
+
+    except Exception as e:
+        logger.warning("Reprompt validation failed (graceful skip): %s", e)
+        return None
 
 
 async def _barcode_lookup_internal(
@@ -318,14 +679,21 @@ async def _estimate_price(
     category_id: Optional[str],
     name: Optional[str],
     pool,
+    catalog_match_key: Optional[str] = None,
 ) -> tuple[Optional[float], Optional[str], Optional[dict[str, Any]]]:
     """
     Estimate price from multiple sources.
+
+    When catalog_match_key is provided, uses it for precise market_hits
+    lookup instead of fuzzy name matching.
 
     Returns (estimated_price, price_source, price_band_dict).
     """
     if not pool or not category_id or not name:
         return None, None, None
+
+    # Use catalog_match_key for precise lookup, fall back to fuzzy name
+    search_key = catalog_match_key if catalog_match_key else name[:40]
 
     # Source 1: market_hits (recent sold prices)
     try:
@@ -340,7 +708,7 @@ async def _estimate_price(
                 ORDER BY ended_at DESC NULLS LAST
                 LIMIT 20
                 """,
-                f"%{name[:40]}%",
+                f"%{search_key}%",
             )
 
             if rows and len(rows) >= 3:
@@ -603,6 +971,131 @@ async def process_intake(
             result.identification_method = "manual"
 
         # -----------------------------------------------------------------
+        # Step 2.5: Catalog matching (RAG) — ground vision results against catalog
+        # -----------------------------------------------------------------
+        if result.category_id and result.name and not barcode_found:
+            # Extract search keywords and brand/set from vision attributes
+            search_kws: list[str] = result.attributes.get("search_keywords", [])
+            vis_brand = result.attributes.get("brand") or result.attributes.get("manufacturer")
+            vis_set = result.attributes.get("set_code") or result.attributes.get("set_name")
+
+            catalog_matches = await _match_catalog_items(
+                category_id=result.category_id,
+                suggested_name=result.name,
+                search_keywords=search_kws if isinstance(search_kws, list) else [],
+                brand=str(vis_brand) if vis_brand else None,
+                set_code=str(vis_set) if vis_set else None,
+                pool=pool,
+            )
+
+            if catalog_matches:
+                best = catalog_matches[0]
+                best_score = best["match_score"]
+
+                if best_score >= 0.75:
+                    # Strong match — adopt catalog title
+                    result.catalog_match_id = best["catalog_item_id"]
+                    result.catalog_match_key = best["item_key"]
+                    result.name = best["title"] or result.name
+                    # Merge catalog attributes into result
+                    if best.get("brand"):
+                        result.attributes["brand"] = best["brand"]
+                    if best.get("rarity"):
+                        result.attributes["rarity"] = best["rarity"]
+                        result.subtype_id = best["rarity"]
+                    if best.get("set_code"):
+                        result.attributes["set_code"] = best["set_code"]
+                    if best.get("image_url"):
+                        result.image_url = result.image_url or best["image_url"]
+                    result.rationale.append(
+                        f"Catalog match (score={best_score:.2f}): adopted '{best['title']}'"
+                    )
+                elif best_score >= 0.6:
+                    # Probable match — keep vision name but note the match
+                    result.catalog_match_id = best["catalog_item_id"]
+                    result.catalog_match_key = best["item_key"]
+                    result.rationale.append(
+                        f"Probable catalog match (score={best_score:.2f}): '{best['title']}'"
+                    )
+
+                # Build alternatives list (top 3)
+                result.alternatives = catalog_matches[:3]
+
+            else:
+                result.catalog_miss = True
+                result.rationale.append("No catalog matches found for vision result")
+
+            # Build field_confidence from vision per-field scores
+            name_conf = result.attributes.get("name_confidence")
+            if name_conf is not None:
+                result.field_confidence = {
+                    "category": result.category_confidence,
+                    "name": float(name_conf),
+                    "condition": result.attributes.get("condition_confidence", 0.0),
+                }
+
+            # Extract chain_of_thought
+            cot = result.attributes.get("chain_of_thought")
+            if cot:
+                result.chain_of_thought = str(cot)
+
+        # -----------------------------------------------------------------
+        # Step 2.6: Re-prompt validation — send image + candidates back to
+        # the model for a focused visual comparison.
+        # -----------------------------------------------------------------
+        if (
+            image_bytes
+            and result.alternatives
+            and len(result.alternatives) >= 2
+        ):
+            best_alt_score = max(
+                a.get("match_score", 0) for a in result.alternatives
+            )
+            if best_alt_score < 0.90:
+                reprompt = await _validate_with_reprompt(
+                    image_bytes=image_bytes,
+                    initial_name=result.name or "",
+                    initial_category=result.category_id or "",
+                    catalog_candidates=result.alternatives,
+                )
+                if reprompt is not None:
+                    sel_idx = reprompt["selected_index"]
+                    sel_conf = reprompt["confidence"]
+                    sel_reason = reprompt["reasoning"]
+
+                    if sel_idx == 0:
+                        # Model re-confirmed original identification
+                        if result.field_confidence and result.field_confidence.get("name") is not None:
+                            result.field_confidence["name"] = max(
+                                result.field_confidence["name"], sel_conf,
+                            )
+                        result.rationale.append(
+                            f"Reprompt confirmed original '{result.name}' "
+                            f"(conf={sel_conf:.2f}): {sel_reason}"
+                        )
+                    elif 1 <= sel_idx <= len(result.alternatives):
+                        selected = result.alternatives[sel_idx - 1]
+                        result.catalog_match_id = selected.get("catalog_item_id")
+                        result.catalog_match_key = selected.get("item_key")
+                        result.name = selected.get("title") or result.name
+                        if selected.get("brand"):
+                            result.attributes["brand"] = selected["brand"]
+                        if selected.get("rarity"):
+                            result.attributes["rarity"] = selected["rarity"]
+                            result.subtype_id = selected["rarity"]
+                        if selected.get("set_code"):
+                            result.attributes["set_code"] = selected["set_code"]
+                        if result.field_confidence and result.field_confidence.get("name") is not None:
+                            result.field_confidence["name"] = max(
+                                result.field_confidence["name"], sel_conf,
+                            )
+                        result.rationale.append(
+                            f"Reprompt selected candidate #{sel_idx} "
+                            f"'{selected.get('title')}' over original "
+                            f"(conf={sel_conf:.2f}): {sel_reason}"
+                        )
+
+        # -----------------------------------------------------------------
         # Step 3: Taxonomy resolution
         # -----------------------------------------------------------------
         if result.category_id:
@@ -623,6 +1116,7 @@ async def process_intake(
         if result.estimated_price is None and result.category_id and result.name:
             price, source, band = await _estimate_price(
                 result.category_id, result.name, pool,
+                catalog_match_key=result.catalog_match_key,
             )
             if price is not None:
                 result.estimated_price = price

@@ -74,7 +74,9 @@ class TestIntakeResult:
             "attributes", "identification_method", "barcode", "barcode_type",
             "taxonomy_version", "taxonomy_confidence", "suggested_corrections",
             "estimated_price", "price_source", "price_band", "image_url",
-            "catalog_miss", "rationale",
+            "catalog_miss", "catalog_match_id", "catalog_match_key",
+            "alternatives", "field_confidence", "chain_of_thought",
+            "rationale",
         }
         assert set(d.keys()) == expected_keys
 
@@ -400,3 +402,199 @@ class TestProcessIntakeErrorResilience:
             result = await process_intake()
 
         assert "intake_timestamp" in result.attributes
+
+
+# ---------------------------------------------------------------------------
+# Reprompt validation (Step 2.6)
+# ---------------------------------------------------------------------------
+
+
+def _make_catalog_matches(n: int = 3) -> list[dict]:
+    """Build N fake catalog match dicts for testing."""
+    items = []
+    for i in range(n):
+        items.append({
+            "catalog_item_id": str(100 + i),
+            "item_key": f"ITEM-{i}",
+            "title": f"Candidate {i}",
+            "category": "pokemon",
+            "brand": f"Brand{i}",
+            "rarity": "rare" if i == 0 else "common",
+            "set_code": f"SET{i}",
+            "image_url": None,
+            "match_score": round(0.80 - i * 0.05, 2),
+            "match_reason": "title_match",
+        })
+    return items
+
+
+class TestRepromptValidation:
+    """Tests for _validate_with_reprompt re-prompt step (Step 2.6)."""
+
+    @pytest.mark.asyncio
+    async def test_reprompt_selects_different_candidate(self):
+        """Reprompt picks candidate #2 → result name and catalog_match_id updated."""
+        from app.agents.intake_agent import process_intake
+
+        catalog = _make_catalog_matches(3)
+
+        mock_vision = AsyncMock(return_value={
+            "category_id": "pokemon",
+            "category_confidence": 0.85,
+            "condition": None,
+            "condition_confidence": 0.0,
+            "suggested_name": "Charizard Base",
+            "attributes": {"name_confidence": 0.7, "search_keywords": []},
+            "identification_method": "vision_openai",
+        })
+
+        mock_reprompt = AsyncMock(return_value={
+            "selected_index": 2,
+            "confidence": 0.92,
+            "reasoning": "Art matches candidate 2",
+        })
+
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
+             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+            result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
+
+        # Should have adopted candidate #2 (index 1 in zero-based list)
+        assert result.name == "Candidate 1"
+        assert result.catalog_match_id == "101"
+        assert result.catalog_match_key == "ITEM-1"
+        assert any("Reprompt selected candidate #2" in r for r in result.rationale)
+
+    @pytest.mark.asyncio
+    async def test_reprompt_confirms_original(self):
+        """Reprompt returns index 0 → original name kept, confidence boosted."""
+        from app.agents.intake_agent import process_intake
+
+        catalog = _make_catalog_matches(3)
+
+        mock_vision = AsyncMock(return_value={
+            "category_id": "pokemon",
+            "category_confidence": 0.85,
+            "condition": None,
+            "condition_confidence": 0.0,
+            "suggested_name": "Charizard Base",
+            "attributes": {"name_confidence": 0.6, "search_keywords": []},
+            "identification_method": "vision_openai",
+        })
+
+        mock_reprompt = AsyncMock(return_value={
+            "selected_index": 0,
+            "confidence": 0.88,
+            "reasoning": "Original matches best",
+        })
+
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
+             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+            result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
+
+        # Name should still be the catalog-adopted one (score=0.80 >= 0.75)
+        # but reprompt confirmed it
+        assert result.catalog_match_id == "100"  # best catalog match adopted
+        assert result.field_confidence["name"] >= 0.88
+        assert any("Reprompt confirmed" in r for r in result.rationale)
+
+    @pytest.mark.asyncio
+    async def test_reprompt_skipped_high_score(self):
+        """Best catalog match score=0.95 → reprompt never called."""
+        from app.agents.intake_agent import process_intake
+
+        catalog = _make_catalog_matches(2)
+        catalog[0]["match_score"] = 0.95  # very high score
+
+        mock_vision = AsyncMock(return_value={
+            "category_id": "pokemon",
+            "category_confidence": 0.9,
+            "condition": None,
+            "condition_confidence": 0.0,
+            "suggested_name": "Pikachu",
+            "attributes": {"name_confidence": 0.8, "search_keywords": []},
+            "identification_method": "vision_openai",
+        })
+
+        mock_reprompt = AsyncMock(return_value=None)
+
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
+             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+            result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
+
+        mock_reprompt.assert_not_called()
+        assert result.name is not None  # adopted from catalog
+
+    @pytest.mark.asyncio
+    async def test_reprompt_skipped_single_match(self):
+        """Only 1 catalog match → reprompt never called."""
+        from app.agents.intake_agent import process_intake
+
+        catalog = _make_catalog_matches(1)  # single match
+
+        mock_vision = AsyncMock(return_value={
+            "category_id": "pokemon",
+            "category_confidence": 0.85,
+            "condition": None,
+            "condition_confidence": 0.0,
+            "suggested_name": "Pikachu",
+            "attributes": {"name_confidence": 0.7, "search_keywords": []},
+            "identification_method": "vision_openai",
+        })
+
+        mock_reprompt = AsyncMock(return_value=None)
+
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
+             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+            result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
+
+        mock_reprompt.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_reprompt_error_graceful(self):
+        """Reprompt raises RuntimeError → result unchanged, no crash."""
+        from app.agents.intake_agent import process_intake
+
+        catalog = _make_catalog_matches(3)
+
+        mock_vision = AsyncMock(return_value={
+            "category_id": "pokemon",
+            "category_confidence": 0.85,
+            "condition": None,
+            "condition_confidence": 0.0,
+            "suggested_name": "Charizard Base",
+            "attributes": {"name_confidence": 0.7, "search_keywords": []},
+            "identification_method": "vision_openai",
+        })
+
+        # Reprompt returns None (as if an error happened internally)
+        mock_reprompt = AsyncMock(return_value=None)
+
+        with patch("app.agents.intake_agent.get_db_pool", return_value=None), \
+             patch("app.agents.intake_agent._vision_classify_internal", mock_vision), \
+             patch("app.agents.intake_agent._lookup_taxonomy_corrections", AsyncMock(return_value=[])), \
+             patch("app.agents.intake_agent._estimate_price", AsyncMock(return_value=(None, None, None))), \
+             patch("app.agents.intake_agent._match_catalog_items", AsyncMock(return_value=catalog)), \
+             patch("app.agents.intake_agent._validate_with_reprompt", mock_reprompt):
+            result = await process_intake(image_bytes=b"\x89PNG\r\n\x1a\n")
+
+        # Should not crash; catalog adoption still happened
+        assert result is not None
+        assert result.catalog_match_id == "100"  # original best match
+        # No reprompt rationale entry
+        assert not any("Reprompt" in r for r in result.rationale)
