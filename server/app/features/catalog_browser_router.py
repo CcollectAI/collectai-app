@@ -167,6 +167,17 @@ async def browse_catalog_items(
         for r in rows
     ]
 
+    # Record demand signal (best-effort)
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="catalog_browsed",
+            category=category_id,
+            query_text=q,
+        )
+    except Exception:
+        pass
+
     return CatalogBrowseResponse(
         items=items,
         total=total,

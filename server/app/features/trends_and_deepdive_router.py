@@ -153,10 +153,41 @@ async def get_collection_trends(
                 gain_pct = ((last_val - first_val) / first_val) if first_val else 0.0
                 per_category[row["category"]] = {"gain_pct": round(gain_pct, 4)}
 
+            # ------- DCA cost basis history -------
+            # Compute cumulative cost basis over time from items with purchase_price
+            dca_history = None
+            try:
+                dca_rows = await conn.fetch(
+                    """
+                    WITH daily AS (
+                        SELECT
+                            date_trunc('day', COALESCE(i.purchased_at, i.created_at)) AS day,
+                            SUM(i.purchase_price) AS day_cost
+                        FROM items i
+                        WHERE i.user_id = $1
+                          AND i.purchase_price IS NOT NULL
+                          AND COALESCE(i.purchased_at, i.created_at) >= $2
+                        GROUP BY 1
+                    )
+                    SELECT day, SUM(day_cost) OVER (ORDER BY day) AS cumulative_cost
+                    FROM daily
+                    ORDER BY day
+                    """,
+                    user_id,
+                    cutoff,
+                )
+                if dca_rows:
+                    dca_history = [
+                        TimeseriesPoint(ts=row["day"], value=float(row["cumulative_cost"] or 0))
+                        for row in dca_rows
+                    ]
+            except Exception as e:
+                logger.debug("[collection/trends] DCA query failed (column may not exist): %s", e)
+
             return CollectionTrendResponse(
                 currency=currency,
                 total_history=total_history[offset:offset + limit],
-                dca_history=None,  # TODO: track DCA cost basis
+                dca_history=dca_history,
                 per_category_gain_loss=per_category,
             )
 
@@ -473,6 +504,17 @@ async def get_category_deep_dive(
                 key=lambda x: abs(x["change_pct"]),
                 reverse=True,
             )
+
+            # Record demand signal (best-effort)
+            try:
+                from app.features.data_moat import record_demand_signal
+                await record_demand_signal(
+                    signal_type="category_viewed",
+                    category=category,
+                    user_id=user_id,
+                )
+            except Exception:
+                pass
 
             result = CategoryDeepDiveResponse(
                 category=category,

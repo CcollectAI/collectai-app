@@ -100,7 +100,26 @@ async def run_once():
                 )
                 continue
 
-            # For each prediction, find actual sold prices
+            # Batch-fetch all actuals for this category's item_refs (avoids N+1)
+            item_refs = [pred["item_ref"] for pred in predictions]
+            all_actuals = await conn.fetch(
+                """
+                SELECT normalized_key, price::float AS price
+                FROM public.market_hits
+                WHERE normalized_key = ANY($1)
+                  AND price IS NOT NULL
+                  AND ended_at IS NOT NULL
+                  AND ended_at > now() - ($2 || ' days')::interval
+                """,
+                item_refs,
+                str(SOLD_LOOKBACK_DAYS),
+            )
+
+            # Group actuals by normalized_key
+            actuals_by_key: dict[str, list[float]] = {}
+            for row in all_actuals:
+                actuals_by_key.setdefault(row["normalized_key"], []).append(row["price"])
+
             covered = 0
             total = 0
             abs_errors = []
@@ -111,25 +130,11 @@ async def run_once():
                 q50 = pred["q50"]
                 q90 = pred["q90"]
 
-                # Get actual sold prices for this item_ref
-                actuals = await conn.fetch(
-                    """
-                    SELECT price::float AS price
-                    FROM public.market_hits
-                    WHERE normalized_key = $1
-                      AND price IS NOT NULL
-                      AND ended_at IS NOT NULL
-                      AND ended_at > now() - ($2 || ' days')::interval
-                    """,
-                    item_ref,
-                    str(SOLD_LOOKBACK_DAYS),
-                )
-
-                if not actuals:
+                prices = actuals_by_key.get(item_ref, [])
+                if not prices:
                     continue
 
-                for actual_row in actuals:
-                    actual_price = actual_row["price"]
+                for actual_price in prices:
                     total += 1
 
                     # PICP: is actual within [q10, q90]?

@@ -186,9 +186,26 @@ def evaluate(
             # Normalize discount to 0-1 (capped: 30% below = 1.0, at q50 = 0.0, above = 0.0)
             price_discount = max(0.0, min(1.0, -price_vs_q50_pct / 30.0))
 
-    # Recency — newer listings score higher (use discovered_at proximity)
-    # For now, all current hits get a 0.5 recency baseline
-    recency_score = 0.5
+    # Recency — newer listings score higher based on discovered_at
+    discovered_at = hit.get("discovered_at")
+    if discovered_at is not None:
+        if isinstance(discovered_at, str):
+            try:
+                discovered_dt = datetime.fromisoformat(discovered_at.replace("Z", "+00:00"))
+            except ValueError:
+                discovered_dt = None
+        elif isinstance(discovered_at, datetime):
+            discovered_dt = discovered_at if discovered_at.tzinfo else discovered_at.replace(tzinfo=timezone.utc)
+        else:
+            discovered_dt = None
+
+        if discovered_dt is not None:
+            days_since = max(0, (now - discovered_dt).total_seconds() / 86400)
+            recency_score = max(0.0, 1.0 - days_since / 30.0)
+        else:
+            recency_score = 0.5
+    else:
+        recency_score = 0.5
 
     # Scarcity/urgency — low quantity_available boosts deal score
     quantity = int(hit.get("quantity_available", 0) or 0)

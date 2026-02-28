@@ -46,7 +46,7 @@ class MarketplaceTrustSnapshot(BaseModel):
 # ---------------------------------------------------------------------------
 
 def _empty_seller(user_id: str) -> SellerReputation:
-    """Return a stub seller reputation when no trust data is available."""
+    """Return a default seller reputation when no trust data is available."""
     return SellerReputation(
         user_id=user_id,
         score=0.0,
@@ -57,14 +57,24 @@ def _empty_seller(user_id: str) -> SellerReputation:
     )
 
 
+def _compute_badge(completed: int, avg_stars: float) -> str:
+    """Determine trust badge from completed deals and average rating."""
+    if completed >= 50 and avg_stars >= 4.8:
+        return "verified"
+    elif completed >= 20 and avg_stars >= 4.5:
+        return "power"
+    elif completed >= 5:
+        return "regular"
+    return "new"
+
+
 @router.get("/seller/{user_id}", response_model=SellerReputation)
 async def get_seller_reputation(user_id: str, _caller: str = Depends(get_current_user_id)):
     """
     Seller reputation endpoint.
 
-    TODO: Wire up to a real trades / disputes table once the marketplace
-    feature ships.  Until then returns an honest empty stub so the frontend
-    knows no data is available yet (score=0, badge='new').
+    Computes trust score from completed P2P offers and deal_ratings.
+    Falls back to empty stub if no trade data exists.
     """
     try:
         UUID(user_id)
@@ -73,50 +83,56 @@ async def get_seller_reputation(user_id: str, _caller: str = Depends(get_current
 
     pool = get_db_pool()
     if not pool:
-        logger.info("[trust/seller] No DB pool -- returning empty stub for user_id=%s", user_id)
         return _empty_seller(user_id)
 
     try:
-        # Escape LIKE metacharacters to prevent pattern injection
-        safe_id = user_id.replace('%', r'\%').replace('_', r'\_')
         async with pool.acquire() as conn:
-            # Attempt to read from a future `marketplace_trades` or similar table.
-            # For now, check if seller has market_hits as a rough proxy.
+            # Query real offers + ratings for this user as seller
             row = await conn.fetchrow(
                 """
                 SELECT
-                    COUNT(*) AS total_trades,
-                    AVG(seller_score) AS avg_score
-                FROM market_hits
-                WHERE seller_score IS NOT NULL
-                  AND url ILIKE '%' || $1 || '%'
+                    COUNT(*) FILTER (WHERE o.status = 'completed') AS completed_deals,
+                    COUNT(*) FILTER (WHERE o.status IN ('completed', 'accepted', 'proposed', 'countered')) AS total_deals,
+                    COALESCE(AVG(dr.stars), 0) AS avg_stars,
+                    COUNT(dr.id) AS total_ratings
+                FROM offers o
+                LEFT JOIN deal_ratings dr ON dr.offer_id = o.id AND dr.rated_id = $1::uuid
+                WHERE o.seller_id = $1::uuid OR o.buyer_id = $1::uuid
                 """,
-                safe_id,
+                user_id,
             )
 
-            if not row or row["total_trades"] == 0:
+            if not row or row["completed_deals"] == 0:
                 return _empty_seller(user_id)
 
-            trades = int(row["total_trades"])
-            avg_score = float(row["avg_score"] or 0)
+            completed = int(row["completed_deals"])
+            avg_stars = float(row["avg_stars"])
+            total_ratings = int(row["total_ratings"])
 
-            # Map avg marketplace seller_score to a badge
-            if avg_score >= 99:
-                badge = "verified"
-            elif avg_score >= 95:
-                badge = "power"
-            elif trades >= 10:
-                badge = "regular"
-            else:
-                badge = "new"
+            # Trust score: weighted blend of completion rate and rating
+            # Base: avg_stars normalized to 0-100, boosted by completion count
+            score = min(100.0, (avg_stars / 5.0) * 80 + min(20.0, completed * 2))
+            badge = _compute_badge(completed, avg_stars)
+
+            # Count disputed/cancelled offers as disputes
+            dispute_count = await conn.fetchval(
+                """
+                SELECT COUNT(*) FROM offers
+                WHERE (seller_id = $1::uuid OR buyer_id = $1::uuid)
+                  AND status IN ('cancelled', 'declined')
+                """,
+                user_id,
+            ) or 0
+
+            dispute_rate = dispute_count / (completed + dispute_count) if (completed + dispute_count) > 0 else 0.0
 
             return SellerReputation(
                 user_id=user_id,
-                score=round(avg_score, 1),
+                score=round(score, 1),
                 badge=badge,
-                total_trades=trades,
-                disputes=0,  # TODO: track disputes in dedicated table
-                dispute_rate=0.0,
+                total_trades=completed,
+                disputes=dispute_count,
+                dispute_rate=round(dispute_rate, 4),
             )
 
     except asyncpg.PostgresError as e:

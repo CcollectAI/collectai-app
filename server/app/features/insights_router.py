@@ -190,9 +190,62 @@ async def get_personalized_insights(
                 for row in trend_rows
             ]
 
-            # ---- Rare-set alerts ----
-            # TODO: requires catalogue / retirement metadata; return empty for now
+            # ---- Rare-set alerts (near-complete sets) ----
             rare_alerts: List[RareSetAlert] = []
+            try:
+                import json as _json
+                set_rows = await conn.fetch(
+                    """
+                    SELECT sr.id, sr.category_id, sr.set_name, sr.total_items, sr.items_json
+                    FROM set_registry sr
+                    WHERE sr.total_items > 0
+                    """
+                )
+                for sr in set_rows:
+                    total = sr["total_items"]
+                    if total <= 0:
+                        continue
+                    # Parse items_json for set item keys
+                    try:
+                        items_list = sr["items_json"] if isinstance(sr["items_json"], list) else _json.loads(sr["items_json"] or "[]")
+                    except Exception:
+                        continue
+                    set_keys = [it.get("key") or it.get("name", "") for it in items_list if isinstance(it, dict)]
+                    if not set_keys:
+                        continue
+
+                    # Check user's owned items in this category
+                    owned_rows = await conn.fetch(
+                        """
+                        SELECT normalized_key, title FROM items
+                        WHERE user_id = $1 AND category = $2
+                        """,
+                        user_id, sr["category_id"],
+                    )
+                    if not owned_rows:
+                        continue
+
+                    # Match owned items against set keys
+                    owned_count = 0
+                    for sk in set_keys:
+                        sk_lower = sk.lower()
+                        for orow in owned_rows:
+                            nk = orow["normalized_key"]
+                            title = orow["title"]
+                            if (nk and sk_lower in nk.lower()) or (title and sk_lower in title.lower()):
+                                owned_count += 1
+                                break
+
+                    pct = owned_count / total
+                    if 0.80 <= pct < 1.0:
+                        missing = total - owned_count
+                        rare_alerts.append(RareSetAlert(
+                            category=sr["category_id"],
+                            item_name=sr["set_name"],
+                            note=f"You own {owned_count}/{total} ({pct:.0%}). Only {missing} item{'s' if missing != 1 else ''} to complete!",
+                        ))
+            except Exception as e:
+                logger.debug("[insights] rare-set alert check failed: %s", e)
 
             return PersonalizedInsightsResponse(
                 overexposed_categories=overexposed[offset:offset + limit],

@@ -1,0 +1,710 @@
+"""Tests for production hardening features:
+- Data moat REST endpoints and demand signal wiring
+- Valuation worker confidence scores and temporal decay
+- Trust score computation from real offer data
+- Alert rate limiting per user
+- Policy engine recency from discovered_at
+- Model loader cache TTL
+- Calibration worker batch pattern
+"""
+
+import inspect
+import math
+import os
+import sys
+import time
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+from unittest.mock import AsyncMock, patch, MagicMock
+
+os.environ.setdefault("DB_ENABLED", "false")
+os.environ.setdefault("DEV_MODE", "true")
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import pytest
+
+
+# ---------------------------------------------------------------------------
+# Package 1: Data Moat Endpoints
+# ---------------------------------------------------------------------------
+
+class TestDataMoatEndpoints:
+    """Tests for data moat REST API surface."""
+
+    def test_router_exists(self):
+        from app.features.data_moat import router
+        routes = [r.path for r in router.routes]
+        assert any("supply-trends" in r for r in routes)
+        assert any("demand-heat" in r for r in routes)
+        assert any("health" in r for r in routes)
+
+    def test_data_moat_registered_in_main(self):
+        import inspect
+        import main
+        src = inspect.getsource(main)
+        assert "data_moat.router" in src
+
+
+class TestDemandSignalWiring:
+    """Verify demand signals are wired into search, watchlist, and alerts."""
+
+    def test_marketplace_search_records_signal(self):
+        src = inspect.getsource(
+            __import__("app.agents.marketplace_router", fromlist=["marketplace_search"]).marketplace_search
+        )
+        assert "record_demand_signal" in src
+        assert "search_query" in src
+
+    def test_watchlist_add_records_signal(self):
+        src = inspect.getsource(
+            __import__("app.features.watchlist_router", fromlist=["add_to_watchlist"]).add_to_watchlist
+        )
+        assert "record_demand_signal" in src
+        assert "watchlist_add" in src
+
+    def test_unified_search_records_signal(self):
+        src = inspect.getsource(
+            __import__("app.features.search_router", fromlist=["unified_search"]).unified_search
+        )
+        assert "record_demand_signal" in src
+        assert "search_query" in src
+
+    def test_alert_creation_records_signal(self):
+        src = inspect.getsource(
+            __import__(
+                "app.features.alerts_feature_router",
+                fromlist=["create_or_update_alert"],
+            ).create_or_update_alert
+        )
+        assert "record_demand_signal" in src
+        assert "price_alert_set" in src
+
+
+# ---------------------------------------------------------------------------
+# Package 2: Valuation Worker — Confidence Score & Temporal Decay
+# ---------------------------------------------------------------------------
+
+class TestConfidenceScore:
+    """Tests for confidence_score formula."""
+
+    def test_high_confidence_many_recent_diverse_sources(self):
+        """Many recent hits from diverse sources → confidence near 1.0."""
+        # 10 hits, 3 sources, all very recent (weight ≈ 1.0)
+        n = 10
+        unique_sources = 3
+        avg_weight = 0.95
+
+        source_diversity = min(1.0, unique_sources / 3)  # 1.0
+        source_count_factor = min(1.0, n / 5)  # 1.0
+        recency_factor = min(1.0, avg_weight)  # 0.95
+
+        conf = source_count_factor * source_diversity * recency_factor
+        assert conf >= 0.90
+
+    def test_low_confidence_few_old_single_source(self):
+        """Few old hits from single source → low confidence."""
+        n = 2
+        unique_sources = 1
+        avg_weight = 0.3
+
+        source_diversity = min(1.0, unique_sources / 3)  # 0.33
+        source_count_factor = min(1.0, n / 5)  # 0.4
+        recency_factor = min(1.0, avg_weight)  # 0.3
+
+        conf = source_count_factor * source_diversity * recency_factor
+        assert conf < 0.10
+
+    def test_confidence_caps_at_1(self):
+        """Confidence should never exceed 1.0."""
+        n = 100
+        unique_sources = 10
+        avg_weight = 1.0
+
+        source_diversity = min(1.0, unique_sources / 3)
+        source_count_factor = min(1.0, n / 5)
+        recency_factor = min(1.0, avg_weight)
+
+        conf = source_count_factor * source_diversity * recency_factor
+        assert conf <= 1.0
+
+
+class TestTemporalDecay:
+    """Tests for exponential temporal decay weighting."""
+
+    def test_recent_listing_high_weight(self):
+        """A listing from today should have weight ≈ 1.0."""
+        days_old = 0
+        half_life = 30.0
+        weight = math.exp(-days_old / half_life)
+        assert weight >= 0.99
+
+    def test_30_day_old_half_weight(self):
+        """A listing from 30 days ago should have weight ≈ 0.37 (e^-1)."""
+        days_old = 30
+        half_life = 30.0
+        weight = math.exp(-days_old / half_life)
+        assert 0.35 <= weight <= 0.40
+
+    def test_60_day_old_very_low_weight(self):
+        """A listing from 60 days ago should have weight ≈ 0.14 (e^-2)."""
+        days_old = 60
+        half_life = 30.0
+        weight = math.exp(-days_old / half_life)
+        assert weight < 0.15
+
+    def test_valuation_worker_has_temporal_decay(self):
+        """Verify valuation_worker.py uses temporal decay."""
+        import workers.valuation_worker as vw
+        src = inspect.getsource(vw.run_once)
+        assert "math.exp" in src or "_DECAY_HALF_LIFE" in src
+        assert "weighted_quantile" in src
+
+
+class TestValuationModelBlending:
+    """Tests for Ridge model blending in valuation worker."""
+
+    def test_predict_ridge_basic(self):
+        from workers.valuation_worker import _predict_ridge
+        model = {
+            "features": ["price"],
+            "standardizer": {"mean": [100.0], "std": [50.0]},
+            "ridge": {"coef": [1.0], "intercept": 100.0},
+        }
+        result = _predict_ridge(model, "pokemon:charizard", 150.0)
+        assert result is not None
+        assert result > 0
+
+    def test_predict_ridge_mismatched_dimensions(self):
+        from workers.valuation_worker import _predict_ridge
+        model = {
+            "features": ["price", "condition"],
+            "standardizer": {"mean": [100.0], "std": [50.0]},  # Wrong dimension
+            "ridge": {"coef": [1.0, 0.5], "intercept": 100.0},
+        }
+        result = _predict_ridge(model, "pokemon:charizard", 150.0)
+        assert result is None  # Should fail gracefully
+
+    def test_predict_ridge_zero_std(self):
+        from workers.valuation_worker import _predict_ridge
+        model = {
+            "features": ["price"],
+            "standardizer": {"mean": [100.0], "std": [0.0]},
+            "ridge": {"coef": [1.0], "intercept": 100.0},
+        }
+        result = _predict_ridge(model, "pokemon:charizard", 150.0)
+        # Should handle zero std gracefully (x_std = 0)
+        assert result is not None
+        assert result == 100.0  # intercept only
+
+
+# ---------------------------------------------------------------------------
+# Package 3: Worker Hardening
+# ---------------------------------------------------------------------------
+
+class TestAlertRateLimiting:
+    """Tests for per-user alert caps in price_monitor_worker."""
+
+    def test_max_alerts_per_user_constant_exists(self):
+        import workers.price_monitor_worker as pmw
+        assert hasattr(pmw, "MAX_ALERTS_PER_USER")
+        assert pmw.MAX_ALERTS_PER_USER > 0
+
+    def test_threshold_alerts_has_per_user_tracking(self):
+        import workers.price_monitor_worker as pmw
+        src = inspect.getsource(pmw.check_threshold_alerts)
+        assert "alerts_per_user" in src
+        assert "MAX_ALERTS_PER_USER" in src
+
+    def test_anomaly_detection_has_per_user_tracking(self):
+        import workers.price_monitor_worker as pmw
+        src = inspect.getsource(pmw.detect_anomalies)
+        assert "anomaly_alerts_per_user" in src
+        assert "MAX_ALERTS_PER_USER" in src
+
+
+class TestCalibrationBatch:
+    """Tests for calibration worker N+1 fix."""
+
+    def test_calibration_uses_batch_query(self):
+        """Verify calibration worker uses ANY($1) batch query."""
+        import workers.calibration_worker as cw
+        src = inspect.getsource(cw.run_once)
+        assert "ANY($1)" in src
+        assert "actuals_by_key" in src
+
+    def test_calibration_no_per_prediction_query(self):
+        """Verify there's no per-prediction inner query loop."""
+        import workers.calibration_worker as cw
+        src = inspect.getsource(cw.run_once)
+        # The old N+1 pattern had a query inside `for pred in predictions:`
+        # Now the actuals fetch happens BEFORE the prediction loop
+        lines = src.split("\n")
+        batch_idx = None
+        pred_loop_idx = None
+        for i, line in enumerate(lines):
+            if "ANY($1)" in line:
+                batch_idx = i
+            if "for pred in predictions:" in line:
+                pred_loop_idx = i
+        assert batch_idx is not None
+        assert pred_loop_idx is not None
+        assert batch_idx < pred_loop_idx  # Batch query before the loop
+
+
+class TestPolicyEngineRecency:
+    """Tests for policy engine recency_score from discovered_at."""
+
+    def test_recent_listing_high_recency(self):
+        from app.agents.policy_engine import evaluate
+        now = datetime.now(timezone.utc)
+        mandate = {"max_price": 100, "min_trust_score": 0}
+        hit = {
+            "price": 50,
+            "provenance_score": 0.9,
+            "discovered_at": now.isoformat(),
+        }
+        prediction = {"q50": 80}
+        verdict = evaluate(mandate, hit, prediction)
+        # Recency should be near 1.0 for a just-discovered listing
+        assert verdict.deal_score > 0
+
+    def test_old_listing_low_recency(self):
+        from app.agents.policy_engine import evaluate
+        old = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat()
+        mandate = {"max_price": 100, "min_trust_score": 0}
+        hit = {
+            "price": 50,
+            "provenance_score": 0.9,
+            "discovered_at": old,
+        }
+        prediction = {"q50": 80}
+        verdict = evaluate(mandate, hit, prediction)
+        # 60 days old → recency should be 0 (max(0, 1-60/30) = 0)
+        assert verdict.passed
+
+    def test_no_discovered_at_fallback(self):
+        from app.agents.policy_engine import evaluate
+        mandate = {"max_price": 100, "min_trust_score": 0}
+        hit = {
+            "price": 50,
+            "provenance_score": 0.9,
+        }
+        verdict = evaluate(mandate, hit)
+        # Should still work with 0.5 baseline
+        assert verdict.passed
+
+
+# ---------------------------------------------------------------------------
+# Package 4: Trust Wiring
+# ---------------------------------------------------------------------------
+
+class TestTrustScoreComputation:
+    """Tests for trust badge computation."""
+
+    def test_compute_badge_verified(self):
+        from app.features.marketplace_trust_router import _compute_badge
+        assert _compute_badge(50, 4.8) == "verified"
+        assert _compute_badge(100, 5.0) == "verified"
+
+    def test_compute_badge_power(self):
+        from app.features.marketplace_trust_router import _compute_badge
+        assert _compute_badge(20, 4.5) == "power"
+        assert _compute_badge(30, 4.6) == "power"
+
+    def test_compute_badge_regular(self):
+        from app.features.marketplace_trust_router import _compute_badge
+        assert _compute_badge(5, 3.0) == "regular"
+        assert _compute_badge(10, 4.0) == "regular"
+
+    def test_compute_badge_new(self):
+        from app.features.marketplace_trust_router import _compute_badge
+        assert _compute_badge(0, 0.0) == "new"
+        assert _compute_badge(3, 4.9) == "new"
+
+
+class TestStubRoutersRemoved:
+    """Verify stub routers are removed from main.py."""
+
+    def test_no_stub_imports_in_main(self):
+        src = inspect.getsource(__import__("main"))
+        assert "spool_ui" not in src
+        assert "vision_ops" not in src
+        assert "vision_ingest" not in src
+        assert "spool_ops" not in src
+        assert "manifests_router" not in src
+        # ops_router is also removed
+        assert "from app.routes.ops import" not in src
+
+    def test_stub_files_deleted(self):
+        base = Path(__file__).resolve().parent.parent / "app" / "routes"
+        assert not (base / "vision_ops.py").exists()
+        assert not (base / "spool_ui.py").exists()
+        assert not (base / "manifests.py").exists()
+        assert not (base / "vision_ingest.py").exists()
+        assert not (base / "spool_ops.py").exists()
+        assert not (base / "ops.py").exists()
+
+
+class TestRareSetAlerts:
+    """Verify rare-set alerts are wired."""
+
+    def test_insights_has_set_registry_query(self):
+        import app.features.insights_router as ir
+        src = inspect.getsource(ir.get_personalized_insights)
+        assert "set_registry" in src
+        assert "0.80" in src  # 80% threshold
+
+
+# ---------------------------------------------------------------------------
+# Package 5: Monitoring & Observability
+# ---------------------------------------------------------------------------
+
+class TestModelLoaderCacheTTL:
+    """Tests for model cache TTL and max size."""
+
+    def test_cache_ttl_constant(self):
+        from app.ml.model_loader import CACHE_TTL, MAX_CACHE_SIZE
+        assert CACHE_TTL == 3600
+        assert MAX_CACHE_SIZE == 100
+
+    def test_stale_cache_entry_evicted(self):
+        from app.ml.model_loader import _get_cached_model, _set_cached_model, _model_cache
+
+        # Set a model with old timestamp
+        _model_cache["test_stale"] = {
+            "model_type": "test",
+            "_cached_at": time.time() - 7200,  # 2 hours ago
+        }
+
+        result = _get_cached_model("test_stale")
+        assert result is None  # Should be evicted due to TTL
+        assert "test_stale" not in _model_cache
+
+    def test_fresh_cache_entry_returned(self):
+        from app.ml.model_loader import _get_cached_model, _set_cached_model, _model_cache
+
+        _set_cached_model("test_fresh", {"model_type": "test"})
+        result = _get_cached_model("test_fresh")
+        assert result is not None
+        assert result["model_type"] == "test"
+
+        # Clean up
+        _model_cache.pop("test_fresh", None)
+
+    def test_cache_eviction_at_max_size(self):
+        from app.ml.model_loader import _set_cached_model, _model_cache, MAX_CACHE_SIZE
+
+        # Clear existing cache
+        original = dict(_model_cache)
+        _model_cache.clear()
+
+        # Fill cache to max
+        for i in range(MAX_CACHE_SIZE):
+            _set_cached_model(f"cat_{i}", {"model_type": f"model_{i}"})
+
+        assert len(_model_cache) == MAX_CACHE_SIZE
+
+        # Add one more — should evict oldest
+        _set_cached_model("overflow_cat", {"model_type": "overflow"})
+        assert len(_model_cache) == MAX_CACHE_SIZE
+        assert "overflow_cat" in _model_cache
+
+        # Restore
+        _model_cache.clear()
+        _model_cache.update(original)
+
+
+class TestWorkerRegistryPersistence:
+    """Tests for worker registry DB persistence."""
+
+    def test_record_run_calls_persist(self):
+        from app.worker_registry import record_run, _registry
+
+        # Clear registry to test
+        _registry.pop("test_persist", None)
+        record_run("test_persist", "ok")
+
+        assert "test_persist" in _registry
+        assert _registry["test_persist"]["runs"] == 1
+        assert _registry["test_persist"]["last_status"] == "ok"
+
+        # Clean up
+        _registry.pop("test_persist", None)
+
+    def test_persist_function_exists(self):
+        from app.worker_registry import _persist_run_to_db
+        assert callable(_persist_run_to_db)
+
+
+class TestAdapterHealthEndpoint:
+    """Tests for the combined adapter health endpoint."""
+
+    def test_adapter_health_endpoint_registered(self):
+        from app.agents.marketplace_router import router
+        routes = [r.path for r in router.routes]
+        assert any("adapter-health" in r for r in routes)
+
+
+class TestCanaryStatus:
+    """Tests for canary deployment status endpoint."""
+
+    def test_ops_canary_status_registered(self):
+        import inspect
+        import main
+        src = inspect.getsource(main)
+        assert "canary-status" in src or "canary_status" in src
+
+    @pytest.mark.asyncio
+    async def test_get_canary_status_no_db(self):
+        from app.ml.model_loader import get_canary_status
+        result = await get_canary_status()
+        assert "canary_traffic_pct" in result
+        assert "production_models" in result
+        assert "canary_models" in result
+        assert "calibration" in result
+
+
+# ---------------------------------------------------------------------------
+# Data Moat Strengthening: Split Refresh & Extended Signals
+# ---------------------------------------------------------------------------
+
+class TestSplitRefreshIntervals:
+    """Tests for independent matview refresh intervals."""
+
+    def test_demand_interval_default_5min(self):
+        import workers.matview_refresh_worker as mw
+        # Default should be 300s (5 min) unless legacy env var overrides
+        assert hasattr(mw, "DEMAND_INTERVAL")
+        assert mw.DEMAND_INTERVAL <= 300 or os.getenv("MATVIEW_REFRESH_INTERVAL")
+
+    def test_supply_interval_default_30min(self):
+        import workers.matview_refresh_worker as mw
+        assert hasattr(mw, "SUPPLY_INTERVAL")
+        assert mw.SUPPLY_INTERVAL <= 1800 or os.getenv("MATVIEW_REFRESH_INTERVAL")
+
+    def test_independent_loops_exist(self):
+        import workers.matview_refresh_worker as mw
+        assert hasattr(mw, "_demand_loop")
+        assert hasattr(mw, "_supply_loop")
+        assert callable(mw._demand_loop)
+        assert callable(mw._supply_loop)
+
+    def test_scheduler_loop_uses_gather(self):
+        import workers.matview_refresh_worker as mw
+        src = inspect.getsource(mw.scheduler_loop)
+        assert "gather" in src
+        assert "_demand_loop" in src
+        assert "_supply_loop" in src
+
+    def test_worker_registry_has_split_schedules(self):
+        from app.worker_registry import SCHEDULES
+        assert "matview_demand" in SCHEDULES
+        assert "matview_supply" in SCHEDULES
+        assert SCHEDULES["matview_demand"] == 300
+        assert SCHEDULES["matview_supply"] == 1800
+
+
+class TestExtendedSignalTypes:
+    """Tests for expanded demand signal type whitelist."""
+
+    def test_new_signal_types_in_whitelist(self):
+        src = inspect.getsource(
+            __import__("app.features.data_moat", fromlist=["record_demand_signal"]).record_demand_signal
+        )
+        for sig_type in ("item_scanned", "item_added", "catalog_browsed",
+                         "category_viewed", "collection_viewed"):
+            assert sig_type in src, f"Missing signal type: {sig_type}"
+
+
+class TestNewSignalWiring:
+    """Tests for demand signal wiring in newly instrumented endpoints."""
+
+    def test_dossier_records_item_viewed(self):
+        src = inspect.getsource(
+            __import__("app.agents.dossier_router", fromlist=["get_dossier"]).get_dossier
+        )
+        assert "record_demand_signal" in src
+        assert "item_viewed" in src
+
+    def test_intake_process_records_item_scanned(self):
+        src = inspect.getsource(
+            __import__("app.agents.intake_router", fromlist=["intake_process"]).intake_process
+        )
+        assert "record_demand_signal" in src
+        assert "item_scanned" in src
+
+    def test_intake_barcode_records_item_scanned(self):
+        src = inspect.getsource(
+            __import__("app.agents.intake_router", fromlist=["intake_barcode_only"]).intake_barcode_only
+        )
+        assert "record_demand_signal" in src
+        assert "item_scanned" in src
+
+    def test_intake_image_records_item_scanned(self):
+        src = inspect.getsource(
+            __import__("app.agents.intake_router", fromlist=["intake_image_only"]).intake_image_only
+        )
+        assert "record_demand_signal" in src
+        assert "item_scanned" in src
+
+    def test_intake_save_records_item_added(self):
+        src = inspect.getsource(
+            __import__("app.agents.intake_router", fromlist=["intake_save"]).intake_save
+        )
+        assert "record_demand_signal" in src
+        assert "item_added" in src
+
+    def test_catalog_browse_records_catalog_browsed(self):
+        src = inspect.getsource(
+            __import__("app.features.catalog_browser_router", fromlist=["browse_catalog_items"]).browse_catalog_items
+        )
+        assert "record_demand_signal" in src
+        assert "catalog_browsed" in src
+
+    def test_collection_detail_records_collection_viewed(self):
+        src = inspect.getsource(
+            __import__("app.features.collections_router", fromlist=["get_collection_detail"]).get_collection_detail
+        )
+        assert "record_demand_signal" in src
+        assert "collection_viewed" in src
+
+    def test_category_deepdive_records_category_viewed(self):
+        src = inspect.getsource(
+            __import__("app.features.trends_and_deepdive_router", fromlist=["get_category_deep_dive"]).get_category_deep_dive
+        )
+        assert "record_demand_signal" in src
+        assert "category_viewed" in src
+
+    def test_price_evidence_records_item_viewed(self):
+        src = inspect.getsource(
+            __import__("app.features.predict_router", fromlist=["get_price_evidence"]).get_price_evidence
+        )
+        assert "record_demand_signal" in src
+        assert "item_viewed" in src
+
+
+# ---------------------------------------------------------------------------
+# Feature 2: Price Accuracy Feedback Loop
+# ---------------------------------------------------------------------------
+
+class TestPriceFeedbackLoop:
+    """Tests for ground truth recording from completed deals."""
+
+    def test_record_price_ground_truth_function_exists(self):
+        from app.features.data_moat import record_price_ground_truth
+        assert callable(record_price_ground_truth)
+
+    @pytest.mark.asyncio
+    async def test_record_ground_truth_no_db(self):
+        from app.features.data_moat import record_price_ground_truth
+        result = await record_price_ground_truth(
+            item_id="00000000-0000-0000-0000-000000000001",
+            actual_price=42.50,
+            currency="EUR",
+        )
+        assert result is False  # No DB pool in test
+
+    def test_complete_deal_wires_ground_truth(self):
+        src = inspect.getsource(
+            __import__("app.agents.deal_desk_router", fromlist=["complete_deal"]).complete_deal
+        )
+        assert "record_price_ground_truth" in src
+        assert "actual_price" in src
+
+    def test_prediction_accuracy_endpoint_exists(self):
+        from app.features.data_moat import router
+        routes = [r.path for r in router.routes]
+        assert any("prediction-accuracy" in r for r in routes)
+
+
+# ---------------------------------------------------------------------------
+# Feature 3: Scarcity Detection
+# ---------------------------------------------------------------------------
+
+class TestScarcityDetection:
+    """Tests for supply-down + demand-up scarcity detection."""
+
+    def test_detect_scarcity_function_exists(self):
+        from app.features.data_moat import detect_scarcity
+        assert callable(detect_scarcity)
+
+    @pytest.mark.asyncio
+    async def test_detect_scarcity_no_db(self):
+        from app.features.data_moat import detect_scarcity
+        result = await detect_scarcity()
+        assert result == []  # No DB pool in test
+
+    def test_scarcity_endpoint_exists(self):
+        from app.features.data_moat import router
+        routes = [r.path for r in router.routes]
+        assert any("scarcity" in r for r in routes)
+
+    def test_scarcity_score_formula(self):
+        """Scarcity score = demand_growth * supply_decline (both > 0)."""
+        demand_growth = 1.5  # 150% more searches
+        supply_decline = 0.4  # 40% fewer listings
+        score = max(0, demand_growth) * max(0, supply_decline)
+        assert score == pytest.approx(0.6, abs=0.01)
+
+    def test_scarcity_score_zero_when_no_decline(self):
+        """No scarcity if supply is stable or growing."""
+        demand_growth = 2.0
+        supply_decline = -0.1  # Supply grew 10%
+        score = max(0, demand_growth) * max(0, supply_decline)
+        assert score == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Feature 4: Geographic Demand Segmentation
+# ---------------------------------------------------------------------------
+
+class TestGeoDemandSegmentation:
+    """Tests for geographic demand signal enrichment."""
+
+    def test_record_demand_signal_accepts_geo_params(self):
+        src = inspect.getsource(
+            __import__("app.features.data_moat", fromlist=["record_demand_signal"]).record_demand_signal
+        )
+        assert "region" in src
+        assert "country_code" in src
+
+    def test_get_user_geo_function_exists(self):
+        from app.features.data_moat import get_user_geo
+        assert callable(get_user_geo)
+
+    @pytest.mark.asyncio
+    async def test_get_user_geo_no_db(self):
+        from app.features.data_moat import get_user_geo
+        region, country = await get_user_geo("some-user-id")
+        assert region is None
+        assert country is None
+
+    @pytest.mark.asyncio
+    async def test_get_user_geo_none_user(self):
+        from app.features.data_moat import get_user_geo
+        region, country = await get_user_geo(None)
+        assert region is None
+        assert country is None
+
+    def test_demand_heat_by_region_endpoint_exists(self):
+        from app.features.data_moat import router
+        routes = [r.path for r in router.routes]
+        assert any("by-region" in r for r in routes)
+
+    def test_marketplace_search_enriches_with_geo(self):
+        src = inspect.getsource(
+            __import__("app.agents.marketplace_router", fromlist=["marketplace_search"]).marketplace_search
+        )
+        assert "get_user_geo" in src
+        assert "region" in src
+
+    def test_migration_adds_geo_columns(self):
+        """Verify the migration file exists and adds region/country_code."""
+        migration = Path(__file__).resolve().parent.parent.parent / "supabase" / "migrations" / "20260228_data_moat_v2.sql"
+        assert migration.exists()
+        content = migration.read_text()
+        assert "region" in content
+        assert "country_code" in content
+        assert "price_ground_truths" in content

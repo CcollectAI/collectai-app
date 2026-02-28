@@ -126,6 +126,19 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
                     payload.predicted_value, payload.currency,
                 )
                 logger.info("[watchlist] Added item: id=%s, user=%s", item.id, user_id)
+
+                # Record demand signal (best-effort)
+                try:
+                    from app.features.data_moat import record_demand_signal
+                    await record_demand_signal(
+                        signal_type="watchlist_add",
+                        category=payload.category,
+                        item_key=payload.name or payload.item_id,
+                        user_id=user_id,
+                    )
+                except Exception:
+                    pass
+
                 return item
         except Exception as e:
             logger.error("[watchlist] DB error adding to watchlist: %s", e)

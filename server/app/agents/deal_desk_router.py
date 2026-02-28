@@ -372,6 +372,25 @@ async def complete_deal(
         except (json.JSONDecodeError, TypeError) as e:
             logger.error("Invalid JSON from RPC: %s", e)
             raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
+
+        # Record ground truth for data moat feedback loop (best-effort)
+        try:
+            async with pool.acquire() as conn2:
+                offer_row = await conn2.fetchrow(
+                    "SELECT item_id, current_price, currency FROM offers WHERE id = $1::uuid",
+                    offer_id,
+                )
+            if offer_row:
+                from app.features.data_moat import record_price_ground_truth
+                await record_price_ground_truth(
+                    item_id=str(offer_row["item_id"]),
+                    actual_price=float(offer_row["current_price"]),
+                    currency=offer_row["currency"] or "EUR",
+                    source="deal_desk",
+                )
+        except Exception:
+            pass
+
         return data
     except Exception as exc:
         if hasattr(exc, "status_code"):

@@ -160,18 +160,13 @@ from app.routes.items_router import router as items_router
 from app.routes.portfolio_router import router as portfolio_router
 from app.features.import_router import router as import_router
 
-from app.routes.spool_ui import router as spool_ui_router
 from app.routes.vision_predict import router as vision_predict_router
-from app.routes.vision_ops import router as vision_ops_router
-from app.routes.vision_ingest import router as vision_ingest_router
-from app.routes.spool_ops import router as spool_ops_router
-from app.routes.manifests import router as manifests_router
-from app.routes.ops import router as ops_router
 from app.routes.user_settings_router import router as user_settings_router
 from app.routes.account_router import router as account_router
 from app.routes.fx_router import router as fx_router
 from app.routes.pipeline_status_router import router as pipeline_status_router
 
+from app.features import data_moat
 from app.features import insights_router
 from app.features import screenshot_intel_router
 from app.features import quickscan_advanced_router
@@ -230,15 +225,10 @@ app.include_router(portfolio_router)
 app.include_router(import_router)
 
 # Core routers
-app.include_router(spool_ui_router)
 app.include_router(vision_predict_router)
-app.include_router(vision_ops_router)
-app.include_router(vision_ingest_router)
-app.include_router(spool_ops_router)
-app.include_router(manifests_router)
-app.include_router(ops_router)
 
 # Feature routers
+app.include_router(data_moat.router)
 app.include_router(alerts_feature_router.router)
 app.include_router(trends_and_deepdive_router.router)
 app.include_router(provenance_router.router)
@@ -302,6 +292,7 @@ except ImportError:
 # /v1 aliases — all feature routers also available under /v1 prefix
 # ---------------------------------------------------------------------------
 _v1 = APIRouter(prefix="/v1")
+_v1.include_router(data_moat.router)
 _v1.include_router(alerts_feature_router.router)
 _v1.include_router(trends_and_deepdive_router.router)
 _v1.include_router(provenance_router.router)
@@ -409,6 +400,52 @@ async def ops_cache(_: bool = Depends(require_ops_key)):
 async def ops_circuits(_: bool = Depends(require_ops_key)):
     from workers.circuit_breaker import all_circuit_status
     return all_circuit_status()
+
+
+@app.get("/ops/canary-status")
+async def ops_canary_status(_: bool = Depends(require_ops_key)):
+    from app.ml.model_loader import get_canary_status
+    return await get_canary_status()
+
+
+@app.get("/ops/worker-history")
+async def ops_worker_history(
+    worker_name: str = "",
+    limit: int = 50,
+    _: bool = Depends(require_ops_key),
+):
+    """Recent worker run history from DB (persisted across restarts)."""
+    from app.lib.db_helpers import get_db_pool
+    pool = get_db_pool()
+    if not pool:
+        return {"runs": [], "note": "no_db_pool"}
+    try:
+        async with pool.acquire() as conn:
+            if worker_name:
+                rows = await conn.fetch(
+                    """
+                    SELECT worker_name, status, finished_at
+                    FROM worker_runs
+                    WHERE worker_name = $1
+                    ORDER BY finished_at DESC
+                    LIMIT $2
+                    """,
+                    worker_name,
+                    min(limit, 200),
+                )
+            else:
+                rows = await conn.fetch(
+                    """
+                    SELECT worker_name, status, finished_at
+                    FROM worker_runs
+                    ORDER BY finished_at DESC
+                    LIMIT $1
+                    """,
+                    min(limit, 200),
+                )
+            return {"runs": [dict(r) for r in rows]}
+    except Exception as e:
+        return {"runs": [], "error": str(e)}
 
 
 if DEBUG:

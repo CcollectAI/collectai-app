@@ -180,6 +180,19 @@ async def create_or_update_alert(
             now,
             json.dumps(payload.metadata or {}),
         )
+
+    # Record demand signal (best-effort)
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="price_alert_set",
+            category=payload.category,
+            item_key=payload.item_id,
+            user_id=user_id,
+        )
+    except Exception:
+        pass
+
     return alert
 
 

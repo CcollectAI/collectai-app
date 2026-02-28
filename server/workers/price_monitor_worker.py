@@ -38,6 +38,9 @@ DEDUP_HOURS = int(os.getenv("ALERT_DEDUP_HOURS", "24"))
 # Set completion threshold (suggest only when user owns >50% of a set)
 SET_COMPLETION_MIN_PCT = float(os.getenv("SET_COMPLETION_MIN_PCT", "0.50"))
 
+# Maximum alerts per user per monitoring cycle (prevents alert spam)
+MAX_ALERTS_PER_USER = int(os.getenv("MAX_ALERTS_PER_USER", "10"))
+
 
 async def _already_fired(conn, user_id, item_id, trigger_type):
     """Check if an alert of this type already fired for this user+item in the last DEDUP_HOURS."""
@@ -100,12 +103,17 @@ async def check_threshold_alerts(conn):
 
     logger.info("Checking %d threshold alerts", len(alerts))
     fired = 0
+    alerts_per_user: dict[str, int] = {}
 
     for alert in alerts:
         alert_id = alert["alert_id"]
         user_id = alert["user_id"]
         item_id = alert["item_id"]
         threshold = float(alert["threshold_value"])
+
+        # Skip if user already received MAX_ALERTS_PER_USER this cycle
+        if alerts_per_user.get(str(user_id), 0) >= MAX_ALERTS_PER_USER:
+            continue
 
         # Skip if already fired recently
         if await _already_fired_by_alert(conn, alert_id):
@@ -164,6 +172,7 @@ async def check_threshold_alerts(conn):
             )
 
             fired += 1
+            alerts_per_user[str(user_id)] = alerts_per_user.get(str(user_id), 0) + 1
             logger.info(
                 "Threshold alert fired: alert_id=%s item=%s q50=%.2f threshold=%.2f",
                 alert_id, item_id, q50, threshold,
@@ -197,6 +206,7 @@ async def detect_anomalies(conn):
 
     logger.info("Checking %d item_refs for price anomalies", len(item_refs))
     fired = 0
+    anomaly_alerts_per_user: dict[str, int] = {}
 
     for row in item_refs:
         item_ref = row["item_ref"]
@@ -279,6 +289,10 @@ async def detect_anomalies(conn):
             user_id = owner["user_id"]
             item_id = str(owner["item_id"])
 
+            # Per-user alert cap
+            if anomaly_alerts_per_user.get(str(user_id), 0) >= MAX_ALERTS_PER_USER:
+                continue
+
             # Dedup check
             if await _already_fired(conn, user_id, item_id, trigger_type):
                 continue
@@ -297,6 +311,7 @@ async def detect_anomalies(conn):
             )
 
             fired += 1
+            anomaly_alerts_per_user[str(user_id)] = anomaly_alerts_per_user.get(str(user_id), 0) + 1
             logger.info(
                 "Anomaly alert fired: user=%s item_ref=%s type=%s z=%.2f pct=%.1f%%",
                 user_id, item_ref, trigger_type, z_score, pct_change,

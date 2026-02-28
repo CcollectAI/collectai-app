@@ -328,6 +328,18 @@ async def get_collection_detail(
                     for ir in item_rows
                 ]
 
+                # Record demand signal (best-effort)
+                try:
+                    from app.features.data_moat import record_demand_signal
+                    await record_demand_signal(
+                        signal_type="collection_viewed",
+                        category=row["category"],
+                        item_key=row["collection_key"],
+                        user_id=user_id,
+                    )
+                except Exception:
+                    pass
+
                 return CollectionDetail(**dict(row), items=items)
         except HTTPException:
             raise

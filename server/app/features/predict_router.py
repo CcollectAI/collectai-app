@@ -152,6 +152,17 @@ async def get_price_evidence(
                 except Exception as e:
                     logger.warning("[predict] fallback explanation failed: %s", e)
 
+            # Record demand signal (best-effort)
+            try:
+                from app.features.data_moat import record_demand_signal
+                await record_demand_signal(
+                    signal_type="item_viewed",
+                    item_key=item_id,
+                    user_id=user_id,
+                )
+            except Exception:
+                pass
+
             return PriceEvidenceResponse(
                 explanation=explanation,
                 evidence_summary=evidence_summary,

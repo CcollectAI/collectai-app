@@ -872,6 +872,26 @@ export type IntakeResultResponse = {
   } | null;
   image_url: string | null;
   catalog_miss: boolean;
+  catalog_match_id: string | null;
+  catalog_match_key: string | null;
+  alternatives: Array<{
+    catalog_item_id: string | null;
+    item_key: string | null;
+    title: string | null;
+    category: string | null;
+    brand: string | null;
+    rarity: string | null;
+    set_code: string | null;
+    image_url: string | null;
+    match_score: number;
+    match_reason: string | null;
+  }>;
+  field_confidence: {
+    category: number;
+    name: number;
+    condition: number;
+  } | null;
+  chain_of_thought: string | null;
   rationale: string[];
 };
 

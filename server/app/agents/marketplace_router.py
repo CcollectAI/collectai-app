@@ -171,6 +171,21 @@ async def marketplace_search(
                 hits_out.sort(key=lambda h: (h.get("price") is None, -(h.get("price") or 0)))
             # "newest" and "relevance" keep the default order from the agent
 
+        # Record demand signal with geo enrichment (best-effort)
+        try:
+            from app.features.data_moat import record_demand_signal, get_user_geo
+            region, country = await get_user_geo(user_id)
+            await record_demand_signal(
+                signal_type="search_query",
+                category=request.category,
+                query_text=request.query,
+                user_id=user_id,
+                region=region,
+                country_code=country,
+            )
+        except Exception:
+            pass
+
         return {
             "hits": hits_out,
             "total_sources_queried": result.total_sources_queried,
@@ -278,6 +293,28 @@ async def marketplace_health():
         return {"adapters": [], "error": "Health check failed"}
     finally:
         await agent.close()
+
+
+@router.get("/adapter-health")
+async def adapter_health():
+    """Combined adapter health + circuit breaker status for all 11 sources."""
+    from app.agents.marketplace_agent import MarketplaceAgent
+    from workers.circuit_breaker import all_circuit_status
+
+    agent = MarketplaceAgent()
+    try:
+        health = await agent.health_check()
+    except Exception:
+        health = {"adapters": {}, "any_healthy": False}
+    finally:
+        await agent.close()
+
+    circuits = all_circuit_status()
+    return {
+        "adapters": health.get("adapters", {}),
+        "any_healthy": health.get("any_healthy", False),
+        "circuit_breakers": circuits,
+    }
 
 
 # ---------------------------------------------------------------------------

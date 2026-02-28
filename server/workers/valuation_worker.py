@@ -5,6 +5,7 @@ import asyncio
 import datetime
 import json
 import logging
+import math
 import os
 
 import asyncpg
@@ -19,6 +20,12 @@ logging.basicConfig(
 DSN = os.getenv("DB_DSN")
 
 _EVIDENCE_LOOKBACK_DAYS = 90
+
+# Temporal decay: half-life in days (listings older than this get exponentially less weight)
+_DECAY_HALF_LIFE = 30.0
+
+# Model blending weight when calibration gate passes
+_MODEL_BLEND_ALPHA = 0.7
 
 
 def _build_evidence(hits: list[dict]) -> tuple[list[str], dict, str]:
@@ -92,6 +99,56 @@ def _build_evidence(hits: list[dict]) -> tuple[list[str], dict, str]:
     return evidence_hit_ids, evidence_summary, explanation_text
 
 
+async def _check_gate_pass(conn, category: str) -> bool:
+    """Check if the latest calibration snapshot for a category has gate_pass=True."""
+    try:
+        row = await conn.fetchrow(
+            """
+            SELECT gate_pass FROM public.calibration_snapshots
+            WHERE category = $1
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            category,
+        )
+        return bool(row and row["gate_pass"])
+    except Exception:
+        return False
+
+
+def _predict_ridge(model: dict, item_ref: str, fallback_q50: float) -> float | None:
+    """Run Ridge model inference to get a q50 prediction.
+
+    Uses the model artifact's standardizer and ridge coefficients.
+    Returns predicted value or None on failure.
+    """
+    try:
+        standardizer = model["standardizer"]
+        ridge = model["ridge"]
+        features = model.get("features", [])
+        mean = standardizer["mean"]
+        std = standardizer["std"]
+        coef = ridge["coef"]
+        intercept = ridge["intercept"]
+
+        # Build a simple feature vector using the empirical q50 as the primary feature
+        # The Ridge model expects standardized features
+        x = [fallback_q50] + [0.0] * (len(features) - 1)
+        if len(x) != len(mean) or len(x) != len(coef):
+            return None
+
+        # Standardize
+        x_std = [(x[i] - mean[i]) / std[i] if std[i] > 0 else 0.0 for i in range(len(x))]
+
+        # Predict
+        prediction = sum(x_std[i] * coef[i] for i in range(len(x_std))) + intercept
+        if prediction > 0:
+            return float(prediction)
+        return None
+    except Exception:
+        return None
+
+
 @with_async_retry(max_retries=3, base_delay=1.0, max_delay=60.0)
 async def run_once():
     if not DSN:
@@ -130,41 +187,98 @@ async def run_once():
         logging.info("Found %d item_ref groups to process", len(groups))
 
         for item_ref, hits in groups.items():
-            prices = sorted(float(h["price"]) for h in hits)
-            if not prices:
+            now = datetime.datetime.now(datetime.timezone.utc)
+
+            # ── Temporal decay weighting ──────────────────────────────────
+            weighted_prices = []
+            weights = []
+            for h in hits:
+                price = float(h["price"])
+                observed = h["observed_at"]
+                if observed is not None:
+                    days_old = max(0, (now - observed).total_seconds() / 86400)
+                else:
+                    days_old = _DECAY_HALF_LIFE  # assume moderate age if unknown
+                weight = math.exp(-days_old / _DECAY_HALF_LIFE)
+                weighted_prices.append((price, weight))
+                weights.append(weight)
+
+            if not weighted_prices:
                 logging.warning("No valid prices for item_ref=%s, skipping", item_ref)
                 continue
 
-            n = len(prices)
+            # Sort by price for weighted quantile computation
+            weighted_prices.sort(key=lambda pw: pw[0])
+            total_weight = sum(w for _, w in weighted_prices)
 
-            def q(p: float, _prices=prices, _n=n) -> float:
-                """Simple quantile helper: p in [0,1]."""
-                idx = max(0, min(_n - 1, int(round(p * (_n - 1)))))
-                return _prices[idx]
+            def weighted_quantile(p: float) -> float:
+                """Compute weighted quantile at percentile p in [0,1]."""
+                if total_weight <= 0:
+                    return weighted_prices[len(weighted_prices) // 2][0]
+                cumulative = 0.0
+                target = p * total_weight
+                for price, w in weighted_prices:
+                    cumulative += w
+                    if cumulative >= target:
+                        return price
+                return weighted_prices[-1][0]
 
-            q10 = q(0.10)
-            q50 = q(0.50)
-            q90 = q(0.90)
+            q10 = weighted_quantile(0.10)
+            q50 = weighted_quantile(0.50)
+            q90 = weighted_quantile(0.90)
 
-            now = datetime.datetime.now(datetime.timezone.utc)
+            n = len(weighted_prices)
+
+            # ── Model blending ────────────────────────────────────────────
+            # Try to blend with Ridge model prediction if available
+            model_used = False
+            try:
+                from app.ml.model_loader import get_active_model
+                category = item_ref.split(":")[0] if ":" in item_ref else item_ref
+                model = await get_active_model(category, routing_key=item_ref)
+                if model and model.get("ridge") and model.get("standardizer"):
+                    # Check calibration gate_pass
+                    gate_pass = await _check_gate_pass(conn, category)
+                    alpha = _MODEL_BLEND_ALPHA if gate_pass else 0.0
+                    if alpha > 0:
+                        model_q50 = _predict_ridge(model, item_ref, q50)
+                        if model_q50 is not None:
+                            q50 = alpha * model_q50 + (1 - alpha) * q50
+                            model_used = True
+            except Exception as e:
+                logging.debug("Model blending skipped for %s: %s", item_ref, e)
+
+            # ── Confidence score ──────────────────────────────────────────
+            # conf = min(1.0, source_count/5) × source_diversity × recency
+            unique_sources = len({h["source"] for h in hits if h["source"]})
+            source_diversity = min(1.0, unique_sources / 3)
+            source_count_factor = min(1.0, n / 5)
+            # Recency: average weight (closer to 1.0 = more recent data)
+            avg_weight = total_weight / n if n > 0 else 0.5
+            recency_factor = min(1.0, avg_weight)
+            confidence_score = round(source_count_factor * source_diversity * recency_factor, 4)
 
             # Build evidence artifacts
             evidence_hit_ids, evidence_summary, explanation_text = _build_evidence(hits)
+            if model_used:
+                explanation_text += " Model-blended prediction applied."
 
             logging.info(
-                "item_ref=%s n=%d q10=%.2f q50=%.2f q90=%.2f comps=%d",
-                item_ref, n, q10, q50, q90, len(evidence_hit_ids),
+                "item_ref=%s n=%d q10=%.2f q50=%.2f q90=%.2f conf=%.3f comps=%d model=%s",
+                item_ref, n, q10, q50, q90, confidence_score, len(evidence_hit_ids),
+                "blended" if model_used else "empirical",
             )
 
             # ---------------------------------------------------------------
-            # INSERT price prediction with evidence columns
+            # INSERT price prediction with evidence + confidence
             # ---------------------------------------------------------------
             await conn.execute(
                 """
                 INSERT INTO public.price_predictions
                     (item_ref, q10, q50, q90, generated_at,
-                     evidence_hit_ids, evidence_summary, explanation)
-                VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)
+                     evidence_hit_ids, evidence_summary, explanation,
+                     conf_score)
+                VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
                 """,
                 item_ref,
                 q10,
@@ -174,6 +288,7 @@ async def run_once():
                 evidence_hit_ids,
                 json.dumps(evidence_summary),
                 explanation_text,
+                confidence_score,
             )
 
             # ---------------------------------------------------------------

@@ -58,6 +58,27 @@ class SuggestedCorrectionResponse(BaseModel):
     user_count: int
 
 
+class FieldConfidence(BaseModel):
+    """Per-field confidence scores from the vision + catalog pipeline."""
+    category: float = 0.0
+    name: float = 0.0
+    condition: float = 0.0
+
+
+class CatalogMatchResponse(BaseModel):
+    """A catalog item that matched the scanned item."""
+    catalog_item_id: Optional[str] = None
+    item_key: Optional[str] = None
+    title: Optional[str] = None
+    category: Optional[str] = None
+    brand: Optional[str] = None
+    rarity: Optional[str] = None
+    set_code: Optional[str] = None
+    image_url: Optional[str] = None
+    match_score: float = 0.0
+    match_reason: Optional[str] = None
+
+
 class IntakeResultResponse(BaseModel):
     """JSON-serialisable response for an intake result."""
 
@@ -77,6 +98,11 @@ class IntakeResultResponse(BaseModel):
     price_band: Optional[PriceBandResponse] = None
     image_url: Optional[str] = None
     catalog_miss: bool = False
+    catalog_match_id: Optional[str] = None
+    catalog_match_key: Optional[str] = None
+    alternatives: list[CatalogMatchResponse] = Field(default_factory=list)
+    field_confidence: Optional[FieldConfidence] = None
+    chain_of_thought: Optional[str] = None
     rationale: list[str] = Field(default_factory=list)
 
 
@@ -126,6 +152,37 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
         except Exception:
             pass
 
+    # Build alternatives list
+    alternatives: list[CatalogMatchResponse] = []
+    for alt in (result.alternatives or []):
+        try:
+            alternatives.append(CatalogMatchResponse(
+                catalog_item_id=alt.get("catalog_item_id"),
+                item_key=alt.get("item_key"),
+                title=alt.get("title"),
+                category=alt.get("category"),
+                brand=alt.get("brand"),
+                rarity=alt.get("rarity"),
+                set_code=alt.get("set_code"),
+                image_url=alt.get("image_url"),
+                match_score=alt.get("match_score", 0),
+                match_reason=alt.get("match_reason"),
+            ))
+        except Exception:
+            pass
+
+    # Build field confidence
+    field_confidence = None
+    if result.field_confidence:
+        try:
+            field_confidence = FieldConfidence(
+                category=result.field_confidence.get("category", 0),
+                name=result.field_confidence.get("name", 0),
+                condition=result.field_confidence.get("condition", 0),
+            )
+        except Exception:
+            pass
+
     return IntakeResultResponse(
         name=result.name,
         category_id=result.category_id,
@@ -143,6 +200,11 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
         price_band=price_band,
         image_url=result.image_url,
         catalog_miss=result.catalog_miss,
+        catalog_match_id=result.catalog_match_id,
+        catalog_match_key=result.catalog_match_key,
+        alternatives=alternatives,
+        field_confidence=field_confidence,
+        chain_of_thought=result.chain_of_thought,
         rationale=result.rationale,
     )
 
@@ -224,6 +286,18 @@ async def intake_process(
         user_id=user_id,
     )
 
+    # Record demand signal (best-effort)
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="item_scanned",
+            category=category,
+            item_key=name or barcode,
+            user_id=user_id,
+        )
+    except Exception:
+        pass
+
     return _intake_to_response(result)
 
 
@@ -257,6 +331,17 @@ async def intake_barcode_only(
         user_hints=user_hints if user_hints else None,
         user_id=user_id,
     )
+
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="item_scanned",
+            category=req.category,
+            item_key=req.name or barcode,
+            user_id=user_id,
+        )
+    except Exception:
+        pass
 
     return _intake_to_response(result)
 
@@ -309,6 +394,17 @@ async def intake_image_only(
         user_hints=user_hints if user_hints else None,
         user_id=user_id,
     )
+
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="item_scanned",
+            category=category,
+            item_key=name,
+            user_id=user_id,
+        )
+    except Exception:
+        pass
 
     return _intake_to_response(result)
 
@@ -440,5 +536,17 @@ async def intake_save(
         "[intake/save] Created item %s for user %s (category=%s)",
         item_id, user_id, payload.category,
     )
+
+    # Record demand signal — strongest signal: user committed to adding this item
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="item_added",
+            category=payload.category,
+            item_key=normalized_key,
+            user_id=user_id,
+        )
+    except Exception:
+        pass
 
     return IntakeSaveResponse(id=item_id, title=payload.title, category=payload.category)

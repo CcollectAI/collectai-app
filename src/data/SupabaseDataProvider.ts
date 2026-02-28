@@ -461,6 +461,41 @@ export class SupabaseDataProvider implements DataProvider {
         ?? (intake.attributes?.condition_guess as string | undefined)
         ?? null;
 
+      // Map alternatives from snake_case to camelCase
+      const alternatives = (intake.alternatives ?? []).map((alt) => ({
+        catalogItemId: alt.catalog_item_id ?? null,
+        itemKey: alt.item_key ?? null,
+        title: alt.title ?? null,
+        category: alt.category ?? null,
+        brand: alt.brand ?? null,
+        rarity: alt.rarity ?? null,
+        setCode: alt.set_code ?? null,
+        imageUrl: alt.image_url ?? null,
+        matchScore: alt.match_score ?? 0,
+        matchReason: alt.match_reason ?? null,
+      }));
+
+      const fieldConfidence = intake.field_confidence
+        ? {
+            category: intake.field_confidence.category ?? 0,
+            name: intake.field_confidence.name ?? 0,
+            condition: intake.field_confidence.condition ?? 0,
+          }
+        : null;
+
+      // Extract category-specific details from intake attributes
+      // (exclude internal fields like chain_of_thought, search_keywords, condition, name_confidence)
+      const internalKeys = new Set(['chain_of_thought', 'search_keywords', 'condition', 'condition_guess', 'name_confidence', 'clip_hint']);
+      const extractedDetails: Record<string, string | number | boolean | null> = {};
+      if (intake.attributes && typeof intake.attributes === 'object') {
+        for (const [k, v] of Object.entries(intake.attributes)) {
+          if (internalKeys.has(k)) continue;
+          if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' || v === null) {
+            extractedDetails[k] = v;
+          }
+        }
+      }
+
       return {
         itemId: null,
         attributes: {
@@ -468,6 +503,7 @@ export class SupabaseDataProvider implements DataProvider {
           editionGuess: (intake.attributes?.edition as string | undefined) ?? null,
           conditionGuess: condition,
           rarityScore: (intake.attributes?.rarity_score as number | undefined) ?? null,
+          extractedDetails: Object.keys(extractedDetails).length > 0 ? extractedDetails : null,
         },
         prediction: {
           name: intake.name ?? '',
@@ -478,6 +514,10 @@ export class SupabaseDataProvider implements DataProvider {
           confidence,
           explanation: intake.rationale?.length ? intake.rationale.join(' ') : null,
         },
+        catalogMatchId: intake.catalog_match_id ?? null,
+        catalogMatchKey: intake.catalog_match_key ?? null,
+        alternatives,
+        fieldConfidence,
       };
     }
 

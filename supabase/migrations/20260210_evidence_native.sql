@@ -204,7 +204,7 @@ SELECT
     pp.q10,
     pp.q50,
     pp.q90,
-    pp.confidence,
+    pp.conf_score AS confidence,
     pp.explanation,
     pp.evidence_summary,
     pp.evidence_hit_ids,
@@ -214,7 +214,7 @@ FROM public.items i
 LEFT JOIN LATERAL (
     SELECT *
     FROM public.price_predictions pp2
-    WHERE pp2.nk = i.id::text
+    WHERE pp2.item_id = i.id
     ORDER BY pp2.created_at DESC
     LIMIT 1
 ) pp ON true;

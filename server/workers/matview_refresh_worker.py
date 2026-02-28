@@ -35,7 +35,18 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 DSN = os.getenv("DB_DSN")
-INTERVAL_SECS = int(os.getenv("MATVIEW_REFRESH_INTERVAL", "3600"))
+
+# Independent refresh intervals — demand heat refreshes faster because user
+# actions (searches, watchlist adds) happen continuously, while supply data
+# only changes when crawlers run (every 30min-6hrs).
+DEMAND_INTERVAL = int(os.getenv("MATVIEW_DEMAND_INTERVAL", "300"))   # 5 min
+SUPPLY_INTERVAL = int(os.getenv("MATVIEW_SUPPLY_INTERVAL", "1800"))  # 30 min
+
+# Legacy env var — if set, overrides both intervals (backwards compat)
+_legacy = os.getenv("MATVIEW_REFRESH_INTERVAL")
+if _legacy:
+    DEMAND_INTERVAL = int(_legacy)
+    SUPPLY_INTERVAL = int(_legacy)
 
 MATVIEWS = [
     "public.mv_supply_trend",
@@ -93,20 +104,68 @@ async def run_once():
     record_run("matview_refresh", "ok")
 
 
-async def scheduler_loop():
-    """Run refresh in a loop with configurable interval."""
+async def _refresh_view(view_name: str) -> bool:
+    """Refresh a single materialized view. Returns True on success."""
+    if not DSN:
+        return False
+    import asyncpg
+    conn = await asyncpg.connect(DSN)
+    try:
+        try:
+            await conn.execute(
+                f"REFRESH MATERIALIZED VIEW CONCURRENTLY {view_name}"
+            )
+            logger.info("Refreshed %s", view_name)
+            return True
+        except Exception as e:
+            logger.warning(
+                "CONCURRENTLY failed for %s (%s), trying non-concurrent",
+                view_name, e,
+            )
+            try:
+                await conn.execute(f"REFRESH MATERIALIZED VIEW {view_name}")
+                logger.info("Refreshed %s (non-concurrent)", view_name)
+                return True
+            except Exception as e2:
+                logger.error("Failed to refresh %s: %s", view_name, e2)
+                return False
+    finally:
+        await conn.close()
+
+
+async def _demand_loop():
+    """Refresh demand heat view on fast interval."""
     while not _shutdown:
         try:
-            await run_once()
+            await _refresh_view("public.mv_demand_heat")
+            record_run("matview_demand", "ok")
         except Exception as e:
-            record_run("matview_refresh", "error")
-            log_dead_letter("matview_refresh", {}, e)
-            logger.exception("matview_refresh crashed: %r", e)
-
-        for _ in range(INTERVAL_SECS):
+            record_run("matview_demand", "error")
+            logger.exception("demand refresh crashed: %r", e)
+        for _ in range(DEMAND_INTERVAL):
             if _shutdown:
                 break
             await asyncio.sleep(1)
+
+
+async def _supply_loop():
+    """Refresh supply trend view on slower interval."""
+    while not _shutdown:
+        try:
+            await _refresh_view("public.mv_supply_trend")
+            record_run("matview_supply", "ok")
+        except Exception as e:
+            record_run("matview_supply", "error")
+            logger.exception("supply refresh crashed: %r", e)
+        for _ in range(SUPPLY_INTERVAL):
+            if _shutdown:
+                break
+            await asyncio.sleep(1)
+
+
+async def scheduler_loop():
+    """Run both refresh loops concurrently with independent intervals."""
+    await asyncio.gather(_demand_loop(), _supply_loop())
 
 
 async def main():

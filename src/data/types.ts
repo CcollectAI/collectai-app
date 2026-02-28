@@ -140,6 +140,8 @@ export type QuickScanAttributes = {
   editionGuess?: string | null;
   conditionGuess?: string | null;
   rarityScore?: number | null;
+  /** Category-specific extracted details from vision AI (e.g. set_name, card_number, rarity) */
+  extractedDetails?: Record<string, string | number | boolean | null> | null;
 };
 
 export type QuickScanPrediction = {
@@ -152,11 +154,34 @@ export type QuickScanPrediction = {
   explanation?: string | null;
 };
 
+export type CatalogAlternative = {
+  catalogItemId: string | null;
+  itemKey: string | null;
+  title: string | null;
+  category: string | null;
+  brand: string | null;
+  rarity: string | null;
+  setCode: string | null;
+  imageUrl: string | null;
+  matchScore: number;
+  matchReason: string | null;
+};
+
+export type FieldConfidence = {
+  category: number;
+  name: number;
+  condition: number;
+};
+
 export type QuickScanResult = {
   itemId?: string | null;
   attributes: QuickScanAttributes;
   prediction: QuickScanPrediction;
   taxonomy?: TaxonomyClassification;  // Classification with subtype and collections
+  catalogMatchId?: string | null;
+  catalogMatchKey?: string | null;
+  alternatives?: CatalogAlternative[];
+  fieldConfidence?: FieldConfidence | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

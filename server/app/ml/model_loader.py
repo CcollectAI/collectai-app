@@ -102,19 +102,38 @@ def _load_artifact_from_s3(s3_key: str) -> dict | None:
 
 
 # Cache for loaded model artifacts (keyed by category)
+# Each entry: {"artifact": dict, "loaded_at": float}
 _model_cache: dict[str, dict] = {}
 _canary_cache: dict[str, dict] = {}
 
+# Cache configuration
+CACHE_TTL = 3600  # 1 hour
+MAX_CACHE_SIZE = 100
+
 
 def _get_cached_model(category: str, is_canary: bool = False) -> dict | None:
-    """Get model from in-memory cache."""
+    """Get model from in-memory cache, respecting TTL."""
+    import time
     cache = _canary_cache if is_canary else _model_cache
-    return cache.get(category)
+    entry = cache.get(category)
+    if entry is None:
+        return None
+    # Check TTL
+    if time.time() - entry.get("_cached_at", 0) > CACHE_TTL:
+        cache.pop(category, None)
+        return None
+    return entry
 
 
 def _set_cached_model(category: str, artifact: dict, is_canary: bool = False) -> None:
-    """Store model in in-memory cache."""
+    """Store model in in-memory cache with timestamp. Evicts oldest if over limit."""
+    import time
     cache = _canary_cache if is_canary else _model_cache
+    # Evict oldest entries if at capacity
+    if len(cache) >= MAX_CACHE_SIZE and category not in cache:
+        oldest_key = min(cache, key=lambda k: cache[k].get("_cached_at", 0))
+        cache.pop(oldest_key, None)
+    artifact["_cached_at"] = time.time()
     cache[category] = artifact
 
 
@@ -217,6 +236,72 @@ async def get_active_model(category: str, routing_key: str | None = None) -> dic
 
     logger.info(f"No active model found for category: {category}")
     return None
+
+
+async def get_canary_status() -> dict:
+    """Return canary deployment metrics: traffic split, per-model accuracy, active models."""
+    pool = get_db_pool()
+    result: dict = {
+        "canary_traffic_pct": CANARY_TRAFFIC_PCT,
+        "production_models": {},
+        "canary_models": {},
+        "calibration": {},
+    }
+
+    if not pool:
+        return result
+
+    try:
+        async with pool.acquire() as conn:
+            # Active models per category
+            prod_rows = await conn.fetch(
+                """
+                SELECT DISTINCT ON (category) category, model_type, created_at
+                FROM model_registry
+                WHERE is_active = true AND (is_canary IS NULL OR is_canary = false)
+                ORDER BY category, created_at DESC
+                """
+            )
+            for r in prod_rows:
+                result["production_models"][r["category"]] = {
+                    "model_type": r["model_type"],
+                    "deployed_at": r["created_at"].isoformat() if r["created_at"] else None,
+                }
+
+            canary_rows = await conn.fetch(
+                """
+                SELECT DISTINCT ON (category) category, model_type, created_at
+                FROM model_registry
+                WHERE is_canary = true
+                ORDER BY category, created_at DESC
+                """
+            )
+            for r in canary_rows:
+                result["canary_models"][r["category"]] = {
+                    "model_type": r["model_type"],
+                    "deployed_at": r["created_at"].isoformat() if r["created_at"] else None,
+                }
+
+            # Latest calibration per category
+            cal_rows = await conn.fetch(
+                """
+                SELECT DISTINCT ON (category) category, picp, ace, mae, gate_pass, created_at
+                FROM calibration_snapshots
+                ORDER BY category, created_at DESC
+                """
+            )
+            for r in cal_rows:
+                result["calibration"][r["category"]] = {
+                    "picp": float(r["picp"]) if r["picp"] is not None else None,
+                    "ace": float(r["ace"]) if r["ace"] is not None else None,
+                    "mae": float(r["mae"]) if r["mae"] is not None else None,
+                    "gate_pass": r["gate_pass"],
+                    "measured_at": r["created_at"].isoformat() if r["created_at"] else None,
+                }
+    except Exception as e:
+        logger.warning("Failed to fetch canary status: %s", e)
+
+    return result
 
 
 def get_active_model_sync(category: str) -> dict | None:

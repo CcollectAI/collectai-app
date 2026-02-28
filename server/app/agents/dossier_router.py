@@ -78,6 +78,17 @@ async def get_dossier(item_id: str, user_id: str = Depends(get_current_user_id))
         logger.error("[dossier] Error generating dossier: %s", e, exc_info=True)
         raise error_response(500, "Failed to generate dossier", code=ErrorCode.INTERNAL_ERROR)
 
+    # Record demand signal (best-effort)
+    try:
+        from app.features.data_moat import record_demand_signal
+        await record_demand_signal(
+            signal_type="item_viewed",
+            item_key=item_id,
+            user_id=user_id,
+        )
+    except Exception:
+        pass
+
     return DossierResponse(**dossier.to_dict())
 
 

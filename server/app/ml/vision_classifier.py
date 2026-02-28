@@ -98,6 +98,211 @@ CATEGORY_DESCRIPTIONS: dict[str, str] = {
 }
 
 # Condition keywords for heuristic detection
+# ---------------------------------------------------------------------------
+# Category-specific extraction prompts (injected into OpenAI Vision prompt)
+# ---------------------------------------------------------------------------
+
+CATEGORY_PROMPTS: dict[str, str] = {
+    # Trading cards
+    "pokemon": (
+        "Extract: card_name, set_name, card_number (e.g. #4/102), rarity_symbol "
+        "(circle/diamond/star/rainbow), printing (1st Edition/Unlimited/Shadowless), "
+        "is_holo (boolean), language, condition_notes (scratches, whitening, centering)."
+    ),
+    "mtg": (
+        "Extract: card_name, set_name, set_code, card_number, rarity "
+        "(common/uncommon/rare/mythic), foil (boolean), language, "
+        "edition (Alpha/Beta/Unlimited/Revised/etc), condition_notes."
+    ),
+    "yugioh": (
+        "Extract: card_name, set_code, card_number, rarity "
+        "(Common/Rare/Super/Ultra/Secret/Ghost/Starlight), "
+        "printing (1st Edition/Unlimited), language, condition_notes."
+    ),
+    "lorcana": (
+        "Extract: card_name, set_name, card_number, rarity "
+        "(Common/Uncommon/Rare/Super Rare/Legendary), foil (boolean), "
+        "ink_color, condition_notes."
+    ),
+    "sportscards": (
+        "Extract: player_name, year, brand (Topps/Panini/Upper Deck), "
+        "set_name, card_number, parallel (base/refractor/prizm/auto), "
+        "graded (boolean), grade_service, grade_value, condition_notes."
+    ),
+    # Figures
+    "funko": (
+        "Extract: character_name, franchise, figure_number, product_line "
+        "(Pop/Soda/Mystery Mini), exclusive_sticker (Chase/Convention/Store), "
+        "is_sealed (boolean), condition_notes (box damage, window)."
+    ),
+    "anime_figures": (
+        "Extract: character_name, franchise, manufacturer (Good Smile/Alter/Kotobukiya), "
+        "figure_type (Nendoroid/Figma/Scale), scale (1/4, 1/7, 1/8), "
+        "is_sealed (boolean), condition_notes."
+    ),
+    "hot_toys": (
+        "Extract: character_name, franchise, figure_type (MMS/DX/Cosbaby), "
+        "scale, exclusive, is_sealed (boolean), condition_notes."
+    ),
+    "designer_toys": (
+        "Extract: character_name, artist_designer, brand (KAWS/Bearbrick/Medicom), "
+        "size (100%/400%/1000%), variant_colorway, is_sealed (boolean), condition_notes."
+    ),
+    # Building / Models
+    "lego": (
+        "Extract: set_name, set_number, theme (Star Wars/City/Technic/Creator), "
+        "piece_count, year, built_or_sealed (built/sealed/open complete), "
+        "minifigures_included, condition_notes."
+    ),
+    "gunpla": (
+        "Extract: model_name, grade (HG/RG/MG/PG/SD), scale, "
+        "series (Gundam/Zaku/etc), kit_number, built_or_unbuilt, "
+        "painted (boolean), condition_notes."
+    ),
+    "warhammer": (
+        "Extract: unit_name, faction (Space Marines/Orks/Necrons/etc), "
+        "game_system (40K/AoS/Kill Team), built_or_sprue (built/on sprue/NOS), "
+        "painted (boolean), edition, condition_notes."
+    ),
+    "scale_models": (
+        "Extract: subject_name, manufacturer (Tamiya/Hasegawa/Revell), "
+        "scale (1/35, 1/48, 1/72), category (aircraft/armor/ship/car), "
+        "built_or_unbuilt, condition_notes."
+    ),
+    # Media
+    "manga": (
+        "Extract: title, volume_number, author, publisher "
+        "(Viz/Kodansha/Yen Press/Shueisha), isbn, language, "
+        "printing (1st print/reprint), condition_notes."
+    ),
+    "bluray_steelbook": (
+        "Extract: title, format (Blu-ray/4K UHD/DVD), steelbook (boolean), "
+        "edition (Standard/Limited/Criterion/Arrow), region_code, "
+        "slipcover (boolean), is_sealed (boolean), condition_notes."
+    ),
+    "anime_bluray": (
+        "Extract: title, format (Blu-ray/DVD), publisher (Aniplex/Funimation), "
+        "edition (Standard/Limited/Collector), region_code, episodes_included, "
+        "is_sealed (boolean), condition_notes."
+    ),
+    "anime_ost_vinyl": (
+        "Extract: title, artist_composer, anime_franchise, label, "
+        "format (LP/2xLP/7inch), color_variant, pressing (1st/repress), "
+        "is_sealed (boolean), condition_notes."
+    ),
+    "anime_soundtrack": (
+        "Extract: title, artist_composer, anime_franchise, label, "
+        "format (CD/SACD), is_limited (boolean), is_sealed (boolean), condition_notes."
+    ),
+    # Music / Fandom
+    "kpop_merch": (
+        "Extract: group_name, album_name, version_variant, "
+        "inclusions (photocard/poster/bookmark), member_pulled, "
+        "is_sealed (boolean), condition_notes."
+    ),
+    "taylor_swift": (
+        "Extract: item_type (vinyl/CD/merch/poster), album_era, variant, "
+        "tour (Eras/1989/etc), is_signed (boolean), is_sealed (boolean), condition_notes."
+    ),
+    "kpop_lightsticks": (
+        "Extract: group_name, version (v1/v2/SE), model_name, "
+        "is_official (boolean), is_sealed (boolean), condition_notes."
+    ),
+    # Gaming
+    "retro_games": (
+        "Extract: game_title, platform (NES/SNES/N64/Game Boy/Genesis), "
+        "region (NTSC/PAL/NTSC-J), cib_status (CIB/cart only/box only), "
+        "manual_included (boolean), condition_notes."
+    ),
+    # Nintendo / Pokemon Merch
+    "nintendo_merch": (
+        "Extract: item_name, character, product_type (plush/amiibo/figure/apparel), "
+        "store_exclusive (Pokemon Center/Nintendo Store), year, "
+        "is_sealed (boolean), condition_notes."
+    ),
+    "retro_pokemon": (
+        "Extract: item_name, character, manufacturer (Tomy/Hasbro/Bandai), "
+        "product_type (figure/plush/toy), year, is_sealed (boolean), condition_notes."
+    ),
+    # Disney / Theme Parks
+    "disney": (
+        "Extract: item_name, character, product_type (pin/figure/plush/ornament/doll), "
+        "franchise (Frozen/Marvel/Star Wars/Pixar), year, edition (Limited/Open), "
+        "pin_number, is_sealed (boolean), condition_notes."
+    ),
+    "theme_park": (
+        "Extract: item_name, park_name (Disneyland/Walt Disney World/Universal Studios), "
+        "event_name, year, product_type (pin/figure/mug/magnet/clothing), "
+        "is_exclusive (boolean), is_sealed (boolean), condition_notes."
+    ),
+    "ghibli": (
+        "Extract: item_name, film_title (Spirited Away/Totoro/Princess Mononoke), "
+        "character, product_type (figure/plush/music box/print), manufacturer, "
+        "is_sealed (boolean), condition_notes."
+    ),
+    # Japan Exclusives
+    "bandai_premium": (
+        "Extract: item_name, franchise, product_line (S.H.Figuarts/Metal Build/"
+        "Figure-rise/Tamashii Nations), scale, is_p_bandai_exclusive (boolean), "
+        "is_sealed (boolean), condition_notes."
+    ),
+    "jp_magazine": (
+        "Extract: magazine_name (Dengeki/Famitsu/Newtype/Animage), issue_date, "
+        "insert_type (furoku/poster/figure/card), franchise, "
+        "is_insert_included (boolean), condition_notes."
+    ),
+    "jp_event": (
+        "Extract: event_name (Comiket/Wonder Festival/AnimeJapan/Jump Festa), "
+        "year, circle_booth, item_type (tapestry/acrylic stand/keychain/doujin), "
+        "franchise, is_limited (boolean), condition_notes."
+    ),
+    # IP-Specific
+    "one_piece": (
+        "Extract: character_name, figure_line (Portrait of Pirates/Figuarts Zero/"
+        "Grandista/Ichiban Kuji), manufacturer (Megahouse/Banpresto/Bandai), "
+        "scale, prize_rank, is_sealed (boolean), condition_notes."
+    ),
+    "vtuber": (
+        "Extract: vtuber_name, agency (Hololive/Nijisanji/VShojo/indie), "
+        "item_type (acrylic stand/tapestry/voice pack/badge/plush), "
+        "event_name, is_official (boolean), is_sealed (boolean), condition_notes."
+    ),
+    # Niche
+    "keycaps": (
+        "Extract: keycap_name, maker_artist, sculpt_name, colorway, "
+        "profile (SA/Cherry/OEM/DSA), material (resin/PBT/ABS), "
+        "mount (MX/Topre), is_sealed (boolean), condition_notes."
+    ),
+    "loungefly": (
+        "Extract: item_name, franchise (Disney/Marvel/Star Wars/Sanrio/Pokemon), "
+        "product_type (mini backpack/wallet/crossbody/pin set), "
+        "exclusive_retailer, year, is_sealed (boolean), condition_notes."
+    ),
+    # Legacy
+    "diecast": (
+        "Extract: vehicle_name, brand (Hot Wheels/Matchbox/Tomica/Greenlight), "
+        "scale (1/64, 1/43, 1/24, 1/18), series_line, year, "
+        "variant (chase/treasure hunt/super), is_sealed (boolean), condition_notes."
+    ),
+    "pop_fandom": (
+        "Extract: artist_name, item_type (vinyl/CD/poster/signed item/tour merch), "
+        "tour_or_era, year, variant, is_signed (boolean), "
+        "is_sealed (boolean), condition_notes."
+    ),
+    "retro_handhelds": (
+        "Extract: device_name, brand (Nintendo/Sega/Atari/Bandai/Tiger), "
+        "model (Game Boy/Game Gear/Neo Geo Pocket/Tamagotchi), "
+        "variant_color, year, working_status (working/for parts), "
+        "cib_status (CIB/loose/box only), condition_notes."
+    ),
+}
+
+# Default extraction prompt for categories without a specific template
+_DEFAULT_CATEGORY_PROMPT = (
+    "Extract: item_name, brand, series_line, variant_colorway, "
+    "year_released, is_sealed (boolean), condition_notes."
+)
+
 CONDITION_KEYWORDS: dict[str, list[str]] = {
     "mint": ["mint", "gem mint", "pristine", "perfect"],
     "near_mint": ["near mint", "nm", "excellent", "like new"],
@@ -313,38 +518,113 @@ async def _classify_clip(image_bytes: bytes, filename: str) -> ClassificationRes
 # Tier 2 — OpenAI Vision API
 # ---------------------------------------------------------------------------
 
-_OPENAI_SYSTEM_PROMPT = """You are a collectibles classification expert for the CollectAI app.
-Given an image of a collectible item, classify it into exactly ONE of these 36 categories:
+_OPENAI_SYSTEM_PROMPT = """You are a collectibles identification expert for the CollectAI app.
+Given an image of a collectible item, follow these steps:
 
-pokemon, mtg, yugioh, lorcana, funko, designer_toys, anime_figures, hot_toys,
+STEP 1 - OBSERVE: Describe what you see — text, logos, numbers, colors, packaging, damage, labels, barcodes.
+STEP 2 - CLASSIFY: Determine the category from the 36 options below.
+STEP 3 - IDENTIFY: Name the specific item as precisely as possible (include set, number, edition, variant).
+STEP 4 - DETAIL: Extract category-specific attributes.
+STEP 5 - CONDITION: Assess visible condition (mint, near_mint, very_good, good, fair, poor).
+
+Categories: pokemon, mtg, yugioh, lorcana, funko, designer_toys, anime_figures, hot_toys,
 lego, gunpla, scale_models, warhammer, retro_games, manga, bluray_steelbook,
 anime_bluray, anime_soundtrack, anime_ost_vinyl, kpop_merch, taylor_swift,
 pop_fandom, kpop_lightsticks, disney, theme_park, ghibli, bandai_premium,
 jp_magazine, jp_event, nintendo_merch, retro_pokemon, one_piece, vtuber,
-keycaps, loungefly, diecast, sportscards
+keycaps, loungefly, diecast, sportscards, retro_handhelds
 
-Also estimate the condition if visible (mint, near_mint, very_good, good, fair, poor).
-Suggest a name/title for the item.
+{category_detail}"""
 
-Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
-{
-  "category_id": "pokemon",
-  "category_confidence": 0.92,
-  "condition": "near_mint",
-  "condition_confidence": 0.75,
-  "suggested_name": "Charizard Base Set Holo #4",
-  "attributes": {}
-}"""
+# Structured output JSON schema for response_format
+_IDENTIFICATION_SCHEMA: dict[str, Any] = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "collectible_identification",
+        "strict": False,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "reasoning": {
+                    "type": "string",
+                    "description": "Chain-of-thought trace: what you see, how you identify it",
+                },
+                "category_id": {
+                    "type": "string",
+                    "description": "Category ID from the allowed list",
+                },
+                "category_confidence": {
+                    "type": "number",
+                    "description": "Confidence in category (0.0-1.0)",
+                },
+                "suggested_name": {
+                    "type": "string",
+                    "description": "Specific item name with set/number/edition/variant",
+                },
+                "name_confidence": {
+                    "type": "number",
+                    "description": "Confidence in the item name (0.0-1.0)",
+                },
+                "condition": {
+                    "anyOf": [{"type": "string"}, {"type": "null"}],
+                    "description": "Condition: mint, near_mint, very_good, good, fair, poor, or null",
+                },
+                "condition_confidence": {
+                    "type": "number",
+                    "description": "Confidence in condition assessment (0.0-1.0)",
+                },
+                "attributes": {
+                    "type": "object",
+                    "description": "Category-specific extracted attributes",
+                    "additionalProperties": True,
+                },
+                "search_keywords": {
+                    "type": "array",
+                    "description": "3-5 keywords for catalog search",
+                    "items": {"type": "string"},
+                },
+            },
+            "required": [
+                "reasoning", "category_id", "category_confidence",
+                "suggested_name", "name_confidence",
+                "condition", "condition_confidence",
+                "attributes", "search_keywords",
+            ],
+            "additionalProperties": False,
+        },
+    },
+}
 
 
-async def _classify_openai_vision(image_bytes: bytes, filename: str) -> ClassificationResult | None:
+def _build_system_prompt(category_hint: str | None = None) -> str:
+    """Build the system prompt, optionally injecting category-specific extraction instructions."""
+    if category_hint:
+        detail = CATEGORY_PROMPTS.get(category_hint, _DEFAULT_CATEGORY_PROMPT)
+        detail_block = f"Category hint: {category_hint}\n{detail}"
+    else:
+        detail_block = (
+            "No category hint available. Identify the category first, "
+            "then extract relevant attributes."
+        )
+    return _OPENAI_SYSTEM_PROMPT.format(category_detail=detail_block)
+
+
+async def _classify_openai_vision(
+    image_bytes: bytes,
+    filename: str,
+    category_hint: str | None = None,
+) -> ClassificationResult | None:
     """
-    Use OpenAI Vision API (GPT-4o-mini or similar) to classify the image.
+    Use OpenAI Vision API with chain-of-thought prompting and structured output
+    to identify a specific collectible item from an image.
     """
     if not OPENAI_API_KEY:
         return None
 
-    logger.info("vision_classifier: attempting OpenAI Vision classification")
+    logger.info(
+        "vision_classifier: attempting OpenAI Vision classification (hint=%s)",
+        category_hint,
+    )
 
     try:
         b64_image = base64.b64encode(image_bytes).decode("utf-8")
@@ -353,6 +633,8 @@ async def _classify_openai_vision(image_bytes: bytes, filename: str) -> Classifi
             mime = "image/png"
         elif image_bytes[:4] == b"RIFF" and image_bytes[8:12] == b"WEBP":
             mime = "image/webp"
+
+        system_prompt = _build_system_prompt(category_hint)
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(
@@ -364,7 +646,7 @@ async def _classify_openai_vision(image_bytes: bytes, filename: str) -> Classifi
                 json={
                     "model": OPENAI_VISION_MODEL,
                     "messages": [
-                        {"role": "system", "content": _OPENAI_SYSTEM_PROMPT},
+                        {"role": "system", "content": system_prompt},
                         {
                             "role": "user",
                             "content": [
@@ -372,35 +654,36 @@ async def _classify_openai_vision(image_bytes: bytes, filename: str) -> Classifi
                                     "type": "image_url",
                                     "image_url": {
                                         "url": f"data:{mime};base64,{b64_image}",
-                                        "detail": "low",
+                                        "detail": "auto",
                                     },
                                 },
                                 {
                                     "type": "text",
-                                    "text": f"Classify this collectible item. Filename: {filename}",
+                                    "text": f"Identify this collectible item. Filename: {filename}",
                                 },
                             ],
                         },
                     ],
-                    "max_tokens": 300,
-                    "temperature": 0.1,
+                    "response_format": _IDENTIFICATION_SCHEMA,
+                    "max_tokens": 800,
+                    "temperature": 0.2,
                 },
             )
             resp.raise_for_status()
             data = resp.json()
 
-        # Parse the response
+        # Parse the structured response
         content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
         if not content:
             logger.warning("OpenAI Vision returned empty content")
             return None
 
-        # Strip markdown code fences if present
+        # With response_format, content is guaranteed valid JSON (no markdown stripping needed)
+        # But keep a safety fallback for edge cases
         content = content.strip()
         if content.startswith("```"):
-            # Remove ```json ... ``` wrapper
             lines = content.split("\n")
-            lines = [l for l in lines if not l.strip().startswith("```")]
+            lines = [ln for ln in lines if not ln.strip().startswith("```")]
             content = "\n".join(lines).strip()
 
         parsed = json.loads(content)
@@ -408,29 +691,33 @@ async def _classify_openai_vision(image_bytes: bytes, filename: str) -> Classifi
         category_id = parsed.get("category_id", "")
         if category_id not in ALL_CATEGORIES:
             logger.warning("OpenAI Vision returned unknown category: %s", category_id)
-            # Try to find closest match
             cat_lower = category_id.lower().replace(" ", "_").replace("-", "_")
             if cat_lower in ALL_CATEGORIES:
                 category_id = cat_lower
             else:
                 return None
 
-        confidence = float(parsed.get("category_confidence", 0.7))
-        confidence = max(0.0, min(1.0, confidence))
+        confidence = max(0.0, min(1.0, float(parsed.get("category_confidence", 0.7))))
+        name_confidence = max(0.0, min(1.0, float(parsed.get("name_confidence", 0.5))))
 
         condition = parsed.get("condition")
         if condition and condition not in CONDITION_KEYWORDS:
-            # Normalize
             condition = condition.lower().replace(" ", "_").replace("-", "_")
             if condition not in CONDITION_KEYWORDS:
                 condition = None
 
-        cond_conf = float(parsed.get("condition_confidence", 0.0))
-        cond_conf = max(0.0, min(1.0, cond_conf))
+        cond_conf = max(0.0, min(1.0, float(parsed.get("condition_confidence", 0.0))))
+
+        # Merge extracted attributes with per-field confidences and search keywords
+        attributes = parsed.get("attributes", {})
+        attributes["search_keywords"] = parsed.get("search_keywords", [])
+        attributes["chain_of_thought"] = parsed.get("reasoning", "")
+        attributes["name_confidence"] = name_confidence
 
         logger.info(
-            "OpenAI Vision classification: category=%s confidence=%.4f condition=%s",
-            category_id, confidence, condition,
+            "OpenAI Vision identification: category=%s conf=%.2f name='%s' name_conf=%.2f",
+            category_id, confidence,
+            parsed.get("suggested_name", "")[:60], name_confidence,
         )
 
         return ClassificationResult(
@@ -439,7 +726,7 @@ async def _classify_openai_vision(image_bytes: bytes, filename: str) -> Classifi
             condition=condition,
             condition_confidence=cond_conf,
             suggested_name=parsed.get("suggested_name"),
-            attributes=parsed.get("attributes", {}),
+            attributes=attributes,
             embedding_vector=None,
             classification_method="openai_vision",
             model_version=f"openai:{OPENAI_VISION_MODEL}",
@@ -574,11 +861,14 @@ async def classify_image(
     filename: str = "",
 ) -> ClassificationResult:
     """
-    Classify a collectible item image using the 3-tier approach.
+    Classify and identify a collectible item image using a refined 3-tier approach.
 
-    Tier 1: CLIP via fal.ai (if FAL_KEY is set)
-    Tier 2: OpenAI Vision API (if OPENAI_API_KEY is set)
+    Tier 1: CLIP via fal.ai — fast pre-filter to get a category_hint
+    Tier 2: OpenAI Vision with category_hint — specific item identification
     Tier 3: Heuristic fallback (always available)
+
+    CLIP now feeds INTO OpenAI Vision rather than being an alternative.
+    This gives us fast category narrowing + precise item identification.
 
     Args:
         image_bytes: Raw image bytes (JPEG, PNG, or WebP)
@@ -597,15 +887,31 @@ async def classify_image(
             attributes={"error": "empty_image"},
         )
 
-    # Tier 1: CLIP
-    result = await _classify_clip(image_bytes, filename)
+    # Tier 1: CLIP — fast pre-filter for category hint
+    category_hint: str | None = None
+    clip_embedding: list[float] | None = None
+    clip_result = await _classify_clip(image_bytes, filename)
+    if clip_result is not None and clip_result.category_confidence > 0.5:
+        category_hint = clip_result.category_id
+        clip_embedding = clip_result.embedding_vector
+        logger.info(
+            "CLIP pre-filter: hint=%s (confidence=%.2f)",
+            category_hint, clip_result.category_confidence,
+        )
+
+    # Tier 2: OpenAI Vision with category hint for specific identification
+    result = await _classify_openai_vision(image_bytes, filename, category_hint)
     if result is not None:
+        # Preserve CLIP embedding on the final result for future vector search
+        if clip_embedding:
+            result.embedding_vector = clip_embedding
+            if category_hint:
+                result.attributes["clip_hint"] = category_hint
         return result
 
-    # Tier 2: OpenAI Vision
-    result = await _classify_openai_vision(image_bytes, filename)
-    if result is not None:
-        return result
+    # If CLIP returned a result on its own (even without OpenAI), use it
+    if clip_result is not None:
+        return clip_result
 
     # Tier 3: Heuristic (always returns a result)
     return _classify_heuristic(image_bytes, filename)
