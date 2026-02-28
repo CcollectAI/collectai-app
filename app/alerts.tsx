@@ -18,8 +18,7 @@ import {
   Linking,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type AlertFeedItem } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -362,25 +361,7 @@ function AlertsScreen() {
   // Shared header (used in loading + main states)
   // -----------------------------------------------------------------------
 
-  const renderHeader = () => (
-    <View
-      style={[
-        styles.header,
-        { backgroundColor: colors.card, borderBottomColor: colors.border },
-      ]}
-    >
-      <AnimatedPressable
-        onPress={() => router.back()}
-        style={styles.backBtn}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <Ionicons name="chevron-back" size={24} color={colors.text} />
-      </AnimatedPressable>
-      <Text style={[styles.headerTitle, { color: colors.text }]}>Alerts</Text>
-      <View style={{ width: 32 }} />
-    </View>
-  );
+  // Header title is handled by Stack header from _layout.tsx
 
   // -----------------------------------------------------------------------
   // Tab bar
@@ -454,15 +435,12 @@ function AlertsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView
-        style={[styles.safe, { backgroundColor: colors.background }]}
-        edges={['top', 'left', 'right']}
-      >
-        {renderHeader()}
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
+        <Stack.Screen options={{ headerTitle: 'Alerts' }} />
         <View style={styles.loadingContainer}>
           <SkeletonList count={5} type="row" />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -471,11 +449,8 @@ function AlertsScreen() {
   // -----------------------------------------------------------------------
 
   return (
-    <SafeAreaView
-      style={[styles.safe, { backgroundColor: colors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      {renderHeader()}
+    <View style={[styles.safe, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: 'Alerts' }} />
       {renderTabBar()}
 
       {error ? (
@@ -577,7 +552,7 @@ function AlertsScreen() {
         />
       )}
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 }
 

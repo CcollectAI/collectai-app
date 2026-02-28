@@ -8,7 +8,7 @@
 
 import { Platform, Alert, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import haptics from './haptics';
+import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 
 import type { ExpoCalendarEntry } from '@/../types/api';
@@ -187,11 +187,11 @@ export async function addToCalendar(params: {
       createdAt: new Date().toISOString(),
     });
 
-    haptics.success();
+    fireHaptic(HapticIntent.CONFIDENCE_HIGH);
     return { success: true, calendarEventId };
   } catch (error: unknown) {
     logger.warn('[Calendar] Error adding event:', error);
-    haptics.error();
+    fireHaptic(HapticIntent.ALERT_TRIGGERED);
     return { success: false, error: error instanceof Error ? error.message : 'Failed to add event' };
   }
 }
@@ -222,7 +222,7 @@ export async function removeFromCalendar(eventId: string): Promise<boolean> {
       await Calendar.deleteEventAsync(event.calendarEventId);
       const updated = stored.filter((e) => e.eventId !== eventId);
       await AsyncStorage.setItem(CALENDAR_STORAGE_KEY, JSON.stringify(updated));
-      haptics.success();
+      fireHaptic(HapticIntent.CONFIDENCE_HIGH);
       return true;
     }
     return false;
@@ -290,11 +290,11 @@ export async function scheduleReminder(params: {
       scheduledFor: params.triggerDate.toISOString(),
     });
 
-    haptics.success();
+    fireHaptic(HapticIntent.CONFIDENCE_HIGH);
     return { success: true, notificationId };
   } catch (error: unknown) {
     logger.warn('[Calendar] Error scheduling reminder:', error);
-    haptics.error();
+    fireHaptic(HapticIntent.ALERT_TRIGGERED);
     return { success: false, error: error instanceof Error ? error.message : 'Failed to schedule reminder' };
   }
 }
@@ -313,7 +313,7 @@ export async function cancelReminder(eventId: string): Promise<boolean> {
       await Notifications.cancelScheduledNotificationAsync(reminder.notificationId);
       const updated = stored.filter((r) => r.eventId !== eventId);
       await AsyncStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updated));
-      haptics.success();
+      fireHaptic(HapticIntent.CONFIDENCE_HIGH);
       return true;
     }
     return false;

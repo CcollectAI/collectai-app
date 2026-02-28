@@ -16,7 +16,6 @@ import {
   RefreshControl,
   TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type CategoryStoreData, type Item, type MiniUserProfile, type CategoryMissingItem, type BuildPaintProject } from '@/data';
@@ -143,6 +142,7 @@ function CategoryStoreScreen() {
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogOffset, setCatalogOffset] = useState(0);
   const [catalogExpanded, setCatalogExpanded] = useState(false);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
   const CATALOG_PAGE_SIZE = 30;
 
   const loadCatalogItems = useCallback(async (search: string, offset: number, append = false) => {
@@ -168,6 +168,7 @@ function CategoryStoreScreen() {
     } finally {
       setCatalogLoading(false);
       setCatalogLoadingMore(false);
+      setCatalogLoaded(true);
     }
   }, [categoryId]);
 
@@ -187,12 +188,12 @@ function CategoryStoreScreen() {
     loadCatalogItems(catalogSearch, catalogOffset, true);
   };
 
-  // Load catalog when expanded
+  // Load catalog when expanded (once)
   useEffect(() => {
-    if (catalogExpanded && catalogItems.length === 0 && !catalogLoading) {
+    if (catalogExpanded && !catalogLoaded && !catalogLoading) {
       loadCatalogItems('', 0, false);
     }
-  }, [catalogExpanded, catalogItems.length, catalogLoading, loadCatalogItems]);
+  }, [catalogExpanded, catalogLoaded, catalogLoading, loadCatalogItems]);
 
   const spotlightRef = useRef<FlatList>(null);
 
@@ -379,28 +380,18 @@ function CategoryStoreScreen() {
   // Loading state
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-        </View>
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.centered}>
           <SkeletonList count={4} type="card" />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Error / not found state
   if (error || !data) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-        <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-        </View>
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.centered}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.muted} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>Category not found</Text>
@@ -411,19 +402,12 @@ function CategoryStoreScreen() {
             <Text style={[styles.backButtonText, { color: colors.text }]}>Go back</Text>
           </AnimatedPressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      {/* Header row with back button */}
-      <View style={[styles.headerRow, { backgroundColor: colors.background }]}>
-        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-      </View>
-
+    <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -1264,7 +1248,7 @@ function CategoryStoreScreen() {
     />
 
     <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 }
 

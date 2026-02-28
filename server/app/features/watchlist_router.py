@@ -26,6 +26,10 @@ class WatchlistItem(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     predicted_value: Optional[float] = None
     currency: str = "EUR"
+    last_market_price: Optional[float] = None
+    last_checked_at: Optional[datetime] = None
+    price_trend: Optional[str] = None
+    market_hit_count: int = 0
 
 
 class WatchlistCreate(BaseModel):
@@ -58,7 +62,9 @@ async def get_my_watchlist(
                 rows = await conn.fetch(
                     """
                     SELECT id, user_id, item_id, name, category,
-                           created_at, predicted_value, currency
+                           created_at, predicted_value, currency,
+                           last_market_price, last_checked_at,
+                           price_trend, market_hit_count
                     FROM watchlist
                     WHERE user_id = $1
                     ORDER BY created_at DESC
@@ -76,6 +82,10 @@ async def get_my_watchlist(
                         created_at=r["created_at"],
                         predicted_value=float(r["predicted_value"]) if r["predicted_value"] else None,
                         currency=r["currency"] or "EUR",
+                        last_market_price=float(r["last_market_price"]) if r["last_market_price"] else None,
+                        last_checked_at=r["last_checked_at"],
+                        price_trend=r["price_trend"],
+                        market_hit_count=r["market_hit_count"] or 0,
                     )
                     for r in rows
                 ]
@@ -144,7 +154,9 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
                 rows = await conn.fetch(
                     """
                     SELECT id, user_id, item_id, name, category,
-                           created_at, predicted_value, currency
+                           created_at, predicted_value, currency,
+                           last_market_price, last_checked_at,
+                           price_trend, market_hit_count
                     FROM watchlist
                     WHERE user_id = $1
                     ORDER BY created_at DESC
@@ -161,6 +173,10 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
                         created_at=r["created_at"],
                         predicted_value=float(r["predicted_value"]) if r["predicted_value"] else None,
                         currency=r["currency"] or "EUR",
+                        last_market_price=float(r["last_market_price"]) if r["last_market_price"] else None,
+                        last_checked_at=r["last_checked_at"],
+                        price_trend=r["price_trend"],
+                        market_hit_count=r["market_hit_count"] or 0,
                     )
                     for r in rows
                 ]

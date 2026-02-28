@@ -12,7 +12,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -28,7 +27,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
 import type { EventKind, CreateEventInput, EventTemplate } from '@/data/events';
 import { CATEGORIES } from '@/constants/categories';
@@ -41,6 +40,8 @@ import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
 import CompactSelect from '@/components/CompactSelect';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
+import { QuickNavBar } from '@/components/QuickNavBar';
+import { KIND_ICON } from '@/constants/eventConstants';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -56,14 +57,6 @@ const EVENT_KINDS: { label: string; value: EventKind }[] = [
   { label: 'Convention', value: 'convention' },
   { label: 'Release', value: 'release' },
 ];
-
-const KIND_ICON: Record<EventKind, keyof typeof Ionicons.glyphMap> = {
-  meetup: 'people-outline',
-  collection_drop: 'cube-outline',
-  stream: 'logo-twitch',
-  convention: 'map-outline',
-  release: 'rocket-outline',
-};
 
 const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ionicons.glyphMap }[] = [
   { label: 'In-Person', value: 'in_person', icon: 'location-outline' },
@@ -235,23 +228,12 @@ const CreateEventScreen: React.FC = () => {
   /* ======================================================================== */
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: isSponsored ? 'Create Sponsored Event' : 'Create Event' }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* ---------------------------------------------------------------- */}
-        {/*  Header                                                          */}
-        {/* ---------------------------------------------------------------- */}
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            {isSponsored ? 'Create Sponsored Event' : 'Create Event'}
-          </Text>
-          <View style={{ width: 32 }} />
-        </View>
 
         {/* Sponsored badge */}
         {isSponsored && (
@@ -835,7 +817,8 @@ const CreateEventScreen: React.FC = () => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      <QuickNavBar />
+    </View>
   );
 };
 

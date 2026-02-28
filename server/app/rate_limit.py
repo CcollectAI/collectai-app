@@ -21,7 +21,7 @@ import time
 from collections import defaultdict
 from typing import Callable, Awaitable
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
@@ -45,6 +45,8 @@ EXEMPT_PATHS = frozenset({"/healthz", "/version", "/ops/status"})
 
 # In-memory sliding window: {ip: [timestamp, ...]}
 _hits: dict[str, list[float]] = defaultdict(list)
+_last_eviction: float = 0.0  # monotonic timestamp of last key eviction
+_EVICTION_INTERVAL: float = 300.0  # evict stale keys every 5 minutes
 
 
 def _client_ip(request: Request) -> str:
@@ -92,6 +94,17 @@ async def rate_limit_middleware(
         )
 
     _hits[ip].append(now)
+
+    # Periodically evict empty keys to prevent unbounded memory growth
+    global _last_eviction
+    if now - _last_eviction > _EVICTION_INTERVAL:
+        _last_eviction = now
+        stale = [k for k, v in _hits.items() if not v]
+        for k in stale:
+            del _hits[k]
+        if stale:
+            logger.debug("Evicted %d stale IP keys from rate limiter", len(stale))
+
     response = await call_next(request)
     return response
 
@@ -102,6 +115,7 @@ async def rate_limit_middleware(
 
 # Shared store across all per-user limiters: {(scope, user_id): [timestamps]}
 _user_hits: dict[tuple[str, str], list[float]] = defaultdict(list)
+_user_last_eviction: float = 0.0
 
 
 def _prune_user(timestamps: list[float], now: float, window: int) -> list[float]:
@@ -164,12 +178,25 @@ def per_user_rate_limit(
                 max_requests,
                 window_seconds,
             )
-            raise HTTPException(
-                status_code=429,
-                detail="Per-user rate limit exceeded. Please try again later.",
-                headers={"Retry-After": str(retry_after), "X-Error-Code": "RATE_LIMITED"},
+            from app.errors import error_response
+            from app.lib.error_codes import ErrorCode
+            raise error_response(
+                429,
+                "Per-user rate limit exceeded. Please try again later.",
+                code=ErrorCode.RATE_LIMITED,
+                headers={"Retry-After": str(retry_after)},
             )
 
         _user_hits[key].append(now)
+
+        # Periodically evict empty keys to prevent unbounded memory growth
+        global _user_last_eviction
+        if now - _user_last_eviction > _EVICTION_INTERVAL:
+            _user_last_eviction = now
+            stale = [k for k, v in _user_hits.items() if not v]
+            for k in stale:
+                del _user_hits[k]
+            if stale:
+                logger.debug("Evicted %d stale user keys from rate limiter", len(stale))
 
     return _check

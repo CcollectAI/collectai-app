@@ -547,11 +547,18 @@ async def get_leaderboard(
     if not db_configured():
         return {"leaderboard": [], "user_rank": None, "total_count": 0}
 
-    xp_column = {
+    # SAFETY: xp_column is always one of 3 hardcoded literals from the dict
+    # lookup above. The dict key is validated by FastAPI's regex pattern
+    # (^(weekly|monthly|alltime)$), the dict maps to a fixed set, and the
+    # assert below provides runtime defense-in-depth. This is NOT user input.
+    _XP_COLUMNS = {
         "weekly": "weekly_xp",
         "monthly": "monthly_xp",
         "alltime": "total_xp",
-    }[period]
+    }
+    xp_column = _XP_COLUMNS[period]
+
+    assert xp_column in _XP_COLUMNS.values(), f"Invalid xp_column: {xp_column}"
 
     try:
         async with get_conn() as conn:
@@ -568,7 +575,7 @@ async def get_leaderboard(
                     p.avatar_url,
                     p.avatar_color
                 FROM public.user_gamification ug
-                LEFT JOIN public.profiles p ON p.id::text = ug.user_id::text
+                LEFT JOIN public.profiles p ON p.id = ug.user_id
                 WHERE ug.{xp_column} > 0
                 ORDER BY ug.{xp_column} DESC, ug.user_id
                 LIMIT $1 OFFSET $2

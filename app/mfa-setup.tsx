@@ -19,7 +19,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// SafeAreaView removed — Stack header handles safe area
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
@@ -27,6 +27,7 @@ import { AnimatedPressable } from '@/motion';
 import { useToast } from '@/components/Toast';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 const TIFFANY = '#81D8D0';
 const TIFFANY_DARK = '#5FBFB6';
@@ -151,7 +152,7 @@ function MFASetupScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>Two-Factor Authentication</Text>
         <Text style={styles.subtitle}>
@@ -270,7 +271,8 @@ function MFASetupScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+      <QuickNavBar />
+    </View>
   );
 }
 

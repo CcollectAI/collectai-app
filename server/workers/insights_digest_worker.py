@@ -162,6 +162,7 @@ async def run_once():
     """Execute a single cycle of the insights digest worker."""
     if not DSN:
         logger.error("No DB_DSN env")
+        record_run("insights_digest_worker", "error")
         return
 
     conn = await asyncpg.connect(DSN)
@@ -178,17 +179,36 @@ async def run_once():
         lookback_date = now - timedelta(days=LOOKBACK_DAYS)
         digests_sent = 0
 
+        # Batch-fetch preferences for all users at once (avoids N+1)
+        all_user_ids = [row["user_id"] for row in user_rows]
+        all_prefs_rows = await conn.fetch(
+            "SELECT user_id, notification_preferences FROM public.user_settings WHERE user_id = ANY($1)",
+            all_user_ids,
+        )
+        prefs_by_user = {r["user_id"]: r for r in all_prefs_rows}
+
+        # Batch-fetch dedup check for all users at once (avoids N+1)
+        dedup_rows = await conn.fetch(
+            """
+            SELECT DISTINCT user_id FROM public.alert_trigger_history
+            WHERE user_id = ANY($1::text[])
+              AND trigger_type = 'weekly_digest'
+              AND created_at > now() - interval '7 days'
+            """,
+            [str(uid) for uid in all_user_ids],
+        )
+        digest_dedup_set = {r["user_id"] for r in dedup_rows}
+
         for user_row in user_rows:
             user_id = user_row["user_id"]
 
-            # Check preferences
-            prefs_row = await conn.fetchrow(_CHECK_PREFS_QUERY, user_id)
+            # Check preferences (from batch-fetched data)
+            prefs_row = prefs_by_user.get(user_id)
             if not _is_digest_enabled(prefs_row):
                 continue
 
-            # Dedup check
-            existing = await conn.fetchrow(_DIGEST_DEDUP_QUERY, str(user_id))
-            if existing is not None:
+            # Dedup check (from batch-fetched data)
+            if str(user_id) in digest_dedup_set:
                 continue
 
             # Get current value
@@ -308,7 +328,7 @@ async def run_once():
         logger.info("Insights digest worker complete: %d digests sent", digests_sent)
     finally:
         await conn.close()
-    record_run("insights_digest_worker", "ok")
+        record_run("insights_digest_worker", "ok")
 
 
 async def main():

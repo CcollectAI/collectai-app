@@ -601,16 +601,41 @@ export class CachedDataProvider implements DataProvider {
   // Event search — pass through
   searchEvents(params: { q?: string; category?: string; eventType?: string; location?: string; upcomingOnly?: boolean; limit?: number; offset?: number }) { return this.inner.searchEvents(params); }
 
-  // Deal Desk (P2P Offers) — pass through (real-time negotiations, not cached)
-  proposeOffer(itemId: string, price: number, message?: string): Promise<Offer> { return this.inner.proposeOffer(itemId, price, message); }
-  counterOffer(offerId: string, price: number, message?: string): Promise<Offer> { return this.inner.counterOffer(offerId, price, message); }
-  respondToOffer(offerId: string, accept: boolean, message?: string): Promise<void> { return this.inner.respondToOffer(offerId, accept, message); }
+  // Deal Desk (P2P Offers) — mutations invalidate items cache
+  async proposeOffer(itemId: string, price: number, message?: string): Promise<Offer> {
+    const result = await this.inner.proposeOffer(itemId, price, message);
+    return result;
+  }
+  async counterOffer(offerId: string, price: number, message?: string): Promise<Offer> {
+    const result = await this.inner.counterOffer(offerId, price, message);
+    return result;
+  }
+  async respondToOffer(offerId: string, accept: boolean, message?: string): Promise<void> {
+    await this.inner.respondToOffer(offerId, accept, message);
+    // Accepting removes item from sale — invalidate items
+    if (accept) await cacheClear(CK.ITEMS_LIST);
+  }
   cancelOffer(offerId: string): Promise<void> { return this.inner.cancelOffer(offerId); }
   listActiveOffers(): Promise<Offer[]> { return this.inner.listActiveOffers(); }
   listDealHistory(): Promise<Offer[]> { return this.inner.listDealHistory(); }
   getOfferDetail(offerId: string): Promise<{ offer: Offer; events: OfferEvent[] }> { return this.inner.getOfferDetail(offerId); }
   getUserReputation(userId: string): Promise<UserReputation> { return this.inner.getUserReputation(userId); }
-  toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void> { return this.inner.toggleForSale(itemId, forSale, askingPrice); }
+  async toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void> {
+    await this.inner.toggleForSale(itemId, forSale, askingPrice);
+    await cacheClear(CK.ITEMS_LIST);
+  }
   markShipped(offerId: string, trackingInfo?: string): Promise<void> { return this.inner.markShipped(offerId, trackingInfo); }
-  completeDeal(offerId: string, stars: number, comment?: string): Promise<void> { return this.inner.completeDeal(offerId, stars, comment); }
+  async completeDeal(offerId: string, stars: number, comment?: string): Promise<void> {
+    await this.inner.completeDeal(offerId, stars, comment);
+    await cacheClear(CK.ITEMS_LIST);
+  }
+
+  // Multi-Marketplace Selling (pass-through)
+  listMarketplaceListings(status?: import('./types').MarketplaceListing['status']): Promise<import('./types').MarketplaceListing[]> { return this.inner.listMarketplaceListings(status); }
+  createMarketplaceListing(input: Omit<import('./types').MarketplaceListing, 'id' | 'viewsCount' | 'watchersCount' | 'offersCount' | 'createdAt'>): Promise<import('./types').MarketplaceListing> { return this.inner.createMarketplaceListing(input); }
+  updateMarketplaceListing(listingId: string, patch: Partial<import('./types').MarketplaceListing>): Promise<import('./types').MarketplaceListing> { return this.inner.updateMarketplaceListing(listingId, patch); }
+  deleteMarketplaceListing(listingId: string): Promise<void> { return this.inner.deleteMarketplaceListing(listingId); }
+  listMarketplaceAccounts(): Promise<import('./types').MarketplaceAccount[]> { return this.inner.listMarketplaceAccounts(); }
+  listMarketplaceSales(): Promise<import('./types').MarketplaceSale[]> { return this.inner.listMarketplaceSales(); }
+  getMarketplaceFeeSchedules(): Promise<import('./types').MarketplaceFeeSchedule[]> { return this.inner.getMarketplaceFeeSchedules(); }
 }

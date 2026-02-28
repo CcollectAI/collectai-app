@@ -147,9 +147,8 @@ async def browse_catalog_items(
             )
             for pr in price_rows:
                 price_map[pr["item_key"]] = float(pr["price"])
-        except Exception:
-            # market_observations table might not exist or query might fail
-            pass
+        except Exception as exc:
+            logger.debug("Could not fetch estimated prices: %s", exc)
 
     items = [
         CatalogItem(

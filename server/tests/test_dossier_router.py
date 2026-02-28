@@ -174,7 +174,9 @@ class TestGetDossier:
             resp = client.get("/dossier/nonexistent-item-id")
 
         assert resp.status_code == 404
-        assert "not found" in resp.json()["detail"].lower()
+        detail = resp.json()["detail"]
+        msg = detail["message"] if isinstance(detail, dict) else detail
+        assert "not found" in msg.lower()
 
     def test_dossier_db_not_configured_503(self):
         """When database is not configured, return 503."""
@@ -184,7 +186,9 @@ class TestGetDossier:
             resp = client.get("/dossier/abc-123-def")
 
         assert resp.status_code == 503
-        assert "database" in resp.json()["detail"].lower() or "not available" in resp.json()["detail"].lower()
+        detail = resp.json()["detail"]
+        msg = detail["message"] if isinstance(detail, dict) else detail
+        assert "database" in msg.lower() or "not available" in msg.lower()
 
     def test_dossier_generate_error_500(self):
         """Unexpected error during dossier generation returns 500."""
@@ -200,7 +204,9 @@ class TestGetDossier:
             resp = client.get("/dossier/abc-123-def")
 
         assert resp.status_code == 500
-        assert "failed" in resp.json()["detail"].lower()
+        detail = resp.json()["detail"]
+        msg = detail["message"] if isinstance(detail, dict) else detail
+        assert "failed" in msg.lower()
 
     def test_dossier_minimal_sections(self):
         """Dossier with empty optional sections returns valid response."""

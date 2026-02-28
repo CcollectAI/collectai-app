@@ -18,11 +18,12 @@ Endpoints:
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
@@ -71,6 +72,7 @@ class CompleteRequest(BaseModel):
 class ToggleForSaleRequest(BaseModel):
     for_sale: bool
     asking_price: Optional[float] = Field(None, gt=0)
+    currency: str = Field("EUR", pattern=r"^(EUR|USD|GBP|JPY|KRW|AUD|CAD)$")
 
 
 # ---------------------------------------------------------------------------
@@ -104,14 +106,19 @@ async def propose_offer(
     try:
         async with pool.acquire() as conn:
             result = await conn.fetchval(
-                "SELECT rpc_propose_offer_v1($1::uuid, $2::numeric, $3::text)",
-                item_id, body.price, body.message,
+                "SELECT rpc_propose_offer_v1($1::uuid, $2::numeric, $3::text, $4::uuid)",
+                item_id, body.price, body.message, user_id,
             )
 
-        import json
-        data = json.loads(result) if isinstance(result, str) else result
+        try:
+            data = json.loads(result) if isinstance(result, str) else result
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.error("Invalid JSON from RPC: %s", e)
+            raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
         return data
     except Exception as exc:
+        if hasattr(exc, "status_code"):
+            raise exc
         msg = str(exc)
         if "not found" in msg.lower():
             raise error_response(404, msg, code=ErrorCode.NOT_FOUND)
@@ -140,15 +147,28 @@ async def counter_offer(
 
     try:
         async with pool.acquire() as conn:
+            # Pre-flight ownership check: caller must be buyer or seller
+            participant = await conn.fetchval(
+                "SELECT 1 FROM offers WHERE id = $1::uuid AND (seller_id = $2::uuid OR buyer_id = $2::uuid)",
+                offer_id, user_id,
+            )
+            if not participant:
+                raise error_response(403, "Not authorized to act on this offer", code=ErrorCode.FORBIDDEN)
+
             result = await conn.fetchval(
                 "SELECT rpc_counter_offer_v1($1::uuid, $2::numeric, $3::text)",
                 offer_id, body.price, body.message,
             )
 
-        import json
-        data = json.loads(result) if isinstance(result, str) else result
+        try:
+            data = json.loads(result) if isinstance(result, str) else result
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.error("Invalid JSON from RPC: %s", e)
+            raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
         return data
     except Exception as exc:
+        if hasattr(exc, "status_code"):
+            raise exc
         msg = str(exc)
         if "not found" in msg.lower():
             raise error_response(404, msg, code=ErrorCode.NOT_FOUND)
@@ -179,15 +199,28 @@ async def respond_offer(
 
     try:
         async with pool.acquire() as conn:
+            # Pre-flight ownership check: caller must be buyer or seller
+            participant = await conn.fetchval(
+                "SELECT 1 FROM offers WHERE id = $1::uuid AND (seller_id = $2::uuid OR buyer_id = $2::uuid)",
+                offer_id, user_id,
+            )
+            if not participant:
+                raise error_response(403, "Not authorized to act on this offer", code=ErrorCode.FORBIDDEN)
+
             result = await conn.fetchval(
                 "SELECT rpc_respond_offer_v1($1::uuid, $2::boolean, $3::text)",
                 offer_id, body.accept, body.message,
             )
 
-        import json
-        data = json.loads(result) if isinstance(result, str) else result
+        try:
+            data = json.loads(result) if isinstance(result, str) else result
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.error("Invalid JSON from RPC: %s", e)
+            raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
         return data
     except Exception as exc:
+        if hasattr(exc, "status_code"):
+            raise exc
         msg = str(exc)
         if "not found" in msg.lower():
             raise error_response(404, msg, code=ErrorCode.NOT_FOUND)
@@ -217,15 +250,28 @@ async def cancel_offer(
 
     try:
         async with pool.acquire() as conn:
+            # Pre-flight ownership check: caller must be buyer or seller
+            participant = await conn.fetchval(
+                "SELECT 1 FROM offers WHERE id = $1::uuid AND (seller_id = $2::uuid OR buyer_id = $2::uuid)",
+                offer_id, user_id,
+            )
+            if not participant:
+                raise error_response(403, "Not authorized to act on this offer", code=ErrorCode.FORBIDDEN)
+
             result = await conn.fetchval(
                 "SELECT rpc_cancel_offer_v1($1::uuid)",
                 offer_id,
             )
 
-        import json
-        data = json.loads(result) if isinstance(result, str) else result
+        try:
+            data = json.loads(result) if isinstance(result, str) else result
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.error("Invalid JSON from RPC: %s", e)
+            raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
         return data
     except Exception as exc:
+        if hasattr(exc, "status_code"):
+            raise exc
         msg = str(exc)
         if "not found" in msg.lower():
             raise error_response(404, msg, code=ErrorCode.NOT_FOUND)
@@ -256,15 +302,28 @@ async def mark_shipped(
 
     try:
         async with pool.acquire() as conn:
+            # Pre-flight ownership check: only seller can mark shipped
+            is_seller = await conn.fetchval(
+                "SELECT 1 FROM offers WHERE id = $1::uuid AND seller_id = $2::uuid",
+                offer_id, user_id,
+            )
+            if not is_seller:
+                raise error_response(403, "Only the seller can mark as shipped", code=ErrorCode.FORBIDDEN)
+
             result = await conn.fetchval(
                 "SELECT rpc_mark_shipped_v1($1::uuid, $2::text)",
                 offer_id, body.tracking_info,
             )
 
-        import json
-        data = json.loads(result) if isinstance(result, str) else result
+        try:
+            data = json.loads(result) if isinstance(result, str) else result
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.error("Invalid JSON from RPC: %s", e)
+            raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
         return data
     except Exception as exc:
+        if hasattr(exc, "status_code"):
+            raise exc
         msg = str(exc)
         if "not found" in msg.lower():
             raise error_response(404, msg, code=ErrorCode.NOT_FOUND)
@@ -295,15 +354,28 @@ async def complete_deal(
 
     try:
         async with pool.acquire() as conn:
+            # Pre-flight ownership check: only buyer can complete
+            is_buyer = await conn.fetchval(
+                "SELECT 1 FROM offers WHERE id = $1::uuid AND buyer_id = $2::uuid",
+                offer_id, user_id,
+            )
+            if not is_buyer:
+                raise error_response(403, "Only the buyer can complete the deal", code=ErrorCode.FORBIDDEN)
+
             result = await conn.fetchval(
                 "SELECT rpc_complete_deal_v1($1::uuid, $2::smallint, $3::text)",
                 offer_id, body.stars, body.comment,
             )
 
-        import json
-        data = json.loads(result) if isinstance(result, str) else result
+        try:
+            data = json.loads(result) if isinstance(result, str) else result
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.error("Invalid JSON from RPC: %s", e)
+            raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
         return data
     except Exception as exc:
+        if hasattr(exc, "status_code"):
+            raise exc
         msg = str(exc)
         if "not found" in msg.lower():
             raise error_response(404, msg, code=ErrorCode.NOT_FOUND)
@@ -322,6 +394,8 @@ async def complete_deal(
 @router.get("/deals/active")
 async def list_active_offers(
     user_id: str = Depends(get_current_user_id),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     _rl: None = Depends(_deal_read_limit),
 ):
     pool = get_db_pool()
@@ -330,20 +404,31 @@ async def list_active_offers(
 
     try:
         async with pool.acquire() as conn:
+            total_count = await conn.fetchval(
+                """
+                SELECT COUNT(*) FROM v_offer_summary_v1
+                WHERE (seller_id = $1 OR buyer_id = $1)
+                  AND status IN ('proposed', 'countered', 'accepted')
+                """,
+                user_id,
+            )
+
             rows = await conn.fetch(
                 """
                 SELECT * FROM v_offer_summary_v1
                 WHERE (seller_id = $1 OR buyer_id = $1)
                   AND status IN ('proposed', 'countered', 'accepted')
                 ORDER BY updated_at DESC
-                LIMIT 50
+                LIMIT $2 OFFSET $3
                 """,
                 user_id,
+                limit,
+                offset,
             )
 
         return {
             "offers": [_row_to_offer_summary(dict(r), user_id) for r in rows],
-            "total_count": len(rows),
+            "total_count": total_count or 0,
         }
     except Exception:
         logger.exception("list_active_offers failed")
@@ -357,6 +442,8 @@ async def list_active_offers(
 @router.get("/deals/history")
 async def list_deal_history(
     user_id: str = Depends(get_current_user_id),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     _rl: None = Depends(_deal_read_limit),
 ):
     pool = get_db_pool()
@@ -365,20 +452,31 @@ async def list_deal_history(
 
     try:
         async with pool.acquire() as conn:
+            total_count = await conn.fetchval(
+                """
+                SELECT COUNT(*) FROM v_offer_summary_v1
+                WHERE (seller_id = $1 OR buyer_id = $1)
+                  AND status IN ('completed', 'cancelled', 'declined', 'expired')
+                """,
+                user_id,
+            )
+
             rows = await conn.fetch(
                 """
                 SELECT * FROM v_offer_summary_v1
                 WHERE (seller_id = $1 OR buyer_id = $1)
                   AND status IN ('completed', 'cancelled', 'declined', 'expired')
                 ORDER BY updated_at DESC
-                LIMIT 50
+                LIMIT $2 OFFSET $3
                 """,
                 user_id,
+                limit,
+                offset,
             )
 
         return {
             "offers": [_row_to_offer_summary(dict(r), user_id) for r in rows],
-            "total_count": len(rows),
+            "total_count": total_count or 0,
         }
     except Exception:
         logger.exception("list_deal_history failed")
@@ -590,7 +688,7 @@ async def toggle_for_sale(
                 """,
                 body.for_sale,
                 body.asking_price if body.for_sale else None,
-                "EUR",
+                body.currency,
                 item_id,
             )
 

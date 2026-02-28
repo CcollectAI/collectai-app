@@ -19,8 +19,7 @@ import {
   Animated,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider } from '@/data';
 import type { EventAnnouncement, CollectorsEvent } from '@/data/events';
@@ -192,20 +191,8 @@ const EventAnnouncementsScreen: React.FC = () => {
   /* ======================================================================== */
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Announcements</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={[styles.safe, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: 'Announcements' }} />
 
       {/* Loading */}
       {loading ? (
@@ -248,7 +235,7 @@ const EventAnnouncementsScreen: React.FC = () => {
         </AnimatedPressable>
       )}
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 };
 

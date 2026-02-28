@@ -301,16 +301,16 @@ function QuickScanScreen() {
   // Permission loading
   if (!permission) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: '#000' }]}>
+      <View style={[styles.container, { backgroundColor: '#000' }]}>
         <ActivityIndicator size="large" color={TIFFANY} />
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Permission denied
   if (!permission.granted) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.permissionContainer}>
           <Ionicons name="camera-outline" size={64} color={colors.muted} />
           <Text style={[styles.permissionTitle, { color: colors.text }]}>
@@ -339,14 +339,14 @@ function QuickScanScreen() {
             <Text style={[styles.backBtnText, { color: colors.muted }]}>Go Back</Text>
           </AnimatedPressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // ---- Batch Summary Screen ----
   if (phase === 'batch_summary') {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar barStyle="dark-content" />
         <View style={styles.summaryHeader}>
           <Ionicons name="checkmark-circle" size={56} color={TIFFANY} />
@@ -411,7 +411,7 @@ function QuickScanScreen() {
             <Text style={styles.summaryDoneBtnText}>Done</Text>
           </AnimatedPressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -425,7 +425,7 @@ function QuickScanScreen() {
     });
 
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar barStyle="light-content" />
 
         {/* Captured image with scan line */}
@@ -497,7 +497,7 @@ function QuickScanScreen() {
             Hold tight -- this usually takes a few seconds
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 

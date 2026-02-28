@@ -292,11 +292,11 @@ function ProjectDetailScreen() {
     return (
       <>
         <Stack.Screen options={{ headerTitle: "Project" }} />
-        <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+        <View style={[styles.safe, { backgroundColor: colors.background }]}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.accent} />
           </View>
-        </SafeAreaView>
+        </View>
       </>
     );
   }
@@ -305,7 +305,7 @@ function ProjectDetailScreen() {
     return (
       <>
         <Stack.Screen options={{ headerTitle: "Project" }} />
-        <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+        <View style={[styles.safe, { backgroundColor: colors.background }]}>
           <View style={styles.loadingContainer}>
             <Ionicons name="alert-circle-outline" size={48} color={colors.muted} />
             <Text style={[styles.errorText, { color: colors.text }]}>{error || "Project not found"}</Text>
@@ -318,7 +318,7 @@ function ProjectDetailScreen() {
               <Text style={[styles.backBtnText, { color: colors.text }]}>Go back</Text>
             </AnimatedPressable>
           </View>
-        </SafeAreaView>
+        </View>
       </>
     );
   }
@@ -330,7 +330,7 @@ function ProjectDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ headerTitle: project.title }} />
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
@@ -874,7 +874,7 @@ function ProjectDetailScreen() {
         </ScrollView>
         </KeyboardAvoidingView>
         <QuickNavBar />
-      </SafeAreaView>
+      </View>
     </>
   );
 }

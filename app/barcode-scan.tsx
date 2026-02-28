@@ -20,15 +20,14 @@ import {
   Animated,
   Linking,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+// SafeAreaView removed — Stack header handles safe area
+import { router, Stack } from 'expo-router';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { dataProvider, type BarcodeLookupResult } from '@/data';
 import { collectorsApi, type IntakeResultResponse, getBillingStatus, type BillingStatus } from '@/api/collectorsApi';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
-import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
@@ -369,16 +368,16 @@ function BarcodeScanScreen() {
   // Permission not determined yet
   if (!permission) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.accent} />
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Permission denied
   if (!permission.granted) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.permissionContainer}>
           <Ionicons name="camera-outline" size={64} color={colors.muted} />
           <Text style={[styles.permissionTitle, { color: colors.text }]}>
@@ -399,22 +398,13 @@ function BarcodeScanScreen() {
             <Text style={[styles.backButtonText, { color: colors.muted }]}>Go Back</Text>
           </AnimatedPressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['left', 'right']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }} style={styles.headerBack} accessibilityRole="button" accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          {inputMode === 'camera' ? 'Scan EAN Barcode / ISBN' : 'Import from URL'}
-        </Text>
-        <ThemeToggleButton size={22} />
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: inputMode === 'camera' ? 'Scan Barcode' : 'Import from URL' }} />
 
       {/* Mode Toggle */}
       {scanState === 'scanning' && (
@@ -606,7 +596,10 @@ function BarcodeScanScreen() {
                   {isManualSubmitting ? (
                     <ActivityIndicator size="small" color={colors.card} />
                   ) : (
-                    <Ionicons name="search" size={20} color={colors.card} />
+                    <>
+                      <Ionicons name="search" size={18} color={colors.card} />
+                      <Text style={[styles.primaryButtonText, { color: colors.card }]}>Look Up</Text>
+                    </>
                   )}
                 </AnimatedPressable>
               </View>
@@ -789,7 +782,7 @@ function BarcodeScanScreen() {
         prefillName={catalogModalPrefillName}
         inputData={catalogModalInputData}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -861,6 +854,9 @@ const styles = StyleSheet.create({
   },
   cameraContainer: {
     flex: 1,
+    borderRadius: 16,
+    marginHorizontal: 12,
+    overflow: 'hidden',
   },
   camera: {
     flex: 1,
@@ -1097,29 +1093,33 @@ const styles = StyleSheet.create({
   },
   manualEntryScroll: {
     maxHeight: 200,
+    marginTop: 4,
   },
   manualEntryScrollContent: {
     flexGrow: 1,
   },
-modeToggleRow: {
+  modeToggleRow: {
     flexDirection: 'row',
     gap: 10,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingTop: 8,
+    paddingBottom: 14,
   },
   modeToggleButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 12,
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    minHeight: 52,
   },
   modeToggleText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   urlImportContainer: {
     flex: 1,
@@ -1190,10 +1190,12 @@ modeToggleRow: {
     letterSpacing: 1,
   },
   manualSubmitButton: {
-    width: 56,
-    height: 56,
+    flexDirection: 'row',
+    height: 50,
+    paddingHorizontal: 16,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
 });

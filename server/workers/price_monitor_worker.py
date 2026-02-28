@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 
 import asyncpg
 
+from app.worker_registry import record_run
 from workers.retry import with_async_retry, log_dead_letter
 
 logging.basicConfig(
@@ -455,6 +456,7 @@ async def run_once():
     """Execute a single monitoring cycle."""
     if not DSN:
         logger.error("DB_DSN not set in environment")
+        record_run("price_monitor", "error")
         return
 
     conn = await asyncpg.connect(DSN)
@@ -472,12 +474,14 @@ async def run_once():
         )
     finally:
         await conn.close()
+        record_run("price_monitor", "ok")
 
 
 async def main():
     try:
         await run_once()
     except Exception as e:
+        record_run("price_monitor", "error")
         log_dead_letter("price_monitor_worker", {}, e)
         logger.exception("price_monitor_worker crashed: %r", e)
 

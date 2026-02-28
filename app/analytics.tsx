@@ -19,7 +19,6 @@ import {
   Animated,
   RefreshControl,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
@@ -160,41 +159,24 @@ function AnalyticsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-        <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.safe}>
+        <Stack.Screen options={{ headerTitle: 'Analytics' }} />
         <View style={styles.loadingContainer}>
           <SkeletonList count={3} type="analytics" />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-      <Stack.Screen options={{ headerShown: false }} />
+    <View style={styles.safe}>
+      <Stack.Screen options={{ headerTitle: 'Analytics' }} />
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
-        {/* Header */}
-        <View style={styles.header}>
-          <AnimatedPressable
-            style={styles.backBtn}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }}
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={24} color={COLORS.navy} />
-          </AnimatedPressable>
-          <View style={styles.headerText}>
-            <Text style={styles.headerLabel}>PORTFOLIO</Text>
-            <Text style={styles.headerTitle}>Analytics</Text>
-          </View>
-          <AnimatedPressable style={styles.refreshBtn} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); loadData(); }} accessibilityRole="button" accessibilityLabel="Refresh analytics data">
-            <Ionicons name="refresh-outline" size={20} color={COLORS.muted} />
-          </AnimatedPressable>
-        </View>
 
         {/* Error Banner */}
         {error && (
@@ -506,7 +488,7 @@ function AnalyticsScreen() {
         </Animated.View>
       </ScrollView>
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 }
 

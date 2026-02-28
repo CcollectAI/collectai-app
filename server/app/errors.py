@@ -30,6 +30,7 @@ def error_response(
     status_code: int,
     detail: str,
     code: str = "UNKNOWN_ERROR",
+    headers: dict[str, str] | None = None,
 ) -> HTTPException:
     """Create an HTTPException with a standard error body including request_id."""
     return HTTPException(
@@ -39,4 +40,5 @@ def error_response(
             "code": code,
             "request_id": get_request_id(),
         },
+        headers=headers,
     )

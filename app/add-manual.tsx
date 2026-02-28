@@ -1,7 +1,6 @@
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import React, { useState, useMemo } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -20,7 +19,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, Stack } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
@@ -31,6 +30,7 @@ import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 type SaveState = "idle" | "saving" | "success" | "error";
 
@@ -230,21 +230,13 @@ const ManualAddScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: 'Add Manually' }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Add Manually</Text>
-          <View style={{ width: 32 }} />
-        </View>
-
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -900,7 +892,8 @@ const ManualAddScreen: React.FC = () => {
         prefillName={nameField.value}
         inputData={{ name: nameField.value, category: category || undefined }}
       />
-    </SafeAreaView>
+      <QuickNavBar />
+    </View>
   );
 };
 

@@ -182,7 +182,8 @@ function RootStack() {
   // Shared screen options with icon-only header
   const iconOnlyHeader = {
     headerTitle: '',
-    headerBackTitleVisible: false,
+    headerBackTitle: '',
+    headerBackButtonDisplayMode: 'minimal' as const,
     headerRight: () => <HeaderRight />,
   };
 
@@ -195,6 +196,7 @@ function RootStack() {
         screenOptions={{
           headerShown: true,
           headerTitle: '',
+          headerBackTitle: '',
           headerBackButtonDisplayMode: 'minimal',
           headerRight: () => <HeaderRight />,
           headerStyle: { backgroundColor: colors.card },
@@ -240,13 +242,21 @@ function RootStack() {
         <Stack.Screen name="purchase/create-mandate" options={iconOnlyHeader} />
         <Stack.Screen name="purchase/deal/[dealId]" options={iconOnlyHeader} />
 
-        {/* Deal Desk / P2P Selling */}
+        {/* Deal Desk / P2P Selling / Marketplace */}
+        <Stack.Screen name="sell/dashboard" options={iconOnlyHeader} />
         <Stack.Screen name="sell/offers" options={iconOnlyHeader} />
         <Stack.Screen name="sell/[offerId]" options={iconOnlyHeader} />
 
         {/* Subscription & Security */}
         <Stack.Screen name="subscription" options={iconOnlyHeader} />
         <Stack.Screen name="mfa-setup" options={iconOnlyHeader} />
+
+        {/* Additional screens */}
+        <Stack.Screen name="alerts" options={iconOnlyHeader} />
+        <Stack.Screen name="condition-guide" options={iconOnlyHeader} />
+        <Stack.Screen name="leaderboard" options={iconOnlyHeader} />
+        <Stack.Screen name="sets-to-complete" options={iconOnlyHeader} />
+        <Stack.Screen name="twitch-leaderboard" options={iconOnlyHeader} />
 
         {/* Legal screens — no header (custom header inside) */}
         <Stack.Screen name="legal/privacy-policy" options={{ headerShown: false }} />

@@ -31,6 +31,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { useToast } from "@/components/Toast";
 import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, positiveNumber } from "@/lib/validate";
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 
@@ -239,6 +240,7 @@ function CreateMandateScreen() {
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }
@@ -402,6 +404,7 @@ function CreateMandateScreen() {
         <View style={{ height: Platform.OS === "ios" ? 40 : 24 }} />
       </ScrollView>
       </KeyboardAvoidingView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 }

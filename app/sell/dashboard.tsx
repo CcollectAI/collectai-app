@@ -1,0 +1,856 @@
+/**
+ * Seller Dashboard — Multi-marketplace listing management.
+ *
+ * Shows active listings across marketplaces, sales history with revenue breakdown,
+ * connected marketplace accounts, and fee comparisons.
+ */
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Modal,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { router, Stack } from 'expo-router';
+import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '@/hooks/useAppTheme';
+import { useSettings } from '@/lib/settings';
+import { useToast } from '@/components/Toast';
+import { dataProvider } from '@/data';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { formatPrice, getCurrencySymbol } from '@/lib/format';
+import { EmptyState } from '@/components/EmptyState';
+import { SkeletonList } from '@/components/Skeleton';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { QuickNavBar } from '@/components/QuickNavBar';
+import { AnimatedPressable } from '@/motion';
+import { SwipeableRow, SwipeActions } from '@/components/SwipeableRow';
+import type {
+  MarketplaceListing,
+  MarketplaceSale,
+  MarketplaceAccount,
+  MarketplaceFeeSchedule,
+  ListingStatus,
+  MarketplaceId,
+  CurrencyCode,
+} from '@/data/types';
+
+// ---------------------------------------------------------------------------
+// Marketplace branding
+// ---------------------------------------------------------------------------
+
+const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+  collectai: { label: 'CollectAI P2P', icon: 'people-outline', color: '#81D8D0' },
+  ebay: { label: 'eBay', icon: 'cart-outline', color: '#E53238' },
+  mercari: { label: 'Mercari', icon: 'storefront-outline', color: '#4DC8F0' },
+  cardmarket: { label: 'Cardmarket', icon: 'card-outline', color: '#1A3C7D' },
+  stockx: { label: 'StockX', icon: 'trending-up-outline', color: '#006340' },
+  bricklink: { label: 'BrickLink', icon: 'cube-outline', color: '#D01012' },
+  tcgplayer: { label: 'TCGPlayer', icon: 'layers-outline', color: '#363A5D' },
+  discogs: { label: 'Discogs', icon: 'disc-outline', color: '#333333' },
+};
+
+const STATUS_CONFIG: Record<ListingStatus, { label: string; bg: string; fg: string }> = {
+  draft: { label: 'Draft', bg: '#F3F4F6', fg: '#6B7280' },
+  active: { label: 'Active', bg: '#D1FAE5', fg: '#065F46' },
+  sold: { label: 'Sold', bg: '#DBEAFE', fg: '#1E40AF' },
+  expired: { label: 'Expired', bg: '#FEF3C7', fg: '#92400E' },
+  delisted: { label: 'Delisted', bg: '#F3F4F6', fg: '#6B7280' },
+  error: { label: 'Error', bg: '#FEE2E2', fg: '#991B1B' },
+};
+
+// ---------------------------------------------------------------------------
+// Tab type
+// ---------------------------------------------------------------------------
+
+type Tab = 'listings' | 'sales' | 'accounts';
+
+// ---------------------------------------------------------------------------
+// ListingCard
+// ---------------------------------------------------------------------------
+
+function ListingCard({
+  listing,
+  colors,
+  currency,
+}: {
+  listing: MarketplaceListing;
+  colors: ReturnType<typeof useAppTheme>['colors'];
+  currency: CurrencyCode;
+}) {
+  const mp = MARKETPLACE_CONFIG[listing.marketplaceId] ?? MARKETPLACE_CONFIG.collectai;
+  const statusCfg = STATUS_CONFIG[listing.status] ?? STATUS_CONFIG.draft;
+
+  return (
+    <AnimatedPressable
+      onPress={() => {
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+        // Navigate to listing detail (future screen)
+      }}
+      style={[styles.listingCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      accessibilityRole="button"
+      accessibilityLabel={`${listing.listingTitle} on ${mp.label}, ${statusCfg.label}, ${formatPrice(listing.price, currency)}`}
+    >
+      <View style={styles.listingTop}>
+        {/* Marketplace badge */}
+        <View style={[styles.mpBadge, { backgroundColor: mp.color + '15' }]}>
+          <Ionicons name={mp.icon} size={12} color={mp.color} />
+          <Text style={[styles.mpBadgeText, { color: mp.color }]}>{mp.label}</Text>
+        </View>
+
+        {/* Status badge */}
+        <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
+          <Text style={[styles.statusBadgeText, { color: statusCfg.fg }]}>{statusCfg.label}</Text>
+        </View>
+      </View>
+
+      <Text style={[styles.listingTitle, { color: colors.text }]} numberOfLines={2}>
+        {listing.listingTitle}
+      </Text>
+
+      <View style={styles.listingMeta}>
+        <Text style={[styles.listingPrice, { color: colors.text }]}>
+          {formatPrice(listing.price, currency)}
+        </Text>
+        {listing.estimatedNet != null && (
+          <Text style={[styles.listingNet, { color: colors.muted }]}>
+            Net: {formatPrice(listing.estimatedNet, currency)}
+          </Text>
+        )}
+      </View>
+
+      {/* Metrics row */}
+      <View style={styles.metricsRow}>
+        <View style={styles.metricItem}>
+          <Ionicons name="eye-outline" size={13} color={colors.muted} />
+          <Text style={[styles.metricText, { color: colors.muted }]}>{listing.viewsCount}</Text>
+        </View>
+        <View style={styles.metricItem}>
+          <Ionicons name="heart-outline" size={13} color={colors.muted} />
+          <Text style={[styles.metricText, { color: colors.muted }]}>{listing.watchersCount}</Text>
+        </View>
+        <View style={styles.metricItem}>
+          <Ionicons name="chatbubble-outline" size={13} color={colors.muted} />
+          <Text style={[styles.metricText, { color: colors.muted }]}>{listing.offersCount}</Text>
+        </View>
+        {listing.format !== 'fixed_price' && (
+          <View style={[styles.formatBadge, { borderColor: colors.border }]}>
+            <Text style={[styles.formatText, { color: colors.muted }]}>
+              {listing.format === 'auction' ? 'Auction' : 'Best Offer'}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {listing.syncedAt && (
+        <Text style={[styles.syncedText, { color: colors.muted }]}>
+          Synced {new Date(listing.syncedAt).toLocaleDateString()}
+        </Text>
+      )}
+    </AnimatedPressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SaleCard
+// ---------------------------------------------------------------------------
+
+function SaleCard({
+  sale,
+  colors,
+  currency,
+}: {
+  sale: MarketplaceSale;
+  colors: ReturnType<typeof useAppTheme>['colors'];
+  currency: CurrencyCode;
+}) {
+  return (
+    <View style={[styles.saleCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={styles.saleTop}>
+        <Text style={[styles.salePrice, { color: colors.text }]}>
+          {formatPrice(sale.salePrice, currency)}
+        </Text>
+        <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
+          <Text style={[styles.statusBadgeText, { color: '#065F46' }]}>
+            {sale.status === 'completed' ? 'Completed' : sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}
+          </Text>
+        </View>
+      </View>
+
+      {sale.buyerName && (
+        <Text style={[styles.saleBuyer, { color: colors.muted }]} numberOfLines={1}>
+          Buyer: {sale.buyerName}
+        </Text>
+      )}
+
+      {/* Financial breakdown */}
+      <View style={[styles.financialRow, { borderTopColor: colors.border }]}>
+        <View style={styles.financialItem}>
+          <Text style={[styles.financialLabel, { color: colors.muted }]}>Fees</Text>
+          <Text style={[styles.financialValue, { color: '#EF4444' }]}>
+            -{formatPrice((sale.platformFee ?? 0) + (sale.paymentProcessingFee ?? 0), currency)}
+          </Text>
+        </View>
+        {sale.shippingCostActual != null && sale.shippingCostActual > 0 && (
+          <View style={styles.financialItem}>
+            <Text style={[styles.financialLabel, { color: colors.muted }]}>Shipping</Text>
+            <Text style={[styles.financialValue, { color: colors.muted }]}>
+              -{formatPrice(sale.shippingCostActual, currency)}
+            </Text>
+          </View>
+        )}
+        <View style={styles.financialItem}>
+          <Text style={[styles.financialLabel, { color: colors.muted }]}>Net</Text>
+          <Text style={[styles.financialValue, { color: '#059669' }]}>
+            {formatPrice(sale.netProceeds, currency)}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={[styles.saleDate, { color: colors.muted }]}>
+        {new Date(sale.soldAt).toLocaleDateString()}
+      </Text>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AccountCard
+// ---------------------------------------------------------------------------
+
+function AccountCard({
+  account,
+  colors,
+}: {
+  account: MarketplaceAccount;
+  colors: ReturnType<typeof useAppTheme>['colors'];
+}) {
+  const mp = MARKETPLACE_CONFIG[account.marketplaceId] ?? MARKETPLACE_CONFIG.collectai;
+
+  return (
+    <View style={[styles.accountCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={[styles.accountIcon, { backgroundColor: mp.color + '15' }]}>
+        <Ionicons name={mp.icon} size={24} color={mp.color} />
+      </View>
+      <View style={styles.accountInfo}>
+        <Text style={[styles.accountName, { color: colors.text }]}>{mp.label}</Text>
+        {account.sellerName && (
+          <Text style={[styles.accountSeller, { color: colors.muted }]} numberOfLines={1}>
+            {account.sellerName}
+          </Text>
+        )}
+        <Text style={[styles.accountDate, { color: colors.muted }]}>
+          Connected {new Date(account.connectedAt).toLocaleDateString()}
+        </Text>
+      </View>
+      <View style={[
+        styles.accountStatusDot,
+        { backgroundColor: account.isActive ? '#059669' : '#EF4444' },
+      ]} />
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Revenue Summary Card
+// ---------------------------------------------------------------------------
+
+function RevenueSummary({
+  sales,
+  colors,
+  currency,
+}: {
+  sales: MarketplaceSale[];
+  colors: ReturnType<typeof useAppTheme>['colors'];
+  currency: CurrencyCode;
+}) {
+  const totals = useMemo(() => {
+    let gross = 0;
+    let fees = 0;
+    let net = 0;
+    for (const s of sales) {
+      gross += s.salePrice;
+      fees += (s.platformFee ?? 0) + (s.paymentProcessingFee ?? 0);
+      net += s.netProceeds;
+    }
+    return { gross, fees, net, count: sales.length };
+  }, [sales]);
+
+  if (totals.count === 0) return null;
+
+  return (
+    <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Text style={[styles.summaryTitle, { color: colors.text }]}>Revenue Summary</Text>
+      <View style={styles.summaryRow}>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.muted }]}>Gross</Text>
+          <Text style={[styles.summaryValue, { color: colors.text }]}>
+            {formatPrice(totals.gross, currency)}
+          </Text>
+        </View>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.muted }]}>Fees</Text>
+          <Text style={[styles.summaryValue, { color: '#EF4444' }]}>
+            -{formatPrice(totals.fees, currency)}
+          </Text>
+        </View>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.muted }]}>Net</Text>
+          <Text style={[styles.summaryValue, { color: '#059669' }]}>
+            {formatPrice(totals.net, currency)}
+          </Text>
+        </View>
+      </View>
+      <Text style={[styles.summaryCount, { color: colors.muted }]}>
+        {totals.count} {totals.count === 1 ? 'sale' : 'sales'} completed
+      </Text>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Screen
+// ---------------------------------------------------------------------------
+
+function SellerDashboardScreen() {
+  const { colors } = useAppTheme();
+  const { settings } = useSettings();
+  const { showToast } = useToast();
+
+  const [tab, setTab] = useState<Tab>('listings');
+  const [listings, setListings] = useState<MarketplaceListing[]>([]);
+  const [sales, setSales] = useState<MarketplaceSale[]>([]);
+  const [accounts, setAccounts] = useState<MarketplaceAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ListingStatus | 'all'>('all');
+
+  // Create Listing modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createTitle, setCreateTitle] = useState('');
+  const [createPrice, setCreatePrice] = useState('');
+  const [createMarketplace, setCreateMarketplace] = useState<MarketplaceId>('collectai');
+  const [creating, setCreating] = useState(false);
+
+  // Fee schedules for preview
+  const [feeSchedules, setFeeSchedules] = useState<MarketplaceFeeSchedule[]>([]);
+
+  const loadData = useCallback(async () => {
+    try {
+      const [ls, sl, ac, fees] = await Promise.all([
+        dataProvider.listMarketplaceListings(),
+        dataProvider.listMarketplaceSales(),
+        dataProvider.listMarketplaceAccounts(),
+        dataProvider.getMarketplaceFeeSchedules(),
+      ]);
+      setListings(ls);
+      setSales(sl);
+      setAccounts(ac);
+      setFeeSchedules(fees);
+    } catch {
+      showToast({ message: 'Failed to load seller data', type: 'error' });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    loadData();
+  }, [loadData, settings.hapticsEnabled]);
+
+  // Swipe actions for listings
+  const handleDelist = useCallback((listing: MarketplaceListing) => {
+    Alert.alert('Delist item?', `Remove "${listing.listingTitle}" from marketplace?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delist', style: 'destructive', onPress: async () => {
+          try {
+            await dataProvider.deleteMarketplaceListing(listing.id);
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            showToast({ message: 'Listing removed', type: 'success' });
+            loadData();
+          } catch { showToast({ message: 'Failed to delist', type: 'error' }); }
+        },
+      },
+    ]);
+  }, [loadData, showToast]);
+
+  // Create listing handler
+  const handleCreateListing = useCallback(async () => {
+    const title = createTitle.trim();
+    if (!title) { showToast({ message: 'Please enter a title', type: 'warning' }); return; }
+    const price = parseFloat(createPrice.replace(/[^\d.]/g, ''));
+    if (!Number.isFinite(price) || price <= 0) { showToast({ message: 'Please enter a valid price', type: 'warning' }); return; }
+
+    setCreating(true);
+    try {
+      await dataProvider.createMarketplaceListing({
+        itemId: '',
+        marketplaceId: createMarketplace,
+        listingTitle: title,
+        price,
+        currency: settings.currency,
+        format: 'fixed_price',
+        status: 'draft',
+      });
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED);
+      showToast({ message: 'Listing created as draft', type: 'success' });
+      setShowCreateModal(false);
+      setCreateTitle('');
+      setCreatePrice('');
+      loadData();
+    } catch { showToast({ message: 'Failed to create listing', type: 'error' }); }
+    finally { setCreating(false); }
+  }, [createTitle, createPrice, createMarketplace, settings.currency, loadData, showToast]);
+
+  // Compute fee preview for create modal
+  const feePreview = useMemo(() => {
+    const price = parseFloat(createPrice.replace(/[^\d.]/g, ''));
+    if (!Number.isFinite(price) || price <= 0) return null;
+    const schedule = feeSchedules.find((f) => f.marketplaceId === createMarketplace);
+    if (!schedule) return null;
+    const fees = (price * (schedule.baseFeePct + schedule.paymentProcessingPct) / 100) + schedule.fixedFee;
+    return { fees: Math.round(fees * 100) / 100, net: Math.round((price - fees) * 100) / 100 };
+  }, [createPrice, createMarketplace, feeSchedules]);
+
+  // Filter listings by status
+  const filteredListings = useMemo(() => {
+    if (statusFilter === 'all') return listings;
+    return listings.filter((l) => l.status === statusFilter);
+  }, [listings, statusFilter]);
+
+  // Count by status
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: listings.length };
+    for (const l of listings) {
+      counts[l.status] = (counts[l.status] ?? 0) + 1;
+    }
+    return counts;
+  }, [listings]);
+
+  const renderListing = useCallback(
+    ({ item }: { item: MarketplaceListing }) => (
+      <SwipeableRow
+        rightActions={[
+          ...(item.status === 'active' ? [SwipeActions.delete(() => handleDelist(item))] : []),
+        ]}
+        enableHaptics={settings.hapticsEnabled}
+      >
+        <ListingCard listing={item} colors={colors} currency={settings.currency} />
+      </SwipeableRow>
+    ),
+    [colors, settings.currency, settings.hapticsEnabled, handleDelist],
+  );
+
+  const renderSale = useCallback(
+    ({ item }: { item: MarketplaceSale }) => (
+      <SaleCard sale={item} colors={colors} currency={settings.currency} />
+    ),
+    [colors, settings.currency],
+  );
+
+  const renderAccount = useCallback(
+    ({ item }: { item: MarketplaceAccount }) => (
+      <AccountCard account={item} colors={colors} />
+    ),
+    [colors],
+  );
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: 'Seller Dashboard' }} />
+
+      {/* Tab bar */}
+      <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>
+        {(['listings', 'sales', 'accounts'] as Tab[]).map((t) => (
+          <Pressable
+            key={t}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setTab(t);
+            }}
+            style={[
+              styles.tabBtn,
+              tab === t && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
+            ]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === t }}
+          >
+            <Text style={[styles.tabBtnText, { color: tab === t ? colors.accent : colors.muted }]}>
+              {t === 'listings' ? `Listings (${listings.length})` : t === 'sales' ? `Sales (${sales.length})` : `Accounts (${accounts.length})`}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {loading ? (
+        <SkeletonList count={4} type="deal" />
+      ) : tab === 'listings' ? (
+        <>
+          {/* Status filter chips */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterContent}>
+            {(['all', 'active', 'draft', 'sold', 'expired', 'delisted', 'error'] as const).map((s) => {
+              const count = statusCounts[s] ?? 0;
+              if (s !== 'all' && count === 0) return null;
+              const isActive = statusFilter === s;
+              return (
+                <Pressable
+                  key={s}
+                  onPress={() => setStatusFilter(s)}
+                  style={[
+                    styles.filterChip,
+                    { borderColor: isActive ? colors.accent : colors.border },
+                    isActive && { backgroundColor: colors.accent + '15' },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                >
+                  <Text style={[styles.filterChipText, { color: isActive ? colors.accent : colors.muted }]}>
+                    {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)} ({count})
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {filteredListings.length === 0 ? (
+            <EmptyState
+              icon="pricetags-outline"
+              title="No listings yet"
+              subtitle="List your collectibles on eBay, Mercari, Cardmarket, and more from one place"
+              colors={colors}
+              ctaLabel="List an Item"
+              ctaOnPress={() => router.push('/(tabs)/items')}
+            />
+          ) : (
+            <FlatList
+              data={filteredListings}
+              renderItem={renderListing}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.listContent}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />
+              }
+            />
+          )}
+        </>
+      ) : tab === 'sales' ? (
+        <FlatList
+          data={sales}
+          renderItem={renderSale}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={<RevenueSummary sales={sales} colors={colors} currency={settings.currency} />}
+          ListEmptyComponent={
+            <EmptyState
+              icon="cash-outline"
+              title="No sales yet"
+              subtitle="When your listings sell, revenue details will appear here"
+              colors={colors}
+            />
+          }
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />
+          }
+        />
+      ) : (
+        <FlatList
+          data={accounts}
+          renderItem={renderAccount}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                showToast({ message: 'Marketplace connections coming soon', type: 'info' });
+              }}
+              style={[styles.connectBtn, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Connect a marketplace account"
+            >
+              <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
+              <Text style={[styles.connectBtnText, { color: colors.accent }]}>Connect Marketplace</Text>
+            </AnimatedPressable>
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="link-outline"
+              title="No accounts connected"
+              subtitle="Connect your eBay, Mercari, or other marketplace accounts to list items directly"
+              colors={colors}
+            />
+          }
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />
+          }
+        />
+      )}
+
+      {/* Create Listing FAB */}
+      {!loading && tab === 'listings' && (
+        <AnimatedPressable
+          style={[styles.fab, { backgroundColor: colors.accent }]}
+          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowCreateModal(true); }}
+          accessibilityRole="button"
+          accessibilityLabel="Create new listing"
+        >
+          <Ionicons name="add" size={28} color="#FFFFFF" />
+        </AnimatedPressable>
+      )}
+
+      {/* Create Listing Modal */}
+      <Modal visible={showCreateModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Create Listing</Text>
+              <AnimatedPressable onPress={() => setShowCreateModal(false)} accessibilityRole="button" accessibilityLabel="Close">
+                <Ionicons name="close" size={24} color={colors.muted} />
+              </AnimatedPressable>
+            </View>
+
+            <Text style={[styles.modalLabel, { color: colors.text }]}>Title</Text>
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+              value={createTitle}
+              onChangeText={setCreateTitle}
+              placeholder="Item title"
+              placeholderTextColor={colors.muted}
+              autoFocus
+              returnKeyType="next"
+              maxLength={200}
+            />
+
+            <Text style={[styles.modalLabel, { color: colors.text }]}>Price ({settings.currency})</Text>
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+              value={createPrice}
+              onChangeText={setCreatePrice}
+              placeholder={`${getCurrencySymbol(settings.currency)} 0.00`}
+              placeholderTextColor={colors.muted}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+            />
+
+            <Text style={[styles.modalLabel, { color: colors.text }]}>Marketplace</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              {(['collectai', 'ebay', 'mercari', 'cardmarket'] as MarketplaceId[]).map((mp) => {
+                const cfg = MARKETPLACE_CONFIG[mp];
+                const isActive = createMarketplace === mp;
+                return (
+                  <Pressable
+                    key={mp}
+                    onPress={() => setCreateMarketplace(mp)}
+                    style={[styles.mpChip, { borderColor: isActive ? cfg?.color ?? colors.accent : colors.border }, isActive && { backgroundColor: (cfg?.color ?? colors.accent) + '15' }]}
+                  >
+                    <Text style={[styles.mpChipText, { color: isActive ? cfg?.color ?? colors.accent : colors.muted }]}>{cfg?.label ?? mp}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            {/* Fee preview */}
+            {feePreview && (
+              <View style={[styles.feePreview, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                <View style={styles.feeRow}>
+                  <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. fees</Text>
+                  <Text style={[styles.feeValue, { color: '#EF4444' }]}>-{formatPrice(feePreview.fees, settings.currency)}</Text>
+                </View>
+                <View style={styles.feeRow}>
+                  <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. net</Text>
+                  <Text style={[styles.feeValue, { color: '#059669' }]}>{formatPrice(feePreview.net, settings.currency)}</Text>
+                </View>
+              </View>
+            )}
+
+            <AnimatedPressable
+              style={[styles.createBtn, { backgroundColor: colors.accent }, creating && { opacity: 0.7 }]}
+              onPress={handleCreateListing}
+              disabled={creating}
+              accessibilityRole="button"
+              accessibilityLabel={creating ? 'Creating listing' : 'Create listing'}
+            >
+              {creating ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.createBtnText}>Create as Draft</Text>
+              )}
+            </AnimatedPressable>
+          </View>
+        </View>
+      </Modal>
+
+      <QuickNavBar />
+    </View>
+  );
+}
+
+export default function SellerDashboardWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Seller Dashboard">
+      <SellerDashboardScreen />
+    </ScreenErrorBoundary>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  tabBar: {
+    flexDirection: 'row',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  tabBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabBtnText: { fontSize: 13, fontWeight: '600' },
+
+  filterRow: { maxHeight: 48 },
+  filterContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginRight: 6,
+  },
+  filterChipText: { fontSize: 12, fontWeight: '600' },
+
+  listContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 },
+
+  // Listing card
+  listingCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 10,
+  },
+  listingTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  mpBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  mpBadgeText: { fontSize: 11, fontWeight: '600' },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  statusBadgeText: { fontSize: 11, fontWeight: '600' },
+  listingTitle: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
+  listingMeta: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 8 },
+  listingPrice: { fontSize: 16, fontWeight: '700' },
+  listingNet: { fontSize: 12 },
+  metricsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  metricItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  metricText: { fontSize: 12 },
+  formatBadge: { borderWidth: 1, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  formatText: { fontSize: 10, fontWeight: '600' },
+  syncedText: { fontSize: 10, marginTop: 6 },
+
+  // Sale card
+  saleCard: { borderRadius: 14, borderWidth: 1, padding: 12, marginBottom: 10 },
+  saleTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  salePrice: { fontSize: 16, fontWeight: '700' },
+  saleBuyer: { fontSize: 12, marginBottom: 8 },
+  financialRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
+  financialItem: { alignItems: 'center' },
+  financialLabel: { fontSize: 10, marginBottom: 2 },
+  financialValue: { fontSize: 13, fontWeight: '600' },
+  saleDate: { fontSize: 10 },
+
+  // Account card
+  accountCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, padding: 12, marginBottom: 10, gap: 12 },
+  accountIcon: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  accountInfo: { flex: 1 },
+  accountName: { fontSize: 14, fontWeight: '600' },
+  accountSeller: { fontSize: 12, marginTop: 2 },
+  accountDate: { fontSize: 11, marginTop: 2 },
+  accountStatusDot: { width: 10, height: 10, borderRadius: 5 },
+
+  // Connect button
+  connectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  connectBtnText: { fontSize: 14, fontWeight: '600' },
+
+  // Revenue summary
+  summaryCard: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16 },
+  summaryTitle: { fontSize: 14, fontWeight: '700', marginBottom: 12 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  summaryItem: { alignItems: 'center', flex: 1 },
+  summaryLabel: { fontSize: 11, marginBottom: 4 },
+  summaryValue: { fontSize: 16, fontWeight: '700' },
+  summaryCount: { fontSize: 11, marginTop: 10, textAlign: 'center' },
+
+  // FAB
+  fab: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+
+  // Create Listing Modal
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '700' },
+  modalLabel: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 8 },
+  modalInput: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 8 },
+  mpChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1, marginRight: 8 },
+  mpChipText: { fontSize: 12, fontWeight: '600' },
+  feePreview: { borderRadius: 10, borderWidth: 1, padding: 12, marginBottom: 12 },
+  feeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  feeLabel: { fontSize: 12 },
+  feeValue: { fontSize: 13, fontWeight: '600' },
+  createBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
+  createBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+});

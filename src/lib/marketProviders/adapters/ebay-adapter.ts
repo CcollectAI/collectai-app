@@ -10,6 +10,7 @@
 
 import Constants from 'expo-constants';
 import { logger } from '@/lib/logger';
+import { toEUR } from '@/lib/fx';
 import type { CurrencyCode, MarketHit } from '@/data/types';
 import type {
   MarketProviderAdapter,
@@ -37,9 +38,6 @@ const ALL_CATEGORIES = [
   'nintendo_merch', 'retro_pokemon', 'one_piece', 'vtuber',
   'keycaps', 'loungefly', 'diecast', 'sportscards',
 ];
-
-// TODO: Replace with live FX rate from shared util
-const USD_TO_EUR = 0.92;
 
 const TAG = '[EbayAdapter]';
 
@@ -77,7 +75,7 @@ function makeErrorResult(error: string, latencyMs: number): ProviderSearchResult
 function convertPrice(price: number, fromCurrency: string): { price: number; currency: CurrencyCode } {
   const upper = fromCurrency.toUpperCase();
   if (upper === 'EUR') return { price, currency: 'EUR' };
-  if (upper === 'USD') return { price: Math.round(price * USD_TO_EUR * 100) / 100, currency: 'EUR' };
+  if (upper === 'USD') return { price: toEUR(price, 'USD'), currency: 'EUR' };
   // For other currencies, return as-is with original currency
   return { price, currency: upper as CurrencyCode };
 }

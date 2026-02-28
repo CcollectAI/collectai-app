@@ -2,9 +2,8 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { View, Text, ScrollView, StyleSheet, Animated, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { USER_PROFILES } from '@/data/users';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from '@/motion';
@@ -69,7 +68,8 @@ const LeaderboardScreen: React.FC = () => {
   });
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <View style={[styles.safe, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: 'Leaderboard' }} />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
@@ -77,20 +77,6 @@ const LeaderboardScreen: React.FC = () => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <View style={styles.headerText}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Collector Leaderboard
-            </Text>
-            <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-              Ranked by estimated portfolio value
-            </Text>
-          </View>
-        </View>
 
         {/* Leaderboard list */}
         {rankedUsers.map((user, index) => {
@@ -148,7 +134,7 @@ const LeaderboardScreen: React.FC = () => {
         </Animated.View>
       </ScrollView>
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 };
 

@@ -15,7 +15,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
@@ -23,6 +23,8 @@ from app.subscription import require_plan
 
 from app.auth import get_current_user_id
 from app.db import db_configured, get_conn
+from app.errors import error_response
+from app.lib.error_codes import ErrorCode
 from app.agents.dossier_agent import generate_dossier, ItemDossier
 
 router = APIRouter(prefix="/dossier", tags=["dossier"])
@@ -64,17 +66,17 @@ class DossierSummaryResponse(BaseModel):
 async def get_dossier(item_id: str, user_id: str = Depends(get_current_user_id)):
     """Return full dossier for an item as JSON."""
     if not db_configured():
-        raise HTTPException(status_code=503, detail="Database not available")
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
     try:
         async with get_conn() as conn:
             dossier = await generate_dossier(item_id, user_id, conn)
     except ValueError as e:
         logger.warning("[dossier] %s (item=%s, user=%s)", e, item_id, user_id)
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise error_response(404, "Item not found", code=ErrorCode.NOT_FOUND)
     except Exception as e:
         logger.error("[dossier] Error generating dossier: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to generate dossier")
+        raise error_response(500, "Failed to generate dossier", code=ErrorCode.INTERNAL_ERROR)
 
     return DossierResponse(**dossier.to_dict())
 
@@ -83,17 +85,17 @@ async def get_dossier(item_id: str, user_id: str = Depends(get_current_user_id))
 async def get_dossier_summary(item_id: str, user_id: str = Depends(get_current_user_id)):
     """Return lightweight summary (identity + valuation + completeness)."""
     if not db_configured():
-        raise HTTPException(status_code=503, detail="Database not available")
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
     try:
         async with get_conn() as conn:
             dossier = await generate_dossier(item_id, user_id, conn)
     except ValueError as e:
         logger.warning("[dossier] %s (item=%s, user=%s)", e, item_id, user_id)
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise error_response(404, "Item not found", code=ErrorCode.NOT_FOUND)
     except Exception as e:
         logger.error("[dossier] Error generating dossier summary: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to generate dossier summary")
+        raise error_response(500, "Failed to generate dossier summary", code=ErrorCode.INTERNAL_ERROR)
 
     return DossierSummaryResponse(
         item_id=dossier.item_id,
@@ -112,17 +114,17 @@ async def export_dossier_html(
 ):
     """Return dossier as a downloadable self-contained HTML document."""
     if not db_configured():
-        raise HTTPException(status_code=503, detail="Database not available")
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
     try:
         async with get_conn() as conn:
             dossier = await generate_dossier(item_id, user_id, conn)
     except ValueError as e:
         logger.warning("[dossier] %s (item=%s, user=%s)", e, item_id, user_id)
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise error_response(404, "Item not found", code=ErrorCode.NOT_FOUND)
     except Exception as e:
         logger.error("[dossier] Error exporting dossier: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to export dossier")
+        raise error_response(500, "Failed to export dossier", code=ErrorCode.INTERNAL_ERROR)
 
     html_content = _render_html(dossier)
 

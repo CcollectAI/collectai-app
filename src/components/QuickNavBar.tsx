@@ -1,14 +1,16 @@
 /**
  * QuickNavBar — Persistent bottom navigation bar for screens outside the (tabs) group.
  * Mirrors the 5 main tabs so users can jump to any section without hitting "back" repeatedly.
+ *
+ * Uses plain Pressable (not AnimatedPressable) because AnimatedPressable applies
+ * the style prop to an inner Animated.View, which breaks flex: 1 in a row layout.
  */
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 
 type TabDef = {
@@ -33,14 +35,17 @@ export function QuickNavBar() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const bottomPadding = Math.max(insets.bottom, 10);
+
   return (
     <View
       style={[
         styles.container,
         {
+          height: 58 + bottomPadding,
+          paddingBottom: bottomPadding,
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          paddingBottom: Math.max(insets.bottom, 10),
         },
       ]}
     >
@@ -49,7 +54,7 @@ export function QuickNavBar() {
         const color = isActive ? colors.accent : colors.muted;
 
         return (
-          <AnimatedPressable
+          <Pressable
             key={tab.route}
             style={styles.tab}
             onPress={() => {
@@ -67,7 +72,7 @@ export function QuickNavBar() {
               color={color}
             />
             <Text style={[styles.label, { color }]}>{tab.label}</Text>
-          </AnimatedPressable>
+          </Pressable>
         );
       })}
     </View>

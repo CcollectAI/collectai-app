@@ -28,6 +28,9 @@ SCHEDULES = {
     "task_worker": 5,                    # polls every 5 seconds
     "value_change_worker": 24 * 3600,    # daily
     "insights_digest_worker": 7 * 24 * 3600,  # weekly
+    "watchlist_monitor_worker": 3600,    # every 1 hour
+    "calibration_worker": 24 * 3600,     # daily
+    "catalog_learning_worker": 1800,     # every 30 minutes
 }
 
 

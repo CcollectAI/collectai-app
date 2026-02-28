@@ -16,7 +16,7 @@ import {
   GestureResponderEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import haptics from '@/lib/haptics';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 /** Swipe action configuration */
 export type SwipeAction = {
@@ -88,7 +88,7 @@ export function SwipeableRow({
         return Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dy) < 10;
       },
       onPanResponderGrant: () => {
-        if (enableHaptics) haptics.lightTap();
+        if (enableHaptics) fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
       },
       onPanResponderMove: (_, gestureState) => {
         // Swipe left (negative dx) - reveal right actions
@@ -120,7 +120,7 @@ export function SwipeableRow({
             friction: 10,
           }).start();
           isOpen.current = 'right';
-          if (enableHaptics) haptics.mediumTap();
+          if (enableHaptics) fireHaptic(HapticIntent.JUDGMENT_LOCKED);
         } else if (shouldOpenLeft && isOpen.current !== 'left') {
           Animated.spring(translateX, {
             toValue: leftActionsWidth,
@@ -129,7 +129,7 @@ export function SwipeableRow({
             friction: 10,
           }).start();
           isOpen.current = 'left';
-          if (enableHaptics) haptics.mediumTap();
+          if (enableHaptics) fireHaptic(HapticIntent.JUDGMENT_LOCKED);
         } else {
           Animated.spring(translateX, {
             toValue: 0,
@@ -144,7 +144,7 @@ export function SwipeableRow({
   ).current;
 
   const handleAction = useCallback((action?: SwipeAction) => {
-    if (enableHaptics) haptics.warning();
+    if (enableHaptics) fireHaptic(HapticIntent.ALERT_TRIGGERED);
     // Animate close first, then call action
     Animated.timing(translateX, {
       toValue: 0,
@@ -172,7 +172,7 @@ export function SwipeableRow({
 
   const handleLongPress = useCallback(() => {
     if (onLongPress) {
-      if (enableHaptics) haptics.mediumTap();
+      if (enableHaptics) fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       onLongPress();
     }
   }, [onLongPress, enableHaptics]);

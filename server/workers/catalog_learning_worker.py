@@ -17,6 +17,7 @@ import re
 from typing import Any
 
 from app.config import CATALOG_AUTO_MAP_THRESHOLD, CATALOG_NEW_CATEGORY_THRESHOLD
+from app.worker_registry import record_run
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ async def run_once() -> dict[str, int]:
     pool = get_pool()
     if pool is None:
         logger.warning("[catalog-learning-worker] No DB pool, skipping")
+        record_run("catalog_learning_worker", "error")
         return {"auto_mapped": 0, "candidates_updated": 0, "promoted": 0}
 
     auto_mapped = 0
@@ -200,6 +202,7 @@ async def run_once() -> dict[str, int]:
 
     except Exception as exc:
         logger.error("[catalog-learning-worker] Cycle failed: %s", exc, exc_info=True)
+        record_run("catalog_learning_worker", "error")
         raise
 
     result = {
@@ -208,4 +211,5 @@ async def run_once() -> dict[str, int]:
         "promoted": promoted,
     }
     logger.info("[catalog-learning-worker] Cycle complete: %s", result)
+    record_run("catalog_learning_worker", "ok")
     return result

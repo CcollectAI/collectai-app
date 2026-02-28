@@ -176,12 +176,18 @@ discogs_circuit = CircuitBreaker("discogs", max_failures=5, cooldown_seconds=60)
 pricecharting_circuit = CircuitBreaker("pricecharting", max_failures=5, cooldown_seconds=60)
 stockx_circuit = CircuitBreaker("stockx", max_failures=5, cooldown_seconds=60)
 bricklink_circuit = CircuitBreaker("bricklink", max_failures=5, cooldown_seconds=60)
+firecrawl_circuit = CircuitBreaker("firecrawl", max_failures=5, cooldown_seconds=120)
+crawl4ai_circuit = CircuitBreaker("crawl4ai", max_failures=5, cooldown_seconds=120)
 
 
 def all_circuit_status() -> list[dict]:
     """Return status of all circuit breakers for ops monitoring."""
     return [
-        ebay_circuit.status(),
-        tcgplayer_circuit.status(),
-        openai_circuit.status(),
+        cb.status()
+        for cb in (
+            ebay_circuit, tcgplayer_circuit, openai_circuit,
+            cardmarket_circuit, discogs_circuit, pricecharting_circuit,
+            stockx_circuit, bricklink_circuit, firecrawl_circuit,
+            crawl4ai_circuit,
+        )
     ]

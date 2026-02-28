@@ -73,7 +73,7 @@ let mockWatchlistItems: WatchlistItem[] = [
   },
   {
     id: 'wl-mock-2',
-    title: 'LEGO UCS Millennium Falcon',
+    title: 'LEGO UCS Millennium Falcon 75192',
     priority: 'medium',
     owned: false,
     targetPrice: 700,
@@ -81,6 +81,61 @@ let mockWatchlistItems: WatchlistItem[] = [
     category: 'LEGO',
     notes: 'Birthday gift idea',
     createdAt: '2025-12-08T15:30:00Z',
+  },
+  {
+    id: 'wl-mock-3',
+    title: 'Black Lotus (Unlimited)',
+    priority: 'high',
+    owned: false,
+    targetPrice: 8500,
+    currency: 'EUR',
+    category: 'Magic: The Gathering',
+    notes: 'Dream card — only buy if LP or better',
+    createdAt: '2025-12-05T09:00:00Z',
+  },
+  {
+    id: 'wl-mock-4',
+    title: 'Air Jordan 1 Retro High OG Chicago',
+    priority: 'medium',
+    owned: false,
+    targetPrice: 420,
+    currency: 'EUR',
+    category: 'Sneakers',
+    notes: 'Size 10.5 US, deadstock only',
+    createdAt: '2025-11-28T18:00:00Z',
+  },
+  {
+    id: 'wl-mock-5',
+    title: 'Warhammer 40K Leviathan Box Set',
+    priority: 'low',
+    owned: false,
+    targetPrice: 150,
+    currency: 'EUR',
+    category: 'Warhammer',
+    notes: 'Good starter set for Tyranids army',
+    createdAt: '2025-11-20T12:00:00Z',
+  },
+  {
+    id: 'wl-mock-6',
+    title: 'PSA 10 1st Edition Lugia Neo Genesis',
+    priority: 'high',
+    owned: false,
+    targetPrice: 12000,
+    currency: 'EUR',
+    category: 'Pokémon',
+    notes: 'Investment piece — wait for dip below 12k',
+    createdAt: '2025-11-15T08:00:00Z',
+  },
+  {
+    id: 'wl-mock-7',
+    title: 'Bandai RG Sazabi 1/144',
+    priority: 'low',
+    owned: false,
+    targetPrice: 55,
+    currency: 'EUR',
+    category: 'Gunpla',
+    notes: 'Next build project after current kit',
+    createdAt: '2025-11-10T14:00:00Z',
   },
 ];
 
@@ -2021,6 +2076,47 @@ export class MockDataProvider implements DataProvider {
 
   async completeDeal(_offerId: string, _stars: number, _comment?: string): Promise<void> {
     /* no-op */
+  }
+
+  // Multi-Marketplace Selling — seeded mock data
+  private _mockListings: import('./types').MarketplaceListing[] = [
+    { id: 'ml-1', itemId: 'item-1', marketplaceId: 'ebay', listingTitle: 'PSA 10 Charizard Base Set Holo 1st Edition', price: 12500, currency: 'EUR', format: 'auction', quantity: 1, status: 'active', viewsCount: 342, watchersCount: 28, offersCount: 3, estimatedFees: 1612, estimatedNet: 10888, feePercentage: 12.9, listedAt: '2026-02-20T10:00:00Z', syncedAt: '2026-02-27T08:00:00Z', createdAt: '2026-02-20T10:00:00Z' },
+    { id: 'ml-2', itemId: 'item-2', marketplaceId: 'collectai', listingTitle: 'LEGO Star Wars UCS AT-AT 75313 (Sealed)', price: 899, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'active', viewsCount: 56, watchersCount: 8, offersCount: 1, estimatedFees: 0, estimatedNet: 899, feePercentage: 0, listedAt: '2026-02-22T14:30:00Z', syncedAt: '2026-02-27T08:00:00Z', createdAt: '2026-02-22T14:30:00Z' },
+    { id: 'ml-3', itemId: 'item-3', marketplaceId: 'cardmarket', listingTitle: 'MTG Black Lotus Beta (HP)', price: 18000, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'draft', viewsCount: 0, watchersCount: 0, offersCount: 0, createdAt: '2026-02-25T09:00:00Z' },
+    { id: 'ml-4', itemId: 'item-4', marketplaceId: 'mercari', listingTitle: 'Warhammer 40K Leviathan Box Set (NOS)', price: 180, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'sold', viewsCount: 124, watchersCount: 15, offersCount: 2, soldAt: '2026-02-24T16:45:00Z', syncedAt: '2026-02-25T08:00:00Z', createdAt: '2026-02-18T11:00:00Z' },
+    { id: 'ml-5', itemId: 'item-5', marketplaceId: 'ebay', listingTitle: 'Funko Pop Freddy Funko as Batman SDCC 2019', price: 320, currency: 'EUR', format: 'best_offer', quantity: 1, status: 'delisted', viewsCount: 89, watchersCount: 6, offersCount: 0, statusMessage: 'Relisted on CollectAI P2P', createdAt: '2026-02-10T08:00:00Z' },
+  ];
+
+  private _mockSales: import('./types').MarketplaceSale[] = [
+    { id: 'ms-1', listingId: 'ml-4', buyerName: 'collector_jane', salePrice: 180, currency: 'EUR', shippingCostActual: 8.50, platformFee: 18, paymentProcessingFee: 0, netProceeds: 153.50, status: 'completed', soldAt: '2026-02-24T16:45:00Z' },
+    { id: 'ms-2', listingId: 'ml-old-1', buyerName: 'pokefan_2026', salePrice: 450, currency: 'EUR', shippingCostActual: 12, platformFee: 58.05, paymentProcessingFee: 13.35, netProceeds: 366.60, trackingNumber: 'DHL-1234567890', carrier: 'DHL', status: 'completed', soldAt: '2026-02-15T12:00:00Z' },
+    { id: 'ms-3', listingId: 'ml-old-2', buyerName: null, salePrice: 95, currency: 'EUR', platformFee: 0, paymentProcessingFee: 0, netProceeds: 95, status: 'shipped', soldAt: '2026-02-26T09:30:00Z' },
+  ];
+
+  private _mockAccounts: import('./types').MarketplaceAccount[] = [
+    { id: 'ma-1', marketplaceId: 'ebay', sellerName: 'CollectAI_Pro', isActive: true, connectedAt: '2025-11-01T10:00:00Z', lastSyncAt: '2026-02-27T08:00:00Z' },
+    { id: 'ma-2', marketplaceId: 'collectai', sellerName: 'demo_seller', isActive: true, connectedAt: '2026-01-15T14:00:00Z', lastSyncAt: '2026-02-27T08:00:00Z' },
+  ];
+
+  async listMarketplaceListings(): Promise<import('./types').MarketplaceListing[]> { return this._mockListings; }
+  async createMarketplaceListing(input: Omit<import('./types').MarketplaceListing, 'id' | 'viewsCount' | 'watchersCount' | 'offersCount' | 'createdAt'>): Promise<import('./types').MarketplaceListing> {
+    const listing = { ...input, id: `mock-listing-${Date.now()}`, viewsCount: 0, watchersCount: 0, offersCount: 0, createdAt: new Date().toISOString() } as import('./types').MarketplaceListing;
+    this._mockListings.unshift(listing);
+    return listing;
+  }
+  async updateMarketplaceListing(_listingId: string, _patch: Partial<import('./types').MarketplaceListing>): Promise<import('./types').MarketplaceListing> { throw new Error('Not implemented'); }
+  async deleteMarketplaceListing(listingId: string): Promise<void> { this._mockListings = this._mockListings.filter((l) => l.id !== listingId); }
+  async listMarketplaceAccounts(): Promise<import('./types').MarketplaceAccount[]> { return this._mockAccounts; }
+  async listMarketplaceSales(): Promise<import('./types').MarketplaceSale[]> { return this._mockSales; }
+  async getMarketplaceFeeSchedules(): Promise<import('./types').MarketplaceFeeSchedule[]> {
+    return [
+      { marketplaceId: 'collectai', displayName: 'CollectAI P2P', baseFeePct: 0, paymentProcessingPct: 0, fixedFee: 0, currency: 'EUR', notes: 'Free P2P trading' },
+      { marketplaceId: 'ebay', displayName: 'eBay', baseFeePct: 12.9, paymentProcessingPct: 2.9, fixedFee: 0.30, currency: 'EUR', notes: 'Final value fee + payment processing' },
+      { marketplaceId: 'mercari', displayName: 'Mercari', baseFeePct: 10.0, paymentProcessingPct: 0, fixedFee: 0, currency: 'EUR', notes: 'Flat 10% seller fee' },
+      { marketplaceId: 'cardmarket', displayName: 'Cardmarket', baseFeePct: 5.0, paymentProcessingPct: 0, fixedFee: 0, currency: 'EUR', notes: '5% commission' },
+      { marketplaceId: 'stockx', displayName: 'StockX', baseFeePct: 9.5, paymentProcessingPct: 3.0, fixedFee: 0, currency: 'EUR', notes: 'Transaction + payment processing' },
+      { marketplaceId: 'bricklink', displayName: 'BrickLink', baseFeePct: 3.0, paymentProcessingPct: 0, fixedFee: 0, currency: 'EUR', notes: '3% final value fee' },
+    ];
   }
 }
 

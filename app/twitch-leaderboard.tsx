@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -129,7 +128,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
       : "Twitch leaderboard synced with Supabase";
 
   return (
-    <SafeAreaView
+    <View
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <ScrollView
@@ -465,7 +464,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
         </View>
       </ScrollView>
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 };
 

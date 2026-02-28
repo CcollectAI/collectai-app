@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collectorsApi } from '@/api/collectorsApi';
+import { updateFxCache } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
 
 export type ChartRange = '1D'|'7D'|'30D';
@@ -76,6 +77,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           AUD: r.AUD ?? DEFAULTS.fxRates.AUD,
           CAD: r.CAD ?? DEFAULTS.fxRates.CAD,
         };
+        updateFxCache(next);
         setSettings((prev) => ({ ...prev, fxRates: next }));
       }
     } catch {

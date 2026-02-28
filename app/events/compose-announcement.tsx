@@ -9,7 +9,6 @@
 import React, { useState } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -21,7 +20,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
@@ -31,6 +30,7 @@ import { useFormField, validateAll } from '@/hooks/useFormField';
 import { compose, required, maxLength, url } from '@/lib/validate';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -101,27 +101,12 @@ const ComposeAnnouncementScreen: React.FC = () => {
   /* ======================================================================== */
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: 'Compose Announcement' }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* ---------------------------------------------------------------- */}
-        {/*  Header                                                          */}
-        {/* ---------------------------------------------------------------- */}
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Compose Announcement</Text>
-          <View style={{ width: 32 }} />
-        </View>
-
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -248,7 +233,8 @@ const ComposeAnnouncementScreen: React.FC = () => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      <QuickNavBar />
+    </View>
   );
 };
 

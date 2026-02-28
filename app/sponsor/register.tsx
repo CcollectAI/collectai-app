@@ -9,7 +9,6 @@
 import React, { useState, useRef } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -22,7 +21,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
@@ -33,6 +32,7 @@ import { compose, required, maxLength, email, url } from '@/lib/validate';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 /* -------------------------------------------------------------------------- */
 /*  Static data                                                                */
@@ -143,27 +143,12 @@ const SponsorRegisterScreen: React.FC = () => {
   /* ======================================================================== */
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: 'Become a Sponsor' }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* ---------------------------------------------------------------- */}
-        {/*  Header                                                          */}
-        {/* ---------------------------------------------------------------- */}
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Become a Sponsor</Text>
-          <View style={{ width: 32 }} />
-        </View>
-
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -406,7 +391,8 @@ const SponsorRegisterScreen: React.FC = () => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      <QuickNavBar />
+    </View>
   );
 };
 

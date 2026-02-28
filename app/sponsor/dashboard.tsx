@@ -10,7 +10,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -356,12 +355,12 @@ const SponsorDashboardScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>Loading dashboard...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -371,20 +370,7 @@ const SponsorDashboardScreen: React.FC = () => {
 
   if (!company) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Sponsor Dashboard</Text>
-          <View style={{ width: 32 }} />
-        </View>
-
+      <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <EmptyState
           icon="megaphone-outline"
           title="Start Sponsoring Events"
@@ -405,7 +391,7 @@ const SponsorDashboardScreen: React.FC = () => {
             </AnimatedPressable>
           }
         />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -423,24 +409,11 @@ const SponsorDashboardScreen: React.FC = () => {
   ];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      {/* ------------------------------------------------------------------ */}
-      {/*  Header                                                            */}
-      {/* ------------------------------------------------------------------ */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }, SHADOW_SM]}>
-        <AnimatedPressable
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </AnimatedPressable>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Campaign Manager</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.muted }]} numberOfLines={1}>{company.name}</Text>
-        </View>
-        <View style={{ width: 32 }} />
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      {/* Title */}
+      <View style={[styles.titleRow, { backgroundColor: colors.background }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Campaign Manager</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.muted }]} numberOfLines={1}>{company.name}</Text>
       </View>
 
       <ScrollView
@@ -1160,7 +1133,7 @@ const SponsorDashboardScreen: React.FC = () => {
         </Animated.View>
       </ScrollView>
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -1199,14 +1172,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  titleRow: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 12,
+  },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.2,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   headerSubtitle: {
-    fontSize: 11,
-    marginTop: 1,
+    fontSize: 12,
+    marginTop: 2,
   },
 
   /* Scroll */

@@ -7,7 +7,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -20,7 +19,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -331,36 +330,24 @@ function OfferDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={styles.header}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Offer Detail</Text>
-          <View style={{ width: 32 }} />
-        </View>
+      <View style={[styles.safeArea, { backgroundColor: colors.background, flex: 1 }]}>
+        <Stack.Screen options={{ headerTitle: 'Offer Detail' }} />
         <SkeletonList count={3} type="deal" />
         <QuickNavBar />
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!offer) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={styles.header}>
-          <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Offer Detail</Text>
-          <View style={{ width: 32 }} />
-        </View>
+      <View style={[styles.safeArea, { backgroundColor: colors.background, flex: 1 }]}>
+        <Stack.Screen options={{ headerTitle: 'Offer Detail' }} />
         <View style={styles.errorState}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.muted} />
           <Text style={[styles.errorText, { color: colors.muted }]}>Offer not found</Text>
         </View>
         <QuickNavBar />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -372,31 +359,22 @@ function OfferDetailScreen() {
   const canComplete = isBuyer && offer.status === 'accepted';
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <AnimatedPressable
-          onPress={() => router.back()}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Offer Detail</Text>
-        {offer.dmThreadId ? (
+    <View style={[styles.safeArea, { backgroundColor: colors.background, flex: 1 }]}>
+      <Stack.Screen options={{ headerTitle: 'Offer Detail' }} />
+
+      {/* Chat shortcut above scroll when DM exists */}
+      {offer.dmThreadId && (
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 4 }}>
           <AnimatedPressable
             onPress={handleOpenChat}
-            style={styles.backBtn}
+            style={{ padding: 6 }}
             accessibilityRole="button"
             accessibilityLabel="Open chat"
           >
             <Ionicons name="chatbubble-outline" size={22} color={colors.accent} />
           </AnimatedPressable>
-        ) : (
-          <View style={{ width: 32 }} />
-        )}
-      </View>
+        </View>
+      )}
 
       <ScrollView
         style={styles.scroll}
@@ -807,7 +785,7 @@ function OfferDetailScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

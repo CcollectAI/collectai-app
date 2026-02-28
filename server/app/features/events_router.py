@@ -261,6 +261,8 @@ async def search_events(
             events = [_row_to_event(dict(r)) for r in rows] if rows else []
             return EventListResponse(events=events, total=total_count or 0)
     except Exception as e:
+        if hasattr(e, "status_code"):
+            raise e
         logger.warning("search_events error: %s", e)
         raise error_response(500, "Event search failed", code=ErrorCode.INTERNAL_ERROR)
 
@@ -1749,6 +1751,55 @@ async def mark_announcement_read(
             raise error_response(500, "Failed to mark announcement read", code=ErrorCode.INTERNAL_ERROR)
 
     return {"success": True}
+
+
+class BatchReadRequest(BaseModel):
+    announcement_ids: list[str] = Field(..., max_length=100)
+
+
+@router.post("/{event_id}/announcements/batch-read")
+async def batch_mark_announcements_read(
+    event_id: str,
+    body: BatchReadRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Mark multiple announcements as read in a single call."""
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    valid_ids = []
+    for aid in body.announcement_ids:
+        try:
+            UUID(aid)
+            valid_ids.append(aid)
+        except ValueError:
+            continue
+
+    if not valid_ids:
+        return {"success": True, "marked": 0}
+
+    pool = get_db_pool()
+    if pool is not None:
+        try:
+            async with pool.acquire() as conn:
+                await conn.executemany(
+                    """
+                    INSERT INTO event_announcement_reads (announcement_id, user_id)
+                    VALUES ($1, $2)
+                    ON CONFLICT (announcement_id, user_id) DO NOTHING
+                    """,
+                    [(aid, user_id) for aid in valid_ids],
+                )
+                return {"success": True, "marked": len(valid_ids)}
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[events] Error batch marking announcements read: %s", e)
+            raise error_response(500, "Failed to batch mark announcements read", code=ErrorCode.INTERNAL_ERROR)
+
+    return {"success": True, "marked": len(valid_ids)}
 
 
 # ---------------------------------------------------------------------------

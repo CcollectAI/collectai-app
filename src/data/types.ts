@@ -89,6 +89,10 @@ export type WatchlistItem = {
   category?: string;
   notes?: string;
   createdAt?: string;
+  lastMarketPrice?: number | null;
+  lastCheckedAt?: string | null;
+  priceTrend?: 'up' | 'down' | 'stable' | null;
+  marketHitCount?: number;
 };
 
 export type CreateWatchlistInput = {
@@ -404,7 +408,7 @@ export type QuickscanDraft = {
   photoUri: string;
   categoryId?: string | null;
   title?: string | null;
-  attributes?: Record<string, any> | null;
+  attributes?: Record<string, unknown> | null;
   notes?: string | null;
 };
 
@@ -638,7 +642,7 @@ export type Offer = {
   buyerId: string;
   status: OfferStatus;
   currentPrice: number;
-  currency: string;
+  currency: CurrencyCode;
   otherUserId: string;
   otherUserName: string;
   otherUserAvatarUrl?: string | null;
@@ -676,4 +680,85 @@ export type DealAgentStats = {
   totalDealsPurchased: number;
   totalSavedVsQ50: number;
   moneySavedEur: number;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Multi-Marketplace Selling
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type MarketplaceId = 'collectai' | 'ebay' | 'mercari' | 'cardmarket' | 'stockx' | 'bricklink' | 'tcgplayer' | 'discogs';
+
+export type ListingStatus = 'draft' | 'active' | 'sold' | 'expired' | 'delisted' | 'error';
+export type ListingFormat = 'fixed_price' | 'auction' | 'best_offer';
+export type SaleStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'completed' | 'disputed' | 'refunded';
+
+export type MarketplaceAccount = {
+  id: string;
+  marketplaceId: MarketplaceId;
+  sellerName?: string | null;
+  sellerId?: string | null;
+  isActive: boolean;
+  connectedAt: string;
+  lastSyncAt?: string | null;
+};
+
+export type MarketplaceListing = {
+  id: string;
+  itemId: string;
+  accountId?: string | null;
+  marketplaceId: MarketplaceId;
+  externalListingId?: string | null;
+  listingUrl?: string | null;
+  listingTitle: string;
+  listingDescription?: string | null;
+  price: number;
+  currency: CurrencyCode;
+  originalPrice?: number | null;
+  format: ListingFormat;
+  quantity: number;
+  conditionLabel?: string | null;
+  conditionNotes?: string | null;
+  shippingMethod?: string | null;
+  shippingCost?: number | null;
+  shipsInternational?: boolean;
+  returnsAccepted?: boolean;
+  status: ListingStatus;
+  statusMessage?: string | null;
+  viewsCount: number;
+  watchersCount: number;
+  offersCount: number;
+  estimatedFees?: number | null;
+  estimatedNet?: number | null;
+  feePercentage?: number | null;
+  listedAt?: string | null;
+  expiresAt?: string | null;
+  soldAt?: string | null;
+  syncedAt?: string | null;
+  createdAt: string;
+};
+
+export type MarketplaceSale = {
+  id: string;
+  listingId: string;
+  buyerName?: string | null;
+  salePrice: number;
+  currency: CurrencyCode;
+  shippingCostActual?: number | null;
+  platformFee?: number | null;
+  paymentProcessingFee?: number | null;
+  netProceeds: number;
+  trackingNumber?: string | null;
+  carrier?: string | null;
+  status: SaleStatus;
+  soldAt: string;
+};
+
+export type MarketplaceFeeSchedule = {
+  marketplaceId: MarketplaceId;
+  displayName: string;
+  baseFeePct: number;
+  paymentProcessingPct: number;
+  fixedFee: number;
+  currency: string;
+  notes?: string | null;
 };

@@ -186,6 +186,7 @@ async def run_once():
     """Execute a single cycle of the value change worker."""
     if not DSN:
         logger.error("No DB_DSN env")
+        record_run("value_change_worker", "error")
         return
 
     conn = await asyncpg.connect(DSN)
@@ -203,6 +204,27 @@ async def run_once():
         portfolio_alerts = 0
         item_alerts = 0
 
+        # Batch-fetch user preferences for all users at once (avoids N+1)
+        all_user_ids = [row["user_id"] for row in portfolio_rows]
+        all_prefs_rows = await conn.fetch(
+            "SELECT user_id, notification_preferences FROM public.user_settings WHERE user_id = ANY($1)",
+            all_user_ids,
+        )
+        prefs_by_user = {r["user_id"]: r for r in all_prefs_rows}
+
+        # Batch-fetch portfolio-level dedup (avoids N+1)
+        dedup_rows = await conn.fetch(
+            """
+            SELECT DISTINCT user_id FROM public.alert_trigger_history
+            WHERE user_id = ANY($1::text[])
+              AND trigger_type = 'value_change'
+              AND created_at > now() - interval '1 hour' * $2
+            """,
+            [str(uid) for uid in all_user_ids],
+            PORTFOLIO_DEDUP_HOURS,
+        )
+        portfolio_dedup_set = {r["user_id"] for r in dedup_rows}
+
         for row in portfolio_rows:
             user_id = row["user_id"]
             current_value = float(row["total_value"])
@@ -210,8 +232,8 @@ async def run_once():
             if current_value <= 0:
                 continue
 
-            # Check user preferences
-            prefs_row = await conn.fetchrow(_CHECK_PREFS_QUERY, user_id)
+            # Check user preferences (from batch-fetched data)
+            prefs_row = prefs_by_user.get(user_id)
             if not _is_value_changes_enabled(prefs_row):
                 continue
 
@@ -229,11 +251,8 @@ async def run_once():
 
             # 3. Check portfolio-level threshold
             if abs(pct_change) > PORTFOLIO_CHANGE_THRESHOLD_PCT:
-                # Dedup check
-                existing = await conn.fetchrow(
-                    _PORTFOLIO_DEDUP_QUERY, user_id, PORTFOLIO_DEDUP_HOURS
-                )
-                if existing is None:
+                # Dedup check (from batch-fetched data)
+                if str(user_id) not in portfolio_dedup_set:
                     if pct_change > 0:
                         message = (
                             f"Your collection is up {pct_change:.1f}% this week! "
@@ -366,7 +385,7 @@ async def run_once():
         )
     finally:
         await conn.close()
-    record_run("value_change_worker", "ok")
+        record_run("value_change_worker", "ok")
 
 
 async def main():

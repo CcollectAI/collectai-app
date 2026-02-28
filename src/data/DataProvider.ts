@@ -34,6 +34,10 @@ import type {
   Offer,
   OfferEvent,
   UserReputation,
+  MarketplaceListing,
+  MarketplaceAccount,
+  MarketplaceSale,
+  MarketplaceFeeSchedule,
 } from './types';
 import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 
@@ -802,4 +806,29 @@ export interface DataProvider {
 
   /** Confirm delivery and rate the seller (buyer only). */
   completeDeal(offerId: string, stars: number, comment?: string): Promise<void>;
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Multi-Marketplace Selling
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** List user's marketplace listings with optional status filter. */
+  listMarketplaceListings(status?: MarketplaceListing['status']): Promise<MarketplaceListing[]>;
+
+  /** Create a marketplace listing. */
+  createMarketplaceListing(input: Omit<MarketplaceListing, 'id' | 'viewsCount' | 'watchersCount' | 'offersCount' | 'createdAt'>): Promise<MarketplaceListing>;
+
+  /** Update a marketplace listing. */
+  updateMarketplaceListing(listingId: string, patch: Partial<MarketplaceListing>): Promise<MarketplaceListing>;
+
+  /** Delete/delist a marketplace listing. */
+  deleteMarketplaceListing(listingId: string): Promise<void>;
+
+  /** List user's connected marketplace accounts. */
+  listMarketplaceAccounts(): Promise<MarketplaceAccount[]>;
+
+  /** List user's completed marketplace sales. */
+  listMarketplaceSales(): Promise<MarketplaceSale[]>;
+
+  /** Get fee schedules for all marketplaces. */
+  getMarketplaceFeeSchedules(): Promise<MarketplaceFeeSchedule[]>;
 }

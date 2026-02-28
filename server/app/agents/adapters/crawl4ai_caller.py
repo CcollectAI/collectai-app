@@ -27,6 +27,7 @@ from app.agents.adapters.firecrawl_caller import (
     _extract_image_url,
     _extract_price,
 )
+from workers.circuit_breaker import crawl4ai_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +183,12 @@ class Crawl4AICaller:
             logger.debug("[Crawl4AICaller] Not configured")
             return []
 
+        try:
+            crawl4ai_circuit.check()
+        except CircuitOpenError:
+            logger.warning("[Crawl4AICaller] circuit open — skipping search")
+            return []
+
         from app.lib.crawl4ai_client import scrape_url
 
         # Fetch live FX rates
@@ -199,6 +206,7 @@ class Crawl4AICaller:
             sites = ["ebay.com"]
 
         all_hits: List[Dict[str, Any]] = []
+        failures = 0
 
         for site in sites[:3]:  # cap at 3 sites per search
             url = self._build_search_url(query, site)
@@ -208,6 +216,8 @@ class Crawl4AICaller:
                 result = await scrape_url(url, wait_for=wait_for)
                 if not result or not result.get("markdown"):
                     continue
+
+                crawl4ai_circuit.record_success()
 
                 listings = _split_into_listings(result["markdown"])
                 for listing_text in listings:
@@ -247,6 +257,8 @@ class Crawl4AICaller:
                         all_hits.append(hit)
 
             except Exception:
+                failures += 1
+                crawl4ai_circuit.record_failure()
                 logger.error("[Crawl4AICaller] search failed for %s", site, exc_info=True)
                 continue
 
@@ -265,6 +277,12 @@ class Crawl4AICaller:
         For eBay: appends sold filters. For others: appends "sold" to query.
         """
         if not self.configured:
+            return []
+
+        try:
+            crawl4ai_circuit.check()
+        except CircuitOpenError:
+            logger.warning("[Crawl4AICaller] circuit open — skipping sold_comps")
             return []
 
         from app.lib.crawl4ai_client import scrape_url
@@ -298,6 +316,8 @@ class Crawl4AICaller:
                 result = await scrape_url(url, wait_for=wait_for)
                 if not result or not result.get("markdown"):
                     continue
+
+                crawl4ai_circuit.record_success()
 
                 listings = _split_into_listings(result["markdown"])
                 for listing_text in listings:
@@ -334,6 +354,7 @@ class Crawl4AICaller:
                         all_hits.append(hit)
 
             except Exception:
+                crawl4ai_circuit.record_failure()
                 logger.error("[Crawl4AICaller] sold_comps failed for %s", site, exc_info=True)
                 continue
 

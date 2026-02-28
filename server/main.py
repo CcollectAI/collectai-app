@@ -217,6 +217,7 @@ from app.features.gamification_router import router as gamification_router
 from app.features.catalog_browser_router import router as catalog_browser_router
 from app.features.grading_router import router as grading_router
 from app.features.export_router import router as export_router
+from app.features.marketplace_listing_router import router as marketplace_listing_router
 
 # ---------------------------------------------------------------------------
 # Register routers
@@ -288,6 +289,7 @@ app.include_router(gamification_router)
 app.include_router(catalog_browser_router)
 app.include_router(grading_router)
 app.include_router(export_router)
+app.include_router(marketplace_listing_router)
 
 # Twitch (optional)
 try:
@@ -339,6 +341,7 @@ _v1.include_router(gamification_router)
 _v1.include_router(catalog_browser_router)
 _v1.include_router(grading_router)
 _v1.include_router(export_router)
+_v1.include_router(marketplace_listing_router)
 app.include_router(_v1)
 
 # ---------------------------------------------------------------------------

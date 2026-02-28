@@ -20,12 +20,12 @@ import {
   Alert,
   Modal,
   RefreshControl,
+  Share,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type PublicUserProfile } from '@/data';
-import type { CollectorsEvent, EventKind } from '@/data/events';
+import type { CollectorsEvent } from '@/data/events';
 import { getCategoryById } from '@/data/categories';
 import { getUserById } from '@/data/users';
 import { PublicUserProfileCard } from '@/components/PublicUserProfileCard';
@@ -40,50 +40,9 @@ import { useToast } from '@/components/Toast';
 import { SkeletonEventCard } from '@/components/Skeleton';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { collectorsApi } from '@/api/collectorsApi';
-
-const kindLabel: Record<EventKind, string> = {
-  collection_drop: 'Collection drop',
-  meetup: 'Meetup',
-  stream: 'Twitch stream',
-  convention: 'Convention',
-  release: 'New release',
-};
-
-const kindIcon: Record<EventKind, keyof typeof Ionicons.glyphMap> = {
-  collection_drop: 'pricetag-outline',
-  meetup: 'people-outline',
-  stream: 'videocam-outline',
-  convention: 'map-outline',
-  release: 'rocket-outline',
-};
-
-function getEventCountdown(dateStr: string): { text: string; isUpcoming: boolean } {
-  const eventDate = new Date(dateStr);
-  const now = new Date();
-  const diff = eventDate.getTime() - now.getTime();
-
-  if (diff < 0) {
-    return { text: 'Event ended', isUpcoming: false };
-  }
-
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-
-  if (days > 7) {
-    return { text: eventDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }), isUpcoming: true };
-  }
-  if (days > 0) {
-    return { text: `Starts in ${days} day${days > 1 ? 's' : ''}, ${hours} hour${hours !== 1 ? 's' : ''}`, isUpcoming: true };
-  }
-  if (hours > 0) {
-    return { text: `Starts in ${hours} hour${hours !== 1 ? 's' : ''}`, isUpcoming: true };
-  }
-  const mins = Math.floor(diff / 60000);
-  if (mins > 0) {
-    return { text: `Starts in ${mins} minute${mins !== 1 ? 's' : ''}`, isUpcoming: true };
-  }
-  return { text: 'Starting now!', isUpcoming: true };
-}
+import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
+import { Image } from 'expo-image';
+import { parseEventDate, getCountdown } from '@/lib/calendar';
 
 const EVENT_SOURCE_LABELS: Record<string, string> = {
   admin: 'Official',
@@ -394,18 +353,18 @@ function EventDetailScreen() {
   // Loading state
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <SkeletonEventCard />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Not found state
   if (!event) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.emptyContainer}>
           <Ionicons name="calendar-outline" size={48} color={colors.muted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>Event not found</Text>
@@ -421,31 +380,22 @@ function EventDetailScreen() {
             <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
           </AnimatedPressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+    <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
       >
-        {/* Top row: Back + 3-dot menu */}
-        <View style={styles.topRow}>
-          <AnimatedPressable
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.back(); }}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-            <Text style={[styles.backBtnText, { color: colors.text }]}>Back</Text>
-          </AnimatedPressable>
-
-          {isCreator && (
+        {/* Creator menu (3-dot) */}
+        {isCreator && (
+          <View style={styles.topRow}>
+            <View style={{ flex: 1 }} />
             <AnimatedPressable
               onPress={() => setShowMenu(true)}
               style={styles.menuBtn}
@@ -454,8 +404,17 @@ function EventDetailScreen() {
             >
               <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
             </AnimatedPressable>
-          )}
-        </View>
+          </View>
+        )}
+
+        {/* Hero image */}
+        {event.imageUrl && (
+          <Image
+            source={{ uri: event.imageUrl }}
+            style={styles.heroImage}
+            contentFit="cover"
+          />
+        )}
 
         {/* Cancelled banner */}
         {event.status === 'cancelled' && (
@@ -468,13 +427,13 @@ function EventDetailScreen() {
         {/* Event Kind Badge */}
         <View style={[styles.kindBadge, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}>
           <Ionicons
-            name={kindIcon[event.kind]}
+            name={KIND_ICON[event.kind]}
             size={14}
             color={colors.accent}
             style={{ marginRight: 6 }}
           />
           <Text style={[styles.kindText, { color: colors.accent }]}>
-            {kindLabel[event.kind]}
+            {KIND_LABEL[event.kind]}
           </Text>
         </View>
 
@@ -502,11 +461,13 @@ function EventDetailScreen() {
         </View>
 
         {event.date && (() => {
-          const countdown = getEventCountdown(event.date);
+          const eventDate = parseEventDate(event.date, event.time);
+          const countdown = getCountdown(eventDate);
+          const isUpcoming = !countdown.isPast;
           return (
-            <View style={[styles.countdownBadge, { backgroundColor: countdown.isUpcoming ? colors.accent + '15' : colors.border + '40' }]}>
-              <Ionicons name={countdown.isUpcoming ? 'time-outline' : 'checkmark-circle-outline'} size={14} color={countdown.isUpcoming ? colors.accent : colors.muted} />
-              <Text style={[styles.countdownText, { color: countdown.isUpcoming ? colors.accent : colors.muted }]}>{countdown.text}</Text>
+            <View style={[styles.countdownBadge, { backgroundColor: isUpcoming ? colors.accent + '15' : colors.border + '40' }]}>
+              <Ionicons name={isUpcoming ? 'time-outline' : 'checkmark-circle-outline'} size={14} color={isUpcoming ? colors.accent : colors.muted} />
+              <Text style={[styles.countdownText, { color: isUpcoming ? colors.accent : colors.muted }]}>{countdown.formatted}</Text>
             </View>
           );
         })()}
@@ -682,6 +643,7 @@ function EventDetailScreen() {
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={rsvpStatus === 'going' ? 'Cancel going' : 'Mark as going'}
+                accessibilityHint={rsvpStatus === 'going' ? 'Removes your RSVP from this event' : 'RSVPs you as going to this event'}
               >
                 <Ionicons
                   name={rsvpStatus === 'going' ? 'checkmark-circle' : 'person-add-outline'}
@@ -707,6 +669,7 @@ function EventDetailScreen() {
               ]}
               accessibilityRole="button"
               accessibilityLabel={rsvpStatus === 'interested' ? 'Remove interest' : 'Mark as interested'}
+              accessibilityHint={rsvpStatus === 'interested' ? 'Removes your interest from this event' : 'Marks you as interested in this event'}
             >
               <Ionicons
                 name={rsvpStatus === 'interested' ? 'star' : 'star-outline'}
@@ -734,6 +697,47 @@ function EventDetailScreen() {
             {event.attendeeCount} {event.attendeeCount === 1 ? 'collector' : 'collectors'} attending
           </Text>
         )}
+
+        {/* Capacity progress bar */}
+        {event.maxAttendees != null && event.maxAttendees > 0 && (
+          <View style={styles.capacityBar}>
+            <View style={[styles.capacityTrack, { backgroundColor: colors.border }]}>
+              <View
+                style={[
+                  styles.capacityFill,
+                  {
+                    width: `${Math.min(100, (goingCount / event.maxAttendees) * 100)}%`,
+                    backgroundColor: goingCount >= event.maxAttendees ? '#EF4444' : colors.accent,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={[styles.capacityText, { color: colors.muted }]}>
+              {goingCount}/{event.maxAttendees} spots filled
+            </Text>
+          </View>
+        )}
+
+        {/* Share Event */}
+        <AnimatedPressable
+          onPress={async () => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            try {
+              await Share.share({
+                message: `${event.title}\n${event.date}${event.time ? ` at ${event.time}` : ''}${event.location ? `\n${event.location}` : ''}\n\nCheck it out on CollectAI!`,
+                title: event.title,
+              });
+            } catch {
+              showToast({ message: 'Failed to share event', type: 'error' });
+            }
+          }}
+          style={[styles.shareBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+          accessibilityRole="button"
+          accessibilityLabel="Share this event"
+        >
+          <Ionicons name="share-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+          <Text style={[styles.shareBtnText, { color: colors.accent }]}>Share Event</Text>
+        </AnimatedPressable>
 
         {/* ============================================================== */}
         {/*  Announcements Card                                             */}
@@ -960,7 +964,7 @@ function EventDetailScreen() {
         </AnimatedPressable>
       </Modal>
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -1036,6 +1040,14 @@ const styles = StyleSheet.create({
   },
   menuBtn: {
     padding: 8,
+  },
+
+  /* Hero image */
+  heroImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 16,
   },
 
   /* Cancelled banner */
@@ -1154,11 +1166,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  /* Share button */
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  shareBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
   /* RSVP count text */
   rsvpCountText: {
     fontSize: 12,
     marginTop: 4,
     marginBottom: 12,
+  },
+
+  /* Capacity progress bar */
+  capacityBar: {
+    marginBottom: 16,
+  },
+  capacityTrack: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  capacityFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  capacityText: {
+    fontSize: 12,
+    marginTop: 6,
   },
 
   /* Announcements card */

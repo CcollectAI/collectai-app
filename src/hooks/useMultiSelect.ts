@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import haptics from '@/lib/haptics';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 interface UseMultiSelectOptions<T> {
   items: T[];
@@ -52,7 +52,7 @@ export function useMultiSelect<T>({
 
   // Enter multi-select mode
   const enterMultiSelectMode = useCallback(() => {
-    haptics.mediumTap();
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED);
     setIsMultiSelectMode(true);
   }, []);
 
@@ -74,7 +74,7 @@ export function useMultiSelect<T>({
   // Toggle individual item selection
   const toggleItem = useCallback(
     (id: string) => {
-      haptics.lightTap();
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
       const newSelection = new Set(selectedIds);
       if (newSelection.has(id)) {
         newSelection.delete(id);
@@ -88,14 +88,14 @@ export function useMultiSelect<T>({
 
   // Select all items
   const selectAll = useCallback(() => {
-    haptics.mediumTap();
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED);
     const allIds = new Set(items.map(keyExtractor));
     updateSelection(allIds);
   }, [items, keyExtractor, updateSelection]);
 
   // Deselect all items
   const deselectAll = useCallback(() => {
-    haptics.lightTap();
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
     updateSelection(new Set());
   }, [updateSelection]);
 

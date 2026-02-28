@@ -14,10 +14,12 @@ import {
   Animated,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { dataProvider } from '@/data';
 import type { CollectorsEvent } from '@/data/events';
 import { useOptimisticRsvpList } from '@/hooks/useOptimisticRsvp';
@@ -30,25 +32,10 @@ import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { CountdownBadge } from '@/components/EventCountdown';
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
 import calendar, { parseEventDate, getCountdown } from '@/lib/calendar';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
-
-const kindLabel: Record<CollectorsEvent['kind'], string> = {
-  collection_drop: 'Collection drop',
-  meetup: 'Meetup',
-  stream: 'Twitch stream',
-  convention: 'Convention',
-  release: 'New release',
-};
-
-const kindIcon: Record<CollectorsEvent['kind'], keyof typeof Ionicons.glyphMap> = {
-  collection_drop: 'cube-outline',
-  meetup: 'people-outline',
-  stream: 'logo-twitch',
-  convention: 'map-outline',
-  release: 'rocket-outline',
-};
 
 function EventsScreen() {
   const router = useRouter();
@@ -59,6 +46,7 @@ function EventsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Paginated data fetching
   const eventFetcher = useCallback(
@@ -84,11 +72,17 @@ function EventsScreen() {
   }, []);
 
   const now = new Date();
-  const upcomingEvents = events.filter((e) => {
+
+  // Search filter: match title case-insensitively
+  const searchFiltered = events.filter(
+    (e) => !searchQuery || e.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const upcomingEvents = searchFiltered.filter((e) => {
     const eventDate = parseEventDate(e.date, e.time);
     return eventDate >= now;
   });
-  const pastEvents = events.filter((e) => {
+  const pastEvents = searchFiltered.filter((e) => {
     const eventDate = parseEventDate(e.date, e.time);
     return eventDate < now;
   });
@@ -137,7 +131,7 @@ function EventsScreen() {
           title: event.title,
           startDate: eventDate,
           location: event.location,
-          notes: `CollectAI Event: ${kindLabel[event.kind]}`,
+          notes: `CollectAI Event: ${KIND_LABEL[event.kind]}`,
         });
       } catch (calErr) {
         // Calendar add is non-critical; don't fail the RSVP for this
@@ -163,7 +157,7 @@ function EventsScreen() {
     const result = await calendar.scheduleReminder({
       eventId: event.id,
       title: `Upcoming: ${event.title}`,
-      body: `${kindLabel[event.kind]} starts in 1 hour!`,
+      body: `${KIND_LABEL[event.kind]} starts in 1 hour!`,
       triggerDate: reminderDate,
     });
 
@@ -176,7 +170,7 @@ function EventsScreen() {
 
   const renderEventCard = (event: CollectorsEvent, showActions = true) => {
     const metaLine = [
-      kindLabel[event.kind],
+      KIND_LABEL[event.kind],
       event.date + (event.time ? ` — ${event.time}` : ''),
     ]
       .filter(Boolean)
@@ -203,7 +197,7 @@ function EventsScreen() {
           },
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`${isSponsored ? 'Sponsored: ' : ''}${event.title}, ${kindLabel[event.kind]}, ${event.date}`}
+        accessibilityLabel={`${isSponsored ? 'Sponsored: ' : ''}${event.title}, ${KIND_LABEL[event.kind]}, ${event.date}`}
       >
         {/* Sponsored badge */}
         {isSponsored && (
@@ -221,14 +215,22 @@ function EventsScreen() {
         )}
 
         <View style={styles.eventHeader}>
-          <View
-            style={[
-              styles.eventIcon,
-              { backgroundColor: isPast ? colors.muted + '80' : colors.accent },
-            ]}
-          >
-            <Ionicons name={kindIcon[event.kind]} size={20} color="#ffffff" />
-          </View>
+          {event.imageUrl ? (
+            <Image
+              source={{ uri: event.imageUrl }}
+              style={styles.eventThumbnail}
+              contentFit="cover"
+            />
+          ) : (
+            <View
+              style={[
+                styles.eventIcon,
+                { backgroundColor: isPast ? colors.muted + '80' : colors.accent },
+              ]}
+            >
+              <Ionicons name={KIND_ICON[event.kind]} size={20} color="#ffffff" />
+            </View>
+          )}
 
           <View style={styles.eventInfo}>
             <View style={styles.eventTitleRow}>
@@ -358,6 +360,30 @@ function EventsScreen() {
           <Ionicons name="megaphone-outline" size={14} color={colors.accent} />
           <Text style={[styles.sponsorPillText, { color: colors.accent }]}>Sponsor</Text>
         </AnimatedPressable>
+      </View>
+
+      {/* Search Bar */}
+      <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Ionicons name="search-outline" size={16} color={colors.muted} style={{ marginRight: 8 }} />
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search events..."
+          placeholderTextColor={colors.muted}
+          style={[styles.searchInput, { color: colors.text }]}
+          accessibilityLabel="Search events"
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        {searchQuery.length > 0 && (
+          <AnimatedPressable
+            onPress={() => setSearchQuery('')}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
+            <Ionicons name="close-circle" size={18} color={colors.muted} />
+          </AnimatedPressable>
+        )}
       </View>
 
       {/* Category Filter Chips */}
@@ -548,6 +574,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
+  eventThumbnail: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    marginRight: 10,
+  },
   eventInfo: {
     flex: 1,
     paddingRight: 8,
@@ -623,6 +655,20 @@ const styles = StyleSheet.create({
   sponsorPillText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
   },
   filterRow: {
     marginBottom: 12,

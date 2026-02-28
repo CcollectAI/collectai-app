@@ -236,15 +236,15 @@ export class SupabaseDataProvider implements DataProvider {
     }
 
     return {
-      id: r.id as string,
-      title: r.title as string,
-      priority: (r.priority as 'high' | 'medium' | 'low') || 'medium',
-      owned: (r.owned as boolean) ?? false,
-      targetPrice: (r.target_price as number | null) ?? null,
-      currency: (r.currency as CurrencyCode) || 'EUR',
-      category: r.category as string | undefined,
-      notes: r.notes as string | undefined,
-      createdAt: r.created_at as string | undefined,
+      id: typeof r.id === 'string' ? r.id : String(r.id ?? ''),
+      title: typeof r.title === 'string' ? r.title : String(r.title ?? ''),
+      priority: (['high', 'medium', 'low'].includes(r.priority as string) ? r.priority as 'high' | 'medium' | 'low' : 'medium'),
+      owned: typeof r.owned === 'boolean' ? r.owned : false,
+      targetPrice: typeof r.target_price === 'number' ? r.target_price : null,
+      currency: (typeof r.currency === 'string' && r.currency ? r.currency as CurrencyCode : 'EUR'),
+      category: typeof r.category === 'string' ? r.category : undefined,
+      notes: typeof r.notes === 'string' ? r.notes : undefined,
+      createdAt: typeof r.created_at === 'string' ? r.created_at : undefined,
     };
   }
 
@@ -267,15 +267,15 @@ export class SupabaseDataProvider implements DataProvider {
 
     const r = data as Record<string, unknown>;
     return {
-      id: r.id as string,
-      title: r.title as string,
-      priority: (r.priority as 'low' | 'medium' | 'high') || 'medium',
-      owned: (r.owned as boolean) ?? false,
-      targetPrice: (r.target_price as number | null) ?? null,
-      currency: (r.currency as CurrencyCode) || 'EUR',
-      category: r.category as string | undefined,
-      notes: r.notes as string | undefined,
-      createdAt: r.created_at as string | undefined,
+      id: typeof r.id === 'string' ? r.id : String(r.id ?? ''),
+      title: typeof r.title === 'string' ? r.title : String(r.title ?? ''),
+      priority: (['high', 'medium', 'low'].includes(r.priority as string) ? r.priority as 'high' | 'medium' | 'low' : 'medium'),
+      owned: typeof r.owned === 'boolean' ? r.owned : false,
+      targetPrice: typeof r.target_price === 'number' ? r.target_price : null,
+      currency: (typeof r.currency === 'string' && r.currency ? r.currency as CurrencyCode : 'EUR'),
+      category: typeof r.category === 'string' ? r.category : undefined,
+      notes: typeof r.notes === 'string' ? r.notes : undefined,
+      createdAt: typeof r.created_at === 'string' ? r.created_at : undefined,
     };
   }
 
@@ -2298,6 +2298,30 @@ export class SupabaseDataProvider implements DataProvider {
 
   async completeDeal(offerId: string, stars: number, comment?: string): Promise<void> {
     await collectorsApi.completeDeal(offerId, { stars, comment });
+  }
+
+  // Multi-Marketplace Selling
+  async listMarketplaceListings(status?: import('./types').MarketplaceListing['status']): Promise<import('./types').MarketplaceListing[]> {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+    return collectorsApi.get(`/marketplace/listings${qs}`);
+  }
+  async createMarketplaceListing(input: Omit<import('./types').MarketplaceListing, 'id' | 'viewsCount' | 'watchersCount' | 'offersCount' | 'createdAt'>): Promise<import('./types').MarketplaceListing> {
+    return collectorsApi.post('/marketplace/listings', input as Record<string, unknown>);
+  }
+  async updateMarketplaceListing(listingId: string, patch: Partial<import('./types').MarketplaceListing>): Promise<import('./types').MarketplaceListing> {
+    return collectorsApi.patch(`/marketplace/listings/${listingId}`, patch as Record<string, unknown>);
+  }
+  async deleteMarketplaceListing(listingId: string): Promise<void> {
+    await collectorsApi.delete(`/marketplace/listings/${listingId}`);
+  }
+  async listMarketplaceAccounts(): Promise<import('./types').MarketplaceAccount[]> {
+    return collectorsApi.get('/marketplace/listings/accounts');
+  }
+  async listMarketplaceSales(): Promise<import('./types').MarketplaceSale[]> {
+    return collectorsApi.get('/marketplace/listings/sales');
+  }
+  async getMarketplaceFeeSchedules(): Promise<import('./types').MarketplaceFeeSchedule[]> {
+    return collectorsApi.get('/marketplace/listings/fees');
   }
 }
 

@@ -20,6 +20,7 @@ import re
 from typing import Any, Dict, List, Optional
 
 from app.config import USD_TO_EUR, GBP_TO_EUR, JPY_TO_EUR
+from workers.circuit_breaker import firecrawl_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
 
@@ -266,10 +267,18 @@ class FirecrawlCaller:
             search_query = f"{query} price listing"
 
         try:
+            firecrawl_circuit.check()
+        except CircuitOpenError:
+            logger.warning("[FirecrawlCaller] circuit open — skipping search")
+            return []
+
+        try:
             results = await search_web(search_query, limit=min(limit, 10))
             hits = [_normalize_search_result(r, query, rates) for r in results]
+            firecrawl_circuit.record_success()
             return [h for h in hits if h["price"] is not None]
         except Exception:
+            firecrawl_circuit.record_failure()
             logger.error("[FirecrawlCaller] search failed", exc_info=True)
             return []
 
@@ -308,6 +317,12 @@ class FirecrawlCaller:
             sold_query = f"{query} sold ({site_filter})"
 
         try:
+            firecrawl_circuit.check()
+        except CircuitOpenError:
+            logger.warning("[FirecrawlCaller] circuit open — skipping sold_comps")
+            return []
+
+        try:
             results = await search_web(sold_query, limit=min(limit, 10))
             hits = []
             for r in results:
@@ -315,8 +330,10 @@ class FirecrawlCaller:
                 hit["is_sold"] = True
                 if hit["price"] is not None:
                     hits.append(hit)
+            firecrawl_circuit.record_success()
             return hits
         except Exception:
+            firecrawl_circuit.record_failure()
             logger.error("[FirecrawlCaller] sold_comps failed", exc_info=True)
             return []
 
@@ -391,8 +408,16 @@ class FirecrawlCaller:
             search_query = f"{query} ({site_filter})"
 
         try:
+            firecrawl_circuit.check()
+        except CircuitOpenError:
+            logger.warning("[FirecrawlCaller] circuit open — skipping search_with_extraction")
+            return []
+
+        try:
             results = await search_web(search_query, limit=min(limit, 5))
+            firecrawl_circuit.record_success()
         except Exception:
+            firecrawl_circuit.record_failure()
             logger.error("[FirecrawlCaller] search_with_extraction search failed", exc_info=True)
             return []
 

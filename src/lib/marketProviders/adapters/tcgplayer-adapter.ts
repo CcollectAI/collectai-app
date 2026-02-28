@@ -12,6 +12,7 @@
 
 import Constants from 'expo-constants';
 import { logger } from '@/lib/logger';
+import { toEUR } from '@/lib/fx';
 import type { MarketHit } from '@/data/types';
 import type {
   MarketProviderAdapter,
@@ -35,9 +36,6 @@ const CATEGORY_TO_TCGPLAYER_ID: Record<string, number> = {
 };
 
 const SUPPORTED_CATEGORIES = Object.keys(CATEGORY_TO_TCGPLAYER_ID);
-
-// TODO: Replace with live FX rate from shared util
-const USD_TO_EUR = 0.92;
 
 const TAG = '[TCGPlayerAdapter]';
 
@@ -73,7 +71,7 @@ function makeErrorResult(error: string, latencyMs: number): ProviderSearchResult
 }
 
 function convertUsdToEur(usd: number): number {
-  return Math.round(usd * USD_TO_EUR * 100) / 100;
+  return toEUR(usd, 'USD');
 }
 
 // ---------------------------------------------------------------------------

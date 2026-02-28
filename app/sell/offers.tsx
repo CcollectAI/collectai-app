@@ -8,7 +8,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -17,7 +16,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -207,20 +206,8 @@ function OffersInboxScreen() {
   const keyExtractor = useCallback((item: Offer) => item.id, []);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <AnimatedPressable
-          onPress={() => router.back()}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>My Offers</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={[styles.safeArea, { backgroundColor: colors.background, flex: 1 }]}>
+      <Stack.Screen options={{ headerTitle: 'My Offers' }} />
 
       {/* Tab bar */}
       <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>
@@ -296,7 +283,7 @@ function OffersInboxScreen() {
       )}
 
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 }
 

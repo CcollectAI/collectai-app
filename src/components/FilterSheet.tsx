@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import haptics from '@/lib/haptics';
+import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 
 export type SortOption = 'value_desc' | 'value_asc' | 'name_asc' | 'name_desc' | 'date_desc' | 'date_asc';
@@ -118,7 +118,7 @@ export function FilterSheet({
   }, []);
 
   const handleToggleCategory = useCallback((category: string) => {
-    haptics.lightTap();
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
     setConfig((prev) => ({
       ...prev,
       categories: prev.categories.includes(category)
@@ -128,7 +128,7 @@ export function FilterSheet({
   }, []);
 
   const handleToggleCondition = useCallback((condition: string) => {
-    haptics.lightTap();
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
     setConfig((prev) => ({
       ...prev,
       conditions: prev.conditions.includes(condition)
@@ -138,7 +138,7 @@ export function FilterSheet({
   }, []);
 
   const handleSetSort = useCallback((sortBy: SortOption) => {
-    haptics.lightTap();
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
     setConfig((prev) => ({ ...prev, sortBy }));
   }, []);
 
@@ -151,12 +151,12 @@ export function FilterSheet({
   }, []);
 
   const handleReset = useCallback(() => {
-    haptics.mediumTap();
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED);
     setConfig(DEFAULT_CONFIG);
   }, []);
 
   const handleApply = useCallback(() => {
-    haptics.success();
+    fireHaptic(HapticIntent.CONFIDENCE_HIGH);
     onApply(config);
     onClose();
   }, [config, onApply, onClose]);
@@ -164,7 +164,7 @@ export function FilterSheet({
   const handleSavePreset = useCallback(() => {
     if (!presetName.trim()) return;
 
-    haptics.success();
+    fireHaptic(HapticIntent.CONFIDENCE_HIGH);
     const newPreset: FilterPreset = {
       id: Date.now().toString(),
       name: presetName.trim(),
@@ -176,17 +176,17 @@ export function FilterSheet({
   }, [presetName, config, presets]);
 
   const handleLoadPreset = useCallback((preset: FilterPreset) => {
-    haptics.mediumTap();
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED);
     setConfig(preset.config);
   }, []);
 
   const handleDeletePreset = useCallback((presetId: string) => {
-    haptics.warning();
+    fireHaptic(HapticIntent.ALERT_TRIGGERED);
     savePresets(presets.filter((p) => p.id !== presetId));
   }, [presets]);
 
   const toggleSection = useCallback((section: string) => {
-    haptics.lightTap();
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
     setExpandedSection((prev) => (prev === section ? null : section));
   }, []);
 

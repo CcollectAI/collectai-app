@@ -23,6 +23,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 type BlockedUser = { id: string; name: string };
 
@@ -160,6 +161,7 @@ function BlockedUsersScreen() {
           }
         />
       )}
+      <QuickNavBar />
     </SafeAreaView>
   );
 }

@@ -14,7 +14,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -28,7 +27,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
 import type { EventKind, CreateEventInput, CollectorsEvent } from '@/data/events';
 import { CATEGORIES } from '@/constants/categories';
@@ -42,6 +41,7 @@ import { useAuthContext } from '@/providers/useAuthContext';
 import CompactSelect from '@/components/CompactSelect';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -272,18 +272,19 @@ const EditEventScreen: React.FC = () => {
 
   if (initialLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>Loading event...</Text>
         </View>
-      </SafeAreaView>
+        <QuickNavBar />
+      </View>
     );
   }
 
   if (authError) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
           <Text style={[styles.errorTitle, { color: colors.text }]}>{authError}</Text>
@@ -296,7 +297,8 @@ const EditEventScreen: React.FC = () => {
             <Text style={[styles.errorBtnText, { color: colors.text }]}>Go Back</Text>
           </AnimatedPressable>
         </View>
-      </SafeAreaView>
+        <QuickNavBar />
+      </View>
     );
   }
 
@@ -305,22 +307,12 @@ const EditEventScreen: React.FC = () => {
   /* ======================================================================== */
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ headerTitle: 'Edit Event' }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* ---------------------------------------------------------------- */}
-        {/*  Header                                                          */}
-        {/* ---------------------------------------------------------------- */}
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Event</Text>
-          <View style={{ width: 32 }} />
-        </View>
-
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -757,7 +749,8 @@ const EditEventScreen: React.FC = () => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      <QuickNavBar />
+    </View>
   );
 };
 

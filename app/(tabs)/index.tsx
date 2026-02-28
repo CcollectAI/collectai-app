@@ -26,7 +26,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/PortfolioLineChart";
-import { useWatchlist } from "@/state/watchlistStore";
+import { dataProvider } from "@/data";
+import type { WatchlistItem } from "@/data/types";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -167,7 +168,12 @@ function extractItems(raw: unknown): ItemRow[] {
 
 function PortfolioScreen() {
   const router = useRouter();
-  const watchlist = useWatchlist();
+  const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
+  useEffect(() => {
+    dataProvider.listWatchlist('')
+      .then((items) => setWatchlistItems(items.slice(0, 5)))
+      .catch(() => {});
+  }, []);
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -179,7 +185,7 @@ function PortfolioScreen() {
   const [items, setItems] = useState<ItemRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [fabOpen, setFabOpen] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tierSummary, setTierSummary] = useState<{ tier: string; rarityScore: number; completenessScore: number; diversificationScore: number } | null>(null);
 
@@ -204,13 +210,7 @@ function PortfolioScreen() {
     enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
   });
 
-  // Get watchlist items with their alerts
-  const watchlistItems = useMemo(() => {
-    return watchlist.items.slice(0, 5).map((item) => ({
-      ...item,
-      alert: watchlist.getAlert(item.id),
-    }));
-  }, [watchlist]);
+  // watchlistItems is now loaded via DataProvider useEffect above
 
   // Compute totals from series
   const { total, delta, deltaPct } = useMemo(() => {
@@ -557,6 +557,26 @@ function PortfolioScreen() {
           </View>
         )}
 
+        {/* Add Item Banner */}
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            setAddMenuOpen(true);
+          }}
+          style={[styles.addBanner, { backgroundColor: colors.accent + '0D', borderColor: colors.accent + '30' }]}
+          accessibilityRole="button"
+          accessibilityLabel="Add an item to your collection"
+        >
+          <View style={[styles.addBannerIconWrap, { backgroundColor: colors.accent }]}>
+            <Ionicons name="add" size={18} color="#FFFFFF" />
+          </View>
+          <View style={styles.addBannerText}>
+            <Text style={[styles.addBannerTitle, { color: colors.text }]}>Add to Collection</Text>
+            <Text style={[styles.addBannerSubtitle, { color: colors.muted }]}>Scan, snap, or enter manually</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+        </AnimatedPressable>
+
         {/* Personalized Categories (from onboarding) */}
         {followedCategories.length > 0 && (
           <>
@@ -872,9 +892,7 @@ function PortfolioScreen() {
 
             <View style={[styles.listCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               {watchlistItems.map((it, idx) => {
-                const hasAlert = Boolean(it.alert);
-                const targetPrice = it.alert?.threshold;
-                const currentValue = it.currentValue ?? it.value ?? 0;
+                const hasAlert = Boolean(it.targetPrice);
 
                 return (
                   <AnimatedPressable
@@ -889,7 +907,7 @@ function PortfolioScreen() {
                       router.push('/watchlist-builder');
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel={`Watchlist item: ${it.name ?? it.title}`}
+                    accessibilityLabel={`Watchlist item: ${it.title}`}
                   >
                     <View style={styles.watchlistLeft}>
                       <View style={styles.watchlistNameRow}>
@@ -900,7 +918,7 @@ function PortfolioScreen() {
                           style={styles.bellIcon}
                         />
                         <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                          {it.name ?? it.title ?? "Watchlist Item"}
+                          {it.title ?? "Watchlist Item"}
                         </Text>
                       </View>
                       <Text style={[styles.itemCategory, { color: colors.muted }]} numberOfLines={1}>
@@ -908,13 +926,13 @@ function PortfolioScreen() {
                       </Text>
                     </View>
                     <View style={styles.watchlistRight}>
-                      {targetPrice != null && (
+                      {it.targetPrice != null && (
                         <Text style={[styles.targetPrice, { color: colors.accent }]}>
-                          Target {formatPrice(targetPrice)}
+                          Target {formatPrice(it.targetPrice)}
                         </Text>
                       )}
                       <Text style={[styles.currentPrice, { color: colors.muted }]}>
-                        Current {formatPrice(currentValue)}
+                        {it.priority} priority
                       </Text>
                     </View>
                   </AnimatedPressable>
@@ -929,75 +947,66 @@ function PortfolioScreen() {
         </Animated.View>
       </ScrollView>
 
-      {/* Floating Add Button */}
-      <AnimatedPressable
-        onPress={() => {
-          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-          setFabOpen(true);
-        }}
-        style={styles.fab}
-        accessibilityRole="button"
-        accessibilityLabel="Add item"
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </AnimatedPressable>
-
-      {/* FAB Menu */}
+      {/* Add Item Menu (bottom sheet style) */}
       <Modal
-        visible={fabOpen}
+        visible={addMenuOpen}
         transparent
         animationType="fade"
-        onRequestClose={() => setFabOpen(false)}
+        onRequestClose={() => setAddMenuOpen(false)}
       >
         <TouchableOpacity
           activeOpacity={1}
-          onPress={() => setFabOpen(false)}
-          style={styles.fabOverlay}
+          onPress={() => setAddMenuOpen(false)}
+          style={styles.addMenuOverlay}
         >
-          <View style={[styles.fabMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.addMenuSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.addMenuHandle} />
             <TouchableOpacity
-              onPress={() => { setFabOpen(false); router.push('/quickscan'); }}
-              style={styles.fabMenuItem}
+              onPress={() => { setAddMenuOpen(false); router.push('/quickscan'); }}
+              style={styles.addMenuItem}
               accessibilityRole="button"
               accessibilityLabel="QuickScan AI"
             >
-              <View style={[styles.fabMenuIcon, { backgroundColor: colors.accent + '15' }]}>
+              <View style={[styles.addMenuIcon, { backgroundColor: colors.accent + '15' }]}>
                 <Ionicons name="camera-outline" size={20} color={colors.accent} />
               </View>
-              <View>
-                <Text style={[styles.fabMenuTitle, { color: colors.text }]}>QuickScan AI</Text>
-                <Text style={[styles.fabMenuSubtitle, { color: colors.muted }]}>Snap a photo, get instant valuation</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.addMenuTitle, { color: colors.text }]}>QuickScan AI</Text>
+                <Text style={[styles.addMenuSubtitle, { color: colors.muted }]}>Snap a photo, get instant valuation</Text>
               </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </TouchableOpacity>
-            <View style={[styles.fabMenuDivider, { backgroundColor: colors.border }]} />
+            <View style={[styles.addMenuDivider, { backgroundColor: colors.border }]} />
             <TouchableOpacity
-              onPress={() => { setFabOpen(false); router.push('/barcode-scan'); }}
-              style={styles.fabMenuItem}
+              onPress={() => { setAddMenuOpen(false); router.push('/barcode-scan'); }}
+              style={styles.addMenuItem}
               accessibilityRole="button"
               accessibilityLabel="Scan barcode"
             >
-              <View style={[styles.fabMenuIcon, { backgroundColor: colors.accent + '15' }]}>
+              <View style={[styles.addMenuIcon, { backgroundColor: colors.accent + '15' }]}>
                 <Ionicons name="barcode-outline" size={20} color={colors.accent} />
               </View>
-              <View>
-                <Text style={[styles.fabMenuTitle, { color: colors.text }]}>Scan Barcode</Text>
-                <Text style={[styles.fabMenuSubtitle, { color: colors.muted }]}>ISBN, EAN, or UPC</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.addMenuTitle, { color: colors.text }]}>Scan Barcode</Text>
+                <Text style={[styles.addMenuSubtitle, { color: colors.muted }]}>ISBN, EAN, or UPC</Text>
               </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </TouchableOpacity>
-            <View style={[styles.fabMenuDivider, { backgroundColor: colors.border }]} />
+            <View style={[styles.addMenuDivider, { backgroundColor: colors.border }]} />
             <TouchableOpacity
-              onPress={() => { setFabOpen(false); router.push('/add-manual'); }}
-              style={styles.fabMenuItem}
+              onPress={() => { setAddMenuOpen(false); router.push('/add-manual'); }}
+              style={styles.addMenuItem}
               accessibilityRole="button"
               accessibilityLabel="Add manually"
             >
-              <View style={[styles.fabMenuIcon, { backgroundColor: colors.accent + '15' }]}>
+              <View style={[styles.addMenuIcon, { backgroundColor: colors.accent + '15' }]}>
                 <Ionicons name="create-outline" size={20} color={colors.accent} />
               </View>
-              <View>
-                <Text style={[styles.fabMenuTitle, { color: colors.text }]}>Add Manually</Text>
-                <Text style={[styles.fabMenuSubtitle, { color: colors.muted }]}>Enter item details</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.addMenuTitle, { color: colors.text }]}>Add Manually</Text>
+                <Text style={[styles.addMenuSubtitle, { color: colors.muted }]}>Enter item details</Text>
               </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -1454,68 +1463,89 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // FAB
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#81D8D0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-    zIndex: 10,
-  },
-  fabOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
-    paddingRight: 20,
-    paddingBottom: 88,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  fabMenu: {
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: 'hidden',
-    minWidth: 220,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  fabMenuItem: {
+  // Add Banner (inline, replaces FAB)
+  addBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 16,
+    marginBottom: 4,
   },
-  fabMenuIcon: {
-    width: 36,
-    height: 36,
+  addBannerIconWrap: {
+    width: 34,
+    height: 34,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fabMenuTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+  addBannerText: {
+    flex: 1,
+    marginLeft: 12,
   },
-  fabMenuSubtitle: {
+  addBannerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  addBannerSubtitle: {
     fontSize: 12,
     marginTop: 1,
   },
-  fabMenuDivider: {
+
+  // Add Menu (bottom sheet)
+  addMenuOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  addMenuSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    paddingTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  addMenuHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  addMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  addMenuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addMenuTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  addMenuSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  addMenuDivider: {
     height: 1,
-    marginHorizontal: 16,
+    marginHorizontal: 20,
   },
 
   // Followed Categories (from onboarding)

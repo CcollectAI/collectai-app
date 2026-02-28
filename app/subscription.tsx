@@ -12,7 +12,7 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// SafeAreaView removed — Stack header handles safe area
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { AnimatedPressable } from '@/motion';
@@ -164,7 +164,7 @@ function SubscriptionScreen() {
   const currentPlan = billing?.plan ?? 'free';
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.title, { color: colors.text }]}>Subscription</Text>
 
@@ -239,7 +239,7 @@ function SubscriptionScreen() {
         )}
       </ScrollView>
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 }
 

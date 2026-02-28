@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Watchlist monitor worker — bridges watchlist → MarketplaceAgent → market_hits.
+
+Scans watchlist items due for a market check, runs aggregate_search via
+the existing MarketplaceAgent, persists comps to market_hits (so the
+valuation_worker + price_monitor_worker pick them up automatically),
+and updates watchlist rows with latest pricing/trend data.
+
+If a watchlist item's target price is met (market price ≤ target),
+an alert is fired to alert_trigger_history.
+"""
+
+import asyncio
+import json
+import logging
+import os
+import statistics
+from datetime import datetime, timezone
+
+import asyncpg
+
+from app.worker_registry import record_run
+from workers.retry import with_async_retry, log_dead_letter
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [watchlist_monitor] %(levelname)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+DSN = os.getenv("DB_DSN")
+
+# How many watchlist items to scan per cycle
+BATCH_SIZE = int(os.getenv("WATCHLIST_MONITOR_BATCH", "100"))
+
+# Dedup window for target-met alerts (hours)
+DEDUP_HOURS = int(os.getenv("WATCHLIST_ALERT_DEDUP_HOURS", "24"))
+
+
+async def _already_fired(conn, user_id: str, item_key: str) -> bool:
+    """Check if a watchlist_target_met alert fired recently for this user+item."""
+    row = await conn.fetchrow(
+        """
+        SELECT 1 FROM public.alert_trigger_history
+        WHERE user_id = $1
+          AND item_id = $2
+          AND trigger_type = 'watchlist_target_met'
+          AND created_at > now() - ($3 || ' hours')::interval
+        LIMIT 1
+        """,
+        user_id,
+        item_key,
+        str(DEDUP_HOURS),
+    )
+    return row is not None
+
+
+def _determine_trend(old_price: float | None, new_price: float) -> str:
+    """Compare old and new price to determine trend direction."""
+    if old_price is None:
+        return "stable"
+    diff_pct = ((new_price - old_price) / old_price) * 100 if old_price != 0 else 0
+    if diff_pct > 2.0:
+        return "up"
+    elif diff_pct < -2.0:
+        return "down"
+    return "stable"
+
+
+@with_async_retry(max_retries=3, base_delay=1.0, max_delay=60.0)
+async def run_once():
+    """Execute a single watchlist monitoring cycle."""
+    if not DSN:
+        logger.error("DB_DSN not set in environment")
+        record_run("watchlist_monitor_worker", "error")
+        return
+
+    # Lazy import to avoid circular deps at module level
+    from app.agents.marketplace_agent import MarketplaceAgent
+    from app.features.data_moat import record_supply_snapshot
+
+    conn = await asyncpg.connect(DSN)
+    logger.info("Connected to DB — starting watchlist monitor cycle")
+
+    agent = MarketplaceAgent()
+    scanned = 0
+    alerts_fired = 0
+
+    try:
+        # Fetch watchlist items due for scan (oldest-checked first, NULLs first)
+        rows = await conn.fetch(
+            """
+            SELECT id, user_id, title, category,
+                   target_price, currency, last_market_price
+            FROM public.watchlist_items
+            ORDER BY last_checked_at ASC NULLS FIRST
+            LIMIT $1
+            """,
+            BATCH_SIZE,
+        )
+
+        if not rows:
+            logger.info("No watchlist items to scan")
+            record_run("watchlist_monitor_worker", "ok")
+            return
+
+        logger.info("Scanning %d watchlist items", len(rows))
+
+        for row in rows:
+            wl_id = row["id"]  # UUID — keep as-is for asyncpg
+            user_id = str(row["user_id"])
+            title = row["title"]
+            category = row["category"]
+            target_price = float(row["target_price"]) if row["target_price"] is not None else None
+            old_market_price = float(row["last_market_price"]) if row["last_market_price"] is not None else None
+
+            search_query = title or f"collectible {category or 'item'}"
+
+            try:
+                # Use existing MarketplaceAgent for aggregated search
+                result = await agent.aggregate_search(
+                    query=search_query,
+                    category=category,
+                    limit=20,
+                    include_sold=True,
+                )
+
+                # Persist hits to market_hits (valuation_worker picks these up)
+                normalized_key = title.lower().strip().replace(" ", "_") if title else None
+                await agent.persist_comps_to_db(result, normalized_key=normalized_key)
+
+                # Compute median price from top provenance hits
+                prices = [
+                    float(h.hit.get("price", 0))
+                    for h in result.hits
+                    if h.hit.get("price") is not None and float(h.hit.get("price", 0)) > 0
+                ]
+
+                current_price = statistics.median(prices) if prices else None
+                hit_count = len(result.hits)
+                trend = _determine_trend(old_market_price, current_price) if current_price else "stable"
+
+                # Update watchlist row
+                await conn.execute(
+                    """
+                    UPDATE public.watchlist_items
+                    SET last_market_price = $1,
+                        last_checked_at = $2,
+                        price_trend = $3,
+                        market_hit_count = $4
+                    WHERE id = $5
+                    """,
+                    current_price,
+                    datetime.now(timezone.utc),
+                    trend,
+                    hit_count,
+                    wl_id,
+                )
+
+                # Record supply snapshot (data moat)
+                if current_price and category:
+                    avg_p = statistics.mean(prices) if prices else None
+                    min_p = min(prices) if prices else None
+                    max_p = max(prices) if prices else None
+                    await record_supply_snapshot(
+                        category=category,
+                        item_key=normalized_key or search_query,
+                        listing_count=hit_count,
+                        avg_price_eur=avg_p,
+                        min_price_eur=min_p,
+                        max_price_eur=max_p,
+                        source="watchlist_monitor",
+                    )
+
+                # Fire alert if market price drops to or below target
+                if (
+                    current_price is not None
+                    and target_price is not None
+                    and current_price <= target_price
+                ):
+                    item_key = f"watchlist:{wl_id}"
+                    if not await _already_fired(conn, user_id, item_key):
+                        trigger_value = json.dumps({
+                            "current_price": round(current_price, 2),
+                            "target_price": round(target_price, 2),
+                            "hit_count": hit_count,
+                            "watchlist_id": str(wl_id),
+                        })
+                        message = (
+                            f"{title or 'Watchlist item'} is now at "
+                            f"{current_price:.2f}, below your target of "
+                            f"{target_price:.2f}"
+                        )
+                        await conn.execute(
+                            """
+                            INSERT INTO public.alert_trigger_history
+                                (user_id, item_id, trigger_type, trigger_value, message)
+                            VALUES ($1, $2, 'watchlist_target_met', $3::jsonb, $4)
+                            """,
+                            user_id,
+                            item_key,
+                            trigger_value,
+                            message,
+                        )
+                        alerts_fired += 1
+                        logger.info(
+                            "Target met alert: wl=%s price=%.2f target=%.2f",
+                            wl_id, current_price, target_price,
+                        )
+
+                scanned += 1
+
+            except Exception as e:
+                logger.warning(
+                    "Failed to scan watchlist item %s: %s", str(wl_id), e,
+                    exc_info=True,
+                )
+
+        logger.info(
+            "Watchlist monitor cycle complete: scanned=%d alerts=%d",
+            scanned, alerts_fired,
+        )
+
+    finally:
+        await agent.close()
+        await conn.close()
+        record_run("watchlist_monitor_worker", "ok")
+
+
+async def main():
+    try:
+        await run_once()
+    except Exception as e:
+        record_run("watchlist_monitor_worker", "error")
+        log_dead_letter("watchlist_monitor_worker", {}, e)
+        logger.exception("watchlist_monitor_worker crashed: %r", e)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

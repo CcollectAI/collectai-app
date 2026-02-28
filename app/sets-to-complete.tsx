@@ -3,7 +3,6 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import {
   ActivityIndicator,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -85,7 +84,7 @@ const SetsToCompleteScreen: React.FC = () => {
   }, [items]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -145,7 +144,7 @@ const SetsToCompleteScreen: React.FC = () => {
           })}
       </ScrollView>
       <QuickNavBar />
-    </SafeAreaView>
+    </View>
   );
 };
 
