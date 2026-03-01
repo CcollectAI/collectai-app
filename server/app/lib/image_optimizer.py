@@ -33,18 +33,21 @@ def optimize_image(
     image_bytes: bytes,
     max_edge: int = 1200,
     quality: int = 85,
+    prefer_webp: bool = True,
 ) -> Tuple[bytes, int, int]:
     """
     Resize an image so its longest edge is at most *max_edge* pixels, convert
-    to JPEG at the given quality, and strip all EXIF / metadata.
+    to WebP (preferred) or JPEG, and strip all EXIF / metadata.
 
     Args:
         image_bytes: Raw image bytes (JPEG, PNG, WebP, etc.).
         max_edge: Maximum dimension on the longest side (default 1200).
-        quality: JPEG compression quality 1-95 (default 85).
+        quality: Compression quality 1-95 (default 85).
+        prefer_webp: If True (default), output WebP for 20-30% smaller files.
+                     Falls back to JPEG if WebP encoding fails.
 
     Returns:
-        Tuple of (optimized_jpeg_bytes, width, height).
+        Tuple of (optimized_bytes, width, height).
 
     Raises:
         ValueError: If the input bytes cannot be decoded as an image.
@@ -85,14 +88,27 @@ def optimize_image(
     else:
         new_w, new_h = w, h
 
-    # Encode to JPEG (no EXIF, no ICC profile)
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=quality, optimize=True)
-    optimized = buf.getvalue()
+    # Try WebP first (20-30% smaller), fall back to JPEG
+    out_format = "JPEG"
+    if prefer_webp:
+        try:
+            buf = io.BytesIO()
+            img.save(buf, format="WEBP", quality=quality, method=4)
+            optimized = buf.getvalue()
+            out_format = "WEBP"
+        except Exception:
+            logger.debug("[image_optimizer] WebP encoding failed, falling back to JPEG")
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=quality, optimize=True)
+            optimized = buf.getvalue()
+    else:
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=quality, optimize=True)
+        optimized = buf.getvalue()
 
     logger.info(
-        "[image_optimizer] Optimized image: %d bytes -> %d bytes (%dx%d)",
-        len(image_bytes), len(optimized), new_w, new_h,
+        "[image_optimizer] Optimized image (%s): %d bytes -> %d bytes (%dx%d)",
+        out_format, len(image_bytes), len(optimized), new_w, new_h,
     )
 
     return optimized, new_w, new_h

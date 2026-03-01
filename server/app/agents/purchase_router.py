@@ -315,14 +315,17 @@ async def create_mandate(
             expires_at,
         )
 
-    # Record demand signal (best-effort, non-blocking)
+    # Record demand signal with geo enrichment (best-effort, non-blocking)
     try:
-        from app.features.data_moat import record_demand_signal
+        from app.features.data_moat import record_demand_signal, get_user_geo
+        region, country = await get_user_geo(user_id)
         await record_demand_signal(
             signal_type="mandate_created",
             category=body.category,
             item_key=body.search_query,
             user_id=user_id,
+            region=region,
+            country_code=country,
         )
     except Exception as exc:
         logger.debug("[purchase] Demand signal recording failed: %s", exc)

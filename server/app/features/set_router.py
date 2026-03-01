@@ -163,7 +163,10 @@ async def list_sets(
             if category_id:
                 rows = await conn.fetch(
                     """
-                    SELECT * FROM public.sets
+                    SELECT id, category_id, name, description, total_items,
+                           release_date, image_url, external_id, metadata,
+                           created_at, updated_at
+                    FROM public.sets
                     WHERE category_id = $1
                     ORDER BY name
                     LIMIT $2 OFFSET $3
@@ -179,7 +182,10 @@ async def list_sets(
             else:
                 rows = await conn.fetch(
                     """
-                    SELECT * FROM public.sets
+                    SELECT id, category_id, name, description, total_items,
+                           release_date, image_url, external_id, metadata,
+                           created_at, updated_at
+                    FROM public.sets
                     ORDER BY name
                     LIMIT $1 OFFSET $2
                     """,

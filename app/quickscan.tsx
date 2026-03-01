@@ -26,6 +26,7 @@ import { dataProvider } from '@/data';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent, confidenceToIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { isDeviceOnline } from '@/hooks/useNetworkStatus';
 import { useToast } from '@/components/Toast';
 import { AnimatedPressable } from '@/motion';
 import { useSettings } from '@/lib/settings';
@@ -189,6 +190,14 @@ function QuickScanScreen() {
 
   const handleCapture = useCallback(async () => {
     if (!cameraRef.current) return;
+
+    // Network pre-check before attempting capture + upload
+    const online = await isDeviceOnline();
+    if (!online) {
+      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+      showToast({ message: 'No internet connection. Please check your network and try again.', type: 'error' });
+      return;
+    }
 
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
 

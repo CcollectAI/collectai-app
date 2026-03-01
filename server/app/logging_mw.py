@@ -31,6 +31,7 @@ async def logging_middleware(
     call_next: Callable[[Request], Awaitable[Response]],
 ) -> Response:
     """Log method, path, status, duration, and request_id for each request."""
+    # Only log the path — exclude query string to avoid leaking sensitive params
     path = request.url.path
 
     if path in EXEMPT_PATHS:

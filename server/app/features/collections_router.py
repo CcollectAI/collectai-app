@@ -102,6 +102,11 @@ async def list_collections(
     offset: int = Query(default=0, ge=0),
 ):
     """List all available collections, optionally filtered by category."""
+    if category:
+        from app.lib.validators import is_valid_category
+        if not is_valid_category(category):
+            from app.errors import error_response
+            raise error_response(400, f"Unknown category: {category}")
     pool = get_db_pool()
 
     if pool is not None:
@@ -328,14 +333,17 @@ async def get_collection_detail(
                     for ir in item_rows
                 ]
 
-                # Record demand signal (best-effort)
+                # Record demand signal with geo enrichment (best-effort)
                 try:
-                    from app.features.data_moat import record_demand_signal
+                    from app.features.data_moat import record_demand_signal, get_user_geo
+                    region, country = await get_user_geo(user_id)
                     await record_demand_signal(
                         signal_type="collection_viewed",
                         category=row["category"],
                         item_key=row["collection_key"],
                         user_id=user_id,
+                        region=region,
+                        country_code=country,
                     )
                 except Exception:
                     pass

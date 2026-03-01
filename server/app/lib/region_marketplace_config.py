@@ -35,11 +35,11 @@ def get_ebay_marketplace_id(region: str | None) -> str:
 # True = use this adapter, False = skip
 
 _ADAPTER_POLICY: Dict[str, Dict[str, bool]] = {
-    "americas": {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True},
-    "europe":   {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True},
-    "japan":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True},
-    "korea":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True},
-    "other":    {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True},
+    "americas": {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True, "mercari_us": True, "whatnot": True, "vinted": False, "mavin": True},
+    "europe":   {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "mercari_us": False, "whatnot": False, "vinted": True, "mavin": True},
+    "japan":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True},
+    "korea":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True},
+    "other":    {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True, "mercari_us": True, "whatnot": True, "vinted": True, "mavin": True},
 }
 
 
@@ -228,11 +228,11 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
 }
 
 
-def get_firecrawl_sites(
+def _get_all_sites(
     region: str | None,
     category: str | None,
 ) -> Optional[List[str]]:
-    """Return region-specific Firecrawl site targets, or None to use global defaults."""
+    """Return the full region-specific site list for a category."""
     if not region or not category:
         return None
     region_map = _REGION_SITE_TARGETS.get(region)
@@ -241,12 +241,33 @@ def get_firecrawl_sites(
     return region_map.get(category)
 
 
+def get_firecrawl_sites(
+    region: str | None,
+    category: str | None,
+) -> Optional[List[str]]:
+    """Return Firecrawl site targets (first half of the list).
+
+    The site list is split between Firecrawl and Crawl4AI to avoid
+    both adapters scraping the same sites in parallel.
+    """
+    sites = _get_all_sites(region, category)
+    if not sites:
+        return None
+    mid = max(1, len(sites) // 2)
+    return sites[:mid]
+
+
 def get_crawl4ai_sites(
     region: str | None,
     category: str | None,
 ) -> Optional[List[str]]:
     """Return region-specific Crawl4AI site targets.
 
-    Delegates to get_firecrawl_sites() — both adapters target the same sites.
+    To avoid duplicating work with Firecrawl, Crawl4AI targets the second
+    half of the site list while Firecrawl targets the first half.
     """
-    return get_firecrawl_sites(region, category)
+    sites = _get_all_sites(region, category)
+    if not sites:
+        return None
+    mid = max(1, len(sites) // 2)
+    return sites[mid:]

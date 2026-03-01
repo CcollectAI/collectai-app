@@ -1,0 +1,119 @@
+{"features": {"condition_score": 0.95, "brand_tier": 0.30, "age_score": 0.10, "is_limited": 0.0}, "price": 30}
+{"features": {"condition_score": 0.95, "brand_tier": 0.30, "age_score": 0.15, "is_limited": 0.0}, "price": 35}
+{"features": {"condition_score": 0.95, "brand_tier": 0.35, "age_score": 0.20, "is_limited": 0.0}, "price": 45}
+{"features": {"condition_score": 0.95, "brand_tier": 0.40, "age_score": 0.25, "is_limited": 0.0}, "price": 55}
+{"features": {"condition_score": 0.95, "brand_tier": 0.40, "age_score": 0.30, "is_limited": 0.0}, "price": 70}
+{"features": {"condition_score": 0.95, "brand_tier": 0.50, "age_score": 0.35, "is_limited": 0.0}, "price": 90}
+{"features": {"condition_score": 0.40, "brand_tier": 0.30, "age_score": 0.15, "is_limited": 0.0}, "price": 15}
+{"features": {"condition_score": 0.30, "brand_tier": 0.40, "age_score": 0.20, "is_limited": 0.0}, "price": 20}
+{"features": {"condition_score": 0.95, "brand_tier": 0.50, "age_score": 0.40, "is_limited": 0.0}, "price": 100}
+{"features": {"condition_score": 0.95, "brand_tier": 0.55, "age_score": 0.45, "is_limited": 0.0}, "price": 130}
+{"features": {"condition_score": 0.95, "brand_tier": 0.60, "age_score": 0.50, "is_limited": 0.0}, "price": 180}
+{"features": {"condition_score": 0.95, "brand_tier": 0.65, "age_score": 0.55, "is_limited": 0.0}, "price": 250}
+{"features": {"condition_score": 0.95, "brand_tier": 0.70, "age_score": 0.60, "is_limited": 0.0}, "price": 350}
+{"features": {"condition_score": 0.95, "brand_tier": 0.70, "age_score": 0.65, "is_limited": 0.0}, "price": 450}
+{"features": {"condition_score": 0.50, "brand_tier": 0.60, "age_score": 0.50, "is_limited": 0.0}, "price": 80}
+{"features": {"condition_score": 0.95, "brand_tier": 0.75, "age_score": 0.70, "is_limited": 1.0}, "price": 500}
+{"features": {"condition_score": 0.95, "brand_tier": 0.70, "age_score": 0.60, "is_limited": 1.0}, "price": 400}
+{"features": {"condition_score": 0.95, "brand_tier": 0.80, "age_score": 0.75, "is_limited": 1.0}, "price": 800}
+{"features": {"condition_score": 0.90, "brand_tier": 0.75, "age_score": 0.70, "is_limited": 1.0}, "price": 650}
+{"features": {"condition_score": 0.95, "brand_tier": 0.80, "age_score": 0.80, "is_limited": 1.0}, "price": 1200}
+{"features": {"condition_score": 0.85, "brand_tier": 0.80, "age_score": 0.75, "is_limited": 1.0}, "price": 900}
+{"features": {"condition_score": 0.95, "brand_tier": 0.85, "age_score": 0.85, "is_limited": 1.0}, "price": 1800}
+{"features": {"condition_score": 0.95, "brand_tier": 0.90, "age_score": 0.85, "is_limited": 1.0}, "price": 2000}
+{"features": {"condition_score": 0.90, "brand_tier": 0.85, "age_score": 0.80, "is_limited": 1.0}, "price": 1500}
+{"features": {"condition_score": 0.95, "brand_tier": 0.90, "age_score": 0.90, "is_limited": 1.0}, "price": 5000}
+{"features": {"condition_score": 0.95, "brand_tier": 0.95, "age_score": 0.90, "is_limited": 1.0}, "price": 8000}
+{"features": {"condition_score": 0.90, "brand_tier": 0.90, "age_score": 0.85, "is_limited": 1.0}, "price": 4000}
+{"features": {"condition_score": 0.95, "brand_tier": 0.95, "age_score": 0.95, "is_limited": 1.0}, "price": 15000}
+{"features": {"condition_score": 0.95, "brand_tier": 1.00, "age_score": 1.00, "is_limited": 1.0}, "price": 50000}
+{"features": {"condition_score": 0.90, "brand_tier": 1.00, "age_score": 0.95, "is_limited": 1.0}, "price": 35000}
+{"features": {"condition_score": 0.85, "brand_tier": 0.95, "age_score": 0.90, "is_limited": 1.0}, "price": 10000}
+{"features": {"condition_score": 0.50, "brand_tier": 0.90, "age_score": 0.85, "is_limited": 1.0}, "price": 2500}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.9, "age_score": 0.4, "is_limited": 0.0}, "price": 150.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.6, "is_limited": 0.0}, "price": 550.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.9, "age_score": 0.8333, "is_limited": 1.0}, "price": 5500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.5667, "is_limited": 1.0}, "price": 650.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.9, "age_score": 0.7, "is_limited": 1.0}, "price": 1200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 0.9, "age_score": 1.0, "is_limited": 1.0}, "price": 4500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.3, "is_limited": 0.0}, "price": 45.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.3, "is_limited": 0.0}, "price": 55.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.3, "is_limited": 0.0}, "price": 60.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.8, "age_score": 0.5667, "is_limited": 1.0}, "price": 450.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 1.0}, "price": 350.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 0.0}, "price": 120.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 1.0}, "price": 500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 1.0, "age_score": 1.0, "is_limited": 1.0}, "price": 25000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.9, "age_score": 0.4, "is_limited": 0.0}, "price": 120.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.6, "is_limited": 0.0}, "price": 500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.9, "age_score": 0.6, "is_limited": 0.0}, "price": 350.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.9, "age_score": 0.8333, "is_limited": 1.0}, "price": 2200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 0.9, "age_score": 1.0, "is_limited": 1.0}, "price": 6500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 0.0}, "price": 380.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.6, "is_limited": 0.0}, "price": 80.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.7, "is_limited": 0.0}, "price": 180.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.8, "age_score": 1.0, "is_limited": 1.0}, "price": 800.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.5333, "is_limited": 0.0}, "price": 75.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.4, "is_limited": 1.0}, "price": 130.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.3, "is_limited": 0.0}, "price": 75.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.3, "is_limited": 0.0}, "price": 85.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.8, "age_score": 0.8333, "is_limited": 1.0}, "price": 900.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.3333, "is_limited": 0.0}, "price": 40.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.8, "age_score": 0.8333, "is_limited": 1.0}, "price": 750.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.6, "is_limited": 0.0}, "price": 130.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.8, "age_score": 0.8333, "is_limited": 1.0}, "price": 600.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.7, "age_score": 0.3333, "is_limited": 0.0}, "price": 60.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.4667, "is_limited": 0.0}, "price": 80.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.7, "is_limited": 0.0}, "price": 280.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.8, "age_score": 0.5, "is_limited": 1.0}, "price": 150.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.8, "age_score": 0.7, "is_limited": 1.0}, "price": 550.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.7, "age_score": 0.6, "is_limited": 0.0}, "price": 120.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.9, "age_score": 0.5, "is_limited": 1.0}, "price": 1800.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 0.9, "age_score": 0.6667, "is_limited": 1.0}, "price": 3500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 0.9, "age_score": 0.7667, "is_limited": 1.0}, "price": 6000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.3333, "is_limited": 1.0}, "price": 800.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.8, "age_score": 0.5667, "is_limited": 1.0}, "price": 900.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.8, "age_score": 0.5, "is_limited": 1.0}, "price": 1200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.8, "age_score": 0.4, "is_limited": 1.0}, "price": 1100.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.7, "age_score": 0.3, "is_limited": 1.0}, "price": 120.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.7, "age_score": 0.3, "is_limited": 1.0}, "price": 200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.4, "is_limited": 1.0}, "price": 80.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.8, "age_score": 0.3, "is_limited": 1.0}, "price": 150.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.7, "age_score": 0.3, "is_limited": 1.0}, "price": 250.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.7, "age_score": 0.3, "is_limited": 0.0}, "price": 45.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.7, "age_score": 0.3, "is_limited": 1.0}, "price": 180.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.7, "age_score": 0.3333, "is_limited": 1.0}, "price": 200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.7, "age_score": 0.3, "is_limited": 1.0}, "price": 70.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.7, "is_limited": 0.0}, "price": 260.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.8, "age_score": 0.9, "is_limited": 1.0}, "price": 550.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 1.0}, "price": 200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 1.0}, "price": 350.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.7, "age_score": 0.6, "is_limited": 0.0}, "price": 85.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.7, "age_score": 0.3, "is_limited": 1.0}, "price": 80.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.7, "age_score": 0.4, "is_limited": 0.0}, "price": 95.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.7, "age_score": 0.5, "is_limited": 1.0}, "price": 200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.3, "brand_tier": 0.8, "age_score": 0.4, "is_limited": 1.0}, "price": 80.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 1.0}, "price": 1200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 1.0}, "price": 400.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 1.0}, "price": 350.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 1.0}, "price": 800.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.9, "age_score": 0.3, "is_limited": 1.0}, "price": 450.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.8, "age_score": 0.3, "is_limited": 1.0}, "price": 350.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.8, "age_score": 0.8667, "is_limited": 1.0}, "price": 1000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 0.8, "age_score": 1.0, "is_limited": 1.0}, "price": 30000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.8, "age_score": 1.0, "is_limited": 1.0}, "price": 1200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.7, "age_score": 0.9333, "is_limited": 1.0}, "price": 600.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.8, "age_score": 0.8333, "is_limited": 1.0}, "price": 1500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 0.8, "age_score": 1.0, "is_limited": 1.0}, "price": 1800.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.8, "age_score": 0.3, "is_limited": 1.0}, "price": 200.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 1.0, "age_score": 1.0, "is_limited": 1.0}, "price": 8000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 1.0, "age_score": 1.0, "is_limited": 1.0}, "price": 4500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 1.0, "age_score": 1.0, "is_limited": 1.0}, "price": 7000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 1.0, "age_score": 1.0, "is_limited": 1.0}, "price": 3500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 1.0, "age_score": 1.0, "is_limited": 1.0}, "price": 35000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 1.0, "age_score": 0.9333, "is_limited": 1.0}, "price": 18000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 1.0, "age_score": 1.0, "is_limited": 1.0}, "price": 50000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.95, "brand_tier": 0.7, "age_score": 1.0, "is_limited": 1.0}, "price": 3000.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.7, "age_score": 1.0, "is_limited": 1.0}, "price": 2500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.8, "brand_tier": 0.7, "age_score": 1.0, "is_limited": 1.0}, "price": 1500.0}
+{"features": {"condition_score": 0.95, "rarity_score": 0.5, "brand_tier": 0.7, "age_score": 0.8333, "is_limited": 1.0}, "price": 300.0}

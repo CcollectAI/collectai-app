@@ -26,6 +26,15 @@ os.environ.setdefault("DEV_MODE", "true")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
 
+def _mock_all_adapters_unconfigured(agent):
+    """Set all adapters on an agent to unconfigured MagicMock instances."""
+    for attr in ("_ebay", "_tcgplayer", "_firecrawl", "_crawl4ai",
+                 "_mercari_us", "_whatnot", "_vinted", "_mavin"):
+        mock = MagicMock()
+        mock.configured = False
+        setattr(agent, attr, mock)
+
+
 # ---------------------------------------------------------------------------
 # Helper function tests
 # ---------------------------------------------------------------------------
@@ -289,20 +298,28 @@ class TestDataClassSerialization:
 class TestMarketplaceAgentSearch:
     """Tests for MarketplaceAgent.aggregate_search() with mocked adapters."""
 
+    @pytest.fixture(autouse=True)
+    def _clear_cache(self):
+        """Clear marketplace search cache between tests."""
+        try:
+            from app.cache import cache_clear
+            cache_clear()
+        except (ImportError, AttributeError):
+            pass
+        yield
+        try:
+            from app.cache import cache_clear
+            cache_clear()
+        except (ImportError, AttributeError):
+            pass
+
     @pytest.mark.asyncio
     async def test_no_adapters_configured(self):
         from app.agents.marketplace_agent import MarketplaceAgent
 
         with patch.object(MarketplaceAgent, "__init__", lambda self: None):
             agent = MarketplaceAgent()
-            agent._ebay = MagicMock()
-            agent._ebay.configured = False
-            agent._tcgplayer = MagicMock()
-            agent._tcgplayer.configured = False
-            agent._firecrawl = MagicMock()
-            agent._firecrawl.configured = False
-            agent._crawl4ai = MagicMock()
-            agent._crawl4ai.configured = False
+            _mock_all_adapters_unconfigured(agent)
 
             result = await agent.aggregate_search("Charizard")
 
@@ -323,16 +340,11 @@ class TestMarketplaceAgentSearch:
 
         with patch.object(MarketplaceAgent, "__init__", lambda self: None):
             agent = MarketplaceAgent()
+            _mock_all_adapters_unconfigured(agent)
             agent._ebay = MagicMock()
             agent._ebay.configured = True
             agent._ebay.search = AsyncMock(return_value=mock_ebay_hits)
             agent._ebay.sold_comps = AsyncMock(return_value=[])
-            agent._tcgplayer = MagicMock()
-            agent._tcgplayer.configured = False
-            agent._firecrawl = MagicMock()
-            agent._firecrawl.configured = False
-            agent._crawl4ai = MagicMock()
-            agent._crawl4ai.configured = False
 
             result = await agent.aggregate_search("Charizard")
 
@@ -352,16 +364,11 @@ class TestMarketplaceAgentSearch:
 
         with patch.object(MarketplaceAgent, "__init__", lambda self: None):
             agent = MarketplaceAgent()
+            _mock_all_adapters_unconfigured(agent)
             agent._ebay = MagicMock()
             agent._ebay.configured = True
             agent._ebay.search = AsyncMock(return_value=[dup_hit.copy()])
             agent._ebay.sold_comps = AsyncMock(return_value=[dup_hit.copy()])
-            agent._tcgplayer = MagicMock()
-            agent._tcgplayer.configured = False
-            agent._firecrawl = MagicMock()
-            agent._firecrawl.configured = False
-            agent._crawl4ai = MagicMock()
-            agent._crawl4ai.configured = False
 
             result = await agent.aggregate_search("Charizard")
 
@@ -374,16 +381,11 @@ class TestMarketplaceAgentSearch:
 
         with patch.object(MarketplaceAgent, "__init__", lambda self: None):
             agent = MarketplaceAgent()
+            _mock_all_adapters_unconfigured(agent)
             agent._ebay = MagicMock()
             agent._ebay.configured = True
             agent._ebay.search = AsyncMock(side_effect=RuntimeError("API down"))
             agent._ebay.sold_comps = AsyncMock(side_effect=RuntimeError("API down"))
-            agent._tcgplayer = MagicMock()
-            agent._tcgplayer.configured = False
-            agent._firecrawl = MagicMock()
-            agent._firecrawl.configured = False
-            agent._crawl4ai = MagicMock()
-            agent._crawl4ai.configured = False
 
             result = await agent.aggregate_search("test")
 
@@ -397,15 +399,10 @@ class TestMarketplaceAgentSearch:
 
         with patch.object(MarketplaceAgent, "__init__", lambda self: None):
             agent = MarketplaceAgent()
-            agent._ebay = MagicMock()
-            agent._ebay.configured = False
+            _mock_all_adapters_unconfigured(agent)
             agent._tcgplayer = MagicMock()
             agent._tcgplayer.configured = True
             agent._tcgplayer.search = AsyncMock(return_value=[])
-            agent._firecrawl = MagicMock()
-            agent._firecrawl.configured = False
-            agent._crawl4ai = MagicMock()
-            agent._crawl4ai.configured = False
 
             # Non-TCG category should skip TCGPlayer
             result = await agent.aggregate_search("LEGO Star Wars", category="lego")
@@ -422,6 +419,15 @@ class TestMarketplaceAgentSearch:
 class TestMarketplaceAgentSoldComps:
     """Tests for MarketplaceAgent.find_sold_comps()."""
 
+    @pytest.fixture(autouse=True)
+    def _clear_cache(self):
+        try:
+            from app.cache import cache_clear
+            cache_clear()
+        except (ImportError, AttributeError):
+            pass
+        yield
+
     @pytest.mark.asyncio
     async def test_sold_comps_basic(self):
         from app.agents.marketplace_agent import MarketplaceAgent
@@ -434,15 +440,10 @@ class TestMarketplaceAgentSoldComps:
 
         with patch.object(MarketplaceAgent, "__init__", lambda self: None):
             agent = MarketplaceAgent()
+            _mock_all_adapters_unconfigured(agent)
             agent._ebay = MagicMock()
             agent._ebay.configured = True
             agent._ebay.sold_comps = AsyncMock(return_value=mock_sold)
-            agent._tcgplayer = MagicMock()
-            agent._tcgplayer.configured = False
-            agent._firecrawl = MagicMock()
-            agent._firecrawl.configured = False
-            agent._crawl4ai = MagicMock()
-            agent._crawl4ai.configured = False
 
             result = await agent.find_sold_comps("Pokemon Card", category="pokemon")
 
@@ -465,14 +466,7 @@ class TestMarketplaceAgentHealth:
 
         with patch.object(MarketplaceAgent, "__init__", lambda self: None):
             agent = MarketplaceAgent()
-            agent._ebay = MagicMock()
-            agent._ebay.configured = False
-            agent._tcgplayer = MagicMock()
-            agent._tcgplayer.configured = False
-            agent._firecrawl = MagicMock()
-            agent._firecrawl.configured = False
-            agent._crawl4ai = MagicMock()
-            agent._crawl4ai.configured = False
+            _mock_all_adapters_unconfigured(agent)
 
             health = await agent.health_check()
 

@@ -208,6 +208,7 @@ class TestRequiredEnvVars:
             "DB_DSN": "postgresql://user:pass@host/db",
             "SUPABASE_URL": "https://test.supabase.co",
             "OPS_API_KEY": "ops-key-123",
+            "STRIPE_WEBHOOK_SECRET": "whsec_test_123",
         }
         _reload_config_and_validate(env)  # should not raise
 
@@ -220,6 +221,7 @@ class TestRequiredEnvVars:
             "DB_DSN": "",
             "SUPABASE_URL": "https://test.supabase.co",
             "OPS_API_KEY": "ops-key-123",
+            "STRIPE_WEBHOOK_SECRET": "whsec_test_123",
         }
         _reload_config_and_validate(env)  # should not raise
 

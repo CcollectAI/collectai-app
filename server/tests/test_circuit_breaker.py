@@ -236,7 +236,7 @@ class TestAllCircuitStatus:
     def test_returns_list_of_all_breakers(self):
         statuses = all_circuit_status()
         assert isinstance(statuses, list)
-        assert len(statuses) == 10
+        assert len(statuses) == 14
 
     def test_contains_expected_services(self):
         statuses = all_circuit_status()
@@ -244,6 +244,7 @@ class TestAllCircuitStatus:
         assert names == {
             "ebay", "tcgplayer", "openai", "cardmarket", "discogs",
             "pricecharting", "stockx", "bricklink", "firecrawl", "crawl4ai",
+            "mercari_us", "whatnot", "vinted", "mavin",
         }
 
     def test_all_start_closed(self):

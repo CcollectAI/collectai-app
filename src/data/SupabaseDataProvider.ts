@@ -257,7 +257,7 @@ export class SupabaseDataProvider implements DataProvider {
       .from('watchlist')
       .update(updatePayload)
       .eq('id', id)
-      .select('*')
+      .select('id, title, priority, owned, target_price, currency, category, notes, created_at')
       .single();
 
     if (error) {
@@ -617,9 +617,10 @@ export class SupabaseDataProvider implements DataProvider {
 
     // Query user_public_profile_v1 view (RLS: public SELECT)
     // Try user_id first (common schema), fall back to id
+    const profileCols = 'user_id, id, username, display_name, avatar_url, avatar_color, bio, level, total_xp, items_count, created_at';
     let { data, error } = await supabase
       .from('user_public_profile_v1')
-      .select('*')
+      .select(profileCols)
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -627,7 +628,7 @@ export class SupabaseDataProvider implements DataProvider {
     if (!data && !error) {
       const alt = await supabase
         .from('user_public_profile_v1')
-        .select('*')
+        .select(profileCols)
         .eq('id', userId)
         .maybeSingle();
       data = alt.data;
@@ -798,7 +799,7 @@ export class SupabaseDataProvider implements DataProvider {
     const offset = pagination?.offset ?? 0;
     const { data, error } = await supabase
       .from('v_alerts_feed_v1')
-      .select('*')
+      .select('id, type, alert_type, title, body, category, item_id, item_ref, created_at, read, trigger_value')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -828,7 +829,7 @@ export class SupabaseDataProvider implements DataProvider {
   async listInboxThreads(): Promise<DmThread[]> {
     const { data, error } = await supabase
       .from('v_chat_inbox_v1')
-      .select('*')
+      .select('id, thread_id, other_user_id, other_user_name, other_user_handle, other_user_avatar_url, other_user_avatar_color, last_message_at, last_message_preview, unread_count, status, is_incoming')
       .order('last_message_at', { ascending: false });
 
     if (error) {
@@ -857,7 +858,7 @@ export class SupabaseDataProvider implements DataProvider {
   async listIncomingRequests(): Promise<DmRequest[]> {
     const { data, error } = await supabase
       .from('v_chat_inbox_v1')
-      .select('*')
+      .select('id, thread_id, other_user_id, other_user_name, other_user_handle, other_user_avatar_url, other_user_avatar_color, last_message_at, last_message_preview, status, is_incoming')
       .eq('status', 'pending')
       .eq('is_incoming', true)
       .order('last_message_at', { ascending: false });
@@ -1122,9 +1123,10 @@ export class SupabaseDataProvider implements DataProvider {
 
   async listBuildPaintProjects(): Promise<BuildPaintProject[]> {
     // Try view first, then fall back to base table for paint_recipes
+    const bpCols = 'id, title, name, category, category_id, item_id, item_name, item_images, status, percent_complete, is_completed, cover_image_url, paint_recipes, created_at, updated_at';
     const { data, error } = await supabase
       .from('build_paint_projects')
-      .select('*')
+      .select(bpCols)
       .order('updated_at', { ascending: false })
       .limit(200);
 
@@ -1320,7 +1322,7 @@ export class SupabaseDataProvider implements DataProvider {
   async listBuildPaintProjectsByCategory(categoryId: string): Promise<BuildPaintProject[]> {
     const { data, error } = await supabase
       .from('build_paint_projects')
-      .select('*')
+      .select('id, name, status, category_id, item_id, cover_image_url, paint_recipes, created_at, updated_at')
       .eq('category_id', categoryId)
       .order('updated_at', { ascending: false });
 
@@ -1347,7 +1349,7 @@ export class SupabaseDataProvider implements DataProvider {
   async listBuildPaintProjectsByItem(itemId: string): Promise<BuildPaintProject[]> {
     const { data, error } = await supabase
       .from('build_paint_projects')
-      .select('*')
+      .select('id, name, status, category_id, item_id, cover_image_url, paint_recipes, created_at, updated_at')
       .eq('item_id', itemId)
       .order('updated_at', { ascending: false });
 
@@ -1553,7 +1555,7 @@ export class SupabaseDataProvider implements DataProvider {
   async getEventById(eventId: string): Promise<CollectorsEvent | null> {
     const { data, error } = await supabase
       .from('v_events_with_attendees_v1')
-      .select('*')
+      .select('id, title, description, category_id, event_date, end_date, location, venue_name, cover_image_url, organizer_id, organizer_name, status, capacity, attendee_count, is_attending, tags, sponsor_tier, created_at')
       .eq('id', eventId)
       .maybeSingle();
 
@@ -1576,7 +1578,7 @@ export class SupabaseDataProvider implements DataProvider {
 
     if (error) {
       logger.warn('[SupabaseDataProvider] listEvents error:', error);
-      return [];
+      throw new Error(error.message || 'Failed to load events');
     }
 
     return (data ?? []).map((row: Record<string, unknown>) => this.mapEventRow(row));

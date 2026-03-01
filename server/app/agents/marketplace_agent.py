@@ -23,6 +23,10 @@ from app.agents.adapters.ebay_caller import EbayCaller
 from app.agents.adapters.tcgplayer_caller import TCGPlayerCaller
 from app.agents.adapters.firecrawl_caller import FirecrawlCaller
 from app.agents.adapters.crawl4ai_caller import Crawl4AICaller
+from app.agents.adapters.mercari_us_caller import MercariUSCaller
+from app.agents.adapters.whatnot_caller import WhatNotCaller
+from app.agents.adapters.vinted_caller import VintedCaller
+from app.agents.adapters.mavin_caller import MavinCaller
 from app.lib.region_marketplace_config import (
     should_use_adapter,
     get_ebay_marketplace_id,
@@ -39,7 +43,15 @@ logger = logging.getLogger(__name__)
 SOURCE_RELIABILITY: Dict[str, float] = {
     "ebay_sold": 0.95,
     "tcgplayer": 0.90,
+    "mavin": 0.80,
+    "mavin_sold": 0.85,
+    "mercari_us": 0.70,
+    "mercari_us_sold": 0.75,
     "ebay_listed": 0.70,
+    "whatnot": 0.65,
+    "whatnot_sold": 0.75,
+    "vinted": 0.65,
+    "vinted_sold": 0.70,
     "firecrawl": 0.65,
     "firecrawl_sold": 0.70,
     "crawl4ai": 0.60,
@@ -51,6 +63,10 @@ RECENCY_7D_BOOST = 0.10
 RECENCY_30D_BOOST = 0.05
 SOLD_BONUS = 0.15
 CONDITION_MATCH_BONUS = 0.10
+
+# In-flight request dedup — concurrent identical searches wait for the first
+# caller to finish rather than issuing duplicate adapter calls.
+_inflight: Dict[str, asyncio.Future] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +243,10 @@ class MarketplaceAgent:
         self._tcgplayer = TCGPlayerCaller()
         self._firecrawl = FirecrawlCaller()
         self._crawl4ai = Crawl4AICaller()
+        self._mercari_us = MercariUSCaller()
+        self._whatnot = WhatNotCaller()
+        self._vinted = VintedCaller()
+        self._mavin = MavinCaller()
 
     @property
     def adapters_configured(self) -> Dict[str, bool]:
@@ -236,6 +256,10 @@ class MarketplaceAgent:
             "tcgplayer": self._tcgplayer.configured,
             "firecrawl": self._firecrawl.configured,
             "crawl4ai": self._crawl4ai.configured,
+            "mercari_us": self._mercari_us.configured,
+            "whatnot": self._whatnot.configured,
+            "vinted": self._vinted.configured,
+            "mavin": self._mavin.configured,
         }
 
     async def close(self) -> None:
@@ -244,6 +268,10 @@ class MarketplaceAgent:
         await self._tcgplayer.close()
         await self._firecrawl.close()
         await self._crawl4ai.close()
+        await self._mercari_us.close()
+        await self._whatnot.close()
+        await self._vinted.close()
+        await self._mavin.close()
 
     # ------------------------------------------------------------------
     # Core search
@@ -265,7 +293,52 @@ class MarketplaceAgent:
 
         *region* (americas/europe/japan/other) gates adapters and targets
         region-specific eBay marketplaces and Firecrawl sites.
+
+        Results are cached for 6 hours by (query, category, condition, region).
         """
+        # Check cache first — identical searches within TTL reuse previous results
+        from app.cache import cache_get, cache_set
+        _SEARCH_CACHE_TTL = 6 * 3600  # 6 hours
+        cache_key = f"mkt_search:{query}:{category}:{condition}:{region}:{include_sold}"
+        cached = cache_get(cache_key)
+        if cached is not None:
+            logger.debug("[MarketplaceAgent] cache hit for %s", cache_key)
+            return cached
+
+        # In-flight dedup: if an identical search is already running, await it
+        if cache_key in _inflight:
+            logger.debug("[MarketplaceAgent] dedup — waiting for in-flight %s", cache_key)
+            return await _inflight[cache_key]
+
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future = loop.create_future()
+        _inflight[cache_key] = future
+        try:
+            result = await self._do_aggregate_search(
+                query, category, condition, limit, include_sold, region,
+                cache_key, _SEARCH_CACHE_TTL, cache_set,
+            )
+            future.set_result(result)
+            return result
+        except Exception as exc:
+            future.set_exception(exc)
+            raise
+        finally:
+            _inflight.pop(cache_key, None)
+
+    async def _do_aggregate_search(
+        self,
+        query: str,
+        category: Optional[str],
+        condition: Optional[str],
+        limit: int,
+        include_sold: bool,
+        region: Optional[str],
+        cache_key: str,
+        cache_ttl: int,
+        cache_set_fn,
+    ) -> AggregationResult:
+        """Internal: perform the actual adapter queries (called after cache miss)."""
         all_hits: List[Dict[str, Any]] = []
         total_sources = 0
         successful_sources = 0
@@ -303,6 +376,27 @@ class MarketplaceAgent:
         if self._crawl4ai.configured and should_use_adapter(region, "crawl4ai"):
             total_sources += 1
             tasks.append(("crawl4ai", self._crawl4ai.search(query, category=category, limit=limit, region_sites=c4_sites)))
+
+        # Mercari US (broad collectible coverage)
+        if self._mercari_us.configured and should_use_adapter(region, "mercari_us"):
+            total_sources += 1
+            tasks.append(("mercari_us", self._mercari_us.search(query, category=category, limit=limit)))
+
+        # WhatNot (live auctions — TCG, Funko, sports cards)
+        whatnot_categories = {"pokemon", "mtg", "yugioh", "lorcana", "funko", "sportscards", "designer_toys", "hot_toys", "anime_figures", "kpop_merch"}
+        if self._whatnot.configured and should_use_adapter(region, "whatnot") and (category is None or category in whatnot_categories):
+            total_sources += 1
+            tasks.append(("whatnot", self._whatnot.search(query, category=category, limit=limit)))
+
+        # Vinted (European secondhand marketplace)
+        if self._vinted.configured and should_use_adapter(region, "vinted"):
+            total_sources += 1
+            tasks.append(("vinted", self._vinted.search(query, category=category, limit=limit, region=region)))
+
+        # Mavin.io (sold price aggregator — high quality)
+        if self._mavin.configured and should_use_adapter(region, "mavin"):
+            total_sources += 1
+            tasks.append(("mavin", self._mavin.search(query, category=category, limit=limit)))
 
         if not tasks:
             logger.warning("[MarketplaceAgent] No adapters configured for query: %s", query)
@@ -367,7 +461,7 @@ class MarketplaceAgent:
             scored_hits, total_sources, successful_sources,
         )
 
-        return AggregationResult(
+        result = AggregationResult(
             hits=scored_hits,
             total_sources_queried=total_sources,
             successful_sources=successful_sources,
@@ -384,6 +478,12 @@ class MarketplaceAgent:
             },
         )
 
+        # Cache successful results
+        if scored_hits:
+            cache_set_fn(cache_key, result, cache_ttl)
+
+        return result
+
     # ------------------------------------------------------------------
     # Sold comps + DB persistence
     # ------------------------------------------------------------------
@@ -399,7 +499,16 @@ class MarketplaceAgent:
         """Find sold comparables across all adapters.
 
         Only returns sold/completed items for price estimation.
+        Results are cached for 12 hours since sold data changes slowly.
         """
+        from app.cache import cache_get, cache_set
+        _COMPS_CACHE_TTL = 12 * 3600  # 12 hours
+        cache_key = f"mkt_comps:{query}:{category}:{condition}:{region}"
+        cached = cache_get(cache_key)
+        if cached is not None:
+            logger.debug("[MarketplaceAgent] comps cache hit for %s", cache_key)
+            return cached
+
         all_hits: List[Dict[str, Any]] = []
         total_sources = 0
         successful_sources = 0
@@ -431,6 +540,27 @@ class MarketplaceAgent:
         if self._crawl4ai.configured and should_use_adapter(region, "crawl4ai"):
             total_sources += 1
             tasks.append(("crawl4ai_sold", self._crawl4ai.sold_comps(query, category=category, limit=limit, region_sites=c4_sites)))
+
+        # Mercari US sold comps
+        if self._mercari_us.configured and should_use_adapter(region, "mercari_us"):
+            total_sources += 1
+            tasks.append(("mercari_us_sold", self._mercari_us.sold_comps(query, category=category, limit=limit)))
+
+        # WhatNot sold comps (auction results)
+        whatnot_categories = {"pokemon", "mtg", "yugioh", "lorcana", "funko", "sportscards", "designer_toys", "hot_toys", "anime_figures", "kpop_merch"}
+        if self._whatnot.configured and should_use_adapter(region, "whatnot") and (category is None or category in whatnot_categories):
+            total_sources += 1
+            tasks.append(("whatnot_sold", self._whatnot.sold_comps(query, category=category, limit=limit)))
+
+        # Vinted sold comps (European secondhand)
+        if self._vinted.configured and should_use_adapter(region, "vinted"):
+            total_sources += 1
+            tasks.append(("vinted_sold", self._vinted.sold_comps(query, category=category, limit=limit, region=region)))
+
+        # Mavin.io sold comps (aggregated sold data — highest quality)
+        if self._mavin.configured and should_use_adapter(region, "mavin"):
+            total_sources += 1
+            tasks.append(("mavin_sold", self._mavin.sold_comps(query, category=category, limit=limit)))
 
         if not tasks:
             return AggregationResult(
@@ -489,7 +619,7 @@ class MarketplaceAgent:
             scored_hits, total_sources, successful_sources,
         )
 
-        return AggregationResult(
+        result = AggregationResult(
             hits=scored_hits,
             total_sources_queried=total_sources,
             successful_sources=successful_sources,
@@ -505,6 +635,12 @@ class MarketplaceAgent:
                 "source_errors": source_errors,
             },
         )
+
+        # Cache successful results
+        if scored_hits:
+            cache_set(cache_key, result, _COMPS_CACHE_TTL)
+
+        return result
 
     async def persist_comps_to_db(
         self,
@@ -598,6 +734,26 @@ class MarketplaceAgent:
             tasks.append(("crawl4ai", self._crawl4ai.health_check()))
         else:
             checks["crawl4ai"] = {"configured": False, "healthy": False}
+
+        if self._mercari_us.configured:
+            tasks.append(("mercari_us", self._mercari_us.health_check()))
+        else:
+            checks["mercari_us"] = {"configured": False, "healthy": False}
+
+        if self._whatnot.configured:
+            tasks.append(("whatnot", self._whatnot.health_check()))
+        else:
+            checks["whatnot"] = {"configured": False, "healthy": False}
+
+        if self._vinted.configured:
+            tasks.append(("vinted", self._vinted.health_check()))
+        else:
+            checks["vinted"] = {"configured": False, "healthy": False}
+
+        if self._mavin.configured:
+            tasks.append(("mavin", self._mavin.health_check()))
+        else:
+            checks["mavin"] = {"configured": False, "healthy": False}
 
         if tasks:
             results = await asyncio.gather(

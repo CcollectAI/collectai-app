@@ -39,7 +39,7 @@ ALL_CATEGORIES: list[str] = [
     # Gaming
     "retro_games",
     # Media
-    "manga", "bluray_steelbook", "anime_bluray", "anime_soundtrack", "anime_ost_vinyl",
+    "manga", "comic_books", "bluray_steelbook", "anime_bluray", "anime_soundtrack", "anime_ost_vinyl",
     # Music / Fandom
     "kpop_merch", "taylor_swift", "pop_fandom", "kpop_lightsticks",
     # Disney / Theme Parks
@@ -52,6 +52,14 @@ ALL_CATEGORIES: list[str] = [
     "one_piece", "vtuber",
     # Niche
     "keycaps", "loungefly",
+    # Lifestyle
+    "vinyl_records", "sneakers", "watches",
+    # Collectibles
+    "blind_box", "plush_collectibles",
+    # Spirits / Luxury
+    "whiskey", "vintage_cameras", "pens",
+    # TCGs (stub)
+    "digimon", "one_piece_tcg",
     # Legacy
     "diecast", "sportscards", "retro_handhelds",
 ]
@@ -92,9 +100,20 @@ CATEGORY_DESCRIPTIONS: dict[str, str] = {
     "vtuber": "VTuber merchandise, Hololive goods, Nijisanji merch, virtual YouTuber",
     "keycaps": "Artisan keycap, mechanical keyboard keycap, GMK keycap set, custom cap",
     "loungefly": "Loungefly backpack, Loungefly bag, Loungefly wallet, Disney Loungefly",
+    "comic_books": "Comic book, graphic novel, Marvel DC Image, first appearance, key issue, CGC graded comic",
+    "vinyl_records": "Vinyl record, LP album, 12-inch vinyl, colored vinyl, limited pressing, turntable record",
     "diecast": "Diecast model car, Hot Wheels, Matchbox, die-cast vehicle, miniature car",
     "sportscards": "Sports trading card, baseball card, basketball card, Topps Panini rookie card",
     "retro_handhelds": "Retro handheld console, Game Boy, Tamagotchi, DS, PSP, retro portable gaming device",
+    "sneakers": "Collectible sneakers, limited edition shoes, Nike Jordan, Yeezy, rare kicks",
+    "watches": "Luxury watch, Rolex, Omega, Seiko, timepiece, wristwatch, chronograph",
+    "blind_box": "Blind box figure, Pop Mart, Labubu, Sonny Angels, Dimoo, mystery box toy",
+    "plush_collectibles": "Collectible plush, Squishmallow, Jellycat, Sanrio plush, stuffed animal",
+    "whiskey": "Whiskey bottle, bourbon, scotch, Japanese whisky, collectible spirits",
+    "vintage_cameras": "Vintage film camera, analog camera, Leica, Hasselblad, Nikon FM, Canon AE-1",
+    "pens": "Fountain pen, luxury pen, Montblanc, Pelikan, Sailor, Pilot Namiki, writing instrument",
+    "digimon": "Digimon trading card, Digimon Card Game, Omnimon, Agumon, collectible card",
+    "one_piece_tcg": "One Piece trading card game, One Piece TCG card, Luffy card, manga art card",
 }
 
 # Condition keywords for heuristic detection
@@ -295,6 +314,76 @@ CATEGORY_PROMPTS: dict[str, str] = {
         "variant_color, year, working_status (working/for parts), "
         "cib_status (CIB/loose/box only), condition_notes."
     ),
+    # Lifestyle / Luxury
+    "watches": (
+        "Extract: brand (Rolex/Omega/Seiko/Tudor/Casio), model_name, "
+        "reference_number, case_material (steel/gold/titanium), "
+        "dial_color, movement (automatic/quartz/manual), "
+        "has_box_papers (boolean), condition_notes."
+    ),
+    "sneakers": (
+        "Extract: brand (Nike/Adidas/New Balance/Jordan), model_name, "
+        "colorway, size, sku_style_code, collaboration, "
+        "is_deadstock (boolean), condition_notes."
+    ),
+    # Collectibles
+    "blind_box": (
+        "Extract: brand (Pop Mart/Medicom/Tokidoki), series_name, "
+        "character_name (Labubu/Molly/Dimoo/SkullPanda/Sonny Angel), "
+        "variant (regular/secret/chase/mega secret), "
+        "is_sealed (boolean), condition_notes."
+    ),
+    "plush_collectibles": (
+        "Extract: brand (Squishmallow/Jellycat/Sanrio/Build-A-Bear), "
+        "character_name, size (inches), collection_line, "
+        "exclusive_retailer, is_with_tags (boolean), condition_notes."
+    ),
+    # Spirits
+    "whiskey": (
+        "Extract: brand (Macallan/Pappy Van Winkle/Yamazaki/Buffalo Trace), "
+        "expression_name, age_statement, proof_abv, bottle_size, "
+        "vintage_year, is_sealed (boolean), condition_notes."
+    ),
+    # Photography
+    "vintage_cameras": (
+        "Extract: brand (Leica/Nikon/Canon/Hasselblad/Pentax/Mamiya), "
+        "model_name, camera_type (SLR/rangefinder/TLR/medium format/point-and-shoot), "
+        "lens_included, film_format (35mm/120/large format), "
+        "serial_number, working_status (working/for parts/CLA done), condition_notes."
+    ),
+    # Writing instruments
+    "pens": (
+        "Extract: brand (Montblanc/Pelikan/Sailor/Pilot/Visconti/Parker), "
+        "model_name, pen_type (fountain/rollerball/ballpoint), "
+        "nib_size (EF/F/M/B), nib_material (steel/14K/18K/21K), "
+        "filling_system (piston/cartridge/converter/vacuum), "
+        "is_limited_edition (boolean), condition_notes."
+    ),
+    # TCGs (additional)
+    "digimon": (
+        "Extract: card_name, set_name, card_number, rarity "
+        "(Common/Uncommon/Rare/Super Rare/Secret Rare/Alt Art), "
+        "color (Red/Blue/Yellow/Green/Black/Purple/White), "
+        "foil (boolean), language, condition_notes."
+    ),
+    "one_piece_tcg": (
+        "Extract: card_name, set_code (OP01/OP02/etc), card_number, "
+        "rarity (C/UC/R/SR/SEC/L/SP/Manga Art), "
+        "leader_or_character, color, foil_parallel (boolean), "
+        "language, condition_notes."
+    ),
+    "comic_books": (
+        "Extract: title, issue_number, publisher (Marvel/DC/Image/etc), "
+        "year, key_issue_note (first appearance, death, variant cover), "
+        "graded (boolean), grade_service (CGC/CBCS), grade_number, "
+        "variant_cover_artist, condition_notes."
+    ),
+    "vinyl_records": (
+        "Extract: artist, album_title, label, catalog_number, "
+        "pressing_year, variant (colored/picture disc/limited/OBI strip), "
+        "speed (33/45 RPM), format (LP/EP/single/box set), "
+        "is_sealed (boolean), condition_notes."
+    ),
 }
 
 # Default extraction prompt for categories without a specific template
@@ -417,10 +506,51 @@ def _softmax(scores: list[float]) -> list[float]:
 # Tier 1 — CLIP via fal.ai
 # ---------------------------------------------------------------------------
 
+# Cached text embeddings for category descriptions.  Populated once on first
+# CLIP classification call, then reused for all subsequent calls.  This avoids
+# 37+ fal.ai API calls per scan — only 1 (image) is needed after warm-up.
+_clip_text_embeddings: dict[str, list[float]] = {}
+_clip_text_embeddings_loaded: bool = False
+
+
+async def _ensure_clip_text_embeddings(client: httpx.AsyncClient) -> dict[str, list[float]]:
+    """Fetch and cache text embeddings for all category descriptions (once)."""
+    global _clip_text_embeddings_loaded
+
+    if _clip_text_embeddings_loaded and _clip_text_embeddings:
+        return _clip_text_embeddings
+
+    logger.info("CLIP: warming up text embeddings for %d categories", len(ALL_CATEGORIES))
+    for cat_id in ALL_CATEGORIES:
+        if cat_id in _clip_text_embeddings:
+            continue
+        desc = CATEGORY_DESCRIPTIONS.get(cat_id, cat_id)
+        try:
+            text_resp = await client.post(
+                FAL_CLIP_URL,
+                headers={
+                    "Authorization": f"Key {FAL_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={"text": desc},
+            )
+            text_resp.raise_for_status()
+            text_data = text_resp.json()
+            emb: list[float] = text_data.get("embedding", [])
+            if emb:
+                _clip_text_embeddings[cat_id] = emb
+        except Exception as e:
+            logger.warning("CLIP: failed to get text embedding for %s: %s", cat_id, e)
+
+    _clip_text_embeddings_loaded = True
+    logger.info("CLIP: cached %d/%d text embeddings", len(_clip_text_embeddings), len(ALL_CATEGORIES))
+    return _clip_text_embeddings
+
+
 async def _classify_clip(image_bytes: bytes, filename: str) -> ClassificationResult | None:
     """
     Use fal.ai CLIP endpoint to generate image embeddings, then compute
-    cosine similarity against text embeddings of all 36 category descriptions.
+    cosine similarity against cached text embeddings of all category descriptions.
     """
     if not FAL_KEY:
         return None
@@ -456,24 +586,12 @@ async def _classify_clip(image_bytes: bytes, filename: str) -> ClassificationRes
                 logger.warning("CLIP returned empty image embedding")
                 return None
 
-            # 2) Get text embeddings for all category descriptions and compute similarities
+            # 2) Compare against cached text embeddings
+            text_embs = await _ensure_clip_text_embeddings(client)
             similarities: list[tuple[str, float]] = []
-            for cat_id in ALL_CATEGORIES:
-                desc = CATEGORY_DESCRIPTIONS.get(cat_id, cat_id)
-                text_resp = await client.post(
-                    FAL_CLIP_URL,
-                    headers={
-                        "Authorization": f"Key {FAL_KEY}",
-                        "Content-Type": "application/json",
-                    },
-                    json={"text": desc},
-                )
-                text_resp.raise_for_status()
-                text_data = text_resp.json()
-                text_embedding: list[float] = text_data.get("embedding", [])
-                if text_embedding:
-                    sim = _cosine_similarity(image_embedding, text_embedding)
-                    similarities.append((cat_id, sim))
+            for cat_id, text_embedding in text_embs.items():
+                sim = _cosine_similarity(image_embedding, text_embedding)
+                similarities.append((cat_id, sim))
 
             if not similarities:
                 logger.warning("CLIP: no text embeddings generated")
@@ -518,21 +636,9 @@ async def _classify_clip(image_bytes: bytes, filename: str) -> ClassificationRes
 # Tier 2 — OpenAI Vision API
 # ---------------------------------------------------------------------------
 
-_OPENAI_SYSTEM_PROMPT = """You are a collectibles identification expert for the CollectAI app.
-Given an image of a collectible item, follow these steps:
+_OPENAI_SYSTEM_PROMPT = """Collectibles ID expert. Observe image details (text, logos, numbers, packaging, damage), classify category, identify specific item (set/number/edition/variant), extract attributes, assess condition (mint/near_mint/very_good/good/fair/poor).
 
-STEP 1 - OBSERVE: Describe what you see — text, logos, numbers, colors, packaging, damage, labels, barcodes.
-STEP 2 - CLASSIFY: Determine the category from the 36 options below.
-STEP 3 - IDENTIFY: Name the specific item as precisely as possible (include set, number, edition, variant).
-STEP 4 - DETAIL: Extract category-specific attributes.
-STEP 5 - CONDITION: Assess visible condition (mint, near_mint, very_good, good, fair, poor).
-
-Categories: pokemon, mtg, yugioh, lorcana, funko, designer_toys, anime_figures, hot_toys,
-lego, gunpla, scale_models, warhammer, retro_games, manga, bluray_steelbook,
-anime_bluray, anime_soundtrack, anime_ost_vinyl, kpop_merch, taylor_swift,
-pop_fandom, kpop_lightsticks, disney, theme_park, ghibli, bandai_premium,
-jp_magazine, jp_event, nintendo_merch, retro_pokemon, one_piece, vtuber,
-keycaps, loungefly, diecast, sportscards, retro_handhelds
+Categories: pokemon,mtg,yugioh,lorcana,funko,designer_toys,anime_figures,hot_toys,lego,gunpla,scale_models,warhammer,retro_games,manga,bluray_steelbook,anime_bluray,anime_soundtrack,anime_ost_vinyl,kpop_merch,taylor_swift,pop_fandom,kpop_lightsticks,disney,theme_park,ghibli,bandai_premium,jp_magazine,jp_event,nintendo_merch,retro_pokemon,one_piece,vtuber,keycaps,loungefly,diecast,sportscards,retro_handhelds
 
 {category_detail}"""
 

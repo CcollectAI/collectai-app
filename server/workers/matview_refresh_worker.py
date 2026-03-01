@@ -39,8 +39,8 @@ DSN = os.getenv("DB_DSN")
 # Independent refresh intervals — demand heat refreshes faster because user
 # actions (searches, watchlist adds) happen continuously, while supply data
 # only changes when crawlers run (every 30min-6hrs).
-DEMAND_INTERVAL = int(os.getenv("MATVIEW_DEMAND_INTERVAL", "300"))   # 5 min
-SUPPLY_INTERVAL = int(os.getenv("MATVIEW_SUPPLY_INTERVAL", "1800"))  # 30 min
+DEMAND_INTERVAL = int(os.getenv("MATVIEW_DEMAND_INTERVAL", "600"))    # 10 min (was 5)
+SUPPLY_INTERVAL = int(os.getenv("MATVIEW_SUPPLY_INTERVAL", "3600"))  # 60 min (was 30)
 
 # Legacy env var — if set, overrides both intervals (backwards compat)
 _legacy = os.getenv("MATVIEW_REFRESH_INTERVAL")

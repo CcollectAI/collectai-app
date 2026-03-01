@@ -174,14 +174,14 @@ async def marketplace_search(
         # Record demand signal with geo enrichment (best-effort)
         try:
             from app.features.data_moat import record_demand_signal, get_user_geo
-            region, country = await get_user_geo(user_id)
+            geo_region, geo_country = await get_user_geo(user_id)
             await record_demand_signal(
                 signal_type="search_query",
                 category=request.category,
                 query_text=request.query,
                 user_id=user_id,
-                region=region,
-                country_code=country,
+                region=geo_region,
+                country_code=geo_country,
             )
         except Exception:
             pass

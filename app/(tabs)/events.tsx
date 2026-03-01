@@ -450,7 +450,17 @@ function EventsScreen() {
         renderItem={({ item, section }) => renderEventCard(item, !section.isPast)}
         ListHeaderComponent={headerElement}
         ListEmptyComponent={
-          !loading ? (
+          error ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                Failed to load events
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+                Pull down to retry.
+              </Text>
+            </View>
+          ) : !loading ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="calendar-outline" size={48} color={colors.muted} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>

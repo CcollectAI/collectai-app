@@ -21,7 +21,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-INTERVAL_SECS = int(os.getenv("CATALOG_LEARNING_INTERVAL_SECS", "1800"))
+INTERVAL_SECS = int(os.getenv("CATALOG_LEARNING_INTERVAL_SECS", "86400"))  # daily (was 30 min)
 
 # Graceful shutdown flag
 _shutdown = False

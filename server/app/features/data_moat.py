@@ -97,12 +97,21 @@ async def record_supply_snapshot(
 
     try:
         async with pool.acquire() as conn:
+            # Dedup: skip insert if a snapshot already exists for the same
+            # category/item_key/source within the current hour.
             await conn.execute(
                 """
                 INSERT INTO public.supply_snapshots
                     (category, item_key, source, listing_count,
                      avg_price_eur, min_price_eur, max_price_eur, metadata)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+                SELECT $1, $2, $3, $4, $5, $6, $7, $8::jsonb
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM public.supply_snapshots
+                    WHERE category = $1
+                      AND item_key = $2
+                      AND source = $3
+                      AND snapshot_at >= date_trunc('hour', now())
+                )
                 """,
                 category,
                 item_key,
@@ -298,6 +307,11 @@ async def supply_trends_endpoint(
     _rl: None = Depends(_data_moat_limit),
 ):
     """Supply trend for an item over the last N days."""
+    from app.lib.validators import is_valid_category
+    if not is_valid_category(category):
+        from app.errors import error_response
+        from app.lib.error_codes import ErrorCode
+        raise error_response(400, f"Unknown category: {category}", code=ErrorCode.VALIDATION_ERROR)
     data = await get_supply_trend(category, item_key, days)
     return {"category": category, "item_key": item_key, "days": days, "trends": data}
 
@@ -310,6 +324,11 @@ async def demand_heat_endpoint(
     _rl: None = Depends(_data_moat_limit),
 ):
     """Top trending items by demand signal volume."""
+    from app.lib.validators import is_valid_category
+    if not is_valid_category(category):
+        from app.errors import error_response
+        from app.lib.error_codes import ErrorCode
+        raise error_response(400, f"Unknown category: {category}", code=ErrorCode.VALIDATION_ERROR)
     data = await get_demand_heat(category, limit)
     return {"category": category, "limit": limit, "items": data}
 

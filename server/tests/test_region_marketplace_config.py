@@ -10,6 +10,7 @@ from app.lib.region_marketplace_config import (
     get_ebay_marketplace_id,
     should_use_adapter,
     get_firecrawl_sites,
+    get_crawl4ai_sites,
 )
 
 
@@ -101,9 +102,12 @@ def test_japan_anime_figures_uses_mandarake():
 
 
 def test_japan_manga_uses_surugaya():
-    sites = get_firecrawl_sites("japan", "manga")
-    assert sites is not None
-    assert any("suruga-ya" in s for s in sites)
+    """suruga-ya should be in the combined firecrawl + crawl4ai target set."""
+    fc_sites = get_firecrawl_sites("japan", "manga") or []
+    c4_sites = get_crawl4ai_sites("japan", "manga") or []
+    all_sites = fc_sites + c4_sites
+    assert len(all_sites) > 0
+    assert any("suruga-ya" in s for s in all_sites)
 
 
 def test_americas_returns_none_uses_global_defaults():

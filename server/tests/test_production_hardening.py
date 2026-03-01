@@ -473,16 +473,16 @@ class TestCanaryStatus:
 class TestSplitRefreshIntervals:
     """Tests for independent matview refresh intervals."""
 
-    def test_demand_interval_default_5min(self):
+    def test_demand_interval_default_10min(self):
         import workers.matview_refresh_worker as mw
-        # Default should be 300s (5 min) unless legacy env var overrides
+        # Default should be 600s (10 min) unless legacy env var overrides
         assert hasattr(mw, "DEMAND_INTERVAL")
-        assert mw.DEMAND_INTERVAL <= 300 or os.getenv("MATVIEW_REFRESH_INTERVAL")
+        assert mw.DEMAND_INTERVAL <= 600 or os.getenv("MATVIEW_REFRESH_INTERVAL")
 
-    def test_supply_interval_default_30min(self):
+    def test_supply_interval_default_60min(self):
         import workers.matview_refresh_worker as mw
         assert hasattr(mw, "SUPPLY_INTERVAL")
-        assert mw.SUPPLY_INTERVAL <= 1800 or os.getenv("MATVIEW_REFRESH_INTERVAL")
+        assert mw.SUPPLY_INTERVAL <= 3600 or os.getenv("MATVIEW_REFRESH_INTERVAL")
 
     def test_independent_loops_exist(self):
         import workers.matview_refresh_worker as mw

@@ -73,10 +73,16 @@ CORS_ORIGINS: list[str] = os.getenv(
     "CORS_ORIGINS",
     "http://localhost:3000,http://localhost:8080,http://localhost:8081,"
     "http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:8081,"
-    "exp://localhost:*,exp://192.168.*:*,exp://10.*:*,"
+    "exp://localhost:*,"
     "https://app.collectai.io,https://collectai.app,https://www.collectai.app,"
     "https://api.collectai.app",
 ).split(",")
+
+# Extra Expo dev origins — set via env for your local IP, e.g.
+# EXPO_DEV_ORIGINS="exp://192.168.1.42:*"
+_expo_dev = os.getenv("EXPO_DEV_ORIGINS", "")
+if _expo_dev:
+    CORS_ORIGINS.extend(o.strip() for o in _expo_dev.split(",") if o.strip())
 
 TRUSTED_HOSTS: list[str] = (
     os.getenv("TRUSTED_HOSTS", "").split(",") if os.getenv("TRUSTED_HOSTS") else []
@@ -105,6 +111,11 @@ MAX_BODY_BYTES: int = int(os.getenv("MAX_BODY_BYTES", str(10 * 1024 * 1024)))  #
 AWS_REGION: str = os.environ.get("AWS_REGION", "eu-west-1")
 
 # Catalog images bucket (used by s3_client, photo_upload_router)
+# NOTE: Enable S3 Intelligent-Tiering on these buckets for 30-50% storage
+# savings on infrequently accessed images:
+#   aws s3api put-bucket-intelligent-tiering-configuration \
+#     --bucket collectai-artifacts --id "auto-tier" \
+#     --intelligent-tiering-configuration '{"Id":"auto-tier","Status":"Enabled",...}'
 CATALOG_IMAGES_S3_BUCKET: str = os.environ.get("CATALOG_IMAGES_S3_BUCKET", "collectai-artifacts")
 CATALOG_IMAGES_CDN_URL: str = os.environ.get("CATALOG_IMAGES_CDN_URL", "")
 
@@ -189,7 +200,7 @@ MONITOR_ENABLED: bool = os.getenv("MONITOR_ENABLED", "false").lower() in ("1", "
 # ---------------------------------------------------------------------------
 
 CATALOG_LEARNING_ENABLED: bool = os.getenv("CATALOG_LEARNING_ENABLED", "false").lower() in ("1", "true", "yes")
-CATALOG_LEARNING_INTERVAL_SECS: int = int(os.getenv("CATALOG_LEARNING_INTERVAL_SECS", "1800"))
+CATALOG_LEARNING_INTERVAL_SECS: int = int(os.getenv("CATALOG_LEARNING_INTERVAL_SECS", "86400"))  # daily
 CATALOG_AUTO_MAP_THRESHOLD: int = int(os.getenv("CATALOG_AUTO_MAP_THRESHOLD", "3"))
 CATALOG_NEW_CATEGORY_THRESHOLD: int = int(os.getenv("CATALOG_NEW_CATEGORY_THRESHOLD", "25"))
 
@@ -297,6 +308,8 @@ def validate_config() -> None:
             missing.append("SUPABASE_URL")
         if not OPS_API_KEY:
             missing.append("OPS_API_KEY")
+        if not STRIPE_WEBHOOK_SECRET:
+            missing.append("STRIPE_WEBHOOK_SECRET")
         if missing:
             _log.critical("Missing required env vars for production: %s", ", ".join(missing))
             raise SystemExit(1)

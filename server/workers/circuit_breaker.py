@@ -178,6 +178,10 @@ stockx_circuit = CircuitBreaker("stockx", max_failures=5, cooldown_seconds=60)
 bricklink_circuit = CircuitBreaker("bricklink", max_failures=5, cooldown_seconds=60)
 firecrawl_circuit = CircuitBreaker("firecrawl", max_failures=5, cooldown_seconds=120)
 crawl4ai_circuit = CircuitBreaker("crawl4ai", max_failures=5, cooldown_seconds=120)
+mercari_us_circuit = CircuitBreaker("mercari_us", max_failures=5, cooldown_seconds=60)
+whatnot_circuit = CircuitBreaker("whatnot", max_failures=5, cooldown_seconds=60)
+vinted_circuit = CircuitBreaker("vinted", max_failures=5, cooldown_seconds=60)
+mavin_circuit = CircuitBreaker("mavin", max_failures=5, cooldown_seconds=60)
 
 
 def all_circuit_status() -> list[dict]:
@@ -188,6 +192,7 @@ def all_circuit_status() -> list[dict]:
             ebay_circuit, tcgplayer_circuit, openai_circuit,
             cardmarket_circuit, discogs_circuit, pricecharting_circuit,
             stockx_circuit, bricklink_circuit, firecrawl_circuit,
-            crawl4ai_circuit,
+            crawl4ai_circuit, mercari_us_circuit, whatnot_circuit,
+            vinted_circuit, mavin_circuit,
         )
     ]

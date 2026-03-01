@@ -127,14 +127,17 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
                 )
                 logger.info("[watchlist] Added item: id=%s, user=%s", item.id, user_id)
 
-                # Record demand signal (best-effort)
+                # Record demand signal with geo enrichment (best-effort)
                 try:
-                    from app.features.data_moat import record_demand_signal
+                    from app.features.data_moat import record_demand_signal, get_user_geo
+                    region, country = await get_user_geo(user_id)
                     await record_demand_signal(
                         signal_type="watchlist_add",
                         category=payload.category,
                         item_key=payload.name or payload.item_id,
                         user_id=user_id,
+                        region=region,
+                        country_code=country,
                     )
                 except Exception:
                     pass

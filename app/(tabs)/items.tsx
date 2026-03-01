@@ -29,7 +29,7 @@ import { dataProvider, type Item as DataItem } from "@/data";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from "@/motion";
-import { SkeletonList, SkeletonCategoryPills } from "@/components/Skeleton";
+import { SkeletonList, SkeletonCategoryPills, SkeletonGalleryGrid } from "@/components/Skeleton";
 import { ItemGalleryGrid } from "@/components/ItemGalleryGrid";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import {
@@ -310,6 +310,7 @@ const ItemsScreen: React.FC = () => {
   // Bulk archive (mark as archived/sold) — with optimistic update
   const handleBulkArchive = useCallback(async () => {
     if (selectedCount === 0) return;
+    if (bulkActionLoading || optimisticBulkArchive.isLoading) return;
 
     Alert.alert(
       'Archive Items',
@@ -339,6 +340,7 @@ const ItemsScreen: React.FC = () => {
   // Bulk delete — with optimistic update
   const handleBulkDelete = useCallback(async () => {
     if (selectedCount === 0) return;
+    if (bulkActionLoading || optimisticBulkDelete.isLoading) return;
 
     Alert.alert(
       'Delete Items',
@@ -606,7 +608,11 @@ const ItemsScreen: React.FC = () => {
             <View style={{ width: '100%', height: 44, backgroundColor: '#e2e8f0', borderRadius: 10 }} />
           </View>
           <SkeletonCategoryPills />
-          <SkeletonList count={6} type="row" />
+          {viewMode === 'gallery' ? (
+            <SkeletonGalleryGrid count={6} />
+          ) : (
+            <SkeletonList count={6} type="row" />
+          )}
         </View>
       </SafeAreaView>
     );

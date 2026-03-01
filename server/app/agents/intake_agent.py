@@ -383,6 +383,14 @@ async def _validate_with_reprompt(
     if not OPENAI_API_KEY:
         return None
 
+    from workers.circuit_breaker import openai_circuit, CircuitOpenError
+
+    try:
+        openai_circuit.check()
+    except CircuitOpenError:
+        logger.info("OpenAI circuit open — skipping reprompt validation")
+        return None
+
     try:
         # Build numbered candidates text
         lines: list[str] = []
@@ -472,6 +480,7 @@ async def _validate_with_reprompt(
             logger.warning("Reprompt returned out-of-range index %d", idx)
             return None
 
+        openai_circuit.record_success()
         return {
             "selected_index": idx,
             "confidence": conf,
@@ -479,6 +488,7 @@ async def _validate_with_reprompt(
         }
 
     except Exception as e:
+        openai_circuit.record_failure()
         logger.warning("Reprompt validation failed (graceful skip): %s", e)
         return None
 
@@ -1051,7 +1061,11 @@ async def process_intake(
             best_alt_score = max(
                 a.get("match_score", 0) for a in result.alternatives
             )
-            if best_alt_score < 0.90:
+            # Only re-prompt when identification is uncertain — skip for
+            # high-confidence matches to save an OpenAI Vision call (~40-60%
+            # of scans).  The 0.60 threshold balances quality vs cost.
+            name_conf = (result.field_confidence or {}).get("name", 0.5)
+            if best_alt_score < 0.90 and name_conf < 0.60:
                 reprompt = await _validate_with_reprompt(
                     image_bytes=image_bytes,
                     initial_name=result.name or "",

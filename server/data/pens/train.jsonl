@@ -1,0 +1,137 @@
+{"features": {"condition_score": 0.9, "brand_tier": 0.4, "nib_material": 0.3, "is_limited": 0.0}, "price": 15}
+{"features": {"condition_score": 0.85, "brand_tier": 0.4, "nib_material": 0.3, "is_limited": 0.0}, "price": 18}
+{"features": {"condition_score": 0.95, "brand_tier": 0.4, "nib_material": 0.3, "is_limited": 0.0}, "price": 25}
+{"features": {"condition_score": 0.9, "brand_tier": 0.45, "nib_material": 0.3, "is_limited": 0.0}, "price": 30}
+{"features": {"condition_score": 0.8, "brand_tier": 0.5, "nib_material": 0.3, "is_limited": 0.0}, "price": 35}
+{"features": {"condition_score": 0.9, "brand_tier": 0.5, "nib_material": 0.3, "is_limited": 0.0}, "price": 40}
+{"features": {"condition_score": 0.85, "brand_tier": 0.55, "nib_material": 0.6, "is_limited": 0.0}, "price": 55}
+{"features": {"condition_score": 0.9, "brand_tier": 0.6, "nib_material": 0.6, "is_limited": 0.0}, "price": 75}
+{"features": {"condition_score": 0.7, "brand_tier": 0.7, "nib_material": 0.6, "is_limited": 0.0}, "price": 80}
+{"features": {"condition_score": 0.85, "brand_tier": 0.7, "nib_material": 0.6, "is_limited": 0.0}, "price": 120}
+{"features": {"condition_score": 0.9, "brand_tier": 0.7, "nib_material": 0.8, "is_limited": 0.0}, "price": 180}
+{"features": {"condition_score": 0.85, "brand_tier": 0.7, "nib_material": 0.9, "is_limited": 0.0}, "price": 220}
+{"features": {"condition_score": 0.9, "brand_tier": 0.7, "nib_material": 0.9, "is_limited": 1.0}, "price": 350}
+{"features": {"condition_score": 0.8, "brand_tier": 0.8, "nib_material": 0.6, "is_limited": 0.0}, "price": 180}
+{"features": {"condition_score": 0.85, "brand_tier": 0.8, "nib_material": 0.8, "is_limited": 0.0}, "price": 280}
+{"features": {"condition_score": 0.9, "brand_tier": 0.8, "nib_material": 0.8, "is_limited": 0.0}, "price": 380}
+{"features": {"condition_score": 0.95, "brand_tier": 0.8, "nib_material": 0.8, "is_limited": 0.0}, "price": 450}
+{"features": {"condition_score": 0.85, "brand_tier": 0.8, "nib_material": 0.8, "is_limited": 1.0}, "price": 550}
+{"features": {"condition_score": 0.9, "brand_tier": 0.8, "nib_material": 0.8, "is_limited": 1.0}, "price": 700}
+{"features": {"condition_score": 0.7, "brand_tier": 0.9, "nib_material": 0.8, "is_limited": 0.0}, "price": 350}
+{"features": {"condition_score": 0.8, "brand_tier": 0.9, "nib_material": 0.8, "is_limited": 0.0}, "price": 480}
+{"features": {"condition_score": 0.85, "brand_tier": 0.9, "nib_material": 0.8, "is_limited": 0.0}, "price": 580}
+{"features": {"condition_score": 0.9, "brand_tier": 0.9, "nib_material": 0.8, "is_limited": 0.0}, "price": 720}
+{"features": {"condition_score": 0.95, "brand_tier": 0.9, "nib_material": 0.8, "is_limited": 0.0}, "price": 800}
+{"features": {"condition_score": 0.85, "brand_tier": 0.9, "nib_material": 0.8, "is_limited": 1.0}, "price": 1200}
+{"features": {"condition_score": 0.9, "brand_tier": 0.9, "nib_material": 0.8, "is_limited": 1.0}, "price": 1600}
+{"features": {"condition_score": 0.95, "brand_tier": 0.9, "nib_material": 0.8, "is_limited": 1.0}, "price": 2200}
+{"features": {"condition_score": 0.7, "brand_tier": 1.0, "nib_material": 0.9, "is_limited": 0.0}, "price": 1500}
+{"features": {"condition_score": 0.8, "brand_tier": 1.0, "nib_material": 0.9, "is_limited": 0.0}, "price": 2200}
+{"features": {"condition_score": 0.85, "brand_tier": 1.0, "nib_material": 0.9, "is_limited": 0.0}, "price": 3000}
+{"features": {"condition_score": 0.9, "brand_tier": 1.0, "nib_material": 0.9, "is_limited": 1.0}, "price": 5500}
+{"features": {"condition_score": 0.95, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 8500}
+{"features": {"condition_score": 0.85, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 6200}
+{"features": {"condition_score": 0.8, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 3800}
+{"features": {"condition_score": 0.9, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 4500}
+{"features": {"condition_score": 0.95, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 5800}
+{"features": {"condition_score": 0.5, "brand_tier": 0.9, "nib_material": 0.8, "is_limited": 0.0}, "price": 250}
+{"features": {"condition_score": 0.3, "brand_tier": 0.8, "nib_material": 0.6, "is_limited": 0.0}, "price": 90}
+{"features": {"condition_score": 0.4, "brand_tier": 0.7, "nib_material": 0.6, "is_limited": 0.0}, "price": 65}
+{"features": {"condition_score": 0.2, "brand_tier": 0.4, "nib_material": 0.3, "is_limited": 0.0}, "price": 15}
+{"features": {"condition_score": 0.6, "brand_tier": 0.6, "nib_material": 0.6, "is_limited": 0.0}, "price": 60}
+{"features": {"condition_score": 0.75, "brand_tier": 0.7, "nib_material": 0.8, "is_limited": 1.0}, "price": 280}
+{"features": {"condition_score": 0.9, "brand_tier": 1.0, "nib_material": 0.9, "is_limited": 0.0}, "price": 3500}
+{"features": {"condition_score": 0.65, "brand_tier": 0.5, "nib_material": 0.3, "is_limited": 0.0}, "price": 28}
+{"features": {"condition_score": 0.95, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 10000}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 950}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 750}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 580}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 1200}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 1400}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 1100}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 1300}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 1250}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 850}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 650}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 900}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 1050}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 1100}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 2800}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 1500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 1.0}, "price": 1800}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 550}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 550}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 750}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 400}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 350}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 1200}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 1.0}, "price": 2500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 1.0}, "price": 700}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 1.0}, "price": 800}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 1.0}, "price": 650}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 0.7, "is_limited": 1.0}, "price": 130}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 850}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 1.0}, "price": 1200}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 350}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 1.0}, "price": 280}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 400}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 250}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 550}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 1.0}, "price": 450}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 1.0}, "price": 1500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 1.0}, "price": 600}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.9, "nib_material": 1.0, "is_limited": 0.0}, "price": 700}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 200}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 320}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 320}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 800}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 800}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 200}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 220}
+{"features": {"condition_score": 0.85, "rarity_score": 0.7, "brand_tier": 0.8, "nib_material": 0.7, "is_limited": 0.0}, "price": 600}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 280}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 180}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 2500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.6, "nib_material": 1.0, "is_limited": 0.0}, "price": 350}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.6, "nib_material": 1.0, "is_limited": 0.0}, "price": 550}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.6, "nib_material": 1.0, "is_limited": 0.0}, "price": 380}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.6, "nib_material": 0.7, "is_limited": 1.0}, "price": 80}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.6, "nib_material": 0.7, "is_limited": 1.0}, "price": 65}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.6, "nib_material": 0.7, "is_limited": 1.0}, "price": 90}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.6, "nib_material": 0.7, "is_limited": 0.0}, "price": 120}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.6, "nib_material": 0.7, "is_limited": 1.0}, "price": 45}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.6, "nib_material": 0.7, "is_limited": 0.0}, "price": 75}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 750}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 800}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 900}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 1200}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 1100}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 550}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 0.7, "is_limited": 0.0}, "price": 200}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 600}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 700}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 550}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 650}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 280}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 1200}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 1200}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 800}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 1000}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 1500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 1.0, "nib_material": 1.0, "is_limited": 0.0}, "price": 900}
+{"features": {"condition_score": 0.85, "rarity_score": 0.7, "brand_tier": 0.7, "nib_material": 1.0, "is_limited": 0.0}, "price": 250}
+{"features": {"condition_score": 0.85, "rarity_score": 0.7, "brand_tier": 0.7, "nib_material": 1.0, "is_limited": 0.0}, "price": 400}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.7, "nib_material": 1.0, "is_limited": 0.0}, "price": 500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.7, "brand_tier": 0.7, "nib_material": 1.0, "is_limited": 0.0}, "price": 350}
+{"features": {"condition_score": 0.85, "rarity_score": 0.7, "brand_tier": 0.7, "nib_material": 1.0, "is_limited": 0.0}, "price": 500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.7, "brand_tier": 0.7, "nib_material": 1.0, "is_limited": 0.0}, "price": 800}
+{"features": {"condition_score": 0.85, "rarity_score": 0.7, "brand_tier": 0.7, "nib_material": 1.0, "is_limited": 0.0}, "price": 650}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.6, "nib_material": 0.7, "is_limited": 0.0}, "price": 150}
+{"features": {"condition_score": 0.85, "rarity_score": 0.7, "brand_tier": 0.7, "nib_material": 1.0, "is_limited": 0.0}, "price": 350}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 10000}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 8500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.3, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 0.0}, "price": 1500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 3500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 4500}
+{"features": {"condition_score": 0.85, "rarity_score": 0.75, "brand_tier": 0.8, "nib_material": 1.0, "is_limited": 1.0}, "price": 5000}

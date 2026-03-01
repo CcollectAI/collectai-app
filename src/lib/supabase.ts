@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "@/lib/logger";
 import { SUPABASE_URL as URL, SUPABASE_ANON_KEY as KEY, SUPABASE_MODE as MODE } from "@/api/config";
+import { secureStoreAdapter } from "@/lib/secureStoreAdapter";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function makeMock(): SupabaseClient<any, any, any> {
@@ -31,5 +32,12 @@ export const supabase: SupabaseClient = (() => {
     if (MODE === "strict") throw new Error("Supabase strict mode: missing EXPO_PUBLIC_SUPABASE_URL/ANON_KEY");
     return makeMock();
   }
-  return createClient(URL, KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  return createClient(URL, KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: secureStoreAdapter,
+    },
+  });
 })();

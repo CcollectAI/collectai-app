@@ -35,6 +35,12 @@ SCHEDULES = {
     "watchlist_monitor_worker": 3600,    # every 1 hour
     "calibration_worker": 24 * 3600,     # daily
     "catalog_learning_worker": 1800,     # every 30 minutes
+    "scarcity_monitor_worker": 6 * 3600, # every 6 hours
+    "category_map_worker": 3600,         # every 1 hour
+    "signal_alerts_worker": 1800,        # every 30 minutes
+    "matview_refresh": 0,                # single-run mode
+    "catalog_crawler_worker": 24 * 3600, # daily (nightly crawl)
+    "model_retrain_worker": 7 * 24 * 3600,  # weekly
 }
 
 

@@ -3,13 +3,17 @@ from __future__ import annotations
 import logging
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
+from app.auth import get_current_user_id
 from app.errors import error_response
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/quickscan-advanced", tags=["quickscan-advanced"])
 logger = logging.getLogger(__name__)
+
+_quickscan_adv_limit = per_user_rate_limit(10, window_seconds=60, scope="quickscan_advanced")
 
 
 class QuickScanAttributes(BaseModel):
@@ -199,7 +203,11 @@ def _edition_to_score(edition: str | None) -> float:
 
 
 @router.post("/single", response_model=QuickScanResult)
-async def quickscan_single(request: QuickScanSingleRequest | None = None):
+async def quickscan_single(
+    request: QuickScanSingleRequest | None = None,
+    _user: str = Depends(get_current_user_id),
+    _rl: None = Depends(_quickscan_adv_limit),
+):
     """
     Enriched QuickScan: edition, condition, rarity, q10/q50/q90 band.
 
@@ -239,7 +247,11 @@ async def quickscan_single(request: QuickScanSingleRequest | None = None):
 
 
 @router.post("/batch", response_model=BatchQuickScanResponse)
-async def quickscan_batch(payload: BatchQuickScanRequest):
+async def quickscan_batch(
+    payload: BatchQuickScanRequest,
+    _user: str = Depends(get_current_user_id),
+    _rl: None = Depends(_quickscan_adv_limit),
+):
     """
     Multi-item batch scanning (Advanced D).
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os, asyncio, logging
 import asyncpg
+from app.worker_registry import record_run
 from workers.retry import with_async_retry, log_dead_letter
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [signal_alerts] %(levelname)s: %(message)s")
@@ -13,6 +14,7 @@ THRESH_LOW = 15.0  # EUR; tune later
 async def run_once():
     if not DSN:
         logging.error("DB_DSN not set")
+        record_run("signal_alerts_worker", "error")
         return
 
     conn = await asyncpg.connect(DSN)
@@ -70,11 +72,13 @@ async def run_once():
         logging.info("signal_alerts cycle done")
     finally:
         await conn.close()
+        record_run("signal_alerts_worker", "ok")
 
 async def main():
     try:
         await run_once()
     except Exception as e:
+        record_run("signal_alerts_worker", "error")
         log_dead_letter("signal_alerts_worker", {}, e)
         logging.exception("signal_alerts crashed: %r", e)
 

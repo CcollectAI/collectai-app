@@ -44,9 +44,13 @@ from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/marketplace/listings", tags=["marketplace-listings"])
 logger = logging.getLogger(__name__)
+
+_listing_write_limit = per_user_rate_limit(30, window_seconds=60, scope="marketplace_listing_write")
+_listing_read_limit = per_user_rate_limit(60, window_seconds=60, scope="marketplace_listing_read")
 
 # ---------------------------------------------------------------------------
 # Valid marketplace identifiers
@@ -283,6 +287,7 @@ class SalesListResponse(BaseModel):
 @router.get("/accounts", response_model=List[AccountResponse])
 async def list_accounts(
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_read_limit),
 ):
     """List all connected marketplace accounts for the current user."""
     pool = get_db_pool()
@@ -327,6 +332,7 @@ async def list_accounts(
 async def connect_account(
     payload: AccountCreate,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_write_limit),
 ):
     """Connect a new marketplace account (store OAuth credentials)."""
     if payload.marketplace_id not in VALID_MARKETPLACES:
@@ -399,6 +405,7 @@ async def connect_account(
 async def disconnect_account(
     account_id: str,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_write_limit),
 ):
     """Disconnect (delete) a marketplace account."""
     account_id = _validate_uuid(account_id, "account_id")
@@ -480,6 +487,7 @@ def _row_to_listing(r: dict) -> ListingResponse:
 async def list_listings(
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
+    _rl: None = Depends(_listing_read_limit),
     status: Optional[str] = Query(None, description="Filter by status: draft, active, sold, expired, delisted, error"),
     marketplace_id: Optional[str] = Query(None, description="Filter by marketplace"),
 ):
@@ -558,6 +566,7 @@ async def list_listings(
 async def create_listing(
     payload: ListingCreate,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_write_limit),
 ):
     """Create a new listing (draft or active)."""
     item_id = _validate_uuid(payload.item_id, "item_id")
@@ -662,6 +671,7 @@ async def create_listing(
 async def get_listing(
     listing_id: str,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_read_limit),
 ):
     """Get a single listing's full detail."""
     listing_id = _validate_uuid(listing_id, "listing_id")
@@ -691,6 +701,7 @@ async def update_listing(
     listing_id: str,
     payload: ListingUpdate,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_write_limit),
 ):
     """Update a listing's fields (price, status, description, etc.)."""
     listing_id = _validate_uuid(listing_id, "listing_id")
@@ -767,6 +778,7 @@ async def update_listing(
 async def delete_listing(
     listing_id: str,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_write_limit),
 ):
     """Delete (delist) a listing. Sets status to 'delisted' rather than hard-deleting."""
     listing_id = _validate_uuid(listing_id, "listing_id")
@@ -814,6 +826,7 @@ async def delete_listing(
 async def publish_listing(
     listing_id: str,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_write_limit),
 ):
     """Publish a draft listing — sets status to 'active' and records listed_at."""
     listing_id = _validate_uuid(listing_id, "listing_id")
@@ -865,6 +878,7 @@ async def publish_listing(
 async def list_sales(
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
+    _rl: None = Depends(_listing_read_limit),
 ):
     """List the current user's completed sales with pagination."""
     limit, offset = pagination
@@ -930,6 +944,7 @@ async def record_sale(
     listing_id: str,
     payload: SaleRecord,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_listing_write_limit),
 ):
     """Record a completed sale for a listing. Marks the listing as 'sold'."""
     listing_id = _validate_uuid(listing_id, "listing_id")

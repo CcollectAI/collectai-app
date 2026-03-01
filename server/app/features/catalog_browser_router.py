@@ -20,10 +20,16 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.db import get_pool
 from app.errors import error_response
+from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["catalog-browser"])
+
+# Note: browse_catalog_items is public (no auth) and protected by the global
+# IP-based rate limit middleware. per_user_rate_limit is used only on
+# authenticated endpoints below.
+_catalog_progress_limit = per_user_rate_limit(60, window_seconds=60, scope="catalog_progress")
 
 
 # ---------------------------------------------------------------------------
@@ -167,7 +173,7 @@ async def browse_catalog_items(
         for r in rows
     ]
 
-    # Record demand signal (best-effort)
+    # Record demand signal (best-effort; no user_id/geo — public endpoint)
     try:
         from app.features.data_moat import record_demand_signal
         await record_demand_signal(
@@ -199,6 +205,7 @@ async def update_item_progress(
     item_id: str,
     req: ProgressUpdateRequest,
     user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_catalog_progress_limit),
 ):
     """Update reading/play progress for an item owned by the current user."""
     pool = get_pool()

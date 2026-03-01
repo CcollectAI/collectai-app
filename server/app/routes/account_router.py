@@ -66,7 +66,10 @@ async def delete_account(user_id: str = Depends(get_current_user_id)):
                 # Delete user-owned data in dependency order
                 # Tables with user_id FK to auth.users will cascade,
                 # but we explicitly clean up to be safe.
-                tables_to_clean = [
+                # Frozen allowlist — only these tables can be cleaned.
+                # The table names are used directly in SQL, so we MUST
+                # guarantee they are from this hardcoded set.
+                _ALLOWED_TABLES = frozenset({
                     "mandate_deals",
                     "purchase_mandates",
                     "alert_trigger_history",
@@ -79,12 +82,13 @@ async def delete_account(user_id: str = Depends(get_current_user_id)):
                     "user_settings",
                     "user_category_follows",
                     "event_attendees",
-                ]
+                })
 
-                for table in tables_to_clean:
+                for table in _ALLOWED_TABLES:
+                    assert table.isidentifier(), f"Invalid table name: {table}"
                     try:
                         await conn.execute(
-                            f"DELETE FROM {table} WHERE user_id = $1",  # noqa: S608
+                            f'DELETE FROM "{table}" WHERE user_id = $1',
                             user_id,
                         )
                     except asyncpg.UndefinedTableError:

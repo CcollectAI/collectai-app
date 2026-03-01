@@ -114,6 +114,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInDemo = useCallback(() => {
+    if (!__DEV__) {
+      logger.warn('[AuthProvider] signInDemo blocked in production build');
+      return;
+    }
+
     const demoUser = {
       id: 'demo-user-00000000-0000-0000-0000-000000000000',
       email: 'demo@collectai.app',

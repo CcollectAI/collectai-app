@@ -190,6 +190,21 @@ export function SkeletonChat() {
   );
 }
 
+export function SkeletonGalleryGrid({ count = 6 }: { count?: number }) {
+  const { colors } = useAppTheme();
+  return (
+    <View style={styles.galleryGrid}>
+      {Array.from({ length: count }).map((_, i) => (
+        <View key={i} style={[styles.galleryCard, { backgroundColor: colors.card }]}>
+          <Skeleton width="100%" height={120} borderRadius={8} />
+          <Skeleton width="80%" height={12} borderRadius={4} style={{ marginTop: 8 }} />
+          <Skeleton width="50%" height={10} borderRadius={4} style={{ marginTop: 4 }} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function SkeletonList({ count = 5, type = 'row' }: { count?: number; type?: 'row' | 'card' | 'event' | 'deal' | 'analytics' }) {
   const Component =
     type === 'card' ? SkeletonItemCard :
@@ -295,6 +310,17 @@ const styles = StyleSheet.create({
   chatBubbleRight: {
     alignSelf: 'flex-end',
     borderBottomRightRadius: 4,
+  },
+  galleryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+    gap: 12,
+  },
+  galleryCard: {
+    width: '47%',
+    padding: 8,
+    borderRadius: 12,
   },
 });
 

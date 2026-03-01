@@ -286,14 +286,17 @@ async def intake_process(
         user_id=user_id,
     )
 
-    # Record demand signal (best-effort)
+    # Record demand signal with geo enrichment (best-effort)
     try:
-        from app.features.data_moat import record_demand_signal
+        from app.features.data_moat import record_demand_signal, get_user_geo
+        region, country = await get_user_geo(user_id)
         await record_demand_signal(
             signal_type="item_scanned",
             category=category,
             item_key=name or barcode,
             user_id=user_id,
+            region=region,
+            country_code=country,
         )
     except Exception:
         pass
@@ -316,6 +319,10 @@ async def intake_barcode_only(
     if not barcode:
         raise error_response(400, "Barcode is required")
 
+    from app.lib.validators import is_valid_barcode
+    if not is_valid_barcode(barcode):
+        raise error_response(400, "Invalid barcode format")
+
     user_hints: dict[str, Any] = {}
     if req.category:
         user_hints["category"] = req.category
@@ -333,12 +340,15 @@ async def intake_barcode_only(
     )
 
     try:
-        from app.features.data_moat import record_demand_signal
+        from app.features.data_moat import record_demand_signal, get_user_geo
+        region, country = await get_user_geo(user_id)
         await record_demand_signal(
             signal_type="item_scanned",
             category=req.category,
             item_key=req.name or barcode,
             user_id=user_id,
+            region=region,
+            country_code=country,
         )
     except Exception:
         pass
@@ -396,12 +406,15 @@ async def intake_image_only(
     )
 
     try:
-        from app.features.data_moat import record_demand_signal
+        from app.features.data_moat import record_demand_signal, get_user_geo
+        region, country = await get_user_geo(user_id)
         await record_demand_signal(
             signal_type="item_scanned",
             category=category,
             item_key=name,
             user_id=user_id,
+            region=region,
+            country_code=country,
         )
     except Exception:
         pass
@@ -537,14 +550,17 @@ async def intake_save(
         item_id, user_id, payload.category,
     )
 
-    # Record demand signal — strongest signal: user committed to adding this item
+    # Record demand signal with geo — strongest signal: user committed to adding this item
     try:
-        from app.features.data_moat import record_demand_signal
+        from app.features.data_moat import record_demand_signal, get_user_geo
+        region, country = await get_user_geo(user_id)
         await record_demand_signal(
             signal_type="item_added",
             category=payload.category,
             item_key=normalized_key,
             user_id=user_id,
+            region=region,
+            country_code=country,
         )
     except Exception:
         pass

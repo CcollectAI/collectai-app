@@ -47,6 +47,7 @@ EXEMPT_PATHS = frozenset({"/healthz", "/version", "/ops/status"})
 _hits: dict[str, list[float]] = defaultdict(list)
 _last_eviction: float = 0.0  # monotonic timestamp of last key eviction
 _EVICTION_INTERVAL: float = 300.0  # evict stale keys every 5 minutes
+_MAX_IP_ENTRIES: int = 50_000  # safety cap — force clear if exceeded
 
 
 def _client_ip(request: Request) -> str:
@@ -105,6 +106,11 @@ async def rate_limit_middleware(
         if stale:
             logger.debug("Evicted %d stale IP keys from rate limiter", len(stale))
 
+    # Safety cap: if an attacker cycles through many IPs, force clear
+    if len(_hits) > _MAX_IP_ENTRIES:
+        logger.warning("Rate limiter IP dict exceeded %d entries — forced clear", _MAX_IP_ENTRIES)
+        _hits.clear()
+
     response = await call_next(request)
     return response
 
@@ -116,6 +122,7 @@ async def rate_limit_middleware(
 # Shared store across all per-user limiters: {(scope, user_id): [timestamps]}
 _user_hits: dict[tuple[str, str], list[float]] = defaultdict(list)
 _user_last_eviction: float = 0.0
+_MAX_USER_ENTRIES: int = 100_000  # safety cap — force clear if exceeded
 
 
 def _prune_user(timestamps: list[float], now: float, window: int) -> list[float]:
@@ -198,5 +205,10 @@ def per_user_rate_limit(
                 del _user_hits[k]
             if stale:
                 logger.debug("Evicted %d stale user keys from rate limiter", len(stale))
+
+        # Safety cap: force clear if dict grows too large
+        if len(_user_hits) > _MAX_USER_ENTRIES:
+            logger.warning("Rate limiter user dict exceeded %d entries — forced clear", _MAX_USER_ENTRIES)
+            _user_hits.clear()
 
     return _check

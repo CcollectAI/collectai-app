@@ -26,6 +26,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/PortfolioLineChart";
+import { SkeletonPortfolioHeader, SkeletonList } from "@/components/Skeleton";
 import { dataProvider } from "@/data";
 import type { WatchlistItem } from "@/data/types";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
@@ -529,10 +530,7 @@ function PortfolioScreen() {
               accessibilityLabel={`Portfolio chart: current value ${formatPrice(total)}, ${isPositive ? 'up' : 'down'} ${formatPct(deltaPct)} over ${range}`}
             >
               {loading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color={colors.accent} />
-                  <Text style={[styles.loadingText, { color: colors.muted }]}>Loading...</Text>
-                </View>
+                <SkeletonPortfolioHeader />
               ) : (
                 <PortfolioLineChart
                   series={series}
@@ -632,7 +630,7 @@ function PortfolioScreen() {
         </View>
         {breakdownLoading ? (
           <View style={[styles.breakdownCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 16 }} />
+            <SkeletonList count={3} type="row" />
           </View>
         ) : categoryBreakdown.length > 0 ? (
           <View style={[styles.breakdownCard, { backgroundColor: colors.card, borderColor: colors.border }]}>

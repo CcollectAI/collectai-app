@@ -66,3 +66,39 @@ services:
       options:
         max-size: "25m"
         max-file: "3"
+
+  catalog-crawler:
+    build: .
+    container_name: collectai-catalog-crawler
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["python", "-m", "workers.catalog_crawler_scheduler"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "3"
+
+  model-retrain:
+    build: .
+    container_name: collectai-model-retrain
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["python", "-m", "workers.model_retrain_scheduler"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "3"

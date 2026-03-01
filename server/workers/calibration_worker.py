@@ -191,9 +191,53 @@ async def run_once():
             snapshots_created,
         )
 
+        # Check ground truth accuracy per category (ops monitoring)
+        await _check_ground_truth_accuracy(conn)
+
     finally:
         await conn.close()
         record_run("calibration_worker", "ok")
+
+
+async def _check_ground_truth_accuracy(conn) -> None:
+    """Query price_ground_truths for 30-day MAE per category and log warnings."""
+    try:
+        rows = await conn.fetch(
+            """
+            SELECT i.category,
+                   AVG(ABS(gt.error_pct)) AS mae,
+                   COUNT(*) AS n
+            FROM public.price_ground_truths gt
+            JOIN public.items i ON i.id = gt.item_id
+            WHERE gt.recorded_at >= now() - interval '30 days'
+              AND gt.error_pct IS NOT NULL
+            GROUP BY i.category
+            HAVING COUNT(*) >= 3
+            ORDER BY mae DESC
+            """
+        )
+
+        if not rows:
+            logger.info("No ground truth data for accuracy check")
+            return
+
+        for row in rows:
+            category = row["category"]
+            mae = float(row["mae"] or 0)
+            n = row["n"]
+
+            if mae > 0.25:
+                logger.warning(
+                    "HIGH MAE for category %s: %.1f%% (n=%d) — review model calibration",
+                    category, mae * 100, n,
+                )
+            else:
+                logger.info(
+                    "Ground truth accuracy %s: MAE=%.1f%% (n=%d)",
+                    category, mae * 100, n,
+                )
+    except Exception as e:
+        logger.warning("Ground truth accuracy check failed: %s", e)
 
 
 async def main():

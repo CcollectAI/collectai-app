@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const CategoryList = [
-  // --- TCGs (4) ---
-  'pokemon','mtg','yugioh','lorcana',
+  // --- TCGs (6) ---
+  'pokemon','mtg','yugioh','lorcana','digimon','one_piece_tcg',
 
   // --- Toys / Figures (4) ---
   'funko','designer_toys','anime_figures','hot_toys',
@@ -34,8 +34,14 @@ export const CategoryList = [
   // --- Niche (2) ---
   'keycaps','loungefly',
 
+  // --- Collectibles (2) ---
+  'blind_box','plush_collectibles',
+
   // --- Lifestyle (3) ---
   'vinyl_records','sneakers','watches',
+
+  // --- Spirits / Luxury (3) ---
+  'whiskey','vintage_cameras','pens',
 
   // --- Legacy (3) ---
   'diecast','sportscards','retro_handhelds',
@@ -79,6 +85,23 @@ export const AttrSchemas: Record<Category, z.ZodObject<any>> = {
     rarity: z.string().optional(),          // common/uncommon/rare/super_rare/legendary
     variant: z.string().optional(),         // standard/foil/enchanted
     language: z.string().optional(),
+  }),
+  digimon: z.object({
+    set: z.string().optional(),
+    number: z.string().optional(),
+    color: z.string().optional(),           // red/blue/yellow/green/black/purple/white
+    rarity: z.string().optional(),          // common/uncommon/rare/super_rare/secret_rare/alt_art
+    language: z.string().optional(),
+    grade: z.string().optional(),
+  }),
+  one_piece_tcg: z.object({
+    set: z.string().optional(),             // OP01, OP02, etc.
+    number: z.string().optional(),
+    color: z.string().optional(),
+    rarity: z.string().optional(),          // C/UC/R/SR/SEC/L/SP/manga_art
+    variant: z.string().optional(),         // standard/parallel/manga_art
+    language: z.string().optional(),
+    grade: z.string().optional(),
   }),
 
   // =========================================================================
@@ -422,6 +445,62 @@ export const AttrSchemas: Record<Category, z.ZodObject<any>> = {
   }),
 
   // =========================================================================
+  // Collectibles
+  // =========================================================================
+  blind_box: z.object({
+    brand: z.string().optional(),           // Pop Mart, Medicom, Tokidoki, 52Toys
+    series: z.string().optional(),          // Labubu, Molly, Dimoo, SkullPanda
+    character: z.string().optional(),
+    variant: z.string().optional(),         // regular, secret, chase, mega_secret
+    sealed: z.boolean().optional(),
+    condition: z.string().optional(),
+  }),
+  plush_collectibles: z.object({
+    brand: z.string().optional(),           // Squishmallow, Jellycat, Sanrio, Build-A-Bear
+    character: z.string().optional(),
+    size: z.string().optional(),            // inches (e.g., 5", 8", 12", 16", 24")
+    collection: z.string().optional(),      // Halloween, Valentine's, Easter, Bashful
+    exclusive_retailer: z.string().optional(), // Target, Costco, Five Below, Claire's
+    has_tags: z.boolean().optional(),
+    condition: z.string().optional(),
+  }),
+
+  // =========================================================================
+  // Spirits / Luxury
+  // =========================================================================
+  whiskey: z.object({
+    brand: z.string().optional(),           // Macallan, Pappy Van Winkle, Yamazaki, etc.
+    expression: z.string().optional(),      // Small Batch, Single Barrel, Sherry Cask, etc.
+    age_statement: z.string().optional(),   // 12, 15, 18, 25, NAS
+    type: z.string().optional(),            // bourbon, scotch, japanese, rye, irish
+    proof: z.string().optional(),           // 80, 90, 100, barrel_proof
+    bottle_size: z.string().optional(),     // 750ml, 1L, etc.
+    vintage_year: z.string().optional(),
+    sealed: z.boolean().optional(),
+    condition: z.string().optional(),
+  }),
+  vintage_cameras: z.object({
+    brand: z.string().optional(),           // Leica, Nikon, Canon, Hasselblad, Pentax, Mamiya
+    model: z.string().optional(),           // M6, FM2, AE-1, 500C/M, K1000, etc.
+    camera_type: z.string().optional(),     // SLR, rangefinder, TLR, medium_format, point_and_shoot
+    film_format: z.string().optional(),     // 35mm, 120, large_format
+    lens_included: z.string().optional(),   // description of lens if included
+    serial_number: z.string().optional(),
+    working_status: z.string().optional(),  // working, for_parts, CLA_done
+    condition: z.string().optional(),
+  }),
+  pens: z.object({
+    brand: z.string().optional(),           // Montblanc, Pelikan, Sailor, Pilot, Visconti, Parker
+    model: z.string().optional(),           // 149, Souveran M800, Pro Gear, Custom 823
+    pen_type: z.string().optional(),        // fountain, rollerball, ballpoint
+    nib_size: z.string().optional(),        // EF, F, M, B, BB, stub
+    nib_material: z.string().optional(),    // steel, 14K, 18K, 21K
+    filling_system: z.string().optional(),  // piston, cartridge_converter, vacuum, lever
+    limited_edition: z.boolean().optional(),
+    condition: z.string().optional(),       // mint, near_mint, excellent, good, fair
+  }),
+
+  // =========================================================================
   // Legacy (kept from original app)
   // =========================================================================
   diecast: z.object({
@@ -456,6 +535,8 @@ export const CategoryLabels: Record<Category, string> = {
   mtg: 'Magic: The Gathering',
   yugioh: 'Yu-Gi-Oh!',
   lorcana: 'Disney Lorcana',
+  digimon: 'Digimon TCG',
+  one_piece_tcg: 'One Piece TCG',
 
   // Toys / Figures
   funko: 'Funko Pop',
@@ -508,10 +589,19 @@ export const CategoryLabels: Record<Category, string> = {
   keycaps: 'Artisan Keycaps',
   loungefly: 'Loungefly',
 
+  // Collectibles
+  blind_box: 'Blind Box & Mystery Figures',
+  plush_collectibles: 'Plush Collectibles',
+
   // Lifestyle
   vinyl_records: 'Vinyl Records',
   sneakers: 'Sneakers & Kicks',
   watches: 'Watches',
+
+  // Spirits / Luxury
+  whiskey: 'Whiskey & Spirits',
+  vintage_cameras: 'Vintage Cameras',
+  pens: 'Fountain Pens & Writing',
 
   // Legacy
   diecast: 'Diecast',

@@ -279,17 +279,27 @@ async def _lookup_local_catalog(barcode: str, pool) -> Optional[dict]:
 
 
 async def _lookup_open_library(isbn: str) -> Optional[dict]:
-    """Query Open Library for book data by ISBN."""
+    """Query Open Library for book data by ISBN.
+
+    Total wall-time is capped at _OL_TOTAL_TIMEOUT seconds to prevent
+    cascading external calls from blocking the endpoint.
+    """
     cached = cache_get(f"barcode:ol:{isbn}")
     if cached is not None:
         return cached
 
+    _OL_TOTAL_TIMEOUT = 10.0  # max total seconds for all chained OL calls
+    _OL_MAX_AUTHORS = 3  # limit chained author lookups
+
     url = f"https://openlibrary.org/isbn/{isbn}.json"
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
+        import time as _time
+        _deadline = _time.monotonic() + _OL_TOTAL_TIMEOUT
+
+        async with httpx.AsyncClient(timeout=5.0) as client:
             resp = await client.get(url, follow_redirects=True)
             if resp.status_code != 200:
-                logger.debug(f"[barcode] Open Library {resp.status_code} for ISBN {isbn}")
+                logger.debug("[barcode] Open Library %d for ISBN %s", resp.status_code, isbn)
                 return None
             data = resp.json()
 
@@ -316,9 +326,12 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
             # Number of pages
             pages = data.get("number_of_pages")
 
-            # Try to get author info from works
+            # Try to get author info from works (limited + deadline-aware)
             authors = []
-            for author_ref in data.get("authors", []):
+            for author_ref in data.get("authors", [])[:_OL_MAX_AUTHORS]:
+                if _time.monotonic() >= _deadline:
+                    logger.debug("[barcode] OL deadline reached, skipping remaining authors")
+                    break
                 author_key = author_ref.get("key", "")
                 if author_key:
                     try:
@@ -332,8 +345,8 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
                     except Exception as e:
                         logger.debug("[barcode] Author lookup failed for %s: %s", author_key, e)
 
-            # Also check works for subjects if edition has none
-            if not subjects:
+            # Also check works for subjects if edition has none (deadline-aware)
+            if not subjects and _time.monotonic() < _deadline:
                 works = data.get("works", [])
                 if works:
                     work_key = works[0].get("key", "")
@@ -497,6 +510,10 @@ async def barcode_lookup(
 
     if not barcode:
         raise error_response(400, "Barcode is required", code=ErrorCode.VALIDATION_ERROR)
+
+    from app.lib.validators import is_valid_barcode
+    if not is_valid_barcode(barcode):
+        raise error_response(400, "Invalid barcode format", code=ErrorCode.VALIDATION_ERROR)
 
     pool = get_db_pool()
     rationale: list[str] = []
