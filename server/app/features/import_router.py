@@ -19,8 +19,11 @@ from fastapi.responses import StreamingResponse
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/api/imports", tags=["imports"])
+
+_import_limit = per_user_rate_limit(5, window_seconds=3600, scope="collection_import")
 
 _logger = logging.getLogger(__name__)
 
@@ -63,6 +66,7 @@ async def import_template():
 async def import_collection(
     file: UploadFile = File(...),
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_import_limit),
 ) -> Dict[str, Any]:
     """
     Accept a CSV or Excel file, parse it, and insert valid rows into

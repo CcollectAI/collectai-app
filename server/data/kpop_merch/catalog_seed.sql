@@ -1,6 +1,6 @@
 -- Auto-generated catalog seed for kpop_merch
--- Generated: 2026-02-19T19:01:43.550203+00:00
--- Items: 530
+-- Generated: 2026-03-01T19:46:19.467074+00:00
+-- Items: 601
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', 'bts', 'bts-jungkook-fansign-photocard', 'BTS - Jungkook Fansign Photocard', 'BTS', 'Grail', 'BTS | photocard | Fansign Event'),
@@ -40,6 +40,39 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'bts', 'bts-bts-seasons-greetings-2023', 'BTS - BTS Season''s Greetings 2023', 'BTS', 'Mid', 'BTS | merch | Official'),
   ('kpop_merch', 'bts', 'bts-bts-map-of-the-soul-one-dvd', 'BTS - BTS Map of the Soul ON:E DVD', 'BTS', 'High', 'BTS | merch | Limited'),
   ('kpop_merch', 'bts', 'bts-bts-permission-to-dance-concert-dvd', 'BTS - BTS Permission to Dance Concert DVD', 'BTS', 'High', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-bts-map-of-the-soul-7-vinyl-lp', 'BTS - BTS Map of the Soul: 7 Vinyl LP', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-bts-wings-sealed-original-pressing', 'BTS - BTS Wings (Sealed, Original Pressing)', 'BTS', 'High', 'BTS | album | Original Pressing'),
+  ('kpop_merch', 'bts', 'bts-bts-hyyh-pt1-original-pressing', 'BTS - BTS HYYH Pt.1 (Original Pressing)', 'BTS', 'High', 'BTS | album | Original Pressing'),
+  ('kpop_merch', 'bts', 'bts-bts-hyyh-pt2-original-pressing', 'BTS - BTS HYYH Pt.2 (Original Pressing)', 'BTS', 'High', 'BTS | album | Original Pressing'),
+  ('kpop_merch', 'bts', 'bts-bts-love-yourself-tear-y-version-vinyl', 'BTS - BTS Love Yourself: Tear Y Version Vinyl', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-bts-love-yourself-tear-o-version-vinyl', 'BTS - BTS Love Yourself: Tear O Version Vinyl', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-bts-love-yourself-tear-u-version-vinyl', 'BTS - BTS Love Yourself: Tear U Version Vinyl', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-bts-love-yourself-tear-r-version-vinyl', 'BTS - BTS Love Yourself: Tear R Version Vinyl', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-bts-be-deluxe-edition-w-photocard-set', 'BTS - BTS BE Deluxe Edition w/ Photocard Set', 'BTS', 'High', 'BTS | album | Deluxe'),
+  ('kpop_merch', 'bts', 'bts-bts-official-light-stick-map-of-the-soul-se', 'BTS - BTS Official Light Stick Map of the Soul SE', 'BTS', 'High', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-bts-official-light-stick-ver-4-army-bomb-se', 'BTS - BTS Official Light Stick Ver. 4 (Army Bomb SE)', 'BTS', 'High', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-bts-army-membership-kit-3rd-term', 'BTS - BTS ARMY Membership Kit 3rd Term', 'BTS', 'High', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-bts-army-membership-kit-4th-term', 'BTS - BTS ARMY Membership Kit 4th Term', 'BTS', 'High', 'BTS | merch | Limited')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'bts', 'bts-bts-seasons-greetings-2020', 'BTS - BTS Season''s Greetings 2020', 'BTS', 'Mid', 'BTS | merch | Official'),
+  ('kpop_merch', 'bts', 'bts-bts-seasons-greetings-2021', 'BTS - BTS Season''s Greetings 2021', 'BTS', 'Mid', 'BTS | merch | Official'),
+  ('kpop_merch', 'bts', 'bts-bts-seasons-greetings-2022', 'BTS - BTS Season''s Greetings 2022', 'BTS', 'Mid', 'BTS | merch | Official'),
+  ('kpop_merch', 'bts', 'bts-bts-memories-of-2019-dvd', 'BTS - BTS Memories of 2019 DVD', 'BTS', 'High', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-bts-memories-of-2020-blu-ray', 'BTS - BTS Memories of 2020 Blu-ray', 'BTS', 'High', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-bts-permission-to-dance-on-stage-blu-ray', 'BTS - BTS Permission to Dance On Stage Blu-ray', 'BTS', 'High', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-bts-yet-to-come-in-busan-blu-ray', 'BTS - BTS Yet To Come in Busan Blu-ray', 'BTS', 'High', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-jin-the-astronaut-vinyl-lp', 'BTS - Jin - The Astronaut Vinyl LP', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-rm-right-place-wrong-person', 'BTS - RM - Right Place, Wrong Person', 'BTS', 'Standard', 'BTS | album | Standard'),
+  ('kpop_merch', 'bts', 'bts-rm-right-place-wrong-person-weverse-ver', 'BTS - RM - Right Place, Wrong Person Weverse Ver.', 'BTS', 'Mid', 'BTS | album | Weverse Exclusive'),
+  ('kpop_merch', 'bts', 'bts-v-layover-vinyl-lp', 'BTS - V - Layover Vinyl LP', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-jimin-face-vinyl-lp', 'BTS - Jimin - FACE Vinyl LP', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-j-hope-jack-in-the-box-lp-limited-ed', 'BTS - j-hope - Jack In The Box LP (Limited Ed.)', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-suga-d-day-vinyl-lp', 'BTS - SUGA - D-DAY Vinyl LP', 'BTS', 'High', 'BTS | album | Limited Vinyl'),
+  ('kpop_merch', 'bts', 'bts-bts-pop-up-space-of-bts-mini-figure-set', 'BTS - BTS Pop-Up: Space of BTS Mini Figure Set', 'BTS', 'High', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-bts-pop-up-space-of-bts-poster-collection', 'BTS - BTS Pop-Up: Space of BTS Poster Collection', 'BTS', 'Mid', 'BTS | merch | Limited'),
+  ('kpop_merch', 'bts', 'bts-bts-x-mcdonalds-meal-photocard-set', 'BTS - BTS x McDonald''s Meal Photocard Set', 'BTS', 'Mid', 'BTS | photocard | Collaboration'),
   ('kpop_merch', 'blackpink', 'blackpink-the-album-version-3-lisa', 'Blackpink - The Album Version 3 (Lisa)', 'Blackpink', 'Mid', 'Blackpink | album | Limited'),
   ('kpop_merch', 'blackpink', 'blackpink-the-album-standard', 'Blackpink - The Album Standard', 'Blackpink', 'Standard', 'Blackpink | album | Standard'),
   ('kpop_merch', 'blackpink', 'blackpink-born-pink-digipack-lisa', 'Blackpink - Born Pink Digipack Lisa', 'Blackpink', 'Mid', 'Blackpink | album | Digipack'),
@@ -52,10 +85,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'blackpink', 'blackpink-lisa-lalisa', 'Blackpink - Lisa - LALISA', 'Blackpink', 'Standard', 'Blackpink | album | Standard'),
   ('kpop_merch', 'blackpink', 'blackpink-lisa-lalisa-vinyl-lp', 'Blackpink - Lisa - LALISA Vinyl LP', 'Blackpink', 'High', 'Blackpink | album | Limited Vinyl'),
   ('kpop_merch', 'blackpink', 'blackpink-jennie-solo-photobook-special-ed', 'Blackpink - Jennie - Solo Photobook Special Ed.', 'Blackpink', 'High', 'Blackpink | album | Limited'),
-  ('kpop_merch', 'blackpink', 'blackpink-jisoo-me-red-ver', 'Blackpink - Jisoo - ME (Red Ver.)', 'Blackpink', 'Mid', 'Blackpink | album | Limited')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'blackpink', 'blackpink-jisoo-me-red-ver', 'Blackpink - Jisoo - ME (Red Ver.)', 'Blackpink', 'Mid', 'Blackpink | album | Limited'),
   ('kpop_merch', 'blackpink', 'blackpink-jisoo-me-standard', 'Blackpink - Jisoo - ME Standard', 'Blackpink', 'Standard', 'Blackpink | album | Standard'),
   ('kpop_merch', 'blackpink', 'blackpink-rose-video-call-fansign', 'Blackpink - Rose Video Call Fansign', 'Blackpink', 'Grail', 'Blackpink | photocard | Fansign Event'),
   ('kpop_merch', 'blackpink', 'blackpink-jisoo-me-lucky-draw', 'Blackpink - Jisoo ME Lucky Draw', 'Blackpink', 'High', 'Blackpink | photocard | Lucky Draw'),
@@ -75,7 +105,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'stray-kids', 'stray-kids-oddinary-jewel-case', 'Stray Kids - ODDINARY Jewel Case', 'Stray Kids', 'Standard', 'Stray Kids | album | Jewel Case'),
   ('kpop_merch', 'stray-kids', 'stray-kids-noeasy-limited-edition', 'Stray Kids - NOEASY Limited Edition', 'Stray Kids', 'High', 'Stray Kids | album | Limited'),
   ('kpop_merch', 'stray-kids', 'stray-kids-noeasy-standard', 'Stray Kids - NOEASY Standard', 'Stray Kids', 'Standard', 'Stray Kids | album | Standard'),
-  ('kpop_merch', 'stray-kids', 'stray-kids-in-life-limited-edition', 'Stray Kids - IN LIFE Limited Edition', 'Stray Kids', 'High', 'Stray Kids | album | Limited'),
+  ('kpop_merch', 'stray-kids', 'stray-kids-in-life-limited-edition', 'Stray Kids - IN LIFE Limited Edition', 'Stray Kids', 'High', 'Stray Kids | album | Limited')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', 'stray-kids', 'stray-kids-go-live-limited-edition', 'Stray Kids - GO LIVE Limited Edition', 'Stray Kids', 'High', 'Stray Kids | album | Limited'),
   ('kpop_merch', 'stray-kids', 'stray-kids-clé-levanter-limited', 'Stray Kids - Clé: LEVANTER Limited', 'Stray Kids', 'High', 'Stray Kids | album | Limited'),
   ('kpop_merch', 'stray-kids', 'stray-kids-i-am-not-standard', 'Stray Kids - I am NOT Standard', 'Stray Kids', 'Mid', 'Stray Kids | album | Standard'),
@@ -105,10 +138,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'stray-kids', 'stray-kids-skz-replay-dvd-limited', 'Stray Kids - SKZ REPLAY DVD Limited', 'Stray Kids', 'High', 'Stray Kids | merch | Limited'),
   ('kpop_merch', 'stray-kids', 'stray-kids-stray-kids-skzoo-standing-doll-set', 'Stray Kids - Stray Kids SKZOO Standing Doll Set', 'Stray Kids', 'Mid', 'Stray Kids | merch | Official'),
   ('kpop_merch', 'ateez', 'ateez-the-world-ep2-outlaw', 'ATEEZ - The World EP.2: Outlaw', 'ATEEZ', 'Standard', 'ATEEZ | album | Standard'),
-  ('kpop_merch', 'ateez', 'ateez-treasure-epfin-limited', 'ATEEZ - Treasure EP.FIN Limited', 'ATEEZ', 'Mid', 'ATEEZ | album | Limited')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'ateez', 'ateez-treasure-epfin-limited', 'ATEEZ - Treasure EP.FIN Limited', 'ATEEZ', 'Mid', 'ATEEZ | album | Limited'),
   ('kpop_merch', 'ateez', 'ateez-hongjoong-fansign-photocard', 'ATEEZ - Hongjoong Fansign Photocard', 'ATEEZ', 'High', 'ATEEZ | photocard | Fansign Event'),
   ('kpop_merch', 'ateez', 'ateez-the-world-ep1-movement', 'ATEEZ - The World EP.1: Movement', 'ATEEZ', 'Standard', 'ATEEZ | album | Standard'),
   ('kpop_merch', 'ateez', 'ateez-zero-fever-part3', 'ATEEZ - ZERO: FEVER Part.3', 'ATEEZ', 'Standard', 'ATEEZ | album | Standard'),
@@ -128,7 +158,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'enhypen', 'enhypen-dimension-dilemma', 'Enhypen - Dimension: Dilemma', 'Enhypen', 'Standard', 'Enhypen | album | Standard'),
   ('kpop_merch', 'enhypen', 'enhypen-sunghoon-lucky-draw', 'Enhypen - Sunghoon Lucky Draw', 'Enhypen', 'High', 'Enhypen | photocard | Lucky Draw'),
   ('kpop_merch', 'enhypen', 'enhypen-dark-blood-standard', 'Enhypen - DARK BLOOD Standard', 'Enhypen', 'Standard', 'Enhypen | album | Standard'),
-  ('kpop_merch', 'enhypen', 'enhypen-orange-blood-standard', 'Enhypen - ORANGE BLOOD Standard', 'Enhypen', 'Standard', 'Enhypen | album | Standard'),
+  ('kpop_merch', 'enhypen', 'enhypen-orange-blood-standard', 'Enhypen - ORANGE BLOOD Standard', 'Enhypen', 'Standard', 'Enhypen | album | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', 'enhypen', 'enhypen-orange-blood-engene-ver', 'Enhypen - ORANGE BLOOD ENGENE Ver.', 'Enhypen', 'Mid', 'Enhypen | album | Limited'),
   ('kpop_merch', 'enhypen', 'enhypen-romance-untold', 'Enhypen - ROMANCE: UNTOLD', 'Enhypen', 'Standard', 'Enhypen | album | Standard'),
   ('kpop_merch', 'enhypen', 'enhypen-romance-untold-weverse-albums-ver', 'Enhypen - ROMANCE: UNTOLD Weverse Albums Ver.', 'Enhypen', 'Mid', 'Enhypen | album | Weverse Exclusive'),
@@ -158,10 +191,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'seventeen', 'seventeen-you-make-my-day-follow-ver', 'Seventeen - You Make My Day Follow Ver.', 'Seventeen', 'Standard', 'Seventeen | album | Standard'),
   ('kpop_merch', 'seventeen', 'seventeen-seventeen-best-album-17-is-right-here', 'Seventeen - SEVENTEEN BEST ALBUM 17 IS RIGHT HERE', 'Seventeen', 'Standard', 'Seventeen | album | Standard'),
   ('kpop_merch', 'seventeen', 'seventeen-mingyu-video-call-fansign', 'Seventeen - Mingyu Video Call Fansign', 'Seventeen', 'Grail', 'Seventeen | photocard | Fansign Event'),
-  ('kpop_merch', 'seventeen', 'seventeen-wonwoo-video-call-fansign', 'Seventeen - Wonwoo Video Call Fansign', 'Seventeen', 'Grail', 'Seventeen | photocard | Fansign Event')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'seventeen', 'seventeen-wonwoo-video-call-fansign', 'Seventeen - Wonwoo Video Call Fansign', 'Seventeen', 'Grail', 'Seventeen | photocard | Fansign Event'),
   ('kpop_merch', 'seventeen', 'seventeen-vernon-video-call-fansign', 'Seventeen - Vernon Video Call Fansign', 'Seventeen', 'Grail', 'Seventeen | photocard | Fansign Event'),
   ('kpop_merch', 'seventeen', 'seventeen-jeonghan-lucky-draw', 'Seventeen - Jeonghan Lucky Draw', 'Seventeen', 'High', 'Seventeen | photocard | Lucky Draw'),
   ('kpop_merch', 'seventeen', 'seventeen-joshua-lucky-draw', 'Seventeen - Joshua Lucky Draw', 'Seventeen', 'High', 'Seventeen | photocard | Lucky Draw'),
@@ -181,7 +211,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'newjeans', 'newjeans-how-sweet-weverse-albums-ver', 'NewJeans - How Sweet Weverse Albums Ver.', 'NewJeans', 'Mid', 'NewJeans | album | Weverse Exclusive'),
   ('kpop_merch', 'newjeans', 'newjeans-how-sweet-standard', 'NewJeans - How Sweet Standard', 'NewJeans', 'Standard', 'NewJeans | album | Standard'),
   ('kpop_merch', 'newjeans', 'newjeans-supernatural-weverse-ver', 'NewJeans - Supernatural Weverse Ver.', 'NewJeans', 'Mid', 'NewJeans | album | Weverse Exclusive'),
-  ('kpop_merch', 'newjeans', 'newjeans-minji-video-call-fansign', 'NewJeans - Minji Video Call Fansign', 'NewJeans', 'Grail', 'NewJeans | photocard | Fansign Event'),
+  ('kpop_merch', 'newjeans', 'newjeans-minji-video-call-fansign', 'NewJeans - Minji Video Call Fansign', 'NewJeans', 'Grail', 'NewJeans | photocard | Fansign Event')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', 'newjeans', 'newjeans-hanni-video-call-fansign', 'NewJeans - Hanni Video Call Fansign', 'NewJeans', 'Grail', 'NewJeans | photocard | Fansign Event'),
   ('kpop_merch', 'newjeans', 'newjeans-danielle-lucky-draw', 'NewJeans - Danielle Lucky Draw', 'NewJeans', 'High', 'NewJeans | photocard | Lucky Draw'),
   ('kpop_merch', 'newjeans', 'newjeans-haerin-lucky-draw', 'NewJeans - Haerin Lucky Draw', 'NewJeans', 'High', 'NewJeans | photocard | Lucky Draw'),
@@ -189,6 +222,11 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'newjeans', 'newjeans-newjeans-standard-photocard', 'NewJeans - NewJeans Standard Photocard', 'NewJeans', 'Standard', 'NewJeans | photocard | Standard'),
   ('kpop_merch', 'newjeans', 'newjeans-newjeans-bunnies-official-plush', 'NewJeans - NewJeans Bunnies Official Plush', 'NewJeans', 'Mid', 'NewJeans | merch | Official'),
   ('kpop_merch', 'newjeans', 'newjeans-newjeans-fan-meeting-merch-set', 'NewJeans - NewJeans Fan Meeting Merch Set', 'NewJeans', 'High', 'NewJeans | merch | Tour Exclusive'),
+  ('kpop_merch', 'newjeans', 'newjeans-newjeans-1st-ep-bluebook-hanni-ver', 'NewJeans - NewJeans 1st EP Bluebook Hanni Ver.', 'NewJeans', 'Mid', 'NewJeans | album | Limited'),
+  ('kpop_merch', 'newjeans', 'newjeans-get-up-bunny-beach-bag-haerin-ver', 'NewJeans - Get Up Bunny Beach Bag Haerin Ver.', 'NewJeans', 'Mid', 'NewJeans | album | Weverse Exclusive'),
+  ('kpop_merch', 'newjeans', 'newjeans-how-sweet-weverse-pob-minji', 'NewJeans - How Sweet Weverse POB Minji', 'NewJeans', 'Mid', 'NewJeans | photocard | Pre-order Benefit'),
+  ('kpop_merch', 'newjeans', 'newjeans-omg-ditto-photocard-danielle-pull', 'NewJeans - OMG Ditto Photocard Danielle Pull', 'NewJeans', 'Mid', 'NewJeans | photocard | Album POB'),
+  ('kpop_merch', 'newjeans', 'newjeans-omg-ditto-photocard-haerin-pull', 'NewJeans - OMG Ditto Photocard Haerin Pull', 'NewJeans', 'Mid', 'NewJeans | photocard | Album POB'),
   ('kpop_merch', 'exo', 'exo-xoxo-repackage-growl', 'EXO - XOXO Repackage Growl', 'EXO', 'Mid', 'EXO | album | Standard'),
   ('kpop_merch', 'exo', 'exo-exodus-korean-ver', 'EXO - Exodus Korean Ver.', 'EXO', 'Mid', 'EXO | album | Standard'),
   ('kpop_merch', 'exo', 'exo-the-war-regular-a', 'EXO - The War Regular A', 'EXO', 'Standard', 'EXO | album | Standard'),
@@ -211,10 +249,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'exo', 'exo-xiumin-pob-photocard', 'EXO - Xiumin POB Photocard', 'EXO', 'Mid', 'EXO | photocard | Pre-order Benefit'),
   ('kpop_merch', 'exo', 'exo-chen-pob-photocard', 'EXO - Chen POB Photocard', 'EXO', 'Mid', 'EXO | photocard | Pre-order Benefit'),
   ('kpop_merch', 'exo', 'exo-exo-standard-photocard', 'EXO - EXO Standard Photocard', 'EXO', 'Standard', 'EXO | photocard | Standard'),
-  ('kpop_merch', 'exo', 'exo-exo-official-lightstick-ver3', 'EXO - EXO Official Lightstick Ver.3', 'EXO', 'Mid', 'EXO | merch | Official')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'exo', 'exo-exo-official-lightstick-ver3', 'EXO - EXO Official Lightstick Ver.3', 'EXO', 'Mid', 'EXO | merch | Official'),
   ('kpop_merch', 'exo', 'exo-exo-planet-5-concert-photobook', 'EXO - EXO Planet #5 Concert Photobook', 'EXO', 'High', 'EXO | merch | Tour Exclusive'),
   ('kpop_merch', 'exo', 'exo-exo-fanmeeting-merch-set', 'EXO - EXO Fanmeeting Merch Set', 'EXO', 'High', 'EXO | merch | Tour Exclusive'),
   ('kpop_merch', 'twice', 'twice-formula-of-love-standard', 'TWICE - Formula of Love Standard', 'TWICE', 'Standard', 'TWICE | album | Standard'),
@@ -229,7 +264,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'twice', 'twice-eyes-wide-open-standard', 'TWICE - Eyes Wide Open Standard', 'TWICE', 'Standard', 'TWICE | album | Standard'),
   ('kpop_merch', 'twice', 'twice-taste-of-love-standard', 'TWICE - Taste of Love Standard', 'TWICE', 'Standard', 'TWICE | album | Standard'),
   ('kpop_merch', 'twice', 'twice-more-more-standard', 'TWICE - More & More Standard', 'TWICE', 'Standard', 'TWICE | album | Standard'),
-  ('kpop_merch', 'twice', 'twice-feel-special-standard', 'TWICE - Feel Special Standard', 'TWICE', 'Standard', 'TWICE | album | Standard'),
+  ('kpop_merch', 'twice', 'twice-feel-special-standard', 'TWICE - Feel Special Standard', 'TWICE', 'Standard', 'TWICE | album | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', 'twice', 'twice-twicetagram-standard', 'TWICE - Twicetagram Standard', 'TWICE', 'Mid', 'TWICE | album | Standard'),
   ('kpop_merch', 'twice', 'twice-nayeon-video-call-fansign', 'TWICE - Nayeon Video Call Fansign', 'TWICE', 'Grail', 'TWICE | photocard | Fansign Event'),
   ('kpop_merch', 'twice', 'twice-momo-video-call-fansign', 'TWICE - Momo Video Call Fansign', 'TWICE', 'Grail', 'TWICE | photocard | Fansign Event'),
@@ -264,10 +302,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'nct-dream', 'nct-dream-istj-poster-ver', 'NCT Dream - ISTJ Poster Ver.', 'NCT Dream', 'Mid', 'NCT Dream | album | Limited'),
   ('kpop_merch', 'nct-dream', 'nct-dream-glitch-mode-digipack', 'NCT Dream - Glitch Mode Digipack', 'NCT Dream', 'Standard', 'NCT Dream | album | Digipack'),
   ('kpop_merch', 'nct-dream', 'nct-dream-hot-sauce-boring-jalapeño-ver', 'NCT Dream - Hot Sauce Boring Jalapeño Ver.', 'NCT Dream', 'Mid', 'NCT Dream | album | Limited'),
-  ('kpop_merch', 'nct-dream', 'nct-dream-beatbox-digipack', 'NCT Dream - Beatbox Digipack', 'NCT Dream', 'Standard', 'NCT Dream | album | Digipack')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'nct-dream', 'nct-dream-beatbox-digipack', 'NCT Dream - Beatbox Digipack', 'NCT Dream', 'Standard', 'NCT Dream | album | Digipack'),
   ('kpop_merch', 'nct-dream', 'nct-dream-dream-scape-standard', 'NCT Dream - Dream( )Scape Standard', 'NCT Dream', 'Standard', 'NCT Dream | album | Standard'),
   ('kpop_merch', 'nct-dream', 'nct-dream-jaemin-video-call-fansign', 'NCT Dream - Jaemin Video Call Fansign', 'NCT Dream', 'Grail', 'NCT Dream | photocard | Fansign Event'),
   ('kpop_merch', 'nct-dream', 'nct-dream-haechan-dream-lucky-draw', 'NCT Dream - Haechan Dream Lucky Draw', 'NCT Dream', 'High', 'NCT Dream | photocard | Lucky Draw'),
@@ -282,7 +317,10 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'wayv', 'wayv-xiaojun-video-call-fansign', 'WayV - Xiaojun Video Call Fansign', 'WayV', 'High', 'WayV | photocard | Fansign Event'),
   ('kpop_merch', 'wayv', 'wayv-ten-lucky-draw', 'WayV - Ten Lucky Draw', 'WayV', 'High', 'WayV | photocard | Lucky Draw'),
   ('kpop_merch', 'nct', 'nct-nct-official-lightstick', 'NCT - NCT Official Lightstick', 'NCT', 'Mid', 'NCT | merch | Official'),
-  ('kpop_merch', 'nct', 'nct-universe-standard', 'NCT - Universe Standard', 'NCT', 'Standard', 'NCT | album | Standard'),
+  ('kpop_merch', 'nct', 'nct-universe-standard', 'NCT - Universe Standard', 'NCT', 'Standard', 'NCT | album | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', 'nct', 'nct-golden-age-standard', 'NCT - Golden Age Standard', 'NCT', 'Standard', 'NCT | album | Standard'),
   ('kpop_merch', 'nct', 'nct-golden-age-collecting-ver', 'NCT - Golden Age Collecting Ver.', 'NCT', 'Mid', 'NCT | album | Limited'),
   ('kpop_merch', 'aespa', 'aespa-my-world-poster-ver', 'aespa - MY WORLD Poster Ver.', 'aespa', 'Mid', 'aespa | album | Limited'),
@@ -305,6 +343,11 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'aespa', 'aespa-aespa-official-lightstick', 'aespa - aespa Official Lightstick', 'aespa', 'Mid', 'aespa | merch | Official'),
   ('kpop_merch', 'aespa', 'aespa-synk-hyper-line-concert-photobook', 'aespa - SYNK: HYPER LINE Concert Photobook', 'aespa', 'High', 'aespa | merch | Tour Exclusive'),
   ('kpop_merch', 'aespa', 'aespa-aespa-ae-key-ring-set', 'aespa - aespa ae-Key Ring Set', 'aespa', 'Mid', 'aespa | merch | Official'),
+  ('kpop_merch', 'aespa', 'aespa-my-world-tabloid-ver', 'aespa - MY WORLD Tabloid Ver.', 'aespa', 'Mid', 'aespa | album | Limited'),
+  ('kpop_merch', 'aespa', 'aespa-my-world-collectible-karina-ver', 'aespa - MY WORLD Collectible Karina Ver.', 'aespa', 'Mid', 'aespa | album | Limited'),
+  ('kpop_merch', 'aespa', 'aespa-armageddon-vinyl-lp', 'aespa - Armageddon Vinyl LP', 'aespa', 'High', 'aespa | album | Limited Vinyl'),
+  ('kpop_merch', 'aespa', 'aespa-aespa-official-lightstick-ver2', 'aespa - aespa Official Lightstick Ver.2', 'aespa', 'Mid', 'aespa | merch | Official'),
+  ('kpop_merch', 'aespa', 'aespa-karina-armageddon-lucky-draw', 'aespa - Karina Armageddon Lucky Draw', 'aespa', 'High', 'aespa | photocard | Lucky Draw'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-fearless-standard', 'Le Sserafim - FEARLESS Standard', 'Le Sserafim', 'Standard', 'Le Sserafim | album | Standard'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-fearless-blue-chypre-ver', 'Le Sserafim - FEARLESS Blue Chypre Ver.', 'Le Sserafim', 'Mid', 'Le Sserafim | album | Limited'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-antifragile-standard', 'Le Sserafim - ANTIFRAGILE Standard', 'Le Sserafim', 'Standard', 'Le Sserafim | album | Standard'),
@@ -317,15 +360,20 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'le-sserafim', 'le-sserafim-kazuha-video-call-fansign', 'Le Sserafim - Kazuha Video Call Fansign', 'Le Sserafim', 'Grail', 'Le Sserafim | photocard | Fansign Event'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-sakura-video-call-fansign', 'Le Sserafim - Sakura Video Call Fansign', 'Le Sserafim', 'Grail', 'Le Sserafim | photocard | Fansign Event'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-chaewon-lucky-draw', 'Le Sserafim - Chaewon Lucky Draw', 'Le Sserafim', 'High', 'Le Sserafim | photocard | Lucky Draw'),
-  ('kpop_merch', 'le-sserafim', 'le-sserafim-yunjin-lucky-draw', 'Le Sserafim - Yunjin Lucky Draw', 'Le Sserafim', 'High', 'Le Sserafim | photocard | Lucky Draw')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'le-sserafim', 'le-sserafim-yunjin-lucky-draw', 'Le Sserafim - Yunjin Lucky Draw', 'Le Sserafim', 'High', 'Le Sserafim | photocard | Lucky Draw'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-eunchae-pob-photocard', 'Le Sserafim - Eunchae POB Photocard', 'Le Sserafim', 'Mid', 'Le Sserafim | photocard | Pre-order Benefit'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-kazuha-pob-photocard', 'Le Sserafim - Kazuha POB Photocard', 'Le Sserafim', 'Mid', 'Le Sserafim | photocard | Pre-order Benefit'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-le-sserafim-standard-photocard', 'Le Sserafim - Le Sserafim Standard Photocard', 'Le Sserafim', 'Standard', 'Le Sserafim | photocard | Standard'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-le-sserafim-official-lightstick', 'Le Sserafim - Le Sserafim Official Lightstick', 'Le Sserafim', 'Mid', 'Le Sserafim | merch | Official'),
   ('kpop_merch', 'le-sserafim', 'le-sserafim-flame-rises-tour-merch-set', 'Le Sserafim - FLAME RISES Tour Merch Set', 'Le Sserafim', 'High', 'Le Sserafim | merch | Tour Exclusive'),
+  ('kpop_merch', 'le-sserafim', 'le-sserafim-unforgiven-vinyl-lp', 'Le Sserafim - UNFORGIVEN Vinyl LP', 'Le Sserafim', 'High', 'Le Sserafim | album | Limited Vinyl'),
+  ('kpop_merch', 'le-sserafim', 'le-sserafim-easy-weverse-pob-ver', 'Le Sserafim - EASY Weverse POB Ver.', 'Le Sserafim', 'Mid', 'Le Sserafim | album | Weverse Exclusive'),
+  ('kpop_merch', 'le-sserafim', 'le-sserafim-antifragile-compact-ver-first-press', 'Le Sserafim - ANTIFRAGILE Compact Ver. (First Press)', 'Le Sserafim', 'Mid', 'Le Sserafim | album | Limited'),
+  ('kpop_merch', 'le-sserafim', 'le-sserafim-chaewon-easy-pob-photocard', 'Le Sserafim - Chaewon EASY POB Photocard', 'Le Sserafim', 'Mid', 'Le Sserafim | photocard | Pre-order Benefit'),
+  ('kpop_merch', 'le-sserafim', 'le-sserafim-sakura-unforgiven-lucky-draw', 'Le Sserafim - Sakura UNFORGIVEN Lucky Draw', 'Le Sserafim', 'High', 'Le Sserafim | photocard | Lucky Draw')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', 'ive', 'ive-eleven-standard', 'IVE - ELEVEN Standard', 'IVE', 'Standard', 'IVE | album | Standard'),
   ('kpop_merch', 'ive', 'ive-after-like-standard', 'IVE - After Like Standard', 'IVE', 'Standard', 'IVE | album | Standard'),
   ('kpop_merch', 'ive', 'ive-ive-ive-standard', 'IVE - I''ve IVE Standard', 'IVE', 'Standard', 'IVE | album | Standard'),
@@ -370,15 +418,15 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'red-velvet', 'red-velvet-cosmic-standard', 'Red Velvet - Cosmic Standard', 'Red Velvet', 'Standard', 'Red Velvet | album | Standard'),
   ('kpop_merch', 'red-velvet', 'red-velvet-the-red-standard', 'Red Velvet - The Red Standard', 'Red Velvet', 'Mid', 'Red Velvet | album | Standard'),
   ('kpop_merch', 'red-velvet', 'red-velvet-perfect-velvet-standard', 'Red Velvet - Perfect Velvet Standard', 'Red Velvet', 'Mid', 'Red Velvet | album | Standard'),
-  ('kpop_merch', 'red-velvet', 'red-velvet-rbb-standard', 'Red Velvet - RBB Standard', 'Red Velvet', 'Standard', 'Red Velvet | album | Standard')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'red-velvet', 'red-velvet-rbb-standard', 'Red Velvet - RBB Standard', 'Red Velvet', 'Standard', 'Red Velvet | album | Standard'),
   ('kpop_merch', 'red-velvet', 'red-velvet-irene-video-call-fansign', 'Red Velvet - Irene Video Call Fansign', 'Red Velvet', 'Grail', 'Red Velvet | photocard | Fansign Event'),
   ('kpop_merch', 'red-velvet', 'red-velvet-joy-video-call-fansign', 'Red Velvet - Joy Video Call Fansign', 'Red Velvet', 'Grail', 'Red Velvet | photocard | Fansign Event'),
   ('kpop_merch', 'red-velvet', 'red-velvet-seulgi-lucky-draw', 'Red Velvet - Seulgi Lucky Draw', 'Red Velvet', 'High', 'Red Velvet | photocard | Lucky Draw'),
   ('kpop_merch', 'red-velvet', 'red-velvet-wendy-lucky-draw', 'Red Velvet - Wendy Lucky Draw', 'Red Velvet', 'High', 'Red Velvet | photocard | Lucky Draw'),
-  ('kpop_merch', 'red-velvet', 'red-velvet-yeri-pob-photocard', 'Red Velvet - Yeri POB Photocard', 'Red Velvet', 'Mid', 'Red Velvet | photocard | Pre-order Benefit'),
+  ('kpop_merch', 'red-velvet', 'red-velvet-yeri-pob-photocard', 'Red Velvet - Yeri POB Photocard', 'Red Velvet', 'Mid', 'Red Velvet | photocard | Pre-order Benefit')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', 'red-velvet', 'red-velvet-red-velvet-standard-photocard', 'Red Velvet - Red Velvet Standard Photocard', 'Red Velvet', 'Standard', 'Red Velvet | photocard | Standard'),
   ('kpop_merch', 'red-velvet', 'red-velvet-red-velvet-official-lightstick', 'Red Velvet - Red Velvet Official Lightstick', 'Red Velvet', 'Mid', 'Red Velvet | merch | Official'),
   ('kpop_merch', 'red-velvet', 'red-velvet-r-to-v-concert-photobook', 'Red Velvet - R to V Concert Photobook', 'Red Velvet', 'High', 'Red Velvet | merch | Tour Exclusive'),
@@ -423,15 +471,15 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', '(g)i-dle', 'gi-dle-i-feel-standard', '(G)I-DLE - I FEEL Standard', '(G)I-DLE', 'Standard', '(G)I-DLE | album | Standard'),
   ('kpop_merch', '(g)i-dle', 'gi-dle-i-feel-queen-ver', '(G)I-DLE - I FEEL Queen Ver.', '(G)I-DLE', 'Mid', '(G)I-DLE | album | Limited'),
   ('kpop_merch', '(g)i-dle', 'gi-dle-i-burn-standard', '(G)I-DLE - I burn Standard', '(G)I-DLE', 'Standard', '(G)I-DLE | album | Standard'),
-  ('kpop_merch', '(g)i-dle', 'gi-dle-2-standard', '(G)I-DLE - 2 Standard', '(G)I-DLE', 'Standard', '(G)I-DLE | album | Standard')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', '(g)i-dle', 'gi-dle-2-standard', '(G)I-DLE - 2 Standard', '(G)I-DLE', 'Standard', '(G)I-DLE | album | Standard'),
   ('kpop_merch', '(g)i-dle', 'gi-dle-2-2-2-ver', '(G)I-DLE - 2 (2-2 Ver.)', '(G)I-DLE', 'Mid', '(G)I-DLE | album | Limited'),
   ('kpop_merch', '(g)i-dle', 'gi-dle-i-love-standard', '(G)I-DLE - I LOVE Standard', '(G)I-DLE', 'Standard', '(G)I-DLE | album | Standard'),
   ('kpop_merch', '(g)i-dle', 'gi-dle-i-sway-standard', '(G)I-DLE - I SWAY Standard', '(G)I-DLE', 'Standard', '(G)I-DLE | album | Standard'),
   ('kpop_merch', '(g)i-dle', 'gi-dle-i-made-standard', '(G)I-DLE - I MADE Standard', '(G)I-DLE', 'Standard', '(G)I-DLE | album | Standard'),
-  ('kpop_merch', '(g)i-dle', 'gi-dle-i-am-standard', '(G)I-DLE - I AM Standard', '(G)I-DLE', 'Standard', '(G)I-DLE | album | Standard'),
+  ('kpop_merch', '(g)i-dle', 'gi-dle-i-am-standard', '(G)I-DLE - I AM Standard', '(G)I-DLE', 'Standard', '(G)I-DLE | album | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', '(g)i-dle', 'gi-dle-miyeon-video-call-fansign', '(G)I-DLE - Miyeon Video Call Fansign', '(G)I-DLE', 'Grail', '(G)I-DLE | photocard | Fansign Event'),
   ('kpop_merch', '(g)i-dle', 'gi-dle-shuhua-video-call-fansign', '(G)I-DLE - Shuhua Video Call Fansign', '(G)I-DLE', 'Grail', '(G)I-DLE | photocard | Fansign Event'),
   ('kpop_merch', '(g)i-dle', 'gi-dle-minnie-lucky-draw', '(G)I-DLE - Minnie Lucky Draw', '(G)I-DLE', 'High', '(G)I-DLE | photocard | Lucky Draw'),
@@ -476,15 +524,15 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'dreamcatcher', 'dreamcatcher-dreamcatcher-official-lightstick', 'Dreamcatcher - Dreamcatcher Official Lightstick', 'Dreamcatcher', 'Mid', 'Dreamcatcher | merch | Official'),
   ('kpop_merch', 'mamamoo', 'mamamoo-reality-in-black-standard', 'Mamamoo - reality in BLACK Standard', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
   ('kpop_merch', 'mamamoo', 'mamamoo-travel-standard', 'Mamamoo - Travel Standard', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
-  ('kpop_merch', 'mamamoo', 'mamamoo-mic-on-standard', 'Mamamoo - MIC ON Standard', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'mamamoo', 'mamamoo-mic-on-standard', 'Mamamoo - MIC ON Standard', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
   ('kpop_merch', 'mamamoo', 'mamamoo-waw-standard', 'Mamamoo - WAW Standard', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
   ('kpop_merch', 'mamamoo', 'mamamoo-white-wind-standard', 'Mamamoo - White Wind Standard', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
   ('kpop_merch', 'mamamoo', 'mamamoo-red-moon-standard', 'Mamamoo - Red Moon Standard', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
   ('kpop_merch', 'mamamoo', 'mamamoo-hwasa-maria', 'Mamamoo - Hwasa - Maria', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
-  ('kpop_merch', 'mamamoo', 'mamamoo-hwasa-guilty-pleasure', 'Mamamoo - Hwasa - Guilty Pleasure', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
+  ('kpop_merch', 'mamamoo', 'mamamoo-hwasa-guilty-pleasure', 'Mamamoo - Hwasa - Guilty Pleasure', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', 'mamamoo', 'mamamoo-solar-colours', 'Mamamoo - Solar - COLOURS', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
   ('kpop_merch', 'mamamoo', 'mamamoo-solar-face', 'Mamamoo - Solar - FACE', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
   ('kpop_merch', 'mamamoo', 'mamamoo-moonbyul-starlit-of-muse', 'Mamamoo - Moonbyul - Starlit of Muse', 'Mamamoo', 'Standard', 'Mamamoo | album | Standard'),
@@ -529,15 +577,15 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'bigbang', 'bigbang-seungri-vintage-photocard', 'BIGBANG - Seungri Vintage Photocard', 'BIGBANG', 'High', 'BIGBANG | photocard | Vintage'),
   ('kpop_merch', 'bigbang', 'bigbang-bigbang-official-lightstick-ver4', 'BIGBANG - BIGBANG Official Lightstick Ver.4', 'BIGBANG', 'High', 'BIGBANG | merch | Official'),
   ('kpop_merch', 'bigbang', 'bigbang-bigbang-made-world-tour-dvd', 'BIGBANG - BIGBANG MADE World Tour DVD', 'BIGBANG', 'High', 'BIGBANG | merch | Tour Exclusive'),
-  ('kpop_merch', '2ne1', '2ne1-crush-standard', '2NE1 - Crush Standard', '2NE1', 'High', '2NE1 | album | OOP')
-ON CONFLICT (category, item_key) DO NOTHING;
-
-INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', '2ne1', '2ne1-crush-standard', '2NE1 - Crush Standard', '2NE1', 'High', '2NE1 | album | OOP'),
   ('kpop_merch', '2ne1', '2ne1-crush-pink-edition', '2NE1 - Crush Pink Edition', '2NE1', 'High', '2NE1 | album | OOP Limited'),
   ('kpop_merch', '2ne1', '2ne1-to-anyone-standard', '2NE1 - To Anyone Standard', '2NE1', 'High', '2NE1 | album | OOP'),
   ('kpop_merch', '2ne1', '2ne1-2ne1-1st-mini-album', '2NE1 - 2NE1 1st Mini Album', '2NE1', 'High', '2NE1 | album | OOP'),
   ('kpop_merch', '2ne1', '2ne1-2ne1-collection', '2NE1 - 2NE1 Collection', '2NE1', 'High', '2NE1 | album | OOP'),
-  ('kpop_merch', '2ne1', '2ne1-cl-vintage-photocard', '2NE1 - CL Vintage Photocard', '2NE1', 'Grail', '2NE1 | photocard | Vintage'),
+  ('kpop_merch', '2ne1', '2ne1-cl-vintage-photocard', '2NE1 - CL Vintage Photocard', '2NE1', 'Grail', '2NE1 | photocard | Vintage')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
   ('kpop_merch', '2ne1', '2ne1-park-bom-vintage-photocard', '2NE1 - Park Bom Vintage Photocard', '2NE1', 'Grail', '2NE1 | photocard | Vintage'),
   ('kpop_merch', '2ne1', '2ne1-dara-vintage-photocard', '2NE1 - Dara Vintage Photocard', '2NE1', 'High', '2NE1 | photocard | Vintage'),
   ('kpop_merch', '2ne1', '2ne1-minzy-vintage-photocard', '2NE1 - Minzy Vintage Photocard', '2NE1', 'High', '2NE1 | photocard | Vintage'),
@@ -562,6 +610,35 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('kpop_merch', 'super-junior', 'super-junior-ryeowook-pob-photocard', 'Super Junior - Ryeowook POB Photocard', 'Super Junior', 'Mid', 'Super Junior | photocard | Pre-order Benefit'),
   ('kpop_merch', 'super-junior', 'super-junior-super-junior-standard-photocard', 'Super Junior - Super Junior Standard Photocard', 'Super Junior', 'Standard', 'Super Junior | photocard | Standard'),
   ('kpop_merch', 'super-junior', 'super-junior-super-junior-official-lightstick', 'Super Junior - Super Junior Official Lightstick', 'Super Junior', 'Mid', 'Super Junior | merch | Official'),
-  ('kpop_merch', 'super-junior', 'super-junior-super-show-8-dvd', 'Super Junior - Super Show 8 DVD', 'Super Junior', 'High', 'Super Junior | merch | Tour Exclusive')
+  ('kpop_merch', 'super-junior', 'super-junior-super-show-8-dvd', 'Super Junior - Super Show 8 DVD', 'Super Junior', 'High', 'Super Junior | merch | Tour Exclusive'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-youth-in-the-shade-standard', 'ZEROBASEONE - YOUTH IN THE SHADE Standard', 'ZEROBASEONE', 'Standard', 'ZEROBASEONE | album | Standard'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-youth-in-the-shade-digipack', 'ZEROBASEONE - YOUTH IN THE SHADE Digipack', 'ZEROBASEONE', 'Standard', 'ZEROBASEONE | album | Digipack'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-melting-point-standard', 'ZEROBASEONE - MELTING POINT Standard', 'ZEROBASEONE', 'Standard', 'ZEROBASEONE | album | Standard'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-melting-point-fairytale-ver', 'ZEROBASEONE - MELTING POINT Fairytale Ver.', 'ZEROBASEONE', 'Mid', 'ZEROBASEONE | album | Limited'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-cinema-paradise-standard', 'ZEROBASEONE - CINEMA PARADISE Standard', 'ZEROBASEONE', 'Standard', 'ZEROBASEONE | album | Standard'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-sung-hanbin-video-call-fansign', 'ZEROBASEONE - Sung Hanbin Video Call Fansign', 'ZEROBASEONE', 'Grail', 'ZEROBASEONE | photocard | Fansign Event'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-zhang-hao-video-call-fansign', 'ZEROBASEONE - Zhang Hao Video Call Fansign', 'ZEROBASEONE', 'Grail', 'ZEROBASEONE | photocard | Fansign Event'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-kim-jiwoong-lucky-draw', 'ZEROBASEONE - Kim Jiwoong Lucky Draw', 'ZEROBASEONE', 'High', 'ZEROBASEONE | photocard | Lucky Draw'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-zerobaseone-standard-photocard', 'ZEROBASEONE - ZEROBASEONE Standard Photocard', 'ZEROBASEONE', 'Standard', 'ZEROBASEONE | photocard | Standard'),
+  ('kpop_merch', 'zerobaseone', 'zerobaseone-zerobaseone-official-lightstick', 'ZEROBASEONE - ZEROBASEONE Official Lightstick', 'ZEROBASEONE', 'Mid', 'ZEROBASEONE | merch | Official'),
+  ('kpop_merch', 'boynextdoor', 'boynextdoor-who-standard', 'BOYNEXTDOOR - WHO! Standard', 'BOYNEXTDOOR', 'Standard', 'BOYNEXTDOOR | album | Standard'),
+  ('kpop_merch', 'boynextdoor', 'boynextdoor-why-standard', 'BOYNEXTDOOR - WHY.. Standard', 'BOYNEXTDOOR', 'Standard', 'BOYNEXTDOOR | album | Standard'),
+  ('kpop_merch', 'boynextdoor', 'boynextdoor-how-standard', 'BOYNEXTDOOR - HOW? Standard', 'BOYNEXTDOOR', 'Standard', 'BOYNEXTDOOR | album | Standard'),
+  ('kpop_merch', 'boynextdoor', 'boynextdoor-1999-standard', 'BOYNEXTDOOR - 19.99 Standard', 'BOYNEXTDOOR', 'Standard', 'BOYNEXTDOOR | album | Standard'),
+  ('kpop_merch', 'boynextdoor', 'boynextdoor-sungho-video-call-fansign', 'BOYNEXTDOOR - Sungho Video Call Fansign', 'BOYNEXTDOOR', 'Grail', 'BOYNEXTDOOR | photocard | Fansign Event'),
+  ('kpop_merch', 'boynextdoor', 'boynextdoor-riwoo-lucky-draw', 'BOYNEXTDOOR - Riwoo Lucky Draw', 'BOYNEXTDOOR', 'High', 'BOYNEXTDOOR | photocard | Lucky Draw'),
+  ('kpop_merch', 'boynextdoor', 'boynextdoor-boynextdoor-standard-photocard', 'BOYNEXTDOOR - BOYNEXTDOOR Standard Photocard', 'BOYNEXTDOOR', 'Standard', 'BOYNEXTDOOR | photocard | Standard'),
+  ('kpop_merch', 'riize', 'riize-get-a-guitar-standard', 'RIIZE - Get A Guitar Standard', 'RIIZE', 'Standard', 'RIIZE | album | Standard'),
+  ('kpop_merch', 'riize', 'riize-riizing-standard', 'RIIZE - RIIZING Standard', 'RIIZE', 'Standard', 'RIIZE | album | Standard'),
+  ('kpop_merch', 'riize', 'riize-riizing-collect-book-ver', 'RIIZE - RIIZING Collect Book Ver.', 'RIIZE', 'Mid', 'RIIZE | album | Limited'),
+  ('kpop_merch', 'riize', 'riize-wonbin-video-call-fansign', 'RIIZE - Wonbin Video Call Fansign', 'RIIZE', 'Grail', 'RIIZE | photocard | Fansign Event'),
+  ('kpop_merch', 'riize', 'riize-sohee-video-call-fansign', 'RIIZE - Sohee Video Call Fansign', 'RIIZE', 'Grail', 'RIIZE | photocard | Fansign Event'),
+  ('kpop_merch', 'riize', 'riize-anton-lucky-draw', 'RIIZE - Anton Lucky Draw', 'RIIZE', 'High', 'RIIZE | photocard | Lucky Draw'),
+  ('kpop_merch', 'riize', 'riize-shotaro-pob-photocard', 'RIIZE - Shotaro POB Photocard', 'RIIZE', 'Mid', 'RIIZE | photocard | Pre-order Benefit'),
+  ('kpop_merch', 'riize', 'riize-riize-standard-photocard', 'RIIZE - RIIZE Standard Photocard', 'RIIZE', 'Standard', 'RIIZE | photocard | Standard')
+ON CONFLICT (category, item_key) DO NOTHING;
+
+INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
+  ('kpop_merch', 'riize', 'riize-riize-official-lightstick', 'RIIZE - RIIZE Official Lightstick', 'RIIZE', 'Mid', 'RIIZE | merch | Official')
 ON CONFLICT (category, item_key) DO NOTHING;
 

@@ -55,6 +55,8 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { ConfettiBurst, ConfettiBurstRef } from '@/components/ConfettiBurst';
 import InteractiveLineChart from '@/components/InteractiveLineChart';
 import { Skeleton } from '@/components/Skeleton';
+import { ListForSaleModal } from '@/components/ListForSaleModal';
+import { useListForSale } from '@/hooks/useListForSale';
 
 // Dossier data shape (mirrors collectorsApi.getDossier return type)
 interface DossierData {
@@ -517,6 +519,14 @@ function ItemDetailScreen() {
   const [askingPriceValue, setAskingPriceValue] = useState('');
   const [forSaleModalVisible, setForSaleModalVisible] = useState(false);
   const [forSaleLoading, setForSaleLoading] = useState(false);
+
+  // Multi-marketplace listing modal
+  const listForSaleHook = useListForSale({
+    itemId: id ?? '',
+    itemName: editableName,
+    currency: settings.currency,
+    suggestedPrice: toNum(editableValue) || toNum(q50) || undefined,
+  });
 
   // Build project state — for buildable categories
   const categorySlug = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -1759,14 +1769,13 @@ function ItemDetailScreen() {
               {!isForSale ? (
                 <AnimatedPressable
                   onPress={() => {
-                    setAskingPriceValue(editableValue || String(q50 || value || ''));
-                    setForSaleModalVisible(true);
+                    listForSaleHook.open();
                   }}
                   style={[styles.quickActionBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="List this item for sale"
+                  accessibilityLabel="List this item for sale on marketplaces"
                 >
-                  <Ionicons name="pricetag-outline" size={18} color={theme.accent} />
+                  <Ionicons name="storefront-outline" size={18} color={theme.accent} />
                   <Text style={[styles.quickActionLabel, { color: theme.accent }]}>List for Sale</Text>
                 </AnimatedPressable>
               ) : (
@@ -3142,65 +3151,15 @@ function ItemDetailScreen() {
         />
       )}
 
-      {/* For-Sale Listing Modal */}
-      <Modal
-        visible={forSaleModalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setForSaleModalVisible(false)}
-      >
-        <View style={styles.forSaleModalOverlay}>
-          <View style={[styles.forSaleModalSheet, { backgroundColor: theme.card }]}>
-            <View style={styles.forSaleModalHeader}>
-              <Text style={[styles.forSaleModalTitle, { color: theme.text }]}>List for Sale</Text>
-              <Pressable onPress={() => setForSaleModalVisible(false)}>
-                <Ionicons name="close" size={24} color={theme.muted} />
-              </Pressable>
-            </View>
-
-            <Text style={[styles.forSaleModalLabel, { color: theme.muted }]}>Asking price</Text>
-            <TextInput
-              style={[
-                styles.forSaleModalInput,
-                { backgroundColor: theme.background, color: theme.text, borderColor: theme.border },
-              ]}
-              value={askingPriceValue}
-              onChangeText={setAskingPriceValue}
-              keyboardType="decimal-pad"
-              placeholder="0.00"
-              placeholderTextColor={theme.muted}
-              autoFocus
-            />
-
-            <Text style={[styles.forSaleModalHint, { color: theme.muted }]}>
-              Other collectors can make offers on this item. You can accept, decline, or counter any offer.
-            </Text>
-
-            <AnimatedPressable
-              onPress={handleListForSale}
-              disabled={forSaleLoading || !askingPriceValue.trim()}
-              style={[
-                styles.forSaleModalConfirmBtn,
-                {
-                  backgroundColor: theme.accent,
-                  opacity: forSaleLoading || !askingPriceValue.trim() ? 0.5 : 1,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Confirm listing for sale"
-            >
-              {forSaleLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="pricetag" size={18} color="#fff" />
-                  <Text style={styles.forSaleModalConfirmBtnText}>List for Sale</Text>
-                </>
-              )}
-            </AnimatedPressable>
-          </View>
-        </View>
-      </Modal>
+      {/* Multi-Marketplace Listing Modal */}
+      <ListForSaleModal
+        hook={listForSaleHook}
+        onSuccess={() => {
+          setIsForSale(true);
+          fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+          showToast({ message: `Listed on ${listForSaleHook.selectedIds.length} marketplace${listForSaleHook.selectedIds.length > 1 ? 's' : ''}!`, type: 'success' });
+        }}
+      />
 
       {/* Watchlist modal removed — users add from watchlist screen */}
     </KeyboardAvoidingView>

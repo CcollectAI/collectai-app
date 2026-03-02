@@ -10,6 +10,7 @@ import {
   Text,
   ScrollView,
   SectionList,
+  FlatList,
   StyleSheet,
   Animated,
   ActivityIndicator,
@@ -34,6 +35,7 @@ import { CountdownBadge } from '@/components/EventCountdown';
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
 import calendar, { parseEventDate, getCountdown } from '@/lib/calendar';
+import { CalendarGrid } from '@/components/CalendarGrid';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 
@@ -47,6 +49,8 @@ function EventsScreen() {
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
 
   // Paginated data fetching
   const eventFetcher = useCallback(
@@ -111,6 +115,13 @@ function EventsScreen() {
     }
     return result;
   }, [filteredUpcoming, filteredPast]);
+
+  // Events filtered by selected calendar date (for calendar mode)
+  const calendarFilteredEvents = useMemo(() => {
+    const allFiltered = [...filteredUpcoming, ...filteredPast];
+    if (!selectedCalendarDate) return allFiltered;
+    return allFiltered.filter((e) => e.date.slice(0, 10) === selectedCalendarDate);
+  }, [filteredUpcoming, filteredPast, selectedCalendarDate]);
 
   // Optimistic RSVP: toggles attendance state immediately, reverts on error
   const optimisticRsvp = useOptimisticRsvpList(setEvents, paginatedRefresh);
@@ -328,6 +339,22 @@ function EventsScreen() {
           </Text>
         </View>
         <View style={styles.headerIcons}>
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setViewMode((m) => (m === 'list' ? 'calendar' : 'list'));
+              if (viewMode === 'calendar') setSelectedCalendarDate(null);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={viewMode === 'list' ? 'Switch to calendar view' : 'Switch to list view'}
+            style={styles.viewToggleBtn}
+          >
+            <Ionicons
+              name={viewMode === 'list' ? 'calendar-outline' : 'list-outline'}
+              size={22}
+              color={viewMode === 'calendar' ? colors.accent : colors.text}
+            />
+          </AnimatedPressable>
           <InboxHeaderButton color={colors.text} size={22} />
           <ThemeToggleButton size={22} />
         </View>
@@ -437,67 +464,112 @@ function EventsScreen() {
     </Animated.View>
   );
 
+  const emptyComponent = error ? (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+        Failed to load events
+      </Text>
+      <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+        Pull down to retry.
+      </Text>
+    </View>
+  ) : !loading ? (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="calendar-outline" size={48} color={colors.muted} />
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+        {selectedCalendarDate ? 'No events on this day' : 'No events yet'}
+      </Text>
+      <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+        {selectedCalendarDate
+          ? 'Tap the date again to deselect, or try another day.'
+          : 'Check back later for drops, meetups, and streams.'}
+      </Text>
+    </View>
+  ) : null;
+
+  const footerComponent = (
+    <>
+      {isLoadingMore && (
+        <View style={styles.loadingMoreContainer}>
+          <ActivityIndicator size="small" color={colors.accent} />
+        </View>
+      )}
+      <View style={{ height: 24 }} />
+    </>
+  );
+
+  const refreshControlElement = (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      tintColor={colors.accent}
+      colors={[colors.accent]}
+    />
+  );
+
+  // Calendar mode header: shared header + CalendarGrid + section label
+  const calendarHeaderElement = (
+    <>
+      {headerElement}
+      <CalendarGrid
+        events={[...filteredUpcoming, ...filteredPast]}
+        selectedDate={selectedCalendarDate}
+        onSelectDate={setSelectedCalendarDate}
+      />
+      {calendarFilteredEvents.length > 0 && (
+        <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 4 }]}>
+          {selectedCalendarDate
+            ? `Events on ${selectedCalendarDate}`
+            : `All Events (${calendarFilteredEvents.length})`}
+        </Text>
+      )}
+    </>
+  );
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderSectionHeader={({ section }) => (
-          <Text style={[styles.sectionTitle, { color: section.isPast ? colors.muted : colors.text, marginTop: 16 }]}>
-            {section.title}
-          </Text>
-        )}
-        renderItem={({ item, section }) => renderEventCard(item, !section.isPast)}
-        ListHeaderComponent={headerElement}
-        ListEmptyComponent={
-          error ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                Failed to load events
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-                Pull down to retry.
-              </Text>
-            </View>
-          ) : !loading ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="calendar-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                No events yet
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-                Check back later for drops, meetups, and streams.
-              </Text>
-            </View>
-          ) : null
-        }
-        ListFooterComponent={
-          <>
-            {isLoadingMore && (
-              <View style={styles.loadingMoreContainer}>
-                <ActivityIndicator size="small" color={colors.accent} />
-              </View>
-            )}
-            <View style={{ height: 24 }} />
-          </>
-        }
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        stickySectionHeadersEnabled={false}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
-          />
-        }
-      />
-
+      {viewMode === 'calendar' ? (
+        <FlatList
+          data={calendarFilteredEvents}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            const eventDate = parseEventDate(item.date, item.time);
+            const isPast = eventDate < now;
+            return renderEventCard(item, !isPast);
+          }}
+          ListHeaderComponent={calendarHeaderElement}
+          ListEmptyComponent={emptyComponent}
+          ListFooterComponent={footerComponent}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          refreshControl={refreshControlElement}
+        />
+      ) : (
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          renderSectionHeader={({ section }) => (
+            <Text style={[styles.sectionTitle, { color: section.isPast ? colors.muted : colors.text, marginTop: 16 }]}>
+              {section.title}
+            </Text>
+          )}
+          renderItem={({ item, section }) => renderEventCard(item, !section.isPast)}
+          ListHeaderComponent={headerElement}
+          ListEmptyComponent={emptyComponent}
+          ListFooterComponent={footerComponent}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          stickySectionHeadersEnabled={false}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          refreshControl={refreshControlElement}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -535,6 +607,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  viewToggleBtn: {
+    padding: 4,
   },
   section: {
     marginBottom: 16,

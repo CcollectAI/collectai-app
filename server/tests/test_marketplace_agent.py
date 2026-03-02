@@ -29,7 +29,12 @@ os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 def _mock_all_adapters_unconfigured(agent):
     """Set all adapters on an agent to unconfigured MagicMock instances."""
     for attr in ("_ebay", "_tcgplayer", "_firecrawl", "_crawl4ai",
-                 "_mercari_us", "_whatnot", "_vinted", "_mavin"):
+                 "_mercari_us", "_whatnot", "_vinted", "_mavin",
+                 "_catawiki", "_whisky_auctioneer", "_mandarake",
+                 "_bezel", "_chrono24", "_keh", "_mpb",
+                 "_drop", "_gouletpens", "_brickeconomy",
+                 "_popmart", "_booth", "_scalemates",
+                 "_ktown4u", "_comicbookrealm", "_masterofmalt"):
         mock = MagicMock()
         mock.configured = False
         setattr(agent, attr, mock)

@@ -11,12 +11,15 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.features.pagination import pagination_params
+from app.rate_limit import per_user_rate_limit
 
 from app.db import db_configured, get_conn
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
+
+_alert_write_limit = per_user_rate_limit(20, window_seconds=60, scope="alert_write")
 
 
 class PriceAlert(BaseModel):
@@ -120,6 +123,7 @@ async def create_or_update_alert(
         default=None, description="If provided, updates an existing alert"
     ),
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_alert_write_limit),
 ):
     """
     Create or update a price alert for the current user.
@@ -200,7 +204,7 @@ async def create_or_update_alert(
 
 
 @router.delete("/mine/{alert_id}")
-async def delete_alert(alert_id: str, user_id: str = Depends(get_current_user_id)):
+async def delete_alert(alert_id: str, user_id: str = Depends(get_current_user_id), _rl=Depends(_alert_write_limit)):
     """
     Delete/disable a user's alert (soft delete by setting active=false).
     """

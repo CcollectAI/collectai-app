@@ -27,8 +27,11 @@ from app.lib.error_codes import ErrorCode
 from app.cache import cache_get, cache_set
 from app.config import BARCODE_CACHE_TTL
 from app.lib.db_helpers import get_db_pool
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/barcode", tags=["barcode"])
+
+_barcode_lookup_limit = per_user_rate_limit(20, window_seconds=60, scope="barcode_lookup")
 logger = logging.getLogger(__name__)
 
 # Cache TTL for external barcode lookups (24 hours — ISBN data rarely changes)
@@ -495,6 +498,7 @@ async def _lookup_market_price(category: str, title: Optional[str], pool) -> Opt
 async def barcode_lookup(
     req: BarcodeLookupRequest,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_barcode_lookup_limit),
 ) -> BarcodeLookupResponse:
     """
     Look up a product by barcode or ISBN.

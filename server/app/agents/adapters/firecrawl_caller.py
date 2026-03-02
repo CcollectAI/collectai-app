@@ -37,9 +37,11 @@ CATEGORY_SITE_TARGETS: Dict[str, List[str]] = {
     "lorcana": ["tcgplayer.com", "pricecharting.com", "cardmarket.com", "ebay.com"],
     # Toys / Figures
     "anime_figures": ["myfigurecollection.net", "amiami.com", "solarisjapan.com", "ebay.com"],
+    "blind_box": ["popmart.com", "kidrobot.com", "ebay.com", "stockx.com"],
     "hot_toys": ["sideshow.com", "onesixthwarriors.com", "ebay.com", "collectsideshow.com"],
     "designer_toys": ["stockx.com", "whatnot.com", "ebay.com", "myfigurecollection.net"],
     "funko": ["hobbydb.com", "mercari.com", "poppriceguide.com", "ebay.com"],
+    "plush_collectibles": ["squishmallowsquad.com", "mercari.com", "ebay.com", "whatnot.com"],
     # Building / Models
     "lego": ["bricklink.com", "brickset.com", "ebay.com", "rebrickable.com"],
     "gunpla": ["hlj.com", "gundamplanet.com", "amiami.com", "ebay.com"],
@@ -78,9 +80,12 @@ CATEGORY_SITE_TARGETS: Dict[str, List[str]] = {
     "keycaps": ["reddit.com/r/mechmarket", "drop.com", "ebay.com", "geekhack.org"],
     "loungefly": ["mercari.com", "stockx.com", "ebay.com", "boxlunch.com"],
     # Lifestyle
+    "pens": ["gouletpens.com", "nibs.com", "ebay.com", "penswap.reddit.com"],
     "vinyl_records": ["discogs.com", "vinylmeplease.com", "ebay.com", "reverblp.com"],
     "sneakers": ["stockx.com", "goat.com", "ebay.com", "grailed.com"],
+    "vintage_cameras": ["keh.com", "mpb.com", "ebay.com", "japancamerahunter.com"],
     "watches": ["chrono24.com", "watchrecon.com", "ebay.com", "hodinkee.com"],
+    "whiskey": ["whiskyauctioneer.com", "thewhiskyexchange.com", "masterofmalt.com", "auction.catawiki.com"],
     # Legacy
     "diecast": ["ebay.com", "diecastmodelswholesale.com", "modelcollect.com", "ebay.co.uk"],
     "sportscards": ["130point.com", "comc.com", "ebay.com", "pwccmarketplace.com"],

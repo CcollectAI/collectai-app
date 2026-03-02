@@ -27,6 +27,22 @@ from app.agents.adapters.mercari_us_caller import MercariUSCaller
 from app.agents.adapters.whatnot_caller import WhatNotCaller
 from app.agents.adapters.vinted_caller import VintedCaller
 from app.agents.adapters.mavin_caller import MavinCaller
+from app.agents.adapters.catawiki_caller import CatawikiCaller
+from app.agents.adapters.whisky_auctioneer_caller import WhiskyAuctioneerCaller
+from app.agents.adapters.mandarake_caller import MandarakeCaller
+from app.agents.adapters.bezel_caller import BezelCaller
+from app.agents.adapters.chrono24_caller import Chrono24Caller
+from app.agents.adapters.keh_caller import KEHCaller
+from app.agents.adapters.mpb_caller import MPBCaller
+from app.agents.adapters.drop_caller import DropCaller
+from app.agents.adapters.gouletpens_caller import GouletPensCaller
+from app.agents.adapters.brickeconomy_caller import BrickEconomyCaller
+from app.agents.adapters.popmart_caller import PopMartCaller
+from app.agents.adapters.booth_caller import BoothCaller
+from app.agents.adapters.scalemates_caller import ScaleMatesCaller
+from app.agents.adapters.ktown4u_caller import KTown4UCaller
+from app.agents.adapters.comicbookrealm_caller import ComicBookRealmCaller
+from app.agents.adapters.masterofmalt_caller import MasterOfMaltCaller
 from app.lib.region_marketplace_config import (
     should_use_adapter,
     get_ebay_marketplace_id,
@@ -56,6 +72,28 @@ SOURCE_RELIABILITY: Dict[str, float] = {
     "firecrawl_sold": 0.70,
     "crawl4ai": 0.60,
     "crawl4ai_sold": 0.65,
+    "catawiki": 0.80,
+    "catawiki_sold": 0.90,
+    "whisky_auctioneer": 0.85,
+    "whisky_auctioneer_sold": 0.95,
+    "mandarake": 0.75,
+    "bezel": 0.80,
+    "bezel_sold": 0.85,
+    "chrono24": 0.70,
+    "chrono24_sold": 0.75,
+    "keh": 0.85,
+    "mpb": 0.80,
+    "drop": 0.75,
+    "gouletpens": 0.80,
+    "brickeconomy": 0.85,
+    "brickeconomy_sold": 0.90,
+    "popmart": 0.75,
+    "booth": 0.70,
+    "scalemates": 0.75,
+    "ktown4u": 0.75,
+    "comicbookrealm": 0.80,
+    "comicbookrealm_sold": 0.85,
+    "masterofmalt": 0.80,
 }
 
 # Bonus scores
@@ -247,6 +285,22 @@ class MarketplaceAgent:
         self._whatnot = WhatNotCaller()
         self._vinted = VintedCaller()
         self._mavin = MavinCaller()
+        self._catawiki = CatawikiCaller()
+        self._whisky_auctioneer = WhiskyAuctioneerCaller()
+        self._mandarake = MandarakeCaller()
+        self._bezel = BezelCaller()
+        self._chrono24 = Chrono24Caller()
+        self._keh = KEHCaller()
+        self._mpb = MPBCaller()
+        self._drop = DropCaller()
+        self._gouletpens = GouletPensCaller()
+        self._brickeconomy = BrickEconomyCaller()
+        self._popmart = PopMartCaller()
+        self._booth = BoothCaller()
+        self._scalemates = ScaleMatesCaller()
+        self._ktown4u = KTown4UCaller()
+        self._comicbookrealm = ComicBookRealmCaller()
+        self._masterofmalt = MasterOfMaltCaller()
 
     @property
     def adapters_configured(self) -> Dict[str, bool]:
@@ -260,6 +314,22 @@ class MarketplaceAgent:
             "whatnot": self._whatnot.configured,
             "vinted": self._vinted.configured,
             "mavin": self._mavin.configured,
+            "catawiki": self._catawiki.configured,
+            "whisky_auctioneer": self._whisky_auctioneer.configured,
+            "mandarake": self._mandarake.configured,
+            "bezel": self._bezel.configured,
+            "chrono24": self._chrono24.configured,
+            "keh": self._keh.configured,
+            "mpb": self._mpb.configured,
+            "drop": self._drop.configured,
+            "gouletpens": self._gouletpens.configured,
+            "brickeconomy": self._brickeconomy.configured,
+            "popmart": self._popmart.configured,
+            "booth": self._booth.configured,
+            "scalemates": self._scalemates.configured,
+            "ktown4u": self._ktown4u.configured,
+            "comicbookrealm": self._comicbookrealm.configured,
+            "masterofmalt": self._masterofmalt.configured,
         }
 
     async def close(self) -> None:
@@ -272,6 +342,22 @@ class MarketplaceAgent:
         await self._whatnot.close()
         await self._vinted.close()
         await self._mavin.close()
+        await self._catawiki.close()
+        await self._whisky_auctioneer.close()
+        await self._mandarake.close()
+        await self._bezel.close()
+        await self._chrono24.close()
+        await self._keh.close()
+        await self._mpb.close()
+        await self._drop.close()
+        await self._gouletpens.close()
+        await self._brickeconomy.close()
+        await self._popmart.close()
+        await self._booth.close()
+        await self._scalemates.close()
+        await self._ktown4u.close()
+        await self._comicbookrealm.close()
+        await self._masterofmalt.close()
 
     # ------------------------------------------------------------------
     # Core search
@@ -397,6 +483,92 @@ class MarketplaceAgent:
         if self._mavin.configured and should_use_adapter(region, "mavin"):
             total_sources += 1
             tasks.append(("mavin", self._mavin.search(query, category=category, limit=limit)))
+
+        # Catawiki (European auction house — luxury/niche collectibles)
+        catawiki_categories = {"whiskey", "vintage_cameras", "watches", "pens", "designer_toys", "comic_books"}
+        if self._catawiki.configured and should_use_adapter(region, "catawiki") and (category is None or category in catawiki_categories):
+            total_sources += 1
+            tasks.append(("catawiki", self._catawiki.search(query, category=category, limit=limit)))
+
+        # Whisky Auctioneer (world's largest online whisky auction)
+        if self._whisky_auctioneer.configured and should_use_adapter(region, "whisky_auctioneer") and (category is None or category == "whiskey"):
+            total_sources += 1
+            tasks.append(("whisky_auctioneer", self._whisky_auctioneer.search(query, category=category, limit=limit)))
+
+        # Mandarake (Japan's #1 collectible retailer — JP market)
+        mandarake_categories = {"anime_figures", "bandai_premium", "ghibli", "jp_event", "jp_magazine", "hot_toys", "gunpla", "designer_toys", "manga", "vtuber"}
+        if self._mandarake.configured and should_use_adapter(region, "mandarake") and (category is None or category in mandarake_categories):
+            total_sources += 1
+            tasks.append(("mandarake", self._mandarake.search(query, category=category, limit=limit)))
+
+        # Bezel (trusted watch marketplace — US-focused)
+        if self._bezel.configured and should_use_adapter(region, "bezel") and (category is None or category == "watches"):
+            total_sources += 1
+            tasks.append(("bezel", self._bezel.search(query, category=category, limit=limit)))
+
+        # Chrono24 (world's largest watch marketplace — global)
+        if self._chrono24.configured and should_use_adapter(region, "chrono24") and (category is None or category == "watches"):
+            total_sources += 1
+            tasks.append(("chrono24", self._chrono24.search(query, category=category, limit=limit)))
+
+        # KEH (world's largest used camera dealer — professional grading)
+        if self._keh.configured and should_use_adapter(region, "keh") and (category is None or category == "vintage_cameras"):
+            total_sources += 1
+            tasks.append(("keh", self._keh.search(query, category=category, limit=limit)))
+
+        # MPB (major used camera marketplace — US + EU)
+        if self._mpb.configured and should_use_adapter(region, "mpb") and (category is None or category == "vintage_cameras"):
+            total_sources += 1
+            tasks.append(("mpb", self._mpb.search(query, category=category, limit=limit, region=region)))
+
+        # Drop.com (artisan keycap marketplace — US + EU)
+        if self._drop.configured and should_use_adapter(region, "drop") and (category is None or category == "keycaps"):
+            total_sources += 1
+            tasks.append(("drop", self._drop.search(query, category=category, limit=limit)))
+
+        # GouletPens (leading fountain pen retailer — US)
+        if self._gouletpens.configured and should_use_adapter(region, "gouletpens") and (category is None or category == "pens"):
+            total_sources += 1
+            tasks.append(("gouletpens", self._gouletpens.search(query, category=category, limit=limit)))
+
+        # BrickEconomy (LEGO value tracker — global)
+        if self._brickeconomy.configured and should_use_adapter(region, "brickeconomy") and (category is None or category == "lego"):
+            total_sources += 1
+            tasks.append(("brickeconomy", self._brickeconomy.search(query, category=category, limit=limit)))
+
+        # PopMart (leading blind box / designer toy marketplace — global)
+        popmart_categories = {"blind_box", "designer_toys"}
+        if self._popmart.configured and should_use_adapter(region, "popmart") and (category is None or category in popmart_categories):
+            total_sources += 1
+            tasks.append(("popmart", self._popmart.search(query, category=category, limit=limit)))
+
+        # Booth.pm (Japanese indie/doujin marketplace — JP-focused)
+        booth_categories = {"vtuber", "jp_event", "designer_toys", "kpop_lightsticks"}
+        if self._booth.configured and should_use_adapter(region, "booth") and (category is None or category in booth_categories):
+            total_sources += 1
+            tasks.append(("booth", self._booth.search(query, category=category, limit=limit)))
+
+        # ScaleMates (definitive scale model database — global)
+        scalemates_categories = {"scale_models", "gunpla", "diecast"}
+        if self._scalemates.configured and should_use_adapter(region, "scalemates") and (category is None or category in scalemates_categories):
+            total_sources += 1
+            tasks.append(("scalemates", self._scalemates.search(query, category=category, limit=limit)))
+
+        # KTown4U (leading Korean K-pop merchandise retailer — KR-focused)
+        ktown4u_categories = {"kpop", "kpop_lightsticks", "blind_box"}
+        if self._ktown4u.configured and should_use_adapter(region, "ktown4u") and (category is None or category in ktown4u_categories):
+            total_sources += 1
+            tasks.append(("ktown4u", self._ktown4u.search(query, category=category, limit=limit)))
+
+        # ComicBookRealm (comic book price guide — global)
+        if self._comicbookrealm.configured and should_use_adapter(region, "comicbookrealm") and (category is None or category == "comic_books"):
+            total_sources += 1
+            tasks.append(("comicbookrealm", self._comicbookrealm.search(query, category=category, limit=limit)))
+
+        # Master of Malt (UK whisky retailer — EU-focused)
+        if self._masterofmalt.configured and should_use_adapter(region, "masterofmalt") and (category is None or category == "whiskey"):
+            total_sources += 1
+            tasks.append(("masterofmalt", self._masterofmalt.search(query, category=category, limit=limit)))
 
         if not tasks:
             logger.warning("[MarketplaceAgent] No adapters configured for query: %s", query)
@@ -561,6 +733,86 @@ class MarketplaceAgent:
         if self._mavin.configured and should_use_adapter(region, "mavin"):
             total_sources += 1
             tasks.append(("mavin_sold", self._mavin.sold_comps(query, category=category, limit=limit)))
+
+        # Catawiki sold comps (European auction hammer prices)
+        catawiki_categories = {"whiskey", "vintage_cameras", "watches", "pens", "designer_toys", "comic_books"}
+        if self._catawiki.configured and should_use_adapter(region, "catawiki") and (category is None or category in catawiki_categories):
+            total_sources += 1
+            tasks.append(("catawiki_sold", self._catawiki.sold_comps(query, category=category, limit=limit)))
+
+        # Whisky Auctioneer sold comps (real auction hammer prices — highest reliability for whisky)
+        if self._whisky_auctioneer.configured and should_use_adapter(region, "whisky_auctioneer") and (category is None or category == "whiskey"):
+            total_sources += 1
+            tasks.append(("whisky_auctioneer_sold", self._whisky_auctioneer.sold_comps(query, category=category, limit=limit)))
+
+        # Bezel sold comps (trusted watch marketplace)
+        if self._bezel.configured and should_use_adapter(region, "bezel") and (category is None or category == "watches"):
+            total_sources += 1
+            tasks.append(("bezel_sold", self._bezel.sold_comps(query, category=category, limit=limit)))
+
+        # Chrono24 sold comps (world's largest watch marketplace)
+        if self._chrono24.configured and should_use_adapter(region, "chrono24") and (category is None or category == "watches"):
+            total_sources += 1
+            tasks.append(("chrono24_sold", self._chrono24.sold_comps(query, category=category, limit=limit)))
+
+        # KEH sold comps (no sold history — returns empty)
+        if self._keh.configured and should_use_adapter(region, "keh") and (category is None or category == "vintage_cameras"):
+            total_sources += 1
+            tasks.append(("keh_sold", self._keh.sold_comps(query, category=category, limit=limit)))
+
+        # MPB sold comps (no sold history — returns empty)
+        if self._mpb.configured and should_use_adapter(region, "mpb") and (category is None or category == "vintage_cameras"):
+            total_sources += 1
+            tasks.append(("mpb_sold", self._mpb.sold_comps(query, category=category, limit=limit, region=region)))
+
+        # Drop sold comps (no sold history — returns empty)
+        if self._drop.configured and should_use_adapter(region, "drop") and (category is None or category == "keycaps"):
+            total_sources += 1
+            tasks.append(("drop_sold", self._drop.sold_comps(query, category=category, limit=limit)))
+
+        # GouletPens sold comps (no sold history — returns empty)
+        if self._gouletpens.configured and should_use_adapter(region, "gouletpens") and (category is None or category == "pens"):
+            total_sources += 1
+            tasks.append(("gouletpens_sold", self._gouletpens.sold_comps(query, category=category, limit=limit)))
+
+        # BrickEconomy sold comps (price history data — high quality for LEGO)
+        if self._brickeconomy.configured and should_use_adapter(region, "brickeconomy") and (category is None or category == "lego"):
+            total_sources += 1
+            tasks.append(("brickeconomy_sold", self._brickeconomy.sold_comps(query, category=category, limit=limit)))
+
+        # PopMart sold comps (retail site — no sold history, returns empty)
+        popmart_categories = {"blind_box", "designer_toys"}
+        if self._popmart.configured and should_use_adapter(region, "popmart") and (category is None or category in popmart_categories):
+            total_sources += 1
+            tasks.append(("popmart_sold", self._popmart.sold_comps(query, category=category, limit=limit)))
+
+        # Booth sold comps (indie marketplace — no sold history, returns empty)
+        booth_categories = {"vtuber", "jp_event", "designer_toys", "kpop_lightsticks"}
+        if self._booth.configured and should_use_adapter(region, "booth") and (category is None or category in booth_categories):
+            total_sources += 1
+            tasks.append(("booth_sold", self._booth.sold_comps(query, category=category, limit=limit)))
+
+        # ScaleMates sold comps (reference site — no sold history, returns empty)
+        scalemates_categories = {"scale_models", "gunpla", "diecast"}
+        if self._scalemates.configured and should_use_adapter(region, "scalemates") and (category is None or category in scalemates_categories):
+            total_sources += 1
+            tasks.append(("scalemates_sold", self._scalemates.sold_comps(query, category=category, limit=limit)))
+
+        # KTown4U sold comps (retail storefront — no sold history, returns empty)
+        ktown4u_categories = {"kpop", "kpop_lightsticks", "blind_box"}
+        if self._ktown4u.configured and should_use_adapter(region, "ktown4u") and (category is None or category in ktown4u_categories):
+            total_sources += 1
+            tasks.append(("ktown4u_sold", self._ktown4u.sold_comps(query, category=category, limit=limit)))
+
+        # ComicBookRealm sold comps (guide values as reference pricing)
+        if self._comicbookrealm.configured and should_use_adapter(region, "comicbookrealm") and (category is None or category == "comic_books"):
+            total_sources += 1
+            tasks.append(("comicbookrealm_sold", self._comicbookrealm.sold_comps(query, category=category, limit=limit)))
+
+        # Master of Malt sold comps (retail storefront — no sold history, returns empty)
+        if self._masterofmalt.configured and should_use_adapter(region, "masterofmalt") and (category is None or category == "whiskey"):
+            total_sources += 1
+            tasks.append(("masterofmalt_sold", self._masterofmalt.sold_comps(query, category=category, limit=limit)))
 
         if not tasks:
             return AggregationResult(
@@ -754,6 +1006,71 @@ class MarketplaceAgent:
             tasks.append(("mavin", self._mavin.health_check()))
         else:
             checks["mavin"] = {"configured": False, "healthy": False}
+
+        if self._catawiki.configured:
+            tasks.append(("catawiki", self._catawiki.health_check()))
+        else:
+            checks["catawiki"] = {"configured": False, "healthy": False}
+
+        if self._whisky_auctioneer.configured:
+            tasks.append(("whisky_auctioneer", self._whisky_auctioneer.health_check()))
+        else:
+            checks["whisky_auctioneer"] = {"configured": False, "healthy": False}
+
+        if self._mandarake.configured:
+            tasks.append(("mandarake", self._mandarake.health_check()))
+        else:
+            checks["mandarake"] = {"configured": False, "healthy": False}
+
+        if self._bezel.configured:
+            tasks.append(("bezel", self._bezel.health_check()))
+        else:
+            checks["bezel"] = {"configured": False, "healthy": False}
+
+        if self._chrono24.configured:
+            tasks.append(("chrono24", self._chrono24.health_check()))
+        else:
+            checks["chrono24"] = {"configured": False, "healthy": False}
+
+        if self._keh.configured:
+            tasks.append(("keh", self._keh.health_check()))
+        else:
+            checks["keh"] = {"configured": False, "healthy": False}
+
+        if self._mpb.configured:
+            tasks.append(("mpb", self._mpb.health_check()))
+        else:
+            checks["mpb"] = {"configured": False, "healthy": False}
+
+        if self._drop.configured:
+            tasks.append(("drop", self._drop.health_check()))
+        else:
+            checks["drop"] = {"configured": False, "healthy": False}
+
+        if self._gouletpens.configured:
+            tasks.append(("gouletpens", self._gouletpens.health_check()))
+        else:
+            checks["gouletpens"] = {"configured": False, "healthy": False}
+
+        if self._brickeconomy.configured:
+            tasks.append(("brickeconomy", self._brickeconomy.health_check()))
+        else:
+            checks["brickeconomy"] = {"configured": False, "healthy": False}
+
+        if self._ktown4u.configured:
+            tasks.append(("ktown4u", self._ktown4u.health_check()))
+        else:
+            checks["ktown4u"] = {"configured": False, "healthy": False}
+
+        if self._comicbookrealm.configured:
+            tasks.append(("comicbookrealm", self._comicbookrealm.health_check()))
+        else:
+            checks["comicbookrealm"] = {"configured": False, "healthy": False}
+
+        if self._masterofmalt.configured:
+            tasks.append(("masterofmalt", self._masterofmalt.health_check()))
+        else:
+            checks["masterofmalt"] = {"configured": False, "healthy": False}
 
         if tasks:
             results = await asyncio.gather(

@@ -85,12 +85,12 @@ class TestGetStepTemplate:
         assert len(data["steps"]) == 12
 
     def test_get_lego_template(self):
-        """Returns lego template with 8 steps."""
+        """Returns lego template with 12 steps."""
         resp = client.get("/build-paint/step-templates/lego")
         assert resp.status_code == 200
         data = resp.json()
         assert data["id"] == "lego"
-        assert len(data["steps"]) == 8
+        assert len(data["steps"]) == 12
 
     def test_get_generic_template(self):
         """Returns generic template with 7 steps."""

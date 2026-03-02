@@ -35,11 +35,11 @@ def get_ebay_marketplace_id(region: str | None) -> str:
 # True = use this adapter, False = skip
 
 _ADAPTER_POLICY: Dict[str, Dict[str, bool]] = {
-    "americas": {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True, "mercari_us": True, "whatnot": True, "vinted": False, "mavin": True},
-    "europe":   {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "mercari_us": False, "whatnot": False, "vinted": True, "mavin": True},
-    "japan":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True},
-    "korea":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True},
-    "other":    {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True, "mercari_us": True, "whatnot": True, "vinted": True, "mavin": True},
+    "americas": {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True, "mercari_us": True, "whatnot": True, "vinted": False, "mavin": True, "catawiki": False, "whisky_auctioneer": True, "mandarake": False, "bezel": True, "chrono24": True, "keh": True, "mpb": True, "drop": True, "gouletpens": True, "brickeconomy": True, "popmart": True, "booth": False, "scalemates": True, "ktown4u": True, "comicbookrealm": True, "masterofmalt": False},
+    "europe":   {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "mercari_us": False, "whatnot": False, "vinted": True, "mavin": True, "catawiki": True, "whisky_auctioneer": True, "mandarake": False, "bezel": False, "chrono24": True, "keh": True, "mpb": True, "drop": True, "gouletpens": False, "brickeconomy": True, "popmart": True, "booth": False, "scalemates": True, "ktown4u": True, "comicbookrealm": True, "masterofmalt": True},
+    "japan":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True, "catawiki": False, "whisky_auctioneer": False, "mandarake": True, "bezel": False, "chrono24": True, "keh": False, "mpb": False, "drop": False, "gouletpens": False, "brickeconomy": True, "popmart": True, "booth": True, "scalemates": True, "ktown4u": False, "comicbookrealm": False, "masterofmalt": False},
+    "korea":    {"ebay": True, "tcgplayer": False, "firecrawl": True, "crawl4ai": True, "mercari_us": False, "whatnot": False, "vinted": False, "mavin": True, "catawiki": False, "whisky_auctioneer": False, "mandarake": True, "bezel": False, "chrono24": True, "keh": False, "mpb": False, "drop": False, "gouletpens": False, "brickeconomy": True, "popmart": True, "booth": True, "scalemates": True, "ktown4u": True, "comicbookrealm": False, "masterofmalt": False},
+    "other":    {"ebay": True, "tcgplayer": True, "firecrawl": True, "crawl4ai": True, "mercari_us": True, "whatnot": True, "vinted": True, "mavin": True, "catawiki": True, "whisky_auctioneer": True, "mandarake": False, "bezel": True, "chrono24": True, "keh": True, "mpb": True, "drop": True, "gouletpens": True, "brickeconomy": True, "popmart": True, "booth": False, "scalemates": True, "ktown4u": True, "comicbookrealm": True, "masterofmalt": True},
 }
 
 
@@ -106,9 +106,14 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         "anime_soundtrack": ["vgmdb.net", "ebay.de", "discogs.com"],
         "anime_ost_vinyl":  ["discogs.com", "ebay.de", "amazon.de"],
         # Lifestyle
+        "blind_box":        ["popmart.com", "ebay.de", "vinted.de", "amazon.de"],
+        "pens":             ["gouletpens.com", "ebay.de", "stilografica.it", "lacouronneducomte.nl"],
+        "plush_collectibles": ["ebay.de", "vinted.de", "amazon.de", "mercari.com"],
         "vinyl_records":    ["discogs.com", "ebay.de", "jpc.de"],
         "sneakers":         ["stockx.com", "ebay.de", "vinted.de", "klekt.com"],
+        "vintage_cameras":  ["mpb.com", "ebay.de", "fotohandel.de", "keh.com"],
         "watches":          ["chrono24.de", "ebay.de", "watchfinder.de"],
+        "whiskey":          ["whiskyauctioneer.com", "thewhiskyexchange.com", "ebay.de", "masterofmalt.com"],
     },
     "japan": {
         # TCG — Mercari JP / Yahoo Auctions
@@ -160,9 +165,14 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         "disney":           ["mercari.com/jp", "mandarake.co.jp", "yahoo.co.jp/auctions"],
         "theme_park":       ["mercari.com/jp", "yahoo.co.jp/auctions", "mandarake.co.jp"],
         # Lifestyle
+        "blind_box":        ["popmart.com", "mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
+        "pens":             ["mercari.com/jp", "yahoo.co.jp/auctions", "kingdomnote.com", "penland-cafe.com"],
+        "plush_collectibles": ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp", "mandarake.co.jp"],
         "vinyl_records":    ["discogs.com", "mercari.com/jp", "suruga-ya.jp"],
         "sneakers":         ["mercari.com/jp", "yahoo.co.jp/auctions", "snkrdunk.com"],
+        "vintage_cameras":  ["mercari.com/jp", "yahoo.co.jp/auctions", "japancamerahunter.com", "mapcamera.com"],
         "watches":          ["mercari.com/jp", "yahoo.co.jp/auctions", "jackroad.co.jp"],
+        "whiskey":          ["mercari.com/jp", "yahoo.co.jp/auctions", "dekanta.com", "whisky.auction"],
         # Legacy
         "diecast":          ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
         "sportscards":      ["mercari.com/jp", "yahoo.co.jp/auctions", "suruga-ya.jp"],
@@ -219,9 +229,14 @@ _REGION_SITE_TARGETS: Dict[str, Dict[str, List[str]]] = {
         "sportscards":      ["yes24.com", "ebay.com", "bunjang.co.kr"],
         "taylor_swift":     ["yes24.com", "ebay.com", "bunjang.co.kr"],
         # Lifestyle
+        "blind_box":        ["popmart.com", "yes24.com", "bunjang.co.kr", "coupang.com"],
+        "pens":             ["yes24.com", "ebay.com", "bunjang.co.kr", "aladin.co.kr"],
+        "plush_collectibles": ["yes24.com", "bunjang.co.kr", "coupang.com", "mercari.com"],
         "vinyl_records":    ["discogs.com", "yes24.com", "bunjang.co.kr"],
         "sneakers":         ["stockx.com", "kream.co.kr", "bunjang.co.kr"],
+        "vintage_cameras":  ["yes24.com", "bunjang.co.kr", "ebay.com", "keh.com"],
         "watches":          ["chrono24.com", "ebay.com", "bunjang.co.kr"],
+        "whiskey":          ["yes24.com", "bunjang.co.kr", "auction.catawiki.com", "masterofmalt.com"],
     },
     # "americas" intentionally omitted — falls through to global defaults
     # in firecrawl_caller.py CATEGORY_SITE_TARGETS.

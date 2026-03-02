@@ -182,6 +182,22 @@ mercari_us_circuit = CircuitBreaker("mercari_us", max_failures=5, cooldown_secon
 whatnot_circuit = CircuitBreaker("whatnot", max_failures=5, cooldown_seconds=60)
 vinted_circuit = CircuitBreaker("vinted", max_failures=5, cooldown_seconds=60)
 mavin_circuit = CircuitBreaker("mavin", max_failures=5, cooldown_seconds=60)
+catawiki_circuit = CircuitBreaker("catawiki", max_failures=5, cooldown_seconds=60)
+whisky_auctioneer_circuit = CircuitBreaker("whisky_auctioneer", max_failures=5, cooldown_seconds=60)
+mandarake_circuit = CircuitBreaker("mandarake", max_failures=5, cooldown_seconds=60)
+bezel_circuit = CircuitBreaker("bezel", max_failures=5, cooldown_seconds=60)
+chrono24_circuit = CircuitBreaker("chrono24", max_failures=5, cooldown_seconds=60)
+keh_circuit = CircuitBreaker("keh", max_failures=5, cooldown_seconds=60)
+mpb_circuit = CircuitBreaker("mpb", max_failures=5, cooldown_seconds=60)
+drop_circuit = CircuitBreaker("drop", max_failures=5, cooldown_seconds=60)
+gouletpens_circuit = CircuitBreaker("gouletpens", max_failures=5, cooldown_seconds=60)
+brickeconomy_circuit = CircuitBreaker("brickeconomy", max_failures=5, cooldown_seconds=60)
+popmart_circuit = CircuitBreaker("popmart", max_failures=5, cooldown_seconds=60)
+booth_circuit = CircuitBreaker("booth", max_failures=5, cooldown_seconds=60)
+scalemates_circuit = CircuitBreaker("scalemates", max_failures=5, cooldown_seconds=60)
+ktown4u_circuit = CircuitBreaker("ktown4u", max_failures=5, cooldown_seconds=60)
+comicbookrealm_circuit = CircuitBreaker("comicbookrealm", max_failures=5, cooldown_seconds=60)
+masterofmalt_circuit = CircuitBreaker("masterofmalt", max_failures=5, cooldown_seconds=60)
 
 
 def all_circuit_status() -> list[dict]:
@@ -193,6 +209,12 @@ def all_circuit_status() -> list[dict]:
             cardmarket_circuit, discogs_circuit, pricecharting_circuit,
             stockx_circuit, bricklink_circuit, firecrawl_circuit,
             crawl4ai_circuit, mercari_us_circuit, whatnot_circuit,
-            vinted_circuit, mavin_circuit,
+            vinted_circuit, mavin_circuit, catawiki_circuit,
+            whisky_auctioneer_circuit, mandarake_circuit,
+            bezel_circuit, chrono24_circuit,
+            keh_circuit, mpb_circuit,
+            drop_circuit, gouletpens_circuit, brickeconomy_circuit,
+            popmart_circuit, booth_circuit, scalemates_circuit,
+            ktown4u_circuit, comicbookrealm_circuit, masterofmalt_circuit,
         )
     ]

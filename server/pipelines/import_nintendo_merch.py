@@ -40,12 +40,18 @@ CATEGORY = "nintendo_merch"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Nintendo / Pokemon merchandise catalog (80+ items).
+    """Curated Nintendo / Pokemon merchandise catalog (500+ items).
 
     Covers all major franchises: Pokemon, Mario, Zelda, Kirby, Splatoon,
-    Animal Crossing, Fire Emblem, Metroid.  Includes amiibo (common + rare),
-    Pokemon Center exclusives, Club Nintendo / My Nintendo physical rewards,
-    Nintendo Store Tokyo/NY exclusives, and limited event items.
+    Animal Crossing, Fire Emblem, Metroid, Xenoblade, Pikmin, Star Fox,
+    F-Zero, EarthBound, Monster Hunter, Dark Souls.  Includes complete
+    amiibo collection (Smash Bros, Super Mario, Animal Crossing, Zelda
+    30th, Monster Hunter, Splatoon, Shovel Knight series), Pokemon Center
+    exclusives (plush, figures, costume Pikachu, regional exclusives, TCG
+    accessories), Club Nintendo / My Nintendo physical rewards, Nintendo
+    Store Tokyo/NY/Osaka/Kyoto exclusives, limited event items, special
+    edition consoles & hardware, themed controllers, carrying cases, art
+    books, soundtracks, and First 4 Figures premium statues.
     """
 
     # Format: (franchise, product_type, name, exclusive, rarity_tier, price_eur)
@@ -190,6 +196,542 @@ def get_curated_catalog() -> list[dict]:
         ("Pokemon", "Event", "Pokemon Center 25th Anniversary Box", "Pokemon Center", "grail", 250),
         ("Pokemon", "Event", "GO Fest 2023 Exclusive Plush", "Pokemon GO Fest", "high", 100),
         ("Splatoon", "Event", "Splatoon Koshien Trophy Replica", "Nintendo JP", "grail", 200),
+
+        # ── Amiibo - Zelda Tears of the Kingdom Series ──────────────────
+        ("Zelda", "Amiibo", "Zelda (Tears of the Kingdom)", "", "mid", 30),
+        ("Zelda", "Amiibo", "Ganondorf (Tears of the Kingdom)", "", "mid", 35),
+
+        # ── Amiibo - Splatoon 3 Series ──────────────────────────────────
+        ("Splatoon", "Amiibo", "Shiver (Splatoon 3)", "", "standard", 16),
+        ("Splatoon", "Amiibo", "Frye (Splatoon 3)", "", "standard", 16),
+        ("Splatoon", "Amiibo", "Big Man (Splatoon 3)", "", "standard", 18),
+        ("Splatoon", "Amiibo", "Octoling Girl (Splatoon 3)", "", "standard", 16),
+
+        # ── Amiibo - Rare Smash Bros ────────────────────────────────────
+        ("Mario", "Amiibo", "Gold Mega Man (Smash Bros.)", "Exclusive", "high", 110),
+        ("Mario", "Amiibo", "Poochy (Yoshi's Woolly World)", "Toys R Us", "high", 95),
+
+        # ── Nintendo Store Exclusives (Tokyo / Osaka / Kyoto) ────────────
+        ("Mario", "Store Exclusive", "Nintendo Osaka Grand Opening Pin Set", "Nintendo Store Osaka", "high", 90),
+        ("Mario", "Store Exclusive", "Nintendo Kyoto Opening Day Tote Bag", "Nintendo Store Kyoto", "mid", 55),
+        ("Zelda", "Store Exclusive", "Nintendo Tokyo Hylian Shield Backpack", "Nintendo Store Tokyo", "mid", 70),
+        ("Splatoon", "Store Exclusive", "Nintendo Osaka Splatoon Ink Bottle Set", "Nintendo Store Osaka", "mid", 45),
+
+        # ── Club Nintendo Platinum Rewards (Vintage) ────────────────────
+        ("Mario", "Club Nintendo", "Club Nintendo Platinum Statue Mario & Luigi", "Club Nintendo", "grail", 400),
+        ("Zelda", "Club Nintendo", "Club Nintendo Zelda Messenger Bag", "Club Nintendo", "high", 120),
+        ("Mario", "Club Nintendo", "Club Nintendo Game & Watch Ball Reissue", "Club Nintendo", "grail", 300),
+
+        # ── Super Nintendo World Merch ──────────────────────────────────
+        ("Mario", "Merch", "Super Nintendo World Power-Up Band Full Set (5 Bands)", "Universal Studios JP", "high", 150),
+        ("Mario", "Merch", "Toad Cafe Mushroom Soup Bowl Set", "Universal Studios JP", "mid", 48),
+        ("Mario", "Merch", "Bowser's Castle Exclusive Koopa Shell Backpack", "Universal Studios JP", "mid", 65),
+        ("Mario", "Merch", "Super Nintendo World Star Cup Popcorn Bucket", "Universal Studios JP", "mid", 40),
+        ("Mario", "Merch", "Donkey Kong Country Barrel Mug", "Universal Studios JP", "mid", 35),
+
+        # ── Pokemon Center x Nintendo Collaborations ────────────────────
+        ("Pokemon", "Merch", "Pikachu x Mario Plush Set", "Pokemon Center JP", "high", 95),
+        ("Pokemon", "Merch", "Mario Pikachu Cosplay Plush", "Pokemon Center JP", "high", 110),
+
+        # ── Splatoon Merch - Figures & Plush ────────────────────────────
+        ("Splatoon", "Figure", "Squid Sisters Callie & Marie amiibo 2-Pack Reissue", "Nintendo Store", "mid", 50),
+        ("Splatoon", "Plush", "Inkling Boy Neon Green Plush 10in", "", "standard", 22),
+        ("Splatoon", "Plush", "Judd & Li'l Judd Plush Set", "Nintendo Store JP", "mid", 38),
+
+        # ── Fire Emblem Engage / Three Houses Limited ───────────────────
+        ("Fire Emblem", "Figure", "Alear (Fire Emblem Engage) 1/7 Scale", "", "high", 145),
+        ("Fire Emblem", "Merch", "Three Houses Officer's Academy Pin Set", "Nintendo Store", "mid", 42),
+
+        # ── Xenoblade Chronicles Collector's Items ──────────────────────
+        ("Xenoblade", "Figure", "Pyra 1/7 Scale Figure (Xenoblade 2)", "", "high", 180),
+        ("Xenoblade", "Figure", "Mythra 1/7 Scale Figure (Xenoblade 2)", "", "high", 175),
+        ("Xenoblade", "Merch", "Xenoblade Chronicles 3 Collector's Edition Artbook + Steelbook", "Nintendo Store", "mid", 75),
+
+        # ── Kirby 30th Anniversary Merchandise ──────────────────────────
+        ("Kirby", "Merch", "Kirby 30th Anniversary Medal Collection", "Nintendo Store JP", "mid", 60),
+        ("Kirby", "Plush", "Kirby 30th Anniversary Giant Plush 18in", "Nintendo Store JP", "high", 85),
+        ("Kirby", "Figure", "Kirby & the Forgotten Land Mouthful Mode Figure Set", "", "mid", 45),
+
+        # ── Nintendo Switch Special Edition Consoles ────────────────────
+        ("Zelda", "Console", "Nintendo Switch OLED Zelda TotK Edition", "Limited Edition", "high", 380),
+        ("Pokemon", "Console", "Nintendo Switch Lite Pokemon Dialga & Palkia Edition", "Limited Edition", "high", 250),
+        ("Animal Crossing", "Console", "Nintendo Switch Animal Crossing New Horizons Edition", "Limited Edition", "high", 350),
+        ("Splatoon", "Console", "Nintendo Switch OLED Splatoon 3 Edition", "Limited Edition", "high", 320),
+        ("Pokemon", "Console", "Nintendo Switch OLED Pokemon Scarlet & Violet Edition", "Limited Edition", "high", 340),
+
+        # ── Vintage Nintendo Collectibles ───────────────────────────────
+        ("Mario", "Vintage", "Game & Watch Gallery Complete Set (4 Games)", "", "grail", 280),
+        ("Mario", "Vintage", "Nintendo Hanafuda Playing Cards Miyako no Hana", "", "high", 120),
+        ("Mario", "Vintage", "Nintendo Hanafuda Cards Mario Edition (Red)", "", "mid", 65),
+
+        # ── Pikmin Merchandise ─────────────────────────────────────────────
+        ("Pikmin", "Plush", "Red Pikmin Plush 8in", "", "standard", 16),
+        ("Pikmin", "Plush", "Blue Pikmin Plush 8in", "", "standard", 16),
+        ("Pikmin", "Plush", "Yellow Pikmin Plush 8in", "", "standard", 16),
+        ("Pikmin", "Plush", "Purple Pikmin Plush 8in", "", "standard", 18),
+        ("Pikmin", "Plush", "White Pikmin Plush 8in", "", "standard", 18),
+        ("Pikmin", "Plush", "Rock Pikmin Plush 6in", "", "standard", 14),
+        ("Pikmin", "Plush", "Winged Pikmin Plush 8in", "", "standard", 18),
+        ("Pikmin", "Plush", "Ice Pikmin Plush 6in (Pikmin 4)", "Nintendo Store", "mid", 22),
+        ("Pikmin", "Figure", "Pikmin Bloom Flower Pot Set", "Nintendo Store", "mid", 42),
+        ("Pikmin", "Merch", "Pikmin 4 Oatchi & Pikmin Ceramic Mug", "Nintendo Store", "standard", 28),
+
+        # ── Pokemon Center - Additional Plush ──────────────────────────────
+        ("Pokemon", "Plush", "Jigglypuff Sitting Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Mewtwo Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Lucario Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Dragonite Sitting Plush 8in", "", "standard", 20),
+        ("Pokemon", "Plush", "Mimikyu Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Piplup Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Sylveon Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Mew Plush Floating 8in", "Pokemon Center", "mid", 35),
+        ("Pokemon", "Plush", "Rayquaza Plush 30in", "Pokemon Center JP", "high", 150),
+        ("Pokemon", "Plush", "Gigantamax Pikachu Plush 24in", "Pokemon Center", "high", 120),
+
+        # ── Pokemon Center - Additional Figures ────────────────────────────
+        ("Pokemon", "Figure", "Greninja Gallery Figure DX", "Pokemon Center", "mid", 55),
+        ("Pokemon", "Figure", "Gardevoir Premium Figure", "Pokemon Center", "mid", 60),
+        ("Pokemon", "Figure", "Lucario Gallery Figure", "Pokemon Center", "mid", 50),
+        ("Pokemon", "Figure", "Eevee & Friends Premium Figure Set", "Pokemon Center", "high", 95),
+
+        # ── Zelda Additional Collectibles ──────────────────────────────────
+        ("Zelda", "Book", "Tears of the Kingdom Collector's Edition Guide", "", "mid", 55),
+        ("Zelda", "Replica", "Champion's Tunic Cosplay Set", "", "high", 140),
+        ("Zelda", "Merch", "Breath of the Wild Sheikah Slate Case", "Nintendo Store", "mid", 48),
+        ("Zelda", "Merch", "Ocarina of Time Ceramic Ocarina Replica", "", "mid", 45),
+        ("Zelda", "Figure", "Link Nendoroid Tears of the Kingdom", "", "mid", 55),
+        ("Zelda", "Figure", "Zelda Nendoroid Breath of the Wild", "", "mid", 55),
+
+        # ── Mario Additional Merchandise ───────────────────────────────────
+        ("Mario", "Figure", "Bowser Nendoroid", "", "mid", 55),
+        ("Mario", "Merch", "Super Mario Bros. Wonder Collector Coin Set", "Nintendo Store", "mid", 40),
+        ("Mario", "Merch", "Super Mario 3D World Cat Mario Plush 10in", "", "standard", 24),
+        ("Mario", "Merch", "Piranha Plant Puppet Plush", "Nintendo Store", "mid", 35),
+        ("Mario", "Figure", "Mario & Luigi Dream Team Figure Set", "", "mid", 65),
+
+        # ── Animal Crossing Additional ─────────────────────────────────────
+        ("Animal Crossing", "Plush", "Celeste Plush 10in", "", "standard", 22),
+        ("Animal Crossing", "Plush", "Blathers Plush 12in", "", "standard", 24),
+        ("Animal Crossing", "Merch", "Nook Inc. Aloha Shirt (Adult)", "Nintendo Store", "mid", 45),
+        ("Animal Crossing", "Merch", "K.K. Slider Vinyl Record Set", "Nintendo Store JP", "high", 85),
+
+        # ── Splatoon Additional ────────────────────────────────────────────
+        ("Splatoon", "Merch", "Splatoon 3 Ink Tank Backpack", "Nintendo Store", "mid", 55),
+        ("Splatoon", "Figure", "Off the Hook Pearl & Marina Figure Set", "", "mid", 70),
+
+        # ── Kirby Additional ──────────────────────────────────────────────
+        ("Kirby", "Plush", "King Dedede Plush 12in", "", "standard", 24),
+        ("Kirby", "Figure", "Kirby & the Forgotten Land Bandana Waddle Dee Figure", "", "mid", 38),
+        ("Kirby", "Merch", "Kirby Star Allies Dream Friend Pin Set", "Nintendo Store JP", "mid", 35),
+
+        # ── Star Fox / F-Zero / Other Franchises ──────────────────────────
+        ("Star Fox", "Figure", "Fox McCloud Figma", "", "mid", 70),
+        ("Star Fox", "Amiibo", "Fox (Star Fox Series)", "", "standard", 18),
+        ("F-Zero", "Merch", "Captain Falcon Helmet Replica", "", "high", 120),
+        ("EarthBound", "Figure", "Ness Nendoroid", "", "mid", 65),
+
+        # ── Additional Amiibo - Rare/Vintage ──────────────────────────────
+        ("Mario", "Amiibo", "Wolf Link (Twilight Princess HD)", "", "mid", 50),
+        ("Zelda", "Amiibo", "Toon Link & Zelda 2-Pack (Wind Waker)", "", "mid", 55),
+        ("Splatoon", "Amiibo", "Inkling Squid (Orange)", "", "mid", 40),
+        ("Pokemon", "Amiibo", "Detective Pikachu", "", "mid", 45),
+        ("Kirby", "Amiibo", "King Dedede (Kirby Series)", "", "mid", 45),
+        ("Mario", "Amiibo", "Bowser (Wedding Outfit)", "", "standard", 22),
+        ("Mario", "Amiibo", "Peach (Wedding Outfit)", "", "standard", 22),
+
+        # ── Nintendo Switch Pro Controllers (Themed) ──────────────────────
+        ("Zelda", "Controller", "Pro Controller Zelda TotK Edition", "Limited Edition", "high", 85),
+        ("Splatoon", "Controller", "Pro Controller Splatoon 3 Edition", "Limited Edition", "mid", 75),
+        ("Xenoblade", "Controller", "Pro Controller Xenoblade 3 Edition", "Limited Edition", "mid", 75),
+        ("Monster Hunter", "Controller", "Pro Controller Monster Hunter Rise Edition", "Limited Edition", "mid", 80),
+
+        # === ROUND 2 — Amiibo Complete Collection ===
+
+        # ── Amiibo - Super Smash Bros. Series (Complete) ─────────────────
+        ("Mario", "Amiibo", "Luigi (Super Smash Bros.)", "", "standard", 15),
+        ("Mario", "Amiibo", "Peach (Super Smash Bros.)", "", "standard", 15),
+        ("Mario", "Amiibo", "Bowser (Super Smash Bros.)", "", "standard", 16),
+        ("Mario", "Amiibo", "Yoshi (Super Smash Bros.)", "", "standard", 15),
+        ("Mario", "Amiibo", "Rosalina & Luma (Smash Bros.)", "Target Exclusive", "high", 85),
+        ("Mario", "Amiibo", "Wario (Super Smash Bros.)", "", "standard", 18),
+        ("Mario", "Amiibo", "Donkey Kong (Super Smash Bros.)", "", "standard", 16),
+        ("Mario", "Amiibo", "Diddy Kong (Super Smash Bros.)", "", "standard", 18),
+        ("Mario", "Amiibo", "Toad (Super Smash Bros.)", "", "standard", 15),
+        ("Mario", "Amiibo", "Captain Falcon (Super Smash Bros.)", "", "mid", 40),
+        ("Mario", "Amiibo", "Little Mac (Super Smash Bros.)", "", "mid", 50),
+        ("Mario", "Amiibo", "Pit (Super Smash Bros.)", "", "mid", 35),
+        ("Mario", "Amiibo", "Palutena (Super Smash Bros.)", "", "mid", 40),
+        ("Mario", "Amiibo", "Dark Pit (Super Smash Bros.)", "Best Buy Exclusive", "mid", 55),
+        ("Mario", "Amiibo", "Ike (Super Smash Bros.)", "", "mid", 45),
+        ("Mario", "Amiibo", "Robin (Super Smash Bros.)", "", "mid", 50),
+        ("Mario", "Amiibo", "Lucina (Super Smash Bros.)", "", "mid", 55),
+        ("Mario", "Amiibo", "Roy (Super Smash Bros.)", "", "mid", 35),
+        ("Mario", "Amiibo", "R.O.B. (Super Smash Bros.)", "", "mid", 30),
+        ("Mario", "Amiibo", "R.O.B. Famicom Colors (Smash Bros.)", "JP Exclusive", "high", 85),
+        ("Mario", "Amiibo", "Mr. Game & Watch (Super Smash Bros.)", "", "mid", 45),
+        ("Mario", "Amiibo", "Duck Hunt (Super Smash Bros.)", "", "mid", 35),
+        ("Mario", "Amiibo", "Pac-Man (Super Smash Bros.)", "", "standard", 20),
+        ("Mario", "Amiibo", "Mega Man (Super Smash Bros.)", "", "standard", 22),
+        ("Mario", "Amiibo", "Sonic (Super Smash Bros.)", "", "standard", 22),
+        ("Mario", "Amiibo", "Ryu (Super Smash Bros.)", "", "standard", 20),
+        ("Mario", "Amiibo", "Cloud (Super Smash Bros.)", "", "standard", 22),
+        ("Mario", "Amiibo", "Cloud Player 2 (Super Smash Bros.)", "", "mid", 40),
+        ("Mario", "Amiibo", "Bayonetta (Super Smash Bros.)", "", "standard", 22),
+        ("Mario", "Amiibo", "Bayonetta Player 2 (Smash Bros.)", "", "mid", 45),
+        ("Mario", "Amiibo", "Incineroar (Super Smash Bros.)", "", "standard", 18),
+        ("Mario", "Amiibo", "Simon Belmont (Super Smash Bros.)", "", "standard", 18),
+        ("Mario", "Amiibo", "Richter (Super Smash Bros.)", "", "standard", 18),
+        ("Mario", "Amiibo", "Chrom (Super Smash Bros.)", "", "standard", 20),
+        ("Mario", "Amiibo", "Dark Samus (Super Smash Bros.)", "", "standard", 20),
+        ("Mario", "Amiibo", "King K. Rool (Super Smash Bros.)", "", "standard", 18),
+        ("Mario", "Amiibo", "Ice Climbers (Super Smash Bros.)", "", "standard", 18),
+        ("Mario", "Amiibo", "Piranha Plant (Super Smash Bros.)", "", "standard", 18),
+        ("Mario", "Amiibo", "Isabelle (Super Smash Bros.)", "", "standard", 16),
+        ("Mario", "Amiibo", "Ken (Super Smash Bros.)", "", "standard", 18),
+        ("Mario", "Amiibo", "Young Link (Super Smash Bros.)", "", "standard", 20),
+        ("Mario", "Amiibo", "Joker (Super Smash Bros.)", "", "mid", 35),
+        ("Mario", "Amiibo", "Hero (Super Smash Bros.)", "", "mid", 30),
+        ("Mario", "Amiibo", "Banjo & Kazooie (Super Smash Bros.)", "", "mid", 35),
+        ("Mario", "Amiibo", "Terry Bogard (Super Smash Bros.)", "", "mid", 30),
+        ("Mario", "Amiibo", "Byleth (Super Smash Bros.)", "", "standard", 22),
+        ("Mario", "Amiibo", "Min Min (Super Smash Bros.)", "", "standard", 20),
+        ("Mario", "Amiibo", "Steve (Super Smash Bros.)", "", "mid", 35),
+        ("Mario", "Amiibo", "Alex (Super Smash Bros.)", "", "mid", 35),
+        ("Mario", "Amiibo", "Sephiroth (Super Smash Bros.)", "", "mid", 40),
+        ("Mario", "Amiibo", "Kazuya (Super Smash Bros.)", "", "mid", 35),
+        ("Mario", "Amiibo", "Sora (Super Smash Bros.)", "", "mid", 45),
+
+        # ── Amiibo - Super Mario Series ─────────────────────────────────
+        ("Mario", "Amiibo", "Mario (Super Mario Series)", "", "standard", 14),
+        ("Mario", "Amiibo", "Luigi (Super Mario Series)", "", "standard", 14),
+        ("Mario", "Amiibo", "Peach (Super Mario Series)", "", "standard", 14),
+        ("Mario", "Amiibo", "Toad (Super Mario Series)", "", "standard", 14),
+        ("Mario", "Amiibo", "Bowser (Super Mario Series)", "", "standard", 16),
+        ("Mario", "Amiibo", "Yoshi (Super Mario Series)", "", "standard", 14),
+        ("Mario", "Amiibo", "Rosalina (Super Mario Series)", "", "standard", 18),
+        ("Mario", "Amiibo", "Donkey Kong (Super Mario Series)", "", "standard", 16),
+        ("Mario", "Amiibo", "Diddy Kong (Super Mario Series)", "", "standard", 16),
+        ("Mario", "Amiibo", "Daisy (Super Mario Series)", "", "standard", 16),
+        ("Mario", "Amiibo", "Waluigi (Super Mario Series)", "", "standard", 18),
+        ("Mario", "Amiibo", "Boo (Super Mario Series)", "", "mid", 35),
+        ("Mario", "Amiibo", "Goomba (Super Mario Series)", "", "standard", 16),
+        ("Mario", "Amiibo", "Koopa Troopa (Super Mario Series)", "", "standard", 16),
+        ("Mario", "Amiibo", "Bowser Jr. (Super Mario Series)", "", "standard", 18),
+
+        # ── Amiibo - Animal Crossing Series ──────────────────────────────
+        ("Animal Crossing", "Amiibo", "Isabelle (Animal Crossing Series)", "", "standard", 14),
+        ("Animal Crossing", "Amiibo", "K.K. Slider (Animal Crossing)", "", "standard", 16),
+        ("Animal Crossing", "Amiibo", "Tom Nook (Animal Crossing)", "", "standard", 14),
+        ("Animal Crossing", "Amiibo", "Mabel (Animal Crossing)", "", "standard", 14),
+        ("Animal Crossing", "Amiibo", "Blathers (Animal Crossing)", "", "standard", 14),
+        ("Animal Crossing", "Amiibo", "Celeste (Animal Crossing)", "", "standard", 16),
+        ("Animal Crossing", "Amiibo", "Resetti (Animal Crossing)", "", "standard", 14),
+        ("Animal Crossing", "Amiibo", "Kicks (Animal Crossing)", "", "standard", 14),
+        ("Animal Crossing", "Amiibo", "Rover (Animal Crossing)", "", "mid", 30),
+        ("Animal Crossing", "Amiibo", "Timmy & Tommy (Animal Crossing)", "", "standard", 18),
+
+        # ── Amiibo - Zelda 30th Anniversary ─────────────────────────────
+        ("Zelda", "Amiibo", "8-Bit Link (30th Anniversary)", "", "mid", 40),
+        ("Zelda", "Amiibo", "Ocarina of Time Link (30th Anniversary)", "", "mid", 45),
+        ("Zelda", "Amiibo", "Wind Waker Link (30th Anniversary)", "", "mid", 40),
+        ("Zelda", "Amiibo", "Toon Zelda (Wind Waker)", "", "mid", 35),
+        ("Zelda", "Amiibo", "Majora's Mask Link", "", "mid", 55),
+        ("Zelda", "Amiibo", "Twilight Princess Link", "", "mid", 45),
+
+        # ── Amiibo - Monster Hunter Series ───────────────────────────────
+        ("Monster Hunter", "Amiibo", "One-Eyed Rathalos & Rider (Boy)", "JP Exclusive", "high", 120),
+        ("Monster Hunter", "Amiibo", "Qurupeco & Dan (MH Stories)", "JP Exclusive", "high", 110),
+        ("Monster Hunter", "Amiibo", "Palamute (MH Rise)", "", "mid", 35),
+        ("Monster Hunter", "Amiibo", "Palico (MH Rise)", "", "mid", 35),
+        ("Monster Hunter", "Amiibo", "Magnamalo (MH Rise)", "", "mid", 40),
+
+        # ── Amiibo - Shovel Knight / Misc ────────────────────────────────
+        ("Mario", "Amiibo", "Shovel Knight", "", "mid", 35),
+        ("Mario", "Amiibo", "Shovel Knight Gold Edition", "Best Buy Exclusive", "high", 90),
+
+        # === ROUND 3 — Pokemon Center Deep Dive ===
+
+        # ── Pokemon Center - Plush Waves ─────────────────────────────────
+        ("Pokemon", "Plush", "Umbreon Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Espeon Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Glaceon Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Leafeon Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Flareon Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Vaporeon Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Jolteon Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Fuecoco Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Sprigatito Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Quaxly Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Bulbasaur Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Squirtle Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Charmander Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Meowth Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Togepi Plush 6in", "", "standard", 16),
+        ("Pokemon", "Plush", "Psyduck Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Magikarp Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Ditto Plush 6in", "", "standard", 16),
+        ("Pokemon", "Plush", "Alcremie Plush 8in", "Pokemon Center", "mid", 30),
+        ("Pokemon", "Plush", "Wooloo Plush 8in", "", "standard", 18),
+        ("Pokemon", "Plush", "Corviknight Plush 10in", "", "standard", 22),
+        ("Pokemon", "Plush", "Dragapult Plush 12in", "", "standard", 25),
+        ("Pokemon", "Plush", "Cetitan Plush 10in", "", "standard", 22),
+
+        # ── Pokemon Center - Costume Pikachu Series ─────────────────────
+        ("Pokemon", "Plush", "Pikachu Mega Charizard X Poncho Plush", "Pokemon Center JP", "high", 130),
+        ("Pokemon", "Plush", "Pikachu Mega Charizard Y Poncho Plush", "Pokemon Center JP", "high", 130),
+        ("Pokemon", "Plush", "Pikachu Mega Lucario Poncho Plush", "Pokemon Center JP", "high", 120),
+        ("Pokemon", "Plush", "Pikachu Mega Audino Poncho Plush", "Pokemon Center JP", "high", 110),
+        ("Pokemon", "Plush", "Pikachu Gyarados Poncho Plush", "Pokemon Center JP", "high", 120),
+
+        # ── Pokemon Center - Regional Exclusives ─────────────────────────
+        ("Pokemon", "Plush", "Pikachu Yokohama Sailor Plush", "Pokemon Center Yokohama", "high", 85),
+        ("Pokemon", "Plush", "Pikachu Osaka Takoyaki Plush", "Pokemon Center Osaka", "high", 80),
+        ("Pokemon", "Plush", "Pikachu Sapporo Snow Festival Plush", "Pokemon Center Sapporo", "high", 90),
+        ("Pokemon", "Plush", "Pikachu Kyoto Maiko Plush", "Pokemon Center Kyoto", "high", 85),
+        ("Pokemon", "Plush", "Pikachu Okinawa Kariyushi Plush", "Pokemon Center Okinawa", "high", 80),
+        ("Pokemon", "Plush", "Pikachu Singapore Plush", "Pokemon Center Singapore", "high", 75),
+
+        # ── Pokemon Center - Event Exclusive Plush ───────────────────────
+        ("Pokemon", "Event", "Worlds 2022 Pikachu Plush London", "Pokemon Worlds", "high", 140),
+        ("Pokemon", "Event", "Worlds 2024 Pikachu Plush Honolulu", "Pokemon Worlds", "high", 160),
+        ("Pokemon", "Event", "Pikachu Outbreak Yokohama 2023 Plush", "Pokemon Center JP", "high", 100),
+        ("Pokemon", "Event", "Pokemon Day 2024 Special Pikachu", "Pokemon Center", "mid", 65),
+
+        # ── Pokemon Center - Trainer Accessories ─────────────────────────
+        ("Pokemon", "TCG Accessory", "Eeveelutions Premium Playmat", "Pokemon Center", "mid", 38),
+        ("Pokemon", "TCG Accessory", "Gengar Halloween Premium Sleeves 65ct", "Pokemon Center", "standard", 14),
+        ("Pokemon", "TCG Accessory", "Pikachu Leather Binder 9-Pocket", "Pokemon Center", "mid", 45),
+        ("Pokemon", "TCG Accessory", "Paldea Starters Deck Box", "Pokemon Center", "standard", 18),
+        ("Pokemon", "TCG Accessory", "Charizard ex Premium Collection Box", "Pokemon Center", "mid", 55),
+
+        # ── Pokemon Center - Figures Additional ──────────────────────────
+        ("Pokemon", "Figure", "Pikachu VMAX Climax Figure", "Pokemon Center JP", "mid", 50),
+        ("Pokemon", "Figure", "Mewtwo Strikes Back Evolution Premium Figure", "Pokemon Center", "mid", 65),
+        ("Pokemon", "Figure", "Arceus 1/7 Scale Figure", "", "high", 180),
+        ("Pokemon", "Figure", "Red & Charizard Premium Statue", "Pokemon Center", "grail", 250),
+
+        # === ROUND 4 — All Franchises Deep Dive ===
+
+        # ── Zelda - Complete Merch Collection ────────────────────────────
+        ("Zelda", "Book", "The Legend of Zelda Encyclopedia", "", "mid", 45),
+        ("Zelda", "Book", "Breath of the Wild Master Works", "", "mid", 55),
+        ("Zelda", "Book", "Majora's Mask 3D Collector's Guide", "", "mid", 40),
+        ("Zelda", "Replica", "Master Sword 1:1 Scale First 4 Figures", "First 4 Figures", "grail", 350),
+        ("Zelda", "Replica", "Goddess Sword Skyward Sword Replica", "", "high", 140),
+        ("Zelda", "Replica", "Fierce Deity Sword Replica", "", "high", 160),
+        ("Zelda", "Figure", "Link on Horseback First 4 Figures", "First 4 Figures", "grail", 500),
+        ("Zelda", "Figure", "Skull Kid Majora's Mask First 4 Figures", "First 4 Figures", "grail", 400),
+        ("Zelda", "Figure", "Urbosa Breath of the Wild First 4 Figures", "First 4 Figures", "grail", 380),
+        ("Zelda", "Figure", "Daruk Breath of the Wild First 4 Figures", "First 4 Figures", "grail", 360),
+        ("Zelda", "Figure", "Mipha Breath of the Wild First 4 Figures", "First 4 Figures", "grail", 380),
+        ("Zelda", "Figure", "Revali Breath of the Wild First 4 Figures", "First 4 Figures", "grail", 370),
+        ("Zelda", "Merch", "Sheikah Eye Night Light", "Nintendo Store", "standard", 28),
+        ("Zelda", "Merch", "Triforce LED Lamp", "", "mid", 40),
+        ("Zelda", "Merch", "Korok Seed Keychain Set (8pc)", "Nintendo Store", "mid", 35),
+        ("Zelda", "Merch", "Hylian Shield Backpack", "Nintendo Store", "mid", 65),
+        ("Zelda", "Merch", "Breath of the Wild Map Poster Canvas", "Nintendo Store", "mid", 45),
+        ("Zelda", "Soundtrack", "Zelda 25th Anniversary Orchestra CD", "Club Nintendo", "high", 95),
+        ("Zelda", "Soundtrack", "Breath of the Wild Original Soundtrack 5-CD Set", "", "high", 120),
+        ("Zelda", "Soundtrack", "Tears of the Kingdom Soundtrack", "", "mid", 55),
+        ("Zelda", "Steelbook", "Link's Awakening Steelbook", "Limited Edition", "mid", 45),
+        ("Zelda", "Steelbook", "Majora's Mask 3D Steelbook", "Limited Edition", "mid", 50),
+
+        # ── Mario - Complete Merch Collection ────────────────────────────
+        ("Mario", "Figure", "Mario Nendoroid", "", "mid", 55),
+        ("Mario", "Figure", "Luigi Nendoroid", "", "mid", 55),
+        ("Mario", "Figure", "Princess Peach Nendoroid", "", "mid", 55),
+        ("Mario", "Figure", "Toad Nendoroid", "", "mid", 50),
+        ("Mario", "Figure", "Bowser First 4 Figures", "First 4 Figures", "grail", 450),
+        ("Mario", "Figure", "Mario on Yoshi First 4 Figures", "First 4 Figures", "grail", 400),
+        ("Mario", "Plush", "Chain Chomp Plush 8in", "", "standard", 20),
+        ("Mario", "Plush", "Boo Plush 8in", "", "standard", 18),
+        ("Mario", "Plush", "Bob-omb Plush 6in", "", "standard", 16),
+        ("Mario", "Plush", "Goomba Plush 6in", "", "standard", 16),
+        ("Mario", "Plush", "Koopa Troopa Plush 8in", "", "standard", 18),
+        ("Mario", "Plush", "Toad Plush 8in", "", "standard", 16),
+        ("Mario", "Plush", "Bowser Jr. Plush 8in", "", "standard", 20),
+        ("Mario", "Plush", "Yoshi Green Plush 12in", "", "standard", 24),
+        ("Mario", "Plush", "Princess Peach Plush 10in", "", "standard", 22),
+        ("Mario", "Merch", "Mario Kart 8 Deluxe Red Shell Replica", "Nintendo Store", "mid", 45),
+        ("Mario", "Merch", "Super Star LED Lamp", "", "mid", 38),
+        ("Mario", "Merch", "? Block Lamp with Sound", "", "mid", 42),
+        ("Mario", "Merch", "Bullet Bill Desk Lamp", "", "mid", 40),
+        ("Mario", "Merch", "Mario Movie Collector's Edition Poster Set", "", "mid", 35),
+        ("Mario", "Soundtrack", "Super Mario Galaxy Original Soundtrack Platinum", "", "high", 80),
+        ("Mario", "Soundtrack", "Super Mario Odyssey Original Soundtrack 4-CD", "", "mid", 65),
+        ("Mario", "Soundtrack", "Super Mario Bros. Movie Soundtrack Vinyl", "", "mid", 40),
+        ("Mario", "Controller", "Joy-Con Super Mario Movie Edition", "Limited Edition", "mid", 75),
+        ("Mario", "Carrying Case", "Nintendo Switch Mario Kart Carrying Case", "", "standard", 25),
+
+        # ── Animal Crossing - Deep Dive ──────────────────────────────────
+        ("Animal Crossing", "Plush", "Brewster Plush 10in", "", "standard", 22),
+        ("Animal Crossing", "Plush", "Pascal Plush 8in", "", "standard", 20),
+        ("Animal Crossing", "Plush", "Flick Plush 10in", "", "standard", 22),
+        ("Animal Crossing", "Plush", "CJ Plush 10in", "", "standard", 22),
+        ("Animal Crossing", "Plush", "Daisy Mae Plush 8in", "", "standard", 20),
+        ("Animal Crossing", "Plush", "Leif Plush 8in", "", "standard", 20),
+        ("Animal Crossing", "Figure", "Isabelle Nendoroid", "", "mid", 50),
+        ("Animal Crossing", "Figure", "Tom Nook Nendoroid", "", "mid", 50),
+        ("Animal Crossing", "Figure", "Villager Nendoroid", "", "mid", 55),
+        ("Animal Crossing", "Merch", "Museum Fish Model Set", "Nintendo Store", "mid", 55),
+        ("Animal Crossing", "Merch", "Nook's Cranny Premium Ceramic Set", "Nintendo Store JP", "high", 85),
+        ("Animal Crossing", "Merch", "Animal Crossing Island Life Tote Bag", "Nintendo Store", "standard", 28),
+        ("Animal Crossing", "Merch", "Brewster Coffee Mug & Saucer", "Nintendo Store", "standard", 28),
+        ("Animal Crossing", "Merch", "Animal Crossing Amiibo Card Album", "", "standard", 18),
+        ("Animal Crossing", "Soundtrack", "Animal Crossing NH Original Soundtrack 7-CD Set", "", "high", 120),
+
+        # ── Splatoon - Deep Dive ─────────────────────────────────────────
+        ("Splatoon", "Plush", "Octopus Plush (Red)", "", "standard", 20),
+        ("Splatoon", "Plush", "Squid Plush (Purple)", "", "standard", 20),
+        ("Splatoon", "Plush", "Squid Plush (Neon Green)", "", "standard", 20),
+        ("Splatoon", "Plush", "Little Buddy Plush 6in", "", "standard", 16),
+        ("Splatoon", "Figure", "Inkling Girl Figma", "", "mid", 65),
+        ("Splatoon", "Figure", "Inkling Boy Figma", "", "mid", 65),
+        ("Splatoon", "Figure", "Agent 3 Figma", "", "mid", 70),
+        ("Splatoon", "Merch", "Splatoon 3 Splat Roller Pen", "Nintendo Store", "standard", 18),
+        ("Splatoon", "Merch", "Splatoon 3 Squid Band Tee Shirt", "Nintendo Store", "standard", 28),
+        ("Splatoon", "Merch", "Splatoon 3 Deep Cut Poster Set", "Nintendo Store JP", "mid", 35),
+        ("Splatoon", "Soundtrack", "Splatoon 3 Original Soundtrack Splatune 3", "", "mid", 55),
+        ("Splatoon", "Controller", "Joy-Con Splatoon 3 Gradient Edition", "Limited Edition", "mid", 75),
+
+        # ── Kirby - Deep Dive ────────────────────────────────────────────
+        ("Kirby", "Plush", "Meta Knight Plush 10in", "", "standard", 22),
+        ("Kirby", "Plush", "Bandana Waddle Dee Plush 8in", "", "standard", 18),
+        ("Kirby", "Plush", "Kirby Sleeping Plush 10in", "", "standard", 20),
+        ("Kirby", "Plush", "Kirby Star Allies Friends Set (4 Plush)", "Nintendo Store JP", "mid", 55),
+        ("Kirby", "Plush", "Marx Plush 8in", "", "standard", 22),
+        ("Kirby", "Plush", "Magolor Plush 8in", "", "standard", 22),
+        ("Kirby", "Figure", "Kirby Nendoroid Ice", "", "mid", 50),
+        ("Kirby", "Figure", "Meta Knight Nendoroid", "", "mid", 55),
+        ("Kirby", "Figure", "King Dedede Nendoroid", "", "mid", 55),
+        ("Kirby", "Figure", "Kirby Discovery Figure Collection Set", "", "mid", 45),
+        ("Kirby", "Merch", "Kirby Cafe Plate & Cutlery Set", "Kirby Cafe JP", "mid", 55),
+        ("Kirby", "Merch", "Kirby Cafe Menu Drink Bottle", "Kirby Cafe JP", "mid", 30),
+        ("Kirby", "Merch", "Kirby 30th Anniversary Coin Set", "Nintendo Store JP", "mid", 45),
+        ("Kirby", "Merch", "Warp Star Lamp", "", "mid", 42),
+        ("Kirby", "Soundtrack", "Kirby and the Forgotten Land Soundtrack", "", "mid", 45),
+
+        # ── Fire Emblem - Deep Dive ──────────────────────────────────────
+        ("Fire Emblem", "Figure", "Dimitri 1/7 Scale Figure", "", "high", 150),
+        ("Fire Emblem", "Figure", "Claude 1/7 Scale Figure", "", "high", 145),
+        ("Fire Emblem", "Figure", "Lyn Figma", "", "mid", 75),
+        ("Fire Emblem", "Figure", "Celica Figma", "", "mid", 65),
+        ("Fire Emblem", "Figure", "Alear (Female) 1/7 Scale Figure", "", "high", 145),
+        ("Fire Emblem", "Amiibo", "Alm (Fire Emblem Echoes)", "", "mid", 40),
+        ("Fire Emblem", "Amiibo", "Celica (Fire Emblem Echoes)", "", "mid", 40),
+        ("Fire Emblem", "Amiibo", "Tiki (Fire Emblem)", "", "mid", 45),
+        ("Fire Emblem", "Amiibo", "Chrom (Fire Emblem)", "", "mid", 35),
+        ("Fire Emblem", "Book", "Fire Emblem Art Book: 25th Anniversary", "", "high", 85),
+        ("Fire Emblem", "Book", "Fire Emblem Heroes Character Design Book", "", "mid", 45),
+        ("Fire Emblem", "Merch", "Fire Emblem Engage Emblem Ring Replica Set", "Nintendo Store", "high", 120),
+
+        # ── Metroid - Deep Dive ──────────────────────────────────────────
+        ("Metroid", "Figure", "Samus Aran Light Suit Figma", "", "high", 95),
+        ("Metroid", "Figure", "Samus Zero Suit Figma", "", "mid", 75),
+        ("Metroid", "Figure", "Metroid Prime 2 Dark Samus Statue", "First 4 Figures", "grail", 350),
+        ("Metroid", "Figure", "Samus Returns Special Edition Figure", "", "mid", 65),
+        ("Metroid", "Amiibo", "Samus Aran (Super Smash Bros.)", "", "standard", 18),
+        ("Metroid", "Amiibo", "Zero Suit Samus (Super Smash Bros.)", "", "mid", 35),
+        ("Metroid", "Amiibo", "Samus & E.M.M.I. 2-Pack (Metroid Dread)", "", "mid", 50),
+        ("Metroid", "Replica", "Metroid Dread E.M.M.I. Statue", "First 4 Figures", "grail", 300),
+        ("Metroid", "Soundtrack", "Metroid Dread Original Soundtrack", "", "mid", 45),
+        ("Metroid", "Steelbook", "Metroid Dread Steelbook", "Limited Edition", "mid", 40),
+
+        # ── Xenoblade - Deep Dive ────────────────────────────────────────
+        ("Xenoblade", "Figure", "Shulk 1/7 Scale Figure", "", "high", 160),
+        ("Xenoblade", "Figure", "Mio 1/7 Scale Figure (Xenoblade 3)", "", "high", 170),
+        ("Xenoblade", "Figure", "Rex 1/7 Scale Figure (Xenoblade 2)", "", "high", 165),
+        ("Xenoblade", "Figure", "Pneuma 1/7 Scale Figure (Xenoblade 2)", "", "high", 180),
+        ("Xenoblade", "Figure", "Nia 1/7 Scale Figure (Xenoblade 2)", "", "high", 160),
+        ("Xenoblade", "Amiibo", "Shulk (Super Smash Bros.)", "", "mid", 40),
+        ("Xenoblade", "Amiibo", "Pyra (Super Smash Bros.)", "", "mid", 35),
+        ("Xenoblade", "Amiibo", "Mythra (Super Smash Bros.)", "", "mid", 35),
+        ("Xenoblade", "Amiibo", "Noah (Xenoblade 3)", "", "mid", 30),
+        ("Xenoblade", "Amiibo", "Mio (Xenoblade 3)", "", "mid", 30),
+        ("Xenoblade", "Merch", "Xenoblade 2 Collector's Edition Artbook", "Nintendo Store", "mid", 60),
+        ("Xenoblade", "Soundtrack", "Xenoblade Chronicles Definitive Soundtrack", "", "mid", 55),
+        ("Xenoblade", "Soundtrack", "Xenoblade Chronicles 3 Original Soundtrack 6-CD", "", "high", 80),
+
+        # ── Pikmin - Deep Dive ───────────────────────────────────────────
+        ("Pikmin", "Plush", "Glow Pikmin Plush 6in (Pikmin 4)", "Nintendo Store", "mid", 22),
+        ("Pikmin", "Plush", "Bulbmin Plush 6in", "Nintendo Store JP", "mid", 28),
+        ("Pikmin", "Plush", "Oatchi Plush 8in (Pikmin 4)", "Nintendo Store", "standard", 22),
+        ("Pikmin", "Plush", "Pikmin Full Set (All 9 Types)", "Nintendo Store JP", "high", 120),
+        ("Pikmin", "Figure", "Pikmin 4 Ice Onion Figure Set", "Nintendo Store", "mid", 48),
+        ("Pikmin", "Figure", "Captain Olimar Nendoroid", "", "mid", 55),
+        ("Pikmin", "Merch", "Pikmin Terrarium Collection Full Set", "", "mid", 65),
+        ("Pikmin", "Merch", "Pikmin Bloom 1st Anniversary Pin Set", "Nintendo Store", "mid", 30),
+        ("Pikmin", "Merch", "Pikmin 4 Ice Pikmin LED Light", "Nintendo Store", "standard", 28),
+
+        # ── Star Fox / F-Zero / EarthBound - Deep Dive ───────────────────
+        ("Star Fox", "Figure", "Arwing Ship Model", "", "high", 95),
+        ("Star Fox", "Amiibo", "Falco (Star Fox Series)", "", "standard", 18),
+        ("Star Fox", "Merch", "Star Fox Zero Premium Pin Set", "Nintendo Store", "mid", 35),
+        ("F-Zero", "Merch", "Blue Falcon Model Kit", "", "high", 110),
+        ("F-Zero", "Merch", "F-Zero GX Soundtrack Vinyl Repress", "", "high", 85),
+        ("F-Zero", "Figure", "Captain Falcon Nendoroid", "", "mid", 65),
+        ("EarthBound", "Figure", "Lucas Nendoroid", "", "mid", 65),
+        ("EarthBound", "Merch", "Mr. Saturn Plush 6in", "", "mid", 35),
+        ("EarthBound", "Merch", "EarthBound Player's Guide Reprint", "", "high", 85),
+        ("EarthBound", "Merch", "Mother 3 Handbook (JP)", "", "mid", 55),
+
+        # === ROUND 5 — Special Editions, Controllers, Carrying Cases ===
+
+        # ── Special Edition Consoles / Hardware ──────────────────────────
+        ("Mario", "Console", "Nintendo Switch OLED Mario Red Edition", "Limited Edition", "high", 350),
+        ("Pokemon", "Console", "Nintendo Switch Lite Zacian & Zamazenta", "Limited Edition", "high", 240),
+        ("Mario", "Console", "Nintendo 2DS XL Super Mario Maker Edition", "Limited Edition", "high", 200),
+        ("Zelda", "Console", "New Nintendo 3DS XL Majora's Mask Edition", "Limited Edition", "grail", 350),
+        ("Zelda", "Console", "New Nintendo 3DS XL Hyrule Gold Edition", "Limited Edition", "high", 280),
+        ("Pokemon", "Console", "New Nintendo 3DS XL Solgaleo Lunala", "Limited Edition", "high", 250),
+        ("Mario", "Console", "Nintendo Switch Super Mario Odyssey Bundle", "Limited Edition", "high", 300),
+
+        # ── Themed Controllers ───────────────────────────────────────────
+        ("Mario", "Controller", "Joy-Con Pastel Purple & Green", "Limited Edition", "mid", 75),
+        ("Zelda", "Controller", "GameCube Controller Smash Bros. Ultimate", "Limited Edition", "mid", 60),
+        ("Pokemon", "Controller", "PowerA Enhanced Wireless Pikachu Gold", "", "standard", 28),
+        ("Pokemon", "Controller", "Hori Split Pad Pro Pikachu & Eevee", "", "standard", 35),
+        ("Animal Crossing", "Controller", "Pro Controller Animal Crossing Edition", "Limited Edition", "mid", 75),
+        ("Mario", "Controller", "N64 Controller for Switch (NSO)", "Nintendo Store", "mid", 50),
+
+        # ── Carrying Cases & Accessories ─────────────────────────────────
+        ("Zelda", "Carrying Case", "Nintendo Switch Zelda TotK Travel Case", "", "standard", 25),
+        ("Pokemon", "Carrying Case", "Nintendo Switch Pokemon Legends Arceus Case", "", "standard", 22),
+        ("Splatoon", "Carrying Case", "Nintendo Switch Splatoon 3 Splat Pack Case", "", "standard", 25),
+        ("Animal Crossing", "Carrying Case", "Nintendo Switch AC Aloha Edition Case", "", "standard", 22),
+        ("Mario", "Carrying Case", "Nintendo Switch Super Mario Odyssey Traveler Case", "", "standard", 22),
+
+        # ── Art Books & Coffee Table Books ───────────────────────────────
+        ("Mario", "Book", "Super Mario Bros. Encyclopedia", "", "mid", 40),
+        ("Mario", "Book", "The Art of Super Mario Odyssey", "", "mid", 45),
+        ("Splatoon", "Book", "The Art of Splatoon", "", "mid", 40),
+        ("Splatoon", "Book", "The Art of Splatoon 2", "", "mid", 40),
+        ("Splatoon", "Book", "The Art of Splatoon 3", "", "mid", 45),
+        ("Kirby", "Book", "Kirby Art & Style Collection", "", "mid", 40),
+        ("Pokemon", "Book", "Pokemon Visual Companion Complete Edition", "", "mid", 35),
+        ("Pokemon", "Book", "Pokemon Adventures Box Set (Vol 1-7)", "", "mid", 55),
+
+        # ── Nintendo Store Exclusives - Additional ───────────────────────
+        ("Mario", "Store Exclusive", "Nintendo Store Tokyo 5th Anniversary Coin Set", "Nintendo Store Tokyo", "high", 90),
+        ("Zelda", "Store Exclusive", "Nintendo Store NY Sheikah Slate Notebook", "Nintendo Store NY", "mid", 35),
+        ("Kirby", "Store Exclusive", "Nintendo Store Osaka Kirby Takoyaki Plush", "Nintendo Store Osaka", "mid", 45),
+        ("Splatoon", "Store Exclusive", "Nintendo Store Tokyo Splatoon 3 Tee", "Nintendo Store Tokyo", "mid", 40),
+        ("Animal Crossing", "Store Exclusive", "Nintendo Store NY Nook Inc. Hoodie", "Nintendo Store NY", "mid", 55),
+        ("Pokemon", "Store Exclusive", "Nintendo Store Tokyo Pokemon Trainer Backpack", "Nintendo Store Tokyo", "mid", 65),
+
+        # ── My Nintendo Physical Rewards - Additional ────────────────────
+        ("Mario", "My Nintendo", "My Nintendo Mario Hanafuda Cards", "My Nintendo", "mid", 40),
+        ("Zelda", "My Nintendo", "My Nintendo Zelda Tote Bag", "My Nintendo", "standard", 25),
+        ("Kirby", "My Nintendo", "My Nintendo Kirby Keychain Set", "My Nintendo", "standard", 18),
+        ("Splatoon", "My Nintendo", "My Nintendo Splatoon 3 Poster Set", "My Nintendo", "standard", 20),
+        ("Pokemon", "My Nintendo", "My Nintendo Pokemon Memo Pad Set", "My Nintendo", "standard", 15),
+        ("Animal Crossing", "My Nintendo", "My Nintendo AC Calendar 2024", "My Nintendo", "standard", 18),
+
+        # ── Club Nintendo Vintage Rewards - Additional ───────────────────
+        ("Mario", "Club Nintendo", "Club Nintendo SNES Classic Controller", "Club Nintendo", "high", 120),
+        ("Zelda", "Club Nintendo", "Club Nintendo Fierce Deity Link Figure", "Club Nintendo", "grail", 250),
+        ("Mario", "Club Nintendo", "Club Nintendo Mario Kart Trophy Set (Gold/Silver)", "Club Nintendo", "grail", 280),
+        ("Mario", "Club Nintendo", "Club Nintendo Doc Louis Punch-Out!! Code", "Club Nintendo", "high", 150),
     ]
 
     catalog = []
@@ -216,7 +758,7 @@ def item_to_catalog_item(item: dict) -> CatalogItem:
         item_key=slugify(f"{franchise}-{product_type}-{name}"),
         title=name,
         set_code=franchise.lower().replace(" ", "-"),
-        brand="Nintendo" if franchise in ("Mario", "Zelda", "Kirby", "Splatoon", "Animal Crossing", "Fire Emblem", "Metroid", "Monster Hunter", "Dark Souls") else "Pokemon Company",
+        brand="Pokemon Company" if franchise == "Pokemon" else "Nintendo",
         rarity=item["rarity_tier"].title(),
         notes=f"{franchise} | {product_type}" + (f" | {exclusive}" if exclusive else ""),
         attributes_json={

@@ -356,11 +356,12 @@ export class MockDataProvider implements DataProvider {
     return newItem;
   }
 
-  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string }): Promise<WatchlistItem> {
+  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem> {
     const item = mockWatchlistItems.find((i) => i.id === id);
     if (!item) throw new Error('Watchlist item not found');
     if (updates.targetPrice !== undefined) item.targetPrice = updates.targetPrice;
     if (updates.notes !== undefined) item.notes = updates.notes;
+    if (updates.sortOrder !== undefined) item.sortOrder = updates.sortOrder;
     logger.info('[MockDataProvider] updateWatchlistItem', { id, updates });
     return item;
   }
@@ -370,6 +371,12 @@ export class MockDataProvider implements DataProvider {
     if (index !== -1) {
       mockWatchlistItems.splice(index, 1);
       logger.info('[MockDataProvider] removeWatchlistItem', { id });
+    }
+  }
+
+  async removeWatchlistItems(ids: string[]): Promise<void> {
+    for (const id of ids) {
+      await this.removeWatchlistItem(id);
     }
   }
 

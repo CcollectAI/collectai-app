@@ -17,10 +17,13 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
+from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
+
+_task_enqueue_limit = per_user_rate_limit(10, window_seconds=60, scope="task_enqueue")
 
 
 # ── Request / Response Models ─────────────────────────────────────────────────
@@ -54,6 +57,7 @@ class TaskStatusResponse(BaseModel):
 async def enqueue_task(
     body: EnqueueTaskInput,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_task_enqueue_limit),
 ):
     """Enqueue a background task."""
     pool = get_db_pool()

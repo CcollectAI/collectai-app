@@ -24,10 +24,13 @@ from app.auth import get_current_user_id
 from app.db import db_configured, get_conn
 from app.errors import error_response
 from app.lib.error_codes import ErrorCode
+from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/sets", tags=["sets"])
+
+_set_progress_limit = per_user_rate_limit(30, window_seconds=60, scope="set_progress")
 
 
 # ---------------------------------------------------------------------------
@@ -424,6 +427,7 @@ async def update_set_progress(
     set_id: str,
     req: ProgressUpdateRequest,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_set_progress_limit),
 ):
     """Add or remove items from the user's owned list for a set."""
     set_id = _validate_uuid(set_id, "set_id")

@@ -8,9 +8,14 @@ Covers:
 - Marvel key issues (Amazing Fantasy #15, ASM #129, #300, X-Men #1, etc.)
 - DC key issues (Action Comics #1, Detective Comics #27, Batman #1, etc.)
 - Image/Indie (Saga, Walking Dead, Spawn, etc.)
-- Variant covers (1:25, 1:50, virgin, foil variants)
-- Graded comics (CGC 9.8, 9.6, etc.)
+- Variant covers (1:25, 1:50, 1:100, 1:200, 1:500, virgin, foil variants)
+- Graded comics (CGC 9.8, 9.6, CGC Signature Series)
 - Modern keys (first appearances, death issues)
+- Golden Age (DC, Timely/Atlas), Silver Age (Marvel & DC first appearances)
+- Bronze Age (key deaths, first appearances), Copper Age (DKR, Watchmen, Crisis)
+- Indie publishers (Dark Horse, IDW, BOOM!, Valiant, Vertigo)
+- Magazine-size comics (Creepy, Eerie, Vampirella, Heavy Metal)
+- Omnibus & Absolute editions
 
 Usage:
     python -m pipelines.import_comic_books [--dry-run]
@@ -79,7 +84,7 @@ def _issue_type_score(issue_type: str) -> float:
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated comic books catalog -- ~120 items across 10 subcategories.
+    """Curated comic books catalog -- 500+ items across 52 subcategories.
 
     Tuple format per entry:
         (publisher, series, name, issue_type, rarity_tier, price_eur)
@@ -229,6 +234,477 @@ def get_curated_catalog() -> list[dict]:
         ("Dark Horse", "Lone Wolf and Cub", "Lone Wolf and Cub #1 (1987, English 1st print)", "First Print", "mid", 80.0),
         ("Viz", "Dragon Ball", "Dragon Ball Vol. 1 (English 1st print, 2000)", "First Print", "mid", 60.0),
         ("Viz", "Naruto", "Naruto Vol. 1 (English 1st print, 2003)", "First Print", "mid", 50.0),
+
+        # ── 11. Golden Age Grails (5) ───────────────────────────────────
+        ("Timely", "Captain America Comics", "Captain America Comics #1 (1941, 1st Cap)", "Golden Age Key", "grail", 350000.0),
+        ("Timely", "Marvel Comics", "Marvel Comics #1 (1939, 1st Human Torch)", "Golden Age Key", "grail", 600000.0),
+        ("DC", "More Fun Comics", "More Fun Comics #73 (1st Aquaman & Green Arrow)", "Golden Age Key", "grail", 80000.0),
+        ("Fawcett", "Whiz Comics", "Whiz Comics #2 (1st Captain Marvel/Shazam, 1940)", "Golden Age Key", "grail", 200000.0),
+        ("DC", "All-American Comics", "All-American Comics #16 (1st Green Lantern, 1940)", "Golden Age Key", "grail", 400000.0),
+
+        # ── 12. More Marvel Keys (6) ────────────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #194 (1st Black Cat)", "Bronze Age Key", "grail", 1500.0),
+        ("Marvel", "Avengers", "Avengers #57 (1st Vision)", "Silver Age Key", "grail", 2500.0),
+        ("Marvel", "Captain America", "Captain America #117 (1st Falcon)", "Silver Age Key", "grail", 2000.0),
+        ("Marvel", "Daredevil", "Daredevil #1 (1964, 1st Daredevil)", "Silver Age Key", "grail", 15000.0),
+        ("Marvel", "Strange Tales", "Strange Tales #110 (1st Doctor Strange)", "Silver Age Key", "grail", 20000.0),
+        ("Marvel", "Tales to Astonish", "Tales to Astonish #27 (1st Ant-Man)", "Silver Age Key", "grail", 25000.0),
+
+        # ── 13. More DC Keys (5) ────────────────────────────────────────
+        ("DC", "Batman", "Batman #497 (Bane breaks Batman's back)", "Modern Key", "high", 120.0),
+        ("DC", "Green Lantern", "Green Lantern #7 (1st Sinestro)", "Silver Age Key", "grail", 4000.0),
+        ("DC", "Flash", "Showcase #22 (1st Hal Jordan Green Lantern)", "Silver Age Key", "grail", 20000.0),
+        ("DC", "New Teen Titans", "New Teen Titans #2 (1st Deathstroke)", "Modern Key", "grail", 800.0),
+        ("DC", "Batman", "Batman #357 (1st Killer Croc)", "Modern Key", "high", 200.0),
+
+        # ── 14. Image / Indie Expansion (5) ─────────────────────────────
+        ("Image", "Savage Dragon", "Savage Dragon #1 (1992, Erik Larsen)", "Modern Key", "mid", 40.0),
+        ("Dark Horse", "Sin City", "Sin City: The Hard Goodbye #1 (Frank Miller)", "Modern Key", "high", 150.0),
+        ("Image", "Chew", "Chew #1 (2009, John Layman)", "Modern Key", "high", 250.0),
+        ("Fantagraphics", "Love and Rockets", "Love and Rockets #1 (1982, Hernandez Bros)", "Modern Key", "high", 300.0),
+        ("Mirage", "TMNT", "TMNT #2 (1984, 1st Mousers)", "Modern Key", "grail", 1500.0),
+
+        # ── 15. CGC vs CBCS Market (4) ──────────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CBCS 9.8", "CGC 9.8", "grail", 4500.0),
+        ("DC", "Batman", "Batman Adventures #12 (1st Harley) CBCS 9.8", "CGC 9.8", "grail", 4000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 (1st Wolverine) CGC 9.8", "CGC 9.8", "grail", 50000.0),
+        ("Image", "Saga", "Saga #1 CGC 9.8 Signed by BKV", "Signed", "grail", 800.0),
+
+        # ── 16. Modern First Appearances CGC 9.8 (5) ────────────────────
+        ("Marvel", "Venom", "Venom: Lethal Protector #1 (1993) CGC 9.8", "CGC 9.8", "high", 250.0),
+        ("Image", "Something is Killing the Children", "SIKTC #1 (2019) CGC 9.8", "CGC 9.8", "grail", 1500.0),
+        ("BOOM!", "Something is Killing the Children", "SIKTC #1 Cover A (2019) CGC 9.8", "CGC 9.8", "grail", 1200.0),
+        ("Marvel", "Moon Knight", "Moon Knight #1 (2021 Gleason) CGC 9.8", "CGC 9.8", "high", 120.0),
+        ("DC", "Joker", "Joker #1 (2021, 1st Daughter of Bane) CGC 9.8", "CGC 9.8", "high", 100.0),
+
+        # ── 17. Variant Covers Expansion (5) ────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #55 (2021) 1:25 Gleason Webhead Virgin", "Variant Cover", "high", 200.0),
+        ("DC", "Batman", "Batman #50 (2018) Jim Lee 1:100 Virgin Variant", "Variant Cover", "high", 350.0),
+        ("Marvel", "Venom", "Venom #1 (2018) 1:100 Mark Bagley Virgin Variant", "Variant Cover", "high", 450.0),
+        ("Marvel", "Wolverine", "Wolverine #1 (2020) 1:200 Kael Ngu Virgin Variant", "Variant Cover", "grail", 600.0),
+        ("Image", "Spawn", "Spawn #300 (2019) J. Scott Campbell 1:50 Virgin", "Variant Cover", "high", 300.0),
+
+        # ── 18. Horror / Sci-Fi Keys (15) ──────────────────────────────────
+        ("EC", "Tales from the Crypt", "Tales from the Crypt #33 (1952, Classic Cover)", "Golden Age Key", "grail", 5000.0),
+        ("DC", "House of Secrets", "House of Secrets #92 (1st Swamp Thing)", "Bronze Age Key", "grail", 6000.0),
+        ("Marvel", "Tomb of Dracula", "Tomb of Dracula #10 (1st Blade)", "Bronze Age Key", "grail", 4000.0),
+        ("DC", "Watchmen", "Watchmen #1 (1986, Alan Moore/Dave Gibbons)", "Modern Key", "high", 200.0),
+        ("Image", "The Walking Dead", "Walking Dead #100 (1st Negan)", "Modern Key", "high", 150.0),
+        ("Image", "Something is Killing the Children", "SIKTC #1 (2019, Cover A)", "Modern Key", "high", 350.0),
+        ("IDW", "Locke & Key", "Locke & Key #1 (2008, Joe Hill)", "Modern Key", "high", 200.0),
+        ("Dark Horse", "Aliens", "Aliens #1 (1988, Dark Horse)", "Modern Key", "mid", 80.0),
+        ("Marvel", "Ghost Rider", "Ghost Rider #1 (1973, Son of Satan cameo)", "Bronze Age Key", "high", 300.0),
+        ("EC", "Vault of Horror", "Vault of Horror #12 (#1) (1950)", "Golden Age Key", "grail", 8000.0),
+        ("Marvel", "Blade", "Blade the Vampire Hunter #1 (1994)", "Modern Key", "mid", 40.0),
+        ("DC", "Preacher", "Preacher #1 (1995, Garth Ennis)", "Modern Key", "high", 250.0),
+        ("DC", "Sandman", "Sandman #1 (1989, Neil Gaiman)", "Modern Key", "grail", 800.0),
+        ("DC", "Sandman", "Sandman #8 (1st Death of the Endless)", "Modern Key", "high", 400.0),
+        ("Image", "Negan Lives", "Negan Lives #1 (2020, Red Foil)", "Variant Cover", "mid", 50.0),
+
+        # ── 19. Undervalued / Cult Classic Keys (15) ───────────────────────
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #271 (1st Rocket Raccoon)", "Bronze Age Key", "high", 400.0),
+        ("Marvel", "Avengers", "Avengers #196 (1st Taskmaster)", "Bronze Age Key", "high", 200.0),
+        ("DC", "Supergirl", "Action Comics #252 (1st Supergirl)", "Silver Age Key", "grail", 8000.0),
+        ("Marvel", "Captain Marvel", "Marvel Super-Heroes #12 (1st Captain Marvel)", "Silver Age Key", "grail", 2000.0),
+        ("DC", "Teen Titans", "Brave and the Bold #54 (1st Teen Titans)", "Silver Age Key", "grail", 3000.0),
+        ("Marvel", "X-Men", "X-Men #94 (New X-Men begin, Thunderbird dies)", "Bronze Age Key", "grail", 2500.0),
+        ("Marvel", "Spider-Man", "Amazing Spider-Man #50 (Spider-Man No More!)", "Silver Age Key", "grail", 5000.0),
+        ("Marvel", "Silver Surfer", "Silver Surfer #1 (1968, Origin issue)", "Silver Age Key", "grail", 3000.0),
+        ("Marvel", "X-Factor", "X-Factor #6 (1st Apocalypse full)", "Modern Key", "high", 250.0),
+        ("DC", "Superman", "Superman #75 (Death of Superman, 1992, polybagged)", "Modern Key", "mid", 30.0),
+        ("Marvel", "Spider-Man", "Web of Spider-Man #1 (1985)", "Modern Key", "mid", 40.0),
+        ("Marvel", "Spider-Man", "Peter Parker: Spider-Man #75 (Death of Ben Reilly)", "Modern Key", "mid", 25.0),
+        ("Marvel", "Black Panther", "Fantastic Four #52 (1st Black Panther)", "Silver Age Key", "grail", 12000.0),
+        ("DC", "Batgirl", "Detective Comics #359 (1st Batgirl)", "Silver Age Key", "grail", 4000.0),
+        ("Marvel", "Shang-Chi", "Special Marvel Edition #15 (1st Shang-Chi)", "Bronze Age Key", "high", 400.0),
+
+        # ── 20. Modern Spec / 2020s Keys (20) ─────────────────────────────
+        ("DC", "Batman", "Batman #89 (1st Punchline cameo)", "Modern Key", "high", 100.0),
+        ("DC", "Batman", "Batman #92 (1st Punchline full)", "Modern Key", "mid", 60.0),
+        ("Marvel", "Venom", "Venom #3 (2018, 1st Knull)", "Modern Key", "high", 200.0),
+        ("Marvel", "Thor", "Thor #2 (2020, 1st Black Winter)", "Modern Key", "mid", 50.0),
+        ("Marvel", "Immortal Hulk", "Immortal Hulk #1 (2018, Al Ewing)", "Modern Key", "mid", 80.0),
+        ("BOOM!", "Something is Killing the Children", "SIKTC #12 (1st Bite-Sized)", "Modern Key", "mid", 40.0),
+        ("Marvel", "King in Black", "King in Black #1 (2020, Donny Cates)", "Modern Key", "mid", 30.0),
+        ("Image", "Ice Cream Man", "Ice Cream Man #1 (2018, W. Maxwell Prince)", "Modern Key", "high", 200.0),
+        ("Image", "Department of Truth", "Department of Truth #1 (2020, James Tynion IV)", "Modern Key", "high", 100.0),
+        ("Image", "Radiant Black", "Radiant Black #1 (2021, Kyle Higgins)", "Modern Key", "mid", 40.0),
+        ("Marvel", "Spider-Man", "Amazing Spider-Man #798 (1st Red Goblin)", "Modern Key", "mid", 50.0),
+        ("Marvel", "Moon Knight", "Moon Knight #1 (2021, Jed MacKay)", "Modern Key", "mid", 30.0),
+        ("DC", "Joker", "Joker #1 (2021, James Tynion IV, 1st Daughter of Bane)", "Modern Key", "mid", 35.0),
+        ("Marvel", "X-Men", "House of X #1 (2019, Jonathan Hickman)", "Modern Key", "mid", 40.0),
+        ("Marvel", "X-Men", "Powers of X #1 (2019, Jonathan Hickman)", "Modern Key", "mid", 30.0),
+        ("Image", "Fire & Ice", "Fire & Ice #1 (2023, Bill Willingham cover)", "Modern Key", "mid", 20.0),
+        ("Marvel", "Carnage", "Carnage #1 (2022, Ram V)", "Modern Key", "mid", 25.0),
+        ("DC", "Nightwing", "Nightwing #78 (2021, Tom Taylor run begins)", "Modern Key", "mid", 40.0),
+        ("Marvel", "Spider-Gwen", "Spider-Gwen #1 (2015, Jason Latour)", "Modern Key", "high", 100.0),
+        ("Image", "Geiger", "Geiger #1 (2021, Geoff Johns)", "Modern Key", "mid", 30.0),
+
+        # ── 21. Marvel Silver Age Deep Cuts (10) ─────────────────────────
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #14 (1st Green Goblin)", "Silver Age Key", "grail", 25000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #28 (1st Molten Man)", "Silver Age Key", "grail", 2000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #3 (1st Doctor Octopus)", "Silver Age Key", "grail", 20000.0),
+        ("Marvel", "Avengers", "Avengers #4 (1st Silver Age Captain America)", "Silver Age Key", "grail", 30000.0),
+        ("Marvel", "X-Men", "X-Men #4 (1st Scarlet Witch & Quicksilver)", "Silver Age Key", "grail", 5000.0),
+        ("Marvel", "X-Men", "X-Men #12 (1st Juggernaut)", "Silver Age Key", "grail", 3000.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four #5 (1st Doctor Doom)", "Silver Age Key", "grail", 60000.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four #48 (1st Silver Surfer & Galactus)", "Silver Age Key", "grail", 20000.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four #49 (2nd Silver Surfer & Galactus)", "Silver Age Key", "grail", 5000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #2 (1st Vulture)", "Silver Age Key", "grail", 15000.0),
+
+        # ── 22. Marvel Bronze Age Essentials (10) ────────────────────────
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #121 (Death of Gwen Stacy)", "Bronze Age Key", "grail", 5000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #122 (Death of Green Goblin)", "Bronze Age Key", "grail", 2500.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #101 (1st Morbius)", "Bronze Age Key", "grail", 3000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #182 (Wolverine app)", "Bronze Age Key", "high", 400.0),
+        ("Marvel", "Marvel Premiere", "Marvel Premiere #15 (1st Iron Fist)", "Bronze Age Key", "grail", 1500.0),
+        ("Marvel", "Hero for Hire", "Hero for Hire #1 (1st Luke Cage)", "Bronze Age Key", "grail", 2000.0),
+        ("Marvel", "X-Men", "X-Men #101 (1st Phoenix)", "Bronze Age Key", "grail", 2500.0),
+        ("Marvel", "X-Men", "X-Men #129 (1st Kitty Pryde & Emma Frost)", "Bronze Age Key", "grail", 1000.0),
+        ("Marvel", "X-Men", "X-Men #130 (1st Dazzler)", "Bronze Age Key", "high", 400.0),
+        ("Marvel", "X-Men", "X-Men #137 (Death of Phoenix)", "Bronze Age Key", "grail", 600.0),
+
+        # ── 23. DC Silver/Bronze Age Deep Cuts (10) ──────────────────────
+        ("DC", "Flash", "Flash #105 (1st Silver Age Flash ongoing)", "Silver Age Key", "grail", 15000.0),
+        ("DC", "Flash", "Flash #139 (1st Reverse Flash)", "Silver Age Key", "grail", 5000.0),
+        ("DC", "Green Lantern", "Green Lantern #1 (1st Silver Age GL ongoing, 1960)", "Silver Age Key", "grail", 15000.0),
+        ("DC", "Justice League", "Justice League of America #1 (1960)", "Silver Age Key", "grail", 12000.0),
+        ("DC", "Adventure Comics", "Adventure Comics #247 (1st Legion of Super-Heroes)", "Silver Age Key", "grail", 10000.0),
+        ("DC", "Batman", "Batman #121 (1st Mr. Freeze)", "Silver Age Key", "grail", 8000.0),
+        ("DC", "Batman", "Batman #155 (1st Silver Age Penguin)", "Silver Age Key", "grail", 3000.0),
+        ("DC", "Superman", "Superman #233 (Classic Neal Adams cover, Kryptonite No More)", "Bronze Age Key", "grail", 1000.0),
+        ("DC", "New Gods", "New Gods #1 (1st Orion, Jack Kirby)", "Bronze Age Key", "grail", 800.0),
+        ("DC", "Forever People", "Forever People #1 (1st Darkseid full, Jack Kirby)", "Bronze Age Key", "grail", 1000.0),
+
+        # ── 24. DC Modern/Copper Age Keys (10) ──────────────────────────
+        ("DC", "Batman", "Batman #404 (Year One Part 1, Frank Miller)", "Modern Key", "high", 200.0),
+        ("DC", "Batman", "Batman #386 (1st Black Mask)", "Modern Key", "high", 150.0),
+        ("DC", "Batman", "Batman #635 (1st Jason Todd as Red Hood)", "Modern Key", "high", 250.0),
+        ("DC", "Batman", "Batman #655 (1st Damian Wayne)", "Modern Key", "high", 300.0),
+        ("DC", "Swamp Thing", "Swamp Thing #21 (Alan Moore run begins)", "Modern Key", "high", 200.0),
+        ("DC", "Crisis on Infinite Earths", "Crisis on Infinite Earths #8 (Death of Flash)", "Modern Key", "high", 100.0),
+        ("DC", "Dark Knight Returns", "Batman: The Dark Knight Returns #1 (1986, Frank Miller)", "Modern Key", "grail", 600.0),
+        ("DC", "Superman", "Superman #423 / Action Comics #583 (Whatever Happened to the Man of Tomorrow?)", "Modern Key", "high", 150.0),
+        ("DC", "Suicide Squad", "Legends #3 (1987, New Suicide Squad)", "Modern Key", "mid", 80.0),
+        ("DC", "Batman", "Batman #427 (A Death in the Family Part 2, Jason Todd dies)", "Modern Key", "high", 200.0),
+
+        # ── 25. Image / Indie Keys Expansion (10) ────────────────────────
+        ("Image", "Spawn", "Spawn #9 (1st Angela, Neil Gaiman)", "Modern Key", "high", 100.0),
+        ("Image", "Spawn", "Spawn #174 (1st Gunslinger Spawn)", "Modern Key", "mid", 80.0),
+        ("Image", "Invincible", "Invincible #25 (1st Angstrom Levy)", "Modern Key", "high", 150.0),
+        ("Image", "Invincible", "Invincible #33 (Conquest preview)", "Modern Key", "high", 100.0),
+        ("Image", "Walking Dead", "Walking Dead #19 (1st Michonne)", "Modern Key", "grail", 800.0),
+        ("Image", "Walking Dead", "Walking Dead #27 (1st Governor)", "Modern Key", "high", 250.0),
+        ("Image", "Walking Dead", "Walking Dead #53 (1st Abraham)", "Modern Key", "high", 150.0),
+        ("Image", "Deadly Class", "Deadly Class #1 (2014, Rick Remender)", "Modern Key", "mid", 60.0),
+        ("Image", "East of West", "East of West #1 (2013, Jonathan Hickman)", "Modern Key", "mid", 50.0),
+        ("Image", "Paper Girls", "Paper Girls #1 (2015, BKV)", "Modern Key", "high", 150.0),
+
+        # ── 26. Golden Age Rarities & Timely (8) ─────────────────────────
+        ("Timely", "Human Torch", "Human Torch #5 (#4) (1st Sub-Mariner vs Human Torch)", "Golden Age Key", "grail", 100000.0),
+        ("Timely", "Sub-Mariner", "Sub-Mariner Comics #1 (1941)", "Golden Age Key", "grail", 120000.0),
+        ("Quality", "Police Comics", "Police Comics #1 (1st Plastic Man, 1941)", "Golden Age Key", "grail", 60000.0),
+        ("DC", "Sensation Comics", "Sensation Comics #1 (1942, Wonder Woman)", "Golden Age Key", "grail", 80000.0),
+        ("DC", "Flash Comics", "Flash Comics #1 (1st Flash Jay Garrick, 1940)", "Golden Age Key", "grail", 150000.0),
+        ("Fox", "Blue Beetle", "Blue Beetle #1 (1940, Fox Features)", "Golden Age Key", "grail", 15000.0),
+        ("Timely", "All Winners", "All Winners Comics #1 (1941)", "Golden Age Key", "grail", 50000.0),
+        ("DC", "World's Finest", "World's Finest Comics #2 (1941, Superman & Batman)", "Golden Age Key", "grail", 30000.0),
+
+        # ── 27. Horror/Sci-Fi Classics (8) ───────────────────────────────
+        ("EC", "Haunt of Fear", "Haunt of Fear #15 (#1) (1950)", "Golden Age Key", "grail", 6000.0),
+        ("EC", "Weird Science", "Weird Science #12 (#1) (1950, Wally Wood)", "Golden Age Key", "grail", 5000.0),
+        ("EC", "Weird Fantasy", "Weird Fantasy #13 (#1) (1950)", "Golden Age Key", "grail", 4000.0),
+        ("EC", "Crime SuspenStories", "Crime SuspenStories #22 (1954, most controversial EC)", "Golden Age Key", "grail", 8000.0),
+        ("DC", "House of Mystery", "House of Mystery #174 (1st modern horror host)", "Bronze Age Key", "high", 300.0),
+        ("Warren", "Creepy", "Creepy #1 (1964, Warren Magazine, 1st issue)", "Silver Age Key", "grail", 2000.0),
+        ("Warren", "Eerie", "Eerie #1 (1966, Warren Magazine)", "Silver Age Key", "grail", 1500.0),
+        ("Atlas/Marvel", "Journey into Mystery", "Journey into Mystery #1 (1952, pre-hero Atlas)", "Golden Age Key", "grail", 5000.0),
+
+        # ── 28. CGC Graded Expansion (10) ────────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #14 (1st Green Goblin) CGC 9.6", "CGC 9.6", "grail", 80000.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four #5 (1st Dr. Doom) CGC 9.6", "CGC 9.6", "grail", 120000.0),
+        ("DC", "Action Comics", "Action Comics #1 (1st Superman) CGC 1.0", "CGC 9.6", "grail", 500000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #194 (1st Black Cat) CGC 9.8", "CGC 9.8", "grail", 5000.0),
+        ("Marvel", "Werewolf by Night", "Werewolf by Night #32 (1st Moon Knight) CGC 9.8", "CGC 9.8", "grail", 25000.0),
+        ("DC", "Batman", "Batman #232 (1st Ra's al Ghul) CGC 9.8", "CGC 9.8", "grail", 30000.0),
+        ("Marvel", "Avengers", "Avengers #4 (1st SA Cap) CGC 9.6", "CGC 9.6", "grail", 60000.0),
+        ("DC", "Brave and the Bold", "Brave and the Bold #28 (1st JLA) CGC 9.6", "CGC 9.6", "grail", 80000.0),
+        ("Marvel", "Iron Man", "Tales of Suspense #39 (1st Iron Man) CGC 9.6", "CGC 9.6", "grail", 150000.0),
+        ("Image", "Walking Dead", "Walking Dead #19 (1st Michonne) CGC 9.8", "CGC 9.8", "grail", 3000.0),
+
+        # ── 29. Signed / Remarked Editions (5) ──────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #300 Signed by Todd McFarlane CGC SS 9.8", "Signed", "grail", 8000.0),
+        ("DC", "Batman", "Batman: Dark Knight Returns #1 Signed by Frank Miller CGC SS 9.8", "Signed", "grail", 3000.0),
+        ("Image", "Spawn", "Spawn #1 Signed by Todd McFarlane CGC SS 9.8", "Signed", "grail", 1000.0),
+        ("Marvel", "X-Men", "Giant-Size X-Men #1 Signed by Stan Lee CGC SS 9.4", "Signed", "grail", 20000.0),
+        ("DC", "Sandman", "Sandman #1 Signed by Neil Gaiman CGC SS 9.8", "Signed", "grail", 2500.0),
+
+        # ── 30. Convention & Store Exclusives Expansion (5) ──────────────
+        ("Marvel", "Spider-Man", "ASM #1 (2018) SDCC Exclusive Mark Bagley Virgin", "Convention Exclusive", "high", 150.0),
+        ("DC", "Batman", "Batman #1 (2016) NYCC Exclusive Jim Lee Foil", "Convention Exclusive", "high", 120.0),
+        ("Image", "Invincible", "Invincible #1 LCSD Exclusive (Local Comic Shop Day)", "Convention Exclusive", "high", 300.0),
+        ("Marvel", "Wolverine", "Wolverine #1 (2020) WonderCon Exclusive Artgerm", "Convention Exclusive", "high", 100.0),
+        ("BOOM!", "Power Rangers", "Mighty Morphin Power Rangers #1 SDCC Exclusive", "Convention Exclusive", "mid", 50.0),
+
+        # ── 31. Collected Editions / Omnibus Expansion (10) ──────────────
+        ("Marvel", "Incredible Hulk", "Incredible Hulk Omnibus Vol. 1 (Peter David)", "Omnibus", "high", 100.0),
+        ("DC", "Batman", "Absolute Batman: Court of Owls", "Absolute Edition", "mid", 85.0),
+        ("Marvel", "New Mutants", "New Mutants Omnibus Vol. 1 (Claremont)", "Omnibus", "mid", 90.0),
+        ("DC", "Superman", "All-Star Superman Absolute Edition (Morrison/Quitely)", "Absolute Edition", "high", 120.0),
+        ("Marvel", "X-Men", "Uncanny X-Men Omnibus Vol. 2 (Claremont/Byrne)", "Omnibus", "high", 130.0),
+        ("DC", "Green Lantern", "Absolute Green Lantern: Rebirth (Geoff Johns)", "Absolute Edition", "mid", 75.0),
+        ("Image", "Invincible", "Invincible Compendium Two (TPB)", "TPB", "mid", 40.0),
+        ("Image", "Invincible", "Invincible Compendium Three (TPB)", "TPB", "mid", 40.0),
+        ("Marvel", "Punisher", "Punisher MAX by Garth Ennis Omnibus Vol. 1", "Omnibus", "mid", 90.0),
+        ("DC", "Justice League", "JLA by Grant Morrison Omnibus", "Omnibus", "mid", 80.0),
+
+        # ── 32. Modern 2024-2025 Spec Keys (10) ─────────────────────────
+        ("Marvel", "Ultimate Spider-Man", "Ultimate Spider-Man #1 (2024, Hickman/Checchetto)", "Modern Key", "high", 100.0),
+        ("Marvel", "Ultimate X-Men", "Ultimate X-Men #1 (2024, Peach Momoko)", "Modern Key", "mid", 40.0),
+        ("DC", "Absolute Batman", "Absolute Batman #1 (2024, Scott Snyder)", "Modern Key", "high", 120.0),
+        ("DC", "Absolute Superman", "Absolute Superman #1 (2024, Jason Aaron)", "Modern Key", "mid", 50.0),
+        ("Marvel", "Venom", "Venom #1 (2024, Al Ewing, War of the Symbiotes)", "Modern Key", "mid", 25.0),
+        ("Marvel", "X-Men", "X-Men #1 (2024, Jed MacKay, From the Ashes)", "Modern Key", "mid", 30.0),
+        ("DC", "Absolute Wonder Woman", "Absolute Wonder Woman #1 (2024, Kelly Thompson)", "Modern Key", "mid", 40.0),
+        ("Image", "Transformers", "Transformers #1 (2023, Image/Skybound, Daniel Warren Johnson)", "Modern Key", "high", 100.0),
+        ("Image", "Void Rivals", "Void Rivals #1 (2023, 1st Energon Universe, Kirkman)", "Modern Key", "high", 150.0),
+        ("Marvel", "Ultimate Black Panther", "Ultimate Black Panther #1 (2024, Bryan Hill)", "Modern Key", "mid", 30.0),
+
+        # ── 33. Golden Age — DC Expansion (10) ─────────────────────────────
+        ("DC", "Adventure Comics", "Adventure Comics #40 (1st Sandman, Wesley Dodds, 1939)", "Golden Age Key", "grail", 80000.0),
+        ("DC", "More Fun Comics", "More Fun Comics #52 (1st Spectre, 1940)", "Golden Age Key", "grail", 60000.0),
+        ("DC", "Star Spangled Comics", "Star Spangled Comics #1 (1941)", "Golden Age Key", "grail", 15000.0),
+        ("DC", "Adventure Comics", "Adventure Comics #48 (1st Hourman, 1940)", "Golden Age Key", "grail", 30000.0),
+        ("DC", "Action Comics", "Action Comics #7 (2nd Superman cover, 1938)", "Golden Age Key", "grail", 100000.0),
+        ("DC", "Detective Comics", "Detective Comics #31 (Classic Batman cover, 1939)", "Golden Age Key", "grail", 150000.0),
+        ("DC", "Batman", "Batman #5 (1941, 1st Batmobile cover)", "Golden Age Key", "grail", 40000.0),
+        ("DC", "Action Comics", "Action Comics #23 (1st Lex Luthor, 1940)", "Golden Age Key", "grail", 80000.0),
+        ("DC", "Detective Comics", "Detective Comics #38 (1st Robin, 1940)", "Golden Age Key", "grail", 200000.0),
+        ("DC", "Batman", "Batman #16 (1st Alfred, 1943)", "Golden Age Key", "grail", 25000.0),
+
+        # ── 34. Golden Age — Timely/Atlas Expansion (8) ────────────────────
+        ("Timely", "Young Allies", "Young Allies Comics #1 (1941, Bucky & Toro)", "Golden Age Key", "grail", 25000.0),
+        ("Timely", "All Select", "All Select Comics #1 (1943)", "Golden Age Key", "grail", 20000.0),
+        ("Timely", "USA Comics", "USA Comics #1 (1941, 1st Major Liberty)", "Golden Age Key", "grail", 30000.0),
+        ("Timely", "Mystic Comics", "Mystic Comics #1 (1940)", "Golden Age Key", "grail", 15000.0),
+        ("Timely", "Daring Mystery", "Daring Mystery Comics #1 (1940)", "Golden Age Key", "grail", 20000.0),
+        ("Timely", "Captain America Comics", "Captain America Comics #3 (1941, Red Skull cover)", "Golden Age Key", "grail", 30000.0),
+        ("Atlas", "Venus", "Venus #1 (1948, Good Girl art)", "Golden Age Key", "grail", 8000.0),
+        ("Atlas", "Marvel Boy", "Marvel Boy #1 (1950)", "Golden Age Key", "grail", 5000.0),
+
+        # ── 35. Silver Age — Marvel First Appearances (12) ─────────────────
+        ("Marvel", "Tales of Suspense", "Tales of Suspense #52 (1st Black Widow)", "Silver Age Key", "grail", 8000.0),
+        ("Marvel", "Tales of Suspense", "Tales of Suspense #57 (1st Hawkeye)", "Silver Age Key", "grail", 5000.0),
+        ("Marvel", "Strange Tales", "Strange Tales #135 (1st Nick Fury Agent of SHIELD)", "Silver Age Key", "grail", 3000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #20 (1st Scorpion)", "Silver Age Key", "grail", 4000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #9 (1st Electro)", "Silver Age Key", "grail", 8000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #13 (1st Mysterio)", "Silver Age Key", "grail", 6000.0),
+        ("Marvel", "Avengers", "Avengers #8 (1st Kang the Conqueror)", "Silver Age Key", "grail", 6000.0),
+        ("Marvel", "X-Men", "X-Men #14 (1st Sentinels)", "Silver Age Key", "grail", 3000.0),
+        ("Marvel", "Avengers", "Avengers #16 (New Avengers lineup, Cap's Kooky Quartet)", "Silver Age Key", "grail", 2000.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four #45 (1st Inhumans)", "Silver Age Key", "grail", 4000.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four #52 (1st Black Panther)", "Silver Age Key", "grail", 15000.0),
+        ("Marvel", "Avengers", "Avengers #55 (1st Ultron)", "Silver Age Key", "grail", 3000.0),
+
+        # ── 36. Silver Age — DC First Appearances (8) ──────────────────────
+        ("DC", "Batman", "Batman #139 (1st Batgirl Bette Kane, 1961)", "Silver Age Key", "grail", 3000.0),
+        ("DC", "Showcase", "Showcase #34 (1st Silver Age Atom, 1961)", "Silver Age Key", "grail", 5000.0),
+        ("DC", "Showcase", "Showcase #17 (1st Adam Strange, 1958)", "Silver Age Key", "grail", 4000.0),
+        ("DC", "Adventure Comics", "Adventure Comics #260 (1st Silver Age Aquaman, 1959)", "Silver Age Key", "grail", 3000.0),
+        ("DC", "Showcase", "Showcase #30 (1st Silver Age Aquaman solo, 1961)", "Silver Age Key", "grail", 3000.0),
+        ("DC", "Teen Titans", "Teen Titans #1 (1966, own series)", "Silver Age Key", "grail", 2000.0),
+        ("DC", "Hawkman", "Brave and the Bold #34 (1st Silver Age Hawkman, 1961)", "Silver Age Key", "grail", 4000.0),
+        ("DC", "Metal Men", "Showcase #37 (1st Metal Men, 1962)", "Silver Age Key", "grail", 3000.0),
+
+        # ── 37. Bronze Age — All Key Deaths & First Appearances (12) ───────
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #271 (1st Rocket Raccoon) CGC 9.8", "CGC 9.8", "grail", 2000.0),
+        ("Marvel", "Power Man", "Power Man #48 (Power Man & Iron Fist begin)", "Bronze Age Key", "high", 200.0),
+        ("Marvel", "Tomb of Dracula", "Tomb of Dracula #1 (1972)", "Bronze Age Key", "grail", 1500.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #129 CGC 9.8", "CGC 9.8", "grail", 40000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #238 (1st Hobgoblin)", "Bronze Age Key", "grail", 600.0),
+        ("Marvel", "Marvel Premiere", "Marvel Premiere #47 (1st Scott Lang Ant-Man)", "Bronze Age Key", "high", 400.0),
+        ("DC", "Batman", "Batman #227 (Classic Neal Adams cover, homage to Det. #31)", "Bronze Age Key", "grail", 1000.0),
+        ("DC", "Green Lantern", "Green Lantern #87 (1st John Stewart)", "Bronze Age Key", "grail", 2000.0),
+        ("Marvel", "Iron Fist", "Iron Fist #14 (1st Sabretooth)", "Bronze Age Key", "grail", 1500.0),
+        ("Marvel", "Avengers", "Avengers #181 (1st Scott Lang appearance)", "Bronze Age Key", "high", 300.0),
+        ("DC", "Superman", "Superman #276 (Captain Thunder, proto-Shazam at DC)", "Bronze Age Key", "high", 150.0),
+        ("Marvel", "What If?", "What If? #10 (1st Jane Foster as Thor)", "Bronze Age Key", "high", 250.0),
+
+        # ── 38. Copper Age Keys (10) ───────────────────────────────────────
+        ("DC", "Dark Knight Returns", "Batman: The Dark Knight Returns #2 (1986)", "Modern Key", "high", 200.0),
+        ("DC", "Dark Knight Returns", "Batman: The Dark Knight Returns #3 (1986)", "Modern Key", "high", 150.0),
+        ("DC", "Dark Knight Returns", "Batman: The Dark Knight Returns #4 (1986)", "Modern Key", "high", 200.0),
+        ("DC", "Watchmen", "Watchmen #12 (1987, Final Issue)", "Modern Key", "high", 100.0),
+        ("DC", "Crisis on Infinite Earths", "Crisis on Infinite Earths #1 (1985)", "Modern Key", "high", 150.0),
+        ("Marvel", "Secret Wars", "Marvel Super Heroes Secret Wars #1 (1984)", "Modern Key", "high", 200.0),
+        ("Marvel", "Secret Wars", "Marvel Super Heroes Secret Wars #12 (1985)", "Modern Key", "high", 100.0),
+        ("DC", "Legends", "Legends #1 (1986, 1st Modern Amanda Waller)", "Modern Key", "mid", 60.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #298 (1st Todd McFarlane ASM)", "Modern Key", "high", 200.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #299 (Venom cameo)", "Modern Key", "high", 150.0),
+
+        # ── 39. Image Founders Era (10) ────────────────────────────────────
+        ("Image", "Savage Dragon", "Savage Dragon #2 (1992)", "Modern Key", "mid", 20.0),
+        ("Image", "Savage Dragon", "Savage Dragon #3 (1992)", "Modern Key", "mid", 15.0),
+        ("Image", "WildC.A.T.s", "WildC.A.T.s #1 (1992, Jim Lee)", "Modern Key", "mid", 30.0),
+        ("Image", "WildC.A.T.s", "WildC.A.T.s #2 (1992)", "Modern Key", "mid", 15.0),
+        ("Image", "Youngblood", "Youngblood #1 (1992, Rob Liefeld)", "Modern Key", "mid", 25.0),
+        ("Image", "Youngblood", "Youngblood #1 (1992, Gold Edition)", "Variant Cover", "mid", 80.0),
+        ("Image", "Cyberforce", "Cyberforce #1 (1992, Marc Silvestri)", "Modern Key", "mid", 20.0),
+        ("Image", "Shadowhawk", "Shadowhawk #1 (1992, Jim Valentino)", "Modern Key", "mid", 15.0),
+        ("Image", "Wetworks", "Wetworks #1 (1994, Whilce Portacio)", "Modern Key", "mid", 15.0),
+        ("Image", "Pitt", "Pitt #1 (1993, Dale Keown)", "Modern Key", "mid", 20.0),
+
+        # ── 40. Vertigo Keys (10) ──────────────────────────────────────────
+        ("DC/Vertigo", "Sandman", "Sandman #75 (1996, Final Issue)", "Modern Key", "high", 100.0),
+        ("DC/Vertigo", "Hellblazer", "Hellblazer #1 (1988, 1st John Constantine ongoing)", "Modern Key", "high", 300.0),
+        ("DC/Vertigo", "Swamp Thing", "Swamp Thing #37 (1st John Constantine, Alan Moore)", "Modern Key", "high", 500.0),
+        ("DC/Vertigo", "Y: The Last Man", "Y: The Last Man #1 (2002, Brian K. Vaughan)", "Modern Key", "high", 300.0),
+        ("DC/Vertigo", "Fables", "Fables #1 (2002, Bill Willingham)", "Modern Key", "high", 150.0),
+        ("DC/Vertigo", "100 Bullets", "100 Bullets #1 (1999, Brian Azzarello)", "Modern Key", "mid", 80.0),
+        ("DC/Vertigo", "Transmetropolitan", "Transmetropolitan #1 (1997, Warren Ellis)", "Modern Key", "high", 100.0),
+        ("DC/Vertigo", "Lucifer", "Lucifer #1 (2000, Mike Carey)", "Modern Key", "mid", 60.0),
+        ("DC/Vertigo", "DMZ", "DMZ #1 (2006, Brian Wood)", "Modern Key", "mid", 40.0),
+        ("DC/Vertigo", "Animal Man", "Animal Man #1 (1988, Grant Morrison)", "Modern Key", "high", 100.0),
+
+        # ── 41. Dark Horse Keys (8) ────────────────────────────────────────
+        ("Dark Horse", "Hellboy", "Hellboy: Wake the Devil #1 (1996, Mignola)", "Modern Key", "mid", 60.0),
+        ("Dark Horse", "The Mask", "The Mask #1 (1991, Dark Horse)", "Modern Key", "high", 200.0),
+        ("Dark Horse", "Aliens", "Aliens vs. Predator #0 (1989, Ashcan)", "Modern Key", "mid", 80.0),
+        ("Dark Horse", "Star Wars", "Star Wars: Dark Empire #1 (1991)", "Modern Key", "mid", 60.0),
+        ("Dark Horse", "Usagi Yojimbo", "Usagi Yojimbo #1 (1987, Stan Sakai)", "Modern Key", "high", 200.0),
+        ("Dark Horse", "Concrete", "Concrete #1 (1987, Paul Chadwick)", "Modern Key", "mid", 40.0),
+        ("Dark Horse", "300", "300 #1 (1998, Frank Miller)", "Modern Key", "high", 100.0),
+        ("Dark Horse", "Umbrella Academy", "Umbrella Academy: Apocalypse Suite #1 (2007, Gerard Way)", "Modern Key", "high", 200.0),
+
+        # ── 42. IDW Keys (6) ──────────────────────────────────────────────
+        ("IDW", "TMNT", "Teenage Mutant Ninja Turtles #1 (2011, IDW)", "Modern Key", "mid", 60.0),
+        ("IDW", "Transformers", "Transformers: More Than Meets the Eye #1 (2012)", "Modern Key", "mid", 30.0),
+        ("IDW", "30 Days of Night", "30 Days of Night #1 (2002, Steve Niles)", "Modern Key", "high", 150.0),
+        ("IDW", "Locke & Key", "Locke & Key: Welcome to Lovecraft #1 (2008)", "Modern Key", "high", 250.0),
+        ("IDW", "Star Trek", "Star Trek: Countdown #1 (2009, movie prequel)", "Modern Key", "mid", 30.0),
+        ("IDW", "GI Joe", "GI Joe #1 (2008, IDW relaunch)", "Modern Key", "mid", 25.0),
+
+        # ── 43. BOOM! Studios Keys (6) ─────────────────────────────────────
+        ("BOOM!", "Lumberjanes", "Lumberjanes #1 (2014)", "Modern Key", "high", 150.0),
+        ("BOOM!", "Once & Future", "Once & Future #1 (2019, Kieron Gillen)", "Modern Key", "mid", 60.0),
+        ("BOOM!", "Irredeemable", "Irredeemable #1 (2009, Mark Waid)", "Modern Key", "mid", 50.0),
+        ("BOOM!", "Power Rangers", "Mighty Morphin Power Rangers #0 (2016)", "Modern Key", "mid", 40.0),
+        ("BOOM!", "Something is Killing the Children", "SIKTC #1 Cover B (2019, Jenny Frison)", "Modern Key", "grail", 1000.0),
+        ("BOOM!", "Keanu Reeves' BRZRKR", "BRZRKR #1 (2021, Keanu Reeves)", "Modern Key", "mid", 40.0),
+
+        # ── 44. Valiant Keys (6) ──────────────────────────────────────────
+        ("Valiant", "X-O Manowar", "X-O Manowar #1 (1992, with coupon)", "Modern Key", "high", 100.0),
+        ("Valiant", "Bloodshot", "Bloodshot #1 (1993)", "Modern Key", "mid", 50.0),
+        ("Valiant", "Rai", "Rai #0 (1992, 1st Bloodshot chromium)", "Modern Key", "high", 100.0),
+        ("Valiant", "Ninjak", "Ninjak #1 (1994, chromium cover)", "Modern Key", "mid", 40.0),
+        ("Valiant", "Divinity", "Divinity #1 (2015, Matt Kindt)", "Modern Key", "mid", 30.0),
+        ("Valiant", "X-O Manowar", "X-O Manowar #0 (1993, Gold edition)", "Variant Cover", "high", 150.0),
+
+        # ── 45. CGC Signature Series (10) ──────────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #1 (1963) Signed by Stan Lee CGC SS 6.0", "Signed", "grail", 50000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 Signed by Len Wein CGC SS 9.2", "Signed", "grail", 25000.0),
+        ("DC", "Batman", "Batman #1 (2016) Signed by Tom King CGC SS 9.8", "Signed", "high", 200.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #129 Signed by Gerry Conway CGC SS 9.4", "Signed", "grail", 12000.0),
+        ("Image", "Walking Dead", "Walking Dead #1 Signed by Robert Kirkman CGC SS 9.8", "Signed", "grail", 10000.0),
+        ("Image", "Invincible", "Invincible #1 Signed by Robert Kirkman CGC SS 9.8", "Signed", "grail", 8000.0),
+        ("DC", "Watchmen", "Watchmen #1 Signed by Dave Gibbons CGC SS 9.8", "Signed", "grail", 2000.0),
+        ("Marvel", "X-Men", "X-Men #1 (1963) Signed by Stan Lee CGC SS 5.0", "Signed", "grail", 30000.0),
+        ("Marvel", "New Mutants", "New Mutants #98 Signed by Rob Liefeld CGC SS 9.8", "Signed", "grail", 5000.0),
+        ("DC", "Batman", "Batman Adventures #12 Signed by Bruce Timm CGC SS 9.8", "Signed", "grail", 8000.0),
+
+        # ── 46. Variant Covers — High Ratio (10) ──────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #1 (2022) 1:100 John Romita Sr. Virgin", "Variant Cover", "grail", 500.0),
+        ("Marvel", "Thor", "Thor #1 (2020) 1:200 Peach Momoko Virgin", "Variant Cover", "grail", 800.0),
+        ("DC", "Batman", "Batman #125 (2022) 1:100 Alex Ross Virgin", "Variant Cover", "grail", 500.0),
+        ("Marvel", "X-Men", "X-Men #1 (2024) 1:500 Peach Momoko Virgin", "Variant Cover", "grail", 1200.0),
+        ("DC", "Superman", "Superman #1 (2023) 1:100 Jim Lee Virgin", "Variant Cover", "high", 350.0),
+        ("Marvel", "Ultimate Spider-Man", "Ultimate Spider-Man #1 (2024) 1:100 Marco Checchetto Virgin", "Variant Cover", "grail", 600.0),
+        ("Marvel", "Venom", "Venom #1 (2024) 1:50 Ryan Stegman Virgin", "Variant Cover", "high", 200.0),
+        ("DC", "Absolute Batman", "Absolute Batman #1 (2024) 1:50 Jock Virgin", "Variant Cover", "high", 300.0),
+        ("Image", "Transformers", "Transformers #1 (2023) 1:100 DWJ Virgin Variant", "Variant Cover", "grail", 500.0),
+        ("Marvel", "Spider-Man", "Amazing Spider-Man #900 (2022) 1:500 Alex Ross Virgin", "Variant Cover", "grail", 1000.0),
+
+        # ── 47. Omnibus & Absolute Editions Expansion (10) ─────────────────
+        ("Marvel", "Spider-Man", "Amazing Spider-Man Omnibus Vol. 2 (Lee/Romita)", "Omnibus", "high", 110.0),
+        ("Marvel", "Spider-Man", "Amazing Spider-Man Omnibus Vol. 3 (Lee/Kane)", "Omnibus", "high", 100.0),
+        ("DC", "Batman", "Absolute Batman: Dark Victory", "Absolute Edition", "mid", 90.0),
+        ("DC", "Superman", "Absolute Superman: For All Seasons", "Absolute Edition", "mid", 75.0),
+        ("Marvel", "X-Men", "Uncanny X-Men Omnibus Vol. 3 (Claremont/Romita Jr.)", "Omnibus", "high", 120.0),
+        ("Marvel", "Captain America", "Captain America Omnibus Vol. 1 (Brubaker)", "Omnibus", "mid", 90.0),
+        ("DC", "Batman", "Absolute Batman: Year One", "Absolute Edition", "high", 120.0),
+        ("Marvel", "Venom", "Venom by Donny Cates Omnibus", "Omnibus", "mid", 85.0),
+        ("DC", "Wonder Woman", "Absolute Wonder Woman by George Perez Vol. 1", "Absolute Edition", "high", 100.0),
+        ("Image", "Saga", "Saga Compendium Two (TPB)", "TPB", "mid", 35.0),
+
+        # ── 48. Magazine-Size Comics (10) ──────────────────────────────────
+        ("Warren", "Creepy", "Creepy #2 (1965, Frank Frazetta cover)", "Silver Age Key", "grail", 1000.0),
+        ("Warren", "Creepy", "Creepy #9 (1966, Frank Frazetta cover)", "Silver Age Key", "high", 500.0),
+        ("Warren", "Eerie", "Eerie #8 (1967, Steve Ditko art)", "Silver Age Key", "high", 400.0),
+        ("Warren", "Vampirella", "Vampirella #1 (1969, Warren Magazine, 1st Vampirella)", "Silver Age Key", "grail", 5000.0),
+        ("Warren", "Vampirella", "Vampirella #11 (1971, Spanish Vampirella art begins)", "Bronze Age Key", "high", 300.0),
+        ("Marvel", "Savage Sword of Conan", "Savage Sword of Conan #1 (1974, Magazine)", "Bronze Age Key", "high", 300.0),
+        ("Heavy Metal", "Heavy Metal", "Heavy Metal #1 (1977, 1st issue)", "Bronze Age Key", "grail", 500.0),
+        ("Heavy Metal", "Heavy Metal", "Heavy Metal V1 #3 (1977, Moebius Arzach)", "Bronze Age Key", "high", 200.0),
+        ("Marvel", "Bizarre Adventures", "Bizarre Adventures #34 (1983, last Marvel magazine)", "Modern Key", "mid", 40.0),
+        ("Warren", "Creepy", "Creepy #146 (1983, Final Issue)", "Modern Key", "mid", 80.0),
+
+        # ── 49. Modern Indie — 2010s-2020s (12) ───────────────────────────
+        ("Image", "Nailbiter", "Nailbiter #1 (2014, Joshua Williamson)", "Modern Key", "mid", 40.0),
+        ("Image", "Descender", "Descender #1 (2015, Jeff Lemire)", "Modern Key", "mid", 50.0),
+        ("Image", "Die", "Die #1 (2018, Kieron Gillen)", "Modern Key", "mid", 30.0),
+        ("Image", "Undiscovered Country", "Undiscovered Country #1 (2019, Snyder/Soule)", "Modern Key", "mid", 30.0),
+        ("Image", "King Spawn", "King Spawn #1 (2021, Sean Lewis)", "Modern Key", "mid", 25.0),
+        ("Image", "Local Man", "Local Man #1 (2023, Tim Seeley)", "Modern Key", "mid", 20.0),
+        ("Aftershock", "Animosity", "Animosity #1 (2016, Marguerite Bennett)", "Modern Key", "mid", 40.0),
+        ("Oni Press", "Scott Pilgrim", "Scott Pilgrim Vol. 1 (2004, Bryan Lee O'Malley)", "First Print", "high", 200.0),
+        ("Drawn & Quarterly", "Fun Home", "Fun Home (2006, Alison Bechdel, 1st print HC)", "First Print", "high", 150.0),
+        ("Fantagraphics", "Acme Novelty Library", "Acme Novelty Library #1 (1993, Chris Ware)", "First Print", "high", 100.0),
+        ("Top Shelf", "Blankets", "Blankets (2003, Craig Thompson, 1st print HC)", "First Print", "mid", 80.0),
+        ("Image", "Crossover", "Crossover #1 (2020, Donny Cates)", "Modern Key", "mid", 30.0),
+
+        # ── 50. Marvel 2024-2025 Hot Keys (10) ─────────────────────────────
+        ("Marvel", "Ultimate Spider-Man", "Ultimate Spider-Man #5 (2024, 1st Ultimate Green Goblin)", "Modern Key", "mid", 40.0),
+        ("Marvel", "X-Men", "X-Men #35 (2024, From the Ashes finale)", "Modern Key", "mid", 25.0),
+        ("Marvel", "Absolute Carnage", "Absolute Carnage #1 (2019, Donny Cates)", "Modern Key", "mid", 50.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #26 (2023, Death of Ms. Marvel)", "Modern Key", "mid", 40.0),
+        ("Marvel", "Wolverine", "Wolverine #50 (2024, sabretooth anniversary)", "Modern Key", "mid", 30.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four #1 (2025, Ryan North)", "Modern Key", "mid", 25.0),
+        ("Marvel", "Thunderbolts", "Thunderbolts #1 (2025, Marvel movie tie-in)", "Modern Key", "mid", 30.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #252 (Symbiote origin) CGC 9.8", "CGC 9.8", "grail", 2000.0),
+        ("Marvel", "Avengers", "Avengers #57 (1st Vision) CGC 9.6", "CGC 9.6", "grail", 8000.0),
+        ("Marvel", "Daredevil", "Daredevil #1 (1964) CGC 9.6", "CGC 9.6", "grail", 40000.0),
+
+        # ── 51. DC 2024-2025 Keys (8) ──────────────────────────────────────
+        ("DC", "Absolute Batman", "Absolute Batman #2 (2024, Scott Snyder)", "Modern Key", "mid", 30.0),
+        ("DC", "Absolute Batman", "Absolute Batman #3 (2024)", "Modern Key", "mid", 25.0),
+        ("DC", "Absolute Superman", "Absolute Superman #2 (2024, Jason Aaron)", "Modern Key", "mid", 25.0),
+        ("DC", "Green Lantern", "Green Lantern #1 (2023, Jeremy Adams)", "Modern Key", "mid", 30.0),
+        ("DC", "Batman", "Batman #137 (2024, Chip Zdarsky, Failsafe saga)", "Modern Key", "mid", 30.0),
+        ("DC", "Flash", "The Flash #1 (2023, Si Spurrier)", "Modern Key", "mid", 25.0),
+        ("DC", "Absolute Wonder Woman", "Absolute Wonder Woman #2 (2024)", "Modern Key", "mid", 20.0),
+        ("DC", "Nightwing", "Nightwing #100 (2023, Tom Taylor)", "Modern Key", "mid", 40.0),
+
+        # ── 52. CGC Graded — Additional High-Value (10) ────────────────────
+        ("Marvel", "Fantastic Four", "Fantastic Four #1 (1961) CGC 9.6", "CGC 9.6", "grail", 400000.0),
+        ("Marvel", "X-Men", "X-Men #1 (1963) CGC 9.6", "CGC 9.6", "grail", 100000.0),
+        ("DC", "Batman", "Batman #1 (1940) CGC 6.0", "CGC 9.6", "grail", 300000.0),
+        ("DC", "Superman", "Superman #1 (1939) CGC 5.0", "CGC 9.6", "grail", 250000.0),
+        ("Marvel", "Captain America", "Captain America Comics #1 (1941) CGC 9.0", "CGC 9.6", "grail", 500000.0),
+        ("Marvel", "Avengers", "Avengers #1 (1963) CGC 9.6", "CGC 9.6", "grail", 100000.0),
+        ("DC", "Showcase", "Showcase #4 (1st SA Flash) CGC 9.4", "CGC 9.6", "grail", 150000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #50 (Spider-Man No More) CGC 9.8", "CGC 9.8", "grail", 50000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #121 (Death of Gwen Stacy) CGC 9.8", "CGC 9.8", "grail", 30000.0),
+        ("DC", "Batman", "Batman #181 (1st Poison Ivy) CGC 9.6", "CGC 9.6", "grail", 25000.0),
+
+        # ── 53. Additional Modern Keys & Indies (8) ────────────────────────
+        ("Image", "Hack/Slash", "Hack/Slash #1 (2004, Tim Seeley)", "Modern Key", "mid", 50.0),
+        ("Oni Press", "Rick and Morty", "Rick and Morty #1 (2015, Oni Press)", "Modern Key", "mid", 80.0),
+        ("Archie", "Afterlife with Archie", "Afterlife with Archie #1 (2013, Francesco Francavilla)", "Modern Key", "mid", 60.0),
+        ("Image", "Chew", "Chew #1 CGC 9.8", "CGC 9.8", "grail", 800.0),
+        ("Avatar", "Crossed", "Crossed #1 (2008, Garth Ennis)", "Modern Key", "mid", 50.0),
+        ("Dynamite", "The Boys", "The Boys #1 (2006, Garth Ennis)", "Modern Key", "high", 300.0),
+        ("Dynamite", "Red Sonja", "Red Sonja #1 (2005, Michael Turner cover)", "Variant Cover", "mid", 60.0),
+        ("Antarctic Press", "Gold Digger", "Gold Digger #1 (1992, Fred Perry)", "Modern Key", "mid", 40.0),
     ]
 
     catalog = []

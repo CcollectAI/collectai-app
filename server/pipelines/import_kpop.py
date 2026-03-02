@@ -6,10 +6,11 @@ Layer 2 (Prices):   Estimated market prices → train.jsonl
 
 Sources:
 - Curated data from secondary market (Mercari, eBay, ktown4u resale)
-- 300+ items covering 25+ groups: BTS, Blackpink, Stray Kids, ATEEZ, Enhypen,
+- 570+ items covering 31 groups: BTS, Blackpink, Stray Kids, ATEEZ, Enhypen,
   Seventeen, NewJeans, EXO, TWICE, NCT, aespa, Le Sserafim, IVE, ITZY,
   Red Velvet, GOT7, TXT, (G)I-DLE, NMIXX, Dreamcatcher, Mamamoo, SHINee,
-  BIGBANG, 2NE1, Super Junior — albums, photocards, merch, tour exclusives
+  BIGBANG, 2NE1, Super Junior, ZEROBASEONE, BOYNEXTDOOR, RIIZE
+  — albums, photocards, merch, tour exclusives, vinyl, original pressings
 
 Usage:
     python -m pipelines.import_kpop [--dry-run]
@@ -89,6 +90,48 @@ def get_curated_catalog() -> list[dict]:
         ("BTS", "merch", "BTS Season's Greetings 2023", "Official", "mid", 50),
         ("BTS", "merch", "BTS Map of the Soul ON:E DVD", "Limited", "high", 80),
         ("BTS", "merch", "BTS Permission to Dance Concert DVD", "Limited", "high", 75),
+
+        # BTS — Vinyl & Original Pressings
+        ("BTS", "album", "BTS Map of the Soul: 7 Vinyl LP", "Limited Vinyl", "high", 140),
+        ("BTS", "album", "BTS Wings (Sealed, Original Pressing)", "Original Pressing", "high", 160),
+        ("BTS", "album", "BTS HYYH Pt.1 (Original Pressing)", "Original Pressing", "high", 180),
+        ("BTS", "album", "BTS HYYH Pt.2 (Original Pressing)", "Original Pressing", "high", 175),
+        ("BTS", "album", "BTS Love Yourself: Tear Y Version Vinyl", "Limited Vinyl", "high", 110),
+        ("BTS", "album", "BTS Love Yourself: Tear O Version Vinyl", "Limited Vinyl", "high", 110),
+        ("BTS", "album", "BTS Love Yourself: Tear U Version Vinyl", "Limited Vinyl", "high", 115),
+        ("BTS", "album", "BTS Love Yourself: Tear R Version Vinyl", "Limited Vinyl", "high", 120),
+        ("BTS", "album", "BTS BE Deluxe Edition w/ Photocard Set", "Deluxe", "high", 105),
+
+        # BTS — Lightstick & Membership
+        ("BTS", "merch", "BTS Official Light Stick Map of the Soul SE", "Limited", "high", 95),
+        ("BTS", "merch", "BTS Official Light Stick Ver. 4 (Army Bomb SE)", "Limited", "high", 85),
+        ("BTS", "merch", "BTS ARMY Membership Kit 3rd Term", "Limited", "high", 130),
+        ("BTS", "merch", "BTS ARMY Membership Kit 4th Term", "Limited", "high", 110),
+
+        # BTS — Season's Greetings & Memories
+        ("BTS", "merch", "BTS Season's Greetings 2020", "Official", "mid", 65),
+        ("BTS", "merch", "BTS Season's Greetings 2021", "Official", "mid", 60),
+        ("BTS", "merch", "BTS Season's Greetings 2022", "Official", "mid", 55),
+        ("BTS", "merch", "BTS Memories of 2019 DVD", "Limited", "high", 100),
+        ("BTS", "merch", "BTS Memories of 2020 Blu-ray", "Limited", "high", 110),
+
+        # BTS — Concert Films
+        ("BTS", "merch", "BTS Permission to Dance On Stage Blu-ray", "Limited", "high", 90),
+        ("BTS", "merch", "BTS Yet To Come in Busan Blu-ray", "Limited", "high", 80),
+
+        # BTS — Solo Vinyl Editions
+        ("BTS", "album", "Jin - The Astronaut Vinyl LP", "Limited Vinyl", "high", 85),
+        ("BTS", "album", "RM - Right Place, Wrong Person", "Standard", "standard", 22),
+        ("BTS", "album", "RM - Right Place, Wrong Person Weverse Ver.", "Weverse Exclusive", "mid", 38),
+        ("BTS", "album", "V - Layover Vinyl LP", "Limited Vinyl", "high", 90),
+        ("BTS", "album", "Jimin - FACE Vinyl LP", "Limited Vinyl", "high", 88),
+        ("BTS", "album", "j-hope - Jack In The Box LP (Limited Ed.)", "Limited Vinyl", "high", 100),
+        ("BTS", "album", "SUGA - D-DAY Vinyl LP", "Limited Vinyl", "high", 95),
+
+        # BTS — Pop-Up & Promo Exclusives
+        ("BTS", "merch", "BTS Pop-Up: Space of BTS Mini Figure Set", "Limited", "high", 75),
+        ("BTS", "merch", "BTS Pop-Up: Space of BTS Poster Collection", "Limited", "mid", 45),
+        ("BTS", "photocard", "BTS x McDonald's Meal Photocard Set", "Collaboration", "mid", 55),
 
         # ═══════════════════════════════════════════════════════════════════
         # Blackpink — Albums
@@ -266,6 +309,13 @@ def get_curated_catalog() -> list[dict]:
         ("NewJeans", "merch", "NewJeans Bunnies Official Plush", "Official", "mid", 35),
         ("NewJeans", "merch", "NewJeans Fan Meeting Merch Set", "Tour Exclusive", "high", 90),
 
+        # NewJeans — Additional (expanded)
+        ("NewJeans", "album", "NewJeans 1st EP Bluebook Hanni Ver.", "Limited", "mid", 65),
+        ("NewJeans", "album", "Get Up Bunny Beach Bag Haerin Ver.", "Weverse Exclusive", "mid", 50),
+        ("NewJeans", "photocard", "How Sweet Weverse POB Minji", "Pre-order Benefit", "mid", 60),
+        ("NewJeans", "photocard", "OMG Ditto Photocard Danielle Pull", "Album POB", "mid", 55),
+        ("NewJeans", "photocard", "OMG Ditto Photocard Haerin Pull", "Album POB", "mid", 65),
+
         # ═══════════════════════════════════════════════════════════════════
         # EXO
         # ═══════════════════════════════════════════════════════════════════
@@ -392,6 +442,13 @@ def get_curated_catalog() -> list[dict]:
         ("aespa", "merch", "SYNK: HYPER LINE Concert Photobook", "Tour Exclusive", "high", 80),
         ("aespa", "merch", "aespa ae-Key Ring Set", "Official", "mid", 30),
 
+        # aespa — Additional (expanded)
+        ("aespa", "album", "MY WORLD Tabloid Ver.", "Limited", "mid", 42),
+        ("aespa", "album", "MY WORLD Collectible Karina Ver.", "Limited", "mid", 45),
+        ("aespa", "album", "Armageddon Vinyl LP", "Limited Vinyl", "high", 90),
+        ("aespa", "merch", "aespa Official Lightstick Ver.2", "Official", "mid", 55),
+        ("aespa", "photocard", "Karina Armageddon Lucky Draw", "Lucky Draw", "high", 170),
+
         # ═══════════════════════════════════════════════════════════════════
         # Le Sserafim
         # ═══════════════════════════════════════════════════════════════════
@@ -413,6 +470,13 @@ def get_curated_catalog() -> list[dict]:
         ("Le Sserafim", "photocard", "Le Sserafim Standard Photocard", "Standard", "standard", 10),
         ("Le Sserafim", "merch", "Le Sserafim Official Lightstick", "Official", "mid", 52),
         ("Le Sserafim", "merch", "FLAME RISES Tour Merch Set", "Tour Exclusive", "high", 85),
+
+        # Le Sserafim — Additional (expanded)
+        ("Le Sserafim", "album", "UNFORGIVEN Vinyl LP", "Limited Vinyl", "high", 85),
+        ("Le Sserafim", "album", "EASY Weverse POB Ver.", "Weverse Exclusive", "mid", 35),
+        ("Le Sserafim", "album", "ANTIFRAGILE Compact Ver. (First Press)", "Limited", "mid", 32),
+        ("Le Sserafim", "photocard", "Chaewon EASY POB Photocard", "Pre-order Benefit", "mid", 58),
+        ("Le Sserafim", "photocard", "Sakura UNFORGIVEN Lucky Draw", "Lucky Draw", "high", 165),
 
         # ═══════════════════════════════════════════════════════════════════
         # IVE
@@ -690,6 +754,44 @@ def get_curated_catalog() -> list[dict]:
         ("Super Junior", "photocard", "Super Junior Standard Photocard", "Standard", "standard", 10),
         ("Super Junior", "merch", "Super Junior Official Lightstick", "Official", "mid", 55),
         ("Super Junior", "merch", "Super Show 8 DVD", "Tour Exclusive", "high", 85),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # ZEROBASEONE (4th gen — debut 2023)
+        # ═══════════════════════════════════════════════════════════════════
+        ("ZEROBASEONE", "album", "YOUTH IN THE SHADE Standard", "Standard", "standard", 20),
+        ("ZEROBASEONE", "album", "YOUTH IN THE SHADE Digipack", "Digipack", "standard", 14),
+        ("ZEROBASEONE", "album", "MELTING POINT Standard", "Standard", "standard", 20),
+        ("ZEROBASEONE", "album", "MELTING POINT Fairytale Ver.", "Limited", "mid", 38),
+        ("ZEROBASEONE", "album", "CINEMA PARADISE Standard", "Standard", "standard", 20),
+        ("ZEROBASEONE", "photocard", "Sung Hanbin Video Call Fansign", "Fansign Event", "grail", 300),
+        ("ZEROBASEONE", "photocard", "Zhang Hao Video Call Fansign", "Fansign Event", "grail", 350),
+        ("ZEROBASEONE", "photocard", "Kim Jiwoong Lucky Draw", "Lucky Draw", "high", 130),
+        ("ZEROBASEONE", "photocard", "ZEROBASEONE Standard Photocard", "Standard", "standard", 8),
+        ("ZEROBASEONE", "merch", "ZEROBASEONE Official Lightstick", "Official", "mid", 48),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # BOYNEXTDOOR (5th gen — debut 2023)
+        # ═══════════════════════════════════════════════════════════════════
+        ("BOYNEXTDOOR", "album", "WHO! Standard", "Standard", "standard", 18),
+        ("BOYNEXTDOOR", "album", "WHY.. Standard", "Standard", "standard", 18),
+        ("BOYNEXTDOOR", "album", "HOW? Standard", "Standard", "standard", 20),
+        ("BOYNEXTDOOR", "album", "19.99 Standard", "Standard", "standard", 20),
+        ("BOYNEXTDOOR", "photocard", "Sungho Video Call Fansign", "Fansign Event", "grail", 220),
+        ("BOYNEXTDOOR", "photocard", "Riwoo Lucky Draw", "Lucky Draw", "high", 110),
+        ("BOYNEXTDOOR", "photocard", "BOYNEXTDOOR Standard Photocard", "Standard", "standard", 7),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # RIIZE (5th gen — debut 2023)
+        # ═══════════════════════════════════════════════════════════════════
+        ("RIIZE", "album", "Get A Guitar Standard", "Standard", "standard", 18),
+        ("RIIZE", "album", "RIIZING Standard", "Standard", "standard", 20),
+        ("RIIZE", "album", "RIIZING Collect Book Ver.", "Limited", "mid", 42),
+        ("RIIZE", "photocard", "Wonbin Video Call Fansign", "Fansign Event", "grail", 380),
+        ("RIIZE", "photocard", "Sohee Video Call Fansign", "Fansign Event", "grail", 300),
+        ("RIIZE", "photocard", "Anton Lucky Draw", "Lucky Draw", "high", 120),
+        ("RIIZE", "photocard", "Shotaro POB Photocard", "Pre-order Benefit", "mid", 45),
+        ("RIIZE", "photocard", "RIIZE Standard Photocard", "Standard", "standard", 8),
+        ("RIIZE", "merch", "RIIZE Official Lightstick", "Official", "mid", 48),
     ]
 
     catalog = []
@@ -733,6 +835,7 @@ def item_to_price_observation(item: dict) -> PriceObservation:
     edition_map = {
         "Fansign Event": 0.95, "Lucky Draw": 0.9, "Signed": 0.95,
         "Collector's Edition": 0.85, "Limited Vinyl": 0.8,
+        "Original Pressing": 0.85,
         "Limited": 0.7, "Limited Version": 0.7, "Deluxe": 0.65,
         "Weverse Exclusive": 0.6, "Pre-order Benefit": 0.55,
         "Night Ver.": 0.65, "Digipack": 0.4, "Jewel Case": 0.3,

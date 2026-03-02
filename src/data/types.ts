@@ -93,6 +93,7 @@ export type WatchlistItem = {
   lastCheckedAt?: string | null;
   priceTrend?: 'up' | 'down' | 'stable' | null;
   marketHitCount?: number;
+  sortOrder?: number;
 };
 
 export type CreateWatchlistInput = {

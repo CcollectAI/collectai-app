@@ -18,8 +18,11 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/activity", tags=["activity"])
+
+_activity_log_limit = per_user_rate_limit(30, window_seconds=60, scope="activity_log")
 logger = logging.getLogger(__name__)
 
 
@@ -79,6 +82,7 @@ async def get_user_activity(
 async def log_activity(
     body: LogActivityInput,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_activity_log_limit),
 ):
     """Log an activity to the user's feed."""
     pool = get_db_pool()

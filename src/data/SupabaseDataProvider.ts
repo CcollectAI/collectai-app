@@ -182,7 +182,7 @@ export class SupabaseDataProvider implements DataProvider {
     // Reads via VIEW only (auth.uid() is used server-side)
     const { data, error } = await supabase
       .from('v_watchlist_items_v1')
-      .select('id,title,priority,owned,target_price,currency,category,notes,created_at');
+      .select('id,title,priority,owned,target_price,currency,category,notes,created_at,sort_order');
 
     if (error) {
       logger.warn('[SupabaseDataProvider] listWatchlist error:', error);
@@ -199,6 +199,7 @@ export class SupabaseDataProvider implements DataProvider {
       category?: string | null;
       notes?: string | null;
       created_at?: string | null;
+      sort_order?: number | null;
     }[];
 
     return rows.map((r) => ({
@@ -211,6 +212,7 @@ export class SupabaseDataProvider implements DataProvider {
       category: r.category ?? undefined,
       notes: r.notes ?? undefined,
       createdAt: r.created_at ?? undefined,
+      sortOrder: r.sort_order ?? 0,
     }));
   }
 
@@ -248,16 +250,17 @@ export class SupabaseDataProvider implements DataProvider {
     };
   }
 
-  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string }): Promise<WatchlistItem> {
+  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem> {
     const updatePayload: Record<string, unknown> = {};
     if (updates.targetPrice !== undefined) updatePayload.target_price = updates.targetPrice;
     if (updates.notes !== undefined) updatePayload.notes = updates.notes;
+    if (updates.sortOrder !== undefined) updatePayload.sort_order = updates.sortOrder;
 
     const { data, error } = await supabase
       .from('watchlist')
       .update(updatePayload)
       .eq('id', id)
-      .select('id, title, priority, owned, target_price, currency, category, notes, created_at')
+      .select('id, title, priority, owned, target_price, currency, category, notes, created_at, sort_order')
       .single();
 
     if (error) {
@@ -276,6 +279,7 @@ export class SupabaseDataProvider implements DataProvider {
       category: typeof r.category === 'string' ? r.category : undefined,
       notes: typeof r.notes === 'string' ? r.notes : undefined,
       createdAt: typeof r.created_at === 'string' ? r.created_at : undefined,
+      sortOrder: typeof r.sort_order === 'number' ? r.sort_order : 0,
     };
   }
 
@@ -288,6 +292,21 @@ export class SupabaseDataProvider implements DataProvider {
     if (error) {
       logger.error('[SupabaseDataProvider] removeWatchlistItem RPC error:', error);
       throw new Error(error.message || 'Failed to remove watchlist item');
+    }
+  }
+
+  async removeWatchlistItems(ids: string[]): Promise<void> {
+    // Bulk delete — call RPC per item (ownership enforced server-side)
+    const errors: string[] = [];
+    for (const id of ids) {
+      try {
+        await this.removeWatchlistItem(id);
+      } catch (err) {
+        errors.push(err instanceof Error ? err.message : String(err));
+      }
+    }
+    if (errors.length > 0) {
+      throw new Error(`Failed to remove ${errors.length} item(s): ${errors[0]}`);
     }
   }
 

@@ -10,10 +10,13 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
+from app.rate_limit import per_user_rate_limit
 
 import logging
 
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
+
+_watchlist_write_limit = per_user_rate_limit(30, window_seconds=60, scope="watchlist_write")
 logger = logging.getLogger(__name__)
 
 
@@ -100,7 +103,7 @@ async def get_my_watchlist(
 
 
 @router.post("/mine", response_model=WatchlistItem)
-async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_current_user_id)) -> WatchlistItem:
+async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_current_user_id), _rl=Depends(_watchlist_write_limit)) -> WatchlistItem:
     pool = get_db_pool()
 
     item = WatchlistItem(
@@ -153,7 +156,7 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
 
 
 @router.delete("/mine/{watch_id}", response_model=WatchlistResponse)
-async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_current_user_id)) -> WatchlistResponse:
+async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_current_user_id), _rl=Depends(_watchlist_write_limit)) -> WatchlistResponse:
     pool = get_db_pool()
 
     if pool is not None:

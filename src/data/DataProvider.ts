@@ -69,11 +69,11 @@ export interface DataProvider {
   addWatchlistItem(input: CreateWatchlistInput): Promise<WatchlistItem>;
 
   /**
-   * Update a watchlist item (e.g. target price, notes).
+   * Update a watchlist item (e.g. target price, notes, sort order).
    * @param id - Watchlist item ID
    * @param updates - Fields to update
    */
-  updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string }): Promise<WatchlistItem>;
+  updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem>;
 
   /**
    * Remove an item from the watchlist.
@@ -81,6 +81,12 @@ export interface DataProvider {
    * @param id - Watchlist item ID
    */
   removeWatchlistItem(id: string): Promise<void>;
+
+  /**
+   * Remove multiple watchlist items in bulk.
+   * @param ids - Array of watchlist item IDs to remove
+   */
+  removeWatchlistItems(ids: string[]): Promise<void>;
 
   /**
    * Create a new item in the collection.

@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
+from app.rate_limit import per_user_rate_limit
 from app.config import (
     DB_ENABLED,
     STRIPE_SECRET_KEY,
@@ -31,6 +32,8 @@ from app.errors import error_response
 _log = logging.getLogger("collectai.sponsor")
 
 router = APIRouter(prefix="/events", tags=["events"])
+
+_sponsor_checkout_limit = per_user_rate_limit(5, window_seconds=3600, scope="sponsor_checkout")
 
 # ---------------------------------------------------------------------------
 # Tier configuration
@@ -101,6 +104,7 @@ class SponsorCheckoutRequest(BaseModel):
 async def create_sponsor_checkout(
     body: SponsorCheckoutRequest,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_sponsor_checkout_limit),
 ):
     """Create a Stripe Checkout session for sponsoring an event."""
     stripe_mod = _get_stripe()

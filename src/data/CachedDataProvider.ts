@@ -200,7 +200,7 @@ export class CachedDataProvider implements DataProvider {
     return result;
   }
 
-  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string }): Promise<WatchlistItem> {
+  async updateWatchlistItem(id: string, updates: { targetPrice?: number | null; notes?: string; sortOrder?: number }): Promise<WatchlistItem> {
     const result = await this.inner.updateWatchlistItem(id, updates);
     await cacheClear(CK.WATCHLIST);
     return result;
@@ -208,6 +208,11 @@ export class CachedDataProvider implements DataProvider {
 
   async removeWatchlistItem(id: string): Promise<void> {
     await this.inner.removeWatchlistItem(id);
+    await cacheClear(CK.WATCHLIST);
+  }
+
+  async removeWatchlistItems(ids: string[]): Promise<void> {
+    await this.inner.removeWatchlistItems(ids);
     await cacheClear(CK.WATCHLIST);
   }
 

@@ -4,7 +4,7 @@ Import retro video game consoles & cartridges catalog.
 Layer 1 (Catalog):  Consoles + top games per platform → category_items
 Layer 2 (Prices):   PriceCharting-style estimates (loose/CIB/sealed) → train.jsonl
 
-Source: Curated database of 150+ retro gaming platforms and notable titles
+Source: Curated database of 500+ retro gaming platforms and notable titles
 covering Nintendo, Sega, Sony, Atari, NEC, SNK, Philips, 3DO, and more.
 Can be augmented with PriceCharting API or scraping later.
 
@@ -34,7 +34,7 @@ CATEGORY = "retro_games"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated retro gaming catalog: consoles + high-value games."""
+    """Curated retro gaming catalog: consoles + high-value games (500+ items)."""
 
     items = []
 
@@ -243,6 +243,492 @@ def get_curated_catalog() -> list[dict]:
         # ── Sega CD / Mega-CD ───────────────────────────────────────────
         ("Sega CD", "Snatcher", 1994, 300, 500, 1200, "Rare"),
         ("Sega CD", "Lunar: The Silver Star", 1993, 60, 140, 400, "Uncommon"),
+
+        # ── NES — Additional High-Value Titles ─────────────────────────────
+        ("NES", "Bubble Bobble Part 2", 1993, 500, 1200, 3000, "Rare"),
+        ("NES", "Mike Tyson's Punch-Out!!", 1987, 20, 60, 350, "Common"),
+        ("NES", "Metroid", 1986, 15, 55, 300, "Common"),
+        ("NES", "Castlevania III: Dracula's Curse", 1989, 40, 100, 400, "Uncommon"),
+        ("NES", "Final Fantasy", 1987, 15, 60, 350, "Common"),
+        ("NES", "Dragon Warrior", 1986, 10, 40, 200, "Common"),
+        ("NES", "Snow Brothers", 1991, 200, 500, 1500, "Rare"),
+
+        # ── SNES — Additional Titles ───────────────────────────────────────
+        ("SNES", "Mega Man X2", 1994, 120, 280, 800, "Uncommon"),
+        ("SNES", "Mega Man 7", 1995, 200, 400, 1000, "Rare"),
+        ("SNES", "Turtles in Time", 1992, 40, 100, 350, "Common"),
+        ("SNES", "Aero Fighters", 1994, 350, 650, 1500, "Rare"),
+        ("SNES", "E.V.O.: Search for Eden", 1992, 200, 400, 1000, "Rare"),
+
+        # ── N64 — Additional Titles ────────────────────────────────────────
+        ("N64", "Bomberman 64: The Second Attack", 2000, 150, 300, 800, "Rare"),
+        ("N64", "Goemon's Great Adventure", 1999, 60, 120, 350, "Uncommon"),
+        ("N64", "Snowboard Kids 2", 1999, 120, 250, 600, "Rare"),
+        ("N64", "Worms Armageddon", 1999, 100, 200, 500, "Uncommon"),
+        ("N64", "Diddy Kong Racing", 1997, 15, 40, 180, "Common"),
+
+        # ── GameCube — Additional Titles ───────────────────────────────────
+        ("GameCube", "Baten Kaitos: Eternal Wings", 2003, 60, 130, 350, "Uncommon"),
+        ("GameCube", "Eternal Darkness: Sanity's Requiem", 2002, 50, 110, 300, "Uncommon"),
+        ("GameCube", "Phantasy Star Online Episode I & II Plus", 2003, 80, 170, 450, "Uncommon"),
+        ("GameCube", "Pikmin 2", 2004, 50, 100, 280, "Common"),
+        ("GameCube", "Animal Crossing", 2002, 20, 50, 180, "Common"),
+
+        # ── Game Boy — Additional Titles ───────────────────────────────────
+        ("GB", "Tetris", 1989, 5, 20, 120, "Common"),
+        ("GB", "Super Mario Land 2: 6 Golden Coins", 1992, 10, 30, 150, "Common"),
+        ("GB", "Kirby's Dream Land", 1992, 10, 30, 150, "Common"),
+        ("GBC", "Pokemon Gold/Silver", 1999, 20, 60, 300, "Common"),
+        ("GBC", "The Legend of Zelda: Oracle of Seasons", 2001, 25, 70, 250, "Common"),
+        ("GBC", "The Legend of Zelda: Oracle of Ages", 2001, 25, 70, 250, "Common"),
+        ("GBA", "Mega Man Zero", 2002, 30, 60, 200, "Common"),
+        ("GBA", "WarioWare, Inc.: Mega Microgame$!", 2003, 20, 50, 180, "Common"),
+        ("GBA", "Drill Dozer", 2005, 50, 110, 300, "Uncommon"),
+        ("GBA", "Gunstar Super Heroes", 2005, 40, 90, 250, "Uncommon"),
+
+        # ── Genesis / Mega Drive — Additional ──────────────────────────────
+        ("Genesis", "Mega Turrican", 1993, 80, 180, 500, "Uncommon"),
+        ("Genesis", "MUSHA", 1990, 300, 550, 1500, "Rare"),
+        ("Genesis", "Sonic the Hedgehog 2", 1992, 5, 15, 100, "Common"),
+        ("Genesis", "Shining Force II", 1993, 40, 100, 300, "Uncommon"),
+        ("Genesis", "Landstalker", 1992, 20, 50, 180, "Common"),
+
+        # ── Sega Saturn — Additional ───────────────────────────────────────
+        ("Saturn", "NiGHTS into Dreams...", 1996, 30, 70, 200, "Common"),
+        ("Saturn", "Virtua Fighter 2", 1995, 10, 30, 100, "Common"),
+        ("Saturn", "Panzer Dragoon II Zwei", 1996, 40, 90, 250, "Uncommon"),
+        ("Saturn", "Albert Odyssey: Legend of Eldean", 1996, 120, 250, 600, "Rare"),
+
+        # ── Dreamcast — Additional ─────────────────────────────────────────
+        ("Dreamcast", "Sonic Adventure 2", 2001, 40, 80, 200, "Common"),
+        ("Dreamcast", "Ikaruga", 2002, 80, 160, 400, "Uncommon"),
+        ("Dreamcast", "Grandia II", 2000, 25, 60, 180, "Common"),
+        ("Dreamcast", "Street Fighter III: 3rd Strike", 1999, 50, 110, 300, "Uncommon"),
+
+        # ── PS1 — Additional ───────────────────────────────────────────────
+        ("PS1", "Tail Concerto", 1998, 150, 300, 700, "Rare"),
+        ("PS1", "Lunar: Silver Star Story Complete", 1999, 80, 180, 500, "Uncommon"),
+        ("PS1", "Wild Arms", 1996, 25, 60, 200, "Common"),
+        ("PS1", "Legend of Dragoon", 1999, 30, 70, 200, "Common"),
+
+        # ── PS2 — Additional ───────────────────────────────────────────────
+        ("PS2", "Ar tonelico II", 2008, 80, 160, 400, "Uncommon"),
+        ("PS2", ".hack//Quarantine", 2003, 200, 400, 900, "Rare"),
+        ("PS2", "Okami", 2006, 20, 50, 150, "Common"),
+        ("PS2", "Ico", 2001, 15, 40, 120, "Common"),
+
+        # ── PSP — High-Value Titles ────────────────────────────────────────
+        ("PSP", "Valkyria Chronicles III (JP)", 2011, 25, 50, 120, "JP Only"),
+        ("PSP", "Persona 3 Portable", 2009, 30, 70, 200, "Uncommon"),
+        ("PSP", "Final Fantasy Tactics: The War of the Lions", 2007, 15, 35, 120, "Common"),
+
+        # ── Neo Geo — Additional ───────────────────────────────────────────
+        ("Neo Geo", "The Last Blade 2", 1998, 600, 1000, 2500, "Rare"),
+        ("Neo Geo", "Blazing Star", 1998, 800, 1500, 3500, "Ultra Rare"),
+        ("Neo Geo", "Garou: Mark of the Wolves", 1999, 400, 700, 1800, "Rare"),
+
+        # ── TurboGrafx-16 — Additional ─────────────────────────────────────
+        ("TurboGrafx-16", "Magical Chase", 1991, 3000, 5000, 10000, "Ultra Rare"),
+        ("TurboGrafx-16", "Blazing Lazers", 1989, 20, 50, 180, "Common"),
+
+        # ── Atari 2600 — Additional ────────────────────────────────────────
+        ("2600", "Solaris", 1986, 8, 25, 120, "Common"),
+        ("2600", "H.E.R.O.", 1984, 8, 30, 150, "Common"),
+
+        # ── NES — More High-Value & Essential Titles ─────────────────────
+        ("NES", "Zelda II: The Adventure of Link", 1987, 12, 50, 300, "Common"),
+        ("NES", "Ninja Gaiden", 1988, 12, 45, 250, "Common"),
+        ("NES", "Ninja Gaiden III", 1991, 60, 150, 500, "Uncommon"),
+        ("NES", "Faxanadu", 1989, 10, 35, 200, "Common"),
+        ("NES", "Battletoads", 1991, 20, 60, 300, "Common"),
+        ("NES", "Battletoads & Double Dragon", 1993, 40, 100, 400, "Uncommon"),
+        ("NES", "Power Blade 2", 1992, 300, 700, 2000, "Rare"),
+        ("NES", "Bonk's Adventure", 1993, 400, 900, 2500, "Rare"),
+        ("NES", "Panic Restaurant", 1992, 500, 1100, 3000, "Rare"),
+        ("NES", "Shatterhand", 1991, 100, 250, 700, "Uncommon"),
+
+        # ── SNES — More Essential RPGs & Rarities ────────────────────────
+        ("SNES", "Breath of Fire II", 1994, 40, 100, 350, "Common"),
+        ("SNES", "Illusion of Gaia", 1993, 25, 60, 250, "Common"),
+        ("SNES", "Super Castlevania IV", 1991, 30, 80, 300, "Common"),
+        ("SNES", "Contra III: The Alien Wars", 1992, 35, 90, 350, "Common"),
+        ("SNES", "Kirby Super Star", 1996, 40, 100, 350, "Common"),
+        ("SNES", "Metal Warriors", 1995, 350, 700, 1800, "Rare"),
+        ("SNES", "Hagane: The Final Conflict", 1994, 500, 1000, 2500, "Rare"),
+        ("SNES", "Robotrek", 1994, 60, 150, 450, "Uncommon"),
+
+        # ── N64 — CIB Premiums & Hidden Gems ─────────────────────────────
+        ("N64", "Super Mario 64", 1996, 25, 60, 250, "Common"),
+        ("N64", "Banjo-Tooie", 2000, 25, 65, 280, "Common"),
+        ("N64", "Jet Force Gemini", 1999, 10, 30, 150, "Common"),
+        ("N64", "Mischief Makers", 1997, 20, 50, 200, "Common"),
+        ("N64", "Sin and Punishment (JP)", 2000, 40, 80, 200, "JP Only"),
+        ("N64", "Mario Party 3", 2000, 50, 100, 350, "Uncommon"),
+        ("N64", "Pokemon Snap", 1999, 15, 40, 180, "Common"),
+        ("N64", "Yoshi's Story", 1997, 15, 40, 180, "Common"),
+        ("N64", "Perfect Dark", 2000, 15, 40, 180, "Common"),
+        ("N64", "Stunt Race FX 64 (Prototype)", 1997, 500, 1000, 3000, "Ultra Rare"),
+
+        # ── GameCube — Hidden Gems & Premium CIB ─────────────────────────
+        ("GameCube", "Pokemon XD: Gale of Darkness", 2005, 100, 200, 500, "Uncommon"),
+        ("GameCube", "Paper Mario: The Thousand-Year Door", 2004, 80, 160, 400, "Uncommon"),
+        ("GameCube", "F-Zero GX", 2003, 60, 120, 300, "Uncommon"),
+        ("GameCube", "Custom Robo", 2004, 30, 60, 200, "Common"),
+        ("GameCube", "Metal Gear Solid: The Twin Snakes", 2004, 80, 160, 400, "Uncommon"),
+        ("GameCube", "Resident Evil (Remake)", 2002, 25, 55, 200, "Common"),
+        ("GameCube", "Viewtiful Joe", 2003, 20, 45, 180, "Common"),
+        ("GameCube", "Def Jam: Fight for NY", 2004, 80, 160, 400, "Uncommon"),
+
+        # ── Wii — Late-Gen Rarities ──────────────────────────────────────
+        ("Wii", "Xenoblade Chronicles", 2010, 30, 70, 200, "Uncommon"),
+        ("Wii", "The Last Story", 2011, 25, 60, 180, "Uncommon"),
+        ("Wii", "Metroid Prime Trilogy", 2009, 40, 100, 300, "Uncommon"),
+        ("Wii", "Fire Emblem: Radiant Dawn", 2007, 80, 160, 400, "Rare"),
+        ("Wii", "Dokapon Kingdom", 2008, 100, 200, 500, "Rare"),
+        ("Wii", "Kirby's Return to Dream Land", 2011, 30, 70, 200, "Common"),
+
+        # ── DS — Late-Gen Rarities ───────────────────────────────────────
+        ("DS", "Pokemon HeartGold/SoulSilver", 2009, 80, 200, 500, "Uncommon"),
+        ("DS", "Pokemon Black 2/White 2", 2012, 60, 150, 350, "Uncommon"),
+        ("DS", "Castlevania: Dawn of Sorrow", 2005, 30, 70, 200, "Common"),
+        ("DS", "Castlevania: Order of Ecclesia", 2008, 50, 120, 300, "Uncommon"),
+        ("DS", "Dragon Quest IX: Sentinels of the Starry Skies", 2010, 15, 40, 150, "Common"),
+        ("DS", "The World Ends with You", 2007, 25, 60, 200, "Uncommon"),
+        ("DS", "Solatorobo: Red the Hunter", 2010, 80, 180, 450, "Rare"),
+        ("DS", "Pokemon Platinum", 2008, 60, 150, 350, "Uncommon"),
+
+        # ── Game Boy — More Rarities ─────────────────────────────────────
+        ("GB", "Kid Dracula", 1993, 200, 400, 1000, "Rare"),
+        ("GB", "Mega Man V", 1994, 150, 350, 900, "Rare"),
+        ("GB", "Trip World", 1992, 300, 600, 1500, "Rare"),
+        ("GBC", "Shantae", 2002, 500, 1000, 2500, "Ultra Rare"),
+        ("GBC", "Metal Gear Solid (GBC)", 2000, 30, 70, 200, "Common"),
+
+        # ── GBA — More Essential Titles ──────────────────────────────────
+        ("GBA", "Metroid Fusion", 2002, 40, 100, 300, "Uncommon"),
+        ("GBA", "Metroid: Zero Mission", 2004, 50, 120, 350, "Uncommon"),
+        ("GBA", "Golden Sun", 2001, 25, 60, 200, "Common"),
+        ("GBA", "Golden Sun: The Lost Age", 2002, 30, 70, 220, "Common"),
+        ("GBA", "Castlevania: Circle of the Moon", 2001, 20, 50, 180, "Common"),
+        ("GBA", "Castlevania: Harmony of Dissonance", 2002, 25, 60, 200, "Common"),
+        ("GBA", "Riviera: The Promised Land", 2004, 30, 70, 200, "Common"),
+
+        # ── Sega Saturn — Japanese Exclusives ────────────────────────────
+        ("Saturn", "Dungeons & Dragons Collection (JP)", 1999, 200, 400, 900, "Rare"),
+        ("Saturn", "X-Men vs. Street Fighter (JP)", 1997, 60, 130, 350, "Uncommon"),
+        ("Saturn", "Soukyugurentai (JP)", 1996, 80, 180, 450, "Uncommon"),
+        ("Saturn", "Elevator Action Returns (JP)", 1997, 100, 220, 550, "Rare"),
+        ("Saturn", "Bulk Slash (JP)", 1997, 80, 170, 400, "Uncommon"),
+        ("Saturn", "Hyper Duel (JP)", 1996, 300, 600, 1500, "Rare"),
+
+        # ── Neo Geo MVS/AES — More Premium Titles ────────────────────────
+        ("Neo Geo", "Matrimelee", 2003, 3000, 5000, 8000, "Ultra Rare"),
+        ("Neo Geo", "Shock Troopers 2nd Squad", 1998, 300, 500, 1200, "Rare"),
+        ("Neo Geo", "Samurai Shodown V Special", 2004, 400, 700, 1800, "Rare"),
+        ("Neo Geo", "King of Fighters 2003", 2003, 200, 400, 1000, "Uncommon"),
+        ("Neo Geo", "Windjammers", 1994, 250, 450, 1200, "Rare"),
+
+        # ── TurboGrafx-16 / PC Engine — More Gems ────────────────────────
+        ("TurboGrafx-16", "Soldier Blade", 1992, 60, 140, 400, "Uncommon"),
+        ("TurboGrafx-16", "Air Zonk", 1992, 80, 180, 500, "Uncommon"),
+        ("TurboGrafx-16", "Neutopia", 1989, 30, 70, 220, "Common"),
+        ("TurboGrafx-16", "Lords of Thunder", 1993, 120, 250, 650, "Rare"),
+        ("TurboGrafx-16", "Dungeon Explorer", 1989, 25, 60, 200, "Common"),
+
+        # ── PS1 — More RPGs & Collectible Titles ─────────────────────────
+        ("PS1", "Persona 2: Eternal Punishment", 2000, 120, 250, 600, "Rare"),
+        ("PS1", "Breath of Fire III", 1997, 40, 100, 300, "Uncommon"),
+        ("PS1", "Breath of Fire IV", 2000, 50, 120, 350, "Uncommon"),
+        ("PS1", "Star Ocean: The Second Story", 1998, 35, 80, 250, "Uncommon"),
+        ("PS1", "Threads of Fate", 1999, 40, 100, 300, "Uncommon"),
+        ("PS1", "Legend of Mana", 1999, 40, 100, 300, "Uncommon"),
+        ("PS1", "Brave Fencer Musashi", 1998, 40, 100, 300, "Uncommon"),
+        ("PS1", "Alundra", 1997, 50, 120, 350, "Uncommon"),
+        ("PS1", "Klonoa: Door to Phantomile", 1997, 150, 300, 700, "Rare"),
+        ("PS1", "Harmful Park (JP)", 1997, 200, 400, 1000, "Ultra Rare"),
+
+        # ── PS2 — More RPGs & Horror ─────────────────────────────────────
+        ("PS2", "Suikoden V", 2006, 80, 160, 400, "Uncommon"),
+        ("PS2", "Persona 4", 2008, 25, 60, 180, "Common"),
+        ("PS2", "Digital Devil Saga", 2004, 30, 70, 200, "Common"),
+        ("PS2", "Digital Devil Saga 2", 2005, 40, 90, 250, "Uncommon"),
+        ("PS2", "Shin Megami Tensei: Nocturne", 2003, 40, 100, 300, "Uncommon"),
+        ("PS2", "Fatal Frame II: Crimson Butterfly", 2003, 80, 160, 400, "Uncommon"),
+        ("PS2", "Dark Cloud 2", 2002, 30, 70, 200, "Common"),
+        ("PS2", "Radiata Stories", 2005, 30, 70, 200, "Common"),
+        ("PS2", "Rogue Galaxy", 2006, 25, 60, 180, "Common"),
+        ("PS2", "Wild Arms 3", 2002, 20, 50, 150, "Common"),
+
+        # ── Atari Jaguar — Rare Titles ───────────────────────────────────
+        ("Jaguar", "Tempest 2000", 1994, 50, 120, 350, "Uncommon"),
+        ("Jaguar", "Alien vs Predator", 1994, 40, 100, 300, "Uncommon"),
+        ("Jaguar", "Battlesphere Gold", 2000, 500, 1000, 2500, "Ultra Rare"),
+
+        # ── NES — Complete Essential Library ───────────────────────────
+        ("NES", "Mega Man", 1987, 25, 70, 400, "Common"),
+        ("NES", "Mega Man 2", 1988, 15, 50, 300, "Common"),
+        ("NES", "Mega Man 3", 1990, 15, 50, 300, "Common"),
+        ("NES", "Mega Man 4", 1991, 20, 60, 350, "Common"),
+        ("NES", "Mega Man 6", 1993, 40, 100, 400, "Uncommon"),
+        ("NES", "Super Mario Bros. 2", 1988, 10, 40, 300, "Common"),
+        ("NES", "Super Mario Bros. 3", 1988, 12, 45, 350, "Common"),
+        ("NES", "Castlevania", 1986, 15, 55, 300, "Common"),
+        ("NES", "Castlevania II: Simon's Quest", 1987, 10, 40, 250, "Common"),
+        ("NES", "Kirby's Adventure", 1993, 15, 50, 250, "Common"),
+        ("NES", "Kid Icarus", 1986, 12, 45, 250, "Common"),
+        ("NES", "Excitebike", 1984, 8, 30, 200, "Common"),
+        ("NES", "Duck Tales 2", 1993, 200, 500, 1500, "Rare"),
+        ("NES", "Tecmo Super Bowl", 1991, 15, 40, 200, "Common"),
+        ("NES", "Double Dragon II: The Revenge", 1989, 10, 35, 200, "Common"),
+        ("NES", "Ghosts 'n Goblins", 1986, 12, 40, 250, "Common"),
+        ("NES", "Blaster Master", 1988, 10, 35, 200, "Common"),
+        ("NES", "Crystalis", 1990, 20, 55, 250, "Common"),
+        ("NES", "River City Ransom", 1989, 35, 80, 350, "Uncommon"),
+        ("NES", "Life Force (Salamander)", 1987, 12, 40, 250, "Common"),
+        ("NES", "Chip 'n Dale: Rescue Rangers", 1990, 12, 40, 200, "Common"),
+        ("NES", "Darkwing Duck", 1992, 25, 60, 300, "Uncommon"),
+        ("NES", "Dragon Warrior III", 1991, 30, 70, 300, "Uncommon"),
+        ("NES", "Dragon Warrior IV", 1992, 40, 100, 400, "Uncommon"),
+        ("NES", "Ninja Gaiden II: The Dark Sword of Chaos", 1990, 15, 45, 250, "Common"),
+        ("NES", "Bionic Commando", 1988, 12, 40, 250, "Common"),
+        ("NES", "Star Tropics", 1990, 10, 35, 200, "Common"),
+        ("NES", "Teenage Mutant Ninja Turtles II: The Arcade Game", 1990, 10, 35, 200, "Common"),
+        ("NES", "Kung Fu", 1985, 5, 20, 150, "Common"),
+        ("NES", "Ice Climber", 1985, 8, 30, 200, "Common"),
+        ("NES", "Wizards & Warriors", 1987, 8, 30, 180, "Common"),
+        ("NES", "Adventure Island", 1986, 10, 35, 200, "Common"),
+        ("NES", "Vice: Project Doom", 1991, 80, 200, 600, "Uncommon"),
+        ("NES", "Kickle Cubicle", 1990, 20, 50, 250, "Common"),
+        ("NES", "Jackal", 1988, 10, 35, 200, "Common"),
+        ("NES", "Gun-Nac", 1990, 200, 450, 1200, "Rare"),
+        ("NES", "Metal Storm", 1991, 150, 350, 1000, "Rare"),
+
+        # ── SNES — More Essential Titles ───────────────────────────────
+        ("SNES", "The Legend of Zelda: A Link to the Past", 1991, 25, 65, 300, "Common"),
+        ("SNES", "Super Mario World", 1990, 15, 45, 250, "Common"),
+        ("SNES", "Super Mario World 2: Yoshi's Island", 1995, 25, 65, 300, "Common"),
+        ("SNES", "Donkey Kong Country", 1994, 15, 45, 250, "Common"),
+        ("SNES", "Donkey Kong Country 3", 1996, 25, 65, 280, "Common"),
+        ("SNES", "Final Fantasy II (IV)", 1991, 40, 100, 400, "Uncommon"),
+        ("SNES", "Secret of Evermore", 1995, 30, 80, 300, "Common"),
+        ("SNES", "Ogre Battle: March of the Black Queen", 1993, 80, 200, 600, "Uncommon"),
+        ("SNES", "Shin Megami Tensei (Fan Translation)", 1992, 20, 40, 100, "Repro"),
+        ("SNES", "Sunset Riders", 1993, 60, 150, 450, "Uncommon"),
+        ("SNES", "Space Megaforce (Super Aleste)", 1992, 120, 280, 800, "Uncommon"),
+        ("SNES", "Zombies Ate My Neighbors", 1993, 30, 80, 300, "Common"),
+        ("SNES", "Street Fighter II Turbo", 1993, 15, 40, 200, "Common"),
+        ("SNES", "Tetris Attack", 1996, 15, 40, 200, "Common"),
+        ("SNES", "Super Punch-Out!!", 1994, 30, 70, 300, "Common"),
+        ("SNES", "Earthworm Jim", 1994, 25, 65, 280, "Common"),
+        ("SNES", "R-Type III: The Third Lightning", 1993, 80, 200, 600, "Uncommon"),
+
+        # ── N64 — More Essential Titles ────────────────────────────────
+        ("N64", "Donkey Kong 64", 1999, 20, 50, 200, "Common"),
+        ("N64", "Wave Race 64", 1996, 10, 30, 150, "Common"),
+        ("N64", "Kirby 64: The Crystal Shards", 2000, 20, 50, 200, "Common"),
+        ("N64", "Pokemon Stadium 2", 1999, 20, 50, 200, "Common"),
+        ("N64", "Excitebike 64", 2000, 10, 30, 150, "Common"),
+        ("N64", "1080 Snowboarding", 1998, 8, 25, 120, "Common"),
+        ("N64", "WWF No Mercy", 2000, 20, 50, 200, "Common"),
+        ("N64", "Mario Tennis", 2000, 15, 40, 180, "Common"),
+        ("N64", "Mario Golf", 1999, 15, 40, 180, "Common"),
+        ("N64", "Pilotwings 64", 1996, 10, 30, 150, "Common"),
+        ("N64", "Blast Corps", 1997, 10, 30, 150, "Common"),
+        ("N64", "Star Wars: Rogue Squadron", 1998, 10, 30, 150, "Common"),
+        ("N64", "Turok: Dinosaur Hunter", 1997, 10, 30, 150, "Common"),
+        ("N64", "Turok 2: Seeds of Evil", 1998, 10, 30, 150, "Common"),
+        ("N64", "Doom 64", 1997, 25, 60, 250, "Common"),
+        ("N64", "Mystical Ninja Starring Goemon", 1997, 60, 130, 400, "Uncommon"),
+
+        # ── GameCube — More Titles ─────────────────────────────────────
+        ("GameCube", "Mario Kart: Double Dash!!", 2003, 50, 100, 280, "Common"),
+        ("GameCube", "Super Smash Bros. Melee", 2001, 40, 80, 250, "Common"),
+        ("GameCube", "Resident Evil 4", 2005, 20, 50, 180, "Common"),
+        ("GameCube", "Star Fox Adventures", 2002, 15, 40, 150, "Common"),
+        ("GameCube", "Pikmin", 2001, 30, 60, 200, "Common"),
+        ("GameCube", "The Legend of Zelda: Collector's Edition", 2003, 80, 160, 400, "Uncommon"),
+        ("GameCube", "Tales of Symphonia", 2003, 30, 60, 200, "Common"),
+        ("GameCube", "Wave Race: Blue Storm", 2001, 15, 40, 150, "Common"),
+        ("GameCube", "Mario Party 7", 2005, 40, 80, 250, "Common"),
+        ("GameCube", "Kirby Air Ride", 2003, 50, 100, 300, "Uncommon"),
+        ("GameCube", "Harvest Moon: A Wonderful Life", 2003, 25, 55, 200, "Common"),
+        ("GameCube", "Mega Man Network Transmission", 2003, 25, 55, 180, "Common"),
+
+        # ── Game Boy / GBC — More Titles ───────────────────────────────
+        ("GB", "The Legend of Zelda: Link's Awakening", 1993, 15, 45, 250, "Common"),
+        ("GB", "The Legend of Zelda: Link's Awakening DX", 1998, 20, 60, 300, "Common"),
+        ("GB", "Metroid II: Return of Samus", 1991, 15, 45, 250, "Common"),
+        ("GB", "Donkey Kong Land", 1995, 8, 25, 150, "Common"),
+        ("GB", "Wario Land: Super Mario Land 3", 1994, 10, 35, 200, "Common"),
+        ("GB", "Super Mario Land", 1989, 8, 25, 150, "Common"),
+        ("GBC", "Dragon Warrior III", 2001, 30, 80, 300, "Uncommon"),
+        ("GBC", "Wario Land 3", 2000, 15, 40, 180, "Common"),
+        ("GBC", "Mario Tennis", 2000, 10, 30, 150, "Common"),
+        ("GBC", "Dragon Warrior Monsters", 1999, 15, 40, 200, "Common"),
+        ("GBC", "Dragon Warrior Monsters 2", 2001, 20, 50, 200, "Common"),
+
+        # ── GBA — More Complete Library ────────────────────────────────
+        ("GBA", "Pokemon Ruby/Sapphire", 2002, 40, 100, 300, "Common"),
+        ("GBA", "The Legend of Zelda: The Minish Cap", 2004, 50, 120, 350, "Uncommon"),
+        ("GBA", "Mario & Luigi: Superstar Saga", 2003, 20, 50, 180, "Common"),
+        ("GBA", "Fire Emblem", 2003, 30, 70, 250, "Common"),
+        ("GBA", "Advance Wars", 2001, 20, 50, 200, "Common"),
+        ("GBA", "Kirby & The Amazing Mirror", 2004, 20, 50, 180, "Common"),
+        ("GBA", "Final Fantasy Tactics Advance", 2003, 15, 40, 150, "Common"),
+        ("GBA", "Mega Man Battle Network 3 Blue", 2003, 20, 50, 180, "Common"),
+        ("GBA", "Mega Man Battle Network 6", 2005, 40, 90, 280, "Uncommon"),
+        ("GBA", "Castlevania: Double Pack", 2006, 80, 180, 450, "Uncommon"),
+        ("GBA", "Summon Night: Swordcraft Story 2", 2006, 60, 140, 350, "Uncommon"),
+
+        # ── Genesis / Mega Drive — More Titles ─────────────────────────
+        ("Genesis", "Sonic the Hedgehog 3", 1994, 15, 40, 200, "Common"),
+        ("Genesis", "Sonic & Knuckles", 1994, 12, 35, 180, "Common"),
+        ("Genesis", "Streets of Rage", 1991, 12, 35, 180, "Common"),
+        ("Genesis", "Streets of Rage 3", 1994, 40, 100, 350, "Uncommon"),
+        ("Genesis", "Comix Zone", 1995, 30, 70, 250, "Common"),
+        ("Genesis", "Vectorman", 1995, 10, 30, 150, "Common"),
+        ("Genesis", "Vectorman 2", 1996, 15, 40, 180, "Common"),
+        ("Genesis", "Ristar", 1995, 40, 100, 300, "Uncommon"),
+        ("Genesis", "Dynamite Headdy", 1994, 25, 60, 250, "Common"),
+        ("Genesis", "ToeJam & Earl", 1991, 20, 50, 200, "Common"),
+        ("Genesis", "ToeJam & Earl in Panic on Funkotron", 1993, 20, 50, 200, "Common"),
+        ("Genesis", "Alien Soldier", 1995, 200, 400, 1000, "Rare"),
+        ("Genesis", "Panorama Cotton", 1994, 800, 1500, 3500, "Ultra Rare"),
+
+        # ── Sega Saturn — More Titles ──────────────────────────────────
+        ("Saturn", "Daytona USA", 1995, 8, 25, 100, "Common"),
+        ("Saturn", "Sega Rally Championship", 1995, 10, 30, 120, "Common"),
+        ("Saturn", "Tomb Raider", 1996, 15, 40, 150, "Common"),
+        ("Saturn", "Castlevania: Symphony of the Night (JP)", 1997, 80, 180, 450, "Uncommon"),
+        ("Saturn", "Thunder Force V", 1997, 50, 120, 350, "Uncommon"),
+
+        # ── Dreamcast — More Titles ────────────────────────────────────
+        ("Dreamcast", "Shenmue II", 2001, 30, 70, 200, "Common"),
+        ("Dreamcast", "Soul Calibur", 1999, 15, 40, 150, "Common"),
+        ("Dreamcast", "Phantasy Star Online", 2000, 15, 40, 150, "Common"),
+        ("Dreamcast", "Samba de Amigo", 2000, 20, 50, 180, "Common"),
+        ("Dreamcast", "Space Channel 5", 1999, 15, 40, 150, "Common"),
+        ("Dreamcast", "Seaman", 1999, 25, 60, 200, "Common"),
+        ("Dreamcast", "Under Defeat (JP)", 2005, 100, 220, 550, "Rare"),
+        ("Dreamcast", "Giga Wing 2", 2001, 80, 180, 450, "Uncommon"),
+
+        # ── PS1 — More Essential RPGs & Rarities ──────────────────────
+        ("PS1", "Final Fantasy VIII", 1999, 12, 35, 150, "Common"),
+        ("PS1", "Final Fantasy IX", 2000, 15, 40, 180, "Common"),
+        ("PS1", "Mega Man Legends", 1997, 30, 70, 250, "Uncommon"),
+        ("PS1", "Resident Evil 2", 1998, 25, 60, 200, "Common"),
+        ("PS1", "Silent Hill", 1999, 60, 150, 400, "Uncommon"),
+        ("PS1", "Metal Gear Solid", 1998, 15, 40, 180, "Common"),
+        ("PS1", "Crash Bandicoot: Warped", 1998, 10, 30, 150, "Common"),
+        ("PS1", "Spyro the Dragon", 1998, 15, 40, 150, "Common"),
+        ("PS1", "Ape Escape", 1999, 20, 50, 200, "Common"),
+        ("PS1", "Dino Crisis", 1999, 25, 60, 200, "Uncommon"),
+        ("PS1", "Einhander", 1997, 80, 180, 500, "Uncommon"),
+        ("PS1", "Adventures of Lomax", 1996, 150, 300, 700, "Rare"),
+        ("PS1", "Misadventures of Tron Bonne", 1999, 200, 400, 1000, "Rare"),
+        ("PS1", "Rapid Reload (Gunners Heaven)", 1995, 60, 140, 400, "Uncommon"),
+        ("PS1", "R-Type Delta", 1998, 80, 180, 500, "Uncommon"),
+
+        # ── PS2 — More Titles ──────────────────────────────────────────
+        ("PS2", "Shadow of the Colossus", 2005, 15, 40, 150, "Common"),
+        ("PS2", "Final Fantasy XII", 2006, 10, 30, 120, "Common"),
+        ("PS2", "Kingdom Hearts", 2002, 10, 30, 120, "Common"),
+        ("PS2", "Kingdom Hearts II", 2005, 10, 30, 120, "Common"),
+        ("PS2", "Katamari Damacy", 2004, 15, 40, 150, "Common"),
+        ("PS2", "We Love Katamari", 2005, 20, 50, 180, "Common"),
+        ("PS2", "Resident Evil 4", 2005, 10, 30, 120, "Common"),
+        ("PS2", "Metal Gear Solid 3: Snake Eater", 2004, 10, 30, 120, "Common"),
+        ("PS2", "Jak and Daxter: The Precursor Legacy", 2001, 10, 30, 120, "Common"),
+        ("PS2", "Ratchet & Clank: Going Commando", 2003, 10, 30, 120, "Common"),
+        ("PS2", "Devil May Cry", 2001, 10, 30, 120, "Common"),
+        ("PS2", "Viewtiful Joe", 2003, 15, 40, 150, "Common"),
+        ("PS2", "Gradius V", 2004, 60, 140, 400, "Uncommon"),
+        ("PS2", "Gitaroo Man", 2001, 50, 120, 350, "Uncommon"),
+        ("PS2", "Shin Megami Tensei: Digital Devil Saga", 2004, 30, 70, 200, "Common"),
+        ("PS2", "Valkyrie Profile 2: Silmeria", 2006, 30, 70, 200, "Common"),
+        ("PS2", "Onimusha: Warlords", 2001, 10, 30, 120, "Common"),
+        ("PS2", "Onimusha 3: Demon Siege", 2004, 15, 40, 150, "Common"),
+
+        # ── Wii — More Late-Gen Titles ─────────────────────────────────
+        ("Wii", "Super Mario Galaxy", 2007, 15, 40, 150, "Common"),
+        ("Wii", "Super Mario Galaxy 2", 2010, 20, 50, 180, "Common"),
+        ("Wii", "The Legend of Zelda: Skyward Sword", 2011, 20, 50, 180, "Common"),
+        ("Wii", "The Legend of Zelda: Twilight Princess", 2006, 15, 40, 150, "Common"),
+        ("Wii", "Super Smash Bros. Brawl", 2008, 15, 40, 150, "Common"),
+        ("Wii", "Punch-Out!!", 2009, 20, 50, 180, "Common"),
+        ("Wii", "Mario Kart Wii", 2008, 20, 50, 180, "Common"),
+        ("Wii", "Rhythm Heaven Fever", 2012, 30, 70, 200, "Uncommon"),
+        ("Wii", "Pandora's Tower", 2012, 40, 100, 300, "Uncommon"),
+
+        # ── DS — More Essential Titles ─────────────────────────────────
+        ("DS", "Pokemon Diamond/Pearl", 2007, 30, 70, 200, "Common"),
+        ("DS", "Mario Kart DS", 2005, 10, 30, 120, "Common"),
+        ("DS", "New Super Mario Bros.", 2006, 10, 30, 120, "Common"),
+        ("DS", "Chrono Trigger DS", 2008, 50, 120, 350, "Uncommon"),
+        ("DS", "Dragon Quest V: Hand of the Heavenly Bride", 2008, 60, 140, 400, "Uncommon"),
+        ("DS", "Dragon Quest VI: Realms of Revelation", 2011, 40, 100, 300, "Uncommon"),
+        ("DS", "Radiant Historia", 2010, 40, 100, 300, "Uncommon"),
+
+        # ── TurboGrafx-16 / PC Engine — More Titles ───────────────────
+        ("TurboGrafx-16", "R-Type", 1987, 20, 50, 200, "Common"),
+        ("TurboGrafx-16", "Military Madness", 1989, 15, 40, 180, "Common"),
+        ("TurboGrafx-16", "Devil's Crush", 1990, 20, 50, 200, "Common"),
+        ("TurboGrafx-16", "Ys Book I & II", 1989, 40, 100, 300, "Uncommon"),
+        ("TurboGrafx-16", "Snatcher (PCE CD)", 1992, 200, 400, 1000, "Rare"),
+
+        # ── Neo Geo — More Premium AES Titles ──────────────────────────
+        ("Neo Geo", "Metal Slug 2", 1998, 400, 700, 1800, "Rare"),
+        ("Neo Geo", "Metal Slug 3", 2000, 600, 1000, 2500, "Rare"),
+        ("Neo Geo", "The King of Fighters '98", 1998, 200, 400, 1000, "Uncommon"),
+        ("Neo Geo", "Pulstar", 1995, 500, 900, 2200, "Rare"),
+        ("Neo Geo", "Real Bout Fatal Fury 2", 1998, 250, 450, 1200, "Rare"),
+
+        # ── Atari 2600 — More Classic Titles ───────────────────────────
+        ("2600", "Pac-Man", 1982, 3, 10, 60, "Common"),
+        ("2600", "Space Invaders", 1980, 3, 10, 60, "Common"),
+        ("2600", "Frogger", 1982, 3, 12, 70, "Common"),
+        ("2600", "Atlantis", 1982, 3, 10, 60, "Common"),
+        ("2600", "Missile Command", 1981, 3, 10, 60, "Common"),
+        ("2600", "Demon Attack", 1982, 5, 15, 80, "Common"),
+        ("2600", "Starmaster", 1982, 5, 15, 80, "Common"),
+        ("2600", "Montezuma's Revenge", 1984, 15, 40, 200, "Uncommon"),
+        ("2600", "Jr. Pac-Man", 1986, 20, 50, 250, "Uncommon"),
+
+        # ── Atari 7800 — Titles ────────────────────────────────────────
+        ("7800", "Ninja Golf", 1990, 40, 100, 300, "Uncommon"),
+        ("7800", "Midnight Mutants", 1990, 30, 70, 200, "Common"),
+        ("7800", "Tower Toppler", 1988, 10, 30, 120, "Common"),
+
+        # ── Sega CD / Mega-CD — More Titles ───────────────────────────
+        ("Sega CD", "Lunar: Eternal Blue", 1994, 80, 180, 500, "Uncommon"),
+        ("Sega CD", "Sonic CD", 1993, 30, 70, 200, "Common"),
+        ("Sega CD", "Night Trap", 1992, 30, 80, 250, "Common"),
+        ("Sega CD", "Popful Mail", 1994, 200, 400, 900, "Rare"),
+        ("Sega CD", "Keio Flying Squadron", 1993, 300, 600, 1500, "Rare"),
+
+        # ── PSP — More High-Value Titles ───────────────────────────────
+        ("PSP", "Crisis Core: Final Fantasy VII", 2007, 10, 30, 100, "Common"),
+        ("PSP", "Monster Hunter Freedom Unite", 2008, 10, 30, 100, "Common"),
+        ("PSP", "Kingdom Hearts: Birth by Sleep", 2010, 15, 40, 150, "Common"),
+        ("PSP", "Castlevania: The Dracula X Chronicles", 2007, 20, 50, 180, "Common"),
+        ("PSP", "LocoRoco", 2006, 10, 25, 80, "Common"),
+        ("PSP", "Patapon 2", 2008, 10, 25, 80, "Common"),
+        ("PSP", "Mega Man Powered Up", 2006, 30, 70, 200, "Uncommon"),
+        ("PSP", "Gitaroo Man Lives!", 2006, 30, 70, 200, "Uncommon"),
+
+        # ── Sega Game Gear — Notable Titles ────────────────────────────
+        ("Game Gear", "Sonic the Hedgehog", 1991, 5, 15, 80, "Common"),
+        ("Game Gear", "Shinobi", 1991, 10, 30, 120, "Common"),
+        ("Game Gear", "Shining Force: The Sword of Hajya", 1994, 30, 70, 200, "Uncommon"),
+        ("Game Gear", "Mega Man", 1995, 40, 100, 300, "Uncommon"),
+
+        # ── ColecoVision / Intellivision ───────────────────────────────
+        ("ColecoVision", "Donkey Kong", 1982, 8, 25, 120, "Common"),
+        ("ColecoVision", "Zaxxon", 1982, 8, 25, 120, "Common"),
+        ("ColecoVision", "Turbo", 1982, 10, 30, 150, "Common"),
+        ("Intellivision", "Advanced Dungeons & Dragons", 1982, 8, 25, 120, "Common"),
+        ("Intellivision", "Astrosmash", 1981, 5, 15, 80, "Common"),
+        ("Intellivision", "B-17 Bomber", 1982, 8, 25, 120, "Common"),
     ]
 
     for platform, title, year, loose, cib, sealed, rarity in games:

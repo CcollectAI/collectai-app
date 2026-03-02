@@ -26,8 +26,11 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/sponsor-companies", tags=["sponsor-companies"])
+
+_sponsor_company_limit = per_user_rate_limit(10, window_seconds=3600, scope="sponsor_company")
 logger = logging.getLogger(__name__)
 
 
@@ -132,6 +135,7 @@ async def list_my_companies(
 async def register_company(
     request: CreateSponsorCompanyRequest,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_sponsor_company_limit),
 ):
     """Register a new sponsor company."""
     pool = get_db_pool()

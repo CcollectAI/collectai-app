@@ -1,11 +1,12 @@
 """
-Import Sports Cards catalog — 120+ items across 9 categories.
+Import Sports Cards catalog — 530+ items across 16 categories.
 
 Layer 1 (Catalog):  Iconic cards across sports → category_items
 Layer 2 (Prices):   Market estimates → train.jsonl
 
 Categories: Basketball, Baseball, Football, Soccer, Hockey,
-            UFC/MMA, F1/Racing, Sealed Product/Boxes.
+            UFC/MMA, F1/Racing, Sealed Product/Boxes, Tennis, Golf, Boxing,
+            Cricket, Rugby, Wrestling/WWE, Racing/NASCAR.
 
 Sources: Curated database of high-value sports cards.
 Can be augmented with eBay API, TCDB.com, 130point.com later.
@@ -36,10 +37,11 @@ CATEGORY = "sportscards"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated sports cards catalog — 120+ items across 9 categories.
+    """Curated sports cards catalog — 530+ items across 16 categories.
 
     Sports covered: Basketball, Baseball, Football (NFL), Soccer,
-    Hockey (NHL), UFC/MMA, F1/Racing, and Sealed Product/Boxes.
+    Hockey (NHL), UFC/MMA, F1/Racing, Sealed Product/Boxes,
+    Tennis, Golf, Boxing, Cricket, Rugby, Wrestling/WWE, Racing/NASCAR.
     All prices in EUR.
     """
 
@@ -179,10 +181,499 @@ def get_curated_catalog() -> list[dict]:
         ("Football", "2000", "Playoff Contenders", "Sealed Hobby Box", "N/A", "Factory Sealed", 50000, 70000, "Legendary"),
         ("Baseball", "1952", "Topps", "Sealed Wax Pack (single)", "N/A", "Factory Sealed", 25000, 35000, "Legendary"),
 
+        # ── 2023-2024 Basketball Rookies (8 items) ────────────────────────
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Gold /10", 8000, 60000, "Ultra Rare"),
+        ("Basketball", "2023", "Panini Select", "Victor Wembanyama", "101", "Courtside Silver", 1000, 15000, "High"),
+        ("Basketball", "2023", "Donruss Optic", "Victor Wembanyama", "201", "Holo RC", 400, 6000, "High"),
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Shimmer", 1500, 20000, "Ultra Rare"),
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Tiger Stripe", 2000, 25000, "Ultra Rare"),
+        ("Basketball", "2023", "Panini Prizm", "Chet Holmgren", "249", "Silver Prizm RC", 150, 2500, "High"),
+        ("Basketball", "2023", "Panini Select", "Chet Holmgren", "130", "Courtside Silver", 200, 3000, "High"),
+        ("Basketball", "2023", "Panini Prizm", "Brandon Miller", "253", "Silver Prizm RC", 80, 1200, "Mid"),
+
+        # ── 2023-2024 Football Rookies (5 items) ───────────────────────
+        ("Football", "2024", "Panini Prizm", "Caleb Williams", "305", "Gold /10", 3000, 25000, "Ultra Rare"),
+        ("Football", "2023", "Panini Prizm", "CJ Stroud", "301", "Gold /10", 2500, 20000, "Ultra Rare"),
+        ("Football", "2023", "Panini Select", "CJ Stroud", "201", "Tie-Dye /25", 1500, 12000, "Ultra Rare"),
+        ("Football", "2023", "Panini Prizm", "Brock Purdy", "330", "Snakeskin", 800, 8000, "High"),
+        ("Football", "2023", "Panini National Treasures", "CJ Stroud", "101", "RPA /99", 5000, 40000, "Ultra Rare"),
+
+        # ── Soccer / Football Expansion (6 items) ──────────────────────
+        ("Soccer", "2023", "Topps Chrome UCL", "Jude Bellingham", "50", "Gold /50", 800, 10000, "Ultra Rare"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Erling Haaland", "1", "Superfractor /1", 5000, 50000, "Legendary"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Kylian Mbappe", "10", "Gold Refractor /50", 600, 8000, "Ultra Rare"),
+        ("Soccer", "2018", "Panini Prizm World Cup", "Kylian Mbappe", "80", "Gold /10", 3000, 30000, "Ultra Rare"),
+        ("Soccer", "2023", "Topps Finest UCL", "Jude Bellingham", "JB1", "Finest Auto", 1200, 15000, "Ultra Rare"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Erling Haaland", "1", "Speckle Refractor", 300, 4000, "High"),
+
+        # ── UFC / MMA Expansion (5 items) ──────────────────────────────
+        ("UFC", "2022", "Panini Prizm UFC", "Sean O'Malley", "88", "Silver Prizm", 150, 2500, "High"),
+        ("UFC", "2022", "Panini Prizm UFC", "Sean O'Malley", "88", "Gold /10", 1500, 12000, "Ultra Rare"),
+        ("UFC", "2023", "Panini Prizm UFC", "Alex Pereira", "55", "Silver Prizm", 200, 3000, "High"),
+        ("UFC", "2021", "Panini Select UFC", "Islam Makhachev", "72", "Silver Prizm", 100, 1500, "Mid"),
+        ("UFC", "2023", "Panini Prizm UFC", "Ilia Topuria", "95", "Silver Prizm RC", 120, 2000, "High"),
+
+        # ── F1 / Racing Expansion (6 items) ────────────────────────────
+        ("F1", "2020", "Topps Chrome F1", "Max Verstappen", "1", "Gold /50", 2000, 20000, "Ultra Rare"),
+        ("F1", "2020", "Topps Chrome F1", "Lewis Hamilton", "44", "Superfractor /1", 5000, 40000, "Legendary"),
+        ("F1", "2022", "Topps Chrome F1", "Lando Norris", "4", "Gold /50", 500, 5000, "High"),
+        ("F1", "2023", "Topps Chrome F1", "Oscar Piastri", "81", "Refractor RC", 150, 2000, "High"),
+        ("F1", "2020", "Topps Chrome F1", "Max Verstappen", "1", "Sapphire", 800, 10000, "Ultra Rare"),
+        ("F1", "2023", "Topps Chrome F1", "Max Verstappen", "1", "Green /99", 400, 5000, "High"),
+
+        # ── Vintage Graded (5 items) ───────────────────────────────────
+        ("Basketball", "1986", "Fleer", "Michael Jordan", "57", "PSA 9 (Mint)", 30000, 50000, "Legendary"),
+        ("Basketball", "1986", "Fleer", "Michael Jordan", "57", "PSA 10 (Gem Mint)", 250000, 400000, "Legendary"),
+        ("Baseball", "1952", "Topps", "Mickey Mantle", "311", "PSA 5 (EX)", 100000, 150000, "Legendary"),
+        ("Baseball", "1952", "Topps", "Mickey Mantle", "311", "PSA 8 (NM-MT)", 800000, 999000, "Legendary"),
+        ("Football", "2000", "Playoff Contenders", "Tom Brady", "144", "BGS 9.5 Auto 10", 100000, 200000, "Legendary"),
+
+        # ── Sealed Product / Boxes Expansion (5 items) ──────────────────
+        ("Basketball", "2023", "Panini Prizm", "Sealed Hobby Box (2023-24)", "N/A", "Factory Sealed", 600, 1000, "High"),
+        ("Basketball", "2023", "Panini Select", "Sealed Hobby Box (2023-24)", "N/A", "Factory Sealed", 500, 800, "High"),
+        ("Basketball", "2023", "Panini National Treasures", "Sealed Hobby Box (2023-24)", "N/A", "Factory Sealed", 4000, 6000, "Ultra Rare"),
+        ("Football", "2024", "Panini Prizm", "Sealed Hobby Box (2024)", "N/A", "Factory Sealed", 400, 700, "High"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Sealed Hobby Box (2023-24)", "N/A", "Factory Sealed", 300, 500, "High"),
+
         # ── Modern Parallels & Inserts (representative) ──────────────────
         ("Basketball", "2022", "Panini Select", "Various", "N/A", "Courtside", 20, 200, "Standard"),
         ("Football", "2023", "Panini Prizm", "Various", "N/A", "Neon Green", 10, 100, "Standard"),
         ("Baseball", "2023", "Topps Chrome", "Various", "N/A", "Refractor", 5, 50, "Standard"),
+        ("Basketball", "2023", "Panini Prizm", "Various", "N/A", "Black /1", 500, 5000, "Ultra Rare"),
+        ("Football", "2023", "Panini Prizm", "Various", "N/A", "Gold /10", 200, 2000, "High"),
+
+        # ── Tennis (6 items) ────────────────────────────────────────────
+        ("Tennis", "2003", "Netpro", "Roger Federer", "1", "Base RC", 500, 8000, "Iconic"),
+        ("Tennis", "2003", "Netpro", "Rafael Nadal", "70", "Base RC", 300, 5000, "High"),
+        ("Tennis", "2003", "Netpro", "Serena Williams", "2", "Base RC", 200, 3000, "High"),
+        ("Tennis", "2018", "Topps Chrome", "Naomi Osaka", "98", "Refractor RC", 150, 2000, "High"),
+        ("Tennis", "2021", "Topps Chrome", "Carlos Alcaraz", "45", "Refractor RC", 200, 3000, "High"),
+        ("Tennis", "2003", "Netpro", "Novak Djokovic", "69", "Base RC", 400, 6000, "Iconic"),
+
+        # ── Golf (5 items) ──────────────────────────────────────────────
+        ("Golf", "2001", "Upper Deck", "Tiger Woods", "1", "Base RC", 1500, 20000, "Iconic"),
+        ("Golf", "2001", "Upper Deck", "Tiger Woods", "1", "Gold /25", 10000, 80000, "Legendary"),
+        ("Golf", "2014", "SP Authentic", "Jordan Spieth", "80", "Auto RC", 200, 3000, "High"),
+        ("Golf", "2019", "Leaf Signature Series", "Bryson DeChambeau", "BA-BD1", "Auto", 50, 500, "Mid"),
+        ("Golf", "2023", "Topps Chrome", "Scottie Scheffler", "1", "Refractor", 100, 1500, "High"),
+
+        # ── Boxing (5 items) ────────────────────────────────────────────
+        ("Boxing", "1951", "Topps Ringside", "Sugar Ray Robinson", "31", "Base", 2000, 20000, "Iconic"),
+        ("Boxing", "1986", "Panini Supersport", "Mike Tyson", "153", "Sticker RC", 500, 5000, "Iconic"),
+        ("Boxing", "1991", "Ringlords", "Muhammad Ali", "40", "Base", 100, 1500, "High"),
+        ("Boxing", "2017", "Topps Chrome UFC", "Canelo Alvarez", "75", "Refractor", 150, 2000, "High"),
+        ("Boxing", "2022", "Topps Chrome", "Ryan Garcia", "12", "Refractor RC", 80, 1000, "Mid"),
+
+        # ── Basketball Vintage Expansion (8 items) ──────────────────────
+        ("Basketball", "1996", "Topps Chrome", "Ray Allen", "217", "Refractor RC", 300, 5000, "High"),
+        ("Basketball", "1996", "Topps Chrome", "Steve Nash", "182", "Refractor RC", 250, 4000, "High"),
+        ("Basketball", "2003", "Topps Chrome", "Dwyane Wade", "115", "Refractor RC", 800, 12000, "Iconic"),
+        ("Basketball", "2003", "Topps Chrome", "Carmelo Anthony", "113", "Refractor RC", 300, 5000, "High"),
+        ("Basketball", "2003", "Topps Chrome", "Chris Bosh", "114", "Refractor RC", 200, 3000, "High"),
+        ("Basketball", "1970", "Topps", "Pete Maravich", "123", "Base RC", 1500, 20000, "Iconic"),
+        ("Basketball", "1972", "Topps", "Julius Erving", "195", "Base RC", 800, 12000, "Iconic"),
+        ("Basketball", "1984", "Star", "Michael Jordan XRC", "101", "Base", 5000, 50000, "Legendary"),
+
+        # ── Baseball Modern (7 items) ───────────────────────────────────
+        ("Baseball", "2023", "Topps Chrome", "Elly De La Cruz", "USC200", "Refractor RC", 100, 2000, "High"),
+        ("Baseball", "2023", "Topps Chrome", "Corbin Carroll", "USC100", "Refractor RC", 80, 1500, "High"),
+        ("Baseball", "2023", "Topps Chrome", "Gunnar Henderson", "USC75", "Refractor RC", 80, 1500, "High"),
+        ("Baseball", "2017", "Topps Chrome Update", "Aaron Judge", "HMT40", "Refractor RC", 200, 3000, "High"),
+        ("Baseball", "2017", "Topps Chrome Update", "Cody Bellinger", "HMT80", "Refractor RC", 50, 800, "Mid"),
+        ("Baseball", "1971", "Topps", "Thurman Munson", "5", "Base RC", 500, 6000, "Iconic"),
+        ("Baseball", "1975", "Topps", "George Brett", "228", "Base RC", 400, 5000, "Iconic"),
+
+        # ── Football Classic (6 items) ──────────────────────────────────
+        ("Football", "2012", "Panini National Treasures", "Andrew Luck", "201", "RPA /99", 2000, 15000, "Ultra Rare"),
+        ("Football", "2004", "Topps Chrome", "Eli Manning", "220", "Refractor RC", 200, 3000, "High"),
+        ("Football", "2004", "Topps Chrome", "Ben Roethlisberger", "166", "Refractor RC", 200, 3000, "High"),
+        ("Football", "1957", "Topps", "Johnny Unitas", "138", "Base RC", 2000, 20000, "Iconic"),
+        ("Football", "1976", "Topps", "Walter Payton", "148", "Base RC", 500, 8000, "Iconic"),
+        ("Football", "2021", "Panini Prizm", "Trevor Lawrence", "331", "Silver Prizm RC", 100, 2000, "High"),
+
+        # ── Basketball — Additional Icons & Parallels (12 items) ───────────
+        ("Basketball", "2023", "Panini Prizm", "Scoot Henderson", "260", "Silver Prizm RC", 80, 1200, "Mid"),
+        ("Basketball", "2023", "Panini Select", "Amen Thompson", "155", "Courtside Silver RC", 60, 800, "Mid"),
+        ("Basketball", "2009", "Panini National Treasures", "Stephen Curry", "206", "Logoman /1", 80000, 300000, "Legendary"),
+        ("Basketball", "2018", "Panini National Treasures", "Luka Doncic", "127", "RPA /99", 20000, 120000, "Ultra Rare"),
+        ("Basketball", "2018", "Panini Prizm", "Luka Doncic", "280", "Gold /10", 5000, 50000, "Ultra Rare"),
+        ("Basketball", "2018", "Panini Prizm", "Trae Young", "78", "Silver Prizm RC", 200, 3000, "High"),
+        ("Basketball", "2020", "Panini Prizm", "LaMelo Ball", "278", "Silver Prizm RC", 300, 5000, "High"),
+        ("Basketball", "2020", "Panini National Treasures", "Anthony Edwards", "130", "RPA /99", 8000, 60000, "Ultra Rare"),
+        ("Basketball", "2014", "Panini Prizm", "Joel Embiid", "253", "Silver Prizm RC", 300, 5000, "High"),
+        ("Basketball", "2014", "Panini Prizm", "Nikola Jokic", "335", "Silver Prizm RC", 500, 8000, "High"),
+        ("Basketball", "2017", "Panini Prizm", "Donovan Mitchell", "117", "Silver Prizm RC", 200, 3000, "High"),
+        ("Basketball", "2019", "Panini Prizm", "Tyler Herro", "259", "Silver Prizm RC", 80, 1200, "Mid"),
+
+        # ── Basketball — Vintage Deep Cuts (10 items) ──────────────────────
+        ("Basketball", "1948", "Bowman", "George Mikan", "69", "Base RC", 15000, 100000, "Legendary"),
+        ("Basketball", "1961", "Fleer", "Oscar Robertson", "36", "Base RC", 1500, 20000, "Iconic"),
+        ("Basketball", "1969", "Topps", "John Havlicek", "20", "Base RC", 400, 5000, "High"),
+        ("Basketball", "1972", "Topps", "Walt Frazier", "120", "Base", 200, 2500, "High"),
+        ("Basketball", "1986", "Fleer", "Hakeem Olajuwon", "82", "Base RC", 100, 2500, "High"),
+        ("Basketball", "1986", "Fleer", "Karl Malone", "68", "Base RC", 50, 1200, "Mid"),
+        ("Basketball", "1986", "Fleer", "Clyde Drexler", "26", "Base RC", 40, 1000, "Mid"),
+        ("Basketball", "1986", "Fleer", "John Stockton", "115", "Base RC", 40, 1000, "Mid"),
+        ("Basketball", "1986", "Fleer", "Dominique Wilkins", "121", "Base RC", 30, 800, "Mid"),
+        ("Basketball", "1986", "Fleer", "Isiah Thomas", "109", "Base RC", 30, 800, "Mid"),
+
+        # ── Baseball — Vintage Legends (10 items) ─────────────────────────
+        ("Baseball", "1914", "Cracker Jack", "Babe Ruth (pre-rookie)", "N/A", "Base", 100000, 500000, "Legendary"),
+        ("Baseball", "1916", "M101-4 Sporting News", "Babe Ruth", "151", "Base RC", 200000, 800000, "Legendary"),
+        ("Baseball", "1909", "T206", "Ty Cobb", "N/A", "Green Portrait", 15000, 100000, "Legendary"),
+        ("Baseball", "1909", "T206", "Christy Mathewson", "N/A", "Portrait", 5000, 30000, "Iconic"),
+        ("Baseball", "1909", "T206", "Cy Young", "N/A", "Portrait", 8000, 50000, "Iconic"),
+        ("Baseball", "1933", "Goudey", "Lou Gehrig", "92", "Base", 20000, 150000, "Legendary"),
+        ("Baseball", "1939", "Play Ball", "Ted Williams", "92", "Base RC", 10000, 80000, "Legendary"),
+        ("Baseball", "1941", "Play Ball", "Joe DiMaggio", "71", "Base", 5000, 30000, "Iconic"),
+        ("Baseball", "1955", "Bowman", "Ernie Banks", "242", "Base", 2000, 15000, "Iconic"),
+        ("Baseball", "1952", "Topps", "Willie Mays", "261", "Base", 8000, 60000, "Legendary"),
+
+        # ── Baseball — Modern Stars & Prospects (10 items) ─────────────────
+        ("Baseball", "2018", "Topps Chrome", "Shohei Ohtani", "150", "Refractor RC", 200, 4000, "High"),
+        ("Baseball", "2018", "Bowman Chrome", "Shohei Ohtani", "1", "Auto RC", 3000, 25000, "Ultra Rare"),
+        ("Baseball", "2020", "Bowman Chrome", "Jasson Dominguez", "BCP-8", "1st Bowman Auto", 500, 5000, "High"),
+        ("Baseball", "2023", "Topps Chrome", "Jackson Holliday", "USC150", "Refractor RC", 100, 2000, "High"),
+        ("Baseball", "2023", "Bowman Chrome", "Jackson Holliday", "BCP-1", "1st Bowman Refractor", 150, 2500, "High"),
+        ("Baseball", "2016", "Bowman Chrome", "Vladimir Guerrero Jr.", "BCP-55", "1st Bowman Auto", 500, 6000, "High"),
+        ("Baseball", "2019", "Topps Chrome", "Pete Alonso", "204", "Refractor RC", 80, 1500, "Mid"),
+        ("Baseball", "2020", "Topps Chrome", "Bobby Witt Jr.", "BCP-25", "1st Bowman Refractor", 100, 2000, "High"),
+        ("Baseball", "2021", "Topps Chrome", "Wander Franco", "USC265", "Refractor RC", 100, 2000, "High"),
+        ("Baseball", "1954", "Topps", "Ernie Banks", "94", "Base RC", 3000, 25000, "Iconic"),
+
+        # ── Football — Classic NFL Legends (10 items) ──────────────────────
+        ("Football", "1935", "National Chicle", "Bronko Nagurski", "34", "Base RC", 50000, 300000, "Legendary"),
+        ("Football", "1951", "Bowman", "Tom Landry", "20", "Base RC", 1000, 10000, "Iconic"),
+        ("Football", "1957", "Topps", "Bart Starr", "119", "Base RC", 1500, 15000, "Iconic"),
+        ("Football", "1958", "Topps", "Sonny Jurgensen", "90", "Base RC", 300, 3000, "High"),
+        ("Football", "1962", "Topps", "Fran Tarkenton", "90", "Base RC", 400, 5000, "High"),
+        ("Football", "1970", "Topps", "OJ Simpson", "90", "Base RC", 400, 5000, "High"),
+        ("Football", "1971", "Topps", "Terry Bradshaw", "156", "Base RC", 800, 10000, "Iconic"),
+        ("Football", "1986", "Topps", "Steve Young", "374", "Base RC", 100, 2000, "High"),
+        ("Football", "1998", "Topps Chrome", "Randy Moss", "35", "Refractor RC", 500, 8000, "Iconic"),
+        ("Football", "1998", "Topps Chrome", "Charles Woodson", "67", "Refractor RC", 200, 3000, "High"),
+
+        # ── Football — Modern Stars (8 items) ─────────────────────────────
+        ("Football", "2020", "Panini National Treasures", "Justin Herbert", "164", "RPA /99", 10000, 60000, "Ultra Rare"),
+        ("Football", "2020", "Panini National Treasures", "Joe Burrow", "151", "RPA /99", 8000, 50000, "Ultra Rare"),
+        ("Football", "2018", "Panini National Treasures", "Josh Allen", "161", "RPA /99", 15000, 80000, "Ultra Rare"),
+        ("Football", "2017", "Panini National Treasures", "Patrick Mahomes", "161", "RPA /99", 40000, 200000, "Legendary"),
+        ("Football", "2021", "Panini Prizm", "Mac Jones", "331", "Silver Prizm RC", 50, 800, "Mid"),
+        ("Football", "2022", "Panini Prizm", "Garrett Wilson", "310", "Silver Prizm RC", 80, 1200, "Mid"),
+        ("Football", "2022", "Panini Prizm", "Drake London", "315", "Silver Prizm RC", 60, 1000, "Mid"),
+        ("Football", "2024", "Panini Prizm", "Jayden Daniels", "310", "Silver Prizm RC", 150, 2500, "High"),
+
+        # ── Soccer — World Cup & International (12 items) ──────────────────
+        ("Soccer", "2022", "Panini Prizm World Cup", "Lionel Messi", "1", "Silver Prizm", 300, 5000, "High"),
+        ("Soccer", "2022", "Panini Prizm World Cup", "Lionel Messi", "1", "Gold /10", 5000, 40000, "Ultra Rare"),
+        ("Soccer", "2014", "Panini Prizm World Cup", "Cristiano Ronaldo", "161", "Silver Prizm", 200, 3000, "High"),
+        ("Soccer", "2014", "Panini Prizm World Cup", "Lionel Messi", "12", "Silver Prizm", 400, 6000, "High"),
+        ("Soccer", "2018", "Panini Prizm World Cup", "Erling Haaland", "N/A", "Base RC", 150, 2500, "High"),
+        ("Soccer", "2023", "Topps Chrome Bundesliga", "Jamal Musiala", "50", "Refractor RC", 200, 3000, "High"),
+        ("Soccer", "2019", "Topps Chrome UCL", "Ansu Fati", "72", "Refractor RC", 150, 2000, "High"),
+        ("Soccer", "2021", "Topps Chrome UCL", "Pedri", "30", "Refractor RC", 150, 2000, "High"),
+        ("Soccer", "2023", "Panini Prizm Premier League", "Bukayo Saka", "10", "Silver Prizm", 100, 1500, "High"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Lamine Yamal", "198", "Gold /50", 1500, 15000, "Ultra Rare"),
+        ("Soccer", "2022", "Panini Prizm World Cup", "Kylian Mbappe", "80", "Silver Prizm", 200, 3000, "High"),
+        ("Soccer", "2017", "Topps Chrome UCL", "Erling Haaland", "N/A", "Refractor RC", 500, 6000, "High"),
+
+        # ── Soccer — Premier League & Club (8 items) ──────────────────────
+        ("Soccer", "2023", "Panini Prizm Premier League", "Cole Palmer", "150", "Silver Prizm RC", 150, 2500, "High"),
+        ("Soccer", "2019", "Panini Chronicles", "Phil Foden", "30", "Base RC", 100, 1500, "High"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Jude Bellingham", "50", "Speckle Refractor", 200, 3000, "High"),
+        ("Soccer", "2020", "Topps Chrome UCL", "Pedri", "81", "Gold /50", 800, 8000, "Ultra Rare"),
+        ("Soccer", "2000", "Panini Mega Cracks", "Xavi Hernandez", "56", "Base RC", 300, 3000, "High"),
+        ("Soccer", "2004", "Panini Mega Cracks", "Andres Iniesta", "148", "Base RC", 200, 2500, "High"),
+        ("Soccer", "2023", "Panini Prizm Premier League", "Declan Rice", "5", "Silver Prizm", 80, 1000, "Mid"),
+        ("Soccer", "2021", "Topps Chrome Bundesliga", "Jude Bellingham", "71", "Refractor RC", 400, 5000, "High"),
+
+        # ── Hockey — Vintage & Modern (8 items) ───────────────────────────
+        ("Hockey", "1951", "Parkhurst", "Gordie Howe", "66", "Base RC", 10000, 80000, "Legendary"),
+        ("Hockey", "1951", "Parkhurst", "Maurice Richard", "4", "Base RC", 5000, 40000, "Iconic"),
+        ("Hockey", "1979", "Topps", "Wayne Gretzky", "18", "Base RC", 2500, 40000, "Iconic"),
+        ("Hockey", "1990", "Upper Deck", "Jaromir Jagr", "356", "Young Guns RC", 50, 800, "Mid"),
+        ("Hockey", "2006", "Upper Deck", "Evgeni Malkin", "201", "Young Guns RC", 100, 1500, "High"),
+        ("Hockey", "2017", "Upper Deck", "Cale Makar", "201", "Young Guns RC", 150, 2500, "High"),
+        ("Hockey", "1966", "Topps", "Bobby Hull", "35", "Base", 600, 5000, "Iconic"),
+        ("Hockey", "2003", "Upper Deck", "Marc-Andre Fleury", "201", "Young Guns RC", 100, 1500, "High"),
+
+        # ── UFC / MMA — Additional Fighters (8 items) ─────────────────────
+        ("UFC", "2009", "Topps UFC", "Anderson Silva", "50", "Base", 100, 1500, "High"),
+        ("UFC", "2012", "Topps UFC Bloodlines", "Ronda Rousey", "10", "Auto RC", 500, 5000, "High"),
+        ("UFC", "2010", "Topps UFC", "Georges St-Pierre", "100", "Base", 80, 1000, "Mid"),
+        ("UFC", "2022", "Panini Prizm UFC", "Alex Pereira", "55", "Gold /10", 1500, 12000, "Ultra Rare"),
+        ("UFC", "2023", "Panini Prizm UFC", "Leon Edwards", "35", "Silver Prizm", 80, 1000, "Mid"),
+        ("UFC", "2020", "Panini Select UFC", "Dustin Poirier", "28", "Silver Prizm", 60, 800, "Mid"),
+        ("UFC", "2023", "Panini Prizm UFC", "Tom Aspinall", "90", "Silver Prizm RC", 100, 1500, "High"),
+        ("UFC", "2021", "Topps Chrome UFC", "Charles Oliveira", "40", "Refractor", 100, 1500, "High"),
+
+        # ── F1 / Racing — Expansion (8 items) ─────────────────────────────
+        ("F1", "2021", "Topps Chrome F1", "George Russell", "63", "Refractor RC", 100, 1500, "High"),
+        ("F1", "2022", "Topps Chrome F1", "Zhou Guanyu", "24", "Refractor RC", 60, 800, "Mid"),
+        ("F1", "2020", "Topps Chrome F1", "Daniel Ricciardo", "3", "Refractor", 80, 1000, "Mid"),
+        ("F1", "2020", "Topps Chrome F1", "Sebastian Vettel", "5", "Refractor", 100, 1500, "High"),
+        ("F1", "2022", "Topps Chrome F1", "Carlos Sainz", "55", "Refractor", 80, 1000, "Mid"),
+        ("F1", "2023", "Topps Chrome F1", "Oscar Piastri", "81", "Gold /50", 600, 6000, "High"),
+        ("F1", "1992", "Grid F1", "Michael Schumacher", "N/A", "Base RC", 500, 5000, "Iconic"),
+        ("F1", "2019", "Topps Chrome F1", "Max Verstappen", "33", "Sapphire Blue /99", 1500, 12000, "Ultra Rare"),
+
+        # ── Tennis — Expansion (6 items) ───────────────────────────────────
+        ("Tennis", "2003", "Netpro", "Roger Federer", "1", "Glossy /5000", 800, 12000, "High"),
+        ("Tennis", "2003", "Netpro", "Andy Roddick", "5", "Base RC", 100, 1500, "Mid"),
+        ("Tennis", "2023", "Topps Chrome", "Coco Gauff", "25", "Refractor RC", 100, 1500, "High"),
+        ("Tennis", "2003", "Netpro", "Venus Williams", "3", "Base RC", 150, 2000, "High"),
+        ("Tennis", "2024", "Topps Chrome", "Jannik Sinner", "10", "Refractor RC", 150, 2000, "High"),
+        ("Tennis", "2024", "Topps Chrome", "Aryna Sabalenka", "15", "Refractor RC", 80, 1000, "Mid"),
+
+        # ── Golf — Expansion (5 items) ────────────────────────────────────
+        ("Golf", "2001", "Upper Deck", "Tiger Woods", "1", "SP Authentic Auto", 5000, 40000, "Legendary"),
+        ("Golf", "2001", "SP Authentic", "Phil Mickelson", "45", "Auto RC", 200, 3000, "High"),
+        ("Golf", "2021", "SP Authentic", "Collin Morikawa", "10", "Auto RC", 100, 1500, "High"),
+        ("Golf", "2022", "SP Authentic", "Rory McIlroy", "1", "Auto", 200, 3000, "High"),
+        ("Golf", "2023", "Topps Chrome", "Jon Rahm", "5", "Refractor", 80, 1000, "Mid"),
+
+        # ── Boxing — Expansion (5 items) ──────────────────────────────────
+        ("Boxing", "1948", "Leaf", "Joe Louis", "48", "Base", 1500, 12000, "Iconic"),
+        ("Boxing", "2017", "Topps Chrome", "Floyd Mayweather Jr.", "50", "Refractor", 200, 3000, "High"),
+        ("Boxing", "2023", "Topps Chrome", "Terence Crawford", "25", "Refractor", 100, 1500, "High"),
+        ("Boxing", "2024", "Topps Chrome", "Oleksandr Usyk", "10", "Refractor", 100, 1500, "High"),
+        ("Boxing", "2011", "Ringside Round 2", "Manny Pacquiao", "55", "Base", 100, 1200, "High"),
+
+        # ── Sealed Product / Wax — Additional (8 items) ───────────────────
+        ("Basketball", "1996", "Topps Chrome", "Sealed Hobby Box", "N/A", "Factory Sealed", 80000, 120000, "Legendary"),
+        ("Basketball", "2009", "Panini National Treasures", "Sealed Hobby Box", "N/A", "Factory Sealed", 80000, 100000, "Legendary"),
+        ("Baseball", "1952", "Topps", "Sealed Wax Box (5-cent series)", "N/A", "Factory Sealed", 500000, 800000, "Legendary"),
+        ("Football", "1958", "Topps", "Sealed Wax Box", "N/A", "Factory Sealed", 40000, 60000, "Legendary"),
+        ("Baseball", "1989", "Upper Deck", "Sealed Hobby Box (High Series)", "N/A", "Factory Sealed", 300, 500, "High"),
+        ("Baseball", "1993", "SP", "Sealed Hobby Box", "N/A", "Factory Sealed", 3000, 5000, "Ultra Rare"),
+        ("Hockey", "1979", "O-Pee-Chee", "Sealed Wax Box", "N/A", "Factory Sealed", 100000, 150000, "Legendary"),
+        ("Soccer", "2018", "Panini Prizm World Cup", "Sealed Hobby Box", "N/A", "Factory Sealed", 8000, 12000, "Ultra Rare"),
+
+        # ── Basketball — Wemby Variants & Luka Parallels (12 items) ─────────
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Red /299", 600, 8000, "High"),
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Blue /199", 800, 10000, "High"),
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Green", 200, 3000, "High"),
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Mojo /25", 4000, 35000, "Ultra Rare"),
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Black /1", 30000, 200000, "Legendary"),
+        ("Basketball", "2023", "Panini Flawless", "Victor Wembanyama", "101", "RPA /25", 15000, 100000, "Legendary"),
+        ("Basketball", "2018", "Panini Prizm", "Luka Doncic", "280", "Red /299", 200, 3000, "High"),
+        ("Basketball", "2018", "Panini Prizm", "Luka Doncic", "280", "Blue /199", 300, 4500, "High"),
+        ("Basketball", "2018", "Panini Prizm", "Luka Doncic", "280", "Green", 150, 2000, "High"),
+        ("Basketball", "2018", "Panini Prizm", "Luka Doncic", "280", "Mojo /25", 3000, 25000, "Ultra Rare"),
+        ("Basketball", "2018", "Panini Prizm", "Luka Doncic", "280", "Shimmer", 800, 10000, "Ultra Rare"),
+        ("Basketball", "2018", "Panini Prizm", "Luka Doncic", "280", "Tiger Stripe", 1000, 12000, "Ultra Rare"),
+
+        # ── Basketball — Vintage Wilt/Oscar/Dr. J Deep Cuts (10 items) ──────
+        ("Basketball", "1961", "Fleer", "Wilt Chamberlain", "8", "PSA 8 (NM-MT)", 15000, 50000, "Legendary"),
+        ("Basketball", "1961", "Fleer", "Oscar Robertson", "36", "PSA 8 (NM-MT)", 8000, 25000, "Legendary"),
+        ("Basketball", "1972", "Topps", "Julius Erving", "195", "PSA 9 (Mint)", 5000, 25000, "Legendary"),
+        ("Basketball", "1975", "Topps", "Moses Malone", "254", "Base RC", 300, 4000, "High"),
+        ("Basketball", "1948", "Bowman", "George Mikan", "69", "PSA 5 (EX)", 25000, 80000, "Legendary"),
+        ("Basketball", "1961", "Fleer", "Jerry West", "43", "Base RC", 1500, 15000, "Iconic"),
+        ("Basketball", "1961", "Fleer", "Elgin Baylor", "3", "Base RC", 800, 8000, "Iconic"),
+        ("Basketball", "1969", "Topps", "Wilt Chamberlain", "1", "Base", 500, 6000, "High"),
+        ("Basketball", "1972", "Topps", "Bob Lanier", "131", "Base RC", 100, 1500, "High"),
+        ("Basketball", "1974", "Topps", "George Gervin", "196", "Base RC", 200, 2500, "High"),
+
+        # ── Baseball — Prospects & Modern Stars (12 items) ──────────────────
+        ("Baseball", "2024", "Bowman Chrome", "Ethan Salas", "BCP-1", "1st Bowman Refractor", 200, 3000, "High"),
+        ("Baseball", "2024", "Bowman Chrome", "Ethan Salas", "BCP-1", "1st Bowman Auto", 800, 8000, "Ultra Rare"),
+        ("Baseball", "2023", "Bowman Chrome", "Dylan Crews", "BCP-10", "1st Bowman Refractor", 100, 1500, "High"),
+        ("Baseball", "2023", "Bowman Chrome", "Paul Skenes", "BCP-25", "1st Bowman Refractor", 150, 2500, "High"),
+        ("Baseball", "2023", "Bowman Chrome", "Paul Skenes", "BCP-25", "1st Bowman Auto", 600, 6000, "High"),
+        ("Baseball", "2024", "Topps Chrome", "Paul Skenes", "USC1", "Refractor RC", 100, 2000, "High"),
+        ("Baseball", "2023", "Topps Chrome", "James Outman", "USC180", "Refractor RC", 50, 800, "Mid"),
+        ("Baseball", "2023", "Topps Chrome", "Evan Carter", "USC175", "Refractor RC", 60, 1000, "Mid"),
+        ("Baseball", "2020", "Bowman Chrome", "Spencer Torkelson", "BCP-50", "1st Bowman Refractor", 80, 1200, "Mid"),
+        ("Baseball", "2022", "Bowman Chrome", "Jackson Chourio", "BCP-15", "1st Bowman Auto", 500, 5000, "High"),
+        ("Baseball", "2022", "Bowman Chrome", "Junior Caminero", "BCP-30", "1st Bowman Refractor", 100, 1500, "High"),
+        ("Baseball", "2024", "Topps Chrome", "Yoshinobu Yamamoto", "USC10", "Refractor RC", 80, 1500, "High"),
+
+        # ── Baseball — Vintage T206 & Goudey (10 items) ────────────────────
+        ("Baseball", "1909", "T206", "Walter Johnson", "N/A", "Portrait", 8000, 50000, "Iconic"),
+        ("Baseball", "1909", "T206", "Napoleon Lajoie", "N/A", "Portrait", 5000, 30000, "Iconic"),
+        ("Baseball", "1909", "T206", "Tris Speaker", "N/A", "Portrait", 3000, 20000, "Iconic"),
+        ("Baseball", "1909", "T206", "Eddie Plank", "N/A", "Portrait", 100000, 400000, "Legendary"),
+        ("Baseball", "1909", "T206", "Joe Tinker", "N/A", "Portrait", 2000, 12000, "Iconic"),
+        ("Baseball", "1933", "Goudey", "Jimmie Foxx", "29", "Base", 3000, 20000, "Iconic"),
+        ("Baseball", "1933", "Goudey", "Lefty Grove", "220", "Base", 2000, 15000, "Iconic"),
+        ("Baseball", "1934", "Goudey", "Lou Gehrig", "37", "Base", 10000, 80000, "Legendary"),
+        ("Baseball", "1934", "Goudey", "Hank Greenberg", "62", "Base", 2000, 15000, "Iconic"),
+        ("Baseball", "1933", "Goudey", "Napoleon Lajoie", "106", "Base", 50000, 200000, "Legendary"),
+
+        # ── Baseball — Japanese Cards (6 items) ────────────────────────────
+        ("Baseball", "1959", "Calbee", "Shigeo Nagashima", "N/A", "Base RC", 5000, 25000, "Iconic"),
+        ("Baseball", "1973", "Calbee", "Sadaharu Oh", "N/A", "Base", 2000, 12000, "Iconic"),
+        ("Baseball", "2001", "BBM", "Ichiro Suzuki", "1", "Farewell Edition", 300, 3000, "High"),
+        ("Baseball", "2018", "BBM", "Shohei Ohtani", "1", "Base RC", 200, 2500, "High"),
+        ("Baseball", "2016", "Calbee", "Shohei Ohtani", "N/A", "Chips Card RC", 500, 5000, "High"),
+        ("Baseball", "1988", "Calbee", "Hideo Nomo", "N/A", "Base RC", 100, 1200, "High"),
+
+        # ── Football — 1950s-1970s Legends (10 items) ──────────────────────
+        ("Football", "1948", "Leaf", "Sid Luckman", "1", "Base", 3000, 20000, "Iconic"),
+        ("Football", "1955", "Topps All-American", "Four Horsemen", "68", "Base", 500, 5000, "High"),
+        ("Football", "1962", "Topps", "Mike Ditka", "17", "Base RC", 300, 4000, "High"),
+        ("Football", "1965", "Topps", "Dick Butkus", "31", "Base RC", 800, 10000, "Iconic"),
+        ("Football", "1966", "Philadelphia", "Gale Sayers", "38", "Base RC", 600, 8000, "Iconic"),
+        ("Football", "1972", "Topps", "Roger Staubach", "200", "Base RC", 400, 5000, "Iconic"),
+        ("Football", "1970", "Topps", "Alan Page", "59", "Base RC", 200, 2500, "High"),
+        ("Football", "1973", "Topps", "Franco Harris", "89", "Base RC", 200, 3000, "High"),
+        ("Football", "1974", "Topps", "Too Tall Jones", "116", "Base RC", 80, 1000, "Mid"),
+        ("Football", "1976", "Topps", "Steve Largent", "516", "Base RC", 150, 2000, "High"),
+
+        # ── Football — 1980s-1990s Stars (10 items) ────────────────────────
+        ("Football", "1981", "Topps", "Art Monk", "194", "Base RC", 60, 800, "Mid"),
+        ("Football", "1984", "Topps", "Eric Dickerson", "280", "Base RC", 80, 1200, "Mid"),
+        ("Football", "1986", "Topps", "Reggie White", "275", "Base RC", 100, 2000, "High"),
+        ("Football", "1989", "Score", "Troy Aikman", "270", "Base RC", 30, 500, "Mid"),
+        ("Football", "1989", "Score", "Deion Sanders", "246", "Base RC", 30, 500, "Mid"),
+        ("Football", "1998", "Topps Chrome", "Peyton Manning", "165", "Refractor RC", 2000, 25000, "Iconic"),
+        ("Football", "1999", "Topps Chrome", "Edgerrin James", "145", "Refractor RC", 100, 1500, "High"),
+        ("Football", "2001", "Topps Chrome", "Drew Brees", "229", "Refractor RC", 500, 6000, "High"),
+        ("Football", "2001", "Topps Chrome", "LaDainian Tomlinson", "166", "Refractor RC", 200, 3000, "High"),
+        ("Football", "2004", "Topps Chrome", "Larry Fitzgerald", "215", "Refractor RC", 200, 3000, "High"),
+
+        # ── Football — 2020s Rookies Expansion (8 items) ───────────────────
+        ("Football", "2024", "Panini Prizm", "Jayden Daniels", "310", "Gold /10", 2500, 20000, "Ultra Rare"),
+        ("Football", "2024", "Panini Prizm", "Marvin Harrison Jr.", "315", "Silver Prizm RC", 150, 2500, "High"),
+        ("Football", "2024", "Panini Prizm", "Marvin Harrison Jr.", "315", "Gold /10", 2000, 18000, "Ultra Rare"),
+        ("Football", "2024", "Panini National Treasures", "Caleb Williams", "101", "RPA /99", 8000, 50000, "Ultra Rare"),
+        ("Football", "2022", "Panini Prizm", "Kenneth Walker III", "320", "Silver Prizm RC", 80, 1200, "Mid"),
+        ("Football", "2022", "Panini Prizm", "Chris Olave", "325", "Silver Prizm RC", 60, 1000, "Mid"),
+        ("Football", "2024", "Panini Prizm", "Drake Maye", "320", "Silver Prizm RC", 80, 1200, "Mid"),
+        ("Football", "2024", "Panini Prizm", "Bo Nix", "325", "Silver Prizm RC", 60, 800, "Mid"),
+
+        # ── Soccer — Topps Chrome UCL Expansion (10 items) ─────────────────
+        ("Soccer", "2021", "Topps Chrome UCL", "Gavi", "95", "Refractor RC", 200, 3000, "High"),
+        ("Soccer", "2022", "Topps Chrome UCL", "Jamal Musiala", "40", "Refractor", 150, 2000, "High"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Kobbie Mainoo", "180", "Refractor RC", 100, 1500, "High"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Warren Zaire-Emery", "175", "Refractor RC", 100, 1500, "High"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Joao Neves", "185", "Refractor RC", 80, 1200, "Mid"),
+        ("Soccer", "2021", "Topps Chrome UCL", "Eduardo Camavinga", "88", "Refractor RC", 100, 1500, "High"),
+        ("Soccer", "2022", "Topps Chrome UCL", "Bukayo Saka", "15", "Refractor", 150, 2000, "High"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Alejandro Garnacho", "170", "Refractor RC", 80, 1200, "Mid"),
+        ("Soccer", "2020", "Topps Chrome UCL", "Alphonso Davies", "50", "Refractor RC", 100, 1500, "High"),
+        ("Soccer", "2022", "Topps Chrome UCL", "Gavi", "95", "Gold /50", 800, 8000, "Ultra Rare"),
+
+        # ── Soccer — Panini Select & Donruss (8 items) ─────────────────────
+        ("Soccer", "2022", "Panini Select", "Lionel Messi", "1", "Courtside Silver", 300, 4000, "High"),
+        ("Soccer", "2022", "Panini Select", "Kylian Mbappe", "10", "Courtside Silver", 200, 3000, "High"),
+        ("Soccer", "2022", "Panini Select", "Erling Haaland", "25", "Courtside Silver", 200, 3000, "High"),
+        ("Soccer", "2023", "Panini Donruss", "Lamine Yamal", "199", "Rated Rookie Holo", 200, 3000, "High"),
+        ("Soccer", "2023", "Panini Select", "Jude Bellingham", "50", "Tie-Dye /25", 1500, 15000, "Ultra Rare"),
+        ("Soccer", "2022", "Panini Donruss", "Endrick", "199", "Rated Rookie", 100, 1500, "High"),
+        ("Soccer", "2020", "Panini Select", "Erling Haaland", "25", "Tie-Dye /25", 2000, 20000, "Ultra Rare"),
+        ("Soccer", "2023", "Panini Select", "Cole Palmer", "150", "Courtside Silver RC", 150, 2500, "High"),
+
+        # ── Hockey — Gretzky, Crosby & McDavid Variants (10 items) ──────────
+        ("Hockey", "1979", "O-Pee-Chee", "Wayne Gretzky", "18", "PSA 8 (NM-MT)", 15000, 80000, "Legendary"),
+        ("Hockey", "1979", "O-Pee-Chee", "Wayne Gretzky", "18", "PSA 10 (Gem Mint)", 250000, 500000, "Legendary"),
+        ("Hockey", "2005", "Upper Deck", "Sidney Crosby", "201", "Exclusives /100", 1500, 15000, "Ultra Rare"),
+        ("Hockey", "2005", "Upper Deck", "Sidney Crosby", "201", "High Gloss /10", 8000, 60000, "Ultra Rare"),
+        ("Hockey", "2015", "Upper Deck", "Connor McDavid", "201", "Exclusives /100", 1000, 12000, "Ultra Rare"),
+        ("Hockey", "2015", "Upper Deck", "Connor McDavid", "201", "High Gloss /10", 5000, 40000, "Ultra Rare"),
+        ("Hockey", "2023", "Upper Deck", "Connor Bedard", "201", "Exclusives /100", 1500, 15000, "Ultra Rare"),
+        ("Hockey", "2023", "Upper Deck", "Connor Bedard", "201", "Clear Cut /25", 5000, 40000, "Ultra Rare"),
+        ("Hockey", "1979", "Topps", "Wayne Gretzky", "18", "Base RC", 2000, 30000, "Iconic"),
+        ("Hockey", "1997", "Upper Deck", "Patrick Roy", "139", "Game Jersey", 300, 3000, "High"),
+
+        # ── Hockey — Classic NHL Legends (8 items) ──────────────────────────
+        ("Hockey", "1958", "Topps", "Bobby Hull", "66", "Base RC", 1500, 15000, "Iconic"),
+        ("Hockey", "1960", "Topps", "Jean Beliveau", "30", "Base", 300, 3000, "High"),
+        ("Hockey", "1971", "O-Pee-Chee", "Ken Dryden", "45", "Base RC", 800, 8000, "Iconic"),
+        ("Hockey", "1971", "Topps", "Guy Lafleur", "148", "Base RC", 400, 5000, "High"),
+        ("Hockey", "1980", "O-Pee-Chee", "Ray Bourque", "140", "Base RC", 200, 3000, "High"),
+        ("Hockey", "1980", "O-Pee-Chee", "Mark Messier", "289", "Base RC", 300, 4000, "High"),
+        ("Hockey", "1990", "Score", "Martin Brodeur", "439", "Base RC", 30, 500, "Mid"),
+        ("Hockey", "1990", "Upper Deck", "Pavel Bure", "526", "Young Guns RC", 50, 800, "Mid"),
+
+        # ── Cricket Cards (10 items) ────────────────────────────────────────
+        ("Cricket", "2007", "Futera World Cricket", "Sachin Tendulkar", "1", "Base", 200, 2000, "High"),
+        ("Cricket", "2009", "Topps ICL", "MS Dhoni", "10", "Base", 100, 1200, "High"),
+        ("Cricket", "2022", "Parkside Cricket", "Virat Kohli", "1", "Base", 80, 800, "Mid"),
+        ("Cricket", "1994", "Futera", "Shane Warne", "5", "Base RC", 150, 1500, "High"),
+        ("Cricket", "2023", "Parkside Cricket", "Jasprit Bumrah", "25", "Base", 60, 600, "Mid"),
+        ("Cricket", "2007", "Futera World Cricket", "Brian Lara", "15", "Base", 100, 1000, "High"),
+        ("Cricket", "2021", "Parkside Cricket", "Pat Cummins", "30", "Base", 40, 400, "Mid"),
+        ("Cricket", "2007", "Futera World Cricket", "Ricky Ponting", "20", "Base", 80, 800, "Mid"),
+        ("Cricket", "2023", "Parkside Cricket", "Ben Stokes", "35", "Base", 60, 600, "Mid"),
+        ("Cricket", "2022", "Parkside Cricket", "Babar Azam", "40", "Base", 50, 500, "Mid"),
+
+        # ── Rugby Cards (8 items) ──────────────────────────────────────────
+        ("Rugby", "2003", "Futera", "Jonny Wilkinson", "1", "Base", 100, 1000, "High"),
+        ("Rugby", "2019", "Panini Rugby World Cup", "Cheslin Kolbe", "25", "Sticker RC", 30, 300, "Mid"),
+        ("Rugby", "2007", "Futera World Rugby", "Dan Carter", "10", "Base", 80, 800, "Mid"),
+        ("Rugby", "2023", "Parkside Rugby", "Antoine Dupont", "1", "Base", 60, 600, "Mid"),
+        ("Rugby", "2003", "Futera", "Jonah Lomu", "5", "Base", 150, 1500, "High"),
+        ("Rugby", "2015", "Panini Rugby World Cup", "Richie McCaw", "30", "Sticker", 40, 400, "Mid"),
+        ("Rugby", "2019", "Panini Rugby World Cup", "Eben Etzebeth", "40", "Sticker", 20, 200, "Standard"),
+        ("Rugby", "2023", "Parkside Rugby", "Damian Penaud", "15", "Base", 30, 300, "Mid"),
+
+        # ── Wrestling / WWE Cards (10 items) ───────────────────────────────
+        ("Wrestling", "1985", "Topps WWF", "Hulk Hogan", "1", "Base", 100, 1500, "High"),
+        ("Wrestling", "1998", "Comic Images WWF", "The Rock", "1", "Base RC", 200, 3000, "High"),
+        ("Wrestling", "1998", "Comic Images WWF", "Stone Cold Steve Austin", "10", "Base", 80, 1000, "Mid"),
+        ("Wrestling", "2010", "Topps WWE", "John Cena", "1", "Base", 30, 400, "Mid"),
+        ("Wrestling", "2002", "Fleer WWF", "Brock Lesnar", "68", "Base RC", 100, 1500, "High"),
+        ("Wrestling", "1990", "Classic WWF", "Ultimate Warrior", "1", "Base", 30, 400, "Mid"),
+        ("Wrestling", "2015", "Topps WWE", "Roman Reigns", "50", "Base RC", 40, 500, "Mid"),
+        ("Wrestling", "1985", "Topps WWF", "Andre the Giant", "5", "Base", 50, 800, "Mid"),
+        ("Wrestling", "2015", "Topps Chrome WWE", "Becky Lynch", "25", "Refractor RC", 80, 1200, "High"),
+        ("Wrestling", "1999", "Comic Images WWF", "The Undertaker", "30", "Base", 60, 800, "Mid"),
+
+        # ── Racing / NASCAR Cards (10 items) ───────────────────────────────
+        ("Racing", "1988", "Maxx", "Dale Earnhardt", "10", "Base", 100, 1500, "High"),
+        ("Racing", "1992", "Traks", "Jeff Gordon", "1", "Base RC", 50, 800, "Mid"),
+        ("Racing", "2001", "Press Pass", "Dale Earnhardt Jr.", "1", "Base RC", 30, 400, "Mid"),
+        ("Racing", "2007", "Press Pass", "Jimmie Johnson", "25", "Base", 20, 300, "Mid"),
+        ("Racing", "1988", "Maxx", "Richard Petty", "43", "Base", 60, 800, "Mid"),
+        ("Racing", "1994", "Finish Line", "Dale Earnhardt", "1", "Gold /500", 200, 2000, "High"),
+        ("Racing", "2001", "Press Pass", "Tony Stewart", "20", "Base", 20, 300, "Mid"),
+        ("Racing", "2020", "Donruss NASCAR", "Chase Elliott", "9", "Optic Holo", 50, 600, "Mid"),
+        ("Racing", "2022", "Donruss NASCAR", "Kyle Larson", "5", "Optic Holo", 40, 500, "Mid"),
+        ("Racing", "2023", "Donruss NASCAR", "Ryan Blaney", "12", "Optic Holo", 30, 400, "Mid"),
+
+        # ── Sealed Boxes — All Sports Expansion (12 items) ─────────────────
+        ("Basketball", "2009", "Panini Prizm", "Sealed Hobby Box (2009-10 NT)", "N/A", "Factory Sealed", 60000, 80000, "Legendary"),
+        ("Basketball", "2013", "Panini Prizm", "Sealed Hobby Box (2013-14)", "N/A", "Factory Sealed", 8000, 12000, "Ultra Rare"),
+        ("Basketball", "2020", "Panini Prizm", "Sealed Hobby Box (2020-21)", "N/A", "Factory Sealed", 3000, 5000, "High"),
+        ("Football", "2018", "Panini Prizm", "Sealed Hobby Box (2018)", "N/A", "Factory Sealed", 8000, 12000, "Ultra Rare"),
+        ("Football", "2020", "Panini National Treasures", "Sealed Hobby Box (2020)", "N/A", "Factory Sealed", 6000, 10000, "Ultra Rare"),
+        ("Baseball", "2018", "Topps Chrome", "Sealed Hobby Box (2018)", "N/A", "Factory Sealed", 4000, 6000, "Ultra Rare"),
+        ("Baseball", "2016", "Bowman Chrome", "Sealed Hobby Box (2016)", "N/A", "Factory Sealed", 5000, 8000, "Ultra Rare"),
+        ("Soccer", "2022", "Panini Prizm World Cup", "Sealed Hobby Box (2022)", "N/A", "Factory Sealed", 3000, 5000, "High"),
+        ("Soccer", "2023", "Topps Finest UCL", "Sealed Hobby Box (2023-24)", "N/A", "Factory Sealed", 400, 700, "High"),
+        ("Hockey", "2015", "Upper Deck", "Sealed Hobby Box (2015-16)", "N/A", "Factory Sealed", 5000, 8000, "Ultra Rare"),
+        ("Hockey", "2023", "Upper Deck", "Sealed Hobby Box (2023-24)", "N/A", "Factory Sealed", 400, 700, "High"),
+        ("Cricket", "2022", "Parkside Cricket", "Sealed Hobby Box (2022)", "N/A", "Factory Sealed", 200, 400, "High"),
+
+        # ── Soccer — Panini Stickers & Vintage (8 items) ──────────────────
+        ("Soccer", "1970", "Panini World Cup", "Pele", "N/A", "Sticker", 3000, 20000, "Iconic"),
+        ("Soccer", "2006", "Panini World Cup", "Lionel Messi", "185", "Sticker", 200, 2000, "High"),
+        ("Soccer", "2010", "Panini World Cup", "Cristiano Ronaldo", "559", "Sticker", 50, 500, "Mid"),
+        ("Soccer", "1998", "Panini World Cup", "Zinedine Zidane", "164", "Sticker", 80, 800, "Mid"),
+        ("Soccer", "2014", "Panini Adrenalyn XL World Cup", "Neymar Jr.", "N/A", "Limited Edition", 100, 1200, "High"),
+        ("Soccer", "2022", "Panini Prizm World Cup", "Julian Alvarez", "N/A", "Silver Prizm RC", 100, 1500, "High"),
+        ("Soccer", "1990", "Panini World Cup", "Roberto Baggio", "46", "Sticker RC", 100, 1000, "High"),
+        ("Soccer", "1994", "Panini World Cup", "Romario", "115", "Sticker", 60, 600, "Mid"),
+
+        # ── Additional Basketball Modern (8 items) ─────────────────────────
+        ("Basketball", "2023", "Panini Prizm", "Jarace Walker", "265", "Silver Prizm RC", 40, 600, "Mid"),
+        ("Basketball", "2023", "Panini Prizm", "Ausar Thompson", "258", "Silver Prizm RC", 40, 600, "Mid"),
+        ("Basketball", "2023", "Panini Select", "Victor Wembanyama", "101", "Zebra Prizm", 2500, 30000, "Ultra Rare"),
+        ("Basketball", "2021", "Panini Prizm", "Scottie Barnes", "320", "Silver Prizm RC", 100, 1500, "High"),
+        ("Basketball", "2021", "Panini Prizm", "Cade Cunningham", "282", "Silver Prizm RC", 100, 1500, "High"),
+        ("Basketball", "2021", "Panini Prizm", "Evan Mobley", "290", "Silver Prizm RC", 80, 1200, "Mid"),
+        ("Basketball", "2022", "Panini Prizm", "Paolo Banchero", "245", "Silver Prizm RC", 100, 1500, "High"),
+        ("Basketball", "2022", "Panini Prizm", "Jalen Williams", "268", "Silver Prizm RC", 80, 1200, "Mid"),
+
+        # ── Additional Baseball Vintage (6 items) ──────────────────────────
+        ("Baseball", "1910", "T210 Old Mill", "Shoeless Joe Jackson", "N/A", "Base", 100000, 500000, "Legendary"),
+        ("Baseball", "1914", "Baltimore News", "Babe Ruth", "N/A", "Base RC", 500000, 999000, "Legendary"),
+        ("Baseball", "1951", "Bowman", "Mickey Mantle", "253", "Base RC", 15000, 100000, "Legendary"),
+        ("Baseball", "1948", "Leaf", "Satchel Paige", "8", "Base RC", 20000, 100000, "Legendary"),
+        ("Baseball", "1909", "T206", "Johnny Evers", "N/A", "Portrait", 1500, 8000, "Iconic"),
+        ("Baseball", "1909", "T206", "Frank Chance", "N/A", "Portrait", 1500, 8000, "Iconic"),
     ]
 
     catalog = []
