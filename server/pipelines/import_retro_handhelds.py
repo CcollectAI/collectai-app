@@ -845,6 +845,107 @@ def get_curated_catalog() -> list[dict]:
             "is_limited_edition": is_limited,
             "year": year,
         })
+
+    # Round 7 expansion — 50 items
+    catalog.extend(_expanded_round7_retro_handhelds())
+
+    return catalog
+
+
+def _expanded_round7_retro_handhelds() -> list[dict]:
+    """50 new retro handheld items: Analogue Pocket LEs, Miyoo Mini Plus variants, Anbernic RG353V/RG405M,
+    Game Boy Micro special editions, PSP Go colors, Neo Geo Pocket Color, Panic Playdate."""
+    items = [
+        # --- Analogue Pocket Limited Editions ---
+        ("Analogue", "Analogue Pocket Transparent Smoke", "Analogue Pocket", "Transparent Smoke", "Limited Color", "grail", 340, 440),
+        ("Analogue", "Analogue Pocket Transparent Green", "Analogue Pocket", "Transparent Green", "Limited Color", "grail", 330, 430),
+        ("Analogue", "Analogue Pocket Transparent Blue", "Analogue Pocket", "Transparent Blue", "Limited Color", "grail", 330, 430),
+        ("Analogue", "Analogue Pocket Transparent Orange", "Analogue Pocket", "Transparent Orange", "Limited Color", "grail", 340, 440),
+        ("Analogue", "Analogue Pocket Classic LE GLOW", "Analogue Pocket", "Classic Limited Glow Edition", "Limited Color", "grail", 380, 490),
+        ("Analogue", "Analogue Pocket Dock", "Analogue Pocket", "Dock HDMI TV Output", "Standard", "mid", 80, 110),
+
+        # --- Miyoo Mini Plus Variants ---
+        ("Miyoo", "Miyoo Mini Plus Transparent Black", "Miyoo Mini Plus", "Transparent Black", "Modded/Custom", "mid", 55, 70),
+        ("Miyoo", "Miyoo Mini Plus Transparent Purple", "Miyoo Mini Plus", "Transparent Purple", "Modded/Custom", "mid", 55, 70),
+        ("Miyoo", "Miyoo Mini Plus Gray", "Miyoo Mini Plus", "Gray", "Modded/Custom", "mid", 50, 65),
+        ("Miyoo", "Miyoo Mini Plus Retro Green", "Miyoo Mini Plus", "Retro Green", "Modded/Custom", "mid", 55, 70),
+        ("Miyoo", "Miyoo Mini Plus v3 Transparent White", "Miyoo Mini Plus", "v3 Transparent White", "Modded/Custom", "mid", 55, 70),
+
+        # --- Anbernic RG353V / RG405M ---
+        ("Anbernic", "Anbernic RG353V Transparent Purple", "RG353V", "Transparent Purple", "Modded/Custom", "mid", 65, 85),
+        ("Anbernic", "Anbernic RG353V Transparent White", "RG353V", "Transparent White", "Modded/Custom", "mid", 60, 80),
+        ("Anbernic", "Anbernic RG353VS Black", "RG353VS", "Black Single-Stick", "Modded/Custom", "mid", 50, 65),
+        ("Anbernic", "Anbernic RG405M Purple", "RG405M", "Anodized Purple", "Modded/Custom", "mid", 80, 100),
+        ("Anbernic", "Anbernic RG405M Black", "RG405M", "Matte Black", "Modded/Custom", "mid", 75, 95),
+
+        # --- Game Boy Micro Special Editions ---
+        ("Nintendo", "Game Boy Micro Famicom II Faceplate", "Game Boy Micro", "Famicom II Controller Faceplate (Japan)", "Japan Exclusive", "grail", 200, 400),
+        ("Nintendo", "Game Boy Micro Mario Faceplate Set", "Game Boy Micro", "Mario 20th Anniversary Faceplate Set (Japan)", "Japan Exclusive", "high", 160, 320),
+        ("Nintendo", "Game Boy Micro Purple", "Game Boy Micro", "Purple (Japan)", "Japan Exclusive", "high", 150, 310),
+        ("Nintendo", "Game Boy Micro Donkey Kong Faceplate", "Game Boy Micro", "Donkey Kong Faceplate (Japan)", "Japan Exclusive", "high", 140, 280),
+
+        # --- PSP Go Editions ---
+        ("Sony", "PSP Go Piano Black (Japan)", "PSP Go", "Piano Black (N-1000 Japan)", "Japan Exclusive", "high", 80, 170),
+        ("Sony", "PSP Go Pearl White (Japan)", "PSP Go", "Pearl White (N-1000 Japan)", "Japan Exclusive", "high", 90, 185),
+        ("Sony", "PSP Go Carnival Colors Red (Japan)", "PSP Go", "Carnival Colors Red (Japan)", "Japan Exclusive", "high", 110, 220),
+        ("Sony", "PSP Go Metallic Blue (Japan)", "PSP Go", "Metallic Blue (Japan)", "Japan Exclusive", "high", 100, 210),
+
+        # --- Neo Geo Pocket Color variants ---
+        ("SNK", "Neo Geo Pocket Color Crystal Clear", "Neo Geo Pocket Color", "Crystal Clear", "Limited Color", "high", 105, 220),
+        ("SNK", "Neo Geo Pocket Color Aqua Blue", "Neo Geo Pocket Color", "Aqua Blue", "Limited Color", "high", 95, 200),
+        ("SNK", "Neo Geo Pocket Color Platinum Blue", "Neo Geo Pocket Color", "Platinum Blue", "Standard", "high", 85, 180),
+        ("SNK", "Neo Geo Pocket Color Dark Blue", "Neo Geo Pocket Color", "Dark Blue", "Standard", "high", 85, 175),
+        ("SNK", "Neo Geo Pocket Color Selection Vol.2 Switch", "Switch", "Neo Geo Pocket Color Selection Vol.2 (Game)", "Standard", "mid", 25, 40),
+        ("SNK", "The Last Blade NGPC", "Neo Geo Pocket Color", "The Last Blade (Game)", "Standard", "high", 90, 180),
+        ("SNK", "King of Fighters R-2 NGPC", "Neo Geo Pocket Color", "KoF R-2 (Game)", "Standard", "high", 80, 160),
+
+        # --- Panic Playdate ---
+        ("Panic", "Playdate", "Playdate", "Yellow Standard", "Standard", "high", 160, 220),
+        ("Panic", "Playdate Stereo Dock", "Playdate", "Stereo Dock Speaker Base", "Standard", "mid", 70, 90),
+        ("Panic", "Playdate Cover Orange", "Playdate", "Protective Cover Orange", "Standard", "standard", 25, 35),
+        ("Panic", "Playdate Cover Purple", "Playdate", "Protective Cover Purple", "Standard", "standard", 25, 35),
+
+        # --- Additional modern retro handhelds ---
+        ("Anbernic", "Anbernic RG Nano", "RG Nano", "Black Keychain-Size", "Modded/Custom", "standard", 20, 28),
+        ("Anbernic", "Anbernic RG353P", "RG353P", "Black Landscape", "Modded/Custom", "mid", 55, 70),
+        ("Anbernic", "Anbernic RG353PS", "RG353PS", "Transparent Purple Landscape", "Modded/Custom", "mid", 50, 65),
+        ("Retroid", "Retroid Pocket 4", "Retroid Pocket 4", "Black 4GB", "Modded/Custom", "mid", 70, 90),
+        ("Retroid", "Retroid Pocket 2 Plus", "Retroid Pocket 2+", "Retro Purple", "Modded/Custom", "mid", 45, 60),
+        ("Trimui", "Trimui Smart Pro S", "Trimui Smart Pro S", "Gray Pro S", "Modded/Custom", "mid", 50, 65),
+
+        # --- More vintage/rare handhelds ---
+        ("Nintendo", "Game Boy Advance SP Char Custom Red (Japan)", "Game Boy Advance SP", "Char Aznable Custom Red Gundam (Japan)", "Japan Exclusive", "grail", 280, 550),
+        ("Nintendo", "Game Boy Advance SP Chobits (Japan)", "Game Boy Advance SP", "Chobits Pink (Japan)", "Japan Exclusive", "grail", 220, 440),
+        ("Sony", "PS Vita Slim Dangan Ronpa V3", "PS Vita 2000", "Dangan Ronpa V3 Black/White (Japan)", "Japan Exclusive", "high", 180, 350),
+        ("Sony", "PS Vita Slim Love Live! Sunshine!!", "PS Vita 2000", "Love Live! Sunshine!! Orange (Japan)", "Japan Exclusive", "high", 170, 330),
+        ("Nintendo", "New Nintendo 2DS XL Animal Crossing", "New Nintendo 2DS XL", "Animal Crossing Leaf Green (Japan)", "Japan Exclusive", "high", 110, 230),
+        ("Nintendo", "Nintendo 3DS XL Monster Hunter 4G", "Nintendo 3DS XL", "Monster Hunter 4 Ultimate (Japan)", "Japan Exclusive", "high", 130, 270),
+        ("Nintendo", "Game Boy DMG-01 Classic DMG Backlight Mod White Shell", "Game Boy", "Custom White Shell IPS Backlight Mod", "Modded/Custom", "mid", 90, 130),
+        ("Nintendo", "Game Boy Advance SP IPS V5 Mod Clear Shell", "Game Boy Advance SP", "Custom Clear Shell IPS V5 Mod", "Modded/Custom", "mid", 85, 125),
+    ]
+    catalog = []
+    for brand, name, platform, variant_note, condition, rarity_tier, price_loose, price_cib in items:
+        if "Japan" in variant_note or condition == "Japan Exclusive":
+            region = "JPN"
+        elif "NA" in variant_note:
+            region = "NA"
+        else:
+            region = "EU"
+        is_limited = condition in ("Limited Color", "Special Edition", "Japan Exclusive", "Anniversary")
+        year = _platform_year(platform, name)
+        catalog.append({
+            "brand": brand,
+            "name": name,
+            "platform": platform,
+            "variant_note": variant_note,
+            "condition": condition,
+            "rarity_tier": rarity_tier,
+            "price_loose_eur": price_loose,
+            "price_cib_eur": price_cib,
+            "region": region,
+            "is_limited_edition": is_limited,
+            "year": year,
+        })
     return catalog
 
 
@@ -963,6 +1064,14 @@ def _platform_year(platform: str, name: str) -> int:
         "AYANEO Air 1S": 2023,
         "GPD Win 4": 2023,
         "GPD Win Mini": 2023,
+        "Playdate": 2022,
+        "RG353VS": 2023,
+        "RG353PS": 2023,
+        "RG353P": 2022,
+        "RG Nano": 2024,
+        "Retroid Pocket 4": 2024,
+        "Retroid Pocket 2+": 2022,
+        "Trimui Smart Pro S": 2024,
     }
     # Check for reissue years in name
     if "2020 Reissue" in name or "2020" in name:

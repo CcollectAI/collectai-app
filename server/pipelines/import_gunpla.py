@@ -668,6 +668,74 @@ def get_curated_catalog() -> list[dict]:
         ("PG", "1/60", "Strike Rouge + Skygrasper (P-Bandai)", "Gundam SEED", "P-Bandai", "grail", 350),
     ]
 
+    # ── Expansion Batch 8 — PG Unleashed, Full Mechanics, MGEX, HiRM, SD EX, Mega Size, 30MM, Converge ──
+    kits += [
+        # Perfect Grade Unleashed
+        ("PG Unleashed", "1/60", "RX-78-2 Gundam (Unleashed)", "Mobile Suit Gundam", "PG Unleashed", "grail", 280),
+        ("PG Unleashed", "1/60", "Strike Freedom Gundam (Unleashed)", "Gundam SEED Destiny", "PG Unleashed", "grail", 320),
+        ("PG Unleashed", "1/60", "Wing Gundam Zero EW (Unleashed)", "Gundam Wing", "PG Unleashed", "grail", 310),
+
+        # Full Mechanics 1/100
+        ("Full Mechanics", "1/100", "Gundam Aerial", "Witch from Mercury", "Full Mechanics", "mid", 55),
+        ("Full Mechanics", "1/100", "Gundam Calibarn", "Witch from Mercury", "Full Mechanics", "mid", 58),
+        ("Full Mechanics", "1/100", "Gundam Schwarzette", "Witch from Mercury", "Full Mechanics", "mid", 55),
+        ("Full Mechanics", "1/100", "Gundam Lfrith", "Witch from Mercury", "Full Mechanics", "mid", 52),
+        ("Full Mechanics", "1/100", "Gundam Pharact", "Witch from Mercury", "Full Mechanics", "mid", 50),
+        ("Full Mechanics", "1/100", "Darilbalde", "Witch from Mercury", "Full Mechanics", "mid", 52),
+        ("Full Mechanics", "1/100", "Gundam Barbatos Lupus Rex", "Iron-Blooded Orphans", "Full Mechanics", "mid", 48),
+
+        # SD Gundam EX-Standard
+        ("SD EX-Standard", "SD", "RX-78-2 Gundam (EX-Standard)", "Mobile Suit Gundam", "SD EX-Standard", "standard", 12),
+        ("SD EX-Standard", "SD", "Wing Gundam Zero EW (EX-Standard)", "Gundam Wing", "SD EX-Standard", "standard", 12),
+        ("SD EX-Standard", "SD", "Strike Freedom (EX-Standard)", "Gundam SEED Destiny", "SD EX-Standard", "standard", 12),
+        ("SD EX-Standard", "SD", "Unicorn Gundam (Destroy Mode) (EX-Standard)", "Gundam Unicorn", "SD EX-Standard", "standard", 12),
+        ("SD EX-Standard", "SD", "Nu Gundam (EX-Standard)", "Char's Counterattack", "SD EX-Standard", "standard", 12),
+        ("SD EX-Standard", "SD", "Sinanju (EX-Standard)", "Gundam Unicorn", "SD EX-Standard", "standard", 12),
+        ("SD EX-Standard", "SD", "00 Gundam (EX-Standard)", "Gundam 00", "SD EX-Standard", "standard", 12),
+        ("SD EX-Standard", "SD", "Aerial Gundam (EX-Standard)", "Witch from Mercury", "SD EX-Standard", "standard", 12),
+
+        # Mega Size 1/48
+        ("Mega Size", "1/48", "Unicorn Gundam (Destroy Mode) (Mega Size)", "Gundam Unicorn", "Mega Size", "high", 120),
+        ("Mega Size", "1/48", "RX-78-2 Gundam (Mega Size)", "Mobile Suit Gundam", "Mega Size", "high", 100),
+        ("Mega Size", "1/48", "Zaku II (Mega Size)", "Mobile Suit Gundam", "Mega Size", "high", 100),
+        ("Mega Size", "1/48", "AGE-1 Normal (Mega Size)", "Gundam AGE", "Mega Size", "mid", 85),
+
+        # MGEX (Master Grade Extreme)
+        ("MGEX", "1/100", "Unicorn Gundam Ver.Ka (MGEX)", "Gundam Unicorn", "MGEX", "grail", 250),
+        ("MGEX", "1/100", "Strike Freedom Gundam (MGEX)", "Gundam SEED Destiny", "MGEX", "grail", 280),
+
+        # HiRM (Hi-Resolution Model)
+        ("HiRM", "1/100", "Wing Gundam Zero EW (HiRM)", "Gundam Wing", "HiRM", "high", 150),
+        ("HiRM", "1/100", "God Gundam (HiRM)", "G Gundam", "HiRM", "high", 140),
+        ("HiRM", "1/100", "Barbatos (HiRM)", "Iron-Blooded Orphans", "HiRM", "high", 130),
+        ("HiRM", "1/100", "Astray Red Frame (HiRM)", "Gundam SEED Astray", "HiRM", "high", 135),
+        ("HiRM", "1/100", "Freedom Gundam (HiRM)", "Gundam SEED", "HiRM", "high", 145),
+
+        # 30 Minutes Missions (30MM)
+        ("30MM", "1/144", "eEXM-17 Alto (White)", "30 Minutes Missions", "30MM", "standard", 15),
+        ("30MM", "1/144", "eEXM-17 Alto (Blue)", "30 Minutes Missions", "30MM", "standard", 15),
+        ("30MM", "1/144", "bEXM-15 Portanova (Dark Gray)", "30 Minutes Missions", "30MM", "standard", 16),
+        ("30MM", "1/144", "eEXM-21 Rabiot (White)", "30 Minutes Missions", "30MM", "standard", 16),
+        ("30MM", "1/144", "eEXM-30 Espossito (Brown)", "30 Minutes Missions", "30MM", "standard", 18),
+        ("30MM", "1/144", "bEXM-33 Volpanova (Gray)", "30 Minutes Missions", "30MM", "standard", 18),
+        ("30MM", "1/144", "Lielbein (30MM)", "30 Minutes Missions", "30MM", "standard", 20),
+        ("30MM", "1/144", "Forestieri 01 (30MM)", "30 Minutes Missions", "30MM", "standard", 20),
+        ("30MM", "1/144", "Maxwell (30MM)", "30 Minutes Missions", "30MM", "standard", 18),
+        ("30MM", "1/144", "Spinatio (Army Type) (30MM)", "30 Minutes Missions", "30MM", "standard", 22),
+
+        # Gundam Converge figures
+        ("Converge", "N/A", "Gundam Converge RX-78-2", "Mobile Suit Gundam", "Converge", "standard", 12),
+        ("Converge", "N/A", "Gundam Converge Zeta Gundam", "Zeta Gundam", "Converge", "standard", 12),
+        ("Converge", "N/A", "Gundam Converge Nu Gundam", "Char's Counterattack", "Converge", "standard", 14),
+        ("Converge", "N/A", "Gundam Converge Wing Zero EW", "Gundam Wing", "Converge", "standard", 12),
+        ("Converge", "N/A", "Gundam Converge Unicorn (Destroy)", "Gundam Unicorn", "Converge", "standard", 14),
+        ("Converge", "N/A", "Gundam Converge Strike Freedom", "Gundam SEED Destiny", "Converge", "standard", 14),
+        ("Converge", "N/A", "Gundam Converge Sazabi", "Char's Counterattack", "Converge", "standard", 14),
+        ("Converge", "N/A", "Gundam Converge Aerial", "Witch from Mercury", "Converge", "standard", 14),
+        ("Converge", "N/A", "Gundam Converge Full Armor Gundam", "Gundam Thunderbolt", "Converge", "standard", 15),
+        ("Converge", "N/A", "Gundam Converge God Gundam", "G Gundam", "Converge", "standard", 12),
+    ]
+
     catalog = []
     for grade, scale, name, series, variant, tier, price in kits:
         catalog.append({

@@ -955,6 +955,57 @@ def _seed_sets() -> list[tuple]:
         ("42176-1", "Porsche GT4 e-Performance", "Technic", 2024, 834, 55.0),
         ("42177-1", "Mercedes-AMG F1 W14", "Technic", 2024, 1642, 200.0),
         ("10340-1", "LEGO Christmas Story", "Icons", 2024, 3078, 250.0),
+
+        # ── LEGO Icons 2024-2025 ─────────────────────────────────────────
+        ("10318-1", "Concorde", "Icons", 2023, 2083, 200.0),
+        ("10298-1", "Vespa 125", "Icons", 2022, 1106, 100.0),
+        ("10306-1", "Atari 2600", "Icons", 2023, 2532, 240.0),
+        ("10341-1", "NASA Artemis Space Launch System", "Icons", 2024, 3601, 260.0),
+        ("10331-1", "Kingfisher Bird", "Icons", 2024, 834, 50.0),
+        ("10336-1", "Orient Express Train", "Icons", 2024, 2540, 300.0),
+        ("10330-1", "McLaren MP4/4 & Ayrton Senna", "Icons", 2024, 693, 90.0),
+        ("10327-1", "Dune Atreides Royal Ornithopter", "Icons", 2024, 1369, 165.0),
+
+        # ── LEGO Art ─────────────────────────────────────────────────────
+        ("31208-1", "Hokusai - The Great Wave", "Art", 2023, 1810, 100.0),
+        ("31199-1", "Marvel Studios Iron Man", "Art", 2020, 3167, 120.0),
+        ("31200-1", "Star Wars The Sith", "Art", 2020, 3395, 120.0),
+        ("31197-1", "Andy Warhol's Marilyn Monroe", "Art", 2020, 3341, 120.0),
+        ("31209-1", "The Amazing Spider-Man", "Art", 2023, 2099, 150.0),
+        ("31210-1", "Modern Art", "Art", 2024, 805, 50.0),
+        ("31213-1", "Mona Lisa", "Art", 2024, 1503, 80.0),
+
+        # ── LEGO Ideas ───────────────────────────────────────────────────
+        ("21326-1", "Winnie the Pooh", "Ideas", 2021, 1265, 100.0),
+        ("21329-1", "Fender Stratocaster", "Ideas", 2021, 1074, 100.0),
+        ("21345-1", "Polaroid OneStep SX-70 Camera", "Ideas", 2024, 516, 80.0),
+        ("21333-1", "Vincent van Gogh - The Starry Night", "Ideas", 2022, 2316, 170.0),
+        ("21344-1", "Orient Express", "Ideas", 2023, 2540, 300.0),
+        ("21343-1", "Viking Village", "Ideas", 2024, 2103, 130.0),
+        ("21342-1", "The Insect Collection", "Ideas", 2024, 1111, 80.0),
+        ("21340-1", "Tales of the Space Age", "Ideas", 2023, 688, 50.0),
+        ("21339-1", "BTS Dynamite", "Ideas", 2023, 749, 100.0),
+        ("21338-1", "A-Frame Cabin", "Ideas", 2023, 2082, 180.0),
+
+        # ── LEGO Speed Champions ─────────────────────────────────────────
+        ("76915-1", "Pagani Utopia", "Speed Champions", 2023, 249, 25.0),
+        ("76918-1", "McLaren Solus GT & McLaren F1 LM", "Speed Champions", 2023, 581, 45.0),
+        ("76916-1", "Porsche 963", "Speed Champions", 2023, 280, 25.0),
+        ("76917-1", "2 Fast 2 Furious Nissan Skyline GT-R R34", "Speed Champions", 2023, 319, 25.0),
+        ("76919-1", "McLaren F1 Race Car 2023", "Speed Champions", 2024, 245, 25.0),
+        ("76920-1", "Ford Mustang Dark Horse", "Speed Champions", 2024, 344, 25.0),
+        ("76921-1", "Audi S1 e-tron quattro", "Speed Champions", 2024, 274, 25.0),
+        ("76914-1", "Ferrari 812 Competizione", "Speed Champions", 2023, 261, 25.0),
+        ("76912-1", "Fast & Furious 1970 Dodge Charger R/T", "Speed Champions", 2023, 345, 25.0),
+        ("42143-1", "Ferrari Daytona SP3", "Technic", 2022, 3778, 400.0),
+
+        # ── LEGO Architecture ────────────────────────────────────────────
+        ("21056-1", "Taj Mahal", "Architecture", 2021, 2022, 120.0),
+        ("21058-1", "Great Pyramid of Giza", "Architecture", 2022, 1476, 130.0),
+        ("21060-1", "Himeji Castle", "Architecture", 2024, 2125, 140.0),
+        ("21057-1", "Singapore", "Architecture", 2022, 827, 60.0),
+        ("21034-1", "London", "Architecture", 2017, 468, 40.0),
+        ("21044-1", "Paris", "Architecture", 2019, 649, 50.0),
     ]
 
 

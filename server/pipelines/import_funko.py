@@ -35,7 +35,7 @@ CATEGORY = "funko"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Funko Pop catalog covering 500+ items across major lines and grails."""
+    """Curated Funko Pop catalog covering 550+ items across major lines and grails."""
 
     # Format: (line, number, name, exclusive, rarity_tier, est_price_eur)
     # rarity_tier: grail (>500), high (100-500), mid (30-100), standard (<30)
@@ -652,6 +652,72 @@ def get_curated_catalog() -> list[dict]:
         ("Animation", "SE", "Scooby-Doo (Flocked)", "SDCC 2017", "high", 200),
         ("Animation", "SE", "Optimus Prime (Metallic)", "SDCC 2014", "high", 350),
         ("Animation", "SE", "Megazord (6-Inch Metallic)", "SDCC 2017", "high", 250),
+
+        # ── Funko Soda Chase Figures (8) ────────────────────────────────
+        ("Vinyl Soda", "SE", "Freddy Funko (Chase)", "Funko-Shop", "grail", 600),
+        ("Vinyl Soda", "SE", "Batman (Chase Metallic)", "Funko-Shop", "high", 250),
+        ("Vinyl Soda", "SE", "Spider-Man (Chase Glow)", "Funko-Shop", "high", 200),
+        ("Vinyl Soda", "SE", "Joker (Chase Dark Knight)", "SDCC 2023", "high", 180),
+        ("Vinyl Soda", "SE", "Boba Fett (Chase)", "Funko-Shop", "high", 220),
+        ("Vinyl Soda", "SE", "Darth Vader (Chase Glow)", "Funko-Shop", "high", 190),
+        ("Vinyl Soda", "SE", "Deadpool (Chase Metallic)", "Funko-Shop", "mid", 90),
+        ("Vinyl Soda", "SE", "Teenage Mutant Ninja Turtles Leonardo (Chase)", "Funko-Shop", "mid", 75),
+
+        # ── Funko x Loungefly Crossovers (5) ───────────────────────────
+        ("Loungefly x Funko", "SE", "Maleficent Pop! & Mini Backpack Set", "BoxLunch", "high", 120),
+        ("Loungefly x Funko", "SE", "Ariel Pop! & Crossbody Set", "BoxLunch", "mid", 95),
+        ("Loungefly x Funko", "SE", "Cinderella Castle Pop! & Mini Backpack Set", "Disney Parks", "high", 150),
+        ("Loungefly x Funko", "SE", "Star Wars Ahsoka Pop! & Wallet Set", "Hot Topic", "mid", 85),
+        ("Loungefly x Funko", "SE", "Mickey Mouse Pop! & Ears Headband Set", "Disney Parks", "mid", 100),
+
+        # ── Pop! Trains (5) ─────────────────────────────────────────────
+        ("Pop! Trains", "15", "Hogwarts Express Engine w/ Harry Potter", "Exclusive", "high", 140),
+        ("Pop! Trains", "16", "Hogwarts Express Carriage w/ Ron Weasley", "Exclusive", "high", 130),
+        ("Pop! Trains", "17", "Hogwarts Express Carriage w/ Hermione", "Exclusive", "high", 130),
+        ("Pop! Trains", "20", "Disneyland Railroad w/ Mickey", "Disney Parks", "high", 180),
+        ("Pop! Trains", "21", "Nightmare Before Christmas Train w/ Jack", "Hot Topic", "high", 160),
+
+        # ── Pop! Moments (6) ───────────────────────────────────────────
+        ("Pop! Moment", "612", "Avengers Assemble: Iron Man (Deluxe)", "Amazon", "high", 120),
+        ("Pop! Moment", "620", "Avengers Assemble: Captain America (Deluxe)", "Amazon", "high", 110),
+        ("Pop! Moment", "SE", "Harry Potter vs Voldemort", "Exclusive", "high", 140),
+        ("Pop! Moment", "SE", "Luke vs Darth Vader (Bespin)", "Movie Moment", "high", 130),
+        ("Pop! Moment", "SE", "Batman vs Joker (80th Anniversary)", "GameStop", "mid", 85),
+        ("Pop! Moment", "SE", "Carl & Ellie (Up Movie Moment)", "BoxLunch", "high", 160),
+
+        # ── Pop! Albums (7) ────────────────────────────────────────────
+        ("Pop! Albums", "01", "AC/DC - Back in Black", "", "mid", 40),
+        ("Pop! Albums", "07", "Notorious B.I.G. - Ready to Die", "", "mid", 55),
+        ("Pop! Albums", "08", "Tupac - 2Pacalypse Now", "", "mid", 50),
+        ("Pop! Albums", "13", "Metallica - Metallica (Black Album)", "", "mid", 60),
+        ("Pop! Albums", "18", "Jimi Hendrix - Are You Experienced", "", "mid", 45),
+        ("Pop! Albums", "22", "Iron Maiden - The Number of the Beast", "", "mid", 55),
+        ("Pop! Albums", "28", "Prince - Purple Rain", "Target", "high", 110),
+
+        # ── Pop! Digital NFT Redemptions (5) ───────────────────────────
+        ("Pop! Digital", "SE", "Freddy Funko (Legendary)", "NFT Redemption", "grail", 1500),
+        ("Pop! Digital", "SE", "Batman (Grail Series)", "NFT Redemption", "grail", 800),
+        ("Pop! Digital", "SE", "Spider-Man (Legendary)", "NFT Redemption", "grail", 900),
+        ("Pop! Digital", "SE", "Boba Fett (Legendary)", "NFT Redemption", "high", 400),
+        ("Pop! Digital", "SE", "Optimus Prime (Legendary)", "NFT Redemption", "high", 350),
+
+        # ── Funko Hollywood / HQ Exclusives (7) ───────────────────────
+        ("Hollywood Exclusive", "SE", "Freddy Funko as Batman (Hollywood)", "Funko Hollywood", "grail", 500),
+        ("Hollywood Exclusive", "SE", "Freddy Funko as Ironman (Hollywood)", "Funko Hollywood", "high", 300),
+        ("HQ Exclusive", "SE", "Freddy Funko (Funko HQ)", "Funko HQ Everett", "high", 250),
+        ("Hollywood Exclusive", "SE", "Toucan Sam (Flocked)", "Funko Hollywood", "high", 200),
+        ("Hollywood Exclusive", "SE", "Godzilla (Metallic)", "Funko Hollywood", "high", 180),
+        ("HQ Exclusive", "SE", "Bigfoot (Flocked Rainbow)", "Funko HQ Everett", "high", 250),
+        ("HQ Exclusive", "SE", "Bigfoot (Snowy)", "Funko HQ Everett", "high", 220),
+
+        # ── Pop! Town (7) ──────────────────────────────────────────────
+        ("Pop! Town", "01", "Wayne Manor w/ Batman (Metallic)", "Hot Topic", "high", 150),
+        ("Pop! Town", "02", "Avengers Tower w/ Iron Man", "Amazon", "high", 140),
+        ("Pop! Town", "10", "Sleeping Beauty Castle w/ Aurora", "Disney Parks", "grail", 500),
+        ("Pop! Town", "15", "Hogwarts w/ Dumbledore", "Exclusive", "high", 120),
+        ("Pop! Town", "20", "Ghostbusters Firehouse w/ Slimer", "Walmart", "mid", 75),
+        ("Pop! Town", "25", "Byers House w/ Demogorgon (Stranger Things)", "Target", "mid", 65),
+        ("Pop! Town", "30", "Haunted Mansion w/ Ghost", "Disney Parks", "high", 200),
     ]
 
     catalog = []

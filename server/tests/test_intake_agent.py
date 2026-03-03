@@ -444,7 +444,7 @@ class TestRepromptValidation:
             "condition": None,
             "condition_confidence": 0.0,
             "suggested_name": "Charizard Base",
-            "attributes": {"name_confidence": 0.7, "search_keywords": []},
+            "attributes": {"name_confidence": 0.5, "search_keywords": []},
             "identification_method": "vision_openai",
         })
 
@@ -481,7 +481,7 @@ class TestRepromptValidation:
             "condition": None,
             "condition_confidence": 0.0,
             "suggested_name": "Charizard Base",
-            "attributes": {"name_confidence": 0.6, "search_keywords": []},
+            "attributes": {"name_confidence": 0.5, "search_keywords": []},
             "identification_method": "vision_openai",
         })
 

@@ -434,74 +434,7 @@ export async function getWatchlistInsights(
   return request<WatchlistInsightsResponse>(`/watchlist/insights${qs}`);
 }
 
-// --- CollectAI: marketplace trust & price guidance --- //
-
-export type MarketplaceTrustBadge = {
-  id: string;
-  label: string;
-};
-
-export type MarketplaceTrustProfile = {
-  user_id: string;
-  display_name: string;
-  reputation_score: number;
-  completed_trades: number;
-  dispute_rate: number;
-  badges: MarketplaceTrustBadge[];
-  risk_flags: { id: string; severity: string; label: string; detail: string }[];
-  joined_at: string;
-  last_active_at: string;
-};
-
-export type MarketplaceListingTrust = {
-  listing_id: string;
-  title: string;
-  category: string;
-  category_label: string;
-  currency: CurrencyCode;
-  seller_id: string;
-  fair_price: { p10: number; p50: number; p90: number };
-  model_confidence: number;
-  recommended_price_range: { min: number; max: number };
-  risk_flags: { id: string; severity: string; label: string; detail: string }[];
-  trust_score: number;
-  guidance_text: string;
-  last_scored_at: string;
-};
-
-export async function getMarketplaceTrustProfile(
-  userId: string,
-): Promise<{ ok: boolean; profile: MarketplaceTrustProfile }> {
-  return request<{ ok: boolean; profile: MarketplaceTrustProfile }>(
-    `/marketplace/trust/profile/${userId}`,
-  );
-}
-
-export async function getMarketplaceListingTrust(
-  listingId: string,
-): Promise<{
-  ok: boolean;
-  listing: MarketplaceListingTrust;
-  seller_profile: {
-    user_id: string;
-    reputation_score: number;
-    completed_trades: number;
-    dispute_rate: number;
-    badges: MarketplaceTrustBadge[];
-  };
-}> {
-  return request<{
-    ok: boolean;
-    listing: MarketplaceListingTrust;
-    seller_profile: {
-      user_id: string;
-      reputation_score: number;
-      completed_trades: number;
-      dispute_rate: number;
-      badges: MarketplaceTrustBadge[];
-    };
-  }>(`/marketplace/trust/listing/${listingId}`);
-}
+// Trust/reputation is now handled by /deals/reputation/{user_id} endpoint
 
 // --- CollectAI: screenshot intelligence (demo) --- //
 

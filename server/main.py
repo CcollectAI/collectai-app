@@ -171,7 +171,6 @@ from app.features import insights_router
 from app.features import screenshot_intel_router
 from app.features import quickscan_advanced_router
 from app.features import watchlist_router
-from app.features import marketplace_trust_router
 from app.features import provenance_router
 from app.features import trends_and_deepdive_router
 from app.features import alerts_feature_router
@@ -232,7 +231,6 @@ app.include_router(data_moat.router)
 app.include_router(alerts_feature_router.router)
 app.include_router(trends_and_deepdive_router.router)
 app.include_router(provenance_router.router)
-app.include_router(marketplace_trust_router.router)
 app.include_router(watchlist_router.router)
 app.include_router(quickscan_advanced_router.router)
 app.include_router(insights_router.router)
@@ -296,7 +294,6 @@ _v1.include_router(data_moat.router)
 _v1.include_router(alerts_feature_router.router)
 _v1.include_router(trends_and_deepdive_router.router)
 _v1.include_router(provenance_router.router)
-_v1.include_router(marketplace_trust_router.router)
 _v1.include_router(watchlist_router.router)
 _v1.include_router(quickscan_advanced_router.router)
 _v1.include_router(insights_router.router)

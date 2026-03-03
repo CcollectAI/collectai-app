@@ -892,6 +892,94 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
+
+    catalog.extend(_batch_jp_events_2025())
+    return catalog
+
+
+def _batch_jp_events_2025() -> list[dict]:
+    """Batch 8 — WonFes 2024/2025 garage kits, Comiket C103-C104, AnimeJapan 2025,
+    Jump Festa expanded, TGS, AGF goods, Comic Market tapestries/clear files. ~50 items."""
+
+    items = [
+        # Wonder Festival 2024/2025 — Garage Kits & Prototype Figures
+        ("WonFes", "Frieren", "Garage Kit", "Fern WonFes 2025 Summer 1/7 Resin GK Limited 15pcs", "grail", 400),
+        ("WonFes", "Oshi no Ko", "Garage Kit", "Akane Kurokawa WonFes 2025 Winter 1/7 GK Unpainted", "high", 220),
+        ("WonFes", "Dandadan", "Garage Kit", "Momo Ayase WonFes 2025 Summer 1/7 Resin GK Limited", "high", 260),
+        ("WonFes", "Chainsaw Man", "Garage Kit", "Asa Mitaka War Devil 1/6 GK WonFes 2025 Limited 20pcs", "grail", 440),
+        ("WonFes", "Solo Leveling", "Garage Kit", "Iron Shadow Monarch Form 1/6 Resin GK WonFes 2025", "grail", 480),
+        ("WonFes", "Genshin Impact", "Exclusive Figure", "Furina WonFes 2025 Winter Exclusive 1/7 Painted GK", "high", 280),
+        ("WonFes", "Hololive", "Exclusive Figure", "Usada Pekora WonFes 2025 Summer Exclusive 1/7", "high", 240),
+
+        # Comiket C103/C104 — Doujinshi & Exclusive Goods
+        ("Comiket", "Frieren", "Doujinshi Set", "Frieren C104 Premium Circle Doujinshi Bundle (8)", "mid", 65),
+        ("Comiket", "Dandadan", "Doujinshi Set", "Dandadan C104 Circle Doujinshi Bundle (5)", "mid", 45),
+        ("Comiket", "Hololive", "Tapestry", "Hololive C104 Exclusive Shion Murasaki B2 Tapestry", "mid", 55),
+        ("Comiket", "Touhou Project", "Exclusive Goods", "Touhou C104 Fumo Plush Reimu Limited Edition", "high", 120),
+        ("Comiket", "Blue Archive", "Exclusive Goods", "Blue Archive C104 Corporate Booth Art Board Set", "mid", 70),
+
+        # AnimeJapan 2025 — New Merch
+        ("AnimeJapan", "Dandadan", "Exclusive Figure", "Dandadan AnimeJapan 2025 Okarun Chibi Figure", "mid", 45),
+        ("AnimeJapan", "Solo Leveling", "Exclusive Figure", "Solo Leveling AnimeJapan 2025 Sung Jinwoo Chibi Figure", "mid", 50),
+        ("AnimeJapan", "Oshi no Ko", "Exhibit Goods", "Oshi no Ko AnimeJapan 2025 Exhibition Art Panel", "high", 100),
+        ("AnimeJapan", "Blue Lock", "Clear File Set", "Blue Lock AnimeJapan 2025 Clear File Collection (5pc)", "standard", 18),
+        ("AnimeJapan", "Frieren", "Exhibit Goods", "Frieren AnimeJapan 2025 Exhibition Acrylic Diorama", "high", 110),
+
+        # Jump Festa — One Piece & Naruto & Dragon Ball Exclusives
+        ("Jump Festa", "One Piece", "Exclusive Figure", "Luffy Nika Sun God Jump Festa 2025 Premium Figure", "high", 130),
+        ("Jump Festa", "Naruto", "Exclusive Figure", "Naruto Baryon Mode Jump Festa 2025 Exclusive Figure", "high", 110),
+        ("Jump Festa", "Dragon Ball", "Exclusive Figure", "Goku Ultra Instinct Omen Jump Festa 2025 Figure", "high", 100),
+        ("Jump Festa", "Dragon Ball Daima", "Goods Set", "Dragon Ball Daima Jump Festa 2025 Goods Set (Towel + Badge)", "mid", 45),
+        ("Jump Festa", "One Piece", "Exclusive Card", "One Piece Card Game Jump Festa 2025 Promo Yamato Alt Art", "high", 100),
+        ("Jump Festa", "Chainsaw Man", "Exclusive Figure", "Power Blood Fiend Jump Festa 2025 Exclusive Figure", "mid", 65),
+
+        # Tokyo Game Show — Game Merch
+        ("Tokyo Game Show", "Metaphor: ReFantazio", "Exclusive Figure", "Protagonist TGS 2025 Exclusive Play Arts Mini", "high", 120),
+        ("Tokyo Game Show", "Elden Ring DLC", "Exclusive Merch", "Elden Ring Shadow of the Erdtree TGS Art Board Set", "mid", 50),
+        ("Tokyo Game Show", "Monster Hunter Wilds", "Exclusive Figure", "Seikret TGS 2025 Exclusive Plush", "mid", 45),
+
+        # Animate Girls Festival — Otome & BL Goods
+        ("AGF", "Twisted Wonderland", "Exclusive Goods", "Twisted Wonderland AGF 2025 Exclusive Acrylic Stand Full Set", "mid", 50),
+        ("AGF", "Hypnosis Mic", "Exclusive Goods", "Hypnosis Mic AGF 2025 Exclusive Can Badge Set (12pc)", "mid", 35),
+        ("AGF", "Obey Me!", "Exclusive Goods", "Obey Me! AGF 2025 Exclusive B2 Tapestry Set", "mid", 40),
+        ("AGF", "Ensemble Stars!", "Exclusive Goods", "Enstars AGF 2025 Exclusive Bromide Card Full Set (24pc)", "mid", 45),
+        ("AGF", "A3!", "Exclusive Goods", "A3! AGF 2025 Anniversary Exclusive Acrylic Panel Set", "mid", 38),
+
+        # Comic Market — Limited Tapestries & Clear Files
+        ("Comiket", "Genshin Impact", "Tapestry", "Genshin Impact C105 Exclusive B2 Tapestry Furina", "mid", 55),
+        ("Comiket", "Uma Musume", "Clear File Set", "Uma Musume C105 Corporate Booth Clear File Set (5pc)", "standard", 22),
+        ("Comiket", "Fate/Grand Order", "Tapestry", "FGO C105 Exclusive B1 Tapestry Oberon & Castoria", "high", 100),
+        ("Comiket", "Lycoris Recoil", "Acrylic Stand", "Lycoris Recoil C105 Exclusive Acrylic Diorama Takina & Chisato", "mid", 40),
+
+        # More Jump Festa — Card Game Promos
+        ("Jump Festa", "Yu-Gi-Oh!", "Exclusive Card", "Yu-Gi-Oh! Jump Festa 2025 Secret Rare Promo Card Set (3)", "mid", 55),
+        ("Jump Festa", "Dragon Ball Super", "Exclusive Card", "DBS Card Game Jump Festa 2025 SP Ultra Rare Pack", "mid", 60),
+        ("Jump Festa", "One Piece", "Goods Set", "One Piece Jump Festa 2025 Complete Goods Box (Towel + Badge + Poster)", "mid", 55),
+
+        # Treasure Festa (Yokohama) — More Garage Kits
+        ("Treasure Festa", "Bocchi the Rock!", "Garage Kit", "Gotoh Hitori 1/7 Resin GK Treasure Festa Limited", "high", 220),
+        ("Treasure Festa", "Spy x Family", "Garage Kit", "Yor Forger Thorn Princess 1/7 GK Treasure Festa Limited", "high", 260),
+
+        # Hololive EXPO — More Exclusive Goods
+        ("Hololive EXPO", "Hololive", "Exclusive Goods", "Hololive 5th Fes Exclusive Nendoroid Sakura Miko", "high", 110),
+        ("Hololive EXPO", "Hololive", "Exclusive Goods", "Hololive EXPO 2025 Exclusive Acrylic Stand Full Set (15pc)", "high", 150),
+
+        # Additional Ichiban Kuji — Latest Prizes
+        ("Ichiban Kuji", "Solo Leveling", "Prize Figure", "Solo Leveling Ichiban Kuji A Prize Cha Hae-In", "mid", 55),
+        ("Ichiban Kuji", "Dandadan", "Prize Figure", "Dandadan Ichiban Kuji Last One Prize Okarun & Turbo Granny", "high", 120),
+        ("Ichiban Kuji", "Dragon Ball Daima", "Prize Figure", "Dragon Ball Daima Ichiban Kuji Last One Prize Mini Goku", "high", 110),
+    ]
+
+    catalog = []
+    for event, franchise, item_type, name, tier, price in items:
+        catalog.append({
+            "event": event,
+            "franchise": franchise,
+            "item_type": item_type,
+            "name": name,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
     return catalog
 
 

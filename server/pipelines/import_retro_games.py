@@ -33,6 +33,118 @@ from pipelines.import_common import (
 CATEGORY = "retro_games"
 
 
+def _additional_retro_2025_expansion() -> list[dict]:
+    """55 more items: Saturn, Neo Geo AES, TG-16, Jaguar, 3DO, CIB variants."""
+    extra = []
+
+    # ── Sega Saturn — Holy Grails ──────────────────────────────────────
+    saturn_games = [
+        ("Saturn", "Panzer Dragoon Saga", 1998, 600, 1200, 3000, "Grail"),
+        ("Saturn", "Radiant Silvergun", 1998, 250, 500, 1200, "Rare"),
+        ("Saturn", "Burning Rangers", 1998, 200, 400, 1000, "Rare"),
+        ("Saturn", "Shining Force III", 1997, 150, 300, 800, "Rare"),
+        ("Saturn", "Guardian Heroes", 1996, 100, 220, 600, "Uncommon"),
+        ("Saturn", "Dragon Force", 1996, 80, 180, 500, "Uncommon"),
+        ("Saturn", "NiGHTS into Dreams", 1996, 30, 70, 200, "Common"),
+        ("Saturn", "Virtua Fighter 2", 1995, 15, 40, 120, "Common"),
+        ("Saturn", "Panzer Dragoon Zwei", 1996, 60, 130, 350, "Uncommon"),
+        ("Saturn", "Shining the Holy Ark", 1996, 80, 180, 450, "Uncommon"),
+    ]
+
+    # ── Neo Geo AES — Premium Cartridges ───────────────────────────────
+    neogeo_games = [
+        ("Neo Geo AES", "Metal Slug", 1996, 800, 1500, 4000, "Grail"),
+        ("Neo Geo AES", "Metal Slug 2", 1998, 600, 1100, 3000, "Grail"),
+        ("Neo Geo AES", "Metal Slug 3", 2000, 1200, 2200, 5000, "Grail"),
+        ("Neo Geo AES", "Metal Slug 4", 2002, 400, 800, 2000, "Rare"),
+        ("Neo Geo AES", "Metal Slug 5", 2003, 500, 1000, 2500, "Rare"),
+        ("Neo Geo AES", "The King of Fighters '98", 1998, 300, 600, 1500, "Rare"),
+        ("Neo Geo AES", "Garou: Mark of the Wolves", 1999, 1500, 2800, 6000, "Grail"),
+        ("Neo Geo AES", "The Last Blade 2", 1998, 500, 1000, 2500, "Rare"),
+        ("Neo Geo AES", "Samurai Shodown II", 1994, 200, 400, 1000, "Uncommon"),
+        ("Neo Geo AES", "Blazing Star", 1998, 400, 800, 2000, "Rare"),
+    ]
+
+    # ── TurboGrafx-16 / PC Engine ──────────────────────────────────────
+    tg16_games = [
+        ("TurboGrafx-16", "Bonk's Adventure", 1990, 40, 100, 300, "Common"),
+        ("TurboGrafx-16", "Bonk's Revenge", 1991, 30, 80, 250, "Common"),
+        ("TurboGrafx-16", "Blazing Lazers", 1989, 25, 60, 200, "Common"),
+        ("TurboGrafx-16", "Dungeon Explorer", 1989, 20, 50, 150, "Common"),
+        ("TurboGrafx-16", "Keith Courage in Alpha Zones", 1989, 10, 30, 100, "Common"),
+        ("TurboGrafx-16", "Legendary Axe", 1989, 30, 70, 200, "Common"),
+        ("TurboGrafx-16", "Soldier Blade", 1992, 50, 120, 350, "Uncommon"),
+        ("TurboGrafx-16", "Air Zonk", 1992, 80, 180, 500, "Uncommon"),
+        ("TurboGrafx-16", "Magical Chase", 1993, 2000, 4000, 8000, "Grail"),
+        ("TurboGrafx-16", "Neutopia", 1989, 25, 60, 180, "Common"),
+    ]
+
+    # ── Atari Jaguar ───────────────────────────────────────────────────
+    jaguar_games = [
+        ("Jaguar", "Tempest 2000", 1994, 40, 100, 300, "Common"),
+        ("Jaguar", "Alien vs Predator", 1994, 50, 120, 350, "Uncommon"),
+        ("Jaguar", "Rayman", 1995, 20, 50, 150, "Common"),
+        ("Jaguar", "Doom", 1994, 25, 60, 180, "Common"),
+        ("Jaguar", "Iron Soldier", 1994, 15, 40, 120, "Common"),
+        ("Jaguar", "Wolfenstein 3D", 1994, 20, 50, 150, "Common"),
+        ("Jaguar", "Battlemorph (Jaguar CD)", 1995, 30, 70, 200, "Uncommon"),
+    ]
+
+    # ── 3DO Interactive Multiplayer ────────────────────────────────────
+    threedo_games = [
+        ("3DO", "Road Rash", 1994, 15, 40, 120, "Common"),
+        ("3DO", "The Need for Speed", 1994, 15, 40, 120, "Common"),
+        ("3DO", "Super Street Fighter II Turbo", 1994, 25, 60, 180, "Common"),
+        ("3DO", "Star Control II", 1994, 30, 70, 200, "Uncommon"),
+        ("3DO", "Return Fire", 1995, 20, 50, 150, "Common"),
+        ("3DO", "Gex", 1995, 10, 30, 100, "Common"),
+        ("3DO", "Samurai Shodown", 1994, 20, 50, 150, "Common"),
+    ]
+
+    # ── CIB Variants (premium complete-in-box for key titles) ──────────
+    cib_variants = [
+        ("NES", "The Legend of Zelda (CIB Gold Cart)", 1986, 80, 350, 1500, "Rare"),
+        ("NES", "Mega Man 5 (CIB)", 1992, 150, 400, 1200, "Rare"),
+        ("SNES", "EarthBound (CIB w/ Guide)", 1995, 400, 1200, 3500, "Grail"),
+        ("SNES", "Chrono Trigger (CIB)", 1995, 200, 500, 1500, "Rare"),
+        ("N64", "Conker's Bad Fur Day (CIB)", 2001, 120, 350, 1000, "Rare"),
+        ("N64", "Paper Mario (CIB)", 2001, 80, 200, 600, "Uncommon"),
+        ("Genesis", "Phantasy Star IV (CIB)", 1993, 100, 250, 700, "Rare"),
+        ("Genesis", "MUSHA (CIB)", 1990, 300, 700, 2000, "Grail"),
+        ("Dreamcast", "Skies of Arcadia (CIB)", 2000, 80, 180, 500, "Uncommon"),
+        ("GameCube", "Pokémon Box: Ruby & Sapphire (CIB)", 2003, 300, 600, 1500, "Grail"),
+        ("Game Boy", "Pokémon Crystal (CIB)", 2000, 100, 300, 800, "Rare"),
+    ]
+
+    for platform, title, year, loose, cib, sealed, rarity in (
+        saturn_games + neogeo_games + tg16_games + jaguar_games + threedo_games
+    ):
+        extra.append({
+            "type": "game",
+            "platform": platform,
+            "name": title,
+            "year": year,
+            "price_loose": loose,
+            "price_cib": cib,
+            "price_sealed": sealed,
+            "rarity": rarity,
+        })
+
+    for platform, title, year, loose, cib, sealed, rarity in cib_variants:
+        extra.append({
+            "type": "game",
+            "platform": platform,
+            "name": title,
+            "year": year,
+            "price_loose": loose,
+            "price_cib": cib,
+            "price_sealed": sealed,
+            "rarity": rarity,
+        })
+
+    return extra
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated retro gaming catalog: consoles + high-value games (500+ items)."""
 
@@ -742,6 +854,9 @@ def get_curated_catalog() -> list[dict]:
             "price_sealed": sealed,
             "rarity": rarity,
         })
+
+    # ── Batch: Saturn, Neo Geo AES, TG-16, Jaguar, 3DO, CIB variants (55 items) ──
+    items += _additional_retro_2025_expansion()
 
     return items
 

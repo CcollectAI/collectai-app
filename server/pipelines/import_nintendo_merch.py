@@ -39,6 +39,78 @@ from pipelines.import_common import (
 CATEGORY = "nintendo_merch"
 
 
+def _additional_nintendo_2025_expansion() -> list[tuple]:
+    """55 more items: store exclusives, movie merch, OLED editions, new franchise items."""
+    return [
+        # ── Nintendo Store Exclusives (Tokyo/Osaka/Kyoto) ──────────────────
+        ("Mario", "Store Exclusive", "Nintendo Kyoto Store Grand Opening Mario Pin Set", "Nintendo Store Kyoto", "high", 85),
+        ("Zelda", "Store Exclusive", "Nintendo Tokyo Hylian Shield Wall Art", "Nintendo Store Tokyo", "high", 95),
+        ("Kirby", "Store Exclusive", "Nintendo Osaka Kirby Dotonbori Plush", "Nintendo Store Osaka", "mid", 48),
+        ("Splatoon", "Store Exclusive", "Nintendo Tokyo Splatoon 3 Inkling Figure Set", "Nintendo Store Tokyo", "mid", 55),
+        ("Animal Crossing", "Store Exclusive", "Nintendo Kyoto Isabelle Maiko Plush", "Nintendo Store Kyoto", "high", 75),
+        ("Mario", "Store Exclusive", "Nintendo Tokyo Mario Kabuki Figurine", "Nintendo Store Tokyo", "high", 90),
+        ("Pokemon", "Store Exclusive", "Nintendo Osaka Pikachu Takoyaki Keychain Set", "Nintendo Store Osaka", "mid", 35),
+        ("Zelda", "Store Exclusive", "Nintendo Kyoto Master Sword Letter Opener", "Nintendo Store Kyoto", "mid", 42),
+        ("Kirby", "Store Exclusive", "Nintendo Tokyo Kirby Cafe Parfait Plush", "Nintendo Store Tokyo", "mid", 40),
+        ("Mario", "Store Exclusive", "Nintendo Osaka Super Mario Power-Up Mug Set", "Nintendo Store Osaka", "mid", 38),
+
+        # ── Super Mario Bros. Movie Merchandise ────────────────────────────
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Mario 10in Plush", "", "mid", 32),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Luigi 10in Plush", "", "mid", 32),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Princess Peach 12in Plush", "", "mid", 35),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Bowser Fire Breathing Figure", "", "mid", 45),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Toad Plush 8in", "", "standard", 22),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie DK Barrel Playset", "", "mid", 55),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Kart Racers Set", "", "mid", 48),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Rainbow Road Track Set", "", "high", 85),
+        ("Mario", "Movie Merch", "Super Mario Bros. Movie Luma Star Plush", "", "standard", 18),
+
+        # ── Pikmin Bloom Merchandise ───────────────────────────────────────
+        ("Pikmin", "Plush", "Pikmin Bloom Red Pikmin Flower Plush", "", "standard", 20),
+        ("Pikmin", "Plush", "Pikmin Bloom Blue Pikmin Plush", "", "standard", 20),
+        ("Pikmin", "Plush", "Pikmin Bloom Yellow Pikmin Plush", "", "standard", 20),
+        ("Pikmin", "Plush", "Pikmin Bloom Purple Pikmin Plush", "", "standard", 22),
+        ("Pikmin", "Plush", "Pikmin Bloom White Pikmin Plush", "", "standard", 22),
+        ("Pikmin", "Plush", "Pikmin Bloom Rock Pikmin Plush", "", "standard", 22),
+        ("Pikmin", "Figure", "Pikmin Bloom Ice Pikmin Figure Set", "", "mid", 35),
+        ("Pikmin", "Figure", "Pikmin 4 Oatchi & Red Pikmin Figure", "", "mid", 38),
+
+        # ── Splatoon 3 Amiibo (Big Run & Side Order) ──────────────────────
+        ("Splatoon", "Amiibo", "Splatoon 3 Big Run Inkling (Yellow)", "", "mid", 25),
+        ("Splatoon", "Amiibo", "Splatoon 3 Big Run Octoling (Teal)", "", "mid", 25),
+        ("Splatoon", "Amiibo", "Splatoon 3 Side Order Agent 8 (Pearlescent)", "", "mid", 30),
+        ("Splatoon", "Amiibo", "Splatoon 3 Shiver Amiibo", "", "mid", 28),
+        ("Splatoon", "Amiibo", "Splatoon 3 Frye Amiibo", "", "mid", 28),
+        ("Splatoon", "Amiibo", "Splatoon 3 Big Man Amiibo", "", "mid", 30),
+
+        # ── Fire Emblem Engage Merchandise ─────────────────────────────────
+        ("Fire Emblem", "Figure", "Fire Emblem Engage Alear (Divine Dragon) Figure", "", "mid", 55),
+        ("Fire Emblem", "Figure", "Fire Emblem Engage Veyle Figure", "", "mid", 50),
+        ("Fire Emblem", "Amiibo", "Fire Emblem Engage Alear Amiibo", "", "mid", 35),
+        ("Fire Emblem", "Plush", "Fire Emblem Engage Sommie Plush", "", "mid", 38),
+        ("Fire Emblem", "Book", "The Art of Fire Emblem Engage", "", "mid", 42),
+
+        # ── Xenoblade Chronicles 3 Collector Items ─────────────────────────
+        ("Xenoblade", "Figure", "Xenoblade Chronicles 3 Noah Figure", "", "mid", 55),
+        ("Xenoblade", "Figure", "Xenoblade Chronicles 3 Mio Figure", "", "mid", 55),
+        ("Xenoblade", "Plush", "Xenoblade Chronicles 3 Riku & Manana Plush Set", "", "mid", 48),
+        ("Xenoblade", "Amiibo", "Xenoblade Chronicles 3 Noah Amiibo", "", "mid", 30),
+        ("Xenoblade", "Amiibo", "Xenoblade Chronicles 3 Mio Amiibo", "", "mid", 30),
+        ("Xenoblade", "Soundtrack", "Xenoblade Chronicles 3 Original Soundtrack (8-CD Box)", "", "high", 120),
+
+        # ── Nintendo Switch OLED Special Editions ──────────────────────────
+        ("Splatoon", "Console", "Nintendo Switch OLED Splatoon 3 Edition", "", "high", 380),
+        ("Zelda", "Console", "Nintendo Switch OLED Zelda: Tears of the Kingdom Edition", "", "high", 400),
+        ("Pokemon", "Console", "Nintendo Switch OLED Pokemon Scarlet & Violet Edition", "", "high", 390),
+        ("Zelda", "Controller", "Nintendo Switch Pro Controller Zelda TOTK Edition", "", "mid", 75),
+        ("Splatoon", "Controller", "Nintendo Switch Pro Controller Splatoon 3 Edition", "", "mid", 70),
+        ("Pokemon", "Controller", "Nintendo Switch Pro Controller Pokemon SV Edition", "", "mid", 70),
+        ("Mario", "Console", "Nintendo Switch OLED Mario Red Edition", "", "high", 350),
+        ("Zelda", "Carrying Case", "Nintendo Switch TOTK Sheikah Eye Carrying Case", "", "mid", 35),
+        ("Pokemon", "Carrying Case", "Nintendo Switch SV Koraidon & Miraidon Case", "", "mid", 32),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated Nintendo / Pokemon merchandise catalog (500+ items).
 
@@ -733,6 +805,9 @@ def get_curated_catalog() -> list[dict]:
         ("Mario", "Club Nintendo", "Club Nintendo Mario Kart Trophy Set (Gold/Silver)", "Club Nintendo", "grail", 280),
         ("Mario", "Club Nintendo", "Club Nintendo Doc Louis Punch-Out!! Code", "Club Nintendo", "high", 150),
     ]
+
+    # ── Batch 12: Store Exclusives, Movie Merch, OLED Editions (55 items) ──
+    merch += _additional_nintendo_2025_expansion()
 
     catalog = []
     for franchise, product_type, name, exclusive, tier, price in merch:

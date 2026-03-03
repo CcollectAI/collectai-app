@@ -820,6 +820,87 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
+
+    # Round 7 expansion — 50 items
+    catalog.extend(_expanded_round7_theme_park())
+
+    return catalog
+
+
+def _expanded_round7_theme_park() -> list[dict]:
+    """50 new theme park items: Fantasy Springs, Zootopia, Frozen area, SNW extras, Europa-Park, Efteling."""
+    items = [
+        # --- Tokyo DisneySea Fantasy Springs (2024 Opening) ---
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Grand Opening Spirit Jersey", "Grand Opening", "high", 95),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Rapunzel Lantern Popcorn Bucket", "Grand Opening", "grail", 150),
+        ("Tokyo Disney", "pins", "TDS Fantasy Springs Grand Opening Pin Box Set (LE 3000)", "LE", "grail", 130),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Peter Pan Lost Boys Plush Set", "Grand Opening", "high", 80),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Anna & Elsa Music Box", "Grand Opening", "high", 110),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Fairy Tinker Bell Light-Up Wand", "Grand Opening", "mid", 55),
+        ("Tokyo Disney", "snack_case", "TDS Fantasy Springs Rapunzel Tower Snack Case", "Grand Opening", "high", 65),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Opening Day Commemorative Medal", "Grand Opening", "high", 90),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Tangled Gondola Ornament", "Grand Opening", "mid", 48),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Frozen Kingdom Crystal Globe", "Grand Opening", "high", 100),
+
+        # --- Shanghai Disneyland Zootopia Area Exclusives (2023 Opening) ---
+        ("Shanghai Disney", "merch", "Shanghai Zootopia Land Grand Opening Spirit Jersey", "Grand Opening", "high", 80),
+        ("Shanghai Disney", "merch", "Shanghai Zootopia Judy & Nick Interactive Figure Set", "Grand Opening", "high", 70),
+        ("Shanghai Disney", "pins", "Shanghai Zootopia Grand Opening Pin Set (LE 2000)", "LE", "grail", 110),
+        ("Shanghai Disney", "merch", "Shanghai Zootopia ZPD Police Badge Replica", "Grand Opening", "mid", 45),
+        ("Shanghai Disney", "popcorn_bucket", "Shanghai Zootopia Jumbeaux's Cafe Popcorn Bucket", "Grand Opening", "high", 75),
+        ("Shanghai Disney", "merch", "Shanghai Zootopia Flash Sloth Plush XL", "Grand Opening", "mid", 42),
+        ("Shanghai Disney", "merch", "Shanghai Zootopia Clawhauser Donut Mug", "Grand Opening", "mid", 38),
+        ("Shanghai Disney", "merch", "Shanghai Zootopia Mr. Big Iced Tea Sipper", "Grand Opening", "mid", 40),
+
+        # --- Hong Kong Disneyland World of Frozen (2023 Opening) ---
+        ("Hong Kong Disney", "merch", "HKDL Frozen Grand Opening Elsa Ice Palace Snow Globe", "Grand Opening", "high", 120),
+        ("Hong Kong Disney", "merch", "HKDL Frozen Wandering Oaken's Trading Post Mug Set", "Grand Opening", "mid", 45),
+        ("Hong Kong Disney", "pins", "HKDL World of Frozen Grand Opening Pin Box (LE 1500)", "LE", "grail", 120),
+        ("Hong Kong Disney", "merch", "HKDL Frozen Olaf Warm Hugs Plush LE", "Grand Opening", "high", 65),
+        ("Hong Kong Disney", "merch", "HKDL Frozen Sven Antler Headband", "Grand Opening", "mid", 30),
+        ("Hong Kong Disney", "popcorn_bucket", "HKDL Frozen Marshmallow Popcorn Bucket", "Grand Opening", "high", 80),
+
+        # --- Universal Studios Japan Super Nintendo World (expanded) ---
+        ("USJ", "merch", "USJ Super Nintendo World Power-Up Band Mario", "Park Exclusive", "mid", 38),
+        ("USJ", "merch", "USJ Super Nintendo World Power-Up Band Luigi", "Park Exclusive", "mid", 38),
+        ("USJ", "merch", "USJ Super Nintendo World Power-Up Band Peach", "Park Exclusive", "mid", 38),
+        ("USJ", "merch", "USJ Super Nintendo World Power-Up Band Toad", "Park Exclusive", "mid", 38),
+        ("USJ", "merch", "USJ Super Nintendo World Toad Cafe Question Block Plate Set", "Park Exclusive", "high", 60),
+        ("USJ", "merch", "USJ Super Nintendo World Toad Cafe Mushroom Soup Bowl", "Park Exclusive", "mid", 35),
+        ("USJ", "merch", "USJ Super Nintendo World Bowser Challenge Medal", "Park Exclusive", "mid", 42),
+        ("USJ", "merch", "USJ Super Nintendo World Fire Flower Popcorn Bucket", "Park Exclusive", "high", 55),
+        ("USJ", "merch", "USJ Donkey Kong Country Grand Opening Barrel Mug", "Grand Opening", "high", 65),
+        ("USJ", "merch", "USJ Donkey Kong Country Grand Opening Pin Set", "Grand Opening", "high", 70),
+        ("USJ", "merch", "USJ Super Nintendo World 1-Up Mushroom Light-Up Figure", "Park Exclusive", "mid", 48),
+        ("USJ", "merch", "USJ Super Nintendo World Star Power Coin Medallion", "Park Exclusive", "mid", 30),
+
+        # --- Europa-Park Exclusives (Germany) ---
+        ("Europa-Park", "merch", "Europa-Park Exclusive Ed Euromaus Plush XL", "Park Exclusive", "mid", 35),
+        ("Europa-Park", "merch", "Europa-Park Voltron Nevera Grand Opening Spirit Jersey", "Grand Opening", "high", 65),
+        ("Europa-Park", "pins", "Europa-Park Voltron Grand Opening Pin Set (LE 1000)", "LE", "high", 55),
+        ("Europa-Park", "merch", "Europa-Park Rulantica Water World Exclusive Towel Set", "Park Exclusive", "mid", 30),
+        ("Europa-Park", "merch", "Europa-Park 50th Anniversary Commemorative Coin", "Anniversary LE", "high", 60),
+        ("Europa-Park", "merch", "Europa-Park Wodan Timbercoaster Grand Opening Poster", "Grand Opening", "mid", 40),
+
+        # --- Efteling Exclusives (Netherlands) ---
+        ("Efteling", "merch", "Efteling Max & Moritz Grand Opening Pin Set", "Grand Opening", "high", 50),
+        ("Efteling", "merch", "Efteling Fata Morgana Exclusive Lantern Replica", "Park Exclusive", "high", 65),
+        ("Efteling", "merch", "Efteling Droomvlucht Fairy Light-Up Ornament", "Park Exclusive", "mid", 35),
+        ("Efteling", "merch", "Efteling Holle Bolle Gijs Talking Waste Bin Replica", "Park Exclusive", "mid", 45),
+        ("Efteling", "merch", "Efteling De Vliegende Hollander Grand Opening Coin", "Grand Opening", "high", 50),
+        ("Efteling", "merch", "Efteling 70th Anniversary Commemorative Book LE", "Anniversary LE", "high", 55),
+        ("Efteling", "merch", "Efteling Baron 1898 Exclusive Mine Cart Figure", "Park Exclusive", "mid", 40),
+    ]
+    catalog = []
+    for park, subcategory, name, edition, tier, price in items:
+        catalog.append({
+            "park": park,
+            "subcategory": subcategory,
+            "name": name,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
     return catalog
 
 

@@ -13,10 +13,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 os.environ.setdefault("DB_ENABLED", "false")
 os.environ.setdefault("DATABASE_URL", "mock://localhost")
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
 from starlette.testclient import TestClient
 from main import app  # noqa: E402
 from app.features.watchlist_router import _WATCHLIST
+from app.rate_limit import _user_hits
 
 client = TestClient(app)
 
@@ -27,10 +29,12 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def _clear_watchlist():
-    """Clear the in-memory watchlist store before each test."""
+    """Clear the in-memory watchlist store and rate limit state before each test."""
     _WATCHLIST.clear()
+    _user_hits.clear()
     yield
     _WATCHLIST.clear()
+    _user_hits.clear()
 
 
 def _add_item(**overrides):

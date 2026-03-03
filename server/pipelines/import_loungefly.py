@@ -773,6 +773,73 @@ def get_curated_catalog() -> list[dict]:
         ("Disney", "Winnie the Pooh Honey Pot Crossbody Bag", "Crossbody Bag", "Disney Parks", "mid", 55),
     ]
 
+    # === ROUND 7 — Stitch, Sanrio, NBC, Pixar, Harry Potter, Pokemon, Studio Ghibli (50 items) ===
+
+    # Stitch Collection
+    items += [
+        ("Disney", "Stitch Angel Celestial AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Disney", "Stitch Elvis Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Disney", "Stitch Holiday Gingerbread Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Disney", "Stitch Pineapple Flip Sequin Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Disney", "Stitch Halloween Vampire Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 62),
+        ("Disney", "Stitch Angel Valentine Hearts AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Disney", "Stitch Frog Rainy Day Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 56),
+
+        # Sanrio Collection
+        ("Sanrio", "Cinnamoroll Cloud AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 58),
+        ("Sanrio", "Cinnamoroll Latte Cup Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 52),
+        ("Sanrio", "Kuromi Skull AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Sanrio", "Kuromi & My Melody Opposites AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Sanrio", "My Melody Flower Bouquet Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 52),
+        ("Sanrio", "My Melody Strawberry AOP Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Sanrio", "Hello Kitty 50th Anniversary Gold Mini Backpack", "Mini Backpack", "BoxLunch", "high", 75),
+        ("Sanrio", "Pochacco Sneaker Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+
+        # Nightmare Before Christmas
+        ("Disney", "NBC Oogie Boogie Glow-In-The-Dark Mini Backpack", "Mini Backpack", "BoxLunch", "high", 72),
+        ("Disney", "NBC Jack as Santa Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 62),
+        ("Disney", "NBC Jack & Sally Graveyard Scene Mini Backpack", "Mini Backpack", "Disney Parks", "high", 80),
+        ("Disney", "NBC Spiral Hill Scene Mini Backpack", "Mini Backpack", "Standard", "mid", 58),
+        ("Disney", "NBC Zero Glow-In-The-Dark Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 52),
+        ("Disney", "NBC Oogie Boogie Blacklight AOP Mini Backpack", "Mini Backpack", "Hot Topic", "high", 70),
+
+        # Pixar Collection
+        ("Pixar", "Toy Story Aliens Pizza Planet AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Pixar", "WALL-E & EVE Date Night Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Pixar", "Up Grape Soda Cap Zip-Around Wallet", "Wallet", "Standard", "standard", 38),
+        ("Pixar", "Up House Balloons Sequin Mini Backpack", "Mini Backpack", "Standard", "mid", 62),
+        ("Pixar", "Ratatouille Remy Cosplay Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Pixar", "Inside Out 2 Emotions AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+
+        # Harry Potter Collection
+        ("Harry Potter", "Marauder's Map AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Harry Potter", "Honeydukes Sweet Shop AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Harry Potter", "Diagon Alley Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 72),
+        ("Harry Potter", "Hedwig Cosplay Mini Backpack", "Mini Backpack", "Standard", "mid", 58),
+        ("Harry Potter", "Deathly Hallows Glow-In-The-Dark Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Harry Potter", "Hogwarts Express Platform 9 3/4 Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 52),
+
+        # Pokemon Collection
+        ("Pokemon", "Eeveelutions AOP Mini Backpack", "Mini Backpack", "BoxLunch", "high", 75),
+        ("Pokemon", "Pikachu Holiday Stocking Cosplay Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Pokemon", "Gengar Glow-In-The-Dark Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 62),
+        ("Pokemon", "Umbreon & Espeon Celestial AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Pokemon", "Snorlax Sleeping AOP Mini Backpack", "Mini Backpack", "Standard", "mid", 58),
+        ("Pokemon", "Bulbasaur Floral AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+
+        # Studio Ghibli Collection
+        ("Studio Ghibli", "My Neighbor Totoro Forest Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 72),
+        ("Studio Ghibli", "Totoro Catbus Cosplay Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 58),
+        ("Studio Ghibli", "Kiki's Delivery Service Jiji Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "high", 70),
+        ("Studio Ghibli", "Spirited Away No-Face Mini Backpack", "Mini Backpack", "BoxLunch", "high", 72),
+        ("Studio Ghibli", "Princess Mononoke Forest Spirit AOP Mini Backpack", "Mini Backpack", "BoxLunch", "high", 75),
+        ("Studio Ghibli", "Howl's Moving Castle Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 78),
+        ("Studio Ghibli", "Ponyo Sosuke & Ponyo Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Studio Ghibli", "Totoro Soot Sprites AOP Zip-Around Wallet", "Wallet", "BoxLunch", "standard", 38),
+        ("Studio Ghibli", "Castle in the Sky Robot Soldier Mini Backpack", "Mini Backpack", "BoxLunch", "high", 72),
+        ("Studio Ghibli", "Kiki's Delivery Service Bakery Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 70),
+    ]
+
     catalog = []
     for franchise, name, item_type, exclusive, tier, price in items:
         catalog.append({

@@ -1,7 +1,10 @@
-"""Tests for app/features/marketplace_trust_router.py — marketplace trust endpoints.
+"""Tests for deal desk reputation & risk-flag endpoints (merged from marketplace_trust_router).
+
+The marketplace_trust_router was merged into deal_desk_router. These tests
+cover the enriched /deals/reputation/{user_id} endpoint and the new
+/deals/{offer_id}/risk-flags endpoint.
 
 All tests use the in-memory fallback (DB_ENABLED=false) so no real database is needed.
-The trust router returns stub/fallback data when no DB pool is available.
 """
 import os
 import sys
@@ -14,75 +17,68 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DB_ENABLED", "false")
 os.environ.setdefault("DATABASE_URL", "mock://localhost")
 os.environ.setdefault("DEV_MODE", "true")
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
-from starlette.testclient import TestClient
+from starlette.testclient import TestClient  # noqa: E402
 from main import app  # noqa: E402
+from app.rate_limit import _user_hits  # noqa: E402
 
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=False)
 
 VALID_USER_ID = "00000000-0000-0000-0000-000000000099"
-VALID_LISTING_ID = "listing-test-001"
+VALID_OFFER_ID = "00000000-0000-0000-0000-000000000001"
+
+
+@pytest.fixture(autouse=True)
+def _clear_rate_limits():
+    _user_hits.clear()
+    yield
+    _user_hits.clear()
 
 
 # ---------------------------------------------------------------------------
-# GET /marketplace/trust2/seller/{user_id} — seller reputation
+# Verify old marketplace_trust_router endpoints are removed
 # ---------------------------------------------------------------------------
 
-class TestSellerReputation:
-    def test_seller_reputation_returns_200(self):
-        """Returns 200 with stub reputation when no DB pool."""
+class TestOldEndpointsRemoved:
+    def test_old_trust2_seller_endpoint_gone(self):
+        """The old /marketplace/trust2/seller/{user_id} endpoint no longer exists."""
         resp = client.get(f"/marketplace/trust2/seller/{VALID_USER_ID}")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "user_id" in data
-        assert "score" in data
-        assert "badge" in data
-        assert "total_trades" in data
-        assert "disputes" in data
-        assert "dispute_rate" in data
+        assert resp.status_code in (404, 405)
 
-    def test_seller_reputation_offline_defaults(self):
-        """Offline mode returns empty stub (score=0, badge='new')."""
-        resp = client.get(f"/marketplace/trust2/seller/{VALID_USER_ID}")
-        data = resp.json()
-        assert data["user_id"] == VALID_USER_ID
-        assert data["score"] == 0.0
-        assert data["badge"] == "new"
-        assert data["total_trades"] == 0
-        assert data["disputes"] == 0
-        assert data["dispute_rate"] == 0.0
-
-    def test_seller_reputation_invalid_user_id(self):
-        """Rejects non-UUID user_id with 400."""
-        resp = client.get("/marketplace/trust2/seller/some-arbitrary-id")
-        assert resp.status_code == 400
+    def test_old_trust2_listing_endpoint_gone(self):
+        """The old /marketplace/trust2/listing/{id} endpoint no longer exists."""
+        resp = client.get("/marketplace/trust2/listing/listing-test-001")
+        assert resp.status_code in (404, 405)
 
 
 # ---------------------------------------------------------------------------
-# GET /marketplace/trust2/listing/{listing_id} — listing trust snapshot
+# GET /deals/reputation/{user_id} — enriched reputation
 # ---------------------------------------------------------------------------
 
-class TestListingTrustSnapshot:
-    def test_listing_trust_returns_200(self):
-        """Returns 200 with stub trust snapshot when no DB pool."""
-        resp = client.get(f"/marketplace/trust2/listing/{VALID_LISTING_ID}")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "seller" in data
-        assert "listing_flags" in data
+class TestDealReputation:
+    def test_reputation_returns_503_without_db(self):
+        """Without DB pool, reputation returns 503."""
+        resp = client.get(f"/deals/reputation/{VALID_USER_ID}")
+        assert resp.status_code == 503
 
-    def test_listing_trust_offline_defaults(self):
-        """Offline mode returns empty seller stub and no flags."""
-        resp = client.get(f"/marketplace/trust2/listing/{VALID_LISTING_ID}")
-        data = resp.json()
-        assert data["seller"]["user_id"] == "unknown"
-        assert data["seller"]["score"] == 0.0
-        assert data["seller"]["badge"] == "new"
-        assert data["listing_flags"] == []
+    def test_reputation_invalid_uuid_returns_error(self):
+        """Non-UUID user_id returns 400 (or 503 if DB check runs first)."""
+        resp = client.get("/deals/reputation/not-a-uuid")
+        assert resp.status_code in (400, 503)
 
-    def test_listing_trust_arbitrary_listing_id(self):
-        """Accepts any string as listing_id."""
-        resp = client.get("/marketplace/trust2/listing/any-listing-id")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["listing_flags"] == []
+
+# ---------------------------------------------------------------------------
+# GET /deals/{offer_id}/risk-flags — offer risk assessment
+# ---------------------------------------------------------------------------
+
+class TestOfferRiskFlags:
+    def test_risk_flags_returns_503_without_db(self):
+        """Without DB pool, risk-flags returns 503."""
+        resp = client.get(f"/deals/{VALID_OFFER_ID}/risk-flags")
+        assert resp.status_code == 503
+
+    def test_risk_flags_invalid_uuid_returns_error(self):
+        """Non-UUID offer_id returns 400 (or 503 if DB check runs first)."""
+        resp = client.get("/deals/not-a-uuid/risk-flags")
+        assert resp.status_code in (400, 503)

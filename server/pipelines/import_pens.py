@@ -1466,6 +1466,9 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_esterbrook_round3())
     all_tuples.extend(_additional_brands_round3())
 
+    # Expansion Batch 4 — Pelikan Art, Sailor KoP/Realo, Namiki, Visconti, Aurora
+    all_tuples.extend(_expanded_batch_4())
+
     catalog: list[dict] = []
     for (name, brand, model_line, nib_material, nib_size,
          filling_system, price_eur, is_limited, rarity, notes) in all_tuples:
@@ -1482,6 +1485,117 @@ def get_curated_catalog() -> list[dict]:
             "notes": notes,
         })
     return catalog
+
+
+def _expanded_batch_4() -> list[tuple]:
+    """50 additional fountain pens — Pelikan Art Collection, Sailor KoP/Realo/Naginata, Namiki, Visconti, Aurora."""
+    return [
+        # ── Pelikan — M800 Art Collection & Souveran SE ──
+        ("M800 Art Collection Macaw", "Pelikan", "Art Collection", "18k Gold", "M",
+         "piston", 900, True, "Limited Edition", "2023 LE, blue/yellow macaw resin"),
+        ("M800 Art Collection Golden Beryl", "Pelikan", "Art Collection", "18k Gold", "B",
+         "piston", 850, True, "Limited Edition", "2022 LE, golden amber resin"),
+        ("M800 Art Collection Smoky High-Rise", "Pelikan", "Art Collection", "18k Gold", "F",
+         "piston", 880, True, "Limited Edition", "2024 LE, smoky grey resin"),
+        ("M1000 Raden Sunrise", "Pelikan", "Souveraen", "18k Gold", "B",
+         "piston", 1800, True, "Limited Edition", "Raden (mother-of-pearl inlay) sunrise"),
+        ("M1000 Green-Black", "Pelikan", "Souveraen", "18k Gold", "M",
+         "piston", 780, False, "Standard", "Classic green striped, oversized"),
+        ("Souveraen M600 Pink", "Pelikan", "Souveraen", "14k Gold", "F",
+         "piston", 420, True, "Limited Edition", "Special edition pink stripes"),
+        ("Souveraen M405 Stresemann", "Pelikan", "Souveraen", "14k Gold", "EF",
+         "piston", 320, False, "Standard", "Anthracite grey stripes"),
+        ("M800 Art Collection Spirit of 1838", "Pelikan", "Art Collection", "18k Gold", "M",
+         "piston", 950, True, "Limited Edition", "Anniversary LE, jade green barrel"),
+        ("M1005 Stresemann Black-Green", "Pelikan", "Souveraen", "18k Gold", "B",
+         "piston", 800, False, "Standard", "Anthracite oversized, 18k nib"),
+        ("M800 Art Collection Ocean Swirl", "Pelikan", "Art Collection", "18k Gold", "F",
+         "piston", 870, True, "Limited Edition", "2021 LE, deep blue swirl resin"),
+
+        # ── Sailor — King of Pen, Pro Gear Realo, 1911 Naginata ──
+        ("King of Pen Urushi Crimson", "Sailor", "King of Pen", "21k Gold", "M",
+         "converter", 1600, True, "Limited Edition", "Hand-applied crimson urushi lacquer"),
+        ("King of Pen ST (Standard Size)", "Sailor", "King of Pen", "21k Gold", "MF",
+         "converter", 650, False, "Standard", "Slightly smaller KoP, 21k nib"),
+        ("Pro Gear Realo Blue Demonstrator", "Sailor", "Realo", "21k Gold", "M",
+         "piston", 580, True, "Limited Edition", "Transparent blue piston-fill"),
+        ("Pro Gear Realo Maroon", "Sailor", "Realo", "21k Gold", "F",
+         "piston", 560, False, "Standard", "Piston-fill Pro Gear, maroon resin"),
+        ("1911 Large Naginata Togi", "Sailor", "1911", "21k Gold", "Naginata Togi",
+         "converter", 950, False, "Standard", "Cross-point naginata grind"),
+        ("1911 Large Naginata Concord", "Sailor", "1911", "21k Gold", "Naginata Concord",
+         "converter", 1100, False, "Standard", "Dual-point specialty nib"),
+        ("Pro Gear Slim Lucky Charm Series Manyo Haha", "Sailor", "Pro Gear Slim", "14k Gold", "MF",
+         "converter", 300, True, "Limited Edition", "Botanical color ink-matching pen"),
+        ("King of Pen Bespoke Lapis Blue", "Sailor", "Bespoke", "21k Gold", "B",
+         "converter", 1800, True, "Limited Edition", "Wancher exclusive, deep lapis urushi"),
+        ("Pro Gear Classic Ivory", "Sailor", "Pro Gear", "21k Gold", "M",
+         "converter", 360, False, "Standard", "Ivory resin, gold trim"),
+        ("1911 Standard Night Blue", "Sailor", "1911", "14k Gold", "F",
+         "converter", 260, False, "Standard", "Deep navy resin, silver trim"),
+
+        # ── Namiki — Yukari Royale, Emperor ──
+        ("Yukari Royale Mount Fuji", "Namiki", "Yukari Royale", "18k Gold", "M",
+         "converter", 3500, True, "Limited Edition", "Maki-e Mt. Fuji, gold/silver dust"),
+        ("Yukari Royale Dragon and Cumulus", "Namiki", "Yukari Royale", "18k Gold", "B",
+         "converter", 4200, True, "Limited Edition", "Togidashi maki-e dragon motif"),
+        ("Emperor Chinkin Carp", "Namiki", "Emperor", "18k Gold", "M",
+         "converter", 6500, True, "Limited Edition", "Chinkin engraving, koi carp motif"),
+        ("Emperor Dragon", "Namiki", "Emperor", "18k Gold", "B",
+         "converter", 7500, True, "Limited Edition", "Taka maki-e raised gold dragon"),
+        ("Yukari Pine Tree", "Namiki", "Yukari", "18k Gold", "M",
+         "converter", 1200, True, "Limited Edition", "Hira maki-e pine needles, green/gold"),
+        ("Yukari Cherry Blossom", "Namiki", "Yukari", "18k Gold", "F",
+         "converter", 1100, True, "Limited Edition", "Pink/gold sakura maki-e design"),
+        ("Nippon Art Golden Pheasant", "Namiki", "Nippon Art", "14k Gold", "M",
+         "converter", 480, False, "Standard", "Screen-printed maki-e, accessible Namiki"),
+        ("Nippon Art Mount Fuji and Shrimp", "Namiki", "Nippon Art", "14k Gold", "F",
+         "converter", 480, False, "Standard", "Ukiyo-e inspired Hokusai design"),
+
+        # ── Visconti — Homo Sapiens, Van Gogh, Opera Master ──
+        ("Homo Sapiens Bronze Age", "Visconti", "Homo Sapiens", "Palladium", "M",
+         "vacuum", 750, False, "Standard", "Basaltic lava barrel, power filler"),
+        ("Homo Sapiens Dark Age", "Visconti", "Homo Sapiens", "Palladium", "F",
+         "vacuum", 800, False, "Standard", "Black lava, ruthenium trim"),
+        ("Homo Sapiens Crystal Dream", "Visconti", "Homo Sapiens", "Palladium", "M",
+         "vacuum", 950, True, "Limited Edition", "Clear demonstrator lava resin"),
+        ("Van Gogh Starry Night", "Visconti", "Van Gogh", "Steel", "M",
+         "converter", 320, False, "Standard", "Swirling blue resin, painting tribute"),
+        ("Van Gogh Orchard in Blossom", "Visconti", "Van Gogh", "Steel", "F",
+         "converter", 320, False, "Standard", "Green/white resin, spring palette"),
+        ("Van Gogh Sunflowers", "Visconti", "Van Gogh", "Steel", "M",
+         "converter", 320, False, "Standard", "Yellow/amber resin, vibrant design"),
+        ("Opera Master Typhoon", "Visconti", "Opera Master", "Palladium", "M",
+         "vacuum", 1200, True, "Limited Edition", "Swirled acrylic, storm blue/grey"),
+        ("Opera Master Crimson Tide", "Visconti", "Opera Master", "Palladium", "B",
+         "vacuum", 1250, True, "Limited Edition", "Deep crimson acrylic, wave pattern"),
+        ("Medici Matte Black", "Visconti", "Medici", "18k Gold", "M",
+         "converter", 650, False, "Standard", "Matte black resin, 18k gold nib"),
+        ("Homo Sapiens Lava Color Blue", "Visconti", "Homo Sapiens", "Palladium", "M",
+         "vacuum", 850, True, "Limited Edition", "Blue lava resin, limited colorway"),
+
+        # ── Aurora — 88, Optima, Internazionale ──
+        ("88 Big Black Mamba", "Aurora", "88", "18k Gold", "M",
+         "piston", 680, False, "Standard", "Oversized 88, black resin, gold trim"),
+        ("Optima Auroloide Blue", "Aurora", "Optima", "18k Gold", "F",
+         "piston", 550, False, "Standard", "Blue auroloide resin, gold bands"),
+        ("Optima Flex Nib", "Aurora", "Optima", "18k Gold", "Flex",
+         "piston", 650, True, "Limited Edition", "Rare flex nib variant"),
+        ("Internazionale Blue", "Aurora", "Internazionale", "18k Gold", "M",
+         "piston", 450, False, "Standard", "Classic blue resin, compact size"),
+        ("Internazionale Orange Limited", "Aurora", "Internazionale", "18k Gold", "M",
+         "piston", 520, True, "Limited Edition", "LE orange resin, numbered"),
+        ("88 Minerali Cinnabar", "Aurora", "88 Minerali", "18k Gold", "B",
+         "piston", 750, True, "Limited Edition", "Mineral-inspired resin, red/gold"),
+        ("88 Minerali Malachite", "Aurora", "88 Minerali", "18k Gold", "M",
+         "piston", 750, True, "Limited Edition", "Green mineral resin, gold trim"),
+        ("Optima Demonstrator", "Aurora", "Optima", "18k Gold", "F",
+         "piston", 600, True, "Limited Edition", "Transparent auroloide, visible piston"),
+        ("88 Unica Nera", "Aurora", "88", "18k Gold", "M",
+         "piston", 580, False, "Standard", "All-black edition, PVD trim"),
+        ("Talentum Classic Black", "Aurora", "Talentum", "14k Gold", "M",
+         "converter", 280, False, "Standard", "Entry-level Aurora, 14k nib"),
+    ]
 
 
 # ---------------------------------------------------------------------------

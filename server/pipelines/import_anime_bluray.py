@@ -717,6 +717,85 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
+
+    # Round 7 expansion — 50 items
+    catalog.extend(_expanded_round7_anime_bluray())
+
+    return catalog
+
+
+def _expanded_round7_anime_bluray() -> list[dict]:
+    """50 new anime Blu-ray items: Aniplex LEs, Funimation steelbooks, GKIDS 4K, Rightstuf boxes, JP volumes with bonuses."""
+    releases = [
+        # --- Aniplex Limited Editions (new titles) ---
+        ("Aniplex USA", "Sword Art Online Progressive: Aria of a Starless Night", "Blu-ray", "Aniplex LE with Art Book", "high", 130),
+        ("Aniplex USA", "Sword Art Online Progressive: Scherzo of Deep Night", "Blu-ray", "Aniplex LE with Soundtrack CD", "high", 125),
+        ("Aniplex USA", "Fate/Grand Order: Camelot Wandering Agateram", "Blu-ray", "Aniplex LE Box Set", "high", 160),
+        ("Aniplex USA", "Fate/Grand Order: Solomon", "Blu-ray", "Aniplex LE with Bonus CD", "high", 140),
+        ("Aniplex USA", "Demon Slayer: To the Swordsmith Village", "Blu-ray", "Aniplex LE Steelbook", "high", 120),
+        ("Aniplex USA", "Demon Slayer: Hashira Training Arc", "Blu-ray", "Aniplex LE Complete Box", "high", 180),
+        ("Aniplex USA", "Bocchi the Rock! Complete", "Blu-ray", "Aniplex LE with Guitar Pick Set", "high", 160),
+        ("Aniplex USA", "Lycoris Recoil Complete", "Blu-ray", "Aniplex LE Box Set", "high", 150),
+        ("Aniplex USA", "Rascal Does Not Dream of a Dreaming Girl", "Blu-ray", "Aniplex LE with Art Cards", "high", 110),
+        ("Aniplex USA", "Puella Magi Madoka Magica: Rebellion", "Blu-ray", "Aniplex LE with Homura Figure", "grail", 350),
+
+        # --- Funimation / Crunchyroll Steelbooks ---
+        ("Funimation", "Cowboy Bebop Complete Series", "Blu-ray", "Funimation 25th Anniversary Steelbook", "high", 130),
+        ("Funimation", "Fullmetal Alchemist: Brotherhood Complete", "Blu-ray", "Funimation Steelbook Box Set", "high", 140),
+        ("Crunchyroll", "Chainsaw Man Season 1", "Blu-ray", "Crunchyroll LE Steelbook", "mid", 65),
+        ("Crunchyroll", "Mob Psycho 100 Season 3", "Blu-ray", "Crunchyroll Steelbook", "mid", 55),
+        ("Funimation", "Dragon Ball Super: Super Hero", "Blu-ray", "Funimation Steelbook 4K", "mid", 60),
+        ("Crunchyroll", "Ranking of Kings Season 1", "Blu-ray", "Crunchyroll LE Box Set", "mid", 70),
+        ("Funimation", "One Piece Film Red Collector's", "Blu-ray", "Funimation LE with Uta CD", "high", 100),
+
+        # --- GKIDS Studio Ghibli 4K UHD ---
+        ("GKIDS", "Spirited Away", "4K UHD", "GKIDS 4K Steelbook", "mid", 62),
+        ("GKIDS", "Howl's Moving Castle", "4K UHD", "GKIDS 4K Steelbook", "mid", 60),
+        ("GKIDS", "Kiki's Delivery Service", "4K UHD", "GKIDS 4K Steelbook", "mid", 58),
+        ("GKIDS", "Ponyo", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 55),
+        ("GKIDS", "The Wind Rises", "4K UHD", "GKIDS 4K Steelbook", "mid", 58),
+        ("GKIDS", "Grave of the Fireflies", "4K UHD", "GKIDS 4K Steelbook", "mid", 60),
+        ("GKIDS", "Porco Rosso", "4K UHD", "GKIDS 4K Steelbook", "mid", 55),
+
+        # --- Rightstuf / Nozomi Limited Box Sets ---
+        ("Rightstuf", "Revolutionary Girl Utena Complete", "Blu-ray", "Rightstuf LE Box Set", "high", 200),
+        ("Rightstuf", "Rose of Versailles Complete", "Blu-ray", "Rightstuf LE Box Set", "high", 180),
+        ("Rightstuf", "Legend of the Galactic Heroes: Die Neue These", "Blu-ray", "Rightstuf LE Box Set", "high", 160),
+        ("Rightstuf", "Aria the Animation Complete", "Blu-ray", "Rightstuf LE Box Set", "high", 140),
+        ("Rightstuf", "Cardcaptor Sakura Complete", "Blu-ray", "Rightstuf LE Premium Box Set", "high", 190),
+
+        # --- Japanese Blu-ray Volumes with Bonus Figures/Booklets/Soundtracks ---
+        ("JP Import", "Violet Evergarden The Movie", "Blu-ray", "JP BD Limited Edition with Original Soundtrack", "grail", 300),
+        ("JP Import", "Weathering with You Collector's Edition", "Blu-ray", "JP BD Collector's Edition with Art Book & CD", "grail", 280),
+        ("JP Import", "Your Name. Collector's Edition", "Blu-ray", "JP BD Special Edition with Storyboard Book", "grail", 320),
+        ("JP Import", "Suzume Collector's Edition", "Blu-ray", "JP BD LE with Director's Notes & Mini Figure", "grail", 260),
+        ("JP Import", "Frieren: Beyond Journey's End Vol.1", "Blu-ray", "JP BD with Bonus Drama CD & Art Cards", "high", 110),
+        ("JP Import", "Frieren: Beyond Journey's End Vol.2", "Blu-ray", "JP BD with Bonus Soundtrack CD", "high", 110),
+        ("JP Import", "Oshi no Ko Vol.1", "Blu-ray", "JP BD with Bonus Idol CD & Booklet", "high", 120),
+        ("JP Import", "86: Eighty Six Complete Box", "Blu-ray", "JP BD LE with Shin Figure & Art Book", "grail", 350),
+        ("JP Import", "Bocchi the Rock! Vol.1", "Blu-ray", "JP BD with Bonus Soundtrack CD", "high", 100),
+        ("JP Import", "Mobile Suit Gundam: The Witch from Mercury Box", "Blu-ray", "JP BD LE with Aerial Gunpla Kit", "grail", 380),
+        ("JP Import", "Spy x Family Season 1 Complete Box", "Blu-ray", "JP BD LE with Anya Figure & Art Book", "high", 250),
+        ("JP Import", "Attack on Titan Final Season Complete Box", "Blu-ray", "JP BD Complete with Mikasa Scarf & Art Cards", "grail", 400),
+        ("JP Import", "Jujutsu Kaisen Season 2 Complete Box", "Blu-ray", "JP BD LE with Gojo Figure & Soundtrack CD", "grail", 380),
+
+        # --- Additional notable releases ---
+        ("Aniplex USA", "Monogatari Series: Monster Season", "Blu-ray", "Aniplex LE Box Set", "high", 200),
+        ("JP Import", "Dungeon Meshi Collector's Box", "Blu-ray", "JP BD LE with Recipe Book & Mini Figure", "high", 240),
+        ("Sentai Filmworks", "Made in Abyss Complete", "Blu-ray", "Sentai LE Collector's Box", "high", 130),
+        ("Sentai Filmworks", "The Aquatope on White Sand Complete", "Blu-ray", "Sentai LE Box Set", "mid", 85),
+        ("Discotek Media", "City Hunter Complete", "Blu-ray", "Discotek Complete BD Collection", "high", 200),
+    ]
+    catalog = []
+    for publisher, title, fmt, edition, tier, price in releases:
+        catalog.append({
+            "publisher": publisher,
+            "title": title,
+            "format": fmt,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
     return catalog
 
 

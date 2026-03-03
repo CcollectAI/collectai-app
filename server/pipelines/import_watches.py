@@ -1545,6 +1545,127 @@ def _niche_independent_watches() -> list[tuple]:
     ]
 
 
+def _expanded_batch_premium_brands() -> list[tuple]:
+    """50 additional watches — Grand Seiko, Tudor, Cartier, IWC, Breitling, Nomos, Bell & Ross, Longines."""
+    return [
+        # ── Grand Seiko (8) ────────────────────────────────────────────────
+        ("Grand Seiko", "Spring Drive Snowflake SBGA211", "SBGA211",
+         "Spring Drive Cal. 9R65", "Titanium", "Current Production", 5800),
+        ("Grand Seiko", "Hi-Beat GMT SBGJ201", "SBGJ201",
+         "Automatic Hi-Beat Cal. 9S86", "Stainless Steel", "Current Production", 6200),
+        ("Grand Seiko", "Heritage Collection SBGH271 Seasons Autumn", "SBGH271",
+         "Automatic Hi-Beat Cal. 9S85", "Stainless Steel", "Limited Edition", 6800),
+        ("Grand Seiko", "Heritage Collection SBGY007 Omiwatari", "SBGY007",
+         "Spring Drive Cal. 9R02", "Platinum", "Limited Edition", 28000),
+        ("Grand Seiko", "Elegance SBGK005 Mt. Iwate", "SBGK005",
+         "Manual Cal. 9S63", "Stainless Steel", "Current Production", 5500),
+        ("Grand Seiko", "Sport Collection SBGE257 Spring Drive GMT", "SBGE257",
+         "Spring Drive Cal. 9R66", "Stainless Steel", "Current Production", 6000),
+        ("Grand Seiko", "Heritage Collection SBGA413 Shunbun", "SBGA413",
+         "Spring Drive Cal. 9R65", "Stainless Steel", "Limited Edition", 6500),
+        ("Grand Seiko", "Evolution 9 SLGA007 White Birch", "SLGA007",
+         "Spring Drive Cal. 9RA2", "Stainless Steel", "Current Production", 9200),
+
+        # ── Tudor (8) ─────────────────────────────────────────────────────
+        ("Tudor", "Black Bay 58 925 Silver", "M79010SG-0001",
+         "Automatic Cal. MT5400", "Silver", "Current Production", 4200),
+        ("Tudor", "Black Bay 58 Navy Blue", "M79030B-0001",
+         "Automatic Cal. MT5402", "Stainless Steel", "Current Production", 3800),
+        ("Tudor", "Pelagos FXD Marine Nationale", "M25707B/23-0001",
+         "Automatic Cal. MT5602", "Titanium", "Special Edition", 4500),
+        ("Tudor", "Pelagos 39 Black", "M25407N-0001",
+         "Automatic Cal. MT5400", "Titanium", "Current Production", 4100),
+        ("Tudor", "Ranger 39mm", "M79950-0001",
+         "Automatic Cal. MT5402", "Stainless Steel", "Current Production", 3100),
+        ("Tudor", "Black Bay Pro GMT", "M79470-0001",
+         "Automatic Cal. MT5652", "Stainless Steel", "Current Production", 3900),
+        ("Tudor", "Black Bay Chrono S&G", "M79363N-0001",
+         "Automatic Cal. MT5813", "Steel/Gold", "Current Production", 5800),
+        ("Tudor", "Black Bay 54 37mm", "M79000N-0001",
+         "Automatic Cal. MT5400", "Stainless Steel", "Current Production", 3600),
+
+        # ── Cartier (6) ───────────────────────────────────────────────────
+        ("Cartier", "Santos de Cartier Medium Steel", "WSSA0029",
+         "Automatic Cal. 1847 MC", "Stainless Steel", "Current Production", 7200),
+        ("Cartier", "Santos de Cartier Large Two-Tone", "W2SA0006",
+         "Automatic Cal. 1847 MC", "Steel/Gold", "Current Production", 11500),
+        ("Cartier", "Tank Française Medium Steel", "WSTA0065",
+         "Automatic Cal. 1853 MC", "Stainless Steel", "Current Production", 5800),
+        ("Cartier", "Tank Française Small Steel Quartz", "WSTA0064",
+         "Quartz Cal. 057", "Stainless Steel", "Current Production", 4200),
+        ("Cartier", "Tank Must Large SolarBeat", "WSTA0055",
+         "Quartz SolarBeat Cal. 1", "Stainless Steel", "Current Production", 3100),
+        ("Cartier", "Pasha de Cartier 41mm Chronograph", "WSPA0018",
+         "Automatic Cal. 1904-CH MC", "Stainless Steel", "Current Production", 9500),
+
+        # ── IWC (6) ───────────────────────────────────────────────────────
+        ("IWC", "Portugieser Automatic 40", "IW358305",
+         "Automatic Cal. 82200", "Stainless Steel", "Current Production", 7500),
+        ("IWC", "Portugieser Chronograph", "IW371617",
+         "Automatic Cal. 69355", "Stainless Steel", "Current Production", 8900),
+        ("IWC", "Big Pilot 43mm", "IW329303",
+         "Automatic Cal. 82100", "Stainless Steel", "Current Production", 9200),
+        ("IWC", "Pilot's Watch Mark XX", "IW328203",
+         "Automatic Cal. 32111", "Stainless Steel", "Current Production", 5400),
+        ("IWC", "Spitfire Pilot Chronograph 41mm", "IW387903",
+         "Automatic Cal. 69385", "Stainless Steel", "Current Production", 6800),
+        ("IWC", "Pilot's Watch Chronograph Top Gun Ceratanium", "IW389101",
+         "Automatic Cal. 69380", "Ceramic", "Current Production", 10500),
+
+        # ── Breitling (6) ─────────────────────────────────────────────────
+        ("Breitling", "Navitimer B01 Chronograph 43", "AB0138211B1P1",
+         "Automatic Cal. B01", "Stainless Steel", "Current Production", 8900),
+        ("Breitling", "Navitimer Automatic 41", "A17326211C1P4",
+         "Automatic Cal. B17", "Stainless Steel", "Current Production", 5200),
+        ("Breitling", "Superocean Heritage 57 Capsule", "A10370161C1X1",
+         "Automatic Cal. B10", "Stainless Steel", "Limited Edition", 5800),
+        ("Breitling", "Superocean Heritage 42 Blue", "AB2010161C1S1",
+         "Automatic Cal. B20", "Stainless Steel", "Current Production", 5400),
+        ("Breitling", "Chronomat B01 42 Green Dial", "AB0134101L1A1",
+         "Automatic Cal. B01", "Stainless Steel", "Current Production", 8200),
+        ("Breitling", "Premier B01 Chronograph 42 Norton", "AB0118A21G1X2",
+         "Automatic Cal. B01", "Stainless Steel", "Special Edition", 6800),
+
+        # ── Nomos (6) ─────────────────────────────────────────────────────
+        ("Nomos", "Tangente 35mm", "139",
+         "Manual Cal. Alpha", "Stainless Steel", "Current Production", 1580),
+        ("Nomos", "Tangente Neomatik 41 Update", "180",
+         "Automatic Cal. DUW 6101", "Stainless Steel", "Current Production", 3200),
+        ("Nomos", "Club Campus 36 Night", "712",
+         "Manual Cal. Alpha", "Stainless Steel", "Current Production", 1320),
+        ("Nomos", "Club Campus 38.5 Electric Blue", "730",
+         "Manual Cal. Alpha", "Stainless Steel", "Current Production", 1440),
+        ("Nomos", "Metro Neomatik 41 Update", "1106",
+         "Automatic Cal. DUW 6101", "Stainless Steel", "Current Production", 3600),
+        ("Nomos", "Zurich Weltzeit Nachtblau", "807",
+         "Automatic Cal. DUW 5201", "Stainless Steel", "Current Production", 4800),
+
+        # ── Bell & Ross (5) ───────────────────────────────────────────────
+        ("Bell & Ross", "BR 03-92 Diver Blue Bronze", "BR0392-D-LU-BR/SCA",
+         "Automatic Cal. BR-CAL.302", "Bronze", "Limited Edition", 4200),
+        ("Bell & Ross", "BR 03-92 Nightlum", "BR0392-IDC-CE/SRB",
+         "Automatic Cal. BR-CAL.302", "Ceramic", "Current Production", 3800),
+        ("Bell & Ross", "BR 05 Skeleton Blue", "BR05A-BLU-SKST/SST",
+         "Automatic Cal. BR-CAL.322", "Stainless Steel", "Current Production", 6200),
+        ("Bell & Ross", "BR V2-93 GMT Blue", "BRV293-BLU-ST/SST",
+         "Automatic Cal. BR-CAL.303", "Stainless Steel", "Current Production", 3200),
+        ("Bell & Ross", "BR 03-92 MA-1 Bomber Jacket", "BR0392-KHA-ST/SCA",
+         "Automatic Cal. BR-CAL.302", "Stainless Steel", "Special Edition", 3600),
+
+        # ── Longines (5) ──────────────────────────────────────────────────
+        ("Longines", "Spirit Zulu Time 42mm Blue", "L3.812.4.93.6",
+         "Automatic Cal. L844.2 (COSC)", "Stainless Steel", "Current Production", 2950),
+        ("Longines", "Spirit 40mm Green Dial", "L3.810.4.03.6",
+         "Automatic Cal. L888.4 (COSC)", "Stainless Steel", "Current Production", 2350),
+        ("Longines", "Legend Diver 42mm Bronze", "L3.774.1.50.2",
+         "Automatic Cal. L888.5", "Bronze", "Current Production", 2750),
+        ("Longines", "Legend Diver 36mm Blue", "L3.374.4.90.2",
+         "Automatic Cal. L592.4", "Stainless Steel", "Current Production", 2200),
+        ("Longines", "Ultra-Chron 43mm Diver Reissue", "L2.836.4.52.9",
+         "Automatic Cal. L836.6 Hi-Beat", "Stainless Steel", "Current Production", 3050),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Assemble full catalog
 # ---------------------------------------------------------------------------
@@ -1601,6 +1722,7 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_heritage_revival_watches())
     all_tuples.extend(_collector_expansion_watches())
     all_tuples.extend(_niche_independent_watches())
+    all_tuples.extend(_expanded_batch_premium_brands())
 
     catalog: list[dict] = []
     for brand, model, reference, movement, material, watch_type, price_eur in all_tuples:

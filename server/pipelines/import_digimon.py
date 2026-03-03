@@ -1,5 +1,5 @@
 """
-Import Digimon TCG card data (500+ items).
+Import Digimon TCG card data (550+ items).
 
 Layer 1 (Catalog):  Curated high-value cards → category_items
 Layer 2 (Prices):   Market prices → train.jsonl
@@ -62,7 +62,7 @@ def _rarity_score(rarity: str) -> float:
 # ---------------------------------------------------------------------------
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Digimon TCG catalog (500+ items) covering chase cards across all major sets.
+    """Curated Digimon TCG catalog (550+ items) covering chase cards across all major sets.
 
     Returns a list of dicts with keys:
         name, set_code, card_number, rarity, color, price_eur,
@@ -1273,6 +1273,121 @@ def get_curated_catalog() -> list[dict]:
          "Mega", "Bandai model kit, Amplified Magnamon"),
         ("Figure-rise Standard Amplified Susanoomon", "KIT", "FRS-SUS", "Rare", "Yellow", 55.00,
          "Mega", "Bandai model kit, Amplified Susanoomon"),
+
+        # =================================================================
+        # Batch 11 — Vital Bracelet DIM Cards, BT14-BT16 Alt Arts,
+        # S.H.Figuarts, Last Evolution Kizuna, Digivice Reproductions
+        # =================================================================
+
+        # ── Vital Bracelet DIM Cards (10) ────────────────────────────────
+        ("Vital Bracelet DIM Card: Imperialdramon", "VB", "DIM-IMP", "Super Rare", "Blue", 52.00,
+         "Item", "Vital Bracelet DIM card, Imperialdramon fighter/dragon/paladin modes"),
+        ("Vital Bracelet DIM Card: Omegamon", "VB", "DIM-OMG", "Secret Rare", "Red", 68.00,
+         "Item", "Vital Bracelet DIM card, Omegamon full evolution line"),
+        ("Vital Bracelet DIM Card: Alphamon", "VB", "DIM-ALP", "Secret Rare", "Black", 72.00,
+         "Item", "Vital Bracelet DIM card, Royal Knight Alphamon line"),
+        ("Vital Bracelet DIM Card: Jesmon", "VB", "DIM-JES", "Super Rare", "Red", 48.00,
+         "Item", "Vital Bracelet DIM card, Jesmon Sistermon line"),
+        ("Vital Bracelet DIM Card: Dukemon", "VB", "DIM-DKM", "Super Rare", "Red", 55.00,
+         "Item", "Vital Bracelet DIM card, Dukemon/Gallantmon evolution line"),
+        ("Vital Bracelet DIM Card: UlforceVeedramon", "VB", "DIM-UFV", "Super Rare", "Blue", 50.00,
+         "Item", "Vital Bracelet DIM card, V-mon royal knight line"),
+        ("Vital Bracelet DIM Card: Diaboromon", "VB", "DIM-DIA", "Secret Rare", "Black", 65.00,
+         "Item", "Vital Bracelet DIM card, movie villain Diaboromon line"),
+        ("Vital Bracelet DIM Card: Beelzemon", "VB", "DIM-BLZ", "Super Rare", "Purple", 52.00,
+         "Item", "Vital Bracelet DIM card, Tamers Beelzemon blast mode line"),
+        ("Vital Bracelet DIM Card: Craniummon", "VB", "DIM-CRN", "Rare", "Black", 38.00,
+         "Item", "Vital Bracelet DIM card, Royal Knight Craniummon line"),
+        ("Vital Bracelet DIM Card: Magnamon X-Antibody", "VB", "DIM-MGX", "Secret Rare", "Yellow", 75.00,
+         "Item", "Vital Bracelet DIM card, limited X-Antibody Magnamon"),
+
+        # ── BT14-BT16 Secret Rares & Alternate Arts (14) ────────────────
+        ("Omnimon Alter-S (Alt Art)", "BT14", "BT14-040", "Alt Art", "Black", 85.00,
+         "Mega", "BT14 Blast Ace secret rare alt art, Omnimon Alter-S"),
+        ("Gallantmon Crimson Mode (Alt Art)", "BT14", "BT14-041", "Alt Art", "Red", 78.00,
+         "Mega", "BT14 Blast Ace secret rare alt art, Gallantmon CM"),
+        ("Imperialdramon Fighter Mode (Alt Art)", "BT14", "BT14-035", "Alt Art", "Blue", 72.00,
+         "Mega", "BT14 Blast Ace secret rare alt art, Imperialdramon FM"),
+        ("ShineGreymon Burst Mode (Secret Rare)", "BT14", "BT14-042", "Secret Rare", "Red", 55.00,
+         "Mega", "BT14 Blast Ace secret rare, Data Squad ace"),
+        ("MirageGaogamon Burst Mode (Secret Rare)", "BT14", "BT14-043", "Secret Rare", "Blue", 48.00,
+         "Mega", "BT14 Blast Ace secret rare, DATS partner"),
+        ("Alphamon Ouryuken (Alt Art)", "BT15", "BT15-072", "Alt Art", "Black", 92.00,
+         "Mega", "BT15 Exceed Apocalypse alt art, Royal Knight premium"),
+        ("Omnimon X-Antibody (Secret Rare)", "BT15", "BT15-073", "Secret Rare", "Red", 65.00,
+         "Mega", "BT15 Exceed Apocalypse secret rare, X-Antibody chase"),
+        ("Jesmon GX (Alt Art)", "BT15", "BT15-074", "Alt Art", "Red", 70.00,
+         "Mega", "BT15 Exceed Apocalypse alt art, Jesmon ultimate form"),
+        ("Examon (Alt Art)", "BT15", "BT15-075", "Alt Art", "Green", 68.00,
+         "Mega", "BT15 Exceed Apocalypse alt art, dragon Royal Knight"),
+        ("Rafflesimon (Secret Rare)", "BT16", "BT16-045", "Secret Rare", "Green", 42.00,
+         "Mega", "BT16 Beginning Observer secret rare, plant mega"),
+        ("Susanoomon (Alt Art)", "BT16", "BT16-088", "Alt Art", "Yellow", 80.00,
+         "Mega", "BT16 Beginning Observer alt art, Frontier ultimate fusion"),
+        ("Lucemon Shadowlord Mode (Alt Art)", "BT16", "BT16-089", "Alt Art", "Purple", 75.00,
+         "Mega", "BT16 Beginning Observer alt art, Frontier final boss"),
+        ("Cherubimon Vice (Secret Rare)", "BT16", "BT16-046", "Secret Rare", "Black", 45.00,
+         "Mega", "BT16 Beginning Observer secret rare, dark angel"),
+        ("Kazemon & Zephyrmon (Alt Art)", "BT16", "BT16-090", "Alt Art", "Green", 58.00,
+         "Champion", "BT16 Beginning Observer alt art, Frontier spirit pair"),
+
+        # ── S.H.Figuarts Digimon Figures (8) ────────────────────────────
+        ("S.H.Figuarts WarGreymon (Our War Game!)", "SHF", "SHF-WGM", "Super Rare", "Red", 120.00,
+         "Mega", "Bandai S.H.Figuarts, WarGreymon Our War Game ver."),
+        ("S.H.Figuarts MetalGarurumon (Our War Game!)", "SHF", "SHF-MGR", "Super Rare", "Blue", 115.00,
+         "Mega", "Bandai S.H.Figuarts, MetalGarurumon Our War Game ver."),
+        ("S.H.Figuarts Omegamon (Premium Color)", "SHF", "SHF-OMG", "Secret Rare", "Red", 180.00,
+         "Mega", "Bandai S.H.Figuarts, Omegamon premium color edition"),
+        ("S.H.Figuarts Dukemon Gallantmon (Crimson Mode)", "SHF", "SHF-DKM", "Super Rare", "Red", 135.00,
+         "Mega", "Bandai S.H.Figuarts, Gallantmon Crimson Mode"),
+        ("S.H.Figuarts Imperialdramon Fighter Mode", "SHF", "SHF-IFM", "Super Rare", "Blue", 125.00,
+         "Mega", "Bandai S.H.Figuarts, Imperialdramon Fighter Mode"),
+        ("S.H.Figuarts Alphamon (Royal Knight)", "SHF", "SHF-ALP", "Secret Rare", "Black", 160.00,
+         "Mega", "Bandai S.H.Figuarts, Royal Knight Alphamon"),
+        ("S.H.Figuarts Diablomon (Diaboromon)", "SHF", "SHF-DBM", "Super Rare", "Black", 110.00,
+         "Mega", "Bandai S.H.Figuarts, movie villain Diaboromon"),
+        ("S.H.Figuarts Angemon", "SHF", "SHF-ANG", "Rare", "Yellow", 85.00,
+         "Champion", "Bandai S.H.Figuarts, Angemon from Adventure"),
+
+        # ── Digimon Adventure Last Evolution Kizuna Merch (8) ────────────
+        ("Last Evolution Kizuna Tri-Color DIM Card Set", "VB", "DIM-KIZ", "Secret Rare", "Red", 95.00,
+         "Item", "Limited DIM card set, Kizuna movie-exclusive partner Digimon"),
+        ("Last Evolution Kizuna Premium Blu-ray Box", "MERCH", "KIZUNA-BD", "Super Rare", "Red", 85.00,
+         "Item", "Limited edition Blu-ray box, movie + special features"),
+        ("Last Evolution Kizuna Clear Poster Set (6pc)", "MERCH", "KIZUNA-PST", "Rare", "Red", 35.00,
+         "Item", "Clear file poster set, all 6 original chosen children"),
+        ("Last Evolution Kizuna Agumon Nendoroid", "MERCH", "KIZUNA-AGU", "Super Rare", "Red", 65.00,
+         "Item", "Good Smile Company Nendoroid, Kizuna ver. Agumon"),
+        ("Last Evolution Kizuna Gabumon Nendoroid", "MERCH", "KIZUNA-GAB", "Super Rare", "Blue", 65.00,
+         "Item", "Good Smile Company Nendoroid, Kizuna ver. Gabumon"),
+        ("Last Evolution Kizuna Original Soundtrack LP", "MERCH", "KIZUNA-LP", "Rare", "Red", 55.00,
+         "Item", "Vinyl LP, butter-fly memorial + Kizuna score"),
+        ("Last Evolution Kizuna Memorial Art Book", "MERCH", "KIZUNA-ART", "Rare", "Red", 45.00,
+         "Item", "Hardcover art book, 20th anniversary key visuals"),
+        ("Last Evolution Kizuna Wristwatch (Agumon)", "MERCH", "KIZUNA-WCH", "Super Rare", "Red", 120.00,
+         "Item", "Limited numbered wristwatch, Adventure 20th anniversary"),
+
+        # ── Digivice Reproductions (10) ──────────────────────────────────
+        ("Digivice: (Original 1999 Reproduction)", "DEVICE", "DV-OG99", "Secret Rare", "Red", 95.00,
+         "Item", "Bandai 1999 Digivice reproduction, Adventure original 8 colors"),
+        ("Digivice: D-3 Reproduction (Motomiya Daisuke Ver.)", "DEVICE", "DV-D3D", "Super Rare", "Blue", 80.00,
+         "Item", "Bandai D-3 Digivice reproduction, 02 Daisuke blue"),
+        ("Digivice: D-3 Reproduction (Ichijouji Ken Ver.)", "DEVICE", "DV-D3K", "Super Rare", "Black", 80.00,
+         "Item", "Bandai D-3 Digivice reproduction, 02 Ken dark ver."),
+        ("Digivice: D-Tector Reproduction (Takuya Ver.)", "DEVICE", "DV-DTK", "Super Rare", "Red", 85.00,
+         "Item", "Bandai D-Tector Digivice reproduction, Frontier Takuya"),
+        ("Digivice: D-Tector Reproduction (Koji Ver.)", "DEVICE", "DV-DTJ", "Super Rare", "Blue", 85.00,
+         "Item", "Bandai D-Tector Digivice reproduction, Frontier Koji"),
+        ("Digivice: D-Ark Reproduction (Takato Ver.)", "DEVICE", "DV-DAT", "Super Rare", "Red", 88.00,
+         "Item", "Bandai D-Ark Digivice reproduction, Tamers Takato"),
+        ("Digivice: D-Ark Reproduction (Henry Ver.)", "DEVICE", "DV-DAH", "Super Rare", "Green", 88.00,
+         "Item", "Bandai D-Ark Digivice reproduction, Tamers Henry"),
+        ("Digivice: Ver. Complete (CSA)", "DEVICE", "DV-CSA", "Secret Rare", "White", 130.00,
+         "Item", "Complete Selection Animation, full-size with sounds"),
+        ("Digivice: D-3 Ver. Complete (CSA)", "DEVICE", "DV-D3C", "Secret Rare", "Blue", 140.00,
+         "Item", "Complete Selection Animation D-3, 02 full-size replica"),
+        ("Digivice: D-Power Ver. Complete (CSA)", "DEVICE", "DV-DPC", "Secret Rare", "Red", 145.00,
+         "Item", "Complete Selection Animation D-Power, Tamers full-size replica"),
     ]
 
     catalog = []

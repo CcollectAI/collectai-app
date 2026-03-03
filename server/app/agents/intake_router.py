@@ -550,6 +550,34 @@ async def intake_save(
         item_id, user_id, payload.category,
     )
 
+    # Award XP for scan+save (best-effort, slightly more than manual add)
+    try:
+        from app.features.gamification_router import record_activity_xp
+        async with get_conn() as conn2:
+            scan_count = await conn2.fetchval(
+                "SELECT COUNT(*) FROM items WHERE user_id = $1::uuid",
+                user_id,
+            )
+            achievement_checks = []
+            scan_milestones = [
+                (1, "scanner_1"), (5, "scanner_5"),
+                (10, "scanner_10"), (25, "scanner_25"),
+            ]
+            for threshold, ach_id in scan_milestones:
+                if scan_count >= threshold:
+                    achievement_checks.append((ach_id, scan_count))
+            collector_milestones = [
+                (5, "collector_5"), (10, "collector_10"),
+                (25, "collector_25"), (50, "collector_50"),
+                (100, "collector_100"),
+            ]
+            for threshold, ach_id in collector_milestones:
+                if scan_count >= threshold:
+                    achievement_checks.append((ach_id, scan_count))
+            await record_activity_xp(conn2, user_id, 15, achievement_checks or None)
+    except Exception:
+        logger.debug("[intake/save] Gamification XP award failed (non-critical)")
+
     # Record demand signal with geo — strongest signal: user committed to adding this item
     try:
         from app.features.data_moat import record_demand_signal, get_user_geo

@@ -1,7 +1,7 @@
 """
 Import Scale Model Kits catalog.
 
-Layer 1 (Catalog):  Curated scale model kits (210+ items) → category_items
+Layer 1 (Catalog):  Curated scale model kits (619+ items) → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
 Covers:
@@ -39,7 +39,7 @@ CATEGORY = "scale_models"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated scale model kit catalog — 210 items across 7 subcategories."""
+    """Curated scale model kit catalog — 619 items across 7 subcategories."""
 
     # (manufacturer, model_type, name, scale, rarity_tier, price_eur)
     # rarity_tier: grail (>150), high (80-150), mid (40-80), standard (<40)
@@ -829,6 +829,68 @@ def get_curated_catalog() -> list[dict]:
         ("Matchbox", "Aircraft", "Handley Page 0/400", "1/72", "high", 75),
         ("Frog", "Aircraft", "Bristol Beaufighter TF.X", "1/72", "high", 80),
         ("Airfix", "Aircraft", "Avro Lancaster B.I (Vintage Classic)", "1/72", "mid", 45),
+
+        # ── Tamiya 1/35 Military — Additional Armor ─────────────────────
+        ("Tamiya", "Armor", "Tiger I Early Production (Afrika Korps)", "1/35", "mid", 55),
+        ("Tamiya", "Armor", "Panther Ausf.D (Battle of Kursk)", "1/35", "mid", 52),
+        ("Tamiya", "Armor", "M1A2 Abrams (Operation Iraqi Freedom)", "1/35", "mid", 68),
+        ("Tamiya", "Armor", "T-72M1 (Modern Russian MBT)", "1/35", "mid", 48),
+        ("Tamiya", "Armor", "Churchill Mk.VII", "1/35", "mid", 45),
+        ("Tamiya", "Armor", "Type 90 Tank (JGSDF)", "1/35", "mid", 55),
+        ("Tamiya", "Armor", "Cromwell Mk.IV", "1/35", "mid", 42),
+        ("Tamiya", "Armor", "M26 Pershing (T26E3)", "1/35", "mid", 48),
+
+        # ── Trumpeter 1/350 Ships ────────────────────────────────────────
+        ("Trumpeter", "Ship", "Bismarck (German Battleship)", "1/350", "high", 120),
+        ("Trumpeter", "Ship", "Yamato (IJN Battleship)", "1/350", "high", 140),
+        ("Trumpeter", "Ship", "USS Iowa BB-61", "1/350", "high", 130),
+        ("Trumpeter", "Ship", "HMS Hood (British Battlecruiser)", "1/350", "high", 110),
+        ("Trumpeter", "Ship", "USS Enterprise CV-6", "1/350", "grail", 180),
+        ("Trumpeter", "Ship", "Tirpitz (German Battleship)", "1/350", "high", 125),
+        ("Trumpeter", "Ship", "Admiral Kuznetsov (Russian Carrier)", "1/350", "high", 135),
+        ("Trumpeter", "Ship", "USS Missouri BB-63", "1/350", "high", 130),
+
+        # ── Airfix 1/72 Aircraft ─────────────────────────────────────────
+        ("Airfix", "Aircraft", "Supermarine Spitfire Mk.Vb", "1/72", "standard", 18),
+        ("Airfix", "Aircraft", "Avro Lancaster B.III (Dambusters)", "1/72", "mid", 48),
+        ("Airfix", "Aircraft", "de Havilland Mosquito B.XVI", "1/72", "mid", 40),
+        ("Airfix", "Aircraft", "Hawker Hurricane Mk.I", "1/72", "standard", 15),
+        ("Airfix", "Aircraft", "Avro Vulcan B.2", "1/72", "high", 95),
+        ("Airfix", "Aircraft", "BAe Harrier GR.9", "1/72", "mid", 35),
+        ("Airfix", "Aircraft", "Handley Page Halifax B.III", "1/72", "mid", 55),
+        ("Airfix", "Aircraft", "Bristol Blenheim Mk.IV", "1/72", "standard", 28),
+
+        # ── Revell 1/72 Aircraft ─────────────────────────────────────────
+        ("Revell", "Aircraft", "F-14A Tomcat (Top Gun)", "1/72", "mid", 35),
+        ("Revell", "Aircraft", "SR-71A Blackbird", "1/72", "mid", 42),
+        ("Revell", "Aircraft", "B-17G Flying Fortress", "1/72", "mid", 55),
+        ("Revell", "Aircraft", "Eurofighter Typhoon", "1/72", "standard", 25),
+        ("Revell", "Aircraft", "F/A-18E Super Hornet", "1/72", "standard", 22),
+        ("Revell", "Aircraft", "Heinkel He 111 H-6", "1/72", "mid", 38),
+
+        # ── Meng Models ──────────────────────────────────────────────────
+        ("Meng Model", "Armor", "Sd.Kfz.171 Panther Ausf.A (Late)", "1/35", "high", 82),
+        ("Meng Model", "Armor", "PLA ZTQ-15 Light Tank", "1/35", "mid", 65),
+        ("Meng Model", "Armor", "M2A3 Bradley IFV w/ BUSK III", "1/35", "mid", 70),
+        ("Meng Model", "Armor", "Leopard 2A7+ (German MBT)", "1/35", "high", 85),
+        ("Meng Model", "SD Cute", "World War Toons Sherman (SD)", "SD", "standard", 18),
+        ("Meng Model", "SD Cute", "World War Toons Tiger I (SD)", "SD", "standard", 18),
+        ("Meng Model", "SD Cute", "World War Toons P-51 Mustang (SD)", "SD", "standard", 16),
+
+        # ── Takom 1/35 WWI/WWII ──────────────────────────────────────────
+        ("Takom", "Armor", "Mk.IV Male WWI Tank", "1/35", "mid", 55),
+        ("Takom", "Armor", "St. Chamond French Heavy Tank (WWI)", "1/35", "mid", 52),
+        ("Takom", "Armor", "Panzer III Ausf.M w/ Schürzen", "1/35", "mid", 48),
+        ("Takom", "Armor", "Jagdpanther G1 Early Production", "1/35", "mid", 58),
+        ("Takom", "Armor", "Chieftain Mk.10 (British MBT)", "1/35", "mid", 60),
+
+        # ── Rye Field Model 1/35 ─────────────────────────────────────────
+        ("RFM (Rye Field Model)", "Armor", "Tiger I Late Production w/ Zimmerit & Full Interior", "1/35", "high", 95),
+        ("RFM (Rye Field Model)", "Armor", "Panzer IV Ausf.J Late w/ Full Interior", "1/35", "high", 88),
+        ("RFM (Rye Field Model)", "Armor", "M4A3E8 Sherman w/ Workable Track Links", "1/35", "mid", 55),
+        ("RFM (Rye Field Model)", "Armor", "Leopard 2A6 Main Battle Tank w/ Full Interior", "1/35", "high", 90),
+        ("RFM (Rye Field Model)", "Armor", "T-34/85 Model 1944 No.174 Factory", "1/35", "mid", 48),
+        ("RFM (Rye Field Model)", "Armor", "Sturmtiger w/ Full Interior", "1/35", "high", 85),
     ]
 
     catalog = []

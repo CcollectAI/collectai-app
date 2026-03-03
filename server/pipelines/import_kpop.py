@@ -792,6 +792,83 @@ def get_curated_catalog() -> list[dict]:
         ("RIIZE", "photocard", "Shotaro POB Photocard", "Pre-order Benefit", "mid", 45),
         ("RIIZE", "photocard", "RIIZE Standard Photocard", "Standard", "standard", 8),
         ("RIIZE", "merch", "RIIZE Official Lightstick", "Official", "mid", 48),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # NewJeans — Albums, Photocards & Merch
+        # ═══════════════════════════════════════════════════════════════════
+        ("NewJeans", "album", "NewJeans 'Get Up' Bunny Edition", "Bunny Edition", "high", 85),
+        ("NewJeans", "album", "NewJeans 'Get Up' The POWERPUFF GIRLS x NJ Box Ver.", "Powerpuff Collab", "high", 95),
+        ("NewJeans", "album", "NewJeans 'How Sweet' Weverse Albums Ver.", "Weverse Exclusive", "mid", 35),
+        ("NewJeans", "album", "NewJeans 'How Sweet' Standard", "Standard", "standard", 18),
+        ("NewJeans", "album", "NewJeans 'Super Shy' Single CD", "Japanese Edition", "mid", 30),
+        ("NewJeans", "photocard", "Minji Fansign Photocard", "Fansign Event", "grail", 380),
+        ("NewJeans", "photocard", "Hanni Super Shy Lucky Draw", "Lucky Draw", "grail", 350),
+        ("NewJeans", "photocard", "Haerin Get Up POB", "Pre-order Benefit", "high", 110),
+        ("NewJeans", "merch", "NewJeans Bunnies Official Plush Set (5pc)", "Official", "high", 120),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # LE SSERAFIM — Albums & Photocards
+        # ═══════════════════════════════════════════════════════════════════
+        ("LE SSERAFIM", "album", "LE SSERAFIM 'UNFORGIVEN' Limited Compact Ver.", "Compact Limited", "high", 90),
+        ("LE SSERAFIM", "album", "LE SSERAFIM 'EASY' Vol. 1", "Standard", "standard", 20),
+        ("LE SSERAFIM", "album", "LE SSERAFIM 'EASY' Weverse Albums Ver.", "Weverse Exclusive", "mid", 32),
+        ("LE SSERAFIM", "photocard", "Kazuha UNFORGIVEN Fansign", "Fansign Event", "grail", 320),
+        ("LE SSERAFIM", "photocard", "Sakura EASY Lucky Draw", "Lucky Draw", "high", 150),
+        ("LE SSERAFIM", "merch", "LE SSERAFIM Official Lightstick", "Official", "mid", 52),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # ILLIT — Debut
+        # ═══════════════════════════════════════════════════════════════════
+        ("ILLIT", "album", "ILLIT 'SUPER REAL ME' 1st Mini Album", "Standard", "standard", 18),
+        ("ILLIT", "album", "ILLIT 'SUPER REAL ME' Weverse Albums Ver.", "Weverse Exclusive", "mid", 30),
+        ("ILLIT", "photocard", "Wonhee SUPER REAL ME POB", "Pre-order Benefit", "mid", 45),
+        ("ILLIT", "photocard", "Minju Lucky Draw Photocard", "Lucky Draw", "high", 120),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # BABYMONSTER — Debut
+        # ═══════════════════════════════════════════════════════════════════
+        ("BABYMONSTER", "album", "BABYMONSTER 'DRIP' 1st Mini Album", "Standard", "standard", 20),
+        ("BABYMONSTER", "album", "BABYMONSTER 'DRIP' YG Tag Album", "YG Tag Ver.", "mid", 28),
+        ("BABYMONSTER", "photocard", "Ahyeon Debut Fansign", "Fansign Event", "grail", 280),
+        ("BABYMONSTER", "photocard", "Ruka Lucky Draw Photocard", "Lucky Draw", "high", 100),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # TWS — Debut
+        # ═══════════════════════════════════════════════════════════════════
+        ("TWS", "album", "TWS 'Sparkling Blue' 1st Mini Album", "Standard", "standard", 18),
+        ("TWS", "album", "TWS 'Sparkling Blue' Weverse Albums Ver.", "Weverse Exclusive", "mid", 28),
+        ("TWS", "photocard", "Shinyu Fansign Photocard", "Fansign Event", "high", 150),
+        ("TWS", "photocard", "Dohoon POB Photocard", "Pre-order Benefit", "mid", 40),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # ZEROBASEONE — Additional Versions
+        # ═══════════════════════════════════════════════════════════════════
+        ("ZEROBASEONE", "album", "ZEROBASEONE 'Melting Point' Fairytale Ver.", "Fairytale Ver.", "mid", 35),
+        ("ZEROBASEONE", "album", "ZEROBASEONE 'Melting Point' Loyalty Ver.", "Loyalty Ver.", "mid", 35),
+        ("ZEROBASEONE", "album", "ZEROBASEONE 'Melting Point' Fascination Ver.", "Fascination Ver.", "mid", 35),
+        ("ZEROBASEONE", "photocard", "Sung Hanbin Melting Point Fansign", "Fansign Event", "grail", 300),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # BOYNEXTDOOR — Albums
+        # ═══════════════════════════════════════════════════════════════════
+        ("BOYNEXTDOOR", "album", "BOYNEXTDOOR 'WHO!' 1st Single", "Standard", "standard", 18),
+        ("BOYNEXTDOOR", "album", "BOYNEXTDOOR 'WHY..' 2nd EP", "Standard", "standard", 20),
+        ("BOYNEXTDOOR", "photocard", "Sungho Fansign Photocard", "Fansign Event", "high", 130),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Xikers — Albums & Photocards
+        # ═══════════════════════════════════════════════════════════════════
+        ("Xikers", "album", "xikers 'HOUSE OF TRICKY: Doorbell Ringing'", "Standard", "standard", 18),
+        ("Xikers", "album", "xikers 'HOUSE OF TRICKY: How to Play'", "Standard", "standard", 18),
+        ("Xikers", "photocard", "Xikers Minjae Lucky Draw", "Lucky Draw", "high", 90),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Kiss of Life — Albums
+        # ═══════════════════════════════════════════════════════════════════
+        ("Kiss of Life", "album", "Kiss of Life 'Midas Touch' 1st Mini Album", "Standard", "standard", 18),
+        ("Kiss of Life", "album", "Kiss of Life 'Born to be XX' 2nd Mini Album", "Standard", "standard", 20),
+        ("Kiss of Life", "photocard", "Natty Midas Touch Lucky Draw", "Lucky Draw", "high", 110),
+        ("Kiss of Life", "photocard", "Julie Born to be XX POB", "Pre-order Benefit", "mid", 45),
     ]
 
     catalog = []

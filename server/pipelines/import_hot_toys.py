@@ -692,6 +692,96 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
+
+    catalog.extend(_batch_premium_figures_2025())
+    return catalog
+
+
+def _batch_premium_figures_2025() -> list[dict]:
+    """Batch 8 — Cosbaby expansion, 1/4 scale, MMS Diecast, Mandalorian,
+    Spider-Verse, Deadpool & Wolverine. ~50 items."""
+
+    items = [
+        # Hot Toys Cosbaby — Avengers (expanded)
+        ("Hot Toys", "Marvel MCU", "Avengers Endgame Iron Man Mark LXXXV Cosbaby", "Cosbaby", "standard", 28),
+        ("Hot Toys", "Marvel MCU", "Avengers Endgame Captain America Worthy Cosbaby", "Cosbaby", "standard", 28),
+        ("Hot Toys", "Marvel MCU", "Avengers Endgame Thor Fat Thor Cosbaby", "Cosbaby", "standard", 25),
+        ("Hot Toys", "Marvel MCU", "Avengers Endgame Nebula Cosbaby", "Cosbaby", "standard", 22),
+        ("Hot Toys", "Marvel MCU", "Avengers Endgame Rocket Raccoon Cosbaby", "Cosbaby", "standard", 22),
+        ("Hot Toys", "Marvel MCU", "She-Hulk Attorney at Law Cosbaby", "Cosbaby", "standard", 22),
+
+        # Hot Toys Cosbaby — Star Wars (expanded)
+        ("Hot Toys", "Star Wars", "The Mandalorian Din Djarin Cosbaby", "Cosbaby", "standard", 25),
+        ("Hot Toys", "Star Wars", "Grogu The Child with Pram Cosbaby", "Cosbaby", "standard", 28),
+        ("Hot Toys", "Star Wars", "Ahsoka Tano (Ahsoka Series) Cosbaby", "Cosbaby", "standard", 25),
+        ("Hot Toys", "Star Wars", "Bo-Katan Kryze Cosbaby", "Cosbaby", "standard", 22),
+        ("Hot Toys", "Star Wars", "Darth Maul (Phantom Menace) Cosbaby", "Cosbaby", "standard", 25),
+
+        # Hot Toys 1/4 Scale — Iron Man
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark LXXXV 1/4 Scale (Endgame)", "1/4 Figure", "grail", 1200),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark L 1/4 Scale (Infinity War)", "1/4 Figure", "grail", 1100),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark III 1/4 Scale Deluxe", "1/4 Figure", "grail", 1300),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark XLVI 1/4 Scale (Civil War)", "1/4 Figure", "grail", 1150),
+
+        # Hot Toys 1/4 Scale — Thanos & Others
+        ("Hot Toys", "Marvel MCU", "Thanos 1/4 Scale (Endgame Battle Damaged)", "1/4 Figure", "grail", 1400),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Integrated Suit) 1/4 Scale", "1/4 Figure", "grail", 900),
+        ("Hot Toys", "DC", "Batman (The Dark Knight) 1/4 Scale", "1/4 Figure", "grail", 1100),
+        ("Hot Toys", "DC", "Joker (The Dark Knight) 1/4 Scale", "1/4 Figure", "grail", 1050),
+
+        # Movie Masterpiece Diecast — War Machine / Iron Patriot
+        ("Hot Toys", "Marvel MCU", "War Machine Mark IV MMS Diecast (Endgame)", "1/6 Figure", "high", 580),
+        ("Hot Toys", "Marvel MCU", "War Machine Mark VI MMS Diecast (Armor Wars)", "1/6 Figure", "high", 600),
+        ("Hot Toys", "Marvel MCU", "Iron Patriot MMS Diecast (Endgame)", "1/6 Figure", "high", 560),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark XLVII MMS Diecast (Homecoming)", "1/6 Figure", "high", 550),
+        ("Hot Toys", "Marvel MCU", "Iron Man Nanotech Suit MMS Diecast (Infinity War)", "1/6 Figure", "high", 570),
+
+        # The Mandalorian — Full Line
+        ("Hot Toys", "Star Wars", "Din Djarin (Mandalorian S3 New Armor)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Star Wars", "Grogu 1/6 Scale (Season 3)", "1/6 Figure", "mid", 280),
+        ("Hot Toys", "Star Wars", "Bo-Katan Kryze (Mandalorian S3)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Moff Gideon (Beskar Armor)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Star Wars", "The Armorer (Mandalorian)", "1/6 Figure", "mid", 390),
+        ("Hot Toys", "Star Wars", "Paz Vizsla Heavy Infantry (Mandalorian)", "1/6 Figure", "high", 500),
+
+        # Across the Spider-Verse
+        ("Hot Toys", "Marvel Spider-Verse", "Miles Morales (Across the Spider-Verse)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Marvel Spider-Verse", "Spider-Gwen (Across the Spider-Verse)", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Marvel Spider-Verse", "Spider-Man 2099 Miguel O'Hara", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Marvel Spider-Verse", "Spider-Punk Hobie Brown", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Marvel Spider-Verse", "The Spot (Across the Spider-Verse)", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Marvel Spider-Verse", "Scarlet Spider Ben Reilly (Spider-Verse)", "1/6 Figure", "mid", 370),
+
+        # Deadpool & Wolverine
+        ("Hot Toys", "Marvel MCU", "Deadpool (Deadpool & Wolverine)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Marvel MCU", "Wolverine (Deadpool & Wolverine)", "1/6 Figure", "mid", 430),
+        ("Hot Toys", "Marvel MCU", "Lady Deadpool (Deadpool & Wolverine)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Marvel MCU", "Dogpool (Deadpool & Wolverine)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Marvel MCU", "Cassandra Nova (Deadpool & Wolverine)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Marvel MCU", "Nicepool (Deadpool & Wolverine)", "1/6 Figure", "mid", 370),
+
+        # Additional Hot Toys — Recent MCU
+        ("Hot Toys", "Marvel MCU", "Kang the Conqueror (Quantumania)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Marvel MCU", "Namor (Black Panther Wakanda Forever)", "1/6 Figure", "mid", 390),
+        ("Hot Toys", "Marvel MCU", "Shuri Black Panther Suit (Wakanda Forever)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Marvel MCU", "Loki (Season 2 Finale God of Stories)", "1/6 Figure", "mid", 410),
+
+        # Additional Hot Toys — DC
+        ("Hot Toys", "DC", "The Flash (The Flash 2023)", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "DC", "Batman (Ben Affleck The Flash 2023)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "DC", "Aquaman (Aquaman and the Lost Kingdom)", "1/6 Figure", "mid", 380),
+    ]
+
+    catalog = []
+    for brand, franchise, name, figure_type, tier, price in items:
+        catalog.append({
+            "brand": brand,
+            "franchise": franchise,
+            "name": name,
+            "figure_type": figure_type,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
     return catalog
 
 

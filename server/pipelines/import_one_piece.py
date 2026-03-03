@@ -757,6 +757,9 @@ def get_curated_catalog() -> list[dict]:
         ("Gashapon", "Gear 5 Luffy", "Capsule Figure Swing Collection", "standard", 15),
     ]
 
+    # ── Expansion Batch 6 — 50 more One Piece collectibles ──
+    items += _expanded_batch_6()
+
     catalog = []
     for line, name, variant, tier, price in items:
         catalog.append({
@@ -767,6 +770,71 @@ def get_curated_catalog() -> list[dict]:
             "price_eur": price,
         })
     return catalog
+
+
+def _expanded_batch_6() -> list[tuple]:
+    """50 additional One Piece collectibles — P.O.P., Figuarts, Card Game ultra rares, Ichiban Kuji, DXF, Banpresto WCF."""
+    return [
+        # ── P.O.P. (Portrait of Pirates) — Premium Figures ──
+        ("P.O.P.", "Monkey D. Luffy", "Gear 5 Nika SA-MAXIMUM", "grail", 320),
+        ("P.O.P.", "Yamato", "Warriors Alliance Limited Edition", "grail", 280),
+        ("P.O.P.", "Kaido", "Dragon Form SA-MAXIMUM", "grail", 350),
+        ("P.O.P.", "Red-Haired Shanks", "Playback Memories", "grail", 260),
+        ("P.O.P.", "Roronoa Zoro", "SA-MAXIMUM Wano Country Enma", "high", 180),
+        ("P.O.P.", "Boa Hancock", "Limited Edition ver.BB_02", "high", 200),
+        ("P.O.P.", "Trafalgar Law", "SA-MAXIMUM Room Shambles", "high", 190),
+        ("P.O.P.", "Nami", "Playback Memories Arlong Park", "high", 170),
+        ("P.O.P.", "Portgas D. Ace", "NEO-DX 10th Limited Ver.", "grail", 400),
+        ("P.O.P.", "Carrot", "Sulong Form Limited Edition", "high", 160),
+        ("P.O.P.", "Sanji", "SA-MAXIMUM Ifrit Jambe", "high", 175),
+        ("P.O.P.", "Nico Robin", "Playback Memories Miss All Sunday", "high", 165),
+
+        # ── Figuarts ZERO — Extra Battle / Statue Line ──
+        ("Figuarts ZERO", "Luffy", "Gear 5 Extra Battle Drum of Liberation", "high", 130),
+        ("Figuarts ZERO", "Kaido", "Extra Battle King of the Beasts Dragon Form", "high", 145),
+        ("Figuarts ZERO", "Roronoa Zoro", "Extra Battle King of Hell Three-Sword Style", "high", 125),
+        ("Figuarts ZERO", "Yamato", "Extra Battle Okuchi-no-Makami", "high", 135),
+        ("Figuarts ZERO", "Sanji", "Extra Battle Diable Jambe Premier Hache", "high", 120),
+        ("Figuarts ZERO", "Trafalgar Law", "Extra Battle Gamma Knife", "high", 115),
+        ("Figuarts ZERO", "Big Mom", "Extra Battle Charlotte Linlin", "high", 140),
+
+        # ── One Piece Card Game — Ultra Rares / Manga Art ──
+        ("OP Card Game", "Monkey D. Luffy", "OP05-119 Manga Rare Gear 5", "grail", 280),
+        ("OP Card Game", "Portgas D. Ace", "OP02-013 Alternate Art Leader", "grail", 220),
+        ("OP Card Game", "Roronoa Zoro", "OP01-025 Comic Art Secret Rare", "grail", 250),
+        ("OP Card Game", "Yamato", "OP04-112 Manga Rare", "high", 150),
+        ("OP Card Game", "Boa Hancock", "OP03-114 Secret Rare Alternate Art", "high", 180),
+        ("OP Card Game", "Shanks", "OP01-120 Secret Rare Film Red", "grail", 300),
+        ("OP Card Game", "Nami", "OP01-016 Alternate Art SP", "high", 140),
+        ("OP Card Game", "Uta", "OP02-120 Secret Rare Film Red", "high", 120),
+        ("OP Card Game", "Enel", "OP05-098 Secret Rare Thunder God", "high", 110),
+        ("OP Card Game", "Trafalgar Law", "OP04-099 Comic Art Secret Rare", "high", 160),
+
+        # ── Ichiban Kuji — Last One / A Prize Figures ──
+        ("Ichiban Kuji", "Luffy", "Film Red A Prize Gear 5", "high", 95),
+        ("Ichiban Kuji", "Shanks", "Film Red Last One Prize", "grail", 200),
+        ("Ichiban Kuji", "Uta", "Film Red B Prize Full Figure", "high", 80),
+        ("Ichiban Kuji", "Kaido", "Wano Country Last One Prize Dragon", "grail", 180),
+        ("Ichiban Kuji", "Yamato", "Wano Country A Prize Thunder Bagua", "high", 90),
+        ("Ichiban Kuji", "Roronoa Zoro", "EX Devils Vol. 2 Last One Ashura", "grail", 170),
+        ("Ichiban Kuji", "Luffy", "Legends Over Time A Prize Joy Boy", "high", 85),
+        ("Ichiban Kuji", "Ace", "Memorial Vow Last One Prize", "grail", 190),
+
+        # ── DXF / Grandline Men Series ──
+        ("DXF", "Monkey D. Luffy", "The Grandline Men Wano Country Vol. 1", "mid", 35),
+        ("DXF", "Roronoa Zoro", "The Grandline Men Wano Country Vol. 2", "mid", 35),
+        ("DXF", "Sanji", "The Grandline Men Wano Country Vol. 3", "mid", 32),
+        ("DXF", "Yamato", "The Grandline Lady Wano Country Vol. 6", "mid", 38),
+        ("DXF", "Nico Robin", "The Grandline Lady Wano Country Vol. 5", "mid", 35),
+
+        # ── Banpresto World Colosseum Figures ──
+        ("BWFC", "Monkey D. Luffy", "World Colosseum 2 Champion Gear 4", "high", 95),
+        ("BWFC", "Roronoa Zoro", "World Colosseum 2 Vol. 1 Santoryu", "high", 85),
+        ("BWFC", "Portgas D. Ace", "World Colosseum Vol. 6 Fire Fist", "high", 90),
+        ("BWFC", "Trafalgar Law", "World Colosseum 2 Vol. 6 Room", "high", 80),
+        ("BWFC", "Sanji", "World Colosseum Vol. 2 Diable Jambe", "high", 75),
+        ("BWFC", "Boa Hancock", "World Colosseum 2 Vol. 5 Love Hurricane", "high", 88),
+    ]
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

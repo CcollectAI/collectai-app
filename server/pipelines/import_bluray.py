@@ -694,6 +694,72 @@ def get_curated_catalog() -> list[dict]:
         # ── Best Buy Exclusive (Additional) ──────────────────────────────
         ("Best Buy Exclusive", "Gladiator II", "4K UHD", "Best Buy Steelbook", "mid", 38),
         ("Best Buy Exclusive", "Alien: Romulus", "4K UHD", "Best Buy Steelbook", "mid", 40),
+
+        # ── Expansion Batch — 4K Steelbook Franchise Editions ────────────
+        ("Steelbook", "The Lord of the Rings: Fellowship (Extended)", "4K UHD", "WB Steelbook", "high", 65),
+        ("Steelbook", "The Lord of the Rings: Two Towers (Extended)", "4K UHD", "WB Steelbook", "high", 65),
+        ("Steelbook", "The Lord of the Rings: Return of the King (Extended)", "4K UHD", "WB Steelbook", "high", 65),
+        ("Steelbook", "The Lord of the Rings: 4K Trilogy Box Set", "4K UHD", "WB Steelbook Box Set", "grail", 180),
+        ("Steelbook", "The Dark Knight Trilogy 4K Box Set", "4K UHD", "WB Steelbook Box Set", "grail", 160),
+        ("Steelbook", "Batman (1989) 4K Steelbook", "4K UHD", "WB Steelbook", "mid", 48),
+        ("Steelbook", "Batman Returns 4K Steelbook", "4K UHD", "WB Steelbook", "mid", 45),
+        ("Steelbook", "Blade Runner: The Final Cut 4K Steelbook", "4K UHD", "WB Steelbook", "high", 60),
+        ("Steelbook", "Blade Runner 2049 4K Steelbook", "4K UHD", "WB Steelbook", "mid", 52),
+        ("Steelbook", "Alien 4K Steelbook (40th Anniversary)", "4K UHD", "Fox Steelbook", "high", 60),
+        ("Steelbook", "Aliens 4K Steelbook", "4K UHD", "Fox Steelbook", "mid", 50),
+        ("Steelbook", "Indiana Jones 4-Film 4K Steelbook Collection", "4K UHD", "Paramount Steelbook Box Set", "grail", 170),
+
+        # ── Criterion Collection — Kurosawa ──────────────────────────────
+        ("Criterion", "Rashomon", "Blu-ray", "Criterion #138", "standard", 26),
+        ("Criterion", "Ikiru", "Blu-ray", "Criterion #221", "standard", 28),
+        ("Criterion", "Yojimbo / Sanjuro (Double Feature)", "Blu-ray", "Criterion Box Set", "mid", 45),
+        ("Criterion", "Throne of Blood", "Blu-ray", "Criterion #190", "standard", 28),
+        ("Criterion", "High and Low", "Blu-ray", "Criterion #24", "standard", 30),
+        ("Criterion", "Ran", "4K UHD", "Criterion 4K", "mid", 40),
+
+        # ── Criterion Collection — Bergman ───────────────────────────────
+        ("Criterion", "Ingmar Bergman's Cinema (Box Set)", "Blu-ray", "Criterion Box Set", "grail", 220),
+        ("Criterion", "The Seventh Seal", "Blu-ray", "Criterion #11", "standard", 26),
+        ("Criterion", "Wild Strawberries", "Blu-ray", "Criterion #139", "standard", 26),
+        ("Criterion", "Fanny and Alexander", "Blu-ray", "Criterion #261", "standard", 30),
+
+        # ── Criterion Collection — Tarkovsky ─────────────────────────────
+        ("Criterion", "Andrei Rublev", "Blu-ray", "Criterion #34", "standard", 30),
+        ("Criterion", "Solaris (1972)", "Blu-ray", "Criterion #164", "standard", 30),
+        ("Criterion", "Mirror", "Blu-ray", "Criterion #1047", "standard", 28),
+        ("Criterion", "The Sacrifice", "Blu-ray", "Criterion #1059", "standard", 28),
+
+        # ── Criterion Collection — Wong Kar-wai Singles ──────────────────
+        ("Criterion", "Chungking Express", "Blu-ray", "Criterion #453", "standard", 30),
+        ("Criterion", "Happy Together", "Blu-ray", "Criterion #1079", "standard", 28),
+        ("Criterion", "Fallen Angels", "Blu-ray", "Criterion #1080", "standard", 28),
+
+        # ── Arrow Video Limited Editions Extended ────────────────────────
+        ("Arrow Video", "Phenomena (Dario Argento)", "4K UHD", "Arrow Limited", "mid", 45),
+        ("Arrow Video", "Inferno (Dario Argento)", "4K UHD", "Arrow Limited", "mid", 44),
+        ("Arrow Video", "Opera (Dario Argento)", "4K UHD", "Arrow Limited", "mid", 42),
+        ("Arrow Video", "The Beyond (Lucio Fulci)", "4K UHD", "Arrow Limited", "mid", 44),
+        ("Arrow Video", "Zombie Flesh Eaters (Lucio Fulci)", "4K UHD", "Arrow Limited", "mid", 42),
+        ("Arrow Video", "Society (Brian Yuzna)", "Blu-ray", "Arrow Limited", "mid", 40),
+        ("Arrow Video", "Videodrome", "4K UHD", "Arrow Limited", "mid", 48),
+        ("Arrow Video", "The Fly (Cronenberg)", "4K UHD", "Arrow Limited", "mid", 46),
+
+        # ── Vinegar Syndrome Releases ────────────────────────────────────
+        ("Vinegar Syndrome", "Slumber Party Massacre", "4K UHD", "VS Limited", "mid", 42),
+        ("Vinegar Syndrome", "Sorority Babes", "Blu-ray", "VS Limited", "standard", 35),
+        ("Vinegar Syndrome", "Tammy and the T-Rex", "4K UHD", "VS Limited", "mid", 45),
+        ("Vinegar Syndrome", "Blood Rage", "4K UHD", "VS Limited", "mid", 40),
+        ("Vinegar Syndrome", "Psycho Goreman", "4K UHD", "VS Limited", "mid", 42),
+        ("Vinegar Syndrome", "Pieces", "4K UHD", "VS Limited", "mid", 44),
+        ("Vinegar Syndrome", "Silent Night Deadly Night Collection", "Blu-ray", "VS Box Set", "high", 85),
+        ("Vinegar Syndrome", "Night of the Demons", "4K UHD", "VS Limited", "mid", 42),
+        ("Vinegar Syndrome", "Maniac Cop Trilogy", "4K UHD", "VS Box Set", "high", 90),
+        ("Vinegar Syndrome", "The Mutilator", "4K UHD", "VS Limited", "mid", 40),
+
+        # ── Vinegar Syndrome Additional ──────────────────────────────────
+        ("Vinegar Syndrome", "The Slumber Party Massacre Collection", "Blu-ray", "VS Box Set", "high", 80),
+        ("Vinegar Syndrome", "Dead Heat", "4K UHD", "VS Limited", "mid", 42),
+        ("Vinegar Syndrome", "The Prowler", "4K UHD", "VS Limited", "mid", 42),
     ]
 
     catalog = []

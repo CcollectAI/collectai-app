@@ -4,7 +4,7 @@ Import Anime Figures catalog.
 Layer 1 (Catalog):  Curated anime figure collection → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
-Covers 500+ figures across:
+Covers 550+ figures across:
 - Scale figures: Good Smile Company, Kotobukiya, Alter, Max Factory, FREEing (1/4 to 1/8)
 - Nendoroids: chibi-style collectible figures (20+ characters)
 - Figma: articulated action figures (10+ characters)
@@ -48,7 +48,7 @@ CATEGORY = "anime_figures"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated anime figure catalog covering major manufacturers and series (500+ items)."""
+    """Curated anime figure catalog covering major manufacturers and series (550+ items)."""
 
     # (manufacturer, figure_type, character, series, scale, rarity_tier, price_eur)
     # rarity_tier: grail (>400), high (200-400), mid (80-200), standard (<80)
@@ -759,6 +759,75 @@ def get_curated_catalog() -> list[dict]:
         ("Bandai", "Robot Spirits", "Zaku II ver. A.N.I.M.E.", "Mobile Suit Gundam", "Non-scale", "mid", 75),
         ("Bandai", "Robot Spirits", "Gouf Custom ver. A.N.I.M.E.", "Gundam 08th MS Team", "Non-scale", "mid", 80),
         ("Bandai", "Robot Spirits", "Sazabi ver. A.N.I.M.E.", "Char's Counterattack", "Non-scale", "mid", 100),
+
+        # =================================================================
+        # Batch 11 — ALTER, WAVE Dream Tech, Kotobukiya ARTFX J,
+        # Myethos, Union Creative, Phat!, eStream
+        # =================================================================
+
+        # ── ALTER Figures (8) ───────────────────────────────────────────
+        ("Alter", "Scale", "Saber Alter (Shinjuku Ver.)", "Fate/Grand Order", "1/7", "high", 280),
+        ("Alter", "Scale", "Mash Kyrielight (Ortinax Ver.)", "Fate/Grand Order", "1/7", "high", 260),
+        ("Alter", "Scale", "Jeanne d'Arc (Alter)", "Fate/Grand Order", "1/7", "high", 300),
+        ("Alter", "Scale", "Scathach (Assassin Ver.)", "Fate/Grand Order", "1/7", "high", 270),
+        ("Alter", "Scale", "Rider/Altria Pendragon (Alter)", "Fate/Grand Order", "1/7", "grail", 420),
+        ("Alter", "Scale", "Asuna Yuuki (Aincrad Ver.)", "Sword Art Online", "1/7", "high", 240),
+        ("Alter", "Scale", "Shiki Ryougi (Kimono Ver.)", "Kara no Kyoukai", "1/7", "grail", 450),
+        ("Alter", "Scale", "Saber Lily (Golden Caliburn)", "Fate/Unlimited Codes", "1/7", "high", 230),
+
+        # ── WAVE Dream Tech Series (6) ─────────────────────────────────
+        ("WAVE", "Dream Tech", "Rem (Sleeping Ver.)", "Re:Zero", "1/7", "mid", 130),
+        ("WAVE", "Dream Tech", "Ram (Sleeping Ver.)", "Re:Zero", "1/7", "mid", 125),
+        ("WAVE", "Dream Tech", "Emilia (Teacher Ver.)", "Re:Zero", "1/7", "mid", 140),
+        ("WAVE", "Dream Tech", "Megumin (Swimsuit Ver.)", "KonoSuba", "1/7", "mid", 120),
+        ("WAVE", "Dream Tech", "Raphtalia (Childhood Ver.)", "Shield Hero", "1/7", "mid", 135),
+        ("WAVE", "Dream Tech", "Shiro (Loungewear Ver.)", "No Game No Life", "1/7", "mid", 125),
+
+        # ── Kotobukiya ARTFX J (8) ─────────────────────────────────────
+        ("Kotobukiya", "ARTFX J", "Izuku Midoriya (Smash Ver.)", "My Hero Academia", "1/8", "high", 210),
+        ("Kotobukiya", "ARTFX J", "Katsuki Bakugo (Explosion Ver.)", "My Hero Academia", "1/8", "high", 220),
+        ("Kotobukiya", "ARTFX J", "Shoto Todoroki (Hero Costume Ver.)", "My Hero Academia", "1/8", "mid", 190),
+        ("Kotobukiya", "ARTFX J", "Tanjiro Kamado (Water Breathing)", "Demon Slayer", "1/8", "high", 200),
+        ("Kotobukiya", "ARTFX J", "Kyojuro Rengoku (Flame Breathing)", "Demon Slayer", "1/8", "high", 230),
+        ("Kotobukiya", "ARTFX J", "Muichiro Tokito (Mist Breathing)", "Demon Slayer", "1/8", "mid", 180),
+        ("Kotobukiya", "ARTFX J", "Levi Ackerman (Vertical Maneuvering)", "Attack on Titan", "1/8", "high", 280),
+        ("Kotobukiya", "ARTFX J", "Mikasa Ackerman (3DMG Ver.)", "Attack on Titan", "1/8", "high", 250),
+
+        # ── Myethos Figures (7) ────────────────────────────────────────
+        ("Myethos", "Fairytale", "Little Mermaid", "FairyTale-Another", "1/8", "high", 240),
+        ("Myethos", "Fairytale", "Snow White", "FairyTale-Another", "1/8", "high", 230),
+        ("Myethos", "Fairytale", "Alice in Wonderland", "FairyTale-Another", "1/8", "high", 250),
+        ("Myethos", "Fairytale", "Sleeping Beauty", "FairyTale-Another", "1/8", "high", 220),
+        ("Myethos", "Scale", "Yun Jin (Genshin Impact)", "Honor of Kings", "1/7", "high", 260),
+        ("Myethos", "Scale", "Ganyu (Plenilune Gaze)", "Genshin Impact", "1/7", "high", 280),
+        ("Myethos", "Scale", "Hu Tao (Fragrance in Thaw)", "Genshin Impact", "1/7", "grail", 420),
+
+        # ── Union Creative Figures (7) ─────────────────────────────────
+        ("Union Creative", "Scale", "Joker/Ren Amamiya (Phantom Thief Ver.)", "Persona 5", "1/7", "high", 250),
+        ("Union Creative", "Scale", "Makoto Niijima (Queen)", "Persona 5", "1/7", "high", 240),
+        ("Union Creative", "Scale", "Ann Takamaki (Panther)", "Persona 5", "1/7", "high", 260),
+        ("Union Creative", "Scale", "Momo Belia Deviluke (Darkness Ver.)", "To Love-Ru", "1/6", "high", 300),
+        ("Union Creative", "Scale", "Lala Satalin Deviluke (Wedding Ver.)", "To Love-Ru", "1/7", "high", 280),
+        ("Union Creative", "Scale", "2B (YoRHa No.2 Type B)", "NieR: Automata", "1/7", "high", 290),
+        ("Union Creative", "Scale", "A2 (YoRHa Type A No.2)", "NieR: Automata", "1/7", "high", 270),
+
+        # ── Phat! Company Figures (7) ──────────────────────────────────
+        ("Phat! Company", "Scale", "Rem (Crystal Dress Ver.)", "Re:Zero", "1/7", "grail", 480),
+        ("Phat! Company", "Scale", "Ram (Crystal Dress Ver.)", "Re:Zero", "1/7", "grail", 460),
+        ("Phat! Company", "Scale", "Emilia (Crystal Dress Ver.)", "Re:Zero", "1/7", "grail", 500),
+        ("Phat! Company", "Scale", "Aqua (Sneeze Ver.)", "KonoSuba", "1/7", "mid", 160),
+        ("Phat! Company", "Scale", "Darkness (Lalatina)", "KonoSuba", "1/7", "mid", 170),
+        ("Phat! Company", "Scale", "Megumin (Explosion Ver.)", "KonoSuba", "1/7", "mid", 180),
+        ("Phat! Company", "Scale", "Chika Fujiwara (Secretary Ver.)", "Kaguya-sama", "1/7", "mid", 150),
+
+        # ── eStream Crystal Dress & Premium (7) ───────────────────────
+        ("eStream", "Crystal Dress", "Rem (Crystal Dress)", "Re:Zero", "1/7", "grail", 520),
+        ("eStream", "Crystal Dress", "Emilia (Crystal Dress)", "Re:Zero", "1/7", "grail", 550),
+        ("eStream", "Crystal Dress", "Ram (Crystal Dress)", "Re:Zero", "1/7", "grail", 490),
+        ("eStream", "Crystal Dress", "Rem (Oni Ver. Crystal Dress)", "Re:Zero", "1/7", "grail", 580),
+        ("eStream", "Shibuya Scramble", "Rem (Idol Ver.)", "Re:Zero", "1/7", "high", 350),
+        ("eStream", "Shibuya Scramble", "Emilia (Natsuki Subaru's Birthday)", "Re:Zero", "1/7", "high", 380),
+        ("eStream", "Shibuya Scramble", "Megumin (Explosion Ver. Deluxe)", "KonoSuba", "1/7", "grail", 420),
     ]
 
     catalog = []

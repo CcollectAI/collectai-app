@@ -768,6 +768,8 @@ def get_curated_catalog() -> list[dict]:
     items += _additional_vspo_phase_vshojo()
     items += _additional_concert_blurays()
     items += _additional_vtuber_items()
+    # Expansion Batch 2 — Hololive 6th gen, Nijisanji EN, VShojo, EXPO, signed tapestries
+    items += _expanded_batch_2()
 
     catalog = []
     for agency, talent, item_type, name, exclusive_type, tier, price in items:
@@ -781,6 +783,72 @@ def get_curated_catalog() -> list[dict]:
             "price_eur": price,
         })
     return catalog
+
+
+def _expanded_batch_2() -> list[tuple]:
+    """50 additional VTuber merch — Hololive 6th gen, Nijisanji EN waves, VShojo, EXPO 2024, signed tapestries."""
+    return [
+        # ── Hololive 6th Gen (holoX) — Lui, Chloe, Iroha, Koyori, Laplus ──
+        ("Hololive", "Takane Lui", "Birthday Set", "Takane Lui Birthday 2024 Premium Merch Set", "Birthday", "high", 72),
+        ("Hololive", "Takane Lui", "Tapestry", "Takane Lui 2nd Anniversary B2 Tapestry", "Anniversary", "mid", 30),
+        ("Hololive", "Takane Lui", "Acrylic Stand", "Takane Lui New Outfit Celebration Acrylic Stand", "Outfit Reveal", "mid", 26),
+        ("Hololive", "Sakamata Chloe", "Birthday Set", "Sakamata Chloe Birthday 2024 Complete Merch Set", "Birthday", "high", 75),
+        ("Hololive", "Sakamata Chloe", "Tapestry", "Sakamata Chloe 2nd Anniversary B2 Tapestry", "Anniversary", "mid", 32),
+        ("Hololive", "Sakamata Chloe", "Signed Tapestry", "Sakamata Chloe Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 180),
+        ("Hololive", "Kazama Iroha", "Birthday Set", "Kazama Iroha Birthday 2024 Premium Set", "Birthday", "high", 70),
+        ("Hololive", "Kazama Iroha", "Acrylic Stand", "Kazama Iroha Samurai Outfit Acrylic Stand", "Outfit Reveal", "mid", 25),
+        ("Hololive", "Kazama Iroha", "Tapestry", "Kazama Iroha 2nd Anniversary B2 Tapestry", "Anniversary", "mid", 28),
+        ("Hololive", "Hakui Koyori", "Birthday Set", "Hakui Koyori Birthday 2024 Complete Set", "Birthday", "high", 68),
+        ("Hololive", "Hakui Koyori", "Tapestry", "Hakui Koyori 2nd Anniversary B2 Tapestry", "Anniversary", "mid", 28),
+        ("Hololive", "Hakui Koyori", "Signed Tapestry", "Hakui Koyori Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 170),
+        ("Hololive", "Laplus Darkness", "Birthday Set", "Laplus Darkness Birthday 2024 Premium Set", "Birthday", "high", 75),
+        ("Hololive", "Laplus Darkness", "Tapestry", "Laplus Darkness 2nd Anniversary B2 Tapestry", "Anniversary", "mid", 30),
+        ("Hololive", "Laplus Darkness", "Signed Tapestry", "Laplus Darkness Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 195),
+
+        # ── Nijisanji EN Wave Merch — Luxiem, Noctyx, XSOLEIL, TTT ──
+        ("Nijisanji", "Vox Akuma", "Birthday Set", "Vox Akuma Birthday 2024 Premium Complete Set", "Birthday", "high", 85),
+        ("Nijisanji", "Vox Akuma", "Signed Shikishi", "Vox Akuma Hand-Signed Birthday Shikishi Board", "Birthday", "grail", 200),
+        ("Nijisanji", "Ike Eveland", "Tapestry", "Ike Eveland 2nd Anniversary B2 Tapestry", "Anniversary", "mid", 30),
+        ("Nijisanji", "Fulgur Ovid", "Birthday Set", "Fulgur Ovid Birthday 2024 Merch Set", "Birthday", "high", 55),
+        ("Nijisanji", "Sonny Brisko", "Birthday Set", "Sonny Brisko Birthday 2024 Complete Set", "Birthday", "high", 60),
+        ("Nijisanji", "Kotoka Torahime", "Birthday Set", "Kotoka Torahime Birthday 2024 Set", "Birthday", "mid", 48),
+        ("Nijisanji", "Ver Vermillion", "Acrylic Stand", "Ver Vermillion 2nd Anniversary Acrylic Stand", "Anniversary", "mid", 24),
+        ("Nijisanji", "Hex Haywire", "Birthday Set", "Hex Haywire Birthday 2024 Merch Set", "Birthday", "mid", 45),
+        ("Nijisanji", "Victoria Brightshield", "Debut Set", "Victoria Brightshield Debut Celebration Merch Set", "Debut", "mid", 38),
+        ("Nijisanji", "Claude Clawmark", "Debut Set", "Claude Clawmark Debut Celebration Merch Set", "Debut", "mid", 38),
+
+        # ── VShojo Official Merch — Ironmouse, Silvervale, Kson, Henya ──
+        ("VShojo", "Ironmouse", "Anniversary Set", "Ironmouse 5th Anniversary Premium Complete Set", "Anniversary", "high", 90),
+        ("VShojo", "Ironmouse", "Signed Tapestry", "Ironmouse Hand-Signed B2 Tapestry (100 pcs)", "Anniversary", "grail", 220),
+        ("VShojo", "Ironmouse", "Nendoroid", "Nendoroid Ironmouse #2300", "Standard", "high", 55),
+        ("VShojo", "Silvervale", "Birthday Set", "Silvervale Birthday 2024 Complete Merch Set", "Birthday", "high", 65),
+        ("VShojo", "Silvervale", "Acrylic Stand", "Silvervale New Outfit Acrylic Stand", "Outfit Reveal", "mid", 22),
+        ("VShojo", "Henya the Genius", "Birthday Set", "Henya the Genius Birthday 2024 Set", "Birthday", "mid", 48),
+        ("VShojo", "Henya the Genius", "Acrylic Stand", "Henya the Genius 1st VShojo Anniversary Stand", "Anniversary", "mid", 22),
+        ("VShojo", "Kson", "Birthday Set", "Kson Birthday 2024 Premium Merch Set", "Birthday", "high", 60),
+        ("VShojo", "Matara Kan", "Debut Set", "Matara Kan VShojo Debut Celebration Set", "Debut", "mid", 42),
+
+        # ── Hololive EXPO 2024 Goods ──
+        ("Hololive", "Various", "EXPO Goods", "Hololive EXPO 2024 Venue-Limited Acrylic Keychain Set (20pc)", "Concert", "high", 75),
+        ("Hololive", "Various", "EXPO Goods", "Hololive EXPO 2024 Stage Photo Collection (Full Set)", "Concert", "mid", 45),
+        ("Hololive", "Various", "EXPO Goods", "Hololive EXPO 2024 Venue-Limited T-Shirt (Staff Ver.)", "Concert", "mid", 40),
+        ("Hololive", "Various", "EXPO Goods", "Hololive EXPO 2024 Premium Ticket Holder + Lanyard", "Concert", "mid", 35),
+        ("Hololive", "Various", "EXPO Goods", "Hololive EXPO 2024 Rubber Stamp Collection Full Set", "Concert", "mid", 30),
+
+        # ── Birthday/Anniversary Limited Signed Tapestries ──
+        ("Hololive", "Gawr Gura", "Signed Tapestry", "Gawr Gura Hand-Signed 3rd Anniversary B2 Tapestry", "Anniversary", "grail", 350),
+        ("Hololive", "Hoshimachi Suisei", "Signed Tapestry", "Hoshimachi Suisei Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 280),
+        ("Hololive", "Usada Pekora", "Signed Tapestry", "Usada Pekora Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 300),
+        ("Hololive", "Houshou Marine", "Signed Tapestry", "Houshou Marine Hand-Signed 4th Anniversary B2 Tapestry", "Anniversary", "grail", 320),
+        ("Nijisanji", "Kanae", "Signed Tapestry", "Kanae Hand-Signed 5th Anniversary B2 Tapestry", "Anniversary", "grail", 250),
+        ("Nijisanji", "Kuzuha", "Signed Tapestry", "Kuzuha Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 270),
+
+        # ── Hololive EXPO 2024 — Additional venue goods ──
+        ("Hololive", "Various", "EXPO Goods", "Hololive EXPO 2024 Venue-Limited Poster Set (A2 x5)", "Concert", "high", 60),
+        ("Hololive", "Various", "EXPO Goods", "Hololive EXPO 2024 Clear File Complete Set (20pc)", "Concert", "mid", 38),
+        ("Hololive", "Various", "EXPO Goods", "Hololive EXPO 2024 Trading Card Booster Box", "Concert", "mid", 42),
+        ("Nijisanji", "Various", "EXPO Goods", "Nijisanji EXPO 2024 Venue-Limited Acrylic Diorama Set", "Concert", "high", 68),
+    ]
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

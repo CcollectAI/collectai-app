@@ -671,6 +671,70 @@ def get_curated_catalog() -> list[dict]:
         ("Nintendo", "Pokemon Emerald Version (Loose Cart)", "Loose", "high", 60, 130),
         ("Nintendo", "Pokemon FireRed Version (Loose Cart)", "Loose", "mid", 40, 90),
         ("Nintendo", "Pokemon LeafGreen Version (Loose Cart)", "Loose", "mid", 40, 90),
+
+        # ── Expansion Batch — Neo Genesis Cards ──────────────────────────
+        ("WOTC", "Neo Genesis Lugia 1st Edition Holo #9", "Near Mint", "grail", 300, 800),
+        ("WOTC", "Neo Genesis Togetic 1st Edition Holo #16", "Near Mint", "high", 60, 150),
+        ("WOTC", "Neo Genesis Typhlosion 1st Edition Holo #17", "Near Mint", "high", 80, 200),
+        ("WOTC", "Neo Genesis Feraligatr 1st Edition Holo #5", "Near Mint", "high", 55, 140),
+        ("WOTC", "Neo Genesis Meganium 1st Edition Holo #10", "Near Mint", "high", 50, 130),
+        ("WOTC", "Neo Genesis Pichu 1st Edition Holo #12", "Near Mint", "high", 65, 160),
+
+        # ── Neo Discovery Cards ──────────────────────────────────────────
+        ("WOTC", "Neo Discovery Houndoom 1st Edition Holo #4", "Near Mint", "high", 70, 180),
+        ("WOTC", "Neo Discovery Umbreon 1st Edition Holo #13", "Near Mint", "grail", 200, 500),
+        ("WOTC", "Neo Discovery Espeon 1st Edition Holo #1", "Near Mint", "grail", 180, 450),
+        ("WOTC", "Neo Discovery Kabutops 1st Edition Holo #6", "Near Mint", "high", 50, 130),
+        ("WOTC", "Neo Discovery Scizor 1st Edition Holo #10", "Near Mint", "high", 55, 140),
+        ("WOTC", "Neo Discovery Yanma 1st Edition Holo #17", "Near Mint", "mid", 35, 90),
+
+        # ── Neo Revelation Cards ─────────────────────────────────────────
+        ("WOTC", "Neo Revelation Shining Gyarados 1st Edition #65", "Near Mint", "grail", 350, 900),
+        ("WOTC", "Neo Revelation Shining Magikarp 1st Edition #66", "Near Mint", "grail", 250, 650),
+        ("WOTC", "Neo Revelation Ho-Oh 1st Edition Holo #7", "Near Mint", "high", 80, 200),
+        ("WOTC", "Neo Revelation Suicune 1st Edition Holo #14", "Near Mint", "high", 70, 180),
+        ("WOTC", "Neo Revelation Celebi 1st Edition Holo #3", "Near Mint", "high", 65, 160),
+        ("WOTC", "Neo Revelation Entei 1st Edition Holo #6", "Near Mint", "high", 60, 150),
+
+        # ── Neo Destiny Cards ────────────────────────────────────────────
+        ("WOTC", "Neo Destiny Shining Charizard 1st Edition #107", "Near Mint", "grail", 500, 1500),
+        ("WOTC", "Neo Destiny Shining Mewtwo 1st Edition #109", "Near Mint", "grail", 200, 550),
+        ("WOTC", "Neo Destiny Shining Tyranitar 1st Edition #113", "Near Mint", "grail", 250, 700),
+        ("WOTC", "Neo Destiny Shining Noctowl 1st Edition #110", "Near Mint", "grail", 120, 350),
+        ("WOTC", "Neo Destiny Shining Steelix 1st Edition #112", "Near Mint", "grail", 150, 400),
+        ("WOTC", "Neo Destiny Shining Raichu 1st Edition #111", "Near Mint", "grail", 180, 480),
+        ("WOTC", "Neo Destiny Dark Ampharos 1st Edition Holo #1", "Near Mint", "high", 55, 140),
+        ("WOTC", "Neo Destiny Dark Donphan 1st Edition Holo #3", "Near Mint", "high", 45, 120),
+        ("WOTC", "Neo Destiny Dark Espeon 1st Edition Holo #4", "Near Mint", "high", 80, 200),
+        ("WOTC", "Neo Destiny Dark Tyranitar 1st Edition Holo #11", "Near Mint", "grail", 150, 400),
+        ("WOTC", "Neo Destiny Dark Houndoom 1st Edition Holo #7", "Near Mint", "high", 60, 160),
+        ("WOTC", "Neo Destiny Light Arcanine 1st Edition Holo #12", "Near Mint", "high", 55, 140),
+
+        # ── e-Series Cards ───────────────────────────────────────────────
+        ("WOTC", "Expedition Base Set Charizard Holo #6", "Near Mint", "grail", 150, 400),
+        ("WOTC", "Expedition Base Set Mewtwo Holo #20", "Near Mint", "high", 60, 150),
+        ("WOTC", "Aquapolis Lugia Crystal Type #149", "Near Mint", "grail", 400, 1200),
+        ("WOTC", "Aquapolis Kingdra Crystal Type #148", "Near Mint", "grail", 200, 600),
+        ("WOTC", "Skyridge Charizard Holo #H3", "Near Mint", "grail", 350, 1000),
+        ("WOTC", "Skyridge Celebi Crystal Type #145", "Near Mint", "grail", 300, 900),
+        ("WOTC", "Skyridge Ho-Oh Crystal Type #149", "Near Mint", "grail", 350, 1100),
+
+        # ── Legendary Collection Reverses ────────────────────────────────
+        ("WOTC", "Legendary Collection Reverse Holo Charizard #3", "Near Mint", "grail", 400, 1200),
+        ("WOTC", "Legendary Collection Reverse Holo Dark Blastoise #4", "Near Mint", "grail", 150, 450),
+        ("WOTC", "Legendary Collection Reverse Holo Dark Dragonite #5", "Near Mint", "grail", 120, 350),
+        ("WOTC", "Legendary Collection Reverse Holo Alakazam #1", "Near Mint", "grail", 100, 300),
+        ("WOTC", "Legendary Collection Reverse Holo Zapdos #19", "Near Mint", "high", 80, 220),
+        ("WOTC", "Legendary Collection Reverse Holo Mewtwo #29", "Near Mint", "grail", 120, 350),
+        ("WOTC", "Legendary Collection Reverse Holo Ninetales #17", "Near Mint", "high", 70, 200),
+
+        # ── e-Series Additional ──────────────────────────────────────────
+        ("WOTC", "Expedition Base Set Feraligatr Holo #12", "Near Mint", "high", 50, 130),
+        ("WOTC", "Expedition Base Set Typhlosion Holo #28", "Near Mint", "high", 55, 140),
+        ("WOTC", "Aquapolis Arcanine Crystal Type #H2", "Near Mint", "grail", 250, 700),
+        ("WOTC", "Skyridge Gengar Holo #H9", "Near Mint", "grail", 200, 600),
+        ("WOTC", "Skyridge Umbreon Holo #H29", "Near Mint", "grail", 180, 500),
+        ("WOTC", "Legendary Collection Reverse Holo Hitmonlee #13", "Near Mint", "high", 55, 160),
     ]
 
     catalog = []

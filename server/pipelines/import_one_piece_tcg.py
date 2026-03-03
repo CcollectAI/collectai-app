@@ -57,6 +57,121 @@ def _edition_score(rarity: str) -> float:
 # Curated catalog — 200+ real One Piece TCG cards
 # ---------------------------------------------------------------------------
 
+def _additional_op_2025_expansion() -> list[tuple]:
+    """50 more: OP-07/08/09 chase cards, tournament promos, DON!! gold foils, Gear 5 variants."""
+    return [
+        # ── OP-07 500 Years in the Future — Chase Cards ────────────────────
+        ("Monkey D. Luffy (Gear 5 Manga Art)", "OP07", "OP07-109", "Manga Art", "Red", 280.00,
+         False, "OP07 Manga Rare Gear 5, most sought-after pull"),
+        ("Portgas D. Ace (Manga Art)", "OP07", "OP07-119", "Manga Art", "Purple", 180.00,
+         False, "OP07 Manga Rare Ace, Fire Fist art"),
+        ("Monkey D. Luffy (Alt Art Leader)", "OP07", "OP07-001-AA", "Alt Art", "Red", 95.00,
+         True, "OP07 alt art leader, Gear 5 silhouette"),
+        ("Kozuki Oden (Alt Art)", "OP07", "OP07-053-AA", "Alt Art", "Green/Red", 65.00,
+         False, "OP07 alt art Oden, Wano legend"),
+        ("Queen (OP07)", "OP07", "OP07-068", "SR", "Purple", 12.00,
+         False, "Calamity Queen, Beast Pirates All-Star"),
+        ("Marco the Phoenix (OP07 SEC)", "OP07", "OP07-118", "SEC", "Green", 48.00,
+         False, "OP07 Secret Rare Marco, blue flames art"),
+        ("Sabo (OP07 SEC)", "OP07", "OP07-117", "SEC", "Red", 42.00,
+         False, "OP07 Secret Rare Sabo, dragon claw"),
+
+        # ── OP-08 Two Legends — Chase Cards ────────────────────────────────
+        ("Shanks (Manga Art)", "OP08", "OP08-118", "Manga Art", "Red", 320.00,
+         False, "OP08 Manga Rare Shanks, iconic Marineford moment"),
+        ("Silvers Rayleigh (Manga Art)", "OP08", "OP08-119", "Manga Art", "Blue", 200.00,
+         False, "OP08 Manga Rare Dark King, coating Sunny art"),
+        ("Monkey D. Garp (Alt Art Leader)", "OP08", "OP08-001-AA", "Alt Art", "Blue/Yellow", 75.00,
+         True, "OP08 alt art leader, Marine Hero"),
+        ("Donquixote Rosinante (Alt Art)", "OP08", "OP08-058-AA", "Alt Art", "Blue", 85.00,
+         False, "OP08 Corazon alt art, Law flashback"),
+        ("Jewelry Bonney (OP08 SEC)", "OP08", "OP08-117", "SEC", "Yellow", 55.00,
+         False, "OP08 Secret Rare Bonney, Nika transformation"),
+        ("Borsalino (Kizaru) (OP08)", "OP08", "OP08-055", "SR", "Blue", 14.00,
+         False, "Admiral Kizaru, Glint-Glint Fruit"),
+
+        # ── OP-09 Dawn of the New World — Special Arts ─────────────────────
+        ("Monkey D. Luffy (Nika) (OP09 Manga Art)", "OP09", "OP09-119", "Manga Art", "Red", 350.00,
+         False, "OP09 Manga Rare Nika Luffy, Joy Boy reveal art"),
+        ("Roronoa Zoro (OP09 Alt Art)", "OP09", "OP09-025-AA", "Alt Art", "Green", 90.00,
+         False, "OP09 alt art Zoro, King of Hell 3-sword"),
+        ("Trafalgar Law (OP09 SEC)", "OP09", "OP09-117", "SEC", "Red/Blue", 60.00,
+         False, "OP09 Secret Rare Law, Room: KROOM"),
+        ("Yamato (OP09 Alt Art)", "OP09", "OP09-070-AA", "Alt Art", "Purple", 70.00,
+         False, "OP09 Yamato alt art, Oden's will"),
+        ("Rob Lucci (OP09 Awakened)", "OP09", "OP09-082", "SR", "Black", 16.00,
+         False, "CP0 Lucci awakened Zoan form"),
+
+        # ── Tournament Promo Cards ─────────────────────────────────────────
+        ("Monkey D. Luffy (Flagship Battle Winner)", "PROMO", "P-001-W", "SP", "Red", 450.00,
+         False, "Flagship Battle tournament winner promo, extremely limited"),
+        ("Roronoa Zoro (Regional Champion Promo)", "PROMO", "P-002-W", "SP", "Green", 350.00,
+         False, "Regional Championship winner, gold border"),
+        ("Nami (Treasure Cup Promo)", "PROMO", "P-015", "SP", "Green", 120.00,
+         False, "Treasure Cup participation promo, alt art"),
+        ("Sanji (Flagship Battle Participation)", "PROMO", "P-020", "SP", "Red", 80.00,
+         False, "Flagship Battle participation promo"),
+        ("Nico Robin (Store Championship Promo)", "PROMO", "P-025", "SP", "Blue", 65.00,
+         False, "Official store tournament promo"),
+        ("Trafalgar Law (Win-a-Case Promo)", "PROMO", "P-030", "SP", "Red/Green", 200.00,
+         False, "Win-a-Case event exclusive, foil stamped"),
+
+        # ── Box Toppers ───────────────────────────────────────────────────
+        ("Monkey D. Luffy (OP07 Box Topper)", "OP07", "OP07-BT-001", "SP", "Red", 35.00,
+         False, "OP07 booster box purchase bonus card"),
+        ("Shanks (OP08 Box Topper)", "OP08", "OP08-BT-001", "SP", "Red", 40.00,
+         False, "OP08 booster box purchase bonus card"),
+        ("Boa Hancock (OP09 Box Topper)", "OP09", "OP09-BT-001", "SP", "Green", 30.00,
+         False, "OP09 booster box purchase bonus card"),
+
+        # ── DON!! Cards — Special Gold Foil ────────────────────────────────
+        ("DON!! Card (Standard)", "DON", "DON-001", "C", "Red", 0.50,
+         False, "Standard DON card, every starter deck"),
+        ("DON!! Card (Gold Foil)", "DON", "DON-001-GF", "SP", "Red", 25.00,
+         False, "Gold foil DON card, booster box exclusive"),
+        ("DON!! Card (Film Red Promo Gold)", "DON", "DON-FR-GF", "SP", "Red", 45.00,
+         False, "Film Red event gold foil DON card"),
+        ("DON!! Card (1st Anniversary Gold)", "DON", "DON-1A-GF", "SP", "Red", 55.00,
+         False, "1st Anniversary celebration gold foil DON"),
+        ("DON!! Card (Championship Gold)", "DON", "DON-CH-GF", "SP", "Red", 80.00,
+         False, "Championship series exclusive gold DON"),
+        ("DON!! Card (Treasure Cup Gold)", "DON", "DON-TC-GF", "SP", "Red", 35.00,
+         False, "Treasure Cup event gold DON card"),
+
+        # ── Japanese Exclusive Promo Packs ─────────────────────────────────
+        ("Monkey D. Luffy (Jump Festa Promo)", "PROMO", "P-JP-001", "SP", "Red", 150.00,
+         False, "Jump Festa exclusive Luffy promo, JP only"),
+        ("Roronoa Zoro (V-Jump Promo)", "PROMO", "P-JP-002", "SP", "Green", 40.00,
+         False, "V-Jump magazine insert promo Zoro"),
+        ("Nami (Saikyo Jump Promo)", "PROMO", "P-JP-003", "SP", "Green", 30.00,
+         False, "Saikyo Jump magazine promo Nami"),
+        ("One Piece Day 2024 Promo Pack Luffy", "PROMO", "P-JP-OPD24", "SP", "Red", 95.00,
+         False, "One Piece Day 2024 Japan event exclusive"),
+
+        # ── Gear 5 Luffy Variants Across Sets ─────────────────────────────
+        ("Monkey D. Luffy -Gear 5- (OP05 SEC)", "OP05", "OP05-119", "SEC", "Red", 85.00,
+         False, "First Gear 5 SEC across all sets"),
+        ("Monkey D. Luffy -Gear 5- (OP05 Alt Art)", "OP05", "OP05-119-AA", "Alt Art", "Red", 400.00,
+         False, "Gear 5 alt art, iconic Nika laugh pose"),
+        ("Monkey D. Luffy -Gear 5- (OP07 SR)", "OP07", "OP07-025", "SR", "Red", 18.00,
+         False, "OP07 SR Gear 5 reprint, new art"),
+        ("Monkey D. Luffy -Gear 5- (ST-14 Leader)", "ST14", "ST14-002-SP", "SP", "Red", 35.00,
+         True, "ST-14 special parallel leader Gear 5"),
+        ("Monkey D. Luffy -Gear 5- (OP09 Full Art)", "OP09", "OP09-001-FA", "Alt Art", "Red", 250.00,
+         False, "OP09 full art Gear 5, Drums of Liberation"),
+        ("Monkey D. Luffy -Gear 5- (Championship Promo)", "PROMO", "P-G5-CH", "SP", "Red", 500.00,
+         False, "Championship exclusive Gear 5, gold stamp, extremely rare"),
+
+        # ── Additional OP-08/09 SRs ───────────────────────────────────────
+        ("Dracule Mihawk (OP08)", "OP08", "OP08-070", "SR", "Black", 15.00,
+         False, "Greatest swordsman, Yoru wielder"),
+        ("Eustass Kid (OP09 Awakened)", "OP09", "OP09-055", "SR", "Purple", 12.00,
+         False, "Awakened Kid, Assign magnetic attraction"),
+        ("Vinsmoke Reiju (OP09)", "OP09", "OP09-038", "SR", "Green", 11.00,
+         False, "Germa 66 Poison Pink, support effect"),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Return 500+ curated One Piece TCG cards across all major sets.
 
@@ -1422,6 +1537,9 @@ def get_curated_catalog() -> list[dict]:
         ("Boa Hancock (ST-16)", "ST16", "ST16-001", "L", "Green", 8.00,
          True, "ST-16 Kuja leader, Amazon Lily"),
     ]
+
+    # ── OP-07/08/09 chase cards, promos, DON!! foils, Gear 5 variants (50 items) ──
+    cards_raw += _additional_op_2025_expansion()
 
     catalog = []
     for entry in cards_raw:

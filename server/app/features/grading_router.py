@@ -325,14 +325,19 @@ async def grading_lookup(
     if not clean_cert:
         raise error_response(400, "Invalid certification number", code="VALIDATION_ERROR")
 
-    # TODO: Replace with real API calls when keys are available
-    # Example swap point:
-    #   if service == "psa":
-    #       return await _psa_api_lookup(clean_cert)
-    #   elif service == "cgc":
-    #       return await _cgc_api_lookup(clean_cert)
-    result = _mock_cert_lookup(clean_cert, service)
-    return result
+    # Real API integration requires paid credentials (PSA/CGC/BGS).
+    # Return cert URL so users can verify manually on the service website.
+    svc = GRADING_SERVICES[service]
+    cert_url = svc.get("cert_lookup_url", "").replace("{cert_number}", clean_cert)
+
+    return GradingLookupResponse(
+        cert_number=clean_cert,
+        service=service,
+        service_name=svc["short_name"],
+        cert_verified=False,
+        cert_url=cert_url or None,
+        error="Live certificate verification requires API credentials. Use the cert_url to verify manually.",
+    )
 
 
 @router.get("/population", response_model=PopulationReportResponse)
@@ -357,9 +362,18 @@ async def grading_population(
 
     logger.info("[grading] Population report: item=%s category=%s service=%s", item_name, category, service)
 
-    # TODO: Replace with real population database queries
-    result = _mock_population_report(item_name, category, service)
-    return result
+    # Real population data requires PSA/CGC/BGS API access.
+    # Return a structured response indicating the feature needs API credentials.
+    return PopulationReportResponse(
+        item_name=item_name,
+        category=category,
+        service=service,
+        total_graded=0,
+        population=[],
+        avg_grade=None,
+        highest_grade=None,
+        last_updated=None,
+    )
 
 
 @router.get("/services", response_model=GradingServicesResponse)

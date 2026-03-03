@@ -725,6 +725,76 @@ def get_curated_catalog() -> list[dict]:
         ("loungefly", "Loungefly Disney Tangled Lanterns Backpack", "Standard", "mid", 60),
     ]
 
+    # ── Expansion Batch — Disney100, Swarovski, Jim Shore, Lenox, Archives, D23, Designer Dolls, Lorcana ──
+    items += [
+        # Disney100 Celebration Merch — Platinum Figurines
+        ("disney100", "Disney100 Platinum Mickey Mouse Figurine", "D100 LE", "grail", 250),
+        ("disney100", "Disney100 Platinum Minnie Mouse Figurine", "D100 LE", "grail", 240),
+        ("disney100", "Disney100 Platinum Donald Duck Figurine", "D100 LE", "high", 180),
+        ("disney100", "Disney100 Platinum Goofy Figurine", "D100 LE", "high", 170),
+        ("disney100", "Disney100 Anniversary Castle Snow Globe", "D100 LE", "grail", 280),
+
+        # Disney100 Anniversary Pins
+        ("disney100", "Disney100 Anniversary Partners Pin (Walt & Mickey)", "D100 LE", "high", 95),
+        ("disney100", "Disney100 Iridescent Mickey Head Pin Set (3pc)", "D100 LE", "mid", 45),
+        ("disney100", "Disney100 Decades Pin Collection Complete Set (12pc)", "D100 LE", "grail", 350),
+
+        # Disney Swarovski Crystal Figurines
+        ("swarovski", "Swarovski Disney Mickey Mouse Crystal Figurine", "Premium", "grail", 350),
+        ("swarovski", "Swarovski Disney Cinderella Crystal Slipper", "Premium", "grail", 280),
+        ("swarovski", "Swarovski Disney Ariel Mermaid Crystal Figurine", "Premium", "high", 200),
+        ("swarovski", "Swarovski Disney Elsa Ice Palace Crystal Figurine", "Premium", "grail", 320),
+        ("swarovski", "Swarovski Disney Tinker Bell Crystal Figurine", "Premium", "high", 180),
+        ("swarovski", "Swarovski Disney Stitch Crystal Figurine", "Premium", "high", 190),
+
+        # Jim Shore Disney Traditions
+        ("jim_shore", "Jim Shore Mickey Mouse 'The Original' Large Figurine", "Disney Traditions", "high", 85),
+        ("jim_shore", "Jim Shore Cinderella 'Romantic Waltz' Figurine", "Disney Traditions", "mid", 65),
+        ("jim_shore", "Jim Shore Snow White 'Fairest of All' Figurine", "Disney Traditions", "mid", 60),
+        ("jim_shore", "Jim Shore Ariel 'Splash of Fun' Figurine", "Disney Traditions", "mid", 60),
+        ("jim_shore", "Jim Shore Maleficent 'Sinister Sorceress' Figurine", "Disney Traditions", "high", 80),
+        ("jim_shore", "Jim Shore Stitch 'Ohana Means Family' Figurine", "Disney Traditions", "mid", 55),
+
+        # Lenox Disney Porcelain
+        ("lenox", "Lenox Disney Belle's Enchanted Dance Figurine", "Premium", "high", 120),
+        ("lenox", "Lenox Disney Cinderella's Magical Moment Figurine", "Premium", "high", 110),
+        ("lenox", "Lenox Disney Snow White's Magic Apple Figurine", "Premium", "high", 100),
+        ("lenox", "Lenox Disney Tinker Bell Pixie Dust Figurine", "Premium", "mid", 80),
+
+        # Walt Disney Archives Collection
+        ("archives", "Walt Disney Archives Mickey Sorcerer Bronze Statue", "LE 500", "grail", 400),
+        ("archives", "Walt Disney Archives Steamboat Willie Film Cell", "LE 1000", "high", 180),
+        ("archives", "Walt Disney Archives Fantasia Concept Art Print", "LE 1000", "high", 150),
+        ("archives", "Walt Disney Archives Disneyland Opening Day Replica Ticket", "LE 2500", "mid", 75),
+
+        # D23 Expo Exclusives (2024)
+        ("d23", "D23 Expo 2024 Sorcerer Mickey LE Pin", "D23 LE", "high", 120),
+        ("d23", "D23 Expo 2024 Fantasia Chernabog Figurine", "D23 LE", "high", 160),
+        ("d23", "D23 Expo 2024 Walt & Mickey Partners Statue", "D23 LE", "grail", 250),
+        ("d23", "D23 Expo 2024 Tron Legacy Light Cycle LE Collectible", "D23 LE", "high", 140),
+        ("d23", "D23 Expo 2024 Haunted Mansion Ghost Host Figurine", "D23 LE", "high", 130),
+
+        # shopDisney Designer Collection Dolls
+        ("designer_dolls", "shopDisney Designer Collection Ariel Doll (LE)", "shopDisney LE", "high", 150),
+        ("designer_dolls", "shopDisney Designer Collection Belle Doll (LE)", "shopDisney LE", "high", 145),
+        ("designer_dolls", "shopDisney Designer Collection Jasmine Doll (LE)", "shopDisney LE", "high", 150),
+        ("designer_dolls", "shopDisney Designer Collection Rapunzel Doll (LE)", "shopDisney LE", "high", 140),
+        ("designer_dolls", "shopDisney Designer Collection Mulan Doll (LE)", "shopDisney LE", "high", 145),
+        ("designer_dolls", "shopDisney Designer Collection Tiana Doll (LE)", "shopDisney LE", "high", 155),
+        ("designer_dolls", "shopDisney Designer Collection Elsa & Anna Doll Set (LE)", "shopDisney LE", "grail", 280),
+
+        # Disney Lorcana Promo Cards
+        ("lorcana", "Disney Lorcana Mickey Mouse Sorcerer's Apprentice Promo", "Promo LE", "high", 85),
+        ("lorcana", "Disney Lorcana Elsa Spirit of Winter Enchanted Rare", "Enchanted", "high", 120),
+        ("lorcana", "Disney Lorcana Stitch Rock Star Enchanted Rare", "Enchanted", "high", 100),
+        ("lorcana", "Disney Lorcana Maleficent Monstrous Dragon Promo", "Promo LE", "mid", 65),
+        ("lorcana", "Disney Lorcana Robin Hood Enchanted Rare", "Enchanted", "high", 90),
+        ("lorcana", "Disney Lorcana Belle Bookworm Enchanted Rare", "Enchanted", "high", 80),
+        ("lorcana", "Disney Lorcana First Chapter Booster Box (Sealed)", "Sealed", "high", 160),
+        ("lorcana", "Disney Lorcana Rise of the Floodborn Booster Box (Sealed)", "Sealed", "high", 140),
+        ("lorcana", "Disney Lorcana Shimmering Skies Booster Box (Sealed)", "Sealed", "mid", 95),
+    ]
+
     catalog = []
     for subcategory, name, edition, tier, price in items:
         catalog.append({

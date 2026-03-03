@@ -8,7 +8,7 @@ for frontend category dropdowns and taxonomy management.
 import logging
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from starlette.responses import JSONResponse
 
 from app.cache import cache_get, cache_set
@@ -173,6 +173,8 @@ async def taxonomy_by_version(version: str):
             "notes": row["notes"],
             "created_by": row["created_by"],
         }
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Failed to fetch taxonomy version %s", version)
         raise error_response(500, "Failed to fetch taxonomy", code="TAXONOMY_FETCH_ERROR")

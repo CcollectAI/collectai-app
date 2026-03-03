@@ -766,6 +766,71 @@ def get_curated_catalog() -> list[dict]:
         ("Sonny Angel Forest Animal Series Fox Secret", "Sonny Angel", "Forest Animal", "Fox Secret", "Secret", 135, True, "Autumn leaf fox secret figure"),
         ("Sonny Angel Tropical Animal Series Flamingo", "Sonny Angel", "Tropical Animal", "Flamingo", "Common", 12, False, "Tropical animal flamingo figure"),
         ("Sonny Angel Birdie Series Parakeet", "Sonny Angel", "Birdie Series", "Parakeet", "Common", 12, False, "Birdie series parakeet figure"),
+
+        # ── Expansion Batch — Pop Mart Mega Collection (Sizes) ──────────
+        ("Space Molly 100% Pinkerton", "Pop Mart", "Space Molly 100%", "Pinkerton 100%", "Rare", 45, False, "Small format Space Molly Pinkerton"),
+        ("Space Molly 100% Watermelon", "Pop Mart", "Space Molly 100%", "Watermelon 100%", "Rare", 42, False, "Small format watermelon colorway"),
+        ("Space Molly 400% Hatsune Miku", "Pop Mart", "Space Molly 400%", "Hatsune Miku", "Ultra Rare", 850, False, "400% Hatsune Miku collaboration"),
+        ("Space Molly 400% Back to the Future", "Pop Mart", "Space Molly 400%", "Back to the Future", "Ultra Rare", 700, False, "400% BTTF DeLorean theme"),
+        ("Space Molly 1000% SpongeBob", "Pop Mart", "Space Molly 1000%", "SpongeBob", "Grail", 2200, False, "Mega size SpongeBob collab"),
+        ("Space Molly 1000% Marvel Iron Man", "Pop Mart", "Space Molly 1000%", "Marvel Iron Man", "Grail", 2500, False, "Mega size Iron Man collaboration"),
+        ("Labubu 400% The Monsters Tropical", "Pop Mart", "Labubu 400%", "Tropical Series 400%", "Ultra Rare", 550, False, "Large format Labubu tropical"),
+        ("Labubu 1000% The Monsters Galaxy", "Pop Mart", "Labubu 1000%", "Galaxy 1000%", "Grail", 1600, False, "Mega size galaxy themed Labubu"),
+
+        # ── Medicom Be@rbrick Blind Boxes ────────────────────────────────
+        ("Medicom Be@rbrick Series 46 Full Case", "Medicom", "Bearbrick Series 46", "Full Case", "Rare", 180, False, "Latest 100% series blind box case"),
+        ("Medicom Be@rbrick Series 45 Secret Chase", "Medicom", "Bearbrick Series 45", "Secret Chase", "Secret", 280, True, "Secret artist chase figure"),
+        ("Medicom Be@rbrick Horror Series 100%", "Medicom", "Bearbrick Horror", "Horror Series", "Rare", 35, False, "Horror themed 100% blind box"),
+        ("Medicom Be@rbrick Cute Series 100%", "Medicom", "Bearbrick Cute", "Cute Series", "Common", 20, False, "Cute themed 100% blind box"),
+        ("Medicom Be@rbrick Cleverin Air Freshener Set", "Medicom", "Bearbrick Cleverin", "Air Freshener", "Rare", 55, False, "Cleverin functional art figure"),
+
+        # ── KAWS Holiday Collaborations ──────────────────────────────────
+        ("KAWS Holiday Japan Mount Fuji", "Medicom", "KAWS Holiday", "Japan Mount Fuji", "Ultra Rare", 750, False, "KAWS Holiday Japan reclining figure"),
+        ("KAWS Holiday Hong Kong", "Medicom", "KAWS Holiday", "Hong Kong Bath", "Ultra Rare", 700, False, "KAWS Holiday HK floating figure"),
+        ("KAWS Holiday Korea Seoul", "Medicom", "KAWS Holiday", "Korea Seoul", "Ultra Rare", 680, False, "KAWS Holiday Korea camping figure"),
+        ("KAWS Holiday UK London", "Medicom", "KAWS Holiday", "UK London", "Ultra Rare", 720, False, "KAWS Holiday UK seated figure"),
+        ("KAWS Holiday Singapore Companion", "Medicom", "KAWS Holiday", "Singapore", "Ultra Rare", 690, False, "KAWS Holiday Singapore reclining"),
+
+        # ── tokidoki Unicorno New Series ──────────────────────────────────
+        ("tokidoki Unicorno Series 13 Full Case", "tokidoki", "Unicorno Series 13", "Full Case", "Common", 14, False, "Latest Unicorno blind box series"),
+        ("tokidoki Unicorno Series 13 Secret Prism", "tokidoki", "Unicorno Series 13", "Secret Prism", "Secret", 110, True, "Rainbow prism secret unicorno"),
+        ("tokidoki Unicorno Tropical Paradise", "tokidoki", "Unicorno Tropical", "Tropical Paradise", "Common", 15, False, "Tropical themed unicorno series"),
+        ("tokidoki Unicorno Valentine's Day Limited", "tokidoki", "Unicorno Valentine", "Valentine's Day", "Rare", 55, False, "Valentine's exclusive unicorno"),
+        ("tokidoki Unicorno x Hello Kitty Collab", "tokidoki", "Unicorno x Hello Kitty", "Hello Kitty Collab", "Rare", 65, False, "Sanrio x tokidoki collaboration"),
+
+        # ── Sonny Angel Marine / Fruit / Seasonal Extended ───────────────
+        ("Sonny Angel Marine Series Dolphin", "Sonny Angel", "Marine Series", "Dolphin", "Common", 11, False, "Marine series dolphin hat figure"),
+        ("Sonny Angel Marine Series Seahorse", "Sonny Angel", "Marine Series", "Seahorse", "Common", 11, False, "Marine series seahorse figure"),
+        ("Sonny Angel Marine Series Jellyfish Secret", "Sonny Angel", "Marine Series", "Jellyfish Secret", "Secret", 130, True, "Translucent jellyfish secret figure"),
+        ("Sonny Angel Fruit Series Mango", "Sonny Angel", "Fruit Series", "Mango", "Common", 10, False, "Tropical mango hat figure"),
+        ("Sonny Angel Christmas 2025 Angel", "Sonny Angel", "Christmas 2025", "Christmas Angel", "Rare", 45, False, "2025 Christmas limited edition"),
+        ("Sonny Angel Christmas 2025 Reindeer Secret", "Sonny Angel", "Christmas 2025", "Reindeer Secret", "Secret", 160, True, "Gold reindeer Christmas secret"),
+        ("Sonny Angel Halloween 2025 Vampire", "Sonny Angel", "Halloween 2025", "Vampire", "Rare", 42, False, "2025 Halloween vampire edition"),
+        ("Sonny Angel Halloween 2025 Pumpkin Secret", "Sonny Angel", "Halloween 2025", "Pumpkin Secret", "Secret", 150, True, "Glow-in-dark pumpkin secret"),
+        ("Sonny Angel Flower Series Sunflower", "Sonny Angel", "Flower Series", "Sunflower", "Common", 12, False, "Flower series sunflower hat"),
+        ("Sonny Angel Sweets Series Macaron", "Sonny Angel", "Sweets Series", "Macaron", "Common", 12, False, "Pastel macaron hat figure"),
+
+        # ── Labubu New Releases ──────────────────────────────────────────
+        ("Labubu The Monsters Forest Gaze", "Pop Mart", "Labubu", "Forest Gaze Series", "Common", 15, False, "Forest nature themed Labubu series"),
+        ("Labubu The Monsters Forest Gaze Secret", "Pop Mart", "Labubu", "Forest Gaze Secret", "Secret", 190, True, "Golden deer antler secret Labubu"),
+        ("Labubu The Monsters Dream Wedding", "Pop Mart", "Labubu", "Dream Wedding Series", "Common", 16, False, "Wedding themed Labubu series"),
+        ("Labubu The Monsters Dream Wedding Secret", "Pop Mart", "Labubu", "Dream Wedding Secret", "Secret", 210, True, "Crystal bouquet secret Labubu"),
+        ("Labubu The Monsters Ocean Explorer", "Pop Mart", "Labubu", "Ocean Explorer", "Common", 15, False, "Deep sea themed Labubu series"),
+        ("Labubu The Monsters x Disney Stitch Collab", "Pop Mart", "Labubu", "Disney Stitch Collab", "Rare", 90, False, "Disney x Labubu Stitch collaboration"),
+        ("Labubu The Monsters Retro Arcade", "Pop Mart", "Labubu", "Retro Arcade", "Common", 15, False, "Arcade gaming themed Labubu"),
+
+        # ── More Pop Mart Licensed & IP ─────────────────────────────────
+        ("Pop Mart Dimoo Dating Day Secret Cupid", "Pop Mart", "Dimoo", "Dating Day Secret Cupid", "Secret", 170, True, "Golden cupid wing secret Dimoo"),
+        ("Pop Mart Hirono Reshape Series", "Pop Mart", "Hirono", "Reshape Series", "Common", 16, False, "Identity reshape theme, 9 designs"),
+        ("Pop Mart Hirono Reshape Secret Mirror", "Pop Mart", "Hirono", "Reshape Secret Mirror", "Secret", 260, True, "Mirror reflection secret Hirono"),
+        ("Pop Mart Skullpanda Warmth Series", "Pop Mart", "Skullpanda", "Warmth Series", "Common", 15, False, "Cozy warmth themed series"),
+        ("Pop Mart Skullpanda Warmth Secret Fireplace", "Pop Mart", "Skullpanda", "Warmth Secret Fireplace", "Secret", 195, True, "Glowing fireplace secret figure"),
+        ("Pop Mart Crybaby x Powerpuff Girls Collab", "Pop Mart", "Crybaby", "Powerpuff Girls Collab", "Rare", 75, False, "Powerpuff Girls x Crybaby limited collab"),
+        ("Pop Mart Zsiga Night Walk Series", "Pop Mart", "Zsiga", "Night Walk Series", "Common", 15, False, "Nighttime walk themed series"),
+        ("Pop Mart Pucky Sleep Babies Series", "Pop Mart", "Pucky", "Sleep Babies Series", "Common", 14, False, "Sleeping baby fairy theme"),
+        ("Pop Mart Pucky Sleep Babies Secret Moon", "Pop Mart", "Pucky", "Sleep Babies Secret Moon", "Secret", 150, True, "Crescent moon secret Pucky figure"),
+        ("Pop Mart Instinctoy Erosion Molly Sunset", "Pop Mart", "Molly", "Instinctoy Erosion Sunset", "Rare", 190, False, "Sunset colorway erosion Molly"),
+        ("Sonny Angel Vegetable Series Carrot", "Sonny Angel", "Vegetable Series", "Carrot", "Common", 11, False, "Vegetable series carrot hat figure"),
     ]
 
     catalog = []

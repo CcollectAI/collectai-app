@@ -767,6 +767,74 @@ def _additional_sdcs_and_misc_kits() -> list[tuple]:
     ]
 
 
+def _additional_tamashii_2025_expansion() -> list[tuple]:
+    """50 more: SHF Film Red/Naruto, CSM Kamen Rider, Ultra-Act, Robot Spirits Eva, Proplica."""
+    return [
+        # ── S.H.Figuarts — Dragon Ball Super Hero / Daima ──────────────────
+        ("S.H.Figuarts", "Son Goku (Daima Mini Ver.)", "Dragon Ball Daima", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Vegeta (Daima Mini Ver.)", "Dragon Ball Daima", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Supreme Kai (Daima)", "Dragon Ball Daima", "P-Bandai", "mid", 85),
+        ("S.H.Figuarts", "Gomah (Daima)", "Dragon Ball Daima", "P-Bandai", "mid", 80),
+        ("S.H.Figuarts", "Son Gohan (Beast) Event Color", "Dragon Ball Super: Super Hero", "TNE", "high", 165),
+
+        # ── S.H.Figuarts — Naruto Shippuden Expansion ─────────────────────
+        ("S.H.Figuarts", "Uchiha Itachi -Anbu Black Ops-", "Naruto Shippuden", "P-Bandai", "high", 130),
+        ("S.H.Figuarts", "Pain (Tendo/Deva Path) -Chibaku Tensei-", "Naruto Shippuden", "P-Bandai", "high", 140),
+        ("S.H.Figuarts", "Uchiha Madara -Edo Tensei-", "Naruto Shippuden", "P-Bandai", "high", 135),
+        ("S.H.Figuarts", "Hatake Kakashi -Anbu-", "Naruto Shippuden", "P-Bandai", "mid", 110),
+        ("S.H.Figuarts", "Namikaze Minato -Yellow Flash-", "Naruto Shippuden", "P-Bandai", "high", 125),
+
+        # ── S.H.Figuarts — One Piece Film Red ─────────────────────────────
+        ("S.H.Figuarts", "Shanks (Film Red) Battle Ver.", "One Piece Film Red", "Standard", "mid", 90),
+        ("S.H.Figuarts", "Uta (Film Red)", "One Piece Film Red", "P-Bandai", "mid", 100),
+        ("S.H.Figuarts", "Monkey D. Luffy (Film Red)", "One Piece Film Red", "Standard", "mid", 85),
+        ("Figuarts ZERO", "Uta -Concert Ver.- Extra Battle", "One Piece Film Red", "Standard", "mid", 110),
+
+        # ── Complete Selection Modification (CSM) — Kamen Rider ────────────
+        ("CSM", "Decadriver (Ver. 2)", "Kamen Rider Decade", "P-Bandai", "grail", 380),
+        ("CSM", "Fourze Driver", "Kamen Rider Fourze", "P-Bandai", "grail", 350),
+        ("CSM", "Build Driver", "Kamen Rider Build", "P-Bandai", "grail", 340),
+        ("CSM", "Sengoku Driver (Gaim)", "Kamen Rider Gaim", "P-Bandai", "grail", 360),
+        ("CSM", "Faiz Gear (Ver. 2)", "Kamen Rider 555", "P-Bandai", "grail", 400),
+        ("CSM", "Kaixa Gear", "Kamen Rider 555", "P-Bandai", "grail", 380),
+        ("CSM", "Gatack Zecter", "Kamen Rider Kabuto", "P-Bandai", "high", 280),
+        ("CSM", "Lost Driver", "Kamen Rider W", "P-Bandai", "high", 260),
+        ("CSM", "Buggle Driver II (God Maximum Gamer)", "Kamen Rider Ex-Aid", "P-Bandai", "high", 300),
+
+        # ── Ultra-Act / S.H.Figuarts (Ultraman) ───────────────────────────
+        ("S.H.Figuarts", "Ultraman Tiga Multi Type", "Ultraman Tiga", "Standard", "mid", 80),
+        ("S.H.Figuarts", "Ultraman Tiga Sky Type", "Ultraman Tiga", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Ultraman Zero Beyond", "Ultraman Zero", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Ultraman Geed Primitive", "Ultraman Geed", "Standard", "mid", 75),
+        ("S.H.Figuarts", "Ultraman Geed Royal Mega Master", "Ultraman Geed", "P-Bandai", "high", 120),
+        ("S.H.Figuarts", "Ultraman Blazar", "Ultraman Blazar", "Standard", "mid", 75),
+        ("S.H.Figuarts", "Ultraman Arc", "Ultraman Arc", "Standard", "mid", 75),
+        ("S.H.Figuarts", "Ultraman Decker Flash Type", "Ultraman Decker", "Standard", "mid", 80),
+
+        # ── Robot Spirits — Evangelion ─────────────────────────────────────
+        ("Robot Spirits", "Evangelion Unit-01 (Awakened Ver.)", "Evangelion: 3.0", "P-Bandai", "high", 145),
+        ("Robot Spirits", "Evangelion Unit-02 (Production Model) Type S", "Evangelion: 3.0+1.0", "P-Bandai", "high", 140),
+        ("Robot Spirits", "Evangelion Unit-08 Gamma", "Evangelion: 3.0+1.0", "P-Bandai", "high", 135),
+        ("Robot Spirits", "Evangelion Unit-13", "Evangelion: 3.0+1.0", "P-Bandai", "high", 150),
+        ("Robot Spirits", "Evangelion Mark.06", "Evangelion: 2.0", "P-Bandai", "high", 130),
+
+        # ── Robot Spirits — Code Geass ─────────────────────────────────────
+        ("Robot Spirits", "Lancelot siN ver. A.N.I.M.E.", "Code Geass: Rozé", "P-Bandai", "mid", 100),
+        ("Robot Spirits", "Guren S.E.I.T.E.N. Eight Elements ver. A.N.I.M.E.", "Code Geass R2", "P-Bandai", "mid", 95),
+        ("Robot Spirits", "Shinkirou ver. A.N.I.M.E.", "Code Geass R2", "P-Bandai", "mid", 100),
+
+        # ── Proplica ──────────────────────────────────────────────────────
+        ("Proplica", "Moon Stick -Brilliant Color Edition-", "Sailor Moon", "Standard", "high", 120),
+        ("Proplica", "Cutie Moon Rod -Brilliant Color Edition-", "Sailor Moon R", "Standard", "high", 130),
+        ("Proplica", "Tanjiro Kamado Earrings (Hanafuda)", "Demon Slayer", "Standard", "mid", 65),
+        ("Proplica", "Nichirin Sword (Tanjiro Kamado)", "Demon Slayer", "Standard", "high", 140),
+        ("Proplica", "Jujutsu Kaisen Playback -Ryomen Sukuna Finger-", "Jujutsu Kaisen", "Standard", "mid", 55),
+        ("Proplica", "Sailor Moon Eternal Moon Article", "Sailor Moon Eternal", "P-Bandai", "high", 160),
+        ("Proplica", "Holy Grail -Brilliant Color Edition-", "Sailor Moon S", "P-Bandai", "high", 145),
+        ("Proplica", "Zanpakuto Zangetsu (Tensa) -Final Form-", "Bleach TYBW", "Standard", "high", 135),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated Bandai Premium / P-Bandai exclusives catalog (500+ items)."""
 
@@ -945,6 +1013,7 @@ def get_curated_catalog() -> list[dict]:
     items += _additional_miscellaneous_bandai()
     items += _additional_csm_proplica_sailor()
     items += _additional_sdcs_and_misc_kits()
+    items += _additional_tamashii_2025_expansion()
 
     catalog = []
     for line, name, franchise, exclusive_type, tier, price in items:

@@ -814,6 +814,106 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
+
+    catalog.extend(_batch_premium_diecast_2025())
+    return catalog
+
+
+def _batch_premium_diecast_2025() -> list[dict]:
+    """Batch 8 — Kyosho 1:18, Minichamps F1, Spark F1/Le Mans, BBR, MR Collection,
+    Tarmac Works, Inno64 premium JDM. ~50 items."""
+
+    items = [
+        # Kyosho 1:18 — Ferrari
+        ("Kyosho", "Ferrari F40 Rosso Corsa", "1:18", "Kyosho Original", "grail", 320),
+        ("Kyosho", "Ferrari 250 GTO 1962 Red", "1:18", "Kyosho Original", "grail", 380),
+        ("Kyosho", "Ferrari Enzo Ferrari Red", "1:18", "Kyosho Original", "high", 280),
+        ("Kyosho", "Ferrari Testarossa Red", "1:18", "Kyosho Original", "high", 260),
+
+        # Kyosho 1:18 — Lamborghini
+        ("Kyosho", "Lamborghini Countach LP400 White", "1:18", "Kyosho Original", "grail", 340),
+        ("Kyosho", "Lamborghini Miura P400SV Orange", "1:18", "Kyosho Original", "grail", 360),
+        ("Kyosho", "Lamborghini Diablo GT Metallic Grey", "1:18", "Kyosho Original", "high", 250),
+
+        # Kyosho 1:18 — Porsche
+        ("Kyosho", "Porsche 911 (964) Carrera RS Guards Red", "1:18", "Kyosho Original", "high", 240),
+        ("Kyosho", "Porsche 911 (993) GT2 Speed Yellow", "1:18", "Kyosho Original", "high", 260),
+        ("Kyosho", "Porsche 356A Speedster Silver", "1:18", "Kyosho Original", "high", 230),
+
+        # Minichamps F1 — Red Bull
+        ("Minichamps", "Red Bull RB19 Max Verstappen 2023 World Champion", "1:18", "F1 Collection", "grail", 350),
+        ("Minichamps", "Red Bull RB19 Sergio Perez 2023", "1:18", "F1 Collection", "high", 250),
+        ("Minichamps", "Red Bull RB18 Max Verstappen 2022 World Champion", "1:18", "F1 Collection", "grail", 380),
+
+        # Minichamps F1 — Mercedes
+        ("Minichamps", "Mercedes W14 Lewis Hamilton 2023", "1:18", "F1 Collection", "high", 260),
+        ("Minichamps", "Mercedes W11 Lewis Hamilton 2020 Record Season", "1:18", "F1 Collection", "grail", 400),
+        ("Minichamps", "Mercedes W10 Lewis Hamilton 2019 Monaco GP Winner", "1:18", "F1 Collection", "high", 280),
+
+        # Minichamps F1 — Ferrari / McLaren
+        ("Minichamps", "Ferrari SF-23 Charles Leclerc 2023", "1:18", "F1 Collection", "high", 250),
+        ("Minichamps", "McLaren MCL60 Lando Norris 2023 Silverstone", "1:18", "F1 Collection", "high", 240),
+        ("Minichamps", "McLaren MCL38 Lando Norris 2024 Miami GP Winner", "1:18", "F1 Collection", "high", 280),
+
+        # Spark 1:43 F1 — Le Mans Winners
+        ("Spark", "Toyota GR010 Hybrid Le Mans Winner 2024", "1:43", "Le Mans Collection", "high", 115),
+        ("Spark", "Porsche 919 Hybrid Le Mans Winner 2017", "1:43", "Le Mans Collection", "high", 120),
+        ("Spark", "Audi R18 e-tron quattro Le Mans Winner 2014", "1:43", "Le Mans Collection", "high", 110),
+        ("Spark", "Ferrari 499P Le Mans Winner 2023 #51", "1:43", "Le Mans Collection", "high", 130),
+
+        # Spark 1:43 F1 — Monaco GP
+        ("Spark", "Red Bull RB19 Verstappen Monaco GP Winner 2023", "1:43", "F1 Monaco GP", "high", 100),
+        ("Spark", "Ferrari SF-24 Leclerc Monaco GP Winner 2024", "1:43", "F1 Monaco GP", "high", 110),
+        ("Spark", "McLaren MCL35M Ricciardo Monza GP Winner 2021", "1:43", "F1 Collection", "high", 95),
+
+        # BBR Models Ferrari
+        ("BBR Models", "Ferrari LaFerrari Rosso Corsa", "1:18", "BBR Limited", "grail", 450),
+        ("BBR Models", "Ferrari 296 GTB Assetto Fiorano Yellow", "1:18", "BBR Limited", "grail", 420),
+        ("BBR Models", "Ferrari SF90 Stradale Red", "1:18", "BBR Limited", "grail", 400),
+        ("BBR Models", "Ferrari Roma Spider Argento Nurburgring", "1:18", "BBR Limited", "high", 350),
+        ("BBR Models", "Ferrari 812 Competizione A Blu Capri", "1:43", "BBR Limited", "high", 180),
+
+        # MR Collection — Hypercars
+        ("MR Collection", "Bugatti Chiron Sport Nocturne Black", "1:18", "MR Limited", "grail", 500),
+        ("MR Collection", "Pagani Huayra BC Roadster Blu Tricolore", "1:18", "MR Limited", "grail", 480),
+        ("MR Collection", "Lamborghini Revuelto Verde Alceo", "1:18", "MR Limited", "grail", 460),
+        ("MR Collection", "Bugatti Mistral W16 Yellow", "1:18", "MR Limited", "grail", 520),
+        ("MR Collection", "Pagani Utopia Platinum", "1:18", "MR Limited", "grail", 490),
+
+        # Tarmac Works — RWB Porsche
+        ("Tarmac Works", "Porsche 911 (930) RWB Rauh-Welt Natalia Kills", "1:64", "Hobby64", "mid", 45),
+        ("Tarmac Works", "Porsche 911 (993) RWB Backdate Holy Grail", "1:64", "Hobby64", "mid", 48),
+        ("Tarmac Works", "Porsche 911 (964) RWB Idlers Car", "1:64", "Hobby64", "mid", 42),
+
+        # Tarmac Works — Honda Civic & JDM
+        ("Tarmac Works", "Honda Civic EG6 Gr.A Racing JTCC 1992", "1:64", "Hobby64", "mid", 40),
+        ("Tarmac Works", "Honda Civic EG6 No Good Racing", "1:64", "Hobby64", "mid", 38),
+        ("Tarmac Works", "Honda NSX GT3 Evo Macau Grand Prix", "1:64", "Hobby64", "mid", 36),
+        ("Tarmac Works", "Mitsubishi Lancer Evo VI Tommi Makinen WRC", "1:64", "Hobby64", "mid", 42),
+
+        # Inno64 — Nissan Skyline GT-R
+        ("INNO64", "Nissan Skyline GT-R (R32) Pandem Rocket Bunny", "1:64", "IN64 Collection", "mid", 45),
+        ("INNO64", "Nissan Skyline GT-R (R34) V-Spec II Nur Millennium Jade", "1:64", "IN64 Collection", "mid", 48),
+        ("INNO64", "Nissan Skyline GT-R (R34) Nismo Z-tune Silver", "1:64", "IN64 Collection", "mid", 50),
+        ("INNO64", "Nissan Skyline GT-R (R32) Group A Calsonic 1990", "1:64", "IN64 Collection", "mid", 46),
+
+        # Inno64 — More JDM Legends
+        ("INNO64", "Toyota Sprinter Trueno AE86 Black Limited", "1:64", "IN64 Collection", "mid", 42),
+        ("INNO64", "Mazda RX-7 (FD3S) Mazdaspeed A-Spec", "1:64", "IN64 Collection", "mid", 40),
+        ("INNO64", "Mitsubishi Lancer Evo III GSR Rally Art", "1:64", "IN64 Collection", "mid", 38),
+        ("INNO64", "Honda Civic Type R (EK9) Championship White", "1:64", "IN64 Collection", "mid", 36),
+    ]
+
+    catalog = []
+    for brand, name, scale, variant, tier, price in items:
+        catalog.append({
+            "brand": brand,
+            "name": name,
+            "scale": scale,
+            "variant": variant,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
     return catalog
 
 

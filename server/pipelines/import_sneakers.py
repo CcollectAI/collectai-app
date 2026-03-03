@@ -1379,6 +1379,138 @@ def _nike_sb_expansion_2() -> list[tuple]:
     ]
 
 
+def _asics_gel_lyte_iii_collabs() -> list[tuple]:
+    """ASICS Gel-Lyte III collaborations — Kith, Ronnie Fieg, etc."""
+    return [
+        ("ASICS", "Gel-Lyte III", "Kith x Fieg 'Salmon Toe'", "Collaboration",
+         "H44KK-7271", 450),
+        ("ASICS", "Gel-Lyte III", "Ronnie Fieg 'Homage'", "Collaboration",
+         "H54FK-6540", 500),
+        ("ASICS", "Gel-Lyte III", "Ronnie Fieg 'Militia'", "Collaboration",
+         "MILITIA-01", 350),
+        ("ASICS", "Gel-Lyte III", "Kith 'Super Gold'", "Collaboration",
+         "1201A396-750", 380),
+        ("ASICS", "Gel-Lyte III", "Ronnie Fieg 'Volcano 2.0'", "Collaboration",
+         "1201A459-020", 320),
+        ("ASICS", "Gel-Lyte III", "AFEW x Kith 'Shimizu'", "Collaboration",
+         "1201A764-200", 350),
+        ("ASICS", "Gel-Lyte III", "atmos 'World Map'", "Collaboration",
+         "H50BK-9050", 280),
+        ("ASICS", "Gel-Lyte III", "Packer Shoes 'Dirty Buck'", "Collaboration",
+         "H50TK-1212", 300),
+    ]
+
+
+def _salomon_xt6_collabs() -> list[tuple]:
+    """Salomon XT-6 collaborations — Advanced, MM6, etc."""
+    return [
+        ("Salomon", "XT-6", "Advanced Black/Phantom", "Limited Release",
+         "L41085700", 220),
+        ("Salomon", "XT-6", "Advanced Soft Ground White", "Limited Release",
+         "L47468400", 230),
+        ("Salomon", "XT-6", "MM6 Maison Margiela Black", "Collaboration",
+         "EE7740", 650),
+        ("Salomon", "XT-6", "MM6 Maison Margiela White", "Collaboration",
+         "EE7741", 680),
+        ("Salomon", "XT-6", "Sandy Liang Expanse Green", "Collaboration",
+         "L47469700", 350),
+        ("Salomon", "XT-6", "Palace Grey", "Collaboration",
+         "L47863400", 400),
+        ("Salomon", "XT-6", "BEAMS Green Moss", "Collaboration",
+         "L47356500", 320),
+        ("Salomon", "XT-6", "11 By Boris Bidjan Saberi Black", "Collaboration",
+         "L47261800", 450),
+    ]
+
+
+def _nb_2002r_jjjjound_collabs() -> list[tuple]:
+    """New Balance 2002R — Protection Pack, JJJJound, etc."""
+    return [
+        ("New Balance", "2002R", "Protection Pack Rain Cloud", "Limited Release",
+         "M2002RDA", 280),
+        ("New Balance", "2002R", "Protection Pack Mirage Grey", "Limited Release",
+         "M2002RDB", 260),
+        ("New Balance", "2002R", "Protection Pack Phantom", "Limited Release",
+         "M2002RDC", 270),
+        ("New Balance", "2002R", "Protection Pack Sea Salt", "Limited Release",
+         "M2002RDG", 250),
+        ("New Balance", "2002R", "JJJJound Grey", "Collaboration",
+         "M2002RJA", 450),
+        ("New Balance", "2002R", "JJJJound Navy", "Collaboration",
+         "M2002RJB", 420),
+        ("New Balance", "2002R", "Salehe Bembury Water Be The Guide", "Collaboration",
+         "M2002RSB", 380),
+        ("New Balance", "2002R", "Thisisneverthat Grey", "Collaboration",
+         "ML2002RN", 300),
+    ]
+
+
+def _reebok_question_collabs() -> list[tuple]:
+    """Reebok Question Mid — AI Answer, collaborations."""
+    return [
+        ("Reebok", "Question Mid", "Allen Iverson 'Red Toe'", "OG Colorway",
+         "GX0230", 180),
+        ("Reebok", "Question Mid", "Allen Iverson 'Blue Toe'", "OG Colorway",
+         "GX0227", 170),
+        ("Reebok", "Question Mid", "Panini Prizm Silver", "Collaboration",
+         "GW8856", 250),
+        ("Reebok", "Question Mid", "Concepts 'Liquid Gold'", "Collaboration",
+         "FZ4342", 320),
+        ("Reebok", "Question Mid", "Eric Emanuel Red", "Collaboration",
+         "GX0294", 220),
+        ("Reebok", "Question Mid", "BBC Ice Cream", "Collaboration",
+         "GZ5921", 280),
+        ("Reebok", "Question Mid", "Packer Shoes 'Practice'", "Collaboration",
+         "FW7548", 300),
+        ("Reebok", "Answer IV", "Allen Iverson 'Stepover'", "OG Colorway",
+         "GY0528", 200),
+    ]
+
+
+def _puma_collabs_expanded() -> list[tuple]:
+    """Puma collaborations — LaMelo Ball, Rihanna Fenty, etc."""
+    return [
+        ("Puma", "MB.01", "LaMelo Ball 'Rick and Morty'", "Collaboration",
+         "376682-01", 250),
+        ("Puma", "MB.01", "LaMelo Ball 'Not From Here' Galaxy", "Limited Release",
+         "377237-02", 220),
+        ("Puma", "MB.01", "LaMelo Ball 'Queen City'", "Limited Release",
+         "376316-03", 200),
+        ("Puma", "MB.02", "LaMelo Ball 'Supernova'", "Limited Release",
+         "378065-01", 180),
+        ("Puma", "MB.04", "LaMelo Ball 'Iridescent'", "Limited Release",
+         "309207-01", 160),
+        ("Puma", "Fenty Creeper", "Rihanna Fenty Velvet Black", "Collaboration",
+         "364466-01", 350),
+        ("Puma", "Fenty Creeper", "Rihanna Fenty Velvet Royal Purple", "Collaboration",
+         "364466-02", 380),
+        ("Puma", "Fenty Trainer", "Rihanna Fenty Mid White", "Collaboration",
+         "190398-01", 300),
+        ("Puma", "Fenty Avid", "Rihanna Fenty Avid Black", "Collaboration",
+         "367682-02", 220),
+        ("Puma", "Suede Classic", "BAPE Camo Green", "Collaboration",
+         "366293-01", 280),
+        ("Puma", "MB.03", "LaMelo Ball 'Toxic'", "Limited Release",
+         "379235-01", 190),
+        ("Puma", "Clyde", "Rihanna Fenty Creeper Patent Black", "Collaboration",
+         "364462-01", 400),
+        ("ASICS", "Gel-Lyte III", "SNS 'Taichi'", "Collaboration",
+         "1201A373-750", 300),
+        ("ASICS", "Gel-Lyte III", "Reigning Champ Grey", "Collaboration",
+         "H53GK-9001", 280),
+        ("Salomon", "XT-6", "COMME des GARCONS Black", "Collaboration",
+         "L47364200", 550),
+        ("Salomon", "XT-6", "SATISFY Running Pack Green", "Collaboration",
+         "L47366100", 350),
+        ("New Balance", "2002R", "Aime Leon Dore Green", "Collaboration",
+         "ML2002RA", 400),
+        ("New Balance", "2002R", "SNS 'Goods' Brown", "Collaboration",
+         "ML2002RG", 320),
+        ("Reebok", "Question Low", "Allen Iverson Georgetown", "OG Colorway",
+         "FX0987", 160),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Aggregate catalog
 # ---------------------------------------------------------------------------
@@ -1432,6 +1564,12 @@ def get_curated_catalog() -> list[tuple]:
     catalog.extend(_reebok_collabs())
     catalog.extend(_jordan_11_thru_14_retros())
     catalog.extend(_nike_sb_expansion_2())
+    # --- Expansion Round 3 (50 new items) ---
+    catalog.extend(_asics_gel_lyte_iii_collabs())
+    catalog.extend(_salomon_xt6_collabs())
+    catalog.extend(_nb_2002r_jjjjound_collabs())
+    catalog.extend(_reebok_question_collabs())
+    catalog.extend(_puma_collabs_expanded())
     return catalog
 
 

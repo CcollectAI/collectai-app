@@ -1199,6 +1199,125 @@ def _modern_pop_world_classical() -> list[tuple[str, str, str, str, float]]:
     ]
 
 
+def _vmp_rsd2024_limited_color() -> list[tuple[str, str, str, str, float]]:
+    """50 VMP exclusives, RSD 2024 releases, limited color pressings, vault packages & artist variants."""
+    return [
+        # ── Vinyl Me Please (VMP) Exclusives ──
+        ("Erykah Badu", "Baduizm (VMP Essentials)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 85.00),
+        ("Amy Winehouse", "Back to Black (VMP Essentials)",
+         "Colored/Splatter Vinyl", "Soul/Funk", 90.00),
+        ("Solange", "A Seat at the Table (VMP Essentials)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 75.00),
+        ("Anderson .Paak", "Malibu (VMP Essentials)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 80.00),
+        ("Aretha Franklin", "I Never Loved a Man (VMP Classics)",
+         "Audiophile (MFSL/Half-Speed)", "Soul/Funk", 65.00),
+        ("Bill Withers", "Still Bill (VMP Classics)",
+         "Audiophile (MFSL/Half-Speed)", "Soul/Funk", 60.00),
+        ("Wu-Tang Clan", "Enter the Wu-Tang (VMP Hip-Hop)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 95.00),
+        ("Outkast", "Aquemini (VMP Hip-Hop)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 100.00),
+        ("Thundercat", "Drunk (VMP Essentials)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 70.00),
+        ("Fiona Apple", "Fetch the Bolt Cutters (VMP Essentials)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 65.00),
+
+        # ── Record Store Day 2024 Exclusives ──
+        ("Nirvana", "MTV Unplugged in New York (RSD 2024 Picture Disc)",
+         "Picture Disc", "Indie/Alternative", 55.00),
+        ("Pearl Jam", "No Code (RSD 2024 Clear Vinyl)",
+         "RSD Exclusive", "Classic Rock", 50.00),
+        ("David Bowie", "Aladdin Sane 50th Anniversary (RSD 2024 Red Vinyl)",
+         "RSD Exclusive", "Classic Rock", 60.00),
+        ("Gorillaz", "Demon Days (RSD 2024 Red Vinyl)",
+         "RSD Exclusive", "Indie/Alternative", 65.00),
+        ("The Cure", "Disintegration (RSD 2024 Marble Vinyl)",
+         "RSD Exclusive", "Indie/Alternative", 70.00),
+        ("Fleetwood Mac", "Tango in the Night (RSD 2024 Green Vinyl)",
+         "RSD Exclusive", "Classic Rock", 55.00),
+        ("Miles Davis", "In a Silent Way (RSD 2024 White Vinyl)",
+         "RSD Exclusive", "Jazz", 50.00),
+        ("Prince", "Purple Rain Deluxe (RSD 2024 Purple/Gold Splatter)",
+         "RSD Exclusive", "Soul/Funk", 75.00),
+        ("Sade", "Diamond Life (RSD 2024 Crystal Clear)",
+         "RSD Exclusive", "Soul/Funk", 45.00),
+        ("Talking Heads", "Stop Making Sense (RSD 2024 Live)",
+         "RSD Exclusive", "Indie/Alternative", 55.00),
+
+        # ── Jack White Vault Packages ──
+        ("Jack White", "Vault Package #48 (Live at Cain's Ballroom)",
+         "Numbered Limited", "Indie/Alternative", 120.00),
+        ("Jack White", "Vault Package #50 (Boarding House Reach Sessions)",
+         "Numbered Limited", "Indie/Alternative", 130.00),
+        ("The White Stripes", "Vault Package #45 (Peel Sessions)",
+         "Numbered Limited", "Indie/Alternative", 150.00),
+        ("The Raconteurs", "Vault Package #42 (Live at Third Man)",
+         "Numbered Limited", "Indie/Alternative", 110.00),
+        ("Jack White", "No Name (Vault Tri-Color Edition)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 95.00),
+
+        # ── Radiohead Special Editions ──
+        ("Radiohead", "In Rainbows (Deluxe Box Set 2LP+2CD)",
+         "Box Set", "Indie/Alternative", 180.00),
+        ("Radiohead", "Kid A Mnesia (Scarry Book Edition Red Vinyl)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 85.00),
+        ("Radiohead", "OK Computer OKNOTOK (Blue Opaque Vinyl)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 70.00),
+        ("Radiohead", "A Moon Shaped Pool (White Vinyl Deluxe)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 65.00),
+
+        # ── Tyler, the Creator — IGOR Variants ──
+        ("Tyler, the Creator", "IGOR (Mint Green Vinyl)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 90.00),
+        ("Tyler, the Creator", "IGOR (Pink Vinyl Limited)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 120.00),
+        ("Tyler, the Creator", "Call Me If You Get Lost (Estate Sale Deluxe Vinyl)",
+         "Numbered Limited", "Hip-Hop", 85.00),
+        ("Tyler, the Creator", "Flower Boy (Bee Yellow Vinyl)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 95.00),
+        ("Tyler, the Creator", "Chromakopia (Forest Green Vinyl)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 55.00),
+
+        # ── Frank Ocean Bootlegs / Limited ──
+        ("Frank Ocean", "Blonde (Black Friday Clear Vinyl)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 350.00),
+        ("Frank Ocean", "Blonde (Bootleg Amber Vinyl)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 80.00),
+        ("Frank Ocean", "Endless (Bootleg Purple Vinyl)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 75.00),
+        ("Frank Ocean", "Channel Orange (Bootleg Orange Splatter)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 70.00),
+        ("Frank Ocean", "Nostalgia, Ultra (Bootleg Pink Vinyl)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 65.00),
+
+        # ── Khruangbin Colored Vinyl ──
+        ("Khruangbin", "Con Todo El Mundo (White Vinyl)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 55.00),
+        ("Khruangbin", "Mordechai (Pink Translucent Vinyl)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 50.00),
+        ("Khruangbin", "A La Sala (Gold Metallic Vinyl)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 45.00),
+        ("Khruangbin & Leon Bridges", "Texas Sun (Orange Translucent EP)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 40.00),
+        ("Khruangbin", "Hasta El Cielo (Dub Version Green Vinyl)",
+         "Colored/Splatter Vinyl", "Indie/Alternative", 60.00),
+
+        # ── Additional Limited Color Pressings ──
+        ("Billie Eilish", "Hit Me Hard and Soft (Sea Blue Vinyl)",
+         "Colored/Splatter Vinyl", "Modern Collectible", 45.00),
+        ("Lana Del Rey", "Did You Know That There's a Tunnel Under Ocean Blvd (Alt Cover Green Vinyl)",
+         "Colored/Splatter Vinyl", "Modern Collectible", 50.00),
+        ("Olivia Rodrigo", "GUTS (Spilled Purple/Red Splatter)",
+         "Colored/Splatter Vinyl", "Modern Collectible", 40.00),
+        ("Taylor Swift", "1989 (Taylor's Version) (Tangerine Vinyl)",
+         "Colored/Splatter Vinyl", "Modern Collectible", 55.00),
+        ("Beyonce", "Renaissance (Club Edition Silver Vinyl)",
+         "Colored/Splatter Vinyl", "Hip-Hop", 65.00),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Aggregate catalog
 # ---------------------------------------------------------------------------
@@ -1218,6 +1337,7 @@ SUBCATEGORY_FUNCTIONS = [
     ("Audiophile Pressings", _audiophile_pressings),
     ("RSD, Colored & Box Sets", _rsd_colored_boxsets),
     ("Modern Pop, World & Classical", _modern_pop_world_classical),
+    ("VMP, RSD 2024 & Limited Color Pressings", _vmp_rsd2024_limited_color),
 ]
 
 

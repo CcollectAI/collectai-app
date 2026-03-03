@@ -372,6 +372,12 @@ class TestIntakeUrlEndpoint:
         mock_result.price_band = None
         mock_result.image_url = None
         mock_result.rationale = ["URL provided", "Detected: ebay"]
+        mock_result.catalog_match_id = None
+        mock_result.catalog_match_key = None
+        mock_result.chain_of_thought = None
+        mock_result.catalog_miss = False
+        mock_result.alternatives = []
+        mock_result.field_confidence = {}
 
         with patch(
             "app.agents.intake_router.process_url_import",
@@ -405,6 +411,12 @@ class TestIntakeUrlEndpoint:
         mock_result.price_band = None
         mock_result.image_url = None
         mock_result.rationale = []
+        mock_result.catalog_match_id = None
+        mock_result.catalog_match_key = None
+        mock_result.chain_of_thought = None
+        mock_result.catalog_miss = False
+        mock_result.alternatives = []
+        mock_result.field_confidence = {}
 
         with patch(
             "app.agents.intake_router.process_url_import",

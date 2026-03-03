@@ -842,6 +842,96 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
+
+    catalog.extend(_batch_fandom_collectibles_2025())
+    return catalog
+
+
+def _batch_fandom_collectibles_2025() -> list[dict]:
+    """Batch 7 — Loungefly mini backpacks, Squishmallows rare, Jellycat,
+    Build-A-Bear collabs, Nendoroid Doll. ~50 items."""
+
+    items = [
+        # Loungefly Mini Backpacks — Disney Villains
+        ("Loungefly", "merch", "Loungefly Disney Villains Scenes Mini Backpack", "Exclusive", "high", 85),
+        ("Loungefly", "merch", "Loungefly Maleficent Dragon Mini Backpack", "Exclusive", "high", 80),
+        ("Loungefly", "merch", "Loungefly Ursula Lair Mini Backpack", "Exclusive", "high", 78),
+        ("Loungefly", "merch", "Loungefly Evil Queen Sequin Mini Backpack", "Exclusive", "high", 82),
+        ("Loungefly", "merch", "Loungefly Cruella De Vil Spots Mini Backpack", "Exclusive", "mid", 65),
+
+        # Loungefly Mini Backpacks — Pixar
+        ("Loungefly", "merch", "Loungefly Pixar Up Paradise Falls Mini Backpack", "Exclusive", "high", 78),
+        ("Loungefly", "merch", "Loungefly Pixar Coco Marigold Bridge Mini Backpack", "Exclusive", "mid", 68),
+        ("Loungefly", "merch", "Loungefly Pixar Inside Out 2 Emotions Mini Backpack", "Exclusive", "mid", 65),
+
+        # Loungefly Mini Backpacks — Sanrio
+        ("Loungefly", "merch", "Loungefly Sanrio Hello Kitty 50th Anniversary Mini Backpack", "Limited", "high", 90),
+        ("Loungefly", "merch", "Loungefly Sanrio My Melody Lace Mini Backpack", "Exclusive", "mid", 72),
+        ("Loungefly", "merch", "Loungefly Sanrio Cinnamoroll Cloud Mini Backpack", "Exclusive", "mid", 68),
+        ("Loungefly", "merch", "Loungefly Sanrio Kuromi Gothic Mini Backpack", "Exclusive", "mid", 70),
+
+        # Squishmallows — Rare Finds
+        ("Squishmallows", "merch", "Squishmallows Brina the Bigfoot 12-inch", "Rare", "grail", 150),
+        ("Squishmallows", "merch", "Squishmallows Caedyn the Pink Cow 16-inch", "Rare", "grail", 130),
+        ("Squishmallows", "merch", "Squishmallows Malcolm the Mushroom 12-inch", "Rare", "high", 95),
+        ("Squishmallows", "merch", "Squishmallows Ronnie the Cow 8-inch (Walgreens)", "Exclusive", "high", 80),
+        ("Squishmallows", "merch", "Squishmallows Patty the Cow 12-inch", "Rare", "high", 85),
+        ("Squishmallows", "merch", "Squishmallows Benny the Bigfoot 16-inch (Learning Express)", "Exclusive", "high", 100),
+        ("Squishmallows", "merch", "Squishmallows Evangelica the Unicorn 12-inch", "Rare", "high", 90),
+        ("Squishmallows", "merch", "Squishmallows Jack the Black Cat Halloween 12-inch", "Seasonal", "mid", 55),
+        ("Squishmallows", "merch", "Squishmallows Isis the Seal 5-inch (Five Below)", "Exclusive", "mid", 40),
+
+        # Jellycat — Amuseable Series
+        ("Jellycat", "merch", "Jellycat Amuseable Avocado (Large)", "Standard", "mid", 35),
+        ("Jellycat", "merch", "Jellycat Amuseable Croissant (Large)", "Standard", "mid", 35),
+        ("Jellycat", "merch", "Jellycat Amuseable Espresso Cup", "Standard", "mid", 30),
+        ("Jellycat", "merch", "Jellycat Amuseable Slice of Pizza", "Standard", "mid", 32),
+        ("Jellycat", "merch", "Jellycat Amuseable Sushi Maki Roll", "Standard", "mid", 28),
+        ("Jellycat", "merch", "Jellycat Amuseable Sourdough Bread", "Standard", "mid", 35),
+
+        # Jellycat — Bashful Bunny
+        ("Jellycat", "merch", "Jellycat Bashful Bunny Really Really Big (108cm)", "Giant", "high", 100),
+        ("Jellycat", "merch", "Jellycat Bashful Bunny Luxe Willow", "Luxe", "mid", 50),
+        ("Jellycat", "merch", "Jellycat Irresistible Ice Cream Mint", "Limited", "mid", 30),
+        ("Jellycat", "merch", "Jellycat Blossom Beige Bunny (Huge)", "Standard", "mid", 45),
+
+        # Build-A-Bear — Pokemon
+        ("Build-A-Bear", "merch", "Build-A-Bear Pikachu with Sound", "Exclusive", "mid", 55),
+        ("Build-A-Bear", "merch", "Build-A-Bear Eevee with Cape", "Exclusive", "mid", 55),
+        ("Build-A-Bear", "merch", "Build-A-Bear Snorlax Online Exclusive", "Exclusive", "high", 75),
+        ("Build-A-Bear", "merch", "Build-A-Bear Gengar Halloween 2024", "Seasonal", "high", 70),
+
+        # Build-A-Bear — Sanrio
+        ("Build-A-Bear", "merch", "Build-A-Bear Hello Kitty 50th Anniversary", "Limited", "high", 65),
+        ("Build-A-Bear", "merch", "Build-A-Bear Cinnamoroll with Outfit", "Exclusive", "mid", 58),
+        ("Build-A-Bear", "merch", "Build-A-Bear My Melody Spring Set", "Exclusive", "mid", 55),
+
+        # Build-A-Bear — Star Wars
+        ("Build-A-Bear", "merch", "Build-A-Bear Grogu (The Child) with Pram Accessory", "Exclusive", "high", 65),
+        ("Build-A-Bear", "merch", "Build-A-Bear Chewbacca with Sound", "Exclusive", "mid", 58),
+        ("Build-A-Bear", "merch", "Build-A-Bear R2-D2 Online Exclusive", "Exclusive", "mid", 55),
+
+        # Nendoroid Doll Bodies and Outfits
+        ("Good Smile Company", "merch", "Nendoroid Doll Archetype Boy Almond Milk", "Standard", "mid", 35),
+        ("Good Smile Company", "merch", "Nendoroid Doll Archetype Girl Cream", "Standard", "mid", 35),
+        ("Good Smile Company", "merch", "Nendoroid Doll Outfit Set Sailor Girl (Navy)", "Outfit", "mid", 28),
+        ("Good Smile Company", "merch", "Nendoroid Doll Outfit Set Maid Cafe (Long)", "Outfit", "mid", 30),
+        ("Good Smile Company", "merch", "Nendoroid Doll Outfit Set Kimono Girl (Pink)", "Outfit", "mid", 32),
+        ("Good Smile Company", "merch", "Nendoroid Doll Outfit Set Chinese Dress (Red)", "Outfit", "mid", 30),
+        ("Good Smile Company", "merch", "Nendoroid Doll Outfit Set Pajamas (Blue)", "Outfit", "standard", 25),
+        ("Good Smile Company", "merch", "Nendoroid Doll Hatsune Miku (Date Outfit Ver.)", "Exclusive", "high", 65),
+    ]
+
+    catalog = []
+    for artist, item_type, name, variant, tier, price in items:
+        catalog.append({
+            "artist": artist,
+            "item_type": item_type,
+            "name": name,
+            "variant": variant,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
     return catalog
 
 

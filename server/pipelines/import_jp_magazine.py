@@ -45,7 +45,7 @@ CATEGORY = "jp_magazine"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Japanese magazine exclusives catalog (500+ items)."""
+    """Curated Japanese magazine exclusives catalog (600+ items)."""
 
     # (magazine, franchise, item_type, name, era, rarity_tier, price_eur)
     # rarity_tier: grail (>100), high (50-100), mid (15-50), standard (<15)
@@ -887,6 +887,69 @@ def get_curated_catalog() -> list[dict]:
         # Comp Ace — additional
         ("Comp Ace", "Fate/Grand Order", "Magazine Issue", "Comp Ace FGO Manga Section Anthology Feature Issue", "2020s", "mid", 20),
         ("Comp Ace", "Overlord", "Insert Poster", "Comp Ace Overlord Ainz & Albedo A2 Poster Insert", "2020s", "mid", 22),
+
+        # ── Newtype — Appendix Figures & Premium Posters ────────────────
+        ("Newtype", "Demon Slayer", "B2 Poster", "Newtype Demon Slayer Hashira Training Arc B2 Key Visual", "2020s", "mid", 25),
+        ("Newtype", "Frieren: Beyond Journey's End", "B2 Poster", "Newtype Frieren Key Visual B2 Poster Insert", "2020s", "mid", 28),
+        ("Newtype", "Oshi no Ko", "Clear File", "Newtype Oshi no Ko Ai Hoshino Clear File Set (3pc)", "2020s", "mid", 18),
+        ("Newtype", "Mobile Suit Gundam SEED FREEDOM", "B2 Poster", "Newtype Gundam SEED FREEDOM Theatrical B2 Poster", "2020s", "mid", 30),
+        ("Newtype", "Spy x Family", "Appendix Figure", "Newtype Spy x Family Anya Petit Figure Appendix", "2020s", "mid", 35),
+        ("Newtype", "Chainsaw Man", "B2 Poster", "Newtype Chainsaw Man Movie: Reze Arc B2 Poster", "2020s", "mid", 22),
+        ("Newtype", "Evangelion", "Appendix Figure", "Newtype Eva 3.0+1.0 Rei Ayanami Mini Figure Appendix", "2020s", "high", 55),
+
+        # ── Hobby Japan — Build Guides & Model Reviews ──────────────────
+        ("Hobby Japan", "Gundam", "Magazine Issue", "Hobby Japan Aug 2024 — MG Freedom Gundam 2.0 Build Guide", "2020s", "standard", 12),
+        ("Hobby Japan", "Gundam", "Magazine Issue", "Hobby Japan Mar 2024 — RG Hi-Nu Gundam Feature", "2020s", "standard", 12),
+        ("Hobby Japan", "Frame Arms Girl", "Insert Parts", "Hobby Japan Frame Arms Girl Exclusive Runner Insert", "2020s", "mid", 25),
+        ("Hobby Japan", "Armored Core", "Magazine Issue", "Hobby Japan Armored Core VI Special Issue w/ Decals", "2020s", "mid", 18),
+        ("Hobby Japan", "Zoids", "Magazine Issue", "Hobby Japan Zoids 40th Anniversary Special Issue", "2020s", "mid", 20),
+        ("Hobby Japan", "Macross", "Insert Decal", "Hobby Japan Macross VF-1S Water Slide Decal Insert", "2020s", "mid", 15),
+        ("Hobby Japan", "Gundam", "Appendix Parts", "Hobby Japan MG Barbatos Custom Parts Appendix", "2020s", "mid", 30),
+
+        # ── Dengeki Hobby — Gundam Special Issues ───────────────────────
+        ("Dengeki Hobby", "Gundam", "Magazine Issue", "Dengeki Hobby Final Issue w/ Exclusive HG Parts (2015)", "2010s", "high", 80),
+        ("Dengeki Hobby", "Gundam", "Insert Parts", "Dengeki Hobby 1/144 Zaku Custom Head Parts Insert", "2000s", "high", 65),
+        ("Dengeki Hobby", "Gundam UC", "Insert Parts", "Dengeki Hobby Unicorn Gundam LED Unit Insert", "2010s", "high", 55),
+        ("Dengeki Hobby", "Evangelion", "Magazine Issue", "Dengeki Hobby Eva-01 Metallic Color Guide Issue", "2000s", "mid", 35),
+        ("Dengeki Hobby", "Gundam SEED", "Insert Decal", "Dengeki Hobby SEED Freedom Exclusive Decal Sheet", "2000s", "mid", 28),
+        ("Dengeki Hobby", "Super Robot Wars", "Magazine Issue", "Dengeki Hobby SRW OG Mecha Special Issue", "2000s", "mid", 22),
+        ("Dengeki Hobby", "Five Star Stories", "Insert Poster", "Dengeki Hobby FSS Mortar Headd B2 Poster Insert", "2000s", "mid", 40),
+
+        # ── Monthly Bushiroad — Card Game Promos ────────────────────────
+        ("Monthly Bushiroad", "Cardfight!! Vanguard", "Promo Card", "Bushiroad Monthly Vanguard Exclusive PR Card Insert", "2020s", "mid", 15),
+        ("Monthly Bushiroad", "BanG Dream!", "Promo Card", "Bushiroad Monthly BanG Dream! Promo Card Set", "2020s", "standard", 10),
+        ("Monthly Bushiroad", "Weiss Schwarz", "Promo Card", "Bushiroad Monthly Weiss Schwarz SP Promo Card", "2020s", "mid", 20),
+        ("Monthly Bushiroad", "D4DJ", "Clear File", "Bushiroad Monthly D4DJ Photon Maiden Clear File", "2020s", "standard", 8),
+        ("Monthly Bushiroad", "Cardfight!! Vanguard", "Magazine Issue", "Monthly Bushiroad Vanguard Dear Days Feature Issue", "2020s", "standard", 10),
+        ("Monthly Bushiroad", "Buddyfight", "Promo Card", "Bushiroad Monthly Buddyfight Final Season Promo", "2010s", "mid", 18),
+        ("Monthly Bushiroad", "Rebirth for You", "Promo Card", "Bushiroad Monthly Rebirth Hololive Promo Card", "2020s", "mid", 25),
+
+        # ── V Jump — Dragon Ball / Yu-Gi-Oh Promos ──────────────────────
+        ("V Jump", "Dragon Ball Super", "Promo Card", "V Jump DBS Card Game Tournament Pack 2024 Insert", "2020s", "mid", 22),
+        ("V Jump", "Yu-Gi-Oh!", "Promo Card", "V Jump Yu-Gi-Oh! VJMP-JP Exclusive Ultra Rare 2024", "2020s", "high", 55),
+        ("V Jump", "Dragon Ball Super", "Magazine Issue", "V Jump Dragon Ball Daima Reveal Issue Oct 2024", "2020s", "mid", 18),
+        ("V Jump", "Yu-Gi-Oh!", "Promo Card", "V Jump VJMP-JP250 Shooting Majestic Star Dragon", "2020s", "high", 65),
+        ("V Jump", "Dragon Ball", "Insert Poster", "V Jump Dragon Ball 40th Anniversary A2 Poster", "2020s", "mid", 28),
+        ("V Jump", "One Piece Card Game", "Promo Card", "V Jump One Piece Card Game Promo Luffy Gear 5", "2020s", "mid", 35),
+        ("V Jump", "Boruto", "Magazine Issue", "V Jump Boruto: Two Blue Vortex Launch Issue", "2020s", "standard", 12),
+
+        # ── Weekly Shonen Jump — Milestone Issues ───────────────────────
+        ("Weekly Shonen Jump", "Multiple", "Magazine Issue", "Shonen Jump Issue #1000 Commemorative Edition", "2000s", "grail", 250),
+        ("Weekly Shonen Jump", "One Piece", "Magazine Issue", "Shonen Jump One Piece Chapter 1000 Issue", "2020s", "high", 80),
+        ("Weekly Shonen Jump", "Dragon Ball", "Magazine Issue", "Shonen Jump Dragon Ball Final Chapter Issue (1995)", "1990s", "grail", 300),
+        ("Weekly Shonen Jump", "Naruto", "Magazine Issue", "Shonen Jump Naruto Final Chapter Issue #50 2014", "2010s", "high", 65),
+        ("Weekly Shonen Jump", "Demon Slayer", "Magazine Issue", "Shonen Jump Demon Slayer Final Chapter Issue 2020", "2020s", "high", 55),
+        ("Weekly Shonen Jump", "Jujutsu Kaisen", "Magazine Issue", "Shonen Jump JJK Final Chapter Issue 2024", "2020s", "mid", 40),
+        ("Weekly Shonen Jump", "Multiple", "Magazine Issue", "Shonen Jump 50th Anniversary Issue (2018)", "2010s", "high", 90),
+
+        # ── Animedia — Voice Actor Interviews & Poster Sets ─────────────
+        ("Animedia", "Frieren", "B2 Poster", "Animedia Frieren Party Illustration B2 Poster Set (2pc)", "2020s", "mid", 30),
+        ("Animedia", "Oshi no Ko", "Insert Poster", "Animedia Oshi no Ko Ruby & Aqua Double-Sided A3 Poster", "2020s", "mid", 20),
+        ("Animedia", "Spy x Family", "Clear File", "Animedia Spy x Family Forger Family Clear File Insert", "2020s", "standard", 10),
+        ("Animedia", "Bocchi the Rock!", "B2 Poster", "Animedia Bocchi the Rock! Cast Illustration B2 Poster", "2020s", "mid", 25),
+        ("Animedia", "Haikyuu!!", "Insert Poster", "Animedia Haikyuu!! Final Movie Cast A3 Poster Insert", "2020s", "mid", 22),
+        ("Animedia", "My Hero Academia", "Voice Actor Feature", "Animedia MHA Final Season Seiyuu Interview Issue", "2020s", "standard", 12),
+        ("Animedia", "Gundam: Witch from Mercury", "B2 Poster", "Animedia G-Witch Suletta & Miorine B2 Poster", "2020s", "mid", 28),
     ]
 
     catalog = []

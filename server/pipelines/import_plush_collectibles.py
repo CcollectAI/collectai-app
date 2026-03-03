@@ -92,6 +92,71 @@ def _plush_rarity_score(rarity: str) -> float:
     return _PLUSH_RARITY.get(rarity, shared_rarity_score(rarity))
 
 
+def _additional_plush_2025_expansion() -> list[tuple]:
+    """50 more: Steiff, Gund/Pusheen, Aurora/Miyoni, Jellycat, Kapibarasan, Rilakkuma."""
+    return [
+        # ── Steiff Limited Editions ────────────────────────────────────────
+        ("Steiff Classic 1907 Teddy Bear Replica", "Steiff", "Classic Replica", 'Medium 35cm', 250, "Rare", True, "Numbered replica of 1907 original, mohair"),
+        ("Steiff Teddy Bear 1902 Replica 55PB", "Steiff", "Classic Replica", 'Large 55cm', 400, "Grail", True, "First Steiff bear replica, museum piece"),
+        ("Steiff x Disney Mickey Mouse 1932 Replica", "Steiff", "Disney Collab", 'Medium 30cm', 180, "Rare", True, "Disney x Steiff collab, felt ears"),
+        ("Steiff x Disney Winnie the Pooh", "Steiff", "Disney Collab", 'Medium 25cm', 150, "Rare", False, "Classic Pooh mohair, red shirt"),
+        ("Steiff x Disney Bambi", "Steiff", "Disney Collab", 'Medium 20cm', 130, "Rare", False, "Airbrush details, spotted fawn"),
+        ("Steiff Christmas Teddy Bear 2024", "Steiff", "Annual Christmas", 'Medium 30cm', 120, "Uncommon", False, "2024 annual Christmas bear, gold bow"),
+        ("Steiff Christmas Teddy Bear 2023", "Steiff", "Annual Christmas", 'Medium 30cm', 140, "Uncommon", True, "2023 edition, burgundy velvet ribbon"),
+        ("Steiff Teddybear Workshop Bear", "Steiff", "Special Edition", 'Small 22cm', 95, "Uncommon", True, "Steiff workshop exclusive, leather apron"),
+        ("Steiff Polar Bear Ted", "Steiff", "Wildlife", 'Large 45cm', 200, "Rare", True, "White mohair, glass eyes, LE 1500"),
+
+        # ── Gund — Pusheen Series & Snuffles ──────────────────────────────
+        ("Pusheen Classic Plush", "Gund", "Pusheen", 'Medium 30cm', 25, "Common", False, "Classic grey tabby cat Pusheen"),
+        ("Pusheen Mermaid", "Gund", "Pusheen", 'Medium 25cm', 28, "Common", False, "Pusheen in mermaid tail costume"),
+        ("Pusheen Unicorn (Pusheenicorn)", "Gund", "Pusheen", 'Medium 33cm', 30, "Common", False, "Rainbow horn and wings"),
+        ("Pusheen Detective", "Gund", "Pusheen", 'Medium 25cm', 30, "Uncommon", False, "Sherlock hat and magnifying glass"),
+        ("Pusheen Dragon (Dragonsheen)", "Gund", "Pusheen", 'Medium 28cm', 30, "Common", False, "Green dragon wings and tail"),
+        ("Pusheen Holiday Stocking Set", "Gund", "Pusheen", 'Set 15cm each', 45, "Uncommon", True, "3-piece holiday mini set in stocking"),
+        ("Snuffles 40th Anniversary Bear", "Gund", "Snuffles", 'Large 38cm', 60, "Uncommon", True, "40th anniversary gold tag, white fur"),
+        ("Snuffles Polar Bear", "Gund", "Snuffles", 'Medium 25cm', 35, "Common", False, "Classic polar white Snuffles bear"),
+
+        # ── Aurora World — Miyoni Realistic Animals ────────────────────────
+        ("Miyoni Tabby Cat", "Aurora World", "Miyoni", 'Medium 28cm', 22, "Common", False, "Realistic tabby, weighted paws"),
+        ("Miyoni Red Panda", "Aurora World", "Miyoni", 'Medium 25cm', 25, "Common", False, "Realistic red panda, bushy tail"),
+        ("Miyoni Fennec Fox", "Aurora World", "Miyoni", 'Medium 23cm', 22, "Common", False, "Large ears, desert fox realistic"),
+        ("Miyoni Snow Leopard", "Aurora World", "Miyoni", 'Medium 30cm', 28, "Common", False, "Spotted grey coat, long tail"),
+        ("Miyoni Barn Owl", "Aurora World", "Miyoni", 'Medium 22cm', 20, "Common", False, "Heart-shaped face, realistic plumage"),
+        ("Miyoni Emperor Penguin Chick", "Aurora World", "Miyoni", 'Medium 20cm', 18, "Common", False, "Grey fluffy baby penguin"),
+
+        # ── Jellycat — Extended Range ──────────────────────────────────────
+        ("Jellycat Bashful Dragon (Sage)", "Jellycat", "Bashful", 'Medium 31cm', 30, "Common", False, "Sage green dragon, corduroy wings"),
+        ("Jellycat Bashful Dragon (Blush)", "Jellycat", "Bashful", 'Medium 31cm', 30, "Common", False, "Pink blush dragon, suede-feel wings"),
+        ("Jellycat Amuseable Doughnut", "Jellycat", "Amuseable", 'Medium 18cm', 25, "Common", False, "Ring doughnut with sprinkles, cord legs"),
+        ("Jellycat Amuseable Avocado", "Jellycat", "Amuseable", 'Medium 20cm', 25, "Common", False, "Smiling half avocado with pit"),
+        ("Jellycat Amuseable Croissant", "Jellycat", "Amuseable", 'Medium 20cm', 25, "Common", False, "Golden flaky pastry with cord legs"),
+        ("Jellycat Odyssey Octopus", "Jellycat", "Odyssey", 'Large 49cm', 45, "Uncommon", False, "Teal octopus, 8 curly tentacles"),
+        ("Jellycat Vivacious Vegetable Broccoli", "Jellycat", "Vivacious Vegetable", 'Medium 17cm', 20, "Common", False, "Green broccoli with happy face"),
+        ("Jellycat Delaney Diplodocus", "Jellycat", "Dinosaur", 'Large 50cm', 50, "Uncommon", False, "Long-neck dinosaur, corduroy tummy"),
+        ("Jellycat Fuddlewuddle Dragon", "Jellycat", "Fuddlewuddle", 'Medium 23cm', 28, "Common", False, "Teal/lime green cuddly dragon"),
+        ("Jellycat Retired Bashful Fox (Huge)", "Jellycat", "Bashful Retired", 'Huge 51cm', 90, "HTF", True, "Discontinued huge fox, highly collectible"),
+
+        # ── Kapibarasan (Capybara) ─────────────────────────────────────────
+        ("Kapibarasan Classic Plush", "Bandai", "Kapibarasan", 'Medium 25cm', 30, "Common", False, "Classic brown capybara, Tryworks original"),
+        ("Kapibarasan White-san", "Bandai", "Kapibarasan", 'Medium 25cm', 32, "Common", False, "White capybara friend White-san"),
+        ("Kapibarasan Baby (Kapibaby)", "Bandai", "Kapibarasan", 'Small 15cm', 22, "Common", False, "Baby capybara, smaller round version"),
+        ("Kapibarasan Resting Pose XL", "Bandai", "Kapibarasan", 'XL 60cm', 80, "Uncommon", False, "Oversized resting capybara, huggable"),
+        ("Kapibarasan Hot Spring Edition", "Bandai", "Kapibarasan", 'Medium 25cm', 38, "Uncommon", True, "Onsen theme with towel accessory, limited"),
+
+        # ── Rilakkuma / San-X Anniversary & Friends ────────────────────────
+        ("Rilakkuma 20th Anniversary Plush", "San-X", "Rilakkuma", 'Large 40cm', 75, "Rare", False, "20th anniversary gold ribbon edition"),
+        ("Rilakkuma Classic Lying Down", "San-X", "Rilakkuma", 'Medium 30cm', 35, "Common", False, "Classic relaxing bear pose"),
+        ("Korilakkuma Classic", "San-X", "Rilakkuma", 'Medium 28cm', 32, "Common", False, "White bear with red button, Rilakkuma friend"),
+        ("Korilakkuma Strawberry", "San-X", "Rilakkuma", 'Medium 25cm', 35, "Uncommon", False, "Strawberry costume Korilakkuma"),
+        ("Kiiroitori Chick Classic", "San-X", "Rilakkuma", 'Small 18cm', 25, "Common", False, "Yellow chick, Rilakkuma's pet bird"),
+        ("Kiiroitori Chef Costume", "San-X", "Rilakkuma", 'Small 18cm', 30, "Uncommon", False, "Chef hat and apron Kiiroitori"),
+        ("Rilakkuma Honey Bee", "San-X", "Rilakkuma", 'Medium 28cm', 40, "Uncommon", True, "Bee costume with wings, limited seasonal"),
+        ("Rilakkuma Astronaut", "San-X", "Rilakkuma", 'Medium 28cm', 45, "Uncommon", True, "Space suit theme, NASA collab limited"),
+        ("Sumikko Gurashi Tokage (Lizard)", "San-X", "Sumikko Gurashi", 'Medium 22cm', 28, "Common", False, "Shy lizard pretending to be dinosaur"),
+        ("Sumikko Gurashi Shirokuma (Polar Bear)", "San-X", "Sumikko Gurashi", 'Medium 22cm', 28, "Common", False, "Cold-sensitive polar bear from the north"),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated plush collectibles catalog: 500+ items across 18 sub-categories."""
 
@@ -790,6 +855,9 @@ def get_curated_catalog() -> list[dict]:
         ("No-Face Kaonashi Plush", "Ghibli", "Spirited Away", 'Medium 25cm', 40, "Uncommon", False, "Masked spirit No-Face"),
         ("Calcifer Flame Plush", "Ghibli", "Howl's Moving Castle", 'Small 15cm', 30, "Common", False, "Fire demon Calcifer"),
     ]
+
+    # ── Batch: Steiff, Gund, Aurora, Jellycat, Kapibarasan, Rilakkuma (50 items) ──
+    items += _additional_plush_2025_expansion()
 
     catalog = []
     for name, brand, series, size, price, rarity, is_retired, notes in items:

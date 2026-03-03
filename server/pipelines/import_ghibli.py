@@ -655,8 +655,81 @@ def _additional_ghibli_items() -> list[tuple]:
     ]
 
 
+def _expanded_batch_park_and_deep_cuts() -> list[tuple]:
+    """50 additional Ghibli items — Park exclusives, deep-cut films, jewelry, music boxes, model kits."""
+    return [
+        # ── Ghibli Park Exclusive Goods (Opening Day & Area-Specific) ──────
+        ("Ghibli Park", "park", "Ghibli Park Opening Day Commemorative Pin (Nov 2022)", "Ghibli Park Exclusive", "high", 150),
+        ("Ghibli Park", "park", "Ghibli Park Opening Day Tote Bag (Numbered)", "Ghibli Park Exclusive", "high", 130),
+        ("Ghibli Park", "park", "Ghibli Park Dondoko Forest Totoro Figure (Park Only)", "Ghibli Park Exclusive", "high", 95),
+        ("Ghibli Park", "park", "Ghibli Park Mononoke Village Kodama Lamp Set", "Ghibli Park Exclusive", "high", 110),
+        ("Ghibli Park", "park", "Ghibli Park Valley of Witches Hatter's Hat Replica", "Ghibli Park Exclusive", "high", 85),
+        ("Ghibli Park", "park", "Ghibli Park Grand Warehouse Robot Soldier Key Visual Poster", "Ghibli Park Exclusive", "mid", 45),
+        ("Ghibli Park", "park", "Ghibli Park Hill of Youth Antique Shop Globe Miniature", "Ghibli Park Exclusive", "mid", 65),
+        ("Ghibli Park", "park", "Ghibli Park Opening Ceremony Ticket Frame Set", "Ghibli Park Exclusive", "grail", 250),
+
+        # ── Kiki's Delivery Service — Figures & Goods ──────────────────────
+        ("Kiki's Delivery Service", "figure", "Kiki's Bakery Counter Diorama Figure", "Benelic", "high", 95),
+        ("Kiki's Delivery Service", "figure", "Jiji & Lily Couple Figure Set", "Donguri Sora", "mid", 48),
+        ("Kiki's Delivery Service", "figure", "Kiki Flying Over Koriko Cityscape Diorama", "Cominica", "high", 140),
+        ("Kiki's Delivery Service", "plush", "Jiji Kittens Set (3pcs)", "Donguri Sora", "mid", 55),
+        ("Kiki's Delivery Service", "accessory", "Kiki's Red Bow Hair Ribbon Replica", "JP Exclusive", "mid", 32),
+
+        # ── Porco Rosso — Model Kits & Figures ─────────────────────────────
+        ("Porco Rosso", "model", "Savoia S.21F Late Model Kit (1:72 Fine Molds)", "Fine Molds", "high", 85),
+        ("Porco Rosso", "model", "Curtiss R3C-0 Seaplane Kit (1:72 Fine Molds)", "Fine Molds", "mid", 70),
+        ("Porco Rosso", "figure", "Porco Rosso Seated Pilot Figure", "Benelic", "mid", 55),
+        ("Porco Rosso", "figure", "Fio & Porco Workshop Scene Diorama", "Donguri Sora", "high", 80),
+        ("Porco Rosso", "cel", "Porco Rosso Adriatic Dogfight Animation Cel", "Original Cel", "grail", 2800),
+
+        # ── Nausicaa — Giant God Warrior, Ohmu, Deep Cuts ──────────────────
+        ("Nausicaa", "figure", "Giant God Warrior Awakening Figure (Tokusatsu Revoltech)", "Kaiyodo", "high", 180),
+        ("Nausicaa", "figure", "Ohmu Full Articulated Figure (Blue Eyes)", "Bandai", "high", 145),
+        ("Nausicaa", "figure", "Ohmu Raging Mode (Red Eyes) Figure", "Bandai", "high", 155),
+        ("Nausicaa", "figure", "Nausicaa & Baby Ohmu Diorama", "Cominica", "high", 125),
+        ("Nausicaa", "model", "Nausicaa Gunship Model Kit (1:72 Fine Molds)", "Fine Molds", "high", 95),
+
+        # ── Castle of Cagliostro ───────────────────────────────────────────
+        ("Castle of Cagliostro", "figure", "Lupin & Clarisse Clock Tower Scene Diorama", "Banpresto", "high", 110),
+        ("Castle of Cagliostro", "figure", "Fiat 500 Car Model with Lupin Figure", "Bandai", "mid", 65),
+        ("Castle of Cagliostro", "poster", "Castle of Cagliostro Original B2 Poster (1979)", "Vintage", "grail", 480),
+        ("Castle of Cagliostro", "cel", "Lupin Rooftop Chase Animation Cel", "Original Cel", "grail", 3500),
+
+        # ── Princess Mononoke — Crystal & Jewelry ──────────────────────────
+        ("Princess Mononoke", "jewelry", "Crystal Dagger Pendant Replica (Sterling Silver)", "JP Exclusive", "high", 120),
+        ("Princess Mononoke", "jewelry", "San's Necklace Replica (Natural Stone & Silver)", "JP Exclusive", "high", 95),
+        ("Princess Mononoke", "jewelry", "Kodama Charm Bracelet (Sterling Silver 6pc)", "JP Exclusive", "mid", 75),
+        ("Princess Mononoke", "figure", "Forest Spirit Transformation Sequence 3-Figure Set", "Cominica", "high", 195),
+
+        # ── Howl's Moving Castle — Music Boxes & Calcifer ──────────────────
+        ("Howl's Moving Castle", "music_box", "Merry-Go-Round of Life Sankyo Orgel (Large Walnut)", "Sankyo", "high", 120),
+        ("Howl's Moving Castle", "music_box", "Promise of the World Crystal Ball Music Box", "Sekiguchi", "high", 95),
+        ("Howl's Moving Castle", "music_box", "Howl's Castle Moving Mechanical Music Box", "Benelic", "grail", 280),
+        ("Howl's Moving Castle", "figure", "Calcifer Candle Holder (Cast Iron)", "JP Exclusive", "mid", 48),
+        ("Howl's Moving Castle", "figure", "Calcifer Plush with Sound (Flame Effect)", "Donguri Sora", "mid", 42),
+        ("Howl's Moving Castle", "figure", "Calcifer Cooking Bacon & Eggs Scene Figure", "Benelic", "mid", 55),
+        ("Howl's Moving Castle", "figure", "Calcifer & Howl's Heart Glow-in-Dark Figure", "Donguri Sora", "mid", 38),
+
+        # ── Deep Cut Films — Whisper of the Heart, Ocean Waves, etc. ──────
+        ("Whisper of the Heart", "music_box", "Country Roads Antique Music Box Replica", "Sekiguchi", "high", 130),
+        ("Whisper of the Heart", "figure", "Baron & Shizuku Violin Scene Diorama", "Donguri Sora", "high", 85),
+        ("Ocean Waves", "cel", "Rikako Train Station Animation Cel", "Original Cel", "grail", 1500),
+        ("Only Yesterday", "cel", "Taeko Safflower Field Animation Cel", "Original Cel", "grail", 1800),
+        ("Only Yesterday", "poster", "Only Yesterday B2 Theatrical Poster (1991)", "Vintage", "high", 180),
+
+        # ── Vintage & Grail Art ────────────────────────────────────────────
+        ("Multi-Film", "art_book", "The Art of Ghibli Park Official Book (Deluxe Edition)", "JP Exclusive", "high", 95),
+        ("Multi-Film", "art_book", "Hayao Miyazaki Storyboard Collection — Spirited Away (Complete)", "JP Exclusive", "high", 110),
+        ("Multi-Film", "figure", "Ghibli Museum Exclusive Short Film Collection Frame Set", "Museum Exclusive", "grail", 220),
+
+        # ── Extra Deep Cuts ────────────────────────────────────────────────
+        ("Ghibli Park", "park", "Ghibli Park Cat Returns Baron's Office Miniature Set", "Ghibli Park Exclusive", "high", 88),
+        ("Castle of Cagliostro", "figure", "Clarisse Wedding Dress Figure", "Banpresto", "mid", 72),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
-    """Curated Studio Ghibli collectibles catalog (500+ items)."""
+    """Curated Studio Ghibli collectibles catalog (550+ items)."""
 
     # (film, subcategory, name, edition, rarity_tier, price_eur)
     # rarity_tier: grail (>200), high (80-200), mid (30-80), standard (<30)
@@ -765,6 +838,7 @@ def get_curated_catalog() -> list[dict]:
     items += _additional_fashion_collabs()
     items += _additional_vintage_posters_music()
     items += _additional_ghibli_items()
+    items += _expanded_batch_park_and_deep_cuts()
 
     catalog = []
     for film, subcategory, name, edition, tier, price in items:

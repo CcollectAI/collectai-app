@@ -686,6 +686,69 @@ def get_curated_catalog() -> list[dict]:
         ("Trmk", "Artisan", "Nova Solar Flare", "Cherry R1", "mid", 115),
         ("CKC", "Artisan", "Telepunk Vaporwave", "Cherry R1", "mid", 95),
         ("CKC", "Artisan", "Telepunk Cyberpunk", "Cherry R1", "mid", 100),
+
+        # ── Expanded Batch — Dwarf Factory, Jellykey, CYSM, Artkey, Latrialum, Melonkeys, GSK (50) ──
+
+        # Dwarf Factory — Kraken, Terrarium, Foodie
+        ("Dwarf Factory", "Artisan", "Kraken Abyss Blue", "Cherry R1", "mid", 75),
+        ("Dwarf Factory", "Artisan", "Kraken Inferno Red", "Cherry R1", "mid", 78),
+        ("Dwarf Factory", "Artisan", "Kraken Deep Ocean Teal", "Cherry R1", "mid", 80),
+        ("Dwarf Factory", "Artisan", "Terrarium Keycap Spring Garden", "Cherry R1", "mid", 82),
+        ("Dwarf Factory", "Artisan", "Terrarium Keycap Winter Frost", "Cherry R1", "mid", 80),
+        ("Dwarf Factory", "Artisan", "Terrarium Keycap Deep Forest", "Cherry R1", "mid", 78),
+        ("Dwarf Factory", "Artisan", "Foodie Bacon & Eggs", "Cherry R1", "standard", 55),
+        ("Dwarf Factory", "Artisan", "Foodie Ramen Bowl", "Cherry R1", "standard", 58),
+        ("Dwarf Factory", "Artisan", "Foodie Sushi Platter", "Cherry R1", "standard", 55),
+
+        # Jellykey — Zen Pond, Koi Pond, Dragon of Eden, Born of Forest
+        ("Jelly Key", "Artisan", "Zen Pond III Emerald Koi 6.25u Spacebar", "SA R1", "mid", 120),
+        ("Jelly Key", "Artisan", "Zen Pond III Moonlight Koi", "SA R1", "mid", 95),
+        ("Jelly Key", "Artisan", "Koi Pond Autumn Leaves 2.25u Shift", "SA R1", "mid", 110),
+        ("Jelly Key", "Artisan", "Koi Pond Summer Breeze", "SA R1", "mid", 105),
+        ("Jelly Key", "Artisan", "Dragon of Eden Crimson Flame", "SA R1", "mid", 115),
+        ("Jelly Key", "Artisan", "Dragon of Eden Frost Wing", "SA R1", "mid", 110),
+        ("Jelly Key", "Artisan", "Born of Forest Series Redwood", "SA R1", "mid", 85),
+        ("Jelly Key", "Artisan", "Born of Forest Series Cherry Blossom", "SA R1", "mid", 90),
+
+        # CYSM — Keyby, Boo
+        ("CYSM", "Artisan", "Keyby Coral Reef", "Cherry R4", "mid", 105),
+        ("CYSM", "Artisan", "Keyby Sakura Pink", "Cherry R4", "mid", 110),
+        ("CYSM", "Artisan", "Keyby Midnight Galaxy", "Cherry R4", "mid", 130),
+        ("CYSM", "Artisan", "Boo Ghost White", "Cherry R4", "mid", 80),
+        ("CYSM", "Artisan", "Boo Phantom Purple", "Cherry R4", "mid", 85),
+        ("CYSM", "Artisan", "Boo Pumpkin Spice", "Cherry R4", "mid", 82),
+
+        # Artkey — Sirius, Exmor, Fulfillment
+        ("Artkey", "Artisan", "Sirius Void Black", "Cherry R4", "high", 230),
+        ("Artkey", "Artisan", "Sirius Solar Gold", "Cherry R4", "high", 240),
+        ("Artkey", "Artisan", "Exmor Stardust", "Cherry R4", "high", 215),
+        ("Artkey", "Artisan", "Exmor Bloodmoon", "Cherry R4", "high", 225),
+        ("Artkey", "Artisan", "Fulfillment Serenity", "Cherry R4", "high", 200),
+        ("Artkey", "Artisan", "Fulfillment Chaos", "Cherry R4", "high", 210),
+
+        # Latrialum — GMK Royal, Empress
+        ("Latrialum", "Artisan", "GMK Royal ESC + Fn (Navy/Gold)", "Cherry R4", "high", 320),
+        ("Latrialum", "Artisan", "GMK Royal Arrow Set", "Cherry R4", "grail", 450),
+        ("Latrialum", "Artisan", "Empress Aurora ESC", "Cherry R4", "high", 250),
+        ("Latrialum", "Artisan", "Empress Midnight ESC + Fn Set", "Cherry R4", "high", 340),
+        ("Latrialum", "Artisan", "Ethereal Radiance WASD Set", "Cherry R4", "grail", 420),
+
+        # Melonkeys
+        ("Melonkeys", "Artisan", "Suika Watermelon", "Cherry R1", "mid", 85),
+        ("Melonkeys", "Artisan", "Mango Tango", "Cherry R1", "mid", 80),
+        ("Melonkeys", "Artisan", "Grape Soda", "Cherry R1", "mid", 80),
+        ("Melonkeys", "Artisan", "Dragon Fruit Pink", "Cherry R1", "mid", 85),
+
+        # GSK — Velites, Hogzilla expansion
+        ("GSK", "Artisan", "Velites Crimson Guard", "Cherry R1", "mid", 145),
+        ("GSK", "Artisan", "Velites Frost Sentinel", "Cherry R1", "mid", 140),
+        ("GSK", "Artisan", "Velites Shadow Legion", "Cherry R1", "mid", 150),
+        ("GSK", "Artisan", "Hogzilla Verdant Moss", "Cherry R1", "mid", 125),
+        ("GSK", "Artisan", "Hogzilla Obsidian Night", "Cherry R1", "mid", 130),
+        ("GSK", "Artisan", "Hogzilla Sakura Bloom", "Cherry R1", "mid", 128),
+        ("GSK", "Artisan", "Mandrill Volcanic Red", "Cherry R1", "mid", 130),
+        ("GSK", "Artisan", "Leo Midnight Black", "Cherry R1", "mid", 120),
+        ("GSK", "Artisan", "Froggo Deep Sea", "Cherry R1", "mid", 108),
     ]
 
     catalog = []

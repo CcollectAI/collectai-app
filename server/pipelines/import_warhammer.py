@@ -753,6 +753,73 @@ def get_curated_catalog() -> list[dict]:
         ("nb", "Necromunda", "Ironhead Squat Prospectors", "Gang", 32, 40),
         ("nb", "Necromunda", "Palanite Subjugator Patrol", "Gang", 28, 35),
         ("nb", "Necromunda", "Necromunda: Hive War Box Set", "Box Set", 95, 120),
+
+        # =================================================================
+        # Batch 11 — Horus Heresy Primarchs, AoS Stormcast, Necromunda
+        # Gangs, Blood Bowl Teams, Adeptus Titanicus, Aeronautica
+        # =================================================================
+
+        # ── Horus Heresy Primarch Models (10) ────────────────────────────
+        ("hh", "Horus Heresy", "Horus Lupercal, Warmaster of Chaos (FW)", "Character", 95, 180),
+        ("hh", "Horus Heresy", "Sanguinius, Primarch of the Blood Angels (FW)", "Character", 95, 200),
+        ("hh", "Horus Heresy", "Lion El'Jonson, Primarch of the Dark Angels (FW)", "Character", 95, 190),
+        ("hh", "Horus Heresy", "Fulgrim, Primarch of the Emperor's Children (FW)", "Character", 90, 175),
+        ("hh", "Horus Heresy", "Angron, Primarch of the World Eaters (FW)", "Character", 90, 180),
+        ("hh", "Horus Heresy", "Mortarion, Primarch of the Death Guard (FW)", "Character", 95, 185),
+        ("hh", "Horus Heresy", "Magnus the Red, Primarch of the Thousand Sons (FW)", "Character", 100, 210),
+        ("hh", "Horus Heresy", "Perturabo, Primarch of the Iron Warriors (FW)", "Character", 90, 170),
+        ("hh", "Horus Heresy", "Vulkan, Primarch of the Salamanders (FW)", "Character", 90, 175),
+        ("hh", "Horus Heresy", "Rogal Dorn, Primarch of the Imperial Fists (FW)", "Character", 95, 185),
+
+        # ── Age of Sigmar Stormcast Eternals (8) ────────────────────────
+        ("aos", "Stormcast Eternals", "Yndrasta, the Celestial Spear", "Character", 35, 42),
+        ("aos", "Stormcast Eternals", "Bastian Carthalos, Commander of the Hammers of Sigmar", "Character", 35, 40),
+        ("aos", "Stormcast Eternals", "Ionus Cryptborn, Lord-Veritant", "Character", 28, 35),
+        ("aos", "Stormcast Eternals", "Gardus Steel Soul", "Character", 25, 32),
+        ("aos", "Stormcast Eternals", "Lord-Imperatant w/ Gryph-hound", "Character", 22, 28),
+        ("aos", "Stormcast Eternals", "Stormstrike Chariot", "Vehicle", 42, 50),
+        ("aos", "Stormcast Eternals", "Annihilators w/ Meteoric Grandhammers", "Squad", 38, 45),
+        ("aos", "Stormcast Eternals", "Thunderstrike Stormdrake Guard", "Monster", 55, 68),
+
+        # ── Necromunda Gang Boxes (10) ──────────────────────────────────
+        ("nb", "Necromunda", "Escher Gang Box", "Gang", 32, 40),
+        ("nb", "Necromunda", "Goliath Gang Box", "Gang", 32, 40),
+        ("nb", "Necromunda", "Van Saar Gang Box", "Gang", 32, 40),
+        ("nb", "Necromunda", "Cawdor Gang Box", "Gang", 32, 40),
+        ("nb", "Necromunda", "Delaque Gang Box", "Gang", 32, 40),
+        ("nb", "Necromunda", "Orlock Gang Box", "Gang", 32, 40),
+        ("nb", "Necromunda", "Escher Death Maidens & Wyld Runners", "Gang", 28, 35),
+        ("nb", "Necromunda", "Goliath Stimmers & Forge-born", "Gang", 28, 35),
+        ("nb", "Necromunda", "Van Saar Archeoteks & Grav-cutters", "Gang", 28, 35),
+        ("nb", "Necromunda", "Cawdor Redemptionists", "Gang", 28, 35),
+
+        # ── Blood Bowl Teams (8) ────────────────────────────────────────
+        ("bb", "Blood Bowl", "Skaven Team: The Skavenblight Scramblers", "Team Box", 30, 38),
+        ("bb", "Blood Bowl", "Nurgle Team: The Nurgle's Rotters", "Team Box", 30, 38),
+        ("bb", "Blood Bowl", "Dark Elf Team: The Naggaroth Nightmares", "Team Box", 30, 38),
+        ("bb", "Blood Bowl", "Orc Team: The Gouged Eye", "Team Box", 30, 38),
+        ("bb", "Blood Bowl", "Human Team: The Reikland Reavers", "Team Box", 30, 38),
+        ("bb", "Blood Bowl", "Undead Team: The Champions of Death", "Team Box", 30, 38),
+        ("bb", "Blood Bowl", "Wood Elf Team: The Athelorn Avengers", "Team Box", 30, 38),
+        ("bb", "Blood Bowl", "Blood Bowl Pitch & Dugouts (Sevens)", "Accessory", 25, 30),
+
+        # ── Adeptus Titanicus (7) ──────────────────────────────────────
+        ("at", "Adeptus Titanicus", "Warlord Titan w/ Plasma Annihilator", "Titan", 110, 140),
+        ("at", "Adeptus Titanicus", "Warlord Titan w/ Volcano Cannons", "Titan", 110, 140),
+        ("at", "Adeptus Titanicus", "Reaver Titan (Plastic)", "Titan", 40, 52),
+        ("at", "Adeptus Titanicus", "Warhound Titan Pack (2 Titans)", "Titan", 32, 42),
+        ("at", "Adeptus Titanicus", "Cerastus Knight Lancers", "Knight", 25, 32),
+        ("at", "Adeptus Titanicus", "Acastus Knight Porphyrion", "Knight", 30, 38),
+        ("at", "Adeptus Titanicus", "Adeptus Titanicus Rules Set (OOP)", "Box Set", 50, 80),
+
+        # ── Aeronautica Imperialis (7) ─────────────────────────────────
+        ("ai", "Aeronautica Imperialis", "T-65 Thunderbolt Fighters (Imperial Navy)", "Aircraft", 25, 32),
+        ("ai", "Aeronautica Imperialis", "Marauder Bombers (Imperial Navy)", "Aircraft", 30, 38),
+        ("ai", "Aeronautica Imperialis", "Dakkajet Fighta Bommerz (Orks)", "Aircraft", 25, 32),
+        ("ai", "Aeronautica Imperialis", "Barracuda AX-5-2 Fighters (T'au)", "Aircraft", 25, 32),
+        ("ai", "Aeronautica Imperialis", "Night Scythe / Doom Scythe (Necrons)", "Aircraft", 25, 32),
+        ("ai", "Aeronautica Imperialis", "Valkyrie Assault Carriers (Astra Militarum)", "Aircraft", 30, 38),
+        ("ai", "Aeronautica Imperialis", "Aeronautica Imperialis: Wings of Vengeance (OOP)", "Box Set", 65, 95),
     ]
 
     catalog = []

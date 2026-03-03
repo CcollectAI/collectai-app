@@ -1,5 +1,5 @@
 """
-Import Taylor Swift collectibles catalog (500+ items).
+Import Taylor Swift collectibles catalog (550+ items).
 
 Layer 1 (Catalog):  Curated vinyl variants, signed CDs, tour merch,
                     cassettes, picture discs, magazine covers, Blu-rays,
@@ -43,7 +43,7 @@ CATEGORY = "taylor_swift"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Taylor Swift collectibles catalog (500+ items).
+    """Curated Taylor Swift collectibles catalog (550+ items).
 
     Covers vinyl variants (standard, Target, RSD, Japan, picture disc),
     signed CDs, Eras Tour merch (era outfits, city-specific posters, VIP,
@@ -743,6 +743,73 @@ def get_curated_catalog() -> list[dict]:
         ("Misc", "collectible", "Taylor Swift Cat Benjamin Button Plush (Official)", "Limited", "mid", 40),
         ("Misc", "collectible", "Taylor Swift Eras Tour Playing Cards Deck", "Tour Exclusive", "standard", 20),
         ("Misc", "collectible", "Taylor Swift Reputation Enamel Pin Set (5pc)", "Limited", "mid", 35),
+
+        # =================================================================
+        # Batch 11 — Eras Tour International Exclusives, Signed CDs,
+        # Vinyl Variants, Friendship Bracelets, Snow Globe, VIP Boxes
+        # =================================================================
+
+        # ── Eras Tour International Exclusives (14) ──────────────────────
+        ("Eras Tour", "merch", "Eras Tour Tokyo Dome Exclusive Tee", "Tokyo Exclusive", "high", 120),
+        ("Eras Tour", "merch", "Eras Tour Tokyo Dome Poster (Night 1)", "Tokyo Exclusive", "high", 95),
+        ("Eras Tour", "merch", "Eras Tour Tokyo Dome Poster (Night 2)", "Tokyo Exclusive", "high", 95),
+        ("Eras Tour", "merch", "Eras Tour Tokyo Dome Poster (Night 3)", "Tokyo Exclusive", "high", 100),
+        ("Eras Tour", "merch", "Eras Tour Singapore National Stadium Exclusive Tee", "Singapore Exclusive", "high", 110),
+        ("Eras Tour", "merch", "Eras Tour Singapore Poster", "Singapore Exclusive", "high", 90),
+        ("Eras Tour", "merch", "Eras Tour London Wembley Night 1 Poster", "London Exclusive", "high", 85),
+        ("Eras Tour", "merch", "Eras Tour London Wembley Night 8 Surprise Songs Poster", "London Exclusive", "grail", 150),
+        ("Eras Tour", "merch", "Eras Tour Paris La Defense Arena Poster", "Paris Exclusive", "high", 85),
+        ("Eras Tour", "merch", "Eras Tour Paris Exclusive Crewneck", "Paris Exclusive", "high", 100),
+        ("Eras Tour", "merch", "Eras Tour Vienna Ernst Happel Stadion Poster", "Vienna Exclusive", "high", 80),
+        ("Eras Tour", "merch", "Eras Tour Gelsenkirchen Exclusive Tee", "Gelsenkirchen Exclusive", "high", 90),
+        ("Eras Tour", "merch", "Eras Tour Gelsenkirchen (Swiftkirchen) Poster", "Gelsenkirchen Exclusive", "high", 110),
+        ("Eras Tour", "merch", "Eras Tour Milan San Siro Exclusive Poster", "Milan Exclusive", "high", 80),
+
+        # ── Signed CD Inserts (8) ───────────────────────────────────────
+        ("Midnights", "signed_cd", "Midnights Moonstone Blue (Signed Insert)", "Signed Insert", "grail", 250),
+        ("Midnights", "signed_cd", "Midnights Lavender Marbled (Signed Insert)", "Signed Insert", "grail", 260),
+        ("Midnights", "signed_cd", "Midnights Jade Green (Signed Insert)", "Signed Insert", "grail", 245),
+        ("Midnights", "signed_cd", "Midnights Blood Moon (Signed Insert)", "Signed Insert", "grail", 255),
+        ("TTPD", "signed_cd", "TTPD The Anthology (Signed Insert)", "Signed Insert", "grail", 200),
+        ("1989 TV", "signed_cd", "1989 TV (Signed Insert — Sunrise Blvd Yellow)", "Signed Insert", "grail", 220),
+        ("Speak Now TV", "signed_cd", "Speak Now TV (Signed Insert — Orchid Marble)", "Signed Insert", "grail", 210),
+        ("Folklore", "signed_cd", "Folklore (Signed Insert — In the Trees)", "Signed Insert", "grail", 280),
+
+        # ── Vinyl Variants — Special Editions (8) ───────────────────────
+        ("Folklore", "vinyl", "Folklore In the Trees Edition (Translucent Green)", "In the Trees Ltd", "high", 85),
+        ("Red TV", "vinyl", "Red TV Target Exclusive (Red Opaque 4LP)", "Target Exclusive", "high", 70),
+        ("Fearless TV", "vinyl", "Fearless TV Gold Vinyl (3LP)", "Gold Ltd", "high", 65),
+        ("Speak Now TV", "vinyl", "Speak Now TV Orchid Marble (2LP)", "Orchid Marble", "mid", 55),
+        ("1989 TV", "vinyl", "1989 TV Tangerine Vinyl", "Tangerine Target", "mid", 50),
+        ("1989 TV", "vinyl", "1989 TV Crystal Skies Blue Vinyl", "Crystal Skies Blue", "mid", 48),
+        ("Debut", "vinyl", "Taylor Swift Debut (Hand-Numbered RSD)", "RSD 2018", "grail", 350),
+        ("Red", "vinyl", "Red (Original Pressing Clear Vinyl)", "Clear Ltd", "high", 120),
+
+        # ── Friendship Bracelet Official Sets (6) ───────────────────────
+        ("Eras Tour", "accessory", "Official Friendship Bracelet Kit (Eras Tour)", "Tour Exclusive", "mid", 35),
+        ("Eras Tour", "accessory", "Official Friendship Bracelet Kit (Deluxe 200pc)", "Store Exclusive", "mid", 45),
+        ("Eras Tour", "accessory", "Official Friendship Bracelet Kit (Midnights Edition)", "Online Exclusive", "mid", 38),
+        ("Eras Tour", "accessory", "Official Friendship Bracelet Kit (TTPD Edition)", "Online Exclusive", "mid", 40),
+        ("Eras Tour", "accessory", "Official Friendship Bracelet Display Frame", "Store Exclusive", "mid", 30),
+        ("Eras Tour", "accessory", "Swiftie Bracelet Bead Set (Official 13 Albums)", "Store Exclusive", "mid", 42),
+
+        # ── Lover Snow Globe & Premium Items (6) ────────────────────────
+        ("Lover", "collectible", "Lover Snow Globe (Official Store)", "Limited", "grail", 350),
+        ("Lover", "collectible", "Lover Ornament Set (3pc)", "Store Exclusive", "mid", 55),
+        ("Lover", "collectible", "Lover Heart-Shaped Jewelry Box", "Limited", "high", 80),
+        ("Lover", "collectible", "Lover Diary (Hardcover, Official)", "Limited", "mid", 45),
+        ("Lover", "collectible", "Lover Locket Necklace (Gold)", "Store Exclusive", "high", 70),
+        ("Lover", "collectible", "Lover Embroidered Denim Jacket", "Limited", "high", 130),
+
+        # ── Reputation Stadium Tour VIP Box (8) ─────────────────────────
+        ("Reputation", "vip_box", "Reputation Stadium Tour VIP Box (Complete)", "Tour VIP", "grail", 300),
+        ("Reputation", "vip_box", "Reputation Stadium Tour Snake Ring", "Tour VIP", "high", 90),
+        ("Reputation", "vip_box", "Reputation Stadium Tour Light-Up Wristband", "Tour VIP", "mid", 40),
+        ("Reputation", "vip_box", "Reputation Stadium Tour Poncho (Black)", "Tour VIP", "mid", 55),
+        ("Reputation", "vip_box", "Reputation Stadium Tour Blanket (Snake Logo)", "Tour VIP", "mid", 60),
+        ("Reputation", "vip_box", "Reputation Stadium Tour Tote Bag", "Tour VIP", "mid", 45),
+        ("Reputation", "vip_box", "Reputation Stadium Tour Lanyard & Badge", "Tour VIP", "standard", 25),
+        ("Reputation", "vip_box", "Reputation Stadium Tour Enamel Pin Set (3pc)", "Tour VIP", "mid", 35),
     ]
 
     catalog = []

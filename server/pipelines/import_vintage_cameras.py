@@ -834,6 +834,90 @@ def _additional_misc() -> list[tuple]:
     ]
 
 
+def _round4_medium_format_rangefinder_misc() -> list[tuple]:
+    """50 more cameras — Mamiya RB67, Pentax 67, Bronica SQ-A, Hasselblad 500C/M w/ lenses,
+    Rolleiflex 3.5F, Yashica Mat 124G, Minolta CLE, Olympus Pen F, Canon P, Nikon S3,
+    Contax T2 Black, Fuji GA645, Plaubel Makina 67, and more."""
+    return [
+        # --- Mamiya RB67 variants ---
+        ("RB67 Pro-S with 90mm f/3.8", "Mamiya", "medium format", "1974-1990", 800, "Excellent", True, "Standard", "Studio workhorse with standard C lens, rotating back"),
+        ("RB67 Pro-S with 127mm f/3.8", "Mamiya", "medium format", "1974-1990", 850, "Excellent", True, "Standard", "RB67 with short tele portrait lens"),
+        ("RB67 Pro-S with 180mm f/4.5", "Mamiya", "medium format", "1974-1990", 900, "Excellent", True, "Standard", "RB67 with telephoto lens, wedding favourite"),
+        ("RB67 Pro-S with 65mm f/4.5", "Mamiya", "medium format", "1974-1990", 850, "Good", True, "Standard", "RB67 with wide-angle lens, environmental portraits"),
+        ("RB67 Pro-SD with 90mm K/L", "Mamiya", "medium format", "1990-2000", 1100, "Excellent", True, "Standard", "Final RB67 with improved K/L multi-coated lens"),
+
+        # --- Pentax 67 variants ---
+        ("67 with 105mm f/2.4", "Pentax", "medium format", "1969-1999", 1000, "Excellent", True, "Limited Edition", "Pentax 67 with legendary portrait lens combo"),
+        ("67 with 55mm f/4", "Pentax", "medium format", "1969-1999", 850, "Good", True, "Standard", "Pentax 67 with ultra-wide for landscapes"),
+        ("67 with 150mm f/2.8", "Pentax", "medium format", "1969-1999", 900, "Good", True, "Standard", "Pentax 67 with fast telephoto, bokeh master"),
+        ("67 MLU (Mirror Lock-Up)", "Pentax", "medium format", "1989-1999", 800, "Good", False, "Standard", "Late model 67 with mirror lock-up, reduced vibration"),
+        ("67II with 105mm f/2.4 Kit", "Pentax", "medium format", "1998-2005", 1500, "Excellent", True, "Limited Edition", "Ultimate 67 kit with AE metering + best portrait lens"),
+
+        # --- Bronica SQ-A variants ---
+        ("SQ-A with 80mm f/2.8 PS", "Bronica", "medium format", "1982-1995", 500, "Excellent", True, "Standard", "Modular 6x6 with leaf-shutter standard lens"),
+        ("SQ-A with 150mm f/4 PS", "Bronica", "medium format", "1982-1995", 550, "Good", True, "Standard", "SQ-A with portrait telephoto, leaf shutter"),
+        ("SQ-A with 50mm f/3.5 PS", "Bronica", "medium format", "1982-1995", 550, "Good", True, "Standard", "SQ-A with wide-angle, leaf shutter"),
+        ("SQ-A Prism Finder", "Bronica", "medium format", "1982-1995", 450, "Good", False, "Standard", "SQ-A with eye-level prism finder, no waist-level"),
+
+        # --- Hasselblad 500C/M with lens kits ---
+        ("500C/M with CF 80mm f/2.8 T*", "Hasselblad", "medium format", "1970-1994", 2200, "Excellent", True, "Limited Edition", "Most popular V-system kit with standard Planar"),
+        ("500C/M with CF 150mm f/4 T*", "Hasselblad", "medium format", "1970-1994", 2400, "Excellent", True, "Limited Edition", "V-system with portrait Sonnar lens"),
+        ("500C/M with CF 50mm f/4 T* Distagon", "Hasselblad", "medium format", "1970-1994", 2600, "Excellent", True, "Limited Edition", "V-system with wide-angle Distagon for landscapes"),
+
+        # --- Rolleiflex 3.5F variants ---
+        ("3.5F Xenotar", "Rolleiflex", "TLR", "1958-1976", 1600, "Excellent", True, "Rare", "Schneider Xenotar 75mm f/3.5, sharp alternative to Planar"),
+        ("3.5F White Face", "Rolleiflex", "TLR", "1958-1976", 2000, "Excellent", True, "Rare", "White-face nameplate variant, collector premium"),
+        ("3.5F Planar Type 3", "Rolleiflex", "TLR", "1960-1976", 1900, "Excellent", True, "Rare", "Late production Planar, improved coatings"),
+
+        # --- Yashica Mat 124G variants ---
+        ("Mat 124G Late Serial", "Yashica", "TLR", "1970-1986", 500, "Excellent", True, "Standard", "Late serial numbers, improved QC, Yashinon 80mm f/3.5"),
+        ("Mat 124G with Case & Hood", "Yashica", "TLR", "1970-1986", 550, "Excellent", True, "Standard", "Complete with original ever-ready case and lens hood"),
+
+        # --- Minolta CLE variants ---
+        ("CLE with 40mm f/2 M-Rokkor", "Minolta", "rangefinder", "1981-1985", 1100, "Excellent", True, "Rare", "Compact M-mount with fast standard lens"),
+        ("CLE with 28mm f/2.8 M-Rokkor", "Minolta", "rangefinder", "1981-1985", 1200, "Excellent", True, "Rare", "Compact M-mount with wide-angle, AE"),
+        ("CLE with 90mm f/4 M-Rokkor", "Minolta", "rangefinder", "1981-1985", 1050, "Excellent", True, "Rare", "M-mount with compact telephoto, AE"),
+
+        # --- Olympus Pen F variants ---
+        ("Pen F Chrome Medical", "Olympus", "SLR", "1963-1966", 800, "Good", True, "Rare", "Chrome medical/scientific variant, engraved body"),
+        ("Pen FT Chrome with 38mm f/1.8", "Olympus", "SLR", "1966-1972", 650, "Excellent", True, "Standard", "Half-frame SLR with fast standard lens kit"),
+        ("Pen FT Black with 40mm f/1.4", "Olympus", "SLR", "1966-1972", 750, "Excellent", True, "Rare", "Half-frame with ultra-fast lens, rare black body kit"),
+
+        # --- Canon P variants ---
+        ("Canon P with 50mm f/1.4 LTM", "Canon", "rangefinder", "1959-1961", 650, "Good", True, "Rare", "Canon P with fast standard LTM lens kit"),
+        ("Canon P Black Repaint", "Canon", "rangefinder", "1959-1961", 550, "Good", False, "Standard", "Professionally repainted black Canon P, popular mod"),
+        ("Canon P with Canon 35mm f/2 LTM", "Canon", "rangefinder", "1959-1961", 700, "Good", True, "Rare", "Canon P with legendary wide-angle, street combo"),
+
+        # --- Nikon S3 variants ---
+        ("S3 2000 Year with 50mm f/1.4", "Nikon", "rangefinder", "2000-2001", 4000, "Excellent", True, "Rare", "Y2K reissue with fast Nikkor, 2000 units made"),
+        ("S3 Original Black", "Nikon", "rangefinder", "1958-1960", 2500, "Good", False, "Rare", "Original S3 with black paint, photojournalist model"),
+        ("S3 Original Chrome with 35mm f/2.5", "Nikon", "rangefinder", "1958-1960", 2200, "Good", True, "Rare", "S3 with W-Nikkor wide-angle, documentary combo"),
+
+        # --- Contax T2 Black ---
+        ("T2 Titanium Black", "Contax", "compact", "1990-2002", 2200, "Excellent", True, "Rare", "Black titanium T2, rarest colour, Sonnar 38mm f/2.8"),
+        ("T2 Titanium Silver Champagne", "Contax", "compact", "1990-2002", 1900, "Excellent", True, "Rare", "Silver champagne T2, Sonnar T* 38mm f/2.8"),
+
+        # --- Fuji GA645 variants ---
+        ("GA645i Professional", "Fuji", "medium format", "1997-2002", 850, "Excellent", True, "Standard", "Improved AF GA645, 60mm f/4 Super-EBC Fujinon"),
+        ("GA645Wi Professional", "Fuji", "medium format", "1997-2002", 950, "Excellent", True, "Standard", "Wide-angle AF 645, 45mm f/4 EBC Fujinon, improved AF"),
+        ("GA645Zi Professional Black", "Fuji", "medium format", "1998-2002", 800, "Excellent", True, "Standard", "Black finish zoom GA645, 55-90mm f/4.5-6.9"),
+
+        # --- Plaubel Makina 67 ---
+        ("Makina 67", "Fuji", "rangefinder", "1978-1986", 3500, "Excellent", True, "Rare", "Plaubel Makina 67, bellows rangefinder, Nikkor 80mm f/2.8"),
+        ("Makina 67 with Case", "Fuji", "rangefinder", "1978-1986", 3800, "Excellent", True, "Rare", "Plaubel Makina 67 with original leather case, collector set"),
+        ("Makina W67", "Fuji", "rangefinder", "1981-1986", 4200, "Excellent", True, "Rare", "Wide-angle Makina, Nikkor 55mm f/4.5, ultra-rare"),
+
+        # --- Additional medium format / rangefinder rarities ---
+        ("Fuji GF670W Professional", "Fuji", "rangefinder", "2010-2014", 3200, "Excellent", True, "Rare", "Wide-angle folding bellows 6x7, 55mm f/4.5 Fujinon"),
+        ("Mamiya 7 with 80mm f/4 L", "Mamiya", "rangefinder", "1995-2005", 3200, "Excellent", True, "Rare", "6x7 rangefinder with standard lens, ultra-sharp"),
+        ("Mamiya 7II with 65mm f/4 L", "Mamiya", "rangefinder", "1999-2005", 3500, "Excellent", True, "Rare", "6x7 rangefinder with wide-angle, ultimate landscape kit"),
+        ("Hasselblad 500C 1960 First Year", "Hasselblad", "medium format", "1957-1970", 1800, "Good", True, "Rare", "Early production 500C, historical significance"),
+        ("Rolleiflex 2.8D Xenotar", "Rolleiflex", "TLR", "1955-1956", 1600, "Good", True, "Rare", "Pre-F model, Schneider Xenotar 80mm f/2.8"),
+        ("Fuji GSW690III Professional", "Fuji", "rangefinder", "1992-2000", 1200, "Excellent", True, "Standard", "Wide-angle Texas Leica 6x9, 65mm f/5.6 EBC Fujinon"),
+        ("Konica Hexar RF Limited", "Nikon", "rangefinder", "1999-2003", 1600, "Excellent", False, "Rare", "M-mount RF with titanium top plate, 2001 limited edition"),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Assemble full catalog
 # ---------------------------------------------------------------------------
@@ -883,6 +967,8 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_round3_contax_pentax_minolta())
     all_tuples.extend(_round3_medium_format_lenses())
     all_tuples.extend(_round3_point_and_shoot_misc())
+    # Round 4 expansion
+    all_tuples.extend(_round4_medium_format_rangefinder_misc())
 
     catalog: list[dict] = []
     for name, brand, cam_type, year_range, price_eur, condition, has_lens, rarity, notes in all_tuples:

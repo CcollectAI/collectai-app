@@ -60,8 +60,15 @@ class _MockBatchResponse:
 
 class _MockBatchRequest:
     """Mimics BatchQuickScanRequest."""
-    def __init__(self, image_ids=None):
+    def __init__(self, image_ids=None, category=None):
         self.image_ids = image_ids or []
+        self.category = category
+
+
+class _MockSingleRequest:
+    """Mimics QuickScanSingleRequest."""
+    def __init__(self, category="funko"):
+        self.category = category
 
 
 def _patch_advanced(single_result=None, batch_response=None):
@@ -74,9 +81,10 @@ def _patch_advanced(single_result=None, batch_response=None):
 
     return patch.dict("sys.modules", {
         "app.features.quickscan_advanced_router": type("mod", (), {
-            "quickscan_single_demo": mock_single,
-            "quickscan_batch_demo": mock_batch,
+            "quickscan_single": mock_single,
+            "quickscan_batch": mock_batch,
             "BatchQuickScanRequest": _MockBatchRequest,
+            "QuickScanSingleRequest": _MockSingleRequest,
             "QuickScanResult": _MockResult,
             "BatchQuickScanResponse": _MockBatchResponse,
         })(),

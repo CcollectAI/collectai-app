@@ -115,6 +115,15 @@ async def propose_offer(
         except (json.JSONDecodeError, TypeError) as e:
             logger.error("Invalid JSON from RPC: %s", e)
             raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
+
+        # Award XP for proposing an offer (best-effort)
+        try:
+            from app.features.gamification_router import record_activity_xp
+            async with pool.acquire() as conn_xp:
+                await record_activity_xp(conn_xp, user_id, 5)
+        except Exception:
+            pass
+
         return data
     except Exception as exc:
         if hasattr(exc, "status_code"):
@@ -391,6 +400,30 @@ async def complete_deal(
         except Exception:
             pass
 
+        # Award XP for completing a deal (best-effort)
+        try:
+            from app.features.gamification_router import record_activity_xp
+            async with pool.acquire() as conn_xp:
+                deal_count = await conn_xp.fetchval(
+                    """
+                    SELECT COUNT(*) FROM offers
+                    WHERE (seller_id = $1::uuid OR buyer_id = $1::uuid)
+                      AND status = 'completed'
+                    """,
+                    user_id,
+                )
+                achievement_checks = []
+                deal_milestones = [
+                    (1, "trader_1"), (5, "trader_5"),
+                    (10, "trader_10"), (25, "trader_25"),
+                ]
+                for threshold, ach_id in deal_milestones:
+                    if deal_count >= threshold:
+                        achievement_checks.append((ach_id, deal_count))
+                await record_activity_xp(conn_xp, user_id, 25, achievement_checks or None)
+        except Exception:
+            pass
+
         return data
     except Exception as exc:
         if hasattr(exc, "status_code"):
@@ -628,6 +661,17 @@ async def get_offer_evidence(
 # GET /deals/reputation/{user_id} — User reputation
 # ---------------------------------------------------------------------------
 
+def _compute_trust_badge(completed: int, avg_stars: float) -> str:
+    """Determine trust badge from completed deals and average rating."""
+    if completed >= 50 and avg_stars >= 4.8:
+        return "verified"
+    if completed >= 20 and avg_stars >= 4.5:
+        return "power"
+    if completed >= 5:
+        return "regular"
+    return "new"
+
+
 @router.get("/deals/reputation/{target_user_id}")
 async def get_user_reputation(
     target_user_id: str,
@@ -643,27 +687,148 @@ async def get_user_reputation(
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT * FROM v_user_reputation_v1 WHERE user_id = $1",
+                """
+                SELECT
+                    COUNT(*) FILTER (WHERE o.status = 'completed') AS completed_deals,
+                    COALESCE(AVG(dr.stars), 0) AS avg_stars,
+                    COUNT(dr.id) AS total_ratings
+                FROM offers o
+                LEFT JOIN deal_ratings dr ON dr.offer_id = o.id AND dr.rated_id = $1::uuid
+                WHERE o.seller_id = $1::uuid OR o.buyer_id = $1::uuid
+                """,
                 target_user_id,
             )
 
-        if not row:
-            return {
-                "user_id": target_user_id,
-                "avg_stars": 0,
-                "total_ratings": 0,
-                "completed_deals": 0,
-            }
+            completed = int(row["completed_deals"]) if row else 0
+            avg_stars = float(row["avg_stars"]) if row and row["avg_stars"] else 0.0
+            total_ratings = int(row["total_ratings"]) if row else 0
+
+            # Compute trust score: avg_stars normalized to 0-100, boosted by trade count
+            trust_score = min(100.0, (avg_stars / 5.0) * 80 + min(20.0, completed * 2)) if completed > 0 else 0.0
+            badge = _compute_trust_badge(completed, avg_stars)
+
+            # Count disputes (cancelled/declined)
+            dispute_count = 0
+            if completed > 0:
+                dispute_count = await conn.fetchval(
+                    """
+                    SELECT COUNT(*) FROM offers
+                    WHERE (seller_id = $1::uuid OR buyer_id = $1::uuid)
+                      AND status IN ('cancelled', 'declined')
+                    """,
+                    target_user_id,
+                ) or 0
+
+            dispute_rate = dispute_count / (completed + dispute_count) if (completed + dispute_count) > 0 else 0.0
 
         return {
-            "user_id": str(row["user_id"]),
-            "avg_stars": float(row["avg_stars"]) if row["avg_stars"] else 0,
-            "total_ratings": int(row["total_ratings"]) if row["total_ratings"] else 0,
-            "completed_deals": int(row["completed_deals"]) if row["completed_deals"] else 0,
+            "user_id": target_user_id,
+            "avg_stars": round(avg_stars, 2),
+            "total_ratings": total_ratings,
+            "completed_deals": completed,
+            "trust_score": round(trust_score, 1),
+            "badge": badge,
+            "disputes": dispute_count,
+            "dispute_rate": round(dispute_rate, 4),
         }
     except Exception:
         logger.exception("get_user_reputation failed")
         raise error_response(500, "Failed to get reputation", code=ErrorCode.INTERNAL_ERROR)
+
+
+@router.get("/deals/{offer_id}/risk-flags")
+async def get_offer_risk_flags(
+    offer_id: str,
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_deal_read_limit),
+):
+    """
+    Risk assessment for an offer — detects price outliers and low seller scores.
+
+    Merged from the former marketplace_trust_router listing endpoint.
+    """
+    pool = get_db_pool()
+    if not pool:
+        raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
+
+    offer_id = _validate_uuid(offer_id, "offer_id")
+
+    try:
+        async with pool.acquire() as conn:
+            # Verify access
+            offer = await conn.fetchrow(
+                """
+                SELECT id, item_id, current_price, currency, seller_id, buyer_id
+                FROM offers
+                WHERE id = $1::uuid AND (seller_id = $2::uuid OR buyer_id = $2::uuid)
+                """,
+                offer_id, user_id,
+            )
+            if not offer:
+                raise error_response(404, "Offer not found", code=ErrorCode.NOT_FOUND)
+
+            flags = []
+            offer_price = float(offer["current_price"]) if offer["current_price"] else None
+
+            # Price outlier check: compare offer price to market_hits for the item
+            if offer_price and offer["item_id"]:
+                item_row = await conn.fetchrow(
+                    "SELECT normalized_key FROM items WHERE id = $1::uuid",
+                    str(offer["item_id"]),
+                )
+                if item_row and item_row["normalized_key"]:
+                    avg_row = await conn.fetchrow(
+                        """
+                        SELECT AVG(price) AS avg_price, STDDEV_POP(price) AS stddev_price, COUNT(*) AS sample_count
+                        FROM market_hits
+                        WHERE normalized_key = $1 AND price IS NOT NULL
+                        """,
+                        item_row["normalized_key"],
+                    )
+                    if avg_row and avg_row["avg_price"] and avg_row["stddev_price"]:
+                        avg_price = float(avg_row["avg_price"])
+                        stddev = float(avg_row["stddev_price"])
+                        if stddev > 0 and abs(offer_price - avg_price) > 2 * stddev:
+                            flags.append({
+                                "risk_level": "high" if abs(offer_price - avg_price) > 3 * stddev else "medium",
+                                "reason": f"Price ({offer_price:.2f}) is >2 std deviations from avg ({avg_price:.2f})",
+                            })
+
+            # Seller trust check
+            seller_id = str(offer["seller_id"])
+            seller_completed = await conn.fetchval(
+                "SELECT COUNT(*) FROM offers WHERE seller_id = $1::uuid AND status = 'completed'",
+                seller_id,
+            ) or 0
+            seller_avg = await conn.fetchval(
+                "SELECT COALESCE(AVG(stars), 0) FROM deal_ratings WHERE rated_id = $1::uuid",
+                seller_id,
+            ) or 0.0
+            seller_score = min(100.0, (float(seller_avg) / 5.0) * 80 + min(20.0, seller_completed * 2)) if seller_completed > 0 else 0.0
+
+            if seller_completed > 0 and seller_score < 60:
+                flags.append({
+                    "risk_level": "medium",
+                    "reason": f"Seller trust score below threshold ({seller_score:.0f}/100)",
+                })
+
+            if seller_completed == 0:
+                flags.append({
+                    "risk_level": "low",
+                    "reason": "New seller — no completed trades yet",
+                })
+
+        return {
+            "offer_id": offer_id,
+            "risk_flags": flags,
+            "seller_trust_score": round(seller_score, 1),
+            "seller_badge": _compute_trust_badge(seller_completed, float(seller_avg)),
+        }
+    except Exception as exc:
+        if hasattr(exc, "status_code"):
+            raise exc
+        logger.exception("get_offer_risk_flags failed")
+        raise error_response(500, "Failed to assess risk", code=ErrorCode.INTERNAL_ERROR)
 
 
 # ---------------------------------------------------------------------------

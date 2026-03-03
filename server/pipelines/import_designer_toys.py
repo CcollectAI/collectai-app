@@ -777,6 +777,99 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
+
+    catalog.extend(_batch_art_toys_2025())
+    return catalog
+
+
+def _batch_art_toys_2025() -> list[dict]:
+    """Batch 8 — Superplastic expanded, Coarse Toys, ThreeA/3A Ashley Wood,
+    Mighty Jaxx XXRAY, James Jean, Futura, Ron English, Clutter exclusives. ~50 items."""
+
+    items = [
+        # Superplastic — Janky extended
+        ("Superplastic", "Janky", "Janky Series 3 Full Case (12 Blind Boxes)", "Blind Box Set", "standard", 95),
+        ("Superplastic", "Janky", "Janky Series 4 Full Case (12 Blind Boxes)", "Blind Box Set", "standard", 95),
+        ("Superplastic", "Janky", "Janky x Gorillaz 2D Superjanky 8-inch", "Collab", "high", 450),
+        ("Superplastic", "Janky", "Janky x Post Malone Posty Superjanky", "Collab", "high", 500),
+
+        # Superplastic — Guggimon & Dayzee
+        ("Superplastic", "Guggimon", "Guggimon Blood Superjanky 8-inch", "Limited", "mid", 280),
+        ("Superplastic", "Guggimon", "Guggimon Poison 8-inch (ComplexCon 2023)", "Collab", "high", 400),
+        ("Superplastic", "Dayzee", "Dayzee OG 8-inch Vinyl", "Limited", "mid", 220),
+        ("Superplastic", "Dayzee", "Dayzee Valentine Pink 8-inch", "Limited", "mid", 250),
+        ("Superplastic", "Dayzee", "Dayzee Midnight Black 8-inch", "Limited", "mid", 240),
+
+        # Coarse Toys — Omen extended
+        ("Coarse", "Omen", "Omen Fade to Black 10-inch", "Limited", "high", 500),
+        ("Coarse", "Omen", "Omen Eclipse 10-inch (Gallery Edition)", "Limited", "grail", 900),
+
+        # Coarse Toys — False Friends
+        ("Coarse", "False Friends", "False Friends Dusk & Dawn Pair", "Limited", "high", 650),
+        ("Coarse", "False Friends", "False Friends Blood & Ivory Pair", "Limited", "high", 700),
+
+        # Coarse Toys — Noop extended
+        ("Coarse", "Noop Noop", "Noop Noop Ember Pair", "Limited", "high", 580),
+        ("Coarse", "Noop Noop", "Noop Noop Glacier Pair (Art Basel Edition)", "Limited", "grail", 850),
+
+        # ThreeA / 3A — Ashley Wood Originals
+        ("ThreeA", "Ashley Wood", "WWR Bertie Mk 3 Jungle Grunt 1/6", "Limited", "high", 600),
+        ("ThreeA", "Ashley Wood", "WWR Square Mk 2 Desert Assault 1/6", "Limited", "high", 550),
+        ("ThreeA", "Ashley Wood", "Adventure Kartel Tommy Mission 1/6", "Limited", "high", 700),
+        ("ThreeA", "Ashley Wood", "Popbot TK Slicer 1/6", "Limited", "grail", 900),
+        ("ThreeA", "Ashley Wood", "WWR Large Martin Rothchild 12-inch", "Limited", "high", 800),
+
+        # Mighty Jaxx — XXRAY Series
+        ("Mighty Jaxx", "XXRAY", "XXRAY Plus Batman (DC) 10-inch", "Limited", "mid", 200),
+        ("Mighty Jaxx", "XXRAY", "XXRAY Elmo (Sesame Street) 4-inch", "Standard", "standard", 55),
+        ("Mighty Jaxx", "XXRAY", "XXRAY SpongeBob SquarePants 4-inch", "Standard", "standard", 55),
+        ("Mighty Jaxx", "XXRAY", "XXRAY Mickey Mouse (Disney) 4-inch", "Standard", "standard", 60),
+        ("Mighty Jaxx", "XXRAY", "XXRAY Deadpool (Marvel) 4-inch", "Standard", "standard", 55),
+
+        # Mighty Jaxx — Dissected & Kandy
+        ("Mighty Jaxx", "Dissected", "Dissected Astro Boy BAIT Exclusive", "Collab", "high", 450),
+        ("Mighty Jaxx", "Dissected", "Dissected Care Bear 8-inch", "Limited", "mid", 180),
+        ("Mighty Jaxx", "Kandy", "Kandy x Spongebob Full Case (12 Blind Boxes)", "Blind Box Set", "standard", 85),
+        ("Mighty Jaxx", "Mightyverse", "Mightyverse Freeny's Hidden Dissectibles Dragon Ball Z Case", "Blind Box Set", "standard", 70),
+
+        # James Jean — Art Figures
+        ("James Jean", "Dogwood", "Dogwood OG Edition 14-inch", "Limited", "grail", 1800),
+        ("James Jean", "Dogwood", "Dogwood Night Bloom Edition 14-inch", "Limited", "grail", 2200),
+        ("James Jean", "Descendant", "Descendant Fire Walker Bronze", "Limited", "grail", 2400),
+        ("James Jean", "Descendant", "Descendant Cloud Wanderer 12-inch", "Limited", "grail", 1900),
+
+        # Futura Laboratories — FL-001 & Pointman extended
+        ("Futura Laboratories", "FL-001", "FL-001 All Over Print Figure 12-inch", "Limited", "high", 750),
+        ("Futura Laboratories", "FL-001", "FL-001 Infrared Edition 6-inch", "Limited", "mid", 400),
+        ("Futura Laboratories", "FL Pointman", "Pointman Chrome Edition 12-inch", "Limited", "grail", 1200),
+
+        # Ron English — MC Supersized & Grin
+        ("Ron English", "MC Supersized", "MC Supersized OG Red 10-inch", "Limited", "high", 600),
+        ("Ron English", "MC Supersized", "MC Supersized Army Green 10-inch", "Limited", "high", 550),
+        ("Ron English", "MC Supersized", "MC Supersized Rainbow 10-inch (ComplexCon)", "Collab", "grail", 1000),
+        ("Ron English", "Grin", "Grin OG White 8-inch", "Limited", "mid", 350),
+        ("Ron English", "Grin", "Grin Gold Chrome 8-inch", "Limited", "high", 500),
+        ("Ron English", "Temper Tot", "Temper Tot Red Star 8-inch", "Limited", "mid", 300),
+        ("Ron English", "Popaganda", "Popaganda Cereal Killers Full Set (6 pcs)", "Limited", "high", 800),
+
+        # Clutter Magazine / Gallery Exclusives
+        ("Clutter", "Gallery", "Clutter Gallery x Czee13 Custom Canbot 8-inch", "Limited", "high", 500),
+        ("Clutter", "Gallery", "Clutter Gallery x OG Slick LA Hands 12-inch", "Limited", "high", 700),
+        ("Clutter", "Magazine", "Clutter Magazine x DesignerCon Exclusive Dunny 3-pack", "Limited", "mid", 180),
+        ("Clutter", "Gallery", "Clutter Gallery x RunDMB Custom Munny 8-inch", "Limited", "high", 600),
+        ("Clutter", "Magazine", "Clutter Magazine x DCON Exclusive Canbot Set (4 pcs)", "Limited", "mid", 250),
+    ]
+
+    catalog = []
+    for brand, line, name, edition, tier, price in items:
+        catalog.append({
+            "brand": brand,
+            "line": line,
+            "name": name,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
     return catalog
 
 

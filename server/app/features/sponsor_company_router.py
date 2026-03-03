@@ -122,7 +122,7 @@ async def list_my_companies(
     try:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
-                "SELECT * FROM sponsor_companies WHERE admin_user_id = $1 ORDER BY created_at DESC",
+                "SELECT id, name, logo_url, website_url, contact_email, description, admin_user_id, is_verified, created_at FROM sponsor_companies WHERE admin_user_id = $1 ORDER BY created_at DESC",
                 user_id,
             )
             return [_row_to_company(dict(r)) for r in rows]
@@ -174,7 +174,7 @@ async def get_company(company_id: str):
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT * FROM sponsor_companies WHERE id = $1", company_id,
+                "SELECT id, name, logo_url, website_url, contact_email, description, admin_user_id, is_verified, created_at FROM sponsor_companies WHERE id = $1", company_id,
             )
             if not row:
                 raise error_response(404, "Company not found", code=ErrorCode.NOT_FOUND)
@@ -213,7 +213,7 @@ async def update_company(
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT * FROM sponsor_companies WHERE id = $1 AND admin_user_id = $2",
+                "SELECT id, name, logo_url, website_url, contact_email, description, admin_user_id, is_verified, created_at FROM sponsor_companies WHERE id = $1 AND admin_user_id = $2",
                 company_id, user_id,
             )
             if not row:
@@ -264,7 +264,7 @@ async def delete_company(
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT * FROM sponsor_companies WHERE id = $1",
+                "SELECT id, name, logo_url, website_url, contact_email, description, admin_user_id, is_verified, created_at FROM sponsor_companies WHERE id = $1",
                 company_id,
             )
             if not row:
@@ -306,7 +306,7 @@ async def create_event_checkout(
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT * FROM sponsor_companies WHERE id = $1 AND admin_user_id = $2",
+                "SELECT id, name, logo_url, website_url, contact_email, description, admin_user_id, is_verified, created_at FROM sponsor_companies WHERE id = $1 AND admin_user_id = $2",
                 company_id, user_id,
             )
             if not row:
@@ -425,7 +425,7 @@ async def create_event_demo(
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT * FROM sponsor_companies WHERE id = $1 AND admin_user_id = $2",
+                "SELECT id, name, logo_url, website_url, contact_email, description, admin_user_id, is_verified, created_at FROM sponsor_companies WHERE id = $1 AND admin_user_id = $2",
                 company_id, user_id,
             )
             if not row:

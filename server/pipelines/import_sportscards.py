@@ -676,6 +676,72 @@ def get_curated_catalog() -> list[dict]:
         ("Baseball", "1909", "T206", "Frank Chance", "N/A", "Portrait", 1500, 8000, "Iconic"),
     ]
 
+    # ── Expansion Batch — Prizm, Flawless, Chrome, National Treasures, Bowman, Young Guns, Mosaic ──
+    cards += [
+        # Panini Prizm — Silver, Gold, Black, Mojo Parallels
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Gold Prizm /10 RC", 15000, 120000, "Ultra Rare"),
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Black Prizm 1/1 RC", 80000, 500000, "Legendary"),
+        ("Basketball", "2023", "Panini Prizm", "Victor Wembanyama", "275", "Mojo Prizm RC", 3000, 35000, "Ultra Rare"),
+        ("Basketball", "2022", "Panini Prizm", "Paolo Banchero", "245", "Gold Prizm /10 RC", 3000, 25000, "Ultra Rare"),
+        ("Basketball", "2021", "Panini Prizm", "Cade Cunningham", "282", "Gold Prizm /10 RC", 2500, 20000, "Ultra Rare"),
+        ("Football", "2023", "Panini Prizm", "Caleb Williams", "301", "Silver Prizm RC", 200, 3000, "High"),
+        ("Football", "2023", "Panini Prizm", "Jayden Daniels", "310", "Silver Prizm RC", 150, 2500, "High"),
+        ("Football", "2023", "Panini Prizm", "Marvin Harrison Jr.", "305", "Silver Prizm RC", 180, 2800, "High"),
+
+        # Panini Flawless — Patch Autos, Diamond Embedded
+        ("Basketball", "2023", "Panini Flawless", "Victor Wembanyama", "101", "Patch Auto /25 RC", 20000, 150000, "Ultra Rare"),
+        ("Basketball", "2023", "Panini Flawless", "Victor Wembanyama", "101", "Diamond Embedded 1/1 RC", 100000, 500000, "Legendary"),
+        ("Basketball", "2020", "Panini Flawless", "LaMelo Ball", "55", "Patch Auto /25 RC", 8000, 60000, "Ultra Rare"),
+        ("Basketball", "2018", "Panini Flawless", "Luka Doncic", "42", "Patch Auto /25 RC", 15000, 100000, "Ultra Rare"),
+        ("Football", "2023", "Panini Flawless", "Caleb Williams", "115", "Patch Auto /25 RC", 5000, 40000, "Ultra Rare"),
+
+        # Topps Chrome — Refractors, Superfractors
+        ("Baseball", "2023", "Topps Chrome", "Elly De La Cruz", "150", "Refractor RC", 200, 3000, "High"),
+        ("Baseball", "2023", "Topps Chrome", "Elly De La Cruz", "150", "Gold Refractor /50 RC", 2000, 15000, "Ultra Rare"),
+        ("Baseball", "2023", "Topps Chrome", "Elly De La Cruz", "150", "Superfractor 1/1 RC", 25000, 150000, "Legendary"),
+        ("Baseball", "2022", "Topps Chrome", "Julio Rodriguez", "200", "Refractor RC", 150, 2500, "High"),
+        ("Baseball", "2022", "Topps Chrome", "Julio Rodriguez", "200", "Gold Refractor /50 RC", 1500, 12000, "Ultra Rare"),
+        ("Baseball", "2019", "Topps Chrome", "Vladimir Guerrero Jr.", "201", "Refractor RC", 120, 2000, "High"),
+
+        # Panini National Treasures — Booklet Cards, Logoman
+        ("Basketball", "2023", "Panini National Treasures", "Victor Wembanyama", "130", "Booklet Patch Auto /25 RC", 25000, 180000, "Ultra Rare"),
+        ("Basketball", "2023", "Panini National Treasures", "Victor Wembanyama", "130", "Logoman Patch 1/1 RC", 120000, 600000, "Legendary"),
+        ("Basketball", "2018", "Panini National Treasures", "Luka Doncic", "127", "Logoman Patch 1/1 RC", 80000, 450000, "Legendary"),
+        ("Football", "2020", "Panini National Treasures", "Justin Herbert", "162", "Booklet Patch Auto /25 RC", 8000, 50000, "Ultra Rare"),
+
+        # Bowman 1st Chrome — Top Prospects
+        ("Baseball", "2024", "Bowman 1st Chrome", "Ethan Salas", "BCP-1", "Base 1st Bowman RC", 100, 1500, "High"),
+        ("Baseball", "2024", "Bowman 1st Chrome", "Ethan Salas", "BCP-1", "Refractor /499 RC", 500, 5000, "Ultra Rare"),
+        ("Baseball", "2023", "Bowman 1st Chrome", "Jackson Holliday", "BCP-2", "Base 1st Bowman RC", 80, 1200, "High"),
+        ("Baseball", "2023", "Bowman 1st Chrome", "Jackson Holliday", "BCP-2", "Green Refractor /99 RC", 1500, 12000, "Ultra Rare"),
+        ("Baseball", "2022", "Bowman 1st Chrome", "Druw Jones", "BCP-10", "Base 1st Bowman RC", 60, 800, "Mid"),
+        ("Baseball", "2021", "Bowman 1st Chrome", "Marcelo Mayer", "BCP-15", "Refractor /499 RC", 300, 3000, "High"),
+
+        # Upper Deck Young Guns — Hockey
+        ("Hockey", "2023", "Upper Deck Series 1", "Connor Bedard", "201", "Young Guns RC", 300, 5000, "Iconic"),
+        ("Hockey", "2023", "Upper Deck Series 1", "Connor Bedard", "201", "Young Guns Exclusives /100 RC", 3000, 25000, "Ultra Rare"),
+        ("Hockey", "2015", "Upper Deck Series 1", "Connor McDavid", "201", "Young Guns RC", 1500, 20000, "Iconic"),
+        ("Hockey", "2005", "Upper Deck Series 1", "Sidney Crosby", "201", "Young Guns RC", 1200, 15000, "Iconic"),
+        ("Hockey", "2005", "Upper Deck Series 1", "Alexander Ovechkin", "443", "Young Guns RC", 800, 10000, "Iconic"),
+        ("Hockey", "2019", "Upper Deck Series 2", "Cale Makar", "468", "Young Guns RC", 200, 3000, "High"),
+
+        # Panini Mosaic — Camo, Genesis, Fluorescent
+        ("Basketball", "2023", "Panini Mosaic", "Victor Wembanyama", "215", "Camo Pink RC", 500, 6000, "High"),
+        ("Basketball", "2023", "Panini Mosaic", "Victor Wembanyama", "215", "Genesis RC", 2000, 20000, "Ultra Rare"),
+        ("Basketball", "2023", "Panini Mosaic", "Victor Wembanyama", "215", "Fluorescent /10 RC", 8000, 60000, "Ultra Rare"),
+        ("Basketball", "2019", "Panini Mosaic", "Zion Williamson", "209", "Genesis RC", 1500, 15000, "Ultra Rare"),
+        ("Football", "2023", "Panini Mosaic", "Caleb Williams", "310", "Genesis RC", 800, 8000, "Ultra Rare"),
+        ("Football", "2020", "Panini Mosaic", "Justin Herbert", "211", "Genesis RC", 600, 6000, "Ultra Rare"),
+        ("Soccer", "2022", "Panini Mosaic FIFA World Cup", "Lionel Messi", "1", "Genesis", 500, 5000, "High"),
+        ("Soccer", "2022", "Panini Mosaic FIFA World Cup", "Kylian Mbappe", "75", "Fluorescent /10", 3000, 25000, "Ultra Rare"),
+        ("Soccer", "2022", "Panini Mosaic FIFA World Cup", "Jude Bellingham", "120", "Genesis RC", 800, 8000, "Ultra Rare"),
+
+        # Additional Hockey Young Guns & Modern Football
+        ("Hockey", "2019", "Upper Deck Series 1", "Quinn Hughes", "249", "Young Guns RC", 150, 2000, "High"),
+        ("Hockey", "2016", "Upper Deck Series 1", "Auston Matthews", "201", "Young Guns RC", 500, 8000, "Iconic"),
+        ("Football", "2023", "Panini Prizm", "C.J. Stroud", "302", "Silver Prizm RC", 250, 3500, "High"),
+    ]
+
     catalog = []
     for sport, year, set_name, player, card_no, variant, raw_price, graded_price, rarity in cards:
         catalog.append({

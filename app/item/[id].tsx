@@ -57,6 +57,10 @@ import InteractiveLineChart from '@/components/InteractiveLineChart';
 import { Skeleton } from '@/components/Skeleton';
 import { ListForSaleModal } from '@/components/ListForSaleModal';
 import { useListForSale } from '@/hooks/useListForSale';
+import { CategorySpecificSection } from '@/components/CategorySpecificSection';
+import { ItemProgressSection } from '@/components/ItemProgressSection';
+import { GradingSection } from '@/components/GradingSection';
+import type { GradingLookupResult, PopulationReport, GradingServiceInfo } from '@/components/GradingSection';
 
 // Dossier data shape (mirrors collectorsApi.getDossier return type)
 interface DossierData {
@@ -102,14 +106,7 @@ const PRICE_CHART_RANGES = [
   { label: '1Y', days: 365 },
 ] as const;
 
-// Sneaker size options (US sizing — can be mapped to EU/UK)
-const SNEAKER_SIZES = [
-  '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5',
-  '9', '9.5', '10', '10.5', '11', '11.5', '12', '12.5', '13', '14', '15',
-];
-
-// Watch case diameter options
-const WATCH_SIZES = ['34mm', '36mm', '38mm', '39mm', '40mm', '41mm', '42mm', '43mm', '44mm', '45mm', '46mm'];
+// Sneaker/watch sizes moved to CategorySpecificSection component
 
 // Helper: parse string|number to number for formatPrice/formatNumber
 const toNum = (value: string | number | undefined | null): number | undefined => {
@@ -452,32 +449,7 @@ function ItemDetailScreen() {
   const GRADING_ELIGIBLE = new Set(['pokemon', 'mtg', 'yugioh', 'sportscards', 'comic_books', 'retro_games']);
   const isGradingEligible = GRADING_ELIGIBLE.has(categorySlug);
 
-  type GradingLookupResult = {
-    cert_number: string;
-    service: string;
-    service_name: string;
-    item_name: string | null;
-    grade: string | null;
-    grade_numeric: number | null;
-    sub_grades: Record<string, number> | null;
-    population_at_grade: number | null;
-    population_higher: number | null;
-    cert_verified: boolean;
-    cert_url: string | null;
-    label_type: string | null;
-    year: string | null;
-    error: string | null;
-  };
-  type PopulationEntry = { grade: string; count: number; pct_of_total: number | null };
-  type PopulationReport = {
-    item_name: string; category: string; service: string; total_graded: number;
-    population: PopulationEntry[]; avg_grade: number | null; highest_grade: string | null;
-  };
-  type GradingServiceInfo = {
-    id: string; name: string; short_name: string; website: string;
-    submission_url: string; grade_scale: string; categories: string[];
-    turnaround: string; price_range: string;
-  };
+  // Types imported from GradingSection component
 
   const [gradingExpanded, setGradingExpanded] = useState(false);
   const [gradingLookupResult, setGradingLookupResult] = useState<GradingLookupResult | null>(null);
@@ -585,26 +557,6 @@ function ItemDetailScreen() {
   };
   const progressConfig = PROGRESS_CATEGORIES[categorySlug] ?? null;
   const hasProgressTracking = progressConfig !== null;
-
-  const STATUS_DISPLAY: Record<string, string> = {
-    unread: 'Unread',
-    reading: 'Reading',
-    read: 'Read',
-    unplayed: 'Unplayed',
-    playing: 'Playing',
-    played: 'Played',
-    completed: 'Completed',
-  };
-
-  const STATUS_COLORS: Record<string, string> = {
-    unread: '#94A3B8',
-    reading: '#3B82F6',
-    read: '#22C55E',
-    unplayed: '#94A3B8',
-    playing: '#F59E0B',
-    played: '#22C55E',
-    completed: '#8B5CF6',
-  };
 
   const [progressStatus, setProgressStatus] = useState<string | null>(null);
   const [progressPct, setProgressPct] = useState<number | null>(null);
@@ -1923,252 +1875,22 @@ function ItemDetailScreen() {
               collections={itemCollections}
             />
 
-            {/* ── Size-Specific Pricing — Sneakers ────────────────────────── */}
-            {categorySlug === 'sneakers' && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <View style={styles.sectionHeaderRow}>
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="footsteps-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Size</Text>
-                  </View>
-                  {sizeSaving && <ActivityIndicator size="small" color={theme.accent} />}
-                </View>
-                <View style={styles.sizeSelectorRow}>
-                  {/* Size system toggle */}
-                  <View style={styles.sizeSystemRow}>
-                    {(['US', 'EU', 'UK'] as const).map((sys) => (
-                      <Pressable
-                        key={sys}
-                        onPress={() => {
-                          setSizeSystem(sys.toLowerCase() as 'us' | 'eu' | 'uk');
-                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                        }}
-                        style={[
-                          styles.sizeSystemPill,
-                          {
-                            backgroundColor: sizeSystem === sys.toLowerCase() ? theme.accent : theme.background,
-                            borderColor: theme.border,
-                          },
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: sizeSystem === sys.toLowerCase() }}
-                        accessibilityLabel={`Size system: ${sys}`}
-                      >
-                        <Text style={[
-                          styles.sizeSystemPillText,
-                          { color: sizeSystem === sys.toLowerCase() ? '#fff' : theme.muted },
-                        ]}>{sys}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                  {/* Size picker */}
-                  <View style={styles.sizePillsRow}>
-                    {SNEAKER_SIZES.map((sz) => (
-                      <Pressable
-                        key={sz}
-                        onPress={() => {
-                          setItemSizeValue(sz);
-                          handleSizeChange(sz, sizeSystem);
-                        }}
-                        style={[
-                          styles.sizePill,
-                          {
-                            backgroundColor: itemSizeValue === sz ? theme.accent : theme.background,
-                            borderColor: itemSizeValue === sz ? theme.accent : theme.border,
-                          },
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: itemSizeValue === sz }}
-                        accessibilityLabel={`Size ${sz}`}
-                      >
-                        <Text style={[
-                          styles.sizePillText,
-                          { color: itemSizeValue === sz ? '#fff' : theme.text },
-                        ]}>{sz}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-                <View style={[styles.sizeInfoNote, { backgroundColor: theme.accent + '10' }]}>
-                  <Ionicons name="information-circle-outline" size={14} color={theme.accent} />
-                  <Text style={[styles.sizeInfoNoteText, { color: theme.accent }]}>
-                    Size affects market value — prices vary by size
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* ── Size-Specific Pricing — Watches ─────────────────────────── */}
-            {categorySlug === 'watches' && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <View style={styles.sectionHeaderRow}>
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="watch-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Case Size</Text>
-                  </View>
-                  {sizeSaving && <ActivityIndicator size="small" color={theme.accent} />}
-                </View>
-                <View style={styles.sizePillsRow}>
-                  {WATCH_SIZES.map((sz) => (
-                    <Pressable
-                      key={sz}
-                      onPress={() => {
-                        setItemSizeValue(sz);
-                        handleSizeChange(sz, 'mm');
-                      }}
-                      style={[
-                        styles.sizePill,
-                        {
-                          backgroundColor: itemSizeValue === sz ? theme.accent : theme.background,
-                          borderColor: itemSizeValue === sz ? theme.accent : theme.border,
-                        },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: itemSizeValue === sz }}
-                      accessibilityLabel={`Case diameter ${sz}`}
-                    >
-                      <Text style={[
-                        styles.sizePillText,
-                        { color: itemSizeValue === sz ? '#fff' : theme.text },
-                      ]}>{sz}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <View style={[styles.sizeInfoNote, { backgroundColor: theme.accent + '10' }]}>
-                  <Ionicons name="information-circle-outline" size={14} color={theme.accent} />
-                  <Text style={[styles.sizeInfoNoteText, { color: theme.accent }]}>
-                    Size affects market value — prices vary by size
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* ── LEGO-Specific Features ──────────────────────────────────── */}
-            {categorySlug === 'lego' && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <View style={styles.sectionHeaderRow}>
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="cube-outline" size={20} color={CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>LEGO Details</Text>
-                  </View>
-                </View>
-                {/* Piece Count */}
-                {(itemAttributes?.piece_count || itemAttributes?.pieces) && (
-                  <View style={styles.legoDetailRow}>
-                    <Ionicons name="apps-outline" size={16} color={theme.muted} />
-                    <Text style={[styles.legoDetailLabel, { color: theme.muted }]}>Piece Count</Text>
-                    <Text style={[styles.legoDetailValue, { color: theme.text }]}>
-                      {String(itemAttributes?.piece_count || itemAttributes?.pieces)} pieces
-                    </Text>
-                  </View>
-                )}
-                {/* Set Number */}
-                {itemAttributes?.set_number && (
-                  <View style={styles.legoDetailRow}>
-                    <Ionicons name="barcode-outline" size={16} color={theme.muted} />
-                    <Text style={[styles.legoDetailLabel, { color: theme.muted }]}>Set</Text>
-                    <Text style={[styles.legoDetailValue, { color: theme.text }]}>
-                      #{String(itemAttributes.set_number)}
-                    </Text>
-                  </View>
-                )}
-                {/* Retirement Alert Badge */}
-                {itemAttributes?.retirement_date && (
-                  <View style={[styles.legoRetirementBadge, { backgroundColor: '#FEF3C7' }]}>
-                    <Ionicons name="alert-circle" size={16} color="#D97706" />
-                    <Text style={[styles.legoRetirementText, { color: '#92400E' }]}>
-                      Retiring {String(itemAttributes.retirement_date)}
-                      {new Date(String(itemAttributes.retirement_date)) <= new Date()
-                        ? ' — RETIRED'
-                        : ''}
-                    </Text>
-                  </View>
-                )}
-                {/* Build Instructions Link */}
-                {itemAttributes?.set_number && (
-                  <Pressable
-                    onPress={() => {
-                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      Linking.openURL(`https://www.lego.com/en-us/service/buildinginstructions/${String(itemAttributes.set_number)}`).catch((err) =>
-                        logger.warn('[ItemDetail] Failed to open LEGO instructions URL', err)
-                      );
-                    }}
-                    style={[styles.legoInstructionsBtn, { borderColor: CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent }]}
-                    accessibilityRole="link"
-                    accessibilityLabel={`Open build instructions for set ${String(itemAttributes.set_number)}`}
-                  >
-                    <Ionicons name="document-text-outline" size={16} color={CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent} />
-                    <Text style={[styles.legoInstructionsBtnText, { color: CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent }]}>
-                      Build Instructions
-                    </Text>
-                    <Ionicons name="open-outline" size={14} color={CATEGORY_VISUAL['lego']?.accentColor ?? theme.accent} />
-                  </Pressable>
-                )}
-              </View>
-            )}
-
-            {/* ── Funko Vaulted Status ────────────────────────────────────── */}
-            {categorySlug === 'funko' && (
-              itemAttributes?.vaulted === true ||
-              (typeof notes === 'string' && notes.toLowerCase().includes('vaulted')) ||
-              (typeof itemAttributes?.notes === 'string' && String(itemAttributes.notes).toLowerCase().includes('vaulted'))
-            ) && (
-              <View style={[styles.vaultedBadgeContainer, { borderTopColor: theme.border }]}>
-                <View style={[styles.vaultedBadge, { backgroundColor: '#FEE2E2' }]}>
-                  <Ionicons name="lock-closed" size={16} color="#DC2626" />
-                  <Text style={[styles.vaultedBadgeText, { color: '#991B1B' }]}>
-                    Vaulted
-                  </Text>
-                </View>
-                <Text style={[styles.vaultedHint, { color: theme.muted }]}>
-                  This Pop! has been retired from production. Vaulted items often increase in value.
-                </Text>
-              </View>
-            )}
-
-            {/* ── Sneaker Authentication Links ────────────────────────────── */}
-            {categorySlug === 'sneakers' && !isDraft && id && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <View style={styles.sectionHeaderRow}>
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="shield-checkmark-outline" size={20} color="#22C55E" />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Verify Authenticity</Text>
-                  </View>
-                </View>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 8 }}>
-                  <Pressable
-                    onPress={() => {
-                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      Linking.openURL('https://checkcheck.com').catch((err) =>
-                        logger.warn('[ItemDetail] Failed to open CheckCheck URL', err)
-                      );
-                    }}
-                    style={[styles.authLinkBtn, { borderColor: '#22C55E' }]}
-                    accessibilityRole="link"
-                    accessibilityLabel="Verify with CheckCheck"
-                  >
-                    <Ionicons name="checkmark-circle-outline" size={16} color="#22C55E" />
-                    <Text style={[styles.authLinkBtnText, { color: '#22C55E' }]}>CheckCheck</Text>
-                    <Ionicons name="open-outline" size={12} color="#22C55E" />
-                  </Pressable>
-                  <Pressable
-                    onPress={() => {
-                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      Linking.openURL('https://www.legitcheck.app').catch((err) =>
-                        logger.warn('[ItemDetail] Failed to open Legit Check URL', err)
-                      );
-                    }}
-                    style={[styles.authLinkBtn, { borderColor: '#3B82F6' }]}
-                    accessibilityRole="link"
-                    accessibilityLabel="Verify with Legit Check"
-                  >
-                    <Ionicons name="shield-checkmark-outline" size={16} color="#3B82F6" />
-                    <Text style={[styles.authLinkBtnText, { color: '#3B82F6' }]}>Legit Check</Text>
-                    <Ionicons name="open-outline" size={12} color="#3B82F6" />
-                  </Pressable>
-                </View>
-              </View>
-            )}
+            {/* ── Category-Specific Sections (sneakers/watches/LEGO/funko/auth) ── */}
+            <CategorySpecificSection
+              categorySlug={categorySlug}
+              isDraft={isDraft}
+              itemId={id}
+              itemAttributes={itemAttributes}
+              itemSizeValue={itemSizeValue}
+              sizeSystem={sizeSystem}
+              sizeSaving={sizeSaving}
+              notes={notes}
+              hapticsEnabled={settings.hapticsEnabled}
+              theme={theme}
+              onSizeChange={handleSizeChange}
+              onSizeSystemChange={setSizeSystem}
+              onSizeValueChange={setItemSizeValue}
+            />
 
             {/* New Explainable AI Interface - PriceCard with visual RangeBar */}
             {featureFlags.FEATURE_EXPLAINABLE_AI_INTERFACES && priceEstimate && (
@@ -2398,262 +2120,31 @@ function ItemDetailScreen() {
 
             {/* Grading Section — for eligible categories */}
             {!isDraft && id && isGradingEligible && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <Pressable
-                  onPress={() => {
-                    if (!gradingExpanded) {
-                      loadGradingServices();
-                      if (!gradingPopulation) loadGradingPopulation();
-                    }
-                    setGradingExpanded(!gradingExpanded);
-                    fireHaptic(HapticIntent.TAP_LIGHT, { enabled: settings.hapticsEnabled });
-                  }}
-                  style={styles.sectionHeaderRow}
-                  accessibilityRole="button"
-                  accessibilityLabel="Toggle grading information"
-                >
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="shield-checkmark-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Grading</Text>
-                  </View>
-                  {gradingLookupResult?.cert_verified && (
-                    <View style={[styles.gradingBadge, { backgroundColor: '#22C55E' + '20' }]}>
-                      <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
-                      <Text style={styles.gradingBadgeText}>
-                        {gradingLookupResult.service_name} {gradingLookupResult.grade}
-                      </Text>
-                    </View>
-                  )}
-                  <Ionicons
-                    name={gradingExpanded ? "chevron-up" : "chevron-down"}
-                    size={18}
-                    color={theme.muted}
-                  />
-                </Pressable>
-
-                {gradingExpanded && (
-                  <View style={styles.sectionContent}>
-                    {/* Verified grade badge (if lookup was performed) */}
-                    {gradingLookupResult?.cert_verified && (
-                      <Pressable
-                        style={[styles.gradingVerifiedCard, { backgroundColor: theme.card, borderColor: '#22C55E' + '40' }]}
-                        onPress={() => {
-                          if (gradingLookupResult.cert_url) {
-                            Linking.openURL(gradingLookupResult.cert_url);
-                          }
-                        }}
-                        accessibilityRole="link"
-                        accessibilityLabel={`View ${gradingLookupResult.service_name} certificate`}
-                      >
-                        <View style={styles.gradingVerifiedHeader}>
-                          <Ionicons name="shield-checkmark" size={24} color="#22C55E" />
-                          <View style={{ flex: 1 }}>
-                            <Text style={[styles.gradingVerifiedGrade, { color: theme.text }]}>
-                              {gradingLookupResult.service_name} {gradingLookupResult.grade}
-                            </Text>
-                            <Text style={[styles.gradingVerifiedMeta, { color: theme.muted }]}>
-                              Cert #{gradingLookupResult.cert_number}
-                              {gradingLookupResult.year ? ` \u00b7 ${gradingLookupResult.year}` : ''}
-                              {gradingLookupResult.label_type ? ` \u00b7 ${gradingLookupResult.label_type}` : ''}
-                            </Text>
-                          </View>
-                          <Ionicons name="open-outline" size={16} color={theme.accent} />
-                        </View>
-                        {gradingLookupResult.item_name && (
-                          <Text style={[styles.gradingVerifiedItemName, { color: theme.muted }]}>
-                            {gradingLookupResult.item_name}
-                          </Text>
-                        )}
-                        {gradingLookupResult.sub_grades && (
-                          <View style={styles.gradingSubGradesRow}>
-                            {Object.entries(gradingLookupResult.sub_grades).map(([key, val]) => (
-                              <View key={key} style={[styles.gradingSubGradeChip, { backgroundColor: theme.background }]}>
-                                <Text style={[styles.gradingSubGradeLabel, { color: theme.muted }]}>
-                                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                                </Text>
-                                <Text style={[styles.gradingSubGradeValue, { color: theme.text }]}>{val}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        )}
-                        <View style={styles.gradingPopRow}>
-                          {gradingLookupResult.population_at_grade != null && (
-                            <Text style={[styles.gradingPopText, { color: theme.muted }]}>
-                              Pop at grade: {formatNumber(gradingLookupResult.population_at_grade)}
-                            </Text>
-                          )}
-                          {gradingLookupResult.population_higher != null && gradingLookupResult.population_higher > 0 && (
-                            <Text style={[styles.gradingPopText, { color: theme.muted }]}>
-                              {' \u00b7 '}Higher: {formatNumber(gradingLookupResult.population_higher)}
-                            </Text>
-                          )}
-                        </View>
-                      </Pressable>
-                    )}
-
-                    {/* Look Up Certificate button */}
-                    <Pressable
-                      style={[styles.gradingActionBtn, { borderColor: theme.accent, backgroundColor: theme.card }]}
-                      onPress={() => {
-                        setGradingModalVisible(true);
-                        fireHaptic(HapticIntent.TAP_LIGHT, { enabled: settings.hapticsEnabled });
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Look up grading certificate"
-                    >
-                      <Ionicons name="search-outline" size={16} color={theme.accent} />
-                      <Text style={[styles.gradingActionBtnText, { color: theme.accent }]}>Look Up Certificate</Text>
-                    </Pressable>
-
-                    {/* Population Report mini-table */}
-                    {gradingPopLoading && (
-                      <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-                        <ActivityIndicator size="small" color={theme.accent} />
-                        <Text style={[{ fontSize: 12, marginTop: 6 }, { color: theme.muted }]}>Loading population data...</Text>
-                      </View>
-                    )}
-                    {!gradingPopLoading && gradingPopulation && (
-                      <View style={[styles.gradingPopTable, { borderColor: theme.border }]}>
-                        <View style={styles.gradingPopTableHeader}>
-                          <Text style={[styles.gradingPopTableTitle, { color: theme.text }]}>Population Report</Text>
-                          <Text style={[styles.gradingPopTableSub, { color: theme.muted }]}>
-                            {formatNumber(gradingPopulation.total_graded)} total graded
-                            {gradingPopulation.avg_grade != null ? ` \u00b7 Avg: ${gradingPopulation.avg_grade.toFixed(1)}` : ''}
-                          </Text>
-                        </View>
-                        <View style={[styles.gradingPopTableHeaderRow, { borderBottomColor: theme.border }]}>
-                          <Text style={[styles.gradingPopTableHeaderCell, { color: theme.muted, flex: 1 }]}>Grade</Text>
-                          <Text style={[styles.gradingPopTableHeaderCell, { color: theme.muted, flex: 1, textAlign: 'right' }]}>Count</Text>
-                          <Text style={[styles.gradingPopTableHeaderCell, { color: theme.muted, flex: 1, textAlign: 'right' }]}>%</Text>
-                        </View>
-                        {gradingPopulation.population
-                          .filter((p) => p.count > 0)
-                          .slice(-10)
-                          .reverse()
-                          .map((entry) => (
-                            <View key={entry.grade} style={[styles.gradingPopTableRow, { borderBottomColor: theme.border }]}>
-                              <Text style={[styles.gradingPopTableCell, { color: theme.text, flex: 1, fontWeight: '600' }]}>{entry.grade}</Text>
-                              <Text style={[styles.gradingPopTableCell, { color: theme.text, flex: 1, textAlign: 'right' }]}>{formatNumber(entry.count)}</Text>
-                              <Text style={[styles.gradingPopTableCell, { color: theme.muted, flex: 1, textAlign: 'right' }]}>
-                                {entry.pct_of_total != null ? `${entry.pct_of_total.toFixed(1)}%` : '-'}
-                              </Text>
-                            </View>
-                          ))}
-                      </View>
-                    )}
-
-                    {/* Submit for Grading buttons */}
-                    {gradingServices.length > 0 && (
-                      <View style={styles.gradingSubmitSection}>
-                        <Text style={[styles.gradingSubmitTitle, { color: theme.text }]}>Submit for Grading</Text>
-                        <View style={styles.gradingSubmitRow}>
-                          {gradingServices.slice(0, 4).map((svc) => (
-                            <Pressable
-                              key={svc.id}
-                              style={[styles.gradingSubmitBtn, { borderColor: theme.border, backgroundColor: theme.card }]}
-                              onPress={() => {
-                                Linking.openURL(svc.submission_url);
-                                fireHaptic(HapticIntent.TAP_LIGHT, { enabled: settings.hapticsEnabled });
-                              }}
-                              accessibilityRole="link"
-                              accessibilityLabel={`Submit to ${svc.short_name}`}
-                            >
-                              <Text style={[styles.gradingSubmitBtnName, { color: theme.text }]}>{svc.short_name}</Text>
-                              <Text style={[styles.gradingSubmitBtnMeta, { color: theme.muted }]}>{svc.price_range}</Text>
-                              <Ionicons name="open-outline" size={12} color={theme.muted} />
-                            </Pressable>
-                          ))}
-                        </View>
-                      </View>
-                    )}
-                  </View>
-                )}
-              </View>
+              <GradingSection
+                theme={theme}
+                hapticsEnabled={settings.hapticsEnabled}
+                gradingExpanded={gradingExpanded}
+                onToggleExpanded={() => {
+                  if (!gradingExpanded) {
+                    loadGradingServices();
+                    if (!gradingPopulation) loadGradingPopulation();
+                  }
+                  setGradingExpanded(!gradingExpanded);
+                }}
+                gradingLookupResult={gradingLookupResult}
+                gradingPopulation={gradingPopulation}
+                gradingPopLoading={gradingPopLoading}
+                gradingServices={gradingServices}
+                gradingModalVisible={gradingModalVisible}
+                onSetGradingModalVisible={setGradingModalVisible}
+                gradingCertInput={gradingCertInput}
+                onSetGradingCertInput={setGradingCertInput}
+                gradingServicePick={gradingServicePick}
+                onSetGradingServicePick={setGradingServicePick}
+                gradingLookupLoading={gradingLookupLoading}
+                onGradingLookup={handleGradingLookup}
+              />
             )}
-
-            {/* Grading Certificate Lookup Modal */}
-            <Modal
-              visible={gradingModalVisible}
-              transparent
-              animationType="slide"
-              onRequestClose={() => setGradingModalVisible(false)}
-            >
-              <Pressable
-                style={styles.forSaleModalOverlay}
-                onPress={() => setGradingModalVisible(false)}
-              >
-                <Pressable
-                  style={[styles.forSaleModalSheet, { backgroundColor: theme.card }]}
-                  onPress={() => {}}
-                >
-                  <View style={styles.forSaleModalHeader}>
-                    <Text style={[styles.forSaleModalTitle, { color: theme.text }]}>Look Up Certificate</Text>
-                    <Pressable onPress={() => setGradingModalVisible(false)}>
-                      <Ionicons name="close" size={24} color={theme.muted} />
-                    </Pressable>
-                  </View>
-
-                  {/* Service picker */}
-                  <Text style={[styles.forSaleModalLabel, { color: theme.text }]}>Grading Service</Text>
-                  <View style={styles.gradingServicePickerRow}>
-                    {(['psa', 'cgc', 'bgs', 'beckett'] as const).map((svc) => (
-                      <Pressable
-                        key={svc}
-                        style={[
-                          styles.gradingServicePickerChip,
-                          {
-                            backgroundColor: gradingServicePick === svc ? theme.accent : theme.background,
-                            borderColor: gradingServicePick === svc ? theme.accent : theme.border,
-                          },
-                        ]}
-                        onPress={() => setGradingServicePick(svc)}
-                      >
-                        <Text
-                          style={[
-                            styles.gradingServicePickerText,
-                            { color: gradingServicePick === svc ? '#fff' : theme.text },
-                          ]}
-                        >
-                          {svc.toUpperCase()}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-
-                  {/* Cert number input */}
-                  <Text style={[styles.forSaleModalLabel, { color: theme.text, marginTop: 16 }]}>Certification Number</Text>
-                  <TextInput
-                    style={[styles.forSaleModalInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.background }]}
-                    value={gradingCertInput}
-                    onChangeText={setGradingCertInput}
-                    placeholder="e.g. 12345678"
-                    placeholderTextColor={theme.muted}
-                    keyboardType="number-pad"
-                    returnKeyType="search"
-                    onSubmitEditing={handleGradingLookup}
-                    autoFocus
-                  />
-                  <Text style={[styles.forSaleModalHint, { color: theme.muted }]}>
-                    Enter the number printed on your grading certificate or slab label.
-                  </Text>
-
-                  <Pressable
-                    style={[styles.forSaleModalConfirmBtn, { backgroundColor: theme.accent, opacity: gradingLookupLoading ? 0.6 : 1 }]}
-                    onPress={handleGradingLookup}
-                    disabled={gradingLookupLoading}
-                  >
-                    {gradingLookupLoading ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <>
-                        <Ionicons name="search" size={18} color="#fff" />
-                        <Text style={styles.forSaleModalConfirmBtnText}>Look Up</Text>
-                      </>
-                    )}
-                  </Pressable>
-                </Pressable>
-              </Pressable>
-            </Modal>
 
             {/* Dossier Section */}
             {!isDraft && id && (
@@ -2806,123 +2297,19 @@ function ItemDetailScreen() {
 
             {/* Reading / Play Progress — for manga, comics, games */}
             {!isDraft && id && hasProgressTracking && progressConfig && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <View style={styles.sectionHeaderRow}>
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name={(progressConfig.icon as keyof typeof Ionicons.glyphMap) || 'book-outline'} size={20} color={theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>{progressConfig.label}</Text>
-                  </View>
-                  {progressSaving && (
-                    <ActivityIndicator size="small" color={theme.accent} />
-                  )}
-                </View>
-
-                {progressLoading ? (
-                  <ActivityIndicator size="small" color={theme.accent} style={{ marginVertical: 12 }} />
-                ) : (
-                  <>
-                    {/* Status pills */}
-                    <View style={styles.progressStatusRow}>
-                      {progressConfig.statuses.map((status) => {
-                        const isActive = progressStatus === status;
-                        const statusColor = STATUS_COLORS[status] || theme.accent;
-                        return (
-                          <Pressable
-                            key={status}
-                            onPress={() => handleProgressStatusChange(status)}
-                            style={[
-                              styles.progressStatusPill,
-                              {
-                                backgroundColor: isActive ? statusColor : statusColor + '15',
-                                borderColor: statusColor,
-                              },
-                            ]}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Set status to ${STATUS_DISPLAY[status]}`}
-                            accessibilityState={{ selected: isActive }}
-                          >
-                            <Text style={[
-                              styles.progressStatusPillText,
-                              { color: isActive ? '#fff' : statusColor },
-                            ]}>
-                              {STATUS_DISPLAY[status]}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-
-                    {/* Progress bar (percentage) */}
-                    <View style={styles.progressBarSection}>
-                      <Text style={[styles.progressBarLabel, { color: theme.muted }]}>
-                        Progress: {progressPct ?? 0}%
-                      </Text>
-                      <View style={styles.progressBarRow}>
-                        <View style={[styles.progressBarBg, { backgroundColor: theme.border }]}>
-                          <View
-                            style={[
-                              styles.progressBarFill,
-                              {
-                                backgroundColor: progressStatus ? (STATUS_COLORS[progressStatus] || theme.accent) : theme.accent,
-                                width: `${progressPct ?? 0}%`,
-                              },
-                            ]}
-                          />
-                        </View>
-                      </View>
-                      {/* Quick percentage buttons */}
-                      <View style={styles.progressPctButtons}>
-                        {[0, 25, 50, 75, 100].map((pct) => (
-                          <Pressable
-                            key={pct}
-                            onPress={() => handleProgressPctChange(pct)}
-                            style={[
-                              styles.progressPctBtn,
-                              {
-                                backgroundColor: progressPct === pct ? theme.accent : theme.background,
-                                borderColor: theme.border,
-                              },
-                            ]}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Set progress to ${pct}%`}
-                          >
-                            <Text style={[
-                              styles.progressPctBtnText,
-                              { color: progressPct === pct ? '#fff' : theme.muted },
-                            ]}>
-                              {pct}%
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                    </View>
-
-                    {/* Progress notes */}
-                    <TextInput
-                      style={[
-                        styles.progressNotesInput,
-                        {
-                          color: theme.text,
-                          borderColor: theme.border,
-                          backgroundColor: theme.background,
-                        },
-                      ]}
-                      placeholder={
-                        categorySlug === 'manga' || categorySlug === 'comic_books'
-                          ? 'Reading notes (e.g., "Volume 14 of 37, love the arc!")'
-                          : 'Play notes (e.g., "Cleared World 5, need to replay boss")'
-                      }
-                      placeholderTextColor={theme.muted ?? '#64748B'}
-                      multiline
-                      value={progressNotes}
-                      onChangeText={handleProgressNotesChange}
-                      textAlignVertical="top"
-                      blurOnSubmit={false}
-                      accessibilityLabel={`${progressConfig.label} notes`}
-                    />
-                  </>
-                )}
-              </View>
+              <ItemProgressSection
+                categorySlug={categorySlug}
+                progressConfig={progressConfig}
+                progressStatus={progressStatus}
+                progressPct={progressPct}
+                progressNotes={progressNotes}
+                progressLoading={progressLoading}
+                progressSaving={progressSaving}
+                theme={theme}
+                onStatusChange={handleProgressStatusChange}
+                onPctChange={handleProgressPctChange}
+                onNotesChange={handleProgressNotesChange}
+              />
             )}
 
             {/* Shop this Item — affiliate links */}
@@ -4137,371 +3524,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ── Progress Tracking ────────────────────────────────────────────────
-  progressStatusRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  progressStatusPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  progressStatusPillText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  progressBarSection: {
-    paddingBottom: 10,
-  },
-  progressBarLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 6,
-  },
-  progressBarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  progressBarBg: {
-    flex: 1,
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  progressPctButtons: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 8,
-  },
-  progressPctBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  progressPctBtnText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  progressNotesInput: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
-    minHeight: 60,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  // ── Grading styles ─────────────────────────────────────────────────────
-  gradingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    marginRight: 4,
-  },
-  gradingBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#22C55E',
-  },
-  gradingVerifiedCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 12,
-  },
-  gradingVerifiedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  gradingVerifiedGrade: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  gradingVerifiedMeta: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  gradingVerifiedItemName: {
-    fontSize: 12,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  gradingSubGradesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 10,
-  },
-  gradingSubGradeChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  gradingSubGradeLabel: {
-    fontSize: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  gradingSubGradeValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: 1,
-  },
-  gradingPopRow: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  gradingPopText: {
-    fontSize: 11,
-  },
-  gradingActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  gradingActionBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  gradingPopTable: {
-    borderRadius: 10,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  gradingPopTableHeader: {
-    padding: 12,
-  },
-  gradingPopTableTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  gradingPopTableSub: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  gradingPopTableHeaderRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-  },
-  gradingPopTableHeaderCell: {
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  gradingPopTableRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  gradingPopTableCell: {
-    fontSize: 13,
-  },
-  gradingSubmitSection: {
-    marginTop: 4,
-  },
-  gradingSubmitTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  gradingSubmitRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  gradingSubmitBtn: {
-    flex: 1,
-    minWidth: 120,
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 3,
-  },
-  gradingSubmitBtnName: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  gradingSubmitBtnMeta: {
-    fontSize: 10,
-  },
-  gradingServicePickerRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  gradingServicePickerChip: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  gradingServicePickerText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
-  // ── Size-Specific Pricing ──────────────────────────────────────────────
-  sizeSelectorRow: {
-    paddingTop: 8,
-  },
-  sizeSystemRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 10,
-  },
-  sizeSystemPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  sizeSystemPillText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  sizePillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  sizePill: {
-    minWidth: 44,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  sizePillText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  sizeInfoNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  sizeInfoNoteText: {
-    fontSize: 12,
-    fontWeight: '500',
-    flex: 1,
-  },
-
-  // ── LEGO-Specific ──────────────────────────────────────────────────────
-  legoDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 6,
-  },
-  legoDetailLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    flex: 1,
-  },
-  legoDetailValue: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  legoRetirementBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 6,
-  },
-  legoRetirementText: {
-    fontSize: 13,
-    fontWeight: '600',
-    flex: 1,
-  },
-  legoInstructionsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginTop: 8,
-  },
-  legoInstructionsBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-
-  // ── Funko Vaulted ──────────────────────────────────────────────────────
-  vaultedBadgeContainer: {
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-  },
-  vaultedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  vaultedBadgeText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  vaultedHint: {
-    fontSize: 12,
-    lineHeight: 17,
-  },
-
-  // ── Authentication Links ───────────────────────────────────────────────
-  authLinkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  authLinkBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  // Progress Tracking styles moved to ItemProgressSection component
+  // Grading styles moved to GradingSection component
+  // Size, LEGO, Funko, Auth styles moved to CategorySpecificSection component
 });

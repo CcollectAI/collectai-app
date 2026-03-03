@@ -74,9 +74,9 @@ class TestOptimizeImage:
         assert w == 100
         assert h == 80
 
-        # Should be JPEG
+        # Should be WebP (optimized output format)
         result_img = Image.open(io.BytesIO(optimized))
-        assert result_img.format == "JPEG"
+        assert result_img.format == "WEBP"
         assert result_img.mode == "RGB"
 
     def test_rgba_to_rgb_conversion(self):

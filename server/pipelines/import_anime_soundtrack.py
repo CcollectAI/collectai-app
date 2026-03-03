@@ -786,6 +786,79 @@ def get_curated_catalog() -> list[dict]:
         ("Yu Yu Hakusho", "Various", "Yu Yu Hakusho OST Vinyl (3LP)", "Vinyl", "Limited", "grail", 110),
         ("Trigun", "Tsuneo Imahori", "Trigun Complete Soundtrack (2CD)", "CD", "Limited", "high", 65),
         ("Trigun", "Tsuneo Imahori", "Trigun OST Vinyl (2LP)", "Vinyl", "Limited", "high", 85),
+
+        # ── Expansion Batch — Cowboy Bebop Variants ──────────────────────
+        ("Cowboy Bebop", "Yoko Kanno", "Cowboy Bebop No Disc CD (Ask DNA)", "CD", "Standard", "mid", 32),
+        ("Cowboy Bebop", "Yoko Kanno", "Cowboy Bebop Remixes: Music for Freelance", "CD", "Standard", "mid", 28),
+        ("Cowboy Bebop", "Yoko Kanno", "Cowboy Bebop Boxed Set Vinyl (8LP)", "Vinyl", "Limited", "grail", 280),
+        ("Cowboy Bebop", "Yoko Kanno", "Cowboy Bebop Tank! 7\" Single", "Vinyl", "Japanese Pressing", "high", 70),
+        ("Cowboy Bebop", "Yoko Kanno", "Cowboy Bebop Movie OST (Knockin' on Heaven's Door)", "CD", "Standard", "mid", 30),
+
+        # ── Evangelion Soundtracks Extended ───────────────────────────────
+        ("Evangelion", "Shiro Sagisu", "Evangelion 1.0 You Are (Not) Alone OST", "CD", "Standard", "mid", 22),
+        ("Evangelion", "Shiro Sagisu", "Evangelion: Death & Rebirth OST", "CD", "Standard", "mid", 28),
+        ("Evangelion", "Shiro Sagisu", "Evangelion S2 Works (7CD Archival Box)", "CD Box", "Limited", "grail", 200),
+        ("Evangelion", "Shiro Sagisu", "Neon Genesis Evangelion Decade Vinyl (2LP)", "Vinyl", "Limited Color", "grail", 130),
+
+        # ── Studio Ghibli Film Scores Extended ───────────────────────────
+        ("Kiki's Delivery Service", "Joe Hisaishi", "Kiki's Delivery Service Soundtrack (2LP Vinyl)", "Vinyl", "Japanese Pressing", "high", 85),
+        ("Porco Rosso", "Joe Hisaishi", "Porco Rosso Image Album Vinyl", "Vinyl", "Japanese Pressing", "high", 80),
+        ("The Wind Rises", "Joe Hisaishi", "The Wind Rises Original Soundtrack", "CD", "Standard", "mid", 22),
+        ("The Tale of Princess Kaguya", "Joe Hisaishi", "Kaguya-hime no Monogatari Soundtrack", "CD", "Standard", "mid", 25),
+        ("When Marnie Was There", "Priscilla Ahn / Various", "When Marnie Was There Soundtrack", "CD", "Standard", "mid", 20),
+
+        # ── Chainsaw Man OST ─────────────────────────────────────────────
+        ("Chainsaw Man", "Kensuke Ushio", "Chainsaw Man OST Vol. 1", "CD", "Standard", "mid", 22),
+        ("Chainsaw Man", "Kensuke Ushio", "Chainsaw Man OST Vol. 2", "CD", "Standard", "mid", 22),
+        ("Chainsaw Man", "Kensuke Ushio", "Chainsaw Man Complete Score (2CD)", "CD", "Limited", "high", 55),
+        ("Chainsaw Man", "Kensuke Ushio", "Chainsaw Man OST Vinyl (2LP)", "Vinyl", "Limited", "high", 75),
+        ("Chainsaw Man", "Various", "Chainsaw Man ED Collection (12 Singles Box)", "CD Box", "Limited", "grail", 120),
+
+        # ── Bocchi the Rock! ─────────────────────────────────────────────
+        ("Bocchi the Rock!", "Kessoku Band", "Bocchi the Rock! Album (Kessoku Band)", "CD", "Standard", "mid", 25),
+        ("Bocchi the Rock!", "Kessoku Band", "Kessoku Band Live Vinyl (2LP)", "Vinyl", "Limited", "high", 80),
+        ("Bocchi the Rock!", "Various", "Bocchi the Rock! Complete OST", "CD", "Standard", "mid", 22),
+
+        # ── Blue Lock ────────────────────────────────────────────────────
+        ("Blue Lock", "Yuki Hayashi", "Blue Lock OST Vol. 1", "CD", "Standard", "mid", 20),
+        ("Blue Lock", "Yuki Hayashi", "Blue Lock OST Vol. 2", "CD", "Standard", "mid", 20),
+        ("Blue Lock", "Yuki Hayashi", "Blue Lock Complete Soundtrack (2CD)", "CD", "Limited", "mid", 42),
+
+        # ── Oshi no Ko ───────────────────────────────────────────────────
+        ("Oshi no Ko", "Isao Tokura", "Oshi no Ko Original Soundtrack", "CD", "Standard", "mid", 22),
+        ("Oshi no Ko", "YOASOBI", "Idol (7\" Vinyl Single)", "Vinyl", "Japanese Pressing", "high", 65),
+        ("Oshi no Ko", "Isao Tokura", "Oshi no Ko Season 2 OST", "CD", "Standard", "mid", 22),
+        ("Oshi no Ko", "YOASOBI", "Mephisto (12\" Vinyl Single)", "Vinyl", "Japanese Pressing", "high", 55),
+
+        # ── Vinland Saga Extended ────────────────────────────────────────
+        ("Vinland Saga", "Yutaka Yamada", "Vinland Saga Season 2 OST", "CD", "Standard", "mid", 22),
+        ("Vinland Saga", "Yutaka Yamada", "Vinland Saga S1+S2 Complete Vinyl (4LP)", "Vinyl", "Limited", "grail", 130),
+
+        # ── Attack on Titan Final Season ─────────────────────────────────
+        ("Attack on Titan", "Hiroyuki Sawano / KOHTA YAMAMOTO", "AoT Final Season Part 3 OST", "CD", "Standard", "mid", 22),
+        ("Attack on Titan", "Hiroyuki Sawano / KOHTA YAMAMOTO", "AoT The Final Chapters OST Vinyl (2LP)", "Vinyl", "Limited", "high", 85),
+        ("Attack on Titan", "Hiroyuki Sawano", "AoT Season 1 OST Vinyl (2LP, Anniversary)", "Vinyl", "Limited Color", "grail", 120),
+        ("Attack on Titan", "SiM / Various", "AoT OP/ED Collection Vinyl (3LP)", "Vinyl", "Limited", "grail", 110),
+
+        # ── Demon Slayer Movie Soundtracks ───────────────────────────────
+        ("Demon Slayer", "Yuki Kajiura / Go Shiina", "Demon Slayer: Mugen Train Movie OST", "CD", "Standard", "mid", 22),
+        ("Demon Slayer", "Yuki Kajiura / Go Shiina", "Demon Slayer: To the Swordsmith Village OST", "CD", "Standard", "mid", 22),
+        ("Demon Slayer", "Yuki Kajiura / Go Shiina", "Demon Slayer Movie OST Vinyl (2LP)", "Vinyl", "Limited", "high", 75),
+        ("Demon Slayer", "LiSA", "Homura / Akeboshi (7\" Vinyl Single)", "Vinyl", "Japanese Pressing", "high", 60),
+        ("Demon Slayer", "Aimer", "Zankyosanka / Asa ga Kuru (12\" Vinyl Single)", "Vinyl", "Japanese Pressing", "high", 55),
+        ("Demon Slayer", "Yuki Kajiura / Go Shiina", "Demon Slayer Complete Score Vinyl (6LP Box)", "Vinyl", "Limited", "grail", 220),
+
+        # ── Additional Modern Hits 2024-2026 ─────────────────────────────
+        ("Frieren", "Evan Call", "Frieren: Beyond Journey's End Complete OST (2CD)", "CD", "Limited", "mid", 40),
+        ("Frieren", "Evan Call", "Frieren OST Vinyl (2LP)", "Vinyl", "Limited", "high", 75),
+        ("Dandadan", "Kensuke Ushio", "Dandadan Original Soundtrack", "CD", "Standard", "mid", 22),
+        ("Dandadan", "Kensuke Ushio", "Dandadan OST Vinyl (2LP)", "Vinyl", "Limited", "high", 70),
+        ("Solo Leveling", "Hiroyuki Sawano", "Solo Leveling Complete OST (2CD)", "CD", "Limited", "mid", 42),
+        ("Solo Leveling", "Hiroyuki Sawano", "Solo Leveling OST Vinyl (2LP)", "Vinyl", "Limited", "high", 80),
+        ("Spy x Family", "K)NoW_NAME", "Spy x Family Complete OST (2CD)", "CD", "Limited", "mid", 38),
+        ("Spy x Family", "K)NoW_NAME", "Spy x Family OST Vinyl (2LP)", "Vinyl", "Limited", "high", 70),
+        ("Kaiju No. 8", "Yutaka Yamada", "Kaiju No. 8 Original Soundtrack", "CD", "Standard", "mid", 20),
+        ("Wind Breaker", "KOHTA YAMAMOTO", "Wind Breaker Original Soundtrack", "CD", "Standard", "standard", 16),
     ]
 
     catalog = []

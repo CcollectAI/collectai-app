@@ -9,12 +9,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { SponsorProfileCard } from '@/components/SponsorProfileCard';
+import { AnnouncementComposer } from '@/components/AnnouncementComposer';
 import {
   ScrollView,
   View,
   Text,
   StyleSheet,
-  TextInput,
   ActivityIndicator,
   Image,
   Animated,
@@ -624,192 +625,27 @@ const SponsorDashboardScreen: React.FC = () => {
           {/* ============================================================ */}
           {/*  Company Profile                                              */}
           {/* ============================================================ */}
-          <View style={styles.sectionWrap}>
-            <Text style={[styles.sectionLabel, { color: colors.muted }]}>COMPANY PROFILE</Text>
-
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, SHADOW_SM]}>
-              {/* View mode */}
-              {!editing && (
-                <>
-                  <View style={styles.profileRow}>
-                    {company.logoUrl ? (
-                      <Image
-                        source={{ uri: company.logoUrl }}
-                        style={styles.profileLogo}
-                        accessibilityLabel={`${company.name} logo`}
-                      />
-                    ) : (
-                      <View style={[styles.profileLogoPlaceholder, { backgroundColor: colors.accent + '10' }]}>
-                        <Ionicons name="business" size={28} color={colors.accent} />
-                      </View>
-                    )}
-                    <View style={styles.profileInfo}>
-                      <View style={styles.profileNameRow}>
-                        <Text style={[styles.profileName, { color: colors.text }]} numberOfLines={1}>
-                          {company.name}
-                        </Text>
-                        {company.isVerified && (
-                          <View style={[styles.verifiedPill, { backgroundColor: '#10B981' + '18' }]}>
-                            <Ionicons name="checkmark-circle" size={11} color="#10B981" />
-                            <Text style={[styles.verifiedPillText, { color: '#10B981' }]}>Verified</Text>
-                          </View>
-                        )}
-                      </View>
-                      <View style={styles.profileMeta}>
-                        <Ionicons name="mail-outline" size={11} color={colors.muted} />
-                        <Text style={[styles.profileMetaText, { color: colors.muted }]} numberOfLines={1}>
-                          {company.contactEmail}
-                        </Text>
-                      </View>
-                      {company.websiteUrl && (
-                        <View style={styles.profileMeta}>
-                          <Ionicons name="globe-outline" size={11} color={colors.muted} />
-                          <Text style={[styles.profileMetaText, { color: colors.muted }]} numberOfLines={1}>
-                            {company.websiteUrl}
-                          </Text>
-                        </View>
-                      )}
-                      {memberSince && (
-                        <Text style={[styles.profileSince, { color: colors.muted }]}>
-                          Member since {memberSince}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-
-                  {company.description && (
-                    <View style={[styles.profileDescWrap, { borderTopColor: colors.border }]}>
-                      <Text style={[styles.profileDesc, { color: colors.text }]} numberOfLines={3}>
-                        {company.description}
-                      </Text>
-                    </View>
-                  )}
-                </>
-              )}
-
-              {/* Edit mode */}
-              {editing && (
-                <View>
-                  <View style={styles.editFieldGroup}>
-                    <Text style={[styles.editFieldLabel, { color: colors.muted }]}>
-                      Company Name <Text style={{ color: colors.accent }}>*</Text>
-                    </Text>
-                    <View style={[styles.editInputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                      <TextInput
-                        value={editName}
-                        onChangeText={setEditName}
-                        style={[styles.editInput, { color: colors.text }]}
-                        accessibilityLabel="Company name"
-                        returnKeyType="next"
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.editFieldGroup}>
-                    <Text style={[styles.editFieldLabel, { color: colors.muted }]}>
-                      Contact Email <Text style={{ color: colors.accent }}>*</Text>
-                    </Text>
-                    <View style={[styles.editInputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                      <TextInput
-                        value={editContactEmail}
-                        onChangeText={setEditContactEmail}
-                        style={[styles.editInput, { color: colors.text }]}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        accessibilityLabel="Contact email"
-                        returnKeyType="next"
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.editFieldGroup}>
-                    <Text style={[styles.editFieldLabel, { color: colors.muted }]}>Company Logo</Text>
-                    <AnimatedPressable
-                      onPress={handlePickEditLogo}
-                      disabled={logoUploading}
-                      style={[styles.logoPicker, { borderColor: colors.border, backgroundColor: colors.background }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Change company logo"
-                    >
-                      {logoUploading ? (
-                        <ActivityIndicator size="small" color={colors.accent} />
-                      ) : editLogoPreview ? (
-                        <View style={styles.logoPreviewWrap}>
-                          <Image source={{ uri: editLogoPreview }} style={styles.logoPreviewImg} />
-                          <Text style={[styles.logoChangeHint, { color: colors.accent }]}>Tap to change</Text>
-                        </View>
-                      ) : (
-                        <View style={styles.logoPickerInner}>
-                          <View style={[styles.logoPickerCircle, { backgroundColor: colors.accent + '10' }]}>
-                            <Ionicons name="camera-outline" size={20} color={colors.accent} />
-                          </View>
-                          <Text style={[styles.logoPickerHint, { color: colors.muted }]}>Upload logo</Text>
-                        </View>
-                      )}
-                    </AnimatedPressable>
-                  </View>
-
-                  <View style={styles.editFieldGroup}>
-                    <Text style={[styles.editFieldLabel, { color: colors.muted }]}>Website</Text>
-                    <View style={[styles.editInputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                      <TextInput
-                        value={editWebsiteUrl}
-                        onChangeText={setEditWebsiteUrl}
-                        style={[styles.editInput, { color: colors.text }]}
-                        autoCapitalize="none"
-                        keyboardType="url"
-                        placeholder="https://yourcompany.com"
-                        placeholderTextColor={colors.muted}
-                        accessibilityLabel="Website URL"
-                        returnKeyType="next"
-                      />
-                    </View>
-                  </View>
-
-                  <View>
-                    <Text style={[styles.editFieldLabel, { color: colors.muted }]}>Description</Text>
-                    <View style={[styles.editTextAreaWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                      <TextInput
-                        value={editDescription}
-                        onChangeText={setEditDescription}
-                        multiline
-                        numberOfLines={4}
-                        style={[styles.editTextArea, { color: colors.text }]}
-                        textAlignVertical="top"
-                        placeholder="Tell collectors about your brand..."
-                        placeholderTextColor={colors.muted}
-                        accessibilityLabel="Company description"
-                      />
-                    </View>
-                  </View>
-
-                  <View style={[styles.editActions, { borderTopColor: colors.border }]}>
-                    <AnimatedPressable
-                      onPress={handleCancelEdit}
-                      style={[styles.outlineBtn, { borderColor: colors.border, flex: 1 }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Cancel editing"
-                    >
-                      <Text style={[styles.outlineBtnText, { color: colors.muted }]}>Cancel</Text>
-                    </AnimatedPressable>
-                    <AnimatedPressable
-                      onPress={handleSaveEdit}
-                      disabled={saving}
-                      style={[styles.primaryBtn, { backgroundColor: colors.accent, flex: 1 }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Save changes"
-                    >
-                      {saving ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Text style={styles.primaryBtnText}>Save Changes</Text>
-                      )}
-                    </AnimatedPressable>
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
+          <SponsorProfileCard
+            company={company}
+            colors={colors}
+            memberSince={memberSince}
+            editing={editing}
+            editName={editName}
+            onEditNameChange={setEditName}
+            editContactEmail={editContactEmail}
+            onEditContactEmailChange={setEditContactEmail}
+            editLogoUrl={editLogoUrl}
+            editWebsiteUrl={editWebsiteUrl}
+            onEditWebsiteUrlChange={setEditWebsiteUrl}
+            editDescription={editDescription}
+            onEditDescriptionChange={setEditDescription}
+            editLogoPreview={editLogoPreview}
+            logoUploading={logoUploading}
+            onPickEditLogo={handlePickEditLogo}
+            saving={saving}
+            onCancelEdit={handleCancelEdit}
+            onSaveEdit={handleSaveEdit}
+          />
 
           {/* ============================================================ */}
           {/*  Campaigns Table                                              */}
@@ -937,124 +773,20 @@ const SponsorDashboardScreen: React.FC = () => {
             </View>
 
             {/* Inline compose form */}
-            {showCompose && (
-              <View style={[styles.composeCard, { backgroundColor: colors.card, borderColor: colors.accent }, SHADOW_MD]}>
-                <View style={styles.composeHeader}>
-                  <View style={[styles.composeIconCircle, { backgroundColor: colors.accent + '12' }]}>
-                    <Ionicons name="create-outline" size={14} color={colors.accent} />
-                  </View>
-                  <Text style={[styles.composeTitle, { color: colors.text }]}>New Announcement</Text>
-                </View>
-
-                <View style={[styles.composeDivider, { backgroundColor: colors.border }]} />
-
-                {/* Event selector (if multiple events) */}
-                {sponsoredEvents.length > 1 && (
-                  <View style={styles.composeField}>
-                    <Text style={[styles.composeLabel, { color: colors.muted }]}>Sending to</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.composeChipsRow}>
-                      {sponsoredEvents.map((ev) => {
-                        const isSelected = composeEventId === ev.id;
-                        return (
-                          <AnimatedPressable
-                            key={ev.id}
-                            onPress={() => setComposeEventId(ev.id)}
-                            style={[
-                              styles.composeChip,
-                              { borderColor: isSelected ? colors.accent : colors.border },
-                              isSelected && { backgroundColor: colors.accent + '08' },
-                            ]}
-                          >
-                            <View style={[styles.statusDot, { backgroundColor: getEventStatus(ev).color }]} />
-                            <Text
-                              style={[styles.composeChipText, { color: isSelected ? colors.accent : colors.text }]}
-                              numberOfLines={1}
-                            >
-                              {ev.title}
-                            </Text>
-                            {isSelected && <Ionicons name="checkmark" size={13} color={colors.accent} />}
-                          </AnimatedPressable>
-                        );
-                      })}
-                    </ScrollView>
-                  </View>
-                )}
-
-                {/* Subject */}
-                <View style={styles.composeField}>
-                  <Text style={[styles.composeLabel, { color: colors.muted }]}>Subject</Text>
-                  <TextInput
-                    value={composeTitle}
-                    onChangeText={setComposeTitle}
-                    placeholder="Optional subject line"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.composeInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                    accessibilityLabel="Announcement subject"
-                    returnKeyType="next"
-                  />
-                </View>
-
-                {/* Message */}
-                <View style={styles.composeField}>
-                  <Text style={[styles.composeLabel, { color: colors.muted }]}>Message</Text>
-                  <TextInput
-                    value={composeBody}
-                    onChangeText={setComposeBody}
-                    placeholder="Write your announcement..."
-                    placeholderTextColor={colors.muted}
-                    multiline
-                    numberOfLines={5}
-                    maxLength={2000}
-                    style={[styles.composeTextArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                    textAlignVertical="top"
-                    accessibilityLabel="Announcement message"
-                  />
-                  <View style={styles.composeTextAreaFooter}>
-                    <View style={[styles.composeHint, { backgroundColor: colors.accent + '06' }]}>
-                      <Ionicons name="information-circle-outline" size={11} color={colors.accent} />
-                      <Text style={[styles.composeHintText, { color: colors.accent }]}>
-                        Sent as a DM to all attendees
-                      </Text>
-                    </View>
-                    <Text style={[styles.composeCharCount, { color: composeBody.length > 1800 ? '#EF4444' : colors.muted }]}>
-                      {composeBody.length}/2,000
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={[styles.composeDivider, { backgroundColor: colors.border }]} />
-
-                {/* Actions */}
-                <View style={styles.composeFooter}>
-                  <AnimatedPressable
-                    onPress={() => setShowCompose(false)}
-                    style={[styles.outlineBtn, { borderColor: colors.border, flex: 1 }]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Cancel"
-                  >
-                    <Text style={[styles.outlineBtnText, { color: colors.muted }]}>Cancel</Text>
-                  </AnimatedPressable>
-                  <AnimatedPressable
-                    onPress={handleSendAnnouncement}
-                    disabled={composeSending || !composeBody.trim()}
-                    style={[
-                      styles.primaryBtn,
-                      { backgroundColor: composeBody.trim() ? colors.accent : colors.border, flex: 1 },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Send announcement"
-                  >
-                    {composeSending ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <>
-                        <Ionicons name="send" size={13} color="#FFFFFF" />
-                        <Text style={styles.primaryBtnText}>Send</Text>
-                      </>
-                    )}
-                  </AnimatedPressable>
-                </View>
-              </View>
+            {!!showCompose && (
+              <AnnouncementComposer
+                colors={colors}
+                sponsoredEvents={sponsoredEvents}
+                composeEventId={composeEventId}
+                onComposeEventIdChange={setComposeEventId}
+                composeTitle={composeTitle}
+                onComposeTitleChange={setComposeTitle}
+                composeBody={composeBody}
+                onComposeBodyChange={setComposeBody}
+                composeSending={composeSending}
+                onCancel={() => setShowCompose(false)}
+                onSend={handleSendAnnouncement}
+              />
             )}
 
             {/* Announcements list */}
@@ -1448,156 +1180,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  /* Profile card */
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  profileLogo: {
-    width: 64,
-    height: 64,
-    borderRadius: 14,
-    marginRight: 14,
-  },
-  profileLogoPlaceholder: {
-    width: 64,
-    height: 64,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
-    marginBottom: 4,
-  },
-  profileName: {
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  verifiedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  verifiedPillText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  profileMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  profileMetaText: {
-    fontSize: 12,
-    flex: 1,
-  },
-  profileSince: {
-    fontSize: 10,
-    marginTop: 4,
-  },
-  profileDescWrap: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 14,
-    paddingTop: 12,
-  },
-  profileDesc: {
-    fontSize: 13,
-    lineHeight: 19,
-  },
-
-  /* Edit mode */
-  editFieldGroup: {
-    marginBottom: 14,
-  },
-  editFieldLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  editInputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  editInput: {
-    flex: 1,
-    fontSize: 14,
-    paddingVertical: 0,
-  },
-  editTextAreaWrap: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    minHeight: 88,
-  },
-  editTextArea: {
-    flex: 1,
-    fontSize: 14,
-    minHeight: 64,
-  },
-  editActions: {
-    flexDirection: 'row',
-    gap: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 16,
-    paddingTop: 16,
-  },
-  logoPicker: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    height: 88,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  logoPreviewWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  logoPreviewImg: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-  },
-  logoChangeHint: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  logoPickerInner: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  logoPickerCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoPickerHint: {
-    fontSize: 12,
-  },
-
   /* Campaign table */
   tableHead: {
     flexDirection: 'row',
@@ -1688,102 +1270,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-
-  /* Compose card */
-  composeCard: {
-    borderRadius: 14,
-    borderWidth: 1.5,
-    padding: 16,
-    marginBottom: 12,
-  },
-  composeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  composeIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  composeTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: -0.1,
-  },
-  composeDivider: {
-    height: 1,
-    marginVertical: 14,
-  },
-  composeField: {
-    marginBottom: 14,
-  },
-  composeLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  composeChipsRow: {
-    gap: 6,
-    paddingRight: 4,
-  },
-  composeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  composeChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    maxWidth: 140,
-  },
-  composeInput: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    fontSize: 14,
-  },
-  composeTextArea: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    minHeight: 100,
-  },
-  composeTextAreaFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 6,
-  },
-  composeHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  composeHintText: {
-    fontSize: 10,
-  },
-  composeCharCount: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  composeFooter: {
-    flexDirection: 'row',
-    gap: 10,
   },
 
   /* Announcement rows */

@@ -717,6 +717,88 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": rarity_tier,
             "price_eur": price_eur,
         })
+
+    # Round 7 expansion — 50 items
+    catalog.extend(_expanded_round7_comic_books())
+
+    return catalog
+
+
+def _expanded_round7_comic_books() -> list[dict]:
+    """50 new comic book items: Image keys, Dark Horse keys, indie keys, modern hot keys, CGC 9.8 variants."""
+    comics = [
+        # --- Image Comics Keys ---
+        ("Image", "Walking Dead", "Walking Dead #1 (2003, Robert Kirkman, 1st print)", "Modern Key", "grail", 3000.0),
+        ("Image", "Invincible", "Invincible #1 (2003, Robert Kirkman, 1st print)", "Modern Key", "grail", 2500.0),
+        ("Image", "Saga", "Saga #1 (2012, Brian K. Vaughan, 1st print)", "Modern Key", "high", 250.0),
+        ("Image", "Spawn", "Spawn #1 (1992, Todd McFarlane, 1st print)", "Modern Key", "high", 150.0),
+        ("Image", "Spawn", "Spawn #174 (2008, 1st She-Spawn)", "Modern Key", "mid", 80.0),
+        ("Image", "The Walking Dead", "Walking Dead #19 (2005, 1st Michonne)", "Modern Key", "high", 400.0),
+        ("Image", "The Walking Dead", "Walking Dead #27 (2006, 1st Governor)", "Modern Key", "high", 200.0),
+        ("Image", "The Walking Dead", "Walking Dead #100 (2012, Death of Glenn)", "Modern Key", "high", 150.0),
+        ("Image", "Invincible", "Invincible #7 (2003, 1st Atom Eve)", "Modern Key", "high", 300.0),
+        ("Image", "Invincible", "Invincible #25 (2005, 1st Rex Splode death fake-out)", "Modern Key", "mid", 80.0),
+
+        # --- Dark Horse Comics Keys ---
+        ("Dark Horse", "Hellboy", "Hellboy: Seed of Destruction #1 (1994, Mike Mignola)", "Modern Key", "high", 200.0),
+        ("Dark Horse", "Sin City", "Sin City: The Hard Goodbye TPB (1991, Frank Miller, 1st print)", "First Print", "high", 150.0),
+        ("Dark Horse", "The Mask", "The Mask #1 (1991, 1st Dark Horse series)", "Modern Key", "mid", 80.0),
+        ("Dark Horse", "Concrete", "Concrete #1 (1987, Paul Chadwick)", "Modern Key", "mid", 40.0),
+        ("Dark Horse", "Star Wars Dark Empire", "Star Wars: Dark Empire #1 (1991, Tom Veitch)", "Modern Key", "mid", 60.0),
+        ("Dark Horse", "Aliens", "Aliens #1 (1988, 1st Dark Horse Aliens)", "Modern Key", "high", 200.0),
+        ("Dark Horse", "Predator", "Predator #1 (1989, 1st comic appearance)", "Modern Key", "high", 120.0),
+
+        # --- Indie Publisher Keys ---
+        ("Cartoon Books", "Bone", "Bone #1 (1991, Jeff Smith, 1st print)", "Modern Key", "high", 400.0),
+        ("Aardvark-Vanaheim", "Cerebus", "Cerebus the Aardvark #1 (1977, Dave Sim)", "Bronze Age Key", "grail", 2000.0),
+        ("Mirage", "TMNT", "Teenage Mutant Ninja Turtles #1 (1984, Eastman/Laird, 1st print)", "Modern Key", "grail", 8000.0),
+        ("Mirage", "TMNT", "Teenage Mutant Ninja Turtles #1 (1984, 2nd print)", "First Print", "high", 400.0),
+        ("Caliber", "The Crow", "The Crow #1 (1989, James O'Barr, 1st print)", "Modern Key", "grail", 1500.0),
+        ("Eclipse", "Miracleman", "Miracleman #1 (1985, Alan Moore, Eclipse)", "Modern Key", "high", 200.0),
+        ("Pacific Comics", "Rocketeer", "Rocketeer Special Edition #1 (1984, Dave Stevens)", "Modern Key", "high", 150.0),
+
+        # --- Modern Hot Keys (2020-2025) ---
+        ("BOOM!", "Something is Killing the Children", "Something is Killing the Children #1 (2019, James Tynion IV, 1st print)", "Modern Key", "grail", 800.0),
+        ("BOOM!", "Something is Killing the Children", "SIKTC #7 (2020, 1st Cecilia)", "Modern Key", "mid", 50.0),
+        ("BOOM!", "House of Slaughter", "House of Slaughter #1 (2021, Tynion/Dell'Edera)", "Modern Key", "mid", 40.0),
+        ("Image", "Ice Cream Man", "Ice Cream Man #1 (2018, W. Maxwell Prince, 1st print)", "Modern Key", "high", 200.0),
+        ("Image", "Department of Truth", "Department of Truth #1 (2020, James Tynion IV)", "Modern Key", "mid", 60.0),
+        ("Image", "Radiant Black", "Radiant Black #1 (2021, Kyle Higgins)", "Modern Key", "mid", 30.0),
+        ("Image", "Void Rivals", "Void Rivals #1 (2023, Robert Kirkman, 1st Energon Universe)", "Modern Key", "high", 100.0),
+        ("Image", "Void Rivals", "Void Rivals #1 (2023, 2nd print, 1st Transformers cameo)", "Modern Key", "mid", 40.0),
+        ("Image", "Universal Monsters: Dracula", "Universal Monsters: Dracula #1 (2023, James Tynion IV)", "Modern Key", "mid", 30.0),
+        ("Skybound", "Energon Universe: Transformers", "Transformers #1 (2023, Daniel Warren Johnson)", "Modern Key", "high", 120.0),
+        ("Skybound", "Energon Universe: G.I. Joe", "G.I. Joe #1 (2023, Joshua Williamson)", "Modern Key", "mid", 40.0),
+
+        # --- CGC 9.8 Graded Keys & Variants ---
+        ("Image", "Spawn", "Spawn #1 CGC 9.8 (1992, Todd McFarlane)", "CGC 9.8", "grail", 800.0),
+        ("Image", "Saga", "Saga #1 CGC 9.8 (2012, BKV/Staples)", "CGC 9.8", "grail", 1200.0),
+        ("Image", "Ice Cream Man", "Ice Cream Man #1 CGC 9.8 (2018)", "CGC 9.8", "grail", 800.0),
+        ("BOOM!", "Something is Killing the Children", "SIKTC #1 CGC 9.8 (2019)", "CGC 9.8", "grail", 3000.0),
+        ("Image", "Invincible", "Invincible #1 CGC 9.8 (2003, Kirkman/Walker)", "CGC 9.8", "grail", 8000.0),
+        ("Image", "Walking Dead", "Walking Dead #1 CGC 9.8 (2003, Black Label)", "CGC 9.8", "grail", 12000.0),
+        ("Dark Horse", "Hellboy", "Hellboy: Seed of Destruction #1 CGC 9.8 (1994)", "CGC 9.8", "grail", 1500.0),
+        ("Mirage", "TMNT", "TMNT #1 CGC 9.6 (1984, 1st print, Eastman/Laird)", "CGC 9.6", "grail", 30000.0),
+        ("Image", "The Department of Truth", "Department of Truth #1 CGC 9.8 (1:25 Simmonds variant)", "CGC 9.8", "grail", 500.0),
+        ("Marvel", "Venom", "Venom: Lethal Protector #1 CGC 9.8 (1993, Black Cover)", "CGC 9.8", "grail", 600.0),
+
+        # --- Additional Modern Indies ---
+        ("BOOM!", "Lumberjanes", "Lumberjanes #1 (2014, Stevenson/Watters, 1st print)", "Modern Key", "mid", 50.0),
+        ("BOOM!", "Once & Future", "Once & Future #1 (2019, Kieron Gillen, 1st print)", "Modern Key", "mid", 30.0),
+        ("Image", "Stray Dogs", "Stray Dogs #1 (2021, Tony Fleecs, 1st print)", "Modern Key", "mid", 25.0),
+        ("Image", "W0rldtr33", "W0rldtr33 #1 (2023, James Tynion IV, 1st print)", "Modern Key", "mid", 20.0),
+        ("Image", "Geiger", "Geiger #1 (2021, Geoff Johns, 1st print)", "Modern Key", "mid", 25.0),
+    ]
+    catalog = []
+    for publisher, series, name, issue_type, rarity_tier, price_eur in comics:
+        catalog.append({
+            "publisher": publisher,
+            "series": series,
+            "name": name,
+            "issue_type": issue_type,
+            "rarity_tier": rarity_tier,
+            "price_eur": price_eur,
+        })
     return catalog
 
 

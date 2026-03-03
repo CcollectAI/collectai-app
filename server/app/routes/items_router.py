@@ -81,6 +81,27 @@ async def create_item(
                     payload.collection_name, payload.estimated_value,
                 )
                 logger.info("[items] Created item: id=%s, user=%s", item_id, user_id)
+
+                # Award XP for adding item (best-effort)
+                try:
+                    from app.features.gamification_router import record_activity_xp
+                    item_count = await conn.fetchval(
+                        "SELECT COUNT(*) FROM items WHERE user_id = $1::uuid",
+                        user_id,
+                    )
+                    achievement_checks = []
+                    milestones = [
+                        (5, "collector_5"), (10, "collector_10"),
+                        (25, "collector_25"), (50, "collector_50"),
+                        (100, "collector_100"),
+                    ]
+                    for threshold, ach_id in milestones:
+                        if item_count >= threshold:
+                            achievement_checks.append((ach_id, item_count))
+                    await record_activity_xp(conn, user_id, 10, achievement_checks or None)
+                except Exception:
+                    logger.debug("[items] Gamification XP award failed (non-critical)")
+
                 return ItemResponse(
                     id=item_id,
                     name=payload.name,

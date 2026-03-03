@@ -670,6 +670,9 @@ def get_curated_catalog() -> list[dict]:
         ("WayV", "WayV Official Lightstick Ver. 2", "v2", "Standard", "mid", 42),
     ]
 
+    # ── Expansion Batch 8 — 50 more lightsticks ──
+    items += _expanded_batch_8()
+
     catalog = []
     for group, name, version, variant, tier, price in items:
         catalog.append({
@@ -681,6 +684,81 @@ def get_curated_catalog() -> list[dict]:
             "price_eur": price,
         })
     return catalog
+
+
+def _expanded_batch_8() -> list[tuple]:
+    """50 additional K-pop lightsticks — 4th/5th gen groups, special editions, tour exclusives."""
+    return [
+        # NewJeans
+        ("NewJeans", "NewJeans Official Lightstick (Bunny Ver.)", "v1-bunny", "Standard", "high", 65),
+        ("NewJeans", "NewJeans Lightstick (Tokki Pink Edition)", "v1-pink", "Limited Color", "high", 85),
+        ("NewJeans", "NewJeans Lightstick (OMG Holographic)", "v1-holo", "Tour Exclusive", "grail", 110),
+        # IVE
+        ("IVE", "IVE Official Lightstick Ver. 2", "v2", "Standard", "mid", 48),
+        ("IVE", "IVE Lightstick Ver. 2 (SHOW WHAT I HAVE Tour)", "v2-tour", "Tour Exclusive", "high", 75),
+        # (G)I-DLE
+        ("(G)I-DLE", "(G)I-DLE Official Lightbong", "v1", "Standard", "mid", 45),
+        ("(G)I-DLE", "(G)I-DLE Lightbong (Queencard Gold Edition)", "v1-gold", "Limited Color", "high", 78),
+        ("(G)I-DLE", "(G)I-DLE Lightbong (I FEEL World Tour Chrome)", "v1-chrome", "Tour Exclusive", "high", 88),
+        # LE SSERAFIM
+        ("LE SSERAFIM", "LE SSERAFIM Official Lightstick Ver. 2", "v2", "Standard", "mid", 48),
+        ("LE SSERAFIM", "LE SSERAFIM Lightstick (EASY Mint Edition)", "v2-mint", "Limited Color", "high", 72),
+        ("LE SSERAFIM", "LE SSERAFIM Lightstick (FLAME RISES Tour)", "v2-flame", "Tour Exclusive", "high", 85),
+        # NMIXX
+        ("NMIXX", "NMIXX Official Lightstick", "v1", "Standard", "mid", 42),
+        ("NMIXX", "NMIXX Lightstick (DASH Neon Edition)", "v1-neon", "Limited Color", "high", 68),
+        ("NMIXX", "NMIXX Lightstick (EXPÉRGO World Tour)", "v1-tour", "Tour Exclusive", "high", 80),
+        # ENHYPEN
+        ("ENHYPEN", "ENHYPEN Official Lightstick Ver. 2", "v2", "Standard", "mid", 45),
+        ("ENHYPEN", "ENHYPEN Lightstick (ORANGE BLOOD Amber Edition)", "v2-amber", "Limited Color", "high", 72),
+        ("ENHYPEN", "ENHYPEN Lightstick (FATE World Tour Ver.)", "v2-fate", "Tour Exclusive", "high", 82),
+        # TREASURE
+        ("TREASURE", "TREASURE Official Lightstick Ver. 2", "v2", "Standard", "mid", 42),
+        ("TREASURE", "TREASURE Lightstick (HELLO Tour Edition)", "v2-hello", "Tour Exclusive", "high", 72),
+        # ATEEZ
+        ("ATEEZ", "ATEEZ Lightstick (Seoul Concert Special)", "v2-seoul", "Tour Exclusive", "grail", 105),
+        ("ATEEZ", "ATEEZ Lightiny (THE WORLD Tour Midnight Edition)", "v2-midnight", "Tour Exclusive", "high", 92),
+        ("ATEEZ", "ATEEZ Lightiny (Golden Hour Sunrise Edition)", "v2-sunrise", "Limited Color", "high", 88),
+        # TXT (TOMORROW X TOGETHER)
+        ("TXT", "TXT Official MOA Lightstick Ver. 2", "v2", "Standard", "mid", 45),
+        ("TXT", "TXT MOA Lightstick (ACT: PROMISE Tour Ver.)", "v2-promise", "Tour Exclusive", "high", 78),
+        ("TXT", "TXT MOA Lightstick (Sweet Mirage Pastel Edition)", "v2-pastel", "Limited Color", "high", 75),
+        # BTS Special Editions
+        ("BTS", "BTS ARMY Bomb (Wings Tour Ver.)", "wings-tour", "Tour Exclusive", "grail", 250),
+        ("BTS", "BTS ARMY Bomb (Love Yourself World Tour Ver.)", "ly-tour", "Tour Exclusive", "grail", 220),
+        ("BTS", "BTS ARMY Bomb (BE Pop-Up Store Exclusive)", "be-popup", "Limited", "grail", 180),
+        ("BTS", "BTS ARMY Bomb (Map of the Soul ON:E Concert)", "mots-one", "Tour Exclusive", "grail", 200),
+        ("BTS", "BTS ARMY Bomb (Permission to Dance On Stage LA)", "ptd-la", "Tour Exclusive", "grail", 210),
+        # BLACKPINK Special Editions
+        ("BLACKPINK", "BLACKPINK Lightstick (Coachella 2023 Edition)", "v2-coachella", "Tour Exclusive", "grail", 180),
+        ("BLACKPINK", "BLACKPINK Lightstick (Born Pink Seoul Edition)", "v2-bornpink-seoul", "Tour Exclusive", "grail", 150),
+        ("BLACKPINK", "BLACKPINK Hammerbong (Pink Venom Chrome)", "v2-chrome", "Limited Color", "high", 95),
+        # Stray Kids
+        ("Stray Kids", "Stray Kids Lightstick (MAXIDENT Tour Ver.)", "v2-maxident", "Tour Exclusive", "high", 88),
+        ("Stray Kids", "Stray Kids Lightstick (MANIAC Encore Edition)", "v2-maniac", "Tour Exclusive", "high", 92),
+        ("Stray Kids", "Stray Kids Lightstick (Lotte Fan Meeting Ver.)", "v2-lotte", "Limited", "high", 95),
+        # ITZY
+        ("ITZY", "ITZY Light Ring (Limited Gold Ver.)", "v1-gold", "Limited Color", "high", 72),
+        ("ITZY", "ITZY Light Ring (CHECKMATE Tour Ver.)", "v1-checkmate", "Tour Exclusive", "high", 82),
+        ("ITZY", "ITZY Light Ring (BORN TO BE World Tour)", "v1-btb", "Tour Exclusive", "high", 85),
+        # SEVENTEEN
+        ("SEVENTEEN", "SEVENTEEN Lightstick (FOLLOW TO Seoul Concert)", "v3-seoul", "Tour Exclusive", "high", 90),
+        ("SEVENTEEN", "SEVENTEEN Lightstick (Caratbong Rose Quartz LE)", "v3-rq", "Limited Color", "grail", 120),
+        # EXO
+        ("EXO", "EXO Lightstick (EXO-L-JAPAN Dome Tour Ver.)", "v3-japan", "Tour Exclusive", "high", 95),
+        ("EXO", "EXO Lightstick (EXplOration Concert Silver)", "v3-silver", "Tour Exclusive", "high", 90),
+        # Red Velvet
+        ("Red Velvet", "Red Velvet Lightstick (R to V Japan Tour)", "v2-japan", "Tour Exclusive", "high", 80),
+        # NCT 127
+        ("NCT 127", "NCT 127 Lightstick (NEO CITY Seoul Encore)", "v2-encore", "Tour Exclusive", "high", 82),
+        ("NCT 127", "NCT 127 Lightstick (Fact Check Chrome)", "v2-chrome", "Limited Color", "high", 78),
+        # aespa
+        ("aespa", "aespa Lightstick (SYNK: HYPER LINE Tour)", "v2-synk", "Tour Exclusive", "high", 80),
+        ("aespa", "aespa Lightstick (Armageddon Black Chrome)", "v2-black", "Limited Color", "high", 82),
+        # BABYMONSTER
+        ("BABYMONSTER", "BABYMONSTER Official Lightstick", "v1", "Standard", "mid", 45),
+        ("BABYMONSTER", "BABYMONSTER Lightstick (SHEESH Debut Tour)", "v1-debut", "Tour Exclusive", "high", 72),
+    ]
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

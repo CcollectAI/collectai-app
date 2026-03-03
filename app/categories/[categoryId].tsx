@@ -14,7 +14,6 @@ import {
   Image,
   Linking,
   RefreshControl,
-  TextInput,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +34,7 @@ import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
 import { collectorsApi } from '@/api/collectorsApi';
 import { buildItemAffiliateUrl, openAffiliateUrl } from '@/utils/affiliateHelpers';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { CatalogBrowseSection, type CatalogItemData } from '@/components/CatalogBrowseSection';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -122,19 +122,6 @@ function CategoryStoreScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // ── Catalog Browser state ────────────────────────────────────────────
-  type CatalogItemData = {
-    id: string;
-    category: string;
-    item_key: string;
-    title: string;
-    brand: string | null;
-    rarity: string | null;
-    notes: string | null;
-    image_url: string | null;
-    external_id: string | null;
-    set_code: string | null;
-    estimated_price: number | null;
-  };
   const [catalogItems, setCatalogItems] = useState<CatalogItemData[]>([]);
   const [catalogTotal, setCatalogTotal] = useState(0);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -636,190 +623,51 @@ function CategoryStoreScreen() {
       })()}
 
       {/* 3.25. Browse Catalog — full category_items database browser */}
-      <View style={styles.section}>
-        <AnimatedPressable
-          style={styles.catalogHeaderRow}
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            setCatalogExpanded(!catalogExpanded);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={`Browse catalog, ${catalogExpanded ? 'collapse' : 'expand'}`}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name="library-outline" size={18} color={accentColor} />
-            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Browse Catalog</Text>
-            {catalogTotal > 0 && (
-              <View style={[styles.catalogCountBadge, { backgroundColor: accentColor + '20' }]}>
-                <Text style={[styles.catalogCountText, { color: accentColor }]}>{catalogTotal}</Text>
-              </View>
-            )}
-          </View>
-          <Ionicons
-            name={catalogExpanded ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={colors.muted}
-          />
-        </AnimatedPressable>
-
-        {catalogExpanded && (
-          <View style={styles.catalogBrowser}>
-            {/* Search bar */}
-            <View style={[styles.catalogSearchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Ionicons name="search" size={16} color={colors.muted} />
-              <TextInput
-                style={[styles.catalogSearchInput, { color: colors.text }]}
-                placeholder="Search catalog items..."
-                placeholderTextColor={colors.muted}
-                value={catalogSearch}
-                onChangeText={handleCatalogSearchChange}
-                returnKeyType="search"
-                accessibilityLabel="Search catalog items"
-              />
-              {catalogSearch.length > 0 && (
-                <AnimatedPressable
-                  onPress={() => {
-                    setCatalogSearch('');
-                    setCatalogOffset(0);
-                    loadCatalogItems('', 0, false);
-                  }}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear search"
-                >
-                  <Ionicons name="close-circle" size={16} color={colors.muted} />
-                </AnimatedPressable>
-              )}
-            </View>
-
-            {/* Catalog items list */}
-            {catalogLoading ? (
-              <ActivityIndicator size="small" color={accentColor} style={{ marginVertical: 16 }} />
-            ) : catalogItems.length === 0 ? (
-              <Text style={[styles.emptyText, { color: colors.muted, marginTop: 8 }]}>
-                {catalogSearch ? 'No items matching your search.' : 'No catalog items for this category.'}
-              </Text>
-            ) : (
-              <>
-                {catalogItems.map((cItem) => (
-                  <View
-                    key={cItem.id}
-                    style={[styles.catalogItemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                  >
-                    {/* Thumbnail */}
-                    {cItem.image_url ? (
-                      <Image source={{ uri: cItem.image_url }} style={styles.catalogItemThumb} />
-                    ) : (
-                      <View style={[styles.catalogItemThumbPlaceholder, { backgroundColor: accentColor + '10' }]}>
-                        <Ionicons name="cube-outline" size={18} color={accentColor} />
-                      </View>
-                    )}
-
-                    {/* Item info */}
-                    <View style={styles.catalogItemInfo}>
-                      <Text style={[styles.catalogItemTitle, { color: colors.text }]} numberOfLines={1}>
-                        {cItem.title}
-                      </Text>
-                      <View style={styles.catalogItemMetaRow}>
-                        {cItem.estimated_price != null && (
-                          <Text style={[styles.catalogItemPrice, { color: colors.text }]}>
-                            {formatPrice(cItem.estimated_price)}
-                          </Text>
-                        )}
-                        {cItem.rarity && (
-                          <View style={[styles.catalogRarityBadge, {
-                            backgroundColor:
-                              cItem.rarity === 'grail' ? '#F59E0B20' :
-                              cItem.rarity === 'high' ? '#EF444420' :
-                              cItem.rarity === 'mid' ? '#3B82F620' :
-                              colors.border,
-                          }]}>
-                            <Text style={[styles.catalogRarityText, {
-                              color:
-                                cItem.rarity === 'grail' ? '#D97706' :
-                                cItem.rarity === 'high' ? '#DC2626' :
-                                cItem.rarity === 'mid' ? '#2563EB' :
-                                colors.muted,
-                            }]}>
-                              {cItem.rarity}
-                            </Text>
-                          </View>
-                        )}
-                        {cItem.brand && (
-                          <Text style={[styles.catalogItemBrand, { color: colors.muted }]} numberOfLines={1}>
-                            {cItem.brand}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-
-                    {/* Action buttons */}
-                    <View style={styles.catalogItemActions}>
-                      <AnimatedPressable
-                        style={[styles.catalogActionBtn, { backgroundColor: accentColor }]}
-                        onPress={() => {
-                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                          router.push({
-                            pathname: '/add-manual',
-                            params: {
-                              name: cItem.title,
-                              category: categoryId,
-                              imageUri: cItem.image_url || '',
-                            },
-                          });
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Add ${cItem.title} to collection`}
-                      >
-                        <Ionicons name="add" size={16} color="#fff" />
-                      </AnimatedPressable>
-                      <AnimatedPressable
-                        style={[styles.catalogActionBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: accentColor }]}
-                        onPress={async () => {
-                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                          try {
-                            await collectorsApi.addToWatchlist({
-                              title: cItem.title,
-                              category: categoryId || cItem.category,
-                              target_price: cItem.estimated_price,
-                            });
-                            showToast({ message: `${cItem.title} added to want list`, type: 'success' });
-                          } catch {
-                            showToast({ message: 'Failed to add to want list', type: 'error' });
-                          }
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Add ${cItem.title} to want list`}
-                      >
-                        <Ionicons name="heart-outline" size={14} color={accentColor} />
-                      </AnimatedPressable>
-                    </View>
-                  </View>
-                ))}
-
-                {/* Load more / infinite scroll trigger */}
-                {catalogItems.length < catalogTotal && (
-                  <AnimatedPressable
-                    style={[styles.catalogLoadMoreBtn, { borderColor: accentColor }]}
-                    onPress={handleCatalogLoadMore}
-                    disabled={catalogLoadingMore}
-                    accessibilityRole="button"
-                    accessibilityLabel="Load more catalog items"
-                  >
-                    {catalogLoadingMore ? (
-                      <ActivityIndicator size="small" color={accentColor} />
-                    ) : (
-                      <Text style={[styles.catalogLoadMoreText, { color: accentColor }]}>
-                        Load more ({catalogItems.length} of {catalogTotal})
-                      </Text>
-                    )}
-                  </AnimatedPressable>
-                )}
-              </>
-            )}
-          </View>
-        )}
-      </View>
+      <CatalogBrowseSection
+        catalogExpanded={catalogExpanded}
+        onToggleExpanded={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          setCatalogExpanded(!catalogExpanded);
+        }}
+        catalogTotal={catalogTotal}
+        catalogSearch={catalogSearch}
+        onSearchChange={handleCatalogSearchChange}
+        onClearSearch={() => {
+          setCatalogSearch('');
+          setCatalogOffset(0);
+          loadCatalogItems('', 0, false);
+        }}
+        catalogLoading={catalogLoading}
+        catalogLoadingMore={catalogLoadingMore}
+        catalogItems={catalogItems}
+        onLoadMore={handleCatalogLoadMore}
+        onAddToCollection={(cItem) => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          router.push({
+            pathname: '/add-manual',
+            params: {
+              name: cItem.title,
+              category: categoryId,
+              imageUri: cItem.image_url || '',
+            },
+          });
+        }}
+        onAddToWatchlist={async (cItem) => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          try {
+            await collectorsApi.addToWatchlist({
+              title: cItem.title,
+              category: categoryId || cItem.category,
+              target_price: cItem.estimated_price,
+            });
+            showToast({ message: `${cItem.title} added to want list`, type: 'success' });
+          } catch {
+            showToast({ message: 'Failed to add to want list', type: 'error' });
+          }
+        }}
+        accentColor={accentColor}
+        colors={colors}
+      />
 
       {/* 3.5. Market Insights (Deep Dive) */}
       <View style={styles.section}>
@@ -1816,118 +1664,6 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
 
-  // ── Catalog Browser ───────────────────────────────────────────────────
-  catalogHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  catalogCountBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  catalogCountText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  catalogBrowser: {
-    marginTop: 4,
-  },
-  catalogSearchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    gap: 8,
-    marginBottom: 10,
-  },
-  catalogSearchInput: {
-    flex: 1,
-    fontSize: 14,
-    padding: 0,
-    margin: 0,
-  },
-  catalogItemCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 10,
-    marginBottom: 8,
-  },
-  catalogItemThumb: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  catalogItemThumbPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    marginRight: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  catalogItemInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
-  catalogItemTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  catalogItemMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 3,
-    flexWrap: 'wrap',
-  },
-  catalogItemPrice: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  catalogRarityBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 6,
-  },
-  catalogRarityText: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  catalogItemBrand: {
-    fontSize: 11,
-  },
-  catalogItemActions: {
-    flexDirection: 'column',
-    gap: 4,
-  },
-  catalogActionBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  catalogLoadMoreBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginTop: 4,
-  },
-  catalogLoadMoreText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
   seriesProgressCard: {
     borderRadius: 10,
     borderWidth: 1,

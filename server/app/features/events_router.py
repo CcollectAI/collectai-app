@@ -905,7 +905,7 @@ async def list_templates(
         try:
             async with pool.acquire() as conn:
                 rows = await conn.fetch(
-                    "SELECT * FROM event_templates WHERE user_id = $1 ORDER BY use_count DESC, created_at DESC LIMIT $2 OFFSET $3",
+                    "SELECT id, name, template_data, use_count, created_at FROM event_templates WHERE user_id = $1 ORDER BY use_count DESC, created_at DESC LIMIT $2 OFFSET $3",
                     user_id,
                     limit,
                     offset,
@@ -944,7 +944,7 @@ async def create_template(
         try:
             async with pool.acquire() as conn:
                 ev_row = await conn.fetchrow(
-                    "SELECT * FROM events WHERE id = $1 AND created_by = $2",
+                    "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1 AND created_by = $2",
                     request.from_event_id, user_id,
                 )
                 if not ev_row:
@@ -1087,7 +1087,7 @@ async def get_event(
                 except Exception as view_err:
                     logger.warning("[events] View query failed, falling back to events table: %s", view_err)
                     row = await conn.fetchrow(
-                        "SELECT * FROM events WHERE id = $1",
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1",
                         event_id,
                     )
 
@@ -1168,7 +1168,7 @@ async def update_event(
             async with pool.acquire() as conn:
                 # Verify ownership
                 row = await conn.fetchrow(
-                    "SELECT * FROM events WHERE id = $1 AND created_by = $2",
+                    "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1 AND created_by = $2",
                     event_id, user_id,
                 )
                 if not row:
@@ -1385,7 +1385,7 @@ async def duplicate_event(
         try:
             async with pool.acquire() as conn:
                 row = await conn.fetchrow(
-                    "SELECT * FROM events WHERE id = $1 AND created_by = $2",
+                    "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events WHERE id = $1 AND created_by = $2",
                     event_id, user_id,
                 )
                 if not row:
@@ -1824,7 +1824,7 @@ async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bo
 
     where = f"WHERE {' AND '.join(conditions)}"
     query = (
-        f"SELECT * FROM events {where} "
+        f"SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events {where} "
         f"ORDER BY (is_sponsored AND (sponsor_expires_at IS NULL OR sponsor_expires_at > now())) DESC, "
         f"date ASC "
         f"LIMIT ${param_idx} OFFSET ${param_idx + 1}"

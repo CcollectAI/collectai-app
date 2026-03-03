@@ -4,7 +4,7 @@ Import anime OST vinyl records catalog.
 Layer 1 (Catalog):  Curated anime vinyl releases → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
-Covers 500+ items across 30+ label groups:
+Covers 600+ items across 30+ label groups:
 - Tiger Lab Vinyl releases (Cowboy Bebop, Samurai Champloo, FLCL, Akira, Ghost in the Shell)
 - Milan Records anime vinyl (Studio Ghibli: Spirited Away, Mononoke, Totoro, etc.)
 - Data Discs (game/anime crossover: Jet Set Radio, Shenmue, Streets of Rage, etc.)
@@ -56,7 +56,7 @@ CATEGORY = "anime_ost_vinyl"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated anime OST vinyl records catalog — 500+ items across 30+ label groups."""
+    """Curated anime OST vinyl records catalog — 600+ items across 30+ label groups."""
 
     # (label, title, franchise, pressing, variant, rarity_tier, price_eur)
     # rarity_tier: grail (>100), high (50-100), mid (25-50), standard (<25)
@@ -797,6 +797,64 @@ def get_curated_catalog() -> list[dict]:
         ("King Records", "Vampire Hunter D OST (Noriyoshi Matsuura) 1985", "Vampire Hunter D", "Japanese OG Pressing", "Black", "grail", 150),
         ("Youmex", "Gall Force: Eternal Story OST", "Gall Force", "Japanese OG Pressing", "Black", "high", 78),
         ("King Records", "Record of Lodoss War OST (Hitoshi Sakimoto)", "Record of Lodoss War", "Japanese OG Pressing", "Black", "grail", 130),
+
+        # ── Tiger Lab Vinyl — 2024-2025 New Releases ────────────────────
+        ("Tiger Lab Vinyl", "Serial Experiments Lain OST (Remastered)", "Serial Experiments Lain", "US Pressing", "Clear Purple", "high", 75),
+        ("Tiger Lab Vinyl", "Paprika OST (Susumu Hirasawa)", "Paprika", "US Pressing", "Red Swirl", "high", 80),
+        ("Tiger Lab Vinyl", "Wolf's Rain OST (Yoko Kanno)", "Wolf's Rain", "US Pressing", "Black", "mid", 42),
+        ("Tiger Lab Vinyl", "Ergo Proxy OST", "Ergo Proxy", "US Pressing", "Smoke Grey", "mid", 45),
+        ("Tiger Lab Vinyl", "Texhnolyze OST (Hajime Mizoguchi)", "Texhnolyze", "US Pressing", "Black", "mid", 40),
+        ("Tiger Lab Vinyl", "Paranoia Agent OST (Susumu Hirasawa)", "Paranoia Agent", "US Pressing", "Orange Marble", "high", 72),
+        ("Tiger Lab Vinyl", "Darker Than Black OST", "Darker Than Black", "US Pressing", "Black", "mid", 38),
+        ("Tiger Lab Vinyl", "Michiko & Hatchin OST (Kassin)", "Michiko & Hatchin", "US Pressing", "Gold Translucent", "high", 65),
+
+        # ── Mondo — Anime Pressings ─────────────────────────────────────
+        ("Mondo", "Akira Symphonic Suite (Geinoh Yamashirogumi) Deluxe 2xLP", "Akira", "US Pressing", "Neon Blue/Pink Splatter", "grail", 180),
+        ("Mondo", "Perfect Blue OST (Masahiro Ikumi)", "Perfect Blue", "US Pressing", "Clear w/ Red Splatter", "grail", 200),
+        ("Mondo", "Vampire Hunter D: Bloodlust OST", "Vampire Hunter D", "US Pressing", "Blood Red", "high", 90),
+        ("Mondo", "Belladonna of Sadness OST (Masahiko Satoh)", "Belladonna of Sadness", "US Pressing", "Pink Marble", "high", 85),
+        ("Mondo", "Dragon Ball Z – Bruce Faulconer Score Vol. 1", "Dragon Ball Z", "US Pressing", "Orange/Blue Split", "high", 70),
+        ("Mondo", "Demon Slayer: Kimetsu no Yaiba S1 OST", "Demon Slayer", "US Pressing", "Water Breathing Blue", "high", 75),
+        ("Mondo", "Attack on Titan Season 4 OST (Kohta Yamamoto)", "Attack on Titan", "US Pressing", "Crimson Red", "high", 80),
+        ("Mondo", "Neon Genesis Evangelion OST (Shiro Sagisu) 2xLP", "Evangelion", "US Pressing", "Lilith Purple Splatter", "grail", 160),
+
+        # ── Light in the Attic — City Pop Reissues ──────────────────────
+        ("Light in the Attic", "Tatsuro Yamashita — FOR YOU (Reissue)", "City Pop", "US Pressing", "Black", "high", 55),
+        ("Light in the Attic", "Tatsuro Yamashita — RIDE ON TIME (Reissue)", "City Pop", "US Pressing", "Black", "high", 58),
+        ("Light in the Attic", "Mariya Takeuchi — Variety (Reissue)", "City Pop", "US Pressing", "Pink Vinyl", "high", 65),
+        ("Light in the Attic", "Taeko Ohnuki — Sunshower (Reissue)", "City Pop", "US Pressing", "Black", "mid", 48),
+        ("Light in the Attic", "Haruomi Hosono — Hosono House (Reissue)", "City Pop", "US Pressing", "Black", "mid", 42),
+        ("Light in the Attic", "Minako Yoshida — Light'n Up (Reissue)", "City Pop", "US Pressing", "Clear", "mid", 45),
+        ("Light in the Attic", "Akiko Yano — Tadaima (Reissue)", "City Pop", "US Pressing", "Black", "mid", 40),
+        ("Light in the Attic", "Toshiki Kadomatsu — Sea Breeze (Reissue)", "City Pop", "US Pressing", "Blue Translucent", "high", 60),
+
+        # ── Data Discs — Game/Anime Crossover ───────────────────────────
+        ("Data Discs", "Sonic the Hedgehog OST (Masato Nakamura)", "Sonic", "EU Pressing", "Classic Blue", "high", 55),
+        ("Data Discs", "Sonic the Hedgehog 2 OST", "Sonic", "EU Pressing", "Gold Translucent", "high", 60),
+        ("Data Discs", "Streets of Rage 2 OST (Yuzo Koshiro)", "Streets of Rage", "EU Pressing", "Red Translucent", "high", 65),
+        ("Data Discs", "Streets of Rage 3 OST", "Streets of Rage", "EU Pressing", "Green/Purple Splatter", "high", 58),
+        ("Data Discs", "Shenmue OST (Takenobu Mitsuyoshi)", "Shenmue", "EU Pressing", "Cherry Blossom Pink", "high", 70),
+        ("Data Discs", "Shenmue II OST", "Shenmue", "EU Pressing", "Orange Translucent", "high", 65),
+        ("Data Discs", "OutRun OST (Hiroshi Kawaguchi)", "OutRun", "EU Pressing", "Sunset Orange/Pink", "high", 55),
+        ("Data Discs", "Panzer Dragoon OST", "Panzer Dragoon", "EU Pressing", "Dragon Green", "high", 60),
+
+        # ── Wayô Records — Game/Anime Piano & Orchestral ────────────────
+        ("Wayô Records", "NieR: Automata Piano Collections", "NieR", "EU Pressing", "Black", "high", 55),
+        ("Wayô Records", "NieR Gestalt & Replicant OST 2xLP", "NieR", "EU Pressing", "White", "high", 70),
+        ("Wayô Records", "Final Fantasy VII Piano Collections", "Final Fantasy", "EU Pressing", "Black", "high", 60),
+        ("Wayô Records", "Final Fantasy X Piano Collections", "Final Fantasy", "EU Pressing", "Black", "mid", 48),
+        ("Wayô Records", "Chrono Cross OST (Yasunori Mitsuda) 2xLP", "Chrono Cross", "EU Pressing", "Sea Blue", "high", 75),
+        ("Wayô Records", "Xenoblade Chronicles OST (Yoko Shimomura)", "Xenoblade", "EU Pressing", "Green Translucent", "high", 65),
+        ("Wayô Records", "Kingdom Hearts Piano Collections", "Kingdom Hearts", "EU Pressing", "Black", "mid", 50),
+        ("Wayô Records", "Dragon Quest XI Symphonic Suite", "Dragon Quest", "EU Pressing", "Black", "high", 55),
+
+        # ── Ship to Shore PhonoCo ────────────────────────────────────────
+        ("Ship to Shore", "Castlevania: Symphony of the Night OST 2xLP", "Castlevania", "US Pressing", "Bat Wing Purple", "grail", 130),
+        ("Ship to Shore", "Castlevania III: Dracula's Curse OST", "Castlevania", "US Pressing", "Blood Red", "high", 65),
+        ("Ship to Shore", "Silent Hill OST (Akira Yamaoka)", "Silent Hill", "US Pressing", "Fog Grey", "grail", 140),
+        ("Ship to Shore", "Silent Hill 2 OST (Akira Yamaoka) 2xLP", "Silent Hill", "US Pressing", "Clear w/ Red Splatter", "grail", 160),
+        ("Ship to Shore", "Contra III: The Alien Wars OST", "Contra", "US Pressing", "Military Green", "high", 55),
+        ("Ship to Shore", "Super Castlevania IV OST", "Castlevania", "US Pressing", "Orange Marble", "high", 60),
     ]
 
     catalog = []

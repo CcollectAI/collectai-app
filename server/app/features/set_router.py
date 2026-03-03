@@ -324,7 +324,7 @@ async def get_set_detail(set_id: str):
     try:
         async with get_conn() as conn:
             set_row = await conn.fetchrow(
-                "SELECT * FROM public.sets WHERE id = $1",
+                "SELECT id, category_id, name, description, total_items, release_date, image_url, external_id, metadata, created_at, updated_at FROM public.sets WHERE id = $1",
                 set_id,
             )
             if not set_row:
@@ -332,7 +332,8 @@ async def get_set_detail(set_id: str):
 
             item_rows = await conn.fetch(
                 """
-                SELECT * FROM public.set_items
+                SELECT id, set_id, name, position, external_id, image_url, rarity, metadata, created_at
+                FROM public.set_items
                 WHERE set_id = $1
                 ORDER BY position ASC NULLS LAST, name ASC
                 """,
