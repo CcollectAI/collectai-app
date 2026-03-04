@@ -27,5 +27,8 @@ class ErrorCode:
     # External
     EXTERNAL_SERVICE_ERROR = "EXTERNAL_SERVICE_ERROR"
 
+    # Payment
+    PAYMENT_REQUIRED = "PAYMENT_REQUIRED"
+
     # Generic
     INTERNAL_ERROR = "INTERNAL_ERROR"

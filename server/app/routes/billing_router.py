@@ -381,9 +381,13 @@ async def stripe_webhook(
         return JSONResponse({"received": True})
 
     if event_type == "checkout.session.completed":
-        # Route sponsor checkouts separately from subscription checkouts
-        if data.get("metadata", {}).get("type") == "event_sponsor":
+        metadata_type = data.get("metadata", {}).get("type", "")
+        if metadata_type == "event_sponsor":
             await _handle_sponsor_checkout_completed(pool, data)
+        elif metadata_type == "sponsor_subscription":
+            await _handle_sponsor_subscription_completed(pool, data)
+        elif metadata_type == "event_ticket":
+            await _handle_ticket_checkout_completed(pool, data)
         else:
             await _handle_checkout_completed(pool, data)
     elif event_type == "customer.subscription.updated":
@@ -439,6 +443,29 @@ async def _handle_subscription_updated(pool: Any, subscription: dict):
     current_period_start = subscription.get("current_period_start")
     current_period_end = subscription.get("current_period_end")
 
+    period_start = _safe_timestamp(current_period_start)
+    period_end = _safe_timestamp(current_period_end)
+
+    # Check if this is a sponsor subscription first
+    try:
+        sponsor_row = await pool.fetchrow(
+            "SELECT id FROM sponsor_subscriptions WHERE stripe_subscription_id = $1",
+            sub_id,
+        )
+        if sponsor_row:
+            await pool.execute(
+                """
+                UPDATE sponsor_subscriptions SET
+                    status = $1, current_period_end = $2, updated_at = now()
+                WHERE stripe_subscription_id = $3
+                """,
+                status, period_end, sub_id,
+            )
+            _log.info("Sponsor subscription %s updated: status=%s", sub_id, status)
+            return
+    except Exception:
+        pass  # Table may not exist yet — fall through to user subscriptions
+
     # Map Stripe price to plan
     items = subscription.get("items", {}).get("data", [])
     price_id = items[0]["price"]["id"] if items else None
@@ -447,9 +474,6 @@ async def _handle_subscription_updated(pool: Any, subscription: dict):
         plan = "premium"
     elif price_id == STRIPE_PRICE_ID_PRO:
         plan = "pro"
-
-    period_start = _safe_timestamp(current_period_start)
-    period_end = _safe_timestamp(current_period_end)
 
     await pool.execute(
         """
@@ -471,6 +495,24 @@ async def _handle_subscription_updated(pool: Any, subscription: dict):
 async def _handle_subscription_deleted(pool: Any, subscription: dict):
     """Subscription cancelled — downgrade to free."""
     sub_id = subscription.get("id")
+
+    # Check if this is a sponsor subscription first
+    try:
+        sponsor_row = await pool.fetchrow(
+            "SELECT id FROM sponsor_subscriptions WHERE stripe_subscription_id = $1",
+            sub_id,
+        )
+        if sponsor_row:
+            await pool.execute(
+                "UPDATE sponsor_subscriptions SET status = 'canceled', updated_at = now() "
+                "WHERE stripe_subscription_id = $1",
+                sub_id,
+            )
+            _log.info("Sponsor subscription %s deleted — canceled", sub_id)
+            return
+    except Exception:
+        pass  # Table may not exist yet
+
     await pool.execute(
         """
         UPDATE subscriptions SET plan = 'free', status = 'canceled', updated_at = now()
@@ -570,3 +612,111 @@ async def _handle_sponsor_checkout_completed(pool: Any, session: dict):
                     _log.info("Sent push to %d category followers for event %s", len(follower_rows), event_id)
         except Exception as push_err:
             _log.warning("Failed to send sponsor push notifications: %s", push_err)
+
+
+async def _handle_sponsor_subscription_completed(pool: Any, session: dict):
+    """After successful sponsor subscription checkout, record subscription."""
+    metadata = session.get("metadata", {})
+    company_id = metadata.get("company_id")
+    tier = metadata.get("tier", "featured")
+    user_id = metadata.get("user_id")
+    customer_id = session.get("customer")
+    subscription_id = session.get("subscription")
+
+    if not company_id or not user_id:
+        _log.warning("sponsor_subscription checkout missing company_id/user_id in metadata")
+        return
+
+    # Ensure table exists
+    try:
+        await pool.execute("""
+            CREATE TABLE IF NOT EXISTS sponsor_subscriptions (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                company_id UUID NOT NULL,
+                user_id UUID NOT NULL,
+                stripe_customer_id VARCHAR(255),
+                stripe_subscription_id VARCHAR(255),
+                tier VARCHAR(50) NOT NULL DEFAULT 'featured',
+                status VARCHAR(50) NOT NULL DEFAULT 'active',
+                current_period_end TIMESTAMPTZ,
+                created_at TIMESTAMPTZ DEFAULT now(),
+                updated_at TIMESTAMPTZ DEFAULT now(),
+                UNIQUE(company_id)
+            )
+        """)
+    except Exception:
+        pass
+
+    await pool.execute(
+        """
+        INSERT INTO sponsor_subscriptions
+            (company_id, user_id, stripe_customer_id, stripe_subscription_id, tier, status)
+        VALUES ($1, $2, $3, $4, $5, 'active')
+        ON CONFLICT (company_id) DO UPDATE SET
+            stripe_customer_id = $3,
+            stripe_subscription_id = $4,
+            tier = $5,
+            status = 'active',
+            updated_at = now()
+        """,
+        company_id, user_id, customer_id, subscription_id, tier,
+    )
+    _log.info("Sponsor subscription created: company=%s tier=%s sub=%s", company_id, tier, subscription_id)
+
+
+async def _handle_ticket_checkout_completed(pool: Any, session: dict):
+    """After successful event ticket purchase, record ticket and RSVP user."""
+    metadata = session.get("metadata", {})
+    event_id = metadata.get("event_id")
+    user_id = metadata.get("user_id")
+    stripe_session_id = session.get("id", "")
+    amount = session.get("amount_total", 0)
+
+    if not event_id or not user_id:
+        _log.warning("event_ticket checkout missing event_id/user_id in metadata")
+        return
+
+    fee_cents = int(amount * 0.05) if amount else 0
+
+    # Ensure event_tickets table exists
+    try:
+        await pool.execute("""
+            CREATE TABLE IF NOT EXISTS event_tickets (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                event_id UUID NOT NULL,
+                user_id UUID NOT NULL,
+                stripe_session_id VARCHAR(255),
+                amount_cents INTEGER NOT NULL,
+                fee_cents INTEGER NOT NULL DEFAULT 0,
+                status VARCHAR(50) NOT NULL DEFAULT 'paid',
+                created_at TIMESTAMPTZ DEFAULT now(),
+                UNIQUE(event_id, user_id)
+            )
+        """)
+    except Exception:
+        pass
+
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # Record ticket
+            await conn.execute(
+                """
+                INSERT INTO event_tickets (event_id, user_id, stripe_session_id, amount_cents, fee_cents)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (event_id, user_id) DO UPDATE SET
+                    status = 'paid', stripe_session_id = $3, amount_cents = $4, fee_cents = $5
+                """,
+                event_id, user_id, stripe_session_id, amount or 0, fee_cents,
+            )
+
+            # RSVP as going
+            await conn.execute(
+                """
+                INSERT INTO event_attendees (event_id, user_id, status)
+                VALUES ($1, $2, 'going')
+                ON CONFLICT (event_id, user_id) DO UPDATE SET status = 'going'
+                """,
+                event_id, user_id,
+            )
+
+    _log.info("Ticket purchased: event=%s user=%s amount=%s fee=%s", event_id, user_id, amount, fee_cents)

@@ -1893,6 +1893,22 @@ export class SupabaseDataProvider implements DataProvider {
     };
   }
 
+  async createTicketCheckout(eventId: string): Promise<{ url: string; sessionId: string }> {
+    const r = await collectorsApi.post(`/events/${eventId}/ticket-checkout`) as Record<string, unknown>;
+    return {
+      url: r.url as string,
+      sessionId: r.session_id as string,
+    };
+  }
+
+  async createSponsorSubscriptionCheckout(companyId: string, tier: string): Promise<{ url: string; sessionId: string }> {
+    const r = await collectorsApi.post(`/sponsor-companies/${companyId}/create-subscription-checkout`, { tier }) as Record<string, unknown>;
+    return {
+      url: r.url as string,
+      sessionId: r.session_id as string,
+    };
+  }
+
   private _mapSponsorCompany(r: Record<string, unknown>): import('./events').SponsorCompany {
     return {
       id: r.id as string,

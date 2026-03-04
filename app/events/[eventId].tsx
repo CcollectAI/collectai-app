@@ -43,6 +43,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
 import { Image } from 'expo-image';
 import { parseEventDate, getCountdown } from '@/lib/calendar';
+import { track } from '@/analytics/track';
 
 const EVENT_SOURCE_LABELS: Record<string, string> = {
   admin: 'Official',
@@ -191,6 +192,21 @@ function EventDetailScreen() {
   const handleRsvpGoing = async () => {
     if (!event || !eventId) return;
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+
+    // Paid event — redirect to ticket checkout
+    if (event.ticketPriceCents && event.ticketPriceCents > 0 && rsvpStatus !== 'going') {
+      try {
+        const { url } = await dataProvider.createTicketCheckout(eventId as string);
+        if (url) {
+          Linking.openURL(url);
+        }
+      } catch (err) {
+        logger.warn('[EventDetail] ticket checkout error:', err);
+        showToast({ message: (err as Error)?.message || 'Failed to start ticket checkout.', type: 'error' });
+      }
+      return;
+    }
+
     try {
       if (rsvpStatus === 'going') {
         // Un-RSVP
@@ -218,6 +234,7 @@ function EventDetailScreen() {
             : (prev.attendeeCount ?? 0) + 1,
         } : prev);
         await dataProvider.rsvpEvent(eventId, 'going');
+        track({ name: 'event_rsvp', properties: { event_id: eventId as string, status: 'going' } });
       }
     } catch (err) {
       logger.warn('[EventDetail] rsvp going error:', err);
@@ -255,6 +272,7 @@ function EventDetailScreen() {
             : (prev.attendeeCount ?? 0) + 1,
         } : prev);
         await dataProvider.rsvpEvent(eventId, 'interested');
+        track({ name: 'event_rsvp', properties: { event_id: eventId as string, status: 'interested' } });
       }
     } catch (err) {
       logger.warn('[EventDetail] rsvp interested error:', err);
@@ -652,7 +670,9 @@ function EventDetailScreen() {
                   style={{ marginRight: 6 }}
                 />
                 <Text style={[styles.actionBtnText, { color: rsvpStatus === 'going' ? colors.accent : colors.muted }]}>
-                  Going
+                  {event.ticketPriceCents && event.ticketPriceCents > 0 && rsvpStatus !== 'going'
+                    ? `Buy Ticket \u20AC${(event.ticketPriceCents / 100).toFixed(2)}`
+                    : 'Going'}
                 </Text>
               </AnimatedPressable>
             )}
@@ -681,6 +701,16 @@ function EventDetailScreen() {
                 Interested
               </Text>
             </AnimatedPressable>
+          </View>
+        )}
+
+        {/* Ticket price badge */}
+        {event.ticketPriceCents != null && event.ticketPriceCents > 0 && (
+          <View style={[styles.ticketBadge, { backgroundColor: colors.accent + '15', borderColor: colors.accent }]}>
+            <Ionicons name="ticket-outline" size={14} color={colors.accent} style={{ marginRight: 4 }} />
+            <Text style={[styles.ticketBadgeText, { color: colors.accent }]}>
+              Ticket: {'\u20AC'}{(event.ticketPriceCents / 100).toFixed(2)}
+            </Text>
           </View>
         )}
 
@@ -1177,6 +1207,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   shareBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  /* Ticket badge */
+  ticketBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  ticketBadgeText: {
     fontSize: 13,
     fontWeight: '600',
   },

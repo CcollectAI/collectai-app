@@ -217,6 +217,15 @@ MERCARI_AFFILIATE_ID: str = os.getenv("MERCARI_AFFILIATE_ID", "")
 DISCOGS_AFFILIATE_TOKEN: str = os.getenv("DISCOGS_AFFILIATE_TOKEN", "")
 STOCKX_AFFILIATE_ID: str = os.getenv("STOCKX_AFFILIATE_ID", "")
 BRICKLINK_AFFILIATE_ID: str = os.getenv("BRICKLINK_AFFILIATE_ID", "")
+WHATNOT_AFFILIATE_ID: str = os.getenv("WHATNOT_AFFILIATE_ID", "")  # Impact.com, 1-3.5%
+CATAWIKI_AFFILIATE_ID: str = os.getenv("CATAWIKI_AFFILIATE_ID", "")  # Partnerize, ~7-10%
+KEH_AFFILIATE_ID: str = os.getenv("KEH_AFFILIATE_ID", "")  # ShareASale, 1.6-3.2%
+MPB_AFFILIATE_ID: str = os.getenv("MPB_AFFILIATE_ID", "")  # FlexOffers/Sovrn, 2%
+MASTEROFMALT_AFFILIATE_ID: str = os.getenv("MASTEROFMALT_AFFILIATE_ID", "")  # Affiliate Future, 5-7.66%
+POPMART_AFFILIATE_ID: str = os.getenv("POPMART_AFFILIATE_ID", "")  # Yeesshh/Digidip, 1-8%
+DROP_AFFILIATE_ID: str = os.getenv("DROP_AFFILIATE_ID", "")  # FlexOffers, 1.6-2.4%
+CHRONO24_AFFILIATE_ID: str = os.getenv("CHRONO24_AFFILIATE_ID", "")  # Direct partnership
+AMIAMI_AFFILIATE_ID: str = os.getenv("AMIAMI_AFFILIATE_ID", "")  # Sovrn Commerce
 
 # ---------------------------------------------------------------------------
 # Task Queue Worker
@@ -238,6 +247,11 @@ STRIPE_PRICE_ID_PREMIUM: str = os.getenv("STRIPE_PRICE_ID_PREMIUM", "")
 STRIPE_PRICE_ID_SPONSOR_FEATURED: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_FEATURED", "")
 STRIPE_PRICE_ID_SPONSOR_PROMOTED: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_PROMOTED", "")
 STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT", "")
+
+# Sponsor monthly subscription price IDs (recurring)
+STRIPE_PRICE_ID_SPONSOR_SUB_FEATURED: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_SUB_FEATURED", "")
+STRIPE_PRICE_ID_SPONSOR_SUB_PROMOTED: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_SUB_PROMOTED", "")
+STRIPE_PRICE_ID_SPONSOR_SUB_SPOTLIGHT: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_SUB_SPOTLIGHT", "")
 
 # ---------------------------------------------------------------------------
 # Redis (optional — falls back to in-memory cache when absent)

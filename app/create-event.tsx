@@ -22,7 +22,6 @@ import {
   Platform,
   Switch,
   Animated,
-  Modal,
   FlatList,
   TouchableOpacity,
 } from 'react-native';
@@ -38,6 +37,7 @@ import { useSettings } from '@/lib/settings';
 import { useFormField, validateAll } from '@/hooks/useFormField';
 import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
 import CompactSelect from '@/components/CompactSelect';
+import { BottomSheetModal } from '@/components/BottomSheetModal';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
@@ -90,6 +90,7 @@ const CreateEventScreen: React.FC = () => {
   const imageUrlField = useFormField(url('Image URL'));
   const descriptionField = useFormField(compose(required('Description'), maxLength('Description', 2000)));
   const [isPublic, setIsPublic] = useState(true);
+  const [ticketPriceCents, setTicketPriceCents] = useState('');
 
   /* ---- detail input draft ---- */
   const [detailDraft, setDetailDraft] = useState('');
@@ -200,6 +201,7 @@ const CreateEventScreen: React.FC = () => {
         ...(imageUrlField.value.trim() ? { imageUrl: imageUrlField.value.trim() } : {}),
         ...(latitude !== undefined ? { latitude } : {}),
         ...(longitude !== undefined ? { longitude } : {}),
+        ...(ticketPriceCents.trim() ? { ticketPriceCents: Math.round(parseFloat(ticketPriceCents) * 100) } : {}),
         ...(params.sponsorCompanyId ? { sponsorCompanyId: params.sponsorCompanyId, sponsorTier: 'featured' as const } : {}),
       };
 
@@ -246,15 +248,14 @@ const CreateEventScreen: React.FC = () => {
         )}
 
         {/* Template picker modal */}
-        <Modal visible={templateSheetOpen} animationType="slide" transparent>
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>From Template</Text>
-                <TouchableOpacity onPress={() => setTemplateSheetOpen(false)}>
-                  <Ionicons name="close" size={24} color={colors.text} />
-                </TouchableOpacity>
-              </View>
+        <BottomSheetModal
+          visible={templateSheetOpen}
+          onClose={() => setTemplateSheetOpen(false)}
+          title="From Template"
+          colors={{ ...colors, background: colors.card }}
+          maxHeight="60%"
+        >
+          <View style={{ paddingBottom: 40 }}>
               {templates.length === 0 ? (
                 <Text style={[styles.inviteNote, { color: colors.muted, padding: 20 }]}>No templates yet. Create events and save them as templates.</Text>
               ) : (
@@ -272,9 +273,8 @@ const CreateEventScreen: React.FC = () => {
                   )}
                 />
               )}
-            </View>
           </View>
-        </Modal>
+        </BottomSheetModal>
 
         <ScrollView
           style={styles.scroll}
@@ -643,6 +643,37 @@ const CreateEventScreen: React.FC = () => {
               </View>
             </View>
           </View>
+
+          {/* ============================================================== */}
+          {/*  Section: Ticket Price (meetup/convention only)                 */}
+          {/* ============================================================== */}
+          {(kind === 'meetup' || kind === 'convention') && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="ticket-outline" size={16} color={colors.accent} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Ticket Price (optional)</Text>
+              </View>
+
+              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.fieldLabel, { color: colors.text }]}>Price in EUR (leave empty for free)</Text>
+                <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                  <Text style={{ color: colors.muted, marginRight: 4, fontSize: 16 }}>{'\u20AC'}</Text>
+                  <TextInput
+                    value={ticketPriceCents}
+                    onChangeText={setTicketPriceCents}
+                    placeholder="0.00"
+                    placeholderTextColor={colors.muted}
+                    style={[styles.input, { color: colors.text }]}
+                    keyboardType="decimal-pad"
+                    accessibilityLabel="Ticket price in euros"
+                  />
+                </View>
+                <Text style={[styles.fieldHint, { color: colors.muted }]}>
+                  A 5% platform fee applies to paid tickets.
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* ============================================================== */}
           {/*  Section: Event Image                                           */}
@@ -1033,6 +1064,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 4,
   },
+  fieldHint: {
+    fontSize: 12,
+    marginTop: 6,
+    marginLeft: 4,
+  },
 
   /* Bullet-point description */
   bulletList: {
@@ -1096,30 +1132,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  /* Template picker modal */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '60%',
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E2E8F0',
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
+  /* Template picker */
   templateItem: {
     paddingHorizontal: 16,
     paddingVertical: 14,

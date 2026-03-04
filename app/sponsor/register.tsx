@@ -33,6 +33,7 @@ import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { track } from '@/analytics/track';
 
 /* -------------------------------------------------------------------------- */
 /*  Static data                                                                */
@@ -129,6 +130,7 @@ const SponsorRegisterScreen: React.FC = () => {
         ...(descriptionField.value.trim() ? { description: descriptionField.value.trim() } : {}),
       });
 
+      track({ name: 'sponsor_company_registered' });
       router.replace('/sponsor/dashboard');
     } catch (err: unknown) {
       logger.warn('[SponsorRegister] error:', err);

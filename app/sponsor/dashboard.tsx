@@ -34,6 +34,7 @@ import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import { EmptyState } from '@/components/EmptyState';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
+import { track } from '@/analytics/track';
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers & constants                                                        */
@@ -121,6 +122,7 @@ const SponsorDashboardScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showTierPicker, setShowTierPicker] = useState(false);
   const [selectedTier, setSelectedTier] = useState<SponsorTier>('featured');
+  const [billingMode, setBillingMode] = useState<'per_event' | 'monthly'>('per_event');
   const [showEventPicker, setShowEventPicker] = useState(false);
 
   /* ---- inline compose state ---- */
@@ -231,6 +233,13 @@ const SponsorDashboardScreen: React.FC = () => {
     loadCompany();
   }, [loadCompany]);
 
+  // Track dashboard view once loading finishes and company exists
+  useEffect(() => {
+    if (!loading && company) {
+      track({ name: 'sponsor_dashboard_viewed' });
+    }
+  }, [loading, company]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -277,6 +286,7 @@ const SponsorDashboardScreen: React.FC = () => {
       });
       setCompany(updated);
       setEditing(false);
+      track({ name: 'sponsor_profile_updated' });
     } catch (err: unknown) {
       logger.warn('[SponsorDashboard] save error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to update company. Please try again.', type: 'error' });
@@ -293,11 +303,30 @@ const SponsorDashboardScreen: React.FC = () => {
   };
 
   /* ---- confirm tier and navigate ---- */
-  const handleConfirmTier = () => {
+  const handleConfirmTier = async () => {
     if (!company) return;
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-    setShowTierPicker(false);
-    router.push(`/create-event?sponsorCompanyId=${company.id}&tier=${selectedTier}`);
+    track({ name: 'sponsor_tier_selected', properties: { tier: selectedTier } });
+    track({ name: 'sponsor_checkout_initiated', properties: { tier: selectedTier, company_id: company.id } });
+
+    if (billingMode === 'monthly') {
+      // Monthly subscription — open Stripe checkout
+      try {
+        const { url } = await dataProvider.createSponsorSubscriptionCheckout(company.id, selectedTier);
+        setShowTierPicker(false);
+        if (url) {
+          const { Linking } = require('react-native');
+          Linking.openURL(url);
+        }
+      } catch (err: unknown) {
+        logger.warn('[SponsorDashboard] subscription checkout error:', err);
+        showToast({ message: (err as Error)?.message || 'Failed to start subscription checkout.', type: 'error' });
+      }
+    } else {
+      // Per-event — navigate to create event
+      setShowTierPicker(false);
+      router.push(`/create-event?sponsorCompanyId=${company.id}&tier=${selectedTier}`);
+    }
   };
 
   /* ---- announce action (opens inline compose) ---- */
@@ -341,6 +370,7 @@ const SponsorDashboardScreen: React.FC = () => {
       setShowCompose(false);
       setComposeTitle('');
       setComposeBody('');
+      track({ name: 'sponsor_announcement_sent', properties: { event_id: composeEventId } });
       showToast({ message: 'Announcement sent to all attendees.', type: 'success' });
     } catch (err: unknown) {
       logger.warn('[SponsorDashboard] send announcement error:', err);
@@ -543,6 +573,42 @@ const SponsorDashboardScreen: React.FC = () => {
                 </AnimatedPressable>
               ))}
 
+              {/* Billing mode toggle */}
+              <View style={styles.billingModeRow}>
+                <AnimatedPressable
+                  onPress={() => setBillingMode('per_event')}
+                  style={[
+                    styles.billingModeBtn,
+                    {
+                      backgroundColor: billingMode === 'per_event' ? colors.accent : colors.background,
+                      borderColor: billingMode === 'per_event' ? colors.accent : colors.border,
+                    },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: billingMode === 'per_event' }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: billingMode === 'per_event' ? '#FFF' : colors.text }}>
+                    Per Event
+                  </Text>
+                </AnimatedPressable>
+                <AnimatedPressable
+                  onPress={() => setBillingMode('monthly')}
+                  style={[
+                    styles.billingModeBtn,
+                    {
+                      backgroundColor: billingMode === 'monthly' ? colors.accent : colors.background,
+                      borderColor: billingMode === 'monthly' ? colors.accent : colors.border,
+                    },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: billingMode === 'monthly' }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: billingMode === 'monthly' ? '#FFF' : colors.text }}>
+                    Monthly
+                  </Text>
+                </AnimatedPressable>
+              </View>
+
               <View style={[styles.pickerDivider, { backgroundColor: colors.border }]} />
 
               <View style={styles.pickerFooter}>
@@ -560,7 +626,9 @@ const SponsorDashboardScreen: React.FC = () => {
                   accessibilityRole="button"
                   accessibilityLabel="Continue"
                 >
-                  <Text style={styles.primaryBtnText}>Continue</Text>
+                  <Text style={styles.primaryBtnText}>
+                    {billingMode === 'monthly' ? 'Subscribe' : 'Continue'}
+                  </Text>
                   <Ionicons name="arrow-forward" size={15} color="#FFFFFF" />
                 </AnimatedPressable>
               </View>
@@ -1092,6 +1160,18 @@ const styles = StyleSheet.create({
   pickerFooter: {
     flexDirection: 'row',
     gap: 10,
+  },
+  billingModeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  billingModeBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
   },
 
   /* Tier cards */

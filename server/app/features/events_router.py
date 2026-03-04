@@ -78,6 +78,7 @@ class CreateEventRequest(BaseModel):
     is_public: bool = True
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
+    ticket_price_cents: Optional[int] = Field(None, ge=0, description="Ticket price in cents (0 = free)")
 
 
 class UpdateEventRequest(BaseModel):
@@ -129,6 +130,7 @@ class EventResponse(BaseModel):
     is_full: bool = False
     user_rsvp_status: Optional[str] = None
     created_at: Optional[str] = None
+    ticket_price_cents: int = 0
     # Sponsor fields
     is_sponsored: bool = False
     sponsor_name: Optional[str] = None
@@ -404,10 +406,10 @@ async def create_event(
                     INSERT INTO events (
                         title, kind, category_id, date, time, end_date,
                         location, online_url, image_url, description, created_by, source,
-                        format, status, is_public, latitude, longitude
+                        format, status, is_public, latitude, longitude, ticket_price_cents
                     )
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'user',
-                            $12, $13, $14, $15, $16)
+                            $12, $13, $14, $15, $16, $17)
                     RETURNING *
                     """,
                     request.title,
@@ -426,6 +428,7 @@ async def create_event(
                     request.is_public,
                     request.latitude,
                     request.longitude,
+                    request.ticket_price_cents or 0,
                 )
                 return _row_to_event(dict(row), user_id=user_id)
 
@@ -455,6 +458,7 @@ async def create_event(
         "is_public": request.is_public,
         "latitude": request.latitude,
         "longitude": request.longitude,
+        "ticket_price_cents": request.ticket_price_cents or 0,
         "created_by": user_id,
         "source": "user",
         "attendee_count": 0,
@@ -1253,6 +1257,102 @@ async def delete_event(
 
 
 # ---------------------------------------------------------------------------
+# Endpoints — Ticket Checkout
+# ---------------------------------------------------------------------------
+
+@router.post("/{event_id}/ticket-checkout")
+async def ticket_checkout(
+    event_id: str,
+    user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_event_rsvp_limit),
+):
+    """Create a Stripe Checkout Session for a paid event ticket (5% platform fee)."""
+    try:
+        UUID(event_id)
+    except ValueError:
+        raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
+
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT id, title, ticket_price_cents, status, max_attendees FROM events WHERE id = $1",
+                event_id,
+            )
+            if not row:
+                raise error_response(404, "Event not found", code=ErrorCode.NOT_FOUND)
+            if row["status"] != "published":
+                raise error_response(400, "Event is not published", code=ErrorCode.VALIDATION_ERROR)
+
+            ticket_price = row.get("ticket_price_cents") or 0
+            if ticket_price <= 0:
+                raise error_response(400, "This event is free — use RSVP instead", code=ErrorCode.VALIDATION_ERROR)
+
+            # Check user hasn't already RSVPd as going
+            existing = await conn.fetchrow(
+                "SELECT status FROM event_attendees WHERE event_id = $1 AND user_id = $2",
+                event_id, user_id,
+            )
+            if existing and existing["status"] == "going":
+                raise error_response(409, "You are already going to this event", code=ErrorCode.ALREADY_EXISTS)
+
+            # Check capacity
+            if row["max_attendees"] is not None:
+                going_count = await conn.fetchval(
+                    "SELECT COUNT(*) FROM event_attendees WHERE event_id = $1 AND status = 'going'",
+                    event_id,
+                )
+                if going_count >= row["max_attendees"]:
+                    raise error_response(409, "Event is full", code=ErrorCode.CONFLICT)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[events] Error checking event for ticket checkout: %s", e)
+        raise error_response(500, "Failed to check event", code=ErrorCode.INTERNAL_ERROR)
+
+    import asyncio
+    from app.config import STRIPE_SECRET_KEY
+    import stripe
+
+    if not STRIPE_SECRET_KEY:
+        raise error_response(503, "Billing not configured")
+
+    stripe.api_key = STRIPE_SECRET_KEY
+    event_title = row["title"] or "Event Ticket"
+    fee_amount = int(ticket_price * 0.05)  # 5% platform fee
+
+    try:
+        session = await asyncio.to_thread(
+            stripe.checkout.Session.create,
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "eur",
+                    "product_data": {"name": f"Ticket: {event_title}"},
+                    "unit_amount": ticket_price,
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
+            success_url=f"collectai://events/{event_id}?checkout=success",
+            cancel_url=f"collectai://events/{event_id}?checkout=cancel",
+            metadata={
+                "type": "event_ticket",
+                "event_id": event_id,
+                "user_id": user_id,
+            },
+        )
+        return {"url": session.url, "session_id": session.id}
+
+    except Exception as e:
+        logger.error("[events] Stripe ticket checkout creation failed: %s", e)
+        raise error_response(500, "Failed to create checkout session", code=ErrorCode.EXTERNAL_SERVICE_ERROR)
+
+
+# ---------------------------------------------------------------------------
 # Endpoints — RSVP
 # ---------------------------------------------------------------------------
 
@@ -1284,6 +1384,14 @@ async def rsvp_event(
         try:
             async with pool.acquire() as conn:
                 async with conn.transaction():
+                    # Block free RSVP for paid events
+                    if request.status == "going":
+                        ticket_row = await conn.fetchrow(
+                            "SELECT ticket_price_cents FROM events WHERE id = $1", event_id,
+                        )
+                        if ticket_row and ticket_row["ticket_price_cents"] and ticket_row["ticket_price_cents"] > 0:
+                            raise error_response(402, "This event requires a ticket purchase", code=ErrorCode.PAYMENT_REQUIRED)
+
                     # Check capacity if trying to go — lock event row to prevent race
                     if request.status == "going":
                         cap_row = await conn.fetchrow(
@@ -1910,6 +2018,7 @@ def _row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRe
         is_full=is_full,
         user_rsvp_status=row.get("user_rsvp_status"),
         created_at=str(row["created_at"]) if row.get("created_at") else None,
+        ticket_price_cents=row.get("ticket_price_cents", 0) or 0,
         is_sponsored=is_sponsored,
         sponsor_name=row.get("sponsor_name") if is_sponsored else None,
         sponsor_logo_url=row.get("sponsor_logo_url") if is_sponsored else None,

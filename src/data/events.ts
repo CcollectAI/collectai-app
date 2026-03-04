@@ -35,6 +35,7 @@ export type CollectorsEvent = {
   isPublic?: boolean;
   latitude?: number;
   longitude?: number;
+  ticketPriceCents?: number;
   // Sponsor fields
   isSponsored?: boolean;
   sponsorName?: string;
@@ -60,6 +61,7 @@ export type CreateEventInput = {
   latitude?: number;
   longitude?: number;
   maxAttendees?: number;
+  ticketPriceCents?: number;
   // Sponsor fields
   sponsorCompanyId?: string;
   sponsorTier?: SponsorTier;
@@ -94,6 +96,8 @@ export type SponsorCompany = {
   adminUserId: string;
   isVerified: boolean;
   createdAt?: string;
+  subscriptionTier?: SponsorTier;
+  subscriptionStatus?: string;
 };
 
 export const EVENTS: CollectorsEvent[] = [

@@ -82,6 +82,10 @@ class CreateSponsorEventCheckoutRequest(BaseModel):
     event_max_attendees: Optional[int] = Field(None, ge=1)
 
 
+class CreateSponsorSubscriptionRequest(BaseModel):
+    tier: str = Field(..., pattern=r"^(featured|promoted|spotlight)$")
+
+
 _UPDATABLE_COLUMNS = {"name", "logo_url", "website_url", "contact_email", "description"}
 
 # Sponsor tier pricing (Stripe price IDs — placeholder until configured)
@@ -471,3 +475,109 @@ async def create_event_demo(
     except Exception as e:
         logger.error("[sponsor] Error creating demo event: %s", e)
         raise error_response(500, "Failed to create event", code=ErrorCode.INTERNAL_ERROR)
+
+
+@router.post("/{company_id}/create-subscription-checkout")
+async def create_subscription_checkout(
+    company_id: str,
+    request: CreateSponsorSubscriptionRequest,
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_sponsor_company_limit),
+):
+    """Create a Stripe Checkout Session for a monthly sponsor subscription."""
+    try:
+        uuid.UUID(company_id)
+    except ValueError:
+        raise error_response(400, "Invalid company_id format", code=ErrorCode.VALIDATION_ERROR)
+
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
+
+    # Verify company ownership
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT id, name, admin_user_id FROM sponsor_companies WHERE id = $1 AND admin_user_id = $2",
+                company_id, user_id,
+            )
+            if not row:
+                raise error_response(404, "Company not found or not owned by you", code=ErrorCode.NOT_FOUND)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[sponsor] Error verifying company %s: %s", company_id, e)
+        raise error_response(500, "Failed to verify company", code=ErrorCode.INTERNAL_ERROR)
+
+    from app.config import (
+        STRIPE_SECRET_KEY,
+        STRIPE_PRICE_ID_SPONSOR_SUB_FEATURED,
+        STRIPE_PRICE_ID_SPONSOR_SUB_PROMOTED,
+        STRIPE_PRICE_ID_SPONSOR_SUB_SPOTLIGHT,
+    )
+    import stripe
+
+    if not STRIPE_SECRET_KEY:
+        raise error_response(503, "Billing not configured")
+
+    tier_price_map = {
+        "featured": STRIPE_PRICE_ID_SPONSOR_SUB_FEATURED,
+        "promoted": STRIPE_PRICE_ID_SPONSOR_SUB_PROMOTED,
+        "spotlight": STRIPE_PRICE_ID_SPONSOR_SUB_SPOTLIGHT,
+    }
+    price_id = tier_price_map.get(request.tier)
+    if not price_id:
+        raise error_response(400, f"Subscription price not configured for tier: {request.tier}")
+
+    stripe.api_key = STRIPE_SECRET_KEY
+
+    # Get or create Stripe customer via billing helper
+    from app.routes.billing_router import _get_or_create_stripe_customer
+    try:
+        customer_id = await _get_or_create_stripe_customer(user_id, stripe)
+    except Exception as e:
+        logger.error("[sponsor] Error getting/creating Stripe customer: %s", e)
+        raise error_response(500, "Failed to set up billing", code=ErrorCode.INTERNAL_ERROR)
+
+    # Ensure sponsor_subscriptions table exists
+    try:
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS sponsor_subscriptions (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    company_id UUID NOT NULL,
+                    user_id UUID NOT NULL,
+                    stripe_customer_id VARCHAR(255),
+                    stripe_subscription_id VARCHAR(255),
+                    tier VARCHAR(50) NOT NULL DEFAULT 'featured',
+                    status VARCHAR(50) NOT NULL DEFAULT 'active',
+                    current_period_end TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ DEFAULT now(),
+                    updated_at TIMESTAMPTZ DEFAULT now(),
+                    UNIQUE(company_id)
+                )
+            """)
+    except Exception:
+        pass  # Table likely already exists
+
+    try:
+        session = await asyncio.to_thread(
+            stripe.checkout.Session.create,
+            customer=customer_id,
+            payment_method_types=["card"],
+            line_items=[{"price": price_id, "quantity": 1}],
+            mode="subscription",
+            success_url=f"collectai://sponsor/dashboard?checkout=success&type=subscription",
+            cancel_url="collectai://sponsor/dashboard?checkout=cancel",
+            metadata={
+                "type": "sponsor_subscription",
+                "company_id": company_id,
+                "tier": request.tier,
+                "user_id": user_id,
+            },
+        )
+        return {"url": session.url, "session_id": session.id}
+
+    except Exception as e:
+        logger.error("[sponsor] Stripe subscription checkout creation failed: %s", e)
+        raise error_response(500, "Failed to create checkout session", code=ErrorCode.EXTERNAL_SERVICE_ERROR)
