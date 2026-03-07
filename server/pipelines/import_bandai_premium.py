@@ -968,6 +968,48 @@ def get_curated_catalog() -> list[dict]:
         # ── Additional PG Kits ───────────────────────────────────────────
         ("PG 1/60", "Perfect Strike Gundam (P-Bandai)", "Gundam SEED", "P-Bandai", "grail", 400),
         ("PG 1/60", "Banshee Norn (Final Battle Ver.)", "Gundam Unicorn", "P-Bandai", "grail", 480),
+
+        # === ROUND 2 — S.H.Figuarts Web Exclusives, Robot Spirits, Tamashii Nations, Figure-rise, Other ===
+
+        # ── S.H.Figuarts Web Exclusives (8 items) ─────────────────────────
+        ("S.H.Figuarts", "Son Goku Super Saiyan 3 (Renewal)", "Dragon Ball Z", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Vegeta Great Ape (Special Color)", "Dragon Ball Z", "P-Bandai", "high", 180),
+        ("S.H.Figuarts", "Kamen Rider Decade Complete 21 (Renewal)", "Kamen Rider Decade", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Kamen Rider Zero-Two IS", "Kamen Rider Zero-One", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Roronoa Zoro -King of Hell Three-Sword-", "One Piece", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Monkey D. Luffy (Gear 5 Joy Boy)", "One Piece", "P-Bandai", "high", 130),
+        ("S.H.Figuarts", "Sukuna (Jujutsu Kaisen Season 2)", "Jujutsu Kaisen", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Gojo Satoru (Hollow Purple)", "Jujutsu Kaisen", "P-Bandai", "mid", 100),
+
+        # ── Robot Spirits Exclusives (7 items) ─────────────────────────────
+        ("Robot Spirits", "Freedom Gundam Type F (SEED Freedom)", "Gundam SEED Freedom", "P-Bandai", "high", 130),
+        ("Robot Spirits", "Mighty Strike Freedom Gundam ver. A.N.I.M.E.", "Gundam SEED Freedom", "P-Bandai", "high", 145),
+        ("Robot Spirits", "Schwarzette ver. A.N.I.M.E.", "Gundam: Witch from Mercury", "P-Bandai", "mid", 85),
+        ("Robot Spirits", "Gundam Aerial (Permet Score 6) ver. A.N.I.M.E.", "Gundam: Witch from Mercury", "P-Bandai", "high", 120),
+        ("Robot Spirits", "Turn A Gundam Moonlight Butterfly ver. A.N.I.M.E.", "Turn A Gundam", "P-Bandai", "high", 135),
+        ("Robot Spirits", "Unicorn Gundam (Perfectibility) ver. A.N.I.M.E.", "Gundam Unicorn", "P-Bandai", "high", 160),
+        ("Robot Spirits", "Nu Gundam (Double Fin Funnel) ver. A.N.I.M.E.", "Gundam CCA", "P-Bandai", "high", 150),
+
+        # ── Tamashii Nations Exclusives (5 items) ──────────────────────────
+        ("S.H.Figuarts", "Son Goku Ultra Instinct (TNE 2025)", "Dragon Ball Super", "TNE", "high", 175),
+        ("S.H.Figuarts", "Kamen Rider Black Sun (SDCC 2024)", "Kamen Rider Black Sun", "Event Exclusive", "high", 165),
+        ("Robot Spirits", "Strike Freedom Gundam (TNE 2025 Pearl Coating)", "Gundam SEED Destiny", "TNE", "high", 180),
+        ("Figuarts ZERO", "Roronoa Zoro -King of Hell- (TNE 2025)", "One Piece", "TNE", "high", 165),
+        ("Metal Build", "Wing Gundam Zero (EW) Snow White (SDCC 2024)", "Gundam Wing", "Event Exclusive", "grail", 520),
+
+        # ── Figure-rise Standard Exclusives (5 items) ──────────────────────
+        ("Figure-rise Standard", "Kamen Rider Geats Magnum Boost (Clear)", "Kamen Rider Geats", "P-Bandai", "mid", 55),
+        ("Figure-rise Standard", "Amplified Omnimon X-Antibody", "Digimon", "P-Bandai", "mid", 65),
+        ("Figure-rise Standard", "Son Goku SSJ4 (GT)", "Dragon Ball GT", "P-Bandai", "mid", 55),
+        ("Figure-rise Standard", "Ultraman Suit Zero Action Ver.", "Ultraman", "P-Bandai", "mid", 50),
+        ("Figure-rise Standard", "Amplified Gallantmon Crimson Mode", "Digimon", "P-Bandai", "mid", 65),
+
+        # ── Other Bandai Premium Exclusives (5 items) ──────────────────────
+        ("S.H.MonsterArts", "Godzilla (2023 Minus One) Thermae Form", "Godzilla Minus One", "P-Bandai", "high", 160),
+        ("S.H.MonsterArts", "Mechagodzilla (Ready Player One)", "Ready Player One", "P-Bandai", "high", 170),
+        ("Proplica", "Muzan Kibutsuji Nichirin Blade (Tanjiro)", "Demon Slayer", "P-Bandai", "high", 145),
+        ("CSM", "Desire Driver (Kamen Rider Geats)", "Kamen Rider Geats", "P-Bandai", "grail", 380),
+        ("Metal Build", "Gundam Calibarn", "Gundam: Witch from Mercury", "P-Bandai", "grail", 350),
     ]
 
     # Merge helper functions

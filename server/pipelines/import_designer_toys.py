@@ -858,6 +858,70 @@ def _batch_art_toys_2025() -> list[dict]:
         ("Clutter", "Magazine", "Clutter Magazine x DesignerCon Exclusive Dunny 3-pack", "Limited", "mid", 180),
         ("Clutter", "Gallery", "Clutter Gallery x RunDMB Custom Munny 8-inch", "Limited", "high", 600),
         ("Clutter", "Magazine", "Clutter Magazine x DCON Exclusive Canbot Set (4 pcs)", "Limited", "mid", 250),
+
+        # ── KAWS - Additional Editions ─────────────────────────────────────
+        ("KAWS", "Companion", "Companion Resting Place Brown 2013", "Limited", "grail", 3200),
+        ("KAWS", "Companion", "Companion Five Years Later Black", "Limited", "grail", 2400),
+        ("KAWS", "Together", "Together Grey Open Edition 2018", "Open Edition", "mid", 280),
+        ("KAWS", "Together", "Together Brown Open Edition 2018", "Open Edition", "mid", 300),
+        ("KAWS", "Share", "Share Black Open Edition 2020", "Open Edition", "mid", 350),
+        ("KAWS", "Share", "Share Brown Open Edition 2020", "Open Edition", "mid", 370),
+        ("KAWS", "Separated", "Separated Grey Open Edition 2021", "Open Edition", "mid", 300),
+        ("KAWS", "Separated", "Separated Brown Open Edition 2021", "Open Edition", "mid", 320),
+        ("KAWS", "Holiday", "KAWS Holiday Japan Mt. Fuji (Brown)", "Limited", "high", 900),
+        ("KAWS", "Holiday", "KAWS Holiday Singapore (Grey)", "Limited", "high", 850),
+
+        # ── Ron English - Expansion ────────────────────────────────────────
+        ("Ron English", "MC Supersized", "MC Supersized Glow-in-the-Dark 10-inch", "Limited", "high", 650),
+        ("Ron English", "MC Supersized", "MC Supersized Pink Camo 10-inch", "Limited", "high", 580),
+        ("Ron English", "Astronaut Grin", "Astronaut Grin White 12-inch", "Limited", "high", 700),
+        ("Ron English", "Astronaut Grin", "Astronaut Grin Black 12-inch", "Limited", "high", 720),
+        ("Ron English", "FAT Tony", "FAT Tony OG Flesh 8-inch", "Limited", "mid", 400),
+        ("Ron English", "FAT Tony", "FAT Tony Bronze 8-inch", "Limited", "high", 550),
+        ("Ron English", "Temper Tot", "Temper Tot Blue Star 8-inch", "Limited", "mid", 320),
+        ("Ron English", "Grin", "Grin Infrared 8-inch (ComplexCon)", "Collab", "high", 600),
+
+        # ── Coarse Toys - Expansion ────────────────────────────────────────
+        ("Coarse", "Noop", "Noop Ivory 5-inch", "Limited", "mid", 280),
+        ("Coarse", "Noop", "Noop Midnight 5-inch", "Limited", "mid", 300),
+        ("Coarse", "Noop", "Noop Dust 5-inch (DCON Exclusive)", "Collab", "high", 450),
+        ("Coarse", "Pain", "Pain Daily OG Red 10-inch", "Limited", "high", 600),
+        ("Coarse", "Pain", "Pain Daily Grey 10-inch", "Limited", "high", 580),
+        ("Coarse", "Top", "Top Ivory Edition 6-inch", "Limited", "mid", 350),
+        ("Coarse", "False Friends", "False Friends Set (2 pcs) OG", "Limited", "high", 800),
+
+        # ── Superplastic / Janky - Expansion ──────────────────────────────
+        ("Superplastic", "Janky", "Janky Series 5 Full Case (12 Blind Boxes)", "Blind Box Set", "standard", 95),
+        ("Superplastic", "Janky", "Janky x Tyler The Creator Superjanky", "Collab", "high", 550),
+        ("Superplastic", "Guggimon", "Guggimon Neon Green 8-inch (Art Basel)", "Collab", "high", 480),
+        ("Superplastic", "Kranky", "Kranky OG Blue 8-inch", "Limited", "mid", 250),
+        ("Superplastic", "Kranky", "Kranky Lava 8-inch", "Limited", "mid", 280),
+        ("Superplastic", "Superdoodle", "Superdoodle OG White 6-inch", "Limited", "mid", 200),
+        ("Superplastic", "Dayzee", "Dayzee Gold Chrome 8-inch (DCON)", "Collab", "high", 500),
+
+        # ── Mighty Jaxx - Expansion ────────────────────────────────────────
+        ("Mighty Jaxx", "XXRAY", "XXRAY Plus Batman GID 10-inch", "Limited", "high", 550),
+        ("Mighty Jaxx", "XXRAY", "XXRAY Plus SpongeBob Rainbow 4-inch", "Limited", "mid", 200),
+        ("Mighty Jaxx", "Kandy", "Kandy x Spongebob Freeny's Hidden Dissectibles Series 2 (Set)", "Limited", "mid", 180),
+        ("Mighty Jaxx", "Mightyverse", "Mightyverse All Gone Set (4 pcs)", "Limited", "mid", 250),
+        ("Mighty Jaxx", "XXRAY", "XXRAY Wonder Woman 4-inch", "Limited", "mid", 160),
+        ("Mighty Jaxx", "XXRAY", "XXRAY Pikachu 4-inch", "Collab", "high", 500),
+
+        # ── Toyqube - Expansion ────────────────────────────────────────────
+        ("Toyqube", "Astroboy", "Astroboy Greeting OG 10-inch", "Limited", "high", 600),
+        ("Toyqube", "Astroboy", "Astroboy Greeting Chrome Silver 10-inch", "Limited", "high", 750),
+        ("Toyqube", "Astroboy", "Astroboy Greeting Matte Black 10-inch", "Limited", "high", 650),
+        ("Toyqube", "Pinocchio", "Pinocchio Wooden Style 10-inch", "Limited", "mid", 400),
+        ("Toyqube", "Pinocchio", "Pinocchio Chrome Gold 10-inch", "Limited", "high", 700),
+        ("Toyqube", "Astroboy", "Astroboy Greeting GID 6-inch", "Limited", "mid", 350),
+
+        # ── A Bathing Ape / BAPE Figures - Expansion ──────────────────────
+        ("BAPE", "Baby Milo", "Baby Milo OG Brown 8-inch Vinyl", "Limited", "mid", 350),
+        ("BAPE", "Baby Milo", "Baby Milo Camo Green 8-inch Vinyl", "Limited", "mid", 380),
+        ("BAPE", "Baby Milo", "Baby Milo x Star Wars Stormtrooper 6-inch", "Collab", "high", 600),
+        ("BAPE", "Baby Milo", "Baby Milo x Dragon Ball Z Goku 6-inch", "Collab", "high", 650),
+        ("BAPE", "ABC Camo", "BAPE x Bearbrick 100%+400% ABC Camo Green", "Collab", "high", 900),
+        ("BAPE", "ABC Camo", "BAPE x Bearbrick 100%+400% ABC Camo Pink", "Collab", "high", 950),
     ]
 
     catalog = []

@@ -804,6 +804,50 @@ def get_curated_catalog() -> list[dict]:
         ("Zelda", "Club Nintendo", "Club Nintendo Fierce Deity Link Figure", "Club Nintendo", "grail", 250),
         ("Mario", "Club Nintendo", "Club Nintendo Mario Kart Trophy Set (Gold/Silver)", "Club Nintendo", "grail", 280),
         ("Mario", "Club Nintendo", "Club Nintendo Doc Louis Punch-Out!! Code", "Club Nintendo", "high", 150),
+
+        # === ROUND 6 — Tears of the Kingdom, Splatoon 3, Kirby Premium, Metroid Dread, Pikmin, Fire Emblem ===
+
+        # ── Zelda: Tears of the Kingdom Merch ──────────────────────────────
+        ("Zelda", "Figure", "Link Tears of the Kingdom Figma (Paraglider)", "", "mid", 70),
+        ("Zelda", "Figure", "Ganondorf Demon King First 4 Figures", "First 4 Figures", "grail", 480),
+        ("Zelda", "Merch", "Tears of the Kingdom Purah Pad Replica Case", "Nintendo Store", "mid", 55),
+        ("Zelda", "Merch", "Tears of the Kingdom Zonai Device Keychain Set (6pc)", "Nintendo Store", "mid", 38),
+        ("Zelda", "Merch", "Tears of the Kingdom Ultrahand Grabber Toy", "Nintendo Store", "mid", 45),
+        ("Zelda", "Merch", "Tears of the Kingdom Korok Puzzle Cube Set", "Nintendo Store JP", "mid", 42),
+        ("Zelda", "Merch", "Tears of the Kingdom Master Sword Glowing Letter Opener", "Nintendo Store", "mid", 50),
+        ("Zelda", "Plush", "Tears of the Kingdom Construct Plush 8in", "Nintendo Store", "standard", 24),
+
+        # ── Splatoon 3 Expansion Merch ─────────────────────────────────────
+        ("Splatoon", "Plush", "Splatoon 3 Side Order Agent 8 Plush", "Nintendo Store", "mid", 30),
+        ("Splatoon", "Figure", "Splatoon 3 Deep Cut Band Figure Set", "Nintendo Store JP", "mid", 65),
+        ("Splatoon", "Merch", "Splatoon 3 Side Order Pearl Plush (Order Form)", "Nintendo Store JP", "mid", 48),
+        ("Splatoon", "Merch", "Splatoon 3 Splatfest Tee Physical Replica", "Nintendo Store", "standard", 28),
+        ("Splatoon", "Merch", "Splatoon 3 Booyah Bomb Stress Ball Set", "Nintendo Store", "standard", 18),
+        ("Splatoon", "Soundtrack", "Splatoon 3 Expansion Pass Soundtrack CD", "", "mid", 40),
+
+        # ── Kirby Premium Items ────────────────────────────────────────────
+        ("Kirby", "Figure", "Kirby and the Forgotten Land Mouthful Car Nendoroid", "", "mid", 58),
+        ("Kirby", "Merch", "Kirby Cafe Exclusive Anniversary Teapot Set", "Kirby Cafe JP", "high", 95),
+        ("Kirby", "Plush", "Kirby Planet Robobot Armor Plush 10in", "Nintendo Store JP", "mid", 42),
+        ("Kirby", "Figure", "Kirby Return to Dream Land Deluxe Magolor Figure", "", "mid", 48),
+        ("Kirby", "Merch", "Kirby Cafe Waddle Dee Baker Apron Set", "Kirby Cafe JP", "mid", 55),
+
+        # ── Metroid Dread Merch ────────────────────────────────────────────
+        ("Metroid", "Figure", "Samus Aran Metroid Dread Figma", "", "high", 85),
+        ("Metroid", "Figure", "E.M.M.I. White Nendoroid", "", "mid", 55),
+        ("Metroid", "Merch", "Metroid Dread Collector Art Print Set (4pc)", "Nintendo Store", "mid", 42),
+        ("Metroid", "Merch", "Metroid Dread Samus Arm Cannon Stress Toy", "Nintendo Store", "standard", 22),
+        ("Metroid", "Figure", "Metroid Dread Chozo Soldier Statue", "First 4 Figures", "grail", 320),
+
+        # ── Pikmin Items ───────────────────────────────────────────────────
+        ("Pikmin", "Plush", "Pikmin 4 Glow Pikmin Night Light Plush", "Nintendo Store", "mid", 32),
+        ("Pikmin", "Figure", "Pikmin 4 All Types Terrarium Box Set (9 Figures)", "Nintendo Store JP", "high", 85),
+        ("Pikmin", "Merch", "Pikmin 4 Dandori Challenge Timer Clock", "Nintendo Store JP", "mid", 38),
+
+        # ── Fire Emblem Items ──────────────────────────────────────────────
+        ("Fire Emblem", "Figure", "Byleth (Female) 1/7 Scale Figure", "", "high", 155),
+        ("Fire Emblem", "Merch", "Fire Emblem Three Houses Golden Deer Pin Set", "Nintendo Store", "mid", 38),
+        ("Fire Emblem", "Book", "The Art of Fire Emblem: Three Houses", "", "mid", 48),
     ]
 
     # ── Batch 12: Store Exclusives, Movie Merch, OLED Editions (55 items) ──

@@ -902,6 +902,72 @@ def _batch_premium_diecast_2025() -> list[dict]:
         ("INNO64", "Mazda RX-7 (FD3S) Mazdaspeed A-Spec", "1:64", "IN64 Collection", "mid", 40),
         ("INNO64", "Mitsubishi Lancer Evo III GSR Rally Art", "1:64", "IN64 Collection", "mid", 38),
         ("INNO64", "Honda Civic Type R (EK9) Championship White", "1:64", "IN64 Collection", "mid", 36),
+
+        # === BATCH 9 — 50 new items to reach 605+ ===
+
+        # Hot Wheels Super Treasure Hunts — 2024/2025 Wave
+        ("Hot Wheels $TH", "Porsche 918 Spyder", "1:64", "Super Treasure Hunt 2024", "high", 90),
+        ("Hot Wheels $TH", "Lamborghini Countach LPI 800-4", "1:64", "Super Treasure Hunt 2024", "mid", 70),
+        ("Hot Wheels $TH", "Ferrari F40", "1:64", "Super Treasure Hunt 2024", "high", 95),
+        ("Hot Wheels $TH", "'69 Ford Mustang Boss 302", "1:64", "Super Treasure Hunt 2024", "mid", 65),
+        ("Hot Wheels $TH", "Toyota GR Supra", "1:64", "Super Treasure Hunt 2025", "mid", 60),
+        ("Hot Wheels $TH", "Nissan Z (RZ34)", "1:64", "Super Treasure Hunt 2025", "mid", 55),
+        ("Hot Wheels $TH", "Pagani Huayra Roadster", "1:64", "Super Treasure Hunt 2025", "high", 85),
+        ("Hot Wheels $TH", "'71 Plymouth GTX", "1:64", "Super Treasure Hunt 2025", "mid", 60),
+        ("Hot Wheels $TH", "Aston Martin Valhalla", "1:64", "Super Treasure Hunt 2025", "mid", 65),
+        ("Hot Wheels $TH", "Alfa Romeo Giulia Sprint GTA", "1:64", "Super Treasure Hunt 2024", "mid", 70),
+
+        # Matchbox Premium — Collectors Series
+        ("Matchbox", "1964 Ford Fairlane Thunderbolt", "1:64", "Premium Collectors 2024", "mid", 45),
+        ("Matchbox", "Nissan Skyline 2000GT-R (KPGC10)", "1:64", "Premium Collectors 2024", "mid", 50),
+        ("Matchbox", "Porsche 914/6", "1:64", "Premium Collectors 2024", "mid", 42),
+        ("Matchbox", "1970 Plymouth Barracuda", "1:64", "Premium Collectors 2024", "mid", 48),
+        ("Matchbox", "Toyota FJ40 Land Cruiser", "1:64", "Premium Collectors 2025", "mid", 40),
+        ("Matchbox", "BMW 2002 Turbo", "1:64", "Premium Collectors 2025", "mid", 45),
+        ("Matchbox", "Volkswagen Karmann Ghia Coupe", "1:64", "Premium Collectors 2025", "mid", 42),
+        ("Matchbox", "Mercedes-Benz 300 SL Gullwing", "1:64", "Premium Collectors 2025", "mid", 55),
+
+        # Tomica Limited Vintage Neo — More JDM Classics
+        ("Tomica LV", "Toyota Supra (JZA70) 2.5GT Twin Turbo", "1:64", "Limited Vintage Neo", "mid", 65),
+        ("Tomica LV", "Nissan 180SX (RPS13) Type II", "1:64", "Limited Vintage Neo", "mid", 55),
+        ("Tomica LV", "Honda Prelude Si (BA4)", "1:64", "Limited Vintage Neo", "mid", 50),
+        ("Tomica LV", "Mazda Cosmo Sport (L10B)", "1:64", "Limited Vintage Neo", "high", 85),
+        ("Tomica LV", "Mitsubishi Lancer Evolution III GSR", "1:64", "Limited Vintage Neo", "mid", 60),
+        ("Tomica LV", "Subaru Impreza WRX STI (GC8)", "1:64", "Limited Vintage Neo", "mid", 65),
+        ("Tomica LV", "Toyota Crown Comfort Taxi", "1:64", "Limited Vintage Neo", "mid", 45),
+        ("Tomica LV", "Nissan Cedric (Y31) Gran Turismo SV", "1:64", "Limited Vintage Neo", "mid", 55),
+
+        # AUTOart 1:18 — Latest Premium Releases
+        ("AUTOart", "Porsche 911 (992) GT3 Shark Blue", "1:18", "Composite", "grail", 360),
+        ("AUTOart", "Koenigsegg Agera RS (Naraya)", "1:18", "Composite", "grail", 420),
+        ("AUTOart", "McLaren Speedtail Supernova Silver", "1:18", "Composite", "grail", 380),
+        ("AUTOart", "Lexus LFA Nurburgring Package Pearl Yellow", "1:18", "Composite", "grail", 350),
+        ("AUTOart", "Pagani Huayra BC Blu Francia", "1:18", "Composite", "grail", 400),
+        ("AUTOart", "Honda NSX (NC1) Type S Gotham Grey", "1:18", "Composite", "high", 280),
+        ("AUTOart", "Bugatti Chiron Sport French Racing Blue", "1:18", "Composite", "grail", 450),
+
+        # Maisto Premium — Special Edition Plus
+        ("Maisto", "Ford GT (2019) Heritage Edition Gulf Blue", "1:18", "Premium Edition", "mid", 55),
+        ("Maisto", "Bugatti Divo Matte Grey", "1:18", "Premium Edition", "mid", 58),
+        ("Maisto", "Lamborghini Sian FKP 37 Green", "1:18", "Premium Edition", "mid", 52),
+        ("Maisto", "Ferrari Monza SP1 Rosso Corsa", "1:18", "Premium Edition", "mid", 50),
+        ("Maisto", "McLaren Elva Gulf Livery", "1:18", "Premium Edition", "mid", 55),
+
+        # Greenlight — More Chase & Series
+        ("Greenlight", "1979 Pontiac Firebird Trans Am Rocky II", "1:64", "Hollywood Series", "mid", 42),
+        ("Greenlight", "2020 Ford Explorer Police Interceptor", "1:64", "Chase Green Machine", "standard", 28),
+        ("Greenlight", "1977 Pontiac LeMans Safari Terminator", "1:64", "Hollywood Series", "mid", 40),
+        ("Greenlight", "1969 Chevrolet Camaro Z/28 The Crow", "1:64", "Hollywood Series", "mid", 45),
+        ("Greenlight", "2023 Ford Bronco Wildtrak Yellowstone", "1:64", "Hollywood Series", "standard", 30),
+        ("Greenlight", "1973 Ford Falcon XB Last of the V8 Interceptors", "1:64", "Hollywood Series", "mid", 50),
+
+        # JADA Toys Imports — JDM Tuners & Hollywood Rides
+        ("JADA", "Nissan Skyline GT-R (R34) Fast & Furious Silver", "1:24", "Hollywood Rides", "mid", 45),
+        ("JADA", "Mazda RX-7 (FD) Fast & Furious Red", "1:24", "Hollywood Rides", "mid", 42),
+        ("JADA", "Honda S2000 Fast & Furious Pink", "1:24", "Hollywood Rides", "mid", 40),
+        ("JADA", "Mitsubishi Eclipse GSX Fast & Furious Green", "1:24", "Hollywood Rides", "mid", 38),
+        ("JADA", "Nissan 350Z Fast & Furious Orange", "1:24", "Hollywood Rides", "mid", 40),
+        ("JADA", "Toyota FT-1 Concept JDM Tuners Bronze", "1:24", "JDM Tuners", "mid", 38),
     ]
 
     catalog = []

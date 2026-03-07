@@ -1388,6 +1388,144 @@ def get_curated_catalog() -> list[dict]:
          "Item", "Complete Selection Animation D-3, 02 full-size replica"),
         ("Digivice: D-Power Ver. Complete (CSA)", "DEVICE", "DV-DPC", "Secret Rare", "Red", 145.00,
          "Item", "Complete Selection Animation D-Power, Tamers full-size replica"),
+
+        # =================================================================
+        # Vital Bracelet DiMs (10)
+        # =================================================================
+        ("Vital Bracelet DiM Card: True Shadow Howl", "VB", "VB-DIM01", "Rare", "Blue", 28.00,
+         "Item", "Vital Bracelet DiM, Gabumon line, shadow howl theme"),
+        ("Vital Bracelet DiM Card: Volcanic Beat", "VB", "VB-DIM02", "Rare", "Red", 28.00,
+         "Item", "Vital Bracelet DiM, Agumon line, volcanic beat theme"),
+        ("Vital Bracelet DiM Card: Infinite Tide", "VB", "VB-DIM03", "Rare", "Blue", 30.00,
+         "Item", "Vital Bracelet DiM, Gomamon line, infinite tide theme"),
+        ("Vital Bracelet DiM Card: Hermit in the Jungle", "VB", "VB-DIM04", "Rare", "Green", 30.00,
+         "Item", "Vital Bracelet DiM, Palmon line, jungle hermit theme"),
+        ("Vital Bracelet DiM Card: Nu Metal Empire", "VB", "VB-DIM05", "Super Rare", "Black", 45.00,
+         "Item", "Vital Bracelet DiM, MetalGreymon line, nu metal empire"),
+        ("Vital Bracelet DiM Card: Dynasty of the Evil", "VB", "VB-DIM06", "Super Rare", "Purple", 48.00,
+         "Item", "Vital Bracelet DiM, Devimon line, dynasty of evil"),
+        ("Vital Bracelet DiM Card: Digimon Frontier", "VB", "VB-DIM07", "Super Rare", "Red", 52.00,
+         "Item", "Vital Bracelet DiM, Frontier spirit evolution theme"),
+        ("Vital Bracelet DiM Card: Tamers Dim Set", "VB", "VB-DIM08", "Secret Rare", "Red", 65.00,
+         "Item", "Vital Bracelet DiM, Guilmon/Terriermon dual set, Tamers theme"),
+        ("Vital Bracelet DiM Card: Ghost Game Dim Set", "VB", "VB-DIM09", "Super Rare", "White", 50.00,
+         "Item", "Vital Bracelet DiM, Gammamon line, Ghost Game theme"),
+        ("Vital Bracelet DiM Card: Digimon Adventure", "VB", "VB-DIM10", "Secret Rare", "Blue", 70.00,
+         "Item", "Vital Bracelet DiM, all 8 Adventure partners special set"),
+
+        # =================================================================
+        # Digimon Adventure Figures (10)
+        # =================================================================
+        ("G.E.M. Series Taichi & Agumon 20th Anniversary", "FIG", "FIG-GEM-T20", "Secret Rare", "Red", 180.00,
+         "Mega", "MegaHouse G.E.M. 20th anniversary Taichi & Agumon statue"),
+        ("G.E.M. Series Yamato & Gabumon 20th Anniversary", "FIG", "FIG-GEM-Y20", "Secret Rare", "Blue", 175.00,
+         "Mega", "MegaHouse G.E.M. 20th anniversary Yamato & Gabumon statue"),
+        ("G.E.M. Series Takeru & Patamon", "FIG", "FIG-GEM-TP", "Super Rare", "Yellow", 120.00,
+         "Mega", "MegaHouse G.E.M. Takeru & Patamon figure"),
+        ("G.E.M. Series Hikari & Tailmon", "FIG", "FIG-GEM-HT", "Super Rare", "Pink", 125.00,
+         "Mega", "MegaHouse G.E.M. Hikari & Tailmon figure"),
+        ("G.E.M. Series Koushiro & Tentomon", "FIG", "FIG-GEM-KT", "Super Rare", "Purple", 115.00,
+         "Mega", "MegaHouse G.E.M. Koushiro & Tentomon figure"),
+        ("Digivolving Spirits 01 WarGreymon", "FIG", "FIG-DS01", "Secret Rare", "Red", 220.00,
+         "Mega", "Bandai Digivolving Spirits, metal diecast, Agumon→WarGreymon transform"),
+        ("Digivolving Spirits 02 MetalGarurumon", "FIG", "FIG-DS02", "Secret Rare", "Blue", 210.00,
+         "Mega", "Bandai Digivolving Spirits, metal diecast, Gabumon→MetalGarurumon transform"),
+        ("Digivolving Spirits 05 Angewomon", "FIG", "FIG-DS05", "Super Rare", "White", 160.00,
+         "Mega", "Bandai Digivolving Spirits, Gatomon→Angewomon transform"),
+        ("Precious G.E.M. Omnimon", "FIG", "FIG-PG-OMN", "Secret Rare", "White", 350.00,
+         "Mega", "MegaHouse Precious G.E.M. large-scale Omnimon statue"),
+        ("G.E.M. Series Mimi & Palmon", "FIG", "FIG-GEM-MP", "Super Rare", "Green", 110.00,
+         "Mega", "MegaHouse G.E.M. Mimi & Palmon figure"),
+
+        # =================================================================
+        # Digimon Tamers Merchandise (8)
+        # =================================================================
+        ("Digimon Tamers D-Ark Ver.15th (Takato Color)", "MERCH", "MERCH-DA15T", "Secret Rare", "Red", 150.00,
+         "Item", "15th anniversary D-Ark, Takato red, limited run"),
+        ("Digimon Tamers D-Ark Ver.15th (Ruki Color)", "MERCH", "MERCH-DA15R", "Secret Rare", "Blue", 155.00,
+         "Item", "15th anniversary D-Ark, Ruki blue, limited run"),
+        ("G.E.M. Series Takato & Guilmon", "MERCH", "MERCH-GEM-TG", "Super Rare", "Red", 130.00,
+         "Mega", "MegaHouse G.E.M. Tamers Takato & Guilmon figure"),
+        ("G.E.M. Series Ruki & Renamon", "MERCH", "MERCH-GEM-RR", "Super Rare", "Blue", 135.00,
+         "Mega", "MegaHouse G.E.M. Tamers Ruki & Renamon figure"),
+        ("G.E.M. Series Henry & Terriermon", "MERCH", "MERCH-GEM-HT", "Super Rare", "Green", 125.00,
+         "Mega", "MegaHouse G.E.M. Tamers Henry & Terriermon figure"),
+        ("Digimon Tamers Blu-ray BOX Limited Edition", "MERCH", "MERCH-TBR", "Secret Rare", "Red", 200.00,
+         "Item", "Complete Tamers series Blu-ray box with art cards and booklet"),
+        ("Digimon Tamers Card Slash Toy Set", "MERCH", "MERCH-TCS", "Rare", "Red", 40.00,
+         "Item", "Card Slash device with 5 card set, Tamers era toy"),
+        ("Warp Digivolving Dukemon Figure", "MERCH", "MERCH-WDD", "Super Rare", "Red", 95.00,
+         "Mega", "Warp Digivolving Guilmon to Dukemon transformation figure"),
+
+        # =================================================================
+        # D-Arts / S.H.Figuarts Digimon (8)
+        # =================================================================
+        ("D-Arts WarGreymon (Original Color)", "DART", "DART-WG", "Secret Rare", "Red", 250.00,
+         "Mega", "Bandai D-Arts WarGreymon, fully articulated, Brave Shield"),
+        ("D-Arts MetalGarurumon", "DART", "DART-MG", "Secret Rare", "Blue", 240.00,
+         "Mega", "Bandai D-Arts MetalGarurumon, Cocytus Breath effect parts"),
+        ("D-Arts Omegamon", "DART", "DART-OMG", "Secret Rare", "White", 280.00,
+         "Mega", "Bandai D-Arts Omegamon, Transcendent Sword & Supreme Cannon"),
+        ("D-Arts Alphamon", "DART", "DART-ALP", "Secret Rare", "Black", 300.00,
+         "Mega", "Bandai D-Arts Alphamon, Royal Knight, extremely rare"),
+        ("S.H.Figuarts Imperialdramon Fighter Mode", "DART", "DART-IMP", "Super Rare", "Blue", 180.00,
+         "Mega", "S.H.Figuarts Imperialdramon FM, 02 DNA Digivolve"),
+        ("S.H.Figuarts Dukemon Crimson Mode", "DART", "DART-DKM", "Secret Rare", "Red", 320.00,
+         "Mega", "S.H.Figuarts Dukemon Crimson Mode, Tamers final form"),
+        ("D-Arts Diablomon", "DART", "DART-DIA", "Super Rare", "Green", 200.00,
+         "Mega", "Bandai D-Arts Diablomon, Our War Game villain"),
+        ("S.H.Figuarts UlforceVeedramon", "DART", "DART-ULF", "Secret Rare", "Blue", 260.00,
+         "Mega", "S.H.Figuarts UlforceVeedramon, Royal Knight"),
+
+        # =================================================================
+        # Digimon Card Game Accessories (7)
+        # =================================================================
+        ("Official DCG Playmat: Omnimon Alter-S", "ACC", "ACC-PM-OAS", "Rare", "Black", 35.00,
+         "Item", "Official Digimon Card Game playmat, Omnimon Alter-S art"),
+        ("Official DCG Playmat: Jesmon GX", "ACC", "ACC-PM-JGX", "Rare", "Red", 32.00,
+         "Item", "Official Digimon Card Game playmat, Jesmon GX art"),
+        ("Official DCG Deck Box: Alphamon Ouryuken", "ACC", "ACC-DB-AO", "Uncommon", "Black", 18.00,
+         "Item", "Official Digimon Card Game deck box, Alphamon Ouryuken art"),
+        ("Official DCG Card Sleeves: Royal Knights", "ACC", "ACC-SL-RK", "Uncommon", "White", 12.00,
+         "Item", "Official Digimon Card Game sleeves, Royal Knights design, 60-pack"),
+        ("Official DCG Card Sleeves: Seven Great Demon Lords", "ACC", "ACC-SL-SD", "Uncommon", "Purple", 12.00,
+         "Item", "Official Digimon Card Game sleeves, Demon Lords design, 60-pack"),
+        ("Official DCG Playmat: Beelzemon Blast Mode", "ACC", "ACC-PM-BBM", "Rare", "Purple", 38.00,
+         "Item", "Official Digimon Card Game playmat, Beelzemon Blast Mode art"),
+        ("Official DCG Storage Box: Magnamon X", "ACC", "ACC-SB-MX", "Uncommon", "Blue", 20.00,
+         "Item", "Official Digimon Card Game storage box, Magnamon X-Antibody art"),
+
+        # =================================================================
+        # Digimon Ghost Game Merchandise (6)
+        # =================================================================
+        ("G.E.M. Series Hiro & Gammamon", "GHOST", "GHOST-GEM-HG", "Super Rare", "White", 130.00,
+         "Mega", "MegaHouse G.E.M. Ghost Game Hiro & Gammamon figure"),
+        ("Vital Bracelet BE (Ghost Game Edition)", "GHOST", "GHOST-VBBE", "Super Rare", "White", 55.00,
+         "Item", "Vital Bracelet BE special Ghost Game edition device"),
+        ("Figure-rise Standard Gammamon", "GHOST", "GHOST-FRS-G", "Rare", "White", 25.00,
+         "Item", "Bandai Figure-rise Standard model kit, Gammamon"),
+        ("Figure-rise Standard BetelGammamon", "GHOST", "GHOST-FRS-BG", "Rare", "Blue", 28.00,
+         "Item", "Bandai Figure-rise Standard model kit, BetelGammamon"),
+        ("Digimon Ghost Game Blu-ray BOX Vol.1", "GHOST", "GHOST-BR1", "Rare", "White", 65.00,
+         "Item", "Ghost Game anime Blu-ray box volume 1 with art booklet"),
+        ("S.H.Figuarts Regulusmon", "GHOST", "GHOST-SHF-R", "Secret Rare", "Black", 180.00,
+         "Mega", "S.H.Figuarts Regulusmon, Ghost Game final boss figure"),
+
+        # =================================================================
+        # Digimon World Video Games (6)
+        # =================================================================
+        ("Digimon World (PS1, CIB)", "GAME", "GAME-DW1", "Rare", "Yellow", 85.00,
+         "Item", "Digimon World PS1, complete in box, original 1999 release"),
+        ("Digimon World 2 (PS1, CIB)", "GAME", "GAME-DW2", "Rare", "Blue", 75.00,
+         "Item", "Digimon World 2 PS1, complete in box, dungeon RPG"),
+        ("Digimon World 3 (PS1, CIB)", "GAME", "GAME-DW3", "Rare", "Red", 80.00,
+         "Item", "Digimon World 3 PS1, complete in box, RPG adventure"),
+        ("Digimon Story Cyber Sleuth (PS Vita, CIB JP)", "GAME", "GAME-DSCS", "Uncommon", "Blue", 45.00,
+         "Item", "Digimon Story Cyber Sleuth PS Vita JP, complete, popular JRPG"),
+        ("Digimon Rumble Arena (PS1, CIB)", "GAME", "GAME-DRA", "Rare", "Red", 55.00,
+         "Item", "Digimon Rumble Arena PS1, complete in box, fighting game"),
+        ("Digimon World: Digital Card Arena (PS1, CIB)", "GAME", "GAME-DCA", "Rare", "Green", 60.00,
+         "Item", "Digital Card Arena PS1, complete in box, card battle game"),
     ]
 
     catalog = []

@@ -920,6 +920,87 @@ def _batch_fandom_collectibles_2025() -> list[dict]:
         ("Good Smile Company", "merch", "Nendoroid Doll Outfit Set Chinese Dress (Red)", "Outfit", "mid", 30),
         ("Good Smile Company", "merch", "Nendoroid Doll Outfit Set Pajamas (Blue)", "Outfit", "standard", 25),
         ("Good Smile Company", "merch", "Nendoroid Doll Hatsune Miku (Date Outfit Ver.)", "Exclusive", "high", 65),
+
+        # --- IU (Expansion) ---
+        ("IU", "vinyl", "Lilac Limited Purple Vinyl", "Limited", "high", 85),
+        ("IU", "vinyl", "The Golden Hour Standard Vinyl", "Standard", "mid", 38),
+        ("IU", "merch", "IU Concert: The Golden Hour Seoul Poster", "Tour Exclusive", "high", 70),
+        ("IU", "merch", "IU HEREH World Tour Light Stick", "Tour Exclusive", "high", 65),
+
+        # --- Lisa (Expansion) ---
+        ("Lisa", "vinyl", "LALISA Limited Gold Vinyl", "Limited Gold Vinyl", "high", 90),
+        ("Lisa", "merch", "LALISA Photobook Special Edition", "Photobook Edition", "high", 75),
+        ("Lisa", "merch", "Lisa Born Pink World Tour Poster Bangkok", "Tour Exclusive", "high", 65),
+        ("Lisa", "vinyl", "ROCKSTAR Clear Vinyl (Exclusive)", "Limited", "high", 80),
+
+        # --- Jungkook (Expansion) ---
+        ("Jungkook", "vinyl", "GOLDEN Target Exclusive Vinyl", "Target", "mid", 35),
+        ("Jungkook", "merch", "Jungkook Standing Next to You Photo Set", "Limited", "high", 60),
+        ("Jungkook", "merch", "Jungkook GOLDEN Weverse POB Photocard Set", "Weverse Exclusive", "high", 55),
+        ("Jungkook", "vinyl", "GOLDEN Standard Vinyl", "Standard", "mid", 30),
+
+        # --- Rosalia (Expansion) ---
+        ("Rosalia", "vinyl", "Motomami Clear Red Vinyl", "Limited", "high", 70),
+        ("Rosalia", "vinyl", "El Mal Querer Standard Vinyl", "Standard", "mid", 32),
+        ("Rosalia", "merch", "Motomami World Tour Tee", "Tour Exclusive", "mid", 45),
+
+        # --- Steve Lacy (Expansion) ---
+        ("Steve Lacy", "vinyl", "Gemini Rights Emerald Green Vinyl", "Limited", "high", 65),
+        ("Steve Lacy", "vinyl", "Gemini Rights Standard Vinyl", "Standard", "mid", 28),
+        ("Steve Lacy", "merch", "Give You the World Tour Poster", "Tour Exclusive", "mid", 40),
+
+        # --- Ice Spice (Expansion) ---
+        ("Ice Spice", "vinyl", "Like..? Tangerine Vinyl (UO Exclusive)", "UO Exclusive", "mid", 38),
+        ("Ice Spice", "vinyl", "Y2K! Standard Vinyl", "Standard", "standard", 22),
+        ("Ice Spice", "merch", "Ice Spice x Dunkin Signed Poster", "Signed", "high", 85),
+
+        # --- Tyla (Expansion) ---
+        ("Tyla", "vinyl", "Tyla Self-Titled Clear Vinyl (Amazon)", "Amazon", "mid", 30),
+        ("Tyla", "merch", "Tyla Water Signed CD", "Signed", "high", 60),
+        ("Tyla", "vinyl", "Tyla Self-Titled Pink Vinyl (Target)", "Target", "mid", 32),
+
+        # --- Megan Thee Stallion (Expansion) ---
+        ("Megan Thee Stallion", "vinyl", "Traumazine Orange Vinyl", "Limited", "mid", 40),
+        ("Megan Thee Stallion", "merch", "Hot Girl Summer Tour Hoodie", "Tour Exclusive", "high", 75),
+        ("Megan Thee Stallion", "vinyl", "MEGAN Standard Vinyl", "Standard", "standard", 22),
+
+        # --- Maggie Rogers (Expansion) ---
+        ("Maggie Rogers", "vinyl", "Don't Forget Me Standard Vinyl", "Standard", "standard", 24),
+        ("Maggie Rogers", "vinyl", "Surrender Baby Blue Vinyl (UO)", "UO Exclusive", "mid", 38),
+        ("Maggie Rogers", "vinyl", "Heard It in a Past Life Deluxe Vinyl", "Limited", "mid", 42),
+
+        # --- Victoria Monet (Expansion) ---
+        ("Victoria Monet", "vinyl", "Jaguar II Clear Vinyl", "Limited", "mid", 38),
+        ("Victoria Monet", "vinyl", "Jaguar II Standard Vinyl", "Standard", "standard", 24),
+        ("Victoria Monet", "merch", "Victoria Monet Grammy Night Signed Photo", "Signed", "high", 70),
+
+        # --- Raye (Expansion) ---
+        ("Raye", "vinyl", "My 21st Century Blues Standard Vinyl", "Standard", "standard", 24),
+        ("Raye", "vinyl", "My 21st Century Blues Blue Vinyl (Signed)", "Signed", "grail", 110),
+        ("Raye", "merch", "Raye Genesis Tour Poster", "Tour Exclusive", "mid", 40),
+
+        # --- Chapel Hart (Expansion) ---
+        ("Chapel Hart", "vinyl", "The Girls Are Back in Town Standard Vinyl", "Standard", "standard", 22),
+        ("Chapel Hart", "merch", "Chapel Hart Signed Tour Poster", "Signed", "high", 55),
+
+        # --- Kacey Musgraves (Expansion) ---
+        ("Kacey Musgraves", "vinyl", "Deeper Well Forest Green Vinyl", "Limited", "high", 55),
+        ("Kacey Musgraves", "vinyl", "Star-Crossed Lavender Vinyl (UO)", "UO Exclusive", "mid", 40),
+        ("Kacey Musgraves", "merch", "Deeper Well World Tour Poster", "Tour Exclusive", "mid", 45),
+
+        # --- Dominic Fike (Expansion) ---
+        ("Dominic Fike", "vinyl", "Sunburn Clear Orange Vinyl", "Limited", "mid", 38),
+        ("Dominic Fike", "vinyl", "What Could Possibly Go Wrong Standard Vinyl", "Standard", "standard", 22),
+        ("Dominic Fike", "merch", "Dominic Fike Tour Poster 2024", "Tour Exclusive", "mid", 35),
+
+        # --- 21 Savage (Expansion) ---
+        ("21 Savage", "vinyl", "american dream Red Vinyl (Target)", "Target", "mid", 30),
+        ("21 Savage", "vinyl", "I Am > I Was Standard Vinyl", "Standard", "mid", 28),
+        ("21 Savage", "merch", "21 Savage american dream Tour Hoodie", "Tour Exclusive", "high", 75),
+
+        # --- Metro Boomin (Expansion) ---
+        ("Metro Boomin", "vinyl", "Heroes & Villains Standard Vinyl", "Standard", "mid", 28),
+        ("Metro Boomin", "vinyl", "We Don't Trust You Clear Vinyl", "Limited", "mid", 35),
     ]
 
     catalog = []

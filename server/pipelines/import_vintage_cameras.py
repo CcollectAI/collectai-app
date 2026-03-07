@@ -918,6 +918,80 @@ def _round4_medium_format_rangefinder_misc() -> list[tuple]:
     ]
 
 
+def _round5_expansion() -> list[tuple]:
+    """Round 5 expansion: 55 items — medium format, rangefinders, TLR, instant, 35mm SLR, lenses, large format."""
+    return [
+        # --- Medium Format Cameras (10) ---
+        ("Hasselblad 501CM", "Hasselblad", "medium format", "1994-2005", 2200, "Excellent", True, "Limited Edition", "Last mechanical-only V-system, Acute Matte screen"),
+        ("Hasselblad SWC/M", "Hasselblad", "medium format", "1980-1988", 3800, "Excellent", True, "Rare", "Super Wide C/M, Biogon 38mm f/4.5, ultrawide 6x6"),
+        ("Mamiya RZ67 Pro II", "Mamiya", "medium format", "1995-2004", 1200, "Excellent", True, "Standard", "Professional studio workhorse, revolving back, bellows focus"),
+        ("Mamiya RB67 Pro SD", "Mamiya", "medium format", "1990-2004", 900, "Excellent", True, "Standard", "Last RB67, revolving adapter, 6x7 format"),
+        ("Mamiya 645 Pro TL", "Mamiya", "medium format", "1992-1999", 700, "Excellent", True, "Standard", "645 SLR with through-lens metering, modular system"),
+        ("Bronica SQ-Ai", "Bronica", "medium format", "1990-2004", 650, "Excellent", True, "Standard", "6x6 SLR, Zenzanon PS lenses, electronic shutter"),
+        ("Bronica GS-1", "Bronica", "medium format", "1983-1998", 800, "Good", True, "Standard", "6x7 SLR, unique grip design, Zenzanon PG lenses"),
+        ("Pentax 67II", "Pentax", "medium format", "1998-2009", 2800, "Excellent", True, "Limited Edition", "Ultimate 6x7 SLR, AE metering, mirror lock-up"),
+        ("Fuji GX680III Professional (Late Serial)", "Fuji", "medium format", "1999-2006", 1600, "Excellent", True, "Standard", "Late production GX680III, improved mirror mechanism, EBC Fujinon lenses"),
+        ("Mamiya C330 Professional f", "Mamiya", "TLR", "1969-1994", 500, "Good", True, "Standard", "Interchangeable lens TLR, 6x6, bellows focusing"),
+
+        # --- Rangefinder Cameras (10) ---
+        ("Contax G2 Titanium", "Contax", "rangefinder", "1996-2005", 1800, "Excellent", False, "Limited Edition", "Titanium body AF rangefinder, Carl Zeiss lenses"),
+        ("Contax G1 Green Label", "Contax", "rangefinder", "1994-2005", 800, "Excellent", False, "Standard", "Updated G1 with improved AF, Carl Zeiss T* lenses"),
+        ("Voigtlander Bessa R2M", "Voigtlander", "rangefinder", "2002-2015", 650, "Excellent", False, "Standard", "M-mount rangefinder, compact body, 0.7x viewfinder"),
+        ("Voigtlander Bessa R3M", "Voigtlander", "rangefinder", "2005-2015", 750, "Excellent", False, "Standard", "M-mount rangefinder, 1:1 viewfinder magnification"),
+        ("Voigtlander Bessa R4M", "Voigtlander", "rangefinder", "2006-2015", 800, "Excellent", False, "Standard", "M-mount wide-angle rangefinder, 0.52x viewfinder"),
+        ("Canonet QL17 GIII (Mint CLA'd)", "Canon", "rangefinder", "1972-1982", 400, "Mint", True, "Standard", "40mm f/1.7 fully CLA'd, the poor man's Leica, cult classic"),
+        ("Canonet QL17 GIII Black (Early Serial)", "Canon", "rangefinder", "1972-1975", 500, "Excellent", True, "Limited Edition", "Early production black paint, rarer than chrome, collector premium"),
+        ("Yashica Electro 35 GSN", "Yashica", "rangefinder", "1973-1979", 200, "Good", True, "Standard", "45mm f/1.7, electronic AE rangefinder, great optics"),
+        ("Olympus 35 SP", "Olympus", "rangefinder", "1969-1976", 300, "Good", True, "Standard", "42mm f/1.7 G.Zuiko, spot/average metering, underrated gem"),
+        ("Minolta Hi-Matic 7sII", "Minolta", "rangefinder", "1977-1981", 250, "Excellent", True, "Standard", "40mm f/1.7 Rokkor, compact rangefinder, sharp optics"),
+
+        # --- TLR Cameras (8) ---
+        ("Rolleiflex 2.8F Planar", "Rolleiflex", "TLR", "1960-1981", 2800, "Excellent", True, "Rare", "Ultimate Rolleiflex, Carl Zeiss Planar 80mm f/2.8"),
+        ("Rolleiflex 2.8E Xenotar", "Rolleiflex", "TLR", "1956-1959", 1800, "Good", True, "Rare", "Schneider Xenotar lens, built-in meter, classic design"),
+        ("Rolleiflex 3.5F Planar", "Rolleiflex", "TLR", "1958-1981", 2200, "Excellent", True, "Rare", "Slower but sharper, 75mm f/3.5 Planar, light-meter model"),
+        ("Rolleicord Vb", "Rolleiflex", "TLR", "1962-1977", 500, "Excellent", True, "Standard", "Last Rolleicord model, Schneider Xenar 75mm f/3.5, improved meter"),
+        ("Yashica Mat 124G", "Yashica", "TLR", "1970-1986", 350, "Excellent", True, "Standard", "Best-selling TLR ever, Yashinon 80mm f/3.5, CdS meter"),
+        ("Yashica D (Grey Leatherette)", "Yashica", "TLR", "1958-1974", 230, "Good", True, "Standard", "Entry-level Yashica TLR, grey leatherette variant, Yashikor 80mm f/3.5"),
+        ("Minolta Autocord CdS III", "Minolta", "TLR", "1965-1970", 400, "Excellent", True, "Standard", "Rokkor 75mm f/3.5, built-in CdS meter, automatic film advance"),
+        ("Mamiya C220 Professional", "Mamiya", "TLR", "1968-1982", 350, "Good", True, "Standard", "Interchangeable lens TLR, 80mm f/2.8 standard, affordable pro"),
+
+        # --- Instant / Polaroid Cameras (7) ---
+        ("Polaroid SX-70 Land Camera (Chrome/Tan)", "Polaroid", "instant", "1972-1981", 350, "Excellent", True, "Limited Edition", "Iconic folding SLR, original chrome/tan leather"),
+        ("Polaroid SX-70 Sonar OneStep", "Polaroid", "instant", "1978-1981", 280, "Good", True, "Standard", "SX-70 with sonar autofocus, gold stripe"),
+        ("Polaroid SX-70 Alpha 1 Model 2", "Polaroid", "instant", "1977-1979", 400, "Excellent", True, "Limited Edition", "Black body SX-70, split-image focusing, premium model"),
+        ("Polaroid Spectra System", "Polaroid", "instant", "1986-1992", 120, "Good", True, "Standard", "Wide-format instant, Quintic lens, sonar AF"),
+        ("Polaroid Land Camera 195", "Polaroid", "instant", "1974-1976", 500, "Good", True, "Rare", "Professional packfilm camera, Tominon 114mm f/3.8, manual controls"),
+        ("Polaroid Land Camera 180", "Polaroid", "instant", "1965-1969", 600, "Good", True, "Rare", "Pro packfilm, Tominon 114mm f/4.5, manual exposure, rangefinder"),
+        ("Polaroid 600 SE", "Polaroid", "instant", "1978-1981", 700, "Good", True, "Rare", "Professional body, Mamiya 127mm f/4.7, packfilm, studio use"),
+
+        # --- 35mm SLR Bodies (7) ---
+        ("Pentax LX", "Pentax", "SLR", "1980-2001", 600, "Excellent", False, "Limited Edition", "Pentax flagship pro SLR, weather-sealed, interchangeable screens"),
+        ("Pentax MX", "Pentax", "SLR", "1976-1985", 350, "Excellent", False, "Standard", "Compact mechanical SLR, 100% viewfinder, K-mount"),
+        ("Minolta XD-11", "Minolta", "SLR", "1977-1981", 300, "Excellent", False, "Standard", "World's first multi-mode AE SLR, Leitz co-design"),
+        ("Minolta X-700", "Minolta", "SLR", "1981-1999", 200, "Excellent", False, "Standard", "Program AE SLR, huge MD lens ecosystem"),
+        ("Olympus OM-3Ti", "Olympus", "SLR", "1994-2002", 800, "Excellent", False, "Rare", "Titanium OM body, spot/multi-spot metering, mechanical shutter"),
+        ("Pentax K1000", "Pentax", "SLR", "1976-1997", 180, "Good", False, "Standard", "Most popular student SLR ever, fully mechanical, indestructible"),
+        ("Nikon FM3A", "Nikon", "SLR", "2001-2006", 900, "Mint", False, "Limited Edition", "Last manual-focus Nikon, hybrid electronic/mechanical shutter"),
+
+        # --- Vintage Lenses (7) ---
+        ("Carl Zeiss Planar T* 50mm f/1.4 ZM", "Contax", "rangefinder", "2005-present", 800, "Mint", True, "Standard", "Leica M-mount, modern Zeiss optic, 6 elements"),
+        ("Carl Zeiss Sonnar T* 85mm f/2 ZM", "Contax", "rangefinder", "2005-present", 950, "Mint", True, "Standard", "Leica M-mount Zeiss 85mm, classic Sonnar rendering"),
+        ("Leica Summicron 50mm f/2 V4 (Pre-ASPH)", "Leica", "rangefinder", "1979-1994", 1800, "Excellent", True, "Limited Edition", "4th generation Summicron, legendary sharpness, compact"),
+        ("Leica Summilux 35mm f/1.4 (Pre-ASPH Steel Rim)", "Leica", "rangefinder", "1961-1966", 4500, "Good", True, "Rare", "Steel rim Summilux, dreamy wide-open rendering, holy grail"),
+        ("Nikon AI-S Nikkor 105mm f/2.5", "Nikon", "SLR", "1981-2005", 350, "Excellent", True, "Standard", "Classic portrait lens, Afghan Girl fame, sharp and contrasty"),
+        ("Nikon AI-S Nikkor 28mm f/2.8", "Nikon", "SLR", "1981-2006", 280, "Excellent", True, "Standard", "Compact wide-angle, CRC, excellent for street photography"),
+        ("Nikon AI-S Nikkor 35mm f/1.4", "Nikon", "SLR", "1981-2005", 900, "Excellent", True, "Limited Edition", "Fast wide-angle Nikkor, NIC coating, photojournalist lens"),
+
+        # --- Large Format Cameras (6) ---
+        ("Linhof Technika V 4x5", "Linhof", "large format", "1976-2005", 2500, "Excellent", False, "Rare", "German precision field camera, full movements, legendary build"),
+        ("Linhof Master Technika 2000", "Linhof", "large format", "2000-present", 4500, "Mint", False, "Rare", "Ultimate field camera, titanium parts, micro-precision gearing"),
+        ("Wista 45D Cherry Wood", "Wista", "large format", "1975-2000", 800, "Excellent", False, "Standard", "Japanese cherry wood field camera, lightweight, full movements"),
+        ("Graflex Crown Graphic 4x5", "Graflex", "large format", "1947-1973", 400, "Good", False, "Standard", "Press camera with Graflex back, Kalart rangefinder"),
+        ("Sinar P2 4x5 Monorail", "Linhof", "large format", "1988-present", 2000, "Excellent", False, "Limited Edition", "Swiss precision monorail, geared everything, studio standard"),
+        ("Deardorff 8x10 V8", "Graflex", "large format", "1940-1988", 3500, "Good", False, "Rare", "American-made large format icon, mahogany and brass, 8x10 contact prints"),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Assemble full catalog
 # ---------------------------------------------------------------------------
@@ -969,6 +1043,8 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_round3_point_and_shoot_misc())
     # Round 4 expansion
     all_tuples.extend(_round4_medium_format_rangefinder_misc())
+    # Round 5 expansion
+    all_tuples.extend(_round5_expansion())
 
     catalog: list[dict] = []
     for name, brand, cam_type, year_range, price_eur, condition, has_lens, rarity, notes in all_tuples:

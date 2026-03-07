@@ -721,6 +721,10 @@ def get_curated_catalog() -> list[dict]:
     # Round 7 expansion — 50 items
     catalog.extend(_expanded_round7_comic_books())
 
+    # Round 8 expansion — 55 items (Image, Dark Horse, Indie, DC Silver Age,
+    # Marvel Bronze Age, Modern spec, CGC graded slabs)
+    catalog.extend(_expanded_round8_comic_books())
+
     return catalog
 
 
@@ -788,6 +792,92 @@ def _expanded_round7_comic_books() -> list[dict]:
         ("Image", "Stray Dogs", "Stray Dogs #1 (2021, Tony Fleecs, 1st print)", "Modern Key", "mid", 25.0),
         ("Image", "W0rldtr33", "W0rldtr33 #1 (2023, James Tynion IV, 1st print)", "Modern Key", "mid", 20.0),
         ("Image", "Geiger", "Geiger #1 (2021, Geoff Johns, 1st print)", "Modern Key", "mid", 25.0),
+    ]
+    catalog = []
+    for publisher, series, name, issue_type, rarity_tier, price_eur in comics:
+        catalog.append({
+            "publisher": publisher,
+            "series": series,
+            "name": name,
+            "issue_type": issue_type,
+            "rarity_tier": rarity_tier,
+            "price_eur": price_eur,
+        })
+    return catalog
+
+
+def _expanded_round8_comic_books() -> list[dict]:
+    """55 new comic book items: Image keys, Dark Horse keys, indie keys,
+    DC Silver Age, Marvel Bronze Age, modern spec keys, CGC graded slabs."""
+    comics = [
+        # --- Image Comics Keys (+10) ---
+        ("Image", "Savage Dragon", "Savage Dragon #1 (1992, Erik Larsen, 1st print)", "Modern Key", "mid", 60.0),
+        ("Image", "Witchblade", "Witchblade #1 (1995, Michael Turner, 1st print)", "Modern Key", "mid", 80.0),
+        ("Image", "The Darkness", "The Darkness #1 (1996, Marc Silvestri/Garth Ennis)", "Modern Key", "mid", 50.0),
+        ("Image", "Youngblood", "Youngblood #1 (1992, Rob Liefeld, 1st print)", "Modern Key", "mid", 30.0),
+        ("Image", "Cyberforce", "Cyberforce #1 (1992, Marc Silvestri, 1st print)", "Modern Key", "mid", 25.0),
+        ("Image", "Pitt", "Pitt #1 (1993, Dale Keown, 1st print)", "Modern Key", "mid", 20.0),
+        ("Image", "Deadly Class", "Deadly Class #1 (2014, Rick Remender/Wes Craig)", "Modern Key", "mid", 60.0),
+        ("Image", "Paper Girls", "Paper Girls #1 (2015, Brian K. Vaughan/Cliff Chiang)", "Modern Key", "high", 120.0),
+        ("Image", "East of West", "East of West #1 (2013, Jonathan Hickman/Nick Dragotta)", "Modern Key", "mid", 50.0),
+        ("Image", "Nailbiter", "Nailbiter #1 (2014, Joshua Williamson, 1st print)", "Modern Key", "mid", 30.0),
+
+        # --- Dark Horse Keys (+8) ---
+        ("Dark Horse", "300", "300 #1 (1998, Frank Miller, 1st print)", "Modern Key", "high", 200.0),
+        ("Dark Horse", "Usagi Yojimbo", "Usagi Yojimbo #1 (1987, Stan Sakai, Dark Horse run)", "Modern Key", "high", 150.0),
+        ("Dark Horse", "Barb Wire", "Barb Wire #1 (1994, Chris Warner)", "Modern Key", "mid", 20.0),
+        ("Dark Horse", "Ghost", "Ghost #1 (1995, Eric Luke/Adam Hughes)", "Modern Key", "mid", 30.0),
+        ("Dark Horse", "X", "X #1 (1994, Steven Grant)", "Modern Key", "mid", 15.0),
+        ("Dark Horse", "Grendel", "Grendel: War Child #1 (1992, Matt Wagner)", "Modern Key", "mid", 25.0),
+        ("Dark Horse", "Emily the Strange", "Emily the Strange #1 (2005, Dark Horse)", "Modern Key", "mid", 40.0),
+        ("Dark Horse", "Umbrella Academy", "Umbrella Academy: Apocalypse Suite #1 (2007, Gerard Way/Gabriel Ba)", "Modern Key", "high", 180.0),
+
+        # --- Indie Publisher Keys (+8) ---
+        ("Fantagraphics", "Love and Rockets", "Love and Rockets #1 (1982, Hernandez Brothers, 1st print)", "Modern Key", "high", 300.0),
+        ("Drawn & Quarterly", "Berlin", "Berlin #1 (1996, Jason Lutes)", "Modern Key", "mid", 40.0),
+        ("Oni Press", "Scott Pilgrim", "Scott Pilgrim Vol 1 (2004, Bryan Lee O'Malley, 1st print)", "First Print", "high", 200.0),
+        ("Dark Horse", "Usagi Yojimbo", "Usagi Yojimbo #1 (1996, Stan Sakai, Mirage original 1st print)", "Modern Key", "grail", 800.0),
+        ("Archie", "Archie", "Archie #1 (2015, Mark Waid/Fiona Staples, New Riverdale)", "Modern Key", "mid", 30.0),
+        ("Valiant", "Harbinger", "Harbinger #1 (1992, Jim Shooter, with coupon)", "Modern Key", "high", 150.0),
+        ("First Comics", "Nexus", "Nexus #1 (1983, Mike Baron/Steve Rude, Capital edition)", "Modern Key", "high", 100.0),
+        ("Eclipse", "DNAgents", "DNAgents #1 (1983, Mark Evanier/Will Meugniot)", "Modern Key", "mid", 20.0),
+
+        # --- DC Silver Age (+8) ---
+        ("DC", "The Flash", "The Flash #105 (1959, 1st Silver Age Flash solo title)", "Silver Age Key", "grail", 8000.0),
+        ("DC", "Green Lantern", "Green Lantern #1 (1960, 1st Silver Age GL solo title)", "Silver Age Key", "grail", 12000.0),
+        ("DC", "Justice League of America", "Justice League of America #1 (1960, 1st JLA solo title)", "Silver Age Key", "grail", 10000.0),
+        ("DC", "The Atom", "Showcase #34 (1961, 1st Silver Age Atom)", "Silver Age Key", "grail", 5000.0),
+        ("DC", "Hawkman", "The Brave and the Bold #34 (1961, 1st Silver Age Hawkman)", "Silver Age Key", "grail", 4000.0),
+        ("DC", "Teen Titans", "The Brave and the Bold #54 (1964, 1st Teen Titans)", "Silver Age Key", "grail", 6000.0),
+        ("DC", "Aquaman", "Aquaman #1 (1962, 1st Silver Age Aquaman solo)", "Silver Age Key", "grail", 7000.0),
+        ("DC", "Metal Men", "Showcase #37 (1962, 1st Metal Men)", "Silver Age Key", "grail", 3000.0),
+
+        # --- Marvel Bronze Age Keys (+8) ---
+        ("Marvel", "Werewolf by Night", "Werewolf by Night #32 (1975, 1st Moon Knight)", "Bronze Age Key", "grail", 15000.0),
+        ("Marvel", "Marvel Spotlight", "Marvel Spotlight #5 (1972, 1st Ghost Rider Johnny Blaze)", "Bronze Age Key", "grail", 8000.0),
+        ("Marvel", "Hero for Hire", "Hero for Hire #1 (1972, 1st Luke Cage)", "Bronze Age Key", "grail", 5000.0),
+        ("Marvel", "Marvel Premiere", "Marvel Premiere #15 (1974, 1st Iron Fist)", "Bronze Age Key", "grail", 4000.0),
+        ("Marvel", "The Eternals", "Eternals #1 (1976, Jack Kirby, 1st Eternals)", "Bronze Age Key", "grail", 2000.0),
+        ("Marvel", "Ms. Marvel", "Ms. Marvel #1 (1977, 1st Carol Danvers as Ms. Marvel)", "Bronze Age Key", "grail", 3000.0),
+        ("Marvel", "Nova", "Nova #1 (1976, 1st Richard Rider Nova)", "Bronze Age Key", "grail", 1500.0),
+        ("Marvel", "What If?", "What If? #10 (1978, 1st Jane Foster as Thor)", "Bronze Age Key", "high", 400.0),
+
+        # --- Modern Spec Keys (+8) ---
+        ("DC", "Batman", "Batman #89 (2020, 1st Punchline cameo)", "Modern Key", "high", 150.0),
+        ("DC", "Batman", "Batman #92 (2020, 1st Punchline full appearance)", "Modern Key", "high", 100.0),
+        ("Marvel", "Ultimate Fallout", "Ultimate Fallout #4 (2011, 1st Miles Morales)", "Modern Key", "grail", 3000.0),
+        ("Marvel", "Spider-Man", "Miles Morales: Spider-Man #1 (2018, 1st solo ongoing)", "Modern Key", "mid", 50.0),
+        ("Marvel", "Edge of Spider-Verse", "Edge of Spider-Verse #2 (2014, 1st Spider-Gwen)", "Modern Key", "grail", 600.0),
+        ("DC", "Harley Quinn", "Batman Adventures #12 (1993, 1st Harley Quinn in comics)", "Modern Key", "grail", 5000.0),
+        ("Marvel", "Moon Girl", "Moon Girl and Devil Dinosaur #1 (2015, 1st Lunella Lafayette)", "Modern Key", "mid", 80.0),
+        ("Marvel", "Ironheart", "Invincible Iron Man #7 (2017, 1st Riri Williams as Ironheart)", "Modern Key", "mid", 60.0),
+
+        # --- CGC Graded Slabs (+5) ---
+        ("DC", "Batman", "Batman #89 CGC 9.8 (2020, 1st Punchline cameo)", "CGC 9.8", "grail", 600.0),
+        ("Marvel", "Ultimate Fallout", "Ultimate Fallout #4 CGC 9.8 (2011, 1st Miles Morales, Djurdjevic variant)", "CGC 9.8", "grail", 12000.0),
+        ("Marvel", "Edge of Spider-Verse", "Edge of Spider-Verse #2 CGC 9.8 (2014, 1st Spider-Gwen)", "CGC 9.8", "grail", 2500.0),
+        ("DC", "Harley Quinn", "Batman Adventures #12 CGC 9.8 (1993, 1st Harley Quinn)", "CGC 9.8", "grail", 20000.0),
+        ("Image", "Paper Girls", "Paper Girls #1 CGC 9.8 (2015, BKV/Cliff Chiang)", "CGC 9.8", "grail", 500.0),
     ]
     catalog = []
     for publisher, series, name, issue_type, rarity_tier, price_eur in comics:

@@ -736,6 +736,73 @@ def get_curated_catalog() -> list[dict]:
         ("Converge", "N/A", "Gundam Converge God Gundam", "G Gundam", "Converge", "standard", 12),
     ]
 
+    # ── Expansion Batch 9 — Ver.Ka, P-Bandai, RG, SEED Freedom, Full Mechanics, MGEX, SD EX ──
+    kits += [
+        # Master Grade Ver.Ka — Premium Releases
+        ("MG", "1/100", "Full Armor Gundam Ver.Ka (Thunderbolt)", "Gundam Thunderbolt", "Ver.Ka", "high", 100),
+        ("MG", "1/100", "Psycho Zaku Ver.Ka (Thunderbolt)", "Gundam Thunderbolt", "Ver.Ka", "high", 110),
+        ("MG", "1/100", "Victory Two Gundam Ver.Ka", "Victory Gundam", "Ver.Ka", "mid", 65),
+        ("MG", "1/100", "V2 Assault Buster Gundam Ver.Ka", "Victory Gundam", "Ver.Ka", "mid", 80),
+        ("MG", "1/100", "Gundam F91 Ver.2.0", "Gundam F91", "Ver.2.0", "mid", 55),
+        ("MG", "1/100", "Crossbone Gundam X1 Ver.Ka", "Crossbone Gundam", "Ver.Ka", "mid", 60),
+        ("MG", "1/100", "Zeta Gundam Ver.Ka", "Zeta Gundam", "Ver.Ka", "mid", 65),
+        ("MG", "1/100", "ZZ Gundam Ver.Ka", "Gundam ZZ", "Ver.Ka", "mid", 85),
+        ("MG", "1/100", "Gundam Mk-II (AEUG) Ver.2.0", "Zeta Gundam", "Ver.2.0", "mid", 50),
+        ("MG", "1/100", "Ball Ver.Ka", "Mobile Suit Gundam", "Ver.Ka", "standard", 35),
+
+        # P-Bandai Exclusives — New Releases 2024/2025
+        ("MG", "1/100", "Altron Gundam EW (P-Bandai)", "Gundam Wing", "P-Bandai", "high", 115),
+        ("MG", "1/100", "Gundam Heavyarms Custom EW (P-Bandai)", "Gundam Wing", "P-Bandai", "high", 110),
+        ("MG", "1/100", "Providence Gundam (P-Bandai Special Coating)", "Gundam SEED", "P-Bandai", "high", 130),
+        ("RG", "1/144", "Gundam Mk-II (Titans) (P-Bandai)", "Zeta Gundam", "P-Bandai", "mid", 55),
+        ("RG", "1/144", "Strike Rouge + Grand Slam (P-Bandai)", "Gundam SEED", "P-Bandai", "mid", 60),
+        ("HG", "1/144", "Zaku I Sniper Type (P-Bandai)", "MSV", "P-Bandai", "mid", 35),
+        ("HG", "1/144", "GM Cannon II (P-Bandai)", "Gundam 0083", "P-Bandai", "mid", 32),
+        ("HG", "1/144", "Gyan Krieger (P-Bandai)", "Gundam Build", "P-Bandai", "mid", 38),
+        ("MG", "1/100", "Blaze Zaku Phantom (P-Bandai)", "Gundam SEED Destiny", "P-Bandai", "high", 120),
+        ("MG", "1/100", "Gundam Deathscythe EW (Rousette) (P-Bandai)", "Gundam Wing", "P-Bandai", "high", 125),
+
+        # Real Grade — Newer Kits 2024/2025
+        ("RG", "1/144", "Mighty Strike Freedom Gundam", "Gundam SEED Freedom", "", "mid", 45),
+        ("RG", "1/144", "Rising Freedom Gundam", "Gundam SEED Freedom", "", "mid", 40),
+        ("RG", "1/144", "Immortal Justice Gundam", "Gundam SEED Freedom", "", "mid", 42),
+        ("RG", "1/144", "Gundam Aerial (Permet Score 6)", "Gundam: Witch from Mercury", "", "mid", 48),
+        ("RG", "1/144", "Hi-Nu Gundam", "Char's Counterattack", "", "mid", 55),
+        ("RG", "1/144", "Gundam Epyon", "Gundam Wing", "", "mid", 42),
+        ("RG", "1/144", "God Gundam", "G Gundam", "", "mid", 45),
+        ("RG", "1/144", "Char's Zaku II", "Mobile Suit Gundam", "", "standard", 28),
+
+        # Gundam SEED Freedom — HG Line
+        ("HG", "1/144", "Mighty Strike Freedom Gundam", "Gundam SEED Freedom", "HGSEED", "standard", 22),
+        ("HG", "1/144", "Rising Freedom Gundam", "Gundam SEED Freedom", "HGSEED", "standard", 18),
+        ("HG", "1/144", "Immortal Justice Gundam", "Gundam SEED Freedom", "HGSEED", "standard", 18),
+        ("HG", "1/144", "Black Knight Squad Shi-ve.A", "Gundam SEED Freedom", "HGSEED", "standard", 20),
+        ("HG", "1/144", "Gyan Strom", "Gundam SEED Freedom", "HGSEED", "standard", 18),
+        ("HG", "1/144", "ZGMF-X56S/ι Destiny Gundam Spec II", "Gundam SEED Freedom", "HGSEED", "standard", 20),
+        ("HG", "1/144", "ZGMF/A-262B Strike Freedom Gundam Type II", "Gundam SEED Freedom", "HGSEED", "standard", 22),
+
+        # Full Mechanics — IBO & SEED Freedom
+        ("Full Mechanics", "1/100", "Gundam Bael", "Iron-Blooded Orphans", "Full Mechanics", "mid", 45),
+        ("Full Mechanics", "1/100", "Gundam Vidar", "Iron-Blooded Orphans", "Full Mechanics", "mid", 48),
+        ("Full Mechanics", "1/100", "Gundam Gusion Rebake Full City", "Iron-Blooded Orphans", "Full Mechanics", "mid", 45),
+        ("Full Mechanics", "1/100", "Destiny Gundam Spec II", "Gundam SEED Freedom", "Full Mechanics", "mid", 50),
+        ("Full Mechanics", "1/100", "Strike Freedom Type II", "Gundam SEED Freedom", "Full Mechanics", "mid", 52),
+
+        # MGEX — Master Grade Extreme
+        ("MGEX", "1/100", "Wing Gundam Zero EW (MGEX)", "Gundam Wing", "MGEX", "grail", 240),
+        ("MGEX", "1/100", "Nu Gundam (MGEX)", "Char's Counterattack", "MGEX", "grail", 260),
+        ("MGEX", "1/100", "Freedom Gundam (MGEX)", "Gundam SEED", "MGEX", "grail", 230),
+        ("MGEX", "1/100", "RX-78-2 Gundam (MGEX)", "Mobile Suit Gundam", "MGEX", "grail", 220),
+        ("MGEX", "1/100", "Sazabi (MGEX)", "Char's Counterattack", "MGEX", "grail", 270),
+
+        # SD EX-Standard — New Releases
+        ("SD EX-Standard", "SD", "Freedom Gundam (EX-Standard)", "Gundam SEED", "EX-Standard", "standard", 8),
+        ("SD EX-Standard", "SD", "God Gundam (EX-Standard)", "G Gundam", "EX-Standard", "standard", 8),
+        ("SD EX-Standard", "SD", "Barbatos Lupus Rex (EX-Standard)", "Iron-Blooded Orphans", "EX-Standard", "standard", 8),
+        ("SD EX-Standard", "SD", "Mighty Strike Freedom (EX-Standard)", "Gundam SEED Freedom", "EX-Standard", "standard", 10),
+        ("SD EX-Standard", "SD", "Rising Freedom (EX-Standard)", "Gundam SEED Freedom", "EX-Standard", "standard", 10),
+    ]
+
     catalog = []
     for grade, scale, name, series, variant, tier, price in kits:
         catalog.append({

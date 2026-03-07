@@ -831,6 +831,77 @@ def get_curated_catalog() -> list[dict]:
         ("Pop Mart Pucky Sleep Babies Secret Moon", "Pop Mart", "Pucky", "Sleep Babies Secret Moon", "Secret", 150, True, "Crescent moon secret Pucky figure"),
         ("Pop Mart Instinctoy Erosion Molly Sunset", "Pop Mart", "Molly", "Instinctoy Erosion Sunset", "Rare", 190, False, "Sunset colorway erosion Molly"),
         ("Sonny Angel Vegetable Series Carrot", "Sonny Angel", "Vegetable Series", "Carrot", "Common", 11, False, "Vegetable series carrot hat figure"),
+
+        # ── Pop Mart — Dimoo Expansion ─────────────────────────────────────
+        ("Dimoo Space Travel Series", "Pop Mart", "Dimoo", "Space Travel", "Common", 14, False, "Space exploration themed Dimoo series"),
+        ("Dimoo Space Travel Secret Astronaut", "Pop Mart", "Dimoo", "Space Travel Secret", "Secret", 175, True, "Glow-in-dark astronaut secret Dimoo"),
+        ("Dimoo No Limits Series", "Pop Mart", "Dimoo", "No Limits", "Common", 15, False, "Sports extreme theme Dimoo"),
+        ("Dimoo No Limits Secret Skydiver", "Pop Mart", "Dimoo", "No Limits Secret", "Secret", 160, True, "Parachute skydiver secret Dimoo"),
+        ("Dimoo Animal Friends Series", "Pop Mart", "Dimoo", "Animal Friends", "Common", 14, False, "Animal costume Dimoo figures"),
+        ("Dimoo Animal Friends Secret Unicorn", "Pop Mart", "Dimoo", "Animal Friends Secret", "Secret", 180, True, "Rainbow unicorn secret Dimoo"),
+        ("Dimoo Retro Computer Series", "Pop Mart", "Dimoo", "Retro Computer", "Common", 15, False, "Retro tech themed Dimoo"),
+        ("Dimoo x Disney Frozen Elsa Collab", "Pop Mart", "Dimoo", "Disney Frozen Elsa", "Rare", 75, False, "Disney Frozen x Dimoo collaboration"),
+        ("Dimoo Letters From Snowman Series", "Pop Mart", "Dimoo", "Letters From Snowman", "Common", 15, False, "Winter snowman themed Dimoo"),
+        ("Dimoo Letters From Snowman Secret Ice", "Pop Mart", "Dimoo", "Letters From Snowman Secret", "Secret", 170, True, "Crystal ice secret Dimoo figure"),
+
+        # ── Pop Mart — Skullpanda Expansion ────────────────────────────────
+        ("Skullpanda Everyday Wonderland Series", "Pop Mart", "Skullpanda", "Everyday Wonderland", "Common", 15, False, "Alice-inspired wonderland theme"),
+        ("Skullpanda Everyday Wonderland Secret Queen", "Pop Mart", "Skullpanda", "Everyday Wonderland Secret", "Secret", 210, True, "Queen of Hearts secret figure"),
+        ("Skullpanda Hype Panda City Boy Series", "Pop Mart", "Skullpanda", "City Boy", "Common", 15, False, "Streetwear city boy theme"),
+        ("Skullpanda Hype Panda City Boy Secret DJ", "Pop Mart", "Skullpanda", "City Boy Secret DJ", "Secret", 195, True, "Turntable DJ secret Skullpanda"),
+        ("Skullpanda Temperature Of Desire Series", "Pop Mart", "Skullpanda", "Temperature Of Desire", "Common", 16, False, "Fashion desire themed series"),
+        ("Skullpanda Temperature Of Desire Secret Flame", "Pop Mart", "Skullpanda", "Temperature Of Desire Secret", "Secret", 220, True, "Blue flame secret figure"),
+        ("Skullpanda Ink Rhythm Chinese Series", "Pop Mart", "Skullpanda", "Ink Rhythm", "Common", 16, False, "Chinese ink art themed series"),
+        ("Skullpanda The Sound Series", "Pop Mart", "Skullpanda", "The Sound", "Common", 15, False, "Musical instrument themed figures"),
+
+        # ── Pop Mart — Hirono Expansion ────────────────────────────────────
+        ("Hirono Reshape Series Regular", "Pop Mart", "Hirono", "Reshape Regular", "Common", 16, False, "Dark reshape identity theme"),
+        ("Hirono Reshape Secret Broken Mask", "Pop Mart", "Hirono", "Reshape Secret Mask", "Secret", 270, True, "Cracked mask secret Hirono"),
+        ("Hirono Lang Series", "Pop Mart", "Hirono", "Lang Series", "Common", 16, False, "Wolf companion theme Hirono"),
+        ("Hirono Lang Secret Moon Wolf", "Pop Mart", "Hirono", "Lang Secret Moon", "Secret", 260, True, "Moon howling wolf secret figure"),
+        ("Hirono x Crying in the Rain Collab", "Pop Mart", "Hirono", "Crying Rain Collab", "Rare", 85, False, "Hirono x Crybaby crossover collab"),
+        ("Hirono The Other One Secret Shadow", "Pop Mart", "Hirono", "The Other One Shadow Secret", "Secret", 240, True, "Shadow silhouette secret Hirono"),
+        ("Hirono Birdie Series", "Pop Mart", "Hirono", "Birdie", "Common", 16, False, "Bird companion themed Hirono"),
+        ("Hirono Stairway Series", "Pop Mart", "Hirono", "Stairway", "Common", 16, False, "Surreal stairway theme 9 designs"),
+
+        # ── tokidoki Expansion ─────────────────────────────────────────────
+        ("tokidoki Mermicorno Series 7 Full Case", "tokidoki", "Mermicorno Series 7", "Full Case", "Common", 15, False, "Mermaid unicorno series 7"),
+        ("tokidoki Mermicorno Series 7 Secret Pearl", "tokidoki", "Mermicorno Series 7", "Secret Pearl", "Secret", 100, True, "Pearl crown mermicorno secret"),
+        ("tokidoki SANDy Series 3 Full Case", "tokidoki", "SANDy Series 3", "Full Case", "Common", 14, False, "Sandy beach themed series 3"),
+        ("tokidoki Donutella Series 4 Full Case", "tokidoki", "Donutella Series 4", "Full Case", "Common", 14, False, "Donut themed character series 4"),
+        ("tokidoki Cactus Kitties Series", "tokidoki", "Cactus Kitties", "Full Case", "Common", 14, False, "Cactus cat blind box series"),
+        ("tokidoki Neon Star Series 5", "tokidoki", "Neon Star Series 5", "Full Case", "Common", 14, False, "Neon star character series 5"),
+        ("tokidoki Tiger Nation Series", "tokidoki", "Tiger Nation", "Tiger Nation", "Common", 15, False, "Tiger themed tokidoki figures"),
+
+        # ── Finding Unicorn Expansion ──────────────────────────────────────
+        ("Finding Unicorn Shinwoo Ghost Bear Series", "Finding Unicorn", "Shinwoo Ghost Bear", "Standard", "Common", 14, False, "Popular ghost bear blind box"),
+        ("Finding Unicorn Shinwoo Ghost Bear Secret Golden", "Finding Unicorn", "Shinwoo Ghost Bear", "Golden Secret", "Secret", 160, True, "Gold metallic ghost bear secret"),
+        ("Finding Unicorn Lulu Piggy Travel Series", "Finding Unicorn", "Lulu Piggy", "Travel Series", "Common", 13, False, "Travel themed piggy figures"),
+        ("Finding Unicorn Zhuo Cat Cafe Series", "Finding Unicorn", "Zhuo Cat", "Cafe Series", "Common", 13, False, "Cat cafe themed blind box"),
+        ("Finding Unicorn RiCO Happy Factory Series", "Finding Unicorn", "RiCO", "Happy Factory", "Common", 14, False, "Factory worker themed figures"),
+        ("Finding Unicorn RiCO Secret Robot Gold", "Finding Unicorn", "RiCO", "Happy Factory Secret", "Secret", 145, True, "Gold robot Rico secret figure"),
+        ("Finding Unicorn Bao Bao Panda Dream Series", "Finding Unicorn", "Bao Bao Panda", "Dream Series", "Common", 13, False, "Dreaming panda blind box"),
+
+        # ── 52Toys Expansion ───────────────────────────────────────────────
+        ("52Toys MEGABOX Transformers Bumblebee", "52Toys", "MEGABOX", "Transformers Bumblebee", "Rare", 28, False, "Transforming cube Bumblebee figure"),
+        ("52Toys MEGABOX Transformers Optimus Prime", "52Toys", "MEGABOX", "Transformers Optimus", "Rare", 28, False, "Transforming cube Optimus figure"),
+        ("52Toys Nook Series Forest Diary", "52Toys", "Nook", "Forest Diary", "Common", 12, False, "Forest animal diary themed series"),
+        ("52Toys Nook Secret Mushroom Fairy", "52Toys", "Nook", "Forest Diary Secret", "Secret", 95, True, "Mushroom fairy Nook secret figure"),
+        ("52Toys BEASTBOX DIO Shark", "52Toys", "BEASTBOX", "DIO Shark", "Rare", 25, False, "Transforming cube shark figure"),
+        ("52Toys Kimmy & Miki Pajama Series", "52Toys", "Kimmy & Miki", "Pajama Party", "Common", 12, False, "Pajama party themed blind box"),
+        ("52Toys Panda Roll Daily Life Series", "52Toys", "Panda Roll", "Daily Life", "Common", 12, False, "Daily life panda rolling figures"),
+
+        # ── Miniso Collaborations Expansion ────────────────────────────────
+        ("Miniso x Barbie Fashion Series", "Miniso", "Barbie Collab", "Fashion Barbie", "Common", 12, False, "Barbie fashion blind box figures"),
+        ("Miniso x Minions Banana Series", "Miniso", "Minions Collab", "Banana Minions", "Common", 10, False, "Minions banana themed blind box"),
+        ("Miniso x Toy Story Aliens Series", "Miniso", "Toy Story Collab", "Aliens Green", "Common", 10, False, "Toy Story alien figures capsule"),
+        ("Miniso x Chiikawa Adventure Series", "Miniso", "Chiikawa Collab", "Adventure", "Common", 12, False, "Chiikawa adventure themed series"),
+        ("Miniso x Crayon Shin-chan Pajama Series", "Miniso", "Shin-chan Collab", "Pajama", "Common", 10, False, "Shin-chan pajama blind box"),
+
+        # ── Litor's Works Expansion ────────────────────────────────────────
+        ("Litor's Works Umasou! Dinosaur Series 3", "Litor's Works", "Umasou!", "Dinosaur Series 3", "Common", 14, False, "Cute dinosaur blind box series 3"),
+        ("Litor's Works Umasou! Secret Rex Crystal", "Litor's Works", "Umasou!", "Dinosaur S3 Secret", "Secret", 120, True, "Crystal T-Rex secret Umasou"),
+        ("Litor's Works Keep Me Company Series", "Litor's Works", "Keep Me Company", "Standard", "Common", 14, False, "Companion themed blind box"),
     ]
 
     catalog = []

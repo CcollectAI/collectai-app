@@ -840,6 +840,74 @@ def get_curated_catalog() -> list[dict]:
         ("Studio Ghibli", "Kiki's Delivery Service Bakery Scene Mini Backpack", "Mini Backpack", "BoxLunch", "high", 70),
     ]
 
+    # === ROUND 8 — Disney Parks, Horror, Marvel, Star Wars, Sanrio, Anime, Convention Exclusives (50 items) ===
+
+    # Disney Parks Exclusives (+10)
+    items += [
+        ("Disney", "50th Anniversary EARidescent Sequin Mini Backpack", "Mini Backpack", "Disney Parks", "high", 120),
+        ("Disney", "Enchanted Tiki Room Barker Bird Crossbody Bag", "Crossbody Bag", "Disney Parks", "high", 110),
+        ("Disney", "Haunted Mansion Stretching Portraits AOP Mini Backpack", "Mini Backpack", "Disney Parks", "mid", 85),
+        ("Disney", "Space Mountain Galaxy Sequin Mini Backpack", "Mini Backpack", "Disney Parks", "mid", 78),
+        ("Disney", "Cinderella Castle Fireworks Sequin Mini Backpack", "Mini Backpack", "Disney Parks", "high", 105),
+        ("Disney", "Main Street USA Confectionery Mini Backpack", "Mini Backpack", "Disney Parks", "mid", 82),
+        ("Disney", "Figment Imagination Institute Crossbody Bag", "Crossbody Bag", "Disney Parks", "high", 95),
+        ("Disney", "Orange Bird Citrus Swirl Mini Backpack", "Mini Backpack", "Disney Parks", "high", 115),
+        ("Disney", "Walt Disney World 50th Vault Collection Mini Backpack", "Mini Backpack", "Disney Parks", "high", 130),
+        ("Disney", "Polynesian Village Resort Tiki Mini Backpack", "Mini Backpack", "Disney Parks", "mid", 88),
+
+        # Horror Series (+8)
+        ("Horror", "Friday the 13th Jason Mask Glow Mini Backpack", "Mini Backpack", "Hot Topic", "high", 95),
+        ("Horror", "Nightmare on Elm Street Freddy Sweater Mini Backpack", "Mini Backpack", "Hot Topic", "high", 90),
+        ("Horror", "Halloween Michael Myers AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 75),
+        ("Horror", "Chucky Good Guys Cereal Box Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 68),
+        ("Horror", "The Shining Twins Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "high", 100),
+        ("Horror", "Beetlejuice Recently Deceased Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 72),
+        ("Horror", "Scream Ghostface Glow-in-the-Dark Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 78),
+        ("Horror", "Texas Chainsaw Massacre Leatherface Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "high", 85),
+
+        # Marvel (+8)
+        ("Marvel", "Scarlet Witch Chaos Magic Sequin Mini Backpack", "Mini Backpack", "Standard", "mid", 55),
+        ("Marvel", "Loki Helmet Cosplay Mini Backpack", "Mini Backpack", "Standard", "mid", 52),
+        ("Marvel", "Black Panther Wakanda Forever Sequin Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Marvel", "Groot Guardians of the Galaxy Cosplay Mini Backpack", "Mini Backpack", "Standard", "standard", 48),
+        ("Marvel", "Captain America Shield Crossbody Bag", "Crossbody Bag", "Standard", "standard", 45),
+        ("Marvel", "Thor Love & Thunder Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Marvel", "Moon Knight Crescent Dart Glow Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Marvel", "Doctor Strange Multiverse Madness AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+
+        # Star Wars (+7)
+        ("Star Wars", "Ahsoka Tano White Lightsaber Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Star Wars", "Boba Fett Helmet Cosplay Mini Backpack", "Mini Backpack", "Standard", "standard", 48),
+        ("Star Wars", "Padme Amidala Queen Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Star Wars", "Mandalorian Beskar Armor Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 58),
+        ("Star Wars", "Ewok Endor Celebration Mini Backpack", "Mini Backpack", "Standard", "standard", 45),
+        ("Star Wars", "R2-D2 Sequin Cosplay Mini Backpack", "Mini Backpack", "Disney Parks", "mid", 72),
+        ("Star Wars", "Millennium Falcon Blueprint AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+
+        # Sanrio (+7)
+        ("Sanrio", "Pompompurin Pancake Cosplay Crossbody Bag", "Crossbody Bag", "Hot Topic", "mid", 52),
+        ("Sanrio", "Keroppi Matcha AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 58),
+        ("Sanrio", "Badtz-Maru Punk Rock Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+        ("Sanrio", "Little Twin Stars Galaxy AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+        ("Sanrio", "Tuxedosam Sailor Cosplay Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 55),
+        ("Sanrio", "Pochacco Athletic Club AOP Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 56),
+        ("Sanrio", "Hello Kitty 50th Anniversary Gold Bow Mini Backpack", "Mini Backpack", "Hot Topic", "high", 85),
+
+        # Anime Collabs (+5)
+        ("Anime", "Sailor Moon Luna & Artemis Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "high", 75),
+        ("Anime", "Attack on Titan Survey Corps Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Anime", "Demon Slayer Tanjiro Cosplay Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 62),
+        ("Anime", "Jujutsu Kaisen Gojo AOP Mini Backpack", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Anime", "One Piece Straw Hat Pirates Map Mini Backpack", "Mini Backpack", "BoxLunch", "mid", 60),
+
+        # Convention Exclusives (+5)
+        ("Disney", "SDCC 2024 Exclusive Sorcerer Mickey Holographic Mini Backpack", "Mini Backpack", "SDCC", "grail", 220),
+        ("Disney", "NYCC 2024 Exclusive Villains Tarot Mini Backpack", "Mini Backpack", "NYCC", "grail", 200),
+        ("Marvel", "SDCC 2024 Exclusive Venom Symbiote Glow Mini Backpack", "Mini Backpack", "SDCC", "grail", 210),
+        ("Disney", "D23 2024 Exclusive Walt & Mickey Partners Mini Backpack", "Mini Backpack", "D23", "grail", 250),
+        ("Star Wars", "Celebration 2024 Exclusive Vader Chrome Mini Backpack", "Mini Backpack", "Convention", "grail", 230),
+    ]
+
     catalog = []
     for franchise, name, item_type, exclusive, tier, price in items:
         catalog.append({
@@ -896,6 +964,7 @@ def item_to_price_observation(item: dict) -> PriceObservation:
         "Easter LE": 0.60,
         "Amazon": 0.55,
         "Loungefly Exclusive": 0.65,
+        "Convention": 0.90,
         "Standard": 0.30,
     }
 

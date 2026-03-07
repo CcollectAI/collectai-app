@@ -721,6 +721,9 @@ def get_curated_catalog() -> list[dict]:
     # Round 7 expansion — 50 items
     catalog.extend(_expanded_round7_anime_bluray())
 
+    # Round 8 expansion — 55 items (605+)
+    catalog.extend(_expanded_round8_anime_bluray())
+
     return catalog
 
 
@@ -785,6 +788,92 @@ def _expanded_round7_anime_bluray() -> list[dict]:
         ("Sentai Filmworks", "Made in Abyss Complete", "Blu-ray", "Sentai LE Collector's Box", "high", 130),
         ("Sentai Filmworks", "The Aquatope on White Sand Complete", "Blu-ray", "Sentai LE Box Set", "mid", 85),
         ("Discotek Media", "City Hunter Complete", "Blu-ray", "Discotek Complete BD Collection", "high", 200),
+    ]
+    catalog = []
+    for publisher, title, fmt, edition, tier, price in releases:
+        catalog.append({
+            "publisher": publisher,
+            "title": title,
+            "format": fmt,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _expanded_round8_anime_bluray() -> list[dict]:
+    """55 new anime Blu-ray items: recent hit series, classic LEs, Aniplex exclusives,
+    Studio Trigger, Makoto Shinkai, Discotek classics."""
+    releases = [
+        # --- Recent Hit Series Blu-rays (+10) ---
+        ("Crunchyroll", "Jujutsu Kaisen Season 2 Complete", "Blu-ray", "Crunchyroll LE Complete Box", "high", 140),
+        ("JP Import", "Jujutsu Kaisen Shibuya Incident Complete", "Blu-ray", "JP BD Premium Box with Soundtrack", "grail", 320),
+        ("Crunchyroll", "Chainsaw Man Season 1 Collector's", "Blu-ray", "Crunchyroll LE with Pochita Plush", "high", 130),
+        ("JP Import", "Chainsaw Man Reze Arc Complete", "Blu-ray", "JP BD Box Set with Art Book", "high", 240),
+        ("Crunchyroll", "Spy x Family Season 2 Complete", "Blu-ray", "Crunchyroll LE Box Set", "high", 110),
+        ("JP Import", "Spy x Family Complete Collection", "Blu-ray", "JP BD Complete Box with Anya Nendoroid", "grail", 350),
+        ("Aniplex USA", "Jujutsu Kaisen Season 2", "Blu-ray", "Aniplex LE Complete Box with Gojo Acrylic", "high", 260),
+        ("Crunchyroll", "Chainsaw Man Part 2", "Blu-ray", "Crunchyroll LE with Character Cards", "mid", 85),
+        ("Crunchyroll", "Spy x Family Season 2 Part 2", "Blu-ray", "Crunchyroll LE", "mid", 75),
+        ("JP Import", "Jujutsu Kaisen 0 Collector's", "Blu-ray", "JP BD LE with Yuta Figure", "high", 180),
+
+        # --- Classic Anime Limited Editions (+10) ---
+        ("Funimation", "Cowboy Bebop Complete Series 25th Anniversary", "Blu-ray", "Funimation 25th Anniversary LE Box Set", "grail", 300),
+        ("JP Import", "Cowboy Bebop Remix Complete Remaster", "Blu-ray", "JP BD Remaster with Bonus CD", "grail", 380),
+        ("JP Import", "Trigun Complete Remaster", "Blu-ray", "JP BD Remaster Box Set", "high", 250),
+        ("Funimation", "Trigun Complete Series Collector's", "Blu-ray", "Funimation Classics LE with Art Book", "high", 160),
+        ("GKIDS", "Neon Genesis Evangelion Complete Series Remaster", "Blu-ray", "GKIDS Remaster Collector's Box", "grail", 420),
+        ("JP Import", "Neon Genesis Evangelion TV Series Remaster", "Blu-ray", "JP BD Remaster Complete with Booklet Set", "grail", 480),
+        ("JP Import", "Cowboy Bebop Session Box Vol.1", "Blu-ray", "JP BD Limited with Jazz CD", "high", 180),
+        ("JP Import", "Cowboy Bebop Session Box Vol.2", "Blu-ray", "JP BD Limited with Jazz CD Vol.2", "high", 180),
+        ("Discotek Media", "Trigun Complete BD Remaster", "Blu-ray", "Discotek Remaster Edition", "high", 120),
+        ("JP Import", "Neon Genesis Evangelion Directors Cut", "Blu-ray", "JP BD Directors Cut Edition", "grail", 350),
+
+        # --- Aniplex USA Exclusives (+8) ---
+        ("Aniplex USA", "Demon Slayer Infinity Castle Arc", "Blu-ray", "Aniplex LE with Muzan Figure", "grail", 380),
+        ("Aniplex USA", "Solo Leveling Complete Season 1", "Blu-ray", "Aniplex LE Complete Box with Shadow Art", "high", 220),
+        ("Aniplex USA", "Frieren Complete Season 1", "Blu-ray", "Aniplex LE with Frieren Staff Replica", "grail", 320),
+        ("Aniplex USA", "Kaguya-sama: Ultra Romantic Complete", "Blu-ray", "Aniplex LE Complete Collection", "high", 240),
+        ("Aniplex USA", "86 Eighty-Six Complete Collection", "Blu-ray", "Aniplex LE with Shin Figure & Soundtrack", "grail", 380),
+        ("Aniplex USA", "My Dress-Up Darling Complete", "Blu-ray", "Aniplex LE with Marin Cosplay Book", "high", 190),
+        ("Aniplex USA", "Spy x Family Season 1", "Blu-ray", "Aniplex LE Complete with Operation Strix Dossier", "high", 200),
+        ("Aniplex USA", "Dandadan Season 1", "Blu-ray", "Aniplex LE with Turbo Granny Art Cards", "high", 170),
+
+        # --- Funimation / Crunchyroll Limited Editions (+8) ---
+        ("Funimation", "My Hero Academia Complete Season 1-7", "Blu-ray", "Funimation Complete Series LE Box", "grail", 450),
+        ("Crunchyroll", "Mob Psycho 100 Complete Series", "Blu-ray", "Crunchyroll LE Complete Collection", "high", 150),
+        ("Funimation", "Black Clover Complete Collection", "Blu-ray", "Funimation LE Box Set", "high", 180),
+        ("Crunchyroll", "Hell's Paradise Complete", "Blu-ray", "Crunchyroll LE Box Set", "high", 110),
+        ("Crunchyroll", "Blue Lock Season 1 Complete", "Blu-ray", "Crunchyroll LE Box Set", "high", 120),
+        ("Crunchyroll", "Mashle: Magic and Muscles Complete", "Blu-ray", "Crunchyroll LE", "mid", 75),
+        ("Funimation", "Fire Force Complete Series", "Blu-ray", "Funimation LE Complete Box", "high", 160),
+        ("Crunchyroll", "Undead Unluck Complete Season 1", "Blu-ray", "Crunchyroll LE Box Set", "mid", 90),
+
+        # --- Studio Trigger Releases (+6) ---
+        ("Aniplex USA", "Kill la Kill Complete Series Remaster", "Blu-ray", "Aniplex LE Remaster with Don't Lose Your Way CD", "high", 280),
+        ("JP Import", "Promare Collector's Edition", "Blu-ray", "JP BD LE with Galo & Lio Art Book", "high", 180),
+        ("JP Import", "Gurren Lagann Complete Remaster", "Blu-ray", "JP BD Remaster Complete Box with Drill Keychain", "grail", 400),
+        ("GKIDS", "Promare", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 55),
+        ("JP Import", "SSSS.Gridman & Dynazenon Complete", "Blu-ray", "JP BD Complete Box Set", "high", 220),
+        ("JP Import", "Cyberpunk: Edgerunners Collector's", "Blu-ray", "JP BD LE with David Figure", "grail", 300),
+
+        # --- Makoto Shinkai Films (+6) ---
+        ("JP Import", "Suzume Collector's Edition 4K", "4K UHD", "JP 4K LE with Director Commentary Book", "high", 180),
+        ("JP Import", "Your Name. Ultimate Edition", "Blu-ray", "JP BD Ultimate Box with Storyboard Collection", "grail", 400),
+        ("JP Import", "Weathering With You Ultimate Edition", "Blu-ray", "JP BD Ultimate Box with Making-Of Book", "grail", 350),
+        ("GKIDS", "5 Centimeters Per Second", "Blu-ray", "GKIDS Collector's Edition", "mid", 45),
+        ("GKIDS", "The Garden of Words", "Blu-ray", "GKIDS Collector's Edition", "mid", 40),
+        ("GKIDS", "Children Who Chase Lost Voices", "Blu-ray", "GKIDS Collector's Edition", "mid", 42),
+
+        # --- Discotek Media Classic Releases (+7) ---
+        ("Discotek Media", "Slam Dunk Complete Series", "Blu-ray", "Discotek Complete BD Collection", "high", 190),
+        ("Discotek Media", "Hajime no Ippo Complete", "Blu-ray", "Discotek Complete BD Collection", "high", 180),
+        ("Discotek Media", "Great Teacher Onizuka Complete", "Blu-ray", "Discotek Complete BD Collection", "high", 150),
+        ("Discotek Media", "YuYu Hakusho Complete", "Blu-ray", "Discotek Complete BD Collection", "high", 170),
+        ("Discotek Media", "Rurouni Kenshin Complete", "Blu-ray", "Discotek Complete BD Collection", "high", 160),
+        ("Discotek Media", "Initial D Complete Series", "Blu-ray", "Discotek Complete BD Collection", "high", 180),
+        ("Discotek Media", "Cromartie High School Complete", "Blu-ray", "Discotek BD Remaster", "mid", 65),
     ]
     catalog = []
     for publisher, title, fmt, edition, tier, price in releases:

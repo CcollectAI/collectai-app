@@ -795,6 +795,73 @@ def get_curated_catalog() -> list[dict]:
         ("lorcana", "Disney Lorcana Shimmering Skies Booster Box (Sealed)", "Sealed", "mid", 95),
     ]
 
+    # ── Expansion Batch 2 — Disney100, Fantasia, Villains, Pixar, Lorcana Acc, Jim Shore, Walt Archives ──
+    items += [
+        # Disney100 Anniversary Items (+10)
+        ("disney100", "Disney100 Celebration Steamboat Willie Figurine", "D100 LE", "grail", 280),
+        ("disney100", "Disney100 Iridescent Spirit Jersey (Adult)", "D100 Exclusive", "high", 95),
+        ("disney100", "Disney100 Platinum Chip & Dale Figurine", "D100 LE", "high", 160),
+        ("disney100", "Disney100 Oswald the Lucky Rabbit Plush (LE 2500)", "D100 LE", "high", 120),
+        ("disney100", "Disney100 Anniversary Music Box (Steamboat Willie)", "D100 LE", "grail", 300),
+        ("disney100", "Disney100 Decades 1930s Pin & Poster Set", "D100 LE", "mid", 55),
+        ("disney100", "Disney100 Decades 1950s Pin & Poster Set", "D100 LE", "mid", 55),
+        ("disney100", "Disney100 Decades 1970s Pin & Poster Set", "D100 LE", "mid", 50),
+        ("disney100", "Disney100 Platinum Dumbo Figurine", "D100 LE", "high", 175),
+        ("disney100", "Disney100 Anniversary Castle Crystal Ornament", "D100 Exclusive", "high", 140),
+
+        # Fantasia Collectibles (+7)
+        ("fantasia", "Fantasia Sorcerer Mickey WDCC Figurine", "WDCC", "grail", 350),
+        ("fantasia", "Fantasia Chernabog Jim Shore Figurine", "Limited", "high", 120),
+        ("fantasia", "Fantasia Dancing Hippo WDCC Figurine", "WDCC", "high", 180),
+        ("fantasia", "Fantasia 80th Anniversary LE 2000 Pin", "LE 2000", "high", 85),
+        ("fantasia", "Fantasia Sorcerer Hat Light-Up Snow Globe", "Park Exclusive", "high", 150),
+        ("fantasia", "Fantasia Broom Army March Figurine Set", "Limited", "high", 110),
+        ("fantasia", "Fantasia Night on Bald Mountain Lithograph (Signed)", "Signed Print", "high", 200),
+
+        # Villains Series (+8)
+        ("villains", "Disney Villains Maleficent Dragon Jim Shore Figurine", "Limited", "high", 130),
+        ("villains", "Disney Villains Ursula Couture de Force Figurine", "Designer", "high", 100),
+        ("villains", "Disney Villains Evil Queen Midnight Masquerade Doll", "Designer LE", "high", 180),
+        ("villains", "Disney Villains Jafar as Serpent WDCC Figurine", "WDCC", "high", 160),
+        ("villains", "Disney Villains Cruella De Vil Dalmatian Fur Figurine", "Designer", "high", 95),
+        ("villains", "Disney Villains Gaston Tavern Scene Figurine", "Standard", "mid", 65),
+        ("villains", "Disney Villains Hades Ember Glow Figurine", "Park Exclusive", "high", 110),
+        ("villains", "Disney Villains Mother Gothel LE 3000 Pin", "LE 3000", "high", 80),
+
+        # Pixar Premium (+7)
+        ("pixar", "Pixar UP Carl's House Model (LE 1500)", "LE 1500", "grail", 250),
+        ("pixar", "Pixar Toy Story Woody & Buzz 25th Anniversary Figurine Set", "LE 2500", "high", 120),
+        ("pixar", "Pixar Inside Out Joy & Bing Bong Snow Globe", "Park Exclusive", "high", 95),
+        ("pixar", "Pixar Coco Miguel & Dante Day of the Dead Figurine", "Limited", "high", 85),
+        ("pixar", "Pixar Finding Dory Hank Octopus Figurine", "Park Exclusive", "high", 110),
+        ("pixar", "Pixar Monsters Inc Scare Floor Figurine Set", "Limited", "high", 100),
+        ("pixar", "Pixar WALL-E & EVE Stargazing Snow Globe", "Park Exclusive", "high", 130),
+
+        # Disney Lorcana Accessories (+5)
+        ("lorcana", "Disney Lorcana Rise of the Floodborn Playmat (Ursula)", "Premium", "mid", 45),
+        ("lorcana", "Disney Lorcana Into the Inklands Deck Box (Maui)", "Premium", "mid", 30),
+        ("lorcana", "Disney Lorcana First Chapter Card Sleeves (Elsa)", "Premium", "standard", 18),
+        ("lorcana", "Disney Lorcana Shimmering Skies Collector's Album", "Premium", "mid", 35),
+        ("lorcana", "Disney Lorcana Illumineer's Trove Gift Set (First Chapter)", "Sealed", "high", 85),
+
+        # Jim Shore Figurines (+6)
+        ("jim_shore", "Jim Shore Ariel Spirited Siren Figurine", "Standard", "mid", 70),
+        ("jim_shore", "Jim Shore Rapunzel Adventurous Artist Figurine", "Standard", "mid", 65),
+        ("jim_shore", "Jim Shore Stitch Wrapped in Christmas Figurine", "Seasonal", "mid", 60),
+        ("jim_shore", "Jim Shore Dumbo Baby Mine Figurine", "Standard", "mid", 75),
+        ("jim_shore", "Jim Shore Alice in Wonderland Curiouser Figurine", "Standard", "mid", 65),
+        ("jim_shore", "Jim Shore Villain Cruella DeVil Figurine (LE)", "Limited", "high", 95),
+
+        # Walt Disney Archives (+7)
+        ("archives", "Walt Disney Archives Mickey Mouse Film Reel Replica", "LE 1000", "grail", 300),
+        ("archives", "Walt Disney Archives Steamboat Willie Animation Cel Reproduction", "LE 500", "grail", 400),
+        ("archives", "Walt Disney Archives Snow White Apple Prop Replica", "LE 750", "grail", 250),
+        ("archives", "Walt Disney Archives Disneyland Opening Day Ticket Replica", "LE 1000", "high", 180),
+        ("archives", "Walt Disney Archives Fantasia Conductor Baton Replica", "LE 500", "grail", 350),
+        ("archives", "Walt Disney Archives Mary Poppins Carousel Horse Figurine", "LE 750", "high", 200),
+        ("archives", "Walt Disney Archives Pirates of the Caribbean Map Lithograph", "LE 1000", "high", 150),
+    ]
+
     catalog = []
     for subcategory, name, edition, tier, price in items:
         catalog.append({
@@ -849,6 +916,8 @@ def item_to_price_observation(item: dict) -> PriceObservation:
         "LE 300": 0.97, "LE 250": 0.97, "LE 100": 0.99, "LE 50": 0.99,
         "Vaulted": 0.75,
         "DCL Exclusive": 0.7,
+        "D100 LE": 0.85, "LE 500": 0.97,
+        "Sealed": 0.7, "Enchanted": 0.95, "Promo LE": 0.6,
         "Standard": 0.2,
     }
 

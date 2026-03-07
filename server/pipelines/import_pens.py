@@ -68,6 +68,8 @@ BRAND_TIER: dict[str, float] = {
     "BENU": 0.5,
     "Scribo": 0.8,
     "Esterbrook": 0.6,
+    "Kaweco": 0.5,
+    "Faber-Castell": 0.6,
 }
 
 # ---------------------------------------------------------------------------
@@ -1468,6 +1470,8 @@ def get_curated_catalog() -> list[dict]:
 
     # Expansion Batch 4 — Pelikan Art, Sailor KoP/Realo, Namiki, Visconti, Aurora
     all_tuples.extend(_expanded_batch_4())
+    # Expansion Batch 5 — Visconti, Pelikan, Sailor, Kaweco, Aurora, TWSBI, Platinum, Faber-Castell
+    all_tuples.extend(_expanded_batch_5())
 
     catalog: list[dict] = []
     for (name, brand, model_line, nib_material, nib_size,
@@ -1595,6 +1599,138 @@ def _expanded_batch_4() -> list[tuple]:
          "piston", 580, False, "Standard", "All-black edition, PVD trim"),
         ("Talentum Classic Black", "Aurora", "Talentum", "14k Gold", "M",
          "converter", 280, False, "Standard", "Entry-level Aurora, 14k nib"),
+    ]
+
+
+def _expanded_batch_5() -> list[tuple]:
+    """55 additional fountain pens — Visconti, Pelikan, Sailor, Kaweco, Aurora,
+    TWSBI, Platinum, Faber-Castell expansion."""
+    return [
+        # ── Visconti — Homo Sapiens, Van Gogh, Opera Master (+10) ──
+        ("Homo Sapiens Elegance Oversize", "Visconti", "Homo Sapiens", "Palladium", "B",
+         "vacuum", 900, False, "Standard", "Oversized basaltic lava, palladium dreamtouch nib"),
+        ("Homo Sapiens Steel Age", "Visconti", "Homo Sapiens", "Palladium", "F",
+         "vacuum", 780, False, "Standard", "Stainless steel trim, charcoal lava barrel"),
+        ("Homo Sapiens London Fog", "Visconti", "Homo Sapiens", "Palladium", "M",
+         "vacuum", 850, True, "Limited Edition", "Grey fog lava resin, limited colorway"),
+        ("Van Gogh Café Terrace at Night", "Visconti", "Van Gogh", "Steel", "F",
+         "converter", 320, False, "Standard", "Amber/blue resin, night café tribute"),
+        ("Van Gogh Irises", "Visconti", "Van Gogh", "Steel", "M",
+         "converter", 320, False, "Standard", "Purple/green resin, garden palette"),
+        ("Van Gogh Wheatfield with Crows", "Visconti", "Van Gogh", "Steel", "B",
+         "converter", 320, False, "Standard", "Blue/gold resin, dramatic landscape tribute"),
+        ("Opera Master Desert Springs", "Visconti", "Opera Master", "Palladium", "M",
+         "vacuum", 1200, True, "Limited Edition", "Amber/sand swirl acrylic, oasis motif"),
+        ("Opera Master Corsica", "Visconti", "Opera Master", "Palladium", "F",
+         "vacuum", 1250, True, "Limited Edition", "Mediterranean blue/white acrylic swirl"),
+        ("Homo Sapiens Dual Touch", "Visconti", "Homo Sapiens", "Palladium", "M",
+         "vacuum", 880, False, "Standard", "Dual-tone lava barrel, bronze and black"),
+        ("Rembrandt-S Night Blue", "Visconti", "Rembrandt", "Steel", "F",
+         "converter", 180, False, "Standard", "Night blue resin, steel nib, entry Visconti"),
+
+        # ── Pelikan Souverän — M800, M1000, special editions (+8) ──
+        ("Souveraen M800 Red-Black", "Pelikan", "Souveraen", "18k Gold", "F",
+         "piston", 560, False, "Standard", "Rare red tortoiseshell striped resin"),
+        ("Souveraen M800 Brown-Black", "Pelikan", "Souveraen", "18k Gold", "M",
+         "piston", 570, False, "Standard", "Brown tortoiseshell striped barrel"),
+        ("Souveraen M1000 Blue-Black", "Pelikan", "Souveraen", "18k Gold", "B",
+         "piston", 780, False, "Standard", "Blue striped oversized flagship"),
+        ("M800 Art Collection Burnt Orange", "Pelikan", "Art Collection", "18k Gold", "M",
+         "piston", 900, True, "Limited Edition", "2020 LE, warm burnt orange resin"),
+        ("M800 Art Collection Pistachio", "Pelikan", "Art Collection", "18k Gold", "F",
+         "piston", 880, True, "Limited Edition", "Pistachio green swirl resin, gold trim"),
+        ("Souveraen M600 Red-White", "Pelikan", "Souveraen", "14k Gold", "M",
+         "piston", 430, True, "Limited Edition", "Red and white striped special edition"),
+        ("Souveraen M400 Brown Tortoiseshell", "Pelikan", "Souveraen", "14k Gold", "F",
+         "piston", 360, False, "Standard", "Compact brown tortoiseshell resin"),
+        ("M200 Classic Gold Marbled", "Pelikan", "Classic", "Steel", "M",
+         "piston", 120, False, "Standard", "Gold marbled resin, entry Pelikan piston filler"),
+
+        # ── Sailor Pro Gear — Realo, Slim, limited editions (+8) ──
+        ("Pro Gear Realo Black Gold", "Sailor", "Realo", "21k Gold", "B",
+         "piston", 570, False, "Standard", "Piston-fill Pro Gear, black with gold trim"),
+        ("Pro Gear Slim Shikiori Amaoto Harusame", "Sailor", "Pro Gear Slim", "14k Gold", "MF",
+         "converter", 290, True, "Limited Edition", "Spring rain series, soft blue resin"),
+        ("Pro Gear Slim Dragon Palace", "Sailor", "Pro Gear Slim", "14k Gold", "F",
+         "converter", 350, True, "Limited Edition", "Ryugu-jo inspired teal and gold"),
+        ("Pro Gear Slim Manyo Nadeshiko", "Sailor", "Pro Gear Slim", "14k Gold", "MF",
+         "converter", 300, True, "Limited Edition", "Botanical series, pink carnation color"),
+        ("Pro Gear Classic Fire Special Edition", "Sailor", "Pro Gear", "21k Gold", "M",
+         "converter", 420, True, "Limited Edition", "Transparent red and gold, fire-themed"),
+        ("Pro Gear Cocktail Series Old-Fashioned", "Sailor", "Pro Gear", "21k Gold", "B",
+         "converter", 460, True, "Limited Edition", "Cocktail-inspired amber/brown resin"),
+        ("1911 Large Transparent Demonstrator", "Sailor", "1911", "21k Gold", "M",
+         "converter", 450, True, "Limited Edition", "Fully transparent cigar shape, 21k nib"),
+        ("Pro Gear Slim Mini Gold Ivory", "Sailor", "Pro Gear Slim", "14k Gold", "MF",
+         "converter", 240, False, "Standard", "Compact ivory resin, gold trim, mini format"),
+
+        # ── Kaweco Sport — Classic, AL Sport, Stone, special editions (+6) ──
+        ("Kaweco Sport Classic Navy", "Kaweco", "Sport", "Steel", "M",
+         "converter", 25, False, "Standard", "Pocket pen icon, navy blue octagonal barrel"),
+        ("Kaweco Sport Classic Bordeaux", "Kaweco", "Sport", "Steel", "F",
+         "converter", 25, False, "Standard", "Deep bordeaux red, snap cap, pocket size"),
+        ("Kaweco AL Sport Raw High Gloss", "Kaweco", "AL Sport", "Steel", "M",
+         "converter", 80, False, "Standard", "Polished raw aluminum body, premium pocket pen"),
+        ("Kaweco AL Sport Vibrant Violet", "Kaweco", "AL Sport", "Steel", "EF",
+         "converter", 75, True, "Limited Edition", "Annual limited purple anodized aluminum"),
+        ("Kaweco Sport Collectors Edition Iridescent Pearl", "Kaweco", "Sport", "Steel", "M",
+         "converter", 40, True, "Limited Edition", "Iridescent pearl resin, collector SE"),
+        ("Kaweco Brass Sport", "Kaweco", "Brass Sport", "Steel", "M",
+         "converter", 95, False, "Standard", "Solid brass body, develops patina over time"),
+
+        # ── Aurora — Optima, 88, Ipsilon (+6) ──
+        ("Optima Auroloide Green", "Aurora", "Optima", "18k Gold", "M",
+         "piston", 560, False, "Standard", "Classic green auroloide celluloid, gold bands"),
+        ("88 Minerali Lapis Lazuli", "Aurora", "88 Minerali", "18k Gold", "F",
+         "piston", 750, True, "Limited Edition", "Blue lapis mineral celluloid, gold trim"),
+        ("88 Minerali Nero Perla", "Aurora", "88 Minerali", "18k Gold", "M",
+         "piston", 720, True, "Limited Edition", "Black pearl mineral celluloid"),
+        ("Ipsilon Satin Orange", "Aurora", "Ipsilon", "Steel", "F",
+         "converter", 120, False, "Standard", "Satin finish orange resin barrel"),
+        ("Ipsilon Deluxe Bordeaux", "Aurora", "Ipsilon", "Steel", "M",
+         "converter", 160, False, "Standard", "Premium lacquered bordeaux resin, chrome trim"),
+        ("88 Anniversary Green-Gold", "Aurora", "88", "18k Gold", "B",
+         "piston", 700, True, "Limited Edition", "88th anniversary, jade green celluloid"),
+
+        # ── TWSBI — Eco, 580, Diamond series (+6) ──
+        ("TWSBI Eco Jade Green", "TWSBI", "Eco", "Steel", "M",
+         "piston", 35, False, "Standard", "Jade green demonstrator, piston fill"),
+        ("TWSBI Eco Smoke Rose Gold", "TWSBI", "Eco", "Steel", "F",
+         "piston", 40, True, "Limited Edition", "Smoke barrel with rose gold trim"),
+        ("TWSBI Diamond 580ALR Nickel Gray", "TWSBI", "Diamond 580", "Steel", "EF",
+         "piston", 70, False, "Standard", "Nickel gray aluminum ring demonstrator"),
+        ("TWSBI Diamond 580 Smoke", "TWSBI", "Diamond 580", "Steel", "M",
+         "piston", 60, False, "Standard", "Smoke tinted barrel, full-size demonstrator"),
+        ("TWSBI Diamond Mini AL Silver", "TWSBI", "Diamond Mini", "Steel", "F",
+         "piston", 60, False, "Standard", "Aluminum-accented compact piston filler"),
+        ("TWSBI Vac Mini Smoke", "TWSBI", "Vac Mini", "Steel", "M",
+         "vacuum", 60, False, "Standard", "Compact vacuum filler, smoke-tinted barrel"),
+
+        # ── Platinum — #3776 Century, Procyon, Preppy (+6) ──
+        ("Century #3776 Chenonceau White", "Platinum", "#3776 Century", "14k Gold", "F",
+         "converter", 200, True, "Limited Edition", "Pure white translucent resin, Loire tribute"),
+        ("Century #3776 Shape of a Star", "Platinum", "#3776 Century", "14k Gold", "M",
+         "converter", 250, True, "Limited Edition", "Star faceted barrel motif, limited release"),
+        ("Century #3776 Soft Fine", "Platinum", "#3776 Century", "14k Gold", "SF",
+         "converter", 200, False, "Standard", "Soft fine nib, slight flex, fine line variation"),
+        ("Procyon Luster Citrus Yellow", "Platinum", "Procyon", "Steel", "M",
+         "converter", 90, False, "Standard", "Bright citrus yellow aluminum barrel"),
+        ("Procyon Persimmon Orange", "Platinum", "Procyon", "Steel", "F",
+         "converter", 80, False, "Standard", "Warm persimmon aluminum barrel, snap cap"),
+        ("Preppy Wa Limited Sakura", "Platinum", "Preppy", "Steel", "F",
+         "converter", 8, True, "Limited Edition", "Cherry blossom print, budget collector piece"),
+
+        # ── Faber-Castell — Ondoro, Ambition, e-motion (+5) ──
+        ("Ondoro Smoked Oak", "Faber-Castell", "Ondoro", "Steel", "M",
+         "converter", 130, False, "Standard", "Hexagonal smoked oak barrel, chrome trim"),
+        ("Ondoro Graphite Black", "Faber-Castell", "Ondoro", "Steel", "F",
+         "converter", 110, False, "Standard", "Matte black lacquer hexagonal barrel"),
+        ("Ambition Walnut Wood", "Faber-Castell", "Ambition", "Steel", "M",
+         "converter", 90, False, "Standard", "Walnut wood barrel, chrome accents"),
+        ("Ambition Coconut", "Faber-Castell", "Ambition", "Steel", "F",
+         "converter", 85, False, "Standard", "Coconut brown lacquer resin, slim profile"),
+        ("e-motion Pure Black", "Faber-Castell", "e-motion", "Steel", "M",
+         "converter", 110, False, "Standard", "Matt black lacquer, chrome guilloche pattern"),
     ]
 
 

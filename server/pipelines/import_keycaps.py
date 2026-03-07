@@ -4,7 +4,7 @@ Import Artisan Keycaps & Keycap Sets catalog.
 Layer 1 (Catalog):  Curated artisan keycaps + group buy sets → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
-Covers 510+ items across:
+Covers 600+ items across:
 - Artisan makers: Jelly Key, Dwarf Factory, CYSM, Artkey, Latrialum,
   Bro Caps, GAF, ETF (Nightcaps), Alpha Keycaps, GSK, Hot Keys Project,
   Deag (Death Caps), Systematik Kaps, Lividity, Sludgekidd, Glyco Keycaps,
@@ -43,7 +43,7 @@ CATEGORY = "keycaps"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated keycap catalog (510+ items) covering artisan makers, GMK/SA/KAT/ePBT/Cherry/DSA
+    """Curated keycap catalog (600+ items) covering artisan makers, GMK/SA/KAT/ePBT/Cherry/DSA
     sets, premium grail caps, switches, deskmats, cables, stabilizers, plates,
     and full custom keyboard builds as reference items."""
 
@@ -711,7 +711,7 @@ def get_curated_catalog() -> list[dict]:
         ("Jelly Key", "Artisan", "Born of Forest Series Cherry Blossom", "SA R1", "mid", 90),
 
         # CYSM — Keyby, Boo
-        ("CYSM", "Artisan", "Keyby Coral Reef", "Cherry R4", "mid", 105),
+        ("CYSM", "Artisan", "Keyby Coral Reef V2", "Cherry R4", "mid", 105),
         ("CYSM", "Artisan", "Keyby Sakura Pink", "Cherry R4", "mid", 110),
         ("CYSM", "Artisan", "Keyby Midnight Galaxy", "Cherry R4", "mid", 130),
         ("CYSM", "Artisan", "Boo Ghost White", "Cherry R4", "mid", 80),
@@ -734,7 +734,7 @@ def get_curated_catalog() -> list[dict]:
         ("Latrialum", "Artisan", "Ethereal Radiance WASD Set", "Cherry R4", "grail", 420),
 
         # Melonkeys
-        ("Melonkeys", "Artisan", "Suika Watermelon", "Cherry R1", "mid", 85),
+        ("Melonkeys", "Artisan", "Suika Watermelon V2", "Cherry R1", "mid", 85),
         ("Melonkeys", "Artisan", "Mango Tango", "Cherry R1", "mid", 80),
         ("Melonkeys", "Artisan", "Grape Soda", "Cherry R1", "mid", 80),
         ("Melonkeys", "Artisan", "Dragon Fruit Pink", "Cherry R1", "mid", 85),
@@ -749,6 +749,77 @@ def get_curated_catalog() -> list[dict]:
         ("GSK", "Artisan", "Mandrill Volcanic Red", "Cherry R1", "mid", 130),
         ("GSK", "Artisan", "Leo Midnight Black", "Cherry R1", "mid", 120),
         ("GSK", "Artisan", "Froggo Deep Sea", "Cherry R1", "mid", 108),
+
+        # ── Dwarf Factory — Expanded Artisans (+10) ──────────────────────────
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Phantom Smoke", "Cherry R1", "mid", 72),
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Azure Depths", "Cherry R1", "mid", 68),
+        ("Dwarf Factory", "Artisan", "Anura Golden Poison Frog", "Cherry R1", "mid", 72),
+        ("Dwarf Factory", "Artisan", "Anura Blue Strawberry", "Cherry R1", "mid", 70),
+        ("Dwarf Factory", "Artisan", "The Flourish Lavender Field", "Cherry R1", "standard", 58),
+        ("Dwarf Factory", "Artisan", "The Flourish Moonlit Orchid", "Cherry R1", "standard", 55),
+        ("Dwarf Factory", "Artisan", "Moondust Solar Eclipse", "Cherry R1", "mid", 82),
+        ("Dwarf Factory", "Artisan", "Moondust Cosmic Dawn", "Cherry R1", "mid", 78),
+        ("Dwarf Factory", "Artisan", "Foodie Boba Tea", "Cherry R1", "standard", 55),
+        ("Dwarf Factory", "Artisan", "Mystic Dragon Thunderstorm", "Cherry R1", "mid", 82),
+
+        # ── CYSM / Systematik — Expanded Artisans (+8) ──────────────────────
+        ("CYSM", "Artisan", "Keyby Frozen Tundra", "Cherry R4", "mid", 115),
+        ("CYSM", "Artisan", "Keyby Neon Cyberpunk", "Cherry R4", "mid", 125),
+        ("CYSM", "Artisan", "Boba Blueberry Burst", "Cherry R4", "mid", 88),
+        ("CYSM", "Artisan", "Ice Dragon Verdant Scale", "Cherry R4", "mid", 118),
+        ("Systematik Kaps", "Artisan", "Cheshire Phantom Grin", "Cherry R1", "mid", 135),
+        ("Systematik Kaps", "Artisan", "Cheshire Neon Acid", "Cherry R1", "mid", 130),
+        ("Systematik Kaps", "Artisan", "Au Revoir Midnight Rose", "Cherry R1", "mid", 128),
+        ("Systematik Kaps", "Artisan", "Au Revoir Emerald City", "Cherry R1", "mid", 125),
+
+        # ── Jelly Key — Expanded Artisans (+8) ──────────────────────────────
+        ("Jelly Key", "Artisan", "Zen Pond III Sapphire Shimmer", "SA R1", "mid", 95),
+        ("Jelly Key", "Artisan", "Arcade Cabinet Pixel Quest", "SA R1", "mid", 92),
+        ("Jelly Key", "Artisan", "Constellation Series Andromeda", "SA R1", "mid", 98),
+        ("Jelly Key", "Artisan", "Constellation Series Cassiopeia", "SA R1", "mid", 95),
+        ("Jelly Key", "Artisan", "Ethereal Reign Stormcaller", "SA R1", "mid", 118),
+        ("Jelly Key", "Artisan", "Great Wave Tsunami Gold", "SA R1", "mid", 110),
+        ("Jelly Key", "Artisan", "Eternal Lighthouse Starfall", "SA R1", "mid", 105),
+        ("Jelly Key", "Artisan", "Nature's Rage Thunderbolt", "SA R1", "mid", 108),
+
+        # ── GMK Group Buy Sets — Expanded (+8) ──────────────────────────────
+        ("GMK", "Keycap Set", "GMK Chaos Theory Base Kit", "Cherry", "mid", 175),
+        ("GMK", "Keycap Set", "GMK Rainy Season Base Kit", "Cherry", "mid", 165),
+        ("GMK", "Keycap Set", "GMK Hammerhead Dark Base Kit", "Cherry", "mid", 185),
+        ("GMK", "Keycap Set", "GMK Cojiro Base Kit", "Cherry", "mid", 170),
+        ("GMK", "Keycap Set", "GMK Awaken Base Kit", "Cherry", "mid", 180),
+        ("GMK", "Keycap Set", "GMK Fuyu Base Kit", "Cherry", "mid", 160),
+        ("GMK", "Keycap Set", "GMK Yugo Base Kit", "Cherry", "mid", 155),
+        ("GMK", "Keycap Set", "GMK Agent 01 Base Kit", "Cherry", "mid", 185),
+
+        # ── ePBT Sets — Expanded (+6) ───────────────────────────────────────
+        ("ePBT", "Keycap Set", "ePBT Aesthetic Base Kit", "Cherry", "mid", 100),
+        ("ePBT", "Keycap Set", "ePBT Ramune Base Kit", "Cherry", "mid", 95),
+        ("ePBT", "Keycap Set", "ePBT Ivory Base Kit", "Cherry", "mid", 90),
+        ("ePBT", "Keycap Set", "ePBT Camo Base Kit", "Cherry", "mid", 105),
+        ("ePBT", "Keycap Set", "ePBT Dolch Base Kit", "Cherry", "mid", 95),
+        ("ePBT", "Keycap Set", "ePBT Spectrum Base Kit", "Cherry", "mid", 100),
+
+        # ── KAT Profile Sets — Expanded (+6) ────────────────────────────────
+        ("Keyreative", "Keycap Set", "KAT Monochrome Alpha Kit", "KAT", "mid", 105),
+        ("Keyreative", "Keycap Set", "KAT Napoleonic Alpha Kit", "KAT", "mid", 115),
+        ("Keyreative", "Keycap Set", "KAT Oasis Alpha Kit", "KAT", "mid", 110),
+        ("Keyreative", "Keycap Set", "KAT Space Dust Alpha Kit", "KAT", "mid", 120),
+        ("Keyreative", "Keycap Set", "KAT Iron Alpha Kit", "KAT", "mid", 100),
+        ("Keyreative", "Keycap Set", "KAT Drifter Alpha Kit", "KAT", "mid", 105),
+
+        # ── Drop + Collaboration Sets — Expanded (+5) ───────────────────────
+        ("Drop", "Keycap Set", "Drop + Zambumon MT3 Serika Base Kit", "MT3", "mid", 95),
+        ("Drop", "Keycap Set", "Drop + Oblotzky SA Oblivion V2 Base Kit", "SA", "mid", 110),
+        ("Drop", "Keycap Set", "Drop + T0mb3ry SA Carbon R2 Base Kit", "SA", "mid", 105),
+        ("Drop", "Keycap Set", "Drop + MiTo GMK Laser R2 Base Kit", "Cherry", "mid", 120),
+        ("Drop", "Keycap Set", "Drop + biip MT3 Cyber Base Kit", "MT3", "mid", 90),
+
+        # ── SA Profile Sets — Expanded (+4) ─────────────────────────────────
+        ("Signature Plastics", "Keycap Set", "SA Arcane Base Kit", "SA", "mid", 165),
+        ("Signature Plastics", "Keycap Set", "SA Sunday Morning Base Kit", "SA", "mid", 155),
+        ("Signature Plastics", "Keycap Set", "SA Grand Budapest Base Kit", "SA", "mid", 170),
+        ("Signature Plastics", "Keycap Set", "SA Espresso Base Kit", "SA", "mid", 145),
     ]
 
     catalog = []

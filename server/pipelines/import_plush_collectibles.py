@@ -854,6 +854,27 @@ def get_curated_catalog() -> list[dict]:
         ("Jiji Cat Kiki's Delivery", "Ghibli", "Kiki's Delivery Service", 'Medium 25cm', 35, "Common", False, "Black cat companion Jiji"),
         ("No-Face Kaonashi Plush", "Ghibli", "Spirited Away", 'Medium 25cm', 40, "Uncommon", False, "Masked spirit No-Face"),
         ("Calcifer Flame Plush", "Ghibli", "Howl's Moving Castle", 'Small 15cm', 30, "Common", False, "Fire demon Calcifer"),
+
+        # ── Jellycat — Limited Editions & Retired Grails (5) ─────────────
+        ("Jellycat Woodland Bunny Beige", "Jellycat", "Woodland", 'Medium 31cm', 120, "HTF", True, "Retired 2015 woodland series, suede nose"),
+        ("Jellycat Brambling Hedgehog", "Jellycat", "Brambling", 'Medium 22cm', 95, "HTF", True, "Retired 2017, spiky corduroy quills"),
+        ("Jellycat Puffles Penguin Large", "Jellycat", "Puffles", 'Large 32cm', 85, "Rare", True, "Retired 2019, fluffy tuxedo penguin"),
+        ("Jellycat Liberty London Dragon", "Jellycat", "Liberty Collab", 'Medium 26cm', 110, "Rare", False, "Liberty London exclusive, floral wings"),
+        ("Jellycat Amuseable Rainbow", "Jellycat", "Amuseable", 'Large 24cm', 70, "Rare", True, "Retired 2021, rainbow arch with cord legs"),
+
+        # ── Squishmallows — Rare & HTF Exclusives (5) ────────────────────
+        ("Babs the Blue Jay 1st Edition", "Squishmallows", "Original Squad", '12"', 180, "Grail", True, "2017 first generation, extremely rare"),
+        ("Isis the Seal Walgreens Exclusive", "Squishmallows", "Walgreens Exclusive", '12"', 95, "HTF", True, "Walgreens exclusive 2019, retired"),
+        ("Zelina the Zombie Cat", "Squishmallows", "Halloween Squad", '12"', 110, "HTF", True, "Halloween 2020 limited, stitched pattern"),
+        ("Janet the Jellyfish Glow", "Squishmallows", "Sea Life Squad", '12"', 85, "HTF", True, "Glow-in-the-dark tentacles, Five Below exclusive"),
+        ("Sunny the Bee Jumbo", "Squishmallows", "Original Squad", '24" Jumbo', 140, "HTF", False, "Jumbo bee, Costco exclusive 2024"),
+
+        # ── Build-A-Bear — Exclusive & Limited (5) ───────────────────────
+        ("Charizard Build-A-Bear", "Build-A-Bear", "Pokémon", 'Standard 40cm', 75, "Rare", True, "Pokémon online exclusive, retired 2022"),
+        ("Pikachu Sleepover Build-A-Bear", "Build-A-Bear", "Pokémon", 'Standard 40cm', 65, "Uncommon", True, "Sleepover outfit set, retired"),
+        ("Chewbacca Build-A-Bear", "Build-A-Bear", "Star Wars", 'Standard 45cm', 55, "Uncommon", True, "Wookiee with bandolier, retired 2021"),
+        ("Spring Frog Build-A-Bear", "Build-A-Bear", "Seasonal", 'Standard 35cm', 45, "Uncommon", True, "Spring 2020 limited, green patterned frog"),
+        ("Ariel Little Mermaid Build-A-Bear", "Build-A-Bear", "Disney Princess", 'Standard 40cm', 60, "Rare", True, "Little Mermaid themed bear with tail outfit, retired 2023"),
     ]
 
     # ── Batch: Steiff, Gund, Aurora, Jellycat, Kapibarasan, Rilakkuma (50 items) ──

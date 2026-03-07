@@ -672,6 +672,8 @@ def get_curated_catalog() -> list[dict]:
 
     # ── Expansion Batch 8 — 50 more lightsticks ──
     items += _expanded_batch_8()
+    # ── Expansion Batch 9 — 55+ more lightsticks ──
+    items += _expanded_batch_9()
 
     catalog = []
     for group, name, version, variant, tier, price in items:
@@ -758,6 +760,78 @@ def _expanded_batch_8() -> list[tuple]:
         # BABYMONSTER
         ("BABYMONSTER", "BABYMONSTER Official Lightstick", "v1", "Standard", "mid", 45),
         ("BABYMONSTER", "BABYMONSTER Lightstick (SHEESH Debut Tour)", "v1-debut", "Tour Exclusive", "high", 72),
+    ]
+
+
+def _expanded_batch_9() -> list[tuple]:
+    """55+ additional K-pop lightsticks — 4th/5th gen, solo artists, updated versions, special editions, older gen."""
+    return [
+        # ── 4th Gen Group Lightsticks ──
+        ("KISS OF LIFE", "KISS OF LIFE Official Lightstick", "v1", "Standard", "mid", 42),
+        ("KISS OF LIFE", "KISS OF LIFE Lightstick (Midas Touch Gold Edition)", "v1-gold", "Limited Color", "high", 72),
+        ("TWS", "TWS Official Lightstick (Sparkling Blue)", "v1-blue", "Standard", "mid", 40),
+        ("TWS", "TWS Lightstick (First Howling Tour Edition)", "v1-tour", "Tour Exclusive", "high", 78),
+        ("ILLIT", "ILLIT Official Lightstick (Magnetic Pink)", "v1-pink", "Standard", "mid", 42),
+        ("ILLIT", "ILLIT Lightstick (Super Real Me Tour Edition)", "v1-tour", "Tour Exclusive", "high", 75),
+        ("EVNNE", "EVNNE Official Lightstick (Target: ME Ver.)", "v1-target", "Standard", "mid", 40),
+        ("EVNNE", "EVNNE Lightstick (UN: SEEN Tour Chrome)", "v1-chrome", "Tour Exclusive", "high", 78),
+        ("PLAVE", "PLAVE Official Lightstick", "v1", "Standard", "mid", 45),
+        ("PLAVE", "PLAVE Lightstick (Asterum Tour Holographic)", "v1-holo", "Tour Exclusive", "high", 85),
+        ("KATSEYE", "KATSEYE Official Lightstick", "v1", "Standard", "mid", 42),
+        ("MEOVV", "MEOVV Official Lightstick", "v1", "Standard", "mid", 40),
+
+        # ── Updated Versions of Existing Lightsticks ──
+        ("Stray Kids", "Stray Kids Nachimbong Ver. 3", "v3", "Standard", "mid", 48),
+        ("Stray Kids", "Stray Kids Nachimbong Ver. 3 (dominATE Tour)", "v3-dominate", "Tour Exclusive", "high", 88),
+        ("ATEEZ", "ATEEZ Lightiny Ver. 3", "v3", "Standard", "mid", 45),
+        ("ATEEZ", "ATEEZ Lightiny Ver. 3 (TOWARDS THE LIGHT Tour)", "v3-ttl", "Tour Exclusive", "high", 85),
+        ("NCT 127", "NCT 127 Lightstick Ver. 3 (Neo Zone Edition)", "v3", "Standard", "mid", 48),
+        ("aespa", "aespa Lightstick Ver. 2", "v2", "Standard", "mid", 45),
+        ("aespa", "aespa Lightstick Ver. 2 (Supernova Chrome)", "v2-supernova", "Limited Color", "high", 78),
+        ("ITZY", "ITZY Light Ring Ver. 2", "v2", "Standard", "mid", 45),
+        ("Red Velvet", "Red Velvet Lightstick Ver. 2", "v2", "Standard", "mid", 42),
+        ("SEVENTEEN", "SEVENTEEN Carat Bong Ver. 4", "v4", "Standard", "mid", 48),
+
+        # ── Solo Artist Lightsticks ──
+        ("Jimin (BTS)", "Jimin Official Solo Lightstick", "v1", "Standard", "mid", 55),
+        ("Jimin (BTS)", "Jimin Lightstick (MUSE Tour Edition)", "v1-muse", "Tour Exclusive", "high", 95),
+        ("j-hope (BTS)", "j-hope Official Solo Lightstick", "v1", "Standard", "mid", 55),
+        ("j-hope (BTS)", "j-hope Lightstick (Jack in the Box Tour)", "v1-jitb", "Tour Exclusive", "high", 90),
+        ("Suga (BTS)", "Agust D/Suga Solo Lightstick", "v1", "Standard", "high", 65),
+        ("Suga (BTS)", "Agust D Lightstick (D-DAY Tour Silver)", "v1-dday", "Tour Exclusive", "grail", 120),
+        ("V (BTS)", "V Official Solo Lightstick", "v1", "Standard", "high", 60),
+        ("Jungkook (BTS)", "Jungkook Official Solo Lightstick (Golden)", "v1", "Standard", "high", 65),
+        ("Baekhyun (EXO)", "Baekhyun Solo Lightstick", "v1", "Standard", "mid", 50),
+        ("Nayeon (TWICE)", "Nayeon Solo Lightstick (POP! Edition)", "v1", "Standard", "mid", 48),
+
+        # ── Special / Limited Edition Versions ──
+        ("BTS", "BTS ARMY Bomb (10th Anniversary Diamond Edition)", "10th-anniv", "Limited", "grail", 280),
+        ("Blackpink", "Blackpink Lightstick (The Show Live 2021 Ver.)", "v2-theshow", "Tour Exclusive", "grail", 160),
+        ("TWICE", "Candy Bong (5th Anniversary Jewel Edition)", "5th-anniv", "Limited", "grail", 130),
+        ("Stray Kids", "Stray Kids Nachimbong (5-STAR Seoul Gold)", "v2-5star", "Tour Exclusive", "high", 95),
+        ("SEVENTEEN", "Carat Bong (Follow Again Japan Tour Pearl)", "v3-pearl", "Tour Exclusive", "grail", 115),
+        ("NewJeans", "NewJeans Lightstick (Get Up Summer Splash)", "v1-splash", "Limited Color", "high", 92),
+        ("IVE", "IVE Lightstick (I AM Crystal Edition)", "v2-crystal", "Limited Color", "high", 82),
+        ("LE SSERAFIM", "LE SSERAFIM Lightstick (UNFORGIVEN Blood Moon)", "v2-blood", "Limited Color", "high", 88),
+
+        # ── Older Gen Group Sticks ──
+        ("BIGBANG", "BIGBANG Official Lightstick Ver. 4 (Crown)", "v4", "Discontinued", "grail", 150),
+        ("BIGBANG", "BIGBANG Lightstick (MADE Tour Final Ver.)", "v4-made", "Tour Exclusive", "grail", 200),
+        ("2PM", "2PM Official Lightstick", "v1", "Discontinued", "high", 85),
+        ("BEAST/Highlight", "Highlight Official Lightstick", "v1", "Discontinued", "high", 80),
+        ("INFINITE", "INFINITE Official Lightstick", "v1", "Discontinued", "high", 90),
+        ("B.A.P", "B.A.P Official Matoki Lightstick", "v1", "Discontinued", "high", 95),
+        ("BTOB", "BTOB Official Lightstick (Cube)", "v1", "Discontinued", "high", 75),
+        ("T-ARA", "T-ARA Official Lightstick", "v1", "Discontinued", "high", 85),
+
+        # ── Fan-made / Unofficial Premium ──
+        ("BTS", "BTS ARMY Bomb Custom Crystal Shell (Fan-made)", "custom", "Fan Premium", "mid", 45),
+        ("Blackpink", "Blackpink Hammerbong Custom LED Ring (Fan-made)", "custom", "Fan Premium", "mid", 40),
+        ("TWICE", "Candy Bong Custom Glitter Case (Fan-made)", "custom", "Fan Premium", "standard", 28),
+        ("Stray Kids", "Nachimbong Custom Decal Kit (Fan-made)", "custom", "Fan Premium", "standard", 25),
+        ("SEVENTEEN", "Carat Bong Custom Gem Insert (Fan-made)", "custom", "Fan Premium", "mid", 35),
+        ("NewJeans", "NewJeans Lightstick Custom Bunny Ears (Fan-made)", "custom", "Fan Premium", "mid", 38),
+        ("aespa", "aespa Lightstick Custom Neon Shell (Fan-made)", "custom", "Fan Premium", "standard", 30),
     ]
 
 

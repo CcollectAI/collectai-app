@@ -760,6 +760,88 @@ def get_curated_catalog() -> list[dict]:
         ("Vinegar Syndrome", "The Slumber Party Massacre Collection", "Blu-ray", "VS Box Set", "high", 80),
         ("Vinegar Syndrome", "Dead Heat", "4K UHD", "VS Limited", "mid", 42),
         ("Vinegar Syndrome", "The Prowler", "4K UHD", "VS Limited", "mid", 42),
+
+        # ── 4K UHD Steelbooks — Nolan Films ──────────────────────────────
+        ("Best Buy Exclusive", "Interstellar", "4K UHD", "Steelbook", "high", 65),
+        ("Best Buy Exclusive", "Tenet", "4K UHD", "Steelbook", "mid", 45),
+        ("Best Buy Exclusive", "Dunkirk", "4K UHD", "Steelbook", "mid", 40),
+        ("Best Buy Exclusive", "Inception", "4K UHD", "Steelbook", "high", 60),
+
+        # ── 4K UHD Steelbooks — Marvel ────────────────────────────────────
+        ("Best Buy Exclusive", "Avengers: Endgame", "4K UHD", "Steelbook", "high", 55),
+        ("Best Buy Exclusive", "Spider-Man: No Way Home", "4K UHD", "Steelbook", "mid", 45),
+        ("Best Buy Exclusive", "Black Panther: Wakanda Forever", "4K UHD", "Steelbook", "mid", 40),
+        ("Zavvi Exclusive", "Guardians of the Galaxy Vol. 3", "4K UHD", "Steelbook", "mid", 42),
+
+        # ── 4K UHD Steelbooks — Studio Ghibli ────────────────────────────
+        ("GKIDS / Shout Factory", "Howl's Moving Castle", "4K UHD", "Steelbook", "high", 55),
+        ("GKIDS / Shout Factory", "Spirited Away", "4K UHD", "Steelbook", "high", 60),
+        ("GKIDS / Shout Factory", "Castle in the Sky", "4K UHD", "Steelbook", "mid", 45),
+        ("GKIDS / Shout Factory", "Nausicaa of the Valley of the Wind", "4K UHD", "Steelbook", "high", 50),
+
+        # ── Criterion Collection — Classics ──────────────────────────────
+        ("Criterion", "Tokyo Story", "4K UHD", "Criterion 4K #235", "mid", 38),
+        ("Criterion", "The Passion of Joan of Arc", "Blu-ray", "Criterion #62", "mid", 32),
+        ("Criterion", "Bicycle Thieves", "4K UHD", "Criterion 4K #374", "mid", 36),
+        ("Criterion", "Cries and Whispers", "Blu-ray", "Criterion #101", "standard", 28),
+        ("Criterion", "Wild Strawberries", "4K UHD", "Criterion 4K #139", "mid", 38),
+
+        # ── Criterion Collection — New Releases ──────────────────────────
+        ("Criterion", "All of Us Strangers", "Blu-ray", "Criterion #1160", "standard", 30),
+        ("Criterion", "Fallen Leaves", "Blu-ray", "Criterion #1148", "standard", 28),
+        ("Criterion", "The Holdovers", "Blu-ray", "Criterion #1162", "standard", 30),
+        ("Criterion", "Anatomy of a Fall", "Blu-ray", "Criterion #1157", "standard", 30),
+        ("Criterion", "The Taste of Things", "Blu-ray", "Criterion #1152", "standard", 28),
+
+        # ── Arrow Video Limited Editions ──────────────────────────────────
+        ("Arrow Video", "Hellraiser: Quartet of Torment", "4K UHD", "Arrow Box Set", "grail", 120),
+        ("Arrow Video", "Audition", "4K UHD", "Arrow Limited", "mid", 40),
+        ("Arrow Video", "Killer Klowns from Outer Space", "4K UHD", "Arrow Limited", "mid", 42),
+        ("Arrow Video", "The Hills Have Eyes", "4K UHD", "Arrow Limited", "mid", 44),
+        ("Arrow Video", "Witchfinder General", "4K UHD", "Arrow Limited", "mid", 42),
+        ("Arrow Video", "Tenebrae (Dario Argento)", "4K UHD", "Arrow Limited", "mid", 44),
+        ("Arrow Video", "The House That Jack Built", "4K UHD", "Arrow Limited", "mid", 42),
+        ("Arrow Video", "Zombie Flesh Eaters", "4K UHD", "Arrow Limited", "mid", 44),
+
+        # ── Anime Blu-ray Box Sets ────────────────────────────────────────
+        ("Funimation", "Neon Genesis Evangelion Complete Series", "Blu-ray", "Box Set", "grail", 150),
+        ("Funimation", "Cowboy Bebop 25th Anniversary Complete Series", "Blu-ray", "Box Set", "high", 90),
+        ("Funimation", "Akira 35th Anniversary", "4K UHD", "Limited Edition", "grail", 120),
+        ("Aniplex", "Demon Slayer: Kimetsu no Yaiba Season 1 Limited", "Blu-ray", "Box Set", "high", 85),
+        ("GKIDS / Shout Factory", "Ghost in the Shell 4K Steelbook", "4K UHD", "Steelbook", "high", 65),
+        ("Discotek Media", "Urusei Yatsura Complete Series", "Blu-ray", "Box Set", "high", 80),
+        ("Viz Media", "Naruto Shippuden Complete Collection", "Blu-ray", "Box Set", "high", 95),
+        ("All The Anime", "Perfect Blue Ultimate Edition", "Blu-ray", "Limited Edition", "high", 70),
+
+        # ── Horror Collector Editions — Scream Factory ────────────────────
+        ("Scream Factory", "Halloween 4K Complete Collection", "4K UHD", "Box Set", "grail", 130),
+        ("Scream Factory", "They Live Collector's Edition", "4K UHD", "Collector's Edition", "high", 55),
+        ("Scream Factory", "The Fog Collector's Edition", "4K UHD", "Collector's Edition", "mid", 45),
+        ("Scream Factory", "Prince of Darkness Collector's Edition", "4K UHD", "Collector's Edition", "mid", 45),
+
+        # ── Horror Collector Editions — Shout Factory ─────────────────────
+        ("Shout Factory", "Phantasm Sphere Collection", "Blu-ray", "Box Set", "high", 85),
+        ("Shout Factory", "Return of the Living Dead Collector's Edition", "4K UHD", "Collector's Edition", "high", 55),
+        ("Shout Factory", "Pumpkinhead Collector's Edition", "Blu-ray", "Collector's Edition", "mid", 38),
+
+        # ── Boutique Labels — Vinegar Syndrome Extra ──────────────────────
+        ("Vinegar Syndrome", "Abby", "4K UHD", "VS Limited", "mid", 40),
+        ("Vinegar Syndrome", "The House on Sorority Row", "4K UHD", "VS Limited", "mid", 42),
+        ("Vinegar Syndrome", "Pledge Night", "Blu-ray", "VS Limited", "mid", 35),
+
+        # ── Boutique Labels — Indicator / Eureka ──────────────────────────
+        ("Indicator", "The Manchurian Candidate", "Blu-ray", "Indicator Limited", "mid", 40),
+        ("Indicator", "Witness for the Prosecution", "Blu-ray", "Indicator Limited", "mid", 38),
+        ("Eureka / MoC", "Metropolis Complete", "Blu-ray", "Masters of Cinema", "high", 55),
+        ("Eureka / MoC", "Oldboy", "4K UHD", "Masters of Cinema", "mid", 42),
+        ("Eureka / MoC", "Sansho the Bailiff", "Blu-ray", "Masters of Cinema", "mid", 35),
+
+        # ── Disney Vault Releases ─────────────────────────────────────────
+        ("Disney", "Bambi", "4K UHD", "Disney Steelbook", "mid", 40),
+        ("Disney", "Fantasia", "4K UHD", "Disney Steelbook", "mid", 42),
+        ("Disney", "The Jungle Book (1967)", "4K UHD", "Disney Steelbook", "mid", 38),
+        ("Disney", "Sleeping Beauty", "4K UHD", "Disney Steelbook", "mid", 40),
+        ("Disney", "Pinocchio", "4K UHD", "Disney Steelbook", "mid", 38),
     ]
 
     catalog = []

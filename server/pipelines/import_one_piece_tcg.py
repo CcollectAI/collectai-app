@@ -1536,6 +1536,78 @@ def get_curated_catalog() -> list[dict]:
          True, "ST-15 Metal leader, Kid Pirates"),
         ("Boa Hancock (ST-16)", "ST16", "ST16-001", "L", "Green", 8.00,
          True, "ST-16 Kuja leader, Amazon Lily"),
+
+        # === ROUND 8 — OP-07/OP-08 Chase Cards, Manga Rares, Promos, Sealed ===
+
+        # ── OP-07 Chase Cards (additional) ──
+        ("Jewelry Bonney (OP07 SEC)", "OP07", "OP07-115", "SEC", "Green/Yellow", 52.00,
+         False, "OP07 Secret Rare Bonney, Egghead transformation"),
+        ("Vegapunk Stella (OP07)", "OP07", "OP07-046", "SR", "Blue", 10.00,
+         False, "World's greatest scientist, Egghead arc"),
+        ("S-Shark (OP07)", "OP07", "OP07-063", "R", "Blue", 2.50,
+         False, "Seraphim of Jinbe, Fish-Man Karate"),
+        ("Saturn (OP07)", "OP07", "OP07-085", "R", "Black", 3.50,
+         False, "Gorosei Five Elder, Egghead arrival"),
+        ("Edison (Alt Art)", "OP07", "OP07-053-AA", "Alt Art", "Yellow", 35.00,
+         False, "OP07 Satellite Edison alt art"),
+
+        # ── OP-08 Chase Cards (additional) ──
+        ("Garp (OP08 SEC)", "OP08", "OP08-115", "SEC", "Blue/Yellow", 48.00,
+         False, "OP08 Secret Rare Marine Hero Garp"),
+        ("Scopper Gaban (Manga Art)", "OP08", "OP08-045-MA", "Manga Art", "Green", 260.00,
+         False, "OP08 Roger Pirates Scopper manga art"),
+        ("Whitebeard Young (Manga Art)", "OP08", "OP08-022-MA", "Manga Art", "Red", 310.00,
+         False, "OP08 Young Whitebeard God Valley manga art"),
+        ("Rayleigh (OP08 Alt Art)", "OP08", "OP08-053-AA", "Alt Art", "Black/Green", 105.00,
+         False, "OP08 Dark King Rayleigh alt art variant 2"),
+        ("Nefertari D. Lili (Alt Art)", "OP08", "OP08-050-AA", "Alt Art", "Yellow", 50.00,
+         False, "OP08 Ancient queen alt art, D. clan revelation"),
+
+        # ── Manga Rare Alternate Arts ──
+        ("Boa Hancock (Manga Art)", "OP06", "OP06-069-MA", "Manga Art", "Green/Yellow", 420.00,
+         False, "OP06 Empress Hancock manga art, Love-Love Beam"),
+        ("Lucci Awakened (Manga Art)", "OP06", "OP06-086-MA", "Manga Art", "Black", 290.00,
+         False, "OP06 CP0 Lucci awakened manga art"),
+        ("Vinsmoke Reiju (Manga Art)", "OP05", "OP05-015-MA", "Manga Art", "Red", 310.00,
+         False, "OP05 Poison Pink Reiju manga art"),
+        ("Shirahoshi (Manga Art)", "OP05", "OP05-022-MA", "Manga Art", "Green", 280.00,
+         False, "OP05 Poseidon mermaid princess manga art"),
+        ("Mihawk (OP01 Manga Art)", "OP01", "OP01-070-MA", "Manga Art", "Black", 340.00,
+         False, "OP01 World's Strongest Swordsman manga art"),
+        ("Crocodile (OP04 Manga Art)", "OP04", "OP04-058-MA", "Manga Art", "Blue/Black", 380.00,
+         True, "OP04 Sir Crocodile manga art leader"),
+        ("Fujitora (Manga Art)", "OP04", "OP04-042-MA", "Manga Art", "Yellow", 250.00,
+         False, "OP04 Admiral Fujitora blind justice manga art"),
+        ("Eustass Kid (OP09 Manga Art)", "OP09", "OP09-055-MA", "Manga Art", "Purple", 270.00,
+         False, "OP09 Awakened Kid manga art, Assign"),
+
+        # ── Promo Cards (additional) ──
+        ("Robin (Manga Expo 2025)", "PROMO", "P-047-MX25", "SP", "Blue", 70.00,
+         False, "Manga Expo 2025 exclusive Robin promo"),
+        ("Shanks (World Championship 2025)", "PROMO", "P-048-WC25", "SP", "Red", 280.00,
+         False, "2025 World Championship winner Shanks promo"),
+        ("Luffy (Weekly Shonen Jump 25th Anniv.)", "PROMO", "P-049-WSJ25", "SP", "Red", 50.00,
+         False, "Weekly Shonen Jump 25th anniversary Luffy promo"),
+        ("Ace (Anime Japan 2025)", "PROMO", "P-050-AJ25", "SP", "Red/Blue", 45.00,
+         False, "Anime Japan 2025 exclusive Ace promo"),
+        ("Zoro (Flagship Battle 2025 Winner)", "PROMO", "P-051-FB25", "SP", "Green", 160.00,
+         False, "2025 Flagship Battle tournament winner Zoro"),
+        ("Nami (Super Pre-Release OP11)", "PROMO", "P-052-SPR11", "SP", "Green", 40.00,
+         False, "OP11 Super Pre-Release exclusive Nami promo"),
+
+        # ── Sealed Booster Boxes (additional) ──
+        ("OP-01 Romance Dawn JP Sealed Box", "OP01", "BOX-OP01-JP", "SP", "Red", 420.00,
+         False, "Sealed 24-pack JP box, original JP printing"),
+        ("OP-02 Paramount War JP Sealed Box", "OP02", "BOX-OP02-JP", "SP", "Red", 280.00,
+         False, "Sealed 24-pack JP box, Ace leader set"),
+        ("OP-03 Pillars of Strength JP Sealed Box", "OP03", "BOX-OP03-JP", "SP", "Purple", 250.00,
+         False, "Sealed JP box, Yamato manga art chase"),
+        ("OP-04 Kingdoms of Intrigue JP Sealed Box", "OP04", "BOX-OP04-JP", "SP", "Blue", 230.00,
+         False, "Sealed JP box, Robin manga art chase set"),
+        ("OP-05 Awakening JP Sealed Box", "OP05", "BOX-OP05-JP", "SP", "Black", 200.00,
+         False, "Sealed JP box, Law/Kid manga art chase"),
+        ("OP-11 Dawn of New World JP Sealed Box", "OP11", "BOX-OP11-JP", "SP", "Red/Yellow", 160.00,
+         False, "Sealed JP box, Nika manga art chase"),
     ]
 
     # ── OP-07/08/09 chase cards, promos, DON!! foils, Gear 5 variants (50 items) ──

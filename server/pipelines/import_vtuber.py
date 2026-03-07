@@ -758,6 +758,81 @@ def get_curated_catalog() -> list[dict]:
         ("Nijisanji", "Various", "Collab Goods", "Nijisanji x Sega Arcade Prize Plush Set (8pc)", "Standard", "mid", 42),
         ("Indie", "Vedal987", "Birthday Set", "Vedal987 x Neuro-sama Anniversary Complete Set", "Anniversary", "high", 65),
         ("Indie", "CottontailVA", "Birthday Set", "CottontailVA Birthday 2024 Full Merch Set", "Birthday", "mid", 38),
+
+        # ══════════════════════════════════════════════════════════════
+        # EXPANSION TO 605+ — ~55 additional under-represented items
+        # ══════════════════════════════════════════════════════════════
+
+        # ── Hololive EN Gen 3 (Advent) — Shiori, Bijou, Nerissa, FUWAMOCO (+8) ──
+        ("Hololive", "Shiori Novella", "Voice Pack", "Shiori Novella Forbidden Library ASMR Voice Pack", "Birthday", "mid", 30),
+        ("Hololive", "Shiori Novella", "Signed Shikishi", "Shiori Novella Hand-Signed 1st Anniversary Shikishi", "Anniversary", "grail", 160),
+        ("Hololive", "Koseki Bijou", "Birthday Set", "Koseki Bijou Birthday 2025 Complete Merch Set", "Birthday", "high", 72),
+        ("Hololive", "Koseki Bijou", "Voice Pack", "Koseki Bijou Gem Hunter Voice Pack", "Birthday", "mid", 28),
+        ("Hololive", "FUWAMOCO", "Concert Goods", "FUWAMOCO Bau Bau Live 2025 Penlight Set", "Concert", "mid", 42),
+        ("Hololive", "FUWAMOCO", "Signed Shikishi", "FUWAMOCO Hand-Signed Twin Shikishi Board Set", "Anniversary", "grail", 280),
+        ("Hololive", "Nerissa Ravencroft", "Birthday Set", "Nerissa Ravencroft Birthday 2025 Complete Set", "Birthday", "high", 68),
+        ("Hololive", "Nerissa Ravencroft", "Concert Goods", "Nerissa Ravencroft Karaoke Live Towel + Penlight", "Solo Concert", "mid", 40),
+
+        # ── Hololive ID — Risu, Moona, Iofi, Ollie, Anya, Zeta, Kaela (+7) ──
+        ("Hololive", "Ayunda Risu", "Tapestry", "Ayunda Risu 5th Anniversary B2 Tapestry", "Anniversary", "mid", 26),
+        ("Hololive", "Ayunda Risu", "Voice Pack", "Ayunda Risu Squirrel ASMR Voice Pack", "Birthday", "mid", 28),
+        ("Hololive", "Airani Iofifteen", "Tapestry", "Airani Iofifteen 5th Anniversary Art B2 Tapestry", "Anniversary", "mid", 24),
+        ("Hololive", "Kureiji Ollie", "Voice Pack", "Kureiji Ollie Zombie Wake-Up Voice Pack", "Birthday", "mid", 28),
+        ("Hololive", "Anya Melfissa", "Acrylic Stand", "Anya Melfissa 4th Anniversary Acrylic Stand", "Anniversary", "mid", 22),
+        ("Hololive", "Vestia Zeta", "Voice Pack", "Vestia Zeta Secret Agent Voice Pack", "Birthday", "mid", 28),
+        ("Hololive", "Kaela Kovalskia", "Acrylic Stand", "Kaela Kovalskia 2nd Anniversary Acrylic Stand", "Anniversary", "mid", 24),
+
+        # ── Nijisanji EN — Luxiem/Noctyx (+8) ──
+        ("Nijisanji", "Vox Akuma", "Tapestry", "Vox Akuma 3rd Anniversary B2 Tapestry", "Anniversary", "mid", 32),
+        ("Nijisanji", "Vox Akuma", "Voice Pack", "Vox Akuma Demon Lord ASMR Voice Pack", "Birthday", "mid", 35),
+        ("Nijisanji", "Luca Kaneshiro", "Signed Shikishi", "Luca Kaneshiro Hand-Signed Farewell Shikishi Board", "Anniversary", "grail", 180),
+        ("Nijisanji", "Ike Eveland", "Tapestry", "Ike Eveland Birthday 2024 B2 Tapestry", "Birthday", "mid", 26),
+        ("Nijisanji", "Shu Yamino", "Acrylic Stand", "Shu Yamino 2nd Anniversary Acrylic Stand", "Anniversary", "mid", 24),
+        ("Nijisanji", "Fulgur Ovid", "Tapestry", "Fulgur Ovid 2nd Anniversary B2 Tapestry", "Anniversary", "mid", 28),
+        ("Nijisanji", "Alban Knox", "Tapestry", "Alban Knox Birthday 2024 B2 Tapestry", "Birthday", "mid", 26),
+        ("Nijisanji", "Yugo Asuma", "Tapestry", "Yugo Asuma Graduation Memorial B2 Tapestry", "Anniversary", "high", 65),
+
+        # ── VShojo — Ironmouse, Kson, Henya, Froot, Geega, Mata, Hime (+7) ──
+        ("VShojo", "Ironmouse", "Voice Pack", "Ironmouse Birthday 2025 Demon Queen Voice Pack", "Birthday", "mid", 35),
+        ("VShojo", "Kson", "Tapestry", "Kson 2nd VShojo Anniversary B2 Tapestry", "Anniversary", "mid", 28),
+        ("VShojo", "Henya the Genius", "Tapestry", "Henya the Genius Birthday 2025 B2 Tapestry", "Birthday", "mid", 26),
+        ("VShojo", "Froot", "Acrylic Stand", "Apricot (Froot) New Outfit Acrylic Stand", "Outfit Reveal", "mid", 22),
+        ("VShojo", "Geega", "Tapestry", "Geega 3rd Anniversary B2 Tapestry", "Anniversary", "mid", 24),
+        ("VShojo", "Matara Kan", "Acrylic Stand", "Matara Kan 2nd VShojo Anniversary Acrylic Stand", "Anniversary", "mid", 24),
+        ("VShojo", "Hime Hajime", "Birthday Set", "Hime Hajime Birthday 2025 Complete Merch Set", "Birthday", "mid", 42),
+
+        # ── Hololive JP Recent Gens — ReGLOSS/DEV_IS & FLOW GLOW (+8) ──
+        ("Hololive", "Otonose Kanade", "Voice Pack", "Otonose Kanade Piano ASMR Voice Pack", "Birthday", "mid", 30),
+        ("Hololive", "Todoroki Hajime", "Birthday Set", "Todoroki Hajime Birthday 2025 Complete Set", "Birthday", "high", 62),
+        ("Hololive", "Ichijou Ririka", "Birthday Set", "Ichijou Ririka Birthday 2025 Merch Set", "Birthday", "high", 58),
+        ("Hololive", "Juufuutei Raden", "Signed Shikishi", "Juufuutei Raden Hand-Signed Art Shikishi Board", "Birthday", "grail", 175),
+        ("Hololive", "Hiodoshi Ao", "Birthday Set", "Hiodoshi Ao Birthday 2025 Complete Set", "Birthday", "high", 55),
+        ("Hololive", "Isaki Riona", "Birthday Set", "Isaki Riona 1st Anniversary Merch Set", "Anniversary", "high", 52),
+        ("Hololive", "Koganei Niko", "Birthday Set", "Koganei Niko 1st Anniversary Merch Set", "Anniversary", "high", 50),
+        ("Hololive", "Mizumiya Su", "Birthday Set", "Mizumiya Su 1st Anniversary Merch Set", "Anniversary", "high", 50),
+
+        # ── Holostars / STAR — Aruran, Rikka, Miyabi, Astel, Izuru, Roberu, Temma (+7) ──
+        ("Holostars", "Arurandeisu", "Birthday Set", "Arurandeisu Birthday 2024 Complete Merch Set", "Birthday", "mid", 42),
+        ("Holostars", "Rikka", "Concert Goods", "Rikka Solo Live 2024 Penlight + Towel Set", "Solo Concert", "mid", 38),
+        ("Holostars", "Kishido Temma", "Acrylic Stand", "Kishido Temma 4th Anniversary Acrylic Stand", "Anniversary", "mid", 22),
+        ("Holostars", "Yukoku Roberu", "Birthday Set", "Yukoku Roberu Birthday 2024 Full Merch Set", "Birthday", "mid", 45),
+        ("Holostars", "Astel Leda", "Tapestry", "Astel Leda 4th Anniversary B2 Tapestry", "Anniversary", "mid", 24),
+        ("Holostars", "Kageyama Shien", "Birthday Set", "Kageyama Shien Birthday 2024 Complete Set", "Birthday", "mid", 48),
+        ("Holostars", "Various", "Concert Goods", "Holostars 5th Anniversary Live Penlight Set", "Concert", "mid", 35),
+
+        # ── Phase Connect — Pippa, Tenma, Lia, Lumi, Ember (+5) ──
+        ("Phase Connect", "Pipkin Pippa", "Voice Pack", "Pipkin Pippa Rabbit Hole Voice Pack", "Birthday", "mid", 28),
+        ("Phase Connect", "Tenma Maemi", "Acrylic Stand", "Tenma Maemi 3rd Anniversary Acrylic Stand", "Anniversary", "mid", 22),
+        ("Phase Connect", "Lumi Celestia", "Birthday Set", "Lumi Celestia Birthday 2025 Complete Merch Set", "Birthday", "mid", 42),
+        ("Phase Connect", "Lumi Celestia", "Acrylic Stand", "Lumi Celestia 1st Anniversary Acrylic Stand", "Anniversary", "mid", 20),
+        ("Phase Connect", "Ember Amane", "Birthday Set", "Ember Amane Birthday 2025 Merch Set", "Birthday", "mid", 38),
+
+        # ── Independent VTuber Collabs (+5) ──
+        ("Indie", "Dokibird", "Concert Goods", "Dokibird Freedom Live 2025 Penlight + Wristband", "Concert", "mid", 38),
+        ("Indie", "Neuro-sama", "Nendoroid", "Nendoroid Neuro-sama x Evil Neuro Twin Set #2350", "Standard", "grail", 110),
+        ("Indie", "Shylily", "Voice Pack", "Shylily Orca ASMR Voice Pack (Limited)", "Birthday", "mid", 30),
+        ("Indie", "Filian", "Tapestry", "Filian x Shylily Collab B2 Tapestry", "Standard", "mid", 28),
+        ("Indie", "Bao The Whale", "Acrylic Stand", "Bao x Shylily Summer Duo Acrylic Stand Set", "Standard", "mid", 26),
     ]
 
     # Merge helper functions

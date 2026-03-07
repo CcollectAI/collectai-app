@@ -859,6 +859,75 @@ def get_curated_catalog() -> list[dict]:
         ("Spy x Family", "K)NoW_NAME", "Spy x Family OST Vinyl (2LP)", "Vinyl", "Limited", "high", 70),
         ("Kaiju No. 8", "Yutaka Yamada", "Kaiju No. 8 Original Soundtrack", "CD", "Standard", "mid", 20),
         ("Wind Breaker", "KOHTA YAMAMOTO", "Wind Breaker Original Soundtrack", "CD", "Standard", "standard", 16),
+
+        # ── Recent Anime Hit OSTs (10) ──────────────────────────────────
+        ("Shangri-La Frontier", "Takumi Ozawa", "Shangri-La Frontier Original Soundtrack", "CD", "Standard", "mid", 20),
+        ("The Apothecary Diaries", "Kevin Penkin", "The Apothecary Diaries Complete OST (2CD)", "CD", "Limited", "mid", 42),
+        ("The Apothecary Diaries", "Kevin Penkin", "The Apothecary Diaries OST Vinyl (2LP)", "Vinyl", "Limited", "high", 78),
+        ("Undead Unluck", "Kenichiro Suehiro", "Undead Unluck Original Soundtrack", "CD", "Standard", "mid", 20),
+        ("Delicious in Dungeon", "Yasunori Mitsuda", "Delicious in Dungeon Complete OST (2CD)", "CD", "Limited", "mid", 45),
+        ("Delicious in Dungeon", "Yasunori Mitsuda", "Delicious in Dungeon OST Vinyl (2LP)", "Vinyl", "Limited", "high", 80),
+        ("Metallic Rouge", "Taisei Iwasaki", "Metallic Rouge Original Soundtrack", "CD", "Standard", "mid", 18),
+        ("Sousou no Frieren", "Evan Call", "Frieren S2 Original Soundtrack", "CD", "Standard", "mid", 22),
+        ("Blue Box", "Yoshiaki Dewa", "Blue Box Original Soundtrack", "CD", "Standard", "mid", 18),
+        ("Sakamoto Days", "Kenichiro Suehiro", "Sakamoto Days Original Soundtrack", "CD", "Standard", "mid", 20),
+
+        # ── Classic Anime Reissue CDs (10) ──────────────────────────────
+        ("Urusei Yatsura", "Fumitaka Anzai", "Urusei Yatsura Complete BGM Collection (3CD Reissue)", "CD Box", "Reissue", "high", 65),
+        ("Saint Seiya", "Seiji Yokoyama", "Saint Seiya Complete Song Collection (4CD Reissue)", "CD Box", "Reissue", "high", 75),
+        ("Captain Tsubasa", "Various", "Captain Tsubasa Original Soundtrack Remastered (2CD)", "CD", "Reissue", "mid", 38),
+        ("Fist of the North Star", "Nozomi Aoki", "Hokuto no Ken TV Series Complete BGM (3CD Reissue)", "CD Box", "Reissue", "high", 70),
+        ("Space Battleship Yamato", "Hiroshi Miyagawa", "Space Battleship Yamato Complete BGM Remaster (4CD)", "CD Box", "Reissue", "grail", 120),
+        ("Galaxy Express 999", "Nozomi Aoki", "Galaxy Express 999 OST Complete Reissue (2CD)", "CD", "Reissue", "high", 55),
+        ("Dragon Ball", "Shunsuke Kikuchi", "Dragon Ball Original TV Series BGM Remaster (3CD)", "CD Box", "Reissue", "high", 80),
+        ("Slam Dunk", "BMF / Takayuki Hattori", "Slam Dunk Complete Soundtrack Reissue (2CD)", "CD", "Reissue", "high", 50),
+        ("Yu Yu Hakusho", "Yusuke Honma", "Yu Yu Hakusho Complete BGM Reissue (2CD)", "CD", "Reissue", "mid", 45),
+        ("Ranma 1/2", "Various", "Ranma 1/2 Song Collection Reissue (2CD)", "CD", "Reissue", "mid", 40),
+
+        # ── Video Game x Anime Crossover Soundtracks (8) ────────────────
+        ("Persona 5 The Animation", "Shoji Meguro", "Persona 5 The Animation Complete Soundtrack", "CD", "Standard", "mid", 28),
+        ("Persona 3 The Movie", "Shoji Meguro", "Persona 3 Movie OST Complete Box (4CD)", "CD Box", "Limited", "high", 85),
+        ("Tales of Zestiria the X", "Go Shiina", "Tales of Zestiria the X OST", "CD", "Standard", "mid", 22),
+        ("Fate/Grand Order", "Keita Haga", "Fate/Grand Order Absolute Demonic Front Babylonia OST (2CD)", "CD", "Limited", "mid", 45),
+        ("Steins;Gate", "Takeshi Abo", "Steins;Gate Symphonic Reunion Concert Album", "CD", "Limited", "high", 60),
+        ("NieR:Automata Ver1.1a", "Keiichi Okabe", "NieR:Automata Anime OST Vinyl (2LP)", "Vinyl", "Limited", "high", 85),
+        ("Cyberpunk: Edgerunners", "Akira Yamaoka", "Cyberpunk: Edgerunners Score Vinyl (2LP)", "Vinyl", "Limited", "high", 90),
+        ("Tower of God", "Kevin Penkin", "Tower of God Season 2 Original Soundtrack", "CD", "Standard", "mid", 20),
+
+        # ── Character Song CDs (8) ──────────────────────────────────────
+        ("Love Live! Superstar!!", "Liella!", "Love Live! Superstar!! Complete Character Song Box", "CD Box", "Limited", "high", 75),
+        ("THE iDOLM@STER", "Various", "THE iDOLM@STER Million Live! Character Song Collection (5CD)", "CD Box", "Limited", "grail", 120),
+        ("Hololive", "Various", "Hololive IDOL PROJECT Character Song Album Vol.1", "CD", "Limited", "high", 55),
+        ("BanG Dream!", "Various", "BanG Dream! All Band Character Song Best (3CD)", "CD Box", "Limited", "high", 65),
+        ("Ensemble Stars!", "Various", "Ensemble Stars!! Album Series Complete Character Song Box (6CD)", "CD Box", "Limited", "grail", 130),
+        ("Uta no Prince-sama", "Various", "Uta no Prince-sama Maji LOVE Complete Character Song Box (4CD)", "CD Box", "Limited", "high", 85),
+        ("Macross Frontier", "Sheryl Nome / Ranka Lee", "Macross Frontier Complete Character Song Collection (3CD)", "CD Box", "Limited", "high", 70),
+        ("Re:Zero", "Various", "Re:Zero Character Song Album Vol.1-3 Complete (3CD)", "CD Box", "Limited", "high", 60),
+
+        # ── Live Concert Albums (7) ─────────────────────────────────────
+        ("Joe Hisaishi", "Joe Hisaishi", "Joe Hisaishi Symphonic Concert World Tour 2024 Live", "CD", "Limited", "high", 55),
+        ("Yoko Kanno", "Yoko Kanno", "Yoko Kanno Seatbelts Live in Tokyo 2024 (2CD)", "CD", "Limited", "high", 65),
+        ("Hiroyuki Sawano", "Hiroyuki Sawano", "Hiroyuki Sawano [nZk] Live 2025 Complete (2CD+Blu-ray)", "CD Box", "Limited", "grail", 110),
+        ("Yuki Kajiura", "Yuki Kajiura", "Yuki Kajiura LIVE Vol.20 FictionJunction 2024", "CD", "Limited", "high", 50),
+        ("LiSA", "LiSA", "LiSA LiVE is Smile Always 10th Anniversary Concert Album (2CD)", "CD", "Limited", "high", 55),
+        ("Linked Horizon", "Revo", "Linked Horizon Live Tour Shingeki no Kiseki 2024", "CD", "Limited", "high", 60),
+        ("Aimer", "Aimer", "Aimer Live in Budokan blanc et noir 2024 (2CD+Blu-ray)", "CD Box", "Limited", "grail", 100),
+
+        # ── Drama CDs from Popular Series (7) ──────────────────────────
+        ("My Hero Academia", "Various VA", "My Hero Academia Drama CD: Rescue Training Arc", "CD", "Limited", "mid", 35),
+        ("Haikyuu!!", "Various VA", "Haikyuu!! Drama CD: The Day Before Match (Nekoma)", "CD", "Limited", "mid", 32),
+        ("Demon Slayer", "Various VA", "Demon Slayer: Kimetsu Academy Drama CD Complete Box (3CD)", "CD Box", "Limited", "high", 75),
+        ("Jujutsu Kaisen", "Various VA", "Jujutsu Kaisen Drama CD: After Hours at Jujutsu High", "CD", "Limited", "mid", 38),
+        ("Spy x Family", "Various VA", "Spy x Family Drama CD: Operation Doggy Date", "CD", "Limited", "mid", 35),
+        ("Tokyo Revengers", "Various VA", "Tokyo Revengers Drama CD: Founding Days", "CD", "Limited", "mid", 30),
+        ("Blue Lock", "Various VA", "Blue Lock Drama CD: Team Z Off-Field Arc", "CD", "Limited", "mid", 32),
+
+        # ── Limited Edition Box Sets (5) ────────────────────────────────
+        ("One Piece", "Kohei Tanaka / Shiro Hamaguchi", "One Piece 25th Anniversary Complete Score Box (12CD)", "CD Box", "Limited", "grail", 250),
+        ("Naruto", "Toshio Masuda / Yasuharu Takanashi", "Naruto + Shippuden Complete OST Vinyl Box (10LP)", "Vinyl", "Limited", "grail", 320),
+        ("Fullmetal Alchemist", "Akira Senju", "FMA Brotherhood Complete Score (4CD Box)", "CD Box", "Limited", "grail", 140),
+        ("Dragon Ball Z", "Shunsuke Kikuchi", "Dragon Ball Z Complete BGM Collection Vinyl (8LP Box)", "Vinyl", "Limited", "grail", 280),
+        ("Sailor Moon", "Takanori Arisawa", "Sailor Moon 30th Anniversary Complete Music Collection (10CD)", "CD Box", "Limited", "grail", 200),
     ]
 
     catalog = []

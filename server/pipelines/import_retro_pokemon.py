@@ -735,6 +735,81 @@ def get_curated_catalog() -> list[dict]:
         ("WOTC", "Skyridge Gengar Holo #H9", "Near Mint", "grail", 200, 600),
         ("WOTC", "Skyridge Umbreon Holo #H29", "Near Mint", "grail", 180, 500),
         ("WOTC", "Legendary Collection Reverse Holo Hitmonlee #13", "Near Mint", "high", 55, 160),
+
+        # ── Japanese Exclusive Promos ─────────────────────────────────────
+        ("WOTC JP", "Corocoro Shining Mew Promo #151", "Near Mint", "grail", 300, 900),
+        ("WOTC JP", "Masaki Gengar Promo", "Near Mint", "grail", 250, 700),
+        ("WOTC JP", "Masaki Alakazam Promo", "Near Mint", "grail", 200, 600),
+        ("WOTC JP", "Masaki Golem Promo", "Near Mint", "high", 80, 220),
+        ("WOTC JP", "Masaki Omastar Promo", "Near Mint", "high", 75, 200),
+        ("WOTC JP", "Lucky Stadium Promo Chansey", "Near Mint", "high", 60, 160),
+        ("WOTC JP", "Tropical Mega Battle Tropical Wind Promo", "Near Mint", "grail", 800, 2500),
+        ("WOTC JP", "Grand Party Trainer Promo", "Near Mint", "grail", 400, 1200),
+        ("WOTC JP", "No. 1 Trainer Promo (Regional)", "Near Mint", "grail", 1500, 5000),
+        ("WOTC JP", "Fan Club Porygon Promo", "Near Mint", "high", 90, 250),
+
+        # ── Neo Genesis Non-Holo Rares ────────────────────────────────────
+        ("WOTC", "Neo Genesis Heracross 1st Edition Non-Holo #6", "Near Mint", "mid", 25, 65),
+        ("WOTC", "Neo Genesis Skarmory 1st Edition Non-Holo #13", "Near Mint", "mid", 20, 55),
+        ("WOTC", "Neo Genesis Steelix 1st Edition Non-Holo #15", "Near Mint", "mid", 30, 75),
+        ("WOTC", "Neo Genesis Kingdra 1st Edition Non-Holo #8", "Near Mint", "mid", 22, 60),
+        ("WOTC", "Neo Genesis Azumarill 1st Edition Non-Holo #2", "Near Mint", "mid", 18, 50),
+
+        # ── Neo Revelation Non-Holo Rares ─────────────────────────────────
+        ("WOTC", "Neo Revelation Ampharos 1st Edition Holo #1", "Near Mint", "high", 55, 150),
+        ("WOTC", "Neo Revelation Houndoom 1st Edition Holo #8", "Near Mint", "high", 65, 170),
+        ("WOTC", "Neo Revelation Magneton 1st Edition Holo #10", "Near Mint", "mid", 35, 90),
+        ("WOTC", "Neo Revelation Misdreavus 1st Edition Holo #11", "Near Mint", "mid", 40, 100),
+        ("WOTC", "Neo Revelation Porygon2 1st Edition Holo #12", "Near Mint", "mid", 35, 95),
+
+        # ── Gym Heroes Holos ──────────────────────────────────────────────
+        ("WOTC", "Gym Heroes Erika's Vileplume 1st Edition Holo #5", "Near Mint", "high", 55, 140),
+        ("WOTC", "Gym Heroes Lt. Surge's Electabuzz 1st Edition Holo #6", "Near Mint", "high", 50, 130),
+        ("WOTC", "Gym Heroes Misty's Tentacruel 1st Edition Holo #10", "Near Mint", "mid", 35, 90),
+        ("WOTC", "Gym Heroes Rocket's Hitmonchan 1st Edition Holo #11", "Near Mint", "high", 55, 140),
+
+        # ── Gym Challenge Holos ───────────────────────────────────────────
+        ("WOTC", "Gym Challenge Blaine's Charizard 1st Edition Holo #2", "Near Mint", "grail", 350, 1000),
+        ("WOTC", "Gym Challenge Giovanni's Gyarados 1st Edition Holo #5", "Near Mint", "high", 70, 180),
+        ("WOTC", "Gym Challenge Sabrina's Alakazam 1st Edition Holo #16", "Near Mint", "high", 60, 160),
+        ("WOTC", "Gym Challenge Koga's Ditto 1st Edition Holo #10", "Near Mint", "high", 55, 150),
+
+        # ── e-Series Expansion ────────────────────────────────────────────
+        ("WOTC", "Expedition Base Set Blastoise Holo #4", "Near Mint", "high", 80, 200),
+        ("WOTC", "Expedition Base Set Venusaur Holo #30", "Near Mint", "high", 70, 180),
+        ("WOTC", "Aquapolis Suicune Crystal Type #H28", "Near Mint", "grail", 300, 850),
+        ("WOTC", "Aquapolis Nidoking Crystal Type #H22", "Near Mint", "grail", 200, 600),
+        ("WOTC", "Skyridge Kabutops Holo #H14", "Near Mint", "high", 80, 220),
+        ("WOTC", "Skyridge Machamp Holo #H16", "Near Mint", "high", 50, 140),
+        ("WOTC", "Skyridge Golem Holo #H8", "Near Mint", "high", 45, 120),
+
+        # ── Vending Machine Series (Japanese) ─────────────────────────────
+        ("Bandai JP", "Vending Machine Series 1 Pikachu", "Near Mint", "high", 60, 180),
+        ("Bandai JP", "Vending Machine Series 2 Mewtwo", "Near Mint", "high", 55, 160),
+        ("Bandai JP", "Vending Machine Series 3 Dragonite", "Near Mint", "high", 50, 140),
+        ("Bandai JP", "Vending Machine Series 1 Charizard", "Near Mint", "grail", 120, 350),
+        ("Bandai JP", "Vending Machine Series 2 Blastoise", "Near Mint", "high", 80, 220),
+
+        # ── Southern Islands Set ──────────────────────────────────────────
+        ("WOTC", "Southern Islands Mew #1", "Near Mint", "grail", 120, 350),
+        ("WOTC", "Southern Islands Togepi #6", "Near Mint", "mid", 25, 70),
+        ("WOTC", "Southern Islands Slowking #3", "Near Mint", "mid", 30, 80),
+        ("WOTC", "Southern Islands Marill #5", "Near Mint", "mid", 20, 60),
+        ("WOTC", "Southern Islands Complete Binder Set (18 Cards)", "Near Mint", "grail", 300, 800),
+
+        # ── VS Series (Japanese) ──────────────────────────────────────────
+        ("Media Factory JP", "VS Series Lance's Charizard #98", "Near Mint", "grail", 200, 600),
+        ("Media Factory JP", "VS Series Karen's Umbreon #91", "Near Mint", "grail", 150, 400),
+        ("Media Factory JP", "VS Series Clair's Dragonite #100", "Near Mint", "high", 80, 220),
+        ("Media Factory JP", "VS Series Jasmine's Steelix #50", "Near Mint", "high", 60, 160),
+        ("Media Factory JP", "VS Series Falkner's Pidgeot #8", "Near Mint", "mid", 35, 90),
+
+        # ── Sealed Vintage Products ───────────────────────────────────────
+        ("WOTC", "Base Set Booster Pack (Charizard Art) Sealed", "Sealed", "grail", 500, 800),
+        ("WOTC", "Fossil Booster Pack Sealed (Lapras Art)", "Sealed", "grail", 200, 350),
+        ("WOTC", "Team Rocket Booster Pack Sealed (Dark Charizard Art)", "Sealed", "grail", 250, 400),
+        ("WOTC", "Gym Heroes Booster Pack Sealed (Misty Art)", "Sealed", "grail", 180, 300),
+        ("WOTC", "Neo Genesis Booster Pack Sealed (Lugia Art)", "Sealed", "grail", 350, 600),
     ]
 
     catalog = []

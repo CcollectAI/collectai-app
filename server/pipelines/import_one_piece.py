@@ -1,7 +1,7 @@
 """
-Import One Piece collectibles data (500+ items).
+Import One Piece collectibles data (600+ items).
 
-Layer 1 (Catalog):  Curated 500+ items across P.O.P., Figuarts, Ichiban Kuji,
+Layer 1 (Catalog):  Curated 600+ items across P.O.P., Figuarts, Ichiban Kuji,
                     Banpresto, Tsume, VAH, WCF, ship models, cards → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
@@ -42,7 +42,7 @@ CATEGORY = "one_piece"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated One Piece collectibles catalog (500+ items)."""
+    """Curated One Piece collectibles catalog (600+ items)."""
 
     # Format: (line, name, variant, rarity_tier, price_eur)
     # rarity_tier: grail (>200), high (100-200), mid (40-100), standard (<40)
@@ -760,6 +760,9 @@ def get_curated_catalog() -> list[dict]:
     # ── Expansion Batch 6 — 50 more One Piece collectibles ──
     items += _expanded_batch_6()
 
+    # ── Expansion Batch 7 — 55 more One Piece collectibles ──
+    items += _expanded_batch_7()
+
     catalog = []
     for line, name, variant, tier, price in items:
         catalog.append({
@@ -834,6 +837,79 @@ def _expanded_batch_6() -> list[tuple]:
         ("BWFC", "Trafalgar Law", "World Colosseum 2 Vol. 6 Room", "high", 80),
         ("BWFC", "Sanji", "World Colosseum Vol. 2 Diable Jambe", "high", 75),
         ("BWFC", "Boa Hancock", "World Colosseum 2 Vol. 5 Love Hurricane", "high", 88),
+    ]
+
+
+def _expanded_batch_7() -> list[tuple]:
+    """55 additional One Piece collectibles — Film Red, Egghead Arc, Wano Arc,
+    Card Game accessories/playmats, Stampede/Strong World movie items, East Blue Saga."""
+    return [
+        # ── Film Red Merchandise (+10) ──────────────────────────────────────
+        ("Film Red", "Uta", "Figuarts ZERO Concert Dress Ver.", "high", 110),
+        ("Film Red", "Shanks", "S.H.Figuarts Film Red Final Battle", "high", 140),
+        ("Film Red", "Gordon", "DXF Film Red", "standard", 22),
+        ("Film Red", "Luffy", "Glitter & Glamours Film Red Gear 5", "mid", 45),
+        ("Film Red", "Uta", "Nendoroid Film Red Concert Ver.", "mid", 55),
+        ("Film Red", "Shanks & Uta", "Ichiban Kuji Prize A Music Duo", "high", 130),
+        ("Film Red", "Tot Musica", "Figuarts ZERO Extra Battle Tot Musica", "high", 150),
+        ("Film Red", "Uta", "P.O.P. Limited Film Red Diva Ver.", "grail", 220),
+        ("Film Red", "Koby", "DXF Film Red Marine Ver.", "standard", 25),
+        ("Film Red", "Straw Hat Crew", "Film Red Premium Figure Set (5 pcs)", "high", 120),
+
+        # ── Egghead Arc Figures (+10) ──────────────────────────────────────
+        ("Egghead Arc", "Vegapunk (Stella)", "DXF The Grandline Men Egghead", "mid", 35),
+        ("Egghead Arc", "Vegapunk (Lilith)", "DXF The Grandline Lady Egghead", "mid", 38),
+        ("Egghead Arc", "Vegapunk (Shaka)", "Figuarts ZERO Extra Battle", "mid", 80),
+        ("Egghead Arc", "Kizaru", "S.H.Figuarts Egghead Yata no Kagami", "high", 140),
+        ("Egghead Arc", "Saturn", "Figuarts ZERO Extra Battle Gorosei", "high", 120),
+        ("Egghead Arc", "Jewelry Bonney", "DXF The Grandline Lady Egghead Nika", "mid", 40),
+        ("Egghead Arc", "Luffy", "Figuarts ZERO Gear 5 Egghead Battle", "high", 130),
+        ("Egghead Arc", "Dorry & Brogy", "Ichiban Kuji Prize A Giant Warriors", "high", 110),
+        ("Egghead Arc", "Lucci", "S.H.Figuarts Egghead Awakened Leopard", "high", 135),
+        ("Egghead Arc", "Stussy", "DXF The Grandline Lady Egghead", "mid", 38),
+
+        # ── Wano Arc Collectibles (+10) ────────────────────────────────────
+        ("Wano Arc", "Luffy", "Figuarts ZERO Snakeman Extra Battle Wano", "high", 115),
+        ("Wano Arc", "Zoro", "GEM Series Enma Black Blade Wano", "high", 140),
+        ("Wano Arc", "Kin'emon", "DXF The Grandline Men Wano Samurai", "standard", 28),
+        ("Wano Arc", "Momonosuke", "DXF Dragon Form Wano Finale", "mid", 45),
+        ("Wano Arc", "Kaido vs Luffy", "Figuarts ZERO Extra Battle Rooftop Clash", "grail", 200),
+        ("Wano Arc", "Queen", "DXF The Grandline Men Beast Pirates", "standard", 30),
+        ("Wano Arc", "King", "Figuarts ZERO Extra Battle Lunarian Fire", "high", 110),
+        ("Wano Arc", "Sanji", "GEM Series Germa Raid Suit Wano", "high", 130),
+        ("Wano Arc", "Kozuki Hiyori", "Glitter & Glamours Wano", "standard", 28),
+        ("Wano Arc", "Tama", "DXF The Grandline Children Wano", "standard", 20),
+
+        # ── One Piece Card Game Accessories/Playmats (+8) ──────────────────
+        ("OP Card Game", "Playmat", "Official Egghead Arc Tournament Playmat", "mid", 75),
+        ("OP Card Game", "Playmat", "Official Wano Finale Zoro vs King Playmat", "mid", 70),
+        ("OP Card Game", "Playmat", "Official 1st Anniversary Luffy Playmat", "high", 100),
+        ("OP Card Game", "Deck Box", "Official Yamato Premium Deck Box", "standard", 25),
+        ("OP Card Game", "Deck Box", "Official Portgas D. Ace Premium Deck Box", "standard", 25),
+        ("OP Card Game", "Sleeves", "Official Egghead Vegapunk Sleeves 70ct", "standard", 18),
+        ("OP Card Game", "Sleeves", "Official Wano Zoro Enma Sleeves 70ct", "standard", 18),
+        ("OP Card Game", "Playmat", "Regional Championship Shanks Prize Playmat", "high", 130),
+
+        # ── Stampede / Strong World Movie Items (+7) ───────────────────────
+        ("Stampede", "Monkey D. Luffy", "DXF Stampede Festival Outfit", "mid", 40),
+        ("Stampede", "Roger", "Ichiban Kuji Stampede Prize A Pirate King", "high", 120),
+        ("Stampede", "Straw Hat Crew", "Stampede DXF Complete Set (9 pcs)", "high", 150),
+        ("Strong World", "Monkey D. Luffy", "DXF Strong World Black Suit", "mid", 50),
+        ("Strong World", "Nami", "DXF Strong World Cowgirl Ver.", "mid", 45),
+        ("Strong World", "Shiki", "DXF Strong World Golden Lion", "mid", 55),
+        ("Strong World", "Straw Hat Crew", "Strong World Styling Complete Set (9 pcs)", "high", 140),
+
+        # ── Classic East Blue Saga Items (+10) ─────────────────────────────
+        ("East Blue Saga", "Monkey D. Luffy", "P.O.P. Sailing Again Romance Dawn", "high", 160),
+        ("East Blue Saga", "Roronoa Zoro", "P.O.P. Sailing Again Pirate Hunter", "high", 155),
+        ("East Blue Saga", "Nami", "P.O.P. Playback Memories Arlong Park Tears", "high", 145),
+        ("East Blue Saga", "Sanji", "P.O.P. Sailing Again Baratie Chef", "high", 150),
+        ("East Blue Saga", "Usopp", "P.O.P. Sailing Again Syrup Village", "high", 130),
+        ("East Blue Saga", "Arlong", "Figuarts ZERO Shark on Darts", "mid", 75),
+        ("East Blue Saga", "Buggy", "Figuarts ZERO Chop Chop Festival", "mid", 65),
+        ("East Blue Saga", "Captain Kuro", "DXF East Blue Pirate Captains", "standard", 30),
+        ("East Blue Saga", "Don Krieg", "DXF East Blue Pirate Captains", "standard", 28),
+        ("East Blue Saga", "Mihawk vs Zoro", "Ichiban Kuji Prize A Baratie Encounter", "high", 140),
     ]
 
 

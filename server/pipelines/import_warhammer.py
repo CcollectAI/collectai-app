@@ -820,6 +820,77 @@ def get_curated_catalog() -> list[dict]:
         ("ai", "Aeronautica Imperialis", "Night Scythe / Doom Scythe (Necrons)", "Aircraft", 25, 32),
         ("ai", "Aeronautica Imperialis", "Valkyrie Assault Carriers (Astra Militarum)", "Aircraft", 30, 38),
         ("ai", "Aeronautica Imperialis", "Aeronautica Imperialis: Wings of Vengeance (OOP)", "Box Set", 65, 95),
+
+        # === EXPANSION ROUND — 55 new items ===
+
+        # ── Age of Sigmar (+10) ──────────────────────────────────────
+        ("aos", "Stormcast Eternals", "Lord-Relictor", "HQ", 22, 28),
+        ("aos", "Stormcast Eternals", "Vindictors (10)", "Troops", 35, 42),
+        ("aos", "Stormcast Eternals", "Praetors (3)", "Elite", 35, 42),
+        ("aos", "Nighthaunt", "Chainrasps (20)", "Troops", 28, 35),
+        ("aos", "Nighthaunt", "Dreadblade Harrows", "HQ", 18, 22),
+        ("aos", "Nighthaunt", "Krulghast Cruciator", "HQ", 22, 28),
+        ("aos", "Daughters of Khaine", "Melusai Ironscale", "HQ", 22, 28),
+        ("aos", "Daughters of Khaine", "Blood Sisters (5)", "Elite", 35, 42),
+        ("aos", "Daughters of Khaine", "Khinerai Heartrenders (5)", "Fast Attack", 32, 38),
+        ("aos", "Daughters of Khaine", "Bloodwrack Shrine / Cauldron of Blood", "Centerpiece", 55, 70),
+
+        # ── Horus Heresy / 30K (+10) ────────────────────────────────
+        ("hh", "Horus Heresy", "MKIV Tactical Squad (Plastic)", "Troops", 36, 42),
+        ("hh", "Horus Heresy", "Deimos Pattern Predator (Plastic)", "Vehicle", 42, 52),
+        ("hh", "Horus Heresy", "Heavy Weapons Squad (Plastic)", "Heavy Support", 38, 45),
+        ("hh", "Horus Heresy", "Dreadnought Drop Pod (Forge World)", "Vehicle", 38, 55),
+        ("fw", "Horus Heresy", "Primarch Corvus Corax (FW)", "Primarch", 95, 180),
+        ("fw", "Horus Heresy", "Primarch Konrad Curze, Night Haunter (FW)", "Primarch", 95, 185),
+        ("hh", "Sons of Horus", "Justaerin Terminators (FW)", "Elite", 48, 70),
+        ("hh", "Death Guard", "Deathshroud Terminators (30K FW)", "Elite", 45, 65),
+        ("hh", "Iron Warriors", "Tyrant Siege Terminators (FW)", "Elite", 48, 72),
+        ("hh", "World Eaters", "Red Butchers Terminators (FW)", "Elite", 45, 68),
+
+        # ── Kill Team Box Sets (+8) ─────────────────────────────────
+        ("kt", "Kill Team", "Kill Team: Phobos Strike Team", "Box Set", 42, 50),
+        ("kt", "Kill Team", "Kill Team: Legionaries (Chaos)", "Box Set", 42, 50),
+        ("kt", "Kill Team", "Kill Team: Pathfinders (T'au)", "Box Set", 42, 50),
+        ("kt", "Kill Team", "Kill Team: Kommandos (Orks)", "Box Set", 42, 50),
+        ("kt", "Kill Team", "Kill Team: Hand of the Archon (Drukhari)", "Box Set", 42, 50),
+        ("kt", "Kill Team", "Kill Team: Kasrkin (Astra Militarum)", "Box Set", 42, 50),
+        ("kt", "Kill Team", "Kill Team: Void-Dancer Troupe (Harlequins)", "Box Set", 42, 50),
+        ("kt", "Kill Team", "Kill Team: Blooded (Traitor Guard)", "Box Set", 42, 50),
+
+        # ── Necromunda Gangs (+7) ────────────────────────────────────
+        ("nb", "Necromunda", "Necromunda: House Cawdor Upgrade Pack", "Gang", 22, 28),
+        ("nb", "Necromunda", "Necromunda: Delaque Nacht-Ghul & Psy-Gheist", "Gang", 28, 35),
+        ("nb", "Necromunda", "Necromunda: Orlock Arms Masters & Wreckers", "Gang", 28, 35),
+        ("nb", "Necromunda", "Necromunda: Van Saar Neoteks", "Gang", 28, 35),
+        ("nb", "Necromunda", "Necromunda: Escher Phyrr Cats & Khimerix", "Gang", 28, 35),
+        ("nb", "Necromunda", "Necromunda: Goliath Maulers & Zerkers", "Gang", 28, 35),
+        ("nb", "Necromunda", "Necromunda: Hive Scum Hired Guns", "Gang", 22, 28),
+
+        # ── Warhammer Underworlds Warbands (+7) ─────────────────────
+        ("uw", "Underworlds", "Warhammer Underworlds: Thundrik's Profiteers", "Warband", 22, 30),
+        ("uw", "Underworlds", "Warhammer Underworlds: Ylthari's Guardians", "Warband", 22, 30),
+        ("uw", "Underworlds", "Warhammer Underworlds: Mollog's Mob", "Warband", 22, 35),
+        ("uw", "Underworlds", "Warhammer Underworlds: Godsworn Hunt", "Warband", 22, 28),
+        ("uw", "Underworlds", "Warhammer Underworlds: Lady Harrow's Mournflight", "Warband", 22, 28),
+        ("uw", "Underworlds", "Warhammer Underworlds: Rippa's Snarlfangs", "Warband", 22, 30),
+        ("uw", "Underworlds", "Warhammer Underworlds: Morgwaeth's Blade-coven", "Warband", 22, 30),
+
+        # ── Limited Edition / Celebration Models (+7) ───────────────
+        ("40k", "Limited", "Warhammer Day 2025 Exclusive Captain", "Limited", 25, 75),
+        ("40k", "Limited", "Grombrindal, The White Dwarf (AoS Version)", "Limited", 20, 85),
+        ("40k", "Limited", "Black Library Celebration 2024 Space Marine", "Limited", 22, 65),
+        ("40k", "Limited", "LVO 2024 Event Exclusive Model", "Limited", 25, 80),
+        ("40k", "Limited", "Space Marine Heroes Series 4 (Blind Box Set)", "Limited", 15, 28),
+        ("aos", "Limited", "Made to Order: Bretonnia Lord on Hippogryph (2024)", "Limited", 40, 120),
+        ("40k", "Limited", "Warhammer+ Year 4 Exclusive Terminator Chaplain", "Limited", 20, 60),
+
+        # ── Forge World Resin (+6) ──────────────────────────────────
+        ("fw", "Forge World", "Spartan Assault Tank (Resin)", "Vehicle", 80, 115),
+        ("fw", "Forge World", "Kratos Heavy Assault Tank (Resin)", "Vehicle", 65, 95),
+        ("fw", "Forge World", "Caladius Grav-Tank (Custodes)", "Vehicle", 70, 100),
+        ("fw", "Forge World", "Terrax-Pattern Termite Assault Drill", "Vehicle", 55, 80),
+        ("fw", "Forge World", "Achilles-Alpha Pattern Land Raider", "Vehicle", 85, 120),
+        ("fw", "Forge World", "Falchion Super-Heavy Tank Destroyer", "Super-Heavy", 200, 280),
     ]
 
     catalog = []

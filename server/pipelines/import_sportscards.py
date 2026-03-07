@@ -742,6 +742,73 @@ def get_curated_catalog() -> list[dict]:
         ("Football", "2023", "Panini Prizm", "C.J. Stroud", "302", "Silver Prizm RC", 250, 3500, "High"),
     ]
 
+    # ── Expansion Batch 3 — 50 new items across all sports ──
+    cards += [
+        # Panini Prizm Basketball — More Parallels & Stars
+        ("Basketball", "2023", "Panini Prizm", "Chet Holmgren", "250", "Silver Prizm RC", 100, 1500, "High"),
+        ("Basketball", "2023", "Panini Prizm", "Brandon Miller", "255", "Silver Prizm RC", 80, 1200, "Mid"),
+        ("Basketball", "2023", "Panini Prizm", "Amen Thompson", "260", "Silver Prizm RC", 60, 800, "Mid"),
+        ("Basketball", "2022", "Panini Prizm", "Bennedict Mathurin", "270", "Silver Prizm RC", 50, 700, "Mid"),
+        ("Basketball", "2023", "Panini Prizm", "Scoot Henderson", "252", "Gold Prizm /10 RC", 4000, 30000, "Ultra Rare"),
+        ("Basketball", "2020", "Panini Prizm", "Tyrese Haliburton", "262", "Silver Prizm RC", 100, 1500, "High"),
+        ("Basketball", "2019", "Panini Prizm", "Tyler Herro", "259", "Silver Prizm RC", 60, 800, "Mid"),
+        ("Basketball", "2018", "Panini Prizm", "Shai Gilgeous-Alexander", "184", "Silver Prizm RC", 400, 6000, "High"),
+        ("Basketball", "2017", "Panini Prizm", "De'Aaron Fox", "24", "Silver Prizm RC", 100, 1500, "High"),
+        ("Basketball", "2016", "Panini Prizm", "Ben Simmons", "1", "Silver Prizm RC", 80, 1200, "Mid"),
+
+        # Topps Chrome Baseball — More Refractors & Rookies
+        ("Baseball", "2023", "Topps Chrome", "Corbin Carroll", "175", "Refractor RC", 100, 1500, "High"),
+        ("Baseball", "2023", "Topps Chrome", "Gunnar Henderson", "162", "Refractor RC", 120, 2000, "High"),
+        ("Baseball", "2023", "Topps Chrome", "Adley Rutschman", "155", "Refractor RC", 80, 1200, "Mid"),
+        ("Baseball", "2021", "Topps Chrome", "Wander Franco", "215", "Refractor RC", 100, 1500, "High"),
+        ("Baseball", "2020", "Topps Chrome", "Luis Robert", "60", "Refractor RC", 80, 1200, "Mid"),
+        ("Baseball", "2018", "Topps Chrome", "Juan Soto", "155", "Refractor RC", 200, 3000, "High"),
+        ("Baseball", "2017", "Topps Chrome", "Aaron Judge", "169", "Refractor RC", 300, 5000, "High"),
+        ("Baseball", "2024", "Topps Chrome", "Paul Skenes", "180", "Refractor RC", 150, 2500, "High"),
+
+        # Bowman 1st Chrome — More Prospects
+        ("Baseball", "2024", "Bowman 1st Chrome", "Jac Caglianone", "BCP-5", "Base 1st Bowman RC", 50, 600, "Mid"),
+        ("Baseball", "2024", "Bowman 1st Chrome", "Travis Bazzana", "BCP-3", "Base 1st Bowman RC", 60, 800, "Mid"),
+        ("Baseball", "2023", "Bowman 1st Chrome", "Max Clark", "BCP-8", "Base 1st Bowman RC", 40, 500, "Mid"),
+        ("Baseball", "2022", "Bowman 1st Chrome", "Jackson Chourio", "BCP-12", "Refractor /499 RC", 400, 4000, "High"),
+        ("Baseball", "2024", "Bowman 1st Chrome", "Charlie Condon", "BCP-7", "Green Refractor /99 RC", 800, 6000, "Ultra Rare"),
+        ("Baseball", "2023", "Bowman 1st Chrome", "Dylan Crews", "BCP-4", "Base 1st Bowman RC", 50, 600, "Mid"),
+        ("Baseball", "2023", "Bowman 1st Chrome", "Wyatt Langford", "BCP-6", "Base 1st Bowman RC", 40, 500, "Mid"),
+        ("Baseball", "2022", "Bowman 1st Chrome", "Termarr Johnson", "BCP-18", "Refractor /499 RC", 200, 2000, "High"),
+
+        # Panini Select Football — More Parallels & Rookies
+        ("Football", "2023", "Panini Select", "Caleb Williams", "301", "Tie-Dye /25 RC", 3000, 25000, "Ultra Rare"),
+        ("Football", "2023", "Panini Select", "Jayden Daniels", "310", "Courtside Silver RC", 200, 3000, "High"),
+        ("Football", "2023", "Panini Select", "Drake Maye", "315", "Silver Prizm RC", 100, 1500, "High"),
+        ("Football", "2023", "Panini Select", "Marvin Harrison Jr.", "305", "Courtside Silver RC", 250, 3500, "High"),
+        ("Football", "2020", "Panini Select", "Joe Burrow", "1", "Tie-Dye /25 RC", 5000, 40000, "Ultra Rare"),
+        ("Football", "2020", "Panini Select", "Justin Herbert", "162", "Courtside Silver RC", 300, 4000, "High"),
+        ("Football", "2022", "Panini Select", "Brock Purdy", "350", "Courtside Silver RC", 200, 3000, "High"),
+
+        # Upper Deck Hockey — More Young Guns & Legends
+        ("Hockey", "2022", "Upper Deck Series 1", "Matty Beniers", "210", "Young Guns RC", 100, 1500, "High"),
+        ("Hockey", "2022", "Upper Deck Series 1", "Shane Wright", "215", "Young Guns RC", 60, 800, "Mid"),
+        ("Hockey", "2021", "Upper Deck Series 1", "Trevor Zegras", "218", "Young Guns RC", 80, 1200, "Mid"),
+        ("Hockey", "2019", "Upper Deck Series 1", "Jack Hughes", "201", "Young Guns RC", 200, 3000, "High"),
+        ("Hockey", "2017", "Upper Deck Series 1", "Nico Hischier", "201", "Young Guns RC", 100, 1500, "High"),
+        ("Hockey", "2023", "Upper Deck Series 2", "Leo Carlsson", "451", "Young Guns RC", 60, 800, "Mid"),
+        ("Hockey", "2023", "Upper Deck Series 2", "Adam Fantilli", "458", "Young Guns RC", 80, 1200, "Mid"),
+
+        # Panini Donruss Optic — Football & Basketball
+        ("Football", "2023", "Donruss Optic", "Caleb Williams", "201", "Holo RC", 150, 2500, "High"),
+        ("Football", "2023", "Donruss Optic", "Jayden Daniels", "210", "Holo RC", 100, 1500, "High"),
+        ("Football", "2020", "Donruss Optic", "Justin Herbert", "153", "Holo RC", 250, 3500, "High"),
+        ("Basketball", "2023", "Donruss Optic", "Victor Wembanyama", "201", "Holo RC", 400, 5000, "High"),
+        ("Basketball", "2022", "Donruss Optic", "Paolo Banchero", "205", "Holo RC", 80, 1200, "Mid"),
+
+        # International Soccer — More Stars
+        ("Soccer", "2022", "Panini Prizm World Cup", "Lionel Messi", "1", "Gold /10", 5000, 50000, "Ultra Rare"),
+        ("Soccer", "2022", "Panini Prizm World Cup", "Kylian Mbappe", "75", "Silver Prizm", 300, 4000, "High"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Lamine Yamal", "190", "Gold Refractor /50 RC", 2000, 20000, "Ultra Rare"),
+        ("Soccer", "2023", "Topps Chrome UCL", "Florian Wirtz", "155", "Refractor RC", 150, 2000, "High"),
+        ("Soccer", "2021", "Topps Chrome UCL", "Pedri", "80", "Refractor RC", 200, 3000, "High"),
+    ]
+
     catalog = []
     for sport, year, set_name, player, card_no, variant, raw_price, graded_price, rarity in cards:
         catalog.append({

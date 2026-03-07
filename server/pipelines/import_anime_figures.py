@@ -828,6 +828,70 @@ def get_curated_catalog() -> list[dict]:
         ("eStream", "Shibuya Scramble", "Rem (Idol Ver.)", "Re:Zero", "1/7", "high", 350),
         ("eStream", "Shibuya Scramble", "Emilia (Natsuki Subaru's Birthday)", "Re:Zero", "1/7", "high", 380),
         ("eStream", "Shibuya Scramble", "Megumin (Explosion Ver. Deluxe)", "KonoSuba", "1/7", "grail", 420),
+
+        # ── Chainsaw Man - Expansion ─────────────────────────────────────
+        ("Good Smile Company", "Scale", "Yoshida Hirofumi", "Chainsaw Man", "1/7", "mid", 180),
+        ("Kotobukiya", "Scale", "Kobeni Higashiyama", "Chainsaw Man", "1/7", "mid", 170),
+        ("Alter", "Scale", "Himeno Cigarette Ver.", "Chainsaw Man", "1/7", "high", 240),
+        ("Aniplex", "Scale", "Darkness Devil", "Chainsaw Man", "1/7", "grail", 420),
+        ("Good Smile Company", "Scale", "Angel Devil", "Chainsaw Man", "1/7", "mid", 190),
+        ("MegaHouse", "Scale", "Katana Man Unmasked", "Chainsaw Man", "1/8", "mid", 175),
+        ("eStream", "Scale", "Makima Office Suit Ver.", "Chainsaw Man", "1/7", "high", 320),
+        ("Myethos", "Scale", "Reze Casual Ver.", "Chainsaw Man", "1/7", "high", 250),
+        ("FREEing", "Scale", "Kobeni Bunny Ver.", "Chainsaw Man", "1/4", "grail", 470),
+        ("Banpresto", "Vibration Stars", "Aki Hayakawa Rev.", "Chainsaw Man", "Non-scale", "standard", 24),
+
+        # ── Spy x Family - Expansion ─────────────────────────────────────
+        ("Alter", "Scale", "Yor Forger Casual Dress Ver.", "Spy x Family", "1/7", "high", 250),
+        ("Kotobukiya", "Scale", "Anya Forger Winter Uniform", "Spy x Family", "1/7", "mid", 160),
+        ("Good Smile Company", "Scale", "Bond Forger Oversized", "Spy x Family", "Non-scale", "mid", 100),
+        ("MegaHouse", "Scale", "Yor Forger Thorn Princess Battle", "Spy x Family", "1/8", "high", 230),
+        ("FREEing", "Scale", "Anya Forger Bunny Ver.", "Spy x Family", "1/4", "grail", 420),
+        ("Aniplex", "Scale", "Loid & Anya Forger Family Portrait", "Spy x Family", "1/7", "high", 300),
+        ("Banpresto", "Vibration Stars", "Yor Forger Action Ver.", "Spy x Family", "Non-scale", "standard", 28),
+        ("SEGA", "Luminasta", "Anya Forger Penguin Costume", "Spy x Family", "Non-scale", "standard", 25),
+
+        # ── Jujutsu Kaisen - Expansion ───────────────────────────────────
+        ("Alter", "Scale", "Ryomen Sukuna True Form", "Jujutsu Kaisen", "1/7", "grail", 450),
+        ("Good Smile Company", "Scale", "Toji Fushiguro", "Jujutsu Kaisen", "1/7", "high", 250),
+        ("Aniplex", "Scale", "Nobara Kugisaki", "Jujutsu Kaisen", "1/7", "mid", 190),
+        ("Kotobukiya", "Scale", "Maki Zenin", "Jujutsu Kaisen", "1/7", "mid", 180),
+        ("FREEing", "Scale", "Nobara Kugisaki Bunny Ver.", "Jujutsu Kaisen", "1/4", "grail", 460),
+        ("MegaHouse", "Scale", "Choso", "Jujutsu Kaisen", "1/8", "mid", 175),
+        ("eStream", "Scale", "Gojo Satoru Domain Expansion", "Jujutsu Kaisen", "1/7", "grail", 520),
+        ("Banpresto", "King of Artist", "Toji Fushiguro KoA", "Jujutsu Kaisen", "Non-scale", "standard", 35),
+
+        # ── My Hero Academia - Expansion ─────────────────────────────────
+        ("Alter", "Scale", "Endeavor Hellflame", "My Hero Academia", "1/7", "high", 280),
+        ("Good Smile Company", "Scale", "Hawks Wing Spread", "My Hero Academia", "1/7", "high", 260),
+        ("Aniplex", "Scale", "Toga Himiko Unmasked", "My Hero Academia", "1/7", "high", 230),
+        ("Kotobukiya", "ARTFX J", "Eraserhead (Aizawa Shota)", "My Hero Academia", "1/8", "high", 210),
+        ("FREEing", "Scale", "Momo Yaoyorozu Bunny Ver.", "My Hero Academia", "1/4", "grail", 450),
+        ("MegaHouse", "Scale", "Mirko Rumi Usagiyama", "My Hero Academia", "1/8", "high", 240),
+        ("Banpresto", "Grandista", "All Might Grandista", "My Hero Academia", "Non-scale", "standard", 40),
+
+        # ── Bocchi the Rock! - Expansion ─────────────────────────────────
+        ("Good Smile Company", "Scale", "Kita Ikuyo Singing Ver.", "Bocchi the Rock!", "1/7", "mid", 175),
+        ("Kotobukiya", "Scale", "Ryo Yamada Bass Ver.", "Bocchi the Rock!", "1/7", "mid", 170),
+        ("Alter", "Scale", "Bocchi Hitori Stage Fright Ver.", "Bocchi the Rock!", "1/7", "high", 220),
+        ("Good Smile Company", "Pop Up Parade", "Kita Ikuyo Pop Up Parade", "Bocchi the Rock!", "Non-scale", "standard", 32),
+        ("Good Smile Company", "Nendoroid", "Ryo Yamada Nendoroid", "Bocchi the Rock!", "Nendoroid", "standard", 50),
+
+        # ── Frieren - Expansion ──────────────────────────────────────────
+        ("Alter", "Scale", "Frieren Seated Magic Ver.", "Frieren: Beyond Journey's End", "1/7", "high", 270),
+        ("Kotobukiya", "Scale", "Stark Battle Ready", "Frieren: Beyond Journey's End", "1/8", "mid", 175),
+        ("Good Smile Company", "Scale", "Sein the Priest", "Frieren: Beyond Journey's End", "1/8", "mid", 160),
+        ("MegaHouse", "Scale", "Himmel the Hero Sword Draw", "Frieren: Beyond Journey's End", "1/8", "mid", 170),
+        ("Good Smile Company", "Nendoroid", "Stark Nendoroid", "Frieren: Beyond Journey's End", "Nendoroid", "standard", 50),
+
+        # ── Oshi no Ko - Expansion ───────────────────────────────────────
+        ("Good Smile Company", "Scale", "Ai Hoshino Star Costume", "Oshi no Ko", "1/7", "high", 260),
+        ("Alter", "Scale", "Akane Kurokawa Stage Ver.", "Oshi no Ko", "1/7", "mid", 190),
+        ("Kotobukiya", "Scale", "Ruby Hoshino Idol Costume", "Oshi no Ko", "1/7", "mid", 185),
+        ("FREEing", "Scale", "Ruby Hoshino Bunny Ver.", "Oshi no Ko", "1/4", "grail", 470),
+        ("Good Smile Company", "Nendoroid", "Aqua Hoshino Nendoroid", "Oshi no Ko", "Nendoroid", "standard", 55),
+        ("MegaHouse", "Scale", "MEM-cho Swimsuit Ver.", "Oshi no Ko", "1/7", "mid", 175),
+        ("Good Smile Company", "Pop Up Parade", "Kana Arima Pop Up Parade", "Oshi no Ko", "Non-scale", "standard", 32),
     ]
 
     catalog = []

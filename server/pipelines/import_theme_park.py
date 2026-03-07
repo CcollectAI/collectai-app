@@ -890,6 +890,75 @@ def _expanded_round7_theme_park() -> list[dict]:
         ("Efteling", "merch", "Efteling De Vliegende Hollander Grand Opening Coin", "Grand Opening", "high", 50),
         ("Efteling", "merch", "Efteling 70th Anniversary Commemorative Book LE", "Anniversary LE", "high", 55),
         ("Efteling", "merch", "Efteling Baron 1898 Exclusive Mine Cart Figure", "Park Exclusive", "mid", 40),
+
+        # --- Tokyo DisneySea Exclusives ---
+        ("Tokyo DisneySea", "merch", "Tokyo DisneySea 20th Anniversary Crystal Sphere Ornament", "Anniversary LE", "grail", 180),
+        ("Tokyo DisneySea", "merch", "Tokyo DisneySea Sindbad Storybook Voyage Lamp Replica", "Park Exclusive", "high", 95),
+        ("Tokyo DisneySea", "merch", "Tokyo DisneySea Tower of Terror Bellhop Bear Plush LE", "LE", "high", 110),
+        ("Tokyo DisneySea", "merch", "Tokyo DisneySea Duffy & Friends Autumn Costume Set", "Tokyo Exclusive", "mid", 55),
+        ("Tokyo DisneySea", "merch", "Tokyo DisneySea Journey to the Center of the Earth Vehicle Figure", "Park Exclusive", "high", 85),
+        ("Tokyo DisneySea", "merch", "Tokyo DisneySea Fantasy Springs Peter Pan Ship Popcorn Bucket", "Limited Release", "grail", 150),
+        ("Tokyo DisneySea", "merch", "Tokyo DisneySea Fantasy Springs Rapunzel Lantern Light-Up Tumbler", "Limited Release", "high", 75),
+        ("Tokyo DisneySea", "merch", "Tokyo DisneySea Mediterranean Harbor Gondolier Mickey Figurine", "Park Exclusive", "high", 70),
+        ("Tokyo DisneySea", "merch", "Tokyo DisneySea Aquatopia Miniature Ride Vehicle", "Park Exclusive", "mid", 48),
+        ("Tokyo DisneySea", "pins", "Tokyo DisneySea Fantasy Springs Grand Opening Pin Set (LE 500)", "LE 300", "grail", 200),
+
+        # --- Universal Studios Japan ---
+        ("USJ", "merch", "USJ Wizarding World Butterbeer Mug (2024 Redesign)", "Park Exclusive", "mid", 45),
+        ("USJ", "merch", "USJ Jujutsu Kaisen Collaboration Sukuna Finger Replica", "Collab Exclusive", "high", 90),
+        ("USJ", "merch", "USJ Demon Slayer Infinity Train Popcorn Bucket", "Collab Exclusive", "high", 80),
+        ("USJ", "merch", "USJ Attack on Titan The Real 4D Exclusive Keychain Set", "Collab Exclusive", "mid", 40),
+        ("USJ", "merch", "USJ Spy x Family Anya Forger Peanut Popcorn Bucket", "Collab Exclusive", "high", 75),
+        ("USJ", "merch", "USJ Super Nintendo World Peach Castle Miniature", "Park Exclusive", "high", 65),
+        ("USJ", "merch", "USJ Jurassic World Dominion Raptor Egg Popcorn Bucket", "Limited Release", "high", 70),
+        ("USJ", "merch", "USJ Dragon Ball Z Kamehameha Light-Up Figure", "Collab Exclusive", "high", 85),
+        ("USJ", "merch", "USJ Monster Hunter Felyne Plush XL Exclusive", "Collab Exclusive", "mid", 50),
+        ("USJ", "merch", "USJ One Piece Thousand Sunny Ship Popcorn Bucket", "Collab Exclusive", "high", 80),
+
+        # --- Shanghai Disneyland ---
+        ("Shanghai Disney", "merch", "Shanghai Disney Resort Grand Opening Mickey Figure (2016)", "Grand Opening", "grail", 160),
+        ("Shanghai Disney", "merch", "Shanghai Disney Zootopia Land Grand Opening Pin Set (LE 800)", "Grand Opening", "high", 85),
+        ("Shanghai Disney", "merch", "Shanghai Disney TRON Lightcycle Run Coaster Vehicle Replica", "Park Exclusive", "high", 95),
+        ("Shanghai Disney", "merch", "Shanghai Disney StellaLou Exclusive Ballet Costume Plush", "Tokyo Exclusive", "mid", 45),
+        ("Shanghai Disney", "merch", "Shanghai Disney Pirates of the Caribbean Ship Lantern", "Park Exclusive", "high", 70),
+        ("Shanghai Disney", "merch", "Shanghai Disney Enchanted Storybook Castle Miniature (Crystal Edition)", "LE", "grail", 140),
+        ("Shanghai Disney", "merch", "Shanghai Disney Chinese New Year Dragon Mickey Plush LE", "Festival LE", "high", 65),
+        ("Shanghai Disney", "merch", "Shanghai Disney Toy Story Land Alien Swirling Saucers Popcorn Bucket", "Park Exclusive", "high", 60),
+
+        # --- Walt Disney World 50th Anniversary ---
+        ("Disney Parks", "merch", "WDW 50th Anniversary Cinderella Castle Ornament (Crystal)", "Anniversary LE", "grail", 175),
+        ("Disney Parks", "merch", "WDW 50th Anniversary EARidescent Spirit Jersey", "Anniversary LE", "high", 90),
+        ("Disney Parks", "merch", "WDW 50th Anniversary Golden Fab 50 Character Statues Set", "Anniversary LE", "high", 120),
+        ("Disney Parks", "merch", "WDW 50th Anniversary Vault Collection Retro Ticket Media Pin", "Anniversary LE", "high", 65),
+        ("Disney Parks", "merch", "WDW 50th Anniversary Spaceship Earth Light-Up Figurine", "Anniversary LE", "high", 85),
+        ("Disney Parks", "merch", "WDW 50th Anniversary Main Street Electrical Parade Ear Headband", "Anniversary LE", "mid", 55),
+        ("Disney Parks", "merch", "WDW 50th Anniversary Legacy Poster Set (All 4 Parks)", "Anniversary LE", "high", 70),
+        ("Disney Parks", "merch", "WDW 50th Anniversary Mickey & Minnie Sipper Cup Set", "Anniversary LE", "mid", 40),
+
+        # --- Disneyland Paris ---
+        ("Disneyland Paris", "merch", "Disneyland Paris 30th Anniversary Sleeping Beauty Castle Snow Globe", "Anniversary LE", "grail", 150),
+        ("Disneyland Paris", "merch", "Disneyland Paris Phantom Manor Exclusive Hatbox Ghost Figure", "Park Exclusive", "high", 95),
+        ("Disneyland Paris", "merch", "Disneyland Paris Ratatouille Remy Chef Hat & Apron Set", "Park Exclusive", "mid", 45),
+        ("Disneyland Paris", "merch", "Disneyland Paris Avengers Campus Spider-Bot Exclusive", "Park Exclusive", "high", 65),
+        ("Disneyland Paris", "merch", "Disneyland Paris Main Street Bakery Scented Candle Set", "Park Exclusive", "mid", 50),
+        ("Disneyland Paris", "pins", "Disneyland Paris 30th Anniversary Legacy Pin Collection (12 pins)", "Anniversary LE", "high", 110),
+        ("Disneyland Paris", "merch", "Disneyland Paris World of Frozen Grand Opening Elsa Crystal Figure", "Grand Opening", "grail", 160),
+
+        # --- Seasonal / Holiday Exclusives ---
+        ("Disney Parks", "merch", "Disney Parks Halloween Headless Horseman Popcorn Bucket", "Festival LE", "high", 95),
+        ("Disney Parks", "merch", "Disney Parks Mickey's Not-So-Scary Halloween Hocus Pocus Spirit Jersey", "Festival LE", "high", 80),
+        ("Disney Parks", "merch", "Disney Parks Christmas Holiday Gingerbread House Ornament (Grand Floridian)", "Festival LE", "high", 70),
+        ("Disney Parks", "merch", "Disney Parks EPCOT Festival of the Arts Figment Paint Brush Sipper", "Festival LE", "high", 85),
+        ("Disney Parks", "merch", "Disney Parks EPCOT Food & Wine Festival Chef Mickey Pin Set", "Festival LE", "mid", 55),
+        ("Disney Parks", "merch", "Disney Parks Valentine's Day Heart Ear Headband LE", "Festival LE", "mid", 45),
+        ("Disney Parks", "merch", "Disney Parks Chinese New Year Mushu Dragon Popcorn Bucket", "Festival LE", "high", 90),
+
+        # --- Spirit Jerseys & Ear Headbands ---
+        ("Disney Parks", "spirit_jersey", "Disney Parks Haunted Mansion Wallpaper Spirit Jersey", "Park Exclusive", "high", 85),
+        ("Disney Parks", "spirit_jersey", "Disney Parks Tomorrowland Space Mountain Spirit Jersey", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "ear_headband", "Disney Parks Dole Whip Pineapple Ear Headband", "Park Exclusive", "mid", 40),
+        ("Disney Parks", "ear_headband", "Disney Parks Rose Gold Sequin Ear Headband", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "ear_headband", "Disney Parks Enchanted Tiki Room Bird Ear Headband", "Park Exclusive", "mid", 42),
     ]
     catalog = []
     for park, subcategory, name, edition, tier, price in items:

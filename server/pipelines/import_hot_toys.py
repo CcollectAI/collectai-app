@@ -770,6 +770,77 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "DC", "The Flash (The Flash 2023)", "1/6 Figure", "mid", 370),
         ("Hot Toys", "DC", "Batman (Ben Affleck The Flash 2023)", "1/6 Figure", "mid", 400),
         ("Hot Toys", "DC", "Aquaman (Aquaman and the Lost Kingdom)", "1/6 Figure", "mid", 380),
+
+        # === EXPANSION ROUND — 55 new items ===
+
+        # ─── Star Wars Hot Toys (+10) ──────────────────────────────────
+        ("Hot Toys", "Star Wars", "Clone Commander Cody (Phase II)", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Star Wars", "Clone Trooper 212th Attack Battalion", "1/6 Figure", "mid", 330),
+        ("Hot Toys", "Star Wars", "ARC Trooper Echo (The Bad Batch)", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Star Wars", "ARC Trooper Fives (Clone Wars)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Luke Skywalker (ROTJ Deluxe)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Star Wars", "Han Solo (A New Hope)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Star Wars", "Princess Leia (A New Hope)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Obi-Wan Kenobi (ROTS Deluxe)", "1/6 Figure", "mid", 410),
+        ("Hot Toys", "Star Wars", "Emperor Palpatine (ROTJ Throne Room)", "1/6 Figure", "high", 500),
+        ("Hot Toys", "Star Wars", "Grand Admiral Thrawn (Ahsoka)", "1/6 Figure", "mid", 450),
+
+        # ─── Marvel MCU Phase 5/6 & Multiverse (+10) ──────────────────
+        ("Hot Toys", "Marvel MCU", "Captain America (Brave New World)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Marvel MCU", "Thunderbolts Winter Soldier (Bucky)", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Marvel MCU", "Agatha Harkness (Agatha All Along)", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "Marvel MCU", "Ms. Marvel (Kamala Khan)", "1/6 Figure", "standard", 290),
+        ("Hot Toys", "Marvel MCU", "Kate Bishop (Hawkeye Series)", "1/6 Figure", "mid", 310),
+        ("Hot Toys", "Marvel MCU", "Echo (Maya Lopez)", "1/6 Figure", "standard", 280),
+        ("Hot Toys", "Marvel MCU", "She-Hulk (Jennifer Walters)", "1/6 Figure", "mid", 320),
+        ("Hot Toys", "Marvel MCU", "Gorr the God Butcher (Love and Thunder)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Marvel MCU", "Yellowjacket (Ant-Man)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Marvel MCU", "Mysterio (Far From Home)", "1/6 Figure", "mid", 400),
+
+        # ─── DC Hot Toys (+8) ─────────────────────────────────────────
+        ("Hot Toys", "DC", "Batman (Batman Begins)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "DC", "Batman (The Dark Knight DX19)", "1/6 Figure", "high", 650),
+        ("Hot Toys", "DC", "The Joker (Heath Ledger DX11)", "1/6 Figure", "high", 800),
+        ("Hot Toys", "DC", "The Joker (Joaquin Phoenix 2019)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "DC", "Superman (Christopher Reeve)", "1/6 Figure", "high", 600),
+        ("Hot Toys", "DC", "Wonder Woman (Gal Gadot Justice League)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "DC", "Cyborg (Justice League Snyder Cut)", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "DC", "Harley Quinn (Birds of Prey)", "1/6 Figure", "mid", 340),
+
+        # ─── Video Game Figures (+7) ──────────────────────────────────
+        ("Hot Toys", "Resident Evil", "Leon S. Kennedy (RE4 Remake)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Resident Evil", "Ada Wong (RE4 Remake)", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Resident Evil", "Chris Redfield (RE Village)", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Metal Gear", "Naked Snake (MGS3 Snake Eater)", "1/6 Figure", "high", 550),
+        ("Hot Toys", "Metal Gear", "Raiden (Metal Gear Rising)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Batman Arkham", "Batman (Arkham Knight)", "1/6 Figure", "mid", 450),
+        ("Hot Toys", "Batman Arkham", "Harley Quinn (Arkham City)", "1/6 Figure", "mid", 380),
+
+        # ─── Horror / Predator / Aliens (+7) ─────────────────────────
+        ("Hot Toys", "Alien", "Alien Warrior (35th Anniversary)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Alien", "Alien Queen (Aliens 1986)", "1/6 Figure", "high", 800),
+        ("Hot Toys", "Predator", "City Hunter Predator (Predator 2)", "1/6 Figure", "mid", 450),
+        ("Hot Toys", "Predator", "Celtic Predator (AVP)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Predator", "Wolf Predator (AVPR)", "1/6 Figure", "mid", 440),
+        ("Hot Toys", "Horror", "Pennywise (IT Chapter Two)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Horror", "Michael Myers (Halloween 2018)", "1/6 Figure", "mid", 370),
+
+        # ─── Cosbaby / Artist Mix Series (+7) ────────────────────────
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark LXXXV Cosbaby (L)", "Cosbaby", "standard", 45),
+        ("Hot Toys", "Marvel MCU", "Spider-Man Cosbaby (Integrated Suit)", "Cosbaby", "standard", 40),
+        ("Hot Toys", "Marvel MCU", "Thanos Cosbaby (Infinity Gauntlet)", "Cosbaby", "standard", 42),
+        ("Hot Toys", "Star Wars", "The Mandalorian & Grogu Cosbaby Set", "Cosbaby", "standard", 50),
+        ("Hot Toys", "Star Wars", "Darth Vader Cosbaby (Bobble-Head)", "Cosbaby", "standard", 38),
+        ("Hot Toys", "Marvel MCU", "Avengers Artist Mix Set (Ultron Series)", "Artist Mix", "mid", 180),
+        ("Hot Toys", "Marvel MCU", "Guardians of the Galaxy Artist Mix Set", "Artist Mix", "mid", 200),
+
+        # ─── Die-Cast Versions (+6) ──────────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark VII (Die-Cast)", "1/6 Figure", "high", 650),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark L (Die-Cast)", "1/6 Figure", "high", 620),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark XLVI (Die-Cast)", "1/6 Figure", "high", 600),
+        ("Hot Toys", "Marvel MCU", "War Machine Mark IV (Die-Cast)", "1/6 Figure", "high", 580),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark III (Die-Cast)", "1/6 Figure", "high", 700),
+        ("Hot Toys", "Star Wars", "Darth Vader (ESB Die-Cast)", "1/6 Figure", "high", 550),
     ]
 
     catalog = []

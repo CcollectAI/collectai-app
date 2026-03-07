@@ -31,7 +31,13 @@ Covers:
 - Galoob Micro Machines & A-Team (1983–1994)
 - Hasbro Inhumanoids (1986)
 - Coleco Rambo (1986)
-- 550+ items spanning multiple decades
+- Kenner Sky Commanders (1987)
+- Hasbro Air Raiders (1987)
+- Mattel Captain Power (1987–1988)
+- Tonka Supernaturals (1987)
+- Matchbox Ring Raiders (1989)
+- Hasbro Battle Beasts (1987–1988)
+- 610+ items spanning multiple decades
 
 Usage:
     python -m pipelines.import_vintage_toys [--dry-run]
@@ -59,7 +65,7 @@ CATEGORY = "vintage_toys"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated 550+ vintage toys catalog: Kenner Star Wars, GI Joe ARAH,
+    """Curated 610+ vintage toys catalog: Kenner Star Wars, GI Joe ARAH,
     MOTU, Thundercats, TMNT, Transformers G1, and more."""
 
     # (manufacturer, franchise, name, item_type, era, completeness, price_eur)
@@ -523,6 +529,255 @@ def get_curated_catalog() -> list[dict]:
         ("Coleco", "Rambo", "Colonel Trautman", "figure", "1986", "loose_complete", 20),
         ("Coleco", "Rambo", "General Warhawk", "figure", "1986", "loose_complete", 22),
         ("Coleco", "Rambo", "Skyfire Assault Copter", "vehicle", "1986", "CIB", 55),
+
+        # ─── Kenner M.A.S.K. (Additional) ───────────────────────────
+        ("Kenner", "M.A.S.K.", "Raven (with Calhoun Burns)", "vehicle", "1985", "CIB", 75),
+        ("Kenner", "M.A.S.K.", "Firecracker (with Hondo MacLean)", "vehicle", "1985", "CIB", 65),
+        ("Kenner", "M.A.S.K.", "Gator (with Dusty Hayes)", "vehicle", "1985", "CIB", 70),
+        ("Kenner", "M.A.S.K.", "Jackhammer (with Cliff Dagger)", "vehicle", "1985", "CIB", 65),
+        ("Kenner", "M.A.S.K.", "Piranha (with Sly Rax)", "vehicle", "1986", "CIB", 60),
+        ("Kenner", "M.A.S.K.", "Volcano (with Matt Trakker & Jacques LaFleur)", "vehicle", "1986", "CIB", 90),
+        ("Kenner", "M.A.S.K.", "Outlaw (with Miles Mayhem & Nash Gorey)", "vehicle", "1986", "CIB", 80),
+        ("Kenner", "M.A.S.K.", "Hurricane (with Hondo MacLean)", "vehicle", "1986", "CIB", 55),
+        ("Kenner", "M.A.S.K.", "Buzzard (with Miles Mayhem)", "vehicle", "1986", "CIB", 55),
+        ("Kenner", "M.A.S.K.", "Iguana (with Lester Sludge)", "vehicle", "1986", "CIB", 50),
+        ("Kenner", "M.A.S.K.", "Pit Stop Catapult (with Sly Rax)", "vehicle", "1986", "CIB", 55),
+        ("Kenner", "M.A.S.K.", "Meteor (with Ace Riker)", "vehicle", "1987", "CIB", 75),
+        ("Kenner", "M.A.S.K.", "Thunderhawk", "vehicle", "1985", "loose_complete", 65),
+        ("Kenner", "M.A.S.K.", "Switchblade", "vehicle", "1985", "loose_complete", 55),
+        ("Kenner", "M.A.S.K.", "Rhino", "vehicle", "1985", "loose_complete", 45),
+        ("Kenner", "M.A.S.K.", "Condor", "vehicle", "1985", "loose_complete", 30),
+        ("Kenner", "M.A.S.K.", "Boulder Hill Playset", "playset", "1985", "loose_complete", 110),
+        ("Kenner", "M.A.S.K.", "Collector Station Playset", "playset", "1986", "CIB", 150),
+        ("Kenner", "M.A.S.K.", "Slingshot (with Ace Riker)", "vehicle", "1986", "CIB", 55),
+        ("Kenner", "M.A.S.K.", "Bulldog (with Boris Bushkin)", "vehicle", "1987", "CIB", 70),
+
+        # ─── Matchbox / LJN Voltron (Additional) ─────────────────────
+        ("Matchbox", "Voltron", "Red Lion", "vehicle", "1984", "loose_complete", 65),
+        ("Matchbox", "Voltron", "Green Lion", "vehicle", "1984", "loose_complete", 60),
+        ("Matchbox", "Voltron", "Blue Lion", "vehicle", "1984", "loose_complete", 60),
+        ("Matchbox", "Voltron", "Yellow Lion", "vehicle", "1984", "loose_complete", 55),
+        ("Matchbox", "Voltron", "Black Lion", "vehicle", "1984", "loose_complete", 70),
+        ("Matchbox", "Voltron", "Lion Force Voltron (Matchbox Combiner)", "figure", "1984", "CIB", 350),
+        ("Matchbox", "Voltron", "Lion Force Voltron (Matchbox)", "figure", "1984", "loose_complete", 150),
+        ("Matchbox", "Voltron", "Vehicle Voltron (Matchbox Deluxe)", "vehicle", "1985", "CIB", 380),
+        ("Matchbox", "Voltron", "Vehicle Voltron (Matchbox)", "vehicle", "1985", "loose_complete", 160),
+        ("LJN", "Voltron", "Voltron Miniature Lion Set", "vehicle", "1984", "CIB", 85),
+        ("Panosh Place", "Voltron", "Skull Tank", "vehicle", "1985", "CIB", 55),
+        ("Panosh Place", "Voltron", "Zarkon", "figure", "1985", "loose_complete", 35),
+        ("Panosh Place", "Voltron", "Haggar", "figure", "1985", "loose_complete", 30),
+        ("Panosh Place", "Voltron", "Prince Lotor", "figure", "1985", "loose_complete", 32),
+        ("Panosh Place", "Voltron", "Robeast Scorpious", "figure", "1985", "loose_complete", 40),
+
+        # ─── Kenner Silverhawks (1986–1987) ──────────────────────────
+        ("Kenner", "Silverhawks", "Quicksilver (with Tally-Hawk)", "figure", "1986", "loose_complete", 55),
+        ("Kenner", "Silverhawks", "Steelwill", "figure", "1986", "loose_complete", 45),
+        ("Kenner", "Silverhawks", "Steelheart", "figure", "1986", "loose_complete", 48),
+        ("Kenner", "Silverhawks", "Bluegrass (with Side Man)", "figure", "1986", "loose_complete", 50),
+        ("Kenner", "Silverhawks", "Copper Kidd", "figure", "1986", "loose_complete", 40),
+        ("Kenner", "Silverhawks", "Mon*Star", "figure", "1986", "loose_complete", 65),
+        ("Kenner", "Silverhawks", "Buzz-Saw", "figure", "1986", "loose_complete", 35),
+        ("Kenner", "Silverhawks", "Mo-Lec-U-Lar", "figure", "1987", "loose_complete", 55),
+        ("Kenner", "Silverhawks", "Windhammer", "figure", "1987", "loose_complete", 50),
+        ("Kenner", "Silverhawks", "Mumbo Jumbo", "figure", "1987", "loose_complete", 45),
+        ("Kenner", "Silverhawks", "Hardware", "figure", "1987", "loose_complete", 42),
+        ("Kenner", "Silverhawks", "Hotwing", "figure", "1987", "loose_complete", 60),
+        ("Kenner", "Silverhawks", "Flashback", "figure", "1987", "loose_complete", 65),
+        ("Kenner", "Silverhawks", "Miraj", "vehicle", "1986", "CIB", 85),
+        ("Kenner", "Silverhawks", "Maraj", "vehicle", "1986", "CIB", 75),
+
+        # ─── Hasbro Visionaries (Additional) ─────────────────────────
+        ("Hasbro", "Visionaries", "Witterquick", "figure", "1987", "loose_complete", 35),
+        ("Hasbro", "Visionaries", "Arzon", "figure", "1987", "loose_complete", 38),
+        ("Hasbro", "Visionaries", "Feryl", "figure", "1987", "loose_complete", 32),
+        ("Hasbro", "Visionaries", "Cryotek", "figure", "1987", "loose_complete", 35),
+        ("Hasbro", "Visionaries", "Mortdredd", "figure", "1987", "loose_complete", 38),
+        ("Hasbro", "Visionaries", "Lexor", "figure", "1987", "loose_complete", 30),
+        ("Hasbro", "Visionaries", "Reekon", "figure", "1987", "loose_complete", 32),
+        ("Hasbro", "Visionaries", "Lancer Cycle (Vehicle)", "vehicle", "1987", "CIB", 70),
+        ("Hasbro", "Visionaries", "Capture Chariot (Vehicle)", "vehicle", "1987", "CIB", 75),
+        ("Hasbro", "Visionaries", "Sky Claw (Vehicle)", "vehicle", "1987", "CIB", 80),
+        ("Hasbro", "Visionaries", "Iron Mountain Playset", "playset", "1987", "CIB", 200),
+        ("Hasbro", "Visionaries", "Leoric", "figure", "1987", "MOC", 150),
+
+        # ─── Tyco Dino-Riders (1988–1990) ────────────────────────────
+        ("Tyco", "Dino-Riders", "T-Rex with Krulos", "vehicle", "1988", "CIB", 350),
+        ("Tyco", "Dino-Riders", "T-Rex with Krulos", "vehicle", "1988", "loose_complete", 180),
+        ("Tyco", "Dino-Riders", "Triceratops with Hammerhead", "vehicle", "1988", "CIB", 200),
+        ("Tyco", "Dino-Riders", "Triceratops with Hammerhead", "vehicle", "1988", "loose_complete", 100),
+        ("Tyco", "Dino-Riders", "Diplodocus with Questar", "vehicle", "1988", "CIB", 280),
+        ("Tyco", "Dino-Riders", "Stegosaurus with Tark", "vehicle", "1988", "CIB", 150),
+        ("Tyco", "Dino-Riders", "Pterodactyl with Llahd", "vehicle", "1988", "CIB", 85),
+        ("Tyco", "Dino-Riders", "Torosaurus with Gunnur", "vehicle", "1988", "CIB", 120),
+        ("Tyco", "Dino-Riders", "Ankylosaurus with Sting", "vehicle", "1989", "CIB", 130),
+        ("Tyco", "Dino-Riders", "Styracosaurus with Turret", "vehicle", "1989", "CIB", 110),
+        ("Tyco", "Dino-Riders", "Monoclonius with Mako", "vehicle", "1988", "CIB", 75),
+        ("Tyco", "Dino-Riders", "Deinonychus with Antor", "vehicle", "1988", "CIB", 65),
+        ("Tyco", "Dino-Riders", "Quetzalcoatlus with Yungstar", "vehicle", "1989", "CIB", 95),
+        ("Tyco", "Dino-Riders", "Brontosaurus with Ion", "vehicle", "1989", "CIB", 220),
+        ("Tyco", "Dino-Riders", "Command Compound Playset", "playset", "1988", "CIB", 180),
+
+        # ─── Mattel Bravestarr (1986–1988) ───────────────────────────
+        ("Mattel", "Bravestarr", "Marshal Bravestarr", "figure", "1986", "loose_complete", 35),
+        ("Mattel", "Bravestarr", "Thirty/Thirty", "figure", "1986", "loose_complete", 45),
+        ("Mattel", "Bravestarr", "Tex Hex", "figure", "1986", "loose_complete", 30),
+        ("Mattel", "Bravestarr", "Skuzz", "figure", "1986", "loose_complete", 25),
+        ("Mattel", "Bravestarr", "Sand Storm", "figure", "1986", "loose_complete", 28),
+        ("Mattel", "Bravestarr", "Handlebar", "figure", "1986", "loose_complete", 22),
+        ("Mattel", "Bravestarr", "Outlaw Skuzz", "figure", "1987", "loose_complete", 25),
+        ("Mattel", "Bravestarr", "Deputy Fuzz", "figure", "1986", "loose_complete", 28),
+        ("Mattel", "Bravestarr", "Laser-Fire Bravestarr", "figure", "1987", "CIB", 80),
+        ("Mattel", "Bravestarr", "Neutra-Laser Thirty/Thirty", "figure", "1987", "CIB", 90),
+        ("Mattel", "Bravestarr", "Fort Kerium Playset", "playset", "1986", "CIB", 120),
+        ("Mattel", "Bravestarr", "Stratocoach", "vehicle", "1986", "CIB", 55),
+
+        # ─── Kenner Centurions (Additional) ──────────────────────────
+        ("Kenner", "Centurions", "Ace McCloud (Orbital Interceptor)", "figure", "1986", "loose_complete", 48),
+        ("Kenner", "Centurions", "Jake Rockwell (Wild Weasel)", "figure", "1986", "loose_complete", 42),
+        ("Kenner", "Centurions", "Max Ray (Tidal Blast)", "figure", "1986", "loose_complete", 45),
+        ("Kenner", "Centurions", "Rex Charger (Detonator)", "figure", "1987", "loose_complete", 55),
+        ("Kenner", "Centurions", "Ace McCloud (Sky Knight)", "figure", "1986", "CIB", 95),
+        ("Kenner", "Centurions", "Jake Rockwell (Fireforce)", "figure", "1986", "CIB", 85),
+        ("Kenner", "Centurions", "Power Pack Assault Weapon Systems", "accessory", "1986", "CIB", 45),
+
+        # ─── Mego Micronauts (1976–1980) ─────────────────────────────
+        ("Mego", "Micronauts", "Baron Karza", "figure", "1977", "loose_complete", 85),
+        ("Mego", "Micronauts", "Baron Karza", "figure", "1977", "CIB", 250),
+        ("Mego", "Micronauts", "Acroyear", "figure", "1977", "loose_complete", 55),
+        ("Mego", "Micronauts", "Acroyear II", "figure", "1978", "loose_complete", 40),
+        ("Mego", "Micronauts", "Time Traveler (Clear)", "figure", "1977", "loose_complete", 35),
+        ("Mego", "Micronauts", "Time Traveler (Opaque)", "figure", "1977", "loose_complete", 30),
+        ("Mego", "Micronauts", "Space Glider", "figure", "1977", "loose_complete", 40),
+        ("Mego", "Micronauts", "Galactic Warrior", "figure", "1977", "loose_complete", 32),
+        ("Mego", "Micronauts", "Pharoid", "figure", "1977", "loose_complete", 45),
+        ("Mego", "Micronauts", "Biotron", "figure", "1976", "loose_complete", 60),
+        ("Mego", "Micronauts", "Biotron", "figure", "1976", "CIB", 150),
+        ("Mego", "Micronauts", "Microtron", "figure", "1976", "loose_complete", 50),
+        ("Mego", "Micronauts", "Hornetroid", "vehicle", "1979", "CIB", 180),
+        ("Mego", "Micronauts", "Battle Cruiser", "vehicle", "1977", "CIB", 120),
+        ("Mego", "Micronauts", "Astro Station", "playset", "1977", "CIB", 100),
+
+        # ─── Tomy Starriors (1984) ───────────────────────────────────
+        ("Tomy", "Starriors", "Slaughter Steelgrave", "figure", "1984", "loose_complete", 35),
+        ("Tomy", "Starriors", "Destructor Deadeye", "figure", "1984", "loose_complete", 28),
+        ("Tomy", "Starriors", "Protector Hotshot", "figure", "1984", "loose_complete", 25),
+        ("Tomy", "Starriors", "Wastors Gouge", "figure", "1984", "loose_complete", 22),
+        ("Tomy", "Starriors", "Wastors Claw", "figure", "1984", "loose_complete", 22),
+        ("Tomy", "Starriors", "Protector Cricket", "figure", "1984", "loose_complete", 20),
+        ("Tomy", "Starriors", "Destructor Runabout", "figure", "1984", "loose_complete", 20),
+        ("Tomy", "Starriors", "Cosmittor", "figure", "1984", "loose_complete", 30),
+        ("Tomy", "Starriors", "Armored Battle Station", "vehicle", "1984", "CIB", 65),
+        ("Tomy", "Starriors", "Vultor", "figure", "1984", "loose_complete", 28),
+        ("Tomy", "Starriors", "Windstorm", "figure", "1984", "loose_complete", 25),
+        ("Tomy", "Starriors", "Trashor", "figure", "1984", "loose_complete", 22),
+
+        # ─── Hasbro Transformers G1 (Additional) ────────────────────
+        ("Hasbro", "Transformers", "Razorclaw (Predacon, G1)", "figure", "1986", "loose_complete", 45),
+        ("Hasbro", "Transformers", "Rampage (Predacon, G1)", "figure", "1986", "loose_complete", 40),
+        ("Hasbro", "Transformers", "Divebomb (Predacon, G1)", "figure", "1986", "loose_complete", 40),
+        ("Hasbro", "Transformers", "Headstrong (Predacon, G1)", "figure", "1986", "loose_complete", 38),
+        ("Hasbro", "Transformers", "Tantrum (Predacon, G1)", "figure", "1986", "loose_complete", 38),
+        ("Hasbro", "Transformers", "Motormaster (Stunticon, G1)", "figure", "1986", "loose_complete", 45),
+        ("Hasbro", "Transformers", "Drag Strip (Stunticon, G1)", "figure", "1986", "loose_complete", 25),
+        ("Hasbro", "Transformers", "Dead End (Stunticon, G1)", "figure", "1986", "loose_complete", 25),
+        ("Hasbro", "Transformers", "Breakdown (Stunticon, G1)", "figure", "1986", "loose_complete", 25),
+        ("Hasbro", "Transformers", "Wildrider (Stunticon, G1)", "figure", "1986", "loose_complete", 28),
+        ("Hasbro", "Transformers", "Silverbolt (Aerialbot, G1)", "figure", "1986", "loose_complete", 40),
+        ("Hasbro", "Transformers", "Air Raid (Aerialbot, G1)", "figure", "1986", "loose_complete", 22),
+        ("Hasbro", "Transformers", "Fireflight (Aerialbot, G1)", "figure", "1986", "loose_complete", 22),
+        ("Hasbro", "Transformers", "Skydive (Aerialbot, G1)", "figure", "1986", "loose_complete", 22),
+        ("Hasbro", "Transformers", "Slingshot (Aerialbot, G1)", "figure", "1986", "loose_complete", 22),
+        ("Hasbro", "Transformers", "Chromedome (Headmaster, G1)", "figure", "1987", "loose_complete", 55),
+        ("Hasbro", "Transformers", "Hardhead (Headmaster, G1)", "figure", "1987", "loose_complete", 50),
+        ("Hasbro", "Transformers", "Brainstorm (Headmaster, G1)", "figure", "1987", "loose_complete", 55),
+        ("Hasbro", "Transformers", "Highbrow (Headmaster, G1)", "figure", "1987", "loose_complete", 50),
+        ("Hasbro", "Transformers", "Cyclonus (Targetmaster, G1)", "figure", "1987", "loose_complete", 60),
+        ("Hasbro", "Transformers", "Scourge (Targetmaster, G1)", "figure", "1987", "loose_complete", 55),
+        ("Hasbro", "Transformers", "Triggerhappy (Targetmaster, G1)", "figure", "1987", "loose_complete", 45),
+
+        # ─── Hasbro Transformers G1 — More Additions ─────────────────
+        ("Hasbro", "Transformers", "Snapdragon (Headmaster, G1)", "figure", "1987", "loose_complete", 55),
+        ("Hasbro", "Transformers", "Apeface (Headmaster, G1)", "figure", "1987", "loose_complete", 50),
+        ("Hasbro", "Transformers", "Sixshot (G1)", "figure", "1987", "CIB", 280),
+        ("Hasbro", "Transformers", "Sixshot (G1)", "figure", "1987", "loose_complete", 120),
+        ("Hasbro", "Transformers", "Overlord (G1)", "figure", "1988", "CIB", 350),
+        ("Hasbro", "Transformers", "Powermaster Optimus Prime (G1)", "figure", "1988", "CIB", 280),
+        ("Hasbro", "Transformers", "Darkwing (Powermaster, G1)", "figure", "1988", "loose_complete", 35),
+        ("Hasbro", "Transformers", "Dreadwind (Powermaster, G1)", "figure", "1988", "loose_complete", 35),
+
+        # ─── Tyco Dino-Riders (Additional) ───────────────────────────
+        ("Tyco", "Dino-Riders", "Pachycephalosaurus with Tagg", "vehicle", "1989", "CIB", 70),
+        ("Tyco", "Dino-Riders", "Edmontonia with Axis", "vehicle", "1989", "CIB", 85),
+
+        # ─── Kenner Sky Commanders (1987) ──────────────────────────────
+        ("Kenner", "Sky Commanders", "General Summit with Backpack", "figure", "1987", "loose_complete", 30),
+        ("Kenner", "Sky Commanders", "Raider Rath", "figure", "1987", "loose_complete", 28),
+        ("Kenner", "Sky Commanders", "Spider Flyer Vehicle", "vehicle", "1987", "CIB", 65),
+        ("Kenner", "Sky Commanders", "Cable Car Playset", "playset", "1987", "CIB", 85),
+        ("Kenner", "Sky Commanders", "Rapid Deployment Vehicle", "vehicle", "1987", "CIB", 55),
+        ("Kenner", "Sky Commanders", "Outrider with Cable", "vehicle", "1987", "loose_complete", 35),
+        ("Kenner", "Sky Commanders", "Summit with Command Post", "figure", "1987", "CIB", 75),
+        ("Kenner", "Sky Commanders", "Flex Machine", "vehicle", "1987", "loose_complete", 30),
+
+        # ─── Hasbro Air Raiders (1987) ─────────────────────────────────
+        ("Hasbro", "Air Raiders", "Man-O-War Battle Fortress", "playset", "1987", "CIB", 120),
+        ("Hasbro", "Air Raiders", "Twin Lightning", "vehicle", "1987", "CIB", 65),
+        ("Hasbro", "Air Raiders", "Hawkwind", "vehicle", "1987", "CIB", 55),
+        ("Hasbro", "Air Raiders", "Battle Dasher", "vehicle", "1987", "loose_complete", 30),
+        ("Hasbro", "Air Raiders", "Wind Seeker", "vehicle", "1987", "loose_complete", 28),
+        ("Hasbro", "Air Raiders", "Air Refinery Command Outpost", "playset", "1987", "CIB", 95),
+        ("Hasbro", "Air Raiders", "Storm Dagger", "vehicle", "1987", "loose_complete", 25),
+        ("Hasbro", "Air Raiders", "Thunderclaw", "vehicle", "1987", "CIB", 60),
+
+        # ─── Coleco Sectaurs (Additional) ──────────────────────────────
+        ("Coleco", "Sectaurs", "General Spidrax with Spider-Flyer", "figure", "1984", "loose_complete", 60),
+        ("Coleco", "Sectaurs", "Waspax with Wing Fighter", "figure", "1984", "loose_complete", 52),
+        ("Coleco", "Sectaurs", "Dargon with Dragonflyer", "figure", "1984", "CIB", 140),
+        ("Coleco", "Sectaurs", "General Spidrax with Spider-Flyer", "figure", "1984", "CIB", 155),
+        ("Coleco", "Sectaurs", "Hyve Playset", "playset", "1984", "CIB", 180),
+        ("Coleco", "Sectaurs", "Pinsor with Battle Beetle", "figure", "1984", "CIB", 120),
+        ("Coleco", "Sectaurs", "Skulk with Trancula", "figure", "1984", "CIB", 110),
+        ("Coleco", "Sectaurs", "Mantor with Raplor", "figure", "1984", "CIB", 115),
+
+        # ─── Mattel Captain Power (1987–1988) ──────────────────────────
+        ("Mattel", "Captain Power", "Captain Jonathan Power", "figure", "1987", "loose_complete", 35),
+        ("Mattel", "Captain Power", "Major Hawk Masterson", "figure", "1987", "loose_complete", 30),
+        ("Mattel", "Captain Power", "Corporal Jennifer 'Pilot' Chase", "figure", "1987", "loose_complete", 32),
+        ("Mattel", "Captain Power", "Sergeant Robert 'Tank' Ellis", "figure", "1987", "loose_complete", 28),
+        ("Mattel", "Captain Power", "Lord Dread", "figure", "1987", "loose_complete", 40),
+        ("Mattel", "Captain Power", "Soaron Sky Sentry", "figure", "1987", "loose_complete", 38),
+        ("Mattel", "Captain Power", "Blastarr Ground Guardian", "figure", "1987", "loose_complete", 35),
+        ("Mattel", "Captain Power", "Powerjet XT-7 Interactive Vehicle", "vehicle", "1987", "CIB", 110),
+
+        # ─── Tonka Supernaturals (1987) ────────────────────────────────
+        ("Tonka", "Supernaturals", "Lionheart", "figure", "1987", "loose_complete", 45),
+        ("Tonka", "Supernaturals", "Eagle Eye", "figure", "1987", "loose_complete", 40),
+        ("Tonka", "Supernaturals", "Thunderbolt", "figure", "1987", "loose_complete", 38),
+        ("Tonka", "Supernaturals", "Skull", "figure", "1987", "loose_complete", 48),
+        ("Tonka", "Supernaturals", "Mr. Lucky", "figure", "1987", "loose_complete", 42),
+        ("Tonka", "Supernaturals", "Burnheart", "figure", "1987", "loose_complete", 40),
+        ("Tonka", "Supernaturals", "Scary Cat", "figure", "1987", "loose_complete", 35),
+        ("Tonka", "Supernaturals", "Ghostling", "figure", "1987", "loose_complete", 32),
+
+        # ─── Matchbox Ring Raiders (1989) ──────────────────────────────
+        ("Matchbox", "Ring Raiders", "Skull Squadron Commander Ring", "figure", "1989", "loose_complete", 18),
+        ("Matchbox", "Ring Raiders", "Freedom Fighter Ace Ring", "figure", "1989", "loose_complete", 15),
+        ("Matchbox", "Ring Raiders", "Yakamura Zero Fighter Ring", "figure", "1989", "loose_complete", 16),
+        ("Matchbox", "Ring Raiders", "Thunderwing Jet Ring", "figure", "1989", "loose_complete", 14),
+        ("Matchbox", "Ring Raiders", "Ring Raiders Battle Set", "playset", "1989", "CIB", 45),
+        ("Matchbox", "Ring Raiders", "Air Carrier Playset", "playset", "1989", "CIB", 65),
+        ("Matchbox", "Ring Raiders", "Skull Squadron 4-Pack", "figure", "1989", "CIB", 40),
+        ("Matchbox", "Ring Raiders", "Freedom Wing 4-Pack", "figure", "1989", "CIB", 38),
+
+        # ─── Hasbro Battle Beasts (1987–1988) ──────────────────────────
+        ("Hasbro", "Battle Beasts", "Pirate Lion (Fire)", "figure", "1987", "loose_complete", 22),
+        ("Hasbro", "Battle Beasts", "Gruesome Gator (Water)", "figure", "1987", "loose_complete", 20),
+        ("Hasbro", "Battle Beasts", "Rubberneck Giraffe (Wood)", "figure", "1987", "loose_complete", 18),
+        ("Hasbro", "Battle Beasts", "War Weasel (Fire)", "figure", "1987", "loose_complete", 25),
+        ("Hasbro", "Battle Beasts", "Bloodthirsty Bison (Water)", "figure", "1987", "loose_complete", 20),
+        ("Hasbro", "Battle Beasts", "Sabre Sword Tiger (Wood)", "figure", "1987", "loose_complete", 22),
+        ("Hasbro", "Battle Beasts", "Battling Deer Stalker (Fire)", "figure", "1988", "loose_complete", 28),
+        ("Hasbro", "Battle Beasts", "Laser Beasts Triple Threat Snake", "figure", "1988", "CIB", 55),
     ]
 
     catalog = []

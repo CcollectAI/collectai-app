@@ -1666,6 +1666,138 @@ def _expanded_batch_premium_brands() -> list[tuple]:
     ]
 
 
+def _expansion_round2_watches() -> list[tuple]:
+    """55+ additional watches — G-Shock collabs, MoonSwatch, Seiko Presage, Orient Star,
+    Tissot PRX, Hamilton Khaki, Citizen Promaster, Timex collabs."""
+    return [
+        # ── Casio G-Shock Collaborations (10) ────────────────────────────
+        ("G-Shock", "DW-5600 x Porter Yoshida", "DW-5600VT",
+         "Quartz Module 3229", "Resin", "Limited Edition", 380),
+        ("G-Shock", "GA-2100 x Aim Leon Dore", "GA-2100ALD-7A",
+         "Quartz Module 5611", "Resin", "Limited Edition", 450),
+        ("G-Shock", "DW-6900 x Stussy 30th Anniversary", "DW-6900STUSSY-1",
+         "Quartz Module 3230", "Resin", "Limited Edition", 420),
+        ("G-Shock", "GM-2100 x John Mayer Ref. 6557", "GM-2100JM",
+         "Quartz Module 5611", "Stainless Steel", "Limited Edition", 500),
+        ("G-Shock", "DW-5600 x Medicom Toy Bearbrick", "DW-5600BE-1",
+         "Quartz Module 3229", "Resin", "Limited Edition", 320),
+        ("G-Shock", "GA-110 x Dragon Ball Z Frieza", "GA-110FRZ-4A",
+         "Quartz Module 5146", "Resin", "Limited Edition", 380),
+        ("G-Shock", "DW-5600 x Huf SF", "DW-5600HUF-1",
+         "Quartz Module 3229", "Resin", "Limited Edition", 350),
+        ("G-Shock", "MR-G x Bruce Lee", "MRGB5000BA-1",
+         "Tough Solar Module 3496", "Titanium", "Limited Edition", 4200),
+        ("G-Shock", "GA-2100 x CLOT Kevin Poon", "GA-2100CLOT",
+         "Quartz Module 5611", "Resin", "Limited Edition", 380),
+        ("G-Shock", "GMW-B5000 x Eric Haze", "GMW-B5000EH-1",
+         "Tough Solar Module 3459", "Stainless Steel", "Limited Edition", 700),
+
+        # ── Swatch MoonSwatch Collection (8) ─────────────────────────────
+        ("Swatch", "MoonSwatch Mission to Moonshine Gold Moon", "SO33W700",
+         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 400),
+        ("Swatch", "MoonSwatch Mission to Mars Snoopy", "SO33R700",
+         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 550),
+        ("Swatch", "MoonSwatch Full Moon", "SO33K100",
+         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 360),
+        ("Swatch", "MoonSwatch New Moon", "SO33B100",
+         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 340),
+        ("Swatch", "MoonSwatch Mission to the Moon Bioceramic", "SO33M700",
+         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 450),
+        ("Swatch", "MoonSwatch Mission to Neptune Blue", "SO33N700",
+         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 380),
+        ("Swatch", "MoonSwatch Mission to Saturn Gold", "SO33T700",
+         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 370),
+        ("Swatch", "MoonSwatch Mission to Mercury Brown", "SO33A700",
+         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 350),
+
+        # ── Seiko Presage (8) ────────────────────────────────────────────
+        ("Seiko", "Presage Cocktail Time Blue Moon", "SRPB43J1",
+         "Automatic Cal. 4R35", "Stainless Steel", "Current Production", 370),
+        ("Seiko", "Presage Cocktail Time Starlight", "SSA361J1",
+         "Automatic Cal. 4R57", "Stainless Steel", "Current Production", 420),
+        ("Seiko", "Presage Cocktail Time Manhattan", "SSA346J1",
+         "Automatic Cal. 4R57", "Stainless Steel", "Current Production", 400),
+        ("Seiko", "Presage Style60s Ruby", "SSA431J1",
+         "Automatic Cal. 4R35", "Stainless Steel", "Current Production", 380),
+        ("Seiko", "Presage Craftsmanship Shippo Enamel", "SPB293J1",
+         "Automatic Cal. 6R35", "Stainless Steel", "Limited Edition", 1500),
+        ("Seiko", "Presage Sharp Edged Midnight", "SPB205J1",
+         "Automatic Cal. 6R35", "Stainless Steel", "Current Production", 900),
+        ("Seiko", "Presage Zen Garden", "SRPF39J1",
+         "Automatic Cal. 4R35", "Stainless Steel", "Current Production", 350),
+        ("Seiko", "Presage Star Bar Honeycomb", "SARY171",
+         "Automatic Cal. 4R35", "Stainless Steel", "Limited Edition", 480),
+
+        # ── Orient Star (7) ──────────────────────────────────────────────
+        ("Orient Star", "Skeleton Mechanical", "RE-AZ0001S",
+         "Automatic F6R44", "Stainless Steel", "Current Production", 650),
+        ("Orient Star", "Avant-Garde Skeleton", "RE-AV0A01B",
+         "Automatic F6R44", "Stainless Steel", "Current Production", 750),
+        ("Orient Star", "M45 F7 Mechanical Moon Phase", "RE-AY0107N",
+         "Automatic F7M64", "Stainless Steel", "Current Production", 1200),
+        ("Orient Star", "Sports Diver 200m ISO", "RE-AU0302L",
+         "Automatic F6N47", "Stainless Steel", "Current Production", 600),
+        ("Orient Star", "Retrograde Day Indicator", "RE-DE0001L",
+         "Automatic F6R24", "Stainless Steel", "Current Production", 550),
+        ("Orient Star", "Classic Power Reserve", "RE-AW0004S",
+         "Automatic F6R44", "Stainless Steel", "Current Production", 500),
+        ("Orient Star", "Layered Skeleton", "RE-AV0B08Y",
+         "Automatic F6R44", "Stainless Steel", "Limited Edition", 850),
+
+        # ── Tissot PRX Variations (7) ────────────────────────────────────
+        ("Tissot", "PRX Powermatic 80 Ice Blue", "T137.407.11.351.00",
+         "Automatic Powermatic 80", "Stainless Steel", "Current Production", 650),
+        ("Tissot", "PRX Powermatic 80 Damian Lillard", "T137.407.11.041.01",
+         "Automatic Powermatic 80", "Stainless Steel", "Special Edition", 700),
+        ("Tissot", "PRX Digital 35mm", "T137.263.11.050.00",
+         "Quartz Digital", "Stainless Steel", "Current Production", 375),
+        ("Tissot", "PRX Powermatic 80 Rose Gold Tone", "T137.407.33.031.00",
+         "Automatic Powermatic 80", "Steel/Gold", "Current Production", 700),
+        ("Tissot", "PRX 40 205 Black", "T137.407.11.051.00",
+         "Automatic Powermatic 80", "Stainless Steel", "Current Production", 650),
+        ("Tissot", "PRX Chronograph Quartz Blue", "T137.417.11.041.00",
+         "Quartz ETA G10.212", "Stainless Steel", "Current Production", 475),
+        ("Tissot", "PRX 35mm Powermatic 80 Ladies", "T137.207.11.041.00",
+         "Automatic Powermatic 80", "Stainless Steel", "Current Production", 600),
+
+        # ── Hamilton Khaki Models (5) ────────────────────────────────────
+        ("Hamilton", "Khaki Field Mechanical 38mm White", "H69439511",
+         "Manual Cal. H-50", "Stainless Steel", "Current Production", 475),
+        ("Hamilton", "Khaki Field Auto Chrono", "H71616535",
+         "Automatic Cal. H-21", "Stainless Steel", "Current Production", 1695),
+        ("Hamilton", "Khaki Navy Pioneer Small Second", "H78415733",
+         "Automatic Cal. H-10", "Stainless Steel", "Current Production", 895),
+        ("Hamilton", "Khaki Field Expedition Auto 41mm", "H70315510",
+         "Automatic Cal. H-10", "Stainless Steel", "Current Production", 695),
+        ("Hamilton", "Khaki Aviation Converter Auto", "H76635730",
+         "Automatic Cal. H-10", "Stainless Steel", "Current Production", 995),
+
+        # ── Citizen Promaster (5) ────────────────────────────────────────
+        ("Citizen", "Promaster Marine Eco-Drive 200m", "BN0191-55L",
+         "Eco-Drive Cal. E168", "Stainless Steel", "Current Production", 250),
+        ("Citizen", "Promaster Altichron Eco-Drive", "BN4021-02E",
+         "Eco-Drive Cal. J280", "Stainless Steel", "Current Production", 600),
+        ("Citizen", "Promaster Sky Blue Angels", "JY8128-56L",
+         "Eco-Drive Cal. U680", "Stainless Steel", "Special Edition", 550),
+        ("Citizen", "Promaster Fugu Limited Edition", "NY0098-84E",
+         "Automatic Cal. 8204", "Stainless Steel", "Limited Edition", 350),
+        ("Citizen", "Promaster Tough Land Eco-Drive", "BN0217-02E",
+         "Eco-Drive Cal. E168", "Stainless Steel", "Current Production", 300),
+
+        # ── Timex Collaborations (5) ─────────────────────────────────────
+        ("Timex", "Q Timex x Seconde/Seconde/ Degrade", "TW2W24500",
+         "Quartz", "Stainless Steel", "Limited Edition", 220),
+        ("Timex", "Timex x Todd Snyder Marlin Jet Black", "TW2U11800",
+         "Automatic Miyota 8215", "Stainless Steel", "Limited Edition", 280),
+        ("Timex", "Timex x Peanuts Marlin Automatic Snoopy Tennis", "TW2U71300",
+         "Automatic Miyota 8215", "Stainless Steel", "Special Edition", 270),
+        ("Timex", "Timex x Giorgio Galli S2T Automatic", "TW2V62100",
+         "Automatic Miyota 82S5", "Stainless Steel", "Current Production", 395),
+        ("Timex", "Q Timex x Space Invaders", "TW2V39800",
+         "Quartz", "Stainless Steel", "Limited Edition", 200),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Assemble full catalog
 # ---------------------------------------------------------------------------
@@ -1723,6 +1855,7 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_collector_expansion_watches())
     all_tuples.extend(_niche_independent_watches())
     all_tuples.extend(_expanded_batch_premium_brands())
+    all_tuples.extend(_expansion_round2_watches())
 
     catalog: list[dict] = []
     for brand, model, reference, movement, material, watch_type, price_eur in all_tuples:

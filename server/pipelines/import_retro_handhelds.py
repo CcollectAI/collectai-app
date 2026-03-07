@@ -849,6 +849,10 @@ def get_curated_catalog() -> list[dict]:
     # Round 7 expansion — 50 items
     catalog.extend(_expanded_round7_retro_handhelds())
 
+    # Round 8 expansion — 55 items (Neo Geo Pocket Color, Atari Lynx, Sega Nomad,
+    # GBA SP LEs, WonderSwan Color, TurboExpress, N-Gage, Bandai WonderSwan)
+    catalog.extend(_expanded_round8_retro_handhelds())
+
     return catalog
 
 
@@ -922,6 +926,108 @@ def _expanded_round7_retro_handhelds() -> list[dict]:
         ("Nintendo", "Nintendo 3DS XL Monster Hunter 4G", "Nintendo 3DS XL", "Monster Hunter 4 Ultimate (Japan)", "Japan Exclusive", "high", 130, 270),
         ("Nintendo", "Game Boy DMG-01 Classic DMG Backlight Mod White Shell", "Game Boy", "Custom White Shell IPS Backlight Mod", "Modded/Custom", "mid", 90, 130),
         ("Nintendo", "Game Boy Advance SP IPS V5 Mod Clear Shell", "Game Boy Advance SP", "Custom Clear Shell IPS V5 Mod", "Modded/Custom", "mid", 85, 125),
+    ]
+    catalog = []
+    for brand, name, platform, variant_note, condition, rarity_tier, price_loose, price_cib in items:
+        if "Japan" in variant_note or condition == "Japan Exclusive":
+            region = "JPN"
+        elif "NA" in variant_note:
+            region = "NA"
+        else:
+            region = "EU"
+        is_limited = condition in ("Limited Color", "Special Edition", "Japan Exclusive", "Anniversary")
+        year = _platform_year(platform, name)
+        catalog.append({
+            "brand": brand,
+            "name": name,
+            "platform": platform,
+            "variant_note": variant_note,
+            "condition": condition,
+            "rarity_tier": rarity_tier,
+            "price_loose_eur": price_loose,
+            "price_cib_eur": price_cib,
+            "region": region,
+            "is_limited_edition": is_limited,
+            "year": year,
+        })
+    return catalog
+
+
+def _expanded_round8_retro_handhelds() -> list[dict]:
+    """55 new retro handheld items: Neo Geo Pocket Color games, Atari Lynx games,
+    Sega Nomad accessories, GBA SP limited editions, WonderSwan Color games,
+    TurboExpress/PC Engine GT, Nokia N-Gage games, Bandai WonderSwan."""
+    items = [
+        # --- Neo Geo Pocket Color Games (+10) ---
+        ("SNK", "SNK vs Capcom Match of the Millennium NGPC", "Neo Geo Pocket Color", "SNK vs Capcom MOTM (Game)", "Standard", "high", 95, 200),
+        ("SNK", "SNK Gals Fighters NGPC", "Neo Geo Pocket Color", "SNK Gals Fighters (Game)", "Standard", "high", 70, 150),
+        ("SNK", "Metal Slug 2nd Mission NGPC", "Neo Geo Pocket Color", "Metal Slug 2nd Mission (Game)", "Standard", "high", 80, 170),
+        ("SNK", "Biomotor Unitron NGPC", "Neo Geo Pocket Color", "Biomotor Unitron RPG (Game)", "Standard", "high", 60, 130),
+        ("SNK", "Card Fighters Clash SNK Version NGPC", "Neo Geo Pocket Color", "Card Fighters Clash SNK Ver (Game)", "Standard", "high", 75, 155),
+        ("SNK", "Card Fighters Clash Capcom Version NGPC", "Neo Geo Pocket Color", "Card Fighters Clash Capcom Ver (Game)", "Standard", "high", 75, 155),
+        ("SNK", "Faselei! NGPC", "Neo Geo Pocket Color", "Faselei! (Game, PAL)", "Standard", "grail", 200, 400),
+        ("SNK", "Cotton Boomerang NGPC", "Neo Geo Pocket Color", "Cotton Boomerang (Game, Japan)", "Japan Exclusive", "grail", 250, 500),
+        ("SNK", "Samurai Shodown! 2 NGPC", "Neo Geo Pocket Color", "Samurai Shodown! 2 (Game)", "Standard", "high", 85, 175),
+        ("SNK", "Dark Arms Beast Buster NGPC", "Neo Geo Pocket Color", "Dark Arms Beast Buster 1999 (Game)", "Standard", "high", 90, 185),
+
+        # --- Atari Lynx Games (+8) ---
+        ("Atari", "California Games Lynx", "Atari Lynx", "California Games (Game)", "Standard", "mid", 20, 50),
+        ("Atari", "Chip's Challenge Lynx", "Atari Lynx", "Chip's Challenge (Game)", "Standard", "mid", 25, 55),
+        ("Atari", "Electrocop Lynx", "Atari Lynx", "Electrocop (Game)", "Standard", "mid", 15, 40),
+        ("Atari", "Todd's Adventures in Slime World Lynx", "Atari Lynx", "Todd's Adventures in Slime World (Game)", "Standard", "mid", 20, 45),
+        ("Atari", "Blue Lightning Lynx", "Atari Lynx", "Blue Lightning (Game)", "Standard", "mid", 15, 35),
+        ("Atari", "Ninja Gaiden Lynx", "Atari Lynx", "Ninja Gaiden (Game)", "Standard", "high", 80, 160),
+        ("Atari", "Dracula the Undead Lynx", "Atari Lynx", "Dracula the Undead (Game)", "Standard", "mid", 40, 85),
+        ("Atari", "Lemmings Lynx", "Atari Lynx", "Lemmings (Game)", "Standard", "mid", 30, 65),
+
+        # --- Sega Nomad Accessories (+5) ---
+        ("Sega", "Sega Nomad Battery Pack", "Sega Nomad", "Official Rechargeable Battery Pack", "Standard", "high", 80, 140),
+        ("Sega", "Sega Nomad AC Adapter", "Sega Nomad", "Official AC Adapter MK-6501", "Standard", "mid", 35, 60),
+        ("Sega", "Sega Nomad AV Cable", "Sega Nomad", "Official AV Out Cable", "Standard", "mid", 30, 55),
+        ("Sega", "Sega Nomad Carrying Case", "Sega Nomad", "Official Carrying Case", "Standard", "high", 90, 160),
+        ("Sega", "Sega Nomad Link Cable", "Sega Nomad", "2-Player Link Cable", "Standard", "high", 100, 180),
+
+        # --- Game Boy Advance SP Limited Editions (+8) ---
+        ("Nintendo", "Game Boy Advance SP Famicom 20th Anniversary", "Game Boy Advance SP", "Famicom 20th Anniversary (Japan)", "Japan Exclusive", "grail", 250, 500),
+        ("Nintendo", "Game Boy Advance SP NES Classic Edition", "Game Boy Advance SP", "NES Classic Silver & Black", "Special Edition", "high", 120, 250),
+        ("Nintendo", "Game Boy Advance SP Kingdom Hearts", "Game Boy Advance SP", "Kingdom Hearts Chain of Memories (Japan)", "Japan Exclusive", "grail", 300, 600),
+        ("Nintendo", "Game Boy Advance SP Tribal Silver", "Game Boy Advance SP", "Tribal Silver Limited Edition", "Special Edition", "high", 140, 280),
+        ("Nintendo", "Game Boy Advance SP Zelda Minish Cap Gold", "Game Boy Advance SP", "Zelda Minish Cap Gold (PAL)", "Special Edition", "grail", 280, 550),
+        ("Nintendo", "Game Boy Advance SP Who Are You? Pink", "Game Boy Advance SP", "Who Are You? Pink (Japan)", "Japan Exclusive", "high", 130, 260),
+        ("Nintendo", "Game Boy Advance SP Pikachu Yellow", "Game Boy Advance SP", "Pokemon Pikachu Yellow (Japan)", "Japan Exclusive", "grail", 260, 520),
+        ("Nintendo", "Game Boy Advance SP Onyx Black AGS-101", "Game Boy Advance SP", "Onyx Black AGS-101 Backlit", "Standard", "high", 100, 210),
+
+        # --- WonderSwan Color Games (+8) ---
+        ("Bandai", "Final Fantasy WonderSwan Color", "WonderSwan Color", "Final Fantasy (Game, Japan)", "Japan Exclusive", "high", 60, 130),
+        ("Bandai", "Final Fantasy II WonderSwan Color", "WonderSwan Color", "Final Fantasy II (Game, Japan)", "Japan Exclusive", "high", 55, 120),
+        ("Bandai", "Final Fantasy IV WonderSwan Color", "WonderSwan Color", "Final Fantasy IV (Game, Japan)", "Japan Exclusive", "high", 70, 150),
+        ("Bandai", "Riviera WonderSwan Color", "WonderSwan Color", "Riviera: The Promised Land (Game, Japan)", "Japan Exclusive", "high", 80, 170),
+        ("Bandai", "Gunpey EX WonderSwan Color", "WonderSwan Color", "Gunpey EX (Game, Japan)", "Japan Exclusive", "mid", 30, 65),
+        ("Bandai", "Digimon Tamers Digimon Medley WSC", "WonderSwan Color", "Digimon Tamers: Digimon Medley (Game, Japan)", "Japan Exclusive", "mid", 40, 85),
+        ("Bandai", "One Piece Grand Battle Swan Colosseum WSC", "WonderSwan Color", "One Piece Grand Battle Swan Colosseum (Game, Japan)", "Japan Exclusive", "mid", 45, 95),
+        ("Bandai", "Judgement Silversword WSC", "WonderSwan Color", "Judgement Silversword (Game, Japan)", "Japan Exclusive", "grail", 350, 700),
+
+        # --- TurboExpress / PC Engine GT (+6) ---
+        ("NEC", "TurboExpress Console", "TurboExpress", "TurboExpress Handheld Console (NA)", "Standard", "high", 150, 320),
+        ("NEC", "TurboExpress TV Tuner", "TurboExpress", "TurboExpress TV Tuner Accessory (NA)", "Standard", "high", 120, 240),
+        ("NEC", "TurboExpress AC Adapter", "TurboExpress", "TurboExpress Official AC Adapter (NA)", "Standard", "mid", 40, 75),
+        ("NEC", "PC Engine GT Console", "PC Engine GT", "PC Engine GT Handheld Console (Japan)", "Japan Exclusive", "high", 180, 380),
+        ("NEC", "PC Engine GT TV Tuner", "PC Engine GT", "PC Engine GT TV Tuner (Japan)", "Japan Exclusive", "high", 100, 200),
+        ("NEC", "PC Engine GT Car Adapter", "PC Engine GT", "PC Engine GT Car Adapter (Japan)", "Japan Exclusive", "mid", 50, 100),
+
+        # --- Nokia N-Gage Games (+5) ---
+        ("Nokia", "N-Gage QD Console Graphite", "Nokia N-Gage", "N-Gage QD Graphite Console", "Standard", "mid", 40, 90),
+        ("Nokia", "Pathway to Glory N-Gage", "Nokia N-Gage", "Pathway to Glory (Game)", "Standard", "mid", 15, 35),
+        ("Nokia", "Tomb Raider N-Gage", "Nokia N-Gage", "Tomb Raider (Game)", "Standard", "mid", 20, 45),
+        ("Nokia", "Sonic N N-Gage", "Nokia N-Gage", "Sonic N (Game)", "Standard", "mid", 20, 45),
+        ("Nokia", "Elder Scrolls Shadowkey N-Gage", "Nokia N-Gage", "Elder Scrolls Travels: Shadowkey (Game)", "Standard", "high", 80, 160),
+
+        # --- Bandai WonderSwan (+5) ---
+        ("Bandai", "WonderSwan Console Crystal Black", "WonderSwan", "Crystal Black Console (Japan)", "Japan Exclusive", "high", 65, 140),
+        ("Bandai", "WonderSwan Console Skeleton Blue", "WonderSwan", "Skeleton Blue Console (Japan)", "Japan Exclusive", "high", 70, 150),
+        ("Bandai", "WonderSwan Console Sherbet Melon", "WonderSwan", "Sherbet Melon Console (Japan)", "Japan Exclusive", "high", 80, 170),
+        ("Bandai", "Gundam WonderSwan Limited Edition", "WonderSwan", "MS Gundam MSVS Limited Edition Console (Japan)", "Japan Exclusive", "grail", 200, 400),
+        ("Bandai", "Digimon Adventure Anode/Cathode Tamer WS", "WonderSwan", "Digimon Adventure Anode/Cathode Tamer (Game, Japan)", "Japan Exclusive", "mid", 35, 75),
     ]
     catalog = []
     for brand, name, platform, variant_note, condition, rarity_tier, price_loose, price_cib in items:
@@ -1072,6 +1178,7 @@ def _platform_year(platform: str, name: str) -> int:
         "Retroid Pocket 4": 2024,
         "Retroid Pocket 2+": 2022,
         "Trimui Smart Pro S": 2024,
+        "Nokia N-Gage": 2003,
     }
     # Check for reissue years in name
     if "2020 Reissue" in name or "2020" in name:

@@ -841,6 +841,27 @@ def get_curated_catalog() -> list[dict]:
         ("Intellivision", "Advanced Dungeons & Dragons", 1982, 8, 25, 120, "Common"),
         ("Intellivision", "Astrosmash", 1981, 5, 15, 80, "Common"),
         ("Intellivision", "B-17 Bomber", 1982, 8, 25, 120, "Common"),
+
+        # ── Sega Saturn — Japanese Exclusives ─────────────────────────────
+        ("Saturn", "Grandia (JP)", 1997, 20, 50, 200, "Common"),
+        ("Saturn", "Sakura Wars (JP)", 1996, 15, 40, 180, "Common"),
+        ("Saturn", "Princess Crown (JP)", 1997, 80, 180, 500, "Uncommon"),
+        ("Saturn", "Soukyugurentai (Terra Diver) (JP)", 1996, 100, 220, 600, "Uncommon"),
+        ("Saturn", "Batsugun (JP)", 1996, 150, 350, 900, "Rare"),
+
+        # ── Neo Geo AES — More Premium Titles ────────────────────────────
+        ("Neo Geo", "Kizuna Encounter: Super Tag Battle", 1996, 600, 1100, 2800, "Rare"),
+        ("Neo Geo", "Matrimelee", 2003, 1500, 2800, 6000, "Grail"),
+        ("Neo Geo", "Twinkle Star Sprites", 1996, 400, 800, 2000, "Rare"),
+        ("Neo Geo", "Waku Waku 7", 1996, 300, 600, 1500, "Rare"),
+        ("Neo Geo", "Stakes Winner 2", 1996, 200, 400, 1000, "Uncommon"),
+
+        # ── TurboGrafx-16 / PC Engine — More Titles ──────────────────────
+        ("TurboGrafx-16", "Sapphire (PCE CD)", 1995, 1500, 3000, 6500, "Grail"),
+        ("TurboGrafx-16", "Gate of Thunder (TurboGrafx-CD)", 1992, 30, 80, 250, "Common"),
+        ("TurboGrafx-16", "Dracula X: Rondo of Blood (PCE CD)", 1993, 150, 350, 900, "Rare"),
+        ("TurboGrafx-16", "Ninja Spirit", 1990, 40, 100, 300, "Uncommon"),
+        ("TurboGrafx-16", "Splatterhouse (TurboGrafx-16)", 1990, 60, 150, 400, "Uncommon"),
     ]
 
     for platform, title, year, loose, cib, sealed, rarity in games:

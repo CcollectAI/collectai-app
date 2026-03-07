@@ -777,6 +777,77 @@ def get_curated_catalog() -> list[dict]:
         ("Aniplex", "Blue Lock OST (Kenichiro Suehiro)", "Blue Lock", "Japanese Pressing", "Ego Blue", "mid", 42),
         ("Pony Canyon", "Ranking of Kings Season 2 OST (MAYUKO)", "Ranking of Kings S2", "Japanese Pressing", "Crown Gold", "high", 55),
         ("Toho Music", "Kaiju No. 8 OST", "Kaiju No. 8", "Japanese Pressing", "Kaiju Green", "mid", 45),
+
+        # === ROUND 8 — 55 new items to reach 605+ ===
+
+        # ── Additional Soundtrack Vinyl (+10) ──────────────────────────────
+        ("Pony Canyon", "Attack on Titan Season 4 OST (KOHTA YAMAMOTO) 2LP", "Attack on Titan S4", "Japanese Pressing", "Rumbling Red", "high", 72),
+        ("Pony Canyon", "Attack on Titan Complete OST Box Set (Hiroyuki Sawano) 6LP", "Attack on Titan Complete", "Japanese Pressing", "Survey Corps Green", "grail", 220),
+        ("Toho Music", "My Hero Academia OST (Yuki Hayashi) 2LP", "My Hero Academia", "Japanese Pressing", "Deku Green", "high", 65),
+        ("Toho Music", "My Hero Academia Season 6 OST (Yuki Hayashi)", "My Hero Academia S6", "Japanese Pressing", "OFA Gold", "high", 58),
+        ("Aniplex", "Demon Slayer: Hashira Training OST (Yuki Kajiura)", "Demon Slayer S4", "Japanese Pressing", "Hashira Purple", "high", 55),
+        ("Aniplex", "Demon Slayer Complete OST Box (Yuki Kajiura/Go Shiina) 8LP", "Demon Slayer Complete", "Japanese Pressing", "Tanjiro Checkered", "grail", 280),
+        ("Aniplex", "Demon Slayer: Infinity Castle OST (Yuki Kajiura) 2LP", "Demon Slayer: Infinity Castle", "Japanese Pressing", "Muzan Crimson", "high", 68),
+        ("Pony Canyon", "Attack on Titan Final Season Part 3 OST (KOHTA YAMAMOTO)", "Attack on Titan Final", "Japanese Pressing", "Freedom Blue", "high", 62),
+        ("Toho Music", "My Hero Academia Movie: You're Next OST", "My Hero Academia Movie", "Japanese Pressing", "Plus Ultra Red", "mid", 48),
+        ("Aniplex", "Demon Slayer: Entertainment District OST (Yuki Kajiura)", "Demon Slayer S2", "Japanese Pressing", "Tengen Flash Gold", "high", 60),
+
+        # ── Tiger Lab Vinyl Releases (+8) ──────────────────────────────────
+        ("Tiger Lab Vinyl", "Cowboy Bebop Future Blues (Seatbelts)", "Cowboy Bebop", "US Pressing", "Sunset Orange", "high", 62),
+        ("Tiger Lab Vinyl", "Cowboy Bebop Tank! Remix EP (Seatbelts)", "Cowboy Bebop", "US Pressing", "Jazz Gold", "mid", 45),
+        ("Tiger Lab Vinyl", "Samurai Champloo: Departure", "Samurai Champloo", "US Pressing", "Mugen Blue", "high", 55),
+        ("Tiger Lab Vinyl", "Samurai Champloo: Impression", "Samurai Champloo", "US Pressing", "Jin Silver", "high", 58),
+        ("Tiger Lab Vinyl", "FLCL Original Soundtrack (the pillows) 2LP", "FLCL", "US Pressing", "Vespa Yellow", "high", 72),
+        ("Tiger Lab Vinyl", "Kids on the Slope OST Vol.2 (Yoko Kanno)", "Kids on the Slope", "US Pressing", "Saxophone Gold", "mid", 42),
+        ("Tiger Lab Vinyl", "Space Dandy OST Vol.2 (Space Dandy Band)", "Space Dandy", "US Pressing", "Baby Blue", "mid", 40),
+        ("Tiger Lab Vinyl", "Lupin the Third: Woman Called Fujiko Mine OST", "Lupin III", "US Pressing", "Femme Fatale Red", "high", 55),
+
+        # ── Milan Records Anime Releases (+8) ──────────────────────────────
+        ("Milan Records", "The Boy and the Heron OST (Joe Hisaishi) 2LP", "The Boy and the Heron", "EU/US Pressing", "Feather Grey", "high", 58),
+        ("Milan Records", "Suzume OST (RADWIMPS/Kazuma Jinnouchi) 2LP", "Suzume", "EU/US Pressing", "Door Red", "high", 55),
+        ("Milan Records", "Your Name OST (RADWIMPS) 2LP", "Your Name", "EU/US Pressing", "Comet Blue", "high", 62),
+        ("Milan Records", "Weathering With You OST (RADWIMPS) 2LP", "Weathering With You", "EU/US Pressing", "Rain Clear Blue", "high", 58),
+        ("Milan Records", "Nausicaa OST (Joe Hisaishi) 2LP Deluxe", "Nausicaa", "EU/US Pressing", "Toxic Jungle Green", "high", 55),
+        ("Milan Records", "Kiki's Delivery Service OST (Joe Hisaishi)", "Kiki's Delivery Service", "EU/US Pressing", "Witch Purple", "high", 52),
+        ("Milan Records", "Arrietty OST (Cecile Corbel)", "Arrietty", "EU/US Pressing", "Miniature Green", "mid", 38),
+        ("Milan Records", "The Wind Rises OST (Joe Hisaishi)", "The Wind Rises", "EU/US Pressing", "Sky Blue", "mid", 42),
+
+        # ── Japanese Import Vinyl (+8) ─────────────────────────────────────
+        ("King Records", "Yu Yu Hakusho OST (Yusuke Honma) 1992", "Yu Yu Hakusho", "Japanese OG Pressing", "Black", "grail", 180),
+        ("King Records", "Rurouni Kenshin OST (Noriyuki Asakura) 1996", "Rurouni Kenshin", "Japanese OG Pressing", "Black", "grail", 160),
+        ("Nippon Columbia", "Hajime no Ippo OST (Tsuneo Imahori)", "Hajime no Ippo", "Japanese OG Pressing", "Black", "grail", 150),
+        ("Victor", "Initial D Eurobeat Collection (Dave Rodgers) 2LP", "Initial D", "Japanese Pressing", "Racing White/Red", "high", 85),
+        ("King Records", "GTO: Great Teacher Onizuka OST", "GTO", "Japanese OG Pressing", "Black", "grail", 140),
+        ("Nippon Columbia", "City Hunter OST (Yuji Ohno) 1987", "City Hunter", "Japanese OG Pressing", "Black", "grail", 200),
+        ("King Records", "Slam Dunk OST Complete Collection (2LP)", "Slam Dunk", "Japanese OG Pressing", "Black", "grail", 180),
+        ("Aniplex", "Fate/Zero OST (Yuki Kajiura) 3LP", "Fate/Zero", "Japanese Pressing", "Grail Gold", "grail", 130),
+
+        # ── Video Game x Anime Crossover Soundtracks (+7) ─────────────────
+        ("Square Enix Music", "NieR: Automata OST (Keiichi Okabe) 4LP Box", "NieR: Automata", "Japanese Pressing", "YoRHa Black", "grail", 180),
+        ("Bandai Namco Music", "Tales of Arise OST (Motoi Sakuraba) 3LP", "Tales of Arise", "Japanese Pressing", "Flame Red", "high", 75),
+        ("Square Enix Music", "Final Fantasy XIV: Endwalker OST (Masayoshi Soken) 4LP", "Final Fantasy XIV: Endwalker", "Japanese Pressing", "Hydaelyn Blue", "grail", 150),
+        ("Atlus Music", "Persona 3 Reload OST (Atsushi Kitajoh) 3LP", "Persona 3 Reload", "Japanese Pressing", "Velvet Blue", "grail", 120),
+        ("Bandai Namco Music", "Dragon Ball FighterZ OST (2LP)", "Dragon Ball FighterZ", "Japanese Pressing", "Kamehameha Blue", "high", 65),
+        ("Capcom Music", "Devil May Cry 5 OST (Casey Edwards) 2LP", "Devil May Cry 5", "Japanese Pressing", "Nero Blue", "high", 68),
+        ("Bandai Namco Music", "Tekken 8 OST (2LP)", "Tekken 8", "Japanese Pressing", "Mishima Purple", "high", 60),
+
+        # ── Classic Anime Reissue Vinyl (+7) ───────────────────────────────
+        ("Tiger Lab Vinyl", "Akira OST Reissue (Geinoh Yamashirogumi) 2LP", "Akira", "US Pressing", "Neo Tokyo Red", "high", 72),
+        ("Milan Records", "Ghost in the Shell (1995) OST Reissue (Kenji Kawai) 2LP", "Ghost in the Shell", "EU/US Pressing", "Cybernetic Blue", "high", 65),
+        ("Mondo", "Neon Genesis Evangelion OST Reissue (Shiro Sagisu) 2LP", "Evangelion", "US Pressing", "Eva Unit 01 Purple/Green", "high", 78),
+        ("Tiger Lab Vinyl", "Serial Experiments Lain OST Reissue (Bôa)", "Serial Experiments Lain", "US Pressing", "Wired Blue", "high", 68),
+        ("Mondo", "Perfect Blue OST Reissue (Masahiro Ikumi)", "Perfect Blue", "US Pressing", "Mima Blue", "high", 72),
+        ("Tiger Lab Vinyl", "Trigun OST Reissue (Tsuneo Imahori)", "Trigun", "US Pressing", "Desert Sand", "high", 58),
+        ("Milan Records", "Princess Mononoke OST Reissue (Joe Hisaishi) 2LP Deluxe", "Princess Mononoke", "EU/US Pressing", "Forest Green Marble", "high", 65),
+
+        # ── Mondo Anime Vinyl (+7) ─────────────────────────────────────────
+        ("Mondo", "Cowboy Bebop OST (Seatbelts/Yoko Kanno) 2LP", "Cowboy Bebop", "US Pressing", "Bebop Orange/Blue", "high", 75),
+        ("Mondo", "Paprika OST (Susumu Hirasawa)", "Paprika", "US Pressing", "Dream Red", "high", 65),
+        ("Mondo", "Spirited Away OST (Joe Hisaishi) Picture Disc", "Spirited Away", "US Pressing", "Picture Disc", "high", 82),
+        ("Mondo", "My Neighbor Totoro OST (Joe Hisaishi) Picture Disc", "My Neighbor Totoro", "US Pressing", "Picture Disc", "high", 78),
+        ("Mondo", "Millennium Actress OST (Susumu Hirasawa)", "Millennium Actress", "US Pressing", "Film Reel Silver", "high", 68),
+        ("Mondo", "Tokyo Godfathers OST (Keiichi Suzuki)", "Tokyo Godfathers", "US Pressing", "Snow White", "high", 60),
+        ("Mondo", "Vampire Hunter D: Bloodlust OST (Marco D'Ambrosio)", "Vampire Hunter D: Bloodlust", "US Pressing", "Blood Red", "high", 65),
     ]
 
     catalog: list[dict] = []

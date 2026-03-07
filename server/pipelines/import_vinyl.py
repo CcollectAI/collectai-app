@@ -1,7 +1,7 @@
 """
 Curated Vinyl Records Import Pipeline.
 
-Imports a hand-curated catalog of 500+ collectible vinyl records across
+Imports a hand-curated catalog of 600+ collectible vinyl records across
 14 subcategories: Classic Rock, Hip-Hop/R&B, Jazz, Indie/Alternative,
 Electronic/Ambient, Soul/Funk/R&B, Punk/Post-Punk, Modern Collectible
 Pressings, Soundtracks & Scores, Country/Folk/Blues, Metal/Heavy,
@@ -100,7 +100,7 @@ GENRE_POPULARITY: dict[str, float] = {
 
 
 def _classic_rock_icons() -> list[tuple[str, str, str, str, float]]:
-    """55 Classic Rock Icons — original pressings and collectible editions."""
+    """65 Classic Rock Icons — original pressings and collectible editions."""
     return [
         ("Pink Floyd", "The Dark Side of the Moon",
          "Original 1st Pressing", "Classic Rock", 1200.00),
@@ -213,11 +213,32 @@ def _classic_rock_icons() -> list[tuple[str, str, str, str, float]]:
          "Original 1st Pressing", "Classic Rock", 320.00),
         ("Genesis", "Selling England by the Pound",
          "Original 1st Pressing", "Classic Rock", 200.00),
+        # ── Classic Rock Rare Pressings (Expansion) ──────────────────────────
+        ("Pink Floyd", "A Saucerful of Secrets",
+         "Original 1st Pressing", "Classic Rock", 450.00),
+        ("Pink Floyd", "Obscured by Clouds",
+         "Original 1st Pressing", "Classic Rock", 220.00),
+        ("Led Zeppelin", "Presence",
+         "Original 1st Pressing", "Classic Rock", 200.00),
+        ("Led Zeppelin", "In Through the Out Door",
+         "Original 1st Pressing", "Classic Rock", 180.00),
+        ("The Beatles", "Please Please Me",
+         "Original 1st Pressing", "Classic Rock", 2200.00),
+        ("The Beatles", "Help!",
+         "Original 1st Pressing", "Classic Rock", 600.00),
+        ("The Beatles", "Magical Mystery Tour",
+         "Original 1st Pressing", "Classic Rock", 500.00),
+        ("Jimi Hendrix", "Band of Gypsys",
+         "Original 1st Pressing", "Classic Rock", 350.00),
+        ("The Who", "Quadrophenia",
+         "Original 1st Pressing", "Classic Rock", 280.00),
+        ("Emerson, Lake & Palmer", "Brain Salad Surgery",
+         "Original 1st Pressing", "Classic Rock", 180.00),
     ]
 
 
 def _hiphop_rnb_grails() -> list[tuple[str, str, str, str, float]]:
-    """30 Hip-Hop & R&B Grails — original pressings and sought-after editions."""
+    """38 Hip-Hop & R&B Grails — original pressings and sought-after editions."""
     return [
         ("Wu-Tang Clan", "Enter the Wu-Tang (36 Chambers)",
          "Original 1st Pressing", "Hip-Hop", 450.00),
@@ -338,11 +359,28 @@ def _hiphop_rnb_grails() -> list[tuple[str, str, str, str, float]]:
          "Colored/Splatter Vinyl", "Hip-Hop", 65.00),
         ("Pusha T", "Daytona",
          "Original 1st Pressing", "Hip-Hop", 120.00),
+        # ── Hip-Hop/Rap Collectible Pressings (Expansion) ────────────────────
+        ("Wu-Tang Clan", "The W",
+         "Original 1st Pressing", "Hip-Hop", 180.00),
+        ("MF DOOM", "Operation: Doomsday",
+         "Original 1st Pressing", "Hip-Hop", 350.00),
+        ("MF DOOM", "Vaudeville Villain",
+         "Original 1st Pressing", "Hip-Hop", 200.00),
+        ("MF DOOM", "Born Like This",
+         "Original 1st Pressing", "Hip-Hop", 150.00),
+        ("Kanye West", "Graduation",
+         "Original 1st Pressing", "Hip-Hop", 250.00),
+        ("Kanye West", "The Life of Pablo",
+         "Colored/Splatter Vinyl", "Hip-Hop", 180.00),
+        ("A Tribe Called Quest", "The Low End Theory",
+         "Original 1st Pressing", "Hip-Hop", 300.00),
+        ("ODB", "Return to the 36 Chambers: The Dirty Version",
+         "Original 1st Pressing", "Hip-Hop", 250.00),
     ]
 
 
 def _jazz_essentials() -> list[tuple[str, str, str, str, float]]:
-    """28 Jazz Essentials — original pressings (Blue Note, Columbia, Impulse)."""
+    """36 Jazz Essentials — original pressings (Blue Note, Columbia, Impulse)."""
     return [
         ("Miles Davis", "Kind of Blue",
          "Original 1st Pressing", "Jazz", 3500.00),
@@ -461,11 +499,28 @@ def _jazz_essentials() -> list[tuple[str, str, str, str, float]]:
          "Original 1st Pressing", "Jazz", 1800.00),
         ("John Coltrane", "Ascension",
          "Original 1st Pressing", "Jazz", 1200.00),
+        # ── Jazz Blue Note Originals (Expansion) ─────────────────────────────
+        ("Miles Davis", "Nefertiti",
+         "Original 1st Pressing", "Jazz", 900.00),
+        ("Miles Davis", "Filles de Kilimanjaro",
+         "Original 1st Pressing", "Jazz", 700.00),
+        ("John Coltrane", "Impressions",
+         "Original 1st Pressing", "Jazz", 1000.00),
+        ("Thelonious Monk", "Solo Monk",
+         "Original 1st Pressing", "Jazz", 1200.00),
+        ("Thelonious Monk", "Genius of Modern Music Vol. 1",
+         "Original 1st Pressing", "Jazz", 3500.00),
+        ("Kenny Burrell", "Midnight Blue",
+         "Original 1st Pressing", "Jazz", 1800.00),
+        ("Dexter Gordon", "Our Man in Paris",
+         "Original 1st Pressing", "Jazz", 1400.00),
+        ("Lou Donaldson", "Blues Walk",
+         "Original 1st Pressing", "Jazz", 1600.00),
     ]
 
 
 def _indie_alternative() -> list[tuple[str, str, str, str, float]]:
-    """21 Indie/Alternative — original pressings and collectible reissues."""
+    """28 Indie/Alternative — original pressings and collectible reissues."""
     return [
         ("Radiohead", "OK Computer",
          "Original 1st Pressing", "Indie/Alternative", 350.00),
@@ -540,11 +595,26 @@ def _indie_alternative() -> list[tuple[str, str, str, str, float]]:
          "Original 1st Pressing", "Indie/Alternative", 400.00),
         ("Modest Mouse", "The Moon & Antarctica",
          "Original 1st Pressing", "Indie/Alternative", 250.00),
+        # ── Indie/Alternative (Expansion) ────────────────────────────────────
+        ("Radiohead", "A Moon Shaped Pool",
+         "Original 1st Pressing", "Indie/Alternative", 120.00),
+        ("Arcade Fire", "The Suburbs",
+         "Original 1st Pressing", "Indie/Alternative", 150.00),
+        ("Arcade Fire", "Neon Bible",
+         "Original 1st Pressing", "Indie/Alternative", 120.00),
+        ("Neutral Milk Hotel", "On Avery Island",
+         "Original 1st Pressing", "Indie/Alternative", 300.00),
+        ("Built to Spill", "Keep It Like a Secret",
+         "Original 1st Pressing", "Indie/Alternative", 180.00),
+        ("Interpol", "Turn On the Bright Lights",
+         "Original 1st Pressing", "Indie/Alternative", 200.00),
+        ("The Strokes", "Is This It",
+         "Original 1st Pressing", "Indie/Alternative", 250.00),
     ]
 
 
 def _electronic_ambient() -> list[tuple[str, str, str, str, float]]:
-    """26 Electronic/Ambient — original pressings and audiophile editions."""
+    """33 Electronic/Ambient — original pressings and audiophile editions."""
     return [
         ("Kraftwerk", "Trans-Europe Express",
          "Original 1st Pressing", "Electronic", 400.00),
@@ -627,6 +697,21 @@ def _electronic_ambient() -> list[tuple[str, str, str, str, float]]:
          "Original 1st Pressing", "Electronic", 180.00),
         ("Massive Attack", "Blue Lines",
          "Original 1st Pressing", "Electronic", 300.00),
+        # ── Electronic/Ambient (Expansion) ───────────────────────────────────
+        ("Aphex Twin", "Selected Ambient Works Volume II",
+         "Original 1st Pressing", "Electronic", 400.00),
+        ("Boards of Canada", "Tomorrow's Harvest",
+         "Original 1st Pressing", "Electronic", 150.00),
+        ("Brian Eno", "Before and After Science",
+         "Original 1st Pressing", "Electronic", 250.00),
+        ("Brian Eno", "Apollo: Atmospheres and Soundtracks",
+         "Original 1st Pressing", "Electronic", 220.00),
+        ("Aphex Twin", "Collapse EP",
+         "Numbered Limited", "Electronic", 80.00),
+        ("Boards of Canada", "In a Beautiful Place Out in the Country EP",
+         "Original 1st Pressing", "Electronic", 120.00),
+        ("Brian Eno & Harold Budd", "Ambient 2: The Plateaux of Mirror",
+         "Original 1st Pressing", "Electronic", 200.00),
     ]
 
 
@@ -833,7 +918,7 @@ def _modern_collectible_pressings() -> list[tuple[str, str, str, str, float]]:
 
 
 def _soundtracks_scores() -> list[tuple[str, str, str, str, float]]:
-    """18 Soundtracks & Scores — collectible film and game soundtracks."""
+    """23 Soundtracks & Scores — collectible film and game soundtracks."""
     return [
         ("Vangelis", "Blade Runner (Original Soundtrack)",
          "Original 1st Pressing", "Soundtrack", 350.00),
@@ -871,11 +956,22 @@ def _soundtracks_scores() -> list[tuple[str, str, str, str, float]]:
          "Colored/Splatter Vinyl", "Soundtrack", 55.00),
         ("Joe Hisaishi", "My Neighbor Totoro (Soundtrack)",
          "Original 1st Pressing", "Soundtrack", 250.00),
+        # ── Soundtrack Collectibles (Expansion) ──────────────────────────────
+        ("Vangelis", "Blade Runner (Mondo Pressing)",
+         "Numbered Limited", "Soundtrack", 120.00),
+        ("Cliff Martinez", "Drive (Pink Vinyl Reissue)",
+         "Colored/Splatter Vinyl", "Soundtrack", 80.00),
+        ("Joe Hisaishi", "Princess Mononoke (Soundtrack)",
+         "Original 1st Pressing", "Soundtrack", 280.00),
+        ("Joe Hisaishi", "Howl's Moving Castle (Soundtrack)",
+         "Original 1st Pressing", "Soundtrack", 260.00),
+        ("Joe Hisaishi", "Castle in the Sky (Soundtrack)",
+         "Original 1st Pressing", "Soundtrack", 240.00),
     ]
 
 
 def _country_folk_blues() -> list[tuple[str, str, str, str, float]]:
-    """16 Country/Folk/Blues — original pressings and audiophile reissues."""
+    """21 Country/Folk/Blues — original pressings and audiophile reissues."""
     return [
         ("Johnny Cash", "At Folsom Prison",
          "Original 1st Pressing", "Country/Folk/Blues", 400.00),
@@ -917,11 +1013,22 @@ def _country_folk_blues() -> list[tuple[str, str, str, str, float]]:
          "Original 1st Pressing", "Country/Folk/Blues", 450.00),
         ("Howlin' Wolf", "Moanin' in the Moonlight",
          "Original 1st Pressing", "Country/Folk/Blues", 1200.00),
+        # ── Country/Folk Originals (Expansion) ───────────────────────────────
+        ("Johnny Cash", "At San Quentin",
+         "Original 1st Pressing", "Country/Folk/Blues", 350.00),
+        ("Dolly Parton", "Jolene",
+         "Original 1st Pressing", "Country/Folk/Blues", 400.00),
+        ("Dolly Parton", "Coat of Many Colors",
+         "Original 1st Pressing", "Country/Folk/Blues", 350.00),
+        ("Bob Dylan", "Blonde on Blonde",
+         "Original 1st Pressing", "Country/Folk/Blues", 1200.00),
+        ("Bob Dylan", "The Freewheelin' Bob Dylan",
+         "Original 1st Pressing", "Country/Folk/Blues", 800.00),
     ]
 
 
 def _metal_heavy() -> list[tuple[str, str, str, str, float]]:
-    """20 Metal/Heavy — original pressings and colored variants of essential metal records."""
+    """25 Metal/Heavy — original pressings and colored variants of essential metal records."""
     return [
         ("Metallica", "Master of Puppets",
          "Original 1st Pressing", "Punk/Post-Punk", 500.00),
@@ -988,6 +1095,17 @@ def _metal_heavy() -> list[tuple[str, str, str, str, float]]:
          "Original 1st Pressing", "Punk/Post-Punk", 300.00),
         ("Mayhem", "De Mysteriis Dom Sathanas",
          "Original 1st Pressing", "Punk/Post-Punk", 500.00),
+        # ── Metal/Hardcore (Expansion) ───────────────────────────────────────
+        ("Metallica", "Metallica (Black Album)",
+         "Original 1st Pressing", "Punk/Post-Punk", 300.00),
+        ("Black Sabbath", "Vol. 4",
+         "Original 1st Pressing", "Punk/Post-Punk", 350.00),
+        ("Black Sabbath", "Sabbath Bloody Sabbath",
+         "Original 1st Pressing", "Punk/Post-Punk", 300.00),
+        ("Tool", "10,000 Days",
+         "Original 1st Pressing", "Punk/Post-Punk", 400.00),
+        ("Tool", "Fear Inoculum (Limited Deluxe)",
+         "Numbered Limited", "Punk/Post-Punk", 250.00),
     ]
 
 

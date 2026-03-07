@@ -894,6 +894,11 @@ def get_curated_catalog() -> list[dict]:
         })
 
     catalog.extend(_batch_jp_events_2025())
+
+    # Round 8 expansion — 55 items (Comiket, WonFes garage kits, Jump Festa,
+    # AnimeJapan, TGS, Treasure Festa, Tamashii Nations event exclusives)
+    catalog.extend(_expanded_round8_jp_events())
+
     return catalog
 
 
@@ -970,6 +975,92 @@ def _batch_jp_events_2025() -> list[dict]:
         ("Ichiban Kuji", "Dragon Ball Daima", "Prize Figure", "Dragon Ball Daima Ichiban Kuji Last One Prize Mini Goku", "high", 110),
     ]
 
+    catalog = []
+    for event, franchise, item_type, name, tier, price in items:
+        catalog.append({
+            "event": event,
+            "franchise": franchise,
+            "item_type": item_type,
+            "name": name,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _expanded_round8_jp_events() -> list[dict]:
+    """55 new JP event exclusives: Comiket, WonFes garage kits, Jump Festa,
+    AnimeJapan, TGS, Treasure Festa, Tamashii Nations event exclusives."""
+    items = [
+        # --- Comiket Exclusives (+10) ---
+        ("Comiket", "Bocchi the Rock!", "Tapestry", "Bocchi the Rock! C105 Exclusive B2 Tapestry Gotoh Hitori", "mid", 50),
+        ("Comiket", "Chainsaw Man", "Tapestry", "Chainsaw Man C105 Exclusive B2 Tapestry Makima", "mid", 55),
+        ("Comiket", "Blue Archive", "Doujinshi Set", "Blue Archive C105 Premium Circle Doujinshi Bundle (6)", "mid", 50),
+        ("Comiket", "Hololive", "Exclusive Goods", "Hololive C105 Marine Houshou Exclusive Dakimakura Cover", "high", 120),
+        ("Comiket", "Original", "Doujinshi Set", "Comiket C105 Top 10 Circle Doujinshi Mega Bundle", "high", 100),
+        ("Comiket", "Vocaloid", "Tapestry", "Hatsune Miku C105 16th Anniversary B1 Tapestry", "mid", 60),
+        ("Comiket", "Touhou Project", "Music CD Set", "Touhou C105 Arrangement CD Bundle (10 circles)", "mid", 70),
+        ("Comiket", "Fate/Grand Order", "Exclusive Goods", "FGO C105 Corporate Booth Exclusive Acrylic Clock", "high", 110),
+        ("Comiket", "Oshi no Ko", "Clear File Set", "Oshi no Ko C105 Exclusive Clear File Set (5pc)", "standard", 18),
+        ("Comiket", "Dandadan", "Acrylic Stand", "Dandadan C105 Exclusive Acrylic Stand Momo & Okarun", "mid", 35),
+
+        # --- Wonder Festival Garage Kits (+10) ---
+        ("WonFes", "Frieren", "Garage Kit", "Frieren 1/6 Resin GK WonFes 2025 Summer Limited 15pcs", "grail", 420),
+        ("WonFes", "Berserk", "Garage Kit", "Guts Berserker Armor 1/6 GK WonFes 2025 Summer Unpainted", "grail", 500),
+        ("WonFes", "Made in Abyss", "Garage Kit", "Nanachi 1/7 Resin GK WonFes 2025 Summer Limited 20pcs", "high", 280),
+        ("WonFes", "Jujutsu Kaisen", "Garage Kit", "Gojo Satoru Hollow Purple 1/7 GK WonFes 2025 Winter", "grail", 380),
+        ("WonFes", "Demon Slayer", "Garage Kit", "Nezuko Demon Form 1/6 Resin GK WonFes 2025 Summer", "grail", 350),
+        ("WonFes", "Spy x Family", "Exclusive Figure", "Yor Forger Thorn Princess WonFes 2025 Exclusive 1/7", "high", 200),
+        ("WonFes", "Bocchi the Rock!", "Exclusive Figure", "Gotoh Hitori Guitar Hero Pose WonFes 2025 1/7", "high", 180),
+        ("WonFes", "Cyberpunk Edgerunners", "Garage Kit", "Lucy 1/7 Resin GK WonFes 2025 Summer Limited 25pcs", "high", 260),
+        ("WonFes", "My Dress-Up Darling", "Garage Kit", "Marin Kitagawa Cosplay 1/6 GK WonFes 2025 Winter", "high", 240),
+        ("WonFes", "NieR:Automata", "Garage Kit", "2B YoRHa No.2 Type B 1/6 GK WonFes 2025 Summer", "grail", 450),
+
+        # --- Jump Festa Merchandise (+8) ---
+        ("Jump Festa", "One Piece", "Exclusive Figure", "Shanks Film Red Jump Festa 2025 Exclusive DXF Figure", "high", 120),
+        ("Jump Festa", "My Hero Academia", "Exclusive Figure", "Deku Star & Stripe Jump Festa 2025 Premium Figure", "high", 100),
+        ("Jump Festa", "Jujutsu Kaisen", "Exclusive Figure", "Sukuna King of Curses Jump Festa 2025 Figure", "high", 130),
+        ("Jump Festa", "Naruto", "Poster Set", "Naruto 25th Anniversary Jump Festa Poster Set (6pc)", "mid", 55),
+        ("Jump Festa", "Bleach", "Exclusive Figure", "Ichigo TYBW Bankai Jump Festa 2025 Figure", "high", 110),
+        ("Jump Festa", "Sakamoto Days", "Goods Set", "Sakamoto Days Jump Festa 2025 Complete Goods Box", "mid", 40),
+        ("Jump Festa", "Undead Unluck", "Exclusive Card", "Undead Unluck Jump Festa 2025 Promo Card Set", "mid", 30),
+        ("Jump Festa", "Dragon Ball Daima", "Exclusive Figure", "Mini Goku Dragon Ball Daima Jump Festa 2025 Figure", "mid", 75),
+
+        # --- AnimeJapan Exclusives (+8) ---
+        ("AnimeJapan", "Chainsaw Man", "Exclusive Figure", "Denji Chainsaw Devil AnimeJapan 2025 Chibi Figure", "mid", 45),
+        ("AnimeJapan", "Bocchi the Rock!", "Goods Set", "Bocchi the Rock! AnimeJapan 2025 Complete Goods Box (Towel+Badge+Poster)", "mid", 50),
+        ("AnimeJapan", "Dandadan", "Exhibit Goods", "Dandadan AnimeJapan 2025 Exhibition Key Visual Art Board", "high", 100),
+        ("AnimeJapan", "Vinland Saga", "Acrylic Stand", "Vinland Saga AnimeJapan 2025 Thorfinn Acrylic Stand", "mid", 30),
+        ("AnimeJapan", "Mushoku Tensei", "Clear File Set", "Mushoku Tensei AnimeJapan 2025 Clear File Set (4pc)", "standard", 15),
+        ("AnimeJapan", "Kaiju No. 8", "Exclusive Figure", "Kafka Hibino Kaiju Form AnimeJapan 2025 Figure", "mid", 55),
+        ("AnimeJapan", "Wind Breaker", "Badge Set", "Wind Breaker AnimeJapan 2025 Random Badge Collection (8pc)", "standard", 18),
+        ("AnimeJapan", "Sword Art Online", "Exhibit Goods", "SAO 10th Anniversary AnimeJapan 2025 Art Panel", "high", 110),
+
+        # --- Tokyo Game Show Merch (+7) ---
+        ("Tokyo Game Show", "Final Fantasy VII Rebirth", "Exclusive Merch", "FF7 Rebirth TGS 2025 Exclusive Play Arts Mini Cloud", "high", 130),
+        ("Tokyo Game Show", "Persona 6", "Exclusive Figure", "Persona 6 TGS 2025 Exclusive Protagonist Figure", "high", 140),
+        ("Tokyo Game Show", "Dragon Quest XII", "Exclusive Merch", "Dragon Quest XII TGS 2025 Exclusive Slime Plush Set", "mid", 50),
+        ("Tokyo Game Show", "Tekken 8", "Exclusive Figure", "Jin Kazama TGS 2025 Exclusive Chibi Figure", "mid", 45),
+        ("Tokyo Game Show", "Street Fighter 6", "Exclusive Merch", "SF6 TGS 2025 Limited Edition Art Board & Badge Set", "mid", 40),
+        ("Tokyo Game Show", "Death Stranding 2", "Exclusive Merch", "DS2 TGS 2025 BB Pod Replica Keychain Limited", "mid", 55),
+        ("Tokyo Game Show", "Armored Core VI", "Exclusive Figure", "Armored Core VI TGS 2025 ALLMIND Figure Mini", "mid", 60),
+
+        # --- Treasure Festa Items (+6) ---
+        ("Treasure Festa", "Chainsaw Man", "Garage Kit", "Power Blood Fiend 1/7 Resin GK Treasure Festa Yokohama", "high", 240),
+        ("Treasure Festa", "Frieren", "Garage Kit", "Fern Battle Pose 1/7 Resin GK Treasure Festa Ariake", "high", 260),
+        ("Treasure Festa", "Blue Archive", "Garage Kit", "Arona 1/7 Resin GK Treasure Festa Yokohama Limited", "high", 220),
+        ("Treasure Festa", "Hololive", "Garage Kit", "Gawr Gura 1/7 Resin GK Treasure Festa Ariake", "high", 250),
+        ("Treasure Festa", "Lycoris Recoil", "Garage Kit", "Chisato Nishikigi 1/7 Resin GK Treasure Festa Yokohama", "high", 230),
+        ("Treasure Festa", "Oshi no Ko", "Garage Kit", "Ai Hoshino Idol Costume 1/7 GK Treasure Festa Ariake", "high", 270),
+
+        # --- Tamashii Nations Event Exclusives (+6) ---
+        ("Tamashii Nations", "Dragon Ball Super", "S.H.Figuarts", "Vegeta Ultra Ego Event Exclusive S.H.Figuarts", "high", 160),
+        ("Tamashii Nations", "One Piece", "Figuarts ZERO", "Gear 5 Luffy Event Color Ver. Figuarts ZERO Extra Battle", "high", 200),
+        ("Tamashii Nations", "Naruto", "S.H.Figuarts", "Naruto Baryon Mode Event Exclusive S.H.Figuarts", "high", 140),
+        ("Tamashii Nations", "Kamen Rider", "S.H.Figuarts", "Kamen Rider Geats Boost Mark IX Event Exclusive", "high", 120),
+        ("Tamashii Nations", "Gundam", "Metal Build", "Freedom Gundam Concept 2 Metal Build Event Exclusive", "grail", 400),
+        ("Tamashii Nations", "Evangelion", "Robot Spirits", "Eva Unit-13 Awakened Form Robot Spirits Event Exclusive", "high", 170),
+    ]
     catalog = []
     for event, franchise, item_type, name, tier, price in items:
         catalog.append({

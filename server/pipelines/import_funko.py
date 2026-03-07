@@ -718,6 +718,75 @@ def get_curated_catalog() -> list[dict]:
         ("Pop! Town", "20", "Ghostbusters Firehouse w/ Slimer", "Walmart", "mid", 75),
         ("Pop! Town", "25", "Byers House w/ Demogorgon (Stranger Things)", "Target", "mid", 65),
         ("Pop! Town", "30", "Haunted Mansion w/ Ghost", "Disney Parks", "high", 200),
+
+        # ── Funko Soda Figures (10) ──────────────────────────────────────
+        ("Vinyl Soda", "SE", "Batman (Chase Metallic Emerald)", "Common/Chase", "grail", 600),
+        ("Vinyl Soda", "SE", "Boba Fett (Chase Flocked)", "Common/Chase", "high", 180),
+        ("Vinyl Soda", "SE", "Spider-Man (Chase Glow Green)", "Common/Chase", "high", 200),
+        ("Vinyl Soda", "SE", "Freddy Funko as Frankenstein (Chase)", "Funko Shop", "grail", 500),
+        ("Vinyl Soda", "SE", "The Joker (Chase Metallic)", "Common/Chase", "high", 250),
+        ("Vinyl Soda", "SE", "Darth Vader (Chase)", "Common/Chase", "high", 160),
+        ("Vinyl Soda", "SE", "Teenage Mutant Ninja Turtles Shredder (Chase)", "Common/Chase", "high", 140),
+        ("Vinyl Soda", "SE", "He-Man (Chase Glow)", "Common/Chase", "high", 175),
+        ("Vinyl Soda", "SE", "Skeletor (Chase Metallic)", "Common/Chase", "high", 190),
+        ("Vinyl Soda", "SE", "Willy Wonka (Chase)", "Common/Chase", "high", 130),
+
+        # ── Funko Pop! Deluxe / Rides (10) ───────────────────────────────
+        ("Pop! Rides", "SE", "Night King on Viserion (Glow)", "HBO Shop", "grail", 800),
+        ("Pop! Rides", "18", "Daenerys on Drogon", "Hot Topic", "high", 150),
+        ("Pop! Rides", "25", "Batman in Batmobile (1966 Classic)", "Target", "high", 180),
+        ("Pop! Rides", "SE", "Ghost Rider on Motorcycle (Glow)", "PX Previews", "high", 250),
+        ("Pop! Deluxe", "584", "Iron Man Mark I (Glow)", "PX Previews", "high", 200),
+        ("Pop! Deluxe", "727", "Darth Vader on Throne", "GameStop", "mid", 75),
+        ("Pop! Deluxe", "SE", "Avengers Assemble: Thor (Amazon Exclusive)", "Amazon", "high", 120),
+        ("Pop! Deluxe", "SE", "Avengers Assemble: Hulk (Amazon Exclusive)", "Amazon", "high", 130),
+        ("Pop! Rides", "SE", "Hagrid on Motorcycle (6-inch)", "NYCC 2019", "high", 200),
+        ("Pop! Deluxe", "SE", "Star-Lord on Benatar Ship", "Amazon", "mid", 85),
+
+        # ── Funko x Loungefly Exclusives (8) ─────────────────────────────
+        ("Loungefly Exclusive", "SE", "Funko Pop! & Loungefly Bundle: Maleficent Dragon", "BoxLunch", "high", 250),
+        ("Loungefly Exclusive", "SE", "Funko Pop! & Loungefly Bundle: Ursula", "Hot Topic", "high", 200),
+        ("Loungefly Exclusive", "SE", "Funko Pop! & Loungefly Bundle: Stitch (Elvis)", "BoxLunch", "high", 180),
+        ("Loungefly Exclusive", "SE", "Funko Pop! & Loungefly Bundle: Cruella De Vil", "Hot Topic", "high", 175),
+        ("Loungefly Exclusive", "SE", "Funko Pop! & Loungefly Bundle: Ariel", "BoxLunch", "mid", 95),
+        ("Loungefly Exclusive", "SE", "Funko Pop! & Loungefly Bundle: Grogu (The Child)", "Target", "high", 120),
+        ("Loungefly Exclusive", "SE", "Funko Pop! & Loungefly Bundle: Hades (Glow)", "Hot Topic", "high", 160),
+        ("Loungefly Exclusive", "SE", "Funko Pop! & Loungefly Bundle: Rapunzel", "BoxLunch", "mid", 85),
+
+        # ── Convention Exclusives SDCC / NYCC (8) ────────────────────────
+        ("Convention Exclusive", "SE", "Headless Ned Stark", "SDCC 2013", "grail", 2500),
+        ("Convention Exclusive", "SE", "Skeletor (Metallic)", "SDCC 2013", "grail", 1800),
+        ("Convention Exclusive", "SE", "Freddy Funko as The Flash", "SDCC 2016", "grail", 1200),
+        ("Convention Exclusive", "SE", "Tony Stark (Holding Helmet)", "SDCC 2017", "high", 350),
+        ("Convention Exclusive", "SE", "Conan O'Brien as Superman", "SDCC 2018", "grail", 600),
+        ("Convention Exclusive", "SE", "Freddy Funko as Pennywise", "NYCC 2018", "grail", 900),
+        ("Convention Exclusive", "SE", "The Mountain (Armored)", "SDCC 2017", "high", 400),
+        ("Convention Exclusive", "SE", "Toucan Sam (Glow)", "SDCC 2020", "high", 300),
+
+        # ── Funko Pop! Albums (7) ────────────────────────────────────────
+        ("Pop! Albums", "01", "AC/DC: Back in Black", "", "mid", 45),
+        ("Pop! Albums", "03", "Metallica: Metallica (Black Album)", "", "mid", 50),
+        ("Pop! Albums", "05", "Jimi Hendrix: Are You Experienced", "", "mid", 55),
+        ("Pop! Albums", "09", "Ozzy Osbourne: Diary of a Madman", "", "mid", 40),
+        ("Pop! Albums", "17", "Tupac: 2Pacalypse Now", "", "mid", 65),
+        ("Pop! Albums", "20", "Guns N' Roses: Appetite for Destruction", "", "mid", 55),
+        ("Pop! Albums", "24", "Prince: Purple Rain (Metallic)", "FYE", "high", 120),
+
+        # ── Funko Pop! Digital / NFT Redeemables (6) ─────────────────────
+        ("Pop! Digital", "SE", "Freddy Funko (Legendary) Wave 1", "NFT Redemption", "grail", 1200),
+        ("Pop! Digital", "SE", "Batman (Legendary) Physical", "NFT Redemption", "grail", 800),
+        ("Pop! Digital", "SE", "Iron Man (Grail) Physical", "NFT Redemption", "grail", 700),
+        ("Pop! Digital", "SE", "Teenage Mutant Ninja Turtles Set (Legendary)", "NFT Redemption", "grail", 950),
+        ("Pop! Digital", "SE", "Power Rangers Megazord (Legendary)", "NFT Redemption", "high", 450),
+        ("Pop! Digital", "SE", "Scooby-Doo (Legendary) Physical", "NFT Redemption", "high", 380),
+
+        # ── Funko Pop! Trains (6) ────────────────────────────────────────
+        ("Pop! Trains", "01", "Mickey Mouse Engine", "Disney Store", "high", 180),
+        ("Pop! Trains", "02", "Donald Duck Tender", "Disney Store", "high", 150),
+        ("Pop! Trains", "03", "Goofy Flatcar", "Disney Store", "mid", 95),
+        ("Pop! Trains", "04", "Pluto Caboose", "Disney Store", "mid", 85),
+        ("Pop! Trains", "05", "Minnie Mouse Holiday Engine", "Amazon", "high", 140),
+        ("Pop! Trains", "10", "Nightmare Before Christmas: Jack Skellington Train", "Hot Topic", "high", 200),
     ]
 
     catalog = []

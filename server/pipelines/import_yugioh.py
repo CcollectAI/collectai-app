@@ -1597,6 +1597,134 @@ def get_curated_catalog() -> list[dict]:
          "Ultra Rare", True, 30.00, "Monster", "LIGHT"),
         ("MZMI-EN055", "Exodia Legendary Defender (Ultra)", "Maze of Millennia",
          "Ultra Rare", True, 40.00, "Monster", "DARK"),
+
+        # =================================================================
+        # Ghost Rares — Expansion (+10)
+        # =================================================================
+        ("GFTP-EN001", "Blue-Eyes White Dragon (Ghost)", "Ghosts From the Past",
+         "Ghost Rare", True, 350.00, "Monster", "LIGHT"),
+        ("GFTP-EN056", "Dark Magician (Ghost)", "Ghosts From the Past",
+         "Ghost Rare", True, 320.00, "Monster", "DARK"),
+        ("GFP2-EN001", "Red-Eyes Black Dragon (Ghost)", "Ghosts From the Past: The 2nd Haunting",
+         "Ghost Rare", True, 280.00, "Monster", "DARK"),
+        ("GFP2-EN130", "Stardust Dragon (Ghost)", "Ghosts From the Past: The 2nd Haunting",
+         "Ghost Rare", True, 400.00, "Monster", "WIND"),
+        ("DUSA-EN001", "Crystal Wing Synchro Dragon (Ghost)", "Duelist Saga",
+         "Ghost Rare", True, 250.00, "Monster", "WIND"),
+        ("TAEV-EN007", "Rainbow Dragon (Ghost)", "Tactical Evolution",
+         "Ghost Rare", True, 600.00, "Monster", "LIGHT"),
+        ("PTDN-EN043", "Rainbow Neos (Ghost)", "Phantom Darkness",
+         "Ghost Rare", True, 550.00, "Monster", "LIGHT"),
+        ("ANPR-EN040", "Ancient Fairy Dragon (Ghost)", "Ancient Prophecy",
+         "Ghost Rare", True, 800.00, "Monster", "LIGHT"),
+        ("SOVR-EN044", "Majestic Red Dragon (Ghost)", "Stardust Overdrive",
+         "Ghost Rare", True, 450.00, "Monster", "DARK"),
+        ("ABPF-EN040", "Majestic Star Dragon (Ghost)", "Absolute Powerforce",
+         "Ghost Rare", True, 500.00, "Monster", "WIND"),
+
+        # =================================================================
+        # Starlight Rares — Expansion (+10)
+        # =================================================================
+        ("MAMA-EN070", "Dark Magician Girl (Starlight)", "Magnificent Mavens",
+         "Starlight Rare", True, 900.00, "Monster", "DARK"),
+        ("BLVO-EN083", "Underworld Goddess of the Closed World (Starlight)", "Blazing Vortex",
+         "Starlight Rare", True, 350.00, "Monster", "DARK"),
+        ("DAMA-EN083", "Stardust Dragon (Starlight)", "Dawn of Majesty",
+         "Starlight Rare", True, 750.00, "Monster", "WIND"),
+        ("GRCR-EN005", "Blue-Eyes White Dragon (Starlight)", "The Grand Creators",
+         "Starlight Rare", True, 800.00, "Monster", "LIGHT"),
+        ("LEDE-EN091", "Snake-Eye Ash (Starlight)", "Legacy of Destruction",
+         "Starlight Rare", True, 400.00, "Monster", "FIRE"),
+        ("PHNI-EN098", "Skull Knight (Starlight)", "Phantom Nightmare",
+         "Starlight Rare", True, 250.00, "Monster", "DARK"),
+        ("INFO-EN098", "Fiendsmith Engraver (Starlight)", "The Infinite Forbidden",
+         "Starlight Rare", True, 300.00, "Monster", "LIGHT"),
+        ("AGOV-EN098", "Tenpai Dragon Chundra (Starlight)", "Age of Overlord",
+         "Starlight Rare", True, 280.00, "Monster", "FIRE"),
+        ("CYAC-EN098", "Kashtira Fenrir (Starlight)", "Cyberstorm Access",
+         "Starlight Rare", True, 500.00, "Monster", "DARK"),
+        ("POTE-EN098", "Tearlaments Scheiren (Starlight)", "Power of the Elements",
+         "Starlight Rare", True, 320.00, "Monster", "WATER"),
+
+        # =================================================================
+        # Prize Cards (+5)
+        # =================================================================
+        ("YCSW-EN001", "Minerva, the Exalted Lightsworn (YCS Prize)", "Yu-Gi-Oh Championship Series Prize",
+         "Prize Card", False, 15000.00, "Monster", "LIGHT"),
+        ("TF04-EN001", "Des Volstgalph (Prize)", "Tag Force 4 Promotional Card",
+         "Prize Card", False, 5000.00, "Monster", "DARK"),
+        ("WCPS-AE801", "Grandopolis, the Eternal Golden City (Prize)", "World Championship Prize",
+         "Prize Card", False, 8000.00, "Spell", ""),
+        ("YCSW-EN008", "Ascator, Dawnwalker (YCS Prize)", "Yu-Gi-Oh Championship Series Prize",
+         "Prize Card", False, 6000.00, "Monster", "LIGHT"),
+        ("WCPS-EN901", "Iron Knight of Revolution (Prize)", "World Championship Prize",
+         "Prize Card", False, 10000.00, "Monster", "DARK"),
+
+        # =================================================================
+        # Quarter Century Secret Rares — Expansion (+8)
+        # =================================================================
+        ("RA02-EN037", "Pot of Greed (QCSR)", "25th Anniversary Rarity Collection II",
+         "Quarter Century Secret Rare", False, 600.00, "Spell", ""),
+        ("RA02-EN026", "Kuriboh (QCSR)", "25th Anniversary Rarity Collection II",
+         "Quarter Century Secret Rare", False, 350.00, "Monster", "DARK"),
+        ("RA01-EN061", "Infinite Impermanence (QCSR)", "25th Anniversary Rarity Collection",
+         "Quarter Century Secret Rare", False, 450.00, "Trap", ""),
+        ("RA01-EN028", "Change of Heart (QCSR)", "25th Anniversary Rarity Collection",
+         "Quarter Century Secret Rare", False, 650.00, "Spell", ""),
+        ("RA01-EN034", "Red-Eyes Black Dragon (QCSR)", "25th Anniversary Rarity Collection",
+         "Quarter Century Secret Rare", False, 1200.00, "Monster", "DARK"),
+        ("RA02-EN055", "Ghost Belle & Haunted Mansion (QCSR)", "25th Anniversary Rarity Collection II",
+         "Quarter Century Secret Rare", False, 380.00, "Monster", "EARTH"),
+        ("RA01-EN045", "Harpie's Feather Duster (QCSR)", "25th Anniversary Rarity Collection",
+         "Quarter Century Secret Rare", False, 500.00, "Spell", ""),
+        ("RA02-EN080", "Black Luster Soldier - Envoy of the Beginning (QCSR)", "25th Anniversary Rarity Collection II",
+         "Quarter Century Secret Rare", False, 850.00, "Monster", "LIGHT"),
+
+        # =================================================================
+        # OCG Exclusive Ultimate Rares (+7)
+        # =================================================================
+        ("PHRA-JP050", "Tri-Brigade Shuraig (OCG Ulti)", "Phantom Rage (OCG)",
+         "Ultimate Rare", True, 200.00, "Monster", "DARK"),
+        ("ROTD-JP046", "Dogmatika Ecclesia (OCG Ulti)", "Rise of the Duelist (OCG)",
+         "Ultimate Rare", True, 250.00, "Monster", "LIGHT"),
+        ("DAMA-JP050", "Destiny HERO - Destroyer Phoenix Enforcer (OCG Ulti)", "Dawn of Majesty (OCG)",
+         "Ultimate Rare", True, 180.00, "Monster", "DARK"),
+        ("BODE-JP050", "Swordsoul Grandmaster - Chixiao (OCG Ulti)", "Burst of Destiny (OCG)",
+         "Ultimate Rare", True, 160.00, "Monster", "WATER"),
+        ("POTE-JP050", "Spright Elf (OCG Ulti)", "Power of the Elements (OCG)",
+         "Ultimate Rare", True, 220.00, "Monster", "FIRE"),
+        ("CYAC-JP050", "Kashtira Arise-Heart (OCG Ulti)", "Cyberstorm Access (OCG)",
+         "Ultimate Rare", True, 190.00, "Monster", "DARK"),
+        ("LEDE-JP050", "Snake-Eyes Flamberge Dragon (OCG Ulti)", "Legacy of Destruction (OCG)",
+         "Ultimate Rare", True, 170.00, "Monster", "FIRE"),
+
+        # =================================================================
+        # Collector's Rares — Expansion (+5)
+        # =================================================================
+        ("EGO1-EN001", "Blue-Eyes White Dragon (Collector's Rare)", "Egyptian God Deck: Obelisk",
+         "Collector's Rare", False, 80.00, "Monster", "LIGHT"),
+        ("EGS1-EN001", "Dark Magician (Collector's Rare)", "Egyptian God Deck: Slifer",
+         "Collector's Rare", False, 75.00, "Monster", "DARK"),
+        ("MAGO-EN001", "Blue-Eyes White Dragon (Collector's Rare Gold)", "Maximum Gold",
+         "Collector's Rare", False, 100.00, "Monster", "LIGHT"),
+        ("MAGO-EN002", "Dark Magician (Collector's Rare Gold)", "Maximum Gold",
+         "Collector's Rare", False, 95.00, "Monster", "DARK"),
+        ("MGED-EN001", "Blue-Eyes Alternative Ultimate Dragon (Collector's Rare)", "Maximum Gold: El Dorado",
+         "Collector's Rare", False, 120.00, "Monster", "LIGHT"),
+
+        # =================================================================
+        # Sealed Product (+5)
+        # =================================================================
+        ("LOB-BOX", "Legend of Blue-Eyes White Dragon Booster Box (Sealed)", "Legend of Blue-Eyes White Dragon",
+         "Sealed Product", False, 25000.00, "Sealed Product", ""),
+        ("MRD-BOX", "Metal Raiders Booster Box (Sealed)", "Metal Raiders",
+         "Sealed Product", False, 18000.00, "Sealed Product", ""),
+        ("IOC-BOX", "Invasion of Chaos Booster Box (Sealed)", "Invasion of Chaos",
+         "Sealed Product", False, 15000.00, "Sealed Product", ""),
+        ("GLAS-BOX", "Gladiator's Assault Booster Box (Sealed)", "Gladiator's Assault",
+         "Sealed Product", False, 3000.00, "Sealed Product", ""),
+        ("PTDN-BOX", "Phantom Darkness Booster Box (Sealed)", "Phantom Darkness",
+         "Sealed Product", False, 5000.00, "Sealed Product", ""),
     ]
 
     catalog = []

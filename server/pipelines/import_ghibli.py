@@ -828,6 +828,81 @@ def get_curated_catalog() -> list[dict]:
         ("Castle in the Sky", "cel", "Laputa Floating City Animation Cel", "Original Cel", "grail", 2800),
         ("Multi-Film", "art_book", "Hayao Miyazaki Art Book Limited Edition (Signed)", "JP Exclusive", "grail", 450),
         ("Multi-Film", "calendar", "Studio Ghibli Vintage Calendar (1995 Complete)", "Vintage", "high", 120),
+
+        # ══════════════════════════════════════════════════════════════
+        # EXPANSION TO 605+ — 55 additional under-represented films
+        # ══════════════════════════════════════════════════════════════
+
+        # ── The Boy and the Heron (+10) ────────────────────────────
+        ("The Boy and the Heron", "figure", "Old Pelican Elder Figure", "Donguri Sora", "mid", 42),
+        ("The Boy and the Heron", "figure", "Fire Tower Diorama (Paper Theater Deluxe)", "Sankei", "high", 85),
+        ("The Boy and the Heron", "plush", "Parakeet Soldier Plush (Medium 25cm)", "Donguri Sora", "mid", 38),
+        ("The Boy and the Heron", "jewelry", "Mahito's Mother Pendant Necklace Replica (Silver)", "JP Exclusive", "high", 95),
+        ("The Boy and the Heron", "jp_merch", "The Boy and the Heron Blu-ray Steelbook (JP, 2024)", "JP Exclusive", "high", 90),
+        ("The Boy and the Heron", "accessory", "Warawara Enamel Pin Set (6pc)", "JP Exclusive", "mid", 32),
+        ("The Boy and the Heron", "figure", "Himi Kitchen Scene Diorama", "Donguri Sora", "mid", 55),
+        ("The Boy and the Heron", "cel", "Mahito & Grey Heron Tower Scene Key Cel", "Original Cel", "grail", 3200),
+        ("The Boy and the Heron", "model", "Granduncle's Tower Paper Theater (Sankei)", "Sankei", "mid", 42),
+        ("The Boy and the Heron", "poster", "The Boy and the Heron Oscar Winner Commemorative B2 Poster", "JP Exclusive", "high", 110),
+
+        # ── Howl's Moving Castle (+8) ──────────────────────────────
+        ("Howl's Moving Castle", "figure", "Sophie & Howl Star Lake Dance Diorama", "Cominica", "high", 165),
+        ("Howl's Moving Castle", "figure", "Witch of the Waste (Young) Figure", "Benelic", "mid", 48),
+        ("Howl's Moving Castle", "plush", "Markl Apprentice Plush (Medium 22cm)", "Donguri Sora", "mid", 35),
+        ("Howl's Moving Castle", "jewelry", "Calcifer Flame Brooch (Enamel & Gold Plate)", "JP Exclusive", "mid", 42),
+        ("Howl's Moving Castle", "jp_merch", "Howl's Castle Steampunk Lamp (Brass & Glass)", "JP Exclusive", "high", 120),
+        ("Howl's Moving Castle", "model", "Sophie's Hat Shop Paper Theater (Sankei)", "Sankei", "mid", 38),
+        ("Howl's Moving Castle", "accessory", "Howl's Blue Diamond Stud Earring Replica", "JP Exclusive", "high", 85),
+        ("Howl's Moving Castle", "poster", "Howl's Moving Castle 20th Anniversary B2 Poster (2024)", "JP Exclusive", "high", 95),
+
+        # ── Porco Rosso (+7) ───────────────────────────────────────
+        ("Porco Rosso", "figure", "Porco Rosso Hotel Adriano Bar Scene Diorama", "Benelic", "high", 95),
+        ("Porco Rosso", "figure", "Madame Gina Singing Figure", "Donguri Sora", "mid", 48),
+        ("Porco Rosso", "plush", "Porco Rosso Pilot Plush (Medium 25cm)", "Donguri Sora", "mid", 42),
+        ("Porco Rosso", "music_box", "Le Temps des Cerises Music Box (Walnut)", "Sekiguchi", "high", 90),
+        ("Porco Rosso", "accessory", "Porco's Aviator Goggles Replica", "JP Exclusive", "high", 110),
+        ("Porco Rosso", "jp_merch", "Hotel Adriano Ceramic Wine Glass Set (2pc)", "JP Exclusive", "mid", 55),
+        ("Porco Rosso", "jewelry", "Porco's Pilot Wings Pin (Brass, Vintage Style)", "JP Exclusive", "mid", 38),
+
+        # ── Kiki's Delivery Service (+7) ──────────────────────────
+        ("Kiki's Delivery Service", "figure", "Kiki Radio Scene Diorama (Osono's Bakery)", "Donguri Sora", "mid", 52),
+        ("Kiki's Delivery Service", "figure", "Jeff the Dog Figure", "Donguri Sora", "mid", 35),
+        ("Kiki's Delivery Service", "plush", "Kiki in Flying Outfit Plush (Large 35cm)", "Donguri Sora", "mid", 48),
+        ("Kiki's Delivery Service", "jewelry", "Jiji Silhouette Pendant (Sterling Silver)", "JP Exclusive", "mid", 55),
+        ("Kiki's Delivery Service", "jp_merch", "Koriko Bakery Ceramic Bread Basket Replica", "JP Exclusive", "mid", 65),
+        ("Kiki's Delivery Service", "model", "Kiki's House (Okino Residence) Paper Theater (Sankei)", "Sankei", "mid", 42),
+        ("Kiki's Delivery Service", "accessory", "Jiji Tail Ring (Sterling Silver)", "JP Exclusive", "mid", 48),
+
+        # ── Nausicaa (+7) ─────────────────────────────────────────
+        ("Nausicaa", "figure", "Nausicaa Standing on Ohmu Shell Diorama", "Cominica", "high", 145),
+        ("Nausicaa", "figure", "Yupa Warrior Figure", "Benelic", "mid", 55),
+        ("Nausicaa", "plush", "Teto Fox Squirrel Shoulder Plush (Clip-On)", "Donguri Sora", "mid", 38),
+        ("Nausicaa", "jewelry", "Nausicaa's Blue Pendant Necklace Replica", "JP Exclusive", "high", 85),
+        ("Nausicaa", "jp_merch", "Nausicaa Toxic Jungle Terrarium Kit (Live Plants)", "JP Exclusive", "mid", 65),
+        ("Nausicaa", "model", "Ohmu Detailed Model Kit (1:20 Scale, Clear Shell)", "Bandai", "high", 120),
+        ("Nausicaa", "poster", "Nausicaa Image Album LP Vinyl Repress (Hisaishi)", "JP Exclusive", "high", 95),
+
+        # ── Castle in the Sky (+6) ────────────────────────────────
+        ("Castle in the Sky", "figure", "Pazu & Sheeta Levitation Stone Scene Figure", "Benelic", "mid", 52),
+        ("Castle in the Sky", "figure", "Mining Town Diorama (Paper Theater Deluxe)", "Sankei", "high", 80),
+        ("Castle in the Sky", "plush", "Robot Soldier Moss Plush (Medium 28cm)", "Donguri Sora", "mid", 45),
+        ("Castle in the Sky", "jewelry", "Volucite Crystal Pendant Replica (Glowing LED)", "JP Exclusive", "high", 110),
+        ("Castle in the Sky", "accessory", "Pazu's Trumpet Miniature Replica", "JP Exclusive", "mid", 48),
+        ("Castle in the Sky", "jp_merch", "Laputa Castle Blueprint Poster (Architect Style)", "JP Exclusive", "mid", 38),
+
+        # ── Ponyo (+5) ────────────────────────────────────────────
+        ("Ponyo", "figure", "Ponyo Underwater Sisters Scene Diorama", "Donguri Sora", "mid", 55),
+        ("Ponyo", "figure", "Lisa's Car (Flooded Town) Diorama Figure", "Benelic", "high", 85),
+        ("Ponyo", "plush", "Ponyo Sisters Plush Set (3pc)", "Donguri Sora", "mid", 42),
+        ("Ponyo", "model", "Sosuke's House Seaside Paper Theater (Sankei)", "Sankei", "mid", 38),
+        ("Ponyo", "jp_merch", "Ponyo Ramen Bowl & Chopstick Rest Set (Ceramic)", "JP Exclusive", "mid", 42),
+
+        # ── Grave of the Fireflies (+5) ───────────────────────────
+        ("Grave of the Fireflies", "figure", "Seita & Setsuko Firefly Night Diorama", "Benelic", "high", 110),
+        ("Grave of the Fireflies", "cel", "Setsuko & Fireflies Field Animation Cel (Key)", "Original Cel", "grail", 3800),
+        ("Grave of the Fireflies", "accessory", "Sakuma Drops Tin Replica (Sealed, Memorial Edition)", "JP Exclusive", "high", 85),
+        ("Grave of the Fireflies", "poster", "Grave of the Fireflies B2 Theatrical Poster (1988)", "Vintage", "grail", 380),
+        ("Grave of the Fireflies", "art_book", "The Art of Grave of the Fireflies (JP Deluxe Hardcover)", "JP Exclusive", "high", 80),
     ]
 
     # Merge helper functions
