@@ -1,0 +1,138 @@
+"""
+Social proof aggregation for QuickScan results.
+
+Queries demand signals, trending data, recent sold items, and supply
+snapshots to provide market context alongside item identification.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
+
+
+async def get_social_proof(
+    category: Optional[str],
+    item_key: Optional[str],
+    pool,
+) -> dict[str, Any]:
+    """
+    Aggregate social proof data for a scanned item.
+
+    Returns:
+        {
+            "collector_count": int,
+            "is_trending": bool,
+            "trend_rank": int | None,
+            "recent_sold": [{"title", "price", "currency", "sold_at", "source"}],
+            "scarcity": {"listing_count", "supply_trend", "scarcity_score"}
+        }
+    """
+    result: dict[str, Any] = {
+        "collector_count": 0,
+        "is_trending": False,
+        "trend_rank": None,
+        "recent_sold": [],
+        "scarcity": {
+            "listing_count": 0,
+            "supply_trend": "stable",
+            "scarcity_score": 0.0,
+        },
+    }
+
+    if not pool or not category:
+        return result
+
+    try:
+        async with pool.acquire() as conn:
+            # Collector count from demand_signals
+            try:
+                count = await conn.fetchval(
+                    """
+                    SELECT COUNT(DISTINCT user_id)
+                    FROM demand_signals
+                    WHERE category = $1
+                      AND item_key ILIKE $2
+                    """,
+                    category,
+                    f"%{(item_key or '')[:60]}%",
+                )
+                result["collector_count"] = count or 0
+            except Exception as e:
+                logger.debug("Social proof collector count error: %s", e)
+
+            # Trending from mv_demand_heat (materialized view)
+            try:
+                row = await conn.fetchrow(
+                    """
+                    SELECT rank, heat_score
+                    FROM mv_demand_heat
+                    WHERE category = $1
+                      AND item_key ILIKE $2
+                    LIMIT 1
+                    """,
+                    category,
+                    f"%{(item_key or '')[:60]}%",
+                )
+                if row:
+                    result["is_trending"] = True
+                    result["trend_rank"] = row["rank"]
+            except Exception as e:
+                logger.debug("Social proof trending error: %s", e)
+
+            # Recent sold from market_hits (last 5)
+            try:
+                rows = await conn.fetch(
+                    """
+                    SELECT title, price, currency, ended_at, source
+                    FROM market_hits
+                    WHERE normalized_key ILIKE $1
+                      AND price IS NOT NULL
+                      AND price > 0
+                    ORDER BY ended_at DESC NULLS LAST
+                    LIMIT 5
+                    """,
+                    f"%{(item_key or '')[:60]}%",
+                )
+                result["recent_sold"] = [
+                    {
+                        "title": r["title"],
+                        "price": float(r["price"]),
+                        "currency": r["currency"] or "EUR",
+                        "sold_at": r["ended_at"].isoformat() if r["ended_at"] else None,
+                        "source": r["source"],
+                    }
+                    for r in rows
+                ]
+            except Exception as e:
+                logger.debug("Social proof recent sold error: %s", e)
+
+            # Scarcity from supply_snapshots
+            try:
+                row = await conn.fetchrow(
+                    """
+                    SELECT listing_count, supply_trend, scarcity_score
+                    FROM supply_snapshots
+                    WHERE category = $1
+                      AND item_key ILIKE $2
+                    ORDER BY snapshot_date DESC
+                    LIMIT 1
+                    """,
+                    category,
+                    f"%{(item_key or '')[:60]}%",
+                )
+                if row:
+                    result["scarcity"] = {
+                        "listing_count": row["listing_count"] or 0,
+                        "supply_trend": row["supply_trend"] or "stable",
+                        "scarcity_score": round(float(row["scarcity_score"] or 0), 2),
+                    }
+            except Exception as e:
+                logger.debug("Social proof scarcity error: %s", e)
+
+    except Exception as e:
+        logger.warning("Social proof aggregation error: %s", e)
+
+    return result

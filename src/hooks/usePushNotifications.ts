@@ -18,7 +18,7 @@
 import { useEffect, useRef } from "react";
 import { AppState, Linking, Platform, type AppStateStatus } from "react-native";
 import * as Notifications from "expo-notifications";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { collectorsApi } from "@/api/collectorsApi";
 
 // ---------------------------------------------------------------------------
@@ -96,8 +96,7 @@ export function usePushNotifications(userId: string | null) {
 
         // 2. Get Expo push token
         const tokenData = await Notifications.getExpoPushTokenAsync({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          projectId: undefined as any, // Uses the project ID from app.json / app.config
+          projectId: undefined!, // Uses the project ID from app.json / app.config
         });
         const pushToken = tokenData.data; // e.g. "ExponentPushToken[xxxx]"
 
@@ -172,56 +171,36 @@ export function usePushNotifications(userId: string | null) {
 
         // Value change / weekly digest -> open portfolio
         if (data.type === "value_change" || data.type === "weekly_digest") {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/home/portfolio` as any);
+          router.push(`/home/portfolio` as Href);
           return;
         }
 
         // Individual item value change -> open the item
         if (data.type === "item_value_change" && typeof data.item_id === "string" && data.item_id) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/item/${data.item_id}` as any);
+          router.push(`/item/${data.item_id}` as Href);
           return;
         }
 
         if (typeof data.deal_id === "string" && data.deal_id) {
-          // Deal notification -> open deal detail
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/purchase/deal/${data.deal_id}` as any);
+          router.push(`/purchase/deal/${data.deal_id}` as Href);
         } else if (typeof data.item_id === "string" && data.item_id) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/item/${data.item_id}` as any);
+          router.push(`/item/${data.item_id}` as Href);
         } else if (typeof data.event_id === "string" && data.event_id) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/events/${data.event_id}` as any);
+          router.push(`/events/${data.event_id}` as Href);
         } else if (typeof data.thread_id === "string" && data.thread_id) {
-          // Chat message notification -> open the chat thread
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/chat/${data.thread_id}` as any);
+          router.push(`/chat/${data.thread_id}` as Href);
         } else if (typeof data.alert_id === "string" && data.alert_id) {
-          // Alert notification -> open the alerts tab
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/(tabs)/alerts` as any);
+          router.push(`/(tabs)/alerts` as Href);
         } else if (typeof data.connection_request_id === "string") {
-          // Connection request -> open inbox
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/inbox` as any);
+          router.push(`/inbox` as Href);
         } else if (typeof data.announcement_id === "string" && data.event_id === undefined) {
-          // Event announcement without specific event -> open inbox
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/inbox` as any);
+          router.push(`/inbox` as Href);
         } else if (typeof data.project_id === "string" && data.project_id) {
-          // Build & Paint project notification
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/projects/${data.project_id}` as any);
+          router.push(`/projects/${data.project_id}` as Href);
         } else if (typeof data.category_id === "string" && data.category_id) {
-          // Category notification (e.g., price alert for category)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/categories/${data.category_id}` as any);
+          router.push(`/categories/${data.category_id}` as Href);
         } else if (typeof data.user_id === "string" && data.user_id) {
-          // User-related notification (e.g., someone followed you)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push(`/users/${data.user_id}` as any);
+          router.push(`/users/${data.user_id}` as Href);
         }
       });
 

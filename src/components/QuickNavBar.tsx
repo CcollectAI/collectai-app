@@ -8,7 +8,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter, usePathname, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -59,8 +59,7 @@ export function QuickNavBar() {
             style={styles.tab}
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              router.replace(tab.route as any);
+              router.replace(tab.route as Href);
             }}
             accessibilityRole="tab"
             accessibilityLabel={tab.label}

@@ -11,7 +11,7 @@ import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 
-const LAST_UPDATED = 'February 23, 2026';
+const LAST_UPDATED = 'March 4, 2026';
 
 function TermsOfServiceScreenInner() {
   const router = useRouter();
@@ -83,7 +83,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>7. Events & Social Features</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          <Text style={styles.bold}>Events:</Text> Users may create, host, and attend collector events. Event hosts are responsible for the accuracy of event information. RSVP attendance may be limited by capacity settings. We are not responsible for the conduct of event hosts or attendees, or for events that are cancelled or modified.{'\n\n'}
+          <Text style={styles.bold}>Events:</Text> Users may create, host, and attend collector events. Event hosts are responsible for the accuracy of event information. RSVP attendance may be limited by capacity settings. Events may require paid tickets — ticket purchases are processed through Stripe and are non-refundable unless the event is cancelled by the host. A platform fee of 5% is applied to ticket sales. We are not responsible for the conduct of event hosts or attendees, or for events that are cancelled or modified.{'\n\n'}
           <Text style={styles.bold}>Direct Messaging:</Text> Users may send direct messages to other users via the DM request system. Both parties must consent to a conversation. You agree not to use messaging for spam, harassment, or solicitation. We reserve the right to moderate or restrict messaging for users who violate these Terms.{'\n\n'}
           <Text style={styles.bold}>User Blocking:</Text> You may block other users to prevent them from contacting you. Blocking is mutual — blocked users cannot view your profile or send you messages.{'\n\n'}
           <Text style={styles.bold}>Announcements:</Text> Event hosts and sponsors may send announcements to event attendees. These are one-way communications for event-related information only.
@@ -91,16 +91,17 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>8. Sponsor Companies</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          Businesses may register as sponsor companies to sponsor collector events. Sponsor registration requires a company name, contact email, and optional details. Sponsored event payments are processed through Stripe. Sponsors agree to:{'\n'}
+          Businesses may register as sponsor companies to sponsor collector events. Sponsor registration requires a company name, contact email, and optional details. Sponsors may choose per-event payments or monthly subscription billing — both processed through Stripe. Sponsors agree to:{'\n'}
           {'\u2022'} Provide accurate company information{'\n'}
           {'\u2022'} Comply with all applicable advertising and consumer protection laws{'\n'}
           {'\u2022'} Not use sponsor features for deceptive or misleading promotions{'\n\n'}
-          We reserve the right to remove sponsor companies that violate these Terms.
+          Sponsor subscriptions auto-renew monthly until cancelled. Cancellation takes effect at the end of the current billing period. We reserve the right to remove sponsor companies that violate these Terms.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>9. Subscriptions & Payments</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          Certain features of the Service require a paid subscription. Payments are processed through Stripe. Subscription terms, pricing, and renewal conditions are presented at the time of purchase. You may cancel your subscription at any time through the app settings. Refunds are handled in accordance with applicable laws and Stripe's policies.
+          Certain features of the Service require a paid subscription. Payments are processed through Stripe. Subscription terms, pricing, and renewal conditions are presented at the time of purchase. You may cancel your subscription at any time through the app settings. Refunds are handled in accordance with applicable laws and Stripe's policies.{'\n\n'}
+          <Text style={styles.bold}>Event Tickets:</Text> Some events require paid tickets. Ticket prices are set by event hosts and include a 5% platform fee. Ticket purchases are one-time payments processed through Stripe. Tickets are non-transferable and tied to your account. If an event is cancelled by the host, refunds will be issued to the original payment method.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>10. Search & Discovery</Text>
@@ -239,5 +240,8 @@ const styles = StyleSheet.create({
   body: {
     fontSize: 15,
     lineHeight: 24,
+  },
+  bold: {
+    fontWeight: '700',
   },
 });

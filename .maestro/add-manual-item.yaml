@@ -1,0 +1,20 @@
+appId: com.collectai.app
+---
+- launchApp
+# Navigate to Add tab
+- tapOn:
+    id: "tab-add"
+- assertVisible: "Add Manually"
+# Tap Add Manually
+- tapOn: "Add Manually"
+# Fill in the name field
+- tapOn:
+    id: "name-input"
+- inputText: "Test Collectible Item"
+# Save the item
+- tapOn:
+    id: "save-button"
+# Assert success state
+- assertVisible:
+    text: "saved"
+    timeout: 10000

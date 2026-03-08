@@ -992,6 +992,125 @@ def _round5_expansion() -> list[tuple]:
     ]
 
 
+def _round6_expansion() -> list[tuple]:
+    """Round 6 expansion: 89 items — Leica M-series, Hasselblad variants, Rolleiflex,
+    Nikon FM, Canon AE-1 specials, Contax T, Mamiya RB67, Pentax 67 II, Yashica, Minolta."""
+    return [
+        # --- Leica M-Series (12) ---
+        ("Leica M6 TTL 0.72 Black", "Leica", "rangefinder", "1998-2002", 3800, "Excellent", False, "Rare", "TTL metering, 0.72x viewfinder, black chrome body"),
+        ("Leica M6 TTL 0.85 Silver", "Leica", "rangefinder", "1998-2002", 4200, "Excellent", False, "Rare", "High-magnification 0.85x viewfinder for tele lenses"),
+        ("Leica MP 0.72 Black Paint", "Leica", "rangefinder", "2003-present", 5500, "Mint", False, "Limited Edition", "Black paint brass body, classic MP rewind knob"),
+        ("Leica MP 0.72 Silver Chrome", "Leica", "rangefinder", "2003-present", 5200, "Mint", False, "Limited Edition", "Silver chrome finish, mechanical perfection"),
+        ("Leica M-A (Typ 127) Black Chrome", "Leica", "rangefinder", "2014-present", 4800, "Mint", False, "Limited Edition", "Pure mechanical, no meter, no electronics"),
+        ("Leica M-A (Typ 127) Silver Chrome", "Leica", "rangefinder", "2014-present", 4600, "Mint", False, "Limited Edition", "Silver variant, purist film camera"),
+        ("Leica M6 Classic 0.72 Panda", "Leica", "rangefinder", "1984-1998", 4500, "Excellent", False, "Rare", "Silver body with black top plate, panda style"),
+        ("Leica M4-P", "Leica", "rangefinder", "1980-1987", 2800, "Good", False, "Standard", "Minolta-era M body, 28mm framelines, affordable M"),
+        ("Leica M6J (40th Anniversary)", "Leica", "rangefinder", "1994-1994", 8500, "Excellent", False, "Grail", "40th anniversary of M3, LE 1640 pieces"),
+        ("Leica M3 Double Stroke (Early)", "Leica", "rangefinder", "1954-1958", 3200, "Good", False, "Rare", "Early production with double-stroke advance lever"),
+        ("Leica M2 Button Rewind", "Leica", "rangefinder", "1957-1967", 2200, "Good", False, "Standard", "Button rewind variant, 35mm framelines, popular street cam"),
+        ("Leica CL (Compact Leitz)", "Leica", "rangefinder", "1973-1976", 900, "Good", True, "Standard", "Compact M-mount, Summicron-C 40mm, Minolta-made"),
+
+        # --- Hasselblad 500C/M Variants (8) ---
+        ("Hasselblad 500C/M Chrome", "Hasselblad", "medium format", "1970-1994", 2400, "Excellent", True, "Standard", "Chrome body, Planar 80mm f/2.8 C, A12 back"),
+        ("Hasselblad 500C/M Black", "Hasselblad", "medium format", "1970-1994", 2800, "Excellent", True, "Limited Edition", "Black body variant, rarer than chrome, w/ Planar 80mm"),
+        ("Hasselblad 500C Original", "Hasselblad", "medium format", "1957-1970", 1800, "Good", True, "Standard", "First C-series, Compur shutter, classic V-system"),
+        ("Hasselblad 503CW", "Hasselblad", "medium format", "1996-2006", 3200, "Excellent", True, "Limited Edition", "Winder compatible, gliding mirror, last manual V-body"),
+        ("Hasselblad 503CXi", "Hasselblad", "medium format", "1988-1994", 2600, "Excellent", True, "Standard", "Databus-compatible, TTL flash, CXi improvements"),
+        ("Hasselblad 2000FC/M", "Hasselblad", "medium format", "1981-1984", 1500, "Good", False, "Standard", "Focal plane shutter, 1/2000s, F-series lenses"),
+        ("Hasselblad 553ELX", "Hasselblad", "medium format", "1988-1998", 1800, "Good", False, "Standard", "Motorized body, databus, studio workhorse"),
+        ("Hasselblad 903SWC", "Hasselblad", "medium format", "1988-2001", 4500, "Excellent", True, "Rare", "Super Wide C, Biogon 38mm f/4.5, architectural classic"),
+
+        # --- Rolleiflex TLR (7) ---
+        ("Rolleiflex 2.8F Xenotar White Face", "Rolleiflex", "TLR", "1960-1981", 3200, "Excellent", True, "Rare", "White face model, Schneider Xenotar 80mm f/2.8"),
+        ("Rolleiflex 2.8GX", "Rolleiflex", "TLR", "1987-2001", 3800, "Excellent", True, "Limited Edition", "Last Rolleiflex TLR, HFT Planar 80mm f/2.8, TTL meter"),
+        ("Rolleiflex T Grey", "Rolleiflex", "TLR", "1958-1976", 800, "Good", True, "Standard", "Grey leatherette, Tessar 75mm f/3.5, entry Rolleiflex"),
+        ("Rolleiflex 2.8C", "Rolleiflex", "TLR", "1953-1955", 1600, "Good", True, "Rare", "Early Planar/Xenotar 80mm, transition model, collector piece"),
+        ("Rolleiflex Automat MX-EVS", "Rolleiflex", "TLR", "1954-1957", 600, "Good", True, "Standard", "Schneider Xenar 75mm f/3.5, auto film counter"),
+        ("Rolleiflex Wide (Rolleiwide)", "Rolleiflex", "TLR", "1961-1967", 4000, "Excellent", True, "Grail", "Distagon 55mm f/4, only ~4000 made, wide-angle TLR"),
+        ("Rolleiflex 3.5E Planar", "Rolleiflex", "TLR", "1956-1959", 1400, "Good", True, "Rare", "Carl Zeiss Planar 75mm f/3.5, selenium meter"),
+
+        # --- Nikon FM2/FM3A (8) ---
+        ("Nikon FM2n Black", "Nikon", "SLR", "1984-2001", 550, "Excellent", False, "Standard", "Titanium shutter, 1/4000s, mechanical workhorse"),
+        ("Nikon FM2n Chrome", "Nikon", "SLR", "1984-2001", 500, "Excellent", False, "Standard", "Chrome body, titanium honeycomb shutter"),
+        ("Nikon FM2/T Titanium", "Nikon", "SLR", "1993-1995", 1200, "Excellent", False, "Rare", "Full titanium body, champagne finish, LE"),
+        ("Nikon FM3A Black", "Nikon", "SLR", "2001-2006", 1500, "Excellent", False, "Limited Edition", "Hybrid shutter, last manual Nikon, highly sought"),
+        ("Nikon FM3A Silver", "Nikon", "SLR", "2001-2006", 1400, "Excellent", False, "Limited Edition", "Silver chrome variant, hybrid aperture-priority"),
+        ("Nikon FE2 Black", "Nikon", "SLR", "1983-1987", 350, "Excellent", False, "Standard", "Electronic, 1/4000s, TTL flash, popular Nikon"),
+        ("Nikon FA Black", "Nikon", "SLR", "1983-1987", 300, "Good", False, "Standard", "First multi-pattern metering SLR, AMP system"),
+        ("Nikon F4S", "Nikon", "SLR", "1988-1996", 400, "Excellent", False, "Standard", "Pro AF body with MB-21 grip, matrix metering, built-in motor"),
+
+        # --- Canon AE-1 Program Specials (8) ---
+        ("Canon AE-1 Program Chrome", "Canon", "SLR", "1981-1987", 250, "Excellent", False, "Standard", "Program AE mode added, chrome body, FD mount"),
+        ("Canon AE-1 Program Black", "Canon", "SLR", "1981-1987", 280, "Excellent", False, "Standard", "Black body variant, program mode + shutter priority"),
+        ("Canon AE-1 Chrome (Original)", "Canon", "SLR", "1976-1984", 200, "Good", False, "Standard", "The camera that changed everything, shutter-priority AE"),
+        ("Canon AE-1 Olympic Edition", "Canon", "SLR", "1984-1984", 450, "Excellent", False, "Rare", "1984 LA Olympics commemorative, special engravings"),
+        ("Canon A-1 Black", "Canon", "SLR", "1978-1985", 350, "Excellent", False, "Standard", "Five auto modes, LCD viewfinder, Canon flagship"),
+        ("Canon F-1n (New F-1)", "Canon", "SLR", "1981-1992", 500, "Excellent", False, "Standard", "Pro modular body, interchangeable finders/screens"),
+        ("Canon F-1n 1984 Olympic", "Canon", "SLR", "1984-1984", 800, "Excellent", False, "Rare", "LA Olympics edition, special grip, commemorative"),
+        ("Canon T90", "Canon", "SLR", "1986-1992", 300, "Excellent", False, "Standard", "Last FD-mount, designed by Colani, electronic pioneer"),
+
+        # --- Contax T2/T3 (8) ---
+        ("Contax T2 Titanium Silver", "Contax", "point and shoot", "1990-1998", 1800, "Excellent", True, "Rare", "Carl Zeiss Sonnar 38mm f/2.8, titanium body, cult classic"),
+        ("Contax T2 Titanium Black", "Contax", "point and shoot", "1990-1998", 2000, "Excellent", True, "Rare", "Black titanium finish, rarer than silver"),
+        ("Contax T2 Gold (60th Anniversary)", "Contax", "point and shoot", "1992-1992", 4500, "Mint", True, "Grail", "24K gold-plated body, LE 500 pieces worldwide"),
+        ("Contax T3 Titanium Silver", "Contax", "point and shoot", "2001-2005", 2800, "Excellent", True, "Rare", "Sonnar 35mm f/2.8, titanium, last and best T-series"),
+        ("Contax T3 Titanium Black", "Contax", "point and shoot", "2001-2005", 3200, "Excellent", True, "Rare", "Black titanium finish, extremely rare"),
+        ("Contax T3D (with data back)", "Contax", "point and shoot", "2001-2005", 3000, "Excellent", True, "Rare", "Date back version, same optics, fewer produced"),
+        ("Contax TVS III", "Contax", "point and shoot", "2000-2003", 600, "Excellent", True, "Standard", "Vario-Sonnar 30-60mm zoom, titanium body"),
+        ("Contax Tix APS", "Contax", "point and shoot", "1998-2003", 300, "Good", True, "Standard", "APS format compact, Sonnar 28mm f/2.8, titanium"),
+
+        # --- Mamiya RB67 Kits (6) ---
+        ("Mamiya RB67 Pro S + 90mm f/3.8 Kit", "Mamiya", "medium format", "1974-1990", 800, "Excellent", True, "Standard", "Pro S body with Sekor C 90mm f/3.8, 120 back"),
+        ("Mamiya RB67 Pro S + 127mm f/3.8 Kit", "Mamiya", "medium format", "1974-1990", 750, "Good", True, "Standard", "Pro S with 127mm portrait lens, 120 back"),
+        ("Mamiya RB67 Pro S + 180mm f/4.5 Kit", "Mamiya", "medium format", "1974-1990", 850, "Excellent", True, "Standard", "Pro S with telephoto, ideal for portraits"),
+        ("Mamiya RB67 Pro + 65mm f/4.5 Wide Kit", "Mamiya", "medium format", "1970-1974", 900, "Good", True, "Standard", "Original Pro with wide-angle Sekor C 65mm"),
+        ("Mamiya RZ67 Pro + 110mm f/2.8 Kit", "Mamiya", "medium format", "1982-1995", 1100, "Excellent", True, "Standard", "Electronic RZ67, Sekor Z 110mm f/2.8, legendary bokeh"),
+        ("Mamiya RZ67 Pro II + 65mm f/4 Kit", "Mamiya", "medium format", "1995-2004", 1300, "Excellent", True, "Standard", "Pro II with wide-angle Z 65mm, interchangeable backs"),
+
+        # --- Pentax 67 II (5) ---
+        ("Pentax 67 II Body", "Pentax", "medium format", "1998-2009", 2500, "Excellent", False, "Limited Edition", "Ultimate 6x7 SLR body, AE prism, mirror lock-up"),
+        ("Pentax 67 II + 105mm f/2.4 Kit", "Pentax", "medium format", "1998-2009", 3800, "Excellent", True, "Limited Edition", "Legendary portrait combo, Takumar 105mm bokeh king"),
+        ("Pentax 67 (Mirror Lock-Up)", "Pentax", "medium format", "1969-1989", 1200, "Good", False, "Standard", "Original 6x7, MLU version, Asahi Pentax branding"),
+        ("Pentax 6x7 + 90mm f/2.8 Kit", "Pentax", "medium format", "1969-1989", 1500, "Good", True, "Standard", "Original body, Takumar 90mm f/2.8, street 6x7"),
+        ("Pentax 67 Wooden Grip", "Pentax", "medium format", "1989-1998", 1800, "Excellent", False, "Standard", "Updated with grip, metered prism, TTL flash"),
+
+        # --- Yashica T4/T5 (5) ---
+        ("Yashica T4 (Kyocera T Proof)", "Yashica", "point and shoot", "1990-1997", 800, "Excellent", True, "Rare", "Carl Zeiss T* Tessar 35mm f/3.5, compact body"),
+        ("Yashica T4 Super", "Yashica", "point and shoot", "1993-1997", 900, "Excellent", True, "Rare", "Super Scope viewfinder, weatherproof, Zeiss Tessar"),
+        ("Yashica T4 Super D", "Yashica", "point and shoot", "1995-1997", 950, "Excellent", True, "Rare", "Date-back variant, same legendary optics"),
+        ("Yashica T5 (Kyocera T Scope)", "Yashica", "point and shoot", "1998-2005", 500, "Excellent", True, "Standard", "Last in T-series, Zeiss Tessar 35mm f/3.5, zoom viewfinder"),
+        ("Yashica MF-2 Super", "Yashica", "point and shoot", "1990-2000", 80, "Good", True, "Standard", "Budget 35mm P&S, 38mm f/3.8, DX coding, beginner film cam"),
+
+        # --- Minolta CLE + Others (7) ---
+        ("Minolta CLE", "Minolta", "rangefinder", "1981-1985", 1200, "Excellent", False, "Rare", "M-mount electronic rangefinder, AE metering, compact"),
+        ("Minolta X-700 Black", "Minolta", "SLR", "1981-1999", 200, "Excellent", False, "Standard", "Program AE SLR, MD mount, last great Minolta manual"),
+        ("Minolta XG-M", "Minolta", "SLR", "1981-1985", 120, "Good", False, "Standard", "Aperture-priority AE, compact body, MD mount"),
+        ("Minolta SRT-101 Black", "Minolta", "SLR", "1966-1975", 180, "Good", False, "Standard", "CLC metering, mechanical, MC Rokkor lenses, reliable"),
+        ("Minolta SRT Super (SRT-102)", "Minolta", "SLR", "1973-1975", 150, "Good", False, "Standard", "Split-image focusing, hot shoe added, MC/MD mount"),
+        ("Minolta TC-1", "Minolta", "point and shoot", "1996-2002", 1500, "Excellent", True, "Rare", "G-Rokkor 28mm f/3.5, titanium, luxury compact, Leica rival"),
+        ("Minolta Alpha/Dynax 9 (a-9)", "Minolta", "SLR", "1998-2003", 500, "Excellent", False, "Standard", "Pro AF SLR, 1/12000s, 14-segment metering, magnesium body"),
+
+        # --- Additional Rare/Interesting (5) ---
+        ("Olympus XA2", "Olympus", "point and shoot", "1980-1985", 150, "Good", True, "Standard", "Zone-focus 35mm f/3.5, clamshell, A11 flash, beginner classic"),
+        ("Ricoh GR1s", "Ricoh", "point and shoot", "1998-2001", 800, "Excellent", True, "Rare", "GR Lens 28mm f/2.8, snap focus, street legend"),
+        ("Ricoh GR1v", "Ricoh", "point and shoot", "2001-2005", 1100, "Excellent", True, "Rare", "Last GR1, improved LCD, 28mm f/2.8, date back"),
+        ("Konica Hexar AF", "Konica", "rangefinder", "1993-1999", 1000, "Excellent", True, "Rare", "Hexanon 35mm f/2, stealth mode, silent shutter, cult classic"),
+        ("Nikon 35Ti", "Nikon", "point and shoot", "1993-1997", 900, "Excellent", True, "Rare", "Titanium body, Nikkor 35mm f/2.8, analog dial display"),
+
+        # --- Additional Vintage Cameras (+10) ---
+        ("Canon Dial 35", "Canon", "point and shoot", "1963-1967", 250, "Good", True, "Rare", "Half-frame with unique dial advance, Selenium meter"),
+        ("Voigtlander Bessa R3A", "Voigtlander", "rangefinder", "2004-2010", 800, "Excellent", False, "Standard", "M-mount, 1:1 viewfinder, aperture priority AE"),
+        ("Voigtlander Bessa R2A", "Voigtlander", "rangefinder", "2004-2010", 650, "Excellent", False, "Standard", "M-mount, 0.7x viewfinder, compact body"),
+        ("Bronica SQ-Ai", "Bronica", "medium format", "1990-2004", 450, "Good", False, "Standard", "6x6 medium format SLR, electronic shutter, modular"),
+        ("Mamiya 645 Pro TL", "Mamiya", "medium format", "1990-2001", 500, "Good", False, "Standard", "6x4.5 medium format with TTL metering prism"),
+        ("Yashica Electro 35 GSN", "Yashica", "rangefinder", "1973-1975", 180, "Good", True, "Standard", "45mm f/1.7, battery-dependent AE, cult classic"),
+        ("Fujica GW690 III", "Fuji", "medium format", "1984-1997", 750, "Good", True, "Standard", "6x9 rangefinder, Texas Leica, 90mm f/3.5"),
+        ("Lomo LC-A", "LOMO", "point and shoot", "1984-2005", 200, "Good", True, "Standard", "Minitar-1 32mm f/2.8, Soviet-era cult camera"),
+        ("Nikon FM3A", "Nikon", "SLR", "2001-2006", 900, "Excellent", False, "Rare", "Last manual focus Nikon, hybrid AE/manual shutter"),
+        ("Leica CL (Leitz-Minolta)", "Leica", "rangefinder", "1973-1976", 1200, "Good", False, "Rare", "Compact M-mount, Leitz-Minolta collab, 40mm f/2"),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Assemble full catalog
 # ---------------------------------------------------------------------------
@@ -1045,6 +1164,8 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_round4_medium_format_rangefinder_misc())
     # Round 5 expansion
     all_tuples.extend(_round5_expansion())
+    # Round 6 expansion
+    all_tuples.extend(_round6_expansion())
 
     catalog: list[dict] = []
     for name, brand, cam_type, year_range, price_eur, condition, has_lens, rarity, notes in all_tuples:

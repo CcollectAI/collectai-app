@@ -4,8 +4,8 @@ export const CategoryList = [
   // --- TCGs (6) ---
   'pokemon','mtg','yugioh','lorcana','digimon','one_piece_tcg',
 
-  // --- Toys / Figures (4) ---
-  'funko','designer_toys','anime_figures','hot_toys',
+  // --- Toys / Figures (7) ---
+  'funko','designer_toys','anime_figures','hot_toys','action_figures','vintage_toys','marvel_legends',
 
   // --- Building / Models (4) ---
   'lego','gunpla','scale_models','warhammer',
@@ -139,6 +139,30 @@ export const AttrSchemas: Record<Category, z.ZodObject<any>> = {
     mms_number: z.string().optional(),      // Hot Toys MMS catalog number
     condition: z.string().optional(),
     release_year: z.string().optional(),
+  }),
+  action_figures: z.object({
+    line: z.string().optional(),            // GI Joe, Power Rangers, Transformers, etc.
+    scale: z.string().optional(),           // 3.75", 6", 12"
+    wave: z.string().optional(),
+    packaging_type: z.string().optional(),  // Box Art, Standard, Window Box, Archive
+    retailer_exclusive: z.string().optional(),
+    sealed: z.boolean().optional(),
+  }),
+  vintage_toys: z.object({
+    era: z.string().optional(),             // 1970s, 1980s, 1990s
+    manufacturer: z.string().optional(),    // Kenner, Hasbro, Mattel, TOMY
+    item_type: z.string().optional(),       // figure, vehicle, playset, empty_box, proof_card, accessory
+    completeness: z.string().optional(),    // CIB, loose_complete, loose_incomplete, box_only
+    origin_country: z.string().optional(),
+    afa_grade: z.string().optional(),       // AFA 85, AFA 90, etc.
+  }),
+  marvel_legends: z.object({
+    wave: z.string().optional(),
+    baf_figure: z.string().optional(),      // Build-A-Figure name
+    series: z.string().optional(),          // Standard, Retro, 20th Anniversary, Haslab, Deluxe, Fan Channel
+    packaging_type: z.string().optional(),
+    retailer_exclusive: z.string().optional(),
+    sealed: z.boolean().optional(),
   }),
 
   // =========================================================================
@@ -543,6 +567,9 @@ export const CategoryLabels: Record<Category, string> = {
   designer_toys: 'Designer Toys',
   anime_figures: 'Anime Figures & Statues',
   hot_toys: 'Hot Toys & Movie Statues',
+  action_figures: 'Action Figures',
+  vintage_toys: 'Vintage Toys',
+  marvel_legends: 'Marvel Legends',
 
   // Building / Models
   lego: 'LEGO',

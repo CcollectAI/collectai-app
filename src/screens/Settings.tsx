@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, Alert, Text, TextInput, StyleSheet, Switch, ActivityIndicator, Linking, Modal, TouchableOpacity } from 'react-native';
 import { useToast } from '@/components/Toast';
 import Constants from 'expo-constants';
@@ -7,6 +7,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { supabase } from "@/lib/supabase";
 import { AccessibilitySettings } from '@/components/AccessibilitySettings';
 import { AlertSettings } from '@/components/AlertSettings';
+import { MutationQueuePanel } from '@/components/MutationQueuePanel';
 import { featureFlags } from '@/config/featureFlags';
 import { DEFAULT_ALERT_PREFERENCES, AlertPreferences } from '@/types/insights';
 import { useSettings, REGION_DEFAULTS } from '@/lib/settings';
@@ -18,6 +19,17 @@ import { logger } from '@/lib/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { deleteAccount, collectorsApi } from '@/api/collectorsApi';
 import { API_BASE } from '@/api/config';
+import { useFeatureTour } from '@/lib/featureTour';
+import {
+  getQueuedMutations,
+  getQueueLength,
+  removeMutation,
+  clearQueue,
+  replayQueue,
+  type MutationType,
+  type QueuedMutation,
+} from '@/lib/mutationQueue';
+import { offlineSafeMutation } from '@/data/OfflineDataProvider';
 
 type PrivacySettings = {
   showCollectionValue: boolean;
@@ -39,6 +51,7 @@ export default function Settings() {
   const { settings, updateSettings } = useSettings();
   const { user, profile, signOut } = useAuthContext();
   const { showToast } = useToast();
+  const { resetAll: resetFeatureTips } = useFeatureTour();
   const [alertPrefs, setAlertPrefs] = useState<AlertPreferences>(DEFAULT_ALERT_PREFERENCES);
   const [privacy, setPrivacy] = useState<PrivacySettings>(DEFAULT_PRIVACY);
   const [loadingPrivacy, setLoadingPrivacy] = useState(true);
@@ -739,6 +752,22 @@ export default function Settings() {
             {Constants.expoConfig?.version ?? '1.0.0'}
           </Text>
         </View>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            resetFeatureTips();
+            showToast({ message: 'Feature tips reset. They will appear again as you navigate.', type: 'success' });
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Reset feature tips"
+        >
+          <Text style={[styles.settingLabel, { color: colors.text }]}>Reset Feature Tips</Text>
+          <Ionicons name="refresh-outline" size={18} color={colors.muted} />
+        </AnimatedPressable>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 

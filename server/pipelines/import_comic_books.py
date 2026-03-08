@@ -878,6 +878,118 @@ def _expanded_round8_comic_books() -> list[dict]:
         ("Marvel", "Edge of Spider-Verse", "Edge of Spider-Verse #2 CGC 9.8 (2014, 1st Spider-Gwen)", "CGC 9.8", "grail", 2500.0),
         ("DC", "Harley Quinn", "Batman Adventures #12 CGC 9.8 (1993, 1st Harley Quinn)", "CGC 9.8", "grail", 20000.0),
         ("Image", "Paper Girls", "Paper Girls #1 CGC 9.8 (2015, BKV/Cliff Chiang)", "CGC 9.8", "grail", 500.0),
+
+        # === ROUND 9 — 90 new items to reach 700+ ===
+
+        # --- Marvel Key Issues — Amazing Spider-Man (+10) ---
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #14 (1964, 1st Green Goblin)", "Silver Age Key", "grail", 20000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #194 (1979, 1st Black Cat)", "Bronze Age Key", "grail", 2000.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #238 (1983, 1st Hobgoblin)", "Modern Key", "grail", 1500.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #361 (1992, 1st Carnage full)", "Modern Key", "high", 400.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #344 (1991, 1st Cletus Kasady)", "Modern Key", "high", 200.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #529 (2006, 1st Iron Spider suit)", "Modern Key", "mid", 80.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #569 (2008, 1st Anti-Venom)", "Modern Key", "mid", 60.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #798 (2018, 1st Red Goblin)", "Modern Key", "mid", 40.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #4 (2014, 1st Silk/Cindy Moon)", "Modern Key", "high", 150.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man #9 (2014, 1st Spider-UK)", "Modern Key", "mid", 30.0),
+
+        # --- Marvel Key Issues — X-Men First Appearances (+10) ---
+        ("Marvel", "X-Men", "X-Men #4 (1964, 1st Brotherhood of Evil Mutants, 1st Scarlet Witch, 1st Quicksilver)", "Silver Age Key", "grail", 15000.0),
+        ("Marvel", "X-Men", "X-Men #12 (1965, 1st Juggernaut)", "Silver Age Key", "grail", 8000.0),
+        ("Marvel", "X-Men", "X-Men #14 (1965, 1st Sentinels)", "Silver Age Key", "grail", 5000.0),
+        ("Marvel", "X-Men", "Giant-Size X-Men #1 (1975, New X-Men team, Storm, Colossus, Nightcrawler)", "Bronze Age Key", "grail", 20000.0),
+        ("Marvel", "X-Men", "X-Men #101 (1976, 1st Phoenix)", "Bronze Age Key", "grail", 5000.0),
+        ("Marvel", "X-Men", "X-Men #120 (1979, 1st Alpha Flight)", "Bronze Age Key", "high", 400.0),
+        ("Marvel", "X-Men", "X-Men #130 (1980, 1st Dazzler)", "Bronze Age Key", "high", 300.0),
+        ("Marvel", "X-Men", "X-Men #141 (1981, Days of Future Past Part 1)", "Bronze Age Key", "grail", 2000.0),
+        ("Marvel", "X-Men", "New Mutants #87 (1990, 1st Cable)", "Modern Key", "high", 400.0),
+        ("Marvel", "X-Men", "New Mutants #98 (1991, 1st Deadpool)", "Modern Key", "grail", 3000.0),
+
+        # --- DC Key Issues — Batman (+8) ---
+        ("DC", "Batman", "Batman #232 (1971, 1st Ra's al Ghul)", "Bronze Age Key", "grail", 8000.0),
+        ("DC", "Batman", "Batman #251 (1973, Joker's Five-Way Revenge, Neal Adams)", "Bronze Age Key", "grail", 3000.0),
+        ("DC", "Batman", "Batman #357 (1983, 1st Jason Todd/Killer Croc)", "Modern Key", "high", 300.0),
+        ("DC", "Batman", "Batman #386 (1985, 1st Black Mask)", "Modern Key", "high", 200.0),
+        ("DC", "Batman", "Batman #497 (1993, Bane breaks Batman's back)", "Modern Key", "high", 150.0),
+        ("DC", "Batman", "Batman #608 (2002, Hush Part 1, Jim Lee cover)", "Modern Key", "mid", 80.0),
+        ("DC", "Batman", "Batman #655 (2006, 1st Damian Wayne)", "Modern Key", "high", 300.0),
+        ("DC", "Batman", "Batman #1 (New 52, 2011, Scott Snyder/Greg Capullo)", "Modern Key", "mid", 80.0),
+
+        # --- DC Key Issues — Detective Comics (+6) ---
+        ("DC", "Detective Comics", "Detective Comics #359 (1967, 1st Batgirl/Barbara Gordon)", "Silver Age Key", "grail", 10000.0),
+        ("DC", "Detective Comics", "Detective Comics #400 (1970, 1st Man-Bat)", "Bronze Age Key", "grail", 2000.0),
+        ("DC", "Detective Comics", "Detective Comics #411 (1971, 1st Talia al Ghul)", "Bronze Age Key", "grail", 3000.0),
+        ("DC", "Detective Comics", "Detective Comics #474 (1977, 1st modern Deadshot)", "Bronze Age Key", "high", 500.0),
+        ("DC", "Detective Comics", "Detective Comics #880 (2011, Jock iconic cover)", "Modern Key", "high", 200.0),
+        ("DC", "Detective Comics", "Detective Comics #1000 (2019, milestone issue, multiple covers)", "Modern Key", "mid", 30.0),
+
+        # --- Image Comics Firsts — Saga & Invincible (+8) ---
+        ("Image", "Saga", "Saga #2 (2012, Brian K. Vaughan, 1st print)", "Modern Key", "mid", 60.0),
+        ("Image", "Saga", "Saga #12 (2013, Prince Robot IV cover)", "Modern Key", "mid", 30.0),
+        ("Image", "Saga", "Saga #54 (2023, Final Issue)", "Modern Key", "mid", 40.0),
+        ("Image", "Invincible", "Invincible #48 (2008, 1st Conquest)", "Modern Key", "high", 150.0),
+        ("Image", "Invincible", "Invincible #110 (2014, controversial issue)", "Modern Key", "mid", 50.0),
+        ("Image", "Invincible", "Invincible #144 (2018, Final Issue)", "Modern Key", "mid", 60.0),
+        ("Image", "Invincible", "Invincible Returns #1 (2010, Kirkman/Ottley)", "Modern Key", "mid", 30.0),
+        ("Image", "Fire Power", "Fire Power #1 (2020, Robert Kirkman)", "Modern Key", "mid", 20.0),
+
+        # --- Indie Keys — Bone, Usagi Yojimbo, Others (+8) ---
+        ("Cartoon Books", "Bone", "Bone #2 (1991, Jeff Smith, 1st print)", "Modern Key", "high", 200.0),
+        ("Cartoon Books", "Bone", "Bone #1 (1991, Jeff Smith, 2nd print)", "First Print", "mid", 80.0),
+        ("Fantagraphics", "Usagi Yojimbo", "Usagi Yojimbo #1 (1987, Stan Sakai, Fantagraphics)", "Modern Key", "high", 250.0),
+        ("Dark Horse", "Usagi Yojimbo", "Usagi Yojimbo #1 (1996, Dark Horse vol 3, Stan Sakai)", "Modern Key", "mid", 60.0),
+        ("IDW", "Usagi Yojimbo", "Usagi Yojimbo #1 (2019, IDW vol 4, Stan Sakai)", "Modern Key", "mid", 25.0),
+        ("Valiant", "X-O Manowar", "X-O Manowar #1 (1992, Jim Shooter/Barry Windsor-Smith)", "Modern Key", "mid", 50.0),
+        ("Valiant", "Bloodshot", "Bloodshot #1 (1993, Don Perlin, with coupon)", "Modern Key", "mid", 40.0),
+        ("Antarctic Press", "Ninja High School", "Ninja High School #1 (1986, Ben Dunn, B&W)", "Modern Key", "mid", 30.0),
+
+        # --- Variant Covers by Major Artists (+10) ---
+        ("Marvel", "Amazing Spider-Man", "ASM #1 (2022, Peach Momoko 1:100 Virgin Variant)", "Variant Cover", "grail", 500.0),
+        ("DC", "Batman", "Batman #50 (2018, Jim Lee 1:100 Virgin Variant)", "Variant Cover", "high", 200.0),
+        ("Marvel", "Venom", "Venom #1 (2018, Mark Bagley 1:200 Virgin Variant)", "Variant Cover", "grail", 400.0),
+        ("Marvel", "Thor", "Thor #6 (2020, Artgerm 1:100 Virgin Variant, Black Winter)", "Variant Cover", "high", 300.0),
+        ("Marvel", "X-Men", "X-Men #1 (2019, Artgerm 1:500 Virgin Variant)", "Variant Cover", "grail", 600.0),
+        ("DC", "Wonder Woman", "Wonder Woman #750 (2020, Artgerm 1:100 Virgin Variant)", "Variant Cover", "high", 150.0),
+        ("Marvel", "Miles Morales: Spider-Man", "Miles Morales #1 (2022, Peach Momoko 1:50 Variant)", "Variant Cover", "high", 120.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four #1 (2018, Alex Ross 1:100 Virgin Variant)", "Variant Cover", "high", 200.0),
+        ("DC", "Superman", "Action Comics #1000 (2018, Jim Lee 1:100 Tour Virgin Variant)", "Variant Cover", "grail", 500.0),
+        ("Marvel", "Spider-Man", "Amazing Spider-Man #55 (2021, Patrick Gleason Webhead 2nd print)", "Variant Cover", "mid", 40.0),
+
+        # --- CGC-Notable Books (+8) ---
+        ("Marvel", "Hulk", "Incredible Hulk #181 (1974, 1st Wolverine full) CGC 9.8", "CGC 9.8", "grail", 150000.0),
+        ("Marvel", "Iron Man", "Tales of Suspense #39 (1963, 1st Iron Man) CGC 9.4", "CGC 9.6", "grail", 200000.0),
+        ("DC", "Superman", "Action Comics #252 (1959, 1st Supergirl) CGC 9.2", "CGC 9.6", "grail", 80000.0),
+        ("Marvel", "Daredevil", "Daredevil #168 (1981, 1st Elektra) CGC 9.8", "CGC 9.8", "grail", 5000.0),
+        ("Marvel", "Wolverine", "Wolverine Limited Series #1 (1982, Frank Miller) CGC 9.8", "CGC 9.8", "grail", 3000.0),
+        ("DC", "Swamp Thing", "Saga of the Swamp Thing #37 (1985, 1st John Constantine) CGC 9.8", "CGC 9.8", "grail", 8000.0),
+        ("Marvel", "New Mutants", "New Mutants #98 (1991, 1st Deadpool) CGC 9.8", "CGC 9.8", "grail", 10000.0),
+        ("Image", "Spawn", "Spawn #300 (2019, J. Scott Campbell cover) CGC 9.8", "CGC 9.8", "grail", 200.0),
+
+        # --- 2024-2025 First Appearances (+10) ---
+        ("Marvel", "Ultimate Spider-Man", "Ultimate Spider-Man #1 (2024, Jonathan Hickman, 1st print)", "Modern Key", "mid", 50.0),
+        ("DC", "Absolute Batman", "Absolute Batman #1 (2024, Scott Snyder, 1st print)", "Modern Key", "high", 100.0),
+        ("DC", "Absolute Superman", "Absolute Superman #1 (2024, Jason Aaron, 1st print)", "Modern Key", "mid", 60.0),
+        ("DC", "Absolute Wonder Woman", "Absolute Wonder Woman #1 (2024, Kelly Thompson, 1st print)", "Modern Key", "mid", 40.0),
+        ("Marvel", "Ultimate X-Men", "Ultimate X-Men #1 (2024, Peach Momoko, 1st print)", "Modern Key", "mid", 50.0),
+        ("Marvel", "Ultimate Black Panther", "Ultimate Black Panther #1 (2024, Bryan Hill, 1st print)", "Modern Key", "mid", 30.0),
+        ("Skybound", "Transformers", "Transformers #7 (2024, 1st Energon Universe Megatron)", "Modern Key", "mid", 40.0),
+        ("Image", "Rook: Exodus", "Rook: Exodus #1 (2024, Geoff Johns/Gary Frank)", "Modern Key", "mid", 25.0),
+        ("Marvel", "One World Under Doom", "One World Under Doom #1 (2025, Ryan North)", "Modern Key", "mid", 20.0),
+        ("DC", "All In Special", "DC All In Special #1 (2024, Darkseid event)", "Modern Key", "mid", 20.0),
+
+        # --- Omnibus & Absolute Editions (+12) ---
+        ("Marvel", "Uncanny X-Men", "Uncanny X-Men Omnibus Vol 1 (Claremont/Cockrum/Byrne, DM variant)", "Omnibus", "high", 150.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man Omnibus Vol 1 (Lee/Ditko, DM variant)", "Omnibus", "high", 125.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four Omnibus Vol 1 (Lee/Kirby, DM variant)", "Omnibus", "high", 130.0),
+        ("DC", "Sandman", "Absolute Sandman Vol 1 (Neil Gaiman)", "Absolute Edition", "high", 100.0),
+        ("DC", "Batman", "Absolute Dark Knight (Frank Miller, HC)", "Absolute Edition", "high", 80.0),
+        ("DC", "Watchmen", "Absolute Watchmen (Alan Moore/Dave Gibbons)", "Absolute Edition", "high", 100.0),
+        ("DC", "Superman", "All-Star Superman Absolute Edition", "Absolute Edition", "high", 70.0),
+        ("Marvel", "Avengers", "Avengers by Jonathan Hickman Omnibus Vol 1 (DM variant)", "Omnibus", "high", 150.0),
+        ("Marvel", "Daredevil", "Daredevil by Frank Miller Omnibus Companion (DM variant)", "Omnibus", "high", 125.0),
+        ("DC", "Batman", "Batman by Grant Morrison Omnibus Vol 1", "Omnibus", "high", 100.0),
+        ("Image", "Invincible", "Invincible Compendium Vol 1 (2011, Robert Kirkman)", "First Print", "mid", 60.0),
+        ("Image", "Saga", "Saga Compendium Vol 1 (2019, Brian K. Vaughan)", "First Print", "mid", 50.0),
     ]
     catalog = []
     for publisher, series, name, issue_type, rarity_tier, price_eur in comics:

@@ -91,11 +91,8 @@ function ProjectDetailScreen() {
   const PAINT_CATEGORIES = ['warhammer', 'gunpla', 'scale_models'] as const;
   const showPaintRecipes = PAINT_CATEGORIES.includes(project?.categoryId as typeof PAINT_CATEGORIES[number]);
 
-  // Category accent color
-  const accentColor = useMemo(() => {
-    if (!project?.categoryId) return undefined;
-    return CATEGORY_VISUAL[project.categoryId]?.accentColor;
-  }, [project?.categoryId]);
+  // Always use app theme accent for consistency
+  const accentColor = colors.accent;
 
   const categoryName = useMemo(() => {
     if (!project?.categoryId) return project?.category;

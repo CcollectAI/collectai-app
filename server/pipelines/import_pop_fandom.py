@@ -830,6 +830,129 @@ def get_curated_catalog() -> list[dict]:
         ("Weyes Blood", "vinyl", "And in the Darkness, Hearts Aglow Standard Vinyl", "Standard", "standard", 24),
         ("Weyes Blood", "vinyl", "Titanic Rising Standard Vinyl", "Standard", "mid", 28),
         ("Weyes Blood", "vinyl", "Titanic Rising Teal Vinyl (Limited)", "Teal (Limited)", "high", 55),
+
+        # ── Expansion to 700+ — Harry Potter, Star Wars, LOTR, Doctor Who, Stranger Things, GoT, Witcher, Mandalorian ──
+
+        # Harry Potter Collectibles (+12)
+        ("Harry Potter", "collectible", "Harry Potter Hogwarts Castle Snow Globe", "Limited Edition", "high", 85),
+        ("Harry Potter", "collectible", "Harry Potter Marauder's Map Replica (Noble Collection)", "Standard", "mid", 45),
+        ("Harry Potter", "collectible", "Harry Potter Time-Turner Necklace (Noble Collection)", "Standard", "mid", 38),
+        ("Harry Potter", "collectible", "Harry Potter Elder Wand Replica (Noble Collection)", "Standard", "mid", 42),
+        ("Harry Potter", "collectible", "Harry Potter Hogwarts Express Die-Cast Model", "Limited Edition", "high", 75),
+        ("Harry Potter", "collectible", "Harry Potter Monster Book of Monsters Plush", "Standard", "mid", 35),
+        ("Harry Potter", "collectible", "Harry Potter Sorting Hat Interactive Replica", "Standard", "high", 65),
+        ("Harry Potter", "vinyl", "Harry Potter and the Philosopher's Stone Vinyl OST (2LP)", "Picture Disc", "high", 70),
+        ("Harry Potter", "collectible", "Harry Potter MinaLima Illustrated Print Set (7 Books)", "Limited Edition", "grail", 180),
+        ("Harry Potter", "collectible", "Harry Potter Quidditch Trunk Board Game", "Standard", "mid", 48),
+        ("Harry Potter", "collectible", "Harry Potter Triwizard Cup Replica", "Limited Edition", "high", 95),
+        ("Harry Potter", "collectible", "Harry Potter Hedwig Animatronic Figure", "Standard", "high", 55),
+
+        # Star Wars Black Series Exclusives (+12)
+        ("Star Wars", "collectible", "Star Wars Black Series Darth Vader (ESB 40th Anniv.)", "Anniversary", "high", 65),
+        ("Star Wars", "collectible", "Star Wars Black Series Mandalorian & Grogu Deluxe", "Standard", "mid", 45),
+        ("Star Wars", "collectible", "Star Wars Black Series Clone Commander Cody (Archive)", "Standard", "mid", 35),
+        ("Star Wars", "collectible", "Star Wars Black Series Ahsoka Tano (Rebels)", "Standard", "mid", 40),
+        ("Star Wars", "collectible", "Star Wars Black Series Boba Fett (ROTJ Deluxe)", "Standard", "high", 55),
+        ("Star Wars", "collectible", "Star Wars Black Series Luke Skywalker (X-Wing Pilot)", "Walmart Exclusive", "high", 60),
+        ("Star Wars", "collectible", "Star Wars Black Series Cal Kestis (Jedi Survivor)", "GameStop Exclusive", "high", 55),
+        ("Star Wars", "collectible", "Star Wars Vintage Collection Razor Crest Vehicle", "HasLab Exclusive", "grail", 400),
+        ("Star Wars", "collectible", "Star Wars Black Series Stormtrooper (Carbonized)", "Target Exclusive", "high", 50),
+        ("Star Wars", "collectible", "Star Wars Black Series Emperor Palpatine (Throne Room)", "Hasbro Pulse Exclusive", "high", 65),
+        ("Star Wars", "collectible", "Star Wars Galaxy's Edge Legacy Lightsaber (Ahsoka)", "Disney Parks Exclusive", "grail", 250),
+        ("Star Wars", "collectible", "Star Wars Galaxy's Edge Legacy Lightsaber (Luke)", "Disney Parks Exclusive", "grail", 200),
+
+        # Lord of the Rings — Weta Workshop & Collectibles (+10)
+        ("Lord of the Rings", "collectible", "LOTR Weta Workshop Barad-dur Environment Statue", "Limited Edition", "grail", 600),
+        ("Lord of the Rings", "collectible", "LOTR Weta Minas Tirith Polystone Environment", "Limited Edition", "grail", 500),
+        ("Lord of the Rings", "collectible", "LOTR Weta Gandalf the White 1:6 Statue", "Limited Edition", "grail", 350),
+        ("Lord of the Rings", "collectible", "LOTR Weta The One Ring (Gold-Plated Replica)", "Standard", "mid", 40),
+        ("Lord of the Rings", "collectible", "LOTR Weta Sting Sword Replica (1:1)", "Limited Edition", "grail", 280),
+        ("Lord of the Rings", "collectible", "LOTR Weta Narsil Sword Replica (1:1)", "Limited Edition", "grail", 320),
+        ("Lord of the Rings", "collectible", "LOTR Weta Balrog Demon of Shadow & Flame Statue", "Limited Edition", "grail", 450),
+        ("Lord of the Rings", "collectible", "LOTR Hobbit Hole (Bag End) Diorama", "Limited Edition", "high", 180),
+        ("Lord of the Rings", "vinyl", "LOTR Fellowship of the Ring Vinyl OST (3LP)", "Limited Color", "high", 85),
+        ("Lord of the Rings", "vinyl", "LOTR Return of the King Vinyl OST (3LP)", "Limited Color", "high", 90),
+
+        # Doctor Who Big Finish & Collectibles (+8)
+        ("Doctor Who", "collectible", "Doctor Who Big Finish: The War Doctor Begins Box Set", "Limited Edition", "high", 55),
+        ("Doctor Who", "collectible", "Doctor Who Big Finish: 4th Doctor Adventures S12", "Standard", "mid", 35),
+        ("Doctor Who", "collectible", "Doctor Who Big Finish: 8th Doctor Time War Box Set", "Standard", "mid", 40),
+        ("Doctor Who", "collectible", "Doctor Who Big Finish: Missy Series 1-3 Bundle", "Standard", "high", 65),
+        ("Doctor Who", "collectible", "Doctor Who Sonic Screwdriver Universal Remote (Wand Co.)", "Limited Edition", "high", 85),
+        ("Doctor Who", "collectible", "Doctor Who TARDIS Console Room Diorama (Character Options)", "Standard", "high", 75),
+        ("Doctor Who", "collectible", "Doctor Who 13 Doctors Figure Set", "Anniversary", "high", 95),
+        ("Doctor Who", "vinyl", "Doctor Who 60th Anniversary Vinyl OST (Gold)", "Limited Color", "high", 55),
+
+        # Stranger Things Merchandise (+8)
+        ("Stranger Things", "collectible", "Stranger Things Hellfire Club Denim Jacket", "Hot Topic Exclusive", "high", 85),
+        ("Stranger Things", "collectible", "Stranger Things Demogorgon Animatronic Spirit Halloween", "Standard", "high", 95),
+        ("Stranger Things", "collectible", "Stranger Things Palace Arcade Machine (Mini Replica)", "Standard", "high", 75),
+        ("Stranger Things", "collectible", "Stranger Things Hawkins Lab ID Badge Prop Replica", "Standard", "mid", 25),
+        ("Stranger Things", "collectible", "Stranger Things Vecna 1/6 Scale Statue", "Limited Edition", "grail", 350),
+        ("Stranger Things", "vinyl", "Stranger Things Season 4 Vol. 2 Vinyl OST (2LP)", "Red/Black Split", "high", 55),
+        ("Stranger Things", "merch", "Stranger Things Surfer Boy Pizza Box Set (Loungefly)", "Standard", "mid", 48),
+        ("Stranger Things", "collectible", "Stranger Things Walkie-Talkie Set (Replica)", "Standard", "mid", 40),
+
+        # Game of Thrones Collectibles (+8)
+        ("Game of Thrones", "collectible", "Game of Thrones Iron Throne Replica (14-inch)", "Standard", "high", 85),
+        ("Game of Thrones", "collectible", "Game of Thrones Longclaw Sword Replica (Valyrian Steel)", "Limited Edition", "grail", 250),
+        ("Game of Thrones", "collectible", "Game of Thrones Hand of the King Pin (Noble Collection)", "Standard", "mid", 28),
+        ("Game of Thrones", "collectible", "Game of Thrones Dragon Egg Candle Set (3pc)", "Standard", "mid", 45),
+        ("Game of Thrones", "collectible", "Game of Thrones Targaryen Family Crest Shield (Wall Mount)", "Standard", "high", 65),
+        ("Game of Thrones", "vinyl", "Game of Thrones Vinyl OST Complete Collection (8LP Box)", "Limited Edition", "grail", 200),
+        ("Game of Thrones", "collectible", "House of the Dragon Crown of King Viserys Replica", "Limited Edition", "high", 95),
+        ("Game of Thrones", "collectible", "Game of Thrones Stark Direwolf Pup Plush Set (6pc)", "Standard", "high", 55),
+
+        # The Witcher Collectibles (+8)
+        ("The Witcher", "collectible", "The Witcher 3 Geralt of Rivia Statue (Dark Horse)", "Limited Edition", "grail", 280),
+        ("The Witcher", "collectible", "The Witcher Wolf Medallion Replica (CD Projekt Red)", "Standard", "mid", 35),
+        ("The Witcher", "collectible", "The Witcher Ciri Statue (Dark Horse)", "Limited Edition", "high", 180),
+        ("The Witcher", "collectible", "The Witcher Netflix Signed Script (Henry Cavill)", "Signed", "grail", 400),
+        ("The Witcher", "vinyl", "The Witcher 3 OST Vinyl (4LP Box Set)", "Limited Color", "grail", 150),
+        ("The Witcher", "collectible", "The Witcher Gwent Card Set (Physical Full Collection)", "Limited Edition", "high", 85),
+        ("The Witcher", "collectible", "The Witcher Triss Merigold Statue (Sideshow)", "Limited Edition", "grail", 250),
+        ("The Witcher", "merch", "The Witcher Netflix Kaer Morhen Map Poster (Signed)", "Signed", "high", 75),
+
+        # The Mandalorian / Star Wars Disney+ Merch (+8)
+        ("The Mandalorian", "collectible", "The Mandalorian Grogu Animatronic Figure (Hasbro)", "Standard", "mid", 45),
+        ("The Mandalorian", "collectible", "The Mandalorian Beskar Ingot Prop Replica Set (5pc)", "Standard", "high", 65),
+        ("The Mandalorian", "collectible", "The Mandalorian Dark Saber Replica (Force FX Elite)", "Standard", "grail", 200),
+        ("The Mandalorian", "collectible", "The Mandalorian Helmet Replica (Black Series)", "Standard", "grail", 130),
+        ("The Mandalorian", "collectible", "The Mandalorian IG-11 & Grogu 1/6 Scale Figure (Hot Toys)", "Limited Edition", "grail", 350),
+        ("The Mandalorian", "vinyl", "The Mandalorian Season 1-3 Vinyl OST (6LP Box)", "Limited Color", "grail", 140),
+        ("The Mandalorian", "collectible", "Ahsoka Tano Force FX Elite Lightsaber (Dual)", "Standard", "grail", 280),
+        ("The Mandalorian", "collectible", "Grogu Meditation Station Interactive Figure", "Standard", "mid", 38),
+
+        # Marvel Cinematic Universe Merch (+8)
+        ("Marvel", "collectible", "Avengers: Endgame Nano Gauntlet Replica (Hasbro)", "Standard", "high", 95),
+        ("Marvel", "collectible", "Spider-Man Iron Spider Helmet Replica (Hasbro)", "Standard", "high", 80),
+        ("Marvel", "collectible", "Captain America Shield Replica (75th Anniversary)", "Anniversary", "grail", 200),
+        ("Marvel", "collectible", "Thor Mjolnir Replica (Hasbro Legends)", "Standard", "high", 75),
+        ("Marvel", "collectible", "Deadpool Katana Set (Wall-Mount Replica)", "Standard", "high", 65),
+        ("Marvel", "vinyl", "Avengers: Infinity War Vinyl OST (3LP)", "Limited Color", "high", 70),
+        ("Marvel", "collectible", "Loki TVA Badge & Temp Pad Prop Replica Set", "Standard", "mid", 45),
+        ("Marvel", "collectible", "Wakanda Forever Vibranium Necklace Replica", "Standard", "mid", 40),
+
+        # Anime/Manga Pop Fandom Crossover (+8)
+        ("One Piece", "collectible", "One Piece Going Merry Ship Model Kit (Bandai)", "Standard", "mid", 45),
+        ("One Piece", "collectible", "One Piece Straw Hat Prop Replica (1:1)", "Standard", "mid", 35),
+        ("Naruto", "collectible", "Naruto Akatsuki Cloud Cloak (Premium Cosplay)", "Standard", "high", 65),
+        ("Naruto", "collectible", "Naruto Kunai Prop Replica Set (3pc)", "Standard", "mid", 28),
+        ("Dragon Ball", "collectible", "Dragon Ball 4-Star Ball Crystal Replica Set (7pc)", "Standard", "high", 85),
+        ("Attack on Titan", "collectible", "Attack on Titan Survey Corps Jacket (Premium)", "Standard", "high", 75),
+        ("Demon Slayer", "collectible", "Demon Slayer Nichirin Sword Replica (Tanjiro)", "Standard", "high", 90),
+        ("Jujutsu Kaisen", "collectible", "Jujutsu Kaisen Sukuna Finger Replica (10pc Box)", "Limited Edition", "grail", 120),
+
+        # Additional Pop Fandom Vinyl & Merch (+9)
+        ("Studio Ghibli", "vinyl", "My Neighbor Totoro Image Album Vinyl (JP Import)", "Japanese Pressing", "high", 80),
+        ("Studio Ghibli", "vinyl", "Princess Mononoke Symphonic Suite Vinyl", "Limited Color", "high", 75),
+        ("Zelda", "vinyl", "Legend of Zelda: Breath of the Wild OST Vinyl (4LP)", "Limited Color", "grail", 150),
+        ("Zelda", "collectible", "Legend of Zelda Master Sword Replica (1:1 Steel)", "Limited Edition", "grail", 200),
+        ("Pokémon", "collectible", "Pokémon 25th Anniversary Golden Pikachu Figure", "Anniversary", "high", 85),
+        ("Pokémon", "collectible", "Pokémon TCG Premium Trainer's XY Collection Box", "Limited Edition", "grail", 300),
+        ("Final Fantasy", "vinyl", "Final Fantasy VII Remake Vinyl OST (7LP Box Set)", "Limited Color", "grail", 180),
+        ("Final Fantasy", "collectible", "Final Fantasy VII Cloud Buster Sword Replica (1:1)", "Standard", "grail", 250),
+        ("Elden Ring", "vinyl", "Elden Ring OST Vinyl (4LP Box)", "Limited Color", "grail", 130),
     ]
 
     catalog = []

@@ -922,6 +922,130 @@ def _batch_art_toys_2025() -> list[dict]:
         ("BAPE", "Baby Milo", "Baby Milo x Dragon Ball Z Goku 6-inch", "Collab", "high", 650),
         ("BAPE", "ABC Camo", "BAPE x Bearbrick 100%+400% ABC Camo Green", "Collab", "high", 900),
         ("BAPE", "ABC Camo", "BAPE x Bearbrick 100%+400% ABC Camo Pink", "Collab", "high", 950),
+
+        # ── KAWS — Holiday & Additional (Round 5) ─────────────────────────
+        ("KAWS", "Holiday", "Holiday UK (Countryside)", "Limited", "high", 850),
+        ("KAWS", "Holiday", "Holiday Hong Kong Float", "Limited", "high", 750),
+        ("KAWS", "Holiday", "Holiday Taipei Seated", "Limited", "high", 700),
+        ("KAWS", "Holiday", "Holiday Space Chrome Silver", "Limited", "grail", 1800),
+        ("KAWS", "Holiday", "Holiday Space Glow in the Dark", "Limited", "grail", 2000),
+        ("KAWS", "Small Lie", "Small Lie Brown", "Open Edition", "mid", 260),
+        ("KAWS", "Gone", "Gone Companion Brown", "Open Edition", "mid", 430),
+        ("KAWS", "FAMILY", "Family Brown", "Open Edition", "mid", 480),
+        ("KAWS", "FAMILY", "Family Black", "Open Edition", "mid", 500),
+        ("KAWS", "Separated", "Separated Companion Black", "Open Edition", "mid", 380),
+        ("KAWS", "Along the Way", "Along the Way Grey", "Open Edition", "mid", 450),
+        ("KAWS", "Along the Way", "Along the Way Black", "Open Edition", "mid", 470),
+        ("KAWS", "Take", "Take Companion Grey", "Open Edition", "mid", 400),
+        ("KAWS", "Passing Through", "Passing Through Black", "Open Edition", "mid", 420),
+
+        # ── BE@RBRICK 400% Collaborations (Round 5) ───────────────────────
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Keith Haring V6", "Collab", "mid", 380),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Andy Warhol Brillo Box", "Collab", "mid", 400),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% KITH 10th Anniversary", "Collab", "high", 600),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Dior Oblique", "Collab", "grail", 1800),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Chrome Hearts Silver Cross", "Collab", "grail", 2200),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Kanye West Graduation Bear", "Collab", "high", 800),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Supreme Box Logo Red", "Collab", "high", 700),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Mastermind Japan Black", "Collab", "high", 650),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% CLOT x Nike Royale", "Collab", "high", 550),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Hajime Sorayama Space Girl", "Collab", "high", 750),
+
+        # ── BE@RBRICK 1000% Grails (Round 5) ──────────────────────────────
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Supreme Red Box Logo", "Collab", "grail", 4500),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Daft Punk RAM Chrome", "Collab", "grail", 5500),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Pushead Metallic", "Collab", "grail", 3800),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Kaws Dissected Brown", "Collab", "grail", 6500),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Atmos Elephant Print", "Collab", "grail", 3200),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% BAIT Iron Man", "Collab", "grail", 3500),
+
+        # ── Superplastic — Janky & Guggimon (Round 5) ─────────────────────
+        ("Superplastic", "Janky", "Janky x JBalvin Neon Orange 8-inch", "Collab", "high", 550),
+        ("Superplastic", "Janky", "Janky Series 5 Sealed Case (24pc)", "Blind Box Set", "standard", 95),
+        ("Superplastic", "Guggimon", "Guggimon Jaws 8-inch (SDCC Exclusive)", "Collab", "high", 600),
+        ("Superplastic", "Guggimon", "Guggimon Chrome Silver 12-inch", "Limited", "high", 800),
+        ("Superplastic", "Kranky", "Kranky Holiday Sweater 8-inch", "Limited", "mid", 320),
+        ("Superplastic", "Janky", "Janky x Pete Davidson 8-inch", "Collab", "mid", 280),
+
+        # ── Coarse Figures (Round 5) ──────────────────────────────────────
+        ("Coarse", "Omen", "Omen Void Black 8-inch", "Limited", "high", 650),
+        ("Coarse", "Omen", "Omen Fade Shadow 8-inch", "Limited", "high", 700),
+        ("Coarse", "Noop", "Noop Noop Bear Moss Green", "Limited", "mid", 350),
+        ("Coarse", "Pain", "Pain Cry Ivory 12-inch", "Limited", "high", 900),
+        ("Coarse", "False Friends", "False Friends Bunny & Wolf Set", "Limited", "high", 1200),
+        ("Coarse", "Top", "Top Reach Glacier Blue 8-inch", "Limited", "high", 550),
+
+        # ── Ron English Figures (Round 5) ─────────────────────────────────
+        ("Ron English", "MC Supersized", "MC Supersized Gold Chrome 12-inch", "Limited", "high", 800),
+        ("Ron English", "MC Supersized", "MC Supersized Glow 8-inch", "Limited", "mid", 350),
+        ("Ron English", "Popaganda", "Temper Tot Blue 6-inch", "Limited", "mid", 250),
+        ("Ron English", "Popaganda", "FAT Tony Neon Green 8-inch", "Limited", "mid", 300),
+        ("Ron English", "Astronaut Grin", "Astronaut Grin OG White 12-inch", "Limited", "high", 500),
+
+        # ── Takashi Murakami (Round 5) ────────────────────────────────────
+        ("Takashi Murakami", "Flower", "Flower Plush Cushion Rainbow 60cm", "Open Edition", "mid", 200),
+        ("Takashi Murakami", "Flower", "Flower Plush Cushion Blue Pink 30cm", "Open Edition", "standard", 80),
+        ("Takashi Murakami", "Flower", "Flower Plush Cushion Black White 60cm", "Open Edition", "mid", 220),
+        ("Takashi Murakami", "Mr. DOB", "Mr. DOB Figure Gold Chrome 10-inch", "Limited", "high", 1200),
+        ("Takashi Murakami", "ComplexCon", "Murakami x ComplexCon Flower Pillow Signed", "ComplexCon Exclusive", "grail", 2500),
+        ("Takashi Murakami", "Kaikai Kiki", "Kaikai & Kiki Blue Eyes Figure Set", "Limited", "high", 900),
+
+        # ── Daniel Arsham Eroded Figures (Round 5) ────────────────────────
+        ("Daniel Arsham", "Eroded", "Eroded Pikachu Resin Figure", "Limited", "grail", 4500),
+        ("Daniel Arsham", "Eroded", "Eroded Porsche 911 Turbo Crystal", "Limited", "grail", 6000),
+        ("Daniel Arsham", "Eroded", "Eroded Gameboy Crystal Relic", "Limited", "grail", 3200),
+        ("Daniel Arsham", "Crystal Relic", "Crystal Relic Camera 002", "Limited", "grail", 3800),
+        ("Daniel Arsham", "Future Relic", "Future Relic 09 Eroded Turntable", "Limited", "grail", 4200),
+        ("Daniel Arsham", "Eroded", "Eroded Mickey Mouse Figure", "Limited", "grail", 5500),
+
+        # ── James Jean x AllRightsReserved (Round 5) ──────────────────────
+        ("James Jean", "Descendant", "Descendant Dragon Sculpture Frost Edition", "Limited", "high", 1200),
+        ("James Jean", "Descendant", "Descendant Dragon Sculpture Fire Edition", "Limited", "high", 1400),
+        ("James Jean", "AllRightsReserved", "Rider Sculpture Bronze Patina", "Limited", "grail", 2800),
+        ("James Jean", "AllRightsReserved", "Lotus Sculpture Pink Resin", "Limited", "high", 800),
+
+        # === EXPANSION ROUND 6 — 29 new items to reach 700+ ===
+
+        # ── KAWS — 2025/2026 Releases (+6) ──────────────────────────────
+        ("KAWS", "Companion", "Companion 2025 Open Edition (Grey)", "Open Edition", "mid", 300),
+        ("KAWS", "Companion", "Companion 2025 Open Edition (Black)", "Open Edition", "mid", 310),
+        ("KAWS", "Clean Slate", "Clean Slate Brown Open Edition 2023", "Open Edition", "mid", 380),
+        ("KAWS", "Clean Slate", "Clean Slate Grey Open Edition 2023", "Open Edition", "mid", 370),
+        ("KAWS", "Holiday", "KAWS Holiday Korea (Seoul Tower)", "Limited", "high", 920),
+        ("KAWS", "Holiday", "KAWS Holiday Indonesia (Bali)", "Limited", "high", 880),
+
+        # ── BE@RBRICK 100%+400% New Collabs (+6) ────────────────────────
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Jean-Michel Basquiat V8", "Collab", "mid", 350),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Banksy Flower Bomber", "Collab", "high", 700),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Nike SB Dunk Low Chicago", "Collab", "high", 650),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Travis Scott Cactus Jack", "Collab", "high", 850),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Stussy 40th Anniversary", "Collab", "mid", 480),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Karimoku Layered Wood 2024", "Collab", "grail", 4800),
+
+        # ── Superplastic — 2025 Releases (+4) ───────────────────────────
+        ("Superplastic", "Janky", "Janky x MrBeast 8-inch Superjanky", "Collab", "high", 480),
+        ("Superplastic", "Guggimon", "Guggimon Tokyo Exclusive 8-inch", "Limited", "high", 550),
+        ("Superplastic", "Dayzee", "Dayzee OG Pink 12-inch (1st Edition)", "Limited", "high", 600),
+        ("Superplastic", "Superdoodle", "Superdoodle Rainbow Drip 8-inch", "Limited", "mid", 300),
+
+        # ── Daniel Arsham — New Eroded (+4) ──────────────────────────────
+        ("Daniel Arsham", "Eroded", "Eroded Darth Vader Helmet Crystal", "Limited", "grail", 5000),
+        ("Daniel Arsham", "Eroded", "Eroded Basketball (Blue Calcite)", "Limited", "high", 1400),
+        ("Daniel Arsham", "Future Relic", "Future Relic 10 Eroded Camera (White)", "Limited", "grail", 3500),
+        ("Daniel Arsham", "Crystal Relic", "Crystal Relic 005 Cassette Player", "Limited", "high", 1300),
+
+        # ── Pop Mart — Space Molly & New Lines (+5) ─────────────────────
+        ("Pop Mart", "Space Molly", "Space Molly 400% Spongebob Collab", "Collab", "high", 450),
+        ("Pop Mart", "Space Molly", "Space Molly 1000% Chrome Silver", "Collab", "grail", 2000),
+        ("Pop Mart", "LABUBU", "LABUBU The Monsters Christmas 400%", "Limited", "high", 350),
+        ("Pop Mart", "LABUBU", "LABUBU Have a Seat Series Sealed Case (12pc)", "Blind Box Set", "standard", 85),
+        ("Pop Mart", "Hirono", "Hirono The Other One Series Sealed Case (12pc)", "Blind Box Set", "standard", 95),
+
+        # ── Hebru Brantley & Luke Chueh (+4) ────────────────────────────
+        ("Hebru Brantley", "Flyboy", "Flyboy OG Black 12-inch", "Limited", "high", 800),
+        ("Hebru Brantley", "Flyboy", "Flyboy Chrome Gold 12-inch (ComplexCon)", "Collab", "grail", 1500),
+        ("Luke Chueh", "Possessed", "Possessed Bear OG Pink 8-inch", "Limited", "mid", 350),
+        ("Luke Chueh", "Possessed", "Possessed Bear Black & White 8-inch", "Limited", "mid", 380),
     ]
 
     catalog = []

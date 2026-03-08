@@ -892,6 +892,132 @@ def get_curated_catalog() -> list[dict]:
         ("Good Smile Company", "Nendoroid", "Aqua Hoshino Nendoroid", "Oshi no Ko", "Nendoroid", "standard", 55),
         ("MegaHouse", "Scale", "MEM-cho Swimsuit Ver.", "Oshi no Ko", "1/7", "mid", 175),
         ("Good Smile Company", "Pop Up Parade", "Kana Arima Pop Up Parade", "Oshi no Ko", "Non-scale", "standard", 32),
+
+        # ── Frieren - Additional Figures (Round 5) ─────────────────────
+        ("Good Smile Company", "Scale", "Frieren Casting Zoltraak", "Frieren: Beyond Journey's End", "1/7", "high", 260),
+        ("Alter", "Scale", "Fern Staff Combat Ver.", "Frieren: Beyond Journey's End", "1/7", "high", 240),
+        ("Kotobukiya", "ARTFX", "Himmel Legendary Hero Pose", "Frieren: Beyond Journey's End", "1/8", "mid", 180),
+        ("FREEing", "Scale", "Frieren Bunny Ver.", "Frieren: Beyond Journey's End", "1/4", "grail", 490),
+        ("Bandai", "S.H.Figuarts", "Frieren Action Figure", "Frieren: Beyond Journey's End", "Non-scale", "mid", 90),
+        ("Good Smile Company", "Nendoroid", "Fern Nendoroid", "Frieren: Beyond Journey's End", "Nendoroid", "standard", 55),
+        ("Banpresto", "Grandista", "Stark Grandista Figure", "Frieren: Beyond Journey's End", "Non-scale", "standard", 38),
+
+        # ── Chainsaw Man - Additional Figures (Round 5) ────────────────
+        ("Alter", "Scale", "Makima Control Devil Form", "Chainsaw Man", "1/7", "high", 290),
+        ("MegaHouse", "GEM", "Reze Bomb Devil", "Chainsaw Man", "1/8", "high", 220),
+        ("Good Smile Company", "Scale", "Aki Hayakawa Fox Devil", "Chainsaw Man", "1/7", "high", 240),
+        ("Kotobukiya", "ARTFX", "Pochita Nendoroid Giant", "Chainsaw Man", "Non-scale", "mid", 95),
+        ("eStream", "Scale", "Power Blood Fiend Transformation", "Chainsaw Man", "1/7", "grail", 500),
+        ("Banpresto", "Vibration Stars", "Denji Vibration Stars", "Chainsaw Man", "Non-scale", "standard", 28),
+        ("Good Smile Company", "Scale", "War Devil Yoru", "Chainsaw Man", "1/7", "high", 250),
+        ("FREEing", "Scale", "Makima Bunny Ver.", "Chainsaw Man", "1/4", "grail", 480),
+
+        # ── Blue Lock - Figures (Round 5) ──────────────────────────────
+        ("Good Smile Company", "Scale", "Isagi Yoichi Shooting Ver.", "Blue Lock", "1/7", "high", 220),
+        ("Kotobukiya", "Scale", "Bachira Meguru Dribble Ver.", "Blue Lock", "1/8", "mid", 180),
+        ("Alter", "Scale", "Rin Itoshi Goal Celebration", "Blue Lock", "1/7", "high", 250),
+        ("MegaHouse", "Scale", "Nagi Seishiro Trap Ver.", "Blue Lock", "1/8", "mid", 190),
+        ("Good Smile Company", "Scale", "Kaiser Michael Ego Ver.", "Blue Lock", "1/7", "high", 260),
+        ("Banpresto", "DXF", "Isagi Yoichi DXF Figure", "Blue Lock", "Non-scale", "standard", 30),
+        ("Good Smile Company", "Nendoroid", "Bachira Meguru Nendoroid", "Blue Lock", "Nendoroid", "standard", 52),
+        ("Good Smile Company", "Pop Up Parade", "Chigiri Hyoma Pop Up Parade", "Blue Lock", "Non-scale", "standard", 35),
+        ("FREEing", "Scale", "Rin Itoshi Bunny Ver.", "Blue Lock", "1/4", "grail", 460),
+        ("Kotobukiya", "ARTFX", "Nagi & Reo Dual Set", "Blue Lock", "1/8", "high", 320),
+
+        # ── Bocchi the Rock! - Additional Figures (Round 5) ────────────
+        ("Alter", "Scale", "Nijika Ijichi Drumming Ver.", "Bocchi the Rock!", "1/7", "high", 230),
+        ("FREEing", "Scale", "Kita Ikuyo Bunny Ver.", "Bocchi the Rock!", "1/4", "grail", 450),
+        ("MegaHouse", "Scale", "Bocchi Hitori Guitar Solo", "Bocchi the Rock!", "1/8", "mid", 170),
+        ("Good Smile Company", "Nendoroid", "Nijika Ijichi Nendoroid", "Bocchi the Rock!", "Nendoroid", "standard", 50),
+        ("Kotobukiya", "Scale", "PA-san (Seika Ijichi)", "Bocchi the Rock!", "1/7", "mid", 165),
+
+        # ── Oshi no Ko - Additional Figures (Round 5) ──────────────────
+        ("Alter", "Scale", "Ai Hoshino Dome Tour Finale", "Oshi no Ko", "1/7", "grail", 420),
+        ("Kotobukiya", "ARTFX", "Aqua Hoshino Dark Star Ver.", "Oshi no Ko", "1/8", "high", 200),
+        ("Good Smile Company", "Scale", "Akane Kurokawa 'Ai' Cosplay", "Oshi no Ko", "1/7", "high", 230),
+        ("eStream", "Scale", "Ruby Hoshino Stage Performance", "Oshi no Ko", "1/7", "high", 280),
+        ("Good Smile Company", "Nendoroid", "Ai Hoshino Nendoroid", "Oshi no Ko", "Nendoroid", "standard", 58),
+
+        # ── Alter Premium Scales (Round 5) ─────────────────────────────
+        ("Alter", "Scale", "Tohka Yatogami Astral Dress", "Date A Live", "1/7", "high", 280),
+        ("Alter", "Scale", "Megumin Explosion Magic", "KonoSuba", "1/7", "high", 290),
+        ("Alter", "Scale", "Rimuru Tempest Ultimate Form", "That Time I Got Reincarnated as a Slime", "1/7", "high", 270),
+        ("Alter", "Scale", "Violet Evergarden Auto Memory Doll", "Violet Evergarden", "1/7", "high", 310),
+        ("Alter", "Scale", "Saber Artoria Avalon Ver.", "Fate/Grand Order", "1/7", "grail", 450),
+
+        # ── Good Smile Company 1/7 Scales (Round 5) ───────────────────
+        ("Good Smile Company", "Scale", "Shoko Ieiri White Coat", "Jujutsu Kaisen", "1/7", "mid", 195),
+        ("Good Smile Company", "Scale", "Marin Kitagawa Cosplay Ver. 2", "My Dress-Up Darling", "1/7", "high", 250),
+        ("Good Smile Company", "Scale", "Power Chainsaw Man (Alternate)", "Chainsaw Man", "1/7", "high", 235),
+        ("Good Smile Company", "Scale", "Raphtalia Light Novel Ver.", "The Rising of the Shield Hero", "1/7", "mid", 190),
+        ("Good Smile Company", "Scale", "Emilia Crystal Dress Ver.", "Re:Zero", "1/7", "high", 280),
+
+        # ── Kotobukiya ARTFX (Round 5) ─────────────────────────────────
+        ("Kotobukiya", "ARTFX", "Tanjiro Kamado Water Breathing", "Demon Slayer", "1/8", "high", 200),
+        ("Kotobukiya", "ARTFX", "Zenitsu Agatsuma Thunder Breathing", "Demon Slayer", "1/8", "mid", 180),
+        ("Kotobukiya", "ARTFX", "Inosuke Hashibira Beast Breathing", "Demon Slayer", "1/8", "mid", 175),
+        ("Kotobukiya", "ARTFX", "Muichiro Tokito Mist Breathing", "Demon Slayer", "1/8", "mid", 185),
+        ("Kotobukiya", "ARTFX", "Giyu Tomioka Water Breathing", "Demon Slayer", "1/8", "high", 210),
+
+        # ── Bandai Tamashii Nations (Round 5) ──────────────────────────
+        ("Bandai", "S.H.Figuarts", "Goku Ultra Instinct Sign", "Dragon Ball Super", "Non-scale", "mid", 100),
+        ("Bandai", "S.H.Figuarts", "Luffy Gear 5 Nika", "One Piece", "Non-scale", "high", 130),
+        ("Bandai", "Metal Build", "Gundam Aerial Full Armor", "Gundam: Witch from Mercury", "Non-scale", "high", 350),
+        ("Bandai", "Robot Spirits", "Eva Unit-02 Production Model", "Evangelion", "Non-scale", "mid", 110),
+        ("Bandai", "S.H.Figuarts", "Naruto Uzumaki Baryon Mode", "Naruto Shippuden", "Non-scale", "mid", 95),
+
+        # ── MegaHouse G.E.M. Series (Round 5) ─────────────────────────
+        ("MegaHouse", "GEM", "Ichigo Kurosaki Final Getsuga", "Bleach", "1/8", "high", 280),
+        ("MegaHouse", "GEM", "Trunks Super Saiyan Sword", "Dragon Ball Z", "1/8", "mid", 180),
+        ("MegaHouse", "GEM", "Kakashi Hatake Anbu Ver.", "Naruto Shippuden", "1/8", "high", 240),
+        ("MegaHouse", "GEM", "Levi Ackerman Cleaning Ver.", "Attack on Titan", "1/8", "mid", 200),
+        ("MegaHouse", "Portrait of Pirates", "Nico Robin Wano Ver.", "One Piece", "1/8", "high", 300),
+        ("MegaHouse", "GEM", "Gojo Satoru Hollow Purple", "Jujutsu Kaisen", "1/8", "high", 320),
+
+        # === EXPANSION ROUND 6 — 31 new items to reach 700+ ===
+
+        # ── Alter — Premium 2025/2026 Releases (+6) ─────────────────────
+        ("Alter", "Scale", "Makima Barefoot Ver.", "Chainsaw Man", "1/7", "high", 310),
+        ("Alter", "Scale", "Yor Forger Thorn Princess Night Mission", "Spy x Family", "1/7", "high", 290),
+        ("Alter", "Scale", "Frieren Flower Field Ver.", "Frieren: Beyond Journey's End", "1/7", "high", 280),
+        ("Alter", "Scale", "Ai Hoshino Final Stage Performance", "Oshi no Ko", "1/7", "grail", 400),
+        ("Alter", "Scale", "Power Blood Chainsaw Form", "Chainsaw Man", "1/7", "grail", 380),
+        ("Alter", "Scale", "Nobara Kugisaki Black Flash", "Jujutsu Kaisen", "1/7", "high", 270),
+
+        # ── Good Smile Company — Recent Series (+6) ─────────────────────
+        ("Good Smile Company", "Scale", "Anya Forger School Uniform Ver.", "Spy x Family", "1/7", "mid", 165),
+        ("Good Smile Company", "Scale", "Sung Jin-woo Shadow Monarch", "Solo Leveling", "1/7", "high", 280),
+        ("Good Smile Company", "Scale", "Momo Ayase School Uniform", "Dandadan", "1/7", "mid", 180),
+        ("Good Smile Company", "Scale", "Okarun Turbo Granny Possessed", "Dandadan", "1/7", "mid", 190),
+        ("Good Smile Company", "Nendoroid", "Sung Jin-woo Nendoroid", "Solo Leveling", "Nendoroid", "standard", 55),
+        ("Good Smile Company", "Pop Up Parade", "Hime Gotou Pop Up Parade", "Oshi no Ko", "Non-scale", "standard", 30),
+
+        # ── Kotobukiya — ARTFX J Recent (+5) ────────────────────────────
+        ("Kotobukiya", "ARTFX J", "Yuji Itadori Black Flash", "Jujutsu Kaisen", "1/8", "high", 230),
+        ("Kotobukiya", "ARTFX J", "Denji Chainsaw Devil Transformation", "Chainsaw Man", "1/8", "high", 220),
+        ("Kotobukiya", "ARTFX J", "Yor Forger Assassin Pose", "Spy x Family", "1/8", "high", 210),
+        ("Kotobukiya", "ARTFX J", "Sung Jin-woo Dagger Stance", "Solo Leveling", "1/8", "high", 240),
+        ("Kotobukiya", "ARTFX J", "Frieren Magic Circle Casting", "Frieren: Beyond Journey's End", "1/8", "mid", 195),
+
+        # ── FREEing B-Style Bunny Figures (+5) ──────────────────────────
+        ("FREEing", "Scale", "Marin Kitagawa Bunny Ver.", "My Dress-Up Darling", "1/4", "grail", 500),
+        ("FREEing", "Scale", "Megumin Bunny Ver.", "KonoSuba", "1/4", "grail", 460),
+        ("FREEing", "Scale", "Ai Hoshino Bunny Ver.", "Oshi no Ko", "1/4", "grail", 510),
+        ("FREEing", "Scale", "Fern Bunny Ver.", "Frieren: Beyond Journey's End", "1/4", "grail", 480),
+        ("FREEing", "Scale", "Momo Ayase Bunny Ver.", "Dandadan", "1/4", "grail", 470),
+
+        # ── Prime 1 Studio & Tsume Art Grails (+5) ──────────────────────
+        ("Prime 1 Studio", "Premium Masterline", "Luffy Gear 5 Nika", "One Piece", "1/4", "grail", 1500),
+        ("Tsume Art", "HQS", "Zoro Enma Three Sword Style", "One Piece", "1/6", "grail", 900),
+        ("Prime 1 Studio", "Premium Masterline", "Gojo Satoru Unlimited Void", "Jujutsu Kaisen", "1/4", "grail", 1400),
+        ("Tsume Art", "HQS", "Sung Jin-woo Arise", "Solo Leveling", "1/6", "grail", 850),
+        ("Prime 1 Studio", "Premium Masterline", "Pochita & Denji Hug", "Chainsaw Man", "1/4", "grail", 1100),
+
+        # ── Banpresto Prize — Recent Series (+4) ────────────────────────
+        ("Banpresto", "Grandista", "Sung Jin-woo Grandista", "Solo Leveling", "Non-scale", "standard", 38),
+        ("Banpresto", "DXF", "Momo Ayase DXF Figure", "Dandadan", "Non-scale", "standard", 28),
+        ("Banpresto", "Vibration Stars", "Frieren Vibration Stars", "Frieren: Beyond Journey's End", "Non-scale", "standard", 26),
+        ("Banpresto", "DXF", "Fern DXF Figure", "Frieren: Beyond Journey's End", "Non-scale", "standard", 26),
     ]
 
     catalog = []

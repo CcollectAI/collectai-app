@@ -18,9 +18,13 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 logger = logging.getLogger(__name__)
+
+# Per-user: 30 requests per minute for settings
+_settings_user_limit = per_user_rate_limit(30, scope="settings")
 
 # ---------------------------------------------------------------------------
 # Allowed values
@@ -70,7 +74,7 @@ class UserSettingsUpdateResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
-@router.get("", response_model=UserSettingsResponse)
+@router.get("", response_model=UserSettingsResponse, dependencies=[Depends(_settings_user_limit)])
 async def get_user_settings(user_id: str = Depends(get_current_user_id)):
     """
     Return current user settings.
@@ -109,7 +113,7 @@ async def get_user_settings(user_id: str = Depends(get_current_user_id)):
         raise error_response(500, "Failed to fetch settings", code="DB_ERROR")
 
 
-@router.put("", response_model=UserSettingsUpdateResponse)
+@router.put("", response_model=UserSettingsUpdateResponse, dependencies=[Depends(_settings_user_limit)])
 async def update_user_settings(
     request: UserSettingsUpdateRequest,
     user_id: str = Depends(get_current_user_id),

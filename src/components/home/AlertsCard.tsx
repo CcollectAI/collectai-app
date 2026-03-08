@@ -3,13 +3,14 @@
  * Displays pending alerts with summary.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { Alert, AlertType } from '@/types/insights';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { formatPrice } from '@/lib/format';
 
 type AlertsCardProps = {
   alerts: Alert[];
@@ -49,28 +50,17 @@ function getAlertColor(type: AlertType): string {
   }
 }
 
-function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffHours < 1) return 'Just now';
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
-  return `${diffDays}d ago`;
-}
-
 type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
 
 type AlertItemProps = {
   alert: Alert;
   colors: ThemeColors;
   onPress?: () => void;
+  alertActive: boolean;
+  onToggleAlert?: () => void;
 };
 
-function AlertItem({ alert, colors, onPress }: AlertItemProps) {
+function AlertItem({ alert, colors, onPress, alertActive, onToggleAlert }: AlertItemProps) {
   const iconColor = getAlertColor(alert.type);
 
   return (
@@ -81,7 +71,7 @@ function AlertItem({ alert, colors, onPress }: AlertItemProps) {
         onPress?.();
       }}
       accessibilityRole="button"
-      accessibilityLabel={`${alert.description}. ${formatTimeAgo(alert.triggeredAt)}`}
+      accessibilityLabel={`${alert.itemName}. Target: ${formatPrice(alert.value)}`}
     >
       <View style={[styles.alertIcon, { backgroundColor: iconColor + '15' }]}>
         <Ionicons name={getAlertIcon(alert.type) as keyof typeof Ionicons.glyphMap} size={16} color={iconColor} />
@@ -94,9 +84,26 @@ function AlertItem({ alert, colors, onPress }: AlertItemProps) {
           {alert.description}
         </Text>
       </View>
-      <Text style={[styles.alertTime, { color: colors.muted }]}>
-        {formatTimeAgo(alert.triggeredAt)}
-      </Text>
+      <View style={styles.alertRight}>
+        <Text style={[styles.targetPrice, { color: colors.text }]}>
+          {formatPrice(alert.value)}
+        </Text>
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+            onToggleAlert?.();
+          }}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={alertActive ? 'Disable deal alert' : 'Enable deal alert'}
+        >
+          <Ionicons
+            name={alertActive ? 'notifications' : 'notifications-off-outline'}
+            size={16}
+            color={alertActive ? colors.accent : colors.muted}
+          />
+        </AnimatedPressable>
+      </View>
     </AnimatedPressable>
   );
 }
@@ -104,6 +111,19 @@ function AlertItem({ alert, colors, onPress }: AlertItemProps) {
 export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, showEmptyState = true }: AlertsCardProps) {
   const { colors } = useAppTheme();
   const unreadCount = alerts.filter((a) => !a.isRead).length;
+  const [activeAlerts, setActiveAlerts] = useState<Set<string>>(() => new Set(alerts.map((a) => a.id)));
+
+  const toggleAlert = (id: string) => {
+    setActiveAlerts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   // Show card with empty state prompt if no alerts
   if (alerts.length === 0) {
@@ -196,6 +216,8 @@ export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, 
               alert={alert}
               colors={colors}
               onPress={() => onAlertPress?.(alert)}
+              alertActive={activeAlerts.has(alert.id)}
+              onToggleAlert={() => toggleAlert(alert.id)}
             />
             {idx < Math.min(alerts.length, 3) - 1 && (
               <View style={[styles.separator, { backgroundColor: colors.border }]} />
@@ -329,8 +351,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  alertTime: {
-    fontSize: 11,
+  alertRight: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  targetPrice: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   separator: {
     height: StyleSheet.hairlineWidth,

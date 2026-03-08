@@ -855,6 +855,136 @@ def get_curated_catalog() -> list[dict]:
         ("Ship to Shore", "Silent Hill 2 OST (Akira Yamaoka) 2xLP", "Silent Hill", "US Pressing", "Clear w/ Red Splatter", "grail", 160),
         ("Ship to Shore", "Contra III: The Alien Wars OST", "Contra", "US Pressing", "Military Green", "high", 55),
         ("Ship to Shore", "Super Castlevania IV OST", "Castlevania", "US Pressing", "Orange Marble", "high", 60),
+
+        # ══════════════════════════════════════════════════════════════
+        # EXPANSION TO 700+ — 96 additional anime OST vinyl records
+        # ══════════════════════════════════════════════════════════════
+
+        # ── Evangelion Pressings (+12) ─────────────────────────────────
+        ("King Records", "Evangelion: Death & Rebirth OST (Shiro Sagisu)", "Evangelion", "Japanese Pressing", "Black", "high", 90),
+        ("King Records", "Evangelion 2.0 You Can (Not) Advance OST", "Evangelion", "Japanese Pressing", "Black", "high", 80),
+        ("King Records", "Evangelion 3.0 You Can (Not) Redo OST", "Evangelion", "Japanese Pressing", "Black", "high", 85),
+        ("King Records", "Evangelion 3.0+1.0 Thrice Upon a Time OST (3LP)", "Evangelion", "Japanese Pressing", "Black", "grail", 150),
+        ("King Records", "Evangelion: A Cruel Angel's Thesis (7\" Single)", "Evangelion", "Japanese OG Pressing", "Black", "high", 70),
+        ("Milan Records", "Evangelion Original Soundtrack (EU Repress)", "Evangelion", "EU Pressing", "Black", "mid", 38),
+        ("King Records", "Evangelion Original Soundtrack II", "Evangelion", "Japanese Pressing", "Black", "high", 80),
+        ("King Records", "Evangelion Original Soundtrack III", "Evangelion", "Japanese Pressing", "Black", "high", 85),
+        ("King Records", "Evangelion Classical (Piano Covers)", "Evangelion", "Japanese Pressing", "Clear Blue", "high", 75),
+        ("King Records", "Evangelion: Fly Me to the Moon (7\" Single Promo)", "Evangelion", "Japanese OG Pressing", "Black", "high", 65),
+        ("Tiger Lab Vinyl", "Evangelion Finally LP (2LP)", "Evangelion", "US Pressing", "Unit-01 Purple/Green Splatter", "grail", 120),
+        ("Milan Records", "Evangelion 1.0 You Are (Not) Alone OST", "Evangelion", "EU/US Pressing", "Black", "mid", 35),
+
+        # ── Cowboy Bebop Variants (+8) ─────────────────────────────────
+        ("Tiger Lab Vinyl", "Cowboy Bebop OST 2 (No Disc)", "Cowboy Bebop", "US Pressing", "Black", "mid", 38),
+        ("Tiger Lab Vinyl", "Cowboy Bebop OST 2 (No Disc)", "Cowboy Bebop", "US Pressing", "Gold Translucent", "high", 75),
+        ("Tiger Lab Vinyl", "Cowboy Bebop Ask DNA (2LP)", "Cowboy Bebop", "US Pressing", "Clear", "high", 70),
+        ("Tiger Lab Vinyl", "Cowboy Bebop Tank! (7\" Single)", "Cowboy Bebop", "US Pressing", "Orange", "mid", 30),
+        ("Flying Dog", "Cowboy Bebop Remixes: Music for Freelance", "Cowboy Bebop", "Japanese Pressing", "Black", "high", 95),
+        ("Flying Dog", "Cowboy Bebop OST Boxset (4LP Deluxe)", "Cowboy Bebop", "Japanese Pressing", "Black", "grail", 200),
+        ("Victor", "Cowboy Bebop Original Japanese TV OST (1998)", "Cowboy Bebop", "Japanese OG Pressing", "Black", "grail", 180),
+        ("Tiger Lab Vinyl", "Cowboy Bebop Vitaminless", "Cowboy Bebop", "US Pressing", "Green Marble", "high", 65),
+
+        # ── Studio Ghibli Vinyl (+10) ──────────────────────────────────
+        ("Milan Records", "Porco Rosso Soundtrack (Joe Hisaishi)", "Porco Rosso", "EU/US Pressing", "Black", "mid", 32),
+        ("Milan Records", "The Tale of the Princess Kaguya Soundtrack", "Princess Kaguya", "EU/US Pressing", "Black", "mid", 30),
+        ("Milan Records", "From Up on Poppy Hill Soundtrack", "From Up on Poppy Hill", "EU/US Pressing", "Black", "mid", 28),
+        ("Milan Records", "When Marnie Was There Soundtrack", "When Marnie Was There", "EU/US Pressing", "Black", "mid", 28),
+        ("Tokuma Japan", "My Neighbor Totoro OST (Original 1988 Pressing)", "My Neighbor Totoro", "Japanese OG Pressing", "Black", "grail", 160),
+        ("Tokuma Japan", "Castle in the Sky Image Album (Original 1986 Pressing)", "Castle in the Sky", "Japanese OG Pressing", "Black", "grail", 140),
+        ("Tokuma Japan", "Kiki's Delivery Service OST (Original 1989 Pressing)", "Kiki's Delivery Service", "Japanese OG Pressing", "Black", "grail", 130),
+        ("Studio Ghibli Records", "Joe Hisaishi in Budokan (2LP Live)", "Multi-Ghibli", "Japanese Pressing", "Black", "grail", 180),
+        ("Milan Records", "The Boy and the Heron Soundtrack (Joe Hisaishi)", "The Boy and the Heron", "EU/US Pressing", "Black", "mid", 35),
+        ("Studio Ghibli Records", "Spirited Away Image Album (Repress)", "Spirited Away", "Japanese Pressing", "Clear Pink", "high", 70),
+
+        # ── Akira (+8) ─────────────────────────────────────────────────
+        ("Mondo", "Akira Symphonic Suite (Geinoh Yamashirogumi) 2xLP", "Akira", "US Pressing", "Red/Black Split", "grail", 140),
+        ("Mondo", "Akira Symphonic Suite (Geinoh Yamashirogumi) 2xLP", "Akira", "US Pressing", "Neon Blue", "grail", 150),
+        ("Milan Records", "Akira Original Soundtrack (2LP Remaster)", "Akira", "EU/US Pressing", "Black", "high", 55),
+        ("Invitation", "Akira Original Soundtrack (1988 OG Pressing)", "Akira", "Japanese OG Pressing", "Black", "grail", 250),
+        ("Tiger Lab Vinyl", "Akira Symphonic Suite (Repress)", "Akira", "US Pressing", "Clear w/ Red Splatter", "high", 85),
+        ("Invitation", "Akira Image Album (Kaneda's Theme)", "Akira", "Japanese OG Pressing", "Black", "grail", 200),
+        ("Mondo", "Akira Original Soundtrack (RSD 2023)", "Akira", "RSD Exclusive", "Capsule Red", "high", 90),
+        ("Milan Records", "Akira Symphonic Suite (Clear Vinyl Repress)", "Akira", "EU Pressing", "Clear", "high", 60),
+
+        # ── Ghost in the Shell (+8) ────────────────────────────────────
+        ("Mondo", "Ghost in the Shell OST (Kenji Kawai) 2xLP", "Ghost in the Shell", "US Pressing", "Purple/Gold Splatter", "grail", 130),
+        ("Mondo", "Ghost in the Shell OST (Kenji Kawai) 2xLP", "Ghost in the Shell", "US Pressing", "Black", "high", 65),
+        ("King Records", "Ghost in the Shell: Stand Alone Complex OST (Yoko Kanno)", "Ghost in the Shell: SAC", "Japanese Pressing", "Black", "high", 95),
+        ("King Records", "Ghost in the Shell: SAC 2nd GIG OST (Yoko Kanno)", "Ghost in the Shell: SAC 2nd GIG", "Japanese Pressing", "Black", "high", 90),
+        ("Milan Records", "Ghost in the Shell (1995) Soundtrack Reissue", "Ghost in the Shell", "EU/US Pressing", "Black", "mid", 40),
+        ("King Records", "Ghost in the Shell: Innocence OST (Kenji Kawai)", "Ghost in the Shell: Innocence", "Japanese Pressing", "Black", "high", 85),
+        ("Mondo", "Ghost in the Shell: SAC OST (RSD 2024)", "Ghost in the Shell: SAC", "RSD Exclusive", "Tachikoma Blue", "high", 75),
+        ("King Records", "Ghost in the Shell: Arise OST (Cornelius)", "Ghost in the Shell: Arise", "Japanese Pressing", "Black", "high", 70),
+
+        # ── Seasonal Anime OSTs (+12) ──────────────────────────────────
+        ("Aniplex", "Bocchi the Rock! OST (2LP)", "Bocchi the Rock!", "Japanese Pressing", "Pink", "high", 80),
+        ("Aniplex", "Frieren: Beyond Journey's End OST", "Frieren", "Japanese Pressing", "Black", "high", 85),
+        ("Aniplex", "Oshi no Ko OST (Idol Single 7\")", "Oshi no Ko", "Japanese Pressing", "Star Purple", "high", 55),
+        ("Pony Canyon", "Vinland Saga OST (2LP)", "Vinland Saga", "Japanese Pressing", "Black", "high", 75),
+        ("Lantis", "Mobile Suit Gundam: The Witch from Mercury OST", "Gundam Mercury", "Japanese Pressing", "Black", "high", 70),
+        ("Aniplex", "Lycoris Recoil OST", "Lycoris Recoil", "Japanese Pressing", "Black", "mid", 50),
+        ("Crunchyroll Vinyl", "Mob Psycho 100 OST (2LP)", "Mob Psycho 100", "US Pressing", "Psychic Purple", "high", 55),
+        ("Crunchyroll Vinyl", "Ranking of Kings OST", "Ranking of Kings", "US Pressing", "Gold", "mid", 45),
+        ("Aniplex", "Solo Leveling OST", "Solo Leveling", "Japanese Pressing", "Shadow Purple", "high", 65),
+        ("Aniplex", "Dandadan OST (2LP)", "Dandadan", "Japanese Pressing", "Yellow/Black Splatter", "high", 70),
+        ("Crunchyroll Vinyl", "Odd Taxi OST", "Odd Taxi", "US Pressing", "Taxi Yellow", "mid", 48),
+        ("Aniplex", "Blue Lock OST", "Blue Lock", "Japanese Pressing", "Black", "mid", 50),
+
+        # ── Aniplex Limited Pressings (+10) ────────────────────────────
+        ("Aniplex", "Demon Slayer: Swordsmith Village Arc OST", "Demon Slayer", "Japanese Pressing", "Jade Green", "high", 70),
+        ("Aniplex", "Demon Slayer: Hashira Training Arc OST", "Demon Slayer", "Japanese Pressing", "Flame Orange", "high", 65),
+        ("Aniplex", "Sword Art Online Progressive Movie OST", "SAO Progressive", "Japanese Pressing", "Blue", "high", 60),
+        ("Aniplex", "Puella Magi Madoka Magica Rebellion OST", "Madoka Magica", "Japanese Pressing", "Black/Purple Splatter", "high", 85),
+        ("Aniplex", "Fate/stay night Heaven's Feel OST (3LP)", "Fate/stay night", "Japanese Pressing", "Black", "grail", 130),
+        ("Aniplex", "86 Eighty-Six OST (Hiroyuki Sawano)", "86 Eighty-Six", "Japanese Pressing", "Military Silver", "high", 65),
+        ("Aniplex", "Monogatari Series Selection LP", "Monogatari", "Japanese Pressing", "White/Pink Splatter", "high", 80),
+        ("Aniplex", "Rascal Does Not Dream of Bunny Girl Senpai OST", "Bunny Girl Senpai", "Japanese Pressing", "Black", "high", 60),
+        ("Aniplex", "March Comes in Like a Lion OST", "March Lion", "Japanese Pressing", "Black", "mid", 50),
+        ("Aniplex", "Your Lie in April OST (Piano Collection)", "Your Lie in April", "Japanese Pressing", "Clear", "high", 75),
+
+        # ── Tiger Lab Vinyl Releases (+10) ─────────────────────────────
+        ("Tiger Lab Vinyl", "FLCL OST 1 (the pillows)", "FLCL", "US Pressing", "Black", "mid", 35),
+        ("Tiger Lab Vinyl", "FLCL OST 1 (the pillows)", "FLCL", "US Pressing", "Pink Translucent", "high", 65),
+        ("Tiger Lab Vinyl", "FLCL OST 2: King of Pirates", "FLCL", "US Pressing", "Black", "mid", 35),
+        ("Tiger Lab Vinyl", "FLCL OST 3: Marquis de Carabas", "FLCL", "US Pressing", "Black", "mid", 38),
+        ("Tiger Lab Vinyl", "Ghost in the Shell: SAC O.S.T.+ (Yoko Kanno)", "Ghost in the Shell: SAC", "US Pressing", "Black", "mid", 42),
+        ("Tiger Lab Vinyl", "Ghost in the Shell: SAC O.S.T.+ (Yoko Kanno)", "Ghost in the Shell: SAC", "US Pressing", "Tachikoma Blue/Green", "high", 75),
+        ("Tiger Lab Vinyl", "Samurai Champloo: Masta", "Samurai Champloo", "US Pressing", "Black", "mid", 38),
+        ("Tiger Lab Vinyl", "Samurai Champloo: Fat Jon (Remixes)", "Samurai Champloo", "US Pressing", "Gold", "high", 70),
+        ("Tiger Lab Vinyl", "Wolf's Rain OST (Yoko Kanno) 2xLP", "Wolf's Rain", "US Pressing", "White/Grey Marble", "high", 75),
+        ("Tiger Lab Vinyl", "Trigun Stampede OST", "Trigun", "US Pressing", "Red Translucent", "high", 60),
+
+        # ── City Pop / Anime Crossover (+8) ────────────────────────────
+        ("Nippon Columbia", "Kimagure Orange Road OST (Shiro Sagisu)", "Kimagure Orange Road", "Japanese OG Pressing", "Black", "high", 80),
+        ("Columbia Japan", "Urusei Yatsura OST: Lum's Love Song (7\")", "Urusei Yatsura", "Japanese OG Pressing", "Black", "high", 55),
+        ("Victor", "Creamy Mami OST (Takako Ohta)", "Creamy Mami", "Japanese OG Pressing", "Black", "high", 70),
+        ("Columbia Japan", "Maison Ikkoku OST (Anime Original)", "Maison Ikkoku", "Japanese OG Pressing", "Black", "high", 65),
+        ("King Records", "Dirty Pair OST (Original TV)", "Dirty Pair", "Japanese OG Pressing", "Black", "high", 75),
+        ("Victor", "Megazone 23 OST (Part I)", "Megazone 23", "Japanese OG Pressing", "Black", "high", 85),
+        ("Starchild Records", "Macross: Do You Remember Love? OST", "Macross DYRL", "Japanese OG Pressing", "Black", "grail", 130),
+        ("Nippon Columbia", "Cat's Eye OST (Anri)", "Cat's Eye", "Japanese OG Pressing", "Black", "high", 60),
+
+        # ── Vintage / Classic Anime OST (+10) ─────────────────────────
+        ("King Records", "Fist of the North Star OST (Crystal King)", "Fist of the North Star", "Japanese OG Pressing", "Black", "high", 70),
+        ("Columbia Japan", "Space Battleship Yamato Complete OST Box (5LP)", "Space Battleship Yamato", "Japanese OG Pressing", "Black", "grail", 250),
+        ("King Records", "Captain Tsubasa OST (TV Original)", "Captain Tsubasa", "Japanese OG Pressing", "Black", "high", 55),
+        ("Sunrise Music", "Zeta Gundam OST: Mizu no Hoshi e (7\" Single)", "Zeta Gundam", "Japanese OG Pressing", "Black", "high", 60),
+        ("Victor", "Bubblegum Crisis OST (Complete 2LP)", "Bubblegum Crisis", "Japanese OG Pressing", "Black", "high", 95),
+        ("King Records", "Saint Seiya OST: Pegasus Fantasy (7\" Single)", "Saint Seiya", "Japanese OG Pressing", "Black", "high", 55),
+        ("Columbia Japan", "City Hunter OST: Get Wild (7\" Single, TM Network)", "City Hunter", "Japanese OG Pressing", "Black", "high", 65),
+        ("Starchild Records", "Slayers OST (TV Series)", "Slayers", "Japanese OG Pressing", "Black", "high", 50),
+        ("King Records", "Revolutionary Girl Utena OST (2LP)", "Utena", "Japanese OG Pressing", "Black", "high", 90),
+        ("Aniplex", "Rurouni Kenshin: Heart of Sword (7\" Single)", "Rurouni Kenshin", "Japanese OG Pressing", "Black", "high", 45),
+
+        # ── Vinyl Me Please & Boutique Pressings (+8) ──────────────────
+        ("VMP", "Akira OST (Vinyl Me Please Edition)", "Akira", "Boutique Pressing", "Red Marble", "high", 95),
+        ("VMP", "Perfect Blue OST (Vinyl Me Please Edition)", "Perfect Blue", "Boutique Pressing", "Blue Marble", "high", 85),
+        ("Wayo Records", "NieR: Automata OST (4LP Box Set)", "NieR: Automata", "EU Pressing", "Black", "grail", 120),
+        ("Wayo Records", "Persona 3 Reload OST (2LP)", "Persona 3", "EU Pressing", "Blue/White Splatter", "high", 65),
+        ("iam8bit", "Ni no Kuni: Wrath of the White Witch OST (Joe Hisaishi)", "Ni no Kuni", "US Pressing", "Gold", "high", 75),
+        ("iam8bit", "Katamari Damacy OST (2LP)", "Katamari Damacy", "US Pressing", "Green/Rainbow Splatter", "high", 70),
+        ("Data Discs", "Panzer Dragoon Saga OST (2LP)", "Panzer Dragoon", "EU Pressing", "Dragon Blue", "grail", 110),
+        ("Data Discs", "Sonic the Hedgehog 2 OST", "Sonic", "EU Pressing", "Blue Translucent", "mid", 45),
     ]
 
     catalog = []

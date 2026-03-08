@@ -10,7 +10,7 @@
  */
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -26,14 +26,14 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { SkeletonList } from "@/components/Skeleton";
 import { formatPrice } from "@/lib/format";
-import logger from "@/utils/logger";
 import { QuickNavBar } from "@/components/QuickNavBar";
+import { useAsync } from "@/hooks/useAsync";
 
 // Import analytics store
 import {
   fetchPortfolioSnapshot,
-  type PortfolioSnapshot,
 } from "@/store/portfolioAnalyticsStore";
+import type { PortfolioSnapshot } from "@/analytics/portfolioMetrics";
 import { dataProvider } from "@/data";
 import type { CategorySummary } from "@/data/types";
 import { ScoreExplanationSheet } from "@/components/ScoreExplanationSheet";
@@ -94,40 +94,25 @@ function AnalyticsScreen() {
   const router = useRouter();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [snapshot, setSnapshot] = useState<PortfolioSnapshot | null>(null);
-  const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { data: analyticsData, loading, error, retry } = useAsync(
+    () => Promise.all([
+      fetchPortfolioSnapshot(),
+      dataProvider.listCategorySummaries(),
+    ]).then(([snap, cats]) => ({ snapshot: snap, categorySummaries: cats })),
+    [],
+  );
 
-  const loadData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [data, catSummaries] = await Promise.all([
-        fetchPortfolioSnapshot(),
-        dataProvider.listCategorySummaries(),
-      ]);
-      setSnapshot(data);
-      setCategorySummaries(catSummaries);
-    } catch (err: unknown) {
-      logger.warn("[Analytics] Error loading snapshot:", err);
-      setError(err?.message || "Failed to load analytics");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const snapshot = analyticsData?.snapshot ?? null;
+  const categorySummaries = analyticsData?.categorySummaries ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData();
+    retry();
     setRefreshing(false);
-  }, []);
+  }, [retry]);
 
   // Derived data
   const { pl, allocations, winnersLosers, tierSummary, items } = snapshot ?? {

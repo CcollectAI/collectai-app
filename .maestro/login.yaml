@@ -1,0 +1,14 @@
+appId: com.collectai.app
+---
+- launchApp
+- assertVisible: "Sign In"
+- tapOn:
+    id: "email-input"
+- inputText: ${EMAIL}
+- tapOn:
+    id: "password-input"
+- inputText: ${PASSWORD}
+- tapOn: "Sign In"
+- assertVisible:
+    text: "Portfolio"
+    timeout: 10000

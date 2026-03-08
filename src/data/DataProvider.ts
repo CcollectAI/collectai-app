@@ -614,6 +614,16 @@ export interface DataProvider {
    */
   createSponsorEventCheckout(companyId: string, tier: string, eventData: CreateEventInput): Promise<{ url: string; sessionId: string; eventId: string }>;
 
+  /**
+   * Create a Stripe checkout session for event ticket purchase.
+   */
+  createTicketCheckout(eventId: string): Promise<{ url: string; sessionId: string }>;
+
+  /**
+   * Create a Stripe checkout session for sponsor subscription.
+   */
+  createSponsorSubscriptionCheckout(companyId: string, tier: string): Promise<{ url: string; sessionId: string }>;
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Event Announcements
   // ─────────────────────────────────────────────────────────────────────────────

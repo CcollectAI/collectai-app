@@ -26,6 +26,7 @@ import {
   type BillingStatus,
 } from '@/api/collectorsApi';
 import { useToast } from '@/components/Toast';
+import { track } from '@/analytics/track';
 
 const SUCCESS = '#10B981';
 const WARNING = '#F59E0B';
@@ -107,6 +108,7 @@ function SubscriptionScreen() {
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
   useEffect(() => {
+    track({ name: 'subscription_screen_viewed' });
     getBillingStatus()
       .then(setBilling)
       .catch(() => {
@@ -135,6 +137,7 @@ function SubscriptionScreen() {
         return;
       }
       await WebBrowser.openBrowserAsync(url);
+      track({ name: 'subscription_upgrade_initiated', properties: { plan } });
       // Refresh status after returning from Stripe
       const updated = await getBillingStatus();
       setBilling(updated);

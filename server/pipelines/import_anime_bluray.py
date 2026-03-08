@@ -705,6 +705,123 @@ def get_curated_catalog() -> list[dict]:
         ("JP Import", "Space Dandy Complete", "Blu-ray", "JP BD Complete Box", "high", 180),
         ("JP Import", "Planetes Complete", "Blu-ray", "JP BD Complete Box", "high", 200),
         ("JP Import", "Beck: Mongolian Chop Squad", "Blu-ray", "JP BD Complete Box", "high", 180),
+
+        # ── Expansion to 700+ — Recent Hits, 4K UHD, JP Import, Aniplex, Collector Editions ──
+
+        # Recent Hit Anime — Frieren, Oshi no Ko, Solo Leveling, etc. (+10)
+        ("Crunchyroll", "Frieren: Beyond Journey's End", "Blu-ray", "Crunchyroll LE Box Set", "high", 120),
+        ("Crunchyroll", "Frieren: Beyond Journey's End", "Blu-ray", "Crunchyroll Standard", "mid", 55),
+        ("Aniplex USA", "Oshi no Ko Season 1", "Blu-ray", "Aniplex LE Box Set", "high", 180),
+        ("Crunchyroll", "Oshi no Ko Season 1", "Blu-ray", "Crunchyroll Standard", "mid", 60),
+        ("Crunchyroll", "Solo Leveling Season 1", "Blu-ray", "Crunchyroll LE Box Set", "high", 130),
+        ("Crunchyroll", "Solo Leveling Season 1", "Blu-ray", "Crunchyroll Standard", "mid", 50),
+        ("Aniplex USA", "Dandadan Part 1", "Blu-ray", "Aniplex LE", "high", 140),
+        ("Crunchyroll", "Kaiju No. 8 Season 1", "Blu-ray", "Crunchyroll LE", "mid", 85),
+        ("Crunchyroll", "Shangri-La Frontier Season 1", "Blu-ray", "Crunchyroll LE", "mid", 75),
+        ("Crunchyroll", "The Apothecary Diaries Season 1", "Blu-ray", "Crunchyroll LE Box Set", "high", 110),
+
+        # 4K UHD Releases (+10)
+        ("GKIDS", "Howl's Moving Castle", "4K UHD", "GKIDS Collector's", "mid", 45),
+        ("GKIDS", "My Neighbor Totoro", "4K UHD", "GKIDS Collector's", "mid", 42),
+        ("GKIDS", "Nausicaa of the Valley of the Wind", "4K UHD", "GKIDS Collector's", "mid", 45),
+        ("GKIDS", "Castle in the Sky", "4K UHD", "GKIDS Collector's", "mid", 42),
+        ("GKIDS", "Kiki's Delivery Service", "4K UHD", "GKIDS Collector's", "mid", 42),
+        ("Shout Factory", "Ghost in the Shell", "4K UHD", "Shout Factory 4K LE", "high", 130),
+        ("Shout Factory", "Paprika", "4K UHD", "Shout Factory 4K LE", "high", 110),
+        ("Lionsgate", "Dragon Ball Super: Broly", "4K UHD", "Lionsgate 4K + Blu-ray", "mid", 45),
+        ("Lionsgate", "Dragon Ball Super: Super Hero", "4K UHD", "Lionsgate 4K + Blu-ray", "mid", 40),
+        ("JP Import", "Your Name", "4K UHD", "JP 4K Ultra HD Limited Edition", "high", 160),
+
+        # Aniplex USA Additional LEs (+8)
+        ("Aniplex USA", "Solo Leveling", "Blu-ray", "Aniplex LE", "high", 150),
+        ("Aniplex USA", "The Promised Neverland Season 1", "Blu-ray", "Aniplex LE Box Set", "high", 200),
+        ("Aniplex USA", "Erased", "Blu-ray", "Aniplex LE Box Set", "high", 190),
+        ("Aniplex USA", "March Comes in Like a Lion", "Blu-ray", "Aniplex LE Complete Box", "high", 240),
+        ("Aniplex USA", "Blue Lock Part 1", "Blu-ray", "Aniplex LE", "high", 130),
+        ("Aniplex USA", "Oshi no Ko Season 2", "Blu-ray", "Aniplex LE", "high", 140),
+        ("Aniplex USA", "Demon Slayer: Hashira Training Arc", "Blu-ray", "Aniplex LE", "high", 120),
+        ("Aniplex USA", "Sword Art Online Progressive: Scherzo of Deep Night", "Blu-ray", "Aniplex LE", "mid", 90),
+
+        # JP Import Box Sets — Additional Titles (+10)
+        ("JP Import", "Frieren: Beyond Journey's End", "Blu-ray", "JP BD Box Set Vol. 1-4", "high", 280),
+        ("JP Import", "Oshi no Ko", "Blu-ray", "JP BD Box Set Complete", "high", 250),
+        ("JP Import", "Solo Leveling", "Blu-ray", "JP BD Box Set", "high", 220),
+        ("JP Import", "Spy x Family Season 2", "Blu-ray", "JP BD Box Set", "high", 200),
+        ("JP Import", "Jujutsu Kaisen Season 2 Complete", "Blu-ray", "JP BD Complete Box", "high", 260),
+        ("JP Import", "Chainsaw Man Complete", "Blu-ray", "JP BD Complete Box", "high", 240),
+        ("JP Import", "Bocchi the Rock! Complete", "Blu-ray", "JP BD Complete Box", "high", 220),
+        ("JP Import", "My Dress-Up Darling Complete", "Blu-ray", "JP BD Complete Box", "high", 200),
+        ("JP Import", "Lycoris Recoil Complete", "Blu-ray", "JP BD Complete Box", "high", 210),
+        ("JP Import", "86: Eighty-Six Complete", "Blu-ray", "JP BD Complete Box", "high", 230),
+
+        # Complete Series Box Sets (+10)
+        ("Funimation", "Fullmetal Alchemist Brotherhood", "Blu-ray", "Funimation 10th Anniversary Box Set", "high", 180),
+        ("Funimation", "Soul Eater Complete", "Blu-ray", "Funimation Complete Collection", "mid", 90),
+        ("Funimation", "Black Butler Complete", "Blu-ray", "Funimation Complete Collection", "mid", 85),
+        ("Funimation", "Assassination Classroom Complete", "Blu-ray", "Funimation Complete Box Set", "high", 110),
+        ("Sentai Filmworks", "Toradora! Complete", "Blu-ray", "Sentai LE Box Set", "high", 120),
+        ("Sentai Filmworks", "K-On! Complete", "Blu-ray", "Sentai LE Box Set", "high", 130),
+        ("Sentai Filmworks", "Love, Chunibyo & Other Delusions Complete", "Blu-ray", "Sentai LE Box Set", "mid", 95),
+        ("Sentai Filmworks", "Bloom Into You Complete", "Blu-ray", "Sentai LE", "mid", 80),
+        ("Viz Media", "Naruto Shippuden Complete", "Blu-ray", "Viz Complete Box Set", "grail", 480),
+        ("Viz Media", "Bleach Thousand-Year Blood War Part 1", "Blu-ray", "Viz LE", "high", 110),
+
+        # Steelbook Editions (+8)
+        ("GKIDS", "The Boy and the Heron", "4K UHD", "GKIDS Steelbook", "high", 65),
+        ("GKIDS", "Grave of the Fireflies", "Blu-ray", "GKIDS Steelbook", "mid", 55),
+        ("GKIDS", "Ponyo", "Blu-ray", "GKIDS Steelbook", "mid", 50),
+        ("Funimation", "Dragon Ball Super: Super Hero", "Blu-ray", "Funimation Steelbook", "mid", 45),
+        ("Funimation", "My Hero Academia: World Heroes Mission", "Blu-ray", "Funimation Steelbook", "mid", 40),
+        ("Crunchyroll", "Jujutsu Kaisen 0", "Blu-ray", "Crunchyroll Steelbook", "mid", 50),
+        ("Crunchyroll", "One Piece Film Red", "Blu-ray", "Crunchyroll Steelbook", "mid", 45),
+        ("Crunchyroll", "Suzume", "Blu-ray", "Crunchyroll Steelbook", "mid", 55),
+
+        # Vintage / OOP Additional (+8)
+        ("ADV Films", "Rahxephon Complete", "Blu-ray", "ADV LE Box Set", "high", 200),
+        ("Geneon", "Trigun Complete", "Blu-ray", "Geneon OOP Box Set", "high", 190),
+        ("Bandai Visual", "Code Geass Complete", "Blu-ray", "Bandai Visual LE Box Set", "high", 250),
+        ("Bandai Visual", "Escaflowne Complete", "Blu-ray", "Bandai Visual LE Box Set", "high", 220),
+        ("Discotek Media", "Galaxy Express 999", "Blu-ray", "Discotek Complete Collection", "high", 170),
+        ("Discotek Media", "Captain Harlock Complete", "Blu-ray", "Discotek Complete Collection", "high", 160),
+        ("Discotek Media", "Devilman OVA", "Blu-ray", "Discotek LE", "mid", 80),
+        ("Discotek Media", "Cutey Honey Complete", "Blu-ray", "Discotek LE", "mid", 75),
+
+        # Film Blu-rays (+10)
+        ("GKIDS", "The Boy and the Heron", "Blu-ray", "GKIDS Standard", "mid", 35),
+        ("GKIDS", "Weathering With You", "Blu-ray", "GKIDS Standard", "standard", 25),
+        ("GKIDS", "Suzume", "Blu-ray", "GKIDS Standard", "standard", 28),
+        ("Crunchyroll", "Dragon Ball Super: Super Hero", "Blu-ray", "Crunchyroll Standard", "standard", 28),
+        ("Crunchyroll", "One Piece Film Red", "Blu-ray", "Crunchyroll Standard", "standard", 25),
+        ("Crunchyroll", "Jujutsu Kaisen 0", "Blu-ray", "Crunchyroll Standard", "standard", 28),
+        ("JP Import", "The Boy and the Heron", "Blu-ray", "JP Limited Edition", "high", 140),
+        ("JP Import", "The Boy and the Heron", "4K UHD", "JP 4K Ultra HD Limited", "high", 180),
+        ("JP Import", "Suzume", "Blu-ray", "JP BD Collector's Edition", "high", 130),
+        ("JP Import", "One Piece Film Red", "Blu-ray", "JP BD Deluxe Edition", "high", 120),
+
+        # Crunchyroll/Funimation Additional LEs (+8)
+        ("Crunchyroll", "Mushoku Tensei Season 1", "Blu-ray", "Crunchyroll LE Box Set", "high", 115),
+        ("Crunchyroll", "Mushoku Tensei Season 2", "Blu-ray", "Crunchyroll LE", "mid", 80),
+        ("Crunchyroll", "Ranking of Kings Complete", "Blu-ray", "Crunchyroll LE Box Set", "high", 110),
+        ("Crunchyroll", "To Your Eternity Season 1", "Blu-ray", "Crunchyroll LE Box Set", "high", 105),
+        ("Crunchyroll", "Dr. Stone Complete", "Blu-ray", "Crunchyroll LE Box Set", "high", 120),
+        ("Funimation", "Fire Force Complete", "Blu-ray", "Funimation LE Box Set", "high", 130),
+        ("Funimation", "Fruits Basket (2019) Complete", "Blu-ray", "Funimation LE Box Set", "high", 150),
+        ("Funimation", "Tokyo Ghoul Complete", "Blu-ray", "Funimation Complete Set", "mid", 95),
+
+        # Sentai Filmworks Additional (+5)
+        ("Sentai Filmworks", "Girls' Last Tour Complete", "Blu-ray", "Sentai LE", "mid", 85),
+        ("Sentai Filmworks", "Land of the Lustrous", "Blu-ray", "Sentai LE", "mid", 90),
+        ("Sentai Filmworks", "Revue Starlight Complete", "Blu-ray", "Sentai LE Box Set", "mid", 95),
+        ("Sentai Filmworks", "Akame ga Kill! Complete", "Blu-ray", "Sentai Complete Collection", "mid", 75),
+        ("Sentai Filmworks", "Beyond the Boundary Complete", "Blu-ray", "Sentai LE", "mid", 80),
+
+        # Concert / Music Anime Blu-rays (+6)
+        ("Aniplex USA", "BanG Dream! Film Live", "Blu-ray", "Aniplex LE", "mid", 75),
+        ("Aniplex USA", "Bocchi the Rock! Live at Starry", "Blu-ray", "Aniplex Concert LE", "high", 110),
+        ("JP Import", "Love Live! μ's Final LoveLive!", "Blu-ray", "JP BD Memorial Box", "grail", 350),
+        ("JP Import", "Love Live! Aqours 5th Live", "Blu-ray", "JP BD Box", "high", 180),
+        ("JP Import", "Macross Delta Absolute Live!", "Blu-ray", "JP BD LE", "high", 160),
+        ("JP Import", "Symphogear Live 2020", "Blu-ray", "JP BD Box", "high", 150),
     ]
 
     catalog = []

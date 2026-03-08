@@ -3,16 +3,20 @@
  * Route: /categories
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
+  TextInput,
+  Image,
   StyleSheet,
-  FlatList,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
+  Pressable,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +25,12 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { CATEGORY_VISUAL, CATEGORY_GROUPS, getCategoryById, type CategoryId } from '@/data/categories';
+import { FRANCHISES } from '@/data/franchises';
+
+type GroupHeader = { type: 'header'; label: string };
+type CategoryRow = { type: 'row'; summary: CategorySummary };
+type ListItem = GroupHeader | CategoryRow;
 
 export default function CategoriesListScreenWithBoundary() {
   return (
@@ -38,6 +48,8 @@ function CategoriesListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [activeFranchise, setActiveFranchise] = useState<string | null>(null);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -46,7 +58,7 @@ function CategoriesListScreen() {
       setCategories(data);
     } catch (err: unknown) {
       logger.warn('[CategoriesList] loadCategories error:', err);
-      setError(err?.message || 'Failed to load categories');
+      setError((err as Error)?.message || 'Failed to load categories');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -62,23 +74,100 @@ function CategoriesListScreen() {
     loadCategories();
   };
 
-  const renderCategory = ({ item }: { item: CategorySummary }) => {
-    const progressColor = item.completionPct >= 75
+  const franchiseCategoryIds = useMemo<Set<string> | null>(() => {
+    if (!activeFranchise) return null;
+    const f = FRANCHISES.find((fr) => fr.id === activeFranchise);
+    return f ? new Set(f.categoryIds) : null;
+  }, [activeFranchise]);
+
+  const listData = useMemo<ListItem[]>(() => {
+    const q = search.trim().toLowerCase();
+    const catById = new Map(categories.map((c) => [c.id, c]));
+    const placed = new Set<string>();
+    const items: ListItem[] = [];
+
+    for (const group of CATEGORY_GROUPS) {
+      const rows: CategoryRow[] = [];
+      for (const id of group.ids) {
+        const summary = catById.get(id);
+        if (!summary) continue;
+        if (q && !summary.name.toLowerCase().includes(q)) continue;
+        if (franchiseCategoryIds && !franchiseCategoryIds.has(id)) continue;
+        rows.push({ type: 'row', summary });
+        placed.add(id);
+      }
+      if (rows.length > 0) {
+        items.push({ type: 'header', label: group.label });
+        items.push(...rows);
+      }
+    }
+
+    // Append ungrouped categories as fallback
+    const ungrouped: CategoryRow[] = [];
+    for (const c of categories) {
+      if (placed.has(c.id)) continue;
+      if (q && !c.name.toLowerCase().includes(q)) continue;
+      if (franchiseCategoryIds && !franchiseCategoryIds.has(c.id)) continue;
+      ungrouped.push({ type: 'row', summary: c });
+    }
+    if (ungrouped.length > 0) {
+      items.push({ type: 'header', label: 'Other' });
+      items.push(...ungrouped);
+    }
+
+    return items;
+  }, [categories, search, franchiseCategoryIds]);
+
+  // Track failed image loads to show icon fallback
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const renderItem = ({ item }: { item: ListItem }) => {
+    if (item.type === 'header') {
+      return (
+        <View style={[styles.groupHeader, { borderBottomColor: colors.border }]}>
+          <Text style={[styles.groupHeaderText, { color: colors.muted }]}>
+            {item.label.toUpperCase()}
+          </Text>
+        </View>
+      );
+    }
+
+    const cat = item.summary;
+    const visual = CATEGORY_VISUAL[cat.id as CategoryId];
+    const iconName = (visual?.iconName ?? 'grid-outline') as keyof typeof Ionicons.glyphMap;
+    const catData = getCategoryById(cat.id as CategoryId);
+    const bannerUrl = catData?.bannerImageUrl;
+    const showImage = bannerUrl && !failedImages.has(cat.id);
+    const progressColor = cat.completionPct >= 75
       ? '#22c55e'
-      : item.completionPct >= 50
+      : cat.completionPct >= 50
         ? '#eab308'
         : colors.accent;
 
     return (
       <AnimatedPressable
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => router.push(`/categories/${encodeURIComponent(item.id)}`)}
+        onPress={() => router.push(`/categories/${encodeURIComponent(cat.id)}`)}
         accessibilityRole="button"
-        accessibilityLabel={`${item.name}, ${item.completionPct}% complete, ${item.missingCount} missing`}
+        accessibilityLabel={`${cat.name}, ${cat.completionPct}% complete, ${cat.missingCount} missing`}
       >
+        {/* Category thumbnail */}
+        {showImage ? (
+          <Image
+            source={{ uri: bannerUrl }}
+            style={[styles.categoryImage, { borderColor: colors.accent }]}
+            accessibilityIgnoresInvertColors
+            onError={() => setFailedImages((prev) => new Set(prev).add(cat.id))}
+          />
+        ) : (
+          <View style={[styles.iconContainer, { backgroundColor: colors.accent + '15' }]}>
+            <Ionicons name={iconName} size={24} color={colors.accent} />
+          </View>
+        )}
+
         <View style={styles.cardContent}>
           <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-            {item.name}
+            {cat.name}
           </Text>
 
           {/* Progress bar */}
@@ -86,42 +175,34 @@ function CategoriesListScreen() {
             <View
               style={[
                 styles.progressFill,
-                { backgroundColor: progressColor, width: `${item.completionPct}%` },
+                { backgroundColor: progressColor, width: `${Math.min(cat.completionPct, 100)}%` },
               ]}
             />
           </View>
 
-          {/* Stats row */}
+          {/* Compact stats */}
           <View style={styles.statsRow}>
-            <Text style={[styles.statText, { color: colors.muted }]}>
-              {item.completionPct}% complete
+            <Text style={[styles.statText, { color: colors.text, fontWeight: '700' }]}>
+              {cat.completionPct}%
             </Text>
-            <Text style={[styles.statText, { color: colors.accent }]}>
-              {item.missingCount} missing
-            </Text>
-          </View>
-
-          {/* Counts */}
-          <View style={styles.countsRow} accessibilityLabel={`${item.ownedCount} owned, ${item.missingCount} missing, ${item.totalCount} total`}>
-            <View style={styles.countItem}>
-              <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
-              <Text style={[styles.countText, { color: colors.text }]}>{item.ownedCount}</Text>
-            </View>
-            <View style={styles.countItem}>
-              <Ionicons name="ellipse-outline" size={14} color={colors.muted} />
-              <Text style={[styles.countText, { color: colors.text }]}>{item.missingCount}</Text>
-            </View>
-            <View style={styles.countItem}>
-              <Ionicons name="cube-outline" size={14} color={colors.muted} />
-              <Text style={[styles.countText, { color: colors.text }]}>{item.totalCount}</Text>
+            <View style={styles.statsRight}>
+              <Text style={[styles.ownedStat, { color: '#22c55e' }]}>
+                {cat.ownedCount}
+              </Text>
+              <Text style={[styles.statSep, { color: colors.border }]}>/</Text>
+              <Text style={[styles.totalStat, { color: colors.muted }]}>
+                {cat.totalCount}
+              </Text>
             </View>
           </View>
         </View>
 
-        <Ionicons name="chevron-forward" size={20} color={colors.muted} style={styles.chevron} />
+        <Ionicons name="chevron-forward" size={18} color={colors.muted} />
       </AnimatedPressable>
     );
   };
+
+  const getItemType = (item: ListItem) => (item.type === 'header' ? 'header' : 'row');
 
   if (loading) {
     return (
@@ -151,25 +232,88 @@ function CategoriesListScreen() {
           </AnimatedPressable>
         </View>
       ) : (
-        <FlatList
-          data={categories}
-          keyExtractor={(item) => item.id}
-          renderItem={renderCategory}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.accent}
+        <>
+          {/* Search bar */}
+          <View style={[styles.searchContainer, { borderBottomColor: colors.border }]}>
+            <Ionicons name="search-outline" size={18} color={colors.muted} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Search categories..."
+              placeholderTextColor={colors.muted}
+              value={search}
+              onChangeText={setSearch}
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+              accessibilityLabel="Search categories"
             />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="grid-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyText, { color: colors.muted }]}>No categories found</Text>
-            </View>
-          }
-        />
+            {search.length > 0 && (
+              <AnimatedPressable onPress={() => setSearch('')} accessibilityLabel="Clear search">
+                <Ionicons name="close-circle" size={18} color={colors.muted} />
+              </AnimatedPressable>
+            )}
+          </View>
+
+          {/* Franchise filter pills */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.franchisePillsContainer}
+          >
+            {FRANCHISES.map((fr) => {
+              const isActive = activeFranchise === fr.id;
+              return (
+                <Pressable
+                  key={fr.id}
+                  onPress={() => setActiveFranchise(isActive ? null : fr.id)}
+                  style={[
+                    styles.franchisePill,
+                    {
+                      backgroundColor: isActive ? fr.accentColor : colors.card,
+                      borderColor: isActive ? fr.accentColor : colors.border,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                  accessibilityLabel={`Filter by ${fr.name}`}
+                >
+                  <View style={[styles.franchiseDot, { backgroundColor: isActive ? '#fff' : fr.accentColor }]} />
+                  <Text style={[styles.franchisePillText, { color: isActive ? '#fff' : colors.text }]}>
+                    {fr.name}
+                  </Text>
+                  {isActive && (
+                    <Ionicons name="close-circle" size={14} color="#fff" />
+                  )}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <FlashList
+            data={listData}
+            keyExtractor={(item, index) =>
+              item.type === 'header' ? `header-${item.label}` : `row-${item.summary.id}`
+            }
+            renderItem={renderItem}
+            getItemType={getItemType}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.accent}
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="grid-outline" size={48} color={colors.muted} />
+                <Text style={[styles.emptyText, { color: colors.muted }]}>
+                  {search ? 'No matching categories' : 'No categories found'}
+                </Text>
+              </View>
+            }
+          />
+        </>
       )}
       <QuickNavBar />
     </SafeAreaView>
@@ -185,56 +329,118 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  franchisePillsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+    flexDirection: 'row',
+  },
+  franchisePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  franchiseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  franchisePillText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: 4,
+  },
   list: {
     padding: 16,
-    gap: 12,
+  },
+  groupHeader: {
+    paddingTop: 12,
+    paddingBottom: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginBottom: 4,
+  },
+  groupHeaderText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: 10,
+    borderRadius: 14,
     borderWidth: 1,
+    marginBottom: 8,
+    gap: 12,
+  },
+  categoryImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardContent: {
     flex: 1,
+    gap: 5,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: 15,
+    fontWeight: '700',
   },
   progressTrack: {
-    height: 6,
+    height: 5,
     borderRadius: 3,
-    marginBottom: 8,
   },
   progressFill: {
-    height: 6,
+    height: 5,
     borderRadius: 3,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
   },
   statText: {
-    fontSize: 12,
-  },
-  countsRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  countItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  countText: {
     fontSize: 13,
   },
-  chevron: {
-    marginLeft: 12,
+  statsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ownedStat: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  statSep: {
+    fontSize: 12,
+    marginHorizontal: 2,
+  },
+  totalStat: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,

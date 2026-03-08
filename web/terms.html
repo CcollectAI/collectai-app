@@ -18,6 +18,7 @@
   p { font-size: 15px; margin-bottom: 16px; }
   ul { margin: 0 0 16px 20px; }
   li { font-size: 15px; margin-bottom: 4px; }
+  strong { font-weight: 700; }
   a { color: #81D8D0; }
 </style>
 </head>
@@ -25,54 +26,128 @@
 <div class="container">
   <a href="/" class="back-link">&larr; Back to CollectAI</a>
   <h1>Terms of Service</h1>
-  <p class="updated">Last updated: February 18, 2026</p>
+  <p class="updated">Last updated: March 4, 2026</p>
 
   <p>Please read these Terms of Service ("Terms") carefully before using the CollectAI mobile application (the "Service") operated by CollectAI ("we", "our", "us").</p>
 
   <h2>1. Acceptance of Terms</h2>
-  <p>By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service.</p>
+  <p>By creating an account or using the Service, you agree to be bound by these Terms and our Privacy Policy. If you do not agree, do not use the Service.</p>
 
   <h2>2. Account Registration</h2>
-  <p>You must provide accurate and complete information when creating an account. You are responsible for maintaining the security of your account credentials. You must be at least 13 years old to use the Service.</p>
+  <p>You must provide accurate and complete information when creating an account. You are responsible for maintaining the security of your account credentials, including any multi-factor authentication (MFA) settings. You must be at least 13 years old (or 16 in the EU) to use the Service. You may register using email/password or social login (Google, Apple).</p>
 
   <h2>3. User Content</h2>
-  <p>You retain ownership of all content you upload to the Service (photos, descriptions, collection data). By using the Service, you grant us a limited license to store, display, and process your content solely to provide the Service to you.</p>
-  <p>You agree not to upload content that is illegal, offensive, or infringes on third-party rights.</p>
+  <p>You retain ownership of all content you upload to the Service, including photos, descriptions, collection data, project notes, and messages. By using the Service, you grant us a limited, non-exclusive license to store, display, and process your content solely to provide the Service to you.</p>
+  <p>You agree not to upload content that:</p>
+  <ul>
+    <li>Is illegal, offensive, defamatory, or harassing</li>
+    <li>Infringes on third-party intellectual property rights</li>
+    <li>Contains malware, viruses, or malicious code</li>
+    <li>Is deceptive, fraudulent, or misleading</li>
+    <li>Violates the privacy of other individuals</li>
+  </ul>
 
   <h2>4. Price Estimates &amp; Valuations</h2>
-  <p>Price estimates provided by CollectAI are for informational purposes only. They are generated using machine learning models and marketplace data, and should not be relied upon as financial advice. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.</p>
+  <p>Price estimates provided by CollectAI are for informational purposes only. They are generated using machine learning models (Ridge regression with q10/q50/q90 quantile predictions) and aggregated marketplace data from multiple sources. These estimates should not be relied upon as financial advice, appraisals, or insurance valuations. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.</p>
+  <p>Currency conversions are approximate and based on exchange rates refreshed every 8 hours. Shipping cost estimates are approximations and may differ from actual shipping costs.</p>
 
-  <h2>5. Marketplace Integration</h2>
-  <p>CollectAI provides links to third-party marketplaces (eBay, TCGPlayer, Cardmarket) for reference. We are not responsible for transactions conducted on these platforms. Some marketplace links may contain affiliate tags.</p>
+  <h2>5. Marketplace Integration &amp; Affiliate Links</h2>
+  <p>CollectAI provides links to third-party marketplaces (including but not limited to eBay, TCGPlayer, Cardmarket, Discogs, StockX, BrickLink, Mercari, PriceCharting, Yahoo Auctions JP, and AmiAmi) for reference and price comparison. We are not responsible for:</p>
+  <ul>
+    <li>Transactions conducted on these platforms</li>
+    <li>The accuracy of third-party listing information</li>
+    <li>Disputes between buyers and sellers</li>
+    <li>Changes to third-party platform terms or availability</li>
+  </ul>
+  <p>Marketplace links contain affiliate tags where available (currently eBay, TCGPlayer, Cardmarket, Mercari, Discogs, StockX, and BrickLink). When you purchase through an affiliate link, we may receive a commission at no additional cost to you. Affiliate links appear on item detail pages, watchlist, category browse, marketplace search results, and deal notifications.</p>
 
-  <h2>6. Prohibited Uses</h2>
+  <h2>6. Smart Deal Agent</h2>
+  <p>The Smart Deal Agent feature automatically scans marketplaces based on your purchase mandates (search criteria, price limits, budget). By creating a mandate, you authorize the Service to monitor marketplace listings on your behalf. The Deal Agent does not make purchases automatically &mdash; it notifies you of matching deals for your review. You are solely responsible for any purchase decisions.</p>
+
+  <h2>7. Events &amp; Social Features</h2>
+  <p><strong>Events:</strong> Users may create, host, and attend collector events. Event hosts are responsible for the accuracy of event information. RSVP attendance may be limited by capacity settings. Events may require paid tickets &mdash; ticket purchases are processed through Stripe and are non-refundable unless the event is cancelled by the host. A platform fee of 5% is applied to ticket sales. We are not responsible for the conduct of event hosts or attendees, or for events that are cancelled or modified.</p>
+  <p><strong>Direct Messaging:</strong> Users may send direct messages to other users via the DM request system. Both parties must consent to a conversation. You agree not to use messaging for spam, harassment, or solicitation. We reserve the right to moderate or restrict messaging for users who violate these Terms.</p>
+  <p><strong>User Blocking:</strong> You may block other users to prevent them from contacting you. Blocking is mutual &mdash; blocked users cannot view your profile or send you messages.</p>
+  <p><strong>Announcements:</strong> Event hosts and sponsors may send announcements to event attendees. These are one-way communications for event-related information only.</p>
+
+  <h2>8. Sponsor Companies</h2>
+  <p>Businesses may register as sponsor companies to sponsor collector events. Sponsor registration requires a company name, contact email, and optional details. Sponsors may choose per-event payments or monthly subscription billing &mdash; both processed through Stripe. Sponsors agree to:</p>
+  <ul>
+    <li>Provide accurate company information</li>
+    <li>Comply with all applicable advertising and consumer protection laws</li>
+    <li>Not use sponsor features for deceptive or misleading promotions</li>
+  </ul>
+  <p>Sponsor subscriptions auto-renew monthly until cancelled. Cancellation takes effect at the end of the current billing period. We reserve the right to remove sponsor companies that violate these Terms.</p>
+
+  <h2>9. Subscriptions &amp; Payments</h2>
+  <p>Certain features of the Service require a paid subscription. Payments are processed through Stripe. Subscription terms, pricing, and renewal conditions are presented at the time of purchase. You may cancel your subscription at any time through the app settings. Refunds are handled in accordance with applicable laws and Stripe's policies.</p>
+  <p><strong>Event Tickets:</strong> Some events require paid tickets. Ticket prices are set by event hosts and include a 5% platform fee. Ticket purchases are one-time payments processed through Stripe. Tickets are non-transferable and tied to your account. If an event is cancelled by the host, refunds will be issued to the original payment method.</p>
+
+  <h2>10. Search &amp; Discovery</h2>
+  <p>The Service provides unified search across items, users, events, and categories. Search functionality is rate-limited to ensure fair usage. Search results are based on data available within the Service and may not include all collectibles or users. We do not guarantee the completeness or accuracy of search results.</p>
+
+  <h2>11. Activity Feed &amp; Profile</h2>
+  <p>Certain actions you take (adding items, attending events, completing projects) may be displayed in your public activity feed. You can control activity visibility in your privacy settings. Other users may view your public profile, collection statistics, and activity feed when not restricted.</p>
+
+  <h2>12. Rate Limits &amp; Fair Usage</h2>
+  <p>To maintain Service quality for all users, certain features are subject to rate limits (e.g., search queries, photo uploads, marketplace lookups, push token registration, event announcements). Exceeding these limits may result in temporary throttling. Persistent abuse may lead to account restrictions.</p>
+
+  <h2>13. Prohibited Uses</h2>
   <p>You agree not to:</p>
   <ul>
     <li>Use the Service for any unlawful purpose</li>
-    <li>Attempt to reverse-engineer or exploit the Service</li>
-    <li>Scrape or harvest data from the Service</li>
-    <li>Impersonate other users</li>
-    <li>Upload malicious content or malware</li>
-    <li>Use automated systems to access the Service without permission</li>
+    <li>Attempt to reverse-engineer, decompile, or exploit the Service</li>
+    <li>Scrape, harvest, or systematically extract data from the Service</li>
+    <li>Impersonate other users or misrepresent your identity</li>
+    <li>Upload malicious content, malware, or viruses</li>
+    <li>Use automated systems, bots, or scripts to access the Service without permission</li>
+    <li>Circumvent rate limits, security measures, or access controls</li>
+    <li>Use the messaging system for spam, harassment, or unsolicited commercial messages</li>
+    <li>Create fake accounts or fraudulent listings</li>
+    <li>Interfere with or disrupt the Service or its infrastructure</li>
   </ul>
 
-  <h2>7. Account Termination</h2>
-  <p>You may delete your account at any time through the app settings. We reserve the right to suspend or terminate accounts that violate these Terms. Upon termination, your data will be deleted in accordance with our Privacy Policy.</p>
+  <h2>14. Account Termination</h2>
+  <p>You may delete your account at any time through the app settings. Account deletion is permanent and will remove all associated data (collection, projects, messages, events) within 30 days, in accordance with our Privacy Policy.</p>
+  <p>We reserve the right to suspend or terminate accounts that:</p>
+  <ul>
+    <li>Violate these Terms</li>
+    <li>Engage in abusive behavior toward other users</li>
+    <li>Attempt to exploit or compromise the Service</li>
+    <li>Are inactive for an extended period (with prior notice)</li>
+  </ul>
 
-  <h2>8. Intellectual Property</h2>
-  <p>The Service, including its design, features, and underlying technology, is owned by CollectAI. You may not copy, modify, or distribute any part of the Service without our written consent.</p>
+  <h2>15. Intellectual Property</h2>
+  <p>The Service, including its design, features, machine learning models, category taxonomy, and underlying technology, is owned by CollectAI. The CollectAI name, logo, and brand elements are our trademarks. You may not copy, modify, distribute, or create derivative works of any part of the Service without our written consent.</p>
+  <p>Collectible product names, images, and trademarks referenced within the Service belong to their respective owners and are used for identification purposes only.</p>
 
-  <h2>9. Limitation of Liability</h2>
-  <p>The Service is provided "as is" without warranties of any kind. To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Service.</p>
+  <h2>16. Limitation of Liability</h2>
+  <p>The Service is provided "as is" and "as available" without warranties of any kind, express or implied. To the maximum extent permitted by law, we shall not be liable for:</p>
+  <ul>
+    <li>Any indirect, incidental, special, or consequential damages</li>
+    <li>Loss of profits, data, or business opportunities</li>
+    <li>Inaccurate price estimates or valuations</li>
+    <li>Failed or delayed marketplace transactions</li>
+    <li>Service interruptions or data loss</li>
+    <li>Actions of other users (messages, events, transactions)</li>
+  </ul>
+  <p>Our total liability to you for any claims arising from the Service shall not exceed the amount you paid us in the 12 months preceding the claim.</p>
 
-  <h2>10. Changes to Terms</h2>
-  <p>We reserve the right to modify these Terms at any time. We will notify you of material changes through the app. Continued use of the Service after changes constitutes acceptance of the new Terms.</p>
+  <h2>17. Indemnification</h2>
+  <p>You agree to indemnify and hold harmless CollectAI from any claims, damages, or expenses arising from your use of the Service, your violation of these Terms, or your infringement of any third-party rights.</p>
 
-  <h2>11. Governing Law</h2>
-  <p>These Terms shall be governed by the laws of the Netherlands. Any disputes arising from these Terms shall be resolved in the courts of the Netherlands.</p>
+  <h2>18. Changes to Terms</h2>
+  <p>We reserve the right to modify these Terms at any time. We will notify you of material changes through in-app notifications and by updating the "Last updated" date. Continued use of the Service after changes constitutes acceptance of the new Terms. If you do not agree with the changes, you should stop using the Service.</p>
 
-  <h2>12. Contact</h2>
-  <p>For questions about these Terms, contact us at:<br><a href="mailto:support@collectai.app">support@collectai.app</a></p>
+  <h2>19. Governing Law &amp; Disputes</h2>
+  <p>These Terms shall be governed by the laws of the Netherlands. Any disputes arising from these Terms or the Service shall be resolved in the courts of the Netherlands. For EU consumers, this does not affect your rights under mandatory consumer protection laws of your country of residence.</p>
+
+  <h2>20. Severability</h2>
+  <p>If any provision of these Terms is found to be unenforceable, the remaining provisions shall continue in full force and effect.</p>
+
+  <h2>21. Contact</h2>
+  <p>For questions about these Terms, contact us at:<br><a href="mailto:legal@collectai.app">legal@collectai.app</a></p>
+  <p>CollectAI<br>The Netherlands</p>
 </div>
 </body>
 </html>

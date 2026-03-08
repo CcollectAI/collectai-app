@@ -188,6 +188,7 @@ from app.features.predict_router import router as predict_router
 from app.agents.marketplace_router import router as marketplace_agg_router
 from app.agents.dossier_router import router as dossier_router
 from app.agents.intake_router import router as intake_router
+from app.agents.intake_feedback_router import router as intake_feedback_router
 from app.agents.purchase_router import router as purchase_router
 from app.routes.billing_router import router as billing_router
 from app.routes.admin_dashboard import router as admin_dashboard_router
@@ -249,6 +250,7 @@ app.include_router(collections_router.router)
 app.include_router(marketplace_agg_router)
 app.include_router(dossier_router)
 app.include_router(intake_router)
+app.include_router(intake_feedback_router)
 app.include_router(purchase_router)
 app.include_router(predict_router)
 app.include_router(fx_router)
@@ -310,6 +312,7 @@ _v1.include_router(collections_router.router)
 _v1.include_router(marketplace_agg_router)
 _v1.include_router(dossier_router)
 _v1.include_router(intake_router)
+_v1.include_router(intake_feedback_router)
 _v1.include_router(purchase_router)
 _v1.include_router(predict_router)
 _v1.include_router(fx_router)

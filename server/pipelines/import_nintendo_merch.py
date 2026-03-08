@@ -848,6 +848,129 @@ def get_curated_catalog() -> list[dict]:
         ("Fire Emblem", "Figure", "Byleth (Female) 1/7 Scale Figure", "", "high", 155),
         ("Fire Emblem", "Merch", "Fire Emblem Three Houses Golden Deer Pin Set", "Nintendo Store", "mid", 38),
         ("Fire Emblem", "Book", "The Art of Fire Emblem: Three Houses", "", "mid", 48),
+
+        # === ROUND 7 — 700+ Expansion: Amiibo, Store Exclusives, Club Nintendo, Game & Watch, Mario Kart, Pikmin, Animal Crossing ===
+
+        # ── Splatoon 3 Amiibo (New Waves) ──────────────────────────────────
+        ("Splatoon", "Amiibo", "Splatoon 3 Smallfry Amiibo", "", "mid", 25),
+        ("Splatoon", "Amiibo", "Splatoon 3 Inkling (Blue) Amiibo", "", "standard", 18),
+        ("Splatoon", "Amiibo", "Splatoon 3 Octoling (Red) Amiibo", "", "standard", 18),
+        ("Splatoon", "Amiibo", "Splatoon 3 Idol Trio Amiibo 3-Pack", "Nintendo Store", "high", 85),
+
+        # ── Zelda TotK Amiibo ──────────────────────────────────────────────
+        ("Zelda", "Amiibo", "Link (Tears of the Kingdom) Amiibo", "", "mid", 30),
+        ("Zelda", "Amiibo", "Ganondorf (Tears of the Kingdom) Amiibo", "", "mid", 35),
+        ("Zelda", "Amiibo", "Zelda & Loftwing Amiibo (Skyward Sword HD)", "", "mid", 45),
+        ("Zelda", "Amiibo", "Guardian (Breath of the Wild) Amiibo", "", "high", 95),
+        ("Zelda", "Amiibo", "Link (Majora's Mask) Amiibo", "", "mid", 55),
+
+        # ── Metroid Dread Amiibo ───────────────────────────────────────────
+        ("Metroid", "Amiibo", "Samus (Metroid Dread) Amiibo", "", "mid", 40),
+        ("Metroid", "Amiibo", "E.M.M.I. (Metroid Dread) Amiibo", "", "mid", 42),
+
+        # ── Nintendo Tokyo / Osaka / NY Exclusives (More) ──────────────────
+        ("Mario", "Store Exclusive", "Nintendo Tokyo 6th Anniversary Gold Mario Coin", "Nintendo Store Tokyo", "high", 110),
+        ("Pokemon", "Store Exclusive", "Nintendo Tokyo Pikachu x Tokyo Tower Figure", "Nintendo Store Tokyo", "high", 95),
+        ("Zelda", "Store Exclusive", "Nintendo NY Hyrule Warriors Link Poster Set", "Nintendo Store NY", "mid", 45),
+        ("Kirby", "Store Exclusive", "Nintendo Osaka Kirby x Dotonbori Tee", "Nintendo Store Osaka", "mid", 38),
+        ("Animal Crossing", "Store Exclusive", "Nintendo Tokyo Isabelle Tokyo Edition Plush", "Nintendo Store Tokyo", "mid", 55),
+        ("Mario", "Store Exclusive", "Nintendo NY Super Mario World Diorama Figure", "Nintendo Store NY", "high", 85),
+        ("Splatoon", "Store Exclusive", "Nintendo Osaka Splatoon 3 Takoyaki Squid Keychain", "Nintendo Store Osaka", "standard", 22),
+        ("Pokemon", "Store Exclusive", "Nintendo Kyoto Pikachu Geisha Plush", "Nintendo Store Kyoto", "high", 80),
+        ("Zelda", "Store Exclusive", "Nintendo Tokyo Master Sword Ice Tray Mold", "Nintendo Store Tokyo", "standard", 25),
+        ("Mario", "Store Exclusive", "Nintendo Osaka Mario Kushikatsu Plush", "Nintendo Store Osaka", "mid", 42),
+
+        # ── Club Nintendo Prizes (Vintage) ─────────────────────────────────
+        ("Mario", "Club Nintendo", "Club Nintendo Gold Nunchuk", "Club Nintendo", "grail", 320),
+        ("Mario", "Club Nintendo", "Club Nintendo Platinum Mario Hat", "Club Nintendo", "high", 180),
+        ("Zelda", "Club Nintendo", "Club Nintendo Zelda Poster Set (25th Anniversary)", "Club Nintendo", "high", 120),
+        ("Mario", "Club Nintendo", "Club Nintendo Mario Playing Cards Set (Hanafuda)", "Club Nintendo", "high", 95),
+        ("Mario", "Club Nintendo", "Club Nintendo Super Mario Bros. 25th Anniversary Pin Set", "Club Nintendo", "high", 140),
+        ("Mario", "Club Nintendo", "Club Nintendo Luigi's Mansion Dark Moon Diorama", "Club Nintendo", "high", 160),
+        ("Zelda", "Club Nintendo", "Club Nintendo Zelda 3DS Pouch Set", "Club Nintendo", "mid", 55),
+        ("Mario", "Club Nintendo", "Club Nintendo Game & Watch Ball Reissue", "Club Nintendo", "grail", 280),
+
+        # ── Game & Watch Special Editions ──────────────────────────────────
+        ("Mario", "Game & Watch", "Game & Watch Super Mario Bros. (2020)", "Limited Edition", "high", 80),
+        ("Zelda", "Game & Watch", "Game & Watch The Legend of Zelda (2021)", "Limited Edition", "high", 85),
+        ("Mario", "Game & Watch", "Game & Watch Super Mario Bros. (Gold Edition JP)", "Nintendo Store JP", "high", 150),
+        ("Mario", "Game & Watch", "Game & Watch Ball (Club Nintendo Reissue)", "Club Nintendo", "grail", 250),
+
+        # ── Mario Kart Merchandise ─────────────────────────────────────────
+        ("Mario", "Mario Kart", "Mario Kart Live: Home Circuit Mario Set", "", "mid", 65),
+        ("Mario", "Mario Kart", "Mario Kart Live: Home Circuit Luigi Set", "", "mid", 65),
+        ("Mario", "Mario Kart", "Mario Kart 8 Deluxe Collector Pin Set (12 Pins)", "Nintendo Store", "mid", 55),
+        ("Mario", "Mario Kart", "Mario Kart Trophy Replica (Gold)", "Super Nintendo World", "high", 120),
+        ("Mario", "Mario Kart", "Mario Kart Hot Wheels Set (8 Cars)", "", "mid", 48),
+        ("Mario", "Mario Kart", "Mario Kart Blue Shell Plush", "Nintendo Store", "mid", 35),
+        ("Mario", "Mario Kart", "Mario Kart Rainbow Road LED Lamp", "Nintendo Store JP", "mid", 65),
+        ("Mario", "Mario Kart", "Mario Kart Banana Peel Stress Toy Set", "", "standard", 18),
+        ("Mario", "Mario Kart", "Mario Kart 8 Sound Drop Collection Full Set", "Nintendo Store JP", "mid", 58),
+
+        # ── Animal Crossing Sanrio Cards ───────────────────────────────────
+        ("Animal Crossing", "Amiibo Card", "Animal Crossing Sanrio Collaboration Pack (6 Cards)", "", "mid", 35),
+        ("Animal Crossing", "Amiibo Card", "Animal Crossing Sanrio Rilla Card (Single)", "", "mid", 12),
+        ("Animal Crossing", "Amiibo Card", "Animal Crossing Sanrio Marty Card (Single)", "", "mid", 12),
+        ("Animal Crossing", "Amiibo Card", "Animal Crossing Sanrio Chelsea Card (Single)", "", "mid", 12),
+        ("Animal Crossing", "Amiibo Card", "Animal Crossing Sanrio Etoile Card (Single)", "", "mid", 15),
+        ("Animal Crossing", "Amiibo Card", "Animal Crossing Sanrio Chai Card (Single)", "", "mid", 12),
+        ("Animal Crossing", "Amiibo Card", "Animal Crossing Sanrio Toby Card (Single)", "", "mid", 12),
+        ("Animal Crossing", "Amiibo Card", "Animal Crossing Series 5 Pack (6 Cards)", "", "standard", 8),
+        ("Animal Crossing", "Amiibo Card", "Animal Crossing Series 5 Complete Set (48 Cards)", "", "high", 120),
+
+        # ── Pikmin Merch (More) ────────────────────────────────────────────
+        ("Pikmin", "Plush", "Pikmin 4 Winged Pikmin Plush 6in", "Nintendo Store", "standard", 22),
+        ("Pikmin", "Figure", "Pikmin 4 Oatchi Nendoroid", "", "mid", 52),
+        ("Pikmin", "Merch", "Pikmin 4 Pellet Posy Desk Plant Figure", "Nintendo Store JP", "mid", 38),
+        ("Pikmin", "Merch", "Pikmin Bloom Seedling Bottle Keychain Set", "Nintendo Store", "standard", 24),
+        ("Pikmin", "Merch", "Pikmin 4 Dandori Battle Board Game", "Nintendo Store JP", "mid", 45),
+        ("Pikmin", "Plush", "Pikmin 4 Bulborb Plush 10in", "Nintendo Store", "mid", 35),
+
+        # ── Super Nintendo World Merchandise ───────────────────────────────
+        ("Mario", "Theme Park", "Super Nintendo World Power-Up Band (Mario)", "Super Nintendo World", "mid", 40),
+        ("Mario", "Theme Park", "Super Nintendo World Power-Up Band (Luigi)", "Super Nintendo World", "mid", 40),
+        ("Mario", "Theme Park", "Super Nintendo World Power-Up Band (Peach)", "Super Nintendo World", "mid", 40),
+        ("Mario", "Theme Park", "Super Nintendo World ? Block Popcorn Bucket", "Super Nintendo World", "mid", 55),
+        ("Mario", "Theme Park", "Super Nintendo World Mario Kart Bowser Shell Cup", "Super Nintendo World", "mid", 45),
+        ("Mario", "Theme Park", "Super Nintendo World 1-UP Mushroom Sipper", "Super Nintendo World", "mid", 38),
+        ("Mario", "Theme Park", "Super Nintendo World Opening Day Pin Set", "Super Nintendo World", "high", 95),
+        ("Mario", "Theme Park", "Super Nintendo World Hollywood Opening Tee", "Super Nintendo World", "mid", 42),
+
+        # ── Additional Amiibo (Smash Bros. Wave) ───────────────────────────
+        ("Sora", "Amiibo", "Sora (Kingdom Hearts) Amiibo (Smash Bros.)", "", "mid", 35),
+        ("Kazuya", "Amiibo", "Kazuya Mishima Amiibo (Smash Bros.)", "", "mid", 30),
+        ("Steve", "Amiibo", "Steve (Minecraft) Amiibo (Smash Bros.)", "", "mid", 28),
+        ("Sephiroth", "Amiibo", "Sephiroth Amiibo (Smash Bros.)", "", "mid", 35),
+        ("Pyra", "Amiibo", "Pyra & Mythra 2-Pack Amiibo (Smash Bros.)", "", "mid", 50),
+        ("Terry", "Amiibo", "Terry Bogard Amiibo (Smash Bros.)", "", "mid", 28),
+        ("Min Min", "Amiibo", "Min Min Amiibo (Smash Bros.)", "", "mid", 25),
+
+        # ── Nintendo Soundtracks & Media ───────────────────────────────────
+        ("Mario", "Soundtrack", "Super Mario Galaxy Original Soundtrack (Platinum Edition)", "Club Nintendo", "high", 140),
+        ("Zelda", "Soundtrack", "Zelda 25th Anniversary Special Orchestra CD", "Club Nintendo", "high", 95),
+        ("Zelda", "Soundtrack", "Zelda Tears of the Kingdom OST (5-CD Box)", "", "high", 90),
+        ("Pokemon", "Soundtrack", "Pokemon Scarlet & Violet OST (4-CD Set)", "", "mid", 65),
+        ("Mario", "Soundtrack", "Super Mario Odyssey OST (4-CD Set)", "", "mid", 55),
+
+        # ── Donkey Kong Country Merch ──────────────────────────────────────
+        ("Donkey Kong", "Figure", "Donkey Kong Country Returns HD DK Figure", "", "mid", 45),
+        ("Donkey Kong", "Plush", "Diddy Kong Plush 8in", "Nintendo Store", "standard", 22),
+        ("Donkey Kong", "Amiibo", "Donkey Kong (Super Mario Series) Amiibo", "", "standard", 18),
+        ("Donkey Kong", "Amiibo", "Diddy Kong (Super Mario Series) Amiibo", "", "standard", 18),
+        ("Donkey Kong", "Merch", "Donkey Kong Country Returns HD Banana Pouch", "Nintendo Store JP", "standard", 22),
+
+        # ── Kirby Extra Items ──────────────────────────────────────────────
+        ("Kirby", "Plush", "Kirby 30th Anniversary Large Plush 14in", "Nintendo Store JP", "mid", 65),
+        ("Kirby", "Figure", "Kirby Nendoroid (Ice Ver.)", "", "mid", 52),
+        ("Kirby", "Merch", "Kirby Star Allies Dream Friends Pin Set (8 Pins)", "Nintendo Store", "mid", 42),
+
+        # ── Pokemon Center International Exclusives ────────────────────────
+        ("Pokemon", "Plush", "Pokemon Center London Exclusive Galarian Ponyta Plush", "Pokemon Center London", "mid", 48),
+        ("Pokemon", "Plush", "Pokemon Center Paris Exclusive Furfrou Pharaoh Plush", "Pokemon Center Paris", "mid", 45),
+        ("Pokemon", "Figure", "Pokemon Center Taipei Mimikyu Figure", "Pokemon Center Taipei", "mid", 52),
+        ("Pokemon", "Merch", "Pokemon Center Singapore Pikachu Merlion Keychain", "Pokemon Center Singapore", "mid", 35),
+        ("Pokemon", "Plush", "Pokemon Center Kanazawa Pikachu Goldleaf Plush", "Pokemon Center Kanazawa", "high", 80),
+        ("Pokemon", "Plush", "Pokemon Center Okinawa Pikachu Shisa Plush", "Pokemon Center Okinawa", "mid", 55),
     ]
 
     # ── Batch 12: Store Exclusives, Movie Merch, OLED Editions (55 items) ──

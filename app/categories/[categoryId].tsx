@@ -117,7 +117,8 @@ function CategoryStoreScreen() {
   const [buildProjects, setBuildProjects] = useState<BuildPaintProject[]>([]);
   const [buildProjectsLoading, setBuildProjectsLoading] = useState(false);
   const isBuildable = categoryId ? isBuildableCategory(categoryId) : false;
-  const accentColor = categoryId ? (CATEGORY_VISUAL[categoryId]?.accentColor ?? colors.accent) : colors.accent;
+  // Use app theme accent consistently; no per-category color overrides
+  const accentColor = colors.accent;
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -910,10 +911,10 @@ function CategoryStoreScreen() {
               style={styles.missingFooter}
               onPress={() => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                router.push('/categories/');
+                router.push({ pathname: '/category-browse', params: { categoryId: String(categoryId) } });
               }}
               accessibilityRole="button"
-              accessibilityLabel={`View ${missingItems.length - 3} more items to collect across categories`}
+              accessibilityLabel={`View ${missingItems.length - 3} more items to collect`}
             >
               <Text style={[styles.seeMore, { color: colors.accent }]}>
                 +{missingItems.length - 3} more to collect

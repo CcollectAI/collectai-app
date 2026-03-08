@@ -783,6 +783,114 @@ def get_curated_catalog() -> list[dict]:
         ("Deluxe", "Deluxe", "Gladiator (Shi'ar Imperial Guard)", "", "Deluxe Box", "", True, 45),
         ("Deluxe", "Deluxe", "Beta Ray Bill (Deluxe)", "", "Deluxe Box", "", True, 50),
         ("Deluxe", "Deluxe", "Maestro Hulk (Deluxe)", "", "Deluxe Box", "", True, 52),
+
+        # ─── HasLab Exclusives Expansion (+6) ─────────────────────────
+        ("HasLab", "HasLab", "Robbie Reyes Ghost Rider (HasLab, Car & Flames)", "", "HasLab Box", "HasLab", True, 450),
+        ("HasLab", "HasLab", "Giant-Man (HasLab, 32-Inch)", "", "HasLab Box", "HasLab", True, 500),
+        ("HasLab", "HasLab", "Galactus (HasLab) Complete w/ Accessories", "", "HasLab Box", "HasLab", True, 550),
+        ("HasLab", "HasLab", "The Sentinel (HasLab, 26-Inch)", "", "HasLab Box", "HasLab", True, 600),
+        ("HasLab", "HasLab", "Life-Size Wolverine Helmet (HasLab)", "", "HasLab Box", "HasLab", True, 200),
+        ("HasLab", "HasLab", "MODOK (HasLab, Mega Figure)", "", "HasLab Box", "HasLab", True, 350),
+
+        # ─── Fan Channel Exclusives (+10) ─────────────────────────────
+        ("Fan Channel", "Fan Channel", "Lady Deathstrike", "", "Standard", "Hasbro Pulse", True, 35),
+        ("Fan Channel", "Fan Channel", "Scorpion (Mac Gargan)", "", "Standard", "Amazon", True, 32),
+        ("Fan Channel", "Fan Channel", "Firestar", "", "Standard", "Hasbro Pulse", True, 30),
+        ("Fan Channel", "Fan Channel", "Justice (Vance Astrovik)", "", "Standard", "Hasbro Pulse", True, 28),
+        ("Fan Channel", "Fan Channel", "Speedball (Penance)", "", "Standard", "Hasbro Pulse", True, 28),
+        ("Fan Channel", "Fan Channel", "Quasar (Wendell Vaughn)", "", "Standard", "Hasbro Pulse", True, 30),
+        ("Fan Channel", "Fan Channel", "Moonstone (Karla Sofen)", "", "Standard", "Amazon", True, 28),
+        ("Fan Channel", "Fan Channel", "Dazzler (Classic Disco Outfit)", "", "Standard", "Hasbro Pulse", True, 32),
+        ("Fan Channel", "Fan Channel", "Arcade", "", "Standard", "Walgreens", True, 30),
+        ("Fan Channel", "Fan Channel", "Vulture (Classic Green Suit)", "", "Standard", "Target", True, 32),
+
+        # ─── Retro Collection (+10) ──────────────────────────────────
+        ("Retro", "Retro Collection", "Retro Spider-Man (Symbiote Black Suit)", "", "Retro Card", "", True, 38),
+        ("Retro", "Retro Collection", "Retro Spider-Man (Ben Reilly)", "", "Retro Card", "", True, 35),
+        ("Retro", "Retro Collection", "Retro Spider-Man (2099)", "", "Retro Card", "", True, 38),
+        ("Retro", "Retro Collection", "Retro Wolverine (Brown Suit)", "", "Retro Card", "", True, 42),
+        ("Retro", "Retro Collection", "Retro Storm (Mohawk)", "", "Retro Card", "", True, 45),
+        ("Retro", "Retro Collection", "Retro Cyclops (Jim Lee)", "", "Retro Card", "", True, 40),
+        ("Retro", "Retro Collection", "Retro Rogue (Jim Lee)", "", "Retro Card", "", True, 55),
+        ("Retro", "Retro Collection", "Retro Gambit (Jim Lee)", "", "Retro Card", "", True, 50),
+        ("Retro", "Retro Collection", "Retro Jean Grey (Jim Lee)", "", "Retro Card", "", True, 42),
+        ("Retro", "Retro Collection", "Retro Daredevil (Classic Red)", "", "Retro Card", "", True, 38),
+
+        # ─── Deluxe Figures Expansion (+8) ────────────────────────────
+        ("Deluxe", "Deluxe", "Nimrod (Deluxe, X-Men Villain)", "", "Deluxe Box", "", True, 48),
+        ("Deluxe", "Deluxe", "Apocalypse (Deluxe, Classic)", "", "Deluxe Box", "", True, 55),
+        ("Deluxe", "Deluxe", "Kingpin (Deluxe, White Suit)", "", "Deluxe Box", "", True, 48),
+        ("Deluxe", "Deluxe", "Rhino (Deluxe, Classic)", "", "Deluxe Box", "", True, 50),
+        ("Deluxe", "Deluxe", "Hulk (Immortal Hulk, Deluxe)", "", "Deluxe Box", "", True, 52),
+        ("Deluxe", "Deluxe", "Thanos (Deluxe, Infinity Gauntlet)", "", "Deluxe Box", "", True, 55),
+        ("Deluxe", "Deluxe", "Colossus (Deluxe, X-Men)", "", "Deluxe Box", "", True, 48),
+        ("Deluxe", "Deluxe", "Groot (Deluxe, GotG Vol 3)", "", "Deluxe Box", "", True, 45),
+
+        # ─── 2-Packs (+8) ────────────────────────────────────────────
+        ("Standard", "2-Packs", "Wolverine & Sabretooth (Rivalry 2-Pack)", "", "Window Box", "", True, 55),
+        ("Standard", "2-Packs", "Captain America & Red Skull (Nemesis 2-Pack)", "", "Window Box", "", True, 52),
+        ("Standard", "2-Packs", "Spider-Man & Venom (Symbiote Showdown 2-Pack)", "", "Window Box", "", True, 58),
+        ("Standard", "2-Packs", "Iron Man & War Machine (Armor Up 2-Pack)", "", "Window Box", "", True, 55),
+        ("Standard", "2-Packs", "Storm & Thunderbird (Giant-Size X-Men 2-Pack)", "", "Window Box", "", True, 60),
+        ("Standard", "2-Packs", "Daredevil & Elektra (Streets of NYC 2-Pack)", "", "Window Box", "", True, 52),
+        ("Standard", "2-Packs", "Black Panther & Killmonger (Wakanda 2-Pack)", "", "Window Box", "", True, 55),
+        ("Standard", "2-Packs", "Thor & Loki (Asgardian Brothers 2-Pack)", "", "Window Box", "", True, 58),
+
+        # ─── X-Men '97 Wave Expansion (+8) ───────────────────────────
+        ("Standard", "X-Men '97 Wave 2", "Morph (X-Men '97 Wave 2)", "Onslaught", "Standard", "", True, 32),
+        ("Standard", "X-Men '97 Wave 2", "Bishop (X-Men '97 Wave 2)", "Onslaught", "Standard", "", True, 35),
+        ("Standard", "X-Men '97 Wave 2", "Magneto (X-Men '97 Wave 2 Helmet)", "Onslaught", "Standard", "", True, 38),
+        ("Standard", "X-Men '97 Wave 2", "Rogue (X-Men '97 Wave 2 Flight)", "Onslaught", "Standard", "", True, 42),
+        ("Standard", "X-Men '97 Wave 2", "Wolverine (X-Men '97 Wave 2 Adamantium)", "Onslaught", "Standard", "", True, 40),
+        ("Standard", "X-Men '97 Wave 2", "Jubilee (X-Men '97 Wave 2)", "Onslaught", "Standard", "", True, 30),
+        ("Standard", "X-Men '97 Wave 2", "Storm (X-Men '97 Wave 2 Mohawk)", "Onslaught", "Standard", "", True, 38),
+        ("Standard", "X-Men '97 Wave 2", "Onslaught BAF Complete (X-Men '97)", "", "Standard", "", True, 90),
+
+        # ─── Spider-Man Renew Your Vows (+6) ─────────────────────────
+        ("Standard", "Renew Your Vows", "Spider-Man (Renew Your Vows)", "Stilt-Man Leg", "Standard", "", True, 35),
+        ("Standard", "Renew Your Vows", "Spinneret (Mary Jane Watson)", "Stilt-Man Leg", "Standard", "", True, 38),
+        ("Standard", "Renew Your Vows", "Spiderling (Annie May Parker)", "Stilt-Man Leg", "Standard", "", True, 32),
+        ("Standard", "Renew Your Vows", "Mole Man (Renew Your Vows Wave)", "Stilt-Man Leg", "Standard", "", True, 25),
+        ("Standard", "Renew Your Vows", "Regent (Augustus Roman)", "Stilt-Man Leg", "Standard", "", True, 28),
+        ("Standard", "Renew Your Vows", "Stilt-Man BAF Complete (Renew Your Vows)", "", "Standard", "", True, 80),
+
+        # ─── Recent MCU Waves (+10) ──────────────────────────────────
+        ("Standard", "Thunderbolts* MCU", "Red Guardian (Thunderbolts* MCU)", "Crossbones", "Standard", "", True, 30),
+        ("Standard", "Thunderbolts* MCU", "Yelena Belova (Thunderbolts* MCU)", "Crossbones", "Standard", "", True, 32),
+        ("Standard", "Thunderbolts* MCU", "Ghost (Thunderbolts* MCU)", "Crossbones", "Standard", "", True, 28),
+        ("Standard", "Thunderbolts* MCU", "Taskmaster (Thunderbolts* MCU)", "Crossbones", "Standard", "", True, 30),
+        ("Standard", "Thunderbolts* MCU", "Sentry (Thunderbolts* MCU)", "Crossbones", "Standard", "", True, 35),
+        ("Standard", "Thunderbolts* MCU", "U.S. Agent (Thunderbolts* MCU)", "Crossbones", "Standard", "", True, 30),
+        ("Standard", "Brave New World", "Captain America (Brave New World MCU)", "Leader BAF", "Standard", "", True, 32),
+        ("Standard", "Brave New World", "Red Hulk (Brave New World MCU)", "Leader BAF", "Standard", "", True, 38),
+        ("Standard", "Brave New World", "Diamondback (Brave New World MCU)", "Leader BAF", "Standard", "", True, 25),
+        ("Standard", "Brave New World", "Leader BAF Complete (Brave New World)", "", "Standard", "", True, 75),
+
+        # ─── 20th Anniversary Reissues (+8) ──────────────────────────
+        ("20th Anniversary", "20th Anniversary", "Spider-Man (20th Anniversary Retro)", "", "Window Box", "", True, 42),
+        ("20th Anniversary", "20th Anniversary", "Wolverine (20th Anniversary Retro)", "", "Window Box", "", True, 45),
+        ("20th Anniversary", "20th Anniversary", "Iron Man (20th Anniversary Retro)", "", "Window Box", "", True, 42),
+        ("20th Anniversary", "20th Anniversary", "Captain America (20th Anniversary Retro)", "", "Window Box", "", True, 40),
+        ("20th Anniversary", "20th Anniversary", "Hulk (20th Anniversary Retro)", "", "Window Box", "", True, 42),
+        ("20th Anniversary", "20th Anniversary", "Thor (20th Anniversary Retro)", "", "Window Box", "", True, 40),
+        ("20th Anniversary", "20th Anniversary", "Deadpool (20th Anniversary Retro)", "", "Window Box", "", True, 45),
+        ("20th Anniversary", "20th Anniversary", "Venom (20th Anniversary Retro)", "", "Window Box", "", True, 48),
+
+        # ─── BAF Complete Sets (+14) ─────────────────────────────────
+        ("Standard", "BAF Sets", "Armadillo BAF Complete (NWH Wave)", "", "Standard", "", True, 85),
+        ("Standard", "BAF Sets", "Thanos BAF Complete (Endgame Wave)", "", "Standard", "", True, 95),
+        ("Standard", "BAF Sets", "Cull Obsidian BAF Complete (IW Wave)", "", "Standard", "", True, 90),
+        ("Standard", "BAF Sets", "Kingpin BAF Complete (Spider-Man Wave)", "", "Standard", "", True, 100),
+        ("Standard", "BAF Sets", "Dormammu BAF Complete (Doctor Strange Wave)", "", "Standard", "", True, 85),
+        ("Standard", "BAF Sets", "Wendigo BAF Complete (Alpha Flight Wave)", "", "Standard", "", True, 80),
+        ("Standard", "BAF Sets", "Apocalypse BAF Complete (X-Men Wave)", "", "Standard", "", True, 110),
+        ("Standard", "BAF Sets", "Sentinel BAF Complete (X-Men Wave)", "", "Standard", "", True, 120),
+        ("Standard", "BAF Sets", "Caliban BAF Complete (X-Force Wave)", "", "Standard", "", True, 75),
+        ("Standard", "BAF Sets", "Sugar Man BAF Complete (AoA Wave)", "", "Standard", "", True, 85),
+        ("Standard", "BAF Sets", "Super Skrull BAF Complete (Fantastic Four Wave)", "", "Standard", "", True, 90),
+        ("Standard", "BAF Sets", "Crimson Dynamo BAF Complete (Iron Man Wave)", "", "Standard", "", True, 80),
+        ("Standard", "BAF Sets", "Ultron BAF Complete (Avengers Wave)", "", "Standard", "", True, 95),
+        ("Standard", "BAF Sets", "Bonebreaker BAF Complete (X-Men '97 Wave)", "", "Standard", "", True, 88),
     ]
 
     catalog = []

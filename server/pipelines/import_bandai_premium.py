@@ -835,6 +835,116 @@ def _additional_tamashii_2025_expansion() -> list[tuple]:
     ]
 
 
+def _round7_bandai_expansion() -> list[tuple]:
+    """Round 7 expansion: 88 items — Metal Build, Chogokin, CSM, Proplica, S.I.C.,
+    Figuarts ZERO Extra Battle, more S.H.Figuarts."""
+    return [
+        # ── Metal Build Releases (12) ─────────────────────────────────────
+        ("Metal Build", "Gundam Astray Red Frame Kai", "Gundam SEED Astray", "P-Bandai", "grail", 380),
+        ("Metal Build", "Gundam Astray Blue Frame Full Weapons", "Gundam SEED Astray", "P-Bandai", "grail", 400),
+        ("Metal Build", "Gundam Astray Gold Frame Amatsu Mina", "Gundam SEED Astray", "P-Bandai", "grail", 420),
+        ("Metal Build", "Freedom Gundam Concept 2 (Full Burst)", "Gundam SEED", "P-Bandai", "grail", 450),
+        ("Metal Build", "Strike Freedom Gundam (Full Burst Mode)", "Gundam SEED Destiny", "Standard", "grail", 380),
+        ("Metal Build", "Strike Gundam + IWSP", "Gundam SEED", "P-Bandai", "grail", 350),
+        ("Metal Build", "Destiny Gundam (Full Package)", "Gundam SEED Destiny", "P-Bandai", "grail", 400),
+        ("Metal Build", "Infinite Justice Gundam", "Gundam SEED Destiny", "Standard", "high", 280),
+        ("Metal Build", "00 Raiser (Designer's Blue)", "Gundam 00", "P-Bandai", "grail", 420),
+        ("Metal Build", "00 Qan[T] Full Saber", "Gundam 00: Trailblazer", "P-Bandai", "grail", 400),
+        ("Metal Build", "Hi-Nu Gundam", "Char's Counterattack", "Standard", "grail", 380),
+        ("Metal Build", "Gundam F91 (Harrison Maddin)", "Gundam F91", "P-Bandai", "high", 300),
+
+        # ── Chogokin Specials (10) ────────────────────────────────────────
+        ("Soul of Chogokin", "GX-105 Daitarn 3 F.A.", "Daitarn 3", "Standard", "high", 250),
+        ("Soul of Chogokin", "GX-100 Gaiking", "Gaiking", "Standard", "high", 280),
+        ("Soul of Chogokin", "GX-99 Getter Dragon", "Getter Robo G", "Standard", "high", 220),
+        ("Soul of Chogokin", "GX-98 Getter Poseidon", "Getter Robo G", "P-Bandai", "high", 240),
+        ("Soul of Chogokin", "GX-97 Daimos", "Daimos", "Standard", "high", 260),
+        ("Soul of Chogokin", "GX-96 Getter Liger", "Getter Robo G", "P-Bandai", "high", 230),
+        ("Chogokin", "Toy Story Super Combined Buzz the Space Ranger Robo", "Toy Story", "Standard", "mid", 120),
+        ("Chogokin", "Voltron (30th Anniversary)", "Voltron", "Standard", "high", 280),
+        ("Chogokin", "Grendizer (Dynamic Classics)", "UFO Robot Grendizer", "Standard", "high", 200),
+        ("Chogokin", "Mazinger Z (Dynamic Classics)", "Mazinger Z", "Standard", "high", 200),
+
+        # ── CSM (Complete Selection Modification) Kamen Rider (12) ────────
+        ("CSM", "OOO Driver Complete Set", "Kamen Rider OOO", "P-Bandai", "grail", 450),
+        ("CSM", "W Driver (ver. 1.5)", "Kamen Rider W", "P-Bandai", "grail", 380),
+        ("CSM", "Faiz Gear (ver. 2)", "Kamen Rider 555", "P-Bandai", "grail", 400),
+        ("CSM", "Delta Gear", "Kamen Rider 555", "P-Bandai", "high", 280),
+        ("CSM", "Kaixa Gear", "Kamen Rider 555", "P-Bandai", "high", 280),
+        ("CSM", "Decadriver (ver. 2)", "Kamen Rider Decade", "P-Bandai", "grail", 350),
+        ("CSM", "DiEnd Driver", "Kamen Rider Decade", "P-Bandai", "high", 280),
+        ("CSM", "Arcle", "Kamen Rider Kuuga", "P-Bandai", "grail", 380),
+        ("CSM", "Blade Rouzer & Rouse Absorber", "Kamen Rider Blade", "P-Bandai", "grail", 420),
+        ("CSM", "Kabuto Zecter", "Kamen Rider Kabuto", "P-Bandai", "grail", 350),
+        ("CSM", "Buggle Driver II", "Kamen Rider Ex-Aid", "P-Bandai", "high", 250),
+        ("CSM", "V Buckle & Dragvisor", "Kamen Rider Ryuki", "P-Bandai", "grail", 400),
+
+        # ── Proplica (10) ────────────────────────────────────────────────
+        ("Proplica", "Moon Stick -Brilliant Color Edition-", "Sailor Moon", "P-Bandai", "high", 130),
+        ("Proplica", "Spiral Heart Moon Rod", "Sailor Moon S", "Standard", "mid", 95),
+        ("Proplica", "Kaleidomoon Scope", "Sailor Moon SuperS", "Standard", "mid", 100),
+        ("Proplica", "Tanjiro Kamado Earrings (Demon Slayer)", "Demon Slayer", "P-Bandai", "mid", 65),
+        ("Proplica", "Nezuko Bamboo Mouthpiece", "Demon Slayer", "Standard", "mid", 55),
+        ("Proplica", "Nichirin Blade (Rengoku Kyojuro)", "Demon Slayer", "P-Bandai", "high", 140),
+        ("Proplica", "Communicator -Mercury-", "Sailor Moon", "P-Bandai", "mid", 80),
+        ("Proplica", "Crystal Star -Brilliant Color Edition-", "Sailor Moon R", "P-Bandai", "high", 140),
+        ("Proplica", "Jujutsu Kaisen Slaughter Demon (Toji)", "Jujutsu Kaisen", "Standard", "mid", 90),
+        ("Proplica", "Zanpakuto Senbonzakura Kageyoshi (Byakuya)", "Bleach TYBW", "P-Bandai", "high", 150),
+
+        # ── S.I.C. Figures (10) ──────────────────────────────────────────
+        ("S.I.C.", "Kamen Rider Kuuga Mighty Form", "Kamen Rider Kuuga", "Standard", "mid", 90),
+        ("S.I.C.", "Kamen Rider Agito Ground Form", "Kamen Rider Agito", "Standard", "mid", 85),
+        ("S.I.C.", "Kamen Rider Faiz", "Kamen Rider 555", "Standard", "mid", 90),
+        ("S.I.C.", "Kamen Rider Blade", "Kamen Rider Blade", "Standard", "mid", 85),
+        ("S.I.C.", "Kamen Rider Kabuto", "Kamen Rider Kabuto", "Standard", "mid", 90),
+        ("S.I.C.", "Kamen Rider Den-O Sword Form", "Kamen Rider Den-O", "Standard", "mid", 85),
+        ("S.I.C.", "Kamen Rider W CycloneJoker", "Kamen Rider W", "Standard", "mid", 95),
+        ("S.I.C.", "Kamen Rider OOO Tatoba Combo", "Kamen Rider OOO", "Standard", "mid", 90),
+        ("S.I.C.", "Kamen Rider Gaim Orange Arms", "Kamen Rider Gaim", "Standard", "mid", 85),
+        ("S.I.C.", "Kamen Rider Build RabbitTank", "Kamen Rider Build", "Standard", "mid", 90),
+
+        # ── Figuarts ZERO Extra Battle (12) ──────────────────────────────
+        ("Figuarts ZERO", "Portgas D. Ace -Fire Fist-", "One Piece", "Standard", "mid", 85),
+        ("Figuarts ZERO", "Monkey D. Luffy -Gear 5- Gigant", "One Piece", "Standard", "high", 160),
+        ("Figuarts ZERO", "Sanji -Diable Jambe-", "One Piece", "Standard", "mid", 75),
+        ("Figuarts ZERO", "Trafalgar Law -Gamma Knife-", "One Piece", "Standard", "mid", 80),
+        ("Figuarts ZERO", "Kaido King of the Beasts -Twin Dragons-", "One Piece", "Standard", "high", 200),
+        ("Figuarts ZERO", "Shanks -Conqueror's Haki-", "One Piece", "Standard", "high", 180),
+        ("Figuarts ZERO", "Son Goku -SSJ- Burning Battles", "Dragon Ball Z", "Standard", "mid", 70),
+        ("Figuarts ZERO", "Vegeta -Galick Gun-", "Dragon Ball Z", "Standard", "mid", 70),
+        ("Figuarts ZERO", "Gogeta SSB -Burning Battles-", "Dragon Ball Super: Broly", "Standard", "mid", 80),
+        ("Figuarts ZERO", "Boa Hancock -Love Hurricane-", "One Piece", "Standard", "mid", 75),
+        ("Figuarts ZERO", "Yamato -Thunder Bagua-", "One Piece", "Standard", "mid", 85),
+        ("Figuarts ZERO", "Nico Robin -Demonio Fleur-", "One Piece", "Standard", "mid", 80),
+
+        # ── S.H.Figuarts Additional (10) ─────────────────────────────────
+        ("S.H.Figuarts", "Vegito Super Saiyan Blue", "Dragon Ball Super", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Piccolo (Power Awakening)", "Dragon Ball Super: Super Hero", "P-Bandai", "mid", 80),
+        ("S.H.Figuarts", "Gohan Beast", "Dragon Ball Super: Super Hero", "Standard", "mid", 75),
+        ("S.H.Figuarts", "Kamen Rider Zero-One Rising Hopper", "Kamen Rider Zero-One", "Standard", "mid", 70),
+        ("S.H.Figuarts", "Kamen Rider Saber Brave Dragon", "Kamen Rider Saber", "Standard", "mid", 70),
+        ("S.H.Figuarts", "Kamen Rider Revice Rex Genome", "Kamen Rider Revice", "Standard", "mid", 70),
+        ("S.H.Figuarts", "Kamen Rider Geats Magnum Boost", "Kamen Rider Geats", "Standard", "mid", 70),
+        ("S.H.Figuarts", "Kamen Rider Gotchard", "Kamen Rider Gotchard", "Standard", "mid", 70),
+        ("S.H.Figuarts", "Ultraman Trigger Multi Type", "Ultraman Trigger", "Standard", "mid", 70),
+        ("S.H.Figuarts", "Ultraman Decker Flash Type", "Ultraman Decker", "Standard", "mid", 70),
+
+        # ── Robot Spirits Additional (12) ─────────────────────────────────
+        ("Robot Spirits", "Gundam Aerial (Permet Score 5)", "Gundam: Witch from Mercury", "P-Bandai", "high", 155),
+        ("Robot Spirits", "Gundam Lfrith Jiu", "Gundam: Witch from Mercury", "P-Bandai", "mid", 85),
+        ("Robot Spirits", "Gundam Schwarzette", "Gundam: Witch from Mercury", "Standard", "mid", 75),
+        ("Robot Spirits", "Gundam Pharact", "Gundam: Witch from Mercury", "Standard", "mid", 75),
+        ("Robot Spirits", "Michaelis", "Gundam: Witch from Mercury", "P-Bandai", "mid", 80),
+        ("Robot Spirits", "Gundam Calibarn", "Gundam: Witch from Mercury", "P-Bandai", "high", 150),
+        ("Robot Spirits", "Xi Gundam ver. A.N.I.M.E.", "Gundam Hathaway", "Standard", "high", 180),
+        ("Robot Spirits", "Penelope ver. A.N.I.M.E.", "Gundam Hathaway", "Standard", "high", 200),
+        ("Robot Spirits", "Hyaku Shiki ver. A.N.I.M.E.", "Zeta Gundam", "Standard", "mid", 80),
+        ("Robot Spirits", "Rick Dias ver. A.N.I.M.E.", "Zeta Gundam", "P-Bandai", "mid", 80),
+        ("Robot Spirits", "Full Armor ZZ Gundam ver. A.N.I.M.E.", "Gundam ZZ", "P-Bandai", "high", 160),
+        ("Robot Spirits", "Kshatriya ver. A.N.I.M.E.", "Gundam Unicorn", "Standard", "high", 180),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated Bandai Premium / P-Bandai exclusives catalog (500+ items)."""
 
@@ -1056,6 +1166,7 @@ def get_curated_catalog() -> list[dict]:
     items += _additional_csm_proplica_sailor()
     items += _additional_sdcs_and_misc_kits()
     items += _additional_tamashii_2025_expansion()
+    items += _round7_bandai_expansion()
 
     catalog = []
     for line, name, franchise, exclusive_type, tier, price in items:

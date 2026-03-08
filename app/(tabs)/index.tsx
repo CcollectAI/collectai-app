@@ -26,27 +26,30 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { PortfolioLineChart, type TimeSeriesPoint } from "@/components/PortfolioLineChart";
-import { SkeletonPortfolioHeader, SkeletonList } from "@/components/Skeleton";
+import { SkeletonPortfolioHeader } from "@/components/Skeleton";
 import { dataProvider } from "@/data";
-import type { WatchlistItem } from "@/data/types";
 import { InboxHeaderButton } from "@/components/InboxHeaderButton";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { featureFlags } from "@/config/featureFlags";
 import { InsightsCard } from "@/components/home/InsightsCard";
 import { AlertsCard } from "@/components/home/AlertsCard";
+import { PortfolioValueHeader } from "@/components/home/PortfolioValueHeader";
+import { ChartRangeSelector } from "@/components/home/ChartRangeSelector";
+import { CategoryBreakdownSection, type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
+import { TopItemsList, type ItemRow } from "@/components/home/TopItemsList";
+import { FollowedCategoriesCarousel } from "@/components/home/FollowedCategoriesCarousel";
 import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
 import { useAlertsFeed } from "@/hooks/useAlertsFeed";
-import { AnimatedPressable, useEnterReveal, AnimatedCounter } from "@/motion";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/format";
 import { useToast } from "@/components/Toast";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
-import { collectorsApi } from "@/api/collectorsApi";
+import { collectorsApi, getNotificationHistory } from "@/api/collectorsApi";
 import logger from "@/utils/logger";
 import { useStoreReview } from "@/hooks/useStoreReview";
-import { CATEGORY_VISUAL, type CategoryId } from "@/data/categories";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
@@ -75,13 +78,7 @@ if (USE_REAL_BACKEND) {
 
 type RangeKey = "1D" | "7D" | "30D" | "90D" | "1Y" | "ALL";
 
-type ItemRow = {
-  id: string;
-  name: string;
-  category?: string;
-  value: number;
-  changePct?: number;
-};
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Formatting helpers
@@ -91,11 +88,6 @@ function formatPct(p?: number): string {
   if (p === undefined || p === null || Number.isNaN(p)) return "—";
   const sign = p > 0 ? "+" : "";
   return `${sign}${(p * 100).toFixed(2)}%`;
-}
-
-function formatDelta(n: number, currency: import('@/lib/settings').Currency): string {
-  const sign = n >= 0 ? "+" : "";
-  return `${sign}${formatPrice(n, currency)}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -169,12 +161,6 @@ function extractItems(raw: unknown): ItemRow[] {
 
 function PortfolioScreen() {
   const router = useRouter();
-  const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
-  useEffect(() => {
-    dataProvider.listWatchlist('')
-      .then((items) => setWatchlistItems(items.slice(0, 5)))
-      .catch(() => {});
-  }, []);
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -188,18 +174,25 @@ function PortfolioScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tierSummary, setTierSummary] = useState<{ tier: string; rarityScore: number; completenessScore: number; diversificationScore: number } | null>(null);
+  const [tierSummary, setTierSummary] = useState<{ tier: 'Diamond' | 'Gold' | 'Silver' | 'Unranked'; rarityScore: number; completenessScore: number; diversificationScore: number } | null>(null);
 
   // Store review prompt (criteria: 10+ items, 3+ days, 90-day cooldown)
   useStoreReview(items.length);
 
   // Category breakdown state
-  type CategoryBreakdownItem = { category: string; item_count: number; total_value: number; percentage: number };
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
 
   // Followed/personalized categories from onboarding
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
+
+  // Notification unread badge
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  useEffect(() => {
+    getNotificationHistory({ limit: 1, offset: 0 })
+      .then((data) => setUnreadNotifCount(data.unread_count))
+      .catch(() => {});
+  }, []);
 
   // Data insights & alerts (feature flagged)
   const { insights } = usePortfolioInsights({
@@ -211,7 +204,6 @@ function PortfolioScreen() {
     enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
   });
 
-  // watchlistItems is now loaded via DataProvider useEffect above
 
   // Compute totals from series
   const { total, delta, deltaPct } = useMemo(() => {
@@ -238,7 +230,7 @@ function PortfolioScreen() {
       if (USE_REAL_BACKEND && collectorsClient?.getPortfolioTimeseries) {
         try {
           const rangeParam = range.toLowerCase() as "1d" | "7d" | "30d" | "90d" | "1y" | "all";
-          const timeseriesData = await collectorsClient.getPortfolioTimeseries(rangeParam);
+          const timeseriesData = await (collectorsClient as any).getPortfolioTimeseries(rangeParam);
           const extractedSeries = extractSeries(timeseriesData);
           if (extractedSeries.length) {
             setSeries(extractedSeries);
@@ -247,7 +239,7 @@ function PortfolioScreen() {
           }
 
           if (collectorsClient?.getPortfolioItems) {
-            const itemsData = await collectorsClient.getPortfolioItems();
+            const itemsData = await (collectorsClient as any).getPortfolioItems();
             const extractedItems = extractItems(itemsData);
             if (extractedItems.length) {
               setItems(extractedItems.sort((a, b) => b.value - a.value));
@@ -268,7 +260,7 @@ function PortfolioScreen() {
 
         if (analyticsApi?.fetchPortfolioSnapshot) {
           try {
-            const snap = await analyticsApi.fetchPortfolioSnapshot();
+            const snap = await (analyticsApi as any).fetchPortfolioSnapshot();
             const extractedSeries = extractSeries(snap?.series || snap);
             const extractedItems = extractItems(snap);
 
@@ -398,9 +390,9 @@ function PortfolioScreen() {
     router.push("/analytics");
   };
 
-  // Navigate to watchlist builder
+  // Navigate to watchlist tab
   const handleWatchlistPress = () => {
-    router.push("/watchlist-builder");
+    router.push("/(tabs)/wishlist" as any);
   };
 
   return (
@@ -425,6 +417,21 @@ function PortfolioScreen() {
             <Text style={[styles.headerSubtitle, { color: colors.muted }]}>Track your collection value.</Text>
           </View>
           <View style={styles.headerIcons}>
+            <AnimatedPressable
+              onPress={() => router.push('/notifications')}
+              style={{ padding: 4, position: 'relative' }}
+              accessibilityRole="button"
+              accessibilityLabel={`Notifications${unreadNotifCount > 0 ? `, ${unreadNotifCount} unread` : ''}`}
+            >
+              <Ionicons name="notifications-outline" size={22} color={colors.text} />
+              {unreadNotifCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>
+                    {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                  </Text>
+                </View>
+              )}
+            </AnimatedPressable>
             <InboxHeaderButton color={colors.text} size={22} />
             <ThemeToggleButton size={22} />
             <AnimatedPressable
@@ -475,53 +482,24 @@ function PortfolioScreen() {
         ) : (
           <>
             {/* Collection Value */}
-            <View style={styles.valueSection}>
-              <Text style={[styles.headerLabel, { color: colors.muted }]}>COLLECTION VALUE</Text>
-              <AnimatedCounter
-                value={total}
-                format={(v) => formatPrice(v)}
-                style={[styles.totalValue, { color: colors.text }]}
-                enabled={settings.animationsEnabled}
-                accessibilityLabel={`Collection value: ${formatPrice(total)}`}
-              />
-              <Text
-                style={[styles.deltaText, { color: isPositive ? '#10B981' : '#EF4444' }]}
-                accessibilityRole="text"
-                accessibilityLabel={`Change: ${formatDelta(delta, settings.currency)}, ${formatPct(deltaPct)}`}
-              >
-                {formatDelta(delta, settings.currency)} ({formatPct(deltaPct)})
-              </Text>
-            </View>
+            <PortfolioValueHeader
+              theme={colors}
+              total={total}
+              delta={delta}
+              deltaPct={deltaPct}
+              currency={settings.currency}
+              formatPrice={formatPrice}
+              animationsEnabled={settings.animationsEnabled}
+            />
 
             {/* Range Toggles */}
-            <View style={styles.rangeRow}>
-              {rangeButtons.map((k) => {
-                const active = k === range;
-                return (
-                  <AnimatedPressable
-                    key={k}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Show ${k} range`}
-                    accessibilityState={{ selected: active }}
-                    onPress={() => {
-                      if (k !== range) {
-                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      }
-                      setRange(k);
-                    }}
-                    style={[
-                      styles.rangeBtn,
-                      { backgroundColor: colors.card, borderColor: colors.border },
-                      active && { backgroundColor: colors.accent + '20', borderColor: colors.accent },
-                    ]}
-                  >
-                    <Text style={[styles.rangeText, { color: colors.muted }, active && { color: colors.text }]}>
-                      {k}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
-            </View>
+            <ChartRangeSelector
+              theme={colors}
+              selectedRange={range}
+              ranges={rangeButtons}
+              onRangeChange={(k) => setRange(k as RangeKey)}
+              hapticsEnabled={settings.hapticsEnabled}
+            />
 
             {/* Chart Card with Interactive Line Chart */}
             <View
@@ -576,126 +554,20 @@ function PortfolioScreen() {
         </AnimatedPressable>
 
         {/* Personalized Categories (from onboarding) */}
-        {followedCategories.length > 0 && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Categories</Text>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.followedCatsRow}
-              style={{ marginBottom: 12 }}
-            >
-              {followedCategories.map((catSlug) => {
-                const visual = CATEGORY_VISUAL[catSlug as CategoryId];
-                if (!visual) return null;
-                const displayName = catSlug
-                  .replace(/_/g, ' ')
-                  .replace(/\b\w/g, (c) => c.toUpperCase());
-                return (
-                  <AnimatedPressable
-                    key={catSlug}
-                    onPress={() => {
-                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      router.push({ pathname: '/categories/[categoryId]', params: { categoryId: catSlug } });
-                    }}
-                    style={[
-                      styles.followedCatCard,
-                      { backgroundColor: visual.accentColor + '15', borderColor: visual.accentColor + '40' },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Browse ${displayName}`}
-                  >
-                    <View style={[styles.followedCatIcon, { backgroundColor: visual.accentColor + '25' }]}>
-                      <Ionicons
-                        name={(visual.iconName || 'cube') as keyof typeof Ionicons.glyphMap}
-                        size={20}
-                        color={visual.accentColor}
-                      />
-                    </View>
-                    <Text style={[styles.followedCatName, { color: colors.text }]} numberOfLines={1}>
-                      {displayName}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
-            </ScrollView>
-          </>
-        )}
+        <FollowedCategoriesCarousel
+          theme={colors}
+          categories={followedCategories}
+          onCategoryPress={(catSlug) => router.push({ pathname: '/categories/[categoryId]', params: { categoryId: catSlug } })}
+          hapticsEnabled={settings.hapticsEnabled}
+        />
 
         {/* Category Breakdown */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Category Breakdown</Text>
-        </View>
-        {breakdownLoading ? (
-          <View style={[styles.breakdownCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <SkeletonList count={3} type="row" />
-          </View>
-        ) : categoryBreakdown.length > 0 ? (
-          <View style={[styles.breakdownCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {/* Horizontal bar chart for top 5 */}
-            {categoryBreakdown.slice(0, 5).map((cat, idx) => {
-              const barColors = [colors.accent, colors.accent + 'CC', colors.accent + '99', colors.accent + '66', colors.accent + '44'];
-              const barColor = barColors[idx] || colors.accent;
-              return (
-                <View key={cat.category} style={styles.breakdownBarRow} accessibilityLabel={`${cat.category}: ${cat.percentage.toFixed(0)}% of portfolio`}>
-                  <Text style={[styles.breakdownBarLabel, { color: colors.text }]} numberOfLines={1}>
-                    {cat.category}
-                  </Text>
-                  <View style={styles.breakdownBarTrack}>
-                    <View
-                      style={[
-                        styles.breakdownBarFill,
-                        { backgroundColor: barColor, width: `${Math.max(cat.percentage, 2)}%` },
-                      ]}
-                    />
-                  </View>
-                  <Text style={[styles.breakdownBarPct, { color: colors.muted }]}>
-                    {cat.percentage.toFixed(0)}%
-                  </Text>
-                </View>
-              );
-            })}
-
-            {/* Scrollable category cards */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.breakdownCardsRow}
-              style={styles.breakdownCardsScroll}
-            >
-              {categoryBreakdown.map((cat) => (
-                <View
-                  key={cat.category}
-                  style={[styles.breakdownCategoryCard, { backgroundColor: colors.background, borderColor: colors.border }]}
-                  accessibilityLabel={`${cat.category}: ${cat.item_count} item${cat.item_count !== 1 ? 's' : ''}, ${formatPrice(cat.total_value)}, ${cat.percentage.toFixed(0)}%`}
-                >
-                  <Text style={[styles.breakdownCatName, { color: colors.text }]} numberOfLines={1}>
-                    {cat.category}
-                  </Text>
-                  <Text style={[styles.breakdownCatItems, { color: colors.muted }]}>
-                    {cat.item_count} item{cat.item_count !== 1 ? 's' : ''}
-                  </Text>
-                  <Text style={[styles.breakdownCatValue, { color: colors.text }]}>
-                    {formatPrice(cat.total_value)}
-                  </Text>
-                  <View style={[styles.breakdownPctBadge, { backgroundColor: colors.accent + '15' }]}>
-                    <Text style={[styles.breakdownPctBadgeText, { color: colors.accent }]}>
-                      {cat.percentage.toFixed(0)}%
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        ) : (
-          <View style={[styles.breakdownCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.breakdownEmpty, { color: colors.muted }]}>
-              Add items to see your category breakdown.
-            </Text>
-          </View>
-        )}
+        <CategoryBreakdownSection
+          theme={colors}
+          breakdown={categoryBreakdown}
+          loading={breakdownLoading}
+          formatPrice={(v) => formatPrice(v)}
+        />
 
         {/* Extended Portfolio Insights CTA */}
         <AnimatedPressable
@@ -731,16 +603,10 @@ function PortfolioScreen() {
             alerts={alerts}
             onAlertPress={(alert) => {
               markAsRead(alert.id);
-              const itemId = alert.itemId || alert.id;
               router.push({
-                pathname: '/item/[id]',
-                params: {
-                  id: itemId,
-                  name: alert.itemName,
-                  category: alert.itemCategory || '',
-                  value: String(alert.value || 0),
-                },
-              });
+                pathname: '/(tabs)/wishlist',
+                params: { highlightId: alert.itemId || alert.id },
+              } as any);
             }}
             onStartWatchlist={handleWatchlistPress}
             showEmptyState={true}
@@ -787,158 +653,13 @@ function PortfolioScreen() {
         </View>
 
         {/* Top Movers & Shakers */}
-        <View style={[styles.listCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {/* Movers (top gainers) */}
-          {items
-            .filter((it) => (it.changePct ?? 0) > 0)
-            .sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0))
-            .slice(0, 3)
-            .map((it, idx) => (
-              <AnimatedPressable
-                key={it.id}
-                style={[
-                  styles.itemRow,
-                  { borderTopColor: colors.border },
-                  idx === 0 && styles.itemRowFirst,
-                ]}
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  handleItemPress(it);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={`View ${it.name}`}
-              >
-                <View style={styles.itemLeft}>
-                  <View style={styles.moverLabel}>
-                    <Ionicons name="trending-up" size={12} color="#10B981" />
-                    <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                      {it.name}
-                    </Text>
-                  </View>
-                  <Text style={[styles.itemCategory, { color: colors.muted }]} numberOfLines={1}>
-                    {it.category ?? "—"}
-                  </Text>
-                </View>
-                <View style={styles.itemRight}>
-                  <Text style={[styles.itemValue, { color: colors.text }]}>{formatPrice(it.value)}</Text>
-                  <Text style={[styles.itemPct, { color: '#10B981' }]}>
-                    {formatPct(it.changePct)}
-                  </Text>
-                </View>
-              </AnimatedPressable>
-            ))}
-          {/* Shakers (top losers) */}
-          {items
-            .filter((it) => (it.changePct ?? 0) < 0)
-            .sort((a, b) => (a.changePct ?? 0) - (b.changePct ?? 0))
-            .slice(0, 3)
-            .map((it, idx, arr) => {
-              const isFirstInList = idx === 0 && items.filter((i) => (i.changePct ?? 0) > 0).length === 0;
-              return (
-                <AnimatedPressable
-                  key={it.id}
-                  style={[
-                    styles.itemRow,
-                    { borderTopColor: colors.border },
-                    isFirstInList && styles.itemRowFirst,
-                  ]}
-                  onPress={() => {
-                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                    handleItemPress(it);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`View ${it.name}`}
-                >
-                  <View style={styles.itemLeft}>
-                    <View style={styles.moverLabel}>
-                      <Ionicons name="trending-down" size={12} color="#EF4444" />
-                      <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                        {it.name}
-                      </Text>
-                    </View>
-                    <Text style={[styles.itemCategory, { color: colors.muted }]} numberOfLines={1}>
-                      {it.category ?? "—"}
-                    </Text>
-                  </View>
-                  <View style={styles.itemRight}>
-                    <Text style={[styles.itemValue, { color: colors.text }]}>{formatPrice(it.value)}</Text>
-                    <Text style={[styles.itemPct, { color: '#EF4444' }]}>
-                      {formatPct(it.changePct)}
-                    </Text>
-                  </View>
-                </AnimatedPressable>
-              );
-            })}
-        </View>
-
-        {/* Watchlist Section */}
-        {watchlistItems.length > 0 && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Watchlist</Text>
-              <AnimatedPressable
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  handleWatchlistPress();
-                }}
-                accessibilityRole="link"
-                accessibilityLabel="See all watchlist items"
-              >
-                <Text style={[styles.seeAllLink, { color: colors.accent }]}>See all →</Text>
-              </AnimatedPressable>
-            </View>
-
-            <View style={[styles.listCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              {watchlistItems.map((it, idx) => {
-                const hasAlert = Boolean(it.targetPrice);
-
-                return (
-                  <AnimatedPressable
-                    key={it.id}
-                    style={[
-                      styles.watchlistRow,
-                      { borderTopColor: colors.border },
-                      idx === 0 && styles.itemRowFirst,
-                    ]}
-                    onPress={() => {
-                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      router.push('/watchlist-builder');
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Watchlist item: ${it.title}`}
-                  >
-                    <View style={styles.watchlistLeft}>
-                      <View style={styles.watchlistNameRow}>
-                        <Ionicons
-                          name={hasAlert ? "notifications" : "notifications-outline"}
-                          size={16}
-                          color={hasAlert ? colors.accent : colors.muted}
-                          style={styles.bellIcon}
-                        />
-                        <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                          {it.title ?? "Watchlist Item"}
-                        </Text>
-                      </View>
-                      <Text style={[styles.itemCategory, { color: colors.muted }]} numberOfLines={1}>
-                        {it.category ?? "—"}
-                      </Text>
-                    </View>
-                    <View style={styles.watchlistRight}>
-                      {it.targetPrice != null && (
-                        <Text style={[styles.targetPrice, { color: colors.accent }]}>
-                          Target {formatPrice(it.targetPrice)}
-                        </Text>
-                      )}
-                      <Text style={[styles.currentPrice, { color: colors.muted }]}>
-                        {it.priority} priority
-                      </Text>
-                    </View>
-                  </AnimatedPressable>
-                );
-              })}
-            </View>
-          </>
-        )}
+        <TopItemsList
+          theme={colors}
+          items={items}
+          onItemPress={handleItemPress}
+          formatPrice={(v) => formatPrice(v)}
+          hapticsEnabled={settings.hapticsEnabled}
+        />
 
         {/* Bottom spacing */}
         <View style={{ height: Platform.OS === "ios" ? 24 : 18 }} />
@@ -956,6 +677,8 @@ function PortfolioScreen() {
           activeOpacity={1}
           onPress={() => setAddMenuOpen(false)}
           style={styles.addMenuOverlay}
+          accessibilityRole="button"
+          accessibilityLabel="Close add item menu"
         >
           <View style={[styles.addMenuSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.addMenuHandle} />
@@ -1050,45 +773,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
-  valueSection: {
-    marginBottom: 16,
-  },
-  headerLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  totalValue: {
-    fontSize: 36,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  deltaText: {
-    fontSize: 15,
-    fontWeight: "700",
-    marginTop: 4,
-  },
-
-  // Range toggles
-  rangeRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginBottom: 12,
-  },
-  rangeBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
+  notifBadge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "#EF4444",
     borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
   },
-  rangeText: {
+  notifBadgeText: {
+    color: "#fff",
+    fontSize: 9,
     fontWeight: "700",
-    fontSize: 13,
   },
-
   // Chart card
   chartCard: {
     borderWidth: 1,
@@ -1245,175 +946,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
   },
-  seeAllLink: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-
-  // Items list
-  listCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 20,
-  },
-  itemRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderTopWidth: 1,
-  },
-  itemRowFirst: {
-    borderTopWidth: 0,
-  },
-  itemLeft: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  moverLabel: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  itemName: {
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  itemCategory: {
-    fontWeight: "600",
-    fontSize: 12,
-    marginTop: 2,
-  },
-  itemRight: {
-    alignItems: "flex-end",
-    minWidth: 90,
-  },
-  itemValue: {
-    fontWeight: "800",
-    fontSize: 14,
-  },
-  itemPct: {
-    fontWeight: "700",
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  // Watchlist rows
-  watchlistRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderTopWidth: 1,
-  },
-  watchlistLeft: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  watchlistNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  bellIcon: {
-    marginRight: 6,
-  },
-  watchlistRight: {
-    alignItems: "flex-end",
-    minWidth: 100,
-  },
-  targetPrice: {
-    fontWeight: "700",
-    fontSize: 13,
-  },
-  currentPrice: {
-    fontWeight: "600",
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  // Category Breakdown
-  breakdownCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
-  },
-  breakdownBarRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  breakdownBarLabel: {
-    width: 80,
-    fontSize: 12,
-    fontWeight: "600",
-    marginRight: 8,
-  },
-  breakdownBarTrack: {
-    flex: 1,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#E2E8F020",
-    overflow: "hidden",
-    marginRight: 8,
-  },
-  breakdownBarFill: {
-    height: "100%",
-    borderRadius: 5,
-  },
-  breakdownBarPct: {
-    width: 36,
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "right",
-  },
-  breakdownCardsScroll: {
-    marginTop: 10,
-  },
-  breakdownCardsRow: {
-    gap: 10,
-  },
-  breakdownCategoryCard: {
-    width: 130,
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 10,
-  },
-  breakdownCatName: {
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  breakdownCatItems: {
-    fontSize: 11,
-    marginBottom: 4,
-  },
-  breakdownCatValue: {
-    fontSize: 14,
-    fontWeight: "800",
-    marginBottom: 6,
-  },
-  breakdownPctBadge: {
-    alignSelf: "flex-start",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  breakdownPctBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  breakdownEmpty: {
-    fontSize: 13,
-    textAlign: "center",
-    paddingVertical: 16,
-  },
 
   // Extended Portfolio Insights CTA
   insightsCta: {
@@ -1546,32 +1078,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
 
-  // Followed Categories (from onboarding)
-  followedCatsRow: {
-    gap: 10,
-    paddingHorizontal: 2,
-    paddingVertical: 4,
-  },
-  followedCatCard: {
-    width: 100,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
-    alignItems: 'center',
-  },
-  followedCatIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  followedCatName: {
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
 });
 
 export default function PortfolioScreenWithBoundary() {

@@ -741,6 +741,115 @@ def get_curated_catalog() -> list[dict]:
         ("1000Toys", "GANTZ:O", "Gantz Suit (Soft Suit)", '6"', "GANTZ", "Deluxe", "", 80),
         ("1000Toys", "TOA Heavy Industries", "Synthetic Human (Female, 1/12)", '6"', "Original", "Deluxe", "", 78),
         ("1000Toys", "TOA Heavy Industries", "Synthetic Human (1/6 Scale)", '12"', "Original", "Deluxe", "", 180),
+
+        # === ROUND 5 — 700+ Expansion: NECA, McFarlane, Super7, Mezco, Hasbro Pulse, SH Figuarts, Figma, Mafex ===
+
+        # ─── NECA Predator / Alien (New Waves) ─────────────────────────
+        ("NECA", "Ultimate Predator", "Ultimate Jungle Hunter Predator (V2)", '7"', "Predator", "Window Box", "", 40),
+        ("NECA", "Ultimate Predator", "Ultimate City Hunter Predator (V2)", '7"', "Predator", "Window Box", "", 42),
+        ("NECA", "Ultimate Predator", "Ultimate Fugitive Predator (2018)", '7"', "Predator", "Window Box", "", 38),
+        ("NECA", "Ultimate Predator", "Ultimate Emissary Predator #2", '7"', "Predator", "Window Box", "", 40),
+        ("NECA", "Ultimate Predator", "Ultimate Alpha Predator (Prey)", '7"', "Predator", "Window Box", "", 42),
+        ("NECA", "Ultimate Predator", "Ultimate Feral Predator (Prey)", '7"', "Predator", "Window Box", "", 45),
+        ("NECA", "Ultimate Predator", "Ultimate Lasershot Predator", '7"', "Predator", "Window Box", "", 38),
+        ("NECA", "Ultimate Predator", "Ultimate Scout Predator", '7"', "Predator", "Window Box", "", 38),
+        ("NECA", "Ultimate Alien", "Ultimate Xenomorph Warrior (Blue)", '7"', "Aliens", "Window Box", "", 38),
+        ("NECA", "Ultimate Alien", "Ultimate Big Chap Alien (40th Anniversary)", '7"', "Alien", "Window Box", "", 42),
+        ("NECA", "Ultimate Alien", "Ultimate Alien Queen", '7"', "Aliens", "Deluxe", "", 85),
+        ("NECA", "Ultimate Alien", "Ultimate Newborn Alien (Alien Resurrection)", '7"', "Aliens", "Window Box", "", 40),
+        ("NECA", "Ultimate Alien", "Ultimate Dog Alien (Alien 3)", '7"', "Aliens", "Window Box", "", 38),
+
+        # ─── McFarlane Spawn Mega Figures ───────────────────────────────
+        ("McFarlane", "Spawn", "Spawn (Mortal Kombat 11 Mega)", '12"', "Spawn", "Deluxe", "", 55),
+        ("McFarlane", "Spawn", "Violator (Mega Figure)", '12"', "Spawn", "Deluxe", "", 60),
+        ("McFarlane", "Spawn", "Mandarin Spawn (Mega Figure)", '12"', "Spawn", "Deluxe", "", 55),
+        ("McFarlane", "Spawn", "Ninja Spawn (Mega Figure)", '12"', "Spawn", "Deluxe", "", 52),
+        ("McFarlane", "Spawn", "Gunslinger Spawn (Mega Figure)", '12"', "Spawn", "Deluxe", "", 55),
+        ("McFarlane", "Spawn", "Spawn (Issue 1 Cover Art Posed)", '7"', "Spawn", "Standard", "", 28),
+        ("McFarlane", "Spawn", "Medieval Spawn (Remastered)", '7"', "Spawn", "Standard", "", 30),
+        ("McFarlane", "Spawn", "Clown / Violator (Bloody)", '7"', "Spawn", "Standard", "", 28),
+        ("McFarlane", "Spawn", "She-Spawn (Deluxe)", '7"', "Spawn", "Deluxe", "", 38),
+        ("McFarlane", "Spawn", "Soul Crusher (Spawn Universe)", '7"', "Spawn", "Standard", "", 28),
+
+        # ─── Super7 Ultimates Wave 10+ ──────────────────────────────────
+        ("Super7", "Ultimates!", "Thundercats Mumm-Ra (Ever-Living)", '7"', "Thundercats", "Standard", "", 55),
+        ("Super7", "Ultimates!", "Thundercats Tygra (Wave 8)", '7"', "Thundercats", "Standard", "", 48),
+        ("Super7", "Ultimates!", "Thundercats Cheetara (Wave 9)", '7"', "Thundercats", "Standard", "", 52),
+        ("Super7", "Ultimates!", "TMNT Leatherhead (Wave 10)", '7"', "TMNT", "Standard", "", 55),
+        ("Super7", "Ultimates!", "TMNT Ace Duck (Wave 10)", '7"', "TMNT", "Standard", "", 50),
+        ("Super7", "Ultimates!", "TMNT Mondo Gecko (Wave 11)", '7"', "TMNT", "Standard", "", 52),
+        ("Super7", "Ultimates!", "TMNT Ray Fillet (Wave 11)", '7"', "TMNT", "Standard", "", 50),
+        ("Super7", "Ultimates!", "MOTU Mantenna (Wave 10)", '7"', "MOTU", "Standard", "", 55),
+        ("Super7", "Ultimates!", "MOTU Modulok (Wave 10 Deluxe)", '7"', "MOTU", "Deluxe", "", 75),
+        ("Super7", "Ultimates!", "MOTU Dragstor (Wave 11)", '7"', "MOTU", "Standard", "", 52),
+        ("Super7", "Ultimates!", "SilverHawks Quicksilver (Wave 2)", '7"', "SilverHawks", "Standard", "", 55),
+        ("Super7", "Ultimates!", "SilverHawks Mon*Star (Armored)", '7"', "SilverHawks", "Deluxe", "", 70),
+
+        # ─── Mezco ONE:12 Collective (Recent) ──────────────────────────
+        ("Mezco", "ONE:12 Collective", "Batman (Supreme Knight)", '6"', "DC Comics", "Deluxe", "Mezco Exclusive", 120),
+        ("Mezco", "ONE:12 Collective", "Spider-Man (Miles Morales)", '6"', "Marvel", "Standard", "", 95),
+        ("Mezco", "ONE:12 Collective", "Wolverine (Tiger Stripe)", '6"', "Marvel", "Standard", "", 100),
+        ("Mezco", "ONE:12 Collective", "Punisher (War Machine Armor)", '6"', "Marvel", "Deluxe", "Mezco Exclusive", 130),
+        ("Mezco", "ONE:12 Collective", "The Joker (Clown Prince of Crime)", '6"', "DC Comics", "Deluxe", "", 110),
+        ("Mezco", "ONE:12 Collective", "Darkseid", '6"', "DC Comics", "Deluxe", "", 125),
+        ("Mezco", "ONE:12 Collective", "Doc Nocturnal", '6"', "Original", "Standard", "Mezco Exclusive", 90),
+        ("Mezco", "ONE:12 Collective", "Gomez (The Rumble Society)", '6"', "Original", "Standard", "Mezco Exclusive", 85),
+
+        # ─── Hasbro Pulse Exclusives ────────────────────────────────────
+        ("Hasbro", "Black Series", "Darth Revan (Hasbro Pulse Exclusive)", '6"', "Star Wars", "Standard", "Hasbro Pulse", 45),
+        ("Hasbro", "Black Series", "Clone Trooper (Phase I, Hasbro Pulse)", '6"', "Star Wars", "Standard", "Hasbro Pulse", 38),
+        ("Hasbro", "Black Series", "Starkiller (Galen Marek)", '6"', "Star Wars", "Standard", "Hasbro Pulse", 42),
+        ("Hasbro", "Lightning Collection", "Lord Drakkon (Pulse Exclusive)", '6"', "Power Rangers", "Standard", "Hasbro Pulse", 40),
+        ("Hasbro", "Lightning Collection", "Psycho Green Ranger", '6"', "Power Rangers", "Standard", "Hasbro Pulse", 38),
+        ("Hasbro", "GI Joe Classified", "Serpentor & Air Chariot (Pulse Exclusive)", '6"', "GI Joe", "Deluxe", "Hasbro Pulse", 55),
+        ("Hasbro", "GI Joe Classified", "Python Patrol Officer (Pulse Exclusive)", '6"', "GI Joe", "Standard", "Hasbro Pulse", 35),
+        ("Hasbro", "HasLab", "Galactus (HasLab, 32-inch)", '32"', "Marvel", "HasLab", "Hasbro Pulse", 480),
+        ("Hasbro", "HasLab", "Unicron (HasLab, Transformers)", '27"', "Transformers", "HasLab", "Hasbro Pulse", 650),
+
+        # ─── SH Figuarts Dragon Ball Super Hero ────────────────────────
+        ("Bandai", "S.H.Figuarts", "Son Gohan (Beast Form)", '6"', "Dragon Ball", "Standard", "", 65),
+        ("Bandai", "S.H.Figuarts", "Piccolo (Orange Piccolo)", '6"', "Dragon Ball", "Standard", "", 60),
+        ("Bandai", "S.H.Figuarts", "Cell Max", '7"', "Dragon Ball", "Deluxe", "", 85),
+        ("Bandai", "S.H.Figuarts", "Gamma 1", '6"', "Dragon Ball", "Standard", "", 55),
+        ("Bandai", "S.H.Figuarts", "Gamma 2", '6"', "Dragon Ball", "Standard", "", 55),
+        ("Bandai", "S.H.Figuarts", "Vegeta (Ultra Ego)", '6"', "Dragon Ball", "Standard", "", 68),
+        ("Bandai", "S.H.Figuarts", "Goku (Ultra Instinct -Sign-)", '6"', "Dragon Ball", "Standard", "", 62),
+        ("Bandai", "S.H.Figuarts", "Broly (Full Power, DBS)", '7"', "Dragon Ball", "Deluxe", "", 90),
+
+        # ─── Figma New Releases ─────────────────────────────────────────
+        ("Good Smile", "Figma", "Link (Tears of the Kingdom)", '6"', "Zelda", "Standard", "", 75),
+        ("Good Smile", "Figma", "Samus Aran (Metroid Dread)", '6"', "Metroid", "Standard", "", 80),
+        ("Good Smile", "Figma", "Cloud Strife (FF7 Remake)", '6"', "Final Fantasy", "Standard", "", 82),
+        ("Good Smile", "Figma", "Solid Snake (Metal Gear Solid)", '6"', "Metal Gear", "Standard", "", 78),
+        ("Good Smile", "Figma", "Guts (Berserk: Black Swordsman)", '6"', "Berserk", "Standard", "", 85),
+        ("Good Smile", "Figma", "Chainsaw Man (Denji)", '6"', "Chainsaw Man", "Standard", "", 72),
+        ("Good Smile", "Figma", "Power (Chainsaw Man)", '6"', "Chainsaw Man", "Standard", "", 70),
+        ("Good Smile", "Figma", "Makima (Chainsaw Man)", '6"', "Chainsaw Man", "Standard", "", 72),
+
+        # ─── Mafex Batman / Spider-Man ──────────────────────────────────
+        ("Medicom", "MAFEX", "Batman (Hush)", '6"', "DC Comics", "Standard", "", 85),
+        ("Medicom", "MAFEX", "Batman (The Dark Knight Returns)", '6"', "DC Comics", "Standard", "", 90),
+        ("Medicom", "MAFEX", "Batman (Batman Begins)", '6"', "DC Comics", "Standard", "", 88),
+        ("Medicom", "MAFEX", "Spider-Man (Ben Reilly)", '6"', "Marvel", "Standard", "", 82),
+        ("Medicom", "MAFEX", "Spider-Man (Miles Morales, ITSV)", '6"', "Marvel", "Standard", "", 85),
+        ("Medicom", "MAFEX", "Spider-Man (Comic Paint Ver.)", '6"', "Marvel", "Standard", "", 80),
+        ("Medicom", "MAFEX", "Venom (Comic Ver.)", '6"', "Marvel", "Standard", "", 88),
+        ("Medicom", "MAFEX", "Superman (Hush)", '6"', "DC Comics", "Standard", "", 82),
+        ("Medicom", "MAFEX", "Catwoman (Hush)", '6"', "DC Comics", "Standard", "", 78),
+
+        # ─── Additional Action Figures (+12) ───────────────────────────────
+        ("Hasbro", "Black Series", "Ahsoka Tano (Rebels)", '6"', "Star Wars", "Standard", "", 32),
+        ("Hasbro", "Black Series", "Clone Trooper (Phase II)", '6"', "Star Wars", "Standard", "", 28),
+        ("Hasbro", "Black Series", "Grand Inquisitor", '6"', "Star Wars", "Standard", "", 30),
+        ("Hasbro", "Classified", "Cobra Commander (v2)", '6"', "GI Joe", "Standard", "", 28),
+        ("Hasbro", "Classified", "Snake Eyes (Retro Card)", '6"', "GI Joe", "Retro Card", "", 32),
+        ("McFarlane", "DC Multiverse", "Flash (Flashpoint)", '7"', "DC Comics", "Standard", "", 22),
+        ("McFarlane", "DC Multiverse", "Swamp Thing Mega Figure", '7"', "DC Comics", "Deluxe", "", 45),
+        ("NECA", "Ultimate", "Predator (Jungle Hunter)", '7"', "Predator", "Ultimate Box", "", 38),
+        ("NECA", "Ultimate", "Alien Warrior (Blue)", '7"', "Aliens", "Ultimate Box", "", 35),
+        ("Super7", "Ultimates", "Thundercats Mumm-Ra (Ever Living)", '7"', "Thundercats", "Deluxe", "", 55),
+        ("Mezco", "One:12 Collective", "Wolverine (Tiger Stripe)", '6"', "Marvel", "Standard", "", 90),
+        ("Mezco", "One:12 Collective", "Punisher (War Machine Armor)", '6"', "Marvel", "Deluxe", "PX Exclusive", 110),
     ]
 
     catalog = []

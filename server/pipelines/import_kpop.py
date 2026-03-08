@@ -869,6 +869,112 @@ def get_curated_catalog() -> list[dict]:
         ("Kiss of Life", "album", "Kiss of Life 'Born to be XX' 2nd Mini Album", "Standard", "standard", 20),
         ("Kiss of Life", "photocard", "Natty Midas Touch Lucky Draw", "Lucky Draw", "high", 110),
         ("Kiss of Life", "photocard", "Julie Born to be XX POB", "Pre-order Benefit", "mid", 45),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # ENHYPEN — Additional Goods
+        # ═══════════════════════════════════════════════════════════════════
+        ("ENHYPEN", "album", "ENHYPEN 'ROMANCE : UNTOLD' Standard", "Standard", "standard", 22),
+        ("ENHYPEN", "album", "ENHYPEN 'ROMANCE : UNTOLD' Weverse Ver.", "Weverse Exclusive", "mid", 35),
+        ("ENHYPEN", "photocard", "Heeseung ROMANCE UNTOLD Lucky Draw", "Lucky Draw", "grail", 220),
+        ("ENHYPEN", "photocard", "Jay ROMANCE UNTOLD Weverse POB", "Pre-order Benefit", "mid", 55),
+        ("ENHYPEN", "photocard", "Sunghoon Dusk Till Dawn Fan Sign", "Fan Sign", "high", 140),
+        ("ENHYPEN", "merch", "ENHYPEN Official Light Stick Ver. 2", "Official", "mid", 65),
+        ("ENHYPEN", "merch", "ENHYPEN World Tour Finale Hoodie", "Tour Exclusive", "mid", 75),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # ATEEZ — Additional Items
+        # ═══════════════════════════════════════════════════════════════════
+        ("ATEEZ", "album", "ATEEZ 'GOLDEN HOUR : Part.2'", "Standard", "standard", 20),
+        ("ATEEZ", "merch", "ATEEZ Official Lightstick Ver. 3", "Official", "mid", 68),
+        ("ATEEZ", "photocard", "Hongjoong Golden Hour Lucky Draw", "Lucky Draw", "grail", 200),
+        ("ATEEZ", "photocard", "San Towards The Light POB", "Pre-order Benefit", "mid", 50),
+        ("ATEEZ", "merch", "ATEEZ Break the Wall Tour Towel", "Tour Exclusive", "mid", 42),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # IVE — Photo Cards & Albums
+        # ═══════════════════════════════════════════════════════════════════
+        ("IVE", "album", "IVE 'IVE MINE' 1st Full Album", "Standard", "standard", 20),
+        ("IVE", "album", "IVE 'SWITCH' 2nd EP", "Standard", "standard", 22),
+        ("IVE", "photocard", "Wonyoung IVE MINE Lucky Draw", "Lucky Draw", "grail", 250),
+        ("IVE", "photocard", "Yujin SWITCH Weverse POB", "Pre-order Benefit", "mid", 55),
+        ("IVE", "photocard", "Rei IVE MINE Fan Sign", "Fan Sign", "high", 130),
+        ("IVE", "merch", "IVE 1st Fan Meeting DIVE Keyring Set", "Fan Meeting", "mid", 45),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # LE SSERAFIM — Merchandise
+        # ═══════════════════════════════════════════════════════════════════
+        ("LE SSERAFIM", "album", "LE SSERAFIM 'CRAZY' 4th Mini Album", "Standard", "standard", 20),
+        ("LE SSERAFIM", "photocard", "Kazuha CRAZY Lucky Draw", "Lucky Draw", "grail", 210),
+        ("LE SSERAFIM", "photocard", "Chaewon EASY Weverse POB", "Pre-order Benefit", "mid", 60),
+        ("LE SSERAFIM", "merch", "LE SSERAFIM FLAME RISES Tour Cap", "Tour Exclusive", "mid", 48),
+        ("LE SSERAFIM", "merch", "LE SSERAFIM Official Lightstick", "Official", "mid", 62),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # (G)I-DLE — Items
+        # ═══════════════════════════════════════════════════════════════════
+        ("(G)I-DLE", "album", "(G)I-DLE '2' 2nd Full Album", "Standard", "standard", 20),
+        ("(G)I-DLE", "photocard", "Miyeon Super Lady Lucky Draw", "Lucky Draw", "high", 160),
+        ("(G)I-DLE", "photocard", "Shuhua Heat Fan Sign", "Fan Sign", "high", 110),
+        ("(G)I-DLE", "merch", "(G)I-DLE Official Lightstick", "Official", "mid", 58),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # ITZY — Official Goods
+        # ═══════════════════════════════════════════════════════════════════
+        ("ITZY", "album", "ITZY 'BORN TO BE' 2nd Album", "Standard", "standard", 18),
+        ("ITZY", "photocard", "Ryujin BORN TO BE Lucky Draw", "Lucky Draw", "high", 150),
+        ("ITZY", "photocard", "Yeji CHECKMATE Fan Sign", "Fan Sign", "high", 120),
+        ("ITZY", "merch", "ITZY 2nd World Tour Lightstick Strap", "Tour Exclusive", "mid", 35),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # TXT — Merch & Photocards
+        # ═══════════════════════════════════════════════════════════════════
+        ("TXT", "album", "TXT 'The Name Chapter: FREEFALL'", "Standard", "standard", 20),
+        ("TXT", "photocard", "Yeonjun FREEFALL Lucky Draw", "Lucky Draw", "high", 170),
+        ("TXT", "photocard", "Soobin Good Boy Gone Bad POB", "Pre-order Benefit", "mid", 55),
+        ("TXT", "merch", "TXT MOA-DONG Official Plush", "Official", "mid", 40),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Stray Kids — Maxident & More
+        # ═══════════════════════════════════════════════════════════════════
+        ("Stray Kids", "album", "Stray Kids 'ATE' Standard", "Standard", "standard", 22),
+        ("Stray Kids", "photocard", "Felix ATE Lucky Draw", "Lucky Draw", "grail", 240),
+        ("Stray Kids", "photocard", "Hyunjin Maxident Fan Sign", "Fan Sign", "high", 180),
+        ("Stray Kids", "merch", "Stray Kids Maniac Encore Tour Hoodie", "Tour Exclusive", "mid", 78),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # NMIXX — Albums & Photocards
+        # ═══════════════════════════════════════════════════════════════════
+        ("NMIXX", "album", "NMIXX 'Fe3O4: BREAK' 2nd EP", "Standard", "standard", 18),
+        ("NMIXX", "photocard", "Sullyoon Fe3O4 Lucky Draw", "Lucky Draw", "high", 140),
+        ("NMIXX", "photocard", "Haewon DASH POB", "Pre-order Benefit", "mid", 48),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # aespa — MY World & Beyond
+        # ═══════════════════════════════════════════════════════════════════
+        ("aespa", "album", "aespa 'Whiplash' 5th Mini Album", "Standard", "standard", 20),
+        ("aespa", "photocard", "Karina Whiplash Lucky Draw", "Lucky Draw", "grail", 230),
+        ("aespa", "photocard", "Winter MY WORLD Fan Sign", "Fan Sign", "high", 135),
+        ("aespa", "merch", "aespa SYNK: PARALLEL Official Towel", "Tour Exclusive", "mid", 38),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # NewJeans — Bunnies Collection
+        # ═══════════════════════════════════════════════════════════════════
+        ("NewJeans", "merch", "NewJeans Bunny Tokki Plush (Full Set)", "Limited", "high", 120),
+        ("NewJeans", "merch", "NewJeans x LINE FRIENDS Bunini Cushion", "Collab", "mid", 55),
+        ("NewJeans", "photocard", "Minji How Sweet Lucky Draw", "Lucky Draw", "grail", 260),
+        ("NewJeans", "photocard", "Hanni Get Up Fan Sign", "Fan Sign", "high", 180),
+
+        # ═══════════════════════════════════════════════════════════════════
+        # Additional K-pop Items (+8)
+        # ═══════════════════════════════════════════════════════════════════
+        ("ILLIT", "album", "ILLIT SUPER REAL ME Weverse POB Album", "Pre-order Benefit", "mid", 35),
+        ("ILLIT", "photocard", "Wonhee Magnetic Lucky Draw", "Lucky Draw", "high", 150),
+        ("KISS OF LIFE", "album", "KISS OF LIFE Midas Touch Digipack", "Standard", "standard", 22),
+        ("KISS OF LIFE", "photocard", "Julie Born to be XX Fan Sign", "Fan Sign", "high", 130),
+        ("TWS", "album", "TWS Sparkling Blue Limited Edition", "Limited", "mid", 38),
+        ("TWS", "photocard", "Shinyu Plot Twist Lucky Draw", "Lucky Draw", "high", 140),
+        ("RIIZE", "merch", "RIIZE Get a Guitar Tour Towel Set", "Tour Exclusive", "mid", 42),
+        ("RIIZE", "photocard", "Sungchan Impossible Fan Sign", "Fan Sign", "high", 120),
     ]
 
     catalog = []

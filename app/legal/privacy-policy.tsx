@@ -13,7 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 
-const LAST_UPDATED = 'February 23, 2026';
+const LAST_UPDATED = 'March 4, 2026';
 
 function PrivacyPolicyScreenInner() {
   const router = useRouter();
@@ -53,9 +53,9 @@ function PrivacyPolicyScreenInner() {
           {'\n\n'}
           <Text style={styles.bold}>Messaging Data:</Text> Direct messages you send and receive through the in-app chat feature, including message content and timestamps. Messages are only visible to the participants of each conversation.
           {'\n\n'}
-          <Text style={styles.bold}>Event Data:</Text> Events you create, RSVP to, or attend, including event details, announcements, and your attendance status (going/interested).
+          <Text style={styles.bold}>Event Data:</Text> Events you create, RSVP to, or attend, including event details, announcements, your attendance status (going/interested), and ticket purchases for paid events.
           {'\n\n'}
-          <Text style={styles.bold}>Usage Data:</Text> We collect anonymized analytics about how you use the app (screens visited, features used) to improve the Service. We use Sentry for crash reporting.
+          <Text style={styles.bold}>Usage Data:</Text> We collect anonymized analytics about how you use the app (screens visited, features used, sponsor interactions) via PostHog to improve the Service. We use Sentry for crash reporting. Analytics events are typed and do not contain personally identifiable information.
           {'\n\n'}
           <Text style={styles.bold}>Device Information:</Text> Device type, operating system version, and push notification tokens to deliver notifications you have opted into.
           {'\n\n'}
@@ -78,7 +78,7 @@ function PrivacyPolicyScreenInner() {
           {'\u2022'} To calculate shipping estimates for cross-border transactions{'\n'}
           {'\u2022'} To facilitate direct messaging between users{'\n'}
           {'\u2022'} To display online presence indicators to connected users{'\n'}
-          {'\u2022'} To provide event management features (RSVP, announcements, capacity tracking){'\n'}
+          {'\u2022'} To provide event management features (RSVP, announcements, capacity tracking, ticket sales){'\n'}
           {'\u2022'} To detect and prevent technical issues and abuse{'\n'}
           {'\u2022'} To comply with legal obligations
         </Text>
@@ -104,9 +104,11 @@ function PrivacyPolicyScreenInner() {
           {'\u2022'} Mercari, Yahoo Auctions JP, AmiAmi — regional marketplace data{'\n'}
           {'\u2022'} Firecrawl, Crawl4AI — web content extraction for price data{'\n\n'}
           <Text style={styles.bold}>Payments:</Text>{'\n'}
-          {'\u2022'} Stripe — subscription billing and sponsored event payments{'\n\n'}
+          {'\u2022'} Stripe — subscription billing, sponsored event payments, and event ticket purchases{'\n\n'}
           <Text style={styles.bold}>Geolocation:</Text>{'\n'}
           {'\u2022'} ip-api.com — IP-based region detection (country-level only){'\n\n'}
+          <Text style={styles.bold}>Analytics:</Text>{'\n'}
+          {'\u2022'} PostHog — product analytics and feature usage tracking (no PII collected){'\n\n'}
           Each service has its own privacy policy governing data they collect. Marketplace links contain affiliate tags where available (eBay, TCGPlayer, Cardmarket, Mercari, Discogs, StockX, BrickLink) which enable us to earn commissions on purchases at no additional cost to you.
         </Text>
 
@@ -125,7 +127,9 @@ function PrivacyPolicyScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>6. Sponsor & Business Features</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          If you register a sponsor company, we collect your company name, logo, website, contact email, and description. Sponsor data is used to facilitate event sponsorships and is visible to event attendees. Payment processing for sponsored events is handled by Stripe.
+          If you register a sponsor company, we collect your company name, logo, website, contact email, and description. Sponsor data is used to facilitate event sponsorships and is visible to event attendees. Payment processing for sponsored events and sponsor subscriptions is handled by Stripe.
+          {'\n\n'}
+          <Text style={styles.bold}>Payment Data:</Text> When you purchase event tickets or sponsor subscriptions, we collect payment information through Stripe. We do not store credit card numbers — all payment processing is handled securely by Stripe. We retain transaction records (amount, date, event/tier) for billing and support purposes.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>7. Data Sharing</Text>

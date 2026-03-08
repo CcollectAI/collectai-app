@@ -79,6 +79,49 @@ class CatalogMatchResponse(BaseModel):
     match_reason: Optional[str] = None
 
 
+class SocialProofRecentSold(BaseModel):
+    title: Optional[str] = None
+    price: Optional[float] = None
+    currency: str = "EUR"
+    sold_at: Optional[str] = None
+    source: Optional[str] = None
+
+
+class ScarcityInfo(BaseModel):
+    listing_count: int = 0
+    supply_trend: str = "stable"
+    scarcity_score: float = 0.0
+
+
+class SocialProofResponse(BaseModel):
+    collector_count: int = 0
+    is_trending: bool = False
+    trend_rank: Optional[int] = None
+    recent_sold: list[SocialProofRecentSold] = Field(default_factory=list)
+    scarcity: Optional[ScarcityInfo] = None
+
+
+class DuplicateInfoResponse(BaseModel):
+    owned_count: int = 0
+    owned_item_ids: list[str] = Field(default_factory=list)
+    is_variant: bool = False
+    variant_of: Optional[str] = None
+    set_completion: Optional[dict[str, Any]] = None
+
+
+class DefectAnnotationResponse(BaseModel):
+    type: Optional[str] = None
+    severity: Optional[str] = None
+    location: Optional[str] = None
+    description: Optional[str] = None
+
+
+class SuggestedGradeResponse(BaseModel):
+    scale: Optional[str] = None
+    grade_value: Optional[str] = None
+    reasoning: Optional[str] = None
+
+
 class IntakeResultResponse(BaseModel):
     """JSON-serialisable response for an intake result."""
 
@@ -104,6 +147,31 @@ class IntakeResultResponse(BaseModel):
     field_confidence: Optional[FieldConfidence] = None
     chain_of_thought: Optional[str] = None
     rationale: list[str] = Field(default_factory=list)
+    scan_session_id: Optional[str] = None
+    social_proof: Optional[SocialProofResponse] = None
+    duplicate_info: Optional[DuplicateInfoResponse] = None
+    defect_annotations: list[DefectAnnotationResponse] = Field(default_factory=list)
+    suggested_grade: Optional[SuggestedGradeResponse] = None
+
+
+class BoundingBoxResponse(BaseModel):
+    x: float = 0.0
+    y: float = 0.0
+    w: float = 1.0
+    h: float = 1.0
+
+
+class DetectedItemResponse(BaseModel):
+    item_index: int = 0
+    bounding_box: BoundingBoxResponse = Field(default_factory=BoundingBoxResponse)
+    category_hint: Optional[str] = None
+    suggested_name: Optional[str] = None
+    confidence: float = 0.0
+
+
+class MultiDetectResponse(BaseModel):
+    items: list[DetectedItemResponse] = Field(default_factory=list)
+    total_detected: int = 0
 
 
 class BarcodeOnlyRequest(BaseModel):
@@ -183,6 +251,76 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
         except Exception:
             pass
 
+    # Build social proof response
+    social_proof = None
+    if result.social_proof:
+        try:
+            recent_sold = []
+            for s in result.social_proof.get("recent_sold", []):
+                recent_sold.append(SocialProofRecentSold(
+                    title=s.get("title"),
+                    price=s.get("price"),
+                    currency=s.get("currency", "EUR"),
+                    sold_at=s.get("sold_at"),
+                    source=s.get("source"),
+                ))
+            scarcity_data = result.social_proof.get("scarcity")
+            scarcity = None
+            if scarcity_data:
+                scarcity = ScarcityInfo(
+                    listing_count=scarcity_data.get("listing_count", 0),
+                    supply_trend=scarcity_data.get("supply_trend", "stable"),
+                    scarcity_score=scarcity_data.get("scarcity_score", 0.0),
+                )
+            social_proof = SocialProofResponse(
+                collector_count=result.social_proof.get("collector_count", 0),
+                is_trending=result.social_proof.get("is_trending", False),
+                trend_rank=result.social_proof.get("trend_rank"),
+                recent_sold=recent_sold,
+                scarcity=scarcity,
+            )
+        except Exception:
+            logger.debug("Failed to build social proof response")
+
+    # Build duplicate info response
+    duplicate_info = None
+    if result.duplicate_info:
+        try:
+            duplicate_info = DuplicateInfoResponse(
+                owned_count=result.duplicate_info.get("owned_count", 0),
+                owned_item_ids=result.duplicate_info.get("owned_item_ids", []),
+                is_variant=result.duplicate_info.get("is_variant", False),
+                variant_of=result.duplicate_info.get("variant_of"),
+                set_completion=result.duplicate_info.get("set_completion"),
+            )
+        except Exception:
+            logger.debug("Failed to build duplicate info response")
+
+    # Build defect annotations
+    defect_annotations = []
+    for d in (result.defect_annotations or []):
+        try:
+            defect_annotations.append(DefectAnnotationResponse(
+                type=d.get("type"),
+                severity=d.get("severity"),
+                location=d.get("location"),
+                description=d.get("description"),
+            ))
+        except Exception:
+            pass
+
+    # Build suggested grade
+    suggested_grade = None
+    if result.suggested_grade:
+        try:
+            suggested_grade = SuggestedGradeResponse(
+                scale=result.suggested_grade.get("scale"),
+                grade_value=result.suggested_grade.get("grade_value"),
+                reasoning=result.suggested_grade.get("reasoning"),
+            )
+        except Exception:
+            pass
+
     return IntakeResultResponse(
         name=result.name,
         category_id=result.category_id,
@@ -206,6 +344,11 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
         field_confidence=field_confidence,
         chain_of_thought=result.chain_of_thought,
         rationale=result.rationale,
+        scan_session_id=result.scan_session_id,
+        social_proof=social_proof,
+        duplicate_info=duplicate_info,
+        defect_annotations=defect_annotations,
+        suggested_grade=suggested_grade,
     )
 
 
@@ -594,3 +737,63 @@ async def intake_save(
         pass
 
     return IntakeSaveResponse(id=item_id, title=payload.title, category=payload.category)
+
+
+# ---------------------------------------------------------------------------
+# Multi-item detection
+# ---------------------------------------------------------------------------
+
+# Per-user: 10 multi-detect requests per minute
+_multi_detect_limit = per_user_rate_limit(10, scope="intake_multi_detect")
+
+
+@router.post("/multi-detect", response_model=MultiDetectResponse, dependencies=[Depends(_multi_detect_limit)])
+async def intake_multi_detect(
+    file: UploadFile = File(..., description="Image with multiple collectible items"),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Detect multiple collectible items in a single photograph.
+
+    Returns bounding boxes and category hints for each detected item.
+    Use the regular /intake/process endpoint to identify each individual item.
+    """
+    content_type = (file.content_type or "").lower()
+    if content_type and content_type not in ALLOWED_CONTENT_TYPES:
+        raise error_response(400, f"Unsupported image type. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}")
+
+    try:
+        image_bytes = await file.read()
+    except Exception:
+        raise error_response(400, "Failed to read uploaded file")
+
+    if not image_bytes:
+        raise error_response(400, "Empty file uploaded")
+
+    if len(image_bytes) > MAX_IMAGE_BYTES:
+        raise error_response(413, f"Image too large. Maximum size: {MAX_IMAGE_BYTES // (1024 * 1024)} MB")
+
+    if not _is_valid_image(image_bytes):
+        raise error_response(400, "File does not appear to be a valid image")
+
+    from app.ml.multi_item_detector import detect_multiple_items
+
+    detected = await detect_multiple_items(image_bytes)
+
+    items = [
+        DetectedItemResponse(
+            item_index=d.item_index,
+            bounding_box=BoundingBoxResponse(
+                x=d.bounding_box.x,
+                y=d.bounding_box.y,
+                w=d.bounding_box.w,
+                h=d.bounding_box.h,
+            ),
+            category_hint=d.category_hint,
+            suggested_name=d.suggested_name,
+            confidence=d.confidence,
+        )
+        for d in detected
+    ]
+
+    return MultiDetectResponse(items=items, total_detected=len(items))

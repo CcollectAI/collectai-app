@@ -6,7 +6,7 @@ Layer 2 (Prices):   Market estimates for OOP volumes → train.jsonl
 
 Sources:
 - MyAnimeList API (series metadata)
-- Curated OOP manga price data (500+ hand-picked collectible series)
+- Curated OOP manga price data (700+ hand-picked collectible series)
 - Can be augmented with MangaDex, AniList later
 
 Curated catalog covers:
@@ -75,7 +75,7 @@ def fetch_top_manga(limit: int = 200) -> list[dict]:
 def get_curated_oop_manga() -> list[dict]:
     """Curated out-of-print and collectible manga with price data.
 
-    500+ hand-picked series across categories:
+    700+ hand-picked series across categories:
     - OOP grails (Tokyopop/VIZ/Dark Horse out-of-print singles)
     - Additional OOP grails (Tokyopop/ADV/CMX era titles)
     - Horror/seinen OOP
@@ -91,6 +91,14 @@ def get_curated_oop_manga() -> list[dict]:
     - Junji Ito horror collection
     - Kodansha rare prints & Vertical manga
     - Additional complete box sets (Bleach, Naruto, One Piece multi-box)
+    - First English printings (Dragon Ball, Naruto, Bleach, Death Note, Chainsaw Man)
+    - Fullmetal Alchemist Fullmetal Editions (hardcovers)
+    - VIZ Signature & mature reader OOP titles
+    - Rare artbooks & illustration collections
+    - Modern rising series (Kagurabachi, Dandadan, Akane-banashi)
+    - Japanese 1st print tankoubon rarities
+    - Classic shounen OOP (Gintama, Kinnikuman, Bastard!!)
+    - Horror classics OOP (Museum of Terror, Uzumaki singles)
     """
 
     # (title, publisher, volumes, status, avg_vol_price, complete_set_price, rarity)
@@ -575,7 +583,7 @@ def get_curated_oop_manga() -> list[dict]:
         ("Dragon Ball Z: A Visual History", "VIZ", 1, "In Print", 40, 40, "Standard"),
         ("Vagabond Illustration Collection: Water", "VIZ", 1, "OOP", 50, 50, "High"),
         ("Vagabond Illustration Collection: Sumi", "VIZ", 1, "OOP", 60, 60, "High"),
-        ("Berserk Official Guidebook", "Dark Horse", 1, "In Print", 25, 25, "Standard"),
+        ("Berserk Official Guidebook (Reprint)", "Dark Horse", 1, "In Print", 25, 25, "Standard"),
         ("Slam Dunk Illustrations", "Shueisha", 1, "OOP", 60, 60, "High"),
         ("Takehiko Inoue Illustrations", "VIZ", 1, "OOP", 50, 50, "Mid"),
         ("Death Note: How to Read", "VIZ", 1, "In Print", 10, 10, "Standard"),
@@ -678,6 +686,256 @@ def get_curated_oop_manga() -> list[dict]:
         ("Spy x Family (Complete to date)", "VIZ", 14, "In Print", 10, 140, "Standard"),
         ("Vagabond VizBig vol 2", "VIZ", 1, "In Print", 20, 20, "Standard"),
         ("Vagabond VizBig vol 3", "VIZ", 1, "In Print", 20, 20, "Standard"),
+
+        # ── Dragon Ball First Printings & Rare Editions ──────────────────
+        ("Dragon Ball vol 1 (1st English Print)", "VIZ", 1, "OOP", 80, 80, "High"),
+        ("Dragon Ball vol 2 (1st English Print)", "VIZ", 1, "OOP", 45, 45, "Mid"),
+        ("Dragon Ball vol 3 (1st English Print)", "VIZ", 1, "OOP", 40, 40, "Mid"),
+        ("Dragon Ball Z vol 1 (1st English Print)", "VIZ", 1, "OOP", 60, 60, "High"),
+        ("Dragon Ball Z VizBig vol 1", "VIZ", 1, "In Print", 18, 18, "Standard"),
+        ("Dragon Ball Full Color: Saiyan Arc", "VIZ", 3, "In Print", 20, 60, "Standard"),
+        ("Dragon Ball Full Color: Freeza Arc", "VIZ", 5, "In Print", 20, 100, "Standard"),
+        ("Dragon Ball Full Color: Cell Arc", "VIZ", 6, "In Print", 20, 120, "Standard"),
+        ("Dragon Ball Full Color: Buu Arc", "VIZ", 6, "In Print", 20, 120, "Standard"),
+        ("Dragon Ball Daizenshuu (Complete JP)", "Shueisha", 10, "OOP", 45, 450, "High"),
+
+        # ── Naruto First Printings & Rare Editions ───────────────────────
+        ("Naruto vol 1 (1st English Print)", "VIZ", 1, "OOP", 50, 50, "High"),
+        ("Naruto vol 72 (Final Volume, 1st Print)", "VIZ", 1, "OOP", 25, 25, "Mid"),
+        ("Naruto 3-in-1 Omnibus vol 2", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Naruto 3-in-1 Omnibus vol 3", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Naruto Illustration Collection: Naruto", "VIZ", 1, "OOP", 40, 40, "Mid"),
+        ("Naruto: The Art of Naruto Uzumaki", "VIZ", 1, "OOP", 45, 45, "Mid"),
+        ("The Art of Naruto: Road to Ninja", "Shueisha", 1, "OOP", 50, 50, "Mid"),
+
+        # ── Bleach First Printings & Rare Editions ───────────────────────
+        ("Bleach vol 1 (1st English Print)", "VIZ", 1, "OOP", 40, 40, "Mid"),
+        ("Bleach vol 74 (Final Volume, 1st Print)", "VIZ", 1, "OOP", 20, 20, "Mid"),
+        ("Bleach 3-in-1 Omnibus vol 2", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Bleach 3-in-1 Omnibus vol 3", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Bleach Brave Souls Art Book", "Shueisha", 1, "OOP", 35, 35, "Mid"),
+        ("Bleach: Official Character Book SOULs", "VIZ", 1, "OOP", 25, 25, "Mid"),
+        ("Bleach: Official Bootleg KaraBuri+", "VIZ", 1, "OOP", 20, 20, "Mid"),
+        ("Bleach: Can't Fear Your Own World (LN)", "VIZ", 3, "In Print", 14, 42, "Standard"),
+
+        # ── Death Note Collectible Editions ──────────────────────────────
+        ("Death Note vol 1 (1st English Print)", "VIZ", 1, "OOP", 30, 30, "Mid"),
+        ("Death Note Black Edition vol 1", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Death Note Black Edition vol 2", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Death Note Black Edition vol 3", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Death Note Black Edition vol 4", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Death Note Black Edition vol 5", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Death Note Black Edition vol 6", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Death Note: Another Note (Novel)", "VIZ", 1, "OOP", 18, 18, "Mid"),
+        ("Death Note: L Change the World (Novel)", "VIZ", 1, "OOP", 15, 15, "Mid"),
+
+        # ── Attack on Titan Rare & Collectible ───────────────────────────
+        ("Attack on Titan vol 1 (1st English Print)", "Kodansha", 1, "OOP", 35, 35, "Mid"),
+        ("Attack on Titan vol 34 (Final, 1st Print)", "Kodansha", 1, "OOP", 20, 20, "Mid"),
+        ("Attack on Titan: No Regrets", "Kodansha", 2, "In Print", 11, 22, "Standard"),
+        ("Attack on Titan: Before the Fall", "Kodansha", 17, "Partial OOP", 11, 187, "Mid"),
+        ("Attack on Titan: Lost Girls", "Kodansha", 2, "In Print", 11, 22, "Standard"),
+        ("Attack on Titan Character Encyclopedia", "Kodansha", 1, "In Print", 20, 20, "Standard"),
+        ("Attack on Titan Guidebook: Inside & Outside", "Kodansha", 1, "OOP", 18, 18, "Mid"),
+        ("Attack on Titan Anthology", "Kodansha", 1, "OOP", 20, 20, "Mid"),
+
+        # ── Chainsaw Man Complete & Collectible ──────────────────────────
+        ("Chainsaw Man vol 1 (1st English Print)", "VIZ", 1, "OOP", 30, 30, "Mid"),
+        ("Chainsaw Man Box Set 1 (Vols 1-11)", "VIZ", 11, "In Print", 10, 110, "Standard"),
+        ("Chainsaw Man: Buddy Stories (Novel)", "VIZ", 1, "In Print", 10, 10, "Standard"),
+        ("Tatsuki Fujimoto Before Chainsaw Man", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("Look Back (Tatsuki Fujimoto)", "VIZ", 1, "In Print", 10, 10, "Standard"),
+        ("Goodbye, Eri (Tatsuki Fujimoto)", "VIZ", 1, "In Print", 12, 12, "Standard"),
+
+        # ── Jujutsu Kaisen Complete & Collectible ────────────────────────
+        ("Jujutsu Kaisen vol 1 (1st English Print)", "VIZ", 1, "OOP", 25, 25, "Mid"),
+        ("Jujutsu Kaisen 0 (Movie Edition)", "VIZ", 1, "In Print", 10, 10, "Standard"),
+        ("Jujutsu Kaisen: Thorny Road at Dawn (Novel)", "VIZ", 1, "In Print", 10, 10, "Standard"),
+        ("Jujutsu Kaisen Official Fanbook", "VIZ", 1, "In Print", 10, 10, "Standard"),
+        ("Jujutsu Kaisen: The Official Guide", "VIZ", 1, "In Print", 15, 15, "Standard"),
+
+        # ── Spy x Family Collectible ─────────────────────────────────────
+        ("Spy x Family vol 1 (1st English Print)", "VIZ", 1, "OOP", 22, 22, "Mid"),
+        ("Spy x Family: Family Portrait (Art Book)", "Shueisha", 1, "OOP", 35, 35, "Mid"),
+
+        # ── Dandadan & New Wave Shounen ───────────────────────────────────
+        ("Dandadan vol 1 (1st English Print)", "VIZ", 1, "OOP", 18, 18, "Mid"),
+        ("Sakamoto Days vol 1 (1st English Print)", "VIZ", 1, "OOP", 18, 18, "Mid"),
+        ("Nue's Exorcist", "VIZ", 5, "In Print", 10, 50, "Standard"),
+        ("Me & Roboco", "VIZ", 10, "In Print", 10, 100, "Standard"),
+        ("Cipher Academy", "VIZ", 6, "In Print", 10, 60, "Standard"),
+        ("Akane-banashi", "VIZ", 10, "In Print", 10, 100, "Standard"),
+        ("Show-ha Shoten!", "VIZ", 5, "In Print", 10, 50, "Standard"),
+        ("Kill Blue", "VIZ", 5, "In Print", 10, 50, "Standard"),
+        ("Kagurabachi", "VIZ", 5, "In Print", 10, 50, "Standard"),
+        ("Ruri Dragon", "VIZ", 3, "In Print", 10, 30, "Standard"),
+
+        # ── Berserk Deluxe & Collector Expansions ────────────────────────
+        ("Berserk vol 1 (1st English Print)", "Dark Horse", 1, "OOP", 100, 100, "High"),
+        ("Berserk Illustration File (Art Book)", "Dark Horse", 1, "OOP", 60, 60, "High"),
+        ("The Art of Berserk Exhibition Catalog", "Hakusensha", 1, "OOP", 120, 120, "High"),
+        ("Berserk vol 41 (Final, Miura)", "Dark Horse", 1, "In Print", 15, 15, "Standard"),
+
+        # ── Deluxe / Hardcover Editions — Additional ─────────────────────
+        ("Tokyo Ghoul Illustrations: zakki", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Tokyo Ghoul:re Illustrations: zakki:re", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 1", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 2", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 3", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 4", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 5", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 6", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 7", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 8", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 9", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 10", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 11", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 12", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 13", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 14", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 15", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 16", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 17", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Fullmetal Alchemist Fullmetal Edition vol 18", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Hellsing Deluxe vol 1", "Dark Horse", 1, "In Print", 50, 50, "Standard"),
+        ("Hellsing Deluxe vol 2", "Dark Horse", 1, "In Print", 50, 50, "Standard"),
+        ("Hellsing Deluxe vol 3", "Dark Horse", 1, "In Print", 50, 50, "Standard"),
+
+        # ── Out-of-Print VIZ Signature Line ──────────────────────────────
+        ("IKIGAMI: The Ultimate Limit vol 1-10", "VIZ", 10, "OOP", 12, 120, "Mid"),
+        ("Oishinbo A la Carte", "VIZ", 7, "OOP", 15, 105, "Mid"),
+        ("Town of Evening Calm, Country of Cherry Blossoms", "Last Gasp", 1, "OOP", 20, 20, "Mid"),
+        ("Summit of the Gods", "Fanfare/Ponent Mon", 5, "OOP", 30, 150, "High"),
+        ("Taniguchi: A Distant Neighborhood", "Fanfare/Ponent Mon", 2, "OOP", 25, 50, "Mid"),
+        ("The Walking Man (Taniguchi)", "Fanfare/Ponent Mon", 1, "OOP", 30, 30, "Mid"),
+        ("A Drifting Life (Yoshihiro Tatsumi)", "Drawn & Quarterly", 1, "OOP", 25, 25, "Mid"),
+        ("Abandon the Old in Tokyo (Tatsumi)", "Drawn & Quarterly", 1, "OOP", 20, 20, "Mid"),
+        ("The Push Man (Yoshihiro Tatsumi)", "Drawn & Quarterly", 1, "OOP", 20, 20, "Mid"),
+        ("Good-Bye (Yoshihiro Tatsumi)", "Drawn & Quarterly", 1, "OOP", 20, 20, "Mid"),
+
+        # ── Rare Artbooks & Illustration Collections ─────────────────────
+        ("Takeshi Obata: Blanc et Noir", "VIZ", 1, "OOP", 40, 40, "Mid"),
+        ("Hiromu Arakawa Art Book (Fullmetal)", "Square Enix", 1, "OOP", 50, 50, "High"),
+        ("Yoshitaka Amano: The Illustrated Biography", "Dark Horse", 1, "OOP", 60, 60, "Mid"),
+        ("Tsutomu Nihei: Blame! Art Book", "Kodansha", 1, "OOP", 70, 70, "High"),
+        ("Kentaro Miura: Berserk Exhibition Artworks", "Hakusensha", 1, "OOP", 90, 90, "High"),
+        ("Jojo6251: The World of Hirohiko Araki", "Shueisha", 1, "OOP", 80, 80, "High"),
+        ("Hirohiko Araki: Manga in Theory and Practice", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("CLAMP Art Book: South Side", "Tokyopop", 1, "OOP", 35, 35, "Mid"),
+        ("CLAMP Art Book: North Side", "Tokyopop", 1, "OOP", 35, 35, "Mid"),
+        ("Rumiko Takahashi Art Book: Rin-ne", "VIZ", 1, "OOP", 30, 30, "Mid"),
+        ("Eiichiro Oda: One Piece Art Book Color Walk 3", "VIZ", 1, "OOP", 35, 35, "Mid"),
+        ("Junji Ito Artbook: Twisted Visions", "VIZ", 1, "In Print", 30, 30, "Standard"),
+
+        # ── Complete Deluxe Box Sets ─────────────────────────────────────
+        ("Akira 35th Anniversary HC Box Set (JP)", "Kodansha", 6, "OOP", 80, 480, "High"),
+        ("Slam Dunk Complete Collection Box Set (JP)", "Shueisha", 31, "OOP", 12, 370, "High"),
+        ("Hunter x Hunter vol 36 (1st Print JP)", "Shueisha", 1, "OOP", 30, 30, "Mid"),
+        ("One Piece Treasure Cruise Art Book", "Shueisha", 1, "OOP", 40, 40, "Mid"),
+        ("Weekly Shonen Jump 50th Anniversary Golden Issue", "Shueisha", 1, "OOP", 35, 35, "Mid"),
+        ("Shonen Jump Alpha #1 (US Digital-to-Print)", "VIZ", 1, "OOP", 25, 25, "Mid"),
+
+        # ── Modern Series — Popular & Rising ─────────────────────────────
+        ("Kaiju No. 8 vol 1 (1st Print)", "VIZ", 1, "OOP", 18, 18, "Mid"),
+        ("Blue Lock vol 1 (1st English Print)", "Kodansha", 1, "OOP", 20, 20, "Mid"),
+        ("Frieren: Beyond Journey's End vol 1 (1st Print)", "VIZ", 1, "OOP", 18, 18, "Mid"),
+        ("Hell's Paradise vol 1 (1st Print)", "VIZ", 1, "OOP", 20, 20, "Mid"),
+        ("Witch Hat Atelier vol 1 (1st Print)", "Kodansha", 1, "OOP", 18, 18, "Mid"),
+        ("Blue Period", "Kodansha", 14, "In Print", 13, 182, "Standard"),
+        ("Toilet-Bound Hanako-kun", "Yen Press", 20, "In Print", 13, 260, "Standard"),
+        ("Toilet-Bound Hanako-kun vol 0", "Yen Press", 1, "In Print", 13, 13, "Standard"),
+        ("The Quintessential Quintuplets", "Kodansha", 14, "In Print", 11, 154, "Standard"),
+        ("The Quintessential Quintuplets Box Set 1", "Kodansha", 7, "In Print", 11, 77, "Standard"),
+        ("The Quintessential Quintuplets Box Set 2", "Kodansha", 7, "In Print", 11, 77, "Standard"),
+        ("Rent-A-Girlfriend", "Kodansha", 32, "In Print", 11, 352, "Standard"),
+        ("Call of the Night", "VIZ", 19, "In Print", 10, 190, "Standard"),
+        ("Zom 100: Bucket List of the Dead", "VIZ", 17, "In Print", 10, 170, "Standard"),
+        ("To Your Eternity", "Kodansha", 20, "In Print", 11, 220, "Standard"),
+        ("The Summer Hikaru Died", "Yen Press", 4, "In Print", 13, 52, "Standard"),
+        ("Roaming the Apocalypse with My Shiba Inu", "Yen Press", 3, "In Print", 15, 45, "Standard"),
+
+        # ── Rare Tankoubon — JP First Prints & Specials ──────────────────
+        ("Yu Yu Hakusho vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 60, 60, "High"),
+        ("Rurouni Kenshin vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 55, 55, "High"),
+        ("Dr. Slump vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 80, 80, "High"),
+        ("Fist of the North Star vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 90, 90, "High"),
+        ("City Hunter vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 70, 70, "High"),
+        ("Saint Seiya vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 65, 65, "High"),
+        ("Captain Tsubasa vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 60, 60, "High"),
+        ("Shaman King vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 45, 45, "Mid"),
+        ("Gintama vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 35, 35, "Mid"),
+        ("Toriko vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 30, 30, "Mid"),
+        ("Dandadan vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 30, 30, "Mid"),
+        ("Sakamoto Days vol 1 (1st Print JP)", "Shueisha", 1, "OOP", 25, 25, "Mid"),
+
+        # ── Out-of-Print Seinen Gems ─────────────────────────────────────
+        ("Ikki Comix: Baku-On!! (Singles)", "Viz/Ikki", 4, "OOP", 25, 100, "Mid"),
+        ("Tanpenshu (Hiroki Endo)", "Dark Horse", 2, "OOP", 25, 50, "Mid"),
+        ("Eden: It's an Endless World! vol 14", "Dark Horse", 1, "OOP", 80, 80, "High"),
+        ("Panorama of Hell (Hideshi Hino)", "Blast Books", 1, "OOP", 40, 40, "High"),
+        ("Hell Baby (Hideshi Hino)", "Blast Books", 1, "OOP", 35, 35, "Mid"),
+        ("Lychee Light Club", "Vertical", 1, "OOP", 20, 20, "Mid"),
+        ("Dementia 21 (Shintaro Kago)", "Fantagraphics", 1, "OOP", 25, 25, "Mid"),
+        ("Assassination Classroom vol 1 (1st Print)", "VIZ", 1, "OOP", 15, 15, "Mid"),
+
+        # ── VIZ Signature / Mature Reader Line ───────────────────────────
+        ("Pluto (Naoki Urasawa) vol 1 (1st Print)", "VIZ", 1, "OOP", 20, 20, "Mid"),
+        ("Asadora!", "VIZ", 10, "In Print", 15, 150, "Standard"),
+        ("Mujirushi: The Sign of Dreams", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("Master Keaton", "VIZ", 12, "In Print", 18, 216, "Standard"),
+        ("Master Keaton vol 1 (1st Print)", "VIZ", 1, "OOP", 22, 22, "Mid"),
+        ("Billy Bat", "Kodansha", 20, "OOP", 13, 260, "Mid"),
+        ("Happy! (Naoki Urasawa)", "VIZ", 8, "OOP", 14, 112, "Mid"),
+
+        # ── Light Novels — High Demand & OOP ─────────────────────────────
+        ("Vampire Hunter D (Novel)", "Dark Horse", 29, "Partial OOP", 12, 348, "Mid"),
+        ("Vampire Hunter D vol 1 (1st Print)", "Dark Horse", 1, "OOP", 30, 30, "Mid"),
+        ("Full Metal Panic! (Light Novel)", "J-Novel Club", 12, "In Print", 14, 168, "Standard"),
+        ("Log Horizon (Light Novel)", "Yen Press", 12, "In Print", 14, 168, "Standard"),
+        ("Fate/Zero (Light Novel)", "Dark Horse", 4, "In Print", 16, 64, "Standard"),
+        ("The Irregular at Magic High School (LN)", "Yen Press", 32, "In Print", 14, 448, "Standard"),
+        ("So I'm a Spider, So What? (LN)", "Yen Press", 16, "In Print", 14, 224, "Standard"),
+        ("My Youth Romantic Comedy Is Wrong (LN)", "Yen Press", 14, "Partial OOP", 14, 196, "Mid"),
+        ("A Certain Magical Index (Light Novel)", "Yen Press", 22, "In Print", 14, 308, "Standard"),
+        ("The Apothecary Diaries (Light Novel)", "J-Novel Club", 10, "In Print", 14, 140, "Standard"),
+        ("Rascal Does Not Dream of Bunny Girl Senpai (LN)", "Yen Press", 11, "In Print", 14, 154, "Standard"),
+        ("Steins;Gate (Novel)", "Yen Press", 3, "OOP", 15, 45, "Mid"),
+        ("Welcome to the NHK (Novel)", "Tokyopop", 1, "OOP", 30, 30, "High"),
+        ("Battle Royale (Novel)", "VIZ/Haikasoru", 1, "OOP", 18, 18, "Mid"),
+
+        # ── Classic Shounen OOP ──────────────────────────────────────────
+        ("Kinnikuman", "VIZ", 6, "OOP", 25, 150, "High"),
+        ("Bastard!! (Singles)", "VIZ", 19, "OOP", 15, 285, "Mid"),
+        ("Beet the Vandel Buster", "VIZ", 12, "OOP", 10, 120, "Mid"),
+        ("Legendz", "VIZ", 4, "OOP", 12, 48, "Mid"),
+        ("Bo-bobo-bo Bo-bobo", "VIZ", 21, "OOP", 12, 252, "Mid"),
+        ("Gintama (English)", "VIZ", 23, "OOP", 12, 276, "Mid"),
+        ("Beelzebub", "VIZ", 28, "Partial OOP", 10, 280, "Mid"),
+        ("Nura: Rise of the Yokai Clan", "VIZ", 25, "OOP", 10, 250, "Mid"),
+        ("Blue Exorcist", "VIZ", 28, "In Print", 10, 280, "Standard"),
+        ("Jojo's Bizarre Adventure Part 1 (Shonen Jump Singles)", "VIZ", 5, "OOP", 20, 100, "Mid"),
+        ("Hoshin Engi", "VIZ", 23, "OOP", 10, 230, "Mid"),
+        ("Kekkaishi", "VIZ", 35, "OOP", 10, 350, "Mid"),
+
+        # ── Horror Manga — Out-of-Print Classics ────────────────────────
+        ("Uzumaki (Singles)", "VIZ", 3, "OOP", 25, 75, "Mid"),
+        ("Museum of Terror (Junji Ito)", "Dark Horse", 3, "OOP", 50, 150, "High"),
+        ("Tomie (Comics One Singles)", "ComicsOne", 1, "OOP", 60, 60, "High"),
+        ("Gyo (Singles)", "VIZ", 2, "OOP", 20, 40, "Mid"),
+        ("Scary Book (Kazuo Umezu)", "Dark Horse", 3, "OOP", 18, 54, "Mid"),
+        ("The Drifting Classroom (Singles) vol 11 (Final)", "VIZ", 1, "OOP", 60, 60, "High"),
+        ("Orochi: The Perfect Edition (Kazuo Umezu)", "VIZ", 2, "In Print", 23, 46, "Standard"),
+        ("Cat Eyed Boy (Kazuo Umezu)", "VIZ", 2, "In Print", 23, 46, "Standard"),
+
+        # ── Additional Modern Box Sets ───────────────────────────────────
+        ("Dr. Stone Box Set", "VIZ", 26, "In Print", 10, 260, "Standard"),
+        ("Food Wars! Box Set", "VIZ", 36, "In Print", 10, 360, "Standard"),
+        ("Black Clover Box Set 1 (Vols 1-17)", "VIZ", 17, "In Print", 10, 170, "Standard"),
+        ("Haikyuu!! Box Set 2 (Vols 11-20)", "VIZ", 10, "In Print", 10, 100, "Standard"),
+        ("Haikyuu!! Box Set 3 (Vols 21-30)", "VIZ", 10, "In Print", 10, 100, "Standard"),
+        ("Haikyuu!! Box Set 4 (Vols 31-45)", "VIZ", 15, "In Print", 10, 150, "Standard"),
+        ("Kaguya-sama: Love Is War Box Set", "VIZ", 28, "In Print", 10, 280, "Standard"),
+        ("Jujutsu Kaisen Box Set 1 (Vols 1-8)", "VIZ", 8, "In Print", 10, 80, "Standard"),
     ]
 
     items = []

@@ -74,18 +74,68 @@ async def send_push(
         return False
 
 
+async def _persist_notification(
+    conn,
+    user_id: str,
+    title: str,
+    body: str,
+    notification_type: str = "push",
+    data: Optional[dict[str, Any]] = None,
+    deep_link: Optional[str] = None,
+) -> None:
+    """
+    Best-effort INSERT into notification_history table.
+
+    Never raises — errors are logged and swallowed so push delivery
+    is not blocked by persistence failures.
+    """
+    try:
+        import json as _json
+
+        await conn.execute(
+            """
+            INSERT INTO notification_history (user_id, type, title, body, data, deep_link)
+            VALUES ($1, $2, $3, $4, $5::jsonb, $6)
+            """,
+            user_id,
+            notification_type,
+            title,
+            body,
+            _json.dumps(data) if data else "{}",
+            deep_link,
+        )
+    except Exception as exc:
+        logger.warning("[push] Failed to persist notification for user %s: %s", user_id, exc)
+
+
 async def send_push_to_user(
     conn,
     user_id: str,
     title: str,
     body: str,
     data: Optional[dict[str, Any]] = None,
+    notification_type: str = "push",
+    deep_link: Optional[str] = None,
 ) -> int:
     """
     Send push notification to all active tokens for a user.
 
+    Also persists the notification to the notification_history table
+    (best-effort — failures are logged but do not block delivery).
+
     Returns the number of successfully sent notifications.
     """
+    # Best-effort persistence to notification_history
+    await _persist_notification(
+        conn,
+        user_id,
+        title,
+        body,
+        notification_type=notification_type,
+        data=data,
+        deep_link=deep_link,
+    )
+
     rows = await conn.fetch(
         "SELECT push_token FROM public.user_push_tokens WHERE user_id = $1 AND active = true",
         user_id,

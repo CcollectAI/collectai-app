@@ -903,6 +903,128 @@ def get_curated_catalog() -> list[dict]:
         ("Grave of the Fireflies", "accessory", "Sakuma Drops Tin Replica (Sealed, Memorial Edition)", "JP Exclusive", "high", 85),
         ("Grave of the Fireflies", "poster", "Grave of the Fireflies B2 Theatrical Poster (1988)", "Vintage", "grail", 380),
         ("Grave of the Fireflies", "art_book", "The Art of Grave of the Fireflies (JP Deluxe Hardcover)", "JP Exclusive", "high", 80),
+
+        # ══════════════════════════════════════════════════════════════
+        # EXPANSION TO 700+ — 94 additional Studio Ghibli collectibles
+        # ══════════════════════════════════════════════════════════════
+
+        # ── Howl's Moving Castle (+12) ───────────────────────────────
+        ("Howl's Moving Castle", "figure", "Howl Bird Form Transformation Figure", "Benelic", "high", 110),
+        ("Howl's Moving Castle", "figure", "Moving Castle Full Assembly Model (Metal & Resin)", "JP Exclusive", "grail", 350),
+        ("Howl's Moving Castle", "plush", "Heen the Dog Plush (Medium 20cm)", "Donguri Sora", "mid", 35),
+        ("Howl's Moving Castle", "music_box", "Howl's Theme Wooden Carousel Music Box", "Sekiguchi", "high", 110),
+        ("Howl's Moving Castle", "accessory", "Sophie's Walking Stick Miniature (Brass)", "JP Exclusive", "mid", 42),
+        ("Howl's Moving Castle", "jp_merch", "Howl's Breakfast Scene Ceramic Plate Set (4pc)", "JP Exclusive", "mid", 55),
+        ("Howl's Moving Castle", "cel", "Sophie & Howl Flying Scene Animation Cel", "Original Cel", "grail", 4200),
+        ("Howl's Moving Castle", "figure", "Witch of the Waste Blob Form Figure", "Donguri Sora", "mid", 38),
+        ("Howl's Moving Castle", "jewelry", "Moving Castle Gear Cufflinks (Sterling Silver)", "JP Exclusive", "high", 85),
+        ("Howl's Moving Castle", "poster", "Howl's Moving Castle Original B2 Poster (2004)", "Vintage", "high", 160),
+        ("Howl's Moving Castle", "model", "Howl's Bedroom Paper Theater Deluxe (Sankei)", "Sankei", "mid", 45),
+        ("Howl's Moving Castle", "figure", "Calcifer Plush with Sound Effect", "Donguri Sora", "mid", 48),
+
+        # ── Princess Mononoke (+10) ──────────────────────────────────
+        ("Princess Mononoke", "figure", "Ashitaka on Yakul Riding Figure (Large)", "Cominica", "high", 165),
+        ("Princess Mononoke", "figure", "Demon Boar (Nago) Curse Scene Diorama", "Benelic", "high", 95),
+        ("Princess Mononoke", "plush", "Kodama Glow-in-the-Dark Plush (Large 15cm)", "Donguri Sora", "mid", 32),
+        ("Princess Mononoke", "accessory", "San's Crystal Dagger Necklace Replica (Silver)", "JP Exclusive", "high", 90),
+        ("Princess Mononoke", "music_box", "Mononoke Hime Theme Music Box (Ceramic Forest)", "Sekiguchi", "high", 95),
+        ("Princess Mononoke", "cel", "San Riding Moro Animation Cel (Key Frame)", "Original Cel", "grail", 3500),
+        ("Princess Mononoke", "jp_merch", "Irontown Forge Ceramic Sake Set (Tatara)", "JP Exclusive", "mid", 65),
+        ("Princess Mononoke", "model", "San's Village Paper Theater (Sankei)", "Sankei", "mid", 42),
+        ("Princess Mononoke", "figure", "Lady Eboshi Figure with Rifle", "Benelic", "mid", 55),
+        ("Princess Mononoke", "poster", "Princess Mononoke 25th Anniversary B1 Poster", "JP Exclusive", "high", 130),
+
+        # ── Kiki's Delivery Service (+10) ────────────────────────────
+        ("Kiki's Delivery Service", "figure", "Kiki First Delivery Scene Diorama", "Cominica", "high", 120),
+        ("Kiki's Delivery Service", "plush", "Jiji Beanbag Plush Collection (4 poses)", "Donguri Sora", "mid", 40),
+        ("Kiki's Delivery Service", "music_box", "Kiki's Mother Potion Room Music Box", "Benelic", "high", 90),
+        ("Kiki's Delivery Service", "accessory", "Kiki's Red Bow Hair Band Replica", "JP Exclusive", "standard", 22),
+        ("Kiki's Delivery Service", "jp_merch", "Tombo's Bicycle Model (1:12 Diecast)", "JP Exclusive", "mid", 48),
+        ("Kiki's Delivery Service", "figure", "Osono & Baby Figure Set", "Donguri Sora", "mid", 38),
+        ("Kiki's Delivery Service", "cel", "Kiki Flying Over City Animation Cel (Key)", "Original Cel", "grail", 3800),
+        ("Kiki's Delivery Service", "poster", "Kiki's Delivery Service B2 Poster (1989 Original)", "Vintage", "high", 180),
+        ("Kiki's Delivery Service", "jp_merch", "Guchokipanya Bakery Sign Wooden Replica", "JP Exclusive", "mid", 55),
+        ("Kiki's Delivery Service", "figure", "Jiji & Lily Wedding Cake Topper Figure", "Benelic", "mid", 42),
+
+        # ── Porco Rosso (+8) ─────────────────────────────────────────
+        ("Porco Rosso", "figure", "Porco Rosso & Fio Workshop Scene Diorama", "Benelic", "high", 105),
+        ("Porco Rosso", "model", "Savoia S.21F Racing Version Model (1:48)", "Fine Molds", "high", 95),
+        ("Porco Rosso", "plush", "Marco Pig Form Plush (Medium 25cm)", "Donguri Sora", "mid", 40),
+        ("Porco Rosso", "accessory", "Madame Gina's Earring Replica (Gold-Plated)", "JP Exclusive", "high", 75),
+        ("Porco Rosso", "jp_merch", "Hotel Adriano Matchbook & Coaster Set Replica", "JP Exclusive", "mid", 32),
+        ("Porco Rosso", "cel", "Porco Rosso Dogfight Animation Cel", "Original Cel", "grail", 2500),
+        ("Porco Rosso", "poster", "Porco Rosso Italian Release Poster (1995 Import)", "Vintage", "high", 145),
+        ("Porco Rosso", "model", "Curtis's Curtiss R3C-0 Float Plane Model (1:48)", "Fine Molds", "high", 85),
+
+        # ── The Wind Rises (+7) ──────────────────────────────────────
+        ("The Wind Rises", "figure", "Jiro Horikoshi & Caproni Dream Scene Figure", "Benelic", "mid", 52),
+        ("The Wind Rises", "model", "Mitsubishi A5M Claude Prototype Model (1:48)", "Fine Molds", "high", 90),
+        ("The Wind Rises", "art_book", "The Art of The Wind Rises (Deluxe JP Hardcover)", "JP Exclusive", "high", 85),
+        ("The Wind Rises", "cel", "Nahoko Parasol Scene Animation Cel", "Original Cel", "grail", 2800),
+        ("The Wind Rises", "poster", "The Wind Rises B2 Theatrical Poster (2013)", "Vintage", "high", 120),
+        ("The Wind Rises", "accessory", "Jiro's Round Glasses Replica Frame", "JP Exclusive", "mid", 55),
+        ("The Wind Rises", "jp_merch", "Kurokawa Hotel Replica Stationery Set", "JP Exclusive", "mid", 42),
+
+        # ── Nausicaa (+7) ────────────────────────────────────────────
+        ("Nausicaa", "model", "Gunship Mehve Detailed Model Kit (1:72 Scale)", "Bandai", "high", 100),
+        ("Nausicaa", "figure", "God Warrior Giant Diorama (LED Fire)", "Bandai", "grail", 280),
+        ("Nausicaa", "plush", "Ohmu Baby Plush (Calm Blue Eyes)", "Donguri Sora", "mid", 48),
+        ("Nausicaa", "art_book", "Nausicaa Watercolor Artboard Collection (12 prints)", "JP Exclusive", "high", 110),
+        ("Nausicaa", "cel", "Ohmu Stampede Animation Cel (Key Frame)", "Original Cel", "grail", 4500),
+        ("Nausicaa", "poster", "Nausicaa Original B2 Theatrical Poster (1984)", "Vintage", "grail", 320),
+        ("Nausicaa", "jp_merch", "Toxic Jungle Spore Terrarium Replica (Glass Dome)", "JP Exclusive", "high", 85),
+
+        # ── The Boy and the Heron (+8) ───────────────────────────────
+        ("The Boy and the Heron", "figure", "Mahito School Uniform Figure", "Donguri Sora", "mid", 42),
+        ("The Boy and the Heron", "art_book", "The Art of The Boy and the Heron (JP Deluxe)", "JP Exclusive", "high", 95),
+        ("The Boy and the Heron", "plush", "Warawara Plush Set (3 sizes)", "Donguri Sora", "mid", 45),
+        ("The Boy and the Heron", "music_box", "Ask Me Why Music Box (Boy and Heron Theme)", "Benelic", "high", 85),
+        ("The Boy and the Heron", "poster", "Oscar Best Animated Film Commemorative Print (Signed)", "JP Exclusive", "grail", 400),
+        ("The Boy and the Heron", "figure", "Kiriko the Fisherwoman Figure", "Donguri Sora", "mid", 40),
+        ("The Boy and the Heron", "jp_merch", "Granduncle's Block Tower Puzzle Replica (Wood)", "JP Exclusive", "mid", 55),
+        ("The Boy and the Heron", "cel", "Parakeet King Throne Room Animation Cel", "Original Cel", "grail", 3000),
+
+        # ── Castle in the Sky (+7) ───────────────────────────────────
+        ("Castle in the Sky", "figure", "Colonel Muska Figure (With Crystal Pendant)", "Benelic", "mid", 48),
+        ("Castle in the Sky", "music_box", "Pazu's Trumpet Melody Music Box (Brass)", "Sekiguchi", "high", 100),
+        ("Castle in the Sky", "model", "Goliath Airship Detailed Model (1:350)", "Fine Molds", "high", 130),
+        ("Castle in the Sky", "cel", "Sheeta Falling Scene Animation Cel (Key)", "Original Cel", "grail", 3000),
+        ("Castle in the Sky", "poster", "Castle in the Sky B2 Theatrical Poster (1986)", "Vintage", "grail", 350),
+        ("Castle in the Sky", "plush", "Muska's Flaptter Robot Plush", "Donguri Sora", "mid", 35),
+        ("Castle in the Sky", "jp_merch", "Pazu's Mining Helmet Lamp Replica (LED)", "JP Exclusive", "high", 80),
+
+        # ── Ponyo (+6) ───────────────────────────────────────────────
+        ("Ponyo", "figure", "Ponyo Human Form Running Figure", "Donguri Sora", "mid", 35),
+        ("Ponyo", "music_box", "Ponyo Main Theme Song Music Box (Wave Shape)", "Benelic", "high", 80),
+        ("Ponyo", "cel", "Ponyo Wave Scene Animation Cel (Key Frame)", "Original Cel", "grail", 2500),
+        ("Ponyo", "poster", "Ponyo on the Cliff B2 Poster (2008 Original)", "Vintage", "high", 110),
+        ("Ponyo", "plush", "Ponyo Giant Goldfish Form Plush (50cm)", "Donguri Sora", "mid", 55),
+        ("Ponyo", "jp_merch", "Lisa's Car Tin Model (1:43 Diecast)", "JP Exclusive", "mid", 48),
+
+        # ── Ghibli Museum & Park Exclusives (+8) ────────────────────
+        ("Ghibli Museum", "museum", "Museum-Only Totoro Embroidered Handkerchief Set (5pc)", "Museum Exclusive", "mid", 65),
+        ("Ghibli Museum", "museum", "Museum Short Film Reel Framed Print", "Museum Exclusive", "high", 140),
+        ("Ghibli Museum", "museum", "Catbus Ride Token Coin (Copper, Dated)", "Museum Exclusive", "high", 95),
+        ("Ghibli Park", "park", "Ghibli Park Hill of Youth Witch's Hat Pin", "Ghibli Park Exclusive", "mid", 38),
+        ("Ghibli Park", "park", "Ghibli Park Mononoke Village Ashitaka Figurine", "Ghibli Park Exclusive", "high", 110),
+        ("Ghibli Park", "park", "Ghibli Park Grand Warehouse Robot Soldier Snow Globe", "Ghibli Park Exclusive", "high", 130),
+        ("Ghibli Museum", "museum", "Museum Saturn Theater Flip Book (4 types complete)", "Museum Exclusive", "high", 80),
+        ("Ghibli Park", "park", "Ghibli Park Cat Returns Cat Bureau Stamp Set", "Ghibli Park Exclusive", "mid", 45),
+
+        # ── Multi-Film / Cross-Film Items (+5) ──────────────────────
+        ("Multi-Film", "art_book", "Studio Ghibli: The Complete Works (JP Hardcover)", "JP Exclusive", "high", 120),
+        ("Multi-Film", "jp_merch", "Ghibli Characters Ceramic Tea Set (6 films, 12pc)", "JP Exclusive", "high", 145),
+        ("Multi-Film", "fashion", "GBL x Studio Ghibli Denim Jacket (Embroidered)", "GBL Collab", "high", 180),
+        ("Multi-Film", "jp_merch", "Ghibli Food Collection Miniature Set (8 dishes)", "Donguri Sora", "mid", 55),
+        ("Multi-Film", "calendar", "Studio Ghibli 2025 Art Calendar (Large Format JP)", "JP Exclusive", "mid", 45),
+
+        # ── Grave of the Fireflies / My Neighbors the Yamadas (+6) ──
+        ("Grave of the Fireflies", "figure", "Setsuko with Firefly Jar Light-Up Figure", "Benelic", "high", 90),
+        ("Grave of the Fireflies", "jp_merch", "Sakuma Drops Tin with Fruit Candy (Memorial Reissue)", "JP Exclusive", "mid", 25),
+        ("Grave of the Fireflies", "art_book", "Isao Takahata Memorial Art Collection", "JP Exclusive", "high", 110),
+        ("My Neighbors the Yamadas", "figure", "Yamada Family Complete Set (5 figs)", "Donguri Sora", "mid", 52),
+        ("The Cat Returns", "figure", "Baron Humbert Figure (Tall 25cm)", "Benelic", "high", 85),
+        ("Tales from Earthsea", "figure", "Therru & Arren Dragon Scene Diorama", "Donguri Sora", "mid", 55),
     ]
 
     # Merge helper functions

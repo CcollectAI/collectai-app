@@ -10,13 +10,13 @@ import {
   Text,
   ScrollView,
   SectionList,
-  FlatList,
   StyleSheet,
   Animated,
   ActivityIndicator,
   RefreshControl,
   TextInput,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -530,7 +530,7 @@ function EventsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {viewMode === 'calendar' ? (
-        <FlatList
+        <FlashList
           data={calendarFilteredEvents}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {

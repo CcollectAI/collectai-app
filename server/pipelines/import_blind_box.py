@@ -902,6 +902,131 @@ def get_curated_catalog() -> list[dict]:
         ("Litor's Works Umasou! Dinosaur Series 3", "Litor's Works", "Umasou!", "Dinosaur Series 3", "Common", 14, False, "Cute dinosaur blind box series 3"),
         ("Litor's Works Umasou! Secret Rex Crystal", "Litor's Works", "Umasou!", "Dinosaur S3 Secret", "Secret", 120, True, "Crystal T-Rex secret Umasou"),
         ("Litor's Works Keep Me Company Series", "Litor's Works", "Keep Me Company", "Standard", "Common", 14, False, "Companion themed blind box"),
+
+        # ── Expansion to 700+ — Pop Mart collabs, Sonny Angel, tokidoki, BE@RBRICK, KAWS, Medicom ──
+
+        # Pop Mart — Molly Additional Series (+6)
+        ("Molly My Childhood Series", "Pop Mart", "Molly", "My Childhood", "Common", 15, False, "Nostalgic childhood theme, 12 designs"),
+        ("Molly My Childhood Secret Teddy Bear", "Pop Mart", "Molly", "My Childhood Secret", "Secret", 140, True, "Teddy bear chase figure from childhood"),
+        ("Space Molly 400% Winter Frost", "Pop Mart", "Molly", "Space Molly 400% Winter Frost", "Ultra Rare", 600, False, "Large format, frosted translucent body"),
+        ("Molly x Minions Banana Suit", "Pop Mart", "Molly", "Minions Collab", "Rare", 90, False, "Pop Mart x Illumination collab"),
+        ("Molly Steampunk Series", "Pop Mart", "Molly", "Steampunk", "Common", 15, False, "Victorian steampunk design theme"),
+        ("Molly Steampunk Secret Clockwork", "Pop Mart", "Molly", "Steampunk Secret", "Secret", 150, True, "Golden clockwork mechanism chase"),
+
+        # Pop Mart — Dimoo Additional Series (+6)
+        ("Dimoo Space Travel Series", "Pop Mart", "Dimoo", "Space Travel", "Common", 14, False, "Galaxy exploration theme"),
+        ("Dimoo Space Travel Secret Nebula", "Pop Mart", "Dimoo", "Space Travel Secret", "Secret", 155, True, "Nebula translucent secret figure"),
+        ("Dimoo Animal Kingdom Series", "Pop Mart", "Dimoo", "Animal Kingdom", "Common", 14, False, "Wild animal costume designs"),
+        ("Dimoo Retro Computer Series", "Pop Mart", "Dimoo", "Retro Computer", "Common", 15, False, "90s tech nostalgia theme"),
+        ("Dimoo x Jurassic World Collab", "Pop Mart", "Dimoo", "Jurassic World", "Rare", 75, False, "Pop Mart x Universal collab"),
+        ("Dimoo Christmas 2024 Snowflake", "Pop Mart", "Dimoo", "Christmas 2024", "Rare", 45, False, "Seasonal holiday edition"),
+
+        # Pop Mart — Skullpanda Additional Series (+6)
+        ("Skullpanda Midnight Circus Series", "Pop Mart", "Skullpanda", "Midnight Circus", "Common", 15, False, "Dark circus theme with tightrope designs"),
+        ("Skullpanda Midnight Circus Secret Ringmaster", "Pop Mart", "Skullpanda", "Midnight Circus Secret", "Secret", 210, True, "Gold ringmaster chase with top hat"),
+        ("Skullpanda The Mare of Animals Series", "Pop Mart", "Skullpanda", "Mare of Animals", "Common", 16, False, "Nightmare animal fusion designs"),
+        ("Skullpanda Warmth Series", "Pop Mart", "Skullpanda", "Warmth", "Common", 15, False, "Cozy winter fashion designs"),
+        ("Skullpanda Hype Panda x Nike Collab", "Pop Mart", "Skullpanda", "Nike Collab", "Ultra Rare", 450, False, "Nike collaboration limited edition"),
+        ("Skullpanda Day Dream Secret", "Pop Mart", "Skullpanda", "Day Dream Secret", "Secret", 190, True, "Surreal daydream chase figure"),
+
+        # Pop Mart — Hirono Additional (+5)
+        ("Hirono Reshape Series", "Pop Mart", "Hirono", "Reshape", "Common", 16, False, "Transformation theme blind box"),
+        ("Hirono Reshape Secret Chrysalis", "Pop Mart", "Hirono", "Reshape Secret", "Secret", 240, True, "Chrysalis metamorphosis secret figure"),
+        ("Hirono x Fragment Design Collab", "Pop Mart", "Hirono", "Fragment Design", "Ultra Rare", 380, False, "Hiroshi Fujiwara collab limited"),
+        ("Hirono Birdy Series", "Pop Mart", "Hirono", "Birdy", "Common", 16, False, "Bird-themed designs, 9+1 figures"),
+        ("Hirono Birdy Secret Raven", "Pop Mart", "Hirono", "Birdy Secret", "Secret", 230, True, "Metallic raven chase figure"),
+
+        # Pop Mart — 2024-2025 Collaborations (+8)
+        ("Pop Mart x Disney Princess Series", "Pop Mart", "Disney Collab", "Princess Series", "Rare", 22, False, "Official Disney Princess blind box"),
+        ("Pop Mart x Disney Villains Secret Maleficent", "Pop Mart", "Disney Collab", "Villains Secret", "Secret", 120, True, "Maleficent chase figure"),
+        ("Pop Mart x Marvel Avengers Mini Series", "Pop Mart", "Marvel Collab", "Avengers Mini", "Common", 16, False, "Chibi Avengers blind box"),
+        ("Pop Mart x Sanrio Characters Labubu", "Pop Mart", "Labubu", "Sanrio Collab", "Rare", 65, False, "Labubu x Hello Kitty & Friends"),
+        ("Pop Mart x Harry Potter Wizard Series", "Pop Mart", "Harry Potter Collab", "Wizard Series", "Rare", 20, False, "Wizarding World chibi figures"),
+        ("Pop Mart x Transformers Molly", "Pop Mart", "Molly", "Transformers Collab", "Rare", 80, False, "Molly as Optimus Prime/Bumblebee"),
+        ("Pop Mart x One Piece Crew Series", "Pop Mart", "One Piece Collab", "Straw Hat Crew", "Rare", 22, False, "Straw Hat crew blind box"),
+        ("Pop Mart x Evangelion Angel Series", "Pop Mart", "Evangelion Collab", "Angel Series", "Rare", 25, False, "EVA unit chibi blind box"),
+
+        # Sonny Angel Special/Limited Editions (+8)
+        ("Sonny Angel Valentine 2025 Cupid", "Sonny Angel", "Valentine 2025", "Cupid", "Rare", 40, False, "Seasonal Valentine cupid edition"),
+        ("Sonny Angel Valentine 2025 Heart Secret", "Sonny Angel", "Valentine 2025", "Heart Secret", "Secret", 150, True, "Glittery heart secret chase"),
+        ("Sonny Angel Flower Series Rose", "Sonny Angel", "Flower Series", "Rose", "Common", 11, False, "Flower hat rose edition"),
+        ("Sonny Angel Flower Series Sunflower", "Sonny Angel", "Flower Series", "Sunflower", "Common", 11, False, "Sunflower hat baby figure"),
+        ("Sonny Angel Artist Collection Yayoi Kusama", "Sonny Angel", "Artist Collection", "Kusama Polka Dot", "Ultra Rare", 350, False, "Yayoi Kusama dots collaboration"),
+        ("Sonny Angel Vegetable Series Carrot", "Sonny Angel", "Vegetable Series", "Carrot", "Common", 10, False, "Carrot hat baby angel"),
+        ("Sonny Angel Vegetable Series Robbie Secret", "Sonny Angel", "Vegetable Series", "Robbie Pumpkin Secret", "Secret", 115, True, "Secret Robbie from vegetable series"),
+        ("Sonny Angel Hippers Series 2 Sitting Dog", "Sonny Angel", "Hippers Series 2", "Sitting Dog", "Rare", 48, False, "Hippers sitting pose dog costume"),
+
+        # tokidoki Additional Series (+6)
+        ("Unicorno Galactic Riders Series", "tokidoki", "Unicorno Galactic", "Standard Blind Box", "Common", 13, False, "Space rider unicorn theme"),
+        ("Unicorno Galactic Riders Secret Nova", "tokidoki", "Unicorno Galactic", "Nova Chase", "Rare", 60, True, "Metallic nova chase with stars"),
+        ("Mermicorno Series 8 Deep Blue", "tokidoki", "Mermicorno Series 8", "Deep Blue", "Common", 12, False, "Deep ocean mermaid unicorn"),
+        ("SANDy Desert Storm Series", "tokidoki", "SANDy Desert Storm", "Standard", "Common", 13, False, "Desert landscape sand characters"),
+        ("tokidoki x Gudetama Collab Unicorno", "tokidoki", "Unicorno x Sanrio", "Gudetama Lazy", "Rare", 75, False, "Gudetama crossover limited"),
+        ("Donutella Series 4 Matcha Glaze", "tokidoki", "Donutella Series 4", "Matcha Glaze", "Common", 12, False, "Matcha-themed donut character"),
+
+        # BE@RBRICK Mystery Boxes & Mini Series (+8)
+        ("Bearbrick Series 47 Sealed Case", "Medicom", "Bearbrick Series 47", "Sealed Case", "Common", 100, False, "Latest series, 24-piece sealed case"),
+        ("Bearbrick Series 47 Secret Artist", "Medicom", "Bearbrick Series 47", "Secret Artist", "Secret", 180, True, "Secret artist collaboration piece S47"),
+        ("Bearbrick Cute Series Sealed Case", "Medicom", "Bearbrick Cute", "Sealed Case", "Common", 85, False, "Cute character theme mini series"),
+        ("Bearbrick Horror Series 5 Sealed Case", "Medicom", "Bearbrick Horror 5", "Sealed Case", "Common", 95, False, "Horror movie themed 100% series"),
+        ("Bearbrick Horror Series 5 Secret Pennywise", "Medicom", "Bearbrick Horror 5", "Pennywise Secret", "Secret", 200, True, "IT Pennywise secret chase"),
+        ("Bearbrick Series 46 Secret KAWS", "Medicom", "Bearbrick Series 46", "KAWS Secret", "Secret", 250, True, "KAWS Companion secret from S46"),
+        ("Bearbrick My First Baby 100% Pearl", "Medicom", "Bearbrick My First Baby", "Pearl White 100%", "Rare", 45, False, "Baby pearl white blind box mini"),
+        ("Bearbrick SF Series Sealed Case", "Medicom", "Bearbrick SF Series", "Sealed Case", "Common", 90, False, "Science fiction theme sealed case"),
+
+        # KAWS Holiday Variants (+6)
+        ("KAWS Holiday Japan Sitting 8-inch", "KAWS", "Holiday Japan", "Sitting Brown", "Rare", 180, False, "KAWS Companion sitting, Mt. Fuji edition"),
+        ("KAWS Holiday UK Resting 8-inch", "KAWS", "Holiday UK", "Resting Grey", "Rare", 190, False, "KAWS Companion resting, UK exclusive"),
+        ("KAWS Holiday Indonesia Floating", "KAWS", "Holiday Indonesia", "Floating Blue", "Rare", 200, False, "Floating companion, Bali edition"),
+        ("KAWS Holiday Space Silver 11.5-inch", "KAWS", "Holiday Space", "Silver Chrome", "Ultra Rare", 550, False, "Chrome space suit KAWS figure"),
+        ("KAWS Holiday Vietnam Sitting Green", "KAWS", "Holiday Vietnam", "Sitting Green", "Rare", 175, False, "Vietnam Ha Long Bay edition"),
+        ("KAWS Holiday Singapore Floating Pink", "KAWS", "Holiday Singapore", "Floating Pink", "Rare", 185, False, "Marina Bay edition floating figure"),
+
+        # Medicom Mini Figures — Additional (+5)
+        ("Medicom UDF Peanuts Series 14 Snoopy Astronaut", "Medicom", "UDF Peanuts", "Astronaut Snoopy", "Common", 18, False, "Ultra Detail Figure Snoopy space"),
+        ("Medicom UDF Sesame Street Elmo", "Medicom", "UDF Sesame Street", "Elmo", "Common", 16, False, "Ultra Detail Figure Elmo"),
+        ("Medicom VAG Series 40 Random Box", "Medicom", "VAG Series 40", "Random Box", "Common", 10, False, "Vinyl Artist Gacha capsule figure"),
+        ("Medicom VAG Series 39 Secret Dino", "Medicom", "VAG Series 39", "Secret Dino", "Secret", 85, True, "Secret dinosaur from VAG capsule"),
+        ("Medicom UDF Studio Ghibli Totoro Walking", "Medicom", "UDF Ghibli", "Walking Totoro", "Common", 18, False, "Totoro with umbrella mini figure"),
+
+        # Kidrobot Additional Series (+5)
+        ("Kidrobot x Rick and Morty Blind Box Series 2", "Kidrobot", "Rick and Morty S2", "Blind Box", "Common", 14, False, "Rick and Morty mini figures"),
+        ("Kidrobot x Futurama Blind Box", "Kidrobot", "Futurama", "Blind Box", "Common", 16, False, "Futurama character mini figures"),
+        ("Kidrobot x Simpsons Treehouse of Horror", "Kidrobot", "Simpsons THOH", "Blind Box", "Common", 15, False, "Halloween Simpsons blind box"),
+        ("Kidrobot Labbit Band Camp 3000", "Kidrobot", "Labbit Band Camp", "Blind Box", "Common", 12, False, "Music themed Labbit figures"),
+        ("Dunny 5-inch Mishka Keep Watch Series", "Kidrobot", "Dunny Mishka", "Keep Watch", "Rare", 120, False, "Mishka streetwear collaboration"),
+
+        # Pop Mart — Crybaby & Zsiga Additional (+6)
+        ("Crybaby x Powerpuff Girls Collab", "Pop Mart", "Crybaby", "Powerpuff Collab", "Rare", 70, False, "Crybaby as Powerpuff Girls"),
+        ("Crybaby Sad Club Secret Tears", "Pop Mart", "Crybaby", "Sad Club Secret", "Secret", 175, True, "Crystal tears chase figure"),
+        ("Crybaby Little Witch Series", "Pop Mart", "Crybaby", "Little Witch", "Common", 14, False, "Witch costume halloween theme"),
+        ("Zsiga Dream Garden Series", "Pop Mart", "Zsiga", "Dream Garden", "Common", 15, False, "Botanical garden theme designs"),
+        ("Zsiga Dream Garden Secret Lotus", "Pop Mart", "Zsiga", "Dream Garden Secret", "Secret", 160, True, "Golden lotus pond chase figure"),
+        ("Zsiga Winter Tale Series", "Pop Mart", "Zsiga", "Winter Tale", "Common", 15, False, "Snowy winter fantasy theme"),
+
+        # Pop Mart — Pucky Additional (+4)
+        ("Pucky Sleeping Forest Series", "Pop Mart", "Pucky", "Sleeping Forest", "Common", 14, False, "Forest fairy sleeping theme"),
+        ("Pucky Sleeping Forest Secret Moonbeam", "Pop Mart", "Pucky", "Sleeping Forest Secret", "Secret", 130, True, "Glowing moonbeam fairy chase"),
+        ("Pucky Ocean Babies Series", "Pop Mart", "Pucky", "Ocean Babies", "Common", 14, False, "Sea creature baby fairy"),
+        ("Pucky x SpongeBob Collab", "Pop Mart", "Pucky", "SpongeBob Collab", "Rare", 65, False, "Pucky as Bikini Bottom characters"),
+
+        # Rare / Vintage Blind Box Collectibles (+5)
+        ("Pop Mart Labubu The Monsters 1st Series (2016)", "Pop Mart", "Labubu", "1st Series OG", "Grail", 450, False, "Original 2016 Labubu, extremely rare"),
+        ("Sonny Angel Caribbean Sea (2012)", "Sonny Angel", "Caribbean Sea", "2012 Edition", "Grail", 380, False, "Discontinued 2012 Caribbean series"),
+        ("Kidrobot Dunny 8-inch KAWS Companion (2006)", "Kidrobot", "Dunny KAWS", "2006 Companion", "Grail", 1200, False, "Original KAWS x Kidrobot, grail"),
+        ("Bearbrick Series 1 (2001) Sealed Case", "Medicom", "Bearbrick Series 1", "2001 Sealed", "Grail", 2000, False, "First ever Bearbrick series, sealed"),
+        ("tokidoki Unicorno Series 1 (2013) Full Set", "tokidoki", "Unicorno Series 1", "2013 Full Set", "Grail", 350, False, "First Unicorno series complete set"),
+
+        # Additional Blind Box Items (+9)
+        ("Labubu The Monsters Trick or Treat", "Pop Mart", "Labubu", "Trick or Treat Series", "Common", 15, False, "Halloween theme series, 12 designs"),
+        ("Dimoo Midnight Circus Series", "Pop Mart", "Dimoo", "Midnight Circus", "Common", 14, False, "Dark circus fantasy theme"),
+        ("Dimoo Midnight Circus Secret Ringmaster", "Pop Mart", "Dimoo", "Midnight Circus Secret", "Secret", 160, True, "Metallic ringmaster chase figure"),
+        ("Skullpanda Night City Series", "Pop Mart", "Skullpanda", "Night City", "Common", 15, False, "Cyberpunk neon city theme"),
+        ("Molly Steampunk Animal Series", "Pop Mart", "Molly", "Steampunk Animal", "Common", 16, False, "Steampunk animal crossover series"),
+        ("Sonny Angel Flower Series (2015)", "Sonny Angel", "Flower Series", "2015 Edition", "Rare", 75, False, "Discontinued 2015 flower theme"),
+        ("BE@RBRICK Series 47 Full Case", "Medicom", "Bearbrick Series 47", "2024 Full Case", "Rare", 280, False, "Full sealed case with guaranteed chase"),
+        ("Hirono City of Mercy Secret", "Pop Mart", "Hirono", "City of Mercy Secret", "Secret", 200, True, "Translucent ghost variant chase"),
+        ("FARMER BOB Everyday Series", "POP MART", "FARMER BOB", "Everyday Series", "Common", 14, False, "Daily life farmer theme"),
     ]
 
     catalog = []

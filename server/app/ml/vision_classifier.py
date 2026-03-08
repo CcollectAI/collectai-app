@@ -34,6 +34,7 @@ ALL_CATEGORIES: list[str] = [
     "pokemon", "mtg", "yugioh", "lorcana",
     # Toys / Figures
     "funko", "designer_toys", "anime_figures", "hot_toys",
+    "action_figures", "vintage_toys", "marvel_legends",
     # Building / Models
     "lego", "gunpla", "scale_models", "warhammer",
     # Gaming
@@ -74,6 +75,9 @@ CATEGORY_DESCRIPTIONS: dict[str, str] = {
     "designer_toys": "Designer art toy, KAWS figure, Bearbrick, Medicom vinyl toy",
     "anime_figures": "Anime figure, Nendoroid, Figma, Japanese scale figure, PVC statue",
     "hot_toys": "Hot Toys sixth scale figure, premium action figure, Sideshow collectible",
+    "action_figures": "Action figure toy, 6 inch figure, Hasbro Star Wars Black Series, GI Joe, Power Rangers Lightning",
+    "vintage_toys": "Vintage toy, Kenner Star Wars figure, 1980s toy, retro action figure, AFA graded",
+    "marvel_legends": "Marvel Legends action figure, Hasbro Marvel 6 inch, Build-A-Figure BAF wave",
     "lego": "LEGO set, LEGO bricks, LEGO minifigure, building block set",
     "gunpla": "Gunpla model kit, Gundam plastic model, Bandai mecha model kit",
     "scale_models": "Scale model kit, plastic model airplane, Tamiya model, military miniature",
@@ -638,9 +642,10 @@ async def _classify_clip(image_bytes: bytes, filename: str) -> ClassificationRes
 
 _OPENAI_SYSTEM_PROMPT = """Collectibles ID expert. Observe image details (text, logos, numbers, packaging, damage), classify category, identify specific item (set/number/edition/variant), extract attributes, assess condition (mint/near_mint/very_good/good/fair/poor).
 
-Categories: pokemon,mtg,yugioh,lorcana,funko,designer_toys,anime_figures,hot_toys,lego,gunpla,scale_models,warhammer,retro_games,manga,bluray_steelbook,anime_bluray,anime_soundtrack,anime_ost_vinyl,kpop_merch,taylor_swift,pop_fandom,kpop_lightsticks,disney,theme_park,ghibli,bandai_premium,jp_magazine,jp_event,nintendo_merch,retro_pokemon,one_piece,vtuber,keycaps,loungefly,diecast,sportscards,retro_handhelds
+Categories: pokemon,mtg,yugioh,lorcana,funko,designer_toys,anime_figures,hot_toys,action_figures,vintage_toys,marvel_legends,lego,gunpla,scale_models,warhammer,retro_games,manga,bluray_steelbook,anime_bluray,anime_soundtrack,anime_ost_vinyl,kpop_merch,taylor_swift,pop_fandom,kpop_lightsticks,disney,theme_park,ghibli,bandai_premium,jp_magazine,jp_event,nintendo_merch,retro_pokemon,one_piece,vtuber,keycaps,loungefly,diecast,sportscards,retro_handhelds
 
-{category_detail}"""
+{category_detail}
+Also note any visible defects (scratches, dents, wear, stains, creases) with severity and location. Suggest a PSA/CGC grade for cards/comics."""
 
 # Structured output JSON schema for response_format
 _IDENTIFICATION_SCHEMA: dict[str, Any] = {
@@ -688,6 +693,27 @@ _IDENTIFICATION_SCHEMA: dict[str, Any] = {
                     "type": "array",
                     "description": "3-5 keywords for catalog search",
                     "items": {"type": "string"},
+                },
+                "defect_annotations": {
+                    "type": "array",
+                    "description": "Defects detected in the item (scratches, dents, wear, creases, etc.)",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "type": {"type": "string", "description": "Defect type (scratch, dent, crease, stain, tear, foxing, wear, fading, discoloration, chip, crack)"},
+                            "severity": {"type": "string", "description": "minor, moderate, major, or severe"},
+                            "location": {"type": "string", "description": "Where on the item (front, back, corner, edge, surface)"},
+                            "description": {"type": "string", "description": "Brief description of the defect"}
+                        }
+                    },
+                },
+                "suggested_grade": {
+                    "anyOf": [{"type": "object", "properties": {
+                        "scale": {"type": "string", "description": "psa, cgc, or generic"},
+                        "grade_value": {"type": "string", "description": "Suggested grade value"},
+                        "reasoning": {"type": "string", "description": "Why this grade was chosen"}
+                    }}, {"type": "null"}],
+                    "description": "Suggested grading if applicable (cards, comics)"
                 },
             },
             "required": [
@@ -819,6 +845,8 @@ async def _classify_openai_vision(
         attributes["search_keywords"] = parsed.get("search_keywords", [])
         attributes["chain_of_thought"] = parsed.get("reasoning", "")
         attributes["name_confidence"] = name_confidence
+        attributes["defect_annotations"] = parsed.get("defect_annotations", [])
+        attributes["suggested_grade"] = parsed.get("suggested_grade")
 
         logger.info(
             "OpenAI Vision identification: category=%s conf=%.2f name='%s' name_conf=%.2f",
@@ -1013,6 +1041,7 @@ async def classify_image(
             result.embedding_vector = clip_embedding
             if category_hint:
                 result.attributes["clip_hint"] = category_hint
+                result.attributes["clip_confidence"] = clip_result.category_confidence
         return result
 
     # If CLIP returned a result on its own (even without OpenAI), use it

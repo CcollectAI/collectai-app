@@ -77,6 +77,9 @@ class TestIntakeResult:
             "catalog_miss", "catalog_match_id", "catalog_match_key",
             "alternatives", "field_confidence", "chain_of_thought",
             "rationale",
+            # QuickScan enhancement fields
+            "scan_session_id", "defect_annotations", "suggested_grade",
+            "social_proof", "duplicate_info",
         }
         assert set(d.keys()) == expected_keys
 

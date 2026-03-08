@@ -101,6 +101,33 @@ const HOT_TOYS_FIELDS: CategoryField[] = [
   { key: 'release_year', label: 'Release Year', placeholder: 'e.g. 2023', type: 'text', icon: 'calendar-outline' },
 ];
 
+const ACTION_FIGURES_FIELDS: CategoryField[] = [
+  { key: 'line', label: 'Line', placeholder: 'e.g. Black Series, Lightning Collection', type: 'text', icon: 'albums-outline' },
+  { key: 'scale', label: 'Scale', type: 'select', icon: 'resize-outline', options: ['3.75"', '6"', '12"'] },
+  { key: 'wave', label: 'Wave', placeholder: 'e.g. Wave 3', type: 'text', icon: 'layers-outline' },
+  { key: 'packaging_type', label: 'Packaging', type: 'select', icon: 'cube-outline', options: ['Box Art', 'Standard', 'Window Box', 'Archive'] },
+  { key: 'retailer_exclusive', label: 'Retailer Exclusive', placeholder: 'e.g. Target, Walmart', type: 'text', icon: 'lock-closed-outline' },
+  { key: 'sealed', label: 'Sealed', type: 'boolean', icon: 'lock-closed-outline' },
+];
+
+const VINTAGE_TOYS_FIELDS: CategoryField[] = [
+  { key: 'era', label: 'Era', placeholder: 'e.g. 1980s', type: 'text', icon: 'time-outline' },
+  { key: 'manufacturer', label: 'Manufacturer', placeholder: 'e.g. Kenner, Hasbro', type: 'text', icon: 'business-outline' },
+  { key: 'item_type', label: 'Item Type', type: 'select', icon: 'shapes-outline', options: ['Figure', 'Vehicle', 'Playset', 'Empty Box', 'Proof Card', 'Accessory'] },
+  { key: 'completeness', label: 'Completeness', type: 'select', icon: 'checkmark-done-outline', options: ['CIB', 'Loose Complete', 'Loose Incomplete', 'Box Only'] },
+  { key: 'origin_country', label: 'Origin Country', placeholder: 'e.g. USA, Japan', type: 'text', icon: 'globe-outline' },
+  { key: 'afa_grade', label: 'AFA Grade', placeholder: 'e.g. AFA 85', type: 'text', icon: 'shield-checkmark-outline' },
+];
+
+const MARVEL_LEGENDS_FIELDS: CategoryField[] = [
+  { key: 'wave', label: 'Wave', placeholder: 'e.g. Bro Thor Wave', type: 'text', icon: 'layers-outline' },
+  { key: 'baf_figure', label: 'BAF Figure', placeholder: 'e.g. Mr. Hyde', type: 'text', icon: 'body-outline' },
+  { key: 'series', label: 'Series', type: 'select', icon: 'albums-outline', options: ['Standard', 'Retro', '20th Anniversary', 'Haslab', 'Deluxe', 'Fan Channel'] },
+  { key: 'packaging_type', label: 'Packaging', type: 'select', icon: 'cube-outline', options: ['Standard', 'Window Box', 'Retro Card'] },
+  { key: 'retailer_exclusive', label: 'Retailer Exclusive', placeholder: 'e.g. Target, Walmart', type: 'text', icon: 'lock-closed-outline' },
+  { key: 'sealed', label: 'Sealed', type: 'boolean', icon: 'lock-closed-outline' },
+];
+
 // ---------------------------------------------------------------------------
 // Building / Models
 // ---------------------------------------------------------------------------
@@ -383,6 +410,101 @@ const LOUNGEFLY_FIELDS: CategoryField[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Collectibles
+// ---------------------------------------------------------------------------
+
+const BLIND_BOX_FIELDS: CategoryField[] = [
+  { key: 'brand', label: 'Brand', placeholder: 'e.g. Pop Mart, Sonny Angel', type: 'text', icon: 'business-outline' },
+  { key: 'series', label: 'Series', placeholder: 'e.g. Molly, Dimoo', type: 'text', icon: 'albums-outline' },
+  { key: 'figure_name', label: 'Figure Name', placeholder: 'e.g. Space Molly 400%', type: 'text', icon: 'person-outline' },
+  { key: 'variant', label: 'Variant', type: 'select', icon: 'sparkles-outline', options: ['Regular', 'Chase', 'Secret', 'Special'] },
+  { key: 'sealed', label: 'Sealed', type: 'boolean', icon: 'lock-closed-outline' },
+  { key: 'condition', label: 'Condition', type: 'select', icon: 'shield-outline', options: ['Mint', 'Near Mint', 'Good', 'No Card'] },
+];
+
+// ---------------------------------------------------------------------------
+// Spirits & Luxury
+// ---------------------------------------------------------------------------
+
+const WHISKEY_FIELDS: CategoryField[] = [
+  { key: 'distillery', label: 'Distillery', placeholder: 'e.g. Macallan, Yamazaki', type: 'text', icon: 'business-outline' },
+  { key: 'expression', label: 'Expression', placeholder: 'e.g. 18 Year Sherry Oak', type: 'text', icon: 'flask-outline' },
+  { key: 'age_statement', label: 'Age Statement', placeholder: 'e.g. 12, 18, NAS', type: 'text', icon: 'time-outline' },
+  { key: 'spirit_type', label: 'Type', type: 'select', icon: 'wine-outline', options: ['Scotch', 'Bourbon', 'Japanese', 'Irish', 'Rye', 'Other'] },
+  { key: 'cask_type', label: 'Cask Type', placeholder: 'e.g. Sherry, Bourbon, Mizunara', type: 'text', icon: 'cube-outline' },
+  { key: 'abv', label: 'ABV', placeholder: 'e.g. 43%, Cask Strength', type: 'text', icon: 'analytics-outline' },
+  { key: 'sealed', label: 'Sealed', type: 'boolean', icon: 'lock-closed-outline' },
+];
+
+const VINTAGE_CAMERAS_FIELDS: CategoryField[] = [
+  { key: 'brand', label: 'Brand', placeholder: 'e.g. Leica, Nikon, Canon', type: 'text', icon: 'business-outline' },
+  { key: 'model', label: 'Model', placeholder: 'e.g. M3, F3, AE-1', type: 'text', icon: 'camera-outline' },
+  { key: 'camera_type', label: 'Camera Type', type: 'select', icon: 'aperture-outline', options: ['SLR', 'Rangefinder', 'TLR', 'Point & Shoot', 'Medium Format', 'Large Format'] },
+  { key: 'film_format', label: 'Film Format', type: 'select', icon: 'film-outline', options: ['35mm', '120 (Medium Format)', '4x5', '8x10', '110', 'Instant'] },
+  { key: 'year', label: 'Year', placeholder: 'e.g. 1972', type: 'text', icon: 'calendar-outline' },
+  { key: 'working', label: 'Working', type: 'boolean', icon: 'checkmark-circle-outline' },
+  { key: 'condition', label: 'Condition', type: 'select', icon: 'shield-outline', options: ['Mint', 'Excellent', 'Good', 'Fair', 'For Parts'] },
+];
+
+const PENS_FIELDS: CategoryField[] = [
+  { key: 'brand', label: 'Brand', placeholder: 'e.g. Montblanc, Pelikan, Sailor', type: 'text', icon: 'business-outline' },
+  { key: 'model', label: 'Model', placeholder: 'e.g. 149, M800, Pro Gear', type: 'text', icon: 'create-outline' },
+  { key: 'nib_size', label: 'Nib Size', type: 'select', icon: 'create-outline', options: ['EF', 'F', 'M', 'B', 'BB', 'Stub', 'Italic', 'Flex'] },
+  { key: 'nib_material', label: 'Nib Material', type: 'select', icon: 'diamond-outline', options: ['Steel', '14K Gold', '18K Gold', '21K Gold', 'Palladium'] },
+  { key: 'filling_system', label: 'Filling System', type: 'select', icon: 'water-outline', options: ['Piston', 'Converter', 'Cartridge', 'Vacuum', 'Eyedropper', 'Lever'] },
+  { key: 'limited_edition', label: 'Limited Edition', type: 'boolean', icon: 'star-outline' },
+  { key: 'condition', label: 'Condition', type: 'select', icon: 'shield-outline', options: ['New in Box', 'Like New', 'User Grade', 'Vintage - Restored', 'Vintage - Unrestored'] },
+];
+
+// ---------------------------------------------------------------------------
+// Additional TCGs
+// ---------------------------------------------------------------------------
+
+const DIGIMON_FIELDS: CategoryField[] = [
+  { key: 'set', label: 'Set', placeholder: 'e.g. BT-01, EX-04', type: 'text', icon: 'albums-outline' },
+  { key: 'number', label: 'Card Number', placeholder: 'e.g. BT1-025', type: 'text', icon: 'barcode-outline' },
+  { key: 'rarity', label: 'Rarity', type: 'select', icon: 'star-outline', options: ['Common', 'Uncommon', 'Rare', 'Super Rare', 'Secret Rare', 'Alt Art'] },
+  { key: 'language', label: 'Language', type: 'select', icon: 'language-outline', options: ['English', 'Japanese'] },
+  { key: 'variant', label: 'Variant', type: 'select', icon: 'sparkles-outline', options: ['Standard', 'Alt Art', 'Box Topper', 'Promo'] },
+  { key: 'grade', label: 'Grade', placeholder: 'e.g. PSA 10, CGC 9.5', type: 'text', icon: 'shield-checkmark-outline' },
+];
+
+const ONE_PIECE_TCG_FIELDS: CategoryField[] = [
+  { key: 'set', label: 'Set', placeholder: 'e.g. OP-01, OP-05', type: 'text', icon: 'albums-outline' },
+  { key: 'number', label: 'Card Number', placeholder: 'e.g. OP01-001', type: 'text', icon: 'barcode-outline' },
+  { key: 'rarity', label: 'Rarity', type: 'select', icon: 'star-outline', options: ['Common', 'Uncommon', 'Rare', 'Super Rare', 'Secret Rare', 'Leader', 'Alt Art', 'Manga Art'] },
+  { key: 'language', label: 'Language', type: 'select', icon: 'language-outline', options: ['English', 'Japanese'] },
+  { key: 'variant', label: 'Variant', type: 'select', icon: 'sparkles-outline', options: ['Standard', 'Alt Art', 'Manga Art', 'Promo', 'Tournament'] },
+  { key: 'grade', label: 'Grade', placeholder: 'e.g. PSA 10, CGC 9.5', type: 'text', icon: 'shield-checkmark-outline' },
+];
+
+// ---------------------------------------------------------------------------
+// Media — Comic Books & Vinyl Records
+// ---------------------------------------------------------------------------
+
+const COMIC_BOOKS_FIELDS: CategoryField[] = [
+  { key: 'publisher', label: 'Publisher', type: 'select', icon: 'business-outline', options: ['Marvel', 'DC', 'Image', 'Dark Horse', 'IDW', 'Boom! Studios', 'Indie', 'Other'] },
+  { key: 'series', label: 'Series', placeholder: 'e.g. Amazing Spider-Man, Batman', type: 'text', icon: 'book-outline' },
+  { key: 'issue', label: 'Issue Number', placeholder: 'e.g. #300, #1', type: 'text', icon: 'barcode-outline' },
+  { key: 'year', label: 'Year', placeholder: 'e.g. 1988', type: 'text', icon: 'calendar-outline' },
+  { key: 'variant', label: 'Variant', placeholder: 'e.g. Cover A, 1:25 Ratio', type: 'text', icon: 'layers-outline' },
+  { key: 'grade', label: 'Grade', placeholder: 'e.g. CGC 9.8, Raw NM', type: 'text', icon: 'shield-checkmark-outline' },
+  { key: 'key_issue', label: 'Key Issue', type: 'boolean', icon: 'star-outline' },
+  { key: 'signed', label: 'Signed', type: 'boolean', icon: 'create-outline' },
+];
+
+const VINYL_RECORDS_FIELDS: CategoryField[] = [
+  { key: 'artist', label: 'Artist', placeholder: 'e.g. Pink Floyd, Kendrick Lamar', type: 'text', icon: 'person-outline' },
+  { key: 'album', label: 'Album', placeholder: 'e.g. Dark Side of the Moon', type: 'text', icon: 'disc-outline' },
+  { key: 'label', label: 'Label', placeholder: 'e.g. Columbia, Def Jam', type: 'text', icon: 'business-outline' },
+  { key: 'pressing', label: 'Pressing', type: 'select', icon: 'layers-outline', options: ['1st Pressing', '2nd Pressing', 'Repress', 'Reissue', 'Remaster'] },
+  { key: 'color', label: 'Vinyl Color', placeholder: 'e.g. Black, Clear, Splatter', type: 'text', icon: 'color-palette-outline' },
+  { key: 'rpm', label: 'RPM', type: 'select', icon: 'speedometer-outline', options: ['33', '45', '78'] },
+  { key: 'color_vinyl', label: 'Color Vinyl', type: 'boolean', icon: 'color-palette-outline' },
+  { key: 'condition', label: 'Condition', type: 'select', icon: 'shield-outline', options: ['Mint', 'Near Mint', 'Very Good+', 'Very Good', 'Good', 'Fair'] },
+];
+
+// ---------------------------------------------------------------------------
 // Lifestyle — Sneakers & Watches
 // ---------------------------------------------------------------------------
 
@@ -441,6 +563,15 @@ const RETRO_HANDHELDS_FIELDS: CategoryField[] = [
   { key: 'working_condition', label: 'Working Condition', type: 'select', icon: 'checkmark-circle-outline', options: ['Fully Working', 'Partially Working', 'For Parts'] },
 ];
 
+const PLUSH_COLLECTIBLES_FIELDS: CategoryField[] = [
+  { key: 'brand', label: 'Brand', type: 'select', icon: 'heart-circle-outline', options: ['Squishmallow', 'Jellycat', 'Build-A-Bear', 'Sanrio', 'Pokemon Center', 'Other'] },
+  { key: 'character', label: 'Character', placeholder: 'e.g. Ronnie the Cow', type: 'text', icon: 'person-outline' },
+  { key: 'size', label: 'Size', type: 'select', icon: 'resize-outline', options: ['5"', '8"', '12"', '16"', '20"', '24"'] },
+  { key: 'collection', label: 'Collection', placeholder: 'e.g. Halloween, Valentine\'s', type: 'text', icon: 'albums-outline' },
+  { key: 'exclusive_retailer', label: 'Exclusive Retailer', placeholder: 'e.g. Target, Costco', type: 'text', icon: 'lock-closed-outline' },
+  { key: 'has_tags', label: 'Has Tags', type: 'boolean', icon: 'pricetag-outline' },
+];
+
 // ---------------------------------------------------------------------------
 // Master lookup
 // ---------------------------------------------------------------------------
@@ -457,6 +588,9 @@ export const CATEGORY_FIELDS: Partial<Record<Category, CategoryField[]>> = {
   designer_toys: DESIGNER_TOYS_FIELDS,
   anime_figures: ANIME_FIGURES_FIELDS,
   hot_toys: HOT_TOYS_FIELDS,
+  action_figures: ACTION_FIGURES_FIELDS,
+  vintage_toys: VINTAGE_TOYS_FIELDS,
+  marvel_legends: MARVEL_LEGENDS_FIELDS,
 
   // Building / Models
   lego: LEGO_FIELDS,
@@ -510,6 +644,23 @@ export const CATEGORY_FIELDS: Partial<Record<Category, CategoryField[]>> = {
   diecast: DIECAST_FIELDS,
   sportscards: SPORTSCARDS_FIELDS,
   retro_handhelds: RETRO_HANDHELDS_FIELDS,
+
+  // Collectibles
+  blind_box: BLIND_BOX_FIELDS,
+  plush_collectibles: PLUSH_COLLECTIBLES_FIELDS,
+
+  // Spirits & Luxury
+  whiskey: WHISKEY_FIELDS,
+  vintage_cameras: VINTAGE_CAMERAS_FIELDS,
+  pens: PENS_FIELDS,
+
+  // Additional TCGs
+  digimon: DIGIMON_FIELDS,
+  one_piece_tcg: ONE_PIECE_TCG_FIELDS,
+
+  // Media — Expansion
+  comic_books: COMIC_BOOKS_FIELDS,
+  vinyl_records: VINYL_RECORDS_FIELDS,
 };
 
 /**

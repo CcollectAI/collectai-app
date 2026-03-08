@@ -1006,6 +1006,82 @@ def _seed_sets() -> list[tuple]:
         ("21057-1", "Singapore", "Architecture", 2022, 827, 60.0),
         ("21034-1", "London", "Architecture", 2017, 468, 40.0),
         ("21044-1", "Paris", "Architecture", 2019, 649, 50.0),
+
+        # ── 2024/2025 New Releases ──────────────────────────────────────────
+        ("10316-1", "The Lord of the Rings: Barad-dûr", "Icons", 2024, 5471, 460.0),
+        ("10320-1", "Eldorado Fortress", "Icons", 2024, 2509, 220.0),
+        ("77092-1", "Hyrule Castle (Zelda)", "Icons", 2025, 2500, 280.0),
+        ("10364-1", "LEGO Icons Rivendell Expansion", "Icons", 2025, 1800, 180.0),
+        ("10365-1", "Cherry Blossom", "Botanical Collection", 2025, 905, 50.0),
+        ("10368-1", "Orchid Terrarium", "Botanical Collection", 2025, 1100, 55.0),
+        ("10369-1", "Sunflower Bouquet", "Botanical Collection", 2025, 730, 40.0),
+
+        # ── LEGO Icons (Additional) ─────────────────────────────────────────
+        ("10317-1", "Land Rover Classic Defender 90", "Icons", 2024, 2336, 230.0),
+        ("10321-1", "Corvette C1 (1961)", "Icons", 2024, 1210, 150.0),
+        ("10331-1", "Kingfisher Bird", "Icons", 2024, 834, 90.0),
+        ("10334-1", "Concorde", "Icons", 2025, 2083, 200.0),
+        ("10330-1", "McLaren MP4/4 & Ayrton Senna", "Icons", 2024, 693, 90.0),
+
+        # ── Architecture Skylines (New) ─────────────────────────────────────
+        ("21061-1", "Tokyo", "Architecture", 2025, 1230, 70.0),
+        ("21062-1", "Rome", "Architecture", 2025, 955, 60.0),
+        ("21063-1", "San Francisco", "Architecture", 2025, 860, 55.0),
+
+        # ── Creator Expert Vehicles ─────────────────────────────────────────
+        ("10325-1", "Alpine Lodge", "Creator Expert", 2024, 1517, 130.0),
+        ("10326-1", "Natural History Museum", "Creator Expert", 2024, 4014, 300.0),
+        ("10327-1", "Dune Atreides Royal Ornithopter", "Icons", 2024, 1369, 160.0),
+        ("10328-1", "Bouquet of Roses", "Botanical Collection", 2024, 822, 60.0),
+
+        # ── Technic Supercars ───────────────────────────────────────────────
+        ("42176-1", "Porsche GT4 e-Performance", "Technic", 2024, 834, 60.0),
+        ("42151-1", "Bugatti Bolide", "Technic", 2023, 905, 50.0),
+        ("42177-1", "Koenigsegg Jesko Absolut", "Technic", 2025, 2026, 230.0),
+        ("42183-1", "Lamborghini Temerario", "Technic", 2025, 1408, 180.0),
+
+        # ── Retired UCS Star Wars (Collectible) ────────────────────────────
+        ("75181-1", "Y-wing Starfighter UCS", "Star Wars", 2018, 1967, 400.0),
+        ("75095-1", "TIE Fighter UCS", "Star Wars", 2015, 1685, 450.0),
+        ("10174-1", "AT-ST Walker UCS", "Star Wars", 2006, 1068, 600.0),
+        ("10175-1", "Vader's TIE Advanced UCS", "Star Wars", 2006, 1212, 700.0),
+        ("75144-1", "Snowspeeder UCS", "Star Wars", 2017, 1703, 350.0),
+        ("75341-1", "Luke Skywalker's Landspeeder UCS", "Star Wars", 2022, 1890, 250.0),
+
+        # ── Harry Potter (Expansion) ───────────────────────────────────────
+        ("76435-1", "Hogwarts Castle & Grounds", "Harry Potter", 2024, 2660, 170.0),
+        ("76439-1", "Diagon Alley: Weasleys' Wizard Wheezes", "Harry Potter", 2024, 834, 70.0),
+        ("76430-1", "Hogwarts Castle Owlery", "Harry Potter", 2024, 364, 35.0),
+        ("76440-1", "Triwizard Tournament: The Black Lake", "Harry Potter", 2024, 578, 50.0),
+        ("76441-1", "Hogwarts Castle: The Great Hall", "Harry Potter", 2025, 1450, 130.0),
+        ("76442-1", "Hogwarts Express Collectors' Edition", "Harry Potter", 2025, 5129, 500.0),
+        ("76419-1", "Hogwarts Castle and Grounds (Micro)", "Harry Potter", 2023, 2660, 170.0),
+        ("76438-1", "Forbidden Forest: Magical Creatures", "Harry Potter", 2024, 172, 15.0),
+
+        # ── LEGO Ideas (Additional) ─────────────────────────────────────────
+        ("21349-1", "Polaroid OneStep SX-70 Camera", "Ideas", 2024, 516, 80.0),
+        ("21350-1", "Back to the Future Time Machine 2nd", "Ideas", 2025, 1872, 180.0),
+        ("21348-1", "Dungeons & Dragons: Red Dragon's Tale", "Ideas", 2024, 3745, 360.0),
+        ("21345-1", "Curiosity Rover", "Ideas", 2024, 868, 50.0),
+        ("21346-1", "Family Tree", "Ideas", 2024, 1040, 130.0),
+        ("21343-1", "Viking Village", "Ideas", 2024, 2103, 130.0),
+
+        # ── Seasonal / GWP Collectible ──────────────────────────────────────
+        ("40710-1", "Legoland Train GWP", "Promotional", 2024, 346, 45.0),
+        ("40688-1", "Shell Garage GWP", "Promotional", 2024, 263, 40.0),
+
+        # ── Additional LEGO Sets (+11) ─────────────────────────────────────
+        ("77092-1", "Motorized Lighthouse", "Ideas", 2025, 2065, 300.0),
+        ("21354-1", "Space Shuttle Discovery", "Ideas", 2025, 1540, 200.0),
+        ("10352-1", "Tranquil Garden", "Icons", 2025, 1385, 110.0),
+        ("10353-1", "Colosseum of Rome (Micro)", "Architecture", 2025, 896, 80.0),
+        ("42183-1", "Lamborghini Temerario", "Technic", 2025, 1298, 180.0),
+        ("76448-1", "Quidditch Match Pitch", "Harry Potter", 2025, 844, 90.0),
+        ("60438-1", "Deep Sea Research Submarine", "City", 2025, 842, 80.0),
+        ("71487-1", "The Mystery Mansion", "DREAMZzz", 2025, 1368, 110.0),
+        ("75404-1", "Imperial Star Destroyer (Tantive IV Pursuit)", "Star Wars", 2025, 1555, 170.0),
+        ("31220-1", "Great Wave off Kanagawa", "Art", 2025, 1810, 100.0),
+        ("10351-1", "Jazz Club", "Icons", 2025, 2899, 230.0),
     ]
 
 

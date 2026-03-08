@@ -801,6 +801,133 @@ def get_curated_catalog() -> list[dict]:
         ("SD EX-Standard", "SD", "Barbatos Lupus Rex (EX-Standard)", "Iron-Blooded Orphans", "EX-Standard", "standard", 8),
         ("SD EX-Standard", "SD", "Mighty Strike Freedom (EX-Standard)", "Gundam SEED Freedom", "EX-Standard", "standard", 10),
         ("SD EX-Standard", "SD", "Rising Freedom (EX-Standard)", "Gundam SEED Freedom", "EX-Standard", "standard", 10),
+
+        # === EXPANSION ROUND 10 — 90 new items to reach 700+ ===
+
+        # Perfect Grade — Additional PGs
+        ("PG", "1/60", "Gundam Exia (Lighting Model)", "Gundam 00", "PG", "grail", 280),
+        ("PG", "1/60", "Strike Freedom Gundam", "Gundam SEED Destiny", "PG", "grail", 250),
+        ("PG", "1/60", "Gundam Mk-II (AEUG)", "Zeta Gundam", "PG", "grail", 200),
+        ("PG", "1/60", "Gundam Astray Red Frame", "Gundam SEED Astray", "PG", "grail", 220),
+        ("PG", "1/60", "Banshee Norn (Destroy Mode)", "Gundam Unicorn", "PG", "grail", 260),
+
+        # MG Ver.Ka — Additional Releases
+        ("MG", "1/100", "Sazabi Ver.Ka", "Char's Counterattack", "Ver.Ka", "high", 90),
+        ("MG", "1/100", "Nu Gundam Ver.Ka", "Char's Counterattack", "Ver.Ka", "mid", 75),
+        ("MG", "1/100", "Sinanju Ver.Ka", "Gundam Unicorn", "Ver.Ka", "high", 85),
+        ("MG", "1/100", "Hi-Nu Gundam Ver.Ka", "Char's Counterattack", "Ver.Ka", "high", 95),
+        ("MG", "1/100", "Tallgeese Ver.Ka", "Gundam Wing", "Ver.Ka", "mid", 55),
+        ("MG", "1/100", "Wing Gundam Proto Zero Ver.Ka", "Gundam Wing", "Ver.Ka", "mid", 60),
+        ("MG", "1/100", "Unicorn Gundam (Full Psycho-Frame) Ver.Ka Red", "Gundam Unicorn", "Ver.Ka", "high", 90),
+        ("MG", "1/100", "Providence Gundam", "Gundam SEED", "MG", "mid", 65),
+
+        # RG New Releases 2025
+        ("RG", "1/144", "Force Impulse Gundam", "Gundam SEED Destiny", "", "mid", 38),
+        ("RG", "1/144", "Gundam Calibarn", "Witch from Mercury", "", "mid", 42),
+        ("RG", "1/144", "Destiny Gundam", "Gundam SEED Destiny", "", "mid", 40),
+        ("RG", "1/144", "Wing Gundam (TV Version)", "Gundam Wing", "", "standard", 30),
+        ("RG", "1/144", "Turn A Gundam", "Turn A Gundam", "", "mid", 42),
+        ("RG", "1/144", "Tallgeese", "Gundam Wing", "", "standard", 32),
+        ("RG", "1/144", "Tallgeese II", "Gundam Wing", "", "standard", 32),
+        ("RG", "1/144", "Tallgeese III", "Gundam Wing", "", "mid", 38),
+
+        # RE/100 Kits
+        ("RE/100", "1/100", "Nightingale", "Char's Counterattack Beltorchika's Children", "RE/100", "high", 85),
+        ("RE/100", "1/100", "Jagd Doga", "Char's Counterattack", "RE/100", "mid", 55),
+        ("RE/100", "1/100", "Dijeh", "Zeta Gundam", "RE/100", "mid", 50),
+        ("RE/100", "1/100", "Gun EZ", "Victory Gundam", "RE/100", "mid", 48),
+        ("RE/100", "1/100", "Hamma Hamma", "Gundam ZZ", "RE/100", "mid", 55),
+        ("RE/100", "1/100", "Bawoo", "Gundam ZZ", "RE/100", "mid", 52),
+
+        # SD Gundam Cross Silhouette
+        ("SD CS", "SD", "RX-78-2 Gundam (Cross Silhouette)", "Mobile Suit Gundam", "SD CS", "standard", 18),
+        ("SD CS", "SD", "Zeta Gundam (Cross Silhouette)", "Zeta Gundam", "SD CS", "standard", 20),
+        ("SD CS", "SD", "Unicorn Gundam (Cross Silhouette)", "Gundam Unicorn", "SD CS", "standard", 20),
+        ("SD CS", "SD", "Nightingale (Cross Silhouette)", "Char's Counterattack", "SD CS", "standard", 22),
+        ("SD CS", "SD", "Tornado Gundam (Cross Silhouette)", "Gundam Build Fighters", "SD CS", "standard", 18),
+        ("SD CS", "SD", "Sisquiede (Cross Silhouette)", "Gundam Breaker", "SD CS", "standard", 22),
+
+        # P-Bandai Exclusives — 2025 Wave
+        ("MG", "1/100", "Crossbone Gundam X2 Kai (P-Bandai)", "Crossbone Gundam", "P-Bandai", "high", 120),
+        ("MG", "1/100", "Gundam Storm Bringer (P-Bandai)", "Gundam Build", "P-Bandai", "high", 110),
+        ("MG", "1/100", "Geara Doga (P-Bandai)", "Char's Counterattack", "P-Bandai", "high", 105),
+        ("RG", "1/144", "Sinanju Stein (P-Bandai)", "Gundam Narrative", "P-Bandai", "high", 70),
+        ("RG", "1/144", "Crossbone Gundam X1 Patchwork (P-Bandai)", "Crossbone Gundam", "P-Bandai", "high", 65),
+        ("HG", "1/144", "Pale Rider Cavalry (P-Bandai)", "Mobile Suit Gundam Side Stories", "P-Bandai", "mid", 40),
+        ("HG", "1/144", "Gundam Schwarzette (Clear Color) (P-Bandai)", "Witch from Mercury", "P-Bandai", "mid", 38),
+        ("MG", "1/100", "Gundam Sandrock Custom EW (P-Bandai)", "Gundam Wing", "P-Bandai", "high", 115),
+        ("PG", "1/60", "Unicorn Gundam (Final Battle Ver.) (P-Bandai)", "Gundam Unicorn", "P-Bandai", "grail", 380),
+
+        # Gundam Base Exclusives
+        ("HG", "1/144", "RX-78-2 Gundam (Gundam Base Tokyo Limited Clear)", "Mobile Suit Gundam", "Gundam Base", "mid", 35),
+        ("HG", "1/144", "Unicorn Gundam (Gundam Base Luminous Crystal)", "Gundam Unicorn", "Gundam Base", "mid", 38),
+        ("HG", "1/144", "Nu Gundam (Gundam Base Clear Color)", "Char's Counterattack", "Gundam Base", "mid", 35),
+        ("HG", "1/144", "Strike Freedom (Gundam Base Gold Coating)", "Gundam SEED Destiny", "Gundam Base", "mid", 40),
+        ("MG", "1/100", "RX-78-2 Gundam Ver.3.0 (Gundam Base Solid Clear)", "Mobile Suit Gundam", "Gundam Base", "mid", 60),
+
+        # 30 Minute Missions — Custom/Expansion
+        ("30MM", "1/144", "Cielnova (White)", "30 Minutes Missions", "30MM", "standard", 16),
+        ("30MM", "1/144", "Cielnova (Option Armor)", "30 Minutes Missions", "30MM", "standard", 18),
+        ("30MM", "1/144", "Forestieri 02 (30MM)", "30 Minutes Missions", "30MM", "standard", 20),
+        ("30MM", "1/144", "Gavial Rebake (30MM)", "30 Minutes Missions", "30MM", "standard", 22),
+        ("30MM", "1/144", "eEXM-30 Espossito α (30MM)", "30 Minutes Missions", "30MM", "standard", 20),
+        ("30MM", "1/144", "Extended Armament Vehicle (Tank) (30MM)", "30 Minutes Missions", "30MM", "standard", 14),
+        ("30MM", "1/144", "Extended Armament Vehicle (Attack Sub) (30MM)", "30 Minutes Missions", "30MM", "standard", 14),
+
+        # HG The Witch from Mercury — Additional
+        ("HG", "1/144", "Gundam Calibarn", "Witch from Mercury", "HGTWFM", "standard", 22),
+        ("HG", "1/144", "Gundam Schwarzette", "Witch from Mercury", "HGTWFM", "standard", 20),
+        ("HG", "1/144", "Gundam Lfrith", "Witch from Mercury", "HGTWFM", "standard", 18),
+        ("HG", "1/144", "Gundam Pharact", "Witch from Mercury", "HGTWFM", "standard", 20),
+        ("HG", "1/144", "Zowort Heavy", "Witch from Mercury", "HGTWFM", "standard", 18),
+        ("HG", "1/144", "Beguir-Beu", "Witch from Mercury", "HGTWFM", "standard", 18),
+        ("HG", "1/144", "Gundam Aerial Rebuild", "Witch from Mercury", "HGTWFM", "standard", 22),
+        ("HG", "1/144", "Demi Trainer", "Witch from Mercury", "HGTWFM", "standard", 15),
+
+        # Metal Build — Additional Die-cast Figures
+        ("Metal Build", "N/A", "Destiny Gundam (Metal Build)", "Gundam SEED Destiny", "Metal Build", "grail", 350),
+        ("Metal Build", "N/A", "00 Raiser (Metal Build)", "Gundam 00", "Metal Build", "grail", 300),
+        ("Metal Build", "N/A", "Gundam Astray Red Frame Kai (Metal Build)", "Gundam SEED Astray", "Metal Build", "grail", 280),
+        ("Metal Build", "N/A", "Crossbone Gundam X1 (Metal Build)", "Crossbone Gundam", "Metal Build", "grail", 320),
+
+        # Vintage 1/100 — 1980s Originals
+        ("Vintage", "1/100", "RX-78-2 Gundam (1980 Original)", "Mobile Suit Gundam", "Vintage 1980", "high", 120),
+        ("Vintage", "1/100", "MS-06S Zaku II Char Custom (1980)", "Mobile Suit Gundam", "Vintage 1980", "high", 130),
+        ("Vintage", "1/100", "MS-06F Zaku II Mass Production (1980)", "Mobile Suit Gundam", "Vintage 1980", "high", 100),
+        ("Vintage", "1/100", "MSN-02 Zeong (1981)", "Mobile Suit Gundam", "Vintage 1981", "high", 140),
+        ("Vintage", "1/100", "Rick Dom (1981)", "Mobile Suit Gundam", "Vintage 1981", "high", 110),
+
+        # === EXPANSION ROUND 11 — 19 new items to reach 700+ ===
+
+        # PG Unleashed
+        ("PG Unleashed", "1/60", "RX-78-2 Gundam (PG Unleashed)", "Mobile Suit Gundam", "PG Unleashed", "grail", 350),
+        ("PG Unleashed", "1/60", "Strike Freedom Gundam (PG Unleashed)", "Gundam SEED Destiny", "PG Unleashed", "grail", 380),
+        ("PG Unleashed", "1/60", "Wing Gundam Zero EW (PG Unleashed)", "Gundam Wing", "PG Unleashed", "grail", 360),
+
+        # MG Ver.Ka — Latest Releases
+        ("MG", "1/100", "Gundam F90 Ver.Ka", "Gundam F90", "Ver.Ka", "mid", 62),
+        ("MG", "1/100", "Turn A Gundam Ver.Ka", "Turn A Gundam", "Ver.Ka", "mid", 70),
+        ("MG", "1/100", "Gundam X Ver.Ka", "After War Gundam X", "Ver.Ka", "mid", 68),
+
+        # RG New Releases 2025/2026
+        ("RG", "1/144", "Kshatriya", "Gundam Unicorn", "", "mid", 55),
+        ("RG", "1/144", "Xi Gundam", "Hathaway's Flash", "", "high", 65),
+        ("RG", "1/144", "Penelope", "Hathaway's Flash", "", "high", 70),
+        ("RG", "1/144", "Sinanju (RG)", "Gundam Unicorn", "", "mid", 48),
+
+        # P-Bandai Exclusives 2026
+        ("MG", "1/100", "Gundam Aerial (Full Weapons) (P-Bandai)", "Witch from Mercury", "P-Bandai", "high", 125),
+        ("MG", "1/100", "Zaku III Custom (P-Bandai)", "Gundam ZZ", "P-Bandai", "high", 118),
+        ("RG", "1/144", "Banshee Norn (Final Battle) (P-Bandai)", "Gundam Unicorn", "P-Bandai", "high", 72),
+        ("HG", "1/144", "Gundam Pharact (Clear Color) (P-Bandai)", "Witch from Mercury", "P-Bandai", "mid", 42),
+        ("MG", "1/100", "Gouf Custom Ver.2.0 (P-Bandai)", "Gundam 08th MS Team", "P-Bandai", "high", 110),
+
+        # MGEX — Newest Announcements
+        ("MGEX", "1/100", "Destiny Gundam (MGEX)", "Gundam SEED Destiny", "MGEX", "grail", 285),
+        ("MGEX", "1/100", "God Gundam (MGEX)", "G Gundam", "MGEX", "grail", 275),
+
+        # Metal Build — Premium
+        ("Metal Build", "N/A", "Freedom Gundam Concept 2.0 (Metal Build)", "Gundam SEED", "Metal Build", "grail", 380),
     ]
 
     catalog = []

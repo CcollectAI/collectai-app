@@ -14,7 +14,6 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
-  ActionSheetIOS,
   RefreshControl,
   Share,
   Modal,
@@ -25,6 +24,7 @@ import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { showActionSheet } from "@/hooks/useActionSheetPicker";
 import { useAuthContext } from "@/providers/useAuthContext";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
@@ -47,6 +47,7 @@ import { Linking } from "react-native";
 import logger from "@/utils/logger";
 import { ItemAttributesSection } from "@/components/ItemAttributesSection";
 import { formatPrice, formatNumber, getCurrencySymbol } from "@/lib/format";
+import type { CurrencyCode } from "@/data/types";
 import { AnimatedPressable } from "@/motion";
 import { isBuildableCategory } from "@/constants/buildStepTemplates";
 import { CATEGORY_VISUAL } from "@/data/categories";
@@ -61,32 +62,18 @@ import { CategorySpecificSection } from '@/components/CategorySpecificSection';
 import { ItemProgressSection } from '@/components/ItemProgressSection';
 import { GradingSection } from '@/components/GradingSection';
 import type { GradingLookupResult, PopulationReport, GradingServiceInfo } from '@/components/GradingSection';
+import { ItemGallerySection } from '@/components/ItemGallerySection';
+import type { ItemImage } from '@/components/ItemGallerySection';
+import { PriceFeedbackSection } from '@/components/PriceFeedbackSection';
+import { DossierReportSection } from '@/components/DossierReportSection';
+import type { DossierData } from '@/components/DossierReportSection';
+import { MarketplacePricesSection } from '@/components/MarketplacePricesSection';
+import type { MarketHit } from '@/components/MarketplacePricesSection';
+import { BuildProjectSection } from '@/components/BuildProjectSection';
+import { ProvenanceHistorySection } from '@/components/ProvenanceHistorySection';
+import { track } from '@/analytics/track';
 
-// Dossier data shape (mirrors collectorsApi.getDossier return type)
-interface DossierData {
-  item_id: string;
-  generated_at: string;
-  identity: Record<string, unknown>;
-  valuation: Record<string, unknown>;
-  provenance: Array<Record<string, unknown>>;
-  price_history: Array<Record<string, unknown>>;
-  market_comps: Array<Record<string, unknown>>;
-  photos: string[];
-  collections: string[];
-  authenticity_signals: string[];
-  completeness_score: number;
-}
-
-// Market hit shape from marketplace search results
-interface MarketHit {
-  title: string;
-  price: number;
-  url?: string;
-  affiliate_url?: string;
-  source?: string;
-  provider?: string;
-  condition?: string;
-}
+// DossierData and MarketHit types imported from extracted components
 
 // Price trend data shape
 interface PriceTrendData {
@@ -196,14 +183,7 @@ function ItemDetailScreen() {
   const [zoomImageUri, setZoomImageUri] = useState<string | null>(null);
 
   // ── Multi-photo gallery state ──────────────────────────────────────────
-  type ItemImage = {
-    id: string;
-    item_id: string;
-    image_url: string;
-    label: string | null;
-    position: number;
-    created_at: string | null;
-  };
+  // ItemImage type imported from ItemGallerySection
   const [galleryImages, setGalleryImages] = useState<ItemImage[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
   const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
@@ -310,29 +290,10 @@ function ItemDetailScreen() {
 
   const showLabelPicker = (callback: (label: string | null) => void) => {
     const options = ['No Label', ...IMAGE_LABELS.map((l) => LABEL_DISPLAY[l])];
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", ...options],
-          cancelButtonIndex: 0,
-          title: "Choose Photo Label",
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 0) return; // Cancel
-          if (buttonIndex === 1) callback(null); // No Label
-          else callback(IMAGE_LABELS[buttonIndex - 2]);
-        },
-      );
-    } else {
-      Alert.alert("Choose Photo Label", undefined, [
-        { text: "No Label", onPress: () => callback(null) },
-        ...IMAGE_LABELS.map((l) => ({
-          text: LABEL_DISPLAY[l],
-          onPress: () => callback(l),
-        })),
-        { text: "Cancel", style: "cancel" as const },
-      ]);
-    }
+    showActionSheet('Choose Photo Label', options, (index) => {
+      if (index === 0) callback(null); // No Label
+      else callback(IMAGE_LABELS[index - 1]);
+    });
   };
 
   const showPhotoSourcePicker = () => {
@@ -348,28 +309,9 @@ function ItemDetailScreen() {
       }
     };
 
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", "Take Photo", "Choose from Library"],
-          cancelButtonIndex: 0,
-          title: "Add Photo",
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 1) doUpload("camera");
-          if (buttonIndex === 2) doUpload("gallery");
-        },
-      );
-    } else {
-      Alert.alert("Add Photo", "Choose a source", [
-        { text: "Take Photo", onPress: () => doUpload("camera") },
-        {
-          text: "Choose from Library",
-          onPress: () => doUpload("gallery"),
-        },
-        { text: "Cancel", style: "cancel" },
-      ]);
-    }
+    showActionSheet('Add Photo', ['Take Photo', 'Choose from Library'], (index) => {
+      doUpload(index === 0 ? 'camera' : 'gallery');
+    });
   };
 
   // Confetti ref for draft result reveal
@@ -392,7 +334,7 @@ function ItemDetailScreen() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const notesInputRef = useRef<TextInput | null>(null);
-  const scrollViewRef = useRef<Animated.ScrollView | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const notesLayoutY = useRef(0);
 
   // Track keyboard visibility and height
@@ -421,6 +363,12 @@ function ItemDetailScreen() {
   // Quick-edit state (draft mode)
   const [editableName, setEditableName] = useState(name);
   const [editableCategory, setEditableCategory] = useState(category);
+
+  // Track item view on mount
+  useEffect(() => {
+    if (id) track({ name: 'item_viewed', properties: { item_id: id as string, category: editableCategory } });
+  }, []);
+
   const [editableCollection, setEditableCollection] = useState(collection);
   const [editableCondition, setEditableCondition] = useState(condition);
   const [editableValue, setEditableValue] = useState(value);
@@ -444,6 +392,15 @@ function ItemDetailScreen() {
   const [dossierLoading, setDossierLoading] = useState(false);
   const [dossierExpanded, setDossierExpanded] = useState(false);
   const [dossierError, setDossierError] = useState(false);
+
+  // ── Resolve category slug early — needed by grading, build, size, progress sections ──
+  const categorySlug = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9_]/g, '');
+
+  // Item attributes from DB (attributes_json, taxonomy_version, subtype_id, collections)
+  const [itemAttributes, setItemAttributes] = useState<Record<string, unknown> | null>(null);
+  const [taxonomyVersion, setTaxonomyVersion] = useState<string | undefined>();
+  const [subtypeId, setSubtypeId] = useState<string | undefined>();
+  const [itemCollections, setItemCollections] = useState<string[]>([]);
 
   // ── Grading service state ────────────────────────────────────────────
   const GRADING_ELIGIBLE = new Set(['pokemon', 'mtg', 'yugioh', 'sportscards', 'comic_books', 'retro_games']);
@@ -501,9 +458,8 @@ function ItemDetailScreen() {
   });
 
   // Build project state — for buildable categories
-  const categorySlug = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9_]/g, '');
   const itemIsBuildable = isBuildableCategory(categorySlug);
-  const buildAccent = CATEGORY_VISUAL[categorySlug]?.accentColor;
+  const buildAccent = theme.accent;
   const [linkedProject, setLinkedProject] = useState<{ id: string; title: string; pct: number } | null>(null);
 
   // ── Size-specific pricing state (sneakers, watches) ──────────────────
@@ -655,123 +611,50 @@ function ItemDetailScreen() {
 
   // (Price Alert section removed)
 
-  // ActionSheet handlers for iOS dropdowns
+  // ActionSheet handlers for dropdowns
   const showCategoryPicker = () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', ...CATEGORY_OPTIONS],
-          cancelButtonIndex: 0,
-          title: 'Select Category',
-        },
-        (buttonIndex) => {
-          if (buttonIndex > 0) {
-            setEditableCategory(CATEGORY_OPTIONS[buttonIndex - 1]);
-            if (inlineEditPending.current) {
-              inlineEditPending.current = false;
-              setTimeout(() => onSaveEdits(), 100);
-            }
-          } else if (inlineEditPending.current) {
-            inlineEditPending.current = false;
-            setIsEditing(false);
-          }
-        }
-      );
-    } else {
-      // Android fallback - could use a modal picker
-      Alert.alert(
-        'Select Category',
-        undefined,
-        CATEGORY_OPTIONS.map((opt) => ({
-          text: opt,
-          onPress: () => {
-            setEditableCategory(opt);
-            if (inlineEditPending.current) {
-              inlineEditPending.current = false;
-              setTimeout(() => onSaveEdits(), 100);
-            }
-          },
-        })).concat([{ text: 'Cancel', style: 'cancel', onPress: () => { if (inlineEditPending.current) { inlineEditPending.current = false; setIsEditing(false); } } }])
-      );
-    }
+    showActionSheet('Select Category', CATEGORY_OPTIONS, (index) => {
+      setEditableCategory(CATEGORY_OPTIONS[index]);
+      if (inlineEditPending.current) {
+        inlineEditPending.current = false;
+        setTimeout(() => onSaveEdits(), 100);
+      }
+    }, () => {
+      if (inlineEditPending.current) {
+        inlineEditPending.current = false;
+        setIsEditing(false);
+      }
+    });
   };
 
   const showCollectionPicker = () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', ...COLLECTION_OPTIONS],
-          cancelButtonIndex: 0,
-          title: 'Select Collection/Set',
-        },
-        (buttonIndex) => {
-          if (buttonIndex > 0) {
-            setEditableCollection(COLLECTION_OPTIONS[buttonIndex - 1]);
-            if (inlineEditPending.current) {
-              inlineEditPending.current = false;
-              setTimeout(() => onSaveEdits(), 100);
-            }
-          } else if (inlineEditPending.current) {
-            inlineEditPending.current = false;
-            setIsEditing(false);
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        'Select Collection/Set',
-        undefined,
-        COLLECTION_OPTIONS.map((opt) => ({
-          text: opt,
-          onPress: () => {
-            setEditableCollection(opt);
-            if (inlineEditPending.current) {
-              inlineEditPending.current = false;
-              setTimeout(() => onSaveEdits(), 100);
-            }
-          },
-        })).concat([{ text: 'Cancel', style: 'cancel', onPress: () => { if (inlineEditPending.current) { inlineEditPending.current = false; setIsEditing(false); } } }])
-      );
-    }
+    showActionSheet('Select Collection/Set', COLLECTION_OPTIONS, (index) => {
+      setEditableCollection(COLLECTION_OPTIONS[index]);
+      if (inlineEditPending.current) {
+        inlineEditPending.current = false;
+        setTimeout(() => onSaveEdits(), 100);
+      }
+    }, () => {
+      if (inlineEditPending.current) {
+        inlineEditPending.current = false;
+        setIsEditing(false);
+      }
+    });
   };
 
   const showConditionPicker = () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', ...CONDITION_OPTIONS],
-          cancelButtonIndex: 0,
-          title: 'Select Condition/Grade',
-        },
-        (buttonIndex) => {
-          if (buttonIndex > 0) {
-            setEditableCondition(CONDITION_OPTIONS[buttonIndex - 1]);
-            if (inlineEditPending.current) {
-              inlineEditPending.current = false;
-              setTimeout(() => onSaveEdits(), 100);
-            }
-          } else if (inlineEditPending.current) {
-            inlineEditPending.current = false;
-            setIsEditing(false);
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        'Select Condition/Grade',
-        undefined,
-        CONDITION_OPTIONS.map((opt) => ({
-          text: opt,
-          onPress: () => {
-            setEditableCondition(opt);
-            if (inlineEditPending.current) {
-              inlineEditPending.current = false;
-              setTimeout(() => onSaveEdits(), 100);
-            }
-          },
-        })).concat([{ text: 'Cancel', style: 'cancel', onPress: () => { if (inlineEditPending.current) { inlineEditPending.current = false; setIsEditing(false); } } }])
-      );
-    }
+    showActionSheet('Select Condition/Grade', CONDITION_OPTIONS, (index) => {
+      setEditableCondition(CONDITION_OPTIONS[index]);
+      if (inlineEditPending.current) {
+        inlineEditPending.current = false;
+        setTimeout(() => onSaveEdits(), 100);
+      }
+    }, () => {
+      if (inlineEditPending.current) {
+        inlineEditPending.current = false;
+        setIsEditing(false);
+      }
+    });
   };
 
   // Inline tap-to-edit handlers — auto-enter edit mode and open picker in one tap
@@ -826,12 +709,6 @@ function ItemDetailScreen() {
     }, 300000); // 5 min
     return () => clearInterval(evidenceInterval);
   }, [id, isDraft]);
-
-  // Item attributes from DB (attributes_json, taxonomy_version, subtype_id, collections)
-  const [itemAttributes, setItemAttributes] = useState<Record<string, unknown> | null>(null);
-  const [taxonomyVersion, setTaxonomyVersion] = useState<string | undefined>();
-  const [subtypeId, setSubtypeId] = useState<string | undefined>();
-  const [itemCollections, setItemCollections] = useState<string[]>([]);
 
   useEffect(() => {
     if (!id || isDraft) return;
@@ -980,7 +857,7 @@ function ItemDetailScreen() {
   // Grading: cert lookup
   const handleGradingLookup = useCallback(async () => {
     if (!gradingCertInput.trim()) {
-      showToast('Please enter a certification number', 'warning');
+      showToast({ message: 'Please enter a certification number', type: 'warning' });
       return;
     }
     setGradingLookupLoading(true);
@@ -990,13 +867,13 @@ function ItemDetailScreen() {
       setGradingLookupResult(result);
       setGradingModalVisible(false);
       if (result.cert_verified) {
-        showToast(`Verified: ${result.service_name} ${result.grade}`, 'success');
+        showToast({ message: `Verified: ${result.service_name} ${result.grade}`, type: 'success' });
       } else {
-        showToast('Certificate not found or not verified', 'warning');
+        showToast({ message: 'Certificate not found or not verified', type: 'warning' });
       }
     } catch (err) {
       logger.warn('[ItemDetail] grading lookup error:', err);
-      showToast('Failed to look up certificate', 'error');
+      showToast({ message: 'Failed to look up certificate', type: 'error' });
     } finally {
       setGradingLookupLoading(false);
     }
@@ -1022,7 +899,7 @@ function ItemDetailScreen() {
     setMarketLoading(true);
     setMarketError(false);
     try {
-      const data = await collectorsApi.marketplaceSearch(editableName, { category: editableCategory });
+      const data = await collectorsApi.marketplaceSearch(editableName, { category: editableCategory }) as { results?: MarketHit[]; hits?: MarketHit[] };
       const results = data.results || data.hits || [];
       setMarketResults(results);
       setMarketScannedAt(new Date().toISOString());
@@ -1154,8 +1031,6 @@ function ItemDetailScreen() {
       await dataProvider.updateItem(id, {
         name: editableName,
         category: editableCategory,
-        condition: editableCondition,
-        notes: notes || undefined,
       });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Changes saved', type: 'success' });
@@ -1339,235 +1214,31 @@ function ItemDetailScreen() {
           scrollEventThrottle={16}
         >
           {/* ── Image Gallery ─────────────────────────────────────────── */}
-          {galleryLoading ? (
-            /* Skeleton while gallery images are loading */
-            <View style={styles.galleryContainer}>
-              <Skeleton width={GALLERY_WIDTH} height={GALLERY_HEIGHT} borderRadius={16} />
-            </View>
-          ) : (effectiveGalleryImages.length > 0 || (!isDraft && id)) ? (
-            <View style={styles.galleryContainer}>
-              {(() => {
-                // Build data array: real/effective images + "Add Photo" card for saved items
-                const galleryData: Array<
-                  | ({ type: 'image' } & ItemImage)
-                  | { type: 'add'; id: string; item_id: string; image_url: string; label: null; position: number; created_at: null }
-                > = [
-                  ...effectiveGalleryImages.map((img) => ({ type: 'image' as const, ...img })),
-                  ...(!isDraft && id
-                    ? [{ type: 'add' as const, id: '__add__', item_id: '', image_url: '', label: null as null, position: 999, created_at: null as null }]
-                    : []),
-                ];
-                const totalSlides = galleryData.length;
-                const imageCount = effectiveGalleryImages.length;
-                return (
-                  <>
-                    <FlatList
-                      ref={galleryFlatListRef}
-                      data={galleryData}
-                      horizontal
-                      pagingEnabled
-                      showsHorizontalScrollIndicator={false}
-                      keyExtractor={(item) => item.id}
-                      onMomentumScrollEnd={(e) => {
-                        const idx = Math.round(e.nativeEvent.contentOffset.x / GALLERY_WIDTH);
-                        setGalleryActiveIndex(idx);
-                      }}
-                      getItemLayout={(_data, index) => ({
-                        length: GALLERY_WIDTH,
-                        offset: GALLERY_WIDTH * index,
-                        index,
-                      })}
-                      renderItem={({ item, index }) => {
-                        if (item.type === 'add') {
-                          // "Add Photo" card at the end
-                          return (
-                            <Pressable
-                              onPress={showPhotoSourcePicker}
-                              disabled={imageUploading || photoUploading}
-                              style={[
-                                styles.gallerySlide,
-                                { width: GALLERY_WIDTH, height: GALLERY_HEIGHT, borderColor: theme.border },
-                              ]}
-                              accessibilityRole="button"
-                              accessibilityLabel="Add a new photo"
-                            >
-                              <View style={[styles.galleryAddCard, { backgroundColor: theme.card }]}>
-                                {imageUploading || photoUploading ? (
-                                  <ActivityIndicator size="large" color={theme.accent} />
-                                ) : (
-                                  <>
-                                    <Ionicons name="camera-outline" size={36} color={theme.accent} />
-                                    <Text style={[styles.galleryAddText, { color: theme.accent }]}>Add Photo</Text>
-                                  </>
-                                )}
-                              </View>
-                            </Pressable>
-                          );
-                        }
-                        // Normal image slide
-                        const isRealGalleryImage = item.id !== '__original__';
-                        return (
-                          <View style={[styles.gallerySlide, { width: GALLERY_WIDTH, height: GALLERY_HEIGHT }]}>
-                            <Pressable
-                              onPress={() => {
-                                setZoomImageUri(item.image_url);
-                                setZoomVisible(true);
-                              }}
-                              accessibilityRole="button"
-                              accessibilityLabel={`Photo ${index + 1} of ${imageCount}${item.label ? ` (${LABEL_DISPLAY[item.label] || item.label})` : ''}. Tap to zoom`}
-                            >
-                              <Image
-                                source={{ uri: item.image_url }}
-                                style={{ width: GALLERY_WIDTH, height: GALLERY_HEIGHT }}
-                                contentFit="cover"
-                                cachePolicy="disk"
-                                transition={200}
-                              />
-                            </Pressable>
-                            {/* Label badge — bottom-left */}
-                            {item.label && (
-                              <View style={[styles.galleryLabelBadge, { backgroundColor: theme.accent }]}>
-                                <Text style={styles.galleryLabelText}>
-                                  {LABEL_DISPLAY[item.label] || item.label}
-                                </Text>
-                              </View>
-                            )}
-                            {/* Counter badge — bottom-right (only when multiple images) */}
-                            {imageCount > 1 && (
-                              <View style={styles.galleryCounterBadge}>
-                                <Text style={styles.galleryCounterText}>
-                                  {index + 1}/{imageCount}
-                                </Text>
-                              </View>
-                            )}
-                            {/* Delete button in edit mode — only for real gallery images */}
-                            {isEditing && isRealGalleryImage && (
-                              <Pressable
-                                onPress={() => {
-                                  fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-                                  Alert.alert(
-                                    'Delete Photo',
-                                    'Are you sure you want to remove this photo?',
-                                    [
-                                      { text: 'Cancel', style: 'cancel' },
-                                      {
-                                        text: 'Delete',
-                                        style: 'destructive',
-                                        onPress: () => handleGalleryDelete(item.id),
-                                      },
-                                    ],
-                                  );
-                                }}
-                                style={styles.galleryDeleteBtn}
-                                accessibilityRole="button"
-                                accessibilityLabel="Delete this photo"
-                              >
-                                <Ionicons name="close-circle" size={26} color="#FF3B30" />
-                              </Pressable>
-                            )}
-                          </View>
-                        );
-                      }}
-                    />
-                    {/* Page dots */}
-                    {totalSlides > 1 && (
-                      <View style={styles.galleryDots}>
-                        {galleryData.map((img, idx) => (
-                          <View
-                            key={img.id}
-                            style={[
-                              styles.galleryDot,
-                              {
-                                backgroundColor: idx === galleryActiveIndex
-                                  ? theme.accent
-                                  : theme.border,
-                              },
-                            ]}
-                          />
-                        ))}
-                      </View>
-                    )}
-                  </>
-                );
-              })()}
-              {/* Photo error */}
-              {photoError && (
-                <View style={styles.photoErrorBanner}>
-                  <Text style={styles.photoErrorText}>{photoError}</Text>
-                </View>
-              )}
-            </View>
-          ) : (
-            // Fallback: single image (draft mode or no images at all)
-            <View style={[styles.imageWrapper, { borderColor: theme.border }]}>
-              <Pressable
-                onPress={() => {
-                  if (displayImageUri) {
-                    setZoomImageUri(displayImageUri);
-                    setZoomVisible(true);
-                  }
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Tap to zoom image"
-              >
-                {displayImageUri ? (
-                  <Image
-                    source={{ uri: displayImageUri }}
-                    style={styles.image}
-                    contentFit="cover"
-                    cachePolicy="disk"
-                    transition={200}
-                    accessibilityRole="image"
-                    accessibilityLabel={`Photo of ${editableName}`}
-                  />
-                ) : (
-                  <Image
-                    source={require("../../assets/placeholder.png")}
-                    style={styles.image}
-                    contentFit="cover"
-                    accessibilityRole="image"
-                    accessibilityLabel={`Placeholder image for ${editableName}`}
-                  />
-                )}
-              </Pressable>
-
-              {/* Photo upload overlay button */}
-              <Pressable
-                onPress={showPhotoSourcePicker}
-                disabled={photoUploading}
-                style={[
-                  styles.photoUploadOverlay,
-                  !displayImageUri && styles.photoUploadOverlayEmpty,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={displayImageUri ? "Change photo" : "Add your photo"}
-              >
-                {photoUploading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Ionicons
-                      name={displayImageUri ? "camera" : "camera-outline"}
-                      size={displayImageUri ? 18 : 28}
-                      color="#FFFFFF"
-                    />
-                    {!displayImageUri && (
-                      <Text style={styles.photoUploadOverlayText}>
-                        Add your photo
-                      </Text>
-                    )}
-                  </>
-                )}
-              </Pressable>
-
-              {/* Photo error */}
-              {photoError && (
-                <View style={styles.photoErrorBanner}>
-                  <Text style={styles.photoErrorText}>{photoError}</Text>
-                </View>
-              )}
-            </View>
-          )}
+          <ItemGallerySection
+            theme={theme}
+            hapticsEnabled={settings.hapticsEnabled}
+            galleryLoading={galleryLoading}
+            effectiveGalleryImages={effectiveGalleryImages}
+            galleryActiveIndex={galleryActiveIndex}
+            GALLERY_WIDTH={GALLERY_WIDTH}
+            GALLERY_HEIGHT={GALLERY_HEIGHT}
+            galleryFlatListRef={galleryFlatListRef}
+            isDraft={isDraft}
+            id={id}
+            isEditing={isEditing}
+            imageUploading={imageUploading}
+            photoUploading={photoUploading}
+            photoError={photoError}
+            displayImageUri={displayImageUri}
+            editableName={editableName}
+            showPhotoSourcePicker={showPhotoSourcePicker}
+            onGalleryDelete={handleGalleryDelete}
+            onZoomImage={(uri) => {
+              setZoomImageUri(uri);
+              setZoomVisible(true);
+            }}
+            onMomentumScrollEnd={setGalleryActiveIndex}
+          />
 
           {/* Save / Cancel bar — only in edit mode */}
           {!isDraft && id && isEditing && (
@@ -1964,88 +1635,18 @@ function ItemDetailScreen() {
 
             {/* Feedback section — shown for saved items */}
             {!isDraft && id && (
-              <View style={[styles.feedbackBlock, { borderTopColor: theme.border }]}>
-                <Text style={[styles.feedbackHeader, { color: theme.text }]}>
-                  Help improve our estimates
-                </Text>
-
-                {feedbackMessage && (
-                  <Text style={[styles.feedbackMessage, { color: theme.accent }]}>
-                    {feedbackMessage}
-                  </Text>
-                )}
-
-                {showSalePriceInput ? (
-                  <View style={styles.salePriceInputRow}>
-                    <TextInput
-                      style={[
-                        styles.salePriceInput,
-                        {
-                          color: theme.text,
-                          borderColor: theme.border,
-                          backgroundColor: theme.background,
-                        },
-                      ]}
-                      placeholder="Sale price (e.g., 150.00)"
-                      placeholderTextColor={theme.muted ?? '#64748B'}
-                      keyboardType="decimal-pad"
-                      value={salePrice}
-                      onChangeText={setSalePrice}
-                      autoFocus
-                      accessibilityLabel="Sale price"
-                    />
-                    <Pressable
-                      onPress={onSubmitSalePrice}
-                      disabled={submittingFeedback || !salePrice.trim()}
-                      style={[
-                        styles.feedbackSubmitBtn,
-                        { backgroundColor: theme.accent, opacity: submittingFeedback ? 0.7 : 1 },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Submit sale price"
-                    >
-                      <Text style={[styles.feedbackBtnText, { color: '#FFFFFF' }]}>
-                        {submittingFeedback ? "..." : "Submit"}
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setShowSalePriceInput(false)}
-                      style={[styles.feedbackCancelBtn, { borderColor: theme.border }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Cancel sale price entry"
-                    >
-                      <Text style={[styles.feedbackBtnText, { color: theme.muted }]}>
-                        Cancel
-                      </Text>
-                    </Pressable>
-                  </View>
-                ) : (
-                  <View style={styles.feedbackButtonsRow}>
-                    <Pressable
-                      onPress={() => setShowSalePriceInput(true)}
-                      style={[styles.feedbackBtn, { backgroundColor: theme.success }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Report sale price"
-                    >
-                      <Text style={styles.feedbackBtnTextWhite}>I sold it for...</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={onPriceDisagree}
-                      disabled={submittingFeedback}
-                      style={[
-                        styles.feedbackBtn,
-                        { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Report price seems off"
-                    >
-                      <Text style={[styles.feedbackBtnText, { color: theme.text }]}>
-                        Price seems off
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
-              </View>
+              <PriceFeedbackSection
+                theme={theme}
+                showSalePriceInput={showSalePriceInput}
+                salePrice={salePrice}
+                submittingFeedback={submittingFeedback}
+                feedbackMessage={feedbackMessage}
+                onShowSalePriceInput={setShowSalePriceInput}
+                onSalePriceChange={setSalePrice}
+                onSubmitSalePrice={onSubmitSalePrice}
+                onPriceDisagree={onPriceDisagree}
+                onCancelSalePrice={() => setShowSalePriceInput(false)}
+              />
             )}
 
             {/* Refresh All Data — compact action bar above data panels */}
@@ -2085,37 +1686,15 @@ function ItemDetailScreen() {
 
             {/* Provenance & History — collapsible */}
             {!isDraft && id && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <Pressable
-                  onPress={() => setProvenanceExpanded(!provenanceExpanded)}
-                  style={styles.sectionHeaderRow}
-                  accessibilityRole="button"
-                  accessibilityLabel="Toggle ownership history"
-                >
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="time-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Ownership History</Text>
-                  </View>
-                  {provenanceLoading ? (
-                    <ActivityIndicator size="small" color={theme.accent} />
-                  ) : (
-                    <Ionicons
-                      name={provenanceExpanded ? "chevron-up" : "chevron-down"}
-                      size={18}
-                      color={theme.muted}
-                    />
-                  )}
-                </Pressable>
-                {provenanceExpanded && (
-                  <View style={styles.sectionContent}>
-                    <ProvenanceTimeline
-                      events={provenanceEvents}
-                      authenticitySignals={authenticitySignals}
-                      loading={provenanceLoading}
-                    />
-                  </View>
-                )}
-              </View>
+              <ProvenanceHistorySection
+                theme={theme}
+                hapticsEnabled={settings.hapticsEnabled}
+                provenanceExpanded={provenanceExpanded}
+                provenanceLoading={provenanceLoading}
+                provenanceEvents={provenanceEvents}
+                authenticitySignals={authenticitySignals}
+                onToggleExpanded={() => setProvenanceExpanded(!provenanceExpanded)}
+              />
             )}
 
             {/* Grading Section — for eligible categories */}
@@ -2148,151 +1727,34 @@ function ItemDetailScreen() {
 
             {/* Dossier Section */}
             {!isDraft && id && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <Pressable
-                  onPress={() => {
-                    if (!dossierData && !dossierError) loadDossier();
-                    else setDossierExpanded(!dossierExpanded);
-                  }}
-                  style={styles.sectionHeaderRow}
-                  accessibilityRole="button"
-                  accessibilityLabel="View full item report"
-                >
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="document-text-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Full Report</Text>
-                  </View>
-                  {dossierLoading ? (
-                    <ActivityIndicator size="small" color={theme.accent} />
-                  ) : (
-                    <Ionicons
-                      name={dossierExpanded ? "chevron-up" : "chevron-down"}
-                      size={18}
-                      color={theme.muted}
-                    />
-                  )}
-                </Pressable>
-                {dossierExpanded && dossierError && !dossierData && (
-                  <View style={styles.sectionContent}>
-                    <Text style={[styles.emptyText, { color: theme.muted }]}>
-                      Could not load report. Check your connection and try again.
-                    </Text>
-                    <AnimatedPressable
-                      onPress={() => loadDossier()}
-                      style={[styles.retryBtn, { borderColor: theme.accent }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Retry loading report"
-                    >
-                      <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '600' }}>Retry</Text>
-                    </AnimatedPressable>
-                  </View>
-                )}
-                {dossierExpanded && dossierData && (
-                  <View style={styles.sectionContent}>
-                    {/* Valuation summary */}
-                    {dossierData.valuation?.q50 != null && (
-                      <View style={[styles.dossierCard, { backgroundColor: theme.background }]}>
-                        <Text style={[styles.dossierLabel, { color: theme.muted }]}>Estimated Value</Text>
-                        <Text style={[styles.dossierValue, { color: theme.text }]}>
-                          {formatPrice(toNum(dossierData.valuation.q50))}
-                        </Text>
-                        {dossierData.valuation.explanation && (
-                          <Text style={[styles.dossierMeta, { color: theme.muted }]}>
-                            {dossierData.valuation.explanation}
-                          </Text>
-                        )}
-                      </View>
-                    )}
-                    {/* Market comps count */}
-                    {dossierData.market_comps?.length > 0 && (
-                      <View style={styles.dossierRow}>
-                        <Text style={[styles.dossierRowLabel, { color: theme.muted }]}>Similar Listings</Text>
-                        <Text style={[styles.dossierRowValue, { color: theme.text }]}>
-                          {dossierData.market_comps.length} found
-                        </Text>
-                      </View>
-                    )}
-                    {/* Authenticity signals */}
-                    {dossierData.authenticity_signals?.length > 0 && (
-                      <View style={styles.dossierRow}>
-                        <Text style={[styles.dossierRowLabel, { color: theme.muted }]}>Authenticity</Text>
-                        <Text style={[styles.dossierRowValue, { color: theme.accent }]}>
-                          {dossierData.authenticity_signals.join(", ").replace(/_/g, " ")}
-                        </Text>
-                      </View>
-                    )}
-                    {/* Export button */}
-                    <Pressable
-                      onPress={() => {
-                        const url = collectorsApi.getDossierExportUrl(id);
-                        Linking.openURL(url).catch((err) => {
-                          logger.warn('[ItemDetail] Failed to open URL', err);
-                        });
-                      }}
-                      style={[styles.dossierExportBtn, { borderColor: theme.border }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Export report as PDF"
-                    >
-                      <Ionicons name="share-outline" size={16} color={theme.accent} />
-                      <Text style={[styles.dossierExportText, { color: theme.accent }]}>Export Report</Text>
-                    </Pressable>
-                  </View>
-                )}
-              </View>
+              <DossierReportSection
+                theme={theme}
+                dossierData={dossierData}
+                dossierLoading={dossierLoading}
+                dossierExpanded={dossierExpanded}
+                dossierError={dossierError}
+                onToggleExpanded={() => {
+                  if (!dossierData && !dossierError) loadDossier();
+                  else setDossierExpanded(!dossierExpanded);
+                }}
+                onRetry={() => loadDossier()}
+                itemId={id}
+                formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                toNum={toNum}
+              />
             )}
 
             {/* Build Project — for buildable categories */}
             {!isDraft && id && itemIsBuildable && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <View style={styles.sectionHeaderRow}>
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="construct-outline" size={20} color={buildAccent ?? theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Build & Paint</Text>
-                  </View>
-                </View>
-                {linkedProject ? (
-                  <Pressable
-                    onPress={() => router.push(`/projects/${encodeURIComponent(linkedProject.id)}`)}
-                    style={[styles.buildProjectLink, { backgroundColor: theme.background, borderColor: theme.border }]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`View build project: ${linkedProject.title}, ${linkedProject.pct}% complete`}
-                  >
-                    <View style={[styles.buildProjectLinkAccent, { backgroundColor: buildAccent ?? theme.accent }]} />
-                    <View style={styles.buildProjectLinkInfo}>
-                      <Text style={[styles.buildProjectLinkTitle, { color: theme.text }]} numberOfLines={1}>
-                        {linkedProject.title}
-                      </Text>
-                      <View style={styles.buildProjectLinkProgressRow}>
-                        <View style={[styles.buildProjectLinkProgressBg, { backgroundColor: theme.border }]}>
-                          <View
-                            style={[
-                              styles.buildProjectLinkProgressFill,
-                              { backgroundColor: buildAccent ?? theme.accent, width: `${linkedProject.pct}%` },
-                            ]}
-                          />
-                        </View>
-                        <Text style={[styles.buildProjectLinkPct, { color: theme.muted }]}>
-                          {linkedProject.pct}%
-                        </Text>
-                      </View>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={theme.muted} />
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    onPress={() => router.push({
-                      pathname: '/build-paint-projects',
-                      params: { linkItemId: id, linkItemName: editableName, linkCategoryId: categorySlug },
-                    })}
-                    style={[styles.startBuildButton, { backgroundColor: buildAccent ?? theme.accent }]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Start a build project for this item"
-                  >
-                    <Ionicons name="add-circle-outline" size={18} color="#fff" />
-                    <Text style={styles.startBuildButtonText}>Start Build Project</Text>
-                  </Pressable>
-                )}
-              </View>
+              <BuildProjectSection
+                theme={theme}
+                buildAccent={buildAccent}
+                linkedProject={linkedProject}
+                itemIsBuildable={itemIsBuildable}
+                editableName={editableName}
+                itemId={id}
+                categorySlug={categorySlug}
+              />
             )}
 
             {/* Reading / Play Progress — for manga, comics, games */}
@@ -2348,99 +1810,21 @@ function ItemDetailScreen() {
 
             {/* Marketplace Section */}
             {!isDraft && id && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <Pressable
-                  onPress={() => {
-                    if (marketResults.length === 0 && !marketError) loadMarketResults();
-                    else setMarketExpanded(!marketExpanded);
-                  }}
-                  style={styles.sectionHeaderRow}
-                  accessibilityRole="button"
-                  accessibilityLabel="Find on market"
-                >
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="cart-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Market Prices</Text>
-                  </View>
-                  {marketLoading ? (
-                    <ActivityIndicator size="small" color={theme.accent} />
-                  ) : (
-                    <Ionicons
-                      name={marketExpanded ? "chevron-up" : "chevron-down"}
-                      size={18}
-                      color={theme.muted}
-                    />
-                  )}
-                </Pressable>
-                {marketExpanded && marketError && marketResults.length === 0 && !marketLoading && (
-                  <View style={styles.sectionContent}>
-                    <Text style={[styles.emptyText, { color: theme.muted }]}>
-                      Could not load market prices. Check your connection and try again.
-                    </Text>
-                    <AnimatedPressable
-                      onPress={() => loadMarketResults()}
-                      style={[styles.retryBtn, { borderColor: theme.accent }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Retry loading market prices"
-                    >
-                      <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '600' }}>Retry</Text>
-                    </AnimatedPressable>
-                  </View>
-                )}
-                {marketExpanded && marketResults.length > 0 && (
-                  <View style={styles.sectionContent}>
-                    {marketResults.slice(0, 5).map((hit, idx) => (
-                      <Pressable
-                        key={idx}
-                        onPress={() => {
-                          const openUrl = hit.affiliate_url || hit.url;
-                          if (openUrl) Linking.openURL(openUrl).catch((err) => {
-                            logger.warn('[ItemDetail] Failed to open URL', err);
-                          });
-                        }}
-                        style={[styles.marketHitRow, { borderBottomColor: theme.border }]}
-                        accessibilityRole="link"
-                        accessibilityLabel={`${hit.title}, ${formatPrice(toNum(hit.price))} on ${hit.source || hit.provider || 'marketplace'}`}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.marketHitTitle, { color: theme.text }]} numberOfLines={1}>
-                            {hit.title}
-                          </Text>
-                          <Text style={[styles.marketHitMeta, { color: theme.muted }]}>
-                            {hit.source || hit.provider} {hit.condition ? `· ${hit.condition}` : ""}
-                          </Text>
-                        </View>
-                        <Text style={[styles.marketHitPrice, { color: theme.text }]}>
-                          {formatPrice(toNum(hit.price))}
-                        </Text>
-                      </Pressable>
-                    ))}
-                    {marketResults.length > 5 && (
-                      <AnimatedPressable
-                        onPress={() => {
-                          router.push({
-                            pathname: '/(tabs)/marketplace',
-                            params: { q: editableName },
-                          });
-                        }}
-                        style={styles.viewAllLink}
-                        accessibilityRole="link"
-                        accessibilityLabel={`View all ${marketResults.length} marketplace results`}
-                      >
-                        <Text style={[styles.viewAllLinkText, { color: theme.accent }]}>
-                          View all {marketResults.length} results
-                        </Text>
-                        <Ionicons name="arrow-forward" size={14} color={theme.accent} />
-                      </AnimatedPressable>
-                    )}
-                  </View>
-                )}
-                {marketExpanded && marketResults.length === 0 && !marketLoading && (
-                  <Text style={[styles.emptyText, { color: theme.muted }]}>
-                    No listings found for this item.
-                  </Text>
-                )}
-              </View>
+              <MarketplacePricesSection
+                theme={theme}
+                marketResults={marketResults}
+                marketLoading={marketLoading}
+                marketExpanded={marketExpanded}
+                marketError={marketError}
+                editableName={editableName}
+                onToggleExpanded={() => {
+                  if (marketResults.length === 0 && !marketError) loadMarketResults();
+                  else setMarketExpanded(!marketExpanded);
+                }}
+                onRetry={() => loadMarketResults()}
+                formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
+                toNum={toNum}
+              />
             )}
 
             {/* Notes (editable) */}
@@ -2575,27 +1959,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 32,
   },
-  imageWrapper: {
-    width: "100%",
-    height: 260,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-    marginBottom: 16,
-  },
   draftSection: {
     marginBottom: 16,
     gap: 8,
-  },
-  draftBanner: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  draftText: {
-    fontSize: 13,
-    fontWeight: '600',
   },
   draftButtonsRow: {
     flexDirection: 'row',
@@ -2640,51 +2006,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 6,
   },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  photoUploadOverlay: {
-    position: "absolute",
-    bottom: 12,
-    right: 12,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  photoUploadOverlayEmpty: {
-    bottom: 0,
-    right: 0,
-    left: 0,
-    top: 0,
-    width: "100%",
-    height: "100%",
-    borderRadius: 0,
-    backgroundColor: "rgba(0,0,0,0.15)",
-    gap: 8,
-  },
-  photoUploadOverlayText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  photoErrorBanner: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(220,38,38,0.85)",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  photoErrorText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    textAlign: "center",
-  },
   card: {
     borderWidth: 1,
     borderRadius: 16,
@@ -2696,66 +2017,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: -0.3,
   },
-  nameInput: {
-    fontSize: 20,
-    fontWeight: "700",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 4,
-  },
-  editableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  editableFieldWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  editableFieldSmall: {
-    alignSelf: 'flex-start',
-    marginTop: 4,
-  },
-  editableNameInput: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  editableCategoryInput: {
-    fontSize: 14,
-    minWidth: 120,
-  },
   editableNameInputSimple: {
     fontSize: 20,
     fontWeight: '700',
     paddingVertical: 4,
     borderBottomWidth: 1,
-  },
-  editableCategoryInputSimple: {
-    fontSize: 14,
-    paddingVertical: 4,
-    marginTop: 4,
-    borderBottomWidth: 1,
-    alignSelf: 'flex-start',
-    minWidth: 100,
-  },
-  dropdownField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    marginTop: 4,
-    borderBottomWidth: 1,
-    alignSelf: 'flex-start',
-    gap: 6,
-  },
-  dropdownFieldText: {
-    fontSize: 14,
   },
   dropdownFieldRow: {
     flexDirection: 'row',
@@ -2784,31 +2050,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     marginRight: 2,
-  },
-  category: {
-    fontSize: 13,
-  },
-  categoryInput: {
-    fontSize: 13,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginTop: 4,
-  },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginTop: 4,
-    gap: 4,
-  },
-  categoryPillText: {
-    fontSize: 13,
-    fontWeight: '500',
   },
   confidenceSection: {
     marginTop: 12,
@@ -2893,65 +2134,7 @@ const styles = StyleSheet.create({
     minHeight: 100,
     maxHeight: 220,
   },
-  feedbackBlock: {
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-  },
-  feedbackHeader: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 10,
-  },
-  feedbackMessage: {
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  feedbackButtonsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  feedbackBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  feedbackBtnText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  feedbackBtnTextWhite: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  salePriceInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  salePriceInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 14,
-  },
-  feedbackSubmitBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  feedbackCancelBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
+  // Styles for sections still rendered inline (e.g. "Shop this Item")
   sectionBlock: {
     marginTop: 16,
     paddingTop: 12,
@@ -2972,80 +2155,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  sectionContent: {
-    marginTop: 10,
-  },
-  emptyText: {
-    fontSize: 13,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  retryBtn: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 10,
-  },
-  // Build project link card
-  buildProjectLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 10,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginTop: 8,
-  },
-  buildProjectLinkAccent: {
-    width: 4,
-    alignSelf: 'stretch',
-  },
-  buildProjectLinkInfo: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  buildProjectLinkTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  buildProjectLinkProgressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  buildProjectLinkProgressBg: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  buildProjectLinkProgressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  buildProjectLinkPct: {
-    fontSize: 11,
-    fontWeight: '600',
-    minWidth: 28,
-    textAlign: 'right',
-  },
-  startBuildButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 8,
-  },
-  startBuildButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
   affiliateLinkBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -3058,83 +2167,6 @@ const styles = StyleSheet.create({
   affiliateLinkText: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  dossierCard: {
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  dossierLabel: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  dossierValue: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  dossierMeta: {
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 17,
-  },
-  dossierRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
-  dossierRowLabel: {
-    fontSize: 13,
-  },
-  dossierRowValue: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  dossierExportBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 8,
-  },
-  dossierExportText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  marketHitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 8,
-  },
-  marketHitTitle: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  marketHitMeta: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  marketHitPrice: {
-    fontSize: 14,
-    fontWeight: '700',
-    minWidth: 60,
-    textAlign: 'right',
-  },
-  viewAllLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 10,
-    marginTop: 4,
-  },
-  viewAllLinkText: {
-    fontSize: 13,
-    fontWeight: '600',
   },
   stickyButtonContainer: {
     position: 'absolute',
@@ -3209,21 +2241,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  editBarBtnWide: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  editBarBtnWideText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
   editBarBtnPrimary: {
     flex: 1,
     flexDirection: 'row',
@@ -3238,143 +2255,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#fff',
-  },
-  // Price History Chart styles
-  trendDirectionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  trendPctText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  trendRangePills: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 10,
-  },
-  trendRangePill: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  trendRangePillText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  trendChartContainer: {
-    marginTop: 12,
-    paddingVertical: 8,
-  },
-  trendHoverRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    marginBottom: 8,
-  },
-  trendHoverPrice: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  trendHoverDate: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  trendEmptyState: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    gap: 6,
-  },
-  trendEmptyText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  trendEmptySubtext: {
-    fontSize: 12,
-    textAlign: 'center',
-    paddingHorizontal: 16,
-  },
-  // ── Image Gallery styles ─────────────────────────────────────────
-  galleryContainer: {
-    width: '100%',
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  gallerySlide: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  galleryAddCard: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: '#81D8D0',
-  },
-  galleryAddText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  galleryLabelBadge: {
-    position: 'absolute',
-    bottom: 10,
-    left: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  galleryLabelText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'capitalize',
-  },
-  galleryDeleteBtn: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  galleryCounterBadge: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  galleryCounterText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  galleryDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-  },
-  galleryDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
   },
   // For-Sale listing styles
   forSaleBar: {
@@ -3395,74 +2275,6 @@ const styles = StyleSheet.create({
   },
   forSaleBadgeText: {
     fontSize: 13,
-    fontWeight: '600',
-  },
-  forSaleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  forSaleBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  forSaleModalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  forSaleModalSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  forSaleModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  forSaleModalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  forSaleModalLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 6,
-  },
-  forSaleModalInput: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  forSaleModalHint: {
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  forSaleModalConfirmBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 12,
-  },
-  forSaleModalConfirmBtnText: {
-    color: '#fff',
-    fontSize: 15,
     fontWeight: '600',
   },
   // Quick Actions Row (standalone section under image)
@@ -3488,42 +2300,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  // Watchlist button & modal styles
-  watchlistBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 8,
-  },
-  watchlistBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  watchlistPreview: {
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 16,
-  },
-  watchlistPreviewTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  watchlistPreviewBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  watchlistPreviewBadgeText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-
   // Progress Tracking styles moved to ItemProgressSection component
   // Grading styles moved to GradingSection component
   // Size, LEGO, Funko, Auth styles moved to CategorySpecificSection component

@@ -143,6 +143,7 @@ const CreateEventScreen: React.FC = () => {
   const handleUseMyLocation = useCallback(async () => {
     setGeoLoading(true);
     try {
+      // @ts-expect-error expo-location is an optional peer dependency loaded at runtime
       const Location = await import('expo-location');
 
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -217,7 +218,7 @@ const CreateEventScreen: React.FC = () => {
       }
 
       router.back();
-    } catch (err: unknown) {
+    } catch (err: any) {
       logger.warn('[CreateEvent] error:', err);
       showToast({ message: err?.message || 'Failed to create event. Please try again.', type: 'error' });
     } finally {

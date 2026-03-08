@@ -1725,6 +1725,228 @@ def get_curated_catalog() -> list[dict]:
          "Sealed Product", False, 3000.00, "Sealed Product", ""),
         ("PTDN-BOX", "Phantom Darkness Booster Box (Sealed)", "Phantom Darkness",
          "Sealed Product", False, 5000.00, "Sealed Product", ""),
+
+        # =================================================================
+        # Ghost Rares — Additional (+10)
+        # =================================================================
+        ("TAEV-EN035", "Rainbow Dragon (Ghost Rare)", "Tactical Evolution",
+         "Ghost Rare", True, 850.00, "Monster", "LIGHT"),
+        ("GLAS-EN036", "Elemental HERO Chaos Neos (Ghost Rare)", "Gladiator's Assault",
+         "Ghost Rare", True, 600.00, "Monster", "DARK"),
+        ("PTDN-EN001", "Rainbow Neos (Ghost Rare)", "Phantom Darkness",
+         "Ghost Rare", True, 750.00, "Monster", "LIGHT"),
+        ("CSOC-EN040", "Stardust Dragon (Ghost Rare)", "Crossroads of Chaos",
+         "Ghost Rare", True, 1200.00, "Monster", "WIND"),
+        ("RGBT-EN040", "Power Tool Dragon (Ghost Rare)", "Raging Battle",
+         "Ghost Rare", True, 500.00, "Monster", "EARTH"),
+        ("SOVR-EN044", "Majestic Red Dragon (Ghost Rare)", "Stardust Overdrive",
+         "Ghost Rare", True, 550.00, "Monster", "DARK"),
+        ("DREV-EN043", "Dragon Knight Draco-Equiste (Ghost Rare)", "Duelist Revolution",
+         "Ghost Rare", True, 400.00, "Monster", "WIND"),
+        ("GENF-EN041", "Number 17: Leviathan Dragon (Ghost Rare)", "Generation Force",
+         "Ghost Rare", True, 350.00, "Monster", "WATER"),
+        ("ORCS-EN040", "Number C39: Utopia Ray (Ghost Rare)", "Order of Chaos",
+         "Ghost Rare", True, 300.00, "Monster", "LIGHT"),
+        ("REDU-EN041", "Heroic Champion - Excalibur (Ghost Rare)", "Return of the Duelist",
+         "Ghost Rare", True, 280.00, "Monster", "LIGHT"),
+
+        # =================================================================
+        # Starlight Rares — Recent Sets (+12)
+        # =================================================================
+        ("BLVO-EN087", "Heavenly Zephyr - Miradora (Starlight Rare)", "Blazing Vortex",
+         "Starlight Rare", True, 400.00, "Monster", "WIND"),
+        ("LIOV-EN081", "Stardust Dragon (Starlight Rare)", "Lightning Overdrive",
+         "Starlight Rare", True, 1800.00, "Monster", "WIND"),
+        ("DAMA-EN080", "Destiny HERO - Destroyer Phoenix Enforcer (Starlight Rare)", "Dawn of Majesty",
+         "Starlight Rare", True, 1200.00, "Monster", "DARK"),
+        ("BODE-EN098", "Baronne de Fleur (Starlight Rare)", "Burst of Destiny",
+         "Starlight Rare", True, 900.00, "Monster", "WIND"),
+        ("POTE-EN099", "Spright Blue (Starlight Rare)", "Power of the Elements",
+         "Starlight Rare", True, 700.00, "Monster", "DARK"),
+        ("PHHY-EN100", "Kashtira Fenrir (Starlight Rare)", "Photon Hypernova",
+         "Starlight Rare", True, 500.00, "Monster", "DARK"),
+        ("CYAC-EN098", "Mannadium Trisukta (Starlight Rare)", "Cyberstorm Access",
+         "Starlight Rare", True, 350.00, "Monster", "LIGHT"),
+        ("DUNE-EN099", "S:P Little Knight (Starlight Rare)", "Duelist Nexus",
+         "Starlight Rare", True, 600.00, "Monster", "LIGHT"),
+        ("AGOV-EN098", "Fiendsmith Requiem (Starlight Rare)", "Age of Overlord",
+         "Starlight Rare", True, 450.00, "Monster", "DARK"),
+        ("LEDE-EN099", "Bystial Dis Pater (Starlight Rare)", "Legacy of Destruction",
+         "Starlight Rare", True, 380.00, "Monster", "DARK"),
+        ("VASM-EN001", "Dark Magician Girl (Starlight Rare)", "Valiant Smashers",
+         "Starlight Rare", True, 2500.00, "Monster", "DARK"),
+        ("MAZE-EN046", "Exodia the Forbidden One (Quarter Century Secret Rare)", "Maze of Millennia",
+         "Quarter Century Secret Rare", True, 1500.00, "Monster", "DARK"),
+
+        # =================================================================
+        # Prize Cards & Jump Festa Promos (+10)
+        # =================================================================
+        ("YCSW-EN001", "Minerva, the Exalted Lightsworn (YCS Prize)", "YCS Prize Card",
+         "Prize Card", False, 6000.00, "Monster", "LIGHT"),
+        ("YCSW-EN004", "Ascator, Dawnwalker (YCS Prize)", "YCS Prize Card",
+         "Prize Card", False, 3000.00, "Monster", "EARTH"),
+        ("YCSW-EN005", "Number 93: Utopia Kaiser (YCS Prize)", "YCS Prize Card",
+         "Prize Card", False, 5000.00, "Monster", "LIGHT"),
+        ("TFK-EN001", "Tyler the Great Warrior (Prize)", "Make-A-Wish Prize",
+         "Prize Card", False, 200000.00, "Monster", "EARTH"),
+        ("JF-EN001", "Blue-Eyes White Dragon (Jump Festa 2025 Promo)", "Jump Festa 2025 Promo",
+         "Ultra Rare", False, 120.00, "Monster", "LIGHT"),
+        ("JF-EN002", "Dark Magician (Jump Festa 2025 Promo)", "Jump Festa 2025 Promo",
+         "Ultra Rare", False, 100.00, "Monster", "DARK"),
+        ("JF-EN003", "Red-Eyes Black Dragon (Jump Festa 2024 Promo)", "Jump Festa 2024 Promo",
+         "Ultra Rare", False, 90.00, "Monster", "DARK"),
+        ("JMP-EN001", "Slifer the Sky Dragon (Shonen Jump Promo)", "Shonen Jump Promo",
+         "Ultra Rare", False, 350.00, "Monster", "DIVINE"),
+        ("JMP-EN002", "Obelisk the Tormentor (Shonen Jump Promo)", "Shonen Jump Promo",
+         "Ultra Rare", False, 300.00, "Monster", "DIVINE"),
+        ("JMP-EN003", "The Winged Dragon of Ra (Shonen Jump Promo)", "Shonen Jump Promo",
+         "Ultra Rare", False, 280.00, "Monster", "DIVINE"),
+
+        # =================================================================
+        # Quarter Century Secret Rares — 25th Anniversary (+10)
+        # =================================================================
+        ("QCSE-EN001", "Blue-Eyes White Dragon (Quarter Century Secret Rare)", "25th Anniversary Rarity Collection",
+         "Quarter Century Secret Rare", False, 800.00, "Monster", "LIGHT"),
+        ("QCSE-EN002", "Dark Magician (Quarter Century Secret Rare)", "25th Anniversary Rarity Collection",
+         "Quarter Century Secret Rare", False, 700.00, "Monster", "DARK"),
+        ("QCSE-EN003", "Red-Eyes Black Dragon (Quarter Century Secret Rare)", "25th Anniversary Rarity Collection",
+         "Quarter Century Secret Rare", False, 500.00, "Monster", "DARK"),
+        ("RA02-EN001", "Blue-Eyes White Dragon (Quarter Century Ultimate Rare)", "25th Anniversary Ultimate Kaiba Set",
+         "Quarter Century Secret Rare", False, 1200.00, "Monster", "LIGHT"),
+        ("RA02-EN020", "Exodia the Forbidden One (Quarter Century Secret Rare)", "25th Anniversary Rarity Collection II",
+         "Quarter Century Secret Rare", False, 600.00, "Monster", "DARK"),
+        ("RA02-EN050", "Pot of Greed (Quarter Century Secret Rare)", "25th Anniversary Rarity Collection II",
+         "Quarter Century Secret Rare", False, 400.00, "Spell", ""),
+        ("RA02-EN040", "Mirror Force (Quarter Century Secret Rare)", "25th Anniversary Rarity Collection II",
+         "Quarter Century Secret Rare", False, 350.00, "Trap", ""),
+        ("RA02-EN035", "Monster Reborn (Quarter Century Secret Rare)", "25th Anniversary Rarity Collection II",
+         "Quarter Century Secret Rare", False, 380.00, "Spell", ""),
+        ("QCDB-EN001", "Stardust Dragon (Quarter Century Secret Rare)", "Quarter Century Duelist Box",
+         "Quarter Century Secret Rare", False, 900.00, "Monster", "WIND"),
+        ("QCDB-EN002", "Firewall Dragon (Quarter Century Secret Rare)", "Quarter Century Duelist Box",
+         "Quarter Century Secret Rare", False, 450.00, "Monster", "LIGHT"),
+
+        # =================================================================
+        # Pharaoh's Rare from Age of Overlord (+5)
+        # =================================================================
+        ("AGOV-EN001", "Kurikara Divincarnate (Pharaoh's Rare)", "Age of Overlord",
+         "Pharaoh's Rare", True, 200.00, "Monster", "DIVINE"),
+        ("AGOV-EN038", "Vaalmonica Versare (Pharaoh's Rare)", "Age of Overlord",
+         "Pharaoh's Rare", True, 150.00, "Spell", ""),
+        ("AGOV-EN048", "Fiendsmith's Tractus (Pharaoh's Rare)", "Age of Overlord",
+         "Pharaoh's Rare", True, 180.00, "Monster", "DARK"),
+        ("AGOV-EN050", "Snake-Eye Ash (Pharaoh's Rare)", "Age of Overlord",
+         "Pharaoh's Rare", True, 250.00, "Monster", "FIRE"),
+        ("AGOV-EN080", "Promethean Princess, Bestower of Flames (Pharaoh's Rare)", "Age of Overlord",
+         "Pharaoh's Rare", True, 220.00, "Monster", "FIRE"),
+
+        # =================================================================
+        # Maze of Millennia Chase Cards (+8)
+        # =================================================================
+        ("MAZE-EN001", "Blue-Eyes Jet Dragon (Ultra Rare)", "Maze of Millennia",
+         "Ultra Rare", True, 35.00, "Monster", "LIGHT"),
+        ("MAZE-EN025", "Exodius the Ultimate Forbidden Lord (Secret Rare)", "Maze of Millennia",
+         "Secret Rare", True, 40.00, "Monster", "DARK"),
+        ("MAZE-EN044", "Left Arm Offering (Secret Rare)", "Maze of Millennia",
+         "Secret Rare", True, 25.00, "Spell", ""),
+        ("MAZE-EN048", "Dark Magician the Dragon Knight (Ultra Rare)", "Maze of Millennia",
+         "Ultra Rare", True, 30.00, "Monster", "DARK"),
+        ("MAZE-EN050", "Millennium Seeker (Ultra Rare)", "Maze of Millennia",
+         "Ultra Rare", True, 28.00, "Monster", "LIGHT"),
+        ("MAZE-EN052", "Gandora the Dragon of Destruction (Ultra Rare)", "Maze of Millennia",
+         "Ultra Rare", True, 22.00, "Monster", "DARK"),
+        ("MAZE-EN060", "Dunames Dark Witch (Secret Rare)", "Maze of Millennia",
+         "Secret Rare", True, 35.00, "Monster", "LIGHT"),
+        ("MAZE-EN080", "Magician's Salvation (Ultra Rare)", "Maze of Millennia",
+         "Ultra Rare", True, 18.00, "Spell", ""),
+
+        # =================================================================
+        # Speed Duel Tournament Promos (+5)
+        # =================================================================
+        ("SBCB-EN001", "Blue-Eyes White Dragon (Speed Duel Prize)", "Speed Duel Battle City Box",
+         "Ultra Rare", False, 45.00, "Monster", "LIGHT"),
+        ("SBCB-EN002", "Dark Magician (Speed Duel Prize)", "Speed Duel Battle City Box",
+         "Ultra Rare", False, 40.00, "Monster", "DARK"),
+        ("SGX4-EN001", "Slifer the Sky Dragon (Speed Duel Prize)", "Speed Duel GX Midterm Destruction",
+         "Ultra Rare", False, 80.00, "Monster", "DIVINE"),
+        ("SS05-EN001", "Exodia the Forbidden One (Speed Duel)", "Speed Duel Starter Deck",
+         "Ultra Rare", False, 55.00, "Monster", "DARK"),
+        ("SBSC-EN001", "Gate Guardian (Speed Duel)", "Speed Duel Scars of Battle",
+         "Secret Rare", False, 60.00, "Monster", "DARK"),
+
+        # =================================================================
+        # OCG Exclusives — Japanese Cards (+8)
+        # =================================================================
+        ("RC04-JP001", "Blue-Eyes White Dragon (OCG Extra Secret Rare)", "Rarity Collection 2024",
+         "Extra Secret Rare", False, 180.00, "Monster", "LIGHT"),
+        ("RC04-JP003", "Dark Magician (OCG Extra Secret Rare)", "Rarity Collection 2024",
+         "Extra Secret Rare", False, 160.00, "Monster", "DARK"),
+        ("RC04-JP010", "Ash Blossom & Joyous Spring (OCG Extra Secret Rare)", "Rarity Collection 2024",
+         "Extra Secret Rare", False, 120.00, "Monster", "FIRE"),
+        ("PAC1-JP004", "Blue-Eyes White Dragon (OCG Prismatic Art Rare)", "Prismatic Art Collection",
+         "Prismatic Art Rare", False, 250.00, "Monster", "LIGHT"),
+        ("PAC1-JP005", "Dark Magician (OCG Prismatic Art Rare)", "Prismatic Art Collection",
+         "Prismatic Art Rare", False, 220.00, "Monster", "DARK"),
+        ("PAC1-JP006", "Red-Eyes Black Dragon (OCG Prismatic Art Rare)", "Prismatic Art Collection",
+         "Prismatic Art Rare", False, 200.00, "Monster", "DARK"),
+        ("20TH-JPC01", "Blue-Eyes White Dragon (20th Secret Rare)", "20th Anniversary Legend Collection",
+         "20th Secret Rare", False, 350.00, "Monster", "LIGHT"),
+        ("20TH-JPC02", "Dark Magician (20th Secret Rare)", "20th Anniversary Legend Collection",
+         "20th Secret Rare", False, 300.00, "Monster", "DARK"),
+
+        # =================================================================
+        # Anniversary Gold Rares (+5)
+        # =================================================================
+        ("GLD5-EN001", "Blue-Eyes White Dragon (Gold Rare)", "Gold Series: Haunted Mine",
+         "Gold Rare", False, 60.00, "Monster", "LIGHT"),
+        ("GLD5-EN002", "Dark Magician (Gold Rare)", "Gold Series: Haunted Mine",
+         "Gold Rare", False, 55.00, "Monster", "DARK"),
+        ("PGL3-EN080", "Solemn Strike (Gold Secret Rare)", "Premium Gold: Infinite Gold",
+         "Gold Secret Rare", False, 45.00, "Trap", ""),
+        ("MAGO-EN028", "Nibiru, the Primal Being (Premium Gold Rare)", "Maximum Gold",
+         "Premium Gold Rare", False, 35.00, "Monster", "LIGHT"),
+        ("MAGO-EN030", "Ash Blossom & Joyous Spring (Premium Gold Rare)", "Maximum Gold",
+         "Premium Gold Rare", False, 40.00, "Monster", "FIRE"),
+
+        # =================================================================
+        # Sealed Product — Additional (+4)
+        # =================================================================
+        ("DREV-BOX", "Duelist Revolution Booster Box (Sealed)", "Duelist Revolution",
+         "Sealed Product", False, 4000.00, "Sealed Product", ""),
+        ("CSOC-BOX", "Crossroads of Chaos Booster Box (Sealed)", "Crossroads of Chaos",
+         "Sealed Product", False, 3500.00, "Sealed Product", ""),
+        ("AST-BOX", "Ancient Sanctuary Booster Box (Sealed)", "Ancient Sanctuary",
+         "Sealed Product", False, 6000.00, "Sealed Product", ""),
+        ("CRV-BOX", "Cybernetic Revolution Booster Box (Sealed)", "Cybernetic Revolution",
+         "Sealed Product", False, 8000.00, "Sealed Product", ""),
+
+        # =================================================================
+        # Additional Collectible Cards (+10)
+        # =================================================================
+        ("ROTD-EN034", "Dogmatika Ecclesia, the Virtuous", "Rise of the Duelist",
+         "Secret Rare", True, 45.00, "Monster", "LIGHT"),
+        ("DAMA-EN009", "Destiny HERO - Destroyer Phoenix Enforcer", "Dawn of Majesty",
+         "Secret Rare", True, 80.00, "Monster", "DARK"),
+        ("POTE-EN033", "Spright Blue", "Power of the Elements",
+         "Secret Rare", True, 55.00, "Monster", "FIRE"),
+        ("POTE-EN051", "Tearlaments Kitkallos", "Power of the Elements",
+         "Ultra Rare", True, 35.00, "Monster", "DARK"),
+        ("DABL-EN019", "Kashtira Unicorn", "Darkwing Blast",
+         "Ultra Rare", True, 40.00, "Monster", "WIND"),
+        ("CYAC-EN048", "S:P Little Knight", "Cyberstorm Access",
+         "Quarter Century Secret Rare", True, 180.00, "Monster", "LIGHT"),
+        ("BLVO-EN089", "Divine Arsenal AA-ZEUS - Sky Thunder", "Blazing Vortex",
+         "Secret Rare", True, 50.00, "Monster", "LIGHT"),
+        ("BODE-EN050", "Baronne de Fleur", "Burst of Destiny",
+         "Secret Rare", True, 65.00, "Monster", "WIND"),
+        ("MAMA-EN020", "Ghost Belle & Haunted Mansion (Collector's Rare)", "Magnificent Mavens",
+         "Collector's Rare", False, 30.00, "Monster", "EARTH"),
+        ("LEDE-EN020", "Fiendsmith Requiem", "Legacy of Destruction",
+         "Quarter Century Secret Rare", True, 120.00, "Monster", "DARK"),
+        ("INFO-EN024", "Snake-Eyes Flamberge Dragon", "The Infinite Forbidden",
+         "Quarter Century Secret Rare", True, 150.00, "Monster", "FIRE"),
+        ("AGOV-EN007", "Vaalmonica Disarmonia", "Age of Overlord",
+         "Secret Rare", True, 35.00, "Monster", "LIGHT"),
     ]
 
     catalog = []

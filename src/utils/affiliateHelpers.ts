@@ -1,4 +1,5 @@
 import { Linking } from 'react-native';
+import { track } from '@/analytics/track';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
 
@@ -46,11 +47,14 @@ export function buildItemAffiliateUrl(
 
 export function openAffiliateUrl(url: string): void {
   // Only open HTTP(S) URLs
+  let hostname = '';
   try {
     const parsed = new URL(url);
     if (!ALLOWED_SCHEMES.includes(parsed.protocol)) return;
+    hostname = parsed.hostname;
   } catch {
     return;
   }
+  track({ name: 'affiliate_link_opened', properties: { domain: hostname } });
   Linking.openURL(url).catch(() => {});
 }

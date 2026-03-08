@@ -54,8 +54,8 @@ function AgentHubScreen() {
         collectorsApi.listMandates(20, 0),
         collectorsApi.listDeals({ limit: 10, offset: 0 }),
       ]);
-      setMandates(mandateRes.mandates ?? []);
-      setDeals(dealRes.deals ?? []);
+      setMandates((mandateRes as any).mandates ?? []);
+      setDeals((dealRes as any).deals ?? []);
     } catch {
       setError('Could not load deals. Pull to refresh.');
     } finally {

@@ -1439,6 +1439,14 @@ export class MockDataProvider implements DataProvider {
     return { url: '', sessionId: 'cs_demo_bypass', eventId };
   }
 
+  async createTicketCheckout(_eventId: string): Promise<{ url: string; sessionId: string }> {
+    return { url: '', sessionId: 'cs_demo_ticket' };
+  }
+
+  async createSponsorSubscriptionCheckout(_companyId: string, _tier: string): Promise<{ url: string; sessionId: string }> {
+    return { url: '', sessionId: 'cs_demo_sub' };
+  }
+
   async listEventAnnouncements(_eventId: string): Promise<import('./events').EventAnnouncement[]> {
     return [];
   }

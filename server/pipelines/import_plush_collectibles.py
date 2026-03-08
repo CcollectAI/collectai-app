@@ -157,6 +157,115 @@ def _additional_plush_2025_expansion() -> list[tuple]:
     ]
 
 
+def _round7_plush_expansion() -> list[tuple]:
+    """Round 7 expansion: 89 items — Jellycat LE, Squishmallows rare, Build-A-Bear,
+    Steiff LE, Pokemon Center, San-X, Sanrio collabs."""
+    return [
+        # ── Jellycat Limited Editions (15) ────────────────────────────────
+        ("Jellycat Bashful Luxe Bunny Luna", "Jellycat", "Bashful Luxe", 'Medium 31cm', 65, "Rare", True, "Silver shimmer plush, retired 2022"),
+        ("Jellycat Bashful Luxe Bunny Willow", "Jellycat", "Bashful Luxe", 'Medium 31cm', 70, "Rare", True, "Rose gold shimmer, LE 2021"),
+        ("Jellycat Amuseable Croissant", "Jellycat", "Amuseable", 'Medium 20cm', 28, "Common", False, "Golden croissant with cordy legs"),
+        ("Jellycat Amuseable Avocado", "Jellycat", "Amuseable", 'Medium 20cm', 25, "Common", False, "Two-tone green, smiling pit"),
+        ("Jellycat Amuseable Watermelon", "Jellycat", "Amuseable", 'Large 38cm', 45, "Uncommon", False, "Large slice, embroidered seeds"),
+        ("Jellycat Amuseable Pineapple", "Jellycat", "Amuseable", 'Medium 25cm', 30, "Common", False, "Tufted green top, golden body"),
+        ("Jellycat Amuseable Latte", "Jellycat", "Amuseable", 'Medium 20cm', 28, "Common", False, "Latte cup with foam swirl"),
+        ("Jellycat Amuseable Birthday Cake", "Jellycat", "Amuseable", 'Large 28cm', 45, "Uncommon", True, "Birthday exclusive, candles on top, retired"),
+        ("Jellycat Liberty London Blossom Bunny", "Jellycat", "Liberty Collab", 'Medium 31cm', 55, "Rare", True, "Liberty floral fabric ears, London exclusive"),
+        ("Jellycat Bashful Blush Bunny Huge", "Jellycat", "Bashful", 'Huge 51cm', 75, "Uncommon", False, "Blush pink, extra large"),
+        ("Jellycat Odyssey Octopus Large", "Jellycat", "Odyssey", 'Large 49cm', 55, "Uncommon", False, "Eight cordy tentacles, teal"),
+        ("Jellycat Storm Octopus", "Jellycat", "Storm", 'Large 49cm', 50, "Common", False, "Blue-grey, curly tentacles"),
+        ("Jellycat Fuddlewuddle Dragon", "Jellycat", "Fuddlewuddle", 'Medium 23cm', 30, "Common", False, "Green dragon, soft wings"),
+        ("Jellycat Vivacious Vegetable Carrot", "Jellycat", "Vivacious Veg", 'Medium 17cm', 18, "Common", False, "Orange carrot with green leaf top"),
+        ("Jellycat Bashful Cottontail Bunny LE 2024", "Jellycat", "Bashful", 'Medium 31cm', 45, "Rare", False, "2024 spring limited edition, pastel speckled"),
+
+        # ── Squishmallows Rare Finds (18) ─────────────────────────────────
+        ("Cam the Cat 5in Target Exclusive", "Squishmallows", "Select Series", '5"', 35, "Rare", True, "Target exclusive, calico pattern, retired"),
+        ("Harrison the Dog 5in Walgreens", "Squishmallows", "Select Series", '5"', 30, "Rare", True, "Walgreens exclusive brown pup, retired 2021"),
+        ("Palmer the Pumpkin 5in", "Squishmallows", "Halloween Squad", '5"', 28, "Uncommon", True, "Tiny pumpkin, green stem, Halloween 2022"),
+        ("Isis the Seal 8in Learning Squad", "Squishmallows", "Learning Squad", '8"', 40, "Rare", True, "Learning Squad retailer exclusive, retired"),
+        ("Myrtle the Turtle 8in Select", "Squishmallows", "Select Series", '8"', 38, "Rare", False, "Green shell, flower crown, select retailer"),
+        ("Brooke the Bulldog 8in Costco", "Squishmallows", "Original Squad", '8"', 35, "Uncommon", False, "Costco exclusive brown bulldog"),
+        ("Joelle the Bigfoot HugMee", "Squishmallows", "HugMee", '14" HugMee', 55, "Rare", True, "HugMee elongated body, pink bigfoot"),
+        ("Benny the Bigfoot HugMee", "Squishmallows", "HugMee", '14" HugMee', 50, "Rare", False, "Brown bigfoot HugMee variant"),
+        ("Caedyn the Pink Cow HugMee", "Squishmallows", "HugMee", '14" HugMee', 80, "HTF", False, "Pink cow in HugMee shape, Valentine"),
+        ("Connor the Cow HugMee", "Squishmallows", "HugMee", '14" HugMee', 60, "Rare", False, "Black/white cow HugMee variant"),
+        ("Babs the Blue Jay 5in", "Squishmallows", "Original Squad", '5"', 22, "Uncommon", False, "Mini blue jay, Walmart exclusive"),
+        ("Charity the Chicken 8in Easter", "Squishmallows", "Easter Squad", '8"', 32, "Uncommon", True, "Easter 2022, pastel chicken"),
+        ("Nixie the Butterfly 5in Select", "Squishmallows", "Select Series", '5"', 25, "Uncommon", False, "Tie-dye wings, select retailer"),
+        ("Opal the Octopus 8in", "Squishmallows", "Sea Life Squad", '8"', 35, "Uncommon", False, "Purple gradient, eight legs"),
+        ("Marco the Hedgehog 5in", "Squishmallows", "Original Squad", '5"', 20, "Common", False, "Brown hedgehog, mini size"),
+        ("Treyton the Triceratops HugMee", "Squishmallows", "HugMee", '14" HugMee', 55, "Rare", False, "Green triceratops HugMee form"),
+        ("Omar the Bear 8in Five Below", "Squishmallows", "Select Series", '8"', 22, "Uncommon", True, "Five Below exclusive blue bear"),
+        ("Zozo the Bigfoot 5in Claire's", "Squishmallows", "Select Series", '5"', 28, "Rare", True, "Claire's exclusive, tie-dye bigfoot"),
+
+        # ── Build-A-Bear Workshop Exclusives (12) ─────────────────────────
+        ("Eevee Build-A-Bear Bundle", "Build-A-Bear", "Pokémon", 'Standard 40cm', 70, "Rare", True, "Eevee with cape, online exclusive, retired 2023"),
+        ("Jigglypuff Build-A-Bear", "Build-A-Bear", "Pokémon", 'Standard 35cm', 55, "Uncommon", True, "Pink Jigglypuff, microphone accessory, retired"),
+        ("Snorlax Build-A-Bear", "Build-A-Bear", "Pokémon", 'Large 50cm', 85, "Rare", True, "Oversized Snorlax, belly pocket, retired 2022"),
+        ("Gengar Build-A-Bear", "Build-A-Bear", "Pokémon", 'Standard 35cm', 60, "Uncommon", False, "Purple ghost Pokémon, glow-in-the-dark mouth"),
+        ("Toothless Build-A-Bear", "Build-A-Bear", "DreamWorks", 'Standard 40cm', 55, "Uncommon", True, "How to Train Your Dragon, black body, retired"),
+        ("Grogu Build-A-Bear Bundle", "Build-A-Bear", "Star Wars", 'Standard 35cm', 60, "Uncommon", False, "The Child with robe and pendant"),
+        ("Elsa Frozen Build-A-Bear", "Build-A-Bear", "Disney Princess", 'Standard 40cm', 50, "Uncommon", True, "Ice dress and cape set, retired 2021"),
+        ("Spider-Man Build-A-Bear", "Build-A-Bear", "Marvel", 'Standard 40cm', 55, "Uncommon", True, "Red/blue suit bear, web accessories, retired"),
+        ("Sonic the Hedgehog Build-A-Bear", "Build-A-Bear", "SEGA", 'Standard 35cm', 50, "Uncommon", False, "Blue hedgehog, red shoes included"),
+        ("Animal Crossing Isabelle Build-A-Bear", "Build-A-Bear", "Nintendo", 'Standard 35cm', 65, "Rare", True, "Isabelle with outfit, online exclusive, retired 2023"),
+        ("My Little Pony Twilight Sparkle Build-A-Bear", "Build-A-Bear", "Hasbro", 'Standard 40cm', 45, "Uncommon", True, "Purple unicorn with wings, retired 2022"),
+        ("Hello Kitty 50th Anniversary Build-A-Bear", "Build-A-Bear", "Sanrio", 'Standard 35cm', 55, "Rare", False, "50th anniversary golden bow, 2024 LE"),
+
+        # ── Steiff Limited Editions (10) ──────────────────────────────────
+        ("Steiff Paddington Bear 60th Anniversary", "Steiff", "Licensed LE", 'Medium 28cm', 160, "Rare", True, "Blue duffle coat, marmalade tag, LE 2018"),
+        ("Steiff Rupert Bear 100th Anniversary", "Steiff", "Licensed LE", 'Medium 28cm', 175, "Rare", True, "Check trousers and scarf, 2020 LE"),
+        ("Steiff Fynn Teddy Bear Suitcase Set", "Steiff", "Travel Collection", 'Small 24cm', 110, "Uncommon", True, "Bear in cardboard suitcase, passport tag"),
+        ("Steiff Teddy Bear Clown", "Steiff", "Circus Collection", 'Medium 30cm', 145, "Rare", True, "Ruffled collar, polka dot outfit, LE 1500"),
+        ("Steiff Cosy Year Bear 2024", "Steiff", "Annual Cosy", 'Medium 34cm', 85, "Uncommon", False, "Annual cosy edition, cinnamon mohair"),
+        ("Steiff Lladro Teddy Bear Collab", "Steiff", "Designer Collab", 'Medium 32cm', 280, "Rare", True, "Lladro porcelain pendant, LE 500"),
+        ("Steiff Harrods Musical Bear 2023", "Steiff", "Harrods Exclusive", 'Medium 30cm', 195, "Rare", True, "Harrods green apron, plays melody, LE 2023"),
+        ("Steiff Alpaca Silver Teddy Bear", "Steiff", "Premium", 'Large 40cm', 220, "Rare", True, "Silver-tipped alpaca fur, glass eyes, LE 1000"),
+        ("Steiff Margarete Memorial Bear", "Steiff", "Heritage", 'Medium 28cm', 190, "Rare", True, "Tribute to Margarete Steiff, mohair, numbered"),
+        ("Steiff National Geographic Polar Bear", "Steiff", "NatGeo Collab", 'Medium 35cm', 95, "Uncommon", False, "National Geographic tag, educational insert"),
+
+        # ── Pokémon Center Plush Exclusives (12) ──────────────────────────
+        ("Pikachu Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 15, "Common", False, "Mini bean-filled sitting Pikachu"),
+        ("Eevee Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 15, "Common", False, "Mini bean-filled sitting Eevee"),
+        ("Charizard Large Plush", "Pokémon Center", "Large Collection", 'Large 60cm', 75, "Uncommon", False, "Oversized Charizard, spread wings"),
+        ("Snorlax Life-Size Plush", "Pokémon Center", "Life-Size", 'Life-Size 150cm', 450, "HTF", False, "Life-size Snorlax bean bag, Japan exclusive"),
+        ("Gengar Halloween Plush 2024", "Pokémon Center", "Halloween Collection", 'Medium 30cm', 35, "Uncommon", False, "Halloween costume Gengar, pumpkin hat"),
+        ("Mimikyu Plush Premium", "Pokémon Center", "Premium Collection", 'Medium 25cm', 40, "Uncommon", False, "Disguise detail, weighted base"),
+        ("Glaceon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Ice crystal details, bean-filled"),
+        ("Sylveon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Ribbon feelers, bean-filled"),
+        ("Umbreon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 20, "Uncommon", False, "Glow rings, popular Eeveelution"),
+        ("Dragonite Large Plush", "Pokémon Center", "Large Collection", 'Large 50cm', 65, "Uncommon", False, "Friendly dragonite, orange plush"),
+        ("Mewtwo Premium Plush", "Pokémon Center", "Premium Collection", 'Large 45cm', 55, "Uncommon", True, "Articulated tail, retired 2023"),
+        ("Lucario Premium Plush", "Pokémon Center", "Premium Collection", 'Medium 35cm', 45, "Uncommon", False, "Fighting pose, weighted paws"),
+
+        # ── San-X Rilakkuma Specials (10) ─────────────────────────────────
+        ("Rilakkuma 20th Anniversary LE Plush", "San-X", "Rilakkuma Anniversary", 'Medium 28cm', 55, "Rare", False, "20th anniversary golden tag, 2023"),
+        ("Korilakkuma Strawberry Cat", "San-X", "Rilakkuma Sweets", 'Medium 22cm', 30, "Uncommon", False, "White bear, strawberry hat, cat button"),
+        ("Kiiroitori Chick Plush Large", "San-X", "Rilakkuma Friends", 'Large 35cm', 35, "Uncommon", False, "Yellow chick, oversized size"),
+        ("Chairoikoguma Honey Bear", "San-X", "Rilakkuma Friends", 'Medium 22cm', 28, "Uncommon", False, "Small brown bear cub, honey pot"),
+        ("Rilakkuma x Tower Records Collab", "San-X", "Rilakkuma Collab", 'Medium 25cm', 65, "Rare", True, "Tower Records Japan exclusive, headphones"),
+        ("Rilakkuma Atsumete Plush Set (5pc)", "San-X", "Rilakkuma Atsumete", 'Set Mini 10cm each', 45, "Uncommon", False, "5-piece stacking set, pastel colors"),
+        ("Sumikko Gurashi Tapioka Set", "San-X", "Sumikko Gurashi", 'Set Mini 8cm each', 35, "Uncommon", False, "5 boba tapioca ball plush set"),
+        ("Sumikko Gurashi Neko Cat LE", "San-X", "Sumikko Gurashi", 'Medium 22cm', 40, "Rare", True, "Shy cat, limited gold tag, retired 2022"),
+        ("Sumikko Gurashi House Playset", "San-X", "Sumikko Gurashi", 'Playset 30cm', 55, "Uncommon", False, "Corner house with 4 mini plush"),
+        ("Rilakkuma Pajama Party Plush", "San-X", "Rilakkuma Sleep", 'Medium 28cm', 38, "Uncommon", True, "Night cap and sleeping bag, retired 2023"),
+
+        # ── Sanrio Collaboration Plush (12) ───────────────────────────────
+        ("Hello Kitty x Pusheen Collab Plush", "Sanrio", "Sanrio x Pusheen", 'Medium 25cm', 40, "Uncommon", True, "Hello Kitty dressed as Pusheen, LE 2022"),
+        ("My Melody Strawberry Garden Plush", "Sanrio", "My Melody", 'Medium 28cm', 35, "Common", False, "Strawberry apron, garden theme"),
+        ("Kuromi Devil Wings Plush", "Sanrio", "Kuromi", 'Medium 28cm', 35, "Common", False, "Purple devil wings, skull bow"),
+        ("Cinnamoroll Cloud Dream Plush", "Sanrio", "Cinnamoroll", 'Large 35cm', 42, "Uncommon", False, "Sitting on cloud base, large size"),
+        ("Pompompurin Beret Plush", "Sanrio", "Pompompurin", 'Medium 25cm', 32, "Common", False, "French beret and scarf, café theme"),
+        ("Pochacco Sporty Plush", "Sanrio", "Pochacco", 'Medium 25cm', 30, "Common", False, "Headband and jersey, sporty dog"),
+        ("Tuxedo Sam Penguin Plush", "Sanrio", "Tuxedo Sam", 'Medium 22cm', 28, "Common", False, "Bowtie penguin, classic Sanrio"),
+        ("Hello Kitty 50th Anniversary Golden Plush", "Sanrio", "Hello Kitty Anniversary", 'Medium 28cm', 75, "Rare", False, "50th anniversary golden bow, 2024 LE"),
+        ("Sanrio Characters Dress-Up Set (6pc)", "Sanrio", "Sanrio All Stars", 'Set Mini 12cm each', 65, "Uncommon", False, "6 characters in costume, boxed set"),
+        ("Badtz-Maru Punk Rock Plush", "Sanrio", "Badtz-Maru", 'Medium 22cm', 30, "Uncommon", True, "Leather jacket and guitar, retired 2022"),
+        ("Hello Kitty x Steiff Mohair Plush", "Sanrio", "Sanrio x Steiff", 'Medium 25cm', 180, "Rare", True, "Steiff button-in-ear, mohair, LE 1500"),
+        ("Little Twin Stars Kiki & Lala Set", "Sanrio", "Little Twin Stars", 'Set Medium 20cm each', 50, "Uncommon", False, "Pastel star pair, cloud base"),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated plush collectibles catalog: 500+ items across 18 sub-categories."""
 
@@ -879,6 +988,9 @@ def get_curated_catalog() -> list[dict]:
 
     # ── Batch: Steiff, Gund, Aurora, Jellycat, Kapibarasan, Rilakkuma (50 items) ──
     items += _additional_plush_2025_expansion()
+
+    # ── Round 7 expansion: 89 items ──
+    items += _round7_plush_expansion()
 
     catalog = []
     for name, brand, series, size, price, rarity, is_retired, notes in items:

@@ -7,7 +7,6 @@ import { CategoryPill } from '@/components/CategoryPill';
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   ScrollView,
   SectionList,
@@ -26,7 +25,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { dataProvider, type Item as DataItem } from "@/data";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from "@/motion";
 import { SkeletonList, SkeletonCategoryPills, SkeletonGalleryGrid } from "@/components/Skeleton";
@@ -45,6 +44,8 @@ import { useToast } from "@/components/Toast";
 import { FilterSheet, FilterConfig, SortOption } from "@/components/FilterSheet";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from "@/utils/logger";
+import { BulkActionsToolbar } from '@/components/BulkActionsToolbar';
+import { ItemsListHeader } from '@/components/ItemsListHeader';
 
 type Item = {
   id: string;
@@ -56,14 +57,6 @@ type Item = {
   notes?: string;
   imageUrl?: string;
 };
-
-// Semantic action colors (theme-independent)
-const ACTION_COLORS = {
-  archive: '#f97316',
-  archiveBg: '#f9731610',
-  danger: '#ef4444',
-  dangerBg: '#ef444410',
-} as const;
 
 type SortKey = "value_desc" | "value_asc" | "title";
 
@@ -127,6 +120,7 @@ const ItemsScreen: React.FC = () => {
   }, [providerItems]);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [showFloatingAdd, setShowFloatingAdd] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
@@ -179,8 +173,8 @@ const ItemsScreen: React.FC = () => {
   const stableReload = useCallback(() => { refreshRef.current(); }, []);
 
   // Optimistic mutation hooks for bulk operations
-  const optimisticBulkArchive = useOptimisticBulkArchive(setProviderItems, stableReload);
-  const optimisticBulkDelete = useOptimisticBulkDelete(setProviderItems, stableReload);
+  const optimisticBulkArchive = useOptimisticBulkArchive(setProviderItems as any, stableReload);
+  const optimisticBulkDelete = useOptimisticBulkDelete(setProviderItems as any, stableReload);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -544,13 +538,6 @@ const ItemsScreen: React.FC = () => {
     [dataSource]
   );
 
-  const handleAddForCategory = useCallback((category: string) => {
-    router.push({
-      pathname: "/add",
-      params: { categoryHint: category },
-    });
-  }, [router]);
-
   // SectionList sections derived from grouped data
   const sections = useMemo(() =>
     filteredAndSortedByCategory.map(group => ({
@@ -567,7 +554,7 @@ const ItemsScreen: React.FC = () => {
     !!filterCategory ||
     query.trim().length > 0;
 
-  // Detect when ScrollView is near the bottom to trigger loadMore
+  // Detect when ScrollView is near the bottom to trigger loadMore + show floating add
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
@@ -575,6 +562,8 @@ const ItemsScreen: React.FC = () => {
       if (distanceFromBottom < layoutMeasurement.height * 0.5) {
         loadMore();
       }
+      // Show floating add button when user scrolls down past 100px
+      setShowFloatingAdd(contentOffset.y > 100);
     },
     [loadMore],
   );
@@ -641,102 +630,42 @@ const ItemsScreen: React.FC = () => {
     <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
       {/* Header row - switches between normal and multi-select mode */}
       {isMultiSelectMode ? (
-        <>
-          <View style={styles.multiSelectHeader}>
-            <AnimatedPressable
-              style={styles.multiSelectCloseBtn}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                exitMultiSelectMode();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Exit multi-select mode"
-            >
-              <Ionicons name="close" size={24} color={colors.text} />
-            </AnimatedPressable>
-            <Text style={[styles.multiSelectTitle, { color: colors.text }]}>
-              {selectedCount} selected
-            </Text>
-            <View style={styles.multiSelectActions}>
-              <AnimatedPressable
-                style={styles.multiSelectActionBtn}
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  (selectedCount === providerItems.length ? deselectAll : selectAll)();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={selectedCount === providerItems.length ? 'Deselect all items' : 'Select all items'}
-              >
-                <Text style={[styles.multiSelectActionText, { color: colors.accent }]}>
-                  {selectedCount === providerItems.length ? 'Deselect All' : 'Select All'}
-                </Text>
-              </AnimatedPressable>
-            </View>
-          </View>
-
-          {/* Bulk Actions - Top contextual bar */}
-          {selectedCount > 0 && (
-            <View style={[styles.topBulkActionsBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              {(bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading) ? (
-                <ActivityIndicator size="small" color={colors.accent} />
-              ) : (
-                <View style={styles.topBulkActionsRow}>
-                  <AnimatedPressable
-                    style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
-                    onPress={() => {
-                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      setCategoryModalVisible(true);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Move selected items to category"
-                  >
-                    <Ionicons name="folder-outline" size={18} color={colors.accent} />
-                    <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Move</Text>
-                  </AnimatedPressable>
-
-                  <AnimatedPressable
-                    style={[styles.topBulkActionBtn, { backgroundColor: colors.accent + '10' }]}
-                    onPress={() => {
-                      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-                      handleBulkExport();
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Export selected items"
-                  >
-                    <Ionicons name="download-outline" size={18} color={colors.accent} />
-                    <Text style={[styles.topBulkActionText, { color: colors.accent }]}>Export</Text>
-                  </AnimatedPressable>
-
-                  <AnimatedPressable
-                    style={[styles.topBulkActionBtn, { backgroundColor: ACTION_COLORS.archiveBg }]}
-                    onPress={() => {
-                      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-                      handleBulkArchive();
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Archive selected items"
-                  >
-                    <Ionicons name="archive-outline" size={18} color={ACTION_COLORS.archive} />
-                    <Text style={[styles.topBulkActionText, { color: ACTION_COLORS.archive }]}>Archive</Text>
-                  </AnimatedPressable>
-
-                  <AnimatedPressable
-                    style={[styles.topBulkActionBtn, { backgroundColor: ACTION_COLORS.dangerBg }]}
-                    onPress={() => {
-                      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-                      handleBulkDelete();
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Delete selected items"
-                  >
-                    <Ionicons name="trash-outline" size={18} color={ACTION_COLORS.danger} />
-                    <Text style={[styles.topBulkActionText, { color: ACTION_COLORS.danger }]}>Delete</Text>
-                  </AnimatedPressable>
-                </View>
-              )}
-            </View>
-          )}
-        </>
+        <BulkActionsToolbar
+          theme={{ text: colors.text, muted: colors.muted, accent: colors.accent, border: colors.border, card: colors.card }}
+          selectedCount={selectedCount}
+          totalCount={providerItems.length}
+          isAllSelected={selectedCount === providerItems.length}
+          loading={bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading}
+          disabled={bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading}
+          onExit={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            exitMultiSelectMode();
+          }}
+          onSelectAll={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            selectAll();
+          }}
+          onDeselectAll={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            deselectAll();
+          }}
+          onChangeCategory={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            setCategoryModalVisible(true);
+          }}
+          onExport={() => {
+            fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+            handleBulkExport();
+          }}
+          onArchive={() => {
+            fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+            handleBulkArchive();
+          }}
+          onDelete={() => {
+            fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+            handleBulkDelete();
+          }}
+        />
       ) : (
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
@@ -755,110 +684,35 @@ const ItemsScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Search row */}
-      <View style={styles.searchRow}>
-        <View style={[styles.searchInputWrapper, { backgroundColor: colors.card }]}>
-          <Ionicons name="search" size={16} color={colors.muted} style={styles.searchIcon} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search items"
-            placeholderTextColor={colors.muted}
-            accessibilityLabel="Search items"
-            style={[
-              styles.searchInput,
-              {
-                backgroundColor: colors.card,
-                color: colors.text,
-              },
-            ]}
-          />
-        </View>
-
-        {/* Filter button */}
-        <AnimatedPressable
-          style={[styles.searchRowButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            setFilterSheetVisible(true);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Open filters"
-        >
-          <Ionicons name="options-outline" size={18} color={colors.accent} />
-          {(advancedFilter.categories.length > 0 ||
-            advancedFilter.conditions.length > 0 ||
-            advancedFilter.priceMin !== null ||
-            advancedFilter.priceMax !== null) && (
-            <View style={[styles.filterDot, { backgroundColor: colors.accent }]} />
-          )}
-        </AnimatedPressable>
-      </View>
-
-      {/* Controls row: View toggle, Select All */}
-      <View style={styles.controlsRowNew}>
-        {/* View mode toggle */}
-        <View style={styles.viewToggleRow}>
-          <AnimatedPressable
-            style={[
-              styles.viewToggleBtn,
-              viewMode === 'list' && { backgroundColor: colors.accent + '20' },
-              { borderColor: colors.border },
-            ]}
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              if (viewMode !== 'list') toggleViewMode();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="List view"
-            accessibilityState={{ selected: viewMode === 'list' }}
-          >
-            <Ionicons
-              name="list"
-              size={18}
-              color={viewMode === 'list' ? colors.accent : colors.muted}
-            />
-          </AnimatedPressable>
-          <AnimatedPressable
-            style={[
-              styles.viewToggleBtn,
-              viewMode === 'gallery' && { backgroundColor: colors.accent + '20' },
-              { borderColor: colors.border },
-            ]}
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              if (viewMode !== 'gallery') toggleViewMode();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Gallery view"
-            accessibilityState={{ selected: viewMode === 'gallery' }}
-          >
-            <Ionicons
-              name="grid"
-              size={18}
-              color={viewMode === 'gallery' ? colors.accent : colors.muted}
-            />
-          </AnimatedPressable>
-        </View>
-
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
-
-        {/* Select All text button */}
-        {!isMultiSelectMode && (
-          <AnimatedPressable
-            style={styles.selectAllTextBtn}
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              enterMultiSelectMode();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Enter selection mode"
-          >
-            <Text style={[styles.selectAllText, { color: colors.accent }]}>Select</Text>
-          </AnimatedPressable>
-        )}
-      </View>
+      <ItemsListHeader
+        theme={{ text: colors.text, muted: colors.muted, accent: colors.accent, border: colors.border, card: colors.card }}
+        query={query}
+        onQueryChange={setQuery}
+        viewMode={viewMode}
+        onToggleViewList={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          if (viewMode !== 'list') toggleViewMode();
+        }}
+        onToggleViewGallery={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          if (viewMode !== 'gallery') toggleViewMode();
+        }}
+        hasActiveFilter={
+          advancedFilter.categories.length > 0 ||
+          advancedFilter.conditions.length > 0 ||
+          advancedFilter.priceMin !== null ||
+          advancedFilter.priceMax !== null
+        }
+        onOpenFilter={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          setFilterSheetVisible(true);
+        }}
+        onEnterMultiSelect={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          enterMultiSelectMode();
+        }}
+        isMultiSelectMode={isMultiSelectMode}
+      />
 
       {/* Active filter summary */}
       {hasAnyFilter && (
@@ -1075,26 +929,12 @@ const ItemsScreen: React.FC = () => {
       ) : (
         <SectionList
           sections={sections}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
           renderSectionHeader={({ section }) => (
             <View style={[styles.categoryBlock, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
-              <View style={styles.categoryHeaderRow}>
-                <Text style={[styles.categoryTitle, { color: colors.text }]}>
-                  {section.title}
-                </Text>
-                <AnimatedPressable
-                  style={[styles.categoryAddButton, { borderColor: colors.accent }]}
-                  onPress={() => {
-                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                    handleAddForCategory(section.title);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Add item to ${section.title}`}
-                >
-                  <Ionicons name="add-outline" size={14} color={colors.accent} style={{ marginRight: 4 }} />
-                  <Text style={[styles.categoryAddText, { color: colors.accent }]}>Add</Text>
-                </AnimatedPressable>
-              </View>
+              <Text style={[styles.categoryTitle, { color: colors.text }]}>
+                {section.title}
+              </Text>
             </View>
           )}
           renderItem={({ item }) => (
@@ -1187,7 +1027,29 @@ const ItemsScreen: React.FC = () => {
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           refreshControl={refreshCtrl}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
+          onScroll={handleScroll}
+          scrollEventThrottle={400}
         />
+      )}
+
+      {/* Floating Add Item button — appears when scrolling */}
+      {showFloatingAdd && !isMultiSelectMode && (
+        <AnimatedPressable
+          style={[styles.floatingAddBtn, { backgroundColor: colors.accent }]}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push('/add');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Add new item"
+        >
+          <Ionicons name="add" size={22} color="#fff" />
+          <Text style={styles.floatingAddText}>Add Item</Text>
+        </AnimatedPressable>
       )}
       </KeyboardAvoidingView>
 
@@ -1204,6 +1066,8 @@ const ItemsScreen: React.FC = () => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
             setCategoryModalVisible(false);
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Close category picker"
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]} accessibilityRole="menu">
             <View style={styles.modalHeader}>
@@ -1279,7 +1143,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 32,
+    paddingBottom: 80,
   },
   // Loading more (infinite scroll)
   loadingMoreContainer: {
@@ -1327,29 +1191,7 @@ const styles = StyleSheet.create({
   skeletonSearch: {
     marginBottom: 16,
   },
-  // View toggle styles
-  viewToggleRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  viewToggleBtn: {
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  controlsRowNew: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  selectAllTextBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  selectAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  // (viewToggleRow, viewToggleBtn, controlsRowNew, selectAllTextBtn, selectAllText moved to ItemsListHeader)
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1420,47 +1262,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-  },
-  searchInputWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingLeft: 14,
-    height: 44,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    borderRadius: 12,
-    paddingHorizontal: 0,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  searchRowButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  filterDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
+  // (searchRow, searchInputWrapper, searchIcon, searchInput, searchRowButton, filterDot moved to ItemsListHeader)
   filterSummaryRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1538,27 +1340,9 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#E2E8F0",
   },
-  categoryHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
   categoryTitle: {
     fontSize: 16,
     fontWeight: "700",
-  },
-  categoryAddButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  categoryAddText: {
-    fontSize: 11,
-    fontWeight: "600",
   },
   itemRow: {
     flexDirection: "row",
@@ -1680,34 +1464,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
-  // Multi-select styles
-  multiSelectHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    marginBottom: 8,
-  },
-  multiSelectCloseBtn: {
-    padding: 4,
-    marginRight: 12,
-  },
-  multiSelectTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  multiSelectActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  multiSelectActionBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  multiSelectActionText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
+  // (multiSelectHeader, multiSelectCloseBtn, multiSelectTitle, multiSelectActions, multiSelectActionBtn, multiSelectActionText moved to BulkActionsToolbar)
   checkboxContainer: {
     marginRight: 12,
     justifyContent: "center",
@@ -1721,61 +1478,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  topBulkActionsBar: {
-    marginBottom: 12,
-    padding: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  topBulkActionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  topBulkActionBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    gap: 4,
-  },
-  topBulkActionText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  bulkActionsBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 12,
-    borderTopWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  bulkActionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    gap: 8,
-  },
-  bulkActionBtn: {
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    minWidth: 70,
-  },
-  bulkActionText: {
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 4,
-  },
+  // (topBulkActionsBar, topBulkActionsRow, topBulkActionBtn, topBulkActionText, bulkActionsBar, bulkActionsRow, bulkActionBtn, bulkActionText moved to BulkActionsToolbar)
   // Modal styles
   modalOverlay: {
     flex: 1,
@@ -1822,6 +1525,28 @@ const styles = StyleSheet.create({
   modalCancelText: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  floatingAddBtn: {
+    position: "absolute",
+    bottom: 24,
+    left: 24,
+    right: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  floatingAddText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });
 

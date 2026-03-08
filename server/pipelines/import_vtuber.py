@@ -833,6 +833,133 @@ def get_curated_catalog() -> list[dict]:
         ("Indie", "Shylily", "Voice Pack", "Shylily Orca ASMR Voice Pack (Limited)", "Birthday", "mid", 30),
         ("Indie", "Filian", "Tapestry", "Filian x Shylily Collab B2 Tapestry", "Standard", "mid", 28),
         ("Indie", "Bao The Whale", "Acrylic Stand", "Bao x Shylily Summer Duo Acrylic Stand Set", "Standard", "mid", 26),
+
+        # ── Expansion to 700+ — Hololive 3rd/4th/5th Fes, Nijisanji EN, VShojo, Indie, Gamers/Stars ──
+
+        # Hololive 3rd Fes Goods (+5)
+        ("Hololive", "Various", "Concert Goods", "Hololive 3rd Fes. Link Your Wish Venue Penlight", "Concert", "mid", 38),
+        ("Hololive", "Various", "Concert Goods", "Hololive 3rd Fes. Link Your Wish Tapestry Set (6pc)", "Concert", "high", 75),
+        ("Hololive", "Various", "Concert Goods", "Hololive 3rd Fes. Link Your Wish T-Shirt (Staff Ver.)", "Concert", "mid", 42),
+        ("Hololive", "Various", "Concert Goods", "Hololive 3rd Fes. Link Your Wish Rubber Strap Set", "Concert", "mid", 30),
+        ("Hololive", "Various", "Concert Goods", "Hololive 3rd Fes. Link Your Wish Clear File Set (10pc)", "Concert", "mid", 25),
+
+        # Hololive 4th Fes Goods (+5)
+        ("Hololive", "Various", "Concert Goods", "Hololive 4th Fes. Our Bright Parade Venue Penlight", "Concert", "mid", 40),
+        ("Hololive", "Various", "Concert Goods", "Hololive 4th Fes. Our Bright Parade Acrylic Diorama Set", "Concert", "high", 65),
+        ("Hololive", "Various", "Concert Goods", "Hololive 4th Fes. Our Bright Parade Blanket", "Concert", "mid", 48),
+        ("Hololive", "Various", "Concert Goods", "Hololive 4th Fes. Our Bright Parade Trading Badge Set (20pc)", "Concert", "mid", 35),
+        ("Hololive", "Various", "Concert Goods", "Hololive 4th Fes. Our Bright Parade Photo Card Set", "Concert", "mid", 28),
+
+        # Hololive 5th Fes Goods (+5)
+        ("Hololive", "Various", "Concert Goods", "Hololive 5th Fes. Capture the Moment Venue Penlight", "Concert", "mid", 42),
+        ("Hololive", "Various", "Concert Goods", "Hololive 5th Fes. Capture the Moment Fan Towel", "Concert", "mid", 25),
+        ("Hololive", "Various", "Concert Goods", "Hololive 5th Fes. Capture the Moment Poster Set (A2 x6)", "Concert", "high", 55),
+        ("Hololive", "Various", "Concert Goods", "Hololive 5th Fes. Capture the Moment Wristband Set (5pc)", "Concert", "standard", 18),
+        ("Hololive", "Various", "Concert Goods", "Hololive 5th Fes. Capture the Moment Clear Folder Set (12pc)", "Concert", "mid", 28),
+
+        # Nijisanji EN — Ethyria, Iluna, XSOLEIL birthday/grad merch (+10)
+        ("Nijisanji", "Enna Alouette", "Birthday Set", "Enna Alouette Birthday 2025 Complete Merch Set", "Birthday", "high", 65),
+        ("Nijisanji", "Enna Alouette", "Tapestry", "Enna Alouette 3rd Anniversary B2 Tapestry", "Anniversary", "mid", 30),
+        ("Nijisanji", "Millie Parfait", "Birthday Set", "Millie Parfait Birthday 2025 Complete Set", "Birthday", "high", 62),
+        ("Nijisanji", "Millie Parfait", "Acrylic Stand", "Millie Parfait 3rd Anniversary Acrylic Stand", "Anniversary", "mid", 25),
+        ("Nijisanji", "Reimu Endou", "Birthday Set", "Reimu Endou Birthday 2025 Merch Set", "Birthday", "high", 58),
+        ("Nijisanji", "Nina Kosaka", "Tapestry", "Nina Kosaka Graduation Memorial B2 Tapestry", "Anniversary", "high", 88),
+        ("Nijisanji", "Kyo Kaneko", "Birthday Set", "Kyo Kaneko Birthday 2025 Complete Set", "Birthday", "mid", 48),
+        ("Nijisanji", "Aia Amare", "Birthday Set", "Aia Amare Birthday 2025 Merch Set", "Birthday", "mid", 45),
+        ("Nijisanji", "Scarle Yonaguni", "Tapestry", "Scarle Yonaguni Birthday B2 Tapestry", "Birthday", "mid", 32),
+        ("Nijisanji", "Maria Marionette", "Birthday Set", "Maria Marionette Birthday 2025 Complete Set", "Birthday", "high", 60),
+
+        # VShojo expanded merch (+8)
+        ("VShojo", "Ironmouse", "Concert Goods", "Ironmouse VShojo Fest 2025 Venue Penlight", "Concert", "high", 55),
+        ("VShojo", "Ironmouse", "Nendoroid", "Nendoroid Ironmouse Demon Queen Ver. #2450", "Standard", "high", 65),
+        ("VShojo", "Zentreya", "Tapestry", "Zentreya 4th Anniversary B2 Tapestry", "Anniversary", "mid", 28),
+        ("VShojo", "Henya the Genius", "Voice Pack", "Henya the Genius Birthday Voice Pack Physical Edition", "Birthday", "mid", 32),
+        ("VShojo", "Matara Kan", "Birthday Set", "Matara Kan Birthday 2025 Complete Merch Set", "Birthday", "high", 55),
+        ("VShojo", "Geega", "Acrylic Stand", "Geega Birthday 2025 Acrylic Stand", "Birthday", "mid", 22),
+        ("VShojo", "Haruka Karibu", "Tapestry", "Haruka Karibu Graduation Memorial B2 Tapestry", "Anniversary", "high", 85),
+        ("VShojo", "Kson", "Concert Goods", "Kson Solo Live 2025 Venue-Limited Towel + Badge Set", "Concert", "mid", 38),
+
+        # Hololive Gamers merch (+6)
+        ("Hololive", "Shirakami Fubuki", "Birthday Set", "Shirakami Fubuki Birthday 2025 Premium Set", "Birthday", "high", 80),
+        ("Hololive", "Shirakami Fubuki", "Signed Tapestry", "Shirakami Fubuki Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 260),
+        ("Hololive", "Ookami Mio", "Birthday Set", "Ookami Mio Birthday 2025 Complete Set", "Birthday", "high", 68),
+        ("Hololive", "Ookami Mio", "Tapestry", "Ookami Mio 6th Anniversary B2 Tapestry", "Anniversary", "mid", 32),
+        ("Hololive", "Nekomata Okayu", "Birthday Set", "Nekomata Okayu Birthday 2025 Premium Set", "Birthday", "high", 75),
+        ("Hololive", "Inugami Korone", "Birthday Set", "Inugami Korone Birthday 2025 Complete Set", "Birthday", "high", 78),
+
+        # Holostars EN — TEMPUS merch (+5)
+        ("Holostars", "Regis Altare", "Birthday Set", "Regis Altare Birthday 2025 Complete Merch Set", "Birthday", "mid", 45),
+        ("Holostars", "Axel Syrios", "Birthday Set", "Axel Syrios Birthday 2025 Merch Set", "Birthday", "mid", 42),
+        ("Holostars", "Noir Vesper", "Tapestry", "Noir Vesper Graduation Memorial B2 Tapestry", "Anniversary", "high", 75),
+        ("Holostars", "Magni Dezmond", "Tapestry", "Magni Dezmond Graduation Memorial B2 Tapestry", "Anniversary", "high", 72),
+        ("Holostars", "Various", "Concert Goods", "Holostars EN 2nd Anniversary Live Goods Set", "Concert", "mid", 38),
+
+        # Hololive EN — Advent & Justice birthday merch (+8)
+        ("Hololive", "Shiori Novella", "Birthday Set", "Shiori Novella Birthday 2025 Complete Merch Set", "Birthday", "high", 65),
+        ("Hololive", "Shiori Novella", "Acrylic Stand", "Shiori Novella 1st Anniversary Acrylic Stand", "Anniversary", "mid", 26),
+        ("Hololive", "Koseki Bijou", "Birthday Set", "Koseki Bijou Birthday 2025 Premium Set", "Birthday", "high", 70),
+        ("Hololive", "Nerissa Ravencroft", "Birthday Set", "Nerissa Ravencroft Birthday 2025 Set", "Birthday", "high", 62),
+        ("Hololive", "FUWAMOCO", "Birthday Set", "FUWAMOCO Shared Birthday 2025 Premium Duo Set", "Birthday", "grail", 110),
+        ("Hololive", "Elizabeth Rose Bloodflame", "Debut Set", "Elizabeth Rose Bloodflame Debut Celebration Set", "Debut", "mid", 42),
+        ("Hololive", "Gigi Murin", "Debut Set", "Gigi Murin Debut Celebration Merch Set", "Debut", "mid", 40),
+        ("Hololive", "Cecilia Immergreen", "Debut Set", "Cecilia Immergreen Debut Celebration Merch Set", "Debut", "mid", 40),
+
+        # Indie VTuber Collabs & Anniversary (+8)
+        ("Indie", "Dokibird", "Birthday Set", "Dokibird Birthday 2025 Premium Merch Set", "Birthday", "high", 70),
+        ("Indie", "Dokibird", "Signed Shikishi", "Dokibird Hand-Signed Birthday Shikishi Board", "Birthday", "grail", 150),
+        ("Indie", "Neuro-sama", "Acrylic Stand", "Neuro-sama 2nd Anniversary Acrylic Stand", "Anniversary", "mid", 28),
+        ("Indie", "Shylily", "Birthday Set", "Shylily Birthday 2025 Complete Merch Set", "Birthday", "high", 60),
+        ("Indie", "Filian", "Birthday Set", "Filian Birthday 2025 Merch Set", "Birthday", "mid", 48),
+        ("Indie", "Bao The Whale", "Birthday Set", "Bao Birthday 2025 Premium Merch Set", "Birthday", "mid", 45),
+        ("Indie", "Saruei", "Tapestry", "Saruei 3rd Anniversary B2 Tapestry", "Anniversary", "mid", 30),
+        ("Indie", "Vedal987", "Acrylic Stand", "Vedal987 x Neuro-sama Duo Acrylic Stand Set", "Standard", "mid", 25),
+
+        # Concert Blu-rays — additional solo/unit concerts (+6)
+        ("Hololive", "Tokoyami Towa", "Concert Blu-ray", "Tokoyami Towa 1st Solo Live Before Dawn Blu-ray", "Solo Concert", "high", 85),
+        ("Hololive", "Houshou Marine", "Concert Blu-ray", "Houshou Marine 1st Solo Live Ahoy!! Blu-ray", "Solo Concert", "grail", 110),
+        ("Hololive", "Mori Calliope", "Concert Blu-ray", "Mori Calliope New Underworld Order Tour Blu-ray", "Solo Concert", "high", 90),
+        ("Hololive", "Usada Pekora", "Concert Blu-ray", "Usada Pekora Birthday Party 2024 Blu-ray", "Birthday", "high", 75),
+        ("Nijisanji", "Kuzuha", "Concert Blu-ray", "Kuzuha Solo Concert Virtual Strike Blu-ray", "Solo Concert", "high", 80),
+        ("Nijisanji", "Kanae", "Concert Blu-ray", "Kanae Birthday Concert 2024 Blu-ray", "Birthday", "high", 70),
+
+        # Voice Pack Physical Editions (+5)
+        ("Hololive", "Gawr Gura", "Voice Pack", "Gawr Gura Birthday Voice Pack Physical CD Edition", "Birthday", "mid", 35),
+        ("Hololive", "Hoshimachi Suisei", "Voice Pack", "Hoshimachi Suisei Birthday Voice Pack Physical Edition", "Birthday", "mid", 38),
+        ("Hololive", "Mori Calliope", "Voice Pack", "Mori Calliope Anniversary Voice Pack Physical CD", "Anniversary", "mid", 32),
+        ("Nijisanji", "Vox Akuma", "Voice Pack", "Vox Akuma Birthday Voice Pack Physical CD Edition", "Birthday", "mid", 35),
+        ("Nijisanji", "Ike Eveland", "Voice Pack", "Ike Eveland Birthday Voice Pack Physical CD Edition", "Birthday", "mid", 30),
+
+        # Hololive x Lawson/FamilyMart collab goods (+5)
+        ("Hololive", "Various", "Collab Goods", "Hololive x Lawson 2025 Campaign Acrylic Stand Set (10pc)", "Lawson Collab", "mid", 48),
+        ("Hololive", "Various", "Collab Goods", "Hololive x Lawson 2025 Clear File Set (12pc)", "Lawson Collab", "mid", 30),
+        ("Hololive", "Various", "Collab Goods", "Hololive x FamilyMart 2025 Campaign Can Badge Set", "Collab Cafe", "mid", 25),
+        ("Hololive", "Various", "Collab Goods", "Hololive x Sanrio Characters Acrylic Stand Full Set", "Collab Cafe", "high", 65),
+        ("Hololive", "Various", "Collab Goods", "Hololive x Don Quijote Chibi Plush Set (10pc)", "Collab Cafe", "high", 58),
+
+        # Nijisanji Festival/Concert merch (+6)
+        ("Nijisanji", "Various", "Concert Goods", "Nijisanji Koshien 2024 Venue Penlight + Towel Set", "Concert", "mid", 40),
+        ("Nijisanji", "Various", "Concert Goods", "NijiFes 2025 Acrylic Diorama Full Set", "Concert", "high", 72),
+        ("Nijisanji", "Various", "Concert Goods", "NijiFes 2025 Venue-Limited Poster Set (A2 x8)", "Concert", "high", 55),
+        ("Nijisanji", "Various", "Concert Goods", "Nijisanji AR Live 2025 Venue Badge Collection (15pc)", "Concert", "mid", 35),
+        ("Nijisanji", "Various", "Concert Goods", "NijiFes 2025 Clear File Set (20pc)", "Concert", "mid", 30),
+        ("Nijisanji", "Various", "Concert Blu-ray", "Nijisanji Koshien 2024 Blu-ray Box", "Concert", "high", 70),
+
+        # Hololive Stars JP — Uproar!! merch (+5)
+        ("Holostars", "Yatogami Fuma", "Birthday Set", "Yatogami Fuma Birthday 2025 Complete Set", "Birthday", "mid", 45),
+        ("Holostars", "Utsugi Uyu", "Birthday Set", "Utsugi Uyu Birthday 2025 Merch Set", "Birthday", "mid", 42),
+        ("Holostars", "Hizaki Gamma", "Acrylic Stand", "Hizaki Gamma 2nd Anniversary Acrylic Stand", "Anniversary", "mid", 22),
+        ("Holostars", "Minase Rio", "Birthday Set", "Minase Rio Birthday 2025 Complete Set", "Birthday", "mid", 48),
+        ("Holostars", "Various", "Concert Goods", "Holostars Karaoke Live 2025 Venue Goods Set", "Concert", "mid", 35),
+
+        # High-value signed/limited (+8)
+        ("Hololive", "Gawr Gura", "Signed Shikishi", "Gawr Gura Hand-Signed Farewell Shikishi Board", "Anniversary", "grail", 400),
+        ("Hololive", "Mori Calliope", "Signed Tapestry", "Mori Calliope Hand-Signed 4th Anniversary B2 Tapestry", "Anniversary", "grail", 240),
+        ("Hololive", "Nekomata Okayu", "Signed Tapestry", "Nekomata Okayu Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 200),
+        ("Hololive", "Inugami Korone", "Signed Tapestry", "Inugami Korone Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 210),
+        ("Nijisanji", "Enna Alouette", "Signed Shikishi", "Enna Alouette Hand-Signed Birthday Shikishi Board", "Birthday", "grail", 160),
+        ("VShojo", "Ironmouse", "Signed Shikishi", "Ironmouse Hand-Signed Birthday Shikishi Board", "Birthday", "grail", 180),
+        ("Indie", "Shylily", "Signed Tapestry", "Shylily Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 140),
+        ("Indie", "Filian", "Signed Shikishi", "Filian Hand-Signed Anniversary Shikishi Board", "Anniversary", "grail", 120),
     ]
 
     # Merge helper functions

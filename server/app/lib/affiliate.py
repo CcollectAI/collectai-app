@@ -12,6 +12,15 @@ Supported programmes:
   - Discogs Affiliate — anv + utm params
   - StockX (Impact) — utm params
   - BrickLink Referral — ref + utm params
+  - WhatNot (Impact.com) — utm params, 1-3.5%
+  - Catawiki (Partnerize) — utm params, ~7-10%
+  - KEH Camera (ShareASale) — utm params, 1.6-3.2%
+  - MPB (FlexOffers/Sovrn) — utm params, 2%
+  - MasterOfMalt (Affiliate Future) — utm params, 5-7.66%
+  - PopMart (Yeesshh/Digidip) — utm params, 1-8%
+  - Drop.com (FlexOffers) — utm params, 1.6-2.4%
+  - Chrono24 (Direct) — ref + utm params
+  - AmiAmi (Sovrn Commerce) — utm params
 
 URLs from unknown sources (e.g. Firecrawl scrape hits) are returned unchanged.
 
@@ -32,6 +41,15 @@ from app.config import (
     DISCOGS_AFFILIATE_TOKEN,
     STOCKX_AFFILIATE_ID,
     BRICKLINK_AFFILIATE_ID,
+    WHATNOT_AFFILIATE_ID,
+    CATAWIKI_AFFILIATE_ID,
+    KEH_AFFILIATE_ID,
+    MPB_AFFILIATE_ID,
+    MASTEROFMALT_AFFILIATE_ID,
+    POPMART_AFFILIATE_ID,
+    DROP_AFFILIATE_ID,
+    CHRONO24_AFFILIATE_ID,
+    AMIAMI_AFFILIATE_ID,
 )
 
 logger = logging.getLogger(__name__)
@@ -83,6 +101,33 @@ def build_affiliate_url(original_url: str, source: str) -> tuple[str, str]:
 
     if source_lower == "bricklink" and BRICKLINK_AFFILIATE_ID:
         return _tag_bricklink(original_url), "bricklink"
+
+    if source_lower == "whatnot" and WHATNOT_AFFILIATE_ID:
+        return _tag_whatnot(original_url), "whatnot"
+
+    if source_lower == "catawiki" and CATAWIKI_AFFILIATE_ID:
+        return _tag_catawiki(original_url), "catawiki"
+
+    if source_lower == "keh" and KEH_AFFILIATE_ID:
+        return _tag_keh(original_url), "keh"
+
+    if source_lower == "mpb" and MPB_AFFILIATE_ID:
+        return _tag_mpb(original_url), "mpb"
+
+    if source_lower == "masterofmalt" and MASTEROFMALT_AFFILIATE_ID:
+        return _tag_masterofmalt(original_url), "masterofmalt"
+
+    if source_lower == "popmart" and POPMART_AFFILIATE_ID:
+        return _tag_popmart(original_url), "popmart"
+
+    if source_lower == "drop" and DROP_AFFILIATE_ID:
+        return _tag_drop(original_url), "drop"
+
+    if source_lower == "chrono24" and CHRONO24_AFFILIATE_ID:
+        return _tag_chrono24(original_url), "chrono24"
+
+    if source_lower == "amiami" and AMIAMI_AFFILIATE_ID:
+        return _tag_amiami(original_url), "amiami"
 
     # No affiliate programme available for this source
     return original_url, ""
@@ -150,6 +195,96 @@ def _tag_bricklink(url: str) -> str:
         "ref": "collectai",
         "utm_source": "collectai",
         "utm_medium": "affiliate",
+    })
+
+
+def _tag_whatnot(url: str) -> str:
+    """Append WhatNot (Impact.com) affiliate params."""
+    return _append_params(url, {
+        "ref": WHATNOT_AFFILIATE_ID,
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+    })
+
+
+def _tag_catawiki(url: str) -> str:
+    """Append Catawiki (Partnerize) affiliate params."""
+    return _append_params(url, {
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+        "chn": CATAWIKI_AFFILIATE_ID,
+    })
+
+
+def _tag_keh(url: str) -> str:
+    """Append KEH Camera (ShareASale) affiliate params."""
+    return _append_params(url, {
+        "aid": KEH_AFFILIATE_ID,
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+    })
+
+
+def _tag_mpb(url: str) -> str:
+    """Append MPB (FlexOffers/Sovrn) affiliate params."""
+    return _append_params(url, {
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+        "ref": MPB_AFFILIATE_ID,
+    })
+
+
+def _tag_masterofmalt(url: str) -> str:
+    """Append MasterOfMalt (Affiliate Future) affiliate params."""
+    return _append_params(url, {
+        "af": MASTEROFMALT_AFFILIATE_ID,
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+    })
+
+
+def _tag_popmart(url: str) -> str:
+    """Append PopMart (Yeesshh/Digidip) affiliate params."""
+    return _append_params(url, {
+        "ref": POPMART_AFFILIATE_ID,
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+    })
+
+
+def _tag_drop(url: str) -> str:
+    """Append Drop.com (FlexOffers) affiliate params."""
+    return _append_params(url, {
+        "ref": DROP_AFFILIATE_ID,
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+    })
+
+
+def _tag_chrono24(url: str) -> str:
+    """Append Chrono24 (Direct partnership) affiliate params."""
+    return _append_params(url, {
+        "ref": CHRONO24_AFFILIATE_ID,
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+    })
+
+
+def _tag_amiami(url: str) -> str:
+    """Append AmiAmi (Sovrn Commerce) affiliate params."""
+    return _append_params(url, {
+        "utm_source": "collectai",
+        "utm_medium": "affiliate",
+        "utm_campaign": "smart_deal",
+        "ref": AMIAMI_AFFILIATE_ID,
     })
 
 

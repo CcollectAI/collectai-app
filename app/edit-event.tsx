@@ -169,6 +169,7 @@ const EditEventScreen: React.FC = () => {
   const handleUseMyLocation = useCallback(async () => {
     setGeoLoading(true);
     try {
+      // @ts-expect-error expo-location is an optional peer dependency loaded at runtime
       const Location = await import('expo-location');
 
       const { status } = await Location.requestForegroundPermissionsAsync();

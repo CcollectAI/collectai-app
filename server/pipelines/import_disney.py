@@ -860,6 +860,117 @@ def get_curated_catalog() -> list[dict]:
         ("archives", "Walt Disney Archives Fantasia Conductor Baton Replica", "LE 500", "grail", 350),
         ("archives", "Walt Disney Archives Mary Poppins Carousel Horse Figurine", "LE 750", "high", 200),
         ("archives", "Walt Disney Archives Pirates of the Caribbean Map Lithograph", "LE 1000", "high", 150),
+
+        # ── WDCC — Additional Porcelain Figures (+8) ─────────────────────
+        ("wdcc", "WDCC Snow White 'The Fairest One of All'", "WDCC", "grail", 300),
+        ("wdcc", "WDCC Peter Pan 'Off to Neverland' Figurine", "WDCC", "grail", 260),
+        ("wdcc", "WDCC Dumbo 'Take to the Skies' Figurine", "WDCC", "high", 200),
+        ("wdcc", "WDCC Alice in Wonderland 'Curiouser' Figurine", "WDCC", "grail", 280),
+        ("wdcc", "WDCC Aladdin Genie 'I'm Losing to a Rug' Figurine", "WDCC", "high", 190),
+        ("wdcc", "WDCC Beauty and the Beast 'Tale as Old as Time' Figurine", "WDCC", "grail", 320),
+        ("wdcc", "WDCC Lady and the Tramp 'Bella Notte' Figurine", "WDCC", "high", 200),
+        ("wdcc", "WDCC 101 Dalmatians Cruella 'Perfectly Wretched' Figurine", "WDCC", "grail", 250),
+
+        # ── Disney100 Celebration Exclusives (+8) ────────────────────────
+        ("disney100", "Disney100 Platinum Celebration Mickey Mouse Plush", "D100 Exclusive", "high", 85),
+        ("disney100", "Disney100 Oswald the Lucky Rabbit Figurine", "D100 LE", "high", 120),
+        ("disney100", "Disney100 Walt & Mickey Partners Statue Replica", "D100 LE", "grail", 250),
+        ("disney100", "Disney100 Character Canvas Art Print Set (6pc)", "D100 Exclusive", "high", 95),
+        ("disney100", "Disney100 Steamboat Willie Snow Globe", "D100 Exclusive", "high", 130),
+        ("disney100", "Disney100 Anniversary Pin Set (10 Decades)", "D100 LE", "high", 160),
+        ("disney100", "Disney100 Castle Projection Replica Light", "D100 Exclusive", "high", 110),
+        ("disney100", "Disney100 Heritage Film Cell Collection Set", "D100 LE", "grail", 200),
+
+        # ── Loungefly x Funko Collaborations (+7) ────────────────────────
+        ("loungefly", "Loungefly x Funko Villain Maleficent Pop Backpack", "Funko Exclusive", "high", 100),
+        ("loungefly", "Loungefly x Funko Stitch Experiment 626 Crossbody", "Funko Exclusive", "high", 90),
+        ("loungefly", "Loungefly x Funko Disney Princess Castle Backpack", "Standard", "mid", 70),
+        ("loungefly", "Loungefly x Funko Nightmare Before Christmas Zero Bag", "Standard", "mid", 65),
+        ("loungefly", "Loungefly x Funko Pixar Alien Remix Backpack", "Standard", "mid", 60),
+        ("loungefly", "Loungefly x Funko Cinderella Carriage Crossbody", "Park Exclusive", "high", 95),
+        ("loungefly", "Loungefly x Funko Tangled Lantern Mini Backpack", "NYCC Exclusive", "high", 120),
+
+        # ── Disney Traditions Jim Shore — Additional (+8) ────────────────
+        ("jim_shore", "Jim Shore Moana 'Find Your Way' Figurine", "Standard", "mid", 65),
+        ("jim_shore", "Jim Shore Pocahontas 'Colors of the Wind' Figurine", "Standard", "mid", 70),
+        ("jim_shore", "Jim Shore Mulan 'Bravest of All' Figurine", "Standard", "mid", 65),
+        ("jim_shore", "Jim Shore Lilo & Stitch Ohana Means Family Figurine (Large)", "Limited", "high", 110),
+        ("jim_shore", "Jim Shore Encanto Mirabel Figurine", "Standard", "mid", 60),
+        ("jim_shore", "Jim Shore Sleeping Beauty Aurora Dancing Figurine", "Standard", "mid", 70),
+        ("jim_shore", "Jim Shore Tangled Rapunzel Tower Scene", "Limited", "high", 120),
+        ("jim_shore", "Jim Shore Coco Day of the Dead Miguel Figurine", "Standard", "mid", 65),
+
+        # ── Enchanted Disney Fine Jewelry (+5) ───────────────────────────
+        ("jewelry", "Enchanted Disney Elsa Snowflake Diamond Ring", "Enchanted", "high", 180),
+        ("jewelry", "Enchanted Disney Belle Rose Diamond Pendant", "Enchanted", "high", 160),
+        ("jewelry", "Enchanted Disney Ariel Pearl & Diamond Earrings", "Enchanted", "high", 150),
+        ("jewelry", "Enchanted Disney Cinderella Carriage Diamond Bracelet", "Enchanted", "high", 200),
+        ("jewelry", "Enchanted Disney Jasmine Aladdin Lamp Diamond Ring", "Enchanted", "high", 170),
+
+        # ── Lilo & Stitch Collection (+7) ────────────────────────────────
+        ("stitch", "Stitch Crashes Disney January (Lady & Tramp) LE Pin", "LE Monthly", "mid", 45),
+        ("stitch", "Stitch Crashes Disney March (Mulan) LE Pin", "LE Monthly", "mid", 45),
+        ("stitch", "Stitch Experiment 626 WDCC Figurine", "WDCC", "high", 180),
+        ("stitch", "Stitch Elvis Bobblehead (Park Exclusive)", "Park Exclusive", "mid", 40),
+        ("stitch", "Stitch & Angel Valentine's Day Figure Set", "Seasonal", "mid", 55),
+        ("stitch", "Stitch 20th Anniversary LE 2000 Plush (Oversized)", "LE 2000", "high", 100),
+        ("stitch", "Lilo & Stitch Surfboard Wall Art Print", "Limited Print", "mid", 65),
+
+        # ── Encanto & Moana 2 (+7) ──────────────────────────────────────
+        ("encanto", "Encanto Casita Playset (Disney Store Exclusive)", "Store Exclusive", "mid", 75),
+        ("encanto", "Encanto Mirabel Designer Doll", "Designer LE", "high", 140),
+        ("encanto", "Encanto Bruno Figurine (We Don't Talk About)", "Standard", "mid", 45),
+        ("encanto", "Encanto Isabela Floral Figurine", "Standard", "mid", 40),
+        ("moana2", "Moana 2 Maui Hook Replica (Park Exclusive)", "Park Exclusive", "high", 85),
+        ("moana2", "Moana 2 Premiere Event LE 1000 Pin", "LE 1000", "high", 120),
+        ("moana2", "Moana 2 Adventure Set (Disney Store Exclusive)", "Store Exclusive", "mid", 65),
+
+        # ── Vintage Disneyland Memorabilia (+10) ─────────────────────────
+        ("vintage", "Vintage Disneyland 1955 Opening Day Program Reproduction", "Vintage", "grail", 350),
+        ("vintage", "Vintage Disneyland 1960s Souvenir Map (Original)", "Vintage", "grail", 280),
+        ("vintage", "Vintage Walt Disney World 1971 Opening Year Pennant", "Vintage", "high", 200),
+        ("vintage", "Vintage Disneyland Ticket Book E-Ticket (Unused)", "Vintage", "grail", 400),
+        ("vintage", "Vintage Disney Mouseketeer Ears Hat (1950s)", "Vintage", "high", 180),
+        ("vintage", "Vintage Disneyland Haunted Mansion 1969 Attraction Poster", "Vintage", "grail", 350),
+        ("vintage", "Vintage Disney Monorail Souvenir Plate (1960s)", "Vintage", "high", 120),
+        ("vintage", "Vintage Disneyland Small World Opening Day Brochure (1966)", "Vintage", "grail", 300),
+        ("vintage", "Vintage EPCOT Center 1982 Grand Opening Poster", "Vintage", "high", 180),
+        ("vintage", "Vintage Disneyland Pirates of the Caribbean Cast Lanyard (1970s)", "Vintage", "high", 150),
+
+        # ── Walt Disney Archives — Additional (+7) ──────────────────────
+        ("archives", "Walt Disney Archives Bambi Original Sketch Reproduction", "LE 500", "grail", 280),
+        ("archives", "Walt Disney Archives Cinderella Glass Slipper Replica", "LE 750", "grail", 320),
+        ("archives", "Walt Disney Archives Haunted Mansion Tombstone Replica Set", "LE 1000", "high", 200),
+        ("archives", "Walt Disney Archives Walt's Desk Nameplate Replica", "LE 500", "grail", 350),
+        ("archives", "Walt Disney Archives Enchanted Tiki Room Tiki Mug (1963 Replica)", "LE 1000", "high", 150),
+        ("archives", "Walt Disney Archives Jungle Cruise Map Lithograph", "LE 1000", "high", 130),
+        ("archives", "Walt Disney Archives Space Mountain Blueprint Poster", "LE 750", "high", 160),
+
+        # ── runDisney & Park Events (+6) ─────────────────────────────────
+        ("rundisney", "runDisney Walt Disney World Marathon 2025 Finisher Medal", "Event Exclusive", "mid", 65),
+        ("rundisney", "runDisney Disneyland Half Marathon 2025 Finisher Medal", "Event Exclusive", "mid", 55),
+        ("rundisney", "runDisney Wine & Dine Challenge Double Medal Set", "Event Exclusive", "high", 95),
+        ("rundisney", "runDisney Star Wars Rival Run Medal (Vader vs Luke)", "Event Exclusive", "mid", 70),
+        ("parks", "Shanghai Disney Resort Grand Opening LE Pin Set", "LE 1000", "high", 150),
+        ("parks", "Tokyo DisneySea 20th Anniversary LE Figure Set", "LE 2000", "high", 130),
+
+        # ── Disney Designer Dolls — Additional (+4) ─────────────────────
+        ("designer_dolls", "Disney Designer Collection Mulan Doll", "Designer LE", "high", 145),
+        ("designer_dolls", "Disney Designer Collection Moana Doll", "Designer LE", "high", 140),
+        ("designer_dolls", "Disney Designer Midnight Masquerade Belle Doll", "Designer LE", "high", 160),
+        ("designer_dolls", "Disney Designer Fairytale Couples Beauty & Beast Set", "Designer LE", "grail", 260),
+
+        # ── Additional Disney Collectibles (+10) ──────────────────────────
+        ("pins", "Disney Villains Maleficent Dragon LE 2000 Pin", "LE 2000", "high", 110),
+        ("pins", "EPCOT 40th Anniversary Figment Rainbow LE 3000 Pin", "LE 3000", "high", 85),
+        ("ornaments", "Hallmark Disney Tangled Lantern Scene Ornament", "Hallmark Exclusive", "mid", 45),
+        ("ornaments", "Hallmark Disney Encanto Mirabel Musical Ornament", "Hallmark Exclusive", "mid", 42),
+        ("vinylmation", "Vinylmation Park Starz Series 5 Haunted Mansion Bride", "LE 1500", "high", 80),
+        ("disney100", "Disney100 Anniversary Oswald Lucky Rabbit Figurine", "D100 LE", "high", 140),
+        ("parks", "Walt Disney World 50th Anniversary Spirit Jersey (Gold)", "Park Exclusive", "mid", 75),
+        ("parks", "Disneyland Resort 2025 Lunar New Year Snake Ears Headband", "Park Exclusive", "mid", 40),
+        ("swarovski", "Swarovski Disney Moana Crystal Figurine", "Swarovski LE", "grail", 280),
+        ("jim_shore", "Jim Shore Disney Traditions Fantasia Sorcerer Mickey", "Standard", "mid", 65),
     ]
 
     catalog = []

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { Link, usePathname } from "expo-router";
+import { Link, usePathname, type Href } from "expo-router";
 
 export default function NotFoundScreen() {
   const pathname = usePathname();
@@ -25,7 +25,7 @@ export default function NotFoundScreen() {
         match any screen.
       </Text>
 
-      <Link href={"/portfolio" as any} asChild>
+      <Link href={"/portfolio" as Href} asChild>
         <Pressable
           style={{
             paddingHorizontal: 20,

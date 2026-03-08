@@ -16,10 +16,14 @@ from fastapi import APIRouter, Depends
 from app.auth import require_api_key
 from app.errors import error_response
 from app.config import API_SHARED_SECRET, SIGNALS_BASE_URL
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(tags=["portfolio"])
 
 _logger = logging.getLogger(__name__)
+
+# Per-user: 20 requests per minute for portfolio endpoints
+_portfolio_user_limit = per_user_rate_limit(20, scope="portfolio")
 
 # Module-level httpx client — created lazily, closed by lifespan shutdown
 _http_client: httpx.AsyncClient | None = None
@@ -62,17 +66,17 @@ async def _proxy_signals(path: str) -> dict:
 
 # ---- Endpoints ----
 
-@router.get("/portfolio/overview")
+@router.get("/portfolio/overview", dependencies=[Depends(_portfolio_user_limit)])
 async def portfolio_overview(_: bool = Depends(require_api_key)):
     return await _proxy_signals("/portfolio/overview")
 
 
-@router.get("/portfolio/items")
+@router.get("/portfolio/items", dependencies=[Depends(_portfolio_user_limit)])
 async def portfolio_items(_: bool = Depends(require_api_key)):
     return await _proxy_signals("/portfolio/items")
 
 
-@router.get("/portfolio/timeseries")
+@router.get("/portfolio/timeseries", dependencies=[Depends(_portfolio_user_limit)])
 async def portfolio_timeseries(_: bool = Depends(require_api_key)):
     return await _proxy_signals("/portfolio/timeseries")
 

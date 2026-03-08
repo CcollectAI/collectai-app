@@ -212,3 +212,94 @@ def per_user_rate_limit(
             _user_hits.clear()
 
     return _check
+
+
+# ---------------------------------------------------------------------------
+# Per-IP sliding-window rate limit (FastAPI dependency) — for public endpoints
+# ---------------------------------------------------------------------------
+
+# Shared store: {(scope, ip): [timestamps]}
+_ip_hits: dict[tuple[str, str], list[float]] = defaultdict(list)
+_ip_last_eviction: float = 0.0
+_MAX_IP_SCOPE_ENTRIES: int = 50_000  # safety cap
+
+
+def per_ip_rate_limit(
+    max_requests: int,
+    window_seconds: int = WINDOW_SECONDS,
+    scope: str = "default",
+):
+    """
+    Factory that returns a FastAPI dependency enforcing a per-IP
+    sliding-window rate limit.  Designed for **public** endpoints
+    that do not require authentication.
+
+    Parameters
+    ----------
+    max_requests : int
+        Maximum number of requests allowed within *window_seconds*.
+    window_seconds : int
+        Length of the sliding window in seconds (default: 60).
+    scope : str
+        Namespace to separate counters for different endpoint groups.
+
+    Usage::
+
+        geo_limit = per_ip_rate_limit(30, scope="geo")
+
+        @router.get("/detect", dependencies=[Depends(geo_limit)])
+        async def detect_region(request: Request):
+            ...
+    """
+
+    async def _check(request: Request) -> None:
+        if not RATE_LIMIT_ENABLED:
+            return
+
+        ip = _client_ip(request)
+        key = (scope, ip)
+        now = time.monotonic()
+
+        _ip_hits[key] = _prune_user(_ip_hits[key], now, window_seconds)
+
+        if len(_ip_hits[key]) >= max_requests:
+            oldest = _ip_hits[key][0]
+            retry_after = max(1, math.ceil((oldest + window_seconds) - now))
+            logger.warning(
+                "Per-IP rate limit exceeded: ip=%s scope=%s (%d/%d in %ds)",
+                ip,
+                scope,
+                len(_ip_hits[key]),
+                max_requests,
+                window_seconds,
+            )
+            from app.errors import error_response
+            from app.lib.error_codes import ErrorCode
+            raise error_response(
+                429,
+                "Rate limit exceeded. Please try again later.",
+                code=ErrorCode.RATE_LIMITED,
+                headers={"Retry-After": str(retry_after)},
+            )
+
+        _ip_hits[key].append(now)
+
+        # Periodically evict empty keys
+        global _ip_last_eviction
+        if now - _ip_last_eviction > _EVICTION_INTERVAL:
+            _ip_last_eviction = now
+            stale = [k for k, v in _ip_hits.items() if not v]
+            for k in stale:
+                del _ip_hits[k]
+            if stale:
+                logger.debug("Evicted %d stale IP-scope keys from rate limiter", len(stale))
+
+        # Safety cap
+        if len(_ip_hits) > _MAX_IP_SCOPE_ENTRIES:
+            logger.warning(
+                "Rate limiter IP-scope dict exceeded %d entries — forced clear",
+                _MAX_IP_SCOPE_ENTRIES,
+            )
+            _ip_hits.clear()
+
+    return _check

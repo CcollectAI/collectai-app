@@ -34,7 +34,9 @@ def _mock_all_adapters_unconfigured(agent):
                  "_bezel", "_chrono24", "_keh", "_mpb",
                  "_drop", "_gouletpens", "_brickeconomy",
                  "_popmart", "_booth", "_scalemates",
-                 "_ktown4u", "_comicbookrealm", "_masterofmalt"):
+                 "_ktown4u", "_comicbookrealm", "_masterofmalt",
+                 "_pricecharting", "_yahoo_auctions", "_stockx",
+                 "_discogs", "_cardmarket", "_bricklink"):
         mock = MagicMock()
         mock.configured = False
         setattr(agent, attr, mock)

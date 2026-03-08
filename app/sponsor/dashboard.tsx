@@ -695,7 +695,7 @@ const SponsorDashboardScreen: React.FC = () => {
           {/* ============================================================ */}
           <SponsorProfileCard
             company={company}
-            colors={colors}
+            colors={colors as any}
             memberSince={memberSince}
             editing={editing}
             editName={editName}
@@ -843,7 +843,7 @@ const SponsorDashboardScreen: React.FC = () => {
             {/* Inline compose form */}
             {!!showCompose && (
               <AnnouncementComposer
-                colors={colors}
+                colors={colors as any}
                 sponsoredEvents={sponsoredEvents}
                 composeEventId={composeEventId}
                 onComposeEventIdChange={setComposeEventId}

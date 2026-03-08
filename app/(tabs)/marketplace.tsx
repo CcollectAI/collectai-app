@@ -35,6 +35,12 @@ import { getJSON, setJSON } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import logger from "@/utils/logger";
+import { track } from '@/analytics/track';
+import { MarketplaceSearchBar } from '@/components/MarketplaceSearchBar';
+import { MarketplaceFilterPanel } from '@/components/MarketplaceFilterPanel';
+import { RecentSearchesSection } from '@/components/RecentSearchesSection';
+import { TrendingCategoriesGrid, type TrendingCategory } from '@/components/TrendingCategoriesGrid';
+import { SearchResultQuickView } from '@/components/SearchResultQuickView';
 
 // --- Types for marketplace API results ---
 type MarketplaceHit = {
@@ -105,15 +111,7 @@ const FALLBACK_TRENDING = [
   { id: 'gunpla', name: 'Gunpla & Model Kits', meta: 'Steady growth' },
 ];
 
-// Filter options
-const SOURCE_OPTIONS = ["eBay", "TCGPlayer", "Mercari", "Cardmarket", "Discogs", "StockX", "BrickLink"] as const;
-const CONDITION_OPTIONS = ["Near Mint", "Lightly Played", "Played", "Poor"] as const;
-const SORT_OPTIONS = [
-  { value: "relevance", label: "Relevance" },
-  { value: "price_asc", label: "Price: Low\u2192High" },
-  { value: "price_desc", label: "Price: High\u2192Low" },
-  { value: "newest", label: "Newest" },
-] as const;
+// Filter options (constants moved to MarketplaceFilterPanel component)
 
 // Tile colors now come from theme.tileScale (Tiffany brand scale)
 
@@ -186,14 +184,13 @@ const SearchScreen: React.FC = () => {
   const [filterSort, setFilterSort] = useState("relevance");
 
   // Trending categories — fetch from backend, fall back to hardcoded
-  type TrendingCategory = { id: string; name: string; meta: string };
   const [trendingCategories, setTrendingCategories] = useState<TrendingCategory[]>(FALLBACK_TRENDING);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const resp = await collectorsApi.fetchInsights();
+        const resp = await collectorsApi.fetchInsights() as any;
         if (cancelled || !resp?.trending_items?.length) return;
         const catMap = CATEGORIES.reduce<Record<string, string>>((m, c) => { m[c.id] = c.name; return m; }, {});
         const seen = new Set<string>();
@@ -294,7 +291,7 @@ const SearchScreen: React.FC = () => {
     if (searchId !== searchIdRef.current) return;
 
     // Map marketplace hits
-    const mktData = mktResult.status === "fulfilled" ? mktResult.value : null;
+    const mktData = (mktResult.status === "fulfilled" ? mktResult.value : null) as any;
     const hits: MarketplaceHit[] = mktData?.hits ?? [];
     const mktResults: SearchResult[] = hits
       .filter((h) => !h.is_sold)
@@ -357,6 +354,7 @@ const SearchScreen: React.FC = () => {
     setMarketplaceResults(mktResults);
     setCollectionResults(colResults);
     setSearchLoading(false);
+    track({ name: 'marketplace_search', properties: { query: q, result_count: mktResults.length } });
     setRefreshing(false);
   }, [filterSources, filterConditions, filterMinPrice, filterMaxPrice, filterSort, settings]);
 
@@ -498,38 +496,14 @@ const SearchScreen: React.FC = () => {
         </View>
 
         {/* Search input + filter button */}
-        <View style={styles.searchFilterRow}>
-          <View style={[styles.searchRow, { borderColor: colors.border, flex: 1 }]}>
-            <Ionicons
-              name="search-outline"
-              size={18}
-              color={colors.muted}
-              style={{ marginRight: 8 }}
-            />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              onSubmitEditing={handleSubmitSearch}
-              placeholder="Search items & collections"
-              placeholderTextColor={colors.muted}
-              accessibilityLabel="Search items and collections"
-              style={[styles.searchInput, { color: colors.text }]}
-            />
-          </View>
-          <TouchableOpacity
-            onPress={() => setFilterVisible(true)}
-            style={[styles.filterButton, { borderColor: colors.border, backgroundColor: activeFilterCount > 0 ? colors.accent + '15' : 'transparent' }]}
-            accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
-            accessibilityRole="button"
-          >
-            <Ionicons name="options-outline" size={20} color={activeFilterCount > 0 ? colors.accent : colors.muted} />
-            {activeFilterCount > 0 && (
-              <View style={styles.filterCountBadge}>
-                <Text style={styles.filterCountBadgeText}>{activeFilterCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+        <MarketplaceSearchBar
+          theme={colors}
+          query={query}
+          onQueryChange={setQuery}
+          onSubmit={handleSubmitSearch}
+          onOpenFilter={() => setFilterVisible(true)}
+          activeFilterCount={activeFilterCount}
+        />
 
         {/* Find Collectors button */}
         {!trimmedQuery && (
@@ -546,27 +520,12 @@ const SearchScreen: React.FC = () => {
         )}
 
         {/* Recent searches */}
-        {recent.length > 0 && !trimmedQuery && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Recent searches
-            </Text>
-            <View style={styles.chipRow}>
-              {recent.map((term) => (
-                <AnimatedPressable
-                  key={term}
-                  style={[styles.chip, { backgroundColor: colors.accent + '15' }]}
-                  onPress={() => handleChipPress(term)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Search for ${term}`}
-                >
-                  <Text style={[styles.chipText, { color: colors.text }]}>
-                    {term}
-                  </Text>
-                </AnimatedPressable>
-              ))}
-            </View>
-          </View>
+        {!trimmedQuery && (
+          <RecentSearchesSection
+            theme={colors}
+            recentSearches={recent}
+            onChipPress={handleChipPress}
+          />
         )}
 
         {/* Popular searches (preset chips) */}
@@ -634,191 +593,41 @@ const SearchScreen: React.FC = () => {
             </View>
 
             {/* Trending categories */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Trending categories
-              </Text>
-              <View style={styles.trendingList}>
-                {trendingCategories.map((cat, index) => (
-                  <AnimatedPressable
-                    key={cat.id}
-                    style={[styles.trendingRow, { borderColor: colors.border }]}
-                    onPress={() => handleOpenCategory(cat.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${cat.name}, ${cat.meta}`}
-                  >
-                    <View style={[styles.trendingRank, { backgroundColor: colors.accent + '20' }]}>
-                      <Text style={[styles.trendingRankText, { color: colors.accent }]}>
-                        {index + 1}
-                      </Text>
-                    </View>
-                    <View style={styles.trendingInfo}>
-                      <Text style={[styles.trendingName, { color: colors.text }]}>{cat.name}</Text>
-                      <Text style={[styles.trendingMeta, { color: colors.muted }]}>
-                        {cat.meta}
-                      </Text>
-                    </View>
-                    <Ionicons name="trending-up" size={18} color={colors.accent} />
-                  </AnimatedPressable>
-                ))}
-              </View>
-            </View>
+            <TrendingCategoriesGrid
+              theme={colors}
+              categories={trendingCategories}
+              onCategoryPress={handleOpenCategory}
+            />
           </>
         )}
 
         {/* Filter bottom sheet */}
-        <Modal
+        <MarketplaceFilterPanel
+          theme={colors}
           visible={filterVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setFilterVisible(false)}
-        >
-          <SafeAreaView style={[styles.filterModal, { backgroundColor: colors.background }]}>
-            {/* Filter header */}
-            <View style={[styles.filterHeader, { borderBottomColor: colors.border }]}>
-              <TouchableOpacity onPress={() => setFilterVisible(false)} accessibilityLabel="Close filters">
-                <Ionicons name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={[styles.filterHeaderTitle, { color: colors.text }]}>Filters</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setFilterSources([]);
-                  setFilterConditions([]);
-                  setFilterMinPrice("");
-                  setFilterMaxPrice("");
-                  setFilterSort("relevance");
-                }}
-                accessibilityLabel="Reset all filters"
-              >
-                <Text style={[styles.filterResetText, { color: colors.accent }]}>Reset</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.filterContent} contentContainerStyle={{ paddingBottom: 32 }}>
-              {/* Source filter */}
-              <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Source</Text>
-              <View style={styles.filterChipRow}>
-                {SOURCE_OPTIONS.map((src) => {
-                  const active = filterSources.includes(src);
-                  return (
-                    <TouchableOpacity
-                      key={src}
-                      style={[
-                        styles.filterChip,
-                        { borderColor: active ? colors.accent : colors.border, backgroundColor: active ? colors.accent + '20' : 'transparent' },
-                      ]}
-                      onPress={() => {
-                        setFilterSources((prev) =>
-                          active ? prev.filter((s) => s !== src) : [...prev, src]
-                        );
-                      }}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: active }}
-                      accessibilityLabel={src}
-                    >
-                      <Text style={[styles.filterChipText, { color: active ? colors.accent : colors.text }]}>
-                        {src}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Condition filter */}
-              <Text style={[styles.filterSectionTitle, { color: colors.text, marginTop: 20 }]}>Condition</Text>
-              <View style={styles.filterChipRow}>
-                {CONDITION_OPTIONS.map((cond) => {
-                  const active = filterConditions.includes(cond);
-                  return (
-                    <TouchableOpacity
-                      key={cond}
-                      style={[
-                        styles.filterChip,
-                        { borderColor: active ? colors.accent : colors.border, backgroundColor: active ? colors.accent + '20' : 'transparent' },
-                      ]}
-                      onPress={() => {
-                        setFilterConditions((prev) =>
-                          active ? prev.filter((c) => c !== cond) : [...prev, cond]
-                        );
-                      }}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: active }}
-                      accessibilityLabel={cond}
-                    >
-                      <Text style={[styles.filterChipText, { color: active ? colors.accent : colors.text }]}>
-                        {cond}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Price range */}
-              <Text style={[styles.filterSectionTitle, { color: colors.text, marginTop: 20 }]}>Price range</Text>
-              <View style={styles.filterPriceRow}>
-                <TextInput
-                  value={filterMinPrice}
-                  onChangeText={setFilterMinPrice}
-                  placeholder="Min"
-                  placeholderTextColor={colors.muted}
-                  keyboardType="numeric"
-                  style={[styles.filterPriceInput, { color: colors.text, borderColor: colors.border }]}
-                  accessibilityLabel="Minimum price"
-                />
-                <Text style={[styles.filterPriceDash, { color: colors.muted }]}>{"\u2013"}</Text>
-                <TextInput
-                  value={filterMaxPrice}
-                  onChangeText={setFilterMaxPrice}
-                  placeholder="Max"
-                  placeholderTextColor={colors.muted}
-                  keyboardType="numeric"
-                  style={[styles.filterPriceInput, { color: colors.text, borderColor: colors.border }]}
-                  accessibilityLabel="Maximum price"
-                />
-              </View>
-
-              {/* Sort order */}
-              <Text style={[styles.filterSectionTitle, { color: colors.text, marginTop: 20 }]}>Sort by</Text>
-              <View style={styles.filterChipRow}>
-                {SORT_OPTIONS.map((opt) => {
-                  const active = filterSort === opt.value;
-                  return (
-                    <TouchableOpacity
-                      key={opt.value}
-                      style={[
-                        styles.filterChip,
-                        { borderColor: active ? colors.accent : colors.border, backgroundColor: active ? colors.accent + '20' : 'transparent' },
-                      ]}
-                      onPress={() => setFilterSort(opt.value)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: active }}
-                      accessibilityLabel={opt.label}
-                    >
-                      <Text style={[styles.filterChipText, { color: active ? colors.accent : colors.text }]}>
-                        {opt.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </ScrollView>
-
-            {/* Apply button */}
-            <View style={[styles.filterFooter, { borderTopColor: colors.border }]}>
-              <TouchableOpacity
-                style={[styles.filterApplyButton, { backgroundColor: colors.accent }]}
-                onPress={() => {
-                  setFilterVisible(false);
-                  if (trimmedQuery) executeSearch(trimmedQuery);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Apply filters"
-              >
-                <Text style={styles.filterApplyText}>Apply filters</Text>
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
-        </Modal>
+          filterSources={filterSources}
+          filterConditions={filterConditions}
+          filterMinPrice={filterMinPrice}
+          filterMaxPrice={filterMaxPrice}
+          filterSort={filterSort}
+          onSetFilterSources={setFilterSources}
+          onSetFilterConditions={setFilterConditions}
+          onSetFilterMinPrice={setFilterMinPrice}
+          onSetFilterMaxPrice={setFilterMaxPrice}
+          onSetFilterSort={setFilterSort}
+          onApply={() => {
+            setFilterVisible(false);
+            if (trimmedQuery) executeSearch(trimmedQuery);
+          }}
+          onClose={() => setFilterVisible(false)}
+          onReset={() => {
+            setFilterSources([]);
+            setFilterConditions([]);
+            setFilterMinPrice("");
+            setFilterMaxPrice("");
+            setFilterSort("relevance");
+          }}
+        />
 
         {/* User Search Modal */}
         <Modal
@@ -840,6 +649,7 @@ const SearchScreen: React.FC = () => {
                   setUserSearchQuery("");
                   setUserSearchResults([]);
                 }}
+                accessibilityRole="button"
                 accessibilityLabel="Close user search"
               >
                 <Ionicons name="close" size={24} color={colors.text} />
@@ -867,6 +677,7 @@ const SearchScreen: React.FC = () => {
                       setUserSearchQuery("");
                       setUserSearchResults([]);
                     }}
+                    accessibilityRole="button"
                     accessibilityLabel="Clear search"
                   >
                     <Ionicons name="close-circle" size={18} color={colors.muted} />
@@ -1166,89 +977,14 @@ const SearchScreen: React.FC = () => {
       </KeyboardAvoidingView>
 
       {/* Quick View Sheet */}
-      <Modal
+      <SearchResultQuickView
+        theme={colors}
         visible={quickViewVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => { setQuickViewVisible(false); setQuickViewItem(null); }}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => { setQuickViewVisible(false); setQuickViewItem(null); }}
-          style={styles.quickViewOverlay}
-        >
-          <TouchableOpacity activeOpacity={1} style={[styles.quickViewSheet, { backgroundColor: colors.card }]}>
-            {quickViewItem && (
-              <>
-                <View style={[styles.quickViewHandle, { backgroundColor: colors.muted + '40' }]} />
-                <View style={styles.quickViewHeader}>
-                  {quickViewItem.image_url ? (
-                    <Image source={{ uri: quickViewItem.image_url }} style={styles.quickViewImage} />
-                  ) : (
-                    <View style={[styles.quickViewImagePlaceholder, { backgroundColor: colors.accent + '15' }]}>
-                      <Ionicons name="cart-outline" size={28} color={colors.accent} />
-                    </View>
-                  )}
-                  <View style={styles.quickViewInfo}>
-                    <Text style={[styles.quickViewTitle, { color: colors.text }]} numberOfLines={2}>
-                      {quickViewItem.name}
-                    </Text>
-                    <Text style={[styles.quickViewSource, { color: colors.muted }]}>
-                      {quickViewItem.source || 'Marketplace'}
-                      {quickViewItem.condition ? ` \u00b7 ${quickViewItem.condition}` : ''}
-                    </Text>
-                    <Text style={[styles.quickViewPrice, { color: colors.accent }]}>
-                      {formatPrice(quickViewItem.value)}
-                    </Text>
-                    {quickViewItem.secondaryPrice && (
-                      <Text style={[styles.quickViewSecondary, { color: colors.muted }]}>
-                        {quickViewItem.secondaryPrice}
-                      </Text>
-                    )}
-                    {quickViewItem.shippingHint && (
-                      <Text style={[styles.quickViewShipping, { color: colors.muted }]}>
-                        {quickViewItem.shippingHint}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-
-                <View style={styles.quickViewActions}>
-                  <TouchableOpacity
-                    onPress={handleQuickViewOpen}
-                    style={[styles.quickViewBtn, styles.quickViewBtnPrimary, { backgroundColor: colors.accent }]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Open in browser"
-                  >
-                    <Ionicons name="open-outline" size={18} color="#FFFFFF" />
-                    <Text style={styles.quickViewBtnPrimaryText}>Open Listing</Text>
-                  </TouchableOpacity>
-                  <View style={styles.quickViewBtnRow}>
-                    <TouchableOpacity
-                      onPress={handleQuickViewShare}
-                      style={[styles.quickViewBtnSecondary, { borderColor: colors.border }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Share listing"
-                    >
-                      <Ionicons name="share-outline" size={16} color={colors.text} />
-                      <Text style={[styles.quickViewBtnSecondaryText, { color: colors.text }]}>Share</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => { setQuickViewVisible(false); setQuickViewItem(null); }}
-                      style={[styles.quickViewBtnSecondary, { borderColor: colors.border }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Close quick view"
-                    >
-                      <Ionicons name="close" size={16} color={colors.muted} />
-                      <Text style={[styles.quickViewBtnSecondaryText, { color: colors.muted }]}>Close</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </>
-            )}
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+        item={quickViewItem}
+        onClose={() => { setQuickViewVisible(false); setQuickViewItem(null); }}
+        onOpenUrl={handleQuickViewOpen}
+        onShare={handleQuickViewShare}
+      />
     </SafeAreaView>
   );
 };
@@ -1309,21 +1045,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 6,
   },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  chip: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    backgroundColor: undefined,
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
+  // (chip styles moved to RecentSearchesSection component)
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1431,80 +1153,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
-  trendingList: {
-    gap: 8,
-  },
-  trendingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  trendingRank: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  trendingRankText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  trendingInfo: {
-    flex: 1,
-  },
-  trendingName: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  trendingMeta: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  // Filter UI styles
-  searchFilterRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  filterBadge: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  filterCountBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: '#EF4444',
-    borderRadius: 9,
-    minWidth: 18,
-    height: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-  },
-  filterCountBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
-  },
+  // (trending styles moved to TrendingCategoriesGrid component)
+  // (search bar + filter button styles moved to MarketplaceSearchBar component)
   resultThumbnail: {
     width: 48,
     height: 48,
@@ -1534,67 +1184,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
   },
-  filterResetText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  filterContent: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  filterSectionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 10,
-  },
-  filterChipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  filterChip: {
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-  },
-  filterChipText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  filterPriceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  filterPriceInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  filterPriceDash: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  filterFooter: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  filterApplyButton: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  filterApplyText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
+  // (filter panel styles moved to MarketplaceFilterPanel component)
   // Find Collectors styles
   findCollectorsButton: {
     flexDirection: "row",
@@ -1636,100 +1226,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  quickViewOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  quickViewSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 36,
-  },
-  quickViewHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  quickViewHeader: {
-    flexDirection: 'row',
-    gap: 14,
-    marginBottom: 20,
-  },
-  quickViewImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-  },
-  quickViewImagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickViewInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  quickViewTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  quickViewSource: {
-    fontSize: 13,
-  },
-  quickViewPrice: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginTop: 4,
-  },
-  quickViewSecondary: {
-    fontSize: 12,
-  },
-  quickViewShipping: {
-    fontSize: 12,
-  },
-  quickViewActions: {
-    gap: 10,
-  },
-  quickViewBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  quickViewBtnPrimary: {
-    // backgroundColor set inline
-  },
-  quickViewBtnPrimaryText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  quickViewBtnRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  quickViewBtnSecondary: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  quickViewBtnSecondaryText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  // (quick view styles moved to SearchResultQuickView component)
   presetChipsSection: {
     marginBottom: 16,
   },

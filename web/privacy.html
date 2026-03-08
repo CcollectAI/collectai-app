@@ -26,69 +26,137 @@
 <div class="container">
   <a href="/" class="back-link">&larr; Back to CollectAI</a>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: February 18, 2026</p>
+  <p class="updated">Last updated: March 4, 2026</p>
 
   <p>CollectAI ("we", "our", "us") operates the CollectAI mobile application (the "Service"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.</p>
 
-  <h2>Information We Collect</h2>
-  <p><strong>Account Data:</strong> When you create an account, we collect your email address, username, and password (securely hashed). We never store plain-text passwords.</p>
-  <p><strong>Collection Data:</strong> Items you add to your collection, including titles, descriptions, photos, categories, and valuations. This data is stored securely in your private account.</p>
-  <p><strong>Usage Data:</strong> We collect anonymized analytics about how you use the app (screens visited, features used) to improve the Service. We use Sentry for crash reporting.</p>
-  <p><strong>Device Information:</strong> We may collect device type, operating system version, and push notification tokens to deliver notifications you have opted into.</p>
+  <h2>1. Information We Collect</h2>
+  <p><strong>Account Data:</strong> When you create an account, we collect your email address, display name, handle, and password (securely hashed via Supabase Auth). If you use social login (Google, Apple), we receive your name, email, and profile photo from the identity provider. We never store plain-text passwords.</p>
+  <p><strong>Profile Data:</strong> You may optionally provide a bio, avatar photo, and collecting interests. Your display name and handle are visible to other users.</p>
+  <p><strong>Collection Data:</strong> Items you add to your collection, including titles, descriptions, photos, categories, valuations, condition, and category-specific attributes. This data is stored securely in your private account.</p>
+  <p><strong>Build &amp; Paint Projects:</strong> Project titles, steps, progress, notes, and photos you create to track builds of collectible items (model kits, miniatures, etc.).</p>
+  <p><strong>Messaging Data:</strong> Direct messages you send and receive through the in-app chat feature, including message content and timestamps. Messages are only visible to the participants of each conversation.</p>
+  <p><strong>Event Data:</strong> Events you create, RSVP to, or attend, including event details, announcements, your attendance status (going/interested), and ticket purchases for paid events.</p>
+  <p><strong>Usage Data:</strong> We collect anonymized analytics about how you use the app (screens visited, features used, sponsor interactions) via PostHog to improve the Service. We use Sentry for crash reporting. Analytics events are typed and do not contain personally identifiable information.</p>
+  <p><strong>Device Information:</strong> Device type, operating system version, and push notification tokens to deliver notifications you have opted into.</p>
+  <p><strong>Location Data:</strong> We use your IP address to determine your approximate geographic region (country-level) for currency preferences and regional marketplace features. We do not collect precise GPS location. IP-based region data is cached for 24 hours.</p>
+  <p><strong>Presence Data:</strong> When you are actively using the app, we record a "last seen" timestamp to show online/offline status to other users. You can manage this in your privacy settings.</p>
+  <p><strong>Activity Data:</strong> Certain actions (adding items, completing projects, attending events) are recorded in your activity feed. You control whether activities are visible to other users.</p>
+  <p><strong>Search Data:</strong> Search queries you perform (for items, users, events, categories) are processed in real-time to return results. We do not store individual search queries. Search is subject to per-user rate limits.</p>
 
-  <h2>How We Use Your Data</h2>
+  <h2>2. How We Use Your Data</h2>
   <ul>
     <li>To provide and maintain the Service</li>
-    <li>To notify you about changes to the Service</li>
-    <li>To provide price estimates and market insights for your collection</li>
-    <li>To detect and prevent technical issues</li>
+    <li>To provide price estimates and market insights using machine learning models</li>
+    <li>To match marketplace listings and detect deals via our Smart Deal Agent</li>
+    <li>To deliver push notifications for price alerts, event updates, and messages</li>
+    <li>To detect your region for currency conversion and marketplace preferences</li>
+    <li>To calculate shipping estimates for cross-border transactions</li>
+    <li>To facilitate direct messaging between users</li>
+    <li>To display online presence indicators to connected users</li>
+    <li>To provide event management features (RSVP, announcements, capacity tracking, ticket sales)</li>
+    <li>To detect and prevent technical issues and abuse</li>
     <li>To comply with legal obligations</li>
   </ul>
 
-  <h2>Data Storage &amp; Security</h2>
-  <p>Your data is stored on secure servers managed by Supabase (PostgreSQL) with row-level security policies. All data is encrypted in transit (TLS 1.2+). We implement industry-standard security measures to protect your personal information.</p>
+  <h2>3. Data Storage &amp; Security</h2>
+  <p>Your data is stored on secure servers managed by Supabase (PostgreSQL) with row-level security (RLS) policies ensuring users can only access their own data. All data is encrypted in transit (TLS 1.2+). Passwords are hashed using industry-standard algorithms. We implement security headers (HSTS, CSP, X-Frame-Options) and JWT-based authentication with audience and issuer validation.</p>
+  <p>Offline data may be cached locally on your device using SQLite for improved performance. This cache is automatically managed and cleared when you log out.</p>
 
-  <h2>Third-Party Services</h2>
-  <p>We use the following third-party services:</p>
+  <h2>4. Third-Party Services</h2>
+  <p>We integrate with the following third-party services:</p>
+  <p><strong>Infrastructure &amp; Authentication:</strong></p>
   <ul>
-    <li>Supabase &mdash; authentication and database</li>
+    <li>Supabase &mdash; authentication, database, and real-time features</li>
+    <li>Amazon Web Services (AWS) &mdash; backend hosting and file storage</li>
     <li>Sentry &mdash; error and crash reporting</li>
-    <li>eBay, TCGPlayer, Cardmarket &mdash; marketplace data for price comparisons</li>
     <li>Expo &mdash; app distribution and push notifications</li>
   </ul>
-  <p>These services have their own privacy policies governing data they collect.</p>
+  <p><strong>Marketplace Data (price comparisons &amp; deal detection):</strong></p>
+  <ul>
+    <li>eBay, TCGPlayer, Cardmarket, Discogs &mdash; market listings and sold prices</li>
+    <li>PriceCharting, StockX, BrickLink &mdash; collectible valuations</li>
+    <li>Mercari, Yahoo Auctions JP, AmiAmi &mdash; regional marketplace data</li>
+    <li>Firecrawl, Crawl4AI &mdash; web content extraction for price data</li>
+  </ul>
+  <p><strong>Payments:</strong></p>
+  <ul>
+    <li>Stripe &mdash; subscription billing, sponsored event payments, and event ticket purchases</li>
+  </ul>
+  <p><strong>Geolocation:</strong></p>
+  <ul>
+    <li>ip-api.com &mdash; IP-based region detection (country-level only)</li>
+  </ul>
+  <p><strong>Analytics:</strong></p>
+  <ul>
+    <li>PostHog &mdash; product analytics and feature usage tracking (no PII collected)</li>
+  </ul>
+  <p>Each service has its own privacy policy governing data they collect. Marketplace links contain affiliate tags where available (eBay, TCGPlayer, Cardmarket, Mercari, Discogs, StockX, BrickLink) which enable us to earn commissions on purchases at no additional cost to you.</p>
 
-  <h2>Data Sharing</h2>
+  <h2>5. Social Features &amp; User Interactions</h2>
+  <p><strong>Public Profile:</strong> Your display name, handle, avatar, bio, and collection count are visible to other users. Collection values are only shown if you opt in.</p>
+  <p><strong>Direct Messages:</strong> You can send and receive messages with other users. A DM request system ensures both parties consent before a conversation begins. Message content is only visible to conversation participants.</p>
+  <p><strong>Blocking:</strong> You can block other users to prevent them from messaging you or viewing your profile. Blocking automatically declines any pending DM requests.</p>
+  <p><strong>Events:</strong> When you create an event, your profile is shown as the host. When you RSVP to an event, your attendance is visible to other attendees. Event hosts can send announcements to all attendees.</p>
+  <p><strong>Online Presence:</strong> A "last seen" timestamp indicates your online status to other users. This feature helps facilitate real-time interactions.</p>
+
+  <h2>6. Sponsor &amp; Business Features</h2>
+  <p>If you register a sponsor company, we collect your company name, logo, website, contact email, and description. Sponsor data is used to facilitate event sponsorships and is visible to event attendees. Payment processing for sponsored events and sponsor subscriptions is handled by Stripe.</p>
+  <p><strong>Payment Data:</strong> When you purchase event tickets or sponsor subscriptions, we collect payment information through Stripe. We do not store credit card numbers &mdash; all payment processing is handled securely by Stripe. We retain transaction records (amount, date, event/tier) for billing and support purposes.</p>
+
+  <h2>7. Data Sharing</h2>
   <p>We do not sell your personal data. We only share data:</p>
   <ul>
     <li>With your consent</li>
+    <li>With other users, as described in the Social Features section</li>
+    <li>With Stripe for payment processing</li>
     <li>To comply with legal obligations</li>
     <li>To protect against legal liability</li>
-    <li>Aggregated and anonymized data may be used for analytics</li>
+    <li>Aggregated and anonymized data may be used for analytics and model training</li>
   </ul>
 
-  <h2>Your Rights</h2>
-  <p>You have the right to:</p>
+  <h2>8. Currency &amp; Regional Data</h2>
+  <p>We support 7 currencies (EUR, USD, GBP, JPY, KRW, AUD, CAD) and use IP-based geolocation to auto-detect your region for optimal currency and marketplace defaults. Exchange rates are refreshed every 8 hours. You can override your region and currency in settings at any time.</p>
+
+  <h2>9. Caching &amp; Performance</h2>
+  <p>To improve performance and reduce server load, we use caching at multiple levels:</p>
+  <ul>
+    <li>Server-side caching (Redis/in-memory) for frequently accessed data such as category analytics, event listings, and exchange rates</li>
+    <li>Client-side caching for recently viewed items, events, and category data</li>
+    <li>Offline caching via SQLite for app functionality when internet is unavailable</li>
+  </ul>
+  <p>Cached data is automatically refreshed at regular intervals (typically 2&ndash;5 minutes for real-time data, up to 8 hours for exchange rates). You can force a refresh by pulling down on any screen.</p>
+
+  <h2>10. Your Rights (GDPR &amp; International)</h2>
+  <p>Under the GDPR and applicable privacy laws, you have the right to:</p>
   <ul>
     <li>Access your personal data</li>
     <li>Correct inaccurate data</li>
-    <li>Request deletion of your account and data</li>
-    <li>Export your collection data</li>
+    <li>Request deletion of your account and all associated data</li>
+    <li>Export your collection data (CSV export available in the app)</li>
+    <li>Restrict processing of your data</li>
+    <li>Data portability</li>
+    <li>Object to processing</li>
     <li>Withdraw consent at any time</li>
+    <li>Lodge a complaint with a supervisory authority</li>
   </ul>
-  <p>To exercise these rights, use the account settings in the app or contact us at <a href="mailto:support@collectai.app">support@collectai.app</a>.</p>
+  <p>To exercise these rights, use the account settings in the app or contact us at <a href="mailto:privacy@collectai.app">privacy@collectai.app</a>. We will respond within 30 days.</p>
 
-  <h2>Data Retention</h2>
-  <p>We retain your data for as long as your account is active. When you delete your account, all associated data is permanently removed within 30 days.</p>
+  <h2>11. Data Retention</h2>
+  <p>We retain your data for as long as your account is active. When you delete your account, all associated data &mdash; including items, projects, messages, events, and activity history &mdash; is permanently removed within 30 days. Anonymous aggregated data used for ML model training may be retained after account deletion.</p>
 
-  <h2>Children's Privacy</h2>
-  <p>Our Service is not intended for children under 13. We do not knowingly collect personal data from children under 13. If you are a parent or guardian and become aware that your child has provided us with personal data, please contact us.</p>
+  <h2>12. Push Notifications</h2>
+  <p>We may send push notifications for price alerts, deal discoveries, event updates, direct messages, and announcements. You can manage notification preferences in your device settings and within the app. Push notification tokens are stored securely and deleted when you log out or uninstall the app.</p>
 
-  <h2>Changes to This Policy</h2>
-  <p>We may update this privacy policy from time to time. We will notify you of changes by posting the new policy in the app and updating the "Last updated" date.</p>
+  <h2>13. Children's Privacy</h2>
+  <p>Our Service is not intended for children under 13 (or under 16 in the EU). We do not knowingly collect personal data from children. If you are a parent or guardian and become aware that your child has provided us with personal data, please contact us and we will delete the data promptly.</p>
 
-  <h2>Contact Us</h2>
-  <p>If you have questions about this privacy policy, please contact us at:<br><a href="mailto:support@collectai.app">support@collectai.app</a></p>
+  <h2>14. Changes to This Policy</h2>
+  <p>We may update this privacy policy from time to time. We will notify you of material changes through in-app notifications and by updating the "Last updated" date. Continued use of the Service after changes constitutes acceptance of the updated policy.</p>
+
+  <h2>15. Contact Us</h2>
+  <p>If you have questions about this privacy policy, please contact us at:<br><a href="mailto:privacy@collectai.app">privacy@collectai.app</a></p>
+  <p>CollectAI<br>The Netherlands</p>
 </div>
 </body>
 </html>

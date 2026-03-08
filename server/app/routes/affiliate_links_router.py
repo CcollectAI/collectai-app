@@ -16,10 +16,14 @@ from pydantic import BaseModel
 
 from app.auth import get_optional_user_id
 from app.lib.affiliate import build_affiliate_url
+from app.rate_limit import per_ip_rate_limit
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/marketplace", tags=["marketplace"])
+
+# Per-IP: 100 requests per minute for public affiliate links
+_affiliate_ip_limit = per_ip_rate_limit(100, scope="affiliate")
 
 # Categories that include TCG-specific marketplaces
 _TCG_CATEGORIES = {"pokemon", "mtg", "yugioh", "lorcana", "digimon", "one_piece_tcg"}
@@ -87,7 +91,7 @@ def _build_amiami_search_url(query: str) -> str:
     return f"https://www.amiami.com/eng/search/list/?s_keywords={quote_plus(query)}"
 
 
-@router.get("/affiliate-links", response_model=AffiliateLinksResponse)
+@router.get("/affiliate-links", response_model=AffiliateLinksResponse, dependencies=[Depends(_affiliate_ip_limit)])
 async def get_affiliate_links(
     query: str = Query(..., min_length=1, max_length=500, description="Search query"),
     category: Optional[str] = Query(None, max_length=64, description="Item category"),
@@ -214,7 +218,7 @@ class TagAffiliateUrlResponse(BaseModel):
     source: str
 
 
-@router.post("/affiliate-url", response_model=TagAffiliateUrlResponse)
+@router.post("/affiliate-url", response_model=TagAffiliateUrlResponse, dependencies=[Depends(_affiliate_ip_limit)])
 async def tag_affiliate_url(
     payload: TagAffiliateUrlRequest,
     user_id: Optional[str] = Depends(get_optional_user_id),

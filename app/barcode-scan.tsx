@@ -6,6 +6,7 @@
  */
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { track } from '@/analytics/track';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -191,7 +192,6 @@ function BarcodeScanScreen() {
       try {
         const prefill = await dataProvider.lookupByBarcode(cleaned, {
           codeType: 'isbn',
-          source: 'manual'
         });
         setLookupResult(prefill);
         setIntakeResult(null);
@@ -239,8 +239,8 @@ function BarcodeScanScreen() {
         missingRequired: (!intake.name ? ['title'] : []).concat(!intake.category_id ? ['categoryId'] : []),
         priceBand: intake.price_band ?? null,
         rationale: intake.rationale,
-        barcode: null,
-        barcodeType: null,
+        barcode: undefined,
+        barcodeType: undefined,
         imageUrl: intake.image_url,
       };
       setLookupResult(prefill);
@@ -313,6 +313,8 @@ function BarcodeScanScreen() {
         barcode: scannedCode?.value || undefined,
         estimated_price: lookupResult.priceBand?.q50 || undefined,
       });
+
+      track({ name: 'item_added', properties: { source: 'barcode', category: lookupResult?.categoryId ?? undefined } });
 
       // Navigate to the new item detail
       router.replace({

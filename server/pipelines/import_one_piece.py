@@ -763,6 +763,9 @@ def get_curated_catalog() -> list[dict]:
     # ── Expansion Batch 7 — 55 more One Piece collectibles ──
     items += _expanded_batch_7()
 
+    # ── Expansion Batch 8 — 95 more One Piece collectibles (to 700+) ──
+    items += _expanded_batch_8()
+
     catalog = []
     for line, name, variant, tier, price in items:
         catalog.append({
@@ -910,6 +913,127 @@ def _expanded_batch_7() -> list[tuple]:
         ("East Blue Saga", "Captain Kuro", "DXF East Blue Pirate Captains", "standard", 30),
         ("East Blue Saga", "Don Krieg", "DXF East Blue Pirate Captains", "standard", 28),
         ("East Blue Saga", "Mihawk vs Zoro", "Ichiban Kuji Prize A Baratie Encounter", "high", 140),
+    ]
+
+
+def _expanded_batch_8() -> list[tuple]:
+    """95 additional One Piece collectibles — P.O.P. deep cuts, Ichiban Kuji, WCF sets,
+    Film Red, Gear 5, Log Collection, Grandista, Card Game accessories."""
+    return [
+        # ── Portrait of Pirates — Deep Cuts & Reissues (+15) ────────────
+        ("P.O.P.", "Tony Tony Chopper", "SA-MAXIMUM Monster Point Ver.", "grail", 280),
+        ("P.O.P.", "Brook", "Sailing Again Soul King Ver.", "high", 145),
+        ("P.O.P.", "Franky", "SA-MAXIMUM General Franky", "grail", 310),
+        ("P.O.P.", "Donquixote Doflamingo", "SA-MAXIMUM Heavenly Demon", "grail", 290),
+        ("P.O.P.", "Katakuri", "SA-MAXIMUM Mochi Mochi no Mi", "grail", 300),
+        ("P.O.P.", "Kuzan (Aokiji)", "NEO-DX Ice Age Ver.", "grail", 260),
+        ("P.O.P.", "Sabo", "SA-MAXIMUM Fire Dragon Claw", "high", 195),
+        ("P.O.P.", "Perona", "Sailing Again Gothic Ver.", "high", 180),
+        ("P.O.P.", "Koala", "Playback Memories Revolutionary Army", "high", 140),
+        ("P.O.P.", "Vivi", "Playback Memories Arabasta Princess Ver.", "high", 155),
+        ("P.O.P.", "Marco", "Playback Memories Phoenix Ver.", "high", 175),
+        ("P.O.P.", "Jinbe", "SA-MAXIMUM Fish-Man Karate", "high", 170),
+        ("P.O.P.", "Crocodile", "NEO-DX Revival Ver.", "high", 185),
+        ("P.O.P.", "Smoker", "NEO-DX Marine Captain Ver.", "high", 150),
+        ("P.O.P.", "Mihawk", "SA-MAXIMUM Black Blade Yoru", "grail", 320),
+
+        # ── Ichiban Kuji — Last One / Prize A (+12) ────────────────────
+        ("Ichiban Kuji", "Gear 5 Luffy", "Legends Over Time Last One Prize Joy Boy", "grail", 220),
+        ("Ichiban Kuji", "Nika Luffy", "EX One Piece Anime 25th Last One", "grail", 250),
+        ("Ichiban Kuji", "Sabo", "Revolutionary Sabo A Prize Flame Emperor", "high", 100),
+        ("Ichiban Kuji", "Marco", "Marineford A Prize Phoenix Dive", "high", 95),
+        ("Ichiban Kuji", "Law", "Room A Prize Wano Ver.", "high", 85),
+        ("Ichiban Kuji", "Nami", "One Piece Girls Collection Last One Zeus", "high", 130),
+        ("Ichiban Kuji", "Robin", "One Piece Girls Collection A Prize Demon Child", "high", 95),
+        ("Ichiban Kuji", "Whitebeard", "Legends Over Time B Prize Quake Man", "high", 110),
+        ("Ichiban Kuji", "Blackbeard", "EX Devils Vol. 1 A Prize Yami Yami", "high", 105),
+        ("Ichiban Kuji", "Luffy vs Kaido", "EX Wano Decisive Battle Last One Clash", "grail", 240),
+        ("Ichiban Kuji", "Kid & Law", "Wano Alliance A Prize Triple Captain", "high", 90),
+        ("Ichiban Kuji", "Hancock", "One Piece Girls Collection B Prize Snake Princess", "high", 88),
+
+        # ── World Collectible Figure Sets (+10) ────────────────────────
+        ("WCF", "Wano Country Arc", "WCF Vol. 1 Complete Set (6 figs)", "mid", 50),
+        ("WCF", "Wano Country Arc", "WCF Vol. 2 Complete Set (6 figs)", "mid", 50),
+        ("WCF", "Wano Country Arc", "WCF Vol. 3 Complete Set (6 figs)", "mid", 48),
+        ("WCF", "Egghead Arc", "WCF Vol. 1 Vegapunk Set (6 figs)", "mid", 55),
+        ("WCF", "Film Red", "WCF Film Red Complete Set (6 figs)", "mid", 55),
+        ("WCF", "Straw Hat Crew", "WCF Chibi Straw Hat Crew 20th Anniv (10 figs)", "high", 120),
+        ("WCF", "Marine Ford", "WCF Vol. 35 Marineford Complete Set (8 figs)", "high", 100),
+        ("WCF", "Dressrosa", "WCF Dressrosa Complete Set (6 figs)", "mid", 45),
+        ("WCF", "Fishman Island", "WCF Vol. 25 Fisher Tiger & Sun Pirates (6 figs)", "mid", 55),
+        ("WCF", "Thriller Bark", "WCF Vol. 20 Complete Set (6 figs)", "mid", 48),
+
+        # ── Gear 5 / Nika Items (+8) ──────────────────────────────────
+        ("Gear 5", "Monkey D. Luffy", "S.H.Figuarts Gear 5 Nika White", "high", 140),
+        ("Gear 5", "Monkey D. Luffy", "King of Artist Gear 5 Sun God", "mid", 55),
+        ("Gear 5", "Monkey D. Luffy", "DXF Gear 5 Lightning God Pose", "mid", 40),
+        ("Gear 5", "Monkey D. Luffy", "Grandista Gear 5 Joy Boy 30cm", "high", 95),
+        ("Gear 5", "Monkey D. Luffy", "GEM Series Gear 5 Drums of Liberation", "high", 160),
+        ("Gear 5", "Monkey D. Luffy", "Banpresto Chronicle Master Stars Gear 5", "mid", 65),
+        ("Gear 5", "Monkey D. Luffy", "Figuarts ZERO Extra Battle Nika Rooftop", "high", 145),
+        ("Gear 5", "Monkey D. Luffy", "Nendoroid Gear 5 Joyful Ver.", "mid", 55),
+
+        # ── Log Collection / Grandista (+10) ──────────────────────────
+        ("Log Collection", "Monkey D. Luffy", "Log Collection Large Figure Rubber Pistol", "high", 95),
+        ("Log Collection", "Roronoa Zoro", "Log Collection Large Figure Onigiri", "high", 90),
+        ("Log Collection", "Sanji", "Log Collection Large Figure Diable Jambe", "high", 85),
+        ("Log Collection", "Portgas D. Ace", "Log Collection Large Figure Fire Fist", "high", 100),
+        ("Log Collection", "Shanks", "Log Collection Large Figure Gryphon Slash", "high", 105),
+        ("Grandista", "Monkey D. Luffy", "Grandista Manga Dimensions Luffy", "mid", 60),
+        ("Grandista", "Roronoa Zoro", "Grandista Manga Dimensions Zoro", "mid", 55),
+        ("Grandista", "Portgas D. Ace", "Grandista Manga Dimensions Ace", "mid", 55),
+        ("Grandista", "Trafalgar Law", "Grandista Manga Dimensions Law", "mid", 50),
+        ("Grandista", "Boa Hancock", "Grandista Manga Dimensions Hancock", "mid", 58),
+
+        # ── One Piece Card Game — OP06/OP07 Ultra Rares (+10) ──────────
+        ("OP Card Game", "Monkey D. Luffy", "OP07-109 Manga Rare Gear 5 Nika Full Art", "grail", 320),
+        ("OP Card Game", "Shanks", "OP06-118 Secret Rare Full Art Emperor", "grail", 280),
+        ("OP Card Game", "Nico Robin", "OP06-086 Alternate Art SP Miss All Sunday", "high", 160),
+        ("OP Card Game", "Nefertari Vivi", "OP07-051 Manga Rare Arabasta Princess", "high", 140),
+        ("OP Card Game", "Sabo", "OP05-081 Secret Rare Dragon Claw", "high", 130),
+        ("OP Card Game", "Kaido", "OP03-099 Secret Rare Dragon Form", "high", 170),
+        ("OP Card Game", "Charlotte Katakuri", "OP06-070 Secret Rare Mochi Buzzcut", "high", 120),
+        ("OP Card Game", "Jewelry Bonney", "OP07-019 Alternate Art Egghead Nika", "high", 110),
+        ("OP Card Game", "Sanji", "OP07-064 Secret Rare Ifrit Jambe Full Art", "high", 140),
+        ("OP Card Game", "Crocodile", "OP04-058 Alternate Art Cross Guild", "high", 100),
+
+        # ── Tsume HQS / Premium Statues (+8) ──────────────────────────
+        ("Tsume HQS", "Monkey D. Luffy", "HQS Gear 4 Snakeman vs Katakuri", "grail", 800),
+        ("Tsume HQS", "Roronoa Zoro", "HQS Ashura Ichibugin", "grail", 700),
+        ("Tsume HQS", "Portgas D. Ace", "HQS Fire Fist Last Stand", "grail", 750),
+        ("Tsume HQS", "Trafalgar Law", "HQS Gamma Knife Dressrosa", "grail", 650),
+        ("Tsume HQS+", "Kaido vs Luffy", "HQS+ Wano Rooftop Ultimate Clash", "grail", 1200),
+        ("Tsume HQS", "Whitebeard", "HQS Edward Newgate Paramount War", "grail", 900),
+        ("Tsume HQS", "Shanks", "HQS Red Hair Conqueror's Haki", "grail", 850),
+        ("Tsume HQS", "Sanji", "HQS Diable Jambe Anti-Manner Kick", "grail", 680),
+
+        # ── Nendoroid / S.H.Figuarts (+8) ─────────────────────────────
+        ("Nendoroid", "Monkey D. Luffy", "Nendoroid Film Red Concert Ver.", "mid", 50),
+        ("Nendoroid", "Roronoa Zoro", "Nendoroid Wano Country Enma Ver.", "mid", 55),
+        ("Nendoroid", "Nami", "Nendoroid Wano Kunoichi Ver.", "mid", 50),
+        ("Nendoroid", "Chopper", "Nendoroid Cotton Candy Lover Ver.", "mid", 45),
+        ("S.H.Figuarts", "Monkey D. Luffy", "S.H.Figuarts Dressrosa Gear 4 Bounce Man", "high", 110),
+        ("S.H.Figuarts", "Roronoa Zoro", "S.H.Figuarts Wano Country Three-Sword Style", "high", 120),
+        ("S.H.Figuarts", "Sanji", "S.H.Figuarts Whole Cake Island Raid Suit", "high", 100),
+        ("S.H.Figuarts", "Rob Lucci", "S.H.Figuarts Egghead Awakened Leopard Form", "high", 130),
+
+        # ── Collab / GEM / VAH (+8) ───────────────────────────────────
+        ("GEM Series", "Boa Hancock", "GEM Series Palm Sized Boa Hancock", "mid", 65),
+        ("GEM Series", "Nami", "GEM Series Run! Run! Run! Nami", "mid", 70),
+        ("GEM Series", "Roronoa Zoro", "GEM Series Wano Samurai Zoro", "high", 135),
+        ("VAH", "Boa Hancock", "Variable Action Heroes Boa Hancock Blue Ver.", "high", 120),
+        ("VAH", "Trafalgar Law", "Variable Action Heroes Law Room", "high", 110),
+        ("VAH", "Portgas D. Ace", "Variable Action Heroes Ace Flame Commandant", "high", 115),
+        ("Collab Merch", "Luffy", "BAIT x One Piece Gear 5 T-Shirt (LE 500)", "mid", 80),
+        ("Collab Merch", "Straw Hat Crew", "Uniqlo UT x One Piece 25th Anniversary Full Set (8 tees)", "mid", 70),
+
+        # ── Ship Models / Dioramas (+6) ───────────────────────────────
+        ("Ship Model", "Going Merry", "Grand Ship Collection Going Merry Memorial Color", "mid", 45),
+        ("Ship Model", "Thousand Sunny", "Grand Ship Collection Thousand Sunny Film Red", "mid", 48),
+        ("Ship Model", "Oro Jackson", "Grand Ship Collection Oro Jackson Roger's Ship", "mid", 40),
+        ("Ship Model", "Red Force", "Grand Ship Collection Red Force Shanks", "mid", 42),
+        ("Ship Model", "Polar Tang", "Grand Ship Collection Polar Tang Law's Sub", "mid", 38),
+        ("Ship Model", "Moby Dick", "Grand Ship Collection Moby Dick Whitebeard", "mid", 40),
     ]
 
 

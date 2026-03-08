@@ -1663,6 +1663,246 @@ def _puma_collabs_round4() -> list[tuple]:
     ]
 
 
+def _nike_sb_dunk_2024() -> list[tuple]:
+    """Nike SB Dunk Low 2024 releases — Round 5 expansion."""
+    return [
+        ("Nike", "SB Dunk Low", "Jarritos", "Collaboration",
+         "FD0860-001", 380),
+        ("Nike", "SB Dunk Low", "Born x Raised", "Collaboration",
+         "FN7819-400", 350),
+        ("Nike", "SB Dunk Low", "Powerpuff Girls Blossom", "Collaboration",
+         "FD2631-600", 280),
+        ("Nike", "SB Dunk Low", "Powerpuff Girls Bubbles", "Collaboration",
+         "FD2631-400", 260),
+        ("Nike", "SB Dunk Low", "Powerpuff Girls Buttercup", "Collaboration",
+         "FD2631-300", 270),
+        ("Nike", "SB Dunk Low", "April Skateboards White", "Collaboration",
+         "FD2562-100", 300),
+        ("Nike", "SB Dunk Low", "HUF San Francisco", "Collaboration",
+         "FD8775-100", 320),
+        ("Nike", "SB Dunk Low", "Why So Sad? Grey", "Collaboration",
+         "DX5549-400", 250),
+        ("Nike", "SB Dunk Low", "Concepts Orange Lobster", "Collaboration",
+         "FD8776-800", 500),
+        ("Nike", "SB Dunk Low", "Supreme Rammellzee Black", "Collaboration",
+         "FD8778-001", 550),
+        ("Nike", "SB Dunk Low", "Yuto Horigome Wolf Grey", "Collaboration",
+         "FQ1180-001", 320),
+    ]
+
+
+def _jordan_1_low_collabs_r5() -> list[tuple]:
+    """Air Jordan 1 Low collaborations — Round 5 expansion."""
+    return [
+        ("Jordan", "Air Jordan 1 Low", "Travis Scott Black Phantom", "Collaboration",
+         "DM7866-001", 1200),
+        ("Jordan", "Air Jordan 1 Low", "Travis Scott Olive", "Collaboration",
+         "DZ4137-106", 1100),
+        ("Jordan", "Air Jordan 1 Low", "Dior Grey", "Collaboration",
+         "CN8608-001", 4500),
+        ("Jordan", "Air Jordan 1 Low", "Fragment Design White Blue", "Collaboration",
+         "DM7866-140", 650),
+        ("Jordan", "Air Jordan 1 Low", "PSG Paris Saint-Germain", "Collaboration",
+         "CK0687-006", 280),
+        ("Jordan", "Air Jordan 1 Low", "x Zion Williamson Voodoo", "Collaboration",
+         "DZ7292-200", 180),
+        ("Jordan", "Air Jordan 1 Low", "Year of the Dragon Crimson", "Limited Release",
+         "FJ5735-100", 220),
+        ("Jordan", "Air Jordan 1 Low", "EasternStar Jade Smoke", "Limited Release",
+         "FQ9112-100", 160),
+        ("Jordan", "Air Jordan 1 Low", "Bleached Coral (W)", "GR (General Release)",
+         "DC0774-801", 140),
+        ("Jordan", "Air Jordan 1 Low", "Shattered Backboard Low", "OG Colorway",
+         "553558-128", 250),
+    ]
+
+
+def _jordan_4_retro_r5() -> list[tuple]:
+    """Air Jordan 4 retros — Round 5 expansion."""
+    return [
+        ("Jordan", "Air Jordan 4", "Bred Reimagined (2024)", "Retro",
+         "FV5029-006", 350),
+        ("Jordan", "Air Jordan 4", "Oxidized Green", "Retro",
+         "FQ8138-103", 260),
+        ("Jordan", "Air Jordan 4", "Lightning (2021 Retro)", "Retro",
+         "CT8527-700", 300),
+        ("Jordan", "Air Jordan 4", "Red Thunder", "Retro",
+         "CT8527-016", 280),
+        ("Jordan", "Air Jordan 4", "Frozen Moments (W)", "Retro",
+         "AQ9129-001", 320),
+        ("Jordan", "Air Jordan 4", "Midnight Navy", "Retro",
+         "DH6927-140", 300),
+        ("Jordan", "Air Jordan 4", "Craft Olive", "Retro",
+         "FB9927-200", 300),
+        ("Jordan", "Air Jordan 4", "Fear Pack", "Retro",
+         "626969-030", 380),
+        ("Jordan", "Air Jordan 4", "Canyon Purple (W)", "Retro",
+         "AQ9129-500-W", 240),
+        ("Jordan", "Air Jordan 4", "Infrared", "Retro",
+         "DH6927-061", 320),
+        ("Jordan", "Air Jordan 4", "Black Canvas", "Retro",
+         "DH7138-006", 280),
+    ]
+
+
+def _adidas_samba_collabs_r5() -> list[tuple]:
+    """Adidas Samba collaborations — Round 5 expansion."""
+    return [
+        ("Adidas", "Samba OG", "Wales Bonner Cream White", "Collaboration",
+         "GY4344", 380),
+        ("Adidas", "Samba OG", "Wales Bonner Silver Metallic", "Collaboration",
+         "IF0580", 420),
+        ("Adidas", "Samba OG", "Wales Bonner Pony Leopard", "Collaboration",
+         "IG4298", 500),
+        ("Adidas", "Samba OG", "Pharrell Humanrace White", "Collaboration",
+         "IF3655", 280),
+        ("Adidas", "Samba OG", "Messi Indoor White Green", "Collaboration",
+         "ID3550", 200),
+        ("Adidas", "Samba OG", "JJJJound Brown", "Collaboration",
+         "ID8709", 350),
+        ("Adidas", "Samba OG", "Kith Classics White Navy", "Collaboration",
+         "IF3664", 300),
+        ("Adidas", "Samba", "Sporty & Rich Cream", "Collaboration",
+         "IF5930", 280),
+        ("Adidas", "Samba", "Grace Wales Bonner Black", "Collaboration",
+         "ID3546", 360),
+        ("Adidas", "Samba", "INIKI x Ronnie Fieg Navy", "Collaboration",
+         "ID3548", 250),
+    ]
+
+
+def _nb_1906r_collabs_r5() -> list[tuple]:
+    """New Balance 1906R collaborations — Round 5 expansion."""
+    return [
+        ("New Balance", "1906R", "Protection Pack Silver Blue", "Limited Release",
+         "M1906REE", 200),
+        ("New Balance", "1906R", "Protection Pack Rain Cloud", "Limited Release",
+         "M1906REB", 190),
+        ("New Balance", "1906R", "Protection Pack Turtledove", "Limited Release",
+         "M1906REC", 210),
+        ("New Balance", "1906R", "New Spruce (2024)", "Limited Release",
+         "M1906RBB", 180),
+        ("New Balance", "1906R", "Joe Freshgoods 'Conversation Amongst Us'", "Collaboration",
+         "M1906RJF", 400),
+        ("New Balance", "1906R", "Kith 10th Anniversary Cyclades", "Collaboration",
+         "M1906RKT", 350),
+        ("New Balance", "1906R", "Aime Leon Dore Green", "Collaboration",
+         "M1906RAL", 380),
+        ("New Balance", "1906R", "Teddy Santis Sea Salt", "Collaboration",
+         "M1906RTS", 250),
+        ("New Balance", "1906R", "Cordura Black Orange", "Limited Release",
+         "M1906RCB", 220),
+        ("New Balance", "1906R", "Refined Future Magnet", "Limited Release",
+         "M1906RMG", 190),
+    ]
+
+
+def _asics_kayano14_collabs_r5() -> list[tuple]:
+    """ASICS Gel-Kayano 14 collaborations — Round 5 expansion."""
+    return [
+        ("ASICS", "Gel-Kayano 14", "Kiko Kostadinov Cream", "Collaboration",
+         "1201A019-107", 380),
+        ("ASICS", "Gel-Kayano 14", "Windand Sea Black Silver", "Collaboration",
+         "1201A457-001", 320),
+        ("ASICS", "Gel-Kayano 14", "Bricks & Wood Cream Sage", "Collaboration",
+         "1201A457-300", 350),
+        ("ASICS", "Gel-Kayano 14", "GMBH Vyner Cloud Grey", "Collaboration",
+         "1201A019-020", 400),
+        ("ASICS", "Gel-Kayano 14", "Matin Kim Pink Cream", "Collaboration",
+         "1202A389-700", 300),
+        ("ASICS", "Gel-Kayano 14", "Cream Pepper (2024)", "Limited Release",
+         "1201A019-115", 250),
+        ("ASICS", "Gel-Kayano 14", "Black Graphite Grey OG", "Retro",
+         "1201A019-005", 180),
+        ("ASICS", "Gel-Kayano 14", "White Midnight Blue", "Retro",
+         "1201A019-102", 170),
+        ("ASICS", "Gel-Kayano 14", "Cloud Grey Pure Silver", "Retro",
+         "1201A019-024", 165),
+        ("ASICS", "Gel-Kayano 14", "Endless Summer Pack Yellow", "Limited Release",
+         "1201A457-750", 230),
+    ]
+
+
+def _salomon_xt6_collabs_r5() -> list[tuple]:
+    """Salomon XT-6 collaborations — Round 5 expansion."""
+    return [
+        ("Salomon", "XT-6", "COMME des GARCONS CDG Black", "Collaboration",
+         "L41732800", 550),
+        ("Salomon", "XT-6", "Better Gift Shop Purple", "Collaboration",
+         "L47401500", 480),
+        ("Salomon", "XT-6", "Fumito Ganryu Grey White", "Collaboration",
+         "L47188200", 420),
+        ("Salomon", "XT-6", "Salehe Bembury Biscotto Sand", "Collaboration",
+         "L47401800", 500),
+        ("Salomon", "XT-6", "Hidden.NY Hazelnut", "Collaboration",
+         "L47400200", 450),
+        ("Salomon", "XT-6 Advanced", "and wander Black", "Collaboration",
+         "L47420100", 400),
+        ("Salomon", "XT-6 Advanced", "Sandy Liang Ballet Pink", "Collaboration",
+         "L47420400", 380),
+        ("Salomon", "XT-6", "Vanilla Ice White (2024)", "Limited Release",
+         "L47373800", 200),
+        ("Salomon", "XT-6 GORE-TEX", "Black Black GTX", "Limited Release",
+         "L47401100", 250),
+        ("Salomon", "XT-6", "Dover Street Market Silver Gold", "Collaboration",
+         "L47400800", 520),
+    ]
+
+
+def _puma_suede_vtg_r5() -> list[tuple]:
+    """Puma Suede Vintage and other Puma collabs — Round 5 expansion."""
+    return [
+        ("Puma", "Suede VTG", "atmos Crazy Pattern", "Collaboration",
+         "396474-01", 220),
+        ("Puma", "Suede VTG", "Butter Goods Green Brown", "Collaboration",
+         "396475-01", 180),
+        ("Puma", "Suede VTG", "The Hundreds Checkered", "Collaboration",
+         "396479-01", 200),
+        ("Puma", "Suede VTG", "Michael Lau Sample Friends & Family", "F&F (Friends & Family)",
+         "396480-01", 600),
+        ("Puma", "Suede VTG", "Classic Navy White (Re-Issue)", "Retro",
+         "374921-04", 90),
+        ("Puma", "Suede VTG", "Staple Pigeon Grey Pink", "Collaboration",
+         "396477-01", 250),
+        ("Puma", "Suede XL", "PLEASURES Skull Black", "Collaboration",
+         "396478-01", 190),
+        ("Puma", "Clyde", "BAPE 1st Camo Olive", "Collaboration",
+         "396481-01", 320),
+        ("Puma", "Clyde", "Extra Butter Kings of New York", "Collaboration",
+         "396482-01", 280),
+        ("Puma", "Suede VTG", "A.P.C. Khaki Minimal", "Collaboration",
+         "396483-01", 200),
+    ]
+
+
+def _nike_am1_anniversary_r5() -> list[tuple]:
+    """Nike Air Max 1 anniversary and special editions — Round 5 expansion."""
+    return [
+        ("Nike", "Air Max 1", "OG Anniversary Red (2023 Re-Release)", "OG Colorway",
+         "DO9549-100", 250),
+        ("Nike", "Air Max 1", "Anniversary Aqua/Neutral Grey", "OG Colorway",
+         "DH1348-004", 220),
+        ("Nike", "Air Max 1", "Concepts Mellow", "Collaboration",
+         "DN1803-300", 400),
+        ("Nike", "Air Max 1", "Concepts Heavy", "Collaboration",
+         "DN1803-900", 450),
+        ("Nike", "Air Max 1", "CLOT K.O.D. Solar Red", "Collaboration",
+         "DD1636-600", 350),
+        ("Nike", "Air Max 1", "Travis Scott Cactus Jack Baroque Brown", "Collaboration",
+         "DO9392-200", 380),
+        ("Nike", "Air Max 1", "Travis Scott Cactus Jack Saturn Gold", "Collaboration",
+         "DO9392-700", 420),
+        ("Nike", "Air Max 1", "Kasina Won-Ang Orange", "Collaboration",
+         "DQ8475-800", 300),
+        ("Nike", "Air Max 1", "Patta Aqua Noise (5th Anniv)", "Collaboration",
+         "DH1348-001", 350),
+        ("Nike", "Air Max 1", "Dirty Denim", "Limited Release",
+         "DV3050-300", 200),
+        ("Nike", "Air Max 1", "Obsidian (2024 Retro)", "Retro",
+         "FJ4735-400", 180),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Aggregate catalog
 # ---------------------------------------------------------------------------
@@ -1730,6 +1970,16 @@ def get_curated_catalog() -> list[tuple]:
     catalog.extend(_asics_collabs_round4())
     catalog.extend(_salomon_trail_fashion_round4())
     catalog.extend(_puma_collabs_round4())
+    # --- Expansion Round 5 (93 new items) ---
+    catalog.extend(_nike_sb_dunk_2024())
+    catalog.extend(_jordan_1_low_collabs_r5())
+    catalog.extend(_jordan_4_retro_r5())
+    catalog.extend(_adidas_samba_collabs_r5())
+    catalog.extend(_nb_1906r_collabs_r5())
+    catalog.extend(_asics_kayano14_collabs_r5())
+    catalog.extend(_salomon_xt6_collabs_r5())
+    catalog.extend(_puma_suede_vtg_r5())
+    catalog.extend(_nike_am1_anniversary_r5())
     return catalog
 
 

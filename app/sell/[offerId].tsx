@@ -34,6 +34,7 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { AnimatedPressable } from '@/motion';
 import { SkeletonList } from '@/components/Skeleton';
 import type { Offer, OfferEvent, OfferStatus, UserReputation } from '@/data/types';
+import { track } from '@/analytics/track';
 
 // ---------------------------------------------------------------------------
 // Status config
@@ -225,6 +226,7 @@ function OfferDetailScreen() {
       await dataProvider.respondToOffer(offerId, true);
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Offer accepted!', type: 'success' });
+      track({ name: 'offer_created', properties: { offer_id: offerId as string } });
       await loadData();
     } catch (err) {
       showToast({ message: 'Failed to accept offer', type: 'error' });
@@ -310,6 +312,7 @@ function OfferDetailScreen() {
       await dataProvider.completeDeal(offerId, ratingStars, ratingComment.trim() || undefined);
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Deal completed! Thanks for rating.', type: 'success' });
+      track({ name: 'deal_completed', properties: { offer_id: offerId as string } });
       setCompleteVisible(false);
       setRatingStars(5);
       setRatingComment('');

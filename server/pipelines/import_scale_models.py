@@ -891,6 +891,109 @@ def get_curated_catalog() -> list[dict]:
         ("RFM (Rye Field Model)", "Armor", "Leopard 2A6 Main Battle Tank w/ Full Interior", "1/35", "high", 90),
         ("RFM (Rye Field Model)", "Armor", "T-34/85 Model 1944 No.174 Factory", "1/35", "mid", 48),
         ("RFM (Rye Field Model)", "Armor", "Sturmtiger w/ Full Interior", "1/35", "high", 85),
+
+        # ── Tamiya 1/35 Military (Additional) ───────────────────────────────
+        ("Tamiya", "Armor", "M41 Walker Bulldog", "1/35", "mid", 40),
+        ("Tamiya", "Armor", "Jagdpanzer IV/70(V) Lang", "1/35", "mid", 48),
+        ("Tamiya", "Armor", "Cromwell Mk.IV Cruiser Tank", "1/35", "mid", 42),
+        ("Tamiya", "Armor", "M26 Pershing (T26E3)", "1/35", "mid", 50),
+        ("Tamiya", "Armor", "StuG III Ausf.G (Finnish Army)", "1/35", "mid", 45),
+        ("Tamiya", "Armor", "Centurion Mk.III", "1/35", "mid", 52),
+        ("Tamiya", "Armor", "Type 10 Tank (JGSDF)", "1/35", "mid", 55),
+        ("Tamiya", "Armor", "Sd.Kfz.234/2 Puma", "1/35", "mid", 44),
+        ("Tamiya", "Armor", "Nashorn German Heavy SP Gun", "1/35", "mid", 46),
+        ("Tamiya", "Armor", "M48A3 Patton", "1/35", "mid", 48),
+
+        # ── Hasegawa 1/48 Aircraft (Additional) ─────────────────────────────
+        ("Hasegawa", "Aircraft", "F-104G Starfighter (Luftwaffe)", "1/48", "mid", 42),
+        ("Hasegawa", "Aircraft", "Ki-84 Frank (Type 4 Fighter Hayate)", "1/48", "mid", 38),
+        ("Hasegawa", "Aircraft", "F-86F Sabre (USAF)", "1/48", "mid", 40),
+        ("Hasegawa", "Aircraft", "P-40N Warhawk", "1/48", "mid", 36),
+        ("Hasegawa", "Aircraft", "Bf109K-4 (Late War)", "1/48", "mid", 42),
+        ("Hasegawa", "Aircraft", "A6M5c Zero Type 52 Hei", "1/48", "mid", 44),
+        ("Hasegawa", "Aircraft", "Tornado IDS (Luftwaffe)", "1/48", "mid", 48),
+        ("Hasegawa", "Aircraft", "F-8E Crusader (VF-162)", "1/48", "mid", 45),
+
+        # ── Revell Car Kits ──────────────────────────────────────────────────
+        ("Revell", "Car", "Shelby GT350H 1966", "1/24", "mid", 35),
+        ("Revell", "Car", "Plymouth GTX 1970", "1/24", "standard", 28),
+        ("Revell", "Car", "Kenworth W-900 Truck", "1/25", "mid", 55),
+        ("Revell", "Car", "Chevy Impala SS 1964 (Lowrider)", "1/25", "mid", 38),
+        ("Revell", "Car", "VW T1 Samba Bus (Flower Power)", "1/24", "mid", 42),
+        ("Revell", "Car", "Porsche Panamera Turbo S", "1/24", "standard", 30),
+        ("Revell", "Car", "Citroen 2CV Charleston", "1/24", "mid", 35),
+        ("Revell", "Car", "Mercedes-Benz 300 SL Gullwing", "1/24", "mid", 40),
+
+        # ── Trumpeter Ships ──────────────────────────────────────────────────
+        ("Trumpeter", "Ship", "Bismarck (German Battleship)", "1/350", "high", 110),
+        ("Trumpeter", "Ship", "USS Hornet CV-8", "1/350", "high", 105),
+        ("Trumpeter", "Ship", "HMS Hood (Battlecruiser)", "1/350", "high", 115),
+        ("Trumpeter", "Ship", "Yamato (Japanese Battleship)", "1/350", "grail", 160),
+        ("Trumpeter", "Ship", "USS Fletcher DD-445", "1/350", "mid", 65),
+        ("Trumpeter", "Ship", "Type VIIC U-Boat", "1/144", "mid", 55),
+        ("Trumpeter", "Ship", "HMS Warspite (Battleship)", "1/350", "high", 120),
+
+        # ── Meng AFV Kits ────────────────────────────────────────────────────
+        ("Meng", "Armor", "PzH 2000 Self-Propelled Howitzer", "1/35", "mid", 68),
+        ("Meng", "Armor", "Merkava Mk.4M w/ Trophy APS", "1/35", "mid", 72),
+        ("Meng", "Armor", "FT-17 French Light Tank (Cast Turret)", "1/35", "mid", 40),
+        ("Meng", "Armor", "King Tiger Porsche Turret w/ Interior", "1/35", "high", 95),
+        ("Meng", "Armor", "T-90A Russian MBT", "1/35", "mid", 60),
+        ("Meng", "Armor", "M2A3 Bradley BUSK III IFV", "1/35", "mid", 65),
+        ("Meng", "Armor", "PLZ 05 Chinese 155mm SP Howitzer", "1/35", "mid", 58),
+
+        # ── Eduard Limited Editions ──────────────────────────────────────────
+        ("Eduard", "Aircraft", "Spitfire Mk.IX Royal Class (Dual Combo)", "1/48", "grail", 165),
+        ("Eduard", "Aircraft", "Bf109G-6 Royal Class (Dual Combo)", "1/48", "grail", 155),
+        ("Eduard", "Aircraft", "Fw 190A-8 ProfiPACK", "1/48", "high", 85),
+        ("Eduard", "Aircraft", "MiG-21MF ProfiPACK", "1/48", "high", 80),
+        ("Eduard", "Aircraft", "P-51D-5 Mustang ProfiPACK", "1/48", "high", 78),
+        ("Eduard", "Aircraft", "Tempest Mk.V Series 2 ProfiPACK", "1/48", "high", 82),
+
+        # ── Wingnut Wings WWI (Discontinued/Collectible) ─────────────────────
+        ("Wingnut Wings", "Aircraft", "Fokker E.III Eindecker", "1/32", "grail", 220),
+        ("Wingnut Wings", "Aircraft", "Sopwith Camel (Clerget)", "1/32", "grail", 250),
+        ("Wingnut Wings", "Aircraft", "Albatros D.Va", "1/32", "grail", 240),
+        ("Wingnut Wings", "Aircraft", "SE.5a (Hisso)", "1/32", "grail", 230),
+        ("Wingnut Wings", "Aircraft", "Fokker Dr.I Triplane", "1/32", "grail", 280),
+        ("Wingnut Wings", "Aircraft", "Pfalz D.IIIa", "1/32", "grail", 210),
+        ("Wingnut Wings", "Aircraft", "Halberstadt CL.II", "1/32", "grail", 260),
+
+        # ── Academy 1/72 Jets ────────────────────────────────────────────────
+        ("Academy", "Aircraft", "F-22A Raptor (USAF)", "1/72", "standard", 28),
+        ("Academy", "Aircraft", "F/A-18E Super Hornet", "1/72", "standard", 25),
+        ("Academy", "Aircraft", "KF-21 Boramae (Korean Fighter)", "1/72", "mid", 35),
+        ("Academy", "Aircraft", "F-15K Slam Eagle (ROKAF)", "1/72", "standard", 28),
+        ("Academy", "Aircraft", "MiG-29A Fulcrum", "1/72", "standard", 22),
+        ("Academy", "Aircraft", "F-16CG/CJ Block 40 (Fighting Falcon)", "1/72", "standard", 24),
+
+        # ── ICM Figures ──────────────────────────────────────────────────────
+        ("ICM", "Figure", "US Paratroopers (D-Day 1944)", "1/35", "standard", 18),
+        ("ICM", "Figure", "German Infantry in Gas Masks (WWI)", "1/35", "standard", 16),
+        ("ICM", "Figure", "Soviet Female Snipers (WWII)", "1/35", "standard", 17),
+        ("ICM", "Figure", "SEAL Team Six (Modern)", "1/35", "standard", 20),
+        ("ICM", "Figure", "British Infantry Somme Battle (WWI)", "1/35", "standard", 18),
+        ("ICM", "Figure", "German Tankmen (Kursk 1943)", "1/35", "standard", 16),
+
+        # ── Zvezda WWII Kits ─────────────────────────────────────────────────
+        ("Zvezda", "Armor", "T-34/76 Model 1942", "1/35", "standard", 25),
+        ("Zvezda", "Armor", "IS-2 (Stalin Tank)", "1/35", "standard", 30),
+        ("Zvezda", "Armor", "KV-1 Heavy Tank", "1/35", "standard", 28),
+        ("Zvezda", "Armor", "BT-5 Fast Tank", "1/35", "standard", 22),
+        ("Zvezda", "Armor", "GAZ Tiger Russian Armored Vehicle", "1/35", "standard", 26),
+        ("Zvezda", "Aircraft", "Yak-3 Soviet Fighter", "1/48", "standard", 20),
+        ("Zvezda", "Aircraft", "IL-2 Shturmovik", "1/48", "standard", 28),
+        ("Zvezda", "Ship", "Knyaz Suvorov Russian Battleship", "1/350", "mid", 55),
+
+        # ── Additional Scale Models (+8) ────────────────────────────────────
+        ("Wingnut Wings", "Aircraft", "Sopwith Camel F.1", "1/32", "high", 95),
+        ("Wingnut Wings", "Aircraft", "Fokker Dr.I Triplane", "1/32", "high", 90),
+        ("Bronco Models", "Armor", "CV-33 Tankette Series II", "1/35", "standard", 28),
+        ("Meng Model", "Armor", "Merkava Mk.4M w/Trophy APS", "1/35", "mid", 65),
+        ("Meng Model", "Aircraft", "F-35A Lightning II", "1/48", "mid", 58),
+        ("Trumpeter", "Ship", "USS Missouri BB-63", "1/200", "grail", 280),
+        ("Academy", "Aircraft", "F-14A Tomcat (US Navy)", "1/48", "mid", 42),
+        ("Academy", "Armor", "M1A2 SEP Abrams TUSK II", "1/35", "mid", 48),
     ]
 
     catalog = []

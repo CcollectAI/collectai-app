@@ -832,6 +832,129 @@ def _expanded_batch_9() -> list[tuple]:
         ("SEVENTEEN", "Carat Bong Custom Gem Insert (Fan-made)", "custom", "Fan Premium", "mid", 35),
         ("NewJeans", "NewJeans Lightstick Custom Bunny Ears (Fan-made)", "custom", "Fan Premium", "mid", 38),
         ("aespa", "aespa Lightstick Custom Neon Shell (Fan-made)", "custom", "Fan Premium", "standard", 30),
+
+        # ── Expansion to 700+ — Tour merch, photo cards, blankets, towels, fan meeting goods ──
+
+        # BTS Tour-Exclusive Merchandise (+8)
+        ("BTS", "BTS ARMY Bomb Ver. 4 (Yet To Come Busan Gold)", "v4-busan", "Tour Exclusive", "grail", 150),
+        ("BTS", "BTS Permission to Dance Tour Stadium Blanket", "merch-ptd-blanket", "Tour Exclusive", "high", 85),
+        ("BTS", "BTS Map of the Soul Tour Slogan Towel", "merch-mots-towel", "Tour Exclusive", "high", 65),
+        ("BTS", "BTS Yet To Come Busan Concert Photo Card Set (7pc)", "merch-ytc-pc", "Tour Exclusive", "high", 90),
+        ("BTS", "BTS Permission to Dance SoFi Stadium Poster", "merch-ptd-poster", "Tour Exclusive", "high", 70),
+        ("BTS", "BTS ARMY Bomb Keychain Mini (Map of the Soul)", "mini-mots", "Tour Exclusive", "mid", 45),
+        ("BTS", "BTS Wings Tour Lightstick Strap", "merch-wings-strap", "Tour Exclusive", "high", 60),
+        ("BTS", "BTS Love Yourself Tour Headband Set", "merch-ly-headband", "Tour Exclusive", "mid", 40),
+
+        # BLACKPINK Tour Merchandise (+6)
+        ("Blackpink", "Blackpink Born Pink Tour Slogan Towel (Seoul)", "merch-bp-towel-seoul", "Tour Exclusive", "high", 60),
+        ("Blackpink", "Blackpink Born Pink Tour Stadium Blanket", "merch-bp-blanket", "Tour Exclusive", "high", 80),
+        ("Blackpink", "Blackpink Born Pink Photo Card Set (4pc)", "merch-bp-pc", "Tour Exclusive", "high", 75),
+        ("Blackpink", "Blackpink The Show Live Poster", "merch-bp-show-poster", "Tour Exclusive", "high", 65),
+        ("Blackpink", "Blackpink Born Pink Lightstick Strap (Rose Gold)", "merch-bp-strap", "Tour Exclusive", "mid", 35),
+        ("Blackpink", "Blackpink In Your Area Tour Headband", "merch-bp-headband", "Tour Exclusive", "mid", 40),
+
+        # TWICE Tour & Fan Meeting Goods (+8)
+        ("TWICE", "TWICE Ready To Be Tour Slogan Towel", "merch-twice-r2b-towel", "Tour Exclusive", "high", 55),
+        ("TWICE", "TWICE Ready To Be Tour Stadium Blanket", "merch-twice-r2b-blanket", "Tour Exclusive", "high", 75),
+        ("TWICE", "TWICE 4th World Tour III Photo Card Set (9pc)", "merch-twice-3-pc", "Tour Exclusive", "high", 80),
+        ("TWICE", "TWICE Once Day Fan Meeting Lightstick Keychain", "merch-twice-fm-keychain", "Fan Meeting", "mid", 42),
+        ("TWICE", "TWICE Candy Bong Z Mini Keychain (Gold Edition)", "mini-cb-gold", "Limited Color", "high", 65),
+        ("TWICE", "TWICE 5th Anniversary Fan Meeting Slogan", "merch-twice-5th-slogan", "Fan Meeting", "mid", 38),
+        ("TWICE", "Nayeon (TWICE) POP! Solo Tour Photo Card (3pc)", "merch-nayeon-solo-pc", "Tour Exclusive", "mid", 45),
+        ("TWICE", "Mina (TWICE) Birthday Fan Meeting Badge Set", "merch-mina-bday", "Fan Meeting", "mid", 35),
+
+        # Stray Kids Tour Merchandise (+6)
+        ("Stray Kids", "Stray Kids 5-STAR Tour Slogan Towel", "merch-skz-5star-towel", "Tour Exclusive", "high", 55),
+        ("Stray Kids", "Stray Kids dominATE Tour Stadium Blanket", "merch-skz-dom-blanket", "Tour Exclusive", "high", 75),
+        ("Stray Kids", "Stray Kids Maniac Tour Photo Card Set (8pc)", "merch-skz-maniac-pc", "Tour Exclusive", "high", 70),
+        ("Stray Kids", "Stray Kids Nachimbong Mini Keychain Ver.", "mini-skz-nachim", "Standard", "mid", 35),
+        ("Stray Kids", "Stray Kids dominATE Tour Poster (Seoul)", "merch-skz-dom-poster", "Tour Exclusive", "mid", 45),
+        ("Stray Kids", "Bang Chan (SKZ) Birthday Fan Meeting Badge", "merch-bangchan-bday", "Fan Meeting", "mid", 30),
+
+        # SEVENTEEN Tour & Fan Meeting (+6)
+        ("SEVENTEEN", "SEVENTEEN Follow Again Tour Slogan Towel", "merch-svt-follow-towel", "Tour Exclusive", "high", 55),
+        ("SEVENTEEN", "SEVENTEEN Follow Tour Stadium Blanket (Navy)", "merch-svt-follow-blanket", "Tour Exclusive", "high", 70),
+        ("SEVENTEEN", "SEVENTEEN Carat Land 2024 Fan Meeting Badge Set (13pc)", "merch-svt-cl2024", "Fan Meeting", "high", 85),
+        ("SEVENTEEN", "SEVENTEEN Carat Bong Mini Keychain (Crystal)", "mini-svt-crystal", "Limited Color", "high", 60),
+        ("SEVENTEEN", "SEVENTEEN Be the Sun Tour Photo Card Set (13pc)", "merch-svt-bts-pc", "Tour Exclusive", "high", 80),
+        ("SEVENTEEN", "Woozi (SVT) Solo Fan Meeting Slogan", "merch-woozi-solo", "Fan Meeting", "mid", 40),
+
+        # ATEEZ Tour Merchandise (+5)
+        ("ATEEZ", "ATEEZ THE WORLD Tour Slogan Towel", "merch-atz-world-towel", "Tour Exclusive", "high", 50),
+        ("ATEEZ", "ATEEZ THE WORLD Tour Stadium Blanket", "merch-atz-world-blanket", "Tour Exclusive", "high", 70),
+        ("ATEEZ", "ATEEZ Towards The Light Tour Photo Card Set (8pc)", "merch-atz-ttl-pc", "Tour Exclusive", "high", 65),
+        ("ATEEZ", "ATEEZ Lightiny Mini Keychain (Gold)", "mini-atz-gold", "Limited Color", "mid", 40),
+        ("ATEEZ", "ATEEZ ATINY Day Fan Meeting Poster", "merch-atz-atinyday", "Fan Meeting", "mid", 35),
+
+        # EXO / SHINee Reunion & Solo Tour (+6)
+        ("EXO", "EXO EXplOration Tour Slogan Towel", "merch-exo-explore-towel", "Tour Exclusive", "high", 60),
+        ("EXO", "EXO 12th Anniversary Fan Meeting Badge Set (9pc)", "merch-exo-12th-badge", "Fan Meeting", "high", 70),
+        ("EXO", "Baekhyun (EXO) Bambi Solo Tour Photo Card (3pc)", "merch-baek-bambi-pc", "Tour Exclusive", "mid", 45),
+        ("SHINee", "SHINee The Ringtone Tour Slogan Towel", "merch-shinee-ring-towel", "Tour Exclusive", "high", 65),
+        ("SHINee", "SHINee 15th Anniversary Fan Meeting Poster Set", "merch-shinee-15th-poster", "Fan Meeting", "high", 60),
+        ("SHINee", "Taemin (SHINee) N.G.D.A. Solo Tour Blanket", "merch-taemin-ngda-blanket", "Tour Exclusive", "high", 70),
+
+        # NCT / WayV Tour Goods (+6)
+        ("NCT 127", "NCT 127 NEO CITY Seoul Photo Card Set (9pc)", "merch-nct127-neocity-pc", "Tour Exclusive", "high", 70),
+        ("NCT 127", "NCT 127 NEO CITY Tour Slogan Towel", "merch-nct127-towel", "Tour Exclusive", "high", 55),
+        ("NCT DREAM", "NCT DREAM THE DREAM SHOW 3 Tour Blanket", "merch-nctdream-blanket", "Tour Exclusive", "high", 70),
+        ("NCT DREAM", "NCT DREAM Tour Photo Card Set (7pc)", "merch-nctdream-pc", "Tour Exclusive", "high", 65),
+        ("WayV", "WayV Phantom Solo Concert Slogan Towel", "merch-wayv-phantom-towel", "Tour Exclusive", "high", 55),
+        ("WayV", "WayV 5th Anniversary Fan Meeting Badge Set", "merch-wayv-5th-badge", "Fan Meeting", "mid", 45),
+
+        # NewJeans / LE SSERAFIM / IVE Merchandise (+8)
+        ("NewJeans", "NewJeans Bunnies Camp Fan Meeting Badge Set (5pc)", "merch-nj-camp-badge", "Fan Meeting", "high", 60),
+        ("NewJeans", "NewJeans Get Up Tour Slogan Towel", "merch-nj-getup-towel", "Tour Exclusive", "high", 55),
+        ("NewJeans", "NewJeans Lightstick Mini Keychain Bunny", "mini-nj-bunny", "Standard", "mid", 38),
+        ("LE SSERAFIM", "LE SSERAFIM FLAME RISES Tour Slogan Towel", "merch-lsrfm-flame-towel", "Tour Exclusive", "high", 55),
+        ("LE SSERAFIM", "LE SSERAFIM Tour Photo Card Set (5pc)", "merch-lsrfm-pc", "Tour Exclusive", "high", 60),
+        ("IVE", "IVE Show What I Have Tour Slogan Towel", "merch-ive-show-towel", "Tour Exclusive", "high", 50),
+        ("IVE", "IVE Tour Photo Card Set (6pc)", "merch-ive-pc", "Tour Exclusive", "high", 55),
+        ("IVE", "IVE Lightstick Mini Keychain (Pink Crystal)", "mini-ive-pink", "Limited Color", "mid", 38),
+
+        # Member-Specific Items (+10)
+        ("BTS", "Jimin (BTS) MUSE Solo Tour Slogan Towel", "merch-jimin-muse-towel", "Tour Exclusive", "high", 60),
+        ("BTS", "V (BTS) Layover Pop-Up Photo Card Set (6pc)", "merch-v-layover-pc", "Limited", "high", 75),
+        ("BTS", "Jungkook (BTS) Golden Live Photo Card Set (5pc)", "merch-jk-golden-pc", "Tour Exclusive", "high", 70),
+        ("BTS", "RM (BTS) Right Place, Wrong Person Pop-Up Badge", "merch-rm-rpwp-badge", "Limited", "mid", 40),
+        ("BTS", "Suga (BTS) D-DAY Tour Slogan Towel", "merch-suga-dday-towel", "Tour Exclusive", "high", 65),
+        ("BTS", "j-hope (BTS) Jack in the Box Tour Badge Set", "merch-jhope-jitb-badge", "Tour Exclusive", "mid", 45),
+        ("BTS", "Jin (BTS) The Astronaut Fan Meeting Slogan", "merch-jin-astronaut-slogan", "Fan Meeting", "high", 70),
+        ("Blackpink", "Lisa (BP) Rockstar Solo Tour Photo Card (3pc)", "merch-lisa-rockstar-pc", "Tour Exclusive", "high", 65),
+        ("Blackpink", "Jisoo (BP) FLOWER Solo Fan Meeting Badge Set", "merch-jisoo-flower-badge", "Fan Meeting", "high", 55),
+        ("Blackpink", "Rose (BP) APT. Pop-Up Photo Card Set", "merch-rose-apt-pc", "Limited", "high", 60),
+
+        # Japanese Dome Tour Exclusive (+6)
+        ("BTS", "BTS ARMY Bomb (Japan Dome Tour Crystal Edition)", "v4-japan-crystal", "Tour Exclusive", "grail", 170),
+        ("TWICE", "TWICE Candy Bong (Japan Dome Tour Cherry Blossom)", "cb-japan-sakura", "Tour Exclusive", "grail", 120),
+        ("SEVENTEEN", "SEVENTEEN Carat Bong (Japan Dome Pearl White)", "v3-japan-pearl", "Tour Exclusive", "grail", 110),
+        ("Stray Kids", "Stray Kids Nachimbong (Japan Dome Black Chrome)", "v3-japan-chrome", "Tour Exclusive", "grail", 130),
+        ("ATEEZ", "ATEEZ Lightiny (Japan Dome Gold Edition)", "v3-japan-gold", "Tour Exclusive", "grail", 115),
+        ("NCT 127", "NCT 127 Lightstick (Japan Dome Tour Rose Gold)", "v3-japan-rosegold", "Tour Exclusive", "grail", 105),
+
+        # Fan Meeting Exclusive Lightstick Deco (+8)
+        ("BTS", "BTS ARMY Bomb Lightstick Deco Cover (Butter Yellow)", "deco-butter", "Fan Meeting", "mid", 35),
+        ("Blackpink", "Blackpink Lightstick Deco Strap (Pink Venom)", "deco-pinkvenom", "Fan Meeting", "mid", 30),
+        ("TWICE", "TWICE Candy Bong Deco Cover (With YOU-th Mint)", "deco-youth", "Fan Meeting", "mid", 28),
+        ("Stray Kids", "Stray Kids Nachimbong Deco Cover (Rock-Star Red)", "deco-rockstar", "Fan Meeting", "mid", 28),
+        ("SEVENTEEN", "SEVENTEEN Carat Bong Deco Charm (Seventeenth Heaven)", "deco-17heaven", "Fan Meeting", "mid", 30),
+        ("ATEEZ", "ATEEZ Lightiny Deco Cover (Golden Hour Sunset)", "deco-goldenhour", "Fan Meeting", "mid", 28),
+        ("NewJeans", "NewJeans Lightstick Deco Bunny Ears (Ditto Ver.)", "deco-ditto", "Fan Meeting", "mid", 32),
+        ("LE SSERAFIM", "LE SSERAFIM Lightstick Deco Cover (EASY Neon)", "deco-easy", "Fan Meeting", "mid", 28),
+
+        # Stadium/Concert Slogan Banners (+7)
+        ("BTS", "BTS Official Concert Slogan Banner (Purple)", "banner-bts-purple", "Tour Exclusive", "mid", 35),
+        ("Blackpink", "Blackpink Official Concert Slogan Banner (Pink)", "banner-bp-pink", "Tour Exclusive", "mid", 32),
+        ("TWICE", "TWICE Official Concert Slogan Banner (Apricot)", "banner-twice-apricot", "Tour Exclusive", "mid", 30),
+        ("Stray Kids", "Stray Kids Official Concert Slogan Banner (Red)", "banner-skz-red", "Tour Exclusive", "mid", 30),
+        ("SEVENTEEN", "SEVENTEEN Official Concert Slogan Banner (Rose Quartz)", "banner-svt-rq", "Tour Exclusive", "mid", 30),
+        ("ATEEZ", "ATEEZ Official Concert Slogan Banner (Navy)", "banner-atz-navy", "Tour Exclusive", "mid", 28),
+        ("IVE", "IVE Official Concert Slogan Banner (Peach)", "banner-ive-peach", "Tour Exclusive", "mid", 28),
+
+        # Additional Lightstick Accessories (+3)
+        ("TWICE", "TWICE Candybong Z Deco Ring Set (Celebrate Tour)", "deco-celebrate", "Tour Exclusive", "mid", 35),
+        ("aespa", "aespa Official Lightstick Deco Cover (Whiplash Neon)", "deco-whiplash", "Fan Meeting", "mid", 30),
+        ("ENHYPEN", "ENHYPEN EN-Connect Lightstick Strap (Orange Glow)", "strap-enconnect", "Fan Meeting", "standard", 22),
     ]
 
 

@@ -2,7 +2,7 @@ import { Linking } from 'react-native';
 import { router } from 'expo-router';
 import { AddImportCard } from '@/components/AddImportCard';
 import { API_BASE } from '@/api/config';
-import * as DocumentPicker from 'expo-document-picker';
+import { pickDocument } from '@/lib/documentPicker';
 import React from "react";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
@@ -78,36 +78,17 @@ const AddScreen: React.FC = () => {
 const handleImportCollectionFile = async () => {
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: [
-          'text/csv',
-          'application/vnd.ms-excel',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ],
-        copyToCacheDirectory: true,
-      });
+      const pickResult = await pickDocument([
+        'text/csv',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ]);
 
-      // NOTE: return shape differs slightly by Expo SDK; for now just log it.
-      if (!result) {
+      if (pickResult.canceled || !pickResult.document) {
         return;
       }
 
-    // Handle both new (assets) and old (single object) shapes from DocumentPicker
-    // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
-    const canceled = result.canceled ?? (result.type && result.type !== 'success');
-    if (canceled) {
-      return;
-    }
-
-    // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
-    const asset = result.assets && result.assets.length > 0 ? result.assets[0] : result;
-
-    // Basic safety checks
-    // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
-    if (!asset || !asset.uri) {
-      logger.warn('[Add] import: no asset URI found', asset);
-      return;
-    }
+      const { uri, name, mimeType } = pickResult.document;
 
     try {
       setImportBusy(true);
@@ -115,14 +96,10 @@ const handleImportCollectionFile = async () => {
 
       const formData = new FormData();
       // React Native's FormData accepts this shape for file uploads
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       formData.append("file", {
-        // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
-        uri: asset.uri,
-        // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
-        name: asset.name || "collection.xlsx",
-        // @ts-expect-error – DocumentPicker asset shape varies by Expo SDK version
-        type: asset.mimeType || "application/octet-stream",
+        uri,
+        name,
+        type: mimeType,
       } as unknown as Blob);
 
       const res = await fetch(`${API_BASE}/api/imports/collection`, {

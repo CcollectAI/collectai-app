@@ -21,6 +21,7 @@ VALID_CATEGORY_IDS: frozenset[str] = frozenset({
     "pokemon", "mtg", "yugioh", "lorcana", "digimon", "one_piece_tcg",
     # Toys / Figures
     "funko", "designer_toys", "anime_figures", "hot_toys",
+    "action_figures", "vintage_toys", "marvel_legends",
     # Building / Models
     "lego", "gunpla", "scale_models", "warhammer",
     # Gaming

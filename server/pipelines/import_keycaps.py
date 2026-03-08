@@ -820,6 +820,130 @@ def get_curated_catalog() -> list[dict]:
         ("Signature Plastics", "Keycap Set", "SA Sunday Morning Base Kit", "SA", "mid", 155),
         ("Signature Plastics", "Keycap Set", "SA Grand Budapest Base Kit", "SA", "mid", 170),
         ("Signature Plastics", "Keycap Set", "SA Espresso Base Kit", "SA", "mid", 145),
+
+        # ══════════════════════════════════════════════════════════════
+        # EXPANSION TO 700+ — 94 additional artisan keycaps & sets
+        # ══════════════════════════════════════════════════════════════
+
+        # ── Jelly Key — Additional (+8) ────────────────────────────────
+        ("Jelly Key", "Artisan", "Zen Pond III Emerald Koi", "SA R1", "mid", 90),
+        ("Jelly Key", "Artisan", "Zen Pond III Winter Frost", "SA R1", "mid", 95),
+        ("Jelly Key", "Artisan", "Forbidden Realm Volcanic Gate", "SA R1", "mid", 110),
+        ("Jelly Key", "Artisan", "Forbidden Realm Crystal Cavern", "SA R1", "mid", 105),
+        ("Jelly Key", "Artisan", "Nature's Rage Lightning Storm", "SA R1", "mid", 100),
+        ("Jelly Key", "Artisan", "Arcade Cabinet Street Fighter II", "SA R1", "mid", 95),
+        ("Jelly Key", "Artisan", "Born of Forest Series Redwood", "SA R1", "mid", 85),
+        ("Jelly Key", "Artisan", "Mid-Autumn Festival Lantern 2024", "SA R1", "mid", 100),
+
+        # ── Dwarf Factory — Additional (+6) ────────────────────────────
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Frost", "Cherry R1", "mid", 70),
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Ember Gold", "Cherry R1", "mid", 75),
+        ("Dwarf Factory", "Artisan", "The Flourish Lavender", "Cherry R1", "standard", 55),
+        ("Dwarf Factory", "Artisan", "Anura Frog Emerald", "Cherry R1", "mid", 65),
+        ("Dwarf Factory", "Artisan", "Terrarium Keycap Glacier", "Cherry R1", "mid", 80),
+        ("Dwarf Factory", "Artisan", "Moondust Cosmos", "Cherry R1", "mid", 85),
+
+        # ── Alpha Keycaps (+8) ─────────────────────────────────────────
+        ("Alpha Keycaps", "Artisan", "Keypora Lunar Eclipse", "Cherry R4", "grail", 500),
+        ("Alpha Keycaps", "Artisan", "Keypora Solar Flare", "Cherry R4", "grail", 480),
+        ("Alpha Keycaps", "Artisan", "Keypora Nebula Drift", "Cherry R4", "high", 350),
+        ("Alpha Keycaps", "Artisan", "Keypora Sakura Storm", "Cherry R4", "high", 380),
+        ("Alpha Keycaps", "Artisan", "Keypora Tidal Wave", "Cherry R4", "high", 320),
+        ("Alpha Keycaps", "Artisan", "Salvador Phantom", "Cherry R4", "high", 280),
+        ("Alpha Keycaps", "Artisan", "Salvador Inferno", "Cherry R4", "high", 300),
+        ("Alpha Keycaps", "Artisan", "Matapora Arctic Fox", "Cherry R4", "high", 260),
+
+        # ── CYSM — Additional (+6) ────────────────────────────────────
+        ("CYSM", "Artisan", "Keyby Coral Reef", "Cherry R4", "mid", 105),
+        ("CYSM", "Artisan", "Keyby Sunset Beach", "Cherry R4", "mid", 110),
+        ("CYSM", "Artisan", "Ice Dragon Thunderstorm", "Cherry R4", "mid", 120),
+        ("CYSM", "Artisan", "Boba Strawberry", "Cherry R4", "mid", 90),
+        ("CYSM", "Artisan", "Boo Matcha Latte", "Cherry R4", "mid", 85),
+        ("CYSM", "Artisan", "Keyby Galaxy Purple", "Cherry R4", "high", 160),
+
+        # ── Artkey Universe — Additional (+6) ─────────────────────────
+        ("Artkey", "Artisan", "Sirius Midnight Void", "Cherry R4", "high", 230),
+        ("Artkey", "Artisan", "Bull V2 Inferno Red", "Cherry R4", "high", 255),
+        ("Artkey", "Artisan", "Exmoor Twilight", "Cherry R4", "mid", 170),
+        ("Artkey", "Artisan", "Skelekrew Crimson", "Cherry R4", "mid", 185),
+        ("Artkey", "Artisan", "Sirius Arctic Frost", "Cherry R4", "high", 240),
+        ("Artkey", "Artisan", "Bull V2 Deep Sea Leviathan", "Cherry R4", "high", 270),
+
+        # ── Latrialum — Additional (+6) ───────────────────────────────
+        ("Latrialum", "Artisan", "Royal Ethereal Bloom ESC", "Cherry R4", "high", 200),
+        ("Latrialum", "Artisan", "Royal Midnight Empress ESC", "Cherry R4", "high", 210),
+        ("Latrialum", "Artisan", "Thermal Celestial FN Row", "Cherry R4", "high", 190),
+        ("Latrialum", "Artisan", "Thermal Aurora Borealis FN Row", "Cherry R4", "high", 195),
+        ("Latrialum", "Artisan", "Royal Void Walker ESC+FN Set", "Cherry R4", "grail", 420),
+        ("Latrialum", "Artisan", "Thermal Ocean Depths FN Row", "Cherry R4", "high", 185),
+
+        # ── S-Craft Pokemon (+8) ──────────────────────────────────────
+        ("S-Craft", "Artisan", "Pikachu Pokemon Keycap", "Cherry R4", "mid", 80),
+        ("S-Craft", "Artisan", "Eevee Pokemon Keycap", "Cherry R4", "mid", 85),
+        ("S-Craft", "Artisan", "Gengar Pokemon Keycap", "Cherry R4", "mid", 90),
+        ("S-Craft", "Artisan", "Bulbasaur Pokemon Keycap", "Cherry R4", "mid", 80),
+        ("S-Craft", "Artisan", "Charmander Pokemon Keycap", "Cherry R4", "mid", 80),
+        ("S-Craft", "Artisan", "Squirtle Pokemon Keycap", "Cherry R4", "mid", 80),
+        ("S-Craft", "Artisan", "Snorlax Pokemon Keycap", "Cherry R4", "mid", 90),
+        ("S-Craft", "Artisan", "Mewtwo Pokemon Keycap", "Cherry R4", "mid", 95),
+
+        # ── GMK Sets — Laser, Botanical, Olivia, Bento (+10) ──────────
+        ("GMK", "Keycap Set", "GMK Laser R2 Synthwave Base Kit", "Cherry", "mid", 180),
+        ("GMK", "Keycap Set", "GMK Laser R2 Cyberdeck Kit", "Cherry", "mid", 120),
+        ("GMK", "Keycap Set", "GMK Botanical R2 Base Kit", "Cherry", "mid", 200),
+        ("GMK", "Keycap Set", "GMK Botanical R2 Novelties Kit", "Cherry", "mid", 90),
+        ("GMK", "Keycap Set", "GMK Olivia++ Light Base Kit", "Cherry", "high", 280),
+        ("GMK", "Keycap Set", "GMK Olivia++ Dark Base Kit", "Cherry", "high", 300),
+        ("GMK", "Keycap Set", "GMK Bento R2 Traditional Base Kit", "Cherry", "mid", 170),
+        ("GMK", "Keycap Set", "GMK Bento R2 Revised Base Kit", "Cherry", "mid", 160),
+        ("GMK", "Keycap Set", "GMK Darling Base Kit", "Cherry", "high", 250),
+        ("GMK", "Keycap Set", "GMK Demon Sword Base Kit", "Cherry", "high", 220),
+
+        # ── GMK — Additional Premium Sets (+8) ────────────────────────
+        ("GMK", "Keycap Set", "GMK Frost Witch R2 Base Kit", "Cherry", "high", 260),
+        ("GMK", "Keycap Set", "GMK Dracula R2 Core Kit", "Cherry", "high", 240),
+        ("GMK", "Keycap Set", "GMK Hennessey Base Kit", "Cherry", "mid", 190),
+        ("GMK", "Keycap Set", "GMK Shoko R2 Base Kit", "Cherry", "mid", 170),
+        ("GMK", "Keycap Set", "GMK Mizu R2 Base Kit", "Cherry", "high", 230),
+        ("GMK", "Keycap Set", "GMK Noel Base Kit", "Cherry", "mid", 185),
+        ("GMK", "Keycap Set", "GMK Striker 2 Base Kit", "Cherry", "mid", 165),
+        ("GMK", "Keycap Set", "GMK Yuru Base Kit", "Cherry", "mid", 175),
+
+        # ── KAT/KAM Profiles (+8) ─────────────────────────────────────
+        ("Keyreative", "Keycap Set", "KAT Milkshake Base Kit", "KAT", "mid", 130),
+        ("Keyreative", "Keycap Set", "KAT Atlantis Base Kit", "KAT", "mid", 140),
+        ("Keyreative", "Keycap Set", "KAT Refined Base Kit", "KAT", "mid", 120),
+        ("Keyreative", "Keycap Set", "KAT Arctic Base Kit", "KAT", "mid", 125),
+        ("Keyreative", "Keycap Set", "KAT Space Dust Base Kit", "KAT", "mid", 135),
+        ("Keyreative", "Keycap Set", "KAM Superuser Base Kit", "KAM", "mid", 110),
+        ("Keyreative", "Keycap Set", "KAM Wraith Base Kit", "KAM", "mid", 115),
+        ("Keyreative", "Keycap Set", "KAT Napoleonic Base Kit", "KAT", "mid", 130),
+
+        # ── GSK / Bro Caps / Deag / Other Premium Artisans (+10) ──────
+        ("GSK", "Artisan", "Hogzilla Volcanic", "Cherry R4", "high", 300),
+        ("GSK", "Artisan", "Hogzilla Frozen Tundra", "Cherry R4", "high", 280),
+        ("Bro Caps", "Artisan", "BroBot Defender Class Mecha", "Cherry R4", "grail", 450),
+        ("Bro Caps", "Artisan", "BroBot Corrupted Defender", "Cherry R4", "grail", 500),
+        ("Deag (Death Caps)", "Artisan", "Cross Cap Spectral", "Cherry R4", "high", 220),
+        ("Deag (Death Caps)", "Artisan", "Cross Cap Infernal", "Cherry R4", "high", 240),
+        ("Glyco Keycaps", "Artisan", "Glob Strawberry Drip", "Cherry R1", "mid", 65),
+        ("Glyco Keycaps", "Artisan", "Glob Blueberry Drip", "Cherry R1", "mid", 65),
+        ("Rathcaps", "Artisan", "Potion Bottle Amethyst", "Cherry R1", "mid", 75),
+        ("Rathcaps", "Artisan", "Potion Bottle Emerald", "Cherry R1", "mid", 75),
+
+        # ── ePBT / Cherry Original Sets (+4) ──────────────────────────
+        ("ePBT", "Keycap Set", "ePBT Kavala Base Kit", "Cherry", "mid", 100),
+        ("ePBT", "Keycap Set", "ePBT Grand Tour Base Kit", "Cherry", "mid", 95),
+        ("Cherry", "Keycap Set", "Cherry Original Hyperion Base Kit", "Cherry", "mid", 120),
+        ("Cherry", "Keycap Set", "Cherry Original Leviathan Base Kit", "Cherry", "mid", 115),
+
+        # ── Keyboard Builds (+6) ──────────────────────────────────────
+        ("Custom Build", "Keyboard Build", "Keycult No. 2/65 TKL Polycarbonate", "N/A", "grail", 1200),
+        ("Custom Build", "Keyboard Build", "TGR Jane V2 CE WKL Navy", "N/A", "grail", 2000),
+        ("Custom Build", "Keyboard Build", "Geon F1-8X WKL Burgundy", "N/A", "grail", 800),
+        ("Custom Build", "Keyboard Build", "ai03 Vega65 E-White", "N/A", "high", 400),
+        ("Custom Build", "Keyboard Build", "Mode Envoy 65% Dark", "N/A", "mid", 200),
+        ("Custom Build", "Keyboard Build", "Monokei x TGR Tomo Hotswap Silver", "N/A", "high", 350),
     ]
 
     catalog = []

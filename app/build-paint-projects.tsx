@@ -331,7 +331,7 @@ function BuildPaintProjectsScreen() {
               >
                 {selectedCategoryId ? (
                   <View style={styles.pickerSelected}>
-                    <View style={[styles.catDot, { backgroundColor: CATEGORY_VISUAL[selectedCategoryId]?.accentColor || colors.accent }]} />
+                    <View style={[styles.catDot, { backgroundColor: colors.accent }]} />
                     <Text style={[styles.pickerText, { color: colors.text }]}>
                       {CATEGORIES.find((c) => c.id === selectedCategoryId)?.name ?? selectedCategoryId}
                     </Text>
@@ -493,8 +493,8 @@ function BuildPaintProjectsScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={cat.name}
                   >
-                    <View style={[styles.catDot, { backgroundColor: vis?.accentColor || colors.accent }]} />
-                    <Ionicons name={(vis?.iconName || 'cube-outline') as any} size={20} color={vis?.accentColor || colors.accent} />
+                    <View style={[styles.catDot, { backgroundColor: colors.accent }]} />
+                    <Ionicons name={(vis?.iconName || 'cube-outline') as any} size={20} color={colors.accent} />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={[styles.catPickerName, { color: colors.text }]}>{cat.name}</Text>
                     </View>
@@ -600,7 +600,7 @@ function ProjectCard({
   onPress: () => void;
 }) {
   const statusColors = statusColor(project.status, project.isCompleted, colors);
-  const accentColor = project.categoryId ? CATEGORY_VISUAL[project.categoryId]?.accentColor : undefined;
+  const accentColor = colors.accent;
 
   return (
     <AnimatedPressable
@@ -610,9 +610,9 @@ function ProjectCard({
       accessibilityLabel={`${project.title}, ${project.percent}% complete, ${project.isCompleted ? 'completed' : project.status || 'backlog'}`}
     >
       {/* Category accent strip */}
-      {accentColor && <View style={[styles.accentStrip, { backgroundColor: accentColor }]} />}
+      <View style={[styles.accentStrip, { backgroundColor: accentColor }]} />
 
-      <View style={[styles.projectCardInner, accentColor ? { paddingLeft: 12 } : undefined]}>
+      <View style={[styles.projectCardInner, { paddingLeft: 12 }]}>
         <View style={styles.projectCardHeader}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.projectTitle, { color: colors.text }]} numberOfLines={1}>

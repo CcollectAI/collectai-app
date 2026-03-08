@@ -17,8 +17,6 @@ import {
   Platform,
   Switch,
   KeyboardAvoidingView,
-  ActionSheetIOS,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,6 +30,7 @@ import { useToast } from "@/components/Toast";
 import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, positiveNumber } from "@/lib/validate";
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { showActionSheet } from '@/hooks/useActionSheetPicker';
 
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 
@@ -90,7 +89,7 @@ function CreateMandateScreen() {
     if (!params.id) return;
     (async () => {
       try {
-        const m = await collectorsApi.getMandate(params.id!);
+        const m = await collectorsApi.getMandate(params.id!) as any;
         nameField.setValue(m.name);
         setCategory(m.category ?? null);
         maxPriceField.setValue(String(m.max_price));
@@ -112,84 +111,24 @@ function CreateMandateScreen() {
     );
   };
 
-  // ActionSheetIOS handlers
+  // Action sheet handlers
   const showCategoryPicker = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", ...CATEGORY_OPTIONS],
-          cancelButtonIndex: 0,
-          title: "Select Category",
-        },
-        (buttonIndex) => {
-          if (buttonIndex > 0) {
-            const selected = CATEGORY_OPTIONS[buttonIndex - 1];
-            setCategory(selected === "Any" ? null : selected);
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        "Select Category",
-        undefined,
-        CATEGORY_OPTIONS.map((opt) => ({
-          text: opt,
-          onPress: () => setCategory(opt === "Any" ? null : opt),
-        })).concat([{ text: "Cancel", style: "cancel" }])
-      );
-    }
+    showActionSheet('Select Category', CATEGORY_OPTIONS, (index) => {
+      const selected = CATEGORY_OPTIONS[index];
+      setCategory(selected === 'Any' ? null : selected);
+    });
   };
 
   const showRegionPicker = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", ...REGION_LABELS],
-          cancelButtonIndex: 0,
-          title: "Select Region",
-        },
-        (buttonIndex) => {
-          if (buttonIndex > 0) {
-            setRegion(REGIONS[buttonIndex - 1].value);
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        "Select Region",
-        undefined,
-        REGIONS.map((r) => ({
-          text: r.label,
-          onPress: () => setRegion(r.value),
-        })).concat([{ text: "Cancel", style: "cancel" }])
-      );
-    }
+    showActionSheet('Select Region', REGION_LABELS, (index) => {
+      setRegion(REGIONS[index].value);
+    });
   };
 
   const showTrustScorePicker = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", ...TRUST_OPTIONS],
-          cancelButtonIndex: 0,
-          title: "Select Min Trust Score",
-        },
-        (buttonIndex) => {
-          if (buttonIndex > 0) {
-            setMinTrust(parseFloat(TRUST_OPTIONS[buttonIndex - 1]));
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        "Select Min Trust Score",
-        undefined,
-        TRUST_OPTIONS.map((opt) => ({
-          text: opt,
-          onPress: () => setMinTrust(parseFloat(opt)),
-        })).concat([{ text: "Cancel", style: "cancel" }])
-      );
-    }
+    showActionSheet('Select Min Trust Score', TRUST_OPTIONS, (index) => {
+      setMinTrust(parseFloat(TRUST_OPTIONS[index]));
+    });
   };
 
   const handleSave = useCallback(async () => {

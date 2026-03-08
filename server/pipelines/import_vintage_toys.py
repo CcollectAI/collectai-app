@@ -778,6 +778,110 @@ def get_curated_catalog() -> list[dict]:
         ("Hasbro", "Battle Beasts", "Sabre Sword Tiger (Wood)", "figure", "1987", "loose_complete", 22),
         ("Hasbro", "Battle Beasts", "Battling Deer Stalker (Fire)", "figure", "1988", "loose_complete", 28),
         ("Hasbro", "Battle Beasts", "Laser Beasts Triple Threat Snake", "figure", "1988", "CIB", 55),
+
+        # ─── Kenner Star Wars — Last 17 (POTF) ─────────────────────────
+        ("Kenner", "Star Wars", "Romba (POTF Last 17)", "figure", "1985", "loose_complete", 120),
+        ("Kenner", "Star Wars", "Warok (POTF Last 17)", "figure", "1985", "loose_complete", 110),
+        ("Kenner", "Star Wars", "EV-9D9 (POTF Last 17)", "figure", "1985", "loose_complete", 90),
+        ("Kenner", "Star Wars", "Imperial Gunner (POTF Last 17)", "figure", "1985", "loose_complete", 150),
+        ("Kenner", "Star Wars", "A-Wing Pilot (POTF Last 17)", "figure", "1985", "MOC", 600),
+        ("Kenner", "Star Wars", "Luke Stormtrooper (POTF Last 17)", "figure", "1985", "MOC", 800),
+        ("Kenner", "Star Wars", "Lando General (POTF Last 17)", "figure", "1985", "loose_complete", 100),
+        ("Kenner", "Star Wars", "AT-AT Driver (POTF Last 17)", "figure", "1985", "loose_complete", 80),
+        ("Kenner", "Star Wars", "R2-D2 Pop-Up Saber (POTF Last 17)", "figure", "1985", "loose_complete", 180),
+        ("Kenner", "Star Wars", "Han Solo Carbonite (POTF Last 17)", "figure", "1985", "loose_complete", 130),
+
+        # ─── Hasbro GI Joe ARAH — Additional Figures ────────────────────
+        ("Hasbro", "GI Joe ARAH", "Snake Eyes (v2, Swivel Arm)", "figure", "1985", "loose_complete", 120),
+        ("Hasbro", "GI Joe ARAH", "Storm Shadow (v1)", "figure", "1984", "loose_complete", 85),
+        ("Hasbro", "GI Joe ARAH", "Firefly (v1)", "figure", "1984", "loose_complete", 75),
+        ("Hasbro", "GI Joe ARAH", "Zartan (v1, with Chameleon)", "figure", "1984", "CIB", 180),
+        ("Hasbro", "GI Joe ARAH", "Serpentor (v1, with Air Chariot)", "figure", "1986", "CIB", 150),
+        ("Hasbro", "GI Joe ARAH", "Cobra Commander (Battle Armor, v2)", "figure", "1984", "loose_complete", 60),
+        ("Hasbro", "GI Joe ARAH", "Destro (v1, Iron Grenadiers)", "figure", "1983", "loose_complete", 55),
+        ("Hasbro", "GI Joe ARAH", "Baroness (v1)", "figure", "1984", "loose_complete", 90),
+        ("Hasbro", "GI Joe ARAH", "Jinx (v1)", "figure", "1987", "loose_complete", 65),
+        ("Hasbro", "GI Joe ARAH", "USS Flagg Aircraft Carrier", "playset", "1985", "CIB", 1500),
+
+        # ─── Hasbro Transformers G1 — Additional ────────────────────────
+        ("Hasbro", "Transformers", "Jetfire (G1, Complete)", "figure", "1985", "CIB", 500),
+        ("Hasbro", "Transformers", "Jetfire (G1, Loose)", "figure", "1985", "loose_complete", 220),
+        ("Hasbro", "Transformers", "Shockwave (G1)", "figure", "1985", "CIB", 350),
+        ("Hasbro", "Transformers", "Shockwave (G1, Loose)", "figure", "1985", "loose_complete", 150),
+        ("Hasbro", "Transformers", "Omega Supreme (G1)", "figure", "1985", "CIB", 450),
+        ("Hasbro", "Transformers", "Omega Supreme (G1, Loose)", "figure", "1985", "loose_complete", 200),
+        ("Hasbro", "Transformers", "Metroplex (G1)", "figure", "1986", "CIB", 400),
+        ("Hasbro", "Transformers", "Trypticon (G1)", "figure", "1986", "CIB", 380),
+        ("Hasbro", "Transformers", "Predaking (G1, Gift Set)", "figure", "1986", "CIB", 600),
+        ("Hasbro", "Transformers", "Bruticus (G1, Gift Set)", "figure", "1986", "CIB", 350),
+
+        # ─── Mattel MOTU Vintage — Playsets & Vehicles ──────────────────
+        ("Mattel", "MOTU", "Castle Grayskull (Complete)", "playset", "1982", "CIB", 350),
+        ("Mattel", "MOTU", "Castle Grayskull (Loose)", "playset", "1982", "loose_complete", 180),
+        ("Mattel", "MOTU", "Eternia Playset (Complete)", "playset", "1986", "CIB", 2500),
+        ("Mattel", "MOTU", "Snake Mountain (Complete)", "playset", "1984", "CIB", 280),
+        ("Mattel", "MOTU", "Snake Mountain (Loose)", "playset", "1984", "loose_complete", 140),
+        ("Mattel", "MOTU", "Battle Cat (Complete w/ Saddle)", "vehicle", "1982", "loose_complete", 55),
+        ("Mattel", "MOTU", "Panthor (Complete w/ Saddle)", "vehicle", "1982", "loose_complete", 65),
+        ("Mattel", "MOTU", "Fright Zone Playset", "playset", "1985", "CIB", 200),
+        ("Mattel", "MOTU", "Hordak (v1, Complete)", "figure", "1985", "loose_complete", 45),
+        ("Mattel", "MOTU", "Grizzlor (Complete)", "figure", "1985", "loose_complete", 35),
+        ("Mattel", "MOTU", "Leech (Complete)", "figure", "1985", "loose_complete", 30),
+        ("Mattel", "MOTU", "Mantenna (Complete)", "figure", "1985", "loose_complete", 35),
+
+        # ─── Kenner M.A.S.K. — Vehicles ────────────────────────────────
+        ("Kenner", "M.A.S.K.", "Thunderhawk (Complete w/ Matt Trakker)", "vehicle", "1985", "CIB", 180),
+        ("Kenner", "M.A.S.K.", "Rhino (Complete w/ Bruce Sato)", "vehicle", "1985", "CIB", 150),
+        ("Kenner", "M.A.S.K.", "Condor (Complete w/ Brad Turner)", "vehicle", "1985", "CIB", 120),
+        ("Kenner", "M.A.S.K.", "Switchblade (Complete w/ Miles Mayhem)", "vehicle", "1985", "CIB", 140),
+        ("Kenner", "M.A.S.K.", "Jackhammer (Complete w/ Cliff Dagger)", "vehicle", "1985", "CIB", 110),
+        ("Kenner", "M.A.S.K.", "Boulder Hill Playset (Complete)", "playset", "1985", "CIB", 250),
+        ("Kenner", "M.A.S.K.", "Outlaw (Complete w/ Nash Gorey)", "vehicle", "1986", "CIB", 100),
+        ("Kenner", "M.A.S.K.", "Raven (Complete w/ Calhoun Burns)", "vehicle", "1986", "CIB", 90),
+
+        # ─── Mattel Voltron (1984–1985) ─────────────────────────────────
+        ("Mattel", "Voltron", "Voltron Lion Force Deluxe Set (Complete)", "vehicle", "1984", "CIB", 400),
+        ("Mattel", "Voltron", "Voltron Lion Force Deluxe Set (Loose)", "vehicle", "1984", "loose_complete", 200),
+        ("Mattel", "Voltron", "Black Lion (Complete)", "vehicle", "1984", "loose_complete", 80),
+        ("Mattel", "Voltron", "Red Lion (Complete)", "vehicle", "1984", "loose_complete", 60),
+        ("Mattel", "Voltron", "Green Lion (Complete)", "vehicle", "1984", "loose_complete", 55),
+        ("Mattel", "Voltron", "Blue Lion (Complete)", "vehicle", "1984", "loose_complete", 55),
+        ("Mattel", "Voltron", "Yellow Lion (Complete)", "vehicle", "1984", "loose_complete", 55),
+
+        # ─── LJN Thundercats — Additional ───────────────────────────────
+        ("LJN", "Thundercats", "Lion-O (Complete w/ Sword)", "figure", "1985", "loose_complete", 80),
+        ("LJN", "Thundercats", "Mumm-Ra (Complete)", "figure", "1985", "loose_complete", 60),
+        ("LJN", "Thundercats", "Panthro (Complete)", "figure", "1985", "loose_complete", 55),
+        ("LJN", "Thundercats", "Tygra (Complete)", "figure", "1985", "loose_complete", 50),
+        ("LJN", "Thundercats", "Cheetara (Complete)", "figure", "1986", "loose_complete", 65),
+        ("LJN", "Thundercats", "Cat's Lair Playset (Complete)", "playset", "1986", "CIB", 350),
+        ("LJN", "Thundercats", "Thundertank (Complete)", "vehicle", "1986", "CIB", 200),
+
+        # ─── Kenner Silverhawks (1986–1988) ─────────────────────────────
+        ("Kenner", "Silverhawks", "Quicksilver (Complete w/ Tally-Hawk)", "figure", "1986", "loose_complete", 55),
+        ("Kenner", "Silverhawks", "Steelheart (Complete)", "figure", "1986", "loose_complete", 45),
+        ("Kenner", "Silverhawks", "Mon*Star (Complete)", "figure", "1986", "loose_complete", 65),
+        ("Kenner", "Silverhawks", "Bluegrass (Complete w/ Guitar)", "figure", "1986", "loose_complete", 50),
+        ("Kenner", "Silverhawks", "Copper Kidd (Complete)", "figure", "1986", "loose_complete", 40),
+        ("Kenner", "Silverhawks", "Buzz-Saw (Complete)", "figure", "1987", "loose_complete", 45),
+        ("Kenner", "Silverhawks", "Mirage Hawk Vehicle (Complete)", "vehicle", "1987", "CIB", 120),
+
+        # ─── Vintage Lego Space Sets ─────────────────────────────────────
+        ("Lego", "Classic Space", "Galaxy Explorer (497)", "playset", "1979", "CIB", 350),
+        ("Lego", "Classic Space", "Space Cruiser (487)", "vehicle", "1979", "CIB", 200),
+        ("Lego", "Classic Space", "Space Supply Station (6930)", "playset", "1983", "CIB", 150),
+        ("Lego", "Classic Space", "Cosmic Fleet Voyager (6985)", "vehicle", "1986", "CIB", 250),
+        ("Lego", "Blacktron", "Invader (6894)", "vehicle", "1987", "CIB", 120),
+        ("Lego", "Blacktron", "Renegade (6954)", "vehicle", "1987", "CIB", 180),
+        ("Lego", "M-Tron", "Mega Core Magnetizer (6989)", "vehicle", "1990", "CIB", 200),
+        ("Lego", "Ice Planet", "Deep Freeze Defender (6973)", "vehicle", "1993", "CIB", 180),
+
+        # ─── Additional Vintage Toys (+5) ──────────────────────────────────
+        ("Hasbro", "Transformers G1", "Jetfire (Complete)", "figure", "1985", "loose_complete", 280),
+        ("Mattel", "MOTU", "Castle Grayskull (Complete)", "playset", "1982", "CIB", 350),
+        ("Kenner", "Star Wars", "Imperial Shuttle (Complete)", "vehicle", "1984", "CIB", 400),
+        ("LJN", "Thundercats", "Mumm-Ra (Ever-Living Form)", "figure", "1986", "loose_complete", 120),
+        ("Playmates", "TMNT", "Technodrome Playset", "playset", "1990", "CIB", 250),
     ]
 
     catalog = []

@@ -26,12 +26,13 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import { useSettings, REGION_DEFAULTS } from '@/lib/settings';
 import type { Region } from '@/lib/settings';
-import { collectorsApi } from '@/api/collectorsApi';
+import { collectorsApi, logActivity } from '@/api/collectorsApi';
 import { API_BASE } from '@/api/config';
 import { supabase } from '@/lib/supabase';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { CATEGORY_VISUAL, type CategoryId } from '@/data/categories';
 import { CATEGORIES as ALL_CATEGORIES } from '@/constants/categories';
+import { track } from '@/analytics/track';
 
 const TIFFANY = '#81D8D0';
 const TIFFANY_DARK = '#5FBFB6';
@@ -342,7 +343,9 @@ function OnboardingScreen() {
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems.length > 0 && viewableItems[0].index != null) {
-        setCurrentIndex(viewableItems[0].index);
+        const idx = viewableItems[0].index;
+        setCurrentIndex(idx);
+        track({ name: 'onboarding_slide_viewed', properties: { slide: idx } });
       }
     },
   ).current;
@@ -369,6 +372,15 @@ function OnboardingScreen() {
     }
 
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    track({ name: 'onboarding_completed', properties: { categories_selected: selectedCategories.size } });
+
+    // Best-effort XP award for completing onboarding
+    logActivity({
+      activity_type: 'onboarding_completed',
+      title: 'Completed onboarding',
+      metadata: { categories_selected: selectedCategories.size },
+    }).catch(() => {});
+
     router.replace('/(tabs)/add');
   }
 
@@ -384,16 +396,24 @@ function OnboardingScreen() {
   const isLast = currentIndex === SLIDES.length - 1;
   const isCategorySlide = currentIndex === 3;
   const isRegionSlide = currentIndex === 4;
+  // Show skip only on intro slides (0-2), not on category/region slides that need user input
+  const showSkip = currentIndex <= 2;
+
+  const handleSkip = useCallback(() => {
+    track({ name: 'onboarding_skipped', properties: { skip_slide: currentIndex } });
+    // Jump directly to the category selection slide so users still pick categories + region
+    flatListRef.current?.scrollToIndex({ index: 3 });
+  }, [currentIndex]);
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        {!isLast && (
+        {showSkip && (
           <AnimatedPressable
-            onPress={completeOnboarding}
+            onPress={handleSkip}
             style={styles.skipBtn}
             accessibilityRole="button"
-            accessibilityLabel="Skip onboarding"
+            accessibilityLabel="Skip to category selection"
           >
             <Text style={styles.skipText}>Skip</Text>
           </AnimatedPressable>

@@ -88,7 +88,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
 
         setCreators((data ?? []) as TwitchCreator[]);
         setState("loaded");
-      } catch (err: unknown) {
+      } catch (err: any) {
         setState("error");
         setErrorText(
           err?.message || "Unexpected error while loading Twitch leaderboard."

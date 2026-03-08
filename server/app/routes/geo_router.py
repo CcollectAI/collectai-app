@@ -11,15 +11,19 @@ import logging
 from typing import Dict, Tuple
 
 import httpx
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
 from app.cache import cache_get, cache_set
 from app.config import GEO_CACHE_TTL
+from app.rate_limit import per_ip_rate_limit
 
 import hashlib
 
 router = APIRouter(prefix="/geo", tags=["geo"])
 logger = logging.getLogger(__name__)
+
+# Per-IP: 30 requests per minute for public geo detection
+_geo_ip_limit = per_ip_rate_limit(30, scope="geo")
 
 
 def _mask_ip(ip: str) -> str:
@@ -80,7 +84,7 @@ def _get_client_ip(request: Request) -> str:
     return ""
 
 
-@router.get("/detect")
+@router.get("/detect", dependencies=[Depends(_geo_ip_limit)])
 async def detect_region(request: Request):
     """Auto-detect user region from IP address.
 

@@ -27,6 +27,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
+import { track } from '@/analytics/track';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -81,6 +82,7 @@ function LoginScreen() {
           .signInWithIdToken({ provider: 'google', token: id_token })
           .then(({ error }) => {
             if (error) throw error;
+            track({ name: 'user_logged_in', properties: { method: 'google' } });
             router.replace('/(tabs)');
           })
           .catch((e: unknown) => {
@@ -110,6 +112,7 @@ function LoginScreen() {
         token: credential.identityToken,
       });
       if (error) throw error;
+      track({ name: 'user_logged_in', properties: { method: 'apple' } });
       router.replace('/(tabs)');
     } catch (e: unknown) {
       const code = (e as { code?: string })?.code;
@@ -124,6 +127,7 @@ function LoginScreen() {
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     AsyncStorage.setItem('@collectai/onboarding_complete', 'true').catch(() => {});
     signInDemo();
+    track({ name: 'user_logged_in', properties: { method: 'demo' } });
     router.replace('/(tabs)');
   }
 
@@ -142,6 +146,7 @@ function LoginScreen() {
         password,
       });
       if (error) throw error;
+      track({ name: 'user_logged_in', properties: { method: 'email' } });
       // onAuthStateChange in AuthProvider handles the rest
       router.replace('/(tabs)');
     } catch (e: unknown) {
@@ -208,6 +213,7 @@ function LoginScreen() {
               autoFocus
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
+              testID="email-input"
             />
 
             <Text style={[styles.label, { marginTop: 16 }]}>Password</Text>
@@ -223,6 +229,7 @@ function LoginScreen() {
               accessibilityLabel="Password"
               returnKeyType="go"
               onSubmitEditing={handleSignIn}
+              testID="password-input"
             />
 
             {loading ? (

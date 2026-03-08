@@ -810,6 +810,126 @@ def get_curated_catalog() -> list[dict]:
         ("WOTC", "Team Rocket Booster Pack Sealed (Dark Charizard Art)", "Sealed", "grail", 250, 400),
         ("WOTC", "Gym Heroes Booster Pack Sealed (Misty Art)", "Sealed", "grail", 180, 300),
         ("WOTC", "Neo Genesis Booster Pack Sealed (Lugia Art)", "Sealed", "grail", 350, 600),
+
+        # ── Japanese Base Set Cards ──────────────────────────────────────
+        ("WOTC JP", "Japanese Base Set Charizard Holo #6", "Near Mint", "grail", 200, 550),
+        ("WOTC JP", "Japanese Base Set Blastoise Holo #9", "Near Mint", "high", 80, 200),
+        ("WOTC JP", "Japanese Base Set Venusaur Holo #3", "Near Mint", "high", 70, 180),
+        ("WOTC JP", "Japanese Base Set Alakazam Holo #65", "Near Mint", "mid", 40, 100),
+        ("WOTC JP", "Japanese Base Set Chansey Holo #113", "Near Mint", "mid", 35, 90),
+        ("WOTC JP", "Japanese Base Set Mewtwo Holo #150", "Near Mint", "high", 60, 160),
+        ("WOTC JP", "Japanese Base Set Raichu Holo #26", "Near Mint", "mid", 40, 100),
+        ("WOTC JP", "Japanese Base Set Gyarados Holo #130", "Near Mint", "mid", 35, 95),
+        ("WOTC JP", "Japanese Base Set Ninetales Holo #38", "Near Mint", "mid", 30, 80),
+        ("WOTC JP", "Japanese Base Set Magneton Holo #82", "Near Mint", "mid", 25, 65),
+
+        # ── Vending Machine Series (Additional Japanese) ─────────────────
+        ("Bandai JP", "Vending Machine Series 1 Bulbasaur", "Near Mint", "mid", 30, 80),
+        ("Bandai JP", "Vending Machine Series 1 Squirtle", "Near Mint", "mid", 25, 70),
+        ("Bandai JP", "Vending Machine Series 2 Mew", "Near Mint", "high", 70, 200),
+        ("Bandai JP", "Vending Machine Series 3 Lugia", "Near Mint", "high", 65, 180),
+        ("Bandai JP", "Vending Machine Series 2 Eevee", "Near Mint", "mid", 35, 90),
+        ("Bandai JP", "Vending Machine Series 3 Ho-Oh", "Near Mint", "high", 55, 150),
+
+        # ── Southern Islands (Additional) ────────────────────────────────
+        ("WOTC", "Southern Islands Pidgeot #2", "Near Mint", "mid", 20, 55),
+        ("WOTC", "Southern Islands Onix #4", "Near Mint", "mid", 18, 50),
+        ("WOTC", "Southern Islands Jigglypuff #7", "Near Mint", "mid", 18, 48),
+        ("WOTC", "Southern Islands Butterfree #8", "Near Mint", "mid", 18, 48),
+        ("WOTC", "Southern Islands Tentacruel #9", "Near Mint", "mid", 15, 42),
+        ("WOTC", "Southern Islands Lickitung #16", "Near Mint", "mid", 15, 40),
+        ("WOTC", "Southern Islands Vileplume #17", "Near Mint", "mid", 15, 40),
+        ("WOTC", "Southern Islands Primeape #18", "Near Mint", "mid", 15, 42),
+
+        # ── Gym Heroes Holos (Additional) ────────────────────────────────
+        ("WOTC", "Gym Heroes Brock's Rhydon 1st Edition Holo #2", "Near Mint", "high", 55, 140),
+        ("WOTC", "Gym Heroes Erika's Dragonair 1st Edition Holo #4", "Near Mint", "high", 60, 160),
+        ("WOTC", "Gym Heroes Lt. Surge's Fearow 1st Edition Holo #7", "Near Mint", "mid", 35, 90),
+        ("WOTC", "Gym Heroes Misty's Seadra 1st Edition Holo #9", "Near Mint", "mid", 30, 80),
+        ("WOTC", "Gym Heroes Rocket's Mewtwo 1st Edition Holo #14", "Near Mint", "grail", 120, 300),
+        ("WOTC", "Gym Heroes Rocket's Scyther 1st Edition Holo #13", "Near Mint", "high", 55, 140),
+        ("WOTC", "Gym Heroes Sabrina's Gengar 1st Edition Holo #14", "Near Mint", "high", 65, 170),
+        ("WOTC", "Gym Heroes Blaine's Arcanine 1st Edition Holo #1", "Near Mint", "high", 80, 200),
+
+        # ── Gym Challenge Holos (Additional) ─────────────────────────────
+        ("WOTC", "Gym Challenge Blaine's Moltres 1st Edition Holo #1", "Near Mint", "high", 65, 170),
+        ("WOTC", "Gym Challenge Erika's Venusaur 1st Edition Holo #4", "Near Mint", "high", 70, 180),
+        ("WOTC", "Gym Challenge Lt. Surge's Raichu 1st Edition Holo #11", "Near Mint", "high", 55, 140),
+        ("WOTC", "Gym Challenge Misty's Golduck 1st Edition Holo #12", "Near Mint", "mid", 40, 100),
+        ("WOTC", "Gym Challenge Rocket's Zapdos 1st Edition Holo #15", "Near Mint", "high", 75, 190),
+        ("WOTC", "Gym Challenge Giovanni's Nidoking 1st Edition Holo #7", "Near Mint", "high", 55, 150),
+        ("WOTC", "Gym Challenge Giovanni's Persian 1st Edition Holo #8", "Near Mint", "mid", 45, 120),
+
+        # ── VS Series (Additional Japanese) ──────────────────────────────
+        ("Media Factory JP", "VS Series Morty's Gengar #74", "Near Mint", "high", 80, 220),
+        ("Media Factory JP", "VS Series Will's Espeon #65", "Near Mint", "high", 70, 190),
+        ("Media Factory JP", "VS Series Lance's Kingdra #97", "Near Mint", "high", 60, 160),
+        ("Media Factory JP", "VS Series Bruno's Hitmontop #42", "Near Mint", "mid", 30, 80),
+        ("Media Factory JP", "VS Series Pryce's Piloswine #51", "Near Mint", "mid", 25, 70),
+        ("Media Factory JP", "VS Series Sabrina's Espeon #70", "Near Mint", "high", 65, 170),
+        ("Media Factory JP", "VS Series Karen's Tyranitar #92", "Near Mint", "grail", 120, 350),
+
+        # ── Gold Star Cards ──────────────────────────────────────────────
+        ("Pokemon USA", "Gold Star Charizard (EX Dragon Frontiers #100)", "Near Mint", "grail", 600, 1800),
+        ("Pokemon USA", "Gold Star Mewtwo (EX Holon Phantoms #103)", "Near Mint", "grail", 300, 900),
+        ("Pokemon USA", "Gold Star Pikachu (EX Holon Phantoms #104)", "Near Mint", "grail", 400, 1200),
+        ("Pokemon USA", "Gold Star Rayquaza (EX Deoxys #107)", "Near Mint", "grail", 500, 1500),
+        ("Pokemon USA", "Gold Star Gyarados (EX Holon Phantoms #102)", "Near Mint", "grail", 250, 750),
+        ("Pokemon USA", "Gold Star Vaporeon (POP Series 5 #17)", "Near Mint", "grail", 200, 600),
+        ("Pokemon USA", "Gold Star Jolteon (POP Series 5 #16)", "Near Mint", "grail", 200, 600),
+        ("Pokemon USA", "Gold Star Flareon (POP Series 5 #15)", "Near Mint", "grail", 200, 600),
+        ("Pokemon USA", "Gold Star Umbreon (POP Series 5 #18)", "Near Mint", "grail", 350, 1000),
+        ("Pokemon USA", "Gold Star Espeon (POP Series 5 #16)", "Near Mint", "grail", 300, 900),
+
+        # ── Shining Pokemon (Additional) ─────────────────────────────────
+        ("WOTC", "Neo Destiny Shining Celebi 1st Edition #106", "Near Mint", "grail", 180, 500),
+        ("WOTC", "Neo Destiny Shining Kabutops 1st Edition #108", "Near Mint", "grail", 140, 380),
+
+        # ── Crystal Type Cards (Additional) ──────────────────────────────
+        ("WOTC", "Aquapolis Golem Crystal Type #148", "Near Mint", "grail", 180, 520),
+        ("WOTC", "Skyridge Charizard Crystal Type #H3 Reverse", "Near Mint", "grail", 450, 1400),
+        ("WOTC", "Skyridge Kabutops Crystal Type #150", "Near Mint", "grail", 250, 700),
+        ("WOTC", "Skyridge Crobat Crystal Type #147", "Near Mint", "grail", 200, 600),
+
+        # ── Early WOTC Promos ────────────────────────────────────────────
+        ("WOTC", "Pikachu Black Star Promo #1", "Near Mint", "mid", 20, 55),
+        ("WOTC", "Electabuzz Black Star Promo #2", "Near Mint", "mid", 15, 40),
+        ("WOTC", "Mewtwo Black Star Promo #3", "Near Mint", "mid", 15, 40),
+        ("WOTC", "Pikachu Black Star Promo #4 (Ivy Edition)", "Near Mint", "mid", 25, 65),
+        ("WOTC", "Dragonite Black Star Promo #5 (Movie)", "Near Mint", "mid", 20, 55),
+        ("WOTC", "Ancient Mew Promo (Movie 2000)", "Near Mint", "mid", 30, 80),
+        ("WOTC", "Mew Black Star Promo #8 (Wizards)", "Near Mint", "mid", 25, 60),
+        ("WOTC", "Mew Black Star Promo #9 (Wizards)", "Near Mint", "mid", 20, 50),
+
+        # ── e-Series (Additional Holos) ──────────────────────────────────
+        ("WOTC", "Expedition Base Set Alakazam Holo #1", "Near Mint", "high", 55, 140),
+        ("WOTC", "Expedition Base Set Dragonite Holo #9", "Near Mint", "high", 60, 160),
+        ("WOTC", "Expedition Base Set Gengar Holo #13", "Near Mint", "high", 65, 170),
+        ("WOTC", "Expedition Base Set Machamp Holo #16", "Near Mint", "mid", 40, 100),
+        ("WOTC", "Aquapolis Espeon Holo #H10", "Near Mint", "high", 70, 180),
+        ("WOTC", "Aquapolis Umbreon Holo #H30", "Near Mint", "high", 75, 200),
+
+        # ── Neo Discovery (Additional) ───────────────────────────────────
+        ("WOTC", "Neo Discovery Tyranitar 1st Edition Holo #12", "Near Mint", "grail", 130, 350),
+        ("WOTC", "Neo Discovery Poliwrath 1st Edition Holo #9", "Near Mint", "mid", 35, 90),
+        ("WOTC", "Neo Discovery Forretress 1st Edition Holo #2", "Near Mint", "mid", 30, 80),
+        ("WOTC", "Neo Discovery Magnemite 1st Edition Holo #7", "Near Mint", "mid", 25, 70),
+
+        # ── Japanese Promos (Additional) ─────────────────────────────────
+        ("WOTC JP", "Corocoro Mew Lily Pad Promo", "Near Mint", "grail", 150, 450),
+        ("WOTC JP", "Corocoro Shining Mew (Glossy)", "Near Mint", "grail", 350, 1000),
+        ("WOTC JP", "University Magikarp Promo (TMB Qualifier)", "Near Mint", "grail", 600, 2000),
+        ("WOTC JP", "No. 2 Trainer Promo (Regional)", "Near Mint", "grail", 800, 3000),
+        ("WOTC JP", "No. 3 Trainer Promo (Regional)", "Near Mint", "grail", 500, 1800),
+        ("WOTC JP", "Pokemon Center NY Pikachu Gold Star Promo", "Near Mint", "grail", 400, 1200),
+        ("WOTC JP", "ANA Airlines Pikachu Promo (All Nippon)", "Near Mint", "grail", 200, 600),
+        ("WOTC JP", "ANA Airlines Articuno Promo (All Nippon)", "Near Mint", "grail", 150, 450),
+        ("WOTC JP", "Japanese Gym Promo Erika's Clefable", "Near Mint", "high", 60, 160),
+        ("WOTC JP", "Japanese Gym Promo Misty's Psyduck", "Near Mint", "mid", 30, 80),
+        ("WOTC JP", "Japanese Quick Starter Pikachu #25", "Near Mint", "mid", 25, 65),
+        ("WOTC JP", "Japanese Intro Starter Squirtle #7", "Near Mint", "mid", 20, 50),
+        ("WOTC JP", "Japanese Coro Coro Comics Imakuni? Promo", "Near Mint", "high", 80, 220),
+        ("WOTC JP", "Japanese Trade Please! Pikachu Promo", "Near Mint", "high", 70, 190),
     ]
 
     catalog = []

@@ -198,6 +198,7 @@ scalemates_circuit = CircuitBreaker("scalemates", max_failures=5, cooldown_secon
 ktown4u_circuit = CircuitBreaker("ktown4u", max_failures=5, cooldown_seconds=60)
 comicbookrealm_circuit = CircuitBreaker("comicbookrealm", max_failures=5, cooldown_seconds=60)
 masterofmalt_circuit = CircuitBreaker("masterofmalt", max_failures=5, cooldown_seconds=60)
+yahoo_auctions_circuit = CircuitBreaker("yahoo_auctions", max_failures=5, cooldown_seconds=60)
 
 
 def all_circuit_status() -> list[dict]:
@@ -216,5 +217,6 @@ def all_circuit_status() -> list[dict]:
             drop_circuit, gouletpens_circuit, brickeconomy_circuit,
             popmart_circuit, booth_circuit, scalemates_circuit,
             ktown4u_circuit, comicbookrealm_circuit, masterofmalt_circuit,
+            yahoo_auctions_circuit,
         )
     ]

@@ -11,7 +11,9 @@ type AuthEvent =
   | { name: 'user_signed_up'; properties: { method: string } }
   | { name: 'user_logged_in'; properties: { method: string } }
   | { name: 'user_logged_out' }
-  | { name: 'onboarding_completed'; properties?: { categories_selected?: number } };
+  | { name: 'onboarding_completed'; properties?: { categories_selected?: number } }
+  | { name: 'onboarding_slide_viewed'; properties: { slide: number } }
+  | { name: 'onboarding_skipped'; properties: { skip_slide: number } };
 
 type ItemEvent =
   | { name: 'item_added'; properties: { source: 'quickscan' | 'manual' | 'barcode'; category?: string } }
@@ -48,6 +50,16 @@ type SponsorEvent =
   | { name: 'sponsor_profile_updated' }
   | { name: 'sponsor_announcement_sent'; properties: { event_id: string } };
 
+type QuickScanEnhancementEvent =
+  | { name: 'quickscan_fast_path_used'; properties: { category?: string; confidence?: number } }
+  | { name: 'scan_feedback_submitted'; properties: { session_id: string; field: string } }
+  | { name: 'social_proof_viewed'; properties: { category?: string; collector_count?: number } }
+  | { name: 'duplicate_detected'; properties: { category?: string; owned_count?: number } }
+  | { name: 'condition_grade_viewed'; properties: { scale?: string; grade?: string } }
+  | { name: 'edge_classification_used'; properties: { category?: string; method?: string } }
+  | { name: 'multi_item_detected'; properties: { item_count?: number } }
+  | { name: 'comparison_scan_completed'; properties: { categories?: string[] } };
+
 export type AnalyticsEvent =
   | AuthEvent
   | ItemEvent
@@ -57,7 +69,8 @@ export type AnalyticsEvent =
   | EventEvent
   | DealEvent
   | SubscriptionEvent
-  | SponsorEvent;
+  | SponsorEvent
+  | QuickScanEnhancementEvent;
 
 /* ---------- PostHog handle ---------- */
 

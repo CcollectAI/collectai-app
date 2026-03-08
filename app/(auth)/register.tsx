@@ -23,6 +23,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
+import { track } from '@/analytics/track';
 
 const TIFFANY = '#81D8D0';
 const TIFFANY_DARK = '#5FBFB6';
@@ -112,6 +113,7 @@ function RegisterScreen() {
 
       // Success — onAuthStateChange will fire, AuthProvider picks up the session.
       // Root layout will redirect to onboarding since it's a new user.
+      track({ name: 'user_signed_up', properties: { method: 'email' } });
       router.replace('/(auth)/onboarding');
     } catch (e: unknown) {
       showToast({ message: e instanceof Error ? e.message : 'Sign up failed. Unknown error.', type: 'error' });

@@ -16,9 +16,15 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(tags=["items"])
 logger = logging.getLogger(__name__)
+
+# Per-user: 50 requests per minute for reading items
+_items_read_limit = per_user_rate_limit(50, scope="items_read")
+# Per-user: 10 requests per minute for creating items
+_items_write_limit = per_user_rate_limit(10, scope="items_write")
 
 
 # ---- Models ----
@@ -60,7 +66,7 @@ def get_demo_items() -> list[ItemResponse]:
 
 # ---- Endpoints ----
 
-@router.post("/items", response_model=ItemResponse)
+@router.post("/items", response_model=ItemResponse, dependencies=[Depends(_items_write_limit)])
 async def create_item(
     payload: ItemCreateRequest,
     user_id: str = Depends(get_current_user_id),
@@ -130,7 +136,7 @@ async def create_item(
     return item
 
 
-@router.get("/items", response_model=list[ItemResponse])
+@router.get("/items", response_model=list[ItemResponse], dependencies=[Depends(_items_read_limit)])
 async def list_items(user_id: str = Depends(get_current_user_id)):
     """List items in the user's collection."""
     pool = get_db_pool()

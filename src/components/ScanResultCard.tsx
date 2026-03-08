@@ -5,7 +5,7 @@
  * catalog alternatives, and action buttons (retake / add to collection).
  */
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,12 +14,18 @@ import {
   ScrollView,
   StatusBar,
   Dimensions,
+  TextInput,
+  Alert,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
+import { featureFlags } from '@/config/featureFlags';
+import { SocialProofSection } from '@/components/SocialProofSection';
+import { ConditionGradeSection } from '@/components/ConditionGradeSection';
+import { submitScanFeedback } from '@/api/collectorsApi';
 import type { QuickScanResult, CatalogAlternative, CurrencyCode } from '@/data/types';
 
 const TIFFANY = '#81D8D0';
@@ -125,6 +131,33 @@ export function ScanResultCard({
 }: ScanResultCardProps) {
   const { colors } = useAppTheme();
 
+  // Scan feedback state (F9)
+  const [editingField, setEditingField] = useState<'name' | 'category' | 'condition' | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [feedbackSent, setFeedbackSent] = useState(false);
+
+  const handleStartEdit = useCallback((field: 'name' | 'category' | 'condition', current: string) => {
+    if (!featureFlags.FEATURE_SCAN_FEEDBACK || !scanResult.scanSessionId) return;
+    setEditingField(field);
+    setEditValue(current);
+  }, [scanResult.scanSessionId]);
+
+  const handleSubmitFeedback = useCallback(async () => {
+    if (!editingField || !scanResult.scanSessionId) return;
+    try {
+      const feedback: Record<string, string> = { scanSessionId: scanResult.scanSessionId };
+      if (editingField === 'name') feedback.correctedName = editValue;
+      else if (editingField === 'category') feedback.correctedCategory = editValue;
+      else if (editingField === 'condition') feedback.correctedCondition = editValue;
+      await submitScanFeedback(feedback as any);
+      setFeedbackSent(true);
+      setEditingField(null);
+      Alert.alert('Thanks!', 'Your correction helps improve future scans.');
+    } catch {
+      Alert.alert('Error', 'Could not submit feedback. Please try again.');
+    }
+  }, [editingField, editValue, scanResult.scanSessionId]);
+
   const fc = scanResult.fieldConfidence;
   const alts = scanResult.alternatives ?? [];
   const priceBandLow = scanResult.prediction.estimatedLow;
@@ -187,29 +220,109 @@ export function ScanResultCard({
 
         {/* Item identification card -- overlaps hero */}
         <View style={[styles.idCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.idName, { color: colors.text }]} numberOfLines={3}>
-            {scanResult.prediction.name || 'Unknown Item'}
-          </Text>
-          <View style={styles.idMeta}>
-            <View style={[styles.categoryChip, { backgroundColor: TIFFANY + '18' }]}>
-              <Ionicons name="pricetag" size={12} color={TIFFANY_DARK} />
-              <Text style={[styles.categoryChipText, { color: TIFFANY_DARK }]}>
-                {scanResult.attributes.category
-                  .replace(/_/g, ' ')
-                  .replace(/\b\w/g, (c) => c.toUpperCase())}
-              </Text>
+          {editingField === 'name' ? (
+            <View style={styles.feedbackEditRow}>
+              <TextInput
+                style={[styles.feedbackInput, { color: colors.text, borderColor: TIFFANY }]}
+                value={editValue}
+                onChangeText={setEditValue}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={handleSubmitFeedback}
+              />
+              <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]}>
+                <Ionicons name="checkmark" size={16} color="#FFF" />
+              </AnimatedPressable>
+              <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn}>
+                <Ionicons name="close" size={16} color={colors.muted} />
+              </AnimatedPressable>
             </View>
-            {!!scanResult.attributes.conditionGuess && (
-              <View style={[styles.conditionChip, { backgroundColor: colors.border + '80' }]}>
+          ) : (
+            <AnimatedPressable
+              onPress={() => handleStartEdit('name', scanResult.prediction.name || '')}
+              accessibilityHint={featureFlags.FEATURE_SCAN_FEEDBACK ? 'Tap to correct' : undefined}
+            >
+              <Text style={[styles.idName, { color: colors.text }]} numberOfLines={3}>
+                {scanResult.prediction.name || 'Unknown Item'}
+              </Text>
+            </AnimatedPressable>
+          )}
+          <View style={styles.idMeta}>
+            {editingField === 'category' ? (
+              <View style={styles.feedbackEditRow}>
+                <TextInput
+                  style={[styles.feedbackInput, styles.feedbackInputSmall, { color: colors.text, borderColor: TIFFANY }]}
+                  value={editValue}
+                  onChangeText={setEditValue}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmitFeedback}
+                />
+                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]}>
+                  <Ionicons name="checkmark" size={14} color="#FFF" />
+                </AnimatedPressable>
+                <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn}>
+                  <Ionicons name="close" size={14} color={colors.muted} />
+                </AnimatedPressable>
+              </View>
+            ) : (
+              <AnimatedPressable
+                onPress={() => handleStartEdit('category', scanResult.attributes.category)}
+                style={[styles.categoryChip, { backgroundColor: TIFFANY + '18' }]}
+              >
+                <Ionicons name="pricetag" size={12} color={TIFFANY_DARK} />
+                <Text style={[styles.categoryChipText, { color: TIFFANY_DARK }]}>
+                  {scanResult.attributes.category
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, (c) => c.toUpperCase())}
+                </Text>
+                {featureFlags.FEATURE_SCAN_FEEDBACK && <Ionicons name="pencil" size={10} color={TIFFANY_DARK} style={{ marginLeft: 4 }} />}
+              </AnimatedPressable>
+            )}
+            {!!scanResult.attributes.conditionGuess && editingField !== 'condition' && (
+              <AnimatedPressable
+                onPress={() => handleStartEdit('condition', scanResult.attributes.conditionGuess || '')}
+                style={[styles.conditionChip, { backgroundColor: colors.border + '80' }]}
+              >
                 <Ionicons name="shield-checkmark" size={12} color={colors.muted} />
                 <Text style={[styles.conditionChipText, { color: colors.text }]}>
                   {scanResult.attributes.conditionGuess
                     .replace(/_/g, ' ')
                     .replace(/\b\w/g, (c) => c.toUpperCase())}
                 </Text>
+                {featureFlags.FEATURE_SCAN_FEEDBACK && <Ionicons name="pencil" size={10} color={colors.muted} style={{ marginLeft: 4 }} />}
+              </AnimatedPressable>
+            )}
+            {editingField === 'condition' && (
+              <View style={styles.feedbackEditRow}>
+                <TextInput
+                  style={[styles.feedbackInput, styles.feedbackInputSmall, { color: colors.text, borderColor: TIFFANY }]}
+                  value={editValue}
+                  onChangeText={setEditValue}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmitFeedback}
+                />
+                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]}>
+                  <Ionicons name="checkmark" size={14} color="#FFF" />
+                </AnimatedPressable>
+                <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn}>
+                  <Ionicons name="close" size={14} color={colors.muted} />
+                </AnimatedPressable>
               </View>
             )}
           </View>
+          {featureFlags.FEATURE_SCAN_FEEDBACK && !feedbackSent && scanResult.scanSessionId && (
+            <Text style={[styles.feedbackHint, { color: colors.muted }]}>
+              Tap name, category, or condition to correct
+            </Text>
+          )}
+          {feedbackSent && (
+            <View style={styles.feedbackSentBadge}>
+              <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
+              <Text style={{ color: '#22C55E', fontSize: 11, marginLeft: 4 }}>Correction submitted</Text>
+            </View>
+          )}
         </View>
 
         {/* Price band section */}
@@ -242,6 +355,48 @@ export function ScanResultCard({
               </View>
             )}
           </View>
+        )}
+
+        {/* Duplicate/variant banner */}
+        {featureFlags.FEATURE_DUPLICATE_DETECTION && scanResult.duplicateInfo?.ownedCount ? (
+          <View style={[styles.section, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B40' }]}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="warning-outline" size={18} color="#F59E0B" />
+              <Text style={[styles.sectionTitle, { color: '#92400E' }]}>
+                You already have this!
+              </Text>
+            </View>
+            <Text style={{ color: '#92400E', fontSize: 13 }}>
+              You own {scanResult.duplicateInfo.ownedCount} matching item(s) in your collection.
+            </Text>
+            {scanResult.duplicateInfo.setCompletion && (
+              <Text style={{ color: '#92400E', fontSize: 12, marginTop: 4 }}>
+                Set completion: {scanResult.duplicateInfo.setCompletion.pct}% ({scanResult.duplicateInfo.setCompletion.owned}/{scanResult.duplicateInfo.setCompletion.total})
+              </Text>
+            )}
+          </View>
+        ) : featureFlags.FEATURE_DUPLICATE_DETECTION && scanResult.duplicateInfo?.isVariant ? (
+          <View style={[styles.section, { backgroundColor: '#DBEAFE', borderColor: '#3B82F640' }]}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="git-branch-outline" size={18} color="#3B82F6" />
+              <Text style={[styles.sectionTitle, { color: '#1E40AF' }]}>
+                Variant of {scanResult.duplicateInfo.variantOf}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Social proof */}
+        {featureFlags.FEATURE_SOCIAL_PROOF && scanResult.socialProof && (
+          <SocialProofSection socialProof={scanResult.socialProof} currency={currency} />
+        )}
+
+        {/* Condition grading */}
+        {featureFlags.FEATURE_CONDITION_GRADING && (
+          <ConditionGradeSection
+            defects={scanResult.defectAnnotations ?? []}
+            grade={scanResult.suggestedGrade ?? null}
+          />
         )}
 
         {/* Confidence rings */}
@@ -696,6 +851,48 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  // Feedback (F9)
+  feedbackEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  feedbackInput: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  feedbackInputSmall: {
+    fontSize: 12,
+    paddingVertical: 4,
+  },
+  feedbackSubmitBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feedbackCancelBtn: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feedbackHint: {
+    fontSize: 11,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  feedbackSentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
   },
 });
 

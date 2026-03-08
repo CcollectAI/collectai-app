@@ -959,6 +959,128 @@ def _expanded_round7_theme_park() -> list[dict]:
         ("Disney Parks", "ear_headband", "Disney Parks Dole Whip Pineapple Ear Headband", "Park Exclusive", "mid", 40),
         ("Disney Parks", "ear_headband", "Disney Parks Rose Gold Sequin Ear Headband", "Park Exclusive", "mid", 45),
         ("Disney Parks", "ear_headband", "Disney Parks Enchanted Tiki Room Bird Ear Headband", "Park Exclusive", "mid", 42),
+
+        # ── Haunted Mansion Merchandise (Round 5) ─────────────────────────
+        ("Disney Parks", "merch", "Haunted Mansion 55th Anniversary Tombstone Figure Set", "Anniversary LE", "grail", 200),
+        ("Disney Parks", "merch", "Haunted Mansion Madame Leota Crystal Ball Snow Globe", "Park Exclusive", "high", 95),
+        ("Disney Parks", "merch", "Haunted Mansion Hitchhiking Ghosts Light-Up Figurine", "Park Exclusive", "high", 85),
+        ("Disney Parks", "merch", "Haunted Mansion Stretching Room Canvas Art Set (4pc)", "Park Exclusive", "high", 120),
+        ("Disney Parks", "merch", "Haunted Mansion Wallpaper Kitchen Apron & Towel Set", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "merch", "Haunted Mansion Doom Buggy Ride Vehicle Popcorn Bucket", "Limited Release", "high", 130),
+        ("Disney Parks", "merch", "Haunted Mansion Hatbox Ghost Glow-in-the-Dark Mug", "Park Exclusive", "mid", 40),
+        ("Disney Parks", "pins", "Haunted Mansion 999 Happy Haunts Anniversary Pin Set (5pc)", "Anniversary LE", "high", 80),
+
+        # ── Galaxy's Edge Exclusives (Round 5) ────────────────────────────
+        ("Disney Parks", "merch", "Galaxy's Edge Custom Lightsaber (Savi's Workshop Peace & Justice)", "Park Exclusive", "high", 140),
+        ("Disney Parks", "merch", "Galaxy's Edge Custom Lightsaber (Savi's Workshop Power & Control)", "Park Exclusive", "high", 140),
+        ("Disney Parks", "merch", "Galaxy's Edge Darksaber Replica Hilt", "Park Exclusive", "high", 130),
+        ("Disney Parks", "merch", "Galaxy's Edge Droid Depot Custom R-Series Droid Kit", "Park Exclusive", "high", 110),
+        ("Disney Parks", "merch", "Galaxy's Edge Droid Depot Custom BB-Series Droid Kit", "Park Exclusive", "high", 120),
+        ("Disney Parks", "merch", "Galaxy's Edge Oga's Cantina Rancor Teeth Souvenir Mug", "Park Exclusive", "mid", 55),
+        ("Disney Parks", "merch", "Galaxy's Edge First Order Stormtrooper Helmet Replica", "Park Exclusive", "high", 135),
+        ("Disney Parks", "merch", "Galaxy's Edge Holocron Jedi Exclusive (with Kyber Crystal)", "Park Exclusive", "high", 90),
+        ("Disney Parks", "merch", "Galaxy's Edge Millennium Falcon Popcorn Bucket", "Park Exclusive", "high", 75),
+        ("Disney Parks", "pins", "Galaxy's Edge Bounty Hunter Pin Collection (8pc)", "Park Exclusive", "high", 65),
+
+        # ── Super Nintendo World (Round 5) ────────────────────────────────
+        ("USJ", "merch", "Super Nintendo World Mario Power Star Trophy", "Park Exclusive", "high", 80),
+        ("USJ", "merch", "Super Nintendo World Bowser Castle Popcorn Bucket", "Park Exclusive", "high", 70),
+        ("USJ", "merch", "Super Nintendo World Question Block Candy Tin", "Park Exclusive", "mid", 30),
+        ("USJ", "merch", "Super Nintendo World Yoshi Egg Sipper Cup", "Park Exclusive", "mid", 35),
+        ("USJ", "merch", "Super Nintendo World Luigi Mansion Ghost Figure Set", "Park Exclusive", "high", 65),
+        ("USJ", "merch", "Super Nintendo World Princess Peach Tiara Ear Headband", "Park Exclusive", "mid", 40),
+        ("USJ", "merch", "Super Nintendo World Piranha Plant Light-Up Figure", "Park Exclusive", "mid", 55),
+        ("Universal Orlando", "merch", "Super Nintendo World Universal Orlando Grand Opening Set", "Grand Opening", "grail", 180),
+        ("Universal Orlando", "merch", "Super Nintendo World Mario Kart Bowser's Challenge Popcorn Bucket", "Park Exclusive", "high", 65),
+
+        # ── Pandora — The World of Avatar (Round 5) ──────────────────────
+        ("Disney Parks", "merch", "Pandora The World of Avatar Banshee Puppet (Blue)", "Park Exclusive", "high", 70),
+        ("Disney Parks", "merch", "Pandora The World of Avatar Banshee Puppet (Green)", "Park Exclusive", "high", 70),
+        ("Disney Parks", "merch", "Pandora The World of Avatar Banshee Puppet (Purple)", "Park Exclusive", "high", 70),
+        ("Disney Parks", "merch", "Pandora Na'vi Ear Headband with Braid", "Park Exclusive", "mid", 42),
+        ("Disney Parks", "merch", "Pandora Floating Mountains Light-Up Figurine", "Park Exclusive", "high", 110),
+        ("Disney Parks", "merch", "Pandora Way of Water Ilu Sipper Cup", "Park Exclusive", "mid", 45),
+        ("Disney Parks", "merch", "Pandora Utility Suit Interactive Costume", "Park Exclusive", "high", 130),
+
+        # ── Disney Parks Anniversary Items (Round 5) ──────────────────────
+        ("Disney Parks", "anniversary", "Magic Kingdom 50th Anniversary Castle Figurine LE 2000", "Anniversary LE", "grail", 250),
+        ("Disney Parks", "anniversary", "EPCOT 40th Anniversary Spaceship Earth LE Pin", "Anniversary LE", "high", 65),
+        ("Disney Parks", "anniversary", "Disneyland 70th Anniversary Sleeping Beauty Castle Ornament", "Anniversary LE", "high", 75),
+        ("Disney Parks", "anniversary", "Hollywood Studios 35th Anniversary Tower of Terror Figure", "Anniversary LE", "high", 95),
+        ("Disney Parks", "anniversary", "Animal Kingdom 25th Anniversary Tree of Life Snow Globe", "Anniversary LE", "grail", 150),
+
+        # ── Tokyo DisneySea Limited Goods (Round 5) ──────────────────────
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Peter Pan Neverland Popcorn Bucket", "Grand Opening", "high", 120),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Frozen Kingdom Elsa Figure", "Grand Opening", "high", 90),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Rapunzel Lantern Sipper Cup", "Grand Opening", "high", 75),
+        ("Tokyo Disney", "plush", "TDS CookieAnn Plush (2024 Exclusive)", "Tokyo Exclusive", "high", 85),
+        ("Tokyo Disney", "plush", "TDS Linabell New Year 2025 Costume Plush", "Tokyo Exclusive", "high", 90),
+        ("Tokyo Disney", "merch", "TDS Duffy & Friends Autumn Sleepover Blanket Set", "Tokyo Exclusive", "mid", 55),
+        ("Tokyo Disney", "merch", "TDS 20th Anniversary Journey Poster Art Print Set", "Anniversary LE", "high", 80),
+        ("Tokyo Disney", "pins", "TDS Fantasy Springs Grand Opening Pin Set (6pc)", "Grand Opening", "high", 100),
+
+        # ── Universal Studios Japan Expanded (Round 5) ────────────────────
+        ("USJ", "merch", "USJ Attack on Titan The Final Collab Exclusive Figure Set", "Collab Exclusive", "high", 90),
+        ("USJ", "merch", "USJ Demon Slayer DX Nichirin Blade Replica", "Collab Exclusive", "high", 110),
+        ("USJ", "merch", "USJ One Piece Premier Show Exclusive Luffy Figure", "Collab Exclusive", "high", 80),
+        ("USJ", "merch", "USJ Spy x Family Collab Anya Exclusive Plush", "Collab Exclusive", "mid", 50),
+        ("USJ", "merch", "USJ Detective Conan Mystery Challenge Exclusive Badge Set", "Collab Exclusive", "mid", 45),
+        ("USJ", "popcorn_bucket", "USJ Mario Super Star Popcorn Bucket (Gold)", "Park Exclusive", "high", 65),
+
+        # ── Disney Cruise Line Exclusives (Round 5) ──────────────────────
+        ("Disney Cruise Line", "merch", "DCL Disney Wish Maiden Voyage Spirit Jersey", "Grand Opening", "high", 95),
+        ("Disney Cruise Line", "merch", "DCL Disney Treasure Inaugural Voyage Pin Set", "Grand Opening", "high", 80),
+        ("Disney Cruise Line", "merch", "DCL Castaway Cay Exclusive Beach Towel", "Park Exclusive", "mid", 45),
+        ("Disney Cruise Line", "merch", "DCL Captain Mickey Plush (Ship Exclusive)", "Park Exclusive", "mid", 55),
+
+        # === EXPANSION ROUND 6 — 35 new items to reach 700+ ===
+
+        # ── Disney Parks — 2025/2026 Exclusives (+8) ────────────────────
+        ("Disney Parks", "merch", "Disneyland 70th Anniversary Castle Music Box LE", "Anniversary LE", "grail", 250),
+        ("Disney Parks", "merch", "Disneyland 70th Anniversary Opening Day Replica Ticket Framed", "Anniversary LE", "high", 120),
+        ("Disney Parks", "merch", "Disneyland 70th Anniversary Walt & Mickey Partners Statue LE", "Anniversary LE", "grail", 300),
+        ("Disney Parks", "popcorn_bucket", "Tiana's Bayou Adventure Frog Prince Popcorn Bucket", "Park Exclusive", "high", 95),
+        ("Disney Parks", "merch", "Tiana's Bayou Adventure Grand Opening Spirit Jersey", "Grand Opening", "high", 85),
+        ("Disney Parks", "pins", "Tiana's Bayou Adventure Grand Opening Pin Set (5pc)", "Grand Opening", "high", 70),
+        ("Disney Parks", "merch", "EPCOT Guardians of the Galaxy Cosmic Rewind Ride Vehicle Figure", "Park Exclusive", "high", 80),
+        ("Disney Parks", "merch", "Country Bear Musical Jamboree Reimagined Grand Opening Pin", "Grand Opening", "mid", 45),
+
+        # ── Universal Epic Universe — Grand Opening (+7) ────────────────
+        ("Epic Universe", "merch", "Epic Universe Grand Opening Commemorative Coin Set", "Grand Opening", "high", 90),
+        ("Epic Universe", "merch", "How to Train Your Dragon Hiccup & Toothless Figure Set", "Grand Opening", "high", 85),
+        ("Epic Universe", "merch", "Dark Universe Monster Mash Spirit Jersey", "Grand Opening", "high", 80),
+        ("Epic Universe", "merch", "Celestial Park Aurora Light-Up Wand", "Grand Opening", "mid", 55),
+        ("Epic Universe", "pins", "Epic Universe Grand Opening 5-Worlds Pin Set (LE 2000)", "LE", "grail", 150),
+        ("Epic Universe", "popcorn_bucket", "Dark Universe Frankenstein Popcorn Bucket", "Grand Opening", "high", 90),
+        ("Epic Universe", "merch", "Wizarding World of Harry Potter Ministry of Magic Interactive Wand", "Park Exclusive", "high", 75),
+
+        # ── Tokyo DisneySea Fantasy Springs Phase 2 (+5) ────────────────
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Frozen Kingdom Anna Coronation Music Box", "Grand Opening", "high", 110),
+        ("Tokyo Disney", "pins", "TDS Fantasy Springs 1st Anniversary Pin Box (LE 1000)", "Anniversary LE", "grail", 160),
+        ("Tokyo Disney", "snack_case", "TDS Fantasy Springs Tinker Bell Lantern Snack Case", "Grand Opening", "high", 70),
+        ("Tokyo Disney", "plush", "TDS Fantasy Springs Peter Pan Shadow Plush LE", "Grand Opening", "high", 80),
+        ("Tokyo Disney", "merch", "TDS Fantasy Springs Rapunzel Golden Flower Tiara Replica", "Grand Opening", "high", 95),
+
+        # ── Universal Studios Japan — 2025 Collabs (+5) ─────────────────
+        ("USJ", "merch", "USJ Chainsaw Man Collab Pochita Popcorn Bucket", "Collab Exclusive", "high", 85),
+        ("USJ", "merch", "USJ Solo Leveling Collab Sung Jin-woo Shadow Figure", "Collab Exclusive", "high", 90),
+        ("USJ", "merch", "USJ One Piece Premier Show 2025 Luffy Gear 5 Figure", "Collab Exclusive", "high", 95),
+        ("USJ", "merch", "USJ Frieren Collab Exclusive Plush Set (Frieren & Fern)", "Collab Exclusive", "high", 70),
+        ("USJ", "popcorn_bucket", "USJ Jujutsu Kaisen Sukuna Finger Popcorn Bucket 2025", "Collab Exclusive", "high", 80),
+
+        # ── Disneyland Paris — Frozen & Avengers (+5) ───────────────────
+        ("Disneyland Paris", "merch", "DLP World of Frozen Grand Opening Elsa Ice Castle Snow Globe", "Grand Opening", "grail", 180),
+        ("Disneyland Paris", "pins", "DLP World of Frozen Grand Opening Pin Box (LE 1500)", "LE", "grail", 130),
+        ("Disneyland Paris", "merch", "DLP Avengers Campus Iron Man Hall of Armor Figure Set", "Park Exclusive", "high", 95),
+        ("Disneyland Paris", "merch", "DLP Phantom Manor 30th Anniversary Hatbox Ghost Figure", "Anniversary LE", "high", 110),
+        ("Disneyland Paris", "merch", "DLP Main Street Electrical Parade Light-Up Popcorn Bucket", "Park Exclusive", "high", 75),
+
+        # ── Europa-Park & Efteling (+5) ──────────────────────────────────
+        ("Europa-Park", "merch", "Europa-Park Voltron Nevera Opening Day Pin (LE 500)", "Grand Opening", "high", 70),
+        ("Europa-Park", "merch", "Europa-Park Piraten in Batavia Exclusive Ship Model", "Park Exclusive", "high", 60),
+        ("Europa-Park", "merch", "Europa-Park Blue Fire MegaCoaster Light-Up Keychain", "Park Exclusive", "mid", 25),
+        ("Efteling", "merch", "Efteling Symbolica Grand Opening Crystal Key Replica", "Grand Opening", "high", 75),
+        ("Efteling", "merch", "Efteling Pardoes the Wizard Exclusive 12-inch Plush", "Park Exclusive", "mid", 40),
     ]
     catalog = []
     for park, subcategory, name, edition, tier, price in items:

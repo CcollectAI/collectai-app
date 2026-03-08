@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, ViewStyle } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { Link, useRouter, type Href } from "expo-router";
 import { color, radius, space, text as T, shadow } from "../theme/tokens";
 import { fireHaptic, HapticIntent } from "@/haptics";
 export default function Tile({ title, subtitle, href, onPress, left, right, style, disabled }:{
@@ -22,6 +22,6 @@ export default function Tile({ title, subtitle, href, onPress, left, right, styl
       {subtitle ? <Text style={{ color: color.subtext }}>{subtitle}</Text> : null}
     </View>
   );
-  if (href && !disabled) return <Link href={href as any} asChild><Pressable onPress={() => fireHaptic(HapticIntent.CONFIRMATION_LIGHT)} accessibilityRole="button" accessibilityLabel={title}>{inner}</Pressable></Link>;
-  return <Pressable onPress={() => { if (disabled) return; fireHaptic(HapticIntent.CONFIRMATION_LIGHT); if (onPress) return onPress(); if (href) router.push(href as any); }} disabled={disabled} accessibilityRole="button" accessibilityLabel={title}>{inner}</Pressable>;
+  if (href && !disabled) return <Link href={href as Href} asChild><Pressable onPress={() => fireHaptic(HapticIntent.CONFIRMATION_LIGHT)} accessibilityRole="button" accessibilityLabel={title}>{inner}</Pressable></Link>;
+  return <Pressable onPress={() => { if (disabled) return; fireHaptic(HapticIntent.CONFIRMATION_LIGHT); if (onPress) return onPress(); if (href) router.push(href as Href); }} disabled={disabled} accessibilityRole="button" accessibilityLabel={title}>{inner}</Pressable>;
 }

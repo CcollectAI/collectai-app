@@ -8,7 +8,7 @@
  */
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,7 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { useAsync } from '@/hooks/useAsync';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -101,12 +102,8 @@ function AlertsScreen() {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
-  const [triggerHistory, setTriggerHistory] = useState<TriggerHistoryItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState<ActiveTab>('triggers');
-  const [triggersLoading, setTriggersLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [triggersError, setTriggersError] = useState<string | null>(null);
 
   // -----------------------------------------------------------------------
   // Paginated alert rules via usePaginatedList
@@ -133,18 +130,16 @@ function AlertsScreen() {
   // Trigger history loading (not paginated — comes from API endpoint)
   // -----------------------------------------------------------------------
 
-  const loadTriggers = useCallback(async () => {
-    try {
-      setTriggersError(null);
+  const { data: triggersData, loading: triggersLoading, error: triggersError, retry: loadTriggers } = useAsync(
+    async () => {
       const historyData = await collectorsApi
         .getAlertTriggerHistory()
         .catch((err) => {
           logger.warn('[Alerts] Failed to load triggers', err);
-          setTriggersError('Could not load alerts. Pull to refresh.');
-          return { triggers: [], unread_count: 0 };
+          return { triggers: [] as Array<{ id: string; alert_id: string | null; item_id: string | null; trigger_type: string; trigger_value: Record<string, unknown>; message: string; read: boolean; created_at: string }>, unread_count: 0 };
         });
-      setTriggerHistory(
-        historyData.triggers.map((t) => ({
+      return {
+        triggers: historyData.triggers.map((t) => ({
           id: t.id,
           alertId: t.alert_id,
           itemId: t.item_id,
@@ -154,24 +149,28 @@ function AlertsScreen() {
           read: t.read,
           createdAt: t.created_at,
         })),
-      );
-      setUnreadCount(historyData.unread_count);
-    } catch (err: unknown) {
-      logger.warn('[Alerts] loadTriggers error:', err);
-      const message = err instanceof Error ? err.message : 'Failed to load alerts';
-      setTriggersError(message);
-    } finally {
-      setTriggersLoading(false);
-    }
-  }, []);
+        unreadCount: historyData.unread_count,
+      };
+    },
+    [],
+  );
 
-  useEffect(() => {
-    loadTriggers();
-  }, [loadTriggers]);
+  // Local state for optimistic updates on mark-as-read
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const baseTriggers = triggersData?.triggers ?? [];
+  const triggerHistory = baseTriggers.map((t) =>
+    readIds.has(t.id) ? { ...t, read: true } : t,
+  );
+  const baseUnreadCount = triggersData?.unreadCount ?? 0;
+  const unreadCount = Math.max(0, baseUnreadCount - readIds.size);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([loadTriggers(), alertsRefresh()]);
+    setReadIds(new Set());
+    await Promise.all([
+      (async () => { loadTriggers(); })(),
+      alertsRefresh(),
+    ]);
     setRefreshing(false);
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
   }, [loadTriggers, alertsRefresh, settings.hapticsEnabled]);
@@ -186,15 +185,13 @@ function AlertsScreen() {
 
   const handleMarkRead = useCallback(
     async (triggerId: string) => {
-      // Optimistic update
-      setTriggerHistory((prev) =>
-        prev.map((t) => (t.id === triggerId ? { ...t, read: true } : t)),
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      // Optimistic update via local read tracking
+      setReadIds((prev) => new Set(prev).add(triggerId));
       try {
         await collectorsApi.markTriggerRead(triggerId);
       } catch {
-        // Revert on failure — just reload
+        // Revert on failure — reload from server
+        setReadIds(new Set());
         loadTriggers();
       }
     },

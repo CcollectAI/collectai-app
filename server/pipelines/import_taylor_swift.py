@@ -881,6 +881,120 @@ def get_curated_catalog() -> list[dict]:
         ("Holiday", "merch", "Taylor Swift Halloween Eras Cat Ears (2024)", "Limited", "mid", 40),
         ("Holiday", "vinyl", "Christmas Tree Farm 7-inch Single (Ltd Green)", "Limited", "high", 110),
         ("Holiday", "collectible", "Taylor Swift Advent Calendar (Official 2024)", "Store Exclusive", "mid", 60),
+
+        # ─── Eras Tour — City-Specific Exclusives (+12) ────────────────
+        ("Eras Tour", "merch", "Eras Tour Tokyo Night 1 Exclusive Poster", "Japan Exclusive", "high", 95),
+        ("Eras Tour", "merch", "Eras Tour Tokyo Night 2 Exclusive Poster", "Japan Exclusive", "high", 95),
+        ("Eras Tour", "merch", "Eras Tour Melbourne Exclusive Tote Bag", "Australia Exclusive", "mid", 55),
+        ("Eras Tour", "merch", "Eras Tour Edinburgh Castle Exclusive Print", "UK Exclusive", "high", 85),
+        ("Eras Tour", "merch", "Eras Tour Wembley Stadium Exclusive Scarf", "UK Exclusive", "high", 80),
+        ("Eras Tour", "merch", "Eras Tour São Paulo Rain Show Commemorative Tee", "Brazil Exclusive", "high", 90),
+        ("Eras Tour", "merch", "Eras Tour Munich Olympic Park Poster", "Germany Exclusive", "high", 85),
+        ("Eras Tour", "merch", "Eras Tour Hamburg Exclusive Enamel Pin Set", "Germany Exclusive", "mid", 45),
+        ("Eras Tour", "merch", "Eras Tour Singapore Night 6 Poster", "Asia Exclusive", "high", 100),
+        ("Eras Tour", "merch", "Eras Tour Amsterdam Final Night Poster", "Limited", "high", 90),
+        ("Eras Tour", "merch", "Eras Tour Vienna Commemorative Lanyard Set", "Limited", "mid", 40),
+        ("Eras Tour", "merch", "Eras Tour New Orleans Surprise Songs Poster", "Limited", "high", 80),
+
+        # ─── Signed & Autographed Items (+8) ───────────────────────────
+        ("Midnights", "signed", "Midnights Signed CD Booklet (Lavender Haze)", "Signed", "high", 150),
+        ("TTPD", "signed", "TTPD Signed Poster (Fortnight)", "Signed", "grail", 280),
+        ("1989 TV", "signed", "1989 TV Signed Vinyl Sleeve (Aquamarine)", "Signed", "grail", 350),
+        ("Speak Now TV", "signed", "Speak Now TV Signed Booklet (Enchanted Ver.)", "Signed", "high", 200),
+        ("Red TV", "signed", "Red TV Signed Lithograph (All Too Well 10 Min)", "Signed + Numbered", "grail", 420),
+        ("Fearless TV", "signed", "Fearless TV Signed CD Insert (Love Story)", "Signed", "high", 180),
+        ("Debut", "signed", "Taylor Swift Debut Signed CD (2006)", "Signed", "grail", 500),
+        ("Reputation", "signed", "Reputation Signed Magazine Vol. 2 (1st Print)", "Signed", "grail", 350),
+
+        # ─── Rare Vinyl Pressings & RSD (+10) ──────────────────────────
+        ("RSD", "vinyl", "Betty / Cardigan 7-inch RSD 2024", "RSD Exclusive", "high", 70),
+        ("RSD", "vinyl", "Fortnight 7-inch Clear RSD 2025", "RSD Exclusive", "high", 75),
+        ("RSD", "vinyl", "Enchanted 7-inch Picture Disc RSD", "RSD Exclusive", "high", 80),
+        ("Folklore", "vinyl", "Folklore Clandestine Meeting Green Vinyl (Indie)", "Indie Exclusive", "mid", 50),
+        ("Evermore", "vinyl", "Evermore Transparent Green Vinyl (Webstore)", "Webstore Exclusive", "mid", 48),
+        ("Debut", "vinyl", "Taylor Swift Debut LP (1st Pressing, Sealed)", "First Pressing", "grail", 300),
+        ("Fearless", "vinyl", "Fearless Platinum Edition Gold Vinyl (Original)", "First Pressing", "high", 120),
+        ("TTPD", "vinyl", "TTPD Ghosted White 2LP Vinyl (Signed)", "Signed", "grail", 250),
+        ("Midnights", "vinyl", "Midnights 3am Edition Vinyl (Amazon Exclusive)", "Amazon Exclusive", "mid", 55),
+        ("Red TV", "vinyl", "Red TV 4LP Crystal Clear Vinyl (Webstore)", "Webstore Exclusive", "high", 65),
+
+        # ─── Japan-Only CD Editions (+6) ───────────────────────────────
+        ("Reputation", "cd", "Reputation Japan Deluxe CD (Bonus Track)", "Japan Exclusive", "high", 70),
+        ("Red TV", "cd", "Red TV Japan Deluxe CD (Bonus Track)", "Japan Exclusive", "mid", 55),
+        ("Speak Now TV", "cd", "Speak Now TV Japan Deluxe CD (Bonus Track)", "Japan Exclusive", "mid", 50),
+        ("Evermore", "cd", "Evermore Japan Deluxe CD (Bonus Track)", "Japan Exclusive", "mid", 55),
+        ("Fearless TV", "cd", "Fearless TV Japan Deluxe CD (Bonus Track)", "Japan Exclusive", "mid", 50),
+        ("Debut", "cd", "Taylor Swift Debut Japan CD (Bonus Track)", "Japan Exclusive", "high", 65),
+
+        # ─── Target Exclusives (+5) ────────────────────────────────────
+        ("TTPD", "vinyl", "TTPD Charcoal Marble Target Vinyl", "Target", "mid", 42),
+        ("Folklore", "vinyl", "Folklore Green 'Stolen Lullabies' Target Vinyl", "Target", "mid", 48),
+        ("Evermore", "vinyl", "Evermore Webstore Deluxe Target Vinyl", "Target", "mid", 45),
+        ("Red TV", "cd", "Red TV Target Deluxe CD (3 Bonus Tracks)", "Target", "mid", 35),
+        ("1989 TV", "cd", "1989 TV Target Deluxe CD (Voice Memos)", "Target", "mid", 38),
+
+        # ─── Concert Posters & Tour Merch (+10) ────────────────────────
+        ("Eras Tour", "poster", "Eras Tour Official Concert Lithograph (Numbered /500)", "Limited", "grail", 200),
+        ("Eras Tour", "poster", "Eras Tour Opening Night Glendale Poster (Signed by Artist)", "Signed Print", "grail", 350),
+        ("Eras Tour", "merch", "Eras Tour VIP Package Exclusive Tote Bag", "VIP Exclusive", "high", 120),
+        ("Eras Tour", "merch", "Eras Tour Surprise Songs Guitar Pick Set (Complete)", "Tour Exclusive", "high", 90),
+        ("Eras Tour", "merch", "Eras Tour Friendship Bracelet Kit (Official)", "Store Exclusive", "mid", 35),
+        ("Eras Tour", "merch", "Eras Tour Era Outfit Ornament Set (10pc)", "Store Exclusive", "high", 80),
+        ("Eras Tour", "merch", "Eras Tour Stadium Blanket (Woven Logo)", "Tour Exclusive", "mid", 60),
+        ("Reputation", "poster", "Reputation Stadium Tour Lithograph (2018)", "Tour Exclusive", "high", 140),
+        ("Lover", "poster", "Lover Fest Canceled Show Commemorative Poster", "Limited", "grail", 180),
+        ("1989", "poster", "1989 World Tour Official Poster (Framed)", "Tour Exclusive", "high", 130),
+
+        # ─── Lover Snow Globe & Special Items (+7) ─────────────────────
+        ("Lover", "collectible", "Lover Snow Globe (ME! Confetti)", "Store Exclusive", "grail", 300),
+        ("Lover", "collectible", "Lover Heart-Shaped Jewelry Box (Official)", "Store Exclusive", "high", 95),
+        ("TTPD", "collectible", "TTPD Quill Pen & Ink Set (Official)", "Store Exclusive", "high", 75),
+        ("TTPD", "collectible", "TTPD Typewriter Replica Desk Ornament", "Store Exclusive", "high", 110),
+        ("Midnights", "collectible", "Midnights Lavender Haze Candle Set (3pc)", "Store Exclusive", "mid", 45),
+        ("Folklore", "collectible", "Folklore Cardigan (Original Merch, Sealed)", "Store Exclusive", "grail", 250),
+        ("Reputation", "collectible", "Reputation Snake Ring Set (3pc, Official)", "Tour Exclusive", "high", 85),
+
+        # ─── Fan Club & Miscellaneous (+10) ────────────────────────────
+        ("Eras Tour", "merch", "Eras Tour Blue Crewneck (Midnights Era)", "Tour Exclusive", "mid", 65),
+        ("Eras Tour", "merch", "Eras Tour Pink Hoodie (Lover Era)", "Tour Exclusive", "high", 80),
+        ("Eras Tour", "merch", "Eras Tour Green Jacket (Folklore Era)", "Tour Exclusive", "high", 85),
+        ("Eras Tour", "merch", "Eras Tour Black Sequin Top (Reputation Era)", "Tour Exclusive", "high", 90),
+        ("Eras Tour", "merch", "Eras Tour Red Scarf (Red Era)", "Tour Exclusive", "mid", 55),
+        ("Eras Tour", "merch", "Eras Tour Denim Jacket (1989 Era, Patches)", "Tour Exclusive", "high", 110),
+        ("Eras Tour", "merch", "Eras Tour Speak Now Purple Cape (Costume)", "Tour Exclusive", "high", 95),
+        ("Various", "book", "Taylor Swift: The Eras Book (Barnes & Noble Exclusive)", "Exclusive", "mid", 40),
+        ("Various", "book", "Taylor Swift: In Her Own Words (1st Edition Hardcover)", "First Edition", "mid", 55),
+        ("Various", "merch", "Taylor Swift x Stella McCartney Bomber Jacket (Lover Collab)", "Limited", "grail", 400),
+
+        # === EXPANSION ROUND 12 — 20 new items to reach 700+ ===
+
+        # ─── Eras Tour Final Leg Exclusives (+6) ─────────────────────
+        ("Eras Tour", "merch", "Eras Tour Vancouver BC Final Leg Poster", "Final Leg Exclusive", "grail", 200),
+        ("Eras Tour", "merch", "Eras Tour Toronto Rogers Centre Exclusive Tee", "Final Leg Exclusive", "high", 95),
+        ("Eras Tour", "merch", "Eras Tour Indianapolis Lucas Oil Poster", "Final Leg Exclusive", "high", 90),
+        ("Eras Tour", "merch", "Eras Tour Miami Hard Rock Final Night Poster", "Final Leg Exclusive", "grail", 250),
+        ("Eras Tour", "merch", "Eras Tour New Orleans Surprise Songs Bracelet Set", "Final Leg Exclusive", "high", 75),
+        ("Eras Tour", "merch", "Eras Tour Final Show Commemorative Confetti Capsule", "Final Leg Exclusive", "grail", 300),
+
+        # ─── Signed Editions & Autographs (+4) ──────────────────────
+        ("TTPD", "signed", "TTPD Anthology Signed Poster (Black Dog)", "Signed", "grail", 320),
+        ("Midnights", "signed", "Midnights Signed Vinyl Jacket (Jade Green)", "Signed", "grail", 380),
+        ("1989 TV", "signed", "1989 TV Signed Photo Card Set (5pc)", "Signed", "high", 180),
+        ("Folklore", "signed", "Folklore Signed Cardigan Tag (Framed)", "Signed + Framed", "grail", 450),
+
+        # ─── Record Store Day Vinyl (+4) ─────────────────────────────
+        ("RSD", "vinyl", "All Too Well 10 Min 12-inch RSD 2024 (Red Etched)", "RSD Exclusive", "high", 85),
+        ("RSD", "vinyl", "Cruel Summer 7-inch Picture Disc RSD 2025", "RSD Exclusive", "high", 78),
+        ("RSD", "vinyl", "Anti-Hero 7-inch Lavender Vinyl RSD 2025", "RSD Exclusive", "high", 72),
+        ("RSD", "vinyl", "The Tortured Poets Department Live EP RSD 2026", "RSD Exclusive", "high", 90),
+
+        # ─── Concert Merch & Collectibles (+6) ──────────────────────
+        ("Eras Tour", "merch", "Eras Tour Woven Tapestry Blanket (All 11 Eras)", "Tour Exclusive", "high", 110),
+        ("Eras Tour", "merch", "Eras Tour VIP Laminate & Lanyard Set (Final Leg)", "VIP Exclusive", "grail", 180),
+        ("TTPD", "merch", "TTPD Manuscript Edition Box Set (Deluxe)", "Store Exclusive", "high", 95),
+        ("Midnights", "merch", "Midnights Clock Vinyl Display (All 4 Variants)", "Limited", "high", 120),
+        ("Reputation", "merch", "Reputation Stadium Tour Inflatable Snake (6ft)", "Tour Exclusive", "high", 140),
+        ("1989", "merch", "1989 Polaroid Photo Set (Official 13 Cards)", "Store Exclusive", "mid", 45),
     ]
 
     catalog = []

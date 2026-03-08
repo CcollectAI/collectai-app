@@ -842,6 +842,125 @@ def get_curated_catalog() -> list[dict]:
         ("Disney", "The Jungle Book (1967)", "4K UHD", "Disney Steelbook", "mid", 38),
         ("Disney", "Sleeping Beauty", "4K UHD", "Disney Steelbook", "mid", 40),
         ("Disney", "Pinocchio", "4K UHD", "Disney Steelbook", "mid", 38),
+
+        # ── Expansion Round 10 — 91 new items to reach 700+ ─────────────
+
+        # Zavvi Exclusive Steelbooks — Sci-Fi & Action
+        ("Zavvi Exclusive", "The Matrix (1999)", "4K UHD", "Zavvi Steelbook", "mid", 48),
+        ("Zavvi Exclusive", "The Matrix Reloaded", "4K UHD", "Zavvi Steelbook", "mid", 42),
+        ("Zavvi Exclusive", "The Matrix Revolutions", "4K UHD", "Zavvi Steelbook", "mid", 40),
+        ("Zavvi Exclusive", "Terminator 2: Judgment Day", "4K UHD", "Zavvi Steelbook", "high", 58),
+        ("Zavvi Exclusive", "Total Recall (1990)", "4K UHD", "Zavvi Steelbook", "mid", 46),
+        ("Zavvi Exclusive", "RoboCop (1987)", "4K UHD", "Zavvi Steelbook", "mid", 48),
+        ("Zavvi Exclusive", "Predator (1987)", "4K UHD", "Zavvi Steelbook", "mid", 50),
+        ("Zavvi Exclusive", "Die Hard", "4K UHD", "Zavvi Steelbook", "mid", 48),
+        ("Zavvi Exclusive", "Gladiator (2000)", "4K UHD", "Zavvi Steelbook", "mid", 50),
+        ("Zavvi Exclusive", "Mad Max: Fury Road", "4K UHD", "Zavvi Steelbook", "mid", 52),
+        ("Zavvi Exclusive", "The Fifth Element", "4K UHD", "Zavvi Steelbook", "mid", 48),
+        ("Zavvi Exclusive", "Leon: The Professional", "4K UHD", "Zavvi Steelbook", "mid", 46),
+
+        # Best Buy Steelbooks — Horror & Thriller
+        ("Best Buy Exclusive", "The Silence of the Lambs", "4K UHD", "Best Buy Steelbook", "mid", 42),
+        ("Best Buy Exclusive", "Se7en", "4K UHD", "Best Buy Steelbook", "mid", 44),
+        ("Best Buy Exclusive", "The Shining (1980)", "4K UHD", "Best Buy Steelbook", "high", 55),
+        ("Best Buy Exclusive", "A Clockwork Orange", "4K UHD", "Best Buy Steelbook", "mid", 48),
+        ("Best Buy Exclusive", "The Exorcist (1973)", "4K UHD", "Best Buy Steelbook", "mid", 46),
+        ("Best Buy Exclusive", "Jaws", "4K UHD", "Best Buy Steelbook", "high", 55),
+        ("Best Buy Exclusive", "Psycho (1960)", "4K UHD", "Best Buy Steelbook", "mid", 44),
+        ("Best Buy Exclusive", "Get Out", "4K UHD", "Best Buy Steelbook", "mid", 38),
+        ("Best Buy Exclusive", "Us (2019)", "4K UHD", "Best Buy Steelbook", "mid", 36),
+        ("Best Buy Exclusive", "Nope (2022)", "4K UHD", "Best Buy Steelbook", "mid", 38),
+
+        # 4K UHD Steelbooks — Sci-Fi Classics
+        ("Steelbook", "2001: A Space Odyssey", "4K UHD", "WB Steelbook", "high", 58),
+        ("Steelbook", "Close Encounters of the Third Kind", "4K UHD", "Columbia Steelbook", "mid", 48),
+        ("Steelbook", "Arrival (2016)", "4K UHD", "Paramount Steelbook", "mid", 42),
+        ("Steelbook", "Ex Machina", "4K UHD", "Lionsgate Steelbook", "mid", 40),
+        ("Steelbook", "Dune (2021)", "4K UHD", "WB Steelbook", "mid", 48),
+        ("Steelbook", "Dune: Part Two (2024)", "4K UHD", "WB Steelbook", "mid", 50),
+        ("Steelbook", "Everything Everywhere All at Once", "4K UHD", "A24 Steelbook", "high", 60),
+
+        # Criterion Collection — Recent 2024-2025
+        ("Criterion", "Poor Things", "4K UHD", "Criterion 4K #1165", "mid", 38),
+        ("Criterion", "Past Lives", "Blu-ray", "Criterion #1155", "standard", 28),
+        ("Criterion", "Zone of Interest", "Blu-ray", "Criterion #1170", "standard", 30),
+        ("Criterion", "Killers of the Flower Moon", "4K UHD", "Criterion 4K #1175", "mid", 42),
+        ("Criterion", "The Boy and the Heron", "4K UHD", "Criterion 4K #1180", "mid", 40),
+        ("Criterion", "Do the Right Thing", "4K UHD", "Criterion 4K #97", "mid", 38),
+        ("Criterion", "Mulholland Dr.", "4K UHD", "Criterion 4K #779", "mid", 40),
+        ("Criterion", "Blue Velvet", "4K UHD", "Criterion 4K #986", "mid", 38),
+        ("Criterion", "Paris, Texas", "4K UHD", "Criterion 4K #634", "mid", 36),
+
+        # Arrow Video Limited Editions — New Releases
+        ("Arrow Video", "Donnie Darko", "4K UHD", "Arrow Limited", "mid", 46),
+        ("Arrow Video", "An American Werewolf in London", "4K UHD", "Arrow Limited", "high", 55),
+        ("Arrow Video", "The Thing (1982)", "4K UHD", "Arrow Limited", "high", 58),
+        ("Arrow Video", "Re-Animator", "4K UHD", "Arrow Limited", "mid", 44),
+        ("Arrow Video", "From Beyond", "4K UHD", "Arrow Limited", "mid", 42),
+        ("Arrow Video", "Castle of Cagliostro", "4K UHD", "Arrow Limited", "mid", 40),
+        ("Arrow Video", "Bride of Re-Animator", "4K UHD", "Arrow Limited", "mid", 42),
+
+        # Mondo Steelbooks — New Releases
+        ("Mondo", "Blade Runner", "4K UHD", "Mondo Steelbook", "high", 75),
+        ("Mondo", "Alien (1979)", "4K UHD", "Mondo Steelbook", "high", 70),
+        ("Mondo", "The Iron Giant", "4K UHD", "Mondo Steelbook", "mid", 55),
+        ("Mondo", "Pan's Labyrinth", "4K UHD", "Mondo Steelbook", "mid", 58),
+        ("Mondo", "Drive (2011)", "4K UHD", "Mondo Steelbook", "mid", 55),
+        ("Mondo", "Jurassic Park", "4K UHD", "Mondo Steelbook", "mid", 55),
+
+        # Shout / Scream Factory — Collector's Editions
+        ("Scream Factory", "Creepshow 4K Collector's Edition", "4K UHD", "Collector's Edition", "high", 55),
+        ("Scream Factory", "An American Werewolf in London CE", "4K UHD", "Collector's Edition", "high", 60),
+        ("Scream Factory", "The Howling 4K Collector's Edition", "4K UHD", "Collector's Edition", "mid", 45),
+        ("Scream Factory", "Night of the Creeps Collector's Edition", "Blu-ray", "Collector's Edition", "mid", 40),
+        ("Scream Factory", "Sleepaway Camp Collector's Edition", "Blu-ray", "Collector's Edition", "mid", 38),
+        ("Shout Factory", "Mystery Science Theater 3000 Collection", "Blu-ray", "Box Set", "high", 95),
+        ("Shout Factory", "Elvira: Mistress of the Dark", "4K UHD", "Collector's Edition", "mid", 42),
+
+        # Disney Vault Releases — Additional
+        ("Disney", "Snow White and the Seven Dwarfs", "4K UHD", "Disney Steelbook", "mid", 42),
+        ("Disney", "Alice in Wonderland (1951)", "4K UHD", "Disney Steelbook", "mid", 38),
+        ("Disney", "The Little Mermaid (1989)", "4K UHD", "Disney Steelbook", "mid", 40),
+        ("Disney", "Aladdin (1992)", "4K UHD", "Disney Steelbook", "mid", 40),
+        ("Disney", "The Lion King (1994)", "4K UHD", "Disney Steelbook", "mid", 42),
+        ("Disney", "Beauty and the Beast (1991)", "4K UHD", "Disney Steelbook", "mid", 40),
+
+        # Premium Full Slip Editions — Asian Labels
+        ("KimchiDVD", "Parasite (2019)", "4K UHD", "Full Slip Edition", "grail", 150),
+        ("Plain Archive", "Oldboy (2003)", "4K UHD", "Full Slip Collector's", "grail", 180),
+        ("WeET Collection", "Inception Full Slip", "4K UHD", "Full Slip Edition", "grail", 160),
+        ("FilmArena", "The Dark Knight Trilogy Full Slip Box", "4K UHD", "Full Slip Box Set", "grail", 250),
+        ("HDZeta", "Interstellar Lenticular Full Slip", "4K UHD", "Full Slip Lenticular", "grail", 200),
+        ("Manta Lab", "Spider-Man: Into the Spider-Verse", "4K UHD", "Full Slip Edition", "grail", 170),
+        ("KimchiDVD", "Memories of Murder", "4K UHD", "Full Slip Collector's", "grail", 140),
+        ("WeET Collection", "The Grand Budapest Hotel", "4K UHD", "Full Slip Edition", "high", 120),
+
+        # Anime Blu-ray Box Sets — Additional
+        ("Aniplex", "Sword Art Online Progressive Movie", "4K UHD", "Limited Edition", "high", 75),
+        ("Aniplex", "Bocchi the Rock! Complete Collection", "Blu-ray", "Box Set", "high", 90),
+        ("GKIDS / Shout Factory", "The Boy and the Heron", "4K UHD", "Limited Edition", "high", 65),
+        ("Discotek Media", "Lupin III Part 1 Complete", "Blu-ray", "Box Set", "high", 70),
+        ("Funimation", "Dragon Ball Z: Complete Series", "Blu-ray", "Box Set", "high", 100),
+        ("Viz Media", "One Punch Man Season 1 Limited", "Blu-ray", "Limited Edition", "mid", 55),
+        ("All The Anime", "Ghost in the Shell Stand Alone Complex", "Blu-ray", "Ultimate Edition", "high", 85),
+
+        # Boutique Labels — Severin Films
+        ("Severin Films", "The Beyond (Fulci)", "4K UHD", "Severin Limited", "mid", 42),
+        ("Severin Films", "Anthropophagus", "4K UHD", "Severin Limited", "mid", 40),
+        ("Severin Films", "Burial Ground", "4K UHD", "Severin Limited", "mid", 38),
+        ("Severin Films", "Zombie Holocaust", "4K UHD", "Severin Limited", "mid", 40),
+
+        # Second Sight Films
+        ("Second Sight", "The Wicker Man (1973)", "4K UHD", "Second Sight Limited", "high", 55),
+        ("Second Sight", "An American Werewolf in London", "4K UHD", "Second Sight Limited", "high", 60),
+        ("Second Sight", "Dawn of the Dead (1978)", "4K UHD", "Second Sight Box Set", "grail", 120),
+
+        # Additional Boutique Blu-rays (+5)
+        ("Indicator", "The Night of the Hunter (1955)", "Blu-ray", "Indicator LE", "high", 55),
+        ("Eureka", "Harakiri (1962)", "Blu-ray", "Masters of Cinema", "mid", 28),
+        ("88 Films", "Riki-Oh: The Story of Ricky", "Blu-ray", "88 Films Slipcover", "mid", 35),
+        ("Imprint", "Deep Red (Dario Argento)", "Blu-ray", "Imprint Limited Edition", "high", 65),
+        ("Blue Underground", "Maniac (1980)", "4K UHD", "Blue Underground LE", "high", 50),
     ]
 
     catalog = []

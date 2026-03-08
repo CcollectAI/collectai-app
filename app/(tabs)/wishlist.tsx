@@ -8,7 +8,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TextInput,
   Modal,
   Alert,
@@ -19,6 +18,7 @@ import {
   RefreshControl,
   Linking,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,6 +34,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
 import { getMarketplacesForCategory } from '@/data/categories';
 import logger from '@/utils/logger';
+import { track } from '@/analytics/track';
 
 // Pull from single source of truth — all 36 categories + "Other"
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
@@ -158,10 +159,11 @@ export default function WatchlistTabScreen() {
         }
       }
 
+      track({ name: 'watchlist_item_added', properties: { category: formCategory } });
       setModalVisible(false);
       resetForm();
       loadItems();
-    } catch (err: unknown) {
+    } catch (err: any) {
       showToast({ message: err?.message || 'Failed to add item.', type: 'error' });
     } finally {
       setSaving(false);
@@ -181,7 +183,7 @@ export default function WatchlistTabScreen() {
             try {
               await dataProvider.removeWatchlistItem(item.id);
               loadItems();
-            } catch (err: unknown) {
+            } catch (err: any) {
               showToast({ message: err?.message || 'Failed to remove item.', type: 'error' });
             }
           },
@@ -236,7 +238,7 @@ export default function WatchlistTabScreen() {
       setEditTargetItem(null);
       setEditTargetValue('');
       loadItems();
-    } catch (err: unknown) {
+    } catch (err: any) {
       showToast({ message: err?.message || 'Failed to update target price.', type: 'error' });
     } finally {
       setEditTargetSaving(false);
@@ -337,7 +339,7 @@ export default function WatchlistTabScreen() {
 
       // Reload list
       loadItems();
-    } catch (err: unknown) {
+    } catch (err: any) {
       showToast({ message: err?.message || 'Failed to add to collection.', type: 'error' });
     } finally {
       setAcquiring(false);
@@ -464,7 +466,8 @@ export default function WatchlistTabScreen() {
   );
 
   const renderHeader = () => (
-    <View style={styles.actionRow}>
+    <>
+      <View style={styles.actionRow}>
       <AnimatedPressable
         style={[styles.alertsPill, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => router.push('/alerts')}
@@ -485,6 +488,7 @@ export default function WatchlistTabScreen() {
         <Text style={styles.addPillText}>Add</Text>
       </AnimatedPressable>
     </View>
+    </>
   );
 
   if (loading) {
@@ -500,7 +504,7 @@ export default function WatchlistTabScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
-        <FlatList
+        <FlashList
           data={items}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
@@ -601,6 +605,8 @@ export default function WatchlistTabScreen() {
         <AnimatedPressable
           style={styles.pickerOverlay}
           onPress={() => setCategoryPickerVisible(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close category picker"
         >
           <View style={[styles.pickerContent, { backgroundColor: colors.card }]}>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Category</Text>

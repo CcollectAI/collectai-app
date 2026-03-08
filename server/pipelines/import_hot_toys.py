@@ -841,6 +841,114 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "Marvel MCU", "War Machine Mark IV (Die-Cast)", "1/6 Figure", "high", 580),
         ("Hot Toys", "Marvel MCU", "Iron Man Mark III (Die-Cast)", "1/6 Figure", "high", 700),
         ("Hot Toys", "Star Wars", "Darth Vader (ESB Die-Cast)", "1/6 Figure", "high", 550),
+
+        # ─── Deadpool & Wolverine Expansion (+10) ───────────────────────
+        ("Hot Toys", "Marvel MCU", "Deadpool & Wolverine 2-Pack Set", "1/6 Figure", "high", 850),
+        ("Hot Toys", "Marvel MCU", "Kidpool (Deadpool & Wolverine)", "1/6 Figure", "mid", 320),
+        ("Hot Toys", "Marvel MCU", "Headpool (Deadpool & Wolverine)", "1/6 Figure", "mid", 280),
+        ("Hot Toys", "Marvel MCU", "Babypool (Deadpool & Wolverine)", "Cosbaby", "standard", 45),
+        ("Hot Toys", "Marvel MCU", "Deadpool (Deadpool & Wolverine) Deluxe", "1/6 Figure", "high", 480),
+        ("Hot Toys", "Marvel MCU", "Wolverine (Deadpool & Wolverine) Deluxe", "1/6 Figure", "high", 490),
+        ("Hot Toys", "Marvel MCU", "Wolverine (Brown Suit, Deadpool & Wolverine)", "1/6 Figure", "mid", 440),
+        ("Hot Toys", "Marvel MCU", "Paradox (Deadpool & Wolverine)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Marvel MCU", "Pyro (Deadpool & Wolverine)", "1/6 Figure", "mid", 330),
+        ("Hot Toys", "Marvel MCU", "Alioth (Deadpool & Wolverine) Diorama", "Diorama", "high", 700),
+
+        # ─── Thunderbolts* (+8) ──────────────────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Thunderbolts Red Guardian", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Marvel MCU", "Thunderbolts Yelena Belova", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Marvel MCU", "Thunderbolts Ghost", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Marvel MCU", "Thunderbolts Taskmaster", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Marvel MCU", "Thunderbolts U.S. Agent", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Marvel MCU", "Thunderbolts Bucky Barnes (Winter Soldier)", "1/6 Figure", "mid", 390),
+        ("Hot Toys", "Marvel MCU", "Thunderbolts Sentry (Bob Reynolds)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Marvel MCU", "Thunderbolts Valentina Allegra de Fontaine", "1/6 Figure", "mid", 340),
+
+        # ─── Star Wars Ahsoka Series (+8) ───────────────────────────────
+        ("Hot Toys", "Star Wars", "Ahsoka Tano (Ahsoka Series Live Action)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Star Wars", "Sabine Wren (Ahsoka Series)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Star Wars", "Hera Syndulla (Ahsoka Series)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Huyang (Ahsoka Series)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Star Wars", "Baylan Skoll (Ahsoka Series)", "1/6 Figure", "mid", 390),
+        ("Hot Toys", "Star Wars", "Shin Hati (Ahsoka Series)", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Star Wars", "Marrok (Ahsoka Series)", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "Star Wars", "Chopper Droid (Ahsoka Series)", "1/6 Figure", "standard", 250),
+
+        # ─── Mandalorian Season 3 (+6) ──────────────────────────────────
+        ("Hot Toys", "Star Wars", "Din Djarin (Mandalorian S3 Beskar Spear)", "1/6 Figure", "mid", 440),
+        ("Hot Toys", "Star Wars", "Grogu (Mandalorian S3 IG-12 Mech)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Star Wars", "Praetorian Guard (Mandalorian S3)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Greef Karga (Mandalorian S3)", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "Star Wars", "Ragnar Vizsla (Mandalorian S3)", "1/6 Figure", "mid", 310),
+        ("Hot Toys", "Star Wars", "Mythosaur Skull Diorama (Mandalorian)", "Diorama", "high", 600),
+
+        # ─── DC — The Batman / Blue Beetle (+8) ─────────────────────────
+        ("Hot Toys", "DC", "Batman (Robert Pattinson The Batman)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "DC", "Batman (The Batman Unmasked Version)", "1/6 Figure", "mid", 440),
+        ("Hot Toys", "DC", "Catwoman (The Batman Zoe Kravitz)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "DC", "The Riddler (The Batman Paul Dano)", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "DC", "Penguin (The Batman Colin Farrell)", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "DC", "Blue Beetle (Jaime Reyes)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "DC", "Batgirl (Batgirl 2025)", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "DC", "Supergirl (The Flash 2023)", "1/6 Figure", "mid", 360),
+
+        # ─── Cosbaby Expansion (+10) ─────────────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Deadpool & Wolverine Cosbaby 2-Pack", "Cosbaby", "standard", 48),
+        ("Hot Toys", "Marvel MCU", "Scarlet Witch (WandaVision) Cosbaby", "Cosbaby", "standard", 25),
+        ("Hot Toys", "Marvel MCU", "Moon Knight Cosbaby", "Cosbaby", "standard", 24),
+        ("Hot Toys", "Marvel MCU", "Ms. Marvel Kamala Khan Cosbaby", "Cosbaby", "standard", 22),
+        ("Hot Toys", "Marvel MCU", "Loki (God of Stories) Cosbaby", "Cosbaby", "standard", 25),
+        ("Hot Toys", "DC", "The Batman Cosbaby", "Cosbaby", "standard", 24),
+        ("Hot Toys", "DC", "Catwoman (The Batman) Cosbaby", "Cosbaby", "standard", 22),
+        ("Hot Toys", "DC", "Blue Beetle Cosbaby", "Cosbaby", "standard", 22),
+        ("Hot Toys", "Star Wars", "Luke Skywalker (ROTJ) Cosbaby", "Cosbaby", "standard", 25),
+        ("Hot Toys", "Star Wars", "Emperor Palpatine Cosbaby", "Cosbaby", "standard", 22),
+
+        # ─── Artist Mix Expansion (+6) ───────────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Avengers Endgame Artist Mix Full Set", "Artist Mix", "mid", 250),
+        ("Hot Toys", "Marvel MCU", "Spider-Man Rogues Gallery Artist Mix Set", "Artist Mix", "mid", 180),
+        ("Hot Toys", "DC", "Batman v Superman Artist Mix Set", "Artist Mix", "mid", 200),
+        ("Hot Toys", "Star Wars", "Mandalorian Artist Mix Set", "Artist Mix", "mid", 190),
+        ("Hot Toys", "Marvel MCU", "Deadpool & Wolverine Artist Mix Set", "Artist Mix", "mid", 170),
+        ("Hot Toys", "Marvel MCU", "Doctor Strange Artist Mix Set", "Artist Mix", "mid", 160),
+
+        # ─── Toy Fair & Convention Exclusives (+8) ───────────────────────
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark IV (Holographic Toy Fair)", "1/6 Figure", "grail", 1200),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Negative Suit Toy Fair)", "1/6 Figure", "high", 550),
+        ("Hot Toys", "Star Wars", "Shadow Trooper (Toy Fair Exclusive)", "1/6 Figure", "high", 500),
+        ("Hot Toys", "Star Wars", "Gold Chrome Stormtrooper (Toy Fair)", "1/6 Figure", "high", 600),
+        ("Hot Toys", "Marvel MCU", "Hulk (SDCC 2019 Exclusive Battle Damaged)", "1/6 Figure", "high", 580),
+        ("Hot Toys", "DC", "Armored Batman (Black Chrome SDCC)", "1/6 Figure", "high", 650),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark XLII (SDCC Battle Damaged)", "1/6 Figure", "high", 600),
+        ("Hot Toys", "Star Wars", "Boba Fett (Vintage Color SDCC)", "1/6 Figure", "high", 520),
+
+        # ─── Back-Catalog Grails (+14) ───────────────────────────────────
+        ("Hot Toys", "DC", "DX01 The Dark Knight Batman (Original DX)", "1/6 Figure", "grail", 1500),
+        ("Hot Toys", "DC", "DX11 The Joker (Dark Knight, DX Reissue)", "1/6 Figure", "grail", 1800),
+        ("Hot Toys", "DC", "DX12 The Dark Knight Rises Batman", "1/6 Figure", "grail", 1400),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark I (Original Release)", "1/6 Figure", "grail", 1200),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark II (Armor Unleashed)", "1/6 Figure", "grail", 1100),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark V (Suitcase Armor)", "1/6 Figure", "high", 800),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark VI (Die-Cast)", "1/6 Figure", "high", 750),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark XLII (Original Release)", "1/6 Figure", "high", 700),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark XLIII (Age of Ultron)", "1/6 Figure", "high", 650),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark XLIV Hulkbuster (AoU)", "1/6 Figure", "grail", 2000),
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark XLV (Age of Ultron)", "1/6 Figure", "high", 620),
+        ("Hot Toys", "Star Wars", "Boba Fett (ESB Original 2012)", "1/6 Figure", "grail", 1100),
+        ("Hot Toys", "Star Wars", "Darth Vader (ANH Original 2010)", "1/6 Figure", "grail", 1300),
+        ("Hot Toys", "DC", "Superman (Man of Steel, Original Release)", "1/6 Figure", "high", 650),
+
+        # ─── Additional Movie Icons (+10) ─────────────────────────────
+        ("Hot Toys", "John Wick", "John Wick (Chapter 4 Deluxe)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "John Wick", "John Wick (Chapter 2 Suit)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Indiana Jones", "Indiana Jones (Dial of Destiny)", "1/6 Figure", "mid", 450),
+        ("Hot Toys", "Indiana Jones", "Indiana Jones (Raiders Classic Deluxe)", "1/6 Figure", "high", 550),
+        ("Hot Toys", "Back to the Future", "Marty McFly (BTTF Part II Hoverboard)", "1/6 Figure", "high", 600),
+        ("Hot Toys", "Back to the Future", "Doc Brown (BTTF Part I Lab Coat)", "1/6 Figure", "high", 580),
+        ("Hot Toys", "RoboCop", "RoboCop (Die-Cast, Original)", "1/6 Figure", "high", 650),
+        ("Hot Toys", "Terminator", "T-800 (Battle Damaged, T2)", "1/6 Figure", "high", 550),
+        ("Hot Toys", "James Bond", "James Bond 007 (Goldfinger Sean Connery)", "1/6 Figure", "grail", 1100),
+        ("Hot Toys", "Pirates of Caribbean", "Captain Jack Sparrow (DX15 Reissue)", "1/6 Figure", "grail", 1000),
     ]
 
     catalog = []

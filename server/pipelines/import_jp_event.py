@@ -1060,6 +1060,120 @@ def _expanded_round8_jp_events() -> list[dict]:
         ("Tamashii Nations", "Kamen Rider", "S.H.Figuarts", "Kamen Rider Geats Boost Mark IX Event Exclusive", "high", 120),
         ("Tamashii Nations", "Gundam", "Metal Build", "Freedom Gundam Concept 2 Metal Build Event Exclusive", "grail", 400),
         ("Tamashii Nations", "Evangelion", "Robot Spirits", "Eva Unit-13 Awakened Form Robot Spirits Event Exclusive", "high", 170),
+
+        # === ROUND 9 — 90 new items to reach 700+ ===
+
+        # --- Comiket C103/C104/C105 Exclusives (+12) ---
+        ("Comiket", "Hololive", "Tapestry", "Hololive C104 Exclusive B2 Tapestry Shirakami Fubuki Kimono", "mid", 55),
+        ("Comiket", "Vocaloid", "Doujinshi Set", "Hatsune Miku C104 Top Circle Doujinshi Compilation (6)", "mid", 50),
+        ("Comiket", "Touhou Project", "Music CD Set", "Touhou C105 IOSYS Fan Arrangement CD Bundle (5)", "mid", 45),
+        ("Comiket", "Blue Archive", "Tapestry", "Blue Archive C105 Corporate B1 Tapestry Sensei & Students", "mid", 60),
+        ("Comiket", "Genshin Impact", "Exclusive Goods", "Genshin Impact C105 HoYoverse Booth Metal Badge Set (8pc)", "mid", 40),
+        ("Comiket", "Uma Musume", "Doujinshi Set", "Uma Musume C105 Premium Circle Doujinshi Bundle (8)", "mid", 55),
+        ("Comiket", "Fate/Grand Order", "Doujinshi Set", "FGO C105 Wada Arco Circle Doujinshi Set (3)", "high", 100),
+        ("Comiket", "Chainsaw Man", "Acrylic Stand", "Chainsaw Man C105 Exclusive LED Acrylic Stand Power", "mid", 45),
+        ("Comiket", "Original", "Art Book", "C103 Guest of Honor Exclusive Signed Art Book (Limited 100)", "grail", 250),
+        ("Comiket", "Kantai Collection", "Tapestry", "KanColle C104 Exclusive B2 Tapestry Shimakaze", "mid", 50),
+        ("Comiket", "Lycoris Recoil", "Doujinshi Set", "Lycoris Recoil C105 Premium Circle Doujinshi Bundle (5)", "mid", 40),
+        ("Comiket", "Dandadan", "Tapestry", "Dandadan C105 Exclusive B2 Tapestry Momo Ayase", "mid", 50),
+
+        # --- Wonder Festival Garage Kits (+12) ---
+        ("WonFes", "Mushoku Tensei", "Garage Kit", "Roxy Migurdia 1/7 Resin GK WonFes 2025 Summer Limited 20pcs", "grail", 380),
+        ("WonFes", "Chainsaw Man", "Garage Kit", "Makima Control Devil 1/6 GK WonFes 2025 Summer Limited", "grail", 420),
+        ("WonFes", "Blue Lock", "Garage Kit", "Isagi Yoichi 1/7 Resin GK WonFes 2025 Winter Limited 25pcs", "high", 280),
+        ("WonFes", "Oshi no Ko", "Garage Kit", "Ruby Hoshino Idol 1/7 GK WonFes 2025 Summer Limited", "high", 260),
+        ("WonFes", "Genshin Impact", "Garage Kit", "Raiden Shogun 1/6 Resin GK WonFes 2025 Winter Limited 15pcs", "grail", 500),
+        ("WonFes", "One Piece", "Garage Kit", "Boa Hancock 1/6 Resin GK WonFes 2025 Summer Limited 10pcs", "grail", 550),
+        ("WonFes", "Dragon Ball", "Garage Kit", "Vegeta Ultra Ego 1/6 Resin GK WonFes 2025 Winter Limited", "grail", 480),
+        ("WonFes", "Demon Slayer", "Exclusive Figure", "Tengen Uzui Sound Hashira WonFes 2025 Exclusive 1/7", "high", 220),
+        ("WonFes", "Spy x Family", "Garage Kit", "Anya Forger Starlight 1/7 GK WonFes 2025 Summer Painted", "high", 200),
+        ("WonFes", "My Dress-Up Darling", "Exclusive Figure", "Marin Kitagawa School Uniform WonFes 2025 Winter 1/7", "high", 210),
+        ("WonFes", "Bocchi the Rock!", "Garage Kit", "Gotoh Hitori Stage Performance 1/7 GK WonFes 2025", "high", 240),
+        ("WonFes", "Kaiju No. 8", "Garage Kit", "Kafka Kaiju Form 1/6 Resin GK WonFes 2025 Limited 15pcs", "grail", 450),
+
+        # --- AnimeJapan Goods (+8) ---
+        ("AnimeJapan", "Frieren", "Exclusive Figure", "Frieren AnimeJapan 2026 Exclusive Nendoroid", "mid", 80),
+        ("AnimeJapan", "Solo Leveling", "Exhibit Goods", "Solo Leveling AnimeJapan 2026 Exhibition Shadow Army Art Panel Set", "high", 120),
+        ("AnimeJapan", "Dandadan", "Exhibit Goods", "Dandadan AnimeJapan 2026 Okarun vs Turbo Granny Diorama", "high", 100),
+        ("AnimeJapan", "Blue Lock", "Exclusive Figure", "Rin Itoshi AnimeJapan 2026 Chibi Figure", "mid", 45),
+        ("AnimeJapan", "Spy x Family", "Clear File Set", "Spy x Family AnimeJapan 2026 Season 3 Clear File Set (6pc)", "standard", 18),
+        ("AnimeJapan", "Oshi no Ko", "Exhibit Goods", "Oshi no Ko AnimeJapan 2026 Ai Hoshino Memorial Art Panel", "high", 130),
+        ("AnimeJapan", "Chainsaw Man", "Badge Set", "Chainsaw Man AnimeJapan 2026 Random Badge Collection (10pc)", "standard", 22),
+        ("AnimeJapan", "Wind Breaker", "Exclusive Figure", "Sakura Haruka AnimeJapan 2026 Chibi Figure", "mid", 40),
+
+        # --- Jump Festa Exclusives (+10) ---
+        ("Jump Festa", "One Piece", "Exclusive Card", "One Piece Card Game Jump Festa 2026 Alt Art Shanks Promo", "high", 130),
+        ("Jump Festa", "Dragon Ball Daima", "Exclusive Figure", "Glorio Jump Festa 2026 Premium Figure", "mid", 65),
+        ("Jump Festa", "Jujutsu Kaisen", "Exclusive Figure", "Yuta Okkotsu Rika Jump Festa 2026 Premium Figure", "high", 120),
+        ("Jump Festa", "Chainsaw Man", "Poster Set", "Chainsaw Man Jump Festa 2026 Poster Set (4pc)", "mid", 40),
+        ("Jump Festa", "My Hero Academia", "Goods Set", "MHA Final Season Jump Festa 2026 Complete Memorial Set", "high", 100),
+        ("Jump Festa", "Bleach TYBW", "Exclusive Figure", "Zaraki Kenpachi Bankai Jump Festa 2026 Figure", "high", 130),
+        ("Jump Festa", "Boruto: Two Blue Vortex", "Badge Set", "Boruto TBV Jump Festa 2026 Badge & Pin Set (8pc)", "mid", 35),
+        ("Jump Festa", "Sakamoto Days", "Exclusive Figure", "Sakamoto Jump Festa 2026 Exclusive Mini Figure", "mid", 50),
+        ("Jump Festa", "Undead Unluck", "Exclusive Card", "Undead Unluck Jump Festa 2026 Andy & Fuuko Promo Card", "mid", 25),
+        ("Jump Festa", "Dandadan", "Goods Set", "Dandadan Jump Festa 2026 Goods Box (Towel + Clear File + Badge)", "mid", 45),
+
+        # --- Tokyo Game Show Limited Items (+8) ---
+        ("Tokyo Game Show", "Final Fantasy XVI DLC", "Exclusive Merch", "FF XVI Rising Tide TGS 2025 Exclusive Art Board & Pin Set", "mid", 55),
+        ("Tokyo Game Show", "Monster Hunter Wilds", "Exclusive Figure", "Rathalos TGS 2025 Exclusive Mini Figure Set (3pc)", "mid", 60),
+        ("Tokyo Game Show", "Stellar Blade", "Exclusive Merch", "EVE TGS 2025 Exclusive B2 Tapestry", "mid", 45),
+        ("Tokyo Game Show", "Metal Gear Solid Delta", "Exclusive Merch", "MGS Delta Snake Eater TGS 2025 Premium Art Board", "high", 100),
+        ("Tokyo Game Show", "Kingdom Hearts IV", "Exclusive Figure", "Sora KH IV TGS 2025 Exclusive Play Arts Mini", "high", 130),
+        ("Tokyo Game Show", "Dragon Quest III HD-2D", "Exclusive Merch", "DQ III HD-2D TGS 2025 Slime Set & Art Print", "mid", 50),
+        ("Tokyo Game Show", "Granblue Fantasy Relink", "Exclusive Merch", "GBF Relink TGS 2025 Exclusive Gran & Djeeta Acrylic Stand Set", "mid", 38),
+        ("Tokyo Game Show", "Zenless Zone Zero", "Exclusive Merch", "ZZZ TGS 2025 HoYoverse Booth Exclusive Badge Set (10pc)", "mid", 35),
+
+        # --- Treasure Festa Items (+8) ---
+        ("Treasure Festa", "Genshin Impact", "Garage Kit", "Nahida 1/7 Resin GK Treasure Festa Yokohama Limited", "high", 280),
+        ("Treasure Festa", "Dandadan", "Garage Kit", "Momo Ayase 1/7 GK Treasure Festa Ariake Limited", "high", 250),
+        ("Treasure Festa", "Solo Leveling", "Garage Kit", "Sung Jinwoo Shadow Monarch 1/6 GK Treasure Festa Limited 10pcs", "grail", 500),
+        ("Treasure Festa", "Jujutsu Kaisen", "Garage Kit", "Gojo Satoru 1/7 GK Treasure Festa Yokohama 2025", "grail", 380),
+        ("Treasure Festa", "Demon Slayer", "Garage Kit", "Muzan Kibutsuji 1/6 GK Treasure Festa Ariake Limited", "grail", 400),
+        ("Treasure Festa", "NieR:Automata", "Garage Kit", "A2 YoRHa Type A 1/7 GK Treasure Festa Yokohama", "high", 260),
+        ("Treasure Festa", "Made in Abyss", "Garage Kit", "Reg 1/7 Resin GK Treasure Festa Ariake Limited", "high", 220),
+        ("Treasure Festa", "Berserk", "Garage Kit", "Griffith Femto 1/6 GK Treasure Festa Yokohama Limited 15pcs", "grail", 480),
+
+        # --- Design Festa Accessories (+6) ---
+        ("Design Festa", "Original", "Handmade Accessory", "Design Festa 59 Resin Eye Pendant Necklace Artist Original", "mid", 45),
+        ("Design Festa", "Original", "Handmade Accessory", "Design Festa 59 Steampunk Gear Earrings Set Artist Limited", "mid", 35),
+        ("Design Festa", "Original", "Art Print", "Design Festa 60 Guest Artist Signed Giclée Print A3", "high", 120),
+        ("Design Festa", "Original", "Handmade Figure", "Design Festa 60 Custom Sofubi Figure One-Off", "grail", 300),
+        ("Design Festa", "Original", "Art Book", "Design Festa 59 Featured Artist Zine Collection (5 books)", "mid", 40),
+        ("Design Festa", "Original", "Handmade Accessory", "Design Festa 60 UV Resin Galaxy Ring Artist Limited", "mid", 30),
+
+        # --- One Hobby Exclusives (+6) ---
+        ("One Hobby", "Gundam", "Exclusive Figure", "One Hobby #34 Exclusive Gundam Aerial 1/144 Clear Ver.", "mid", 50),
+        ("One Hobby", "Fate/Grand Order", "Exclusive Figure", "FGO One Hobby Exclusive Saber Alter 1/7 Preview Display", "high", 180),
+        ("One Hobby", "Lycoris Recoil", "Exclusive Figure", "Takina Inoue One Hobby Exclusive 1/7 Preview Figure", "high", 160),
+        ("One Hobby", "Blue Archive", "Exclusive Figure", "Arona One Hobby Exclusive Preview 1/7", "high", 150),
+        ("One Hobby", "Frieren", "Exclusive Figure", "Frieren One Hobby Exclusive Preview 1/7 Display", "high", 170),
+        ("One Hobby", "Bocchi the Rock!", "Exclusive Goods", "Bocchi One Hobby Exclusive Acrylic Diorama Set", "mid", 55),
+
+        # --- Ichiban Kuji — Latest Series (+10) ---
+        ("Ichiban Kuji", "Frieren", "Prize Figure", "Frieren Ichiban Kuji B Prize Himmel the Hero", "mid", 50),
+        ("Ichiban Kuji", "Dandadan", "Prize Figure", "Dandadan Ichiban Kuji A Prize Momo Ayase", "mid", 55),
+        ("Ichiban Kuji", "Dragon Ball Daima", "Prize Figure", "Dragon Ball Daima Ichiban Kuji A Prize Glorio", "mid", 50),
+        ("Ichiban Kuji", "One Piece", "Prize Figure", "One Piece Ichiban Kuji Last One Gear 5 Luffy Joy Boy", "grail", 220),
+        ("Ichiban Kuji", "Jujutsu Kaisen", "Prize Figure", "JJK Ichiban Kuji Last One Yuta & Rika Domain", "high", 150),
+        ("Ichiban Kuji", "Chainsaw Man", "Prize Figure", "Chainsaw Man Ichiban Kuji Last One Denji Pochita Combo", "high", 130),
+        ("Ichiban Kuji", "Demon Slayer", "Prize Figure", "KnY Ichiban Kuji Last One Muzan Final Battle", "high", 140),
+        ("Ichiban Kuji", "Naruto Shippuden", "Prize Figure", "Naruto Ichiban Kuji B Prize Minato Yellow Flash", "mid", 55),
+        ("Ichiban Kuji", "Bleach TYBW", "Prize Figure", "Bleach Ichiban Kuji B Prize Aizen Kyoka Suigetsu", "mid", 60),
+        ("Ichiban Kuji", "Spy x Family", "Prize Figure", "Spy x Family Ichiban Kuji Last One Anya & Bond", "mid", 70),
+
+        # --- Hololive Events (+8) ---
+        ("Hololive EXPO", "Hololive", "Exclusive Goods", "Hololive 6th Fes Exclusive Penlight + Wristband Complete Set", "high", 120),
+        ("Hololive EXPO", "Hololive", "Exclusive Figure", "Hololive 6th Fes Exclusive Nendoroid Hoshimachi Suisei", "high", 110),
+        ("Hololive EXPO", "Hololive", "Exclusive Goods", "Hololive EXPO 2026 Exclusive B2 Tapestry Full Set (10pc)", "grail", 250),
+        ("Hololive EXPO", "Hololive", "Exclusive Goods", "Hololive EXPO 2026 Usada Pekora Acrylic Stand LE", "mid", 45),
+        ("Hololive EXPO", "Hololive", "Exclusive Goods", "Hololive EXPO 2026 Marine Houshou Birthday Goods Box", "high", 100),
+        ("Hololive EXPO", "Hololive", "Exclusive Goods", "Hololive EXPO 2026 IRyS 3D Live Memorial Set", "mid", 55),
+        ("Hololive EXPO", "Hololive", "Exclusive Goods", "Hololive EXPO 2026 FUWAMOCO Badge & Clear File Set", "mid", 35),
+        ("Hololive EXPO", "Hololive", "Exclusive Goods", "Hololive EXPO 2026 Nerissa Ravencroft Acrylic Stand LE", "mid", 40),
+
+        # --- Additional JP Event Exclusives (+2) ---
+        ("AnimeJapan", "Chainsaw Man", "Exclusive Figure", "AnimeJapan 2026 Chainsaw Man Power 1/7 Event Exclusive", "high", 160),
+        ("Treasure Festa", "Evangelion", "Garage Kit", "Treasure Festa 2026 EVA Unit-01 Awakened 1/8 Resin GK", "grail", 380),
     ]
     catalog = []
     for event, franchise, item_type, name, tier, price in items:

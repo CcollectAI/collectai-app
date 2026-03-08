@@ -1,0 +1,20 @@
+appId: com.collectai.app
+---
+- launchApp
+# Navigate to Add tab
+- tapOn:
+    id: "tab-add"
+- assertVisible: "QuickScan"
+# Tap QuickScan
+- tapOn:
+    id: "quickscan-button"
+# Allow camera permission if prompted
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+# Assert scan UI is visible
+- assertVisible:
+    id: "capture-button"
+    timeout: 5000

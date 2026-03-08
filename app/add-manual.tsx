@@ -1,4 +1,5 @@
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { track } from '@/analytics/track';
 import React, { useState, useMemo } from "react";
 import {
   ScrollView,
@@ -15,8 +16,6 @@ import {
   TouchableOpacity,
   Keyboard,
   Image,
-  ActionSheetIOS,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, Stack } from "expo-router";
@@ -30,6 +29,7 @@ import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { showActionSheet } from "@/hooks/useActionSheetPicker";
 import { QuickNavBar } from '@/components/QuickNavBar';
 
 type SaveState = "idle" | "saving" | "success" | "error";
@@ -98,25 +98,9 @@ const ManualAddScreen: React.FC = () => {
   };
 
   const showPhotoSourcePicker = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", "Take Photo", "Choose from Library"],
-          cancelButtonIndex: 0,
-          title: "Add Photo",
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 1) handlePhotoUpload("camera");
-          if (buttonIndex === 2) handlePhotoUpload("gallery");
-        },
-      );
-    } else {
-      Alert.alert("Add Photo", "Choose a source", [
-        { text: "Take Photo", onPress: () => handlePhotoUpload("camera") },
-        { text: "Choose from Library", onPress: () => handlePhotoUpload("gallery") },
-        { text: "Cancel", style: "cancel" },
-      ]);
-    }
+    showActionSheet('Add Photo', ['Take Photo', 'Choose from Library'], (index) => {
+      handlePhotoUpload(index === 0 ? 'camera' : 'gallery');
+    });
   };
 
   const filteredCategories = useMemo(() => {
@@ -182,6 +166,7 @@ const ManualAddScreen: React.FC = () => {
         return;
       }
 
+      track({ name: 'item_added', properties: { source: 'manual', category: categorySlug || category } });
       setSaveState("success");
       nameField.reset();
       setCategory("");
@@ -192,7 +177,7 @@ const ManualAddScreen: React.FC = () => {
       estimatedValueField.reset();
       setSource("");
       setNotes("");
-    } catch (err: unknown) {
+    } catch (err: any) {
       logger.warn("[ManualAdd] unexpected error:", err);
       setSaveState("error");
       setErrorText(err?.message || "Unexpected error while saving item.");
@@ -349,6 +334,7 @@ const ManualAddScreen: React.FC = () => {
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
                       accessibilityLabel="Item name"
+                      testID="name-input"
                     />
                   </View>
                   {nameField.touched && nameField.error && (
@@ -860,6 +846,7 @@ const ManualAddScreen: React.FC = () => {
               accessibilityRole="button"
               accessibilityLabel="Save to collection"
               accessibilityState={{ disabled: !canSubmit }}
+              testID="save-button"
             >
               {saveState === "saving" ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />

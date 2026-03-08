@@ -950,6 +950,134 @@ def get_curated_catalog() -> list[dict]:
         ("Animedia", "Haikyuu!!", "Insert Poster", "Animedia Haikyuu!! Final Movie Cast A3 Poster Insert", "2020s", "mid", 22),
         ("Animedia", "My Hero Academia", "Voice Actor Feature", "Animedia MHA Final Season Seiyuu Interview Issue", "2020s", "standard", 12),
         ("Animedia", "Gundam: Witch from Mercury", "B2 Poster", "Animedia G-Witch Suletta & Miorine B2 Poster", "2020s", "mid", 28),
+
+        # ── Newtype — Exclusive Anime Covers (Round 5) ────────────────────
+        ("Newtype", "Frieren", "B2 Poster", "Newtype Frieren & Fern Journey Illustration B2 Poster", "2020s", "mid", 30),
+        ("Newtype", "Oshi no Ko", "Insert Poster", "Newtype Oshi no Ko Ai Hoshino Dome Concert A2 Poster", "2020s", "mid", 28),
+        ("Newtype", "Chainsaw Man", "B2 Poster", "Newtype Chainsaw Man Denji & Power B2 Poster Insert", "2020s", "mid", 25),
+        ("Newtype", "Blue Lock", "Insert Poster", "Newtype Blue Lock Isagi Goal A3 Poster Insert", "2020s", "mid", 20),
+        ("Newtype", "Bocchi the Rock!", "Clear File", "Newtype Bocchi the Rock! Band Performance Clear File Set", "2020s", "standard", 14),
+        ("Newtype", "Solo Leveling", "B2 Poster", "Newtype Solo Leveling Sung Jin-woo Shadow Monarch B2 Poster", "2020s", "mid", 26),
+        ("Newtype", "My Hero Academia", "Insert Poster", "Newtype MHA Final Arc All Might vs AFO A2 Poster", "2020s", "mid", 22),
+        ("Newtype", "Spy x Family", "B2 Poster", "Newtype Spy x Family Movie Key Visual B2 Poster", "2020s", "mid", 24),
+        ("Newtype", "Jujutsu Kaisen", "B2 Poster", "Newtype JJK Shibuya Incident Gojo B2 Poster", "2020s", "mid", 30),
+        ("Newtype", "Attack on Titan", "Insert Poster Set", "Newtype AoT Final Season Complete Poster Set (4pc)", "2020s", "high", 55),
+
+        # ── Animage — Classic & Modern Anime Covers (Round 5) ─────────────
+        ("Animage", "Totoro", "Insert Poster", "Animage My Neighbor Totoro 35th Anniversary A2 Poster", "2020s", "high", 50),
+        ("Animage", "Spirited Away", "B3 Poster", "Animage Spirited Away Chihiro & Haku B3 Poster Insert", "2000s", "high", 65),
+        ("Animage", "Cowboy Bebop", "Insert Poster", "Animage Cowboy Bebop 25th Anniversary A3 Poster Set", "2020s", "high", 55),
+        ("Animage", "Future Boy Conan", "B2 Poster", "Animage Future Boy Conan Original Insert Poster 1978", "1970s", "grail", 200),
+        ("Animage", "Urusei Yatsura", "Insert Poster", "Animage Urusei Yatsura Lum A3 Poster 1982", "1980s", "high", 75),
+
+        # ── Animedia — Voice Actor & Anime Features (Round 5) ─────────────
+        ("Animedia", "Frieren", "Clear File", "Animedia Frieren Party Clear File Set (3pc)", "2020s", "mid", 16),
+        ("Animedia", "Chainsaw Man", "B2 Poster", "Animedia Chainsaw Man Makima Illustration B2 Poster", "2020s", "mid", 28),
+        ("Animedia", "Blue Lock", "Insert Poster", "Animedia Blue Lock Team Z Cast A3 Double-Sided Poster", "2020s", "mid", 20),
+        ("Animedia", "Solo Leveling", "Clear File", "Animedia Solo Leveling Shadow Army Clear File Insert", "2020s", "standard", 12),
+        ("Animedia", "Dandadan", "B2 Poster", "Animedia Dandadan Momo & Okarun B2 Poster Insert", "2020s", "mid", 22),
+
+        # ── Fashion Magazines with Anime Collabs (Round 5) ────────────────
+        ("ViVi", "Spy x Family", "Fashion Feature", "ViVi x Spy x Family Yor Forger Fashion Shoot Issue", "2020s", "mid", 25),
+        ("ViVi", "Sailor Moon", "Fashion Feature", "ViVi x Sailor Moon Eternal Collab Cover Issue", "2020s", "mid", 30),
+        ("ViVi", "Chainsaw Man", "Fashion Feature", "ViVi x Chainsaw Man Power Streetwear Feature Issue", "2020s", "mid", 22),
+        ("Men's Non-no", "Jujutsu Kaisen", "Fashion Feature", "Men's Non-no x JJK Gojo Satoru Style Cover Issue", "2020s", "mid", 28),
+        ("Men's Non-no", "One Piece", "Fashion Feature", "Men's Non-no x One Piece Luffy Gear 5 Cover Issue", "2020s", "mid", 25),
+        ("Men's Non-no", "Blue Lock", "Fashion Feature", "Men's Non-no x Blue Lock Isagi Cover Issue", "2020s", "mid", 20),
+
+        # ── Jump GIGA Issues (Round 5) ────────────────────────────────────
+        ("Jump GIGA", "Multiple", "Magazine Issue", "Jump GIGA 2024 Winter Special Issue", "2020s", "mid", 18),
+        ("Jump GIGA", "Multiple", "Magazine Issue", "Jump GIGA 2024 Summer Special Issue", "2020s", "mid", 16),
+        ("Jump GIGA", "Multiple", "Magazine Issue", "Jump GIGA 2023 Autumn Special (Dragon Ball Tribute)", "2020s", "mid", 22),
+        ("Jump GIGA", "Hunter x Hunter", "Magazine Issue", "Jump GIGA Hunter x Hunter Togashi Interview Issue 2022", "2020s", "high", 45),
+        ("Jump GIGA", "One Piece", "Insert Poster", "Jump GIGA One Piece 25th Anniversary A2 Poster Insert", "2020s", "mid", 30),
+        ("Jump GIGA", "Naruto", "Magazine Issue", "Jump GIGA Naruto 20th Anniversary Tribute Issue", "2020s", "mid", 25),
+
+        # ── Weekly Shonen Jump — Additional Milestones (Round 5) ──────────
+        ("Weekly Shonen Jump", "One Piece", "Magazine Issue", "Shonen Jump One Piece Chapter 1100 Issue (Gear 5 Color)", "2020s", "high", 60),
+        ("Weekly Shonen Jump", "My Hero Academia", "Magazine Issue", "Shonen Jump MHA Final Chapter Issue 2024", "2020s", "mid", 45),
+        ("Weekly Shonen Jump", "Bleach", "Magazine Issue", "Shonen Jump Bleach Final Arc Announcement Issue", "2020s", "mid", 35),
+        ("Weekly Shonen Jump", "Chainsaw Man", "Magazine Issue", "Shonen Jump Chainsaw Man Part 2 Launch Issue", "2020s", "mid", 30),
+        ("Weekly Shonen Jump", "Jujutsu Kaisen", "Magazine Issue", "Shonen Jump JJK Shibuya Incident Cover Issue", "2020s", "mid", 35),
+        ("Weekly Shonen Jump", "Dragon Ball Super", "Magazine Issue", "Shonen Jump Dragon Ball Daima Announcement Issue", "2020s", "mid", 40),
+
+        # ── V Jump — Promo Cards & Specials (Round 5) ─────────────────────
+        ("V Jump", "Yu-Gi-Oh!", "Promo Card", "V Jump VJMP-JP260 Exosisters Magnifica Alt Art", "2020s", "high", 55),
+        ("V Jump", "Yu-Gi-Oh!", "Promo Card", "V Jump VJMP-JP270 Firewall Dragon Ghost Rare", "2020s", "grail", 120),
+        ("V Jump", "Dragon Ball Super Card Game", "Promo Card", "V Jump DBSCG Goku Black Rose Promo", "2020s", "mid", 40),
+        ("V Jump", "One Piece Card Game", "Promo Card", "V Jump OP Card Game Zoro Wano Promo Alt Art", "2020s", "mid", 45),
+        ("V Jump", "Digimon Card Game", "Promo Card", "V Jump Digimon Card Omnimon Alt Art Promo", "2020s", "mid", 35),
+
+        # ── Manga Magazine First Appearances (Round 5) ────────────────────
+        ("Weekly Shonen Jump", "Chainsaw Man", "First Appearance", "Shonen Jump #1 Chainsaw Man Chapter 1 (2018 Issue 52)", "2010s", "grail", 180),
+        ("Weekly Shonen Jump", "Jujutsu Kaisen", "First Appearance", "Shonen Jump #14 JJK Chapter 1 (2018 Issue 14)", "2010s", "grail", 150),
+        ("Weekly Shonen Jump", "Spy x Family", "First Appearance", "Shonen Jump+ Spy x Family Ch1 Print Edition (Special)", "2010s", "high", 90),
+        ("Monthly Shonen Magazine", "Blue Lock", "First Appearance", "Monthly Shonen Magazine Blue Lock Chapter 1 Issue (2018 Aug)", "2010s", "high", 80),
+        ("Weekly Shonen Jump", "Demon Slayer", "First Appearance", "Shonen Jump #11 Demon Slayer Chapter 1 (2016 Issue 11)", "2010s", "grail", 200),
+        ("Shonen Jump+", "Dandadan", "First Appearance", "Shonen Jump+ Dandadan Chapter 1 Print Compilation", "2020s", "high", 55),
+        ("Shonen Jump+", "Kaiju No. 8", "First Appearance", "Shonen Jump+ Kaiju No.8 Chapter 1 Print Compilation", "2020s", "high", 50),
+
+        # ── CoroCoro Comic — Pokemon Issues (Round 5) ─────────────────────
+        ("CoroCoro Comic", "Pokemon", "Magazine Issue", "CoroCoro Pokemon Legends Arceus Reveal Issue Jan 2022", "2020s", "mid", 20),
+        ("CoroCoro Comic", "Pokemon", "Magazine Issue", "CoroCoro Pokemon Scarlet & Violet Reveal Issue Mar 2022", "2020s", "mid", 22),
+        ("CoroCoro Comic", "Pokemon", "Promo Card", "CoroCoro Pokemon Promo Mew VMAX Gold Insert", "2020s", "high", 60),
+        ("CoroCoro Comic", "Pokemon", "Magazine Issue", "CoroCoro Pokemon Legends Z-A Reveal Issue 2024", "2020s", "mid", 25),
+
+        # ── Hobby Japan & Model Graphix (Round 5) ─────────────────────────
+        ("Hobby Japan", "Gundam", "Magazine Issue", "Hobby Japan Gundam SEED Freedom Movie Special Issue", "2020s", "mid", 20),
+        ("Hobby Japan", "Gundam", "Insert Kit", "Hobby Japan HG Gundam Exclusive Color Kit Insert", "2020s", "mid", 35),
+        ("Model Graphix", "Gundam", "Magazine Issue", "Model Graphix Gundam The Origin Master Grade Feature Issue", "2010s", "mid", 18),
+        ("Model Graphix", "Macross", "Magazine Issue", "Model Graphix Macross Delta VF-31 Custom Build Feature", "2010s", "mid", 16),
+
+        # === EXPANSION ROUND 6 — 34 new items to reach 700+ ===
+
+        # ── Jump GIGA — 2025/2026 Specials (+5) ─────────────────────────
+        ("Jump GIGA", "One Piece", "Magazine Issue", "Jump GIGA One Piece 1100 Chapter Celebration Issue 2025", "2020s", "high", 40),
+        ("Jump GIGA", "Dragon Ball", "Magazine Issue", "Jump GIGA Dragon Ball Daima Premiere Issue 2025", "2020s", "mid", 30),
+        ("Jump GIGA", "Jujutsu Kaisen", "Magazine Issue", "Jump GIGA JJK Final Arc Tribute Issue 2025", "2020s", "mid", 28),
+        ("Jump GIGA", "Multiple", "Magazine Issue", "Jump GIGA 2025 Spring Special Issue", "2020s", "mid", 18),
+        ("Jump GIGA", "Multiple", "Magazine Issue", "Jump GIGA 2025 Summer Special w/ One Piece Poster", "2020s", "mid", 20),
+
+        # ── V Jump — Promo Cards 2025 (+5) ──────────────────────────────
+        ("V Jump", "Yu-Gi-Oh!", "Promo Card", "V Jump VJMP-JP280 Stardust Dragon Alt Art Promo", "2020s", "high", 70),
+        ("V Jump", "Yu-Gi-Oh!", "Promo Card", "V Jump VJMP-JP285 Red-Eyes Black Dragon Ghost Rare", "2020s", "grail", 130),
+        ("V Jump", "Dragon Ball Super Card Game", "Promo Card", "V Jump DBSCG Ultra Instinct Goku SPR Promo 2025", "2020s", "mid", 45),
+        ("V Jump", "One Piece Card Game", "Promo Card", "V Jump OP Card Shanks Film Red Alt Art 2025", "2020s", "mid", 50),
+        ("V Jump", "Digimon Card Game", "Promo Card", "V Jump Digimon WarGreymon 25th Anniversary Promo", "2020s", "mid", 38),
+
+        # ── Weekly Shonen Jump — 2025 Milestones (+5) ───────────────────
+        ("Weekly Shonen Jump", "Dandadan", "Magazine Issue", "Shonen Jump+ Dandadan Anime Premiere Commemorative Print Issue", "2020s", "mid", 35),
+        ("Weekly Shonen Jump", "Solo Leveling", "Magazine Issue", "Shonen Jump+ Solo Leveling Ragnarok Manga Launch Issue", "2020s", "mid", 30),
+        ("Weekly Shonen Jump", "Sakamoto Days", "Magazine Issue", "Shonen Jump Sakamoto Days Anime Debut Cover Issue 2025", "2020s", "mid", 28),
+        ("Weekly Shonen Jump", "Kagurabachi", "Magazine Issue", "Shonen Jump Kagurabachi Color Spread Feature Issue 2025", "2020s", "mid", 25),
+        ("Weekly Shonen Jump", "One Piece", "Magazine Issue", "Shonen Jump One Piece 28th Anniversary Cover Issue 2025", "2020s", "high", 55),
+
+        # ── Anime Covers — 2025 Series (+5) ─────────────────────────────
+        ("Newtype", "Solo Leveling", "B2 Poster", "Newtype Solo Leveling Season 2 Key Visual B2 Poster", "2020s", "mid", 28),
+        ("Newtype", "Dandadan", "B2 Poster", "Newtype Dandadan Okarun & Turbo Granny B2 Poster", "2020s", "mid", 25),
+        ("Animedia", "Sakamoto Days", "B2 Poster", "Animedia Sakamoto Days Cast B2 Poster Insert", "2020s", "mid", 22),
+        ("Animage", "Frieren", "B2 Poster", "Animage Frieren Season 2 Key Visual B2 Poster 2025", "2020s", "mid", 30),
+        ("Megami Magazine", "Solo Leveling", "Tapestry", "Megami Magazine Solo Leveling Esil B2 Tapestry", "2020s", "mid", 26),
+
+        # ── CoroCoro Comic — 2025 Issues (+4) ──────────────────────────
+        ("CoroCoro Comic", "Pokemon", "Magazine Issue", "CoroCoro Pokemon Legends Z-A Final Info Issue 2025", "2020s", "mid", 28),
+        ("CoroCoro Comic", "Pokemon", "Promo Card", "CoroCoro Pokemon 25th Movie Promo Card Insert 2025", "2020s", "high", 55),
+        ("CoroCoro Comic", "Beyblade X", "Insert Card", "CoroCoro Beyblade X Exclusive Launch Card Insert 2025", "2020s", "mid", 15),
+        ("CoroCoro Comic", "Pokemon", "Magazine Issue", "CoroCoro Pokemon World Championships Japan Preview Issue", "2020s", "mid", 22),
+
+        # ── Nyantype & Megami — Recent Tapestries (+5) ──────────────────
+        ("Nyantype", "Dandadan", "Tapestry Insert", "Nyantype Dandadan Momo B2 Tapestry Appendix", "2020s", "mid", 24),
+        ("Nyantype", "Frieren", "Clear File", "Nyantype Frieren & Fern Clear File Insert Set (2pc)", "2020s", "standard", 14),
+        ("Megami Magazine", "Oshi no Ko", "Tapestry", "Megami Magazine Oshi no Ko Ai Hoshino Memorial B2 Tapestry", "2020s", "mid", 32),
+        ("Megami Magazine", "Blue Lock", "Clear File", "Megami Magazine Blue Lock Isagi & Rin Clear File Set", "2020s", "standard", 12),
+        ("Megami Magazine", "Chainsaw Man", "Tapestry", "Megami Magazine Chainsaw Man Power B2 Tapestry", "2020s", "mid", 28),
+
+        # ── Vintage Rare Finds (+5) ─────────────────────────────────────
+        ("Animage", "Nausicaa", "Insert Poster", "Animage Nausicaa Valley of the Wind A2 Poster 1984", "1980s", "grail", 180),
+        ("Newtype", "Akira", "B2 Poster", "Newtype Akira Theatrical Release B2 Poster Insert 1988", "1980s", "grail", 200),
+        ("Animage", "Castle in the Sky", "Insert Poster", "Animage Laputa Castle in the Sky A2 Poster 1986", "1980s", "grail", 150),
+        ("Weekly Shonen Jump", "Slam Dunk", "Magazine Issue", "Shonen Jump Slam Dunk Final Chapter Issue #27 1996", "1990s", "grail", 180),
+        ("Animage", "Ghost in the Shell", "B2 Poster", "Animage Ghost in the Shell Motoko B2 Poster 1995", "1990s", "grail", 140),
     ]
 
     catalog = []

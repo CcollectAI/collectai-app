@@ -553,6 +553,14 @@ export class CachedDataProvider implements DataProvider {
     return this.inner.createSponsorEventCheckout(companyId, tier, eventData);
   }
 
+  createTicketCheckout(eventId: string): Promise<{ url: string; sessionId: string }> {
+    return this.inner.createTicketCheckout(eventId);
+  }
+
+  createSponsorSubscriptionCheckout(companyId: string, tier: string): Promise<{ url: string; sessionId: string }> {
+    return this.inner.createSponsorSubscriptionCheckout(companyId, tier);
+  }
+
   // Event announcements — pass through (real-time)
   listEventAnnouncements(eventId: string): Promise<EventAnnouncement[]> {
     return this.inner.listEventAnnouncements(eventId);

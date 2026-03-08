@@ -54,10 +54,10 @@ function DealDetailScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const d = await collectorsApi.getDeal(dealId);
+        const d = await collectorsApi.getDeal(dealId) as MandateDeal;
         if (!cancelled) setDeal(d);
       } catch {
-        if (!cancelled) showToast("Failed to load deal", "error");
+        if (!cancelled) showToast({ message: "Failed to load deal", type: "error" });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -77,7 +77,7 @@ function DealDetailScreen() {
       }
       setDeal((prev) => prev ? { ...prev, status: "clicked", affiliateClick: true } : prev);
     } catch {
-      showToast("Failed to open link", "error");
+      showToast({ message: "Failed to open link", type: "error" });
     }
   }, [deal, settings.hapticsEnabled]);
 
@@ -89,9 +89,9 @@ function DealDetailScreen() {
     try {
       await collectorsApi.confirmDeal(deal.id, deal.listingPrice);
       setDeal((prev) => prev ? { ...prev, status: "purchased" } : prev);
-      showToast("Purchase confirmed!", "success");
+      showToast({ message: "Purchase confirmed!", type: "success" });
     } catch {
-      showToast("Failed to confirm", "error");
+      showToast({ message: "Failed to confirm", type: "error" });
     } finally {
       setConfirming(false);
     }
@@ -104,9 +104,9 @@ function DealDetailScreen() {
     try {
       await collectorsApi.declineDeal(deal.id);
       setDeal((prev) => prev ? { ...prev, status: "declined" } : prev);
-      showToast("Deal dismissed", "success");
+      showToast({ message: "Deal dismissed", type: "success" });
     } catch {
-      showToast("Failed to dismiss", "error");
+      showToast({ message: "Failed to dismiss", type: "error" });
     }
   }, [deal, settings.hapticsEnabled]);
 

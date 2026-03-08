@@ -787,6 +787,127 @@ def get_curated_catalog() -> list[dict]:
         ("Pop! Trains", "04", "Pluto Caboose", "Disney Store", "mid", 85),
         ("Pop! Trains", "05", "Minnie Mouse Holiday Engine", "Amazon", "high", 140),
         ("Pop! Trains", "10", "Nightmare Before Christmas: Jack Skellington Train", "Hot Topic", "high", 200),
+
+        # === ROUND 5 — 700+ Expansion: Convention Exclusives, Funko Shop, Grails, Artist Series, Soda, Anime, Gold, Bitty Pops ===
+
+        # ── SDCC 2024 Exclusives ────────────────────────────────────────────
+        ("Convention Exclusive", "SE", "Freddy Funko as Darth Vader (SDCC 2024)", "SDCC 2024", "grail", 1500),
+        ("Convention Exclusive", "SE", "Goku (Ultra Instinct, Metallic) (SDCC 2024)", "SDCC 2024", "high", 350),
+        ("Convention Exclusive", "SE", "Batman (Hush, Glow) (SDCC 2024)", "SDCC 2024", "high", 280),
+        ("Convention Exclusive", "SE", "Vegeta (Badman, Flocked) (SDCC 2024)", "SDCC 2024", "high", 250),
+        ("Convention Exclusive", "SE", "Naruto (Baryon Mode, Glow) (SDCC 2024)", "SDCC 2024", "high", 320),
+        ("Convention Exclusive", "SE", "Wolverine (Weapon X, Bloody) (SDCC 2024)", "SDCC 2024", "high", 200),
+        ("Convention Exclusive", "SE", "Mechagodzilla (Metallic) (SDCC 2024)", "SDCC 2024", "high", 220),
+        ("Convention Exclusive", "SE", "Freddy Funko as He-Man (SDCC 2024)", "SDCC 2024", "grail", 800),
+
+        # ── NYCC 2024 Exclusives ────────────────────────────────────────────
+        ("Convention Exclusive", "SE", "Spider-Man 2099 (Glow) (NYCC 2024)", "NYCC 2024", "high", 250),
+        ("Convention Exclusive", "SE", "Vegito (Super Saiyan Blue, Metallic) (NYCC 2024)", "NYCC 2024", "high", 280),
+        ("Convention Exclusive", "SE", "Joker (Killing Joke, B&W) (NYCC 2024)", "NYCC 2024", "high", 200),
+        ("Convention Exclusive", "SE", "Demon Slayer Muzan (Glow) (NYCC 2024)", "NYCC 2024", "high", 300),
+        ("Convention Exclusive", "SE", "Freddy Funko as Pennywise (Bloody) (NYCC 2024)", "NYCC 2024", "grail", 650),
+        ("Convention Exclusive", "SE", "All Might (Weakened, Glow) (NYCC 2024)", "NYCC 2024", "high", 180),
+
+        # ── Funko Shop Exclusives ───────────────────────────────────────────
+        ("Funko Shop", "SE", "Freddy Funko (Samurai)", "Funko-Shop", "grail", 700),
+        ("Funko Shop", "SE", "Freddy Funko (Space Robot, Blue)", "Funko-Shop", "grail", 550),
+        ("Funko Shop", "SE", "Freddy Funko (Cuphead)", "Funko-Shop", "high", 400),
+        ("Funko Shop", "SE", "Freddy Funko (Tuxedo, Gold)", "Funko-Shop", "high", 350),
+        ("Funko Shop", "SE", "Bigfoot (Rainbow, Flocked)", "Funko-Shop", "high", 250),
+        ("Funko Shop", "SE", "Zodiac Freddy Funko (Scorpio)", "Funko-Shop", "high", 180),
+        ("Funko Shop", "SE", "Fantastik Plastik: Fin Du Chomp", "Funko-Shop", "mid", 95),
+
+        # ── Grails (Holy Grails) ────────────────────────────────────────────
+        ("A Clockwork Orange", "SE", "Alex DeLarge", "", "grail", 5500),
+        ("Movies", "SE", "Headless Ned Stark (Bloody)", "SDCC 2013", "grail", 3500),
+        ("Freddy Funko", "SE", "Freddy Funko as Jaime Lannister (Gold)", "SDCC 2014", "grail", 4000),
+        ("Willy Wonka", "SE", "Willy Wonka (Golden Ticket)", "", "grail", 2200),
+        ("Cereal Icons", "SE", "Count Chocula (Glow)", "", "grail", 1800),
+        ("Cereal Icons", "SE", "Franken Berry (Metallic)", "", "grail", 1500),
+        ("Monsters", "SE", "Creature from the Black Lagoon (Metallic)", "Gemini", "grail", 6000),
+
+        # ── Artist Series ───────────────────────────────────────────────────
+        ("Artist Series", "SE", "Mickey Mouse (Artist Series, Conductor)", "Amazon", "mid", 45),
+        ("Artist Series", "SE", "Stitch (Artist Series, Tropical)", "Amazon", "mid", 48),
+        ("Artist Series", "SE", "Jack Skellington (Artist Series, Neon)", "Amazon", "mid", 52),
+        ("Artist Series", "SE", "Darth Vader (Artist Series, Bespin)", "Amazon", "mid", 55),
+        ("Artist Series", "SE", "Spider-Man (Artist Series, Graffiti)", "Amazon", "mid", 50),
+        ("Artist Series", "SE", "Batman (Artist Series, Jim Lee)", "Amazon", "mid", 58),
+
+        # ── Funko Soda Figures ──────────────────────────────────────────────
+        ("Vinyl Soda", "SE", "Teenage Mutant Ninja Turtles: Leonardo (Chase)", "Funko-Shop", "high", 120),
+        ("Vinyl Soda", "SE", "Batman (Vintage, Chase)", "", "high", 150),
+        ("Vinyl Soda", "SE", "Freddy Funko (Surfer, Chase)", "Funko-Shop", "high", 180),
+        ("Vinyl Soda", "SE", "Spider-Man (Japanese TV, Chase)", "", "high", 130),
+        ("Vinyl Soda", "SE", "Boba Fett (Vintage, Chase)", "", "high", 160),
+        ("Vinyl Soda", "SE", "Wolverine (Classic, Chase)", "", "high", 110),
+        ("Vinyl Soda", "SE", "Joker (Dark Knight, Chase)", "", "high", 140),
+        ("Vinyl Soda", "SE", "Goku (Super Saiyan, Chase)", "", "high", 170),
+
+        # ── Anime License Pops (Chainsaw Man, Jujutsu Kaisen) ───────────────
+        ("Animation", "1680", "Denji (Chainsaw Man)", "", "mid", 35),
+        ("Animation", "1681", "Power (Chainsaw Man)", "", "mid", 40),
+        ("Animation", "1682", "Makima (Chainsaw Man)", "", "mid", 38),
+        ("Animation", "1683", "Aki Hayakawa (Chainsaw Man)", "", "mid", 32),
+        ("Animation", "1684", "Pochita (Chainsaw Man)", "", "mid", 45),
+        ("Animation", "1685", "Pochita (Flocked) (Chainsaw Man)", "Hot Topic", "high", 120),
+        ("Animation", "1690", "Yuji Itadori (Jujutsu Kaisen S2)", "", "mid", 35),
+        ("Animation", "1691", "Satoru Gojo (Purple Hollow) (Jujutsu Kaisen)", "", "mid", 55),
+        ("Animation", "1692", "Ryomen Sukuna (Jujutsu Kaisen)", "", "mid", 42),
+        ("Animation", "1693", "Megumi Fushiguro (Jujutsu Kaisen)", "", "mid", 30),
+        ("Animation", "1694", "Toji Fushiguro (Jujutsu Kaisen)", "Hot Topic", "mid", 65),
+        ("Animation", "1695", "Gojo (Six Eyes, Glow) (Jujutsu Kaisen)", "Entertainment Earth", "high", 140),
+
+        # ── Funko Gold Figures ──────────────────────────────────────────────
+        ("Gold", "SE", "LeBron James (12-inch Gold, Chase)", "", "high", 180),
+        ("Gold", "SE", "Stephen Curry (12-inch Gold)", "", "mid", 45),
+        ("Gold", "SE", "Tom Brady (12-inch Gold, Chase)", "", "high", 150),
+        ("Gold", "SE", "Snoop Dogg (12-inch Gold, Chase)", "", "high", 120),
+        ("Gold", "SE", "Tupac Shakur (12-inch Gold)", "", "mid", 55),
+
+        # ── Bitty Pops ──────────────────────────────────────────────────────
+        ("Bitty Pop!", "SE", "Marvel 4-Pack: Spider-Man, Iron Man, Venom + Mystery", "", "standard", 15),
+        ("Bitty Pop!", "SE", "Disney Villains 4-Pack: Maleficent, Ursula, Cruella + Mystery", "", "standard", 15),
+        ("Bitty Pop!", "SE", "Star Wars 4-Pack: Darth Vader, Boba Fett, Stormtrooper + Mystery", "", "standard", 15),
+        ("Bitty Pop!", "SE", "Harry Potter 4-Pack: Harry, Hermione, Ron + Mystery", "", "standard", 15),
+        ("Bitty Pop!", "SE", "The Office 4-Pack: Michael, Dwight, Jim + Mystery", "", "standard", 15),
+        ("Bitty Pop!", "SE", "Friends 4-Pack: Rachel, Monica, Phoebe + Mystery", "", "standard", 15),
+
+        # === EXPANSION ROUND 6 — 24 new items to reach 700+ ===
+
+        # ── SDCC 2025 Exclusives (+6) ─────────────────────────────────
+        ("Convention Exclusive", "SE", "Freddy Funko as Saitama (SDCC 2025)", "SDCC 2025", "grail", 1200),
+        ("Convention Exclusive", "SE", "Gojo Satoru (Infinite Void, Metallic) (SDCC 2025)", "SDCC 2025", "high", 350),
+        ("Convention Exclusive", "SE", "Luffy Gear 5 (Glow) (SDCC 2025)", "SDCC 2025", "high", 300),
+        ("Convention Exclusive", "SE", "Tanjiro Kamado (Sun Breathing, Metallic) (SDCC 2025)", "SDCC 2025", "high", 280),
+        ("Convention Exclusive", "SE", "Freddy Funko as Vegeta (SDCC 2025)", "SDCC 2025", "grail", 900),
+        ("Convention Exclusive", "SE", "Spider-Man 2099 (Across the Spider-Verse, Glow) (SDCC 2025)", "SDCC 2025", "high", 250),
+
+        # ── NYCC 2025 Exclusives (+4) ─────────────────────────────────
+        ("Convention Exclusive", "SE", "Toji Fushiguro (Bloody, Glow) (NYCC 2025)", "NYCC 2025", "high", 320),
+        ("Convention Exclusive", "SE", "Denji (Chainsaw Devil Form, Metallic) (NYCC 2025)", "NYCC 2025", "high", 260),
+        ("Convention Exclusive", "SE", "Sukuna (King of Curses, B&W) (NYCC 2025)", "NYCC 2025", "high", 290),
+        ("Convention Exclusive", "SE", "Freddy Funko as Eren Yeager Founding Titan (NYCC 2025)", "NYCC 2025", "grail", 750),
+
+        # ── Grails & Vintage (+4) ────────────────────────────────────
+        ("Disney", "31", "Dumbo (Clown) (Metallic)", "SDCC 2013", "grail", 2800),
+        ("Ad Icons", "SE", "Boo Berry (Metallic, Glow)", "", "grail", 2200),
+        ("Movies", "SE", "The Joker (Bank Robber) (Dark Knight)", "", "grail", 1800),
+        ("Ad Icons", "SE", "Tony the Tiger (Flocked, Glow)", "Funko Shop", "grail", 1500),
+
+        # ── Anime Pops — New Licenses (+6) ───────────────────────────
+        ("Animation", "1700", "Sung Jin-woo (Solo Leveling)", "", "mid", 42),
+        ("Animation", "1701", "Igris (Solo Leveling)", "", "mid", 38),
+        ("Animation", "1702", "Momo Ayase (Dandadan)", "", "mid", 35),
+        ("Animation", "1703", "Okarun (Dandadan)", "", "mid", 40),
+        ("Animation", "1704", "Frieren (Frieren: Beyond Journey's End)", "", "mid", 45),
+        ("Animation", "1705", "Fern (Frieren: Beyond Journey's End)", "", "mid", 38),
+
+        # ── Funko Soda — New Chases (+4) ─────────────────────────────
+        ("Vinyl Soda", "SE", "Gojo (Six Eyes, Chase)", "", "high", 200),
+        ("Vinyl Soda", "SE", "Denji (Chainsaw, Chase)", "", "high", 160),
+        ("Vinyl Soda", "SE", "Luffy Gear 5 (Chase Glow)", "", "high", 190),
+        ("Vinyl Soda", "SE", "Tanjiro (Hinokami Kagura, Chase)", "", "high", 170),
     ]
 
     catalog = []

@@ -893,6 +893,43 @@ export type IntakeResultResponse = {
   } | null;
   chain_of_thought: string | null;
   rationale: string[];
+  // QuickScan enhancement fields
+  scan_session_id: string | null;
+  social_proof: {
+    collector_count: number;
+    is_trending: boolean;
+    trend_rank: number | null;
+    recent_sold: Array<{
+      title: string | null;
+      price: number | null;
+      currency: string;
+      sold_at: string | null;
+      source: string | null;
+    }>;
+    scarcity: {
+      listing_count: number;
+      supply_trend: string;
+      scarcity_score: number;
+    } | null;
+  } | null;
+  duplicate_info: {
+    owned_count: number;
+    owned_item_ids: string[];
+    is_variant: boolean;
+    variant_of: string | null;
+    set_completion: { owned: number; total: number; pct: number } | null;
+  } | null;
+  defect_annotations: Array<{
+    type: string | null;
+    severity: string | null;
+    location: string | null;
+    description: string | null;
+  }>;
+  suggested_grade: {
+    scale: string | null;
+    grade_value: string | null;
+    reasoning: string | null;
+  } | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -980,4 +1017,117 @@ export async function searchEvents(params: {
   if (params.limit) sp.set("limit", String(params.limit));
   if (params.offset) sp.set("offset", String(params.offset));
   return get(`/events/search?${sp.toString()}`);
+}
+
+// ---------------------------------------------------------------------------
+// Notification History
+// ---------------------------------------------------------------------------
+
+export type NotificationItem = {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  data: Record<string, unknown>;
+  deep_link: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type NotificationHistoryResponse = {
+  notifications: NotificationItem[];
+  total_count: number;
+  unread_count: number;
+};
+
+export async function getNotificationHistory(params?: {
+  limit?: number;
+  offset?: number;
+  unread_only?: boolean;
+}): Promise<NotificationHistoryResponse> {
+  const sp = new URLSearchParams();
+  if (params?.limit) sp.set("limit", String(params.limit));
+  if (params?.offset) sp.set("offset", String(params.offset));
+  if (params?.unread_only) sp.set("unread_only", "true");
+  const qs = sp.toString();
+  return get(`/notifications/history${qs ? `?${qs}` : ""}`);
+}
+
+export async function markNotificationRead(notificationId: string) {
+  return patch(`/notifications/${notificationId}/read`, {});
+}
+
+export async function markAllNotificationsRead() {
+  return post("/notifications/mark-all-read", {});
+}
+
+// ---------------------------------------------------------------------------
+// QuickScan feedback & multi-detect
+// ---------------------------------------------------------------------------
+
+type FeedbackApiResponse = {
+  id: string;
+  accepted: boolean;
+  retrain_flagged: boolean;
+};
+
+export async function submitScanFeedback(feedback: {
+  scanSessionId: string;
+  correctedName?: string;
+  correctedCategory?: string;
+  correctedCondition?: string;
+}): Promise<{ id: string; accepted: boolean; retrainFlagged: boolean }> {
+  const resp = await post<FeedbackApiResponse>("/intake/feedback", {
+    scan_session_id: feedback.scanSessionId,
+    corrected_name: feedback.correctedName,
+    corrected_category: feedback.correctedCategory,
+    corrected_condition: feedback.correctedCondition,
+  });
+  return {
+    id: resp.id,
+    accepted: resp.accepted,
+    retrainFlagged: resp.retrain_flagged,
+  };
+}
+
+type MultiDetectApiResponse = {
+  items: Array<{
+    item_index: number;
+    bounding_box: { x: number; y: number; w: number; h: number };
+    category_hint: string | null;
+    suggested_name: string | null;
+    confidence: number;
+  }>;
+  total_detected: number;
+};
+
+export async function multiDetect(
+  imageUri: string,
+): Promise<{
+  items: Array<{
+    itemIndex: number;
+    boundingBox: { x: number; y: number; w: number; h: number };
+    categoryHint: string | null;
+    suggestedName: string | null;
+    confidence: number;
+  }>;
+  totalDetected: number;
+}> {
+  const form = new FormData();
+  form.append("file", {
+    uri: imageUri,
+    type: "image/jpeg",
+    name: "multi.jpg",
+  } as any);
+  const resp = await postMultipart<MultiDetectApiResponse>("/intake/multi-detect", form);
+  return {
+    items: (resp.items || []).map((i) => ({
+      itemIndex: i.item_index,
+      boundingBox: i.bounding_box || { x: 0, y: 0, w: 1, h: 1 },
+      categoryHint: i.category_hint,
+      suggestedName: i.suggested_name,
+      confidence: i.confidence || 0,
+    })),
+    totalDetected: resp.total_detected || 0,
+  };
 }

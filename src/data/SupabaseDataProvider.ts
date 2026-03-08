@@ -537,6 +537,42 @@ export class SupabaseDataProvider implements DataProvider {
         catalogMatchKey: intake.catalog_match_key ?? null,
         alternatives,
         fieldConfidence,
+        scanSessionId: intake.scan_session_id ?? null,
+        socialProof: intake.social_proof ? {
+          collectorCount: intake.social_proof.collector_count ?? 0,
+          isTrending: intake.social_proof.is_trending ?? false,
+          trendRank: intake.social_proof.trend_rank ?? null,
+          recentSold: (intake.social_proof.recent_sold ?? []).map((s) => ({
+            title: (s.title as string) ?? '',
+            price: (s.price as number) ?? 0,
+            currency: ((s.currency ?? 'EUR') as CurrencyCode),
+            soldAt: (s.sold_at as string) ?? null,
+            source: (s.source as string) ?? '',
+          })),
+          scarcity: {
+            listingCount: intake.social_proof.scarcity?.listing_count ?? 0,
+            supplyTrend: ((intake.social_proof.scarcity?.supply_trend ?? 'stable') as 'increasing' | 'stable' | 'decreasing'),
+            scarcityScore: intake.social_proof.scarcity?.scarcity_score ?? 0,
+          },
+        } : null,
+        duplicateInfo: intake.duplicate_info ? {
+          ownedCount: intake.duplicate_info.owned_count ?? 0,
+          ownedItemIds: intake.duplicate_info.owned_item_ids ?? [],
+          isVariant: intake.duplicate_info.is_variant ?? false,
+          variantOf: intake.duplicate_info.variant_of ?? null,
+          setCompletion: intake.duplicate_info.set_completion ?? null,
+        } : null,
+        defectAnnotations: (intake.defect_annotations ?? []).map((d) => ({
+          type: (d.type as string) ?? '',
+          severity: ((d.severity ?? 'minor') as 'minor' | 'moderate' | 'major' | 'severe'),
+          location: (d.location as string) ?? '',
+          description: (d.description as string) ?? '',
+        })),
+        suggestedGrade: intake.suggested_grade ? {
+          scale: ((intake.suggested_grade.scale ?? 'generic') as 'psa' | 'cgc' | 'generic'),
+          gradeValue: (intake.suggested_grade.grade_value as string) ?? '',
+          reasoning: (intake.suggested_grade.reasoning as string) ?? '',
+        } : null,
       };
     }
 

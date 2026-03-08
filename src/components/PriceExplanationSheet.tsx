@@ -3,21 +3,19 @@
  * Bottom sheet displaying detailed price explanation.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   ScrollView,
-  SafeAreaView,
   Pressable,
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { BottomSheetModal } from './BottomSheetModal';
 import {
   PriceExplanation,
   PriceBand,
@@ -62,37 +60,24 @@ export function PriceExplanationSheet({
 }: PriceExplanationSheetProps) {
   const { colors } = useAppTheme();
 
+  const handleClose = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+    onClose();
+  }, [onClose]);
+
   if (!explanation) return null;
 
   const confidenceColor = getConfidenceColor(explanation.confidenceTier);
   const confidenceLabel = getConfidenceLabel(explanation.confidenceTier);
 
   return (
-    <Modal
+    <BottomSheetModal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onClose={handleClose}
+      title="Price Explanation"
+      colors={colors}
+      mode="pageSheet"
     >
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            Price Explanation
-          </Text>
-          <AnimatedPressable
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-              onClose();
-            }}
-            style={styles.closeButton}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-          >
-            <Ionicons name="close" size={24} color={colors.text} />
-          </AnimatedPressable>
-        </View>
-
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
@@ -232,32 +217,11 @@ export function PriceExplanationSheet({
             })}
           </Text>
         </ScrollView>
-      </SafeAreaView>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  closeButton: {
-    position: 'absolute',
-    right: 16,
-    padding: 4,
-  },
   content: {
     flex: 1,
   },

@@ -30,8 +30,14 @@ import { AnimatedPressable } from '@/motion';
 import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import { ScanResultCard } from '@/components/ScanResultCard';
-import type { QuickScanResult, CatalogAlternative } from '@/data/types';
+import { MultiItemOverlay } from '@/components/MultiItemOverlay';
+import { ComparisonCard } from '@/components/ComparisonCard';
+import { classifyOnDevice, buildCategoryDistribution } from '@/lib/edgeClassifier';
+import type { EdgeClassification } from '@/lib/edgeClassifier';
+import { multiDetect } from '@/api/collectorsApi';
+import type { QuickScanResult, CatalogAlternative, DetectedMultiItem } from '@/data/types';
 import logger from '@/utils/logger';
+import { track } from '@/analytics/track';
 
 const TIFFANY = '#81D8D0';
 const TIFFANY_DARK = '#5FBFB6';
@@ -41,7 +47,18 @@ const CORNER_THICKNESS = 4;
 const CORNER_RADIUS = 16;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type ScanPhase = 'camera' | 'analyzing' | 'result' | 'done' | 'batch_result' | 'batch_summary';
+type ScanPhase =
+  | 'camera'
+  | 'analyzing'
+  | 'result'
+  | 'done'
+  | 'batch_result'
+  | 'batch_summary'
+  | 'multi_detect'
+  | 'multi_result'
+  | 'comparison_first'
+  | 'comparison_second'
+  | 'comparison_result';
 
 /** Analysis step for the branded loading screen */
 type AnalysisStep = {
@@ -84,6 +101,20 @@ function QuickScanScreen() {
   const [batchItems, setBatchItems] = useState<BatchScannedItem[]>([]);
   const [currentBatchResult, setCurrentBatchResult] = useState<BatchScannedItem | null>(null);
   const [savingBatchItem, setSavingBatchItem] = useState(false);
+
+  // Multi-detect state
+  const [multiMode, setMultiMode] = useState(false);
+  const [detectedMultiItems, setDetectedMultiItems] = useState<DetectedMultiItem[]>([]);
+  const [multiSelectedIndex, setMultiSelectedIndex] = useState<number | null>(null);
+
+  // Comparison mode state
+  const [compareMode, setCompareMode] = useState(false);
+  const [comparisonA, setComparisonA] = useState<{ result: QuickScanResult; uri: string } | null>(null);
+  const [comparisonB, setComparisonB] = useState<{ result: QuickScanResult; uri: string } | null>(null);
+
+  // Edge classification / viewfinder hint state
+  const [edgeHint, setEdgeHint] = useState<EdgeClassification | null>(null);
+  const [userCategoryDist, setUserCategoryDist] = useState<Record<string, number> | null>(null);
 
   // Result screen state (intermediate screen with alternatives)
   const [scanResult, setScanResult] = useState<QuickScanResult | null>(null);
@@ -140,11 +171,56 @@ function QuickScanScreen() {
     return () => clearInterval(interval);
   }, [phase]);
 
+  // Track when camera permission is first granted
+  useEffect(() => {
+    if (permission?.granted) {
+      track({ name: 'quickscan_started' });
+    }
+  }, [permission?.granted]);
+
+  // Load user's category distribution once for edge classification
+  useEffect(() => {
+    if (!featureFlags.FEATURE_EDGE_CLASSIFICATION) return;
+    dataProvider.listItems({ limit: 500, offset: 0 })
+      .then((items) => {
+        if (items?.length) {
+          setUserCategoryDist(buildCategoryDistribution(items));
+        }
+      })
+      .catch(() => {/* best-effort */});
+  }, []);
+
+  // F5: Live viewfinder hints — periodic frame capture in camera phase
+  useEffect(() => {
+    if (!featureFlags.FEATURE_VIEWFINDER_HINTS || phase !== 'camera' || !cameraRef.current) return;
+
+    const interval = setInterval(async () => {
+      if (!cameraRef.current || phase !== 'camera') return;
+      try {
+        const frame = await cameraRef.current.takePictureAsync({ quality: 0.1 });
+        if (frame?.width && frame?.height) {
+          const hint = classifyOnDevice(
+            { width: frame.width, height: frame.height },
+            userCategoryDist,
+          );
+          if (hint.confidence >= 0.15) {
+            setEdgeHint(hint);
+          }
+        }
+      } catch {
+        // Silent — frame capture may fail during transitions
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [phase, userCategoryDist]);
+
   const resetCamera = useCallback(() => {
     setPhase('camera');
     setCapturedUri(null);
     setCurrentBatchResult(null);
     setScanResult(null);
+    setEdgeHint(null);
     setAnalysisStepIndex(0);
   }, []);
 
@@ -211,8 +287,67 @@ function QuickScanScreen() {
       }
 
       setCapturedUri(photo.uri);
-      setPhase('analyzing');
       setAnalysisStepIndex(0);
+      track({ name: 'quickscan_photo_taken' });
+
+      // F3: On-device edge classification — show instant hint during analyzing
+      if (featureFlags.FEATURE_EDGE_CLASSIFICATION && photo.width && photo.height) {
+        const hint = classifyOnDevice(
+          { width: photo.width, height: photo.height },
+          userCategoryDist,
+        );
+        setEdgeHint(hint);
+        track({ name: 'edge_classification_used', properties: { category: hint.category, method: hint.method } });
+      }
+
+      // F1: Multi-item detection mode
+      if (multiMode && featureFlags.FEATURE_MULTI_ITEM_SCAN) {
+        setPhase('multi_detect');
+        try {
+          const result = await multiDetect(photo.uri);
+          if (result.items.length > 0) {
+            setDetectedMultiItems(result.items.map((it) => ({
+              itemIndex: it.itemIndex,
+              boundingBox: it.boundingBox,
+              categoryHint: it.categoryHint ?? null,
+              suggestedName: it.suggestedName ?? null,
+              confidence: it.confidence,
+            })));
+            track({ name: 'multi_item_detected', properties: { item_count: result.items.length } });
+            setPhase('multi_result');
+          } else {
+            showToast({ message: 'No items detected. Try again.', type: 'info' });
+            setPhase('camera');
+            setCapturedUri(null);
+          }
+        } catch (err: unknown) {
+          logger.warn('[QuickScan] multi-detect error:', err);
+          showToast({ message: 'Multi-detect failed. Try standard mode.', type: 'error' });
+          setPhase('camera');
+          setCapturedUri(null);
+        }
+        return;
+      }
+
+      // F8: Comparison mode — first or second capture
+      if (compareMode && featureFlags.FEATURE_COMPARISON_SCAN) {
+        setPhase('analyzing');
+        const sr = await dataProvider.quickscanSingle(photo.uri);
+        if (!comparisonA) {
+          setComparisonA({ result: sr, uri: photo.uri });
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          showToast({ message: 'Item A captured! Now scan item B.', type: 'success' });
+          setPhase('comparison_second');
+          setCapturedUri(null);
+        } else {
+          setComparisonB({ result: sr, uri: photo.uri });
+          track({ name: 'comparison_scan_completed', properties: {} });
+          setPhase('comparison_result');
+        }
+        return;
+      }
+
+      setPhase('analyzing');
 
       // Run AI analysis
       const sr = await dataProvider.quickscanSingle(photo.uri);
@@ -283,6 +418,15 @@ function QuickScanScreen() {
   const handleConfirmResult = useCallback(() => {
     if (!scanResult || !capturedUri) return;
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    track({
+      name: 'quickscan_result_accepted',
+      properties: {
+        category: scanResult?.attributes?.category,
+        confidence: scanResult?.prediction?.confidence
+          ? Math.round(scanResult.prediction.confidence * 100)
+          : undefined,
+      },
+    });
     setPhase('done');
 
     // Build notes from extracted details
@@ -340,6 +484,8 @@ function QuickScanScreen() {
   const toggleBatchMode = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setBatchMode((prev) => !prev);
+    setMultiMode(false);
+    setCompareMode(false);
     if (batchMode) {
       // Turning off batch mode -- if items were scanned, show summary
       if (batchItems.length > 0) {
@@ -347,6 +493,71 @@ function QuickScanScreen() {
       }
     }
   }, [settings.hapticsEnabled, batchMode, batchItems.length]);
+
+  const toggleMultiMode = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setMultiMode((prev) => !prev);
+    setBatchMode(false);
+    setCompareMode(false);
+  }, [settings.hapticsEnabled]);
+
+  const toggleCompareMode = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setCompareMode((prev) => !prev);
+    setBatchMode(false);
+    setMultiMode(false);
+    setComparisonA(null);
+    setComparisonB(null);
+  }, [settings.hapticsEnabled]);
+
+  // Multi-detect: process all items sequentially
+  const handleProcessAllMulti = useCallback(async () => {
+    if (!capturedUri || detectedMultiItems.length === 0) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    // Navigate to batch summary with detected items as a starting point
+    showToast({ message: `Processing ${detectedMultiItems.length} items...`, type: 'info' });
+    // For now, save the first item and reset
+    resetCamera();
+  }, [capturedUri, detectedMultiItems, settings.hapticsEnabled, showToast, resetCamera]);
+
+  // Comparison: keep item A, B, or both
+  const handleKeepCompA = useCallback(() => {
+    if (!comparisonA) return;
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    setScanResult(comparisonA.result);
+    setCapturedUri(comparisonA.uri);
+    setPhase('result');
+    setComparisonA(null);
+    setComparisonB(null);
+  }, [comparisonA, settings.hapticsEnabled]);
+
+  const handleKeepCompB = useCallback(() => {
+    if (!comparisonB) return;
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    setScanResult(comparisonB.result);
+    setCapturedUri(comparisonB.uri);
+    setPhase('result');
+    setComparisonA(null);
+    setComparisonB(null);
+  }, [comparisonB, settings.hapticsEnabled]);
+
+  const handleKeepBoth = useCallback(() => {
+    if (!comparisonA) return;
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+    // Show item A first, user can go back for B
+    setScanResult(comparisonA.result);
+    setCapturedUri(comparisonA.uri);
+    setPhase('result');
+    setComparisonA(null);
+    setComparisonB(null);
+  }, [comparisonA, settings.hapticsEnabled]);
+
+  const handleCompRetake = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setComparisonA(null);
+    setComparisonB(null);
+    resetCamera();
+  }, [settings.hapticsEnabled, resetCamera]);
 
   const savedBatchCount = batchItems.filter((i) => i.saved).length;
   const totalBatchValue = batchItems
@@ -395,6 +606,37 @@ function QuickScanScreen() {
           </AnimatedPressable>
         </View>
       </View>
+    );
+  }
+
+  // ---- Multi-detect Result Screen ----
+  if (phase === 'multi_result' && capturedUri && detectedMultiItems.length > 0) {
+    return (
+      <MultiItemOverlay
+        imageUri={capturedUri}
+        detectedItems={detectedMultiItems}
+        selectedIndex={multiSelectedIndex}
+        onSelectItem={setMultiSelectedIndex}
+        onProcessAll={handleProcessAllMulti}
+        onProcessSelected={() => {/* TODO: process single item */}}
+      />
+    );
+  }
+
+  // ---- Comparison Result Screen ----
+  if (phase === 'comparison_result' && comparisonA && comparisonB) {
+    return (
+      <ComparisonCard
+        itemA={comparisonA.result}
+        itemB={comparisonB.result}
+        imageUriA={comparisonA.uri}
+        imageUriB={comparisonB.uri}
+        currency={settings.currency}
+        onKeepA={handleKeepCompA}
+        onKeepB={handleKeepCompB}
+        onKeepBoth={handleKeepBoth}
+        onRetake={handleCompRetake}
+      />
     );
   }
 
@@ -485,7 +727,7 @@ function QuickScanScreen() {
   }
 
   // ---- Branded Analysis Screen ----
-  if (phase === 'analyzing' && capturedUri) {
+  if ((phase === 'analyzing' || phase === 'multi_detect') && capturedUri) {
     const currentStep = ANALYSIS_STEPS[analysisStepIndex];
     const imageHeight = SCREEN_WIDTH * 0.75;
     const scanLineTranslate = scanLineAnim.interpolate({
@@ -560,6 +802,16 @@ function QuickScanScreen() {
           })}
         </View>
 
+        {/* F3: Edge classification category pill */}
+        {featureFlags.FEATURE_EDGE_CLASSIFICATION && edgeHint && edgeHint.confidence >= 0.15 && (
+          <View style={styles.edgeHintPill}>
+            <Ionicons name="sparkles" size={14} color={TIFFANY} />
+            <Text style={[styles.edgeHintText, { color: colors.text }]}>
+              Looks like: {edgeHint.category.replace(/_/g, ' ')}
+            </Text>
+          </View>
+        )}
+
         {/* Bottom hint */}
         <View style={styles.analysisBottomHint}>
           <Text style={[styles.analysisHintText, { color: colors.muted }]}>
@@ -593,33 +845,93 @@ function QuickScanScreen() {
             </AnimatedPressable>
             <Text style={styles.topBarTitle}>QuickScan</Text>
 
-            {/* Batch mode toggle pill */}
-            <AnimatedPressable
-              onPress={toggleBatchMode}
-              style={[
-                styles.batchPill,
-                batchMode
-                  ? { backgroundColor: TIFFANY }
-                  : { backgroundColor: 'rgba(255,255,255,0.2)' },
-              ]}
-              accessibilityRole="switch"
-              accessibilityLabel={`Batch mode ${batchMode ? 'on' : 'off'}`}
-              accessibilityState={{ checked: batchMode }}
-            >
-              <Ionicons
-                name="layers-outline"
-                size={16}
-                color={batchMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)'}
-              />
-              <Text
+            {/* Mode toggle pills */}
+            <View style={styles.modePills}>
+              <AnimatedPressable
+                onPress={toggleBatchMode}
                 style={[
-                  styles.batchPillText,
-                  { color: batchMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)' },
+                  styles.batchPill,
+                  batchMode
+                    ? { backgroundColor: TIFFANY }
+                    : { backgroundColor: 'rgba(255,255,255,0.2)' },
                 ]}
+                accessibilityRole="switch"
+                accessibilityLabel={`Batch mode ${batchMode ? 'on' : 'off'}`}
+                accessibilityState={{ checked: batchMode }}
               >
-                Batch
-              </Text>
-            </AnimatedPressable>
+                <Ionicons
+                  name="layers-outline"
+                  size={16}
+                  color={batchMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)'}
+                />
+                <Text
+                  style={[
+                    styles.batchPillText,
+                    { color: batchMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)' },
+                  ]}
+                >
+                  Batch
+                </Text>
+              </AnimatedPressable>
+
+              {featureFlags.FEATURE_MULTI_ITEM_SCAN && (
+                <AnimatedPressable
+                  onPress={toggleMultiMode}
+                  style={[
+                    styles.batchPill,
+                    multiMode
+                      ? { backgroundColor: TIFFANY }
+                      : { backgroundColor: 'rgba(255,255,255,0.2)' },
+                  ]}
+                  accessibilityRole="switch"
+                  accessibilityLabel={`Multi mode ${multiMode ? 'on' : 'off'}`}
+                  accessibilityState={{ checked: multiMode }}
+                >
+                  <Ionicons
+                    name="grid-outline"
+                    size={16}
+                    color={multiMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)'}
+                  />
+                  <Text
+                    style={[
+                      styles.batchPillText,
+                      { color: multiMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)' },
+                    ]}
+                  >
+                    Multi
+                  </Text>
+                </AnimatedPressable>
+              )}
+
+              {featureFlags.FEATURE_COMPARISON_SCAN && (
+                <AnimatedPressable
+                  onPress={toggleCompareMode}
+                  style={[
+                    styles.batchPill,
+                    compareMode
+                      ? { backgroundColor: '#8B5CF6' }
+                      : { backgroundColor: 'rgba(255,255,255,0.2)' },
+                  ]}
+                  accessibilityRole="switch"
+                  accessibilityLabel={`Compare mode ${compareMode ? 'on' : 'off'}`}
+                  accessibilityState={{ checked: compareMode }}
+                >
+                  <Ionicons
+                    name="git-compare-outline"
+                    size={16}
+                    color={compareMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)'}
+                  />
+                  <Text
+                    style={[
+                      styles.batchPillText,
+                      { color: compareMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)' },
+                    ]}
+                  >
+                    Compare
+                  </Text>
+                </AnimatedPressable>
+              )}
+            </View>
           </SafeAreaView>
 
           {/* Batch counter badge */}
@@ -629,6 +941,18 @@ function QuickScanScreen() {
                 <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
                 <Text style={styles.batchCounterText}>
                   {savedBatchCount} item{savedBatchCount !== 1 ? 's' : ''} scanned
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* F5: Viewfinder hint floating pill */}
+          {featureFlags.FEATURE_VIEWFINDER_HINTS && edgeHint && edgeHint.confidence >= 0.15 && phase === 'camera' && (
+            <View style={styles.viewfinderHintRow}>
+              <View style={styles.viewfinderHintPill}>
+                <Ionicons name="sparkles" size={13} color={TIFFANY} />
+                <Text style={styles.viewfinderHintText}>
+                  Looks like: {edgeHint.category.replace(/_/g, ' ')}
                 </Text>
               </View>
             </View>
@@ -650,7 +974,15 @@ function QuickScanScreen() {
           {/* Hint text below frame */}
           <View style={styles.hintArea}>
             <Text style={styles.hintText}>
-              {batchMode ? 'Batch mode -- scan multiple items' : 'Point at your collectible'}
+              {batchMode
+                ? 'Batch mode -- scan multiple items'
+                : multiMode
+                  ? 'Multi mode -- point at a shelf or group'
+                  : compareMode
+                    ? comparisonA
+                      ? 'Now scan item B for comparison'
+                      : 'Compare mode -- scan item A first'
+                    : 'Point at your collectible'}
             </Text>
           </View>
 
@@ -669,14 +1001,15 @@ function QuickScanScreen() {
               </AnimatedPressable>
             )}
             <AnimatedPressable
-              onPress={phase === 'camera' ? handleCapture : undefined}
+              onPress={phase === 'camera' || phase === 'comparison_second' ? handleCapture : undefined}
               style={[
                 styles.captureBtn,
-                phase !== 'camera' && { opacity: 0.5 },
+                phase !== 'camera' && phase !== 'comparison_second' && { opacity: 0.5 },
               ]}
               accessibilityRole="button"
               accessibilityLabel="Take photo"
-              disabled={phase !== 'camera'}
+              disabled={phase !== 'camera' && phase !== 'comparison_second'}
+              testID="capture-button"
             >
               <View style={styles.captureBtnInner}>
                 <Ionicons name="camera" size={32} color="#FFFFFF" />
@@ -1253,6 +1586,52 @@ const styles = StyleSheet.create({
   analysisHintText: {
     fontSize: 13,
     fontWeight: '400',
+  },
+
+  // ---- Mode Toggle Pills Container ----
+  modePills: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+
+  // ---- Edge Classification Pill (analyzing screen) ----
+  edgeHintPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(129,216,208,0.12)',
+  },
+  edgeHintText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+
+  // ---- Viewfinder Hint (camera phase) ----
+  viewfinderHintRow: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  viewfinderHintPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  viewfinderHintText: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
 });
 

@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Optional
 from urllib.parse import urlparse
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,19 @@ class IntakeResult:
     # Rationale trail
     rationale: list[str] = field(default_factory=list)
 
+    # Scan session (F9)
+    scan_session_id: Optional[str] = None
+
+    # Condition grading (F6)
+    defect_annotations: list[dict[str, Any]] = field(default_factory=list)
+    suggested_grade: Optional[dict[str, Any]] = None
+
+    # Social proof (F10)
+    social_proof: Optional[dict[str, Any]] = None
+
+    # Duplicate detection (F7)
+    duplicate_info: Optional[dict[str, Any]] = None
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
@@ -101,6 +115,11 @@ class IntakeResult:
             "field_confidence": self.field_confidence,
             "chain_of_thought": self.chain_of_thought,
             "rationale": self.rationale,
+            "scan_session_id": self.scan_session_id,
+            "defect_annotations": self.defect_annotations,
+            "suggested_grade": self.suggested_grade,
+            "social_proof": self.social_proof,
+            "duplicate_info": self.duplicate_info,
         }
 
 
@@ -633,6 +652,8 @@ async def _vision_classify_internal(
             "suggested_name": result.suggested_name,
             "attributes": result.attributes,
             "identification_method": ident_method,
+            "defect_annotations": result.attributes.get("defect_annotations", []),
+            "suggested_grade": result.attributes.get("suggested_grade"),
         }
     except Exception as e:
         logger.warning("Vision classification failed in intake agent: %s", e)
@@ -880,6 +901,7 @@ async def process_intake(
         IntakeResult with full provenance
     """
     result = IntakeResult()
+    result.scan_session_id = str(uuid4())
     result.barcode = barcode
     result.barcode_type = barcode_type
     hints = user_hints or {}
@@ -969,6 +991,32 @@ async def process_intake(
                             "condition_confidence", 0.0
                         )
 
+                    # Extract defect annotations and suggested grade (F6)
+                    result.defect_annotations = vision_result.get("defect_annotations", [])
+                    result.suggested_grade = vision_result.get("suggested_grade")
+
+                    # Enrich with condition_grader if defects present but no grade
+                    if result.defect_annotations and not result.suggested_grade:
+                        try:
+                            from app.ml.condition_grader import map_defects_to_psa_grade, defects_to_generic_condition
+                            cat_lower = (vision_cat or "").lower()
+                            if any(k in cat_lower for k in ("pokemon", "mtg", "yugioh", "lorcana", "sportscards")):
+                                gr = map_defects_to_psa_grade(result.defect_annotations)
+                                result.suggested_grade = {
+                                    "scale": "psa",
+                                    "grade_value": str(gr["grade"]),
+                                    "reasoning": f"{len(result.defect_annotations)} defect(s): {gr['label']}",
+                                }
+                            else:
+                                gr = defects_to_generic_condition(result.defect_annotations)
+                                result.suggested_grade = {
+                                    "scale": "generic",
+                                    "grade_value": gr["condition"].replace("_", " ").title(),
+                                    "reasoning": f"{len(result.defect_annotations)} defect(s) detected",
+                                }
+                        except Exception:
+                            pass  # Best-effort grading
+
                     result.rationale.append(
                         f"Vision classified as {vision_cat} via {vision_method} "
                         f"(confidence: {vision_conf:.2f})"
@@ -1053,8 +1101,49 @@ async def process_intake(
         # Step 2.6: Re-prompt validation — send image + candidates back to
         # the model for a focused visual comparison.
         # -----------------------------------------------------------------
+        _fast_path_applied = False
         if (
             image_bytes
+            and result.alternatives
+            and len(result.alternatives) >= 1
+        ):
+            best_alt_score = max(
+                a.get("match_score", 0) for a in result.alternatives
+            )
+            clip_conf = result.attributes.get("clip_confidence", 0.0)
+
+            # Fast-path (F2): if CLIP confidence >= 0.90 AND best catalog
+            # match >= 0.90, auto-select the best match and skip re-prompt.
+            if clip_conf >= 0.90 and best_alt_score >= 0.90:
+                _fast_path_applied = True
+                best_alt = max(result.alternatives, key=lambda a: a.get("match_score", 0))
+                result.catalog_match_id = best_alt.get("catalog_item_id")
+                result.catalog_match_key = best_alt.get("item_key")
+                result.name = best_alt.get("title") or result.name
+                if best_alt.get("brand"):
+                    result.attributes["brand"] = best_alt["brand"]
+                if best_alt.get("rarity"):
+                    result.attributes["rarity"] = best_alt["rarity"]
+                    result.subtype_id = best_alt["rarity"]
+                if best_alt.get("set_code"):
+                    result.attributes["set_code"] = best_alt["set_code"]
+                if result.field_confidence and result.field_confidence.get("name") is not None:
+                    result.field_confidence["name"] = max(
+                        result.field_confidence["name"], best_alt_score,
+                    )
+                result.rationale.append(
+                    f"Fast-path: auto-selected '{best_alt.get('title')}' "
+                    f"(clip_conf={clip_conf:.2f}, catalog_score={best_alt_score:.2f}) — "
+                    f"skipped re-prompt"
+                )
+                logger.info(
+                    "Fast-path activated: clip_conf=%.2f, catalog_score=%.2f — skipping reprompt",
+                    clip_conf, best_alt_score,
+                )
+
+        if (
+            not _fast_path_applied
+            and image_bytes
             and result.alternatives
             and len(result.alternatives) >= 2
         ):
@@ -1110,6 +1199,32 @@ async def process_intake(
                         )
 
         # -----------------------------------------------------------------
+        # Step 2.7: Duplicate/variant detection (needs user_id)
+        # -----------------------------------------------------------------
+        if user_id and result.category_id:
+            try:
+                from app.agents.intake_duplicate_check import check_user_duplicates
+                import re as _re
+                _norm_key = _re.sub(r"[^a-z0-9\s]", "", (result.name or "").lower().strip())[:100]
+                result.duplicate_info = await check_user_duplicates(
+                    user_id=user_id,
+                    category_id=result.category_id,
+                    normalized_key=_norm_key,
+                    catalog_match_key=result.catalog_match_key,
+                    pool=pool,
+                )
+                if result.duplicate_info.get("owned_count", 0) > 0:
+                    result.rationale.append(
+                        f"Duplicate detected: user already owns {result.duplicate_info['owned_count']} matching item(s)"
+                    )
+                elif result.duplicate_info.get("is_variant"):
+                    result.rationale.append(
+                        f"Variant detected: similar to owned '{result.duplicate_info['variant_of']}'"
+                    )
+            except Exception:
+                pass
+
+        # -----------------------------------------------------------------
         # Step 3: Taxonomy resolution
         # -----------------------------------------------------------------
         if result.category_id:
@@ -1138,6 +1253,23 @@ async def process_intake(
                 if band:
                     result.price_band = band
                 result.rationale.append(f"Price estimated from {source}: EUR {price:.2f}")
+
+        # -----------------------------------------------------------------
+        # Step 4.5: Social proof (best-effort)
+        # -----------------------------------------------------------------
+        try:
+            from app.agents.intake_social_proof import get_social_proof
+            result.social_proof = await get_social_proof(
+                category=result.category_id,
+                item_key=result.catalog_match_key or result.name,
+                pool=pool,
+            )
+            if result.social_proof.get("collector_count", 0) > 0:
+                result.rationale.append(
+                    f"Social proof: {result.social_proof['collector_count']} collectors interested"
+                )
+        except Exception:
+            pass
 
         # -----------------------------------------------------------------
         # Step 5: Apply user hints (trust user over automation)

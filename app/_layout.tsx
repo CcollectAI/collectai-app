@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Pressable, ActivityIndicator, Text, TextInput, Animated as RNAnimated } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
@@ -53,6 +53,9 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { initOfflineQueue } from "@/data/OfflineDataProvider";
 import { SplashScreen as BrandedSplash } from "@/components/SplashScreen";
 import { recordActiveDay } from "@/hooks/useStoreReview";
+import { initAnalytics, trackScreen } from "@/analytics/track";
+import { featureFlags } from "@/config/featureFlags";
+import { FeatureTourProvider } from "@/lib/featureTour";
 
 /* ---------- OTA Updates (guarded so dev builds work) ---------- */
 let Updates: {
@@ -79,6 +82,11 @@ if (Sentry && SENTRY_DSN) {
     dsn: SENTRY_DSN,
     tracesSampleRate: 0.1,
   });
+}
+
+/* ---------- PostHog Analytics (guarded) ---------- */
+if (featureFlags.FEATURE_ANALYTICS) {
+  initAnalytics(process.env.EXPO_PUBLIC_POSTHOG_KEY);
 }
 
 // Keep splash screen visible while auth loads
@@ -172,6 +180,12 @@ function RootStack() {
   const { colors, isDark } = useAppTheme();
   const { user } = useAuthContext();
   const { loading, onboardingChecked, splashFade, splashHidden } = useProtectedRoute();
+
+  // Screen tracking for analytics
+  const pathname = usePathname();
+  useEffect(() => {
+    if (pathname) trackScreen(pathname);
+  }, [pathname]);
 
   // Register push notifications once auth has resolved
   usePushNotifications(user?.id ?? null);
@@ -322,10 +336,12 @@ function RootLayout() {
     <ErrorBoundary>
       <SettingsProvider>
         <AuthProvider>
-          <ToastProvider>
-            <RootStack />
-            <OfflineBanner />
-          </ToastProvider>
+          <FeatureTourProvider>
+            <ToastProvider>
+              <RootStack />
+              <OfflineBanner />
+            </ToastProvider>
+          </FeatureTourProvider>
         </AuthProvider>
       </SettingsProvider>
     </ErrorBoundary>

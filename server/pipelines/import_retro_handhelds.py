@@ -1028,6 +1028,125 @@ def _expanded_round8_retro_handhelds() -> list[dict]:
         ("Bandai", "WonderSwan Console Sherbet Melon", "WonderSwan", "Sherbet Melon Console (Japan)", "Japan Exclusive", "high", 80, 170),
         ("Bandai", "Gundam WonderSwan Limited Edition", "WonderSwan", "MS Gundam MSVS Limited Edition Console (Japan)", "Japan Exclusive", "grail", 200, 400),
         ("Bandai", "Digimon Adventure Anode/Cathode Tamer WS", "WonderSwan", "Digimon Adventure Anode/Cathode Tamer (Game, Japan)", "Japan Exclusive", "mid", 35, 75),
+
+        # === ROUND 9 — 91 new items to reach 700+ ===
+
+        # --- Game Boy Color Special Editions (+8) ---
+        ("Nintendo", "Game Boy Color Tommy Hilfiger", "Game Boy Color", "Tommy Hilfiger Limited (NA)", "Special Edition", "high", 150, 320),
+        ("Nintendo", "Game Boy Color Ozzy Osbourne Bat", "Game Boy Color", "Ozzy Osbourne Bat Purple (Japan)", "Japan Exclusive", "grail", 300, 600),
+        ("Nintendo", "Game Boy Color Toys R Us Clear Purple", "Game Boy Color", "Toys R Us Exclusive Clear Purple (NA)", "Special Edition", "high", 100, 210),
+        ("Nintendo", "Game Boy Color Daiei Hawks Orange", "Game Boy Color", "Daiei Hawks Orange (Japan)", "Japan Exclusive", "high", 120, 250),
+        ("Nintendo", "Game Boy Color Jusco 30th Anniversary", "Game Boy Color", "Jusco 30th Anniversary Clear (Japan)", "Japan Exclusive", "high", 140, 290),
+        ("Nintendo", "Game Boy Color Famitsu Limited Gold", "Game Boy Color", "Famitsu 500 Issue Gold (Japan)", "Japan Exclusive", "grail", 250, 500),
+        ("Nintendo", "Game Boy Color Manchester United Red", "Game Boy Color", "Manchester United Red (EU)", "Special Edition", "high", 110, 230),
+        ("Nintendo", "Game Boy Color ANA Pikachu Blue", "Game Boy Color", "ANA All Nippon Airways Pikachu (Japan)", "Japan Exclusive", "grail", 200, 400),
+
+        # --- Neo Geo Pocket Color Games (+8) ---
+        ("SNK", "Sonic Pocket Adventure NGPC", "Neo Geo Pocket Color", "Sonic the Hedgehog Pocket Adventure (Game)", "Standard", "high", 65, 140),
+        ("SNK", "Match of the Millennium NGPC (Japanese)", "Neo Geo Pocket Color", "SNK vs Capcom MOTM (Game, Japan)", "Japan Exclusive", "high", 80, 170),
+        ("SNK", "Metal Slug 1st Mission NGPC", "Neo Geo Pocket Color", "Metal Slug 1st Mission (Game)", "Standard", "high", 70, 150),
+        ("SNK", "Puzzle Bobble Mini NGPC", "Neo Geo Pocket Color", "Puzzle Bobble Mini (Game, Japan)", "Japan Exclusive", "mid", 40, 85),
+        ("SNK", "Neo Turf Masters NGPC", "Neo Geo Pocket Color", "Neo Turf Masters / Big Tournament Golf (Game)", "Standard", "high", 85, 175),
+        ("SNK", "Crush Roller NGPC", "Neo Geo Pocket Color", "Crush Roller (Game, Japan)", "Japan Exclusive", "mid", 45, 95),
+        ("SNK", "Cool Cool Jam NGPC", "Neo Geo Pocket Color", "Cool Cool Jam (Game, Japan)", "Japan Exclusive", "high", 100, 210),
+        ("SNK", "Ogre Battle NGPC", "Neo Geo Pocket Color", "Ogre Battle: Legend of the Zenobia Prince (Game, Japan)", "Japan Exclusive", "high", 120, 250),
+
+        # --- Sega Game Gear Games (+8) ---
+        ("Sega", "Sonic the Hedgehog Game Gear", "Game Gear", "Sonic the Hedgehog (Game)", "Standard", "mid", 15, 35),
+        ("Sega", "Sonic Triple Trouble Game Gear", "Game Gear", "Sonic Triple Trouble (Game)", "Standard", "mid", 20, 45),
+        ("Sega", "Shining Force: The Sword of Hajya GG", "Game Gear", "Shining Force: Sword of Hajya (Game)", "Standard", "high", 60, 130),
+        ("Sega", "Shinobi Game Gear", "Game Gear", "Shinobi (Game)", "Standard", "mid", 25, 55),
+        ("Sega", "GG Shinobi II Game Gear", "Game Gear", "GG Shinobi II: The Silent Fury (Game)", "Standard", "mid", 30, 65),
+        ("Sega", "Columns Game Gear", "Game Gear", "Columns (Game)", "Standard", "standard", 10, 25),
+        ("Sega", "Defenders of Oasis Game Gear", "Game Gear", "Defenders of Oasis (Game)", "Standard", "high", 70, 150),
+        ("Sega", "Dragon Crystal Game Gear", "Game Gear", "Dragon Crystal (Game)", "Standard", "mid", 25, 55),
+
+        # --- Atari Lynx Games (+7) ---
+        ("Atari", "Batman Returns Lynx", "Atari Lynx", "Batman Returns (Game)", "Standard", "mid", 30, 65),
+        ("Atari", "Shadow of the Beast Lynx", "Atari Lynx", "Shadow of the Beast (Game)", "Standard", "mid", 35, 75),
+        ("Atari", "Warbirds Lynx", "Atari Lynx", "Warbirds (Game)", "Standard", "mid", 20, 45),
+        ("Atari", "Stun Runner Lynx", "Atari Lynx", "Stun Runner (Game)", "Standard", "mid", 20, 50),
+        ("Atari", "Xybots Lynx", "Atari Lynx", "Xybots (Game)", "Standard", "mid", 25, 55),
+        ("Atari", "Rygar Lynx", "Atari Lynx", "Rygar (Game)", "Standard", "high", 60, 130),
+        ("Atari", "Toki Lynx", "Atari Lynx", "Toki (Game)", "Standard", "mid", 30, 65),
+
+        # --- WonderSwan Color Games (+7) ---
+        ("Bandai", "RockMan EXE WonderSwan WSC", "WonderSwan Color", "RockMan EXE WS (Game, Japan)", "Japan Exclusive", "high", 70, 150),
+        ("Bandai", "Densha de Go! WSC", "WonderSwan Color", "Densha de Go! (Game, Japan)", "Japan Exclusive", "mid", 30, 65),
+        ("Bandai", "Digimon Anode Tamer WSC", "WonderSwan Color", "Digimon Adventure 02 Tag Tamers (Game, Japan)", "Japan Exclusive", "mid", 45, 95),
+        ("Bandai", "Naruto Konoha Ninpouchou WSC", "WonderSwan Color", "Naruto Konoha Ninpouchou (Game, Japan)", "Japan Exclusive", "mid", 35, 75),
+        ("Bandai", "Star Hearts WSC", "WonderSwan Color", "Star Hearts Hoshi to Daichi no Shisha (Game, Japan)", "Japan Exclusive", "high", 90, 190),
+        ("Bandai", "Makai Toushi SaGa WSC", "WonderSwan Color", "Makai Toushi SaGa (Final Fantasy Legend WSC) (Game, Japan)", "Japan Exclusive", "high", 60, 130),
+        ("Bandai", "Rhyme Rider Kerorican WSC", "WonderSwan Color", "Rhyme Rider Kerorican (Game, Japan)", "Japan Exclusive", "mid", 40, 85),
+
+        # --- Game Boy Advance SP Limited Editions (+8) ---
+        ("Nintendo", "Game Boy Advance SP Torchic Orange", "Game Boy Advance SP", "Pokemon Torchic Orange (Japan)", "Japan Exclusive", "grail", 240, 480),
+        ("Nintendo", "Game Boy Advance SP Rayquaza Green", "Game Boy Advance SP", "Pokemon Rayquaza Green (Japan)", "Japan Exclusive", "grail", 280, 560),
+        ("Nintendo", "Game Boy Advance SP Groudon Red", "Game Boy Advance SP", "Pokemon Groudon Red (Japan)", "Japan Exclusive", "grail", 250, 500),
+        ("Nintendo", "Game Boy Advance SP Kyogre Blue", "Game Boy Advance SP", "Pokemon Kyogre Blue (Japan)", "Japan Exclusive", "grail", 260, 520),
+        ("Nintendo", "Game Boy Advance SP Classic NES Black", "Game Boy Advance SP", "Classic NES Black AGS-001 (NA)", "Special Edition", "high", 100, 210),
+        ("Nintendo", "Game Boy Advance SP Pearl Blue AGS-101", "Game Boy Advance SP", "Pearl Blue AGS-101 Backlit (NA)", "Standard", "high", 110, 230),
+        ("Nintendo", "Game Boy Advance SP Surf Blue", "Game Boy Advance SP", "Surf Blue AGS-001 (Japan)", "Japan Exclusive", "high", 100, 210),
+        ("Nintendo", "Game Boy Advance SP Final Fantasy Tactics", "Game Boy Advance SP", "Final Fantasy Tactics Pearl White (Japan)", "Japan Exclusive", "high", 130, 270),
+
+        # --- DS Lite Special Editions (+8) ---
+        ("Nintendo", "Nintendo DS Lite Pokemon Diamond Pearl Dialga Palkia", "Nintendo DS Lite", "Pokemon Diamond Pearl Dialga Palkia (Japan)", "Japan Exclusive", "high", 110, 230),
+        ("Nintendo", "Nintendo DS Lite Crimson/Black Mario", "Nintendo DS Lite", "Crimson/Black Mario Limited (NA)", "Special Edition", "high", 80, 170),
+        ("Nintendo", "Nintendo DS Lite Pikachu Yellow (JP Edition)", "Nintendo DS Lite", "Pikachu Yellow (Japan)", "Japan Exclusive", "high", 120, 250),
+        ("Nintendo", "Nintendo DS Lite Ice Blue", "Nintendo DS Lite", "Ice Blue (Japan)", "Japan Exclusive", "mid", 60, 130),
+        ("Nintendo", "Nintendo DS Lite Metallic Rose", "Nintendo DS Lite", "Metallic Rose (Japan)", "Japan Exclusive", "mid", 65, 140),
+        ("Nintendo", "Nintendo DS Lite Love Plus+ Nene", "Nintendo DS Lite", "Love Plus+ Nene Deluxe (Japan)", "Japan Exclusive", "high", 150, 310),
+        ("Nintendo", "Nintendo DS Lite Kingdom Hearts 358/2 Days", "Nintendo DS Lite", "Kingdom Hearts 358/2 Days Silver (Japan)", "Japan Exclusive", "high", 130, 270),
+        ("Nintendo", "Nintendo DS Lite Guitar Hero On Tour Pack", "Nintendo DS Lite", "Guitar Hero On Tour White Bundle (NA)", "Console Bundle", "mid", 60, 130),
+
+        # --- PSP Limited Consoles (+8) ---
+        ("Sony", "PSP-3000 Monster Hunter 3rd Blue", "PSP-3000", "Monster Hunter Portable 3rd Hunter Blue (Japan)", "Japan Exclusive", "high", 110, 230),
+        ("Sony", "PSP-3000 Kingdom Hearts Birth by Sleep White", "PSP-3000", "Kingdom Hearts Birth by Sleep White (Japan)", "Japan Exclusive", "high", 120, 250),
+        ("Sony", "PSP-3000 Dissidia Final Fantasy Silver", "PSP-3000", "Dissidia Final Fantasy 20th Anniversary Silver (Japan)", "Japan Exclusive", "high", 130, 270),
+        ("Sony", "PSP-3000 Gundam vs Gundam Red", "PSP-3000", "Gundam vs Gundam Red Char's Custom (Japan)", "Japan Exclusive", "high", 140, 290),
+        ("Sony", "PSP-2000 God of War Red", "PSP-2000", "God of War Chains of Olympus Red (NA)", "Special Edition", "high", 90, 190),
+        ("Sony", "PSP-3000 Gran Turismo Silver", "PSP-3000", "Gran Turismo Racing Pack Silver (EU)", "Console Bundle", "mid", 70, 150),
+        ("Sony", "PSP-1000 Metal Gear Solid Platinum Silver", "PSP-1000", "Metal Gear Solid Peace Walker Platinum Silver (Japan)", "Japan Exclusive", "high", 120, 250),
+        ("Sony", "PSP-3000 Hatsune Miku Project Diva 2nd", "PSP-3000", "Hatsune Miku Project Diva 2nd Turquoise (Japan)", "Japan Exclusive", "high", 160, 330),
+
+        # --- Analogue Pocket Accessories (+7) ---
+        ("Analogue", "Analogue Pocket Adapter GG", "Analogue Pocket", "Game Gear Adapter Cartridge", "Standard", "mid", 30, 45),
+        ("Analogue", "Analogue Pocket Adapter NGPC", "Analogue Pocket", "Neo Geo Pocket Color Adapter", "Standard", "mid", 30, 45),
+        ("Analogue", "Analogue Pocket Adapter TG16", "Analogue Pocket", "TurboGrafx-16 Adapter", "Standard", "mid", 30, 45),
+        ("Analogue", "Analogue Pocket Adapter Lynx", "Analogue Pocket", "Atari Lynx Adapter", "Standard", "mid", 30, 45),
+        ("Analogue", "Analogue Pocket Hard Case", "Analogue Pocket", "Official Hard Carrying Case", "Standard", "standard", 20, 30),
+        ("Analogue", "Analogue Pocket Screen Protector Set", "Analogue Pocket", "Official Screen Protector (2-pack)", "Standard", "standard", 8, 12),
+        ("Analogue", "Analogue Pocket Transparent Red", "Analogue Pocket", "Transparent Red Limited", "Limited Color", "grail", 350, 460),
+
+        # --- More Nintendo Switch Lite Limited Editions (+7) ---
+        ("Nintendo", "Switch Lite Zacian and Zamazenta", "Switch Lite", "Pokemon Sword Shield Zacian Zamazenta (EU)", "Special Edition", "high", 160, 250),
+        ("Nintendo", "Switch Lite Dialga & Palkia", "Switch Lite", "Pokemon Brilliant Diamond Shining Pearl (EU)", "Special Edition", "high", 170, 260),
+        ("Nintendo", "Switch Lite Coral", "Switch Lite", "Coral (Japan/NA)", "Standard", "mid", 120, 180),
+        ("Nintendo", "Switch Lite Hyrule Gold", "Switch Lite", "Hyrule Edition Gold (NA)", "Special Edition", "high", 180, 280),
+        ("Nintendo", "Switch Lite Isabelle Aloha Green", "Switch Lite", "Animal Crossing Isabelle Aloha (Japan)", "Japan Exclusive", "high", 190, 300),
+        ("Nintendo", "Switch Lite Giratina Edition Japan", "Switch Lite", "Pokemon Legends Arceus Giratina (Japan)", "Japan Exclusive", "high", 200, 310),
+        ("Nintendo", "Switch Lite Blue", "Switch Lite", "Blue (EU/NA)", "Standard", "mid", 110, 170),
+
+        # --- More Tamagotchi (+6) ---
+        ("Bandai", "Tamagotchi Connection V5 Celebrity Blue", "Tamagotchi", "Connection V5 Celebrity Blue (2008)", "Standard", "mid", 25, 55),
+        ("Bandai", "Tamagotchi iD L 15th Anniversary Royal Purple", "Tamagotchi", "iD L 15th Anniversary Royal Purple (Japan)", "Japan Exclusive", "high", 80, 170),
+        ("Bandai", "Tamagotchi On Wonder Garden Turquoise", "Tamagotchi", "On Wonder Garden Turquoise (NA)", "Standard", "mid", 35, 70),
+        ("Bandai", "Tamagotchi Pix Party Confetti", "Tamagotchi", "Pix Party Confetti Pink (NA)", "Standard", "mid", 30, 60),
+        ("Bandai", "Tamagotchi Uni Lavender", "Tamagotchi", "Uni Lavender (2023)", "Standard", "mid", 45, 65),
+        ("Bandai", "Tamagotchi Smart Niziu Special Set", "Tamagotchi", "Smart NiziU Special Set (Japan)", "Japan Exclusive", "high", 100, 200),
+
+        # --- More Modern Retro Handhelds (+6) ---
+        ("Retroid", "Retroid Pocket 4 Pro", "Retroid Pocket 4 Pro", "Black Pro 8GB", "Modded/Custom", "mid", 90, 115),
+        ("Anbernic", "Anbernic RG556 Black", "RG556", "Black AMOLED", "Modded/Custom", "mid", 85, 110),
+        ("Anbernic", "Anbernic RG353M Silver Metal", "RG353M", "Silver Metal Body", "Modded/Custom", "mid", 70, 90),
+        ("Powkiddy", "Powkiddy RGB30 Clear Purple", "RGB30", "Clear Purple", "Modded/Custom", "mid", 45, 60),
+        ("AYANEO", "AYANEO Pocket S", "AYANEO Pocket S", "White 6-inch OLED", "Modded/Custom", "high", 300, 380),
+        ("GPD", "GPD Win Max 2 2024", "GPD Win Max 2", "2024 Refresh Silver", "Modded/Custom", "high", 550, 650),
+
+        # --- More Misc Vintage (+3) ---
+        ("Epoch", "Epoch Game Pocket Computer Astro Bomber", "Game Pocket Computer", "Astro Bomber Cartridge (Japan)", "Japan Exclusive", "high", 80, 170),
+        ("Milton Bradley", "MB Microvision Block Buster", "Microvision", "Block Buster Cartridge", "Standard", "mid", 40, 85),
+        ("Watara", "Watara Supervision Green Console", "Supervision", "Green Console (PAL)", "Standard", "mid", 35, 70),
     ]
     catalog = []
     for brand, name, platform, variant_note, condition, rarity_tier, price_loose, price_cib in items:

@@ -968,6 +968,133 @@ def _batch_premium_diecast_2025() -> list[dict]:
         ("JADA", "Mitsubishi Eclipse GSX Fast & Furious Green", "1:24", "Hollywood Rides", "mid", 38),
         ("JADA", "Nissan 350Z Fast & Furious Orange", "1:24", "Hollywood Rides", "mid", 40),
         ("JADA", "Toyota FT-1 Concept JDM Tuners Bronze", "1:24", "JDM Tuners", "mid", 38),
+
+        # === BATCH 10 — 91 new items to reach 700+ ===
+
+        # Hot Wheels RLC — 2025 Releases
+        ("Hot Wheels RLC", "Mercedes-Benz 300 SLR Uhlenhaut", "1:64", "RLC Exclusive 2025", "grail", 220),
+        ("Hot Wheels RLC", "'70 Plymouth Superbird", "1:64", "RLC Exclusive 2025", "high", 145),
+        ("Hot Wheels RLC", "Porsche 911 (964) Singer", "1:64", "RLC Exclusive 2025", "high", 155),
+        ("Hot Wheels RLC", "'69 Camaro SS 396", "1:64", "RLC Exclusive 2025", "high", 130),
+        ("Hot Wheels RLC", "Datsun Sunny Truck (B120)", "1:64", "RLC Exclusive 2025", "high", 120),
+
+        # Hot Wheels Convention — 2025 Circuit
+        ("Hot Wheels", "'67 Camaro (Brazil Convention 2025)", "1:64", "Convention Exclusive", "grail", 290),
+        ("Hot Wheels", "Volkswagen T1 Panel Bus (UK Convention 2025)", "1:64", "Convention Exclusive", "grail", 270),
+        ("Hot Wheels", "Nissan Skyline H/T 2000GT-R (Japan Convention 2025)", "1:64", "Convention Exclusive", "grail", 310),
+        ("Hot Wheels", "'71 Datsun Bluebird 510 (Nationals 2025)", "1:64", "Convention Exclusive", "grail", 340),
+
+        # Matchbox 70th Anniversary
+        ("Matchbox", "Land Rover Defender 90 70th Anniversary", "1:64", "70th Anniversary Gold", "mid", 55),
+        ("Matchbox", "Volkswagen Type 2 Bus 70th Anniversary", "1:64", "70th Anniversary Gold", "mid", 50),
+        ("Matchbox", "MG 1100 70th Anniversary", "1:64", "70th Anniversary Gold", "mid", 48),
+        ("Matchbox", "Mercedes-Benz L319 Delivery 70th Anniversary", "1:64", "70th Anniversary Gold", "mid", 52),
+        ("Matchbox", "Ford Model A 70th Anniversary", "1:64", "70th Anniversary Gold", "mid", 55),
+        ("Matchbox", "Citroen DS 70th Anniversary", "1:64", "70th Anniversary Gold", "mid", 48),
+
+        # AUTOart 1:18 — New Premium 2025
+        ("AUTOart", "Toyota GR Yaris Rallye Platinum White", "1:18", "Composite", "high", 280),
+        ("AUTOart", "Nissan Skyline GT-R (R34) Z-Tune Silver", "1:18", "Composite", "grail", 450),
+        ("AUTOart", "McLaren 720S GT3 Gulf Livery", "1:18", "Composite", "grail", 380),
+        ("AUTOart", "Ford GT (2017) Heritage Edition", "1:18", "Composite", "grail", 360),
+        ("AUTOart", "Porsche 918 Spyder Weissach Package", "1:18", "Composite", "grail", 400),
+
+        # Minichamps F1 — 2025 Season
+        ("Minichamps", "Red Bull RB21 Verstappen 2025", "1:43", "F1 Collection", "high", 115),
+        ("Minichamps", "McLaren MCL39 Norris 2025", "1:43", "F1 Collection", "high", 110),
+        ("Minichamps", "Ferrari SF-25 Hamilton 2025 Debut", "1:43", "F1 Collection", "grail", 150),
+        ("Minichamps", "Ferrari SF-25 Leclerc 2025", "1:43", "F1 Collection", "high", 120),
+        ("Minichamps", "Mercedes W16 Russell 2025", "1:43", "F1 Collection", "mid", 95),
+        ("Minichamps", "Aston Martin AMR25 Alonso 2025", "1:43", "F1 Collection", "mid", 90),
+        ("Minichamps", "Williams FW47 Sainz 2025", "1:43", "F1 Collection", "mid", 85),
+        ("Minichamps", "Alpine A525 Gasly 2025", "1:43", "F1 Collection", "mid", 80),
+
+        # Spark 1:43 — Le Mans 2024/2025
+        ("Spark", "Porsche 963 Penske Le Mans Winner 2024", "1:43", "Le Mans Collection", "high", 120),
+        ("Spark", "Ferrari 499P Le Mans 2024 #50", "1:43", "Le Mans Collection", "high", 115),
+        ("Spark", "Toyota GR010 Hybrid Le Mans 2024 #8", "1:43", "Le Mans Collection", "high", 110),
+        ("Spark", "Lamborghini SC63 Le Mans 2024 Debut", "1:43", "Le Mans Collection", "high", 125),
+        ("Spark", "BMW M Hybrid V8 Le Mans 2024", "1:43", "Le Mans Collection", "mid", 95),
+        ("Spark", "Alpine A424 Le Mans 2024", "1:43", "Le Mans Collection", "mid", 90),
+
+        # Tarmac Works — New 2025
+        ("Tarmac Works", "Toyota GR86 D1GP Drift Car", "1:64", "Hobby64", "mid", 38),
+        ("Tarmac Works", "Nissan GT-R (R35) Nismo GT3 Bathurst 12h", "1:64", "Hobby64", "mid", 40),
+        ("Tarmac Works", "Honda Civic Type R (FL5) Time Attack", "1:64", "Global64", "mid", 35),
+        ("Tarmac Works", "Porsche 911 (992) GT3 RS Weissach", "1:64", "Global64", "mid", 42),
+        ("Tarmac Works", "BMW M4 GT3 DTM 2024", "1:64", "Hobby64", "mid", 36),
+        ("Tarmac Works", "Subaru BRZ Super GT 2024", "1:64", "Hobby64", "mid", 38),
+
+        # INNO64 — 2025 Releases
+        ("INNO64", "Honda NSX (NA1) Type R Championship White", "1:64", "IN64 Collection", "mid", 44),
+        ("INNO64", "Nissan Skyline GT-R (R32) Group A HKS", "1:64", "IN64 Collection", "mid", 46),
+        ("INNO64", "Toyota Supra (JZA80) Toms Castrol", "1:64", "IN64 Collection", "mid", 48),
+        ("INNO64", "Mitsubishi Lancer Evo VI Tommi Makinen WRC White", "1:64", "IN64 Collection", "mid", 42),
+        ("INNO64", "Mazda RX-7 (FC3S) RE Amemiya", "1:64", "IN64 Collection", "mid", 40),
+        ("INNO64", "Subaru Impreza WRX STI (GC8) 555 WRC", "1:64", "IN64 Collection", "mid", 44),
+
+        # BM Creations — 1:64 JDM
+        ("BM Creations", "Suzuki Jimny Sierra (JB74) Kinetic Yellow", "1:64", "Junior Collection", "standard", 22),
+        ("BM Creations", "Mitsubishi Pajero Evolution Silver", "1:64", "Junior Collection", "standard", 24),
+        ("BM Creations", "Subaru Sambar Dias Classic", "1:64", "Junior Collection", "standard", 20),
+        ("BM Creations", "Toyota Land Cruiser 80 (FJ80) White", "1:64", "Junior Collection", "standard", 22),
+        ("BM Creations", "Honda City Turbo II Red with Motocompo", "1:64", "Junior Collection", "standard", 25),
+        ("BM Creations", "Daihatsu Copen Red", "1:64", "Junior Collection", "standard", 20),
+
+        # Tomica Limited Vintage Neo — New 2025
+        ("Tomica LV", "Nissan Skyline GT-R (R32) NISMO", "1:64", "Limited Vintage Neo", "mid", 70),
+        ("Tomica LV", "Toyota Celica XX (MA61) 2800GT", "1:64", "Limited Vintage Neo", "mid", 55),
+        ("Tomica LV", "Nissan Leopard (F31) Ultima", "1:64", "Limited Vintage Neo", "mid", 60),
+        ("Tomica LV", "Honda Ballade Sports CR-X Si", "1:64", "Limited Vintage Neo", "mid", 55),
+        ("Tomica LV", "Mitsubishi Galant GTO MR", "1:64", "Limited Vintage Neo", "high", 80),
+
+        # Mini GT — Premium 2025
+        ("Mini GT", "Porsche 911 (992) GT3 RS Guards Red", "1:64", "MGT Collection", "standard", 22),
+        ("Mini GT", "Lamborghini Revuelto Verde Alceo", "1:64", "MGT Collection", "standard", 20),
+        ("Mini GT", "Bugatti Mistral Black", "1:64", "MGT Collection", "standard", 22),
+        ("Mini GT", "Ferrari 296 GTB Assetto Fiorano Red", "1:64", "MGT Collection", "standard", 20),
+        ("Mini GT", "McLaren 750S Spider Blue", "1:64", "MGT Collection", "standard", 18),
+
+        # BBR Models — Latest Ferrari
+        ("BBR Models", "Ferrari F80 Rosso Corsa (2025)", "1:18", "BBR Limited", "grail", 500),
+        ("BBR Models", "Ferrari SF90 XX Stradale Black", "1:18", "BBR Limited", "grail", 480),
+        ("BBR Models", "Ferrari Purosangue Blu Pozzi", "1:43", "BBR Limited", "high", 180),
+
+        # MR Collection — Latest Hypercars
+        ("MR Collection", "Lamborghini Temerario Blu Caelum", "1:18", "MR Limited", "grail", 480),
+        ("MR Collection", "Bugatti Tourbillon Blue Royal", "1:18", "MR Limited", "grail", 540),
+        ("MR Collection", "Pagani Utopia Roadster Exposed Carbon", "1:18", "MR Limited", "grail", 510),
+
+        # Ignition Model — Premium JDM
+        ("Ignition Model", "Nissan Skyline GT-R (R34) V-Spec II Nur Millennium Jade", "1:18", "IG Limited", "grail", 400),
+        ("Ignition Model", "Toyota Sprinter Trueno (AE86) TRD N2 3Door", "1:18", "IG Limited", "grail", 350),
+        ("Ignition Model", "Honda S2000 (AP1) Type V Indy Yellow", "1:18", "IG Limited", "grail", 320),
+
+        # CMC — 2025 Premium Classic
+        ("CMC", "Maserati 300S Sports Car 1956", "1:18", "CMC Limited", "grail", 540),
+        ("CMC", "Porsche 901 Sport Coupe 1964", "1:18", "CMC Limited", "grail", 480),
+
+        # Hot Wheels $TH — 2025 Q2 Wave
+        ("Hot Wheels $TH", "Porsche 911 (930) Turbo", "1:64", "Super Treasure Hunt 2025", "mid", 65),
+        ("Hot Wheels $TH", "BMW M3 (E30) Sport Evolution", "1:64", "Super Treasure Hunt 2025", "mid", 70),
+        ("Hot Wheels $TH", "Mazda RX-7 (FC) Savanna", "1:64", "Super Treasure Hunt 2025", "mid", 60),
+        ("Hot Wheels $TH", "Mercedes-AMG GT Black Series", "1:64", "Super Treasure Hunt 2025", "high", 80),
+
+        # Additional Diecast Items (+14)
+        ("AUTOart", "Lamborghini Huracan Performante Verde Mantis", "1:18", "AUTOart Composite", "grail", 280),
+        ("AUTOart", "Porsche 911 (991.2) GT2 RS Weissach White", "1:18", "AUTOart Composite", "grail", 300),
+        ("AUTOart", "McLaren 720S Glacier White", "1:18", "AUTOart Composite", "high", 220),
+        ("Minichamps", "Porsche 911 (992) GT3 RS Acid Green", "1:18", "Minichamps 2024", "high", 180),
+        ("Minichamps", "BMW M3 (G80) Isle of Man Green", "1:18", "Minichamps 2024", "high", 160),
+        ("Spark", "Toyota GR010 Le Mans Winner 2024 #8", "1:43", "Le Mans Collection", "high", 115),
+        ("Spark", "Ferrari 499P Le Mans 2024 #50", "1:43", "Le Mans Collection", "high", 110),
+        ("Tarmac Works", "Honda Civic EG6 Spoon Sports", "1:64", "Tarmac Works LE", "mid", 45),
+        ("Tarmac Works", "Mitsubishi Lancer Evolution VI TME", "1:64", "Tarmac Works LE", "mid", 42),
+        ("Inno64", "Honda NSX-R (NA2) Championship White", "1:64", "Inno64 LE", "mid", 38),
+        ("Inno64", "Nissan Silvia S15 Rocket Bunny", "1:64", "Inno64 LE", "mid", 40),
+        ("Mini GT", "Ford GT MK II #006 Shadow Black", "1:64", "MGT Collection", "standard", 22),
+        ("Mini GT", "Mercedes-AMG ONE Silver", "1:64", "MGT Collection", "standard", 24),
+        ("Hot Wheels RLC", "Toyota 2000GT", "1:64", "RLC Exclusive 2025", "high", 135),
     ]
 
     catalog = []

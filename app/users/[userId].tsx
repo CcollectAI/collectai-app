@@ -18,10 +18,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { dataProvider, type PublicUserProfile, type ActivityFeedItem } from '@/data';
+import { dataProvider, type PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
-import logger from '@/utils/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import { getJSON, setJSON } from '@/lib/storage';
@@ -29,6 +28,7 @@ import { ACHIEVEMENTS, type Achievement } from '@/lib/achievements';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { PresenceIndicator } from '@/components/PresenceIndicator';
+import { useAsync } from '@/hooks/useAsync';
 
 type DmStatusType = 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined';
 
@@ -66,7 +66,7 @@ const AvatarCircle: React.FC<{ name: string; size?: number }> = ({ name, size = 
 // ─────────────────────────────────────────────────────────────────────────────
 const SectionCard: React.FC<{
   title: string;
-  icon?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
   children: React.ReactNode;
 }> = ({ title, icon, children }) => {
   const { colors } = useAppTheme();
@@ -74,7 +74,7 @@ const SectionCard: React.FC<{
   return (
     <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.sectionHeader}>
-        {icon && <Ionicons name={icon as any} size={16} color={colors.accent} />}
+        {icon && <Ionicons name={icon} size={16} color={colors.accent} />}
         <Text style={[styles.sectionTitle, { color: colors.muted }]}>{title}</Text>
       </View>
       {children}
@@ -100,7 +100,7 @@ const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean }> = ({ ac
     <View style={[styles.badgeItem, { opacity: earned ? 1 : 0.4 }]}>
       <View style={[styles.badgeIcon, { backgroundColor: earned ? tierColor + '20' : colors.border + '40' }]}>
         <Ionicons
-          name={achievement.icon as any}
+          name={achievement.icon as keyof typeof Ionicons.glyphMap}
           size={20}
           color={earned ? tierColor : colors.muted}
         />
@@ -116,31 +116,6 @@ const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean }> = ({ ac
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Activity Feed Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-const ACTIVITY_ICONS: Record<string, string> = {
-  item_added: 'add-circle-outline',
-  item_sold: 'cash-outline',
-  event_rsvp: 'calendar-outline',
-  event_created: 'megaphone-outline',
-  project_completed: 'checkmark-done-outline',
-  achievement_earned: 'ribbon-outline',
-  category_followed: 'heart-outline',
-  collection_milestone: 'trophy-outline',
-};
-
-function formatActivityTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'now';
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `${days}d`;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Main Screen
 // ─────────────────────────────────────────────────────────────────────────────
 function UserProfileScreen() {
@@ -148,16 +123,22 @@ function UserProfileScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
 
-  const [profile, setProfile] = useState<PublicUserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isUserBlocked, setIsUserBlocked] = useState(false);
   const [dmStatus, setDmStatus] = useState<DmStatusType>('none');
   const [showMenu, setShowMenu] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [activityFeed, setActivityFeed] = useState<ActivityFeedItem[]>([]);
   const { showToast } = useToast();
+
+  const { data: profileData, loading, error, retry } = useAsync(
+    () => {
+      if (!userId) return Promise.reject(new Error('No user ID provided'));
+      return dataProvider.getPublicUserProfile(userId);
+    },
+    [userId],
+  );
+
+  const profile = profileData ?? null;
 
   // Load follow state from AsyncStorage on mount
   useEffect(() => {
@@ -179,8 +160,8 @@ function UserProfileScreen() {
         ]);
         setIsUserBlocked(blocked);
         setDmStatus(status);
-      } catch (err) {
-        logger.warn('[UserProfile] checkState error:', err);
+      } catch {
+        // Silently ignore state check errors
       }
     };
 
@@ -259,40 +240,11 @@ function UserProfileScreen() {
     }
   }, [userId, dmStatus, isUserBlocked, router]);
 
-  const loadProfile = useCallback(async () => {
-    if (!userId) {
-      setError('No user ID provided');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const [profileData, feed] = await Promise.all([
-        dataProvider.getPublicUserProfile(userId),
-        dataProvider.getUserActivity(userId, 5).catch(() => [] as ActivityFeedItem[]),
-      ]);
-      setProfile(profileData);
-      setActivityFeed(feed);
-    } catch (err: unknown) {
-      logger.warn('[UserProfile] loadProfile error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load profile');
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadProfile();
+    retry();
     setRefreshing(false);
-  }, [loadProfile]);
+  }, [retry]);
 
   // Derive badges from profile data
   const profileBadges = useMemo(() => {
@@ -544,36 +496,6 @@ function UserProfileScreen() {
                 </AnimatedPressable>
               ))}
             </View>
-          </SectionCard>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            E) Recent Activity
-        ═══════════════════════════════════════════════════════════════════ */}
-        {activityFeed.length > 0 && (
-          <SectionCard title="Recent Activity" icon="time-outline">
-            {activityFeed.map((item) => (
-              <View key={item.id} style={styles.activityRow}>
-                <Ionicons
-                  name={ACTIVITY_ICONS[item.activityType] ?? 'ellipse-outline'}
-                  size={16}
-                  color={colors.accent}
-                />
-                <View style={styles.activityInfo}>
-                  <Text style={[styles.activityTitle, { color: colors.text }]} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  {item.description && (
-                    <Text style={[styles.activityDesc, { color: colors.muted }]} numberOfLines={1}>
-                      {item.description}
-                    </Text>
-                  )}
-                </View>
-                <Text style={[styles.activityTime, { color: colors.muted }]}>
-                  {formatActivityTime(item.createdAt)}
-                </Text>
-              </View>
-            ))}
           </SectionCard>
         )}
 
@@ -890,29 +812,6 @@ const styles = StyleSheet.create({
   },
   interestText: {
     fontSize: 13,
-    fontWeight: '500',
-  },
-
-  // Activity feed
-  activityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 8,
-  },
-  activityInfo: {
-    flex: 1,
-  },
-  activityTitle: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  activityDesc: {
-    fontSize: 12,
-    marginTop: 1,
-  },
-  activityTime: {
-    fontSize: 11,
     fontWeight: '500',
   },
 

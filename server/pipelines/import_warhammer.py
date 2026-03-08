@@ -891,6 +891,14 @@ def get_curated_catalog() -> list[dict]:
         ("fw", "Forge World", "Terrax-Pattern Termite Assault Drill", "Vehicle", 55, 80),
         ("fw", "Forge World", "Achilles-Alpha Pattern Land Raider", "Vehicle", 85, 120),
         ("fw", "Forge World", "Falchion Super-Heavy Tank Destroyer", "Super-Heavy", 200, 280),
+
+        # ── 2024/2025 Releases & Limited Editions ─────────────────────
+        ("40k", "Starter Box", "Leviathan (10th Edition Launch Box)", "Box Set", 160, 220),
+        ("aos", "Starter Box", "Skaventide (AoS 4th Edition Launch Box)", "Box Set", 150, 195),
+        ("40k", "Kill Team", "Kill Team: Hivestorm (Starter Box)", "Box Set", 110, 140),
+        ("fw", "Forge World", "Fulgrim, The Phoenician (Primarch Resin)", "Character", 115, 165),
+        ("hh", "Legions Imperialis", "Legions Imperialis: The Great Slaughter Starter Set", "Box Set", 80, 105),
+        ("40k", "Limited", "Codex Compliant: Black Library Limited Warhammer Horror Anthology (Signed)", "Limited", 50, 120),
     ]
 
     catalog = []

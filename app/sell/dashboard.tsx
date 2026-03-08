@@ -34,6 +34,7 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { AnimatedPressable } from '@/motion';
 import { SwipeableRow, SwipeActions } from '@/components/SwipeableRow';
+import { useAsync } from '@/hooks/useAsync';
 import type {
   MarketplaceListing,
   MarketplaceSale,
@@ -327,10 +328,6 @@ function SellerDashboardScreen() {
   const { showToast } = useToast();
 
   const [tab, setTab] = useState<Tab>('listings');
-  const [listings, setListings] = useState<MarketplaceListing[]>([]);
-  const [sales, setSales] = useState<MarketplaceSale[]>([]);
-  const [accounts, setAccounts] = useState<MarketplaceAccount[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<ListingStatus | 'all'>('all');
 
@@ -341,36 +338,44 @@ function SellerDashboardScreen() {
   const [createMarketplace, setCreateMarketplace] = useState<MarketplaceId>('collectai');
   const [creating, setCreating] = useState(false);
 
-  // Fee schedules for preview
-  const [feeSchedules, setFeeSchedules] = useState<MarketplaceFeeSchedule[]>([]);
+  const { data: dashboardData, loading, error: dashboardError, retry: loadData } = useAsync(
+    () => Promise.all([
+      dataProvider.listMarketplaceListings(),
+      dataProvider.listMarketplaceSales(),
+      dataProvider.listMarketplaceAccounts(),
+      dataProvider.getMarketplaceFeeSchedules(),
+    ]).then(([ls, sl, ac, fees]) => ({
+      listings: ls,
+      sales: sl,
+      accounts: ac,
+      feeSchedules: fees,
+    })),
+    [],
+  );
 
-  const loadData = useCallback(async () => {
-    try {
-      const [ls, sl, ac, fees] = await Promise.all([
-        dataProvider.listMarketplaceListings(),
-        dataProvider.listMarketplaceSales(),
-        dataProvider.listMarketplaceAccounts(),
-        dataProvider.getMarketplaceFeeSchedules(),
-      ]);
-      setListings(ls);
-      setSales(sl);
-      setAccounts(ac);
-      setFeeSchedules(fees);
-    } catch {
+  const listings = dashboardData?.listings ?? [];
+  const sales = dashboardData?.sales ?? [];
+  const accounts = dashboardData?.accounts ?? [];
+  const feeSchedules = dashboardData?.feeSchedules ?? [];
+
+  // Show toast on error
+  useEffect(() => {
+    if (dashboardError) {
       showToast({ message: 'Failed to load seller data', type: 'error' });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
     }
-  }, [showToast]);
+  }, [dashboardError, showToast]);
 
-  useEffect(() => { loadData(); }, [loadData]);
-
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     loadData();
+    // refreshing will be cleared when useAsync finishes (loading goes false)
   }, [loadData, settings.hapticsEnabled]);
+
+  // Clear refreshing when loading completes
+  useEffect(() => {
+    if (!loading) setRefreshing(false);
+  }, [loading]);
 
   // Swipe actions for listings
   const handleDelist = useCallback((listing: MarketplaceListing) => {
@@ -403,6 +408,7 @@ function SellerDashboardScreen() {
         marketplaceId: createMarketplace,
         listingTitle: title,
         price,
+        quantity: 1,
         currency: settings.currency,
         format: 'fixed_price',
         status: 'draft',
@@ -497,7 +503,7 @@ function SellerDashboardScreen() {
         ))}
       </View>
 
-      {loading ? (
+      {loading && !refreshing ? (
         <SkeletonList count={4} type="deal" />
       ) : tab === 'listings' ? (
         <>
@@ -533,8 +539,11 @@ function SellerDashboardScreen() {
               title="No listings yet"
               subtitle="List your collectibles on eBay, Mercari, Cardmarket, and more from one place"
               colors={colors}
-              ctaLabel="List an Item"
-              ctaOnPress={() => router.push('/(tabs)/items')}
+              action={
+                <Pressable onPress={() => router.push('/(tabs)/items')}>
+                  <Text style={{ color: colors.accent, fontWeight: '600', marginTop: 8 }}>List an Item</Text>
+                </Pressable>
+              }
             />
           ) : (
             <FlatList

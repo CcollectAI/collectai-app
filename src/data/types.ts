@@ -183,6 +183,12 @@ export type QuickScanResult = {
   catalogMatchKey?: string | null;
   alternatives?: CatalogAlternative[];
   fieldConfidence?: FieldConfidence | null;
+  // QuickScan enhancement fields
+  scanSessionId?: string | null;
+  socialProof?: SocialProof | null;
+  duplicateInfo?: DuplicateInfo | null;
+  defectAnnotations?: DefectAnnotation[];
+  suggestedGrade?: SuggestedGrade | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -787,4 +793,82 @@ export type MarketplaceFeeSchedule = {
   fixedFee: number;
   currency: string;
   notes?: string | null;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QuickScan Enhancement Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Defect annotation from AI vision analysis. */
+export type DefectAnnotation = {
+  type: string;
+  severity: 'minor' | 'moderate' | 'major' | 'severe';
+  location: string;
+  description: string;
+};
+
+/** Suggested grade from AI vision analysis. */
+export type SuggestedGrade = {
+  scale: 'psa' | 'cgc' | 'generic';
+  gradeValue: string;
+  reasoning: string;
+};
+
+/** Recent sold item for social proof. */
+export type RecentSold = {
+  title: string;
+  price: number;
+  currency: CurrencyCode;
+  soldAt: string | null;
+  source: string;
+};
+
+/** Scarcity information from supply snapshots. */
+export type ScarcityInfo = {
+  listingCount: number;
+  supplyTrend: 'increasing' | 'stable' | 'decreasing';
+  scarcityScore: number;
+};
+
+/** Social proof data for scan results. */
+export type SocialProof = {
+  collectorCount: number;
+  isTrending: boolean;
+  trendRank: number | null;
+  recentSold: RecentSold[];
+  scarcity: ScarcityInfo;
+};
+
+/** Duplicate/variant detection info. */
+export type DuplicateInfo = {
+  ownedCount: number;
+  ownedItemIds: string[];
+  isVariant: boolean;
+  variantOf: string | null;
+  setCompletion: { owned: number; total: number; pct: number } | null;
+};
+
+/** Scan feedback submission. */
+export type ScanFeedback = {
+  scanSessionId: string;
+  correctedName?: string | null;
+  correctedCategory?: string | null;
+  correctedCondition?: string | null;
+};
+
+/** Active learning prompt from backend. */
+export type ActiveLearningPrompt = {
+  question: string;
+  options: string[];
+  field: 'name' | 'category' | 'condition';
+  scanSessionId: string;
+};
+
+/** Detected item from multi-item scan. */
+export type DetectedMultiItem = {
+  itemIndex: number;
+  boundingBox: { x: number; y: number; w: number; h: number };
+  categoryHint: string | null;
+  suggestedName: string | null;
+  confidence: number;
 };

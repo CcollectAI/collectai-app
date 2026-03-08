@@ -36,19 +36,19 @@ const SetsToCompleteScreen: React.FC = () => {
         if (cancelled) return;
 
         const mapped: CollectionStatusInput[] = (raw || []).map((it: PortfolioItem) => ({
-          id: it.id ?? it.item_id ?? undefined,
-          name: it.name ?? it.title ?? null,
-          title: it.title ?? it.name ?? null,
-          category: it.category ?? it.category_label ?? null,
+          id: it.id ?? (it.item_id as string | undefined) ?? undefined,
+          name: it.name ?? (it.title as string | null) ?? null,
+          title: (it.title as string | null) ?? it.name ?? null,
+          category: it.category ?? (it.category_label as string | null) ?? null,
           value:
             typeof it.estimated_value === 'number'
               ? it.estimated_value
-              : it.value ?? null,
-          collection: it.collection ?? it.set_name ?? null,
-          collection_name: it.collection_name ?? it.collection ?? null,
-          set_code: it.set_code ?? null,
-          set_size: it.set_size ?? null,
-          rarity_score: it.rarity_score ?? null,
+              : (it.value as number | null) ?? null,
+          collection: (it.collection as string | null) ?? (it.set_name as string | null) ?? null,
+          collection_name: (it.collection_name as string | null) ?? (it.collection as string | null) ?? null,
+          set_code: (it.set_code as string | null) ?? null,
+          set_size: (it.set_size as number | null) ?? null,
+          rarity_score: (it.rarity_score as number | null) ?? null,
         }));
 
         setItems(mapped);

@@ -11,6 +11,8 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
+import { identifyUser, resetAnalytics, track } from '@/analytics/track';
+
 /* ---------- Sentry (guarded) ---------- */
 import type { SentryModule } from '@/../types/api';
 let Sentry: SentryModule | null = null;
@@ -75,6 +77,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (Sentry?.setUser) {
           Sentry.setUser(data.session?.user ? { id: data.session.user.id } : null);
         }
+        if (data.session?.user) {
+          identifyUser(data.session.user.id);
+        }
         await loadProfile(data.session?.user ?? null);
       } catch (e) {
         logger.warn('[AuthProvider] getSession error:', e);
@@ -92,6 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (Sentry?.setUser) {
         Sentry.setUser(newSession?.user ? { id: newSession.user.id } : null);
       }
+      if (newSession?.user) {
+        identifyUser(newSession.user.id);
+      }
       await loadProfile(newSession?.user ?? null);
     });
 
@@ -108,6 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setProfile(null);
       if (Sentry?.setUser) Sentry.setUser(null);
+      track({ name: 'user_logged_out' });
+      resetAnalytics();
     } catch (e) {
       logger.warn('[AuthProvider] signOut error:', e);
     }

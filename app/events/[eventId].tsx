@@ -506,29 +506,50 @@ function EventDetailScreen() {
           </Text>
         </View>
 
-        {/* Primary external action */}
-        {event.onlineUrl && (
+        {/* Primary external action + Share */}
+        <View style={styles.actionRow}>
+          {event.onlineUrl && (
+            <AnimatedPressable
+              onPress={openExternal}
+              style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+              accessibilityRole="link"
+              accessibilityLabel={isStream ? 'Open stream' : isDrop ? 'Open drop page' : 'Open link'}
+            >
+              <Ionicons
+                name={isStream ? 'logo-twitch' : 'open-outline'}
+                size={16}
+                color="#ffffff"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.primaryBtnText, { color: colors.card }]}>
+                {isStream
+                  ? 'Open stream'
+                  : isDrop
+                  ? 'Open drop page'
+                  : 'Open link'}
+              </Text>
+            </AnimatedPressable>
+          )}
           <AnimatedPressable
-            onPress={openExternal}
-            style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
-            accessibilityRole="link"
-            accessibilityLabel={isStream ? 'Open stream' : isDrop ? 'Open drop page' : 'Open link'}
+            onPress={async () => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              try {
+                await Share.share({
+                  message: `${event.title}\n${event.date}${event.time ? ` at ${event.time}` : ''}${event.location ? `\n${event.location}` : ''}\n\nCheck it out on CollectAI!`,
+                  title: event.title,
+                });
+              } catch {
+                showToast({ message: 'Failed to share event', type: 'error' });
+              }
+            }}
+            style={[styles.shareBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Share this event"
           >
-            <Ionicons
-              name={isStream ? 'logo-twitch' : 'open-outline'}
-              size={16}
-              color="#ffffff"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={[styles.primaryBtnText, { color: colors.card }]}>
-              {isStream
-                ? 'Open stream'
-                : isDrop
-                ? 'Open drop page'
-                : 'Open link'}
-            </Text>
+            <Ionicons name="share-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+            <Text style={[styles.shareBtnText, { color: colors.accent }]}>Share</Text>
           </AnimatedPressable>
-        )}
+        </View>
 
         {/* ============================================================== */}
         {/*  RSVP Section                                                   */}
@@ -748,26 +769,6 @@ function EventDetailScreen() {
           </View>
         )}
 
-        {/* Share Event */}
-        <AnimatedPressable
-          onPress={async () => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            try {
-              await Share.share({
-                message: `${event.title}\n${event.date}${event.time ? ` at ${event.time}` : ''}${event.location ? `\n${event.location}` : ''}\n\nCheck it out on CollectAI!`,
-                title: event.title,
-              });
-            } catch {
-              showToast({ message: 'Failed to share event', type: 'error' });
-            }
-          }}
-          style={[styles.shareBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          accessibilityRole="button"
-          accessibilityLabel="Share this event"
-        >
-          <Ionicons name="share-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
-          <Text style={[styles.shareBtnText, { color: colors.accent }]}>Share Event</Text>
-        </AnimatedPressable>
 
         {/* ============================================================== */}
         {/*  Announcements Card                                             */}
@@ -1148,14 +1149,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  primaryBtn: {
-    alignSelf: 'flex-start',
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  primaryBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 24,
-    marginBottom: 12,
   },
   primaryBtnText: {
     fontSize: 14,
@@ -1201,10 +1208,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
     borderWidth: 1,
-    marginBottom: 16,
   },
   shareBtnText: {
     fontSize: 13,

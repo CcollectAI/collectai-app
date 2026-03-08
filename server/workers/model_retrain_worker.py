@@ -44,6 +44,7 @@ MIN_SAMPLES = int(os.getenv("MODEL_RETRAIN_MIN_SAMPLES", "20"))
 ALL_CATEGORIES = [
     "pokemon", "mtg", "yugioh", "lorcana", "digimon", "one_piece_tcg",
     "funko", "designer_toys", "anime_figures", "hot_toys",
+    "action_figures", "vintage_toys", "marvel_legends",
     "lego", "gunpla", "scale_models", "warhammer", "retro_games",
     "manga", "comic_books", "bluray_steelbook", "anime_bluray", "anime_soundtrack",
     "anime_ost_vinyl", "kpop_merch",
@@ -214,6 +215,53 @@ async def _export_ground_truths(conn, category: str, cutoff: datetime) -> int:
     return count
 
 
+async def _export_scan_corrections(conn, category: str, cutoff: datetime) -> int:
+    """Export user scan corrections to training data.
+
+    Scan corrections represent user-verified category/condition assignments.
+    They get weighted by user_weight (level >= 10 users get 2x).
+    """
+    rows = await conn.fetch(
+        """
+        SELECT corrected_name, corrected_category, corrected_condition, user_weight
+        FROM public.scan_corrections
+        WHERE corrected_category = $1
+          AND created_at >= $2
+        ORDER BY created_at DESC
+        LIMIT 1000
+        """,
+        category,
+        cutoff,
+    )
+
+    if not rows:
+        return 0
+
+    cat_dir = DATA_DIR / category
+    cat_dir.mkdir(parents=True, exist_ok=True)
+
+    corrections_path = cat_dir / "train_corrections.jsonl"
+    count = 0
+
+    with open(corrections_path, "w") as f:
+        for row in rows:
+            condition = row["corrected_condition"]
+            user_weight = float(row["user_weight"] or 1.0)
+            features = _price_to_features(0, condition, False)
+            # Corrections don't have prices, but they refine category/condition mapping
+            # Write them as feature-only records that reinforce correct categorization
+            record = {"features": features, "price": 0, "correction": True}
+            line = json.dumps(record) + "\n"
+            # Apply user weight — high-level users' corrections count more
+            repeat = int(user_weight)
+            for _ in range(repeat):
+                f.write(line)
+                count += 1
+
+    logger.info("Exported %d scan correction observations for %s", count, category)
+    return count
+
+
 def _retrain_category(category: str) -> dict:
     """Retrain the Ridge model for a single category using merged data.
 
@@ -226,7 +274,7 @@ def _retrain_category(category: str) -> dict:
     all_features = []
     all_prices = []
 
-    for jsonl_file in ["train.jsonl", "train_live.jsonl", "train_ground_truth.jsonl"]:
+    for jsonl_file in ["train.jsonl", "train_live.jsonl", "train_ground_truth.jsonl", "train_corrections.jsonl"]:
         path = cat_dir / jsonl_file
         if not path.exists():
             continue
@@ -315,10 +363,12 @@ async def run_once():
         for category in ALL_CATEGORIES:
             hits_count = await _export_market_hits_to_jsonl(conn, category, cutoff)
             gt_count = await _export_ground_truths(conn, category, cutoff)
+            corr_count = await _export_scan_corrections(conn, category, cutoff)
             export_stats[category] = {
                 "market_hits": hits_count,
                 "ground_truths": gt_count,
-                "total": hits_count + gt_count,
+                "scan_corrections": corr_count,
+                "total": hits_count + gt_count + corr_count,
             }
 
         total_exported = sum(s["total"] for s in export_stats.values())
