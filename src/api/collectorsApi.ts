@@ -221,7 +221,7 @@ export const collectorsApi = {
     sold_only?: boolean;
     min_price?: number;
     max_price?: number;
-  }) => post("/market/search", { query, ...opts }),
+  }) => post("/marketplace/search", { query, ...opts }),
 
   // Price prediction
   predictV2: (payload: {
@@ -827,6 +827,135 @@ export const collectorsApi = {
       }>;
       eligible_categories: string[];
     }>(`/grading/services${category ? `?category=${encodeURIComponent(category)}` : ''}`),
+
+  // ── Gamification ──────────────────────────────────────────────────────
+
+  getGamificationProfile: () =>
+    get<{
+      user_id: string;
+      xp: number;
+      level: number;
+      streak_days: number;
+      badges: string[];
+    }>("/gamification/profile"),
+
+  getAchievements: () =>
+    get<{
+      achievements: Array<{
+        id: string;
+        title: string;
+        description: string;
+        tier: string;
+        earned: boolean;
+        earned_at: string | null;
+      }>;
+    }>("/gamification/achievements"),
+
+  getRecentAchievements: () =>
+    get<{
+      achievements: Array<{
+        id: string;
+        title: string;
+        tier: string;
+        earned_at: string;
+      }>;
+    }>("/gamification/achievements/recent"),
+
+  getActiveChallenges: () =>
+    get<{
+      challenges: Array<{
+        id: string;
+        title: string;
+        description: string;
+        progress: number;
+        target: number;
+        reward_xp: number;
+        expires_at: string | null;
+      }>;
+    }>("/gamification/challenges"),
+
+  getLeaderboard: (scope?: string, category?: string) => {
+    const sp = new URLSearchParams();
+    if (scope) sp.set("scope", scope);
+    if (category) sp.set("category", category);
+    const q = sp.toString();
+    return get<{
+      entries: Array<{
+        rank: number;
+        user_id: string;
+        display_name: string;
+        xp: number;
+        level: number;
+        avatar_url: string | null;
+      }>;
+    }>(`/gamification/leaderboard${q ? `?${q}` : ""}`);
+  },
+
+  // ── Marketplace Listings (Multi-Marketplace Selling) ─────────────────
+
+  createMarketplaceListing: (payload: {
+    item_id: string;
+    marketplace_id: string;
+    price: number;
+    currency?: string;
+    format?: string;
+    condition_description?: string;
+  }) => post("/marketplace/listings", payload as Record<string, unknown>),
+
+  listMarketplaceListings: (opts?: { status?: string; marketplace_id?: string; limit?: number; offset?: number }) => {
+    const sp = new URLSearchParams();
+    if (opts?.status) sp.set("status", opts.status);
+    if (opts?.marketplace_id) sp.set("marketplace_id", opts.marketplace_id);
+    if (opts?.limit) sp.set("limit", String(opts.limit));
+    if (opts?.offset) sp.set("offset", String(opts.offset));
+    const q = sp.toString();
+    return get(`/marketplace/listings${q ? `?${q}` : ""}`);
+  },
+
+  updateMarketplaceListing: (listingId: string, payload: Record<string, unknown>) =>
+    patch(`/marketplace/listings/${encodeURIComponent(listingId)}`, payload),
+
+  deleteMarketplaceListing: (listingId: string) =>
+    del(`/marketplace/listings/${encodeURIComponent(listingId)}`),
+
+  publishMarketplaceListing: (listingId: string) =>
+    post(`/marketplace/listings/${encodeURIComponent(listingId)}/publish`),
+
+  calculateMarketplaceFees: (payload: { price: number; marketplace_id: string; category?: string }) =>
+    post("/marketplace/listings/fees/calculate", payload as Record<string, unknown>),
+
+  // ── Portfolio Analytics ──────────────────────────────────────────────
+
+  getPortfolioOverview: () => get("/portfolio/overview"),
+
+  getPortfolioTimeseries: (range?: string) =>
+    get(`/portfolio/timeseries${range ? `?range=${encodeURIComponent(range)}` : ""}`),
+
+  getPortfolioCategoryBreakdown: () => get("/portfolio/category-breakdown"),
+
+  // ── Collections ─────────────────────────────────────────────────────
+
+  listCollections: (category?: string) =>
+    get(`/collections${category ? `?category=${encodeURIComponent(category)}` : ""}`),
+
+  getCollectionDetail: (collectionId: string) =>
+    get(`/collections/${encodeURIComponent(collectionId)}`),
+
+  getCollectionProgress: (collectionId: string) =>
+    get(`/collections/${encodeURIComponent(collectionId)}/progress`),
+
+  getUserCollectionProgress: (category?: string) =>
+    get(`/collections/user/progress${category ? `?category=${encodeURIComponent(category)}` : ""}`),
+
+  // ── Insights ────────────────────────────────────────────────────────
+
+  getPersonalizedInsights: () => get("/insights/personalized"),
+
+  getHomeWidget: () => get("/insights/home-widget"),
+
+  // ── Items Export ────────────────────────────────────────────────────
+
+  exportItemsOverview: () => get("/items-export/overview"),
 
   // ── Insurance Valuation Export ─────────────────────────────────────────
 
