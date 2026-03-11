@@ -26,6 +26,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { dataProvider } from '@/data';
+import { collectorsApi } from '@/api/collectorsApi';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { formatPrice, getCurrencySymbol } from '@/lib/format';
 import { EmptyState } from '@/components/EmptyState';
@@ -340,6 +341,12 @@ function SellerDashboardScreen() {
   const [createMarketplace, setCreateMarketplace] = useState<MarketplaceId>('collectai');
   const [creating, setCreating] = useState(false);
 
+  // Connect marketplace modal state
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [connectMp, setConnectMp] = useState<MarketplaceId>('ebay');
+  const [connectName, setConnectName] = useState('');
+  const [connecting, setConnecting] = useState(false);
+
   const { data: dashboardData, loading, error: dashboardError, retry: loadData } = useAsync(
     () => Promise.all([
       dataProvider.listMarketplaceListings(),
@@ -425,6 +432,36 @@ function SellerDashboardScreen() {
     finally { setCreating(false); }
   }, [createTitleField, createPriceField, createMarketplace, settings.currency, loadData, showToast]);
 
+  // Disconnect marketplace account
+  const handleDisconnect = useCallback((account: MarketplaceAccount) => {
+    Alert.alert('Disconnect Account?', `Remove ${MARKETPLACE_CONFIG[account.marketplaceId]?.label ?? account.marketplaceId} connection?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Disconnect', style: 'destructive', onPress: async () => {
+        try {
+          await collectorsApi.disconnectMarketplaceAccount(account.id);
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+          showToast({ message: 'Account disconnected', type: 'success' });
+          loadData();
+        } catch { showToast({ message: 'Failed to disconnect', type: 'error' }); }
+      }},
+    ]);
+  }, [loadData, showToast]);
+
+  // Connect marketplace account
+  const handleConnect = useCallback(async () => {
+    if (connecting) return;
+    setConnecting(true);
+    try {
+      await collectorsApi.connectMarketplaceAccount({ marketplace_id: connectMp, seller_name: connectName.trim() || undefined });
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED);
+      showToast({ message: 'Account connected!', type: 'success' });
+      setShowConnectModal(false);
+      setConnectName('');
+      loadData();
+    } catch { showToast({ message: 'Failed to connect account', type: 'error' }); }
+    finally { setConnecting(false); }
+  }, [connectMp, connectName, connecting, loadData, showToast]);
+
   // Compute fee preview for create modal
   const feePreview = useMemo(() => {
     const price = parseFloat(createPriceField.value.replace(/[^\d.]/g, ''));
@@ -434,6 +471,27 @@ function SellerDashboardScreen() {
     const fees = (price * (schedule.baseFeePct + schedule.paymentProcessingPct) / 100) + schedule.fixedFee;
     return { fees: Math.round(fees * 100) / 100, net: Math.round((price - fees) * 100) / 100 };
   }, [createPriceField.value, createMarketplace, feeSchedules]);
+
+  const [backendFeePreview, setBackendFeePreview] = useState<{ fees: number; net: number } | null>(null);
+
+  // Fetch accurate fees from backend when price or marketplace changes
+  useEffect(() => {
+    const price = parseFloat(createPriceField.value.replace(/[^\d.]/g, ''));
+    if (!Number.isFinite(price) || price <= 0 || !showCreateModal) {
+      setBackendFeePreview(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      collectorsApi.calculateMarketplaceFees({ price, marketplace_id: createMarketplace, category: undefined })
+        .then((data: any) => {
+          if (data?.total_fees != null) {
+            setBackendFeePreview({ fees: data.total_fees, net: price - data.total_fees });
+          }
+        })
+        .catch(() => { /* use local feePreview as fallback */ });
+    }, 500); // debounce
+    return () => clearTimeout(timer);
+  }, [createPriceField.value, createMarketplace, showCreateModal]);
 
   // Filter listings by status
   const filteredListings = useMemo(() => {
@@ -473,9 +531,14 @@ function SellerDashboardScreen() {
 
   const renderAccount = useCallback(
     ({ item }: { item: MarketplaceAccount }) => (
-      <AccountCard account={item} colors={colors} />
+      <SwipeableRow
+        rightActions={[SwipeActions.delete(() => handleDisconnect(item))]}
+        enableHaptics={settings.hapticsEnabled}
+      >
+        <AccountCard account={item} colors={colors} />
+      </SwipeableRow>
     ),
-    [colors],
+    [colors, settings.hapticsEnabled, handleDisconnect],
   );
 
   return (
@@ -593,7 +656,7 @@ function SellerDashboardScreen() {
             <AnimatedPressable
               onPress={() => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                showToast({ message: 'Marketplace connections coming soon', type: 'info' });
+                setShowConnectModal(true);
               }}
               style={[styles.connectBtn, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
               accessibilityRole="button"
@@ -688,19 +751,23 @@ function SellerDashboardScreen() {
               })}
             </ScrollView>
 
-            {/* Fee preview */}
-            {feePreview && (
-              <View style={[styles.feePreview, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <View style={styles.feeRow}>
-                  <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. fees</Text>
-                  <Text style={[styles.feeValue, { color: colors.error }]}>-{formatPrice(feePreview.fees, settings.currency)}</Text>
+            {/* Fee preview — prefer backend calculation, fall back to local */}
+            {(() => {
+              const displayFees = backendFeePreview ?? feePreview;
+              if (!displayFees) return null;
+              return (
+                <View style={[styles.feePreview, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                  <View style={styles.feeRow}>
+                    <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. fees{backendFeePreview ? '' : ' (local)'}</Text>
+                    <Text style={[styles.feeValue, { color: colors.error }]}>-{formatPrice(displayFees.fees, settings.currency)}</Text>
+                  </View>
+                  <View style={styles.feeRow}>
+                    <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. net</Text>
+                    <Text style={[styles.feeValue, { color: colors.success }]}>{formatPrice(displayFees.net, settings.currency)}</Text>
+                  </View>
                 </View>
-                <View style={styles.feeRow}>
-                  <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. net</Text>
-                  <Text style={[styles.feeValue, { color: colors.success }]}>{formatPrice(feePreview.net, settings.currency)}</Text>
-                </View>
-              </View>
-            )}
+              );
+            })()}
 
             <AnimatedPressable
               style={[styles.createBtn, { backgroundColor: colors.accent }, creating && { opacity: 0.7 }]}
@@ -714,6 +781,49 @@ function SellerDashboardScreen() {
               ) : (
                 <Text style={styles.createBtnText}>Create as Draft</Text>
               )}
+            </AnimatedPressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Connect Marketplace Modal */}
+      <Modal visible={showConnectModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Connect Marketplace</Text>
+              <AnimatedPressable onPress={() => setShowConnectModal(false)} accessibilityRole="button" accessibilityLabel="Close">
+                <Ionicons name="close" size={24} color={colors.muted} />
+              </AnimatedPressable>
+            </View>
+            <Text style={[styles.modalLabel, { color: colors.text }]}>Marketplace</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              {(['ebay', 'mercari', 'cardmarket', 'stockx', 'discogs', 'bricklink'] as MarketplaceId[]).map((mp) => {
+                const cfg = MARKETPLACE_CONFIG[mp];
+                const isActive = connectMp === mp;
+                return (
+                  <Pressable key={mp} onPress={() => setConnectMp(mp)} style={[styles.mpChip, { borderColor: isActive ? cfg?.color ?? colors.accent : colors.border }, isActive && { backgroundColor: (cfg?.color ?? colors.accent) + '15' }]}>
+                    <Text style={[styles.mpChipText, { color: isActive ? cfg?.color ?? colors.accent : colors.muted }]}>{cfg?.label ?? mp}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <Text style={[styles.modalLabel, { color: colors.text }]}>Seller Name (optional)</Text>
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+              value={connectName}
+              onChangeText={setConnectName}
+              placeholder="Your seller username"
+              placeholderTextColor={colors.muted}
+            />
+            <AnimatedPressable
+              style={[styles.createBtn, { backgroundColor: colors.accent }, connecting && { opacity: 0.7 }]}
+              onPress={handleConnect}
+              disabled={connecting}
+              accessibilityRole="button"
+              accessibilityLabel="Connect account"
+            >
+              {connecting ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.createBtnText}>Connect</Text>}
             </AnimatedPressable>
           </View>
         </View>

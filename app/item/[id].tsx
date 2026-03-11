@@ -350,6 +350,10 @@ function ItemDetailScreen() {
     suggestedPrice: toNum(editableValue) || toNum(q50) || undefined,
   });
 
+  // Scarcity + Market Comps state
+  const [scarcityData, setScarcityData] = useState<{ scarcity_score: number; listing_count: number; supply_trend: string } | null>(null);
+  const [marketComps, setMarketComps] = useState<Array<{ source: string; title: string; price: number; currency: string }>>([]);
+
   // Build project state — for buildable categories
   const itemIsBuildable = isBuildableCategory(categorySlug);
   const buildAccent = theme.accent;
@@ -543,6 +547,19 @@ function ItemDetailScreen() {
       })
       .catch(() => {});
   }, [id, isDraft, itemIsBuildable]);
+
+  // Fetch scarcity scores + market comps
+  useEffect(() => {
+    if (isDraft || !categorySlug) return;
+    collectorsApi.getScarcityScores(categorySlug).then((data) => {
+      const match = (data as any)?.items?.find((i: any) => i.item_key?.toLowerCase().includes(editableName.toLowerCase().slice(0, 20)));
+      if (match) setScarcityData(match);
+    }).catch(() => {});
+    collectorsApi.marketplaceComps(editableName, categorySlug).then((data) => {
+      const comps = (data as any)?.comps;
+      if (Array.isArray(comps) && comps.length) setMarketComps(comps.slice(0, 5));
+    }).catch(() => {});
+  }, [isDraft, categorySlug, editableName]);
 
   // Affiliate links, price trend, and dossier managed by hooks above
 
@@ -1159,6 +1176,39 @@ function ItemDetailScreen() {
               />
             )}
 
+            {/* Scarcity Badge */}
+            {scarcityData && (
+              <View style={[styles.scarcityBadge, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={styles.scarcityRow}>
+                  <Ionicons name="diamond-outline" size={16} color={scarcityData.scarcity_score >= 7 ? theme.error : scarcityData.scarcity_score >= 4 ? '#F59E0B' : theme.success} />
+                  <Text style={[styles.scarcityLabel, { color: theme.text }]}>
+                    {scarcityData.scarcity_score >= 7 ? 'Rare' : scarcityData.scarcity_score >= 4 ? 'Moderate' : 'Common'}
+                  </Text>
+                  <Text style={[styles.scarcityMeta, { color: theme.muted }]}>
+                    {scarcityData.listing_count} listings · Supply {scarcityData.supply_trend}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Market Comps */}
+            {marketComps.length > 0 && (
+              <View style={[styles.compsSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Text style={[styles.compsTitle, { color: theme.text }]}>
+                  <Ionicons name="stats-chart-outline" size={14} color={theme.accent} /> Comparable Sales
+                </Text>
+                {marketComps.map((comp, i) => (
+                  <View key={i} style={[styles.compRow, i > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.compTitle, { color: theme.text }]} numberOfLines={1}>{comp.title}</Text>
+                      <Text style={[styles.compSource, { color: theme.muted }]}>{comp.source}</Text>
+                    </View>
+                    <Text style={[styles.compPrice, { color: theme.accent }]}>{formatPrice(comp.price, comp.currency as CurrencyCode)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
             {/* Notes (editable) */}
             <View
               style={styles.notesBlock}
@@ -1346,6 +1396,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
+  scarcityBadge: { borderRadius: 12, borderWidth: 1, padding: 10, marginTop: 10, marginBottom: 4 },
+  scarcityRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  scarcityLabel: { fontSize: 13, fontWeight: '600' },
+  scarcityMeta: { fontSize: 11, flex: 1, textAlign: 'right' },
+  compsSection: { borderRadius: 14, borderWidth: 1, padding: 12, marginTop: 10 },
+  compsTitle: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  compRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  compTitle: { fontSize: 12, fontWeight: '500' },
+  compSource: { fontSize: 10, marginTop: 1 },
+  compPrice: { fontSize: 13, fontWeight: '700', marginLeft: 8 },
   notesBlock: {
     marginTop: 16,
   },

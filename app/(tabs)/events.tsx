@@ -39,6 +39,8 @@ import { CalendarGrid } from '@/components/CalendarGrid';
 import { WeekViewCalendar } from '@/components/events/WeekViewCalendar';
 import { useToast } from '@/components/Toast';
 import { SkeletonList } from '@/components/Skeleton';
+import { collectorsApi } from '@/api/collectorsApi';
+import * as Location from 'expo-location';
 import logger from '@/utils/logger';
 
 function EventsScreen() {
@@ -51,8 +53,10 @@ function EventsScreen() {
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'week'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'week' | 'nearby'>('list');
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
+  const [nearbyEvents, setNearbyEvents] = useState<Array<{ id: string; title: string; date: string; location?: string; distance_km?: number }>>([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
 
   // Paginated data fetching
   const eventFetcher = useCallback(
@@ -105,6 +109,31 @@ function EventsScreen() {
     await paginatedRefresh();
     setRefreshing(false);
   }, [paginatedRefresh]);
+
+  const loadNearbyEvents = useCallback(async () => {
+    setNearbyLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        showToast({ message: 'Location permission needed for nearby events', type: 'info' });
+        setViewMode('list');
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const data = await collectorsApi.getNearbyEvents(loc.coords.latitude, loc.coords.longitude, 50);
+      const events = (data as any)?.events;
+      if (Array.isArray(events)) setNearbyEvents(events);
+    } catch (err) {
+      logger.warn('[Events] nearby events failed:', err);
+      showToast({ message: 'Could not load nearby events', type: 'error' });
+    } finally {
+      setNearbyLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    if (viewMode === 'nearby') loadNearbyEvents();
+  }, [viewMode, loadNearbyEvents]);
 
   // SectionList sections for upcoming + past events
   const sections = useMemo(() => {
@@ -344,15 +373,15 @@ function EventsScreen() {
           <AnimatedPressable
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              setViewMode((m) => m === 'list' ? 'calendar' : m === 'calendar' ? 'week' : 'list');
+              setViewMode((m) => m === 'list' ? 'calendar' : m === 'calendar' ? 'week' : m === 'week' ? 'nearby' : 'list');
               if (viewMode === 'calendar') setSelectedCalendarDate(null);
             }}
             accessibilityRole="button"
-            accessibilityLabel={viewMode === 'list' ? 'Switch to month view' : viewMode === 'calendar' ? 'Switch to week view' : 'Switch to list view'}
+            accessibilityLabel={viewMode === 'list' ? 'Switch to month view' : viewMode === 'calendar' ? 'Switch to week view' : viewMode === 'week' ? 'Switch to nearby view' : 'Switch to list view'}
             style={styles.viewToggleBtn}
           >
             <Ionicons
-              name={viewMode === 'list' ? 'calendar-outline' : viewMode === 'calendar' ? 'grid-outline' : 'list-outline'}
+              name={viewMode === 'list' ? 'calendar-outline' : viewMode === 'calendar' ? 'grid-outline' : viewMode === 'week' ? 'location-outline' : 'list-outline'}
               size={22}
               color={viewMode !== 'list' ? colors.accent : colors.text}
             />
@@ -533,7 +562,47 @@ function EventsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      {viewMode === 'week' ? (
+      {viewMode === 'nearby' ? (
+        <>
+          {headerElement}
+          {nearbyLoading ? (
+            <View style={{ padding: 32, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={[styles.emptySubtitle, { color: colors.muted, marginTop: 12 }]}>Finding events near you...</Text>
+            </View>
+          ) : nearbyEvents.length === 0 ? (
+            <View style={{ padding: 32, alignItems: 'center' }}>
+              <Ionicons name="location-outline" size={48} color={colors.muted} />
+              <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>No nearby events</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>No events found within 50km of your location</Text>
+            </View>
+          ) : (
+            <ScrollView contentContainerStyle={{ padding: 16 }}>
+              {nearbyEvents.map((ev) => (
+                <AnimatedPressable
+                  key={ev.id}
+                  style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => router.push(`/events/${ev.id}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={ev.title}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.eventTitle, { color: colors.text }]} numberOfLines={2}>{ev.title}</Text>
+                    <Text style={[styles.eventMeta, { color: colors.muted }]}>{ev.date}</Text>
+                    {ev.location && <Text style={[styles.eventMeta, { color: colors.muted }]}>{ev.location}</Text>}
+                  </View>
+                  {ev.distance_km != null && (
+                    <View style={[styles.distanceBadge, { backgroundColor: colors.accent + '15' }]}>
+                      <Ionicons name="navigate-outline" size={12} color={colors.accent} />
+                      <Text style={[styles.distanceText, { color: colors.accent }]}>{ev.distance_km.toFixed(1)} km</Text>
+                    </View>
+                  )}
+                </AnimatedPressable>
+              ))}
+            </ScrollView>
+          )}
+        </>
+      ) : viewMode === 'week' ? (
         <WeekViewCalendar
           events={events}
           onEventPress={(evt) => router.push(`/events/${evt.id}`)}
@@ -797,6 +866,19 @@ const styles = StyleSheet.create({
   loadingMoreContainer: {
     paddingVertical: 16,
     alignItems: 'center',
+  },
+  distanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  distanceText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
 

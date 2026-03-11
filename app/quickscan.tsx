@@ -25,7 +25,11 @@ import { MultiItemOverlay } from '@/components/MultiItemOverlay';
 import { ComparisonCard } from '@/components/ComparisonCard';
 import { classifyOnDevice, buildCategoryDistribution } from '@/lib/edgeClassifier';
 import type { EdgeClassification } from '@/lib/edgeClassifier';
-import { multiDetect } from '@/api/collectorsApi';
+import { multiDetect, collectorsApi } from '@/api/collectorsApi';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { Ionicons } from '@expo/vector-icons';
+import { AnimatedPressable } from '@/motion';
 import type { QuickScanResult, CatalogAlternative, DetectedMultiItem } from '@/data/types';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
@@ -190,6 +194,51 @@ function QuickScanScreen() {
     setEdgeHint(null);
     setAnalysisStepIndex(0);
   }, []);
+
+  const handleScreenshotScan = useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const asset = result.assets[0];
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+
+      // If base64 not available, read from URI
+      let base64 = asset.base64;
+      if (!base64 && asset.uri) {
+        base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' });
+      }
+
+      if (!base64) {
+        showToast({ message: 'Could not read image', type: 'error' });
+        return;
+      }
+
+      setPhase('analyzing');
+      setCapturedUri(asset.uri);
+      setAnalysisStepIndex(0);
+
+      const response = await collectorsApi.analyzeScreenshot({ image_base64: base64, source: 'gallery' });
+
+      // The response should be similar to intake result — set it as scan result
+      if (response) {
+        setScanResult(response as any);
+        setPhase('result');
+      } else {
+        showToast({ message: 'Could not identify items in screenshot', type: 'info' });
+        setPhase('camera');
+      }
+    } catch (err) {
+      logger.warn('[QuickScan] Screenshot analysis failed:', err);
+      showToast({ message: 'Screenshot analysis failed', type: 'error' });
+      setPhase('camera');
+    }
+  }, [showToast, settings.hapticsEnabled]);
 
   const handleSaveBatchItem = useCallback(async () => {
     if (!currentBatchResult || savingBatchItem) return;
@@ -622,29 +671,41 @@ function QuickScanScreen() {
 
   // ---- Camera Viewfinder (also serves as background for batch_result overlay) ----
   return (
-    <CameraViewfinder
-      cameraRef={cameraRef}
-      phase={phase}
-      batchMode={batchMode}
-      multiMode={multiMode}
-      compareMode={compareMode}
-      savedBatchCount={savedBatchCount}
-      edgeHint={edgeHint}
-      comparisonA={comparisonA}
-      currentBatchResult={currentBatchResult}
-      batchOverlayAnim={batchOverlayAnim}
-      savingBatchItem={savingBatchItem}
-      currency={settings.currency}
-      onCancel={handleCancel}
-      onCapture={handleCapture}
-      onBatchDone={handleBatchDone}
-      onToggleBatch={toggleBatchMode}
-      onToggleMulti={toggleMultiMode}
-      onToggleCompare={toggleCompareMode}
-      onDiscardBatchItem={handleDiscardBatchItem}
-      onSaveBatchItem={handleSaveBatchItem}
-      colors={colors}
-    />
+    <View style={styles.container}>
+      <CameraViewfinder
+        cameraRef={cameraRef}
+        phase={phase}
+        batchMode={batchMode}
+        multiMode={multiMode}
+        compareMode={compareMode}
+        savedBatchCount={savedBatchCount}
+        edgeHint={edgeHint}
+        comparisonA={comparisonA}
+        currentBatchResult={currentBatchResult}
+        batchOverlayAnim={batchOverlayAnim}
+        savingBatchItem={savingBatchItem}
+        currency={settings.currency}
+        onCancel={handleCancel}
+        onCapture={handleCapture}
+        onBatchDone={handleBatchDone}
+        onToggleBatch={toggleBatchMode}
+        onToggleMulti={toggleMultiMode}
+        onToggleCompare={toggleCompareMode}
+        onDiscardBatchItem={handleDiscardBatchItem}
+        onSaveBatchItem={handleSaveBatchItem}
+        colors={colors}
+      />
+      {phase === 'camera' && (
+        <AnimatedPressable
+          style={[styles.galleryBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+          onPress={handleScreenshotScan}
+          accessibilityRole="button"
+          accessibilityLabel="Scan from gallery or screenshot"
+        >
+          <Ionicons name="image-outline" size={22} color="#FFFFFF" />
+        </AnimatedPressable>
+      )}
+    </View>
   );
 }
 
@@ -659,5 +720,16 @@ export default function QuickScanScreenWithBoundary() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  galleryBtn: {
+    position: 'absolute',
+    bottom: 120,
+    left: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
 });

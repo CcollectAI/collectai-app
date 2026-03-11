@@ -88,7 +88,7 @@ const SectionCard: React.FC<{
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier colors now sourced from theme (see BadgeItem below)
 
-const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean }> = ({ achievement, earned }) => {
+const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean; isRecent?: boolean }> = ({ achievement, earned, isRecent }) => {
   const { colors } = useAppTheme();
   const tierColor = colors.tier[achievement.tier];
 
@@ -100,6 +100,11 @@ const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean }> = ({ ac
           size={20}
           color={earned ? tierColor : colors.muted}
         />
+        {isRecent && (
+          <View style={[styles.newBadgeDot, { backgroundColor: colors.accent }]}>
+            <Text style={styles.newBadgeText}>!</Text>
+          </View>
+        )}
       </View>
       <Text
         style={[styles.badgeLabel, { color: earned ? colors.text : colors.muted }]}
@@ -248,6 +253,8 @@ function UserProfileScreen() {
   const [gamProfile, setGamProfile] = useState<{ xp: number; level: number; streak_days: number } | null>(null);
   // Fetch active challenges
   const [challenges, setChallenges] = useState<Array<{ id: string; title: string; progress: number; target: number; reward_xp: number }>>([]);
+  // Recent achievements (for "New!" badges)
+  const [recentAchievementIds, setRecentAchievementIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!userId) return;
@@ -270,6 +277,14 @@ function UserProfileScreen() {
     collectorsApi.getActiveChallenges()
       .then((data) => {
         if (data?.challenges?.length) setChallenges(data.challenges);
+      })
+      .catch(() => { /* silent */ });
+
+    collectorsApi.getRecentAchievements()
+      .then((data) => {
+        if (data?.achievements?.length) {
+          setRecentAchievementIds(new Set(data.achievements.map((a) => a.id)));
+        }
       })
       .catch(() => { /* silent */ });
   }, [userId]);
@@ -526,7 +541,7 @@ function UserProfileScreen() {
           <SectionCard title="Badges" icon="ribbon-outline">
             <View style={styles.badgesGrid}>
               {profileBadges.map((badge) => (
-                <BadgeItem key={badge.id} achievement={badge} earned={badge.earned} />
+                <BadgeItem key={badge.id} achievement={badge} earned={badge.earned} isRecent={recentAchievementIds.has(badge.id)} />
               ))}
             </View>
           </SectionCard>
@@ -871,6 +886,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  newBadgeDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newBadgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 
   // Interests
