@@ -76,6 +76,13 @@ import type { MarketHit } from '@/components/MarketplacePricesSection';
 import { BuildProjectSection } from '@/components/BuildProjectSection';
 import { ProvenanceHistorySection } from '@/components/ProvenanceHistorySection';
 import { track } from '@/analytics/track';
+import { ItemDetailsCard } from '@/components/item/ItemDetailsCard';
+import { ItemQuickActionsRow } from '@/components/item/ItemQuickActionsRow';
+import { ItemShopSection } from '@/components/item/ItemShopSection';
+import { ItemRefreshBar } from '@/components/item/ItemRefreshBar';
+import { ItemDraftActions } from '@/components/item/ItemDraftActions';
+import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
+import { ItemEditBar } from '@/components/item/ItemEditBar';
 
 // DossierData and MarketHit types imported from extracted components
 
@@ -865,310 +872,70 @@ function ItemDetailScreen() {
 
           {/* Save / Cancel bar — only in edit mode */}
           {!isDraft && id && isEditing && (
-            <View style={styles.editBar}>
-              <AnimatedPressable
-                onPress={() => onSaveEdits()}
-                style={[styles.editBarBtnPrimary, { backgroundColor: theme.accent }]}
-                accessibilityRole="button"
-                accessibilityLabel="Save changes"
-              >
-                <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                <Text style={styles.editBarBtnPrimaryText}>Save Changes</Text>
-              </AnimatedPressable>
-              <AnimatedPressable
-                onPress={() => setIsEditing(false)}
-                style={[styles.editBarBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel editing"
-              >
-                <Text style={[styles.editBarBtnText, { color: theme.muted }]}>Cancel</Text>
-              </AnimatedPressable>
-            </View>
+            <ItemEditBar onSave={() => onSaveEdits()} onCancel={() => setIsEditing(false)} />
           )}
 
           {/* For-Sale status badge — shown when listed */}
           {!isDraft && id && !isEditing && isForSale && (
-            <View style={styles.forSaleBar}>
-              <View style={[styles.forSaleBadge, { backgroundColor: '#D1FAE5' }]}>
-                <Ionicons name="pricetag" size={14} color="#065F46" />
-                <Text style={[styles.forSaleBadgeText, { color: '#065F46' }]}>
-                  Listed{askingPriceValue ? ` ${formatPrice(parseFloat(askingPriceValue), settings.currency)}` : ''}
-                </Text>
-              </View>
-              <AnimatedPressable
-                onPress={() => router.push('/sell/offers')}
-                style={[styles.editBarBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
-                accessibilityRole="button"
-                accessibilityLabel="View offers"
-              >
-                <Ionicons name="pricetags-outline" size={14} color={theme.accent} />
-                <Text style={[styles.editBarBtnText, { color: theme.accent }]}>Offers</Text>
-              </AnimatedPressable>
-              <AnimatedPressable
-                onPress={handleUnlist}
-                disabled={forSaleLoading}
-                style={[styles.editBarBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-                accessibilityRole="button"
-                accessibilityLabel="Unlist from sale"
-              >
-                {forSaleLoading ? (
-                  <ActivityIndicator size="small" color={theme.muted} />
-                ) : (
-                  <Text style={[styles.editBarBtnText, { color: theme.muted }]}>Unlist</Text>
-                )}
-              </AnimatedPressable>
-            </View>
+            <ItemForSaleBar
+              askingPriceValue={askingPriceValue}
+              forSaleLoading={forSaleLoading}
+              onUnlist={handleUnlist}
+            />
           )}
 
           {/* Draft mode - Quick actions row */}
           {isDraft && (
-            <View style={styles.draftSection}>
-              {saveError && (
-                <Text style={[styles.errorText, { color: theme.danger }]}>
-                  {saveError}
-                </Text>
-              )}
-
-              <View style={styles.draftButtonsRow}>
-                <Pressable
-                  onPress={() => router.push('/quickscan')}
-                  style={[
-                    styles.scanAnotherButton,
-                    { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Scan another item"
-                >
-                  <Ionicons name="camera" size={18} color={theme.text} />
-                  <Text style={[styles.scanAnotherButtonText, { color: theme.text }]}>Scan Another</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={onSaveDraft}
-                  disabled={savingDraft}
-                  style={[
-                    styles.saveDraftButton,
-                    { backgroundColor: theme.accent, opacity: savingDraft ? 0.7 : 1 },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Save to collection"
-                >
-                  {savingDraft ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-                      <Text style={styles.saveDraftButtonText}>Save to Collection</Text>
-                    </>
-                  )}
-                </Pressable>
-              </View>
-            </View>
+            <ItemDraftActions
+              savingDraft={savingDraft}
+              saveError={saveError}
+              onSaveDraft={onSaveDraft}
+            />
           )}
 
           {/* ── Quick Actions ─────────────────────────────────────── */}
           {!isDraft && id && !isEditing && (
-            <View style={styles.quickActionsRow}>
-              <AnimatedPressable
-                onPress={() => setIsEditing(true)}
-                style={[styles.quickActionBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-                accessibilityRole="button"
-                accessibilityLabel="Edit item details"
-              >
-                <Ionicons name="create-outline" size={18} color={theme.accent} />
-                <Text style={[styles.quickActionLabel, { color: theme.text }]}>Edit</Text>
-              </AnimatedPressable>
-              <AnimatedPressable
-                onPress={async () => {
-                  try {
-                    await Share.share({
-                      message: `Check out ${editableName}${toNum(editableValue) ? ` - valued at ${formatPrice(toNum(editableValue))}` : ''} on CollectAI`,
-                    });
-                  } catch {
-                    // User cancelled
-                  }
-                }}
-                style={[styles.quickActionBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-                accessibilityRole="button"
-                accessibilityLabel="Share this item"
-              >
-                <Ionicons name="share-outline" size={18} color={theme.accent} />
-                <Text style={[styles.quickActionLabel, { color: theme.text }]}>Share</Text>
-              </AnimatedPressable>
-              {!isForSale ? (
-                <AnimatedPressable
-                  onPress={() => {
-                    listForSaleHook.open();
-                  }}
-                  style={[styles.quickActionBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="List this item for sale on marketplaces"
-                >
-                  <Ionicons name="storefront-outline" size={18} color={theme.accent} />
-                  <Text style={[styles.quickActionLabel, { color: theme.accent }]}>List for Sale</Text>
-                </AnimatedPressable>
-              ) : (
-                <View style={[styles.quickActionBtn, { backgroundColor: '#D1FAE5', borderColor: '#059669' }]}>
-                  <Ionicons name="pricetag" size={18} color="#065F46" />
-                  <Text style={[styles.quickActionLabel, { color: '#065F46' }]}>Listed</Text>
-                </View>
-              )}
-            </View>
+            <ItemQuickActionsRow
+              editableName={editableName}
+              editableValue={editableValue}
+              isForSale={isForSale}
+              onEdit={() => setIsEditing(true)}
+              onListForSale={() => listForSaleHook.open()}
+            />
           )}
 
           {/* Details card */}
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.card, borderColor: theme.border },
-            ]}
-          >
-            {/* Editable Name (draft or edit mode) */}
-            {isDraft || isEditing ? (
-              <TextInput
-                style={[styles.editableNameInputSimple, { color: theme.text, borderBottomColor: theme.border }]}
-                value={editableName}
-                onChangeText={setEditableName}
-                placeholder="Item name"
-                placeholderTextColor={theme.muted ?? '#64748B'}
-                accessibilityLabel="Item name"
-              />
-            ) : (
-              <Text style={[styles.name, { color: theme.text }]}>{editableName}</Text>
-            )}
+          <ItemDetailsCard
+            isDraft={isDraft}
+            isEditing={isEditing}
+            editableName={editableName}
+            editableCategory={editableCategory}
+            editableCollection={editableCollection}
+            editableCondition={editableCondition}
+            editableValue={editableValue}
+            isGradingEligible={isGradingEligible}
+            categorySlug={categorySlug}
+            categoryIdMap={CATEGORY_ID_MAP}
+            itemAttributes={itemAttributes}
+            taxonomyVersion={taxonomyVersion}
+            subtypeId={subtypeId}
+            itemCollections={itemCollections}
+            itemId={id}
+            itemSizeValue={itemSizeValue}
+            sizeSystem={sizeSystem}
+            sizeSaving={sizeSaving}
+            notes={notes}
+            onEditableName={setEditableName}
+            onEditableValue={setEditableValue}
+            onShowCategoryPicker={showCategoryPicker}
+            onShowCollectionPicker={showCollectionPicker}
+            onShowConditionPicker={showConditionPicker}
+            onSizeChange={handleSizeChange}
+            onSizeSystemChange={setSizeSystem}
+            onSizeValueChange={setItemSizeValue}
+          />
 
-            {/* Category row */}
-            <View style={styles.row}>
-              <Text style={[styles.label, { color: theme.muted }]}>
-                Category
-              </Text>
-              {isDraft || isEditing ? (
-                <Pressable
-                  onPress={showCategoryPicker}
-                  style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Category: ${editableCategory === 'Unknown category' ? 'not set' : editableCategory}. Tap to change`}
-                >
-                  <Text style={[styles.dropdownFieldTextSmall, { color: editableCategory === 'Unknown category' ? theme.muted : theme.text }]}>
-                    {editableCategory === 'Unknown category' ? 'Select category' : editableCategory}
-                  </Text>
-                  <Ionicons name="chevron-down" size={14} color={theme.muted} />
-                </Pressable>
-              ) : (
-                <Pressable
-                  onPress={() => {
-                    const categoryId = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    router.push(`/categories/${categoryId}`);
-                  }}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                  accessibilityRole="link"
-                  accessibilityLabel={`View ${editableCategory} category`}
-                >
-                  <Text style={[styles.value, { color: theme.accent }]}>{editableCategory}</Text>
-                  <Ionicons name="chevron-forward" size={14} color={theme.accent} />
-                </Pressable>
-              )}
-            </View>
-
-            {/* Collection row */}
-            <View style={styles.row}>
-              <Text style={[styles.label, { color: theme.muted }]}>
-                Collection
-              </Text>
-              {isDraft || isEditing ? (
-                <Pressable
-                  onPress={showCollectionPicker}
-                  style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Collection: ${editableCollection}. Tap to change`}
-                >
-                  <Text style={[styles.dropdownFieldTextSmall, { color: editableCollection === 'Not set' ? theme.muted : theme.text }]}>
-                    {editableCollection}
-                  </Text>
-                  <Ionicons name="chevron-down" size={14} color={theme.muted} />
-                </Pressable>
-              ) : (
-                <Text style={[styles.value, { color: theme.text }]}>{editableCollection}</Text>
-              )}
-            </View>
-
-            <View style={styles.row}>
-              <Text style={[styles.label, { color: theme.muted }]}>
-                {isGradingEligible ? 'Grade' : 'Condition'}
-              </Text>
-              {isDraft || isEditing ? (
-                <Pressable
-                  onPress={showConditionPicker}
-                  style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}. Tap to change`}
-                >
-                  <Text style={[styles.dropdownFieldTextSmall, { color: editableCondition === 'Not set' ? theme.muted : theme.text }]}>
-                    {editableCondition}
-                  </Text>
-                  <Ionicons name="chevron-down" size={14} color={theme.muted} />
-                </Pressable>
-              ) : (
-                <Text style={[styles.value, { color: theme.text }]} accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}`}>{editableCondition}</Text>
-              )}
-            </View>
-
-            <View style={styles.row}>
-              <Text style={[styles.label, { color: theme.muted }]}>
-                Estimated value
-              </Text>
-              {isDraft || isEditing ? (
-                <View style={styles.editableValueRow}>
-                  <Text style={[styles.currencySymbol, { color: theme.muted }]}>{getCurrencySymbol(settings.currency)}</Text>
-                  <TextInput
-                    style={[styles.editableValueInput, { color: theme.text, borderBottomColor: theme.border, fontWeight: '700' }]}
-                    value={editableValue}
-                    onChangeText={setEditableValue}
-                    placeholder="0"
-                    placeholderTextColor={theme.muted ?? '#64748B'}
-                    keyboardType="decimal-pad"
-                    accessibilityLabel={`Estimated value in ${settings.currency}`}
-                  />
-                </View>
-              ) : (
-                <Text
-                  style={[styles.valueHighlight, { color: theme.text }]}
-                  accessibilityRole="text"
-                  accessibilityLabel={`Estimated value: ${formatPrice(toNum(editableValue))}`}
-                >
-                  {formatPrice(toNum(editableValue))}
-                </Text>
-              )}
-            </View>
-
-            {/* Quick actions moved to standalone section below image */}
-
-            {/* Item Attributes Section — from attributes_json */}
-            <ItemAttributesSection
-              attributes={itemAttributes}
-              category={editableCategory}
-              taxonomyVersion={taxonomyVersion}
-              subtypeId={subtypeId}
-              collections={itemCollections}
-            />
-
-            {/* ── Category-Specific Sections (sneakers/watches/LEGO/funko/auth) ── */}
-            <CategorySpecificSection
-              categorySlug={categorySlug}
-              isDraft={isDraft}
-              itemId={id}
-              itemAttributes={itemAttributes}
-              itemSizeValue={itemSizeValue}
-              sizeSystem={sizeSystem}
-              sizeSaving={sizeSaving}
-              notes={notes}
-              hapticsEnabled={settings.hapticsEnabled}
-              theme={theme}
-              onSizeChange={handleSizeChange}
-              onSizeSystemChange={setSizeSystem}
-              onSizeValueChange={setItemSizeValue}
-            />
-
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             {/* New Explainable AI Interface - PriceCard with visual RangeBar */}
             {featureFlags.FEATURE_EXPLAINABLE_AI_INTERFACES && priceEstimate && (
               <View style={styles.priceCardSection}>
@@ -1187,7 +954,7 @@ function ItemDetailScreen() {
                 <Text style={[styles.label, { color: theme.muted }]}>
                   Price range
                 </Text>
-                <Text style={[styles.value, { color: theme.text }]}>
+                <Text style={{ fontSize: 14, fontWeight: '500', color: theme.text }}>
                   {formatPrice(toNum(q10))} – {formatPrice(toNum(q50))} – {formatPrice(toNum(q90))}
                 </Text>
               </View>
@@ -1257,35 +1024,11 @@ function ItemDetailScreen() {
 
             {/* Refresh All Data — compact action bar above data panels */}
             {!isDraft && id && (
-              <View style={[styles.refreshBar, { borderTopColor: theme.border }]}>
-                <View style={styles.refreshBarLeft}>
-                  <Ionicons name="sparkles" size={16} color={theme.accent} />
-                  <Text style={[styles.refreshBarLabel, { color: theme.muted }]}>
-                    {evidenceData?.prediction_at
-                      ? `Last analyzed ${relativeTime(evidenceData.prediction_at)}`
-                      : 'Powered by CcollectAI'}
-                  </Text>
-                </View>
-                <Pressable
-                  onPress={refreshAllIntelligence}
-                  disabled={aiRefreshing}
-                  style={[
-                    styles.refreshBarBtn,
-                    { backgroundColor: theme.accent + '14', opacity: aiRefreshing ? 0.7 : 1 },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Refresh all intelligence data"
-                >
-                  {aiRefreshing ? (
-                    <ActivityIndicator size="small" color={theme.accent} />
-                  ) : (
-                    <Ionicons name="refresh-outline" size={14} color={theme.accent} />
-                  )}
-                  <Text style={[styles.refreshBarBtnText, { color: theme.accent }]}>
-                    {aiRefreshing ? 'Updating...' : 'Refresh'}
-                  </Text>
-                </Pressable>
-              </View>
+              <ItemRefreshBar
+                predictionAt={evidenceData?.prediction_at}
+                aiRefreshing={aiRefreshing}
+                onRefresh={refreshAllIntelligence}
+              />
             )}
 
             {/* Price History section removed — data available via Full Report and Market Prices */}
@@ -1381,37 +1124,8 @@ function ItemDetailScreen() {
             )}
 
             {/* Shop this Item — affiliate links */}
-            {!isDraft && affiliateLinks.length > 0 && (
-              <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-                <View style={styles.sectionHeaderRow}>
-                  <View style={styles.sectionHeaderLeft}>
-                    <Ionicons name="open-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Shop this Item</Text>
-                  </View>
-                </View>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 8 }}>
-                  {affiliateLinks.map((link) => (
-                    <Pressable
-                      key={link.source}
-                      onPress={() => {
-                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                        Linking.openURL(link.affiliate_url).catch((err) =>
-                          logger.warn('[ItemDetail] Failed to open affiliate URL', err)
-                        );
-                      }}
-                      style={[
-                        styles.affiliateLinkBtn,
-                        { borderColor: theme.border },
-                      ]}
-                      accessibilityRole="link"
-                      accessibilityLabel={link.label}
-                    >
-                      <Ionicons name="open-outline" size={14} color={theme.accent} />
-                      <Text style={[styles.affiliateLinkText, { color: theme.text }]}>{link.label}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
+            {!isDraft && (
+              <ItemShopSection affiliateLinks={affiliateLinks} />
             )}
 
             {/* Marketplace Section */}
@@ -1565,48 +1279,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 32,
   },
-  draftSection: {
-    marginBottom: 16,
-    gap: 8,
-  },
-  draftButtonsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  saveDraftButton: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  saveDraftButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  scanAnotherButton: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  scanAnotherButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  errorText: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
+  // draftSection, draftButtonsRow, saveDraftButton, scanAnotherButton, errorText moved to ItemDraftActions
   priceBandsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1618,45 +1291,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 10,
   },
-  name: {
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  editableNameInputSimple: {
-    fontSize: 20,
-    fontWeight: '700',
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-  },
-  dropdownFieldRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 2,
-    borderBottomWidth: 1,
-    gap: 4,
-  },
-  dropdownFieldTextSmall: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  editableValueInput: {
-    fontSize: 13,
-    fontWeight: '500',
-    paddingVertical: 2,
-    borderBottomWidth: 1,
-    minWidth: 80,
-    textAlign: 'right',
-  },
-  editableValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  currencySymbol: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginRight: 2,
-  },
+  // name, editableNameInputSimple, dropdownFieldRow, editableValueInput, editableValueRow, currencySymbol moved to ItemDetailsCard
   confidenceSection: {
     marginTop: 12,
   },
@@ -1664,23 +1299,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 4,
   },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 6,
-  },
+  // row moved to ItemDetailsCard
   label: {
     fontSize: 13,
   },
-  value: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  valueHighlight: {
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: -0.2,
-  },
+  // value, valueHighlight moved to ItemDetailsCard
   explanationBlock: {
     marginTop: 16,
     paddingTop: 12,
@@ -1740,40 +1363,7 @@ const styles = StyleSheet.create({
     minHeight: 100,
     maxHeight: 220,
   },
-  // Styles for sections still rendered inline (e.g. "Shop this Item")
-  sectionBlock: {
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  sectionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  affiliateLinkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  affiliateLinkText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  // sectionBlock, sectionHeaderRow, sectionHeaderLeft, sectionTitle, affiliateLinkBtn, affiliateLinkText moved to ItemShopSection
   stickyButtonContainer: {
     position: 'absolute',
     bottom: 0,
@@ -1797,115 +1387,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Refresh bar (compact AI action bar)
-  refreshBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 4,
-  },
-  refreshBarLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexShrink: 1,
-  },
-  refreshBarLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  refreshBarBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-  },
-  refreshBarBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  editBar: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  editBarBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  editBarBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  editBarBtnPrimary: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  editBarBtnPrimaryText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  // For-Sale listing styles
-  forSaleBar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  forSaleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flex: 1,
-  },
-  forSaleBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  // Quick Actions Row (standalone section under image)
-  quickActionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 4,
-  },
-  quickActionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    minWidth: 70,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  quickActionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  // refreshBar, editBar, forSaleBar, quickActionsRow styles moved to extracted components
   // Progress Tracking styles moved to ItemProgressSection component
   // Grading styles moved to GradingSection component
   // Size, LEGO, Funko, Auth styles moved to CategorySpecificSection component

@@ -35,6 +35,8 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { AnimatedPressable } from '@/motion';
 import { SwipeableRow, SwipeActions } from '@/components/SwipeableRow';
 import { useAsync } from '@/hooks/useAsync';
+import { useFormField, validateAll } from '@/hooks/useFormField';
+import { compose, required, maxLength, positiveNumber } from '@/lib/validate';
 import type {
   MarketplaceListing,
   MarketplaceSale,
@@ -197,7 +199,7 @@ function SaleCard({
       <View style={[styles.financialRow, { borderTopColor: colors.border }]}>
         <View style={styles.financialItem}>
           <Text style={[styles.financialLabel, { color: colors.muted }]}>Fees</Text>
-          <Text style={[styles.financialValue, { color: '#EF4444' }]}>
+          <Text style={[styles.financialValue, { color: colors.error }]}>
             -{formatPrice((sale.platformFee ?? 0) + (sale.paymentProcessingFee ?? 0), currency)}
           </Text>
         </View>
@@ -211,7 +213,7 @@ function SaleCard({
         )}
         <View style={styles.financialItem}>
           <Text style={[styles.financialLabel, { color: colors.muted }]}>Net</Text>
-          <Text style={[styles.financialValue, { color: '#059669' }]}>
+          <Text style={[styles.financialValue, { color: colors.success }]}>
             {formatPrice(sale.netProceeds, currency)}
           </Text>
         </View>
@@ -255,7 +257,7 @@ function AccountCard({
       </View>
       <View style={[
         styles.accountStatusDot,
-        { backgroundColor: account.isActive ? '#059669' : '#EF4444' },
+        { backgroundColor: account.isActive ? colors.success : colors.error },
       ]} />
     </View>
   );
@@ -300,13 +302,13 @@ function RevenueSummary({
         </View>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryLabel, { color: colors.muted }]}>Fees</Text>
-          <Text style={[styles.summaryValue, { color: '#EF4444' }]}>
+          <Text style={[styles.summaryValue, { color: colors.error }]}>
             -{formatPrice(totals.fees, currency)}
           </Text>
         </View>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryLabel, { color: colors.muted }]}>Net</Text>
-          <Text style={[styles.summaryValue, { color: '#059669' }]}>
+          <Text style={[styles.summaryValue, { color: colors.success }]}>
             {formatPrice(totals.net, currency)}
           </Text>
         </View>
@@ -333,8 +335,8 @@ function SellerDashboardScreen() {
 
   // Create Listing modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createTitle, setCreateTitle] = useState('');
-  const [createPrice, setCreatePrice] = useState('');
+  const createTitleField = useFormField(compose(required('Title'), maxLength('Title', 200)));
+  const createPriceField = useFormField(compose(required('Price'), positiveNumber('Price')));
   const [createMarketplace, setCreateMarketplace] = useState<MarketplaceId>('collectai');
   const [creating, setCreating] = useState(false);
 
@@ -396,10 +398,10 @@ function SellerDashboardScreen() {
 
   // Create listing handler
   const handleCreateListing = useCallback(async () => {
-    const title = createTitle.trim();
-    if (!title) { showToast({ message: 'Please enter a title', type: 'warning' }); return; }
-    const price = parseFloat(createPrice.replace(/[^\d.]/g, ''));
-    if (!Number.isFinite(price) || price <= 0) { showToast({ message: 'Please enter a valid price', type: 'warning' }); return; }
+    if (!validateAll(createTitleField, createPriceField)) return;
+
+    const title = createTitleField.value.trim();
+    const price = parseFloat(createPriceField.value.replace(/[^\d.]/g, ''));
 
     setCreating(true);
     try {
@@ -416,22 +418,22 @@ function SellerDashboardScreen() {
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       showToast({ message: 'Listing created as draft', type: 'success' });
       setShowCreateModal(false);
-      setCreateTitle('');
-      setCreatePrice('');
+      createTitleField.reset();
+      createPriceField.reset();
       loadData();
     } catch { showToast({ message: 'Failed to create listing', type: 'error' }); }
     finally { setCreating(false); }
-  }, [createTitle, createPrice, createMarketplace, settings.currency, loadData, showToast]);
+  }, [createTitleField, createPriceField, createMarketplace, settings.currency, loadData, showToast]);
 
   // Compute fee preview for create modal
   const feePreview = useMemo(() => {
-    const price = parseFloat(createPrice.replace(/[^\d.]/g, ''));
+    const price = parseFloat(createPriceField.value.replace(/[^\d.]/g, ''));
     if (!Number.isFinite(price) || price <= 0) return null;
     const schedule = feeSchedules.find((f) => f.marketplaceId === createMarketplace);
     if (!schedule) return null;
     const fees = (price * (schedule.baseFeePct + schedule.paymentProcessingPct) / 100) + schedule.fixedFee;
     return { fees: Math.round(fees * 100) / 100, net: Math.round((price - fees) * 100) / 100 };
-  }, [createPrice, createMarketplace, feeSchedules]);
+  }, [createPriceField.value, createMarketplace, feeSchedules]);
 
   // Filter listings by status
   const filteredListings = useMemo(() => {
@@ -551,6 +553,9 @@ function SellerDashboardScreen() {
               renderItem={renderListing}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.listContent}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={5}
               refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />
               }
@@ -572,6 +577,9 @@ function SellerDashboardScreen() {
             />
           }
           contentContainerStyle={styles.listContent}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />
           }
@@ -604,6 +612,9 @@ function SellerDashboardScreen() {
             />
           }
           contentContainerStyle={styles.listContent}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />
           }
@@ -635,26 +646,30 @@ function SellerDashboardScreen() {
 
             <Text style={[styles.modalLabel, { color: colors.text }]}>Title</Text>
             <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
-              value={createTitle}
-              onChangeText={setCreateTitle}
+              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: createTitleField.touched && createTitleField.error ? '#EF4444' : colors.border, color: colors.text }]}
+              value={createTitleField.value}
+              onChangeText={createTitleField.onChange}
+              onBlur={createTitleField.onBlur}
               placeholder="Item title"
               placeholderTextColor={colors.muted}
               autoFocus
               returnKeyType="next"
               maxLength={200}
             />
+            {createTitleField.touched && createTitleField.error && <Text style={styles.fieldError}>{createTitleField.error}</Text>}
 
             <Text style={[styles.modalLabel, { color: colors.text }]}>Price ({settings.currency})</Text>
             <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
-              value={createPrice}
-              onChangeText={setCreatePrice}
+              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: createPriceField.touched && createPriceField.error ? '#EF4444' : colors.border, color: colors.text }]}
+              value={createPriceField.value}
+              onChangeText={createPriceField.onChange}
+              onBlur={createPriceField.onBlur}
               placeholder={`${getCurrencySymbol(settings.currency)} 0.00`}
               placeholderTextColor={colors.muted}
               keyboardType="decimal-pad"
               returnKeyType="done"
             />
+            {createPriceField.touched && createPriceField.error && <Text style={styles.fieldError}>{createPriceField.error}</Text>}
 
             <Text style={[styles.modalLabel, { color: colors.text }]}>Marketplace</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
@@ -678,11 +693,11 @@ function SellerDashboardScreen() {
               <View style={[styles.feePreview, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 <View style={styles.feeRow}>
                   <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. fees</Text>
-                  <Text style={[styles.feeValue, { color: '#EF4444' }]}>-{formatPrice(feePreview.fees, settings.currency)}</Text>
+                  <Text style={[styles.feeValue, { color: colors.error }]}>-{formatPrice(feePreview.fees, settings.currency)}</Text>
                 </View>
                 <View style={styles.feeRow}>
                   <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. net</Text>
-                  <Text style={[styles.feeValue, { color: '#059669' }]}>{formatPrice(feePreview.net, settings.currency)}</Text>
+                  <Text style={[styles.feeValue, { color: colors.success }]}>{formatPrice(feePreview.net, settings.currency)}</Text>
                 </View>
               </View>
             )}
@@ -862,4 +877,5 @@ const styles = StyleSheet.create({
   feeValue: { fontSize: 13, fontWeight: '600' },
   createBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
   createBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  fieldError: { fontSize: 12, color: '#EF4444', marginTop: 2, marginLeft: 4, marginBottom: 4 },
 });

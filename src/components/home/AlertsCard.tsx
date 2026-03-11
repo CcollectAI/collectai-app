@@ -3,7 +3,7 @@
  * Displays pending alerts with summary.
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -65,7 +65,7 @@ function AlertItem({ alert, colors, onPress, alertActive, onToggleAlert }: Alert
 
   return (
     <AnimatedPressable
-      style={[styles.alertRow, !alert.isRead && styles.alertUnread]}
+      style={styles.alertRow}
       onPress={() => {
         fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
         onPress?.();
@@ -110,7 +110,7 @@ function AlertItem({ alert, colors, onPress, alertActive, onToggleAlert }: Alert
 
 function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, showEmptyState = true }: AlertsCardProps) {
   const { colors } = useAppTheme();
-  const unreadCount = alerts.filter((a) => !a.isRead).length;
+  const unreadCount = useMemo(() => alerts.filter((a) => !a.isRead).length, [alerts]);
   const [activeAlerts, setActiveAlerts] = useState<Set<string>>(() => new Set(alerts.map((a) => a.id)));
 
   const toggleAlert = (id: string) => {
@@ -229,7 +229,7 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
       {/* View All */}
       {alerts.length > 3 && onViewAll && (
         <AnimatedPressable
-          style={styles.viewAll}
+          style={[styles.viewAll, { borderTopColor: colors.border }]}
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
             onViewAll();
@@ -328,9 +328,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
   },
-  alertUnread: {
-    opacity: 1,
-  },
   alertIcon: {
     width: 32,
     height: 32,
@@ -371,7 +368,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    borderTopColor: 'transparent',
   },
   viewAllText: {
     fontSize: 14,

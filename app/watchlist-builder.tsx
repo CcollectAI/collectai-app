@@ -17,7 +17,6 @@
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { SkeletonList } from '@/components/Skeleton';
-import { SwipeableRow, SwipeActions } from '@/components/SwipeableRow';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
@@ -25,7 +24,6 @@ import {
   ScrollView,
   TextInput,
   Alert,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -33,7 +31,6 @@ import {
   RefreshControl,
 } from "react-native";
 import { useToast } from "@/components/Toast";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
@@ -41,7 +38,6 @@ import { useSettings } from "@/lib/settings";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import logger from "@/utils/logger";
 import { QuickNavBar } from "@/components/QuickNavBar";
-import { formatPrice, getCurrencySymbol } from "@/lib/format";
 import { CATEGORY_SLUG_TO_NAME } from "@/constants/categories";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { saveCSVAndShare } from "@/export/csv";
@@ -51,50 +47,15 @@ import { dataProvider } from "@/data";
 import type { WatchlistItem } from "@/data/types";
 import { useWatchlistRealtime } from "@/hooks/useWatchlistRealtime";
 
+// Extracted components
+import { WatchlistStatsBanner } from "@/components/watchlist/WatchlistStatsBanner";
+import { WatchlistFilterSort, type SortKey } from "@/components/watchlist/WatchlistFilterSort";
+import { WatchlistAddForm } from "@/components/watchlist/WatchlistAddForm";
+import { WatchlistEmptyState } from "@/components/watchlist/WatchlistEmptyState";
+import { WatchlistItemCard } from "@/components/watchlist/WatchlistItemCard";
+import { WatchlistBulkBar } from "@/components/watchlist/WatchlistBulkBar";
+
 type WatchlistPriority = 'high' | 'medium' | 'low';
-
-// Relative time helper for "Last checked" display
-function timeAgo(dateStr: string | null | undefined): string {
-  if (!dateStr) return 'Not checked yet';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
-}
-
-const TREND_INDICATOR: Record<string, { symbol: string; color: string }> = {
-  up: { symbol: '\u25B2', color: '#059669' },
-  down: { symbol: '\u25BC', color: '#DC2626' },
-  stable: { symbol: '\u2550', color: '#6B7280' },
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Priority config (semantic colors — not theme-dependent)
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PRIORITY_CONFIG: Record<WatchlistPriority, { label: string; color: string; bg: string }> = {
-  high: { label: "High", color: "#DC2626", bg: "#DC262615" },
-  medium: { label: "Medium", color: "#D97706", bg: "#D9770615" },
-  low: { label: "Low", color: "#059669", bg: "#05966915" },
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Sort options
-// ─────────────────────────────────────────────────────────────────────────────
-
-type SortKey = 'priority' | 'newest' | 'price_asc' | 'price_desc' | 'custom';
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'priority', label: 'Priority (High\u2192Low)' },
-  { key: 'newest', label: 'Newest first' },
-  { key: 'price_asc', label: 'Price (Low\u2192High)' },
-  { key: 'price_desc', label: 'Price (High\u2192Low)' },
-  { key: 'custom', label: 'Custom order' },
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CSV generation for watchlist items
@@ -128,7 +89,6 @@ function watchlistToCSV(items: WatchlistItem[], currency: string): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function WatchlistBuilderScreen() {
-  const router = useRouter();
   const { user } = useAuthContext();
   const userId = user?.id ?? "";
   const { animatedStyle } = useEnterReveal({ delay: 50 });
@@ -165,7 +125,6 @@ function WatchlistBuilderScreen() {
   // B3.2: Multi-select via existing hook
   const {
     isMultiSelectMode,
-    selectedIds,
     selectedCount,
     enterMultiSelectMode,
     exitMultiSelectMode,
@@ -230,8 +189,8 @@ function WatchlistBuilderScreen() {
   }, [items, activeCategory]);
 
   // Sort items based on selected sort key
+  const priorityOrder: Record<WatchlistPriority, number> = useMemo(() => ({ high: 0, medium: 1, low: 2 }), []);
   const sortedItems = useMemo(() => {
-    const priorityOrder: Record<WatchlistPriority, number> = { high: 0, medium: 1, low: 2 };
     return [...filteredItems].sort((a, b) => {
       switch (sortKey) {
         case 'priority': {
@@ -252,7 +211,7 @@ function WatchlistBuilderScreen() {
           return 0;
       }
     });
-  }, [filteredItems, sortKey]);
+  }, [filteredItems, sortKey, priorityOrder]);
 
   // Stats
   const stats = useMemo(() => {
@@ -444,22 +403,17 @@ function WatchlistBuilderScreen() {
 
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
 
-    // Swap items in the list
     const newItems = [...items];
     const temp = newItems[idx];
     newItems[idx] = newItems[idx - 1];
     newItems[idx - 1] = temp;
 
-    // Assign new sort orders
     const updatedItems = newItems.map((item, i) => ({ ...item, sortOrder: i }));
     const previousItems = [...items];
     setItems(updatedItems);
-
-    // Switch to custom sort so the user sees the new order
     setSortKey('custom');
 
     try {
-      // Persist both swapped items' sort orders
       await Promise.all([
         dataProvider.updateWatchlistItem(updatedItems[idx].id, { sortOrder: idx }),
         dataProvider.updateWatchlistItem(updatedItems[idx - 1].id, { sortOrder: idx - 1 }),
@@ -476,22 +430,17 @@ function WatchlistBuilderScreen() {
 
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
 
-    // Swap items in the list
     const newItems = [...items];
     const temp = newItems[idx];
     newItems[idx] = newItems[idx + 1];
     newItems[idx + 1] = temp;
 
-    // Assign new sort orders
     const updatedItems = newItems.map((item, i) => ({ ...item, sortOrder: i }));
     const previousItems = [...items];
     setItems(updatedItems);
-
-    // Switch to custom sort so the user sees the new order
     setSortKey('custom');
 
     try {
-      // Persist both swapped items' sort orders
       await Promise.all([
         dataProvider.updateWatchlistItem(updatedItems[idx].id, { sortOrder: idx }),
         dataProvider.updateWatchlistItem(updatedItems[idx + 1].id, { sortOrder: idx + 1 }),
@@ -503,8 +452,15 @@ function WatchlistBuilderScreen() {
   }, [items, showToast]);
 
   // Resolve category slug to human-readable name
-  const categoryDisplayName = (slug: string): string =>
-    CATEGORY_SLUG_TO_NAME[slug] || slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const categoryDisplayName = useCallback((slug: string): string =>
+    CATEGORY_SLUG_TO_NAME[slug] || slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), []);
+
+  const handleCloseReorder = useCallback(() => setReorderItemId(null), []);
+
+  const handleOpenAddForm = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+    setShowAddForm(true);
+  }, []);
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -519,7 +475,7 @@ function WatchlistBuilderScreen() {
             <Text style={[styles.headerTitle, { color: colors.text }]}>Watchlist</Text>
           </View>
 
-          {/* B3.2: Select / Cancel toggle button */}
+          {/* Select / Cancel toggle button */}
           {items.length > 0 && (
             <AnimatedPressable
               style={[styles.selectHeaderBtn, { backgroundColor: isMultiSelectMode ? colors.accent + '20' : 'transparent' }]}
@@ -544,7 +500,7 @@ function WatchlistBuilderScreen() {
           {!isMultiSelectMode && (
             <AnimatedPressable
               style={[styles.addHeaderBtn, { backgroundColor: colors.accent + '15' }]}
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }}
+              onPress={handleOpenAddForm}
               accessibilityRole="button"
               accessibilityLabel="Add item to watchlist"
             >
@@ -567,131 +523,25 @@ function WatchlistBuilderScreen() {
           }
         >
           <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
-            {/* Stats Banner — hidden during loading */}
+            {/* Stats Banner */}
             {!loading && items.length > 0 && (
-              <View style={[styles.statsBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.statItem} accessibilityLabel={`${stats.total} items`}>
-                  <Text style={[styles.statValue, { color: colors.text }]}>{stats.total}</Text>
-                  <Text style={[styles.statLabel, { color: colors.muted }]}>Items</Text>
-                </View>
-                <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.statItem} accessibilityLabel={`${stats.high} high priority`}>
-                  <Text style={[styles.statValue, { color: colors.text }]}>{stats.high}</Text>
-                  <Text style={[styles.statLabel, { color: colors.muted }]}>High Priority</Text>
-                </View>
-                <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.statItem} accessibilityLabel={`${stats.withTarget} with targets`}>
-                  <Text style={[styles.statValue, { color: colors.text }]}>{stats.withTarget}</Text>
-                  <Text style={[styles.statLabel, { color: colors.muted }]}>With Targets</Text>
-                </View>
-              </View>
+              <WatchlistStatsBanner stats={stats} colors={colors} />
             )}
 
             {/* Category filter chips + sort pill */}
             {!loading && items.length > 0 && !isMultiSelectMode && (
-              <View style={styles.filterSortRow}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.filterChipScroll}
-                  contentContainerStyle={styles.filterChipContent}
-                >
-                  {/* "All" chip */}
-                  <AnimatedPressable
-                    onPress={() => {
-                      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                      setActiveCategory(null);
-                    }}
-                    style={[
-                      styles.filterChip,
-                      { borderColor: !activeCategory ? colors.accent : colors.border },
-                      !activeCategory && { backgroundColor: colors.accent + '15' },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Show all categories"
-                    accessibilityState={{ selected: !activeCategory }}
-                  >
-                    <Text style={[styles.filterChipText, { color: !activeCategory ? colors.accent : colors.muted }]}>
-                      All
-                    </Text>
-                  </AnimatedPressable>
-
-                  {/* Category chips */}
-                  {uniqueCategories.map((catSlug) => {
-                    const isActive = activeCategory === catSlug;
-                    return (
-                      <AnimatedPressable
-                        key={catSlug}
-                        onPress={() => {
-                          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                          setActiveCategory(isActive ? null : catSlug);
-                        }}
-                        style={[
-                          styles.filterChip,
-                          { borderColor: isActive ? colors.accent : colors.border },
-                          isActive && { backgroundColor: colors.accent + '15' },
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Filter by ${categoryDisplayName(catSlug)}`}
-                        accessibilityState={{ selected: isActive }}
-                      >
-                        <Text style={[styles.filterChipText, { color: isActive ? colors.accent : colors.muted }]}>
-                          {categoryDisplayName(catSlug)}
-                        </Text>
-                      </AnimatedPressable>
-                    );
-                  })}
-                </ScrollView>
-
-                {/* Sort pill */}
-                <AnimatedPressable
-                  onPress={() => {
-                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                    setShowSortMenu((v) => !v);
-                  }}
-                  style={[styles.sortPill, { borderColor: colors.border, backgroundColor: colors.card }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Sort watchlist"
-                >
-                  <Ionicons name="swap-vertical-outline" size={14} color={colors.accent} />
-                  <Text style={[styles.sortPillText, { color: colors.text }]} numberOfLines={1}>
-                    {SORT_OPTIONS.find((o) => o.key === sortKey)?.label.split(' ')[0] ?? 'Sort'}
-                  </Text>
-                </AnimatedPressable>
-              </View>
-            )}
-
-            {/* Sort dropdown menu */}
-            {showSortMenu && (
-              <View style={[styles.sortMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {SORT_OPTIONS.map((opt) => {
-                  const isActive = sortKey === opt.key;
-                  return (
-                    <AnimatedPressable
-                      key={opt.key}
-                      onPress={() => {
-                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                        setSortKey(opt.key);
-                        setShowSortMenu(false);
-                      }}
-                      style={[
-                        styles.sortMenuItem,
-                        isActive && { backgroundColor: colors.accent + '12' },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isActive }}
-                      accessibilityLabel={`Sort by ${opt.label}`}
-                    >
-                      <Text style={[styles.sortMenuItemText, { color: isActive ? colors.accent : colors.text }]}>
-                        {opt.label}
-                      </Text>
-                      {isActive && (
-                        <Ionicons name="checkmark" size={16} color={colors.accent} />
-                      )}
-                    </AnimatedPressable>
-                  );
-                })}
-              </View>
+              <WatchlistFilterSort
+                colors={colors}
+                hapticsEnabled={settings.hapticsEnabled}
+                activeCategory={activeCategory}
+                setActiveCategory={setActiveCategory}
+                sortKey={sortKey}
+                setSortKey={setSortKey}
+                showSortMenu={showSortMenu}
+                setShowSortMenu={setShowSortMenu}
+                uniqueCategories={uniqueCategories}
+                categoryDisplayName={categoryDisplayName}
+              />
             )}
 
             {/* Error */}
@@ -710,148 +560,35 @@ function WatchlistBuilderScreen() {
               </View>
             )}
 
-            {/* Loading — skeleton cards */}
+            {/* Loading */}
             {loading && (
               <SkeletonList count={3} type="card" />
             )}
 
-            {/* Add Form (Expanded) */}
+            {/* Add Form */}
             {showAddForm && (
-              <View style={[styles.addFormCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.addFormHeader}>
-                  <Text style={[styles.addFormTitle, { color: colors.text }]}>Add to Watchlist</Text>
-                  <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); resetForm(); }} style={styles.closeFormBtn} accessibilityRole="button" accessibilityLabel="Close add form">
-                    <Ionicons name="close" size={20} color={colors.muted} />
-                  </AnimatedPressable>
-                </View>
-
-                {/* Title Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.text }]}>Item Name *</Text>
-                  <TextInput
-                    style={[styles.textInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
-                    value={newTitle}
-                    onChangeText={setNewTitle}
-                    placeholder="e.g., PSA 10 Charizard Base Set"
-                    placeholderTextColor={colors.muted}
-                    autoFocus
-                    returnKeyType="next"
-                    onSubmitEditing={() => targetPriceRef.current?.focus()}
-                    maxLength={100}
-                    accessibilityLabel="Item name"
-                  />
-                </View>
-
-                {/* Target Price Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.text }]}>Target Price ({settings.currency}) — optional</Text>
-                  <View style={styles.priceInputRow}>
-                    <Text style={[styles.currencyPrefix, { color: colors.muted }]}>{getCurrencySymbol(settings.currency)}</Text>
-                    <TextInput
-                      ref={targetPriceRef}
-                      style={[styles.textInput, styles.priceInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
-                      value={newTargetPrice}
-                      onChangeText={setNewTargetPrice}
-                      placeholder="e.g., 500"
-                      placeholderTextColor={colors.muted}
-                      keyboardType="decimal-pad"
-                      returnKeyType="next"
-                      onSubmitEditing={() => notesRef.current?.focus()}
-                      accessibilityLabel={`Target price in ${settings.currency}`}
-                    />
-                  </View>
-                  <Text style={[styles.inputHint, { color: colors.muted }]}>Get notified when price hits your target</Text>
-                </View>
-
-                {/* Priority Selector */}
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.text }]}>Priority</Text>
-                  <View style={styles.priorityRow}>
-                    {(["high", "medium", "low"] as WatchlistPriority[]).map((p) => {
-                      const config = PRIORITY_CONFIG[p];
-                      const active = newPriority === p;
-                      return (
-                        <AnimatedPressable
-                          key={p}
-                          style={[
-                            styles.priorityBtn,
-                            { borderColor: colors.border, backgroundColor: colors.card },
-                            active && { backgroundColor: config.bg, borderColor: config.color },
-                          ]}
-                          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setNewPriority(p); }}
-                          accessibilityRole="button"
-                          accessibilityState={{ selected: active }}
-                          accessibilityLabel={`${config.label} priority`}
-                        >
-                          <Text
-                            style={[
-                              styles.priorityBtnText,
-                              { color: colors.muted },
-                              active && { color: config.color, fontWeight: "700" },
-                            ]}
-                          >
-                            {config.label}
-                          </Text>
-                        </AnimatedPressable>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Notes Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.text }]}>Notes (optional)</Text>
-                  <TextInput
-                    ref={notesRef}
-                    style={[styles.textInput, styles.textInputMultiline, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
-                    value={newNotes}
-                    onChangeText={setNewNotes}
-                    placeholder="Any notes about this item..."
-                    placeholderTextColor={colors.muted}
-                    multiline
-                    numberOfLines={2}
-                    maxLength={500}
-                    returnKeyType="done"
-                    accessibilityLabel="Notes"
-                  />
-                </View>
-
-                {/* Save Button */}
-                <AnimatedPressable
-                  style={[styles.saveBtn, { backgroundColor: colors.accent }, saving && styles.saveBtnDisabled]}
-                  onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSave(); }}
-                  disabled={saving}
-                  accessibilityRole="button"
-                  accessibilityLabel={saving ? 'Saving' : 'Add to watchlist'}
-                >
-                  {saving ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <Ionicons name="add-circle" size={20} color="#FFFFFF" />
-                      <Text style={styles.saveBtnText}>Add to Watchlist</Text>
-                    </>
-                  )}
-                </AnimatedPressable>
-              </View>
+              <WatchlistAddForm
+                colors={colors}
+                currency={settings.currency}
+                saving={saving}
+                newTitle={newTitle}
+                setNewTitle={setNewTitle}
+                newTargetPrice={newTargetPrice}
+                setNewTargetPrice={setNewTargetPrice}
+                newPriority={newPriority}
+                setNewPriority={setNewPriority}
+                newNotes={newNotes}
+                setNewNotes={setNewNotes}
+                targetPriceRef={targetPriceRef}
+                notesRef={notesRef}
+                onSave={handleSave}
+                onClose={resetForm}
+              />
             )}
 
             {/* Empty State */}
             {!loading && items.length === 0 && !showAddForm && (
-              <AnimatedPressable style={styles.emptyState} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }} accessibilityRole="button" accessibilityLabel="Start your watchlist, add your first item">
-                <View style={[styles.emptyIconWrap, { backgroundColor: colors.accent + '15' }]}>
-                  <Ionicons name="eye-outline" size={32} color={colors.accent} />
-                </View>
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>Start Your Watchlist</Text>
-                <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-                  Track items you want to buy and set price targets to get notified when
-                  they hit your budget.
-                </Text>
-                <View style={[styles.emptyAddBtn, { backgroundColor: colors.accent + '15' }]}>
-                  <Ionicons name="add" size={18} color={colors.brand?.dark ?? colors.accent} />
-                  <Text style={[styles.emptyAddText, { color: colors.brand?.dark ?? colors.accent }]}>Add Your First Item</Text>
-                </View>
-              </AnimatedPressable>
+              <WatchlistEmptyState colors={colors} onAdd={handleOpenAddForm} />
             )}
 
             {/* Watchlist Items */}
@@ -862,196 +599,33 @@ function WatchlistBuilderScreen() {
                   {activeCategory ? ` in ${categoryDisplayName(activeCategory)}` : ''}
                 </Text>
 
-                {sortedItems.map((item, index) => {
-                  const priorityConfig = PRIORITY_CONFIG[item.priority] ?? PRIORITY_CONFIG.medium;
-                  const isReordering = reorderItemId === item.id;
-                  const isItemSelected = isSelected(item.id);
-                  const isFirst = index === 0;
-                  const isLast = index === sortedItems.length - 1;
-
-                  const cardContent = (
-                    <AnimatedPressable
-                      onPress={isMultiSelectMode ? () => toggleItem(item.id) : undefined}
-                      onLongPress={() => handleLongPress(item.id)}
-                      delayLongPress={400}
-                      style={[
-                        styles.itemCard,
-                        { backgroundColor: colors.card, borderColor: colors.border },
-                        isItemSelected && { borderColor: colors.accent, backgroundColor: colors.accent + '08' },
-                        isReordering && { borderColor: colors.accent, borderWidth: 2 },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${item.title}${isItemSelected ? ', selected' : ''}`}
-                    >
-                      <View style={styles.itemCardMain}>
-                        {/* B3.2: Checkbox in multi-select mode */}
-                        {isMultiSelectMode && (
-                          <View style={styles.checkboxWrap}>
-                            <View style={[
-                              styles.checkbox,
-                              { borderColor: isItemSelected ? colors.accent : colors.border },
-                              isItemSelected && { backgroundColor: colors.accent },
-                            ]}>
-                              {isItemSelected && (
-                                <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-                              )}
-                            </View>
-                          </View>
-                        )}
-
-                        <View style={styles.itemCardLeft}>
-                          <View style={styles.itemTitleRow}>
-                            <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={2}>
-                              {item.title}
-                            </Text>
-                            <View
-                              style={[
-                                styles.priorityBadge,
-                                { backgroundColor: priorityConfig.bg },
-                              ]}
-                            >
-                              <Text
-                                style={[styles.priorityBadgeText, { color: priorityConfig.color }]}
-                              >
-                                {priorityConfig.label}
-                              </Text>
-                            </View>
-                          </View>
-
-                          {/* Category label */}
-                          {item.category ? (
-                            <Text style={[styles.categoryLabel, { color: colors.muted }]} numberOfLines={1}>
-                              {categoryDisplayName(item.category)}
-                            </Text>
-                          ) : null}
-
-                          {item.targetPrice != null && (
-                            <View style={[styles.targetBadge, { backgroundColor: colors.accent + '12' }]}>
-                              <Ionicons name="flag" size={12} color={colors.brand?.dark ?? colors.accent} />
-                              <Text style={[styles.targetBadgeText, { color: colors.brand?.dark ?? colors.accent }]}>
-                                Target: {formatPrice(item.targetPrice, settings.currency)}
-                              </Text>
-                            </View>
-                          )}
-
-                          {/* Market price + trend indicator */}
-                          {item.lastMarketPrice != null && (
-                            <View style={styles.marketRow}>
-                              <Text style={[styles.marketLabel, { color: colors.muted }]}>Market: </Text>
-                              <Text style={[styles.marketPrice, { color: colors.text }]}>
-                                {formatPrice(item.lastMarketPrice, settings.currency)}
-                              </Text>
-                              {item.priceTrend && TREND_INDICATOR[item.priceTrend] && (
-                                <Text style={{ color: TREND_INDICATOR[item.priceTrend].color, fontSize: 12, marginLeft: 4 }}>
-                                  {TREND_INDICATOR[item.priceTrend].symbol}
-                                </Text>
-                              )}
-                              {item.marketHitCount != null && item.marketHitCount > 0 && (
-                                <Text style={[styles.hitCount, { color: colors.muted }]}>
-                                  {` \u00B7 ${item.marketHitCount} listing${item.marketHitCount === 1 ? '' : 's'}`}
-                                </Text>
-                              )}
-                            </View>
-                          )}
-
-                          {/* Last checked timestamp */}
-                          {item.lastCheckedAt && (
-                            <Text style={[styles.lastChecked, { color: colors.muted }]}>
-                              Checked {timeAgo(item.lastCheckedAt)}
-                            </Text>
-                          )}
-
-                          {item.notes && (
-                            <Text style={[styles.itemNotes, { color: colors.muted }]} numberOfLines={2}>
-                              {item.notes}
-                            </Text>
-                          )}
-                        </View>
-
-                        {/* B2.2: Reorder controls (visible on long-press) */}
-                        {isReordering && !isMultiSelectMode && (
-                          <View style={styles.reorderControls}>
-                            <AnimatedPressable
-                              style={[
-                                styles.reorderBtn,
-                                { backgroundColor: isFirst ? colors.border + '40' : colors.accent + '15' },
-                              ]}
-                              onPress={() => handleMoveUp(item.id)}
-                              disabled={isFirst}
-                              accessibilityRole="button"
-                              accessibilityLabel="Move up"
-                            >
-                              <Ionicons
-                                name="chevron-up"
-                                size={18}
-                                color={isFirst ? colors.muted : colors.accent}
-                              />
-                            </AnimatedPressable>
-                            <AnimatedPressable
-                              style={[
-                                styles.reorderBtn,
-                                { backgroundColor: isLast ? colors.border + '40' : colors.accent + '15' },
-                              ]}
-                              onPress={() => handleMoveDown(item.id)}
-                              disabled={isLast}
-                              accessibilityRole="button"
-                              accessibilityLabel="Move down"
-                            >
-                              <Ionicons
-                                name="chevron-down"
-                                size={18}
-                                color={isLast ? colors.muted : colors.accent}
-                              />
-                            </AnimatedPressable>
-                            <AnimatedPressable
-                              style={[styles.reorderBtn, { backgroundColor: colors.border + '30' }]}
-                              onPress={() => setReorderItemId(null)}
-                              accessibilityRole="button"
-                              accessibilityLabel="Close reorder controls"
-                            >
-                              <Ionicons name="close" size={16} color={colors.muted} />
-                            </AnimatedPressable>
-                          </View>
-                        )}
-
-                        {/* Default delete button (non-multi-select, non-reorder) */}
-                        {!isMultiSelectMode && !isReordering && (
-                          <AnimatedPressable
-                            style={styles.deleteBtn}
-                            onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); handleDelete(item); }}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Remove ${item.title} from watchlist`}
-                          >
-                            <Ionicons name="trash-outline" size={18} color={colors.muted} />
-                          </AnimatedPressable>
-                        )}
-                      </View>
-                    </AnimatedPressable>
-                  );
-
-                  // Wrap in SwipeableRow only when not in multi-select mode
-                  if (isMultiSelectMode) {
-                    return <React.Fragment key={item.id}>{cardContent}</React.Fragment>;
-                  }
-
-                  return (
-                    <SwipeableRow
-                      key={item.id}
-                      rightActions={[
-                        SwipeActions.delete(() => handleDelete(item)),
-                      ]}
-                      enableHaptics={settings.hapticsEnabled}
-                    >
-                      {cardContent}
-                    </SwipeableRow>
-                  );
-                })}
+                {sortedItems.map((item, index) => (
+                  <WatchlistItemCard
+                    key={item.id}
+                    item={item}
+                    colors={colors}
+                    currency={settings.currency}
+                    isMultiSelectMode={isMultiSelectMode}
+                    isSelected={isSelected(item.id)}
+                    isReordering={reorderItemId === item.id}
+                    isFirst={index === 0}
+                    isLast={index === sortedItems.length - 1}
+                    hapticsEnabled={settings.hapticsEnabled}
+                    onToggleSelect={toggleItem}
+                    onLongPress={handleLongPress}
+                    onDelete={handleDelete}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
+                    onCloseReorder={handleCloseReorder}
+                    categoryDisplayName={categoryDisplayName}
+                  />
+                ))}
               </View>
             )}
 
             {/* Inline Add Button (when form is closed and list exists) */}
             {!showAddForm && items.length > 0 && !isMultiSelectMode && (
-              <AnimatedPressable style={[styles.inlineAddBtn, { backgroundColor: colors.accent }]} onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowAddForm(true); }} accessibilityRole="button" accessibilityLabel="Add item to watchlist">
+              <AnimatedPressable style={[styles.inlineAddBtn, { backgroundColor: colors.accent }]} onPress={handleOpenAddForm} accessibilityRole="button" accessibilityLabel="Add item to watchlist">
                 <Ionicons name="add" size={20} color="#FFFFFF" />
                 <Text style={styles.inlineAddText}>Add Item</Text>
               </AnimatedPressable>
@@ -1063,41 +637,15 @@ function WatchlistBuilderScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* B3.2: Bulk Action Bar (visible in multi-select mode) */}
+      {/* Bulk Action Bar (visible in multi-select mode) */}
       {isMultiSelectMode && (
-        <View style={[styles.bulkBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-          <AnimatedPressable
-            style={[styles.bulkBtn, styles.bulkBtnDelete]}
-            onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); handleBulkDelete(); }}
-            disabled={selectedCount === 0}
-            accessibilityRole="button"
-            accessibilityLabel={`Delete ${selectedCount} selected items`}
-          >
-            <Ionicons name="trash-outline" size={16} color={selectedCount > 0 ? "#FFFFFF" : "#FFFFFF80"} />
-            <Text style={[styles.bulkBtnText, { color: selectedCount > 0 ? "#FFFFFF" : "#FFFFFF80" }]}>
-              Delete ({selectedCount})
-            </Text>
-          </AnimatedPressable>
-
-          <AnimatedPressable
-            style={[styles.bulkBtn, { backgroundColor: colors.accent }]}
-            onPress={handleExportCSV}
-            accessibilityRole="button"
-            accessibilityLabel="Export watchlist as CSV"
-          >
-            <Ionicons name="download-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.bulkBtnText}>Export CSV</Text>
-          </AnimatedPressable>
-
-          <AnimatedPressable
-            style={[styles.bulkBtn, { backgroundColor: colors.border }]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); exitMultiSelectMode(); }}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel selection"
-          >
-            <Text style={[styles.bulkBtnText, { color: colors.text }]}>Cancel</Text>
-          </AnimatedPressable>
-        </View>
+        <WatchlistBulkBar
+          colors={colors}
+          selectedCount={selectedCount}
+          onBulkDelete={handleBulkDelete}
+          onExportCSV={handleExportCSV}
+          onCancel={exitMultiSelectMode}
+        />
       )}
 
       {!isMultiSelectMode && <QuickNavBar />}
@@ -1139,13 +687,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: -8,
-  },
   headerText: {
     flex: 1,
     marginLeft: 4,
@@ -1177,88 +718,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Stats Banner
-  statsBanner: {
-    flexDirection: "row",
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 16,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  statLabel: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    alignSelf: "stretch",
-    marginHorizontal: 8,
-  },
-
-  // Filter & Sort
-  filterSortRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-    gap: 8,
-  },
-  filterChipScroll: {
-    flex: 1,
-  },
-  filterChipContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginRight: 8,
-  },
-  filterChipText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  sortPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  sortPillText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  sortMenu: {
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-    overflow: "hidden",
-  },
-  sortMenuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  sortMenuItemText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-
   // Error
   errorBanner: {
     flexDirection: "row",
@@ -1282,149 +741,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Add Form
-  addFormCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  addFormHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  addFormTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  closeFormBtn: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // Inputs
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 6,
-  },
-  inputHint: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-  textInput: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-  },
-  textInputMultiline: {
-    minHeight: 60,
-    textAlignVertical: "top",
-  },
-  priceInputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  currencyPrefix: {
-    fontSize: 16,
-    fontWeight: "600",
-    minWidth: 20,
-  },
-  priceInput: {
-    flex: 1,
-  },
-
-  // Priority
-  priorityRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  priorityBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  priorityBtnText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-
-  // Save Button
-  saveBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 4,
-  },
-  saveBtnDisabled: {
-    opacity: 0.7,
-  },
-  saveBtnText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-
-  // Empty State
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 40,
-    paddingHorizontal: 24,
-  },
-  emptyIconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  emptyAddBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-  },
-  emptyAddText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-
   // List Section
   listSection: {
     marginTop: 8,
@@ -1437,158 +753,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Item Card
-  itemCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 10,
-  },
-  itemCardMain: {
-    flexDirection: "row",
-  },
-  itemCardLeft: {
-    flex: 1,
-  },
-  itemTitleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    marginBottom: 4,
-  },
-  itemTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-    lineHeight: 20,
-  },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  priorityBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  categoryLabel: {
-    fontSize: 11,
-    marginBottom: 4,
-  },
-  targetBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginBottom: 4,
-  },
-  targetBadgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  targetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 4,
-  },
-  targetText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  marketRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  marketLabel: {
-    fontSize: 12,
-  },
-  marketPrice: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  hitCount: {
-    fontSize: 11,
-  },
-  lastChecked: {
-    fontSize: 10,
-    marginBottom: 2,
-  },
-  itemNotes: {
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 16,
-  },
-  deleteBtn: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
-  },
-
-  // B3.2: Checkbox for multi-select
-  checkboxWrap: {
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // B2.2: Reorder controls
-  reorderControls: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 8,
-    gap: 4,
-  },
-  reorderBtn: {
-    width: 32,
-    height: 28,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // B3.2: Bulk action bar
-  bulkBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: Platform.OS === "ios" ? 28 : 12,
-    borderTopWidth: 1,
-  },
-  bulkBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  bulkBtnDelete: {
-    backgroundColor: "#DC2626",
-  },
-  bulkBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-
-  // Inline Add Button (replaces fake "floating" button)
+  // Inline Add Button
   inlineAddBtn: {
     flexDirection: "row",
     alignItems: "center",

@@ -3,7 +3,7 @@
  * Fetches alerts from backend + derives price alerts from item priceBand data.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Alert, AlertType } from '@/types/insights';
 import { featureFlags } from '@/config/featureFlags';
 import { dataProvider } from '@/data';
@@ -151,7 +151,7 @@ export function useAlertsFeed(
     );
   }, [alerts]);
 
-  const unreadCount = alerts.filter((a) => !a.isRead).length;
+  const unreadCount = useMemo(() => alerts.filter((a) => !a.isRead).length, [alerts]);
 
   return {
     alerts,
