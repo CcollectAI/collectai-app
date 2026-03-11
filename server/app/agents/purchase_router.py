@@ -24,7 +24,7 @@ from app.subscription import get_user_mandate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/purchase", tags=["purchase"])
+router = APIRouter(prefix="/purchase", tags=["Purchase"])
 
 # Per-user: 10 deal confirm requests per minute
 _deal_confirm_limit = per_user_rate_limit(10, window_seconds=60, scope="deal_confirm")

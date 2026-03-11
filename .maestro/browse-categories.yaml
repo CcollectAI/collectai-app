@@ -1,0 +1,17 @@
+appId: com.collectai.app
+---
+- launchApp
+# Navigate to Items tab
+- tapOn:
+    id: "tab-items"
+- assertVisible:
+    text: "My Collection"
+    timeout: 5000
+# Open category filter if visible
+- runFlow:
+    when:
+      visible: "All Categories"
+    commands:
+      - tapOn: "All Categories"
+      - assertVisible: "Pokémon"
+      - tapOn: "Pokémon"

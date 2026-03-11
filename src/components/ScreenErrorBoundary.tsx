@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 interface Props {
   children: ReactNode;
@@ -8,15 +9,16 @@ interface Props {
 }
 
 function ScreenFallback({ screenName, onRetry }: { screenName?: string; onRetry: () => void }) {
+  const { colors } = useAppTheme();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.iconWrap}>
-        <Ionicons name="alert-circle-outline" size={40} color="#EF4444" />
+        <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
       </View>
-      <Text style={styles.title}>
+      <Text style={[styles.title, { color: colors.text }]}>
         {screenName ? `${screenName} failed to load` : 'Screen failed to load'}
       </Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.subtitle, { color: colors.muted }]}>
         An error occurred. Please try again.
       </Text>
       <Pressable style={styles.retry} onPress={onRetry} accessibilityRole="button">
@@ -57,7 +59,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
-    backgroundColor: '#F7FAF9',
   },
   iconWrap: {
     width: 64,
@@ -71,13 +72,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#0F172A',
     textAlign: 'center',
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 13,
-    color: '#64748B',
     textAlign: 'center',
     marginBottom: 20,
   },

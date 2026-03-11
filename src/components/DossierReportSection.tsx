@@ -79,11 +79,11 @@ export const DossierReportSection = React.memo(function DossierReportSection({
         onPress={onToggleExpanded}
         style={s.sectionHeaderRow}
         accessibilityRole="button"
-        accessibilityLabel="View full item report"
+        accessibilityLabel="View valuation report"
       >
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="document-text-outline" size={20} color={theme.accent} />
-          <Text style={[s.sectionTitle, { color: theme.text }]}>Full Report</Text>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>Valuation Report</Text>
         </View>
         {dossierLoading ? (
           <ActivityIndicator size="small" color={theme.accent} />

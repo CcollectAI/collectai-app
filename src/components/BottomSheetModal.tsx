@@ -8,7 +8,7 @@
  *  - "pageSheet": native page-sheet style (iOS) with full-height container.
  */
 
-import React, { type ReactNode } from 'react';
+import React, { useEffect, useRef, type ReactNode } from 'react';
 import {
   Modal,
   View,
@@ -20,6 +20,7 @@ import {
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 interface BottomSheetModalProps {
   visible: boolean;
@@ -53,6 +54,15 @@ export function BottomSheetModal({
   mode = 'bottomSheet',
   maxHeight = '90%',
 }: BottomSheetModalProps) {
+  // Fire light haptic when modal opens
+  const prevVisible = useRef(visible);
+  useEffect(() => {
+    if (visible && !prevVisible.current) {
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+    }
+    prevVisible.current = visible;
+  }, [visible]);
+
   if (mode === 'pageSheet') {
     return (
       <Modal
@@ -61,9 +71,9 @@ export function BottomSheetModal({
         presentationStyle="pageSheet"
         onRequestClose={onClose}
       >
-        <SafeAreaView style={[styles.pageContainer, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.pageContainer, { backgroundColor: colors.background }]} accessibilityViewIsModal={true}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <Pressable onPress={onClose} hitSlop={8} style={styles.pageCloseBtn}>
+            <Pressable onPress={onClose} hitSlop={8} style={styles.pageCloseBtn} accessibilityRole="button" accessibilityLabel={`Close ${title}`}>
               <Ionicons name="close" size={24} color={colors.text} />
             </Pressable>
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
@@ -87,9 +97,10 @@ export function BottomSheetModal({
         <View style={styles.overlay}>
           <SafeAreaView
             style={[styles.container, { backgroundColor: colors.background, maxHeight }]}
+            accessibilityViewIsModal={true}
           >
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <Pressable onPress={onClose} hitSlop={8}>
+              <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Close ${title}`}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </Pressable>
               <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>

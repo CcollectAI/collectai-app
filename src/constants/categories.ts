@@ -91,3 +91,8 @@ export const CATEGORY_NAME_TO_SLUG: Record<string, string> = Object.fromEntries(
 export const CATEGORY_SLUG_TO_NAME: Record<string, string> = Object.fromEntries(
   CATEGORIES.map((c) => [c.slug, c.name])
 );
+
+/** Categories eligible for professional grading (PSA, CGC, BGS, etc.) */
+export const GRADING_ELIGIBLE_CATEGORIES = new Set<string>([
+  'pokemon', 'mtg', 'yugioh', 'sportscards', 'comic_books', 'retro_games',
+]);

@@ -55,6 +55,7 @@ interface ItemGallerySectionProps {
     border: string;
     background: string;
     card: string;
+    danger?: string;
   };
   hapticsEnabled: boolean;
   galleryLoading: boolean;
@@ -179,6 +180,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                 >
                   <Image
                     source={{ uri: item.image_url }}
+                    placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
                     style={{ width: GALLERY_WIDTH, height: GALLERY_HEIGHT }}
                     contentFit="cover"
                     cachePolicy="disk"
@@ -219,11 +221,11 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                         ],
                       );
                     }}
-                    style={s.galleryDeleteBtn}
+                    style={[s.galleryDeleteBtn, { backgroundColor: theme.card + "D9" }]}
                     accessibilityRole="button"
                     accessibilityLabel="Delete this photo"
                   >
-                    <Ionicons name="close-circle" size={26} color="#FF3B30" />
+                    <Ionicons name="close-circle" size={26} color={theme.danger ?? "#EF4444"} />
                   </Pressable>
                 )}
               </View>
@@ -273,6 +275,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
         {displayImageUri ? (
           <Image
             source={{ uri: displayImageUri }}
+            placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
             style={s.image}
             contentFit="cover"
             cachePolicy="disk"
@@ -378,7 +381,6 @@ const s = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "rgba(255,255,255,0.85)",
     alignItems: "center",
     justifyContent: "center",
   },

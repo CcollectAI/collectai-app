@@ -52,7 +52,7 @@ type ListForSaleModalProps = {
 // Component
 // ---------------------------------------------------------------------------
 
-export function ListForSaleModal({ hook, onSuccess }: ListForSaleModalProps) {
+function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
@@ -103,7 +103,7 @@ export function ListForSaleModal({ hook, onSuccess }: ListForSaleModalProps) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.overlay}>
-          <Pressable style={styles.overlayBackdrop} onPress={close} />
+          <Pressable style={styles.overlayBackdrop} onPress={close} accessibilityRole="button" accessibilityLabel="Close listing modal" />
           <View style={[styles.sheet, { backgroundColor: colors.card }]}>
             {/* ── Header ──────────────────────────────────────────── */}
             <View style={styles.header}>
@@ -694,3 +694,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
   },
 });
+
+export const ListForSaleModal = React.memo(ListForSaleModalInner);

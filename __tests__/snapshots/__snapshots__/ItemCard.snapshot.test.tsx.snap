@@ -1,0 +1,529 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ItemCard snapshots matches snapshot with condition badge (grading-eligible category) 1`] = `
+<View
+  accessibilityLabel="Charizard Base Set"
+  accessibilityRole="button"
+  style={
+    {
+      "backgroundColor": "#FFFFFF",
+      "borderRadius": 24,
+      "elevation": 2,
+      "margin": 6,
+      "overflow": "hidden",
+      "shadowColor": "#000",
+      "shadowOffset": {
+        "height": 4,
+        "width": 0,
+      },
+      "shadowOpacity": 0.06,
+      "shadowRadius": 8,
+      "width": "48%",
+    }
+  }
+>
+  <View
+    accessibilityLabel="Photo of Charizard Base Set"
+    cachePolicy="disk"
+    contentFit="cover"
+    source={
+      {
+        "uri": "https://example.com/charizard.jpg",
+      }
+    }
+    style={
+      {
+        "aspectRatio": 1,
+        "width": "100%",
+      }
+    }
+    testID="expo-image"
+    transition={200}
+  />
+  <View
+    style={
+      {
+        "padding": 10,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#0F172A",
+          "fontWeight": "700",
+        }
+      }
+    >
+      Charizard Base Set
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#64748B",
+          "marginTop": 2,
+        }
+      }
+    >
+      pokemon
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "marginTop": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignSelf": "flex-start",
+            "backgroundColor": "#10B98115",
+            "borderRadius": 10,
+            "paddingHorizontal": 8,
+            "paddingVertical": 4,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#10B981",
+              "fontWeight": "800",
+            }
+          }
+        >
+          $
+          350
+        </Text>
+      </View>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#81D8D015",
+            "borderRadius": 6,
+            "flexDirection": "row",
+            "gap": 3,
+            "paddingHorizontal": 6,
+            "paddingVertical": 3,
+          }
+        }
+      >
+        <Text />
+        <Text
+          style={
+            {
+              "color": "#81D8D0",
+              "fontSize": 10,
+              "fontWeight": "600",
+            }
+          }
+        >
+          PSA 10
+        </Text>
+      </View>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ItemCard snapshots matches snapshot with image and value 1`] = `
+<View
+  accessibilityLabel="Charizard Base Set"
+  accessibilityRole="button"
+  style={
+    {
+      "backgroundColor": "#FFFFFF",
+      "borderRadius": 24,
+      "elevation": 2,
+      "margin": 6,
+      "overflow": "hidden",
+      "shadowColor": "#000",
+      "shadowOffset": {
+        "height": 4,
+        "width": 0,
+      },
+      "shadowOpacity": 0.06,
+      "shadowRadius": 8,
+      "width": "48%",
+    }
+  }
+>
+  <View
+    accessibilityLabel="Photo of Charizard Base Set"
+    cachePolicy="disk"
+    contentFit="cover"
+    source={
+      {
+        "uri": "https://example.com/charizard.jpg",
+      }
+    }
+    style={
+      {
+        "aspectRatio": 1,
+        "width": "100%",
+      }
+    }
+    testID="expo-image"
+    transition={200}
+  />
+  <View
+    style={
+      {
+        "padding": 10,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#0F172A",
+          "fontWeight": "700",
+        }
+      }
+    >
+      Charizard Base Set
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#64748B",
+          "marginTop": 2,
+        }
+      }
+    >
+      Pokemon
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "marginTop": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignSelf": "flex-start",
+            "backgroundColor": "#10B98115",
+            "borderRadius": 10,
+            "paddingHorizontal": 8,
+            "paddingVertical": 4,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#10B981",
+              "fontWeight": "800",
+            }
+          }
+        >
+          $
+          350
+        </Text>
+      </View>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ItemCard snapshots matches snapshot with no category 1`] = `
+<View
+  accessibilityLabel="Charizard Base Set"
+  accessibilityRole="button"
+  style={
+    {
+      "backgroundColor": "#FFFFFF",
+      "borderRadius": 24,
+      "elevation": 2,
+      "margin": 6,
+      "overflow": "hidden",
+      "shadowColor": "#000",
+      "shadowOffset": {
+        "height": 4,
+        "width": 0,
+      },
+      "shadowOpacity": 0.06,
+      "shadowRadius": 8,
+      "width": "48%",
+    }
+  }
+>
+  <View
+    accessibilityLabel="Photo of Charizard Base Set"
+    cachePolicy="disk"
+    contentFit="cover"
+    source={
+      {
+        "uri": "https://example.com/charizard.jpg",
+      }
+    }
+    style={
+      {
+        "aspectRatio": 1,
+        "width": "100%",
+      }
+    }
+    testID="expo-image"
+    transition={200}
+  />
+  <View
+    style={
+      {
+        "padding": 10,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#0F172A",
+          "fontWeight": "700",
+        }
+      }
+    >
+      Charizard Base Set
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#64748B",
+          "marginTop": 2,
+        }
+      }
+    >
+      Uncategorized
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "marginTop": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignSelf": "flex-start",
+            "backgroundColor": "#10B98115",
+            "borderRadius": 10,
+            "paddingHorizontal": 8,
+            "paddingVertical": 4,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#10B981",
+              "fontWeight": "800",
+            }
+          }
+        >
+          $
+          350
+        </Text>
+      </View>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ItemCard snapshots matches snapshot without image (placeholder) 1`] = `
+<View
+  accessibilityLabel="Charizard Base Set"
+  accessibilityRole="button"
+  style={
+    {
+      "backgroundColor": "#FFFFFF",
+      "borderRadius": 24,
+      "elevation": 2,
+      "margin": 6,
+      "overflow": "hidden",
+      "shadowColor": "#000",
+      "shadowOffset": {
+        "height": 4,
+        "width": 0,
+      },
+      "shadowOpacity": 0.06,
+      "shadowRadius": 8,
+      "width": "48%",
+    }
+  }
+>
+  <View
+    accessibilityLabel="Photo of Charizard Base Set"
+    cachePolicy="disk"
+    contentFit="cover"
+    source={1}
+    style={
+      {
+        "aspectRatio": 1,
+        "width": "100%",
+      }
+    }
+    testID="expo-image"
+    transition={200}
+  />
+  <View
+    style={
+      {
+        "padding": 10,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#0F172A",
+          "fontWeight": "700",
+        }
+      }
+    >
+      Charizard Base Set
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#64748B",
+          "marginTop": 2,
+        }
+      }
+    >
+      Pokemon
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "marginTop": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignSelf": "flex-start",
+            "backgroundColor": "#10B98115",
+            "borderRadius": 10,
+            "paddingHorizontal": 8,
+            "paddingVertical": 4,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#10B981",
+              "fontWeight": "800",
+            }
+          }
+        >
+          $
+          350
+        </Text>
+      </View>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ItemCard snapshots matches snapshot without value 1`] = `
+<View
+  accessibilityLabel="Charizard Base Set"
+  accessibilityRole="button"
+  style={
+    {
+      "backgroundColor": "#FFFFFF",
+      "borderRadius": 24,
+      "elevation": 2,
+      "margin": 6,
+      "overflow": "hidden",
+      "shadowColor": "#000",
+      "shadowOffset": {
+        "height": 4,
+        "width": 0,
+      },
+      "shadowOpacity": 0.06,
+      "shadowRadius": 8,
+      "width": "48%",
+    }
+  }
+>
+  <View
+    accessibilityLabel="Photo of Charizard Base Set"
+    cachePolicy="disk"
+    contentFit="cover"
+    source={
+      {
+        "uri": "https://example.com/charizard.jpg",
+      }
+    }
+    style={
+      {
+        "aspectRatio": 1,
+        "width": "100%",
+      }
+    }
+    testID="expo-image"
+    transition={200}
+  />
+  <View
+    style={
+      {
+        "padding": 10,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#0F172A",
+          "fontWeight": "700",
+        }
+      }
+    >
+      Charizard Base Set
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#64748B",
+          "marginTop": 2,
+        }
+      }
+    >
+      Pokemon
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "marginTop": 8,
+        }
+      }
+    />
+  </View>
+</View>
+`;

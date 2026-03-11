@@ -23,7 +23,7 @@ from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(tags=["item-images"])
+router = APIRouter(tags=["Item Images"])
 logger = logging.getLogger(__name__)
 
 # Rate limit: 30 uploads per hour per user

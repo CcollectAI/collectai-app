@@ -123,6 +123,15 @@ export const FRANCHISES: Franchise[] = [
     matchKeys: ['franchise', 'series', 'line'],
     matchValues: ['gi joe', 'g.i. joe', 'cobra', 'classified series'],
   },
+  {
+    id: 'backyard_sports',
+    name: 'Backyard Sports',
+    accentColor: '#43A047',
+    iconName: 'baseball',
+    categoryIds: ['retro_games', 'retro_handhelds'],
+    matchKeys: ['franchise', 'series', 'name'],
+    matchValues: ['backyard baseball', 'backyard football', 'backyard soccer', 'backyard basketball', 'backyard hockey', 'backyard skateboarding', 'backyard sports', 'humongous entertainment', 'pablo sanchez'],
+  },
 ];
 
 export function getFranchiseById(id: string): Franchise | undefined {

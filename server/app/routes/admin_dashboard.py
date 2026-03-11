@@ -23,14 +23,14 @@ from app.db import get_pool
 
 _log = logging.getLogger("collectai.admin")
 
-router = APIRouter(prefix="/ops/dashboard", tags=["ops"])
+router = APIRouter(prefix="/ops/dashboard", tags=["Ops"])
 
 # ---------------------------------------------------------------------------
 # Stats endpoint
 # ---------------------------------------------------------------------------
 
 
-@router.get("/stats")
+@router.get("/stats", summary="Get dashboard stats")
 async def dashboard_stats(_: bool = Depends(require_ops_key)):
     """Return system statistics for the admin dashboard."""
     stats: dict[str, Any] = {
@@ -122,7 +122,7 @@ async def dashboard_stats(_: bool = Depends(require_ops_key)):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/users")
+@router.get("/users", summary="List users")
 async def dashboard_users(
     _: bool = Depends(require_ops_key),
     page: int = Query(1, ge=1),
@@ -185,7 +185,7 @@ async def dashboard_users(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/sponsor-analytics", tags=["ops"])
+@router.get("/sponsor-analytics", tags=["Ops"], summary="Get sponsor analytics")
 async def sponsor_analytics(_: bool = Depends(require_ops_key)):
     """List all sponsored events with analytics data."""
     pool = get_pool()
@@ -227,11 +227,28 @@ async def sponsor_analytics(_: bool = Depends(require_ops_key)):
 
 
 # ---------------------------------------------------------------------------
+# Worker health endpoint
+# ---------------------------------------------------------------------------
+
+
+@router.get("/workers/health", tags=["Ops"], summary="Get worker health status")
+async def workers_health(_: bool = Depends(require_ops_key)):
+    """Return health status for all registered workers.
+
+    Each worker shows: name, last_run, expected_interval_minutes,
+    status (ok/overdue/never_run/on_demand), minutes_overdue.
+    Workers are sorted with overdue first for quick triage.
+    """
+    from app.worker_registry import get_worker_health
+    return JSONResponse(get_worker_health())
+
+
+# ---------------------------------------------------------------------------
 # Main dashboard HTML
 # ---------------------------------------------------------------------------
 
 
-@router.get("", response_class=HTMLResponse)
+@router.get("", response_class=HTMLResponse, summary="Render admin dashboard")
 async def dashboard_page(_: bool = Depends(require_ops_key)):
     """Render the admin dashboard as a self-contained HTML page."""
     return HTMLResponse(_DASHBOARD_HTML)

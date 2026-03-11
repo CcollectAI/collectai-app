@@ -18,7 +18,7 @@ from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(tags=["items"])
+router = APIRouter(tags=["Items"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 50 requests per minute for reading items
@@ -54,6 +54,12 @@ class BatchResponse(BaseModel):
     affected_count: int
 
 
+class PaginatedItemsResponse(BaseModel):
+    items: List[ItemResponse]
+    next_cursor: Optional[str] = None
+    has_more: bool = False
+
+
 # ---- In-memory fallback store ----
 
 _DEMO_ITEMS: list[ItemResponse] = []
@@ -66,7 +72,7 @@ def get_demo_items() -> list[ItemResponse]:
 
 # ---- Endpoints ----
 
-@router.post("/items", response_model=ItemResponse, dependencies=[Depends(_items_write_limit)])
+@router.post("/items", response_model=ItemResponse, dependencies=[Depends(_items_write_limit)], summary="Create a new item")
 async def create_item(
     payload: ItemCreateRequest,
     user_id: str = Depends(get_current_user_id),
@@ -136,25 +142,61 @@ async def create_item(
     return item
 
 
-@router.get("/items", response_model=list[ItemResponse], dependencies=[Depends(_items_read_limit)])
-async def list_items(user_id: str = Depends(get_current_user_id)):
-    """List items in the user's collection."""
+@router.get("/items", response_model=PaginatedItemsResponse, dependencies=[Depends(_items_read_limit)], summary="List user items", description="Returns paginated items for the authenticated user, ordered by most recently updated. Supports cursor-based pagination via `cursor` and `limit` query params.")
+async def list_items(
+    user_id: str = Depends(get_current_user_id),
+    limit: int = 50,
+    cursor: Optional[str] = None,
+):
+    """List items in the user's collection with cursor-based pagination."""
+    import base64
+    from datetime import datetime
+
+    # Clamp limit to [1, 200]
+    limit = max(1, min(limit, 200))
+    fetch_limit = limit + 1  # fetch one extra to detect has_more
+
     pool = get_db_pool()
 
     if pool is not None:
         try:
             async with pool.acquire() as conn:
-                rows = await conn.fetch(
-                    """
-                    SELECT id, title, category, notes, collection_name, estimated_value
-                    FROM items
-                    WHERE user_id = $1::uuid
-                    ORDER BY updated_at DESC
-                    LIMIT 200
-                    """,
-                    user_id,
-                )
-                return [
+                # Decode cursor: base64-encoded "updated_at|id"
+                if cursor:
+                    try:
+                        decoded = base64.b64decode(cursor).decode("utf-8")
+                        cursor_ts, cursor_id = decoded.rsplit("|", 1)
+                        cursor_dt = datetime.fromisoformat(cursor_ts)
+                    except Exception:
+                        raise error_response(400, "Invalid cursor", code="INVALID_CURSOR")
+
+                    rows = await conn.fetch(
+                        """
+                        SELECT id, title, category, notes, collection_name, estimated_value, updated_at
+                        FROM items
+                        WHERE user_id = $1::uuid
+                          AND (updated_at, id) < ($2::timestamptz, $3::uuid)
+                        ORDER BY updated_at DESC, id DESC
+                        LIMIT $4
+                        """,
+                        user_id, cursor_dt, cursor_id, fetch_limit,
+                    )
+                else:
+                    rows = await conn.fetch(
+                        """
+                        SELECT id, title, category, notes, collection_name, estimated_value, updated_at
+                        FROM items
+                        WHERE user_id = $1::uuid
+                        ORDER BY updated_at DESC, id DESC
+                        LIMIT $2
+                        """,
+                        user_id, fetch_limit,
+                    )
+
+                has_more = len(rows) > limit
+                result_rows = rows[:limit]
+
+                items = [
                     ItemResponse(
                         id=str(r["id"]),
                         name=r["title"] or "Untitled",
@@ -163,17 +205,32 @@ async def list_items(user_id: str = Depends(get_current_user_id)):
                         estimated_value=float(r["estimated_value"]) if r.get("estimated_value") is not None else None,
                         notes=r["notes"],
                     )
-                    for r in rows
+                    for r in result_rows
                 ]
+
+                next_cursor = None
+                if has_more and result_rows:
+                    last = result_rows[-1]
+                    ts = last["updated_at"].isoformat() if last["updated_at"] else ""
+                    raw = f"{ts}|{last['id']}"
+                    next_cursor = base64.b64encode(raw.encode("utf-8")).decode("ascii")
+
+                return PaginatedItemsResponse(
+                    items=items,
+                    next_cursor=next_cursor,
+                    has_more=has_more,
+                )
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error("[items] DB error listing items: %s", e)
             raise error_response(500, "Failed to list items", code="DB_ERROR")
 
     # In-memory fallback
-    return _DEMO_ITEMS
+    return PaginatedItemsResponse(items=_DEMO_ITEMS, next_cursor=None, has_more=False)
 
 
-@router.post("/items/batch-archive", response_model=BatchResponse)
+@router.post("/items/batch-archive", response_model=BatchResponse, summary="Archive multiple items")
 async def batch_archive_items(
     request: BatchArchiveRequest,
     user_id: str = Depends(get_current_user_id),
@@ -209,7 +266,7 @@ async def batch_archive_items(
     return BatchResponse(success=True, affected_count=before - len(_DEMO_ITEMS))
 
 
-@router.post("/items/batch-delete", response_model=BatchResponse)
+@router.post("/items/batch-delete", response_model=BatchResponse, summary="Delete multiple items")
 async def batch_delete_items(
     request: BatchDeleteRequest,
     user_id: str = Depends(get_current_user_id),
@@ -252,7 +309,7 @@ class UpdateItemAttributesRequest(BaseModel):
     size_system: Optional[str] = Field(None, pattern=r"^(us|eu|uk|cm|mm)$")
 
 
-@router.patch("/items/{item_id}/attributes")
+@router.patch("/items/{item_id}/attributes", summary="Update item attributes", description="Merge additional attributes into the item's attributes_json and optionally set size fields.")
 async def update_item_attributes(
     item_id: str,
     payload: UpdateItemAttributesRequest,

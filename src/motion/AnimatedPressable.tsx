@@ -13,19 +13,17 @@ import {
   ViewStyle,
   StyleProp,
 } from 'react-native';
-import { DURATION, SCALE } from './tokens';
+import { SCALE, SPRING } from './tokens';
 
 export interface AnimatedPressableProps extends Omit<PressableProps, 'style'> {
   style?: StyleProp<ViewStyle>;
   scaleValue?: number;
-  duration?: number;
   children?: React.ReactNode;
 }
 
 export function AnimatedPressable({
   style,
   scaleValue = SCALE.pressed,
-  duration = DURATION.fast,
   onPressIn,
   onPressOut,
   children,
@@ -36,26 +34,28 @@ export function AnimatedPressable({
 
   const handlePressIn = useCallback(
     (e: GestureResponderEvent) => {
-      Animated.timing(scaleAnim, {
+      Animated.spring(scaleAnim, {
         toValue: scaleValue,
-        duration,
+        tension: SPRING.tension,
+        friction: SPRING.friction,
         useNativeDriver: true,
       }).start();
       onPressIn?.(e);
     },
-    [scaleAnim, scaleValue, duration, onPressIn]
+    [scaleAnim, scaleValue, onPressIn]
   );
 
   const handlePressOut = useCallback(
     (e: GestureResponderEvent) => {
-      Animated.timing(scaleAnim, {
+      Animated.spring(scaleAnim, {
         toValue: 1,
-        duration,
+        tension: SPRING.tension,
+        friction: SPRING.friction,
         useNativeDriver: true,
       }).start();
       onPressOut?.(e);
     },
-    [scaleAnim, duration, onPressOut]
+    [scaleAnim, onPressOut]
   );
 
   return (

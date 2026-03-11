@@ -25,7 +25,7 @@ _feedback_limit = per_user_rate_limit(30, scope="intake_feedback")
 
 router = APIRouter(
     prefix="/intake/feedback",
-    tags=["intake-feedback"],
+    tags=["Intake Feedback"],
     dependencies=[Depends(get_current_user_id), Depends(_feedback_limit)],
 )
 

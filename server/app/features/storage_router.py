@@ -37,7 +37,7 @@ from app.lib.s3_client import (
     get_public_url,
 )
 
-router = APIRouter(prefix="/storage", tags=["storage"])
+router = APIRouter(prefix="/storage", tags=["Storage"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 20 presign-upload requests per hour

@@ -9,6 +9,24 @@ jest.mock('@expo/vector-icons', () => ({
   },
 }));
 
+jest.mock('@/hooks/useAppTheme', () => ({
+  useAppTheme: () => ({
+    colors: {
+      background: '#FFFFFF',
+      text: '#0F172A',
+      muted: '#64748B',
+      border: '#E2E8F0',
+      card: '#F8FAFC',
+      accent: '#40C9C6',
+      danger: '#EF4444',
+      success: '#10B981',
+      warning: '#F59E0B',
+      brand: { base: '#81D8D0', dark: '#5FBFB6', darker: '#44A9A1', light: '#AEE6E1', lighter: '#E6F7F5' },
+    },
+    isDark: false,
+  }),
+}));
+
 import { ScreenErrorBoundary } from '../../src/components/ScreenErrorBoundary';
 
 // Suppress console.error for expected throws

@@ -23,7 +23,7 @@ from app.errors import error_response
 
 _log = logging.getLogger("collectai.mfa")
 
-router = APIRouter(prefix="/auth/mfa", tags=["auth"])
+router = APIRouter(prefix="/auth/mfa", tags=["Auth"])
 
 
 def _get_supabase_admin():
@@ -37,7 +37,7 @@ def _get_supabase_admin():
         return None
 
 
-@router.get("/status")
+@router.get("/status", summary="Get MFA enrollment status")
 async def mfa_status(user_id: str = Depends(get_current_user_id)):
     """Check if the user has MFA enrolled."""
     admin = _get_supabase_admin()
@@ -70,7 +70,7 @@ async def mfa_status(user_id: str = Depends(get_current_user_id)):
         })
 
 
-@router.post("/unenroll")
+@router.post("/unenroll", summary="Unenroll MFA factor")
 async def mfa_unenroll(
     request: Request,
     user_id: str = Depends(get_current_user_id),

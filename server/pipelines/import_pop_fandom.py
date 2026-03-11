@@ -1124,6 +1124,158 @@ def _batch_fandom_collectibles_2025() -> list[dict]:
         # --- Metro Boomin (Expansion) ---
         ("Metro Boomin", "vinyl", "Heroes & Villains Standard Vinyl", "Standard", "mid", 28),
         ("Metro Boomin", "vinyl", "We Don't Trust You Clear Vinyl", "Limited", "mid", 35),
+
+        # ── Expansion to 700+ ──────────────────────────────────────────────
+
+        # --- Laufey ---
+        ("Laufey", "vinyl", "Bewitched Evergreen Vinyl", "Limited", "mid", 38),
+        ("Laufey", "vinyl", "Bewitched Standard Vinyl", "Standard", "standard", 22),
+        ("Laufey", "vinyl", "Everything I Know About Love Lavender Vinyl", "Limited", "mid", 40),
+        ("Laufey", "vinyl", "A Night at the Symphony Blue Vinyl", "Limited", "high", 55),
+        ("Laufey", "merch", "Laufey Bewitched World Tour Poster", "Tour Exclusive", "mid", 35),
+        ("Laufey", "merch", "Laufey Bewitched Tour Tote Bag", "Tour Exclusive", "mid", 30),
+
+        # --- Benson Boone ---
+        ("Benson Boone", "vinyl", "Fireworks & Rollerblades Red Vinyl", "Limited", "mid", 35),
+        ("Benson Boone", "vinyl", "Fireworks & Rollerblades Standard Vinyl", "Standard", "standard", 22),
+        ("Benson Boone", "merch", "Benson Boone Signed CD", "Signed", "high", 65),
+        ("Benson Boone", "merch", "Benson Boone Tour Poster 2025", "Tour Exclusive", "mid", 30),
+
+        # --- Chappell Roan (Expansion 2) ---
+        ("Chappell Roan", "vinyl", "The Rise and Fall Glow-in-the-Dark Vinyl", "Limited", "grail", 150),
+        ("Chappell Roan", "merch", "Chappell Roan Midwest Princess Tour Tee", "Tour Exclusive", "high", 65),
+        ("Chappell Roan", "merch", "Chappell Roan Signed Lithograph", "Signed", "grail", 130),
+
+        # --- Mk.gee ---
+        ("Mk.gee", "vinyl", "Two Star & The Dream Police Standard Vinyl", "Standard", "standard", 24),
+        ("Mk.gee", "vinyl", "Two Star & The Dream Police Clear Vinyl", "Limited", "mid", 42),
+        ("Mk.gee", "merch", "Mk.gee Tour Poster 2025", "Tour Exclusive", "mid", 30),
+
+        # --- Clairo (Expansion 2) ---
+        ("Clairo", "vinyl", "Charm Pink Vinyl (UO Exclusive)", "UO Exclusive", "mid", 38),
+        ("Clairo", "merch", "Clairo Charm Tour Poster", "Tour Exclusive", "mid", 32),
+
+        # --- Peso Pluma ---
+        ("Peso Pluma", "vinyl", "Genesis Black Vinyl", "Standard", "standard", 22),
+        ("Peso Pluma", "vinyl", "Exodo Gold Vinyl (Limited)", "Limited", "mid", 40),
+        ("Peso Pluma", "merch", "Peso Pluma Tour Hoodie", "Tour Exclusive", "high", 75),
+
+        # --- Faye Webster ---
+        ("Faye Webster", "vinyl", "Underdressed at the Symphony Clear Vinyl", "Limited", "mid", 38),
+        ("Faye Webster", "vinyl", "Underdressed at the Symphony Standard Vinyl", "Standard", "standard", 22),
+        ("Faye Webster", "vinyl", "I Know I'm Funny haha Orange Vinyl", "Limited", "mid", 35),
+
+        # --- Ethel Cain ---
+        ("Ethel Cain", "vinyl", "Preacher's Daughter Standard Vinyl", "Standard", "standard", 24),
+        ("Ethel Cain", "vinyl", "Preacher's Daughter Clear Vinyl", "Limited", "high", 55),
+        ("Ethel Cain", "merch", "Ethel Cain Tour Poster 2024", "Tour Exclusive", "mid", 40),
+
+        # --- Renee Rapp ---
+        ("Renee Rapp", "vinyl", "Snow Angel Standard Vinyl", "Standard", "standard", 22),
+        ("Renee Rapp", "vinyl", "Snow Angel Blue Vinyl (Target)", "Target", "mid", 30),
+        ("Renee Rapp", "merch", "Renee Rapp Snow Hard Feelings Tour Poster", "Tour Exclusive", "mid", 35),
+
+        # --- Charli XCX (Expansion 2) ---
+        ("Charli XCX", "vinyl", "Brat Green Vinyl Signed", "Signed", "grail", 140),
+        ("Charli XCX", "merch", "Charli XCX Brat Tour Hoodie", "Tour Exclusive", "high", 80),
+
+        # --- Tate McRae ---
+        ("Tate McRae", "vinyl", "Think Later Clear Vinyl", "Limited", "mid", 32),
+        ("Tate McRae", "vinyl", "Think Later Standard Vinyl", "Standard", "standard", 22),
+        ("Tate McRae", "merch", "Tate McRae Are We Flying Tour Poster", "Tour Exclusive", "mid", 30),
+
+        # --- Tinashe ---
+        ("Tinashe", "vinyl", "Quantum Baby Pink Vinyl", "Limited", "mid", 35),
+        ("Tinashe", "vinyl", "333 Standard Vinyl", "Standard", "standard", 22),
+        ("Tinashe", "merch", "Tinashe Quantum World Tour Poster", "Tour Exclusive", "mid", 30),
+
+        # --- Kehlani ---
+        ("Kehlani", "vinyl", "Crash Signed Vinyl", "Signed", "high", 80),
+        ("Kehlani", "vinyl", "Blue Water Road Standard Vinyl", "Standard", "standard", 24),
+        ("Kehlani", "merch", "Kehlani Tour Poster 2024", "Tour Exclusive", "mid", 35),
+
+        # --- Summer Walker ---
+        ("Summer Walker", "vinyl", "Still Over It Standard Vinyl", "Standard", "standard", 24),
+        ("Summer Walker", "vinyl", "Still Over It Clear Vinyl", "Limited", "mid", 38),
+
+        # --- Tommy Richman ---
+        ("Tommy Richman", "vinyl", "Coyote Clear Vinyl", "Limited", "mid", 35),
+        ("Tommy Richman", "vinyl", "Coyote Standard Vinyl", "Standard", "standard", 22),
+
+        # --- Shaboozey ---
+        ("Shaboozey", "vinyl", "Where I've Been, Isn't Where I'm Going Brown Vinyl", "Limited", "mid", 35),
+        ("Shaboozey", "vinyl", "Where I've Been Standard Vinyl", "Standard", "standard", 22),
+        ("Shaboozey", "merch", "Shaboozey Tour Poster 2025", "Tour Exclusive", "mid", 30),
+
+        # --- Sabrina Carpenter (Expansion 2) ---
+        ("Sabrina Carpenter", "vinyl", "Short n' Sweet Signed Vinyl", "Signed", "grail", 120),
+        ("Sabrina Carpenter", "merch", "Sabrina Carpenter Short n' Sweet Tour Hoodie", "Tour Exclusive", "high", 75),
+
+        # --- SZA (Expansion 2) ---
+        ("SZA", "vinyl", "LANA Clear Smoke Vinyl", "Limited", "high", 55),
+        ("SZA", "merch", "SZA Grand National Tour Poster", "Tour Exclusive", "mid", 40),
+
+        # --- Doechii ---
+        ("Doechii", "vinyl", "Alligator Bites Never Heal Standard Vinyl", "Standard", "standard", 22),
+        ("Doechii", "vinyl", "Alligator Bites Never Heal Green Vinyl", "Limited", "mid", 35),
+        ("Doechii", "merch", "Doechii Tour Poster 2025", "Tour Exclusive", "mid", 30),
+
+        # --- Tyla (Expansion 2) ---
+        ("Tyla", "vinyl", "Tyla Deluxe Clear Vinyl", "Limited", "mid", 38),
+        ("Tyla", "merch", "Tyla World Tour Hoodie", "Tour Exclusive", "high", 70),
+
+        # --- Gracie Abrams (Expansion 2) ---
+        ("Gracie Abrams", "vinyl", "The Secret of Us Clear Signed Vinyl", "Signed", "grail", 110),
+        ("Gracie Abrams", "merch", "Gracie Abrams Secret of Us Tour Poster", "Tour Exclusive", "mid", 35),
+
+        # --- Kendrick Lamar (Expansion 2) ---
+        ("Kendrick Lamar", "vinyl", "GNX Deluxe 2LP Vinyl", "Limited", "high", 55),
+        ("Kendrick Lamar", "vinyl", "GNX Clear Red Vinyl", "Limited", "mid", 40),
+        ("Kendrick Lamar", "merch", "Kendrick Lamar GNX Tour Poster", "Tour Exclusive", "mid", 45),
+
+        # --- Tyler, The Creator (Expansion 2) ---
+        ("Tyler, The Creator", "vinyl", "CHROMAKOPIA Mint Green Vinyl", "Limited", "high", 55),
+        ("Tyler, The Creator", "merch", "CHROMAKOPIA Tour Hoodie", "Tour Exclusive", "high", 85),
+
+        # --- Beyonce (Expansion 2) ---
+        ("Beyonce", "vinyl", "Cowboy Carter Signed Vinyl (Webstore)", "Signed", "grail", 180),
+        ("Beyonce", "merch", "Beyonce Cowboy Carter Tour Poster", "Tour Exclusive", "high", 80),
+
+        # --- Billie Eilish (Expansion 2) ---
+        ("Billie Eilish", "vinyl", "Hit Me Hard and Soft Picture Disc Vinyl", "Picture Disc", "high", 60),
+        ("Billie Eilish", "merch", "Billie Eilish Hit Me Hard Tour Hoodie", "Tour Exclusive", "high", 80),
+
+        # --- Post Malone (Expansion 2) ---
+        ("Post Malone", "vinyl", "F-1 Trillion Clear Vinyl", "Limited", "mid", 35),
+        ("Post Malone", "merch", "Post Malone Big Ass Stadium Tour Poster", "Tour Exclusive", "mid", 40),
+
+        # --- Bad Bunny (Expansion 2) ---
+        ("Bad Bunny", "vinyl", "Debí Tirar Más Fotos Standard Vinyl", "Standard", "standard", 24),
+        ("Bad Bunny", "vinyl", "Debí Tirar Más Fotos Clear Vinyl", "Limited", "mid", 40),
+
+        # --- Hozier (Expansion 2) ---
+        ("Hozier", "vinyl", "Unreal Unearth Forest Green Vinyl (Signed)", "Signed", "grail", 115),
+        ("Hozier", "merch", "Hozier Unreal Unearth Tour Poster", "Tour Exclusive", "mid", 38),
+
+        # --- Jack Harlow ---
+        ("Jack Harlow", "vinyl", "Jackman. Standard Vinyl", "Standard", "standard", 22),
+        ("Jack Harlow", "vinyl", "Come Home the Kids Miss You Blue Vinyl", "Limited", "mid", 35),
+
+        # --- Doja Cat (Expansion 2) ---
+        ("Doja Cat", "vinyl", "Scarlet 2 CLAUDE Clear Vinyl", "Limited", "mid", 38),
+        ("Doja Cat", "merch", "Doja Cat Scarlet Tour Poster", "Tour Exclusive", "mid", 35),
+
+        # --- Noah Kahan (Expansion 2) ---
+        ("Noah Kahan", "vinyl", "Stick Season Forever Deluxe Vinyl (Signed)", "Signed", "grail", 110),
+        ("Noah Kahan", "merch", "Noah Kahan We'll All Be Here Forever Tour Hoodie", "Tour Exclusive", "high", 70),
+
+        # --- Mitski (Expansion 2) ---
+        ("Mitski", "vinyl", "The Land Is Inhospitable Clear Vinyl", "Limited", "mid", 38),
+        ("Mitski", "merch", "Mitski Tour Poster 2024", "Tour Exclusive", "mid", 32),
+
+        # --- Rosalia (Expansion 2) ---
+        ("Rosalia", "vinyl", "Motomami + Picture Disc", "Limited Edition", "high", 85),
+        ("Rosalia", "merch", "Rosalia Motomami Tour Hoodie", "Tour Exclusive", "high", 70),
     ]
 
     catalog = []

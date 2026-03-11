@@ -39,6 +39,9 @@ interface Props {
 
 const PLACEHOLDER_IMAGE = require('../../assets/placeholder.png');
 
+// Default blurhash for smooth image loading (neutral gray gradient)
+const DEFAULT_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+
 export function ItemGalleryGrid({
   items,
   onItemPress,
@@ -85,6 +88,7 @@ export function ItemGalleryGrid({
             {selectedItem.imageUrl ? (
               <Image
                 source={{ uri: selectedItem.imageUrl }}
+                placeholder={{ blurhash: DEFAULT_BLURHASH }}
                 style={styles.lightboxImage}
                 contentFit="contain"
                 cachePolicy="disk"
@@ -151,6 +155,7 @@ export function ItemGalleryGrid({
                 {item.imageUrl ? (
                   <Image
                     source={{ uri: item.imageUrl }}
+                    placeholder={{ blurhash: DEFAULT_BLURHASH }}
                     style={styles.itemImage}
                     contentFit="cover"
                     cachePolicy="disk"

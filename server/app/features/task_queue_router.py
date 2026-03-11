@@ -21,7 +21,7 @@ from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/tasks", tags=["tasks"])
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 _task_enqueue_limit = per_user_rate_limit(10, window_seconds=60, scope="task_enqueue")
 

@@ -32,7 +32,7 @@ from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(tags=["deals"])
+router = APIRouter(tags=["Deal Desk"])
 logger = logging.getLogger(__name__)
 
 # Rate limits
@@ -91,7 +91,7 @@ def _validate_uuid(value: str, field_name: str = "id") -> str:
 # POST /deals/offer — Propose an offer
 # ---------------------------------------------------------------------------
 
-@router.post("/deals/offer")
+@router.post("/deals/offer", summary="Propose an offer")
 async def propose_offer(
     body: ProposeOfferRequest,
     user_id: str = Depends(get_current_user_id),
@@ -141,7 +141,7 @@ async def propose_offer(
 # POST /deals/{offer_id}/counter — Counter-offer
 # ---------------------------------------------------------------------------
 
-@router.post("/deals/{offer_id}/counter")
+@router.post("/deals/{offer_id}/counter", summary="Counter an offer")
 async def counter_offer(
     offer_id: str,
     body: CounterOfferRequest,
@@ -193,7 +193,7 @@ async def counter_offer(
 # POST /deals/{offer_id}/respond — Accept or decline
 # ---------------------------------------------------------------------------
 
-@router.post("/deals/{offer_id}/respond")
+@router.post("/deals/{offer_id}/respond", summary="Accept or decline an offer")
 async def respond_offer(
     offer_id: str,
     body: RespondOfferRequest,
@@ -245,7 +245,7 @@ async def respond_offer(
 # POST /deals/{offer_id}/cancel — Cancel pending offer
 # ---------------------------------------------------------------------------
 
-@router.post("/deals/{offer_id}/cancel")
+@router.post("/deals/{offer_id}/cancel", summary="Cancel a pending offer")
 async def cancel_offer(
     offer_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -296,7 +296,7 @@ async def cancel_offer(
 # POST /deals/{offer_id}/ship — Mark as shipped
 # ---------------------------------------------------------------------------
 
-@router.post("/deals/{offer_id}/ship")
+@router.post("/deals/{offer_id}/ship", summary="Mark offer as shipped")
 async def mark_shipped(
     offer_id: str,
     body: ShipRequest,
@@ -348,7 +348,7 @@ async def mark_shipped(
 # POST /deals/{offer_id}/complete — Confirm delivery + rate
 # ---------------------------------------------------------------------------
 
-@router.post("/deals/{offer_id}/complete")
+@router.post("/deals/{offer_id}/complete", summary="Complete deal and rate", description="Confirm delivery and leave a 1-5 star rating. Awards 25 XP and records ground truth pricing data.")
 async def complete_deal(
     offer_id: str,
     body: CompleteRequest,
@@ -443,7 +443,7 @@ async def complete_deal(
 # GET /deals/active — List active offers
 # ---------------------------------------------------------------------------
 
-@router.get("/deals/active")
+@router.get("/deals/active", summary="List active offers")
 async def list_active_offers(
     user_id: str = Depends(get_current_user_id),
     limit: int = Query(default=50, ge=1, le=200),
@@ -491,7 +491,7 @@ async def list_active_offers(
 # GET /deals/history — Completed/cancelled/declined deals
 # ---------------------------------------------------------------------------
 
-@router.get("/deals/history")
+@router.get("/deals/history", summary="List deal history")
 async def list_deal_history(
     user_id: str = Depends(get_current_user_id),
     limit: int = Query(default=50, ge=1, le=200),
@@ -539,7 +539,7 @@ async def list_deal_history(
 # GET /deals/{offer_id} — Offer detail with events
 # ---------------------------------------------------------------------------
 
-@router.get("/deals/{offer_id}")
+@router.get("/deals/{offer_id}", summary="Get offer detail with events")
 async def get_offer_detail(
     offer_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -605,7 +605,7 @@ async def get_offer_detail(
 # GET /deals/{offer_id}/evidence — Dossier snapshot
 # ---------------------------------------------------------------------------
 
-@router.get("/deals/{offer_id}/evidence")
+@router.get("/deals/{offer_id}/evidence", summary="Get offer dossier snapshot")
 async def get_offer_evidence(
     offer_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -672,7 +672,7 @@ def _compute_trust_badge(completed: int, avg_stars: float) -> str:
     return "new"
 
 
-@router.get("/deals/reputation/{target_user_id}")
+@router.get("/deals/reputation/{target_user_id}", summary="Get user reputation", description="Returns completed deals, average rating, trust score, badge level, and dispute rate for a user.")
 async def get_user_reputation(
     target_user_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -736,7 +736,7 @@ async def get_user_reputation(
         raise error_response(500, "Failed to get reputation", code=ErrorCode.INTERNAL_ERROR)
 
 
-@router.get("/deals/{offer_id}/risk-flags")
+@router.get("/deals/{offer_id}/risk-flags", summary="Get offer risk flags", description="Detects price outliers and low seller trust scores for an offer.")
 async def get_offer_risk_flags(
     offer_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -835,7 +835,7 @@ async def get_offer_risk_flags(
 # PUT /items/{item_id}/for-sale — Toggle for_sale + set asking price
 # ---------------------------------------------------------------------------
 
-@router.put("/items/{item_id}/for-sale")
+@router.put("/items/{item_id}/for-sale", summary="Toggle item for-sale status")
 async def toggle_for_sale(
     item_id: str,
     body: ToggleForSaleRequest,

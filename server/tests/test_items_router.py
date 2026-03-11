@@ -171,7 +171,10 @@ class TestListItems:
     def test_list_empty(self):
         resp = client.get("/items")
         assert resp.status_code == 200
-        assert resp.json() == []
+        body = resp.json()
+        assert body["items"] == []
+        assert body["has_more"] is False
+        assert body["next_cursor"] is None
 
     def test_list_after_create(self):
         """Items created via POST are visible in GET."""
@@ -180,7 +183,8 @@ class TestListItems:
 
         resp = client.get("/items")
         assert resp.status_code == 200
-        data = resp.json()
+        body = resp.json()
+        data = body["items"]
         assert len(data) == 2
         names = [item["name"] for item in data]
         assert "Item A" in names
@@ -214,7 +218,7 @@ class TestBatchArchive:
         assert data["affected_count"] == 2
 
         # Verify only 1 item remains
-        remaining = client.get("/items").json()
+        remaining = client.get("/items").json()["items"]
         assert len(remaining) == 1
         assert remaining[0]["name"] == "Keep This"
 
@@ -256,7 +260,7 @@ class TestBatchDelete:
         assert data["success"] is True
         assert data["affected_count"] == 2
 
-        remaining = client.get("/items").json()
+        remaining = client.get("/items").json()["items"]
         assert len(remaining) == 1
 
     def test_batch_delete_empty_ids_fails(self):

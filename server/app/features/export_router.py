@@ -25,7 +25,7 @@ from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/export", tags=["export"])
+router = APIRouter(prefix="/export", tags=["Export"])
 
 # Rate limit: 5 report generations per hour per user
 _export_limit = per_user_rate_limit(5, window_seconds=3600, scope="insurance_export")

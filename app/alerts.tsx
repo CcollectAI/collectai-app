@@ -472,6 +472,9 @@ function AlertsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderTrigger}
           contentContainerStyle={styles.list}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -511,6 +514,9 @@ function AlertsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderAlert}
           contentContainerStyle={styles.list}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
           onEndReached={alertsLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderAlertsFooter}

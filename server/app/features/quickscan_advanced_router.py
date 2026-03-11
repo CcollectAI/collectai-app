@@ -10,7 +10,7 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/quickscan-advanced", tags=["quickscan-advanced"])
+router = APIRouter(prefix="/quickscan-advanced", tags=["QuickScan"])
 logger = logging.getLogger(__name__)
 
 _quickscan_adv_limit = per_user_rate_limit(10, window_seconds=60, scope="quickscan_advanced")
@@ -202,7 +202,7 @@ def _edition_to_score(edition: str | None) -> float:
     return 0.5
 
 
-@router.post("/single", response_model=QuickScanResult)
+@router.post("/single", response_model=QuickScanResult, summary="Single item QuickScan", description="Enriched scan returning edition, condition, rarity, and q10/q50/q90 price band from ML model.")
 async def quickscan_single(
     request: QuickScanSingleRequest | None = None,
     _user: str = Depends(get_current_user_id),
@@ -246,7 +246,7 @@ async def quickscan_single(
     )
 
 
-@router.post("/batch", response_model=BatchQuickScanResponse)
+@router.post("/batch", response_model=BatchQuickScanResponse, summary="Batch QuickScan")
 async def quickscan_batch(
     payload: BatchQuickScanRequest,
     _user: str = Depends(get_current_user_id),

@@ -14,7 +14,7 @@ from app.db import db_configured, get_conn
 from app.errors import error_response
 from app.features.pagination import pagination_params
 
-router = APIRouter(prefix="/provenance", tags=["provenance"])
+router = APIRouter(prefix="/provenance", tags=["Provenance"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 30 provenance requests per minute

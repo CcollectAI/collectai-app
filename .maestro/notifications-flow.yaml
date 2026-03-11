@@ -1,0 +1,17 @@
+appId: com.collectai.app
+---
+- launchApp
+# Navigate to notifications via bell icon
+- tapOn:
+    id: "inbox-header-button"
+    timeout: 5000
+# Assert notification screen loads
+- assertVisible:
+    text: "Notifications"
+    timeout: 5000
+# Check mark-all-read is visible
+- runFlow:
+    when:
+      visible: "Mark all read"
+    commands:
+      - tapOn: "Mark all read"

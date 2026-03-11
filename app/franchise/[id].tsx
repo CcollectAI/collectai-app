@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
@@ -27,7 +28,7 @@ type SectionHeader = { type: 'header'; categoryId: string; label: string };
 type ItemRow = { type: 'row'; item: { id: string; name: string; categorySlug: string; imageUrl?: string; estimatedValueEur?: number } };
 type ListItem = SectionHeader | ItemRow;
 
-export default function FranchiseDetailScreen() {
+function FranchiseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -252,3 +253,11 @@ const styles = StyleSheet.create({
   itemValue: { fontSize: 13, marginTop: 2 },
   emptyText: { fontSize: 14, textAlign: 'center', marginTop: 12 },
 });
+
+export default function FranchiseDetailScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Franchise Detail">
+      <FranchiseDetailScreen />
+    </ScreenErrorBoundary>
+  );
+}

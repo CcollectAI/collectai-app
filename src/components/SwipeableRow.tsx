@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 /** Swipe action configuration */
 export type SwipeAction = {
@@ -52,7 +53,7 @@ const SWIPE_THRESHOLD = 80;
 const ACTION_WIDTH = 80;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export function SwipeableRow({
+function SwipeableRowInner({
   children,
   onDelete,
   onAction,
@@ -66,6 +67,7 @@ export function SwipeableRow({
   onLongPress,
   enableHaptics = true,
 }: Props) {
+  const { colors } = useAppTheme();
   const translateX = useRef(new Animated.Value(0)).current;
   const isOpen = useRef<'left' | 'right' | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -262,7 +264,7 @@ export function SwipeableRow({
 
       {/* Swipeable content */}
       <Animated.View
-        style={[styles.content, { transform: [{ translateX }] }]}
+        style={[styles.content, { backgroundColor: colors.background, transform: [{ translateX }] }]}
         {...panResponder.panHandlers}
         onTouchStart={handlePressIn}
         onTouchEnd={handlePressOut}
@@ -278,22 +280,6 @@ export function SwipeableRow({
  * Pre-built swipe action creators for common actions
  */
 export const SwipeActions = {
-  watchlist: (onPress: () => void): SwipeAction => ({
-    key: 'watchlist',
-    label: 'Watch',
-    icon: 'eye-outline',
-    color: '#3b82f6',
-    onPress,
-  }),
-
-  removeWatchlist: (onPress: () => void): SwipeAction => ({
-    key: 'remove-watchlist',
-    label: 'Unwatch',
-    icon: 'eye-off-outline',
-    color: '#64748b',
-    onPress,
-  }),
-
   share: (onPress: () => void): SwipeAction => ({
     key: 'share',
     label: 'Share',
@@ -362,8 +348,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   content: {
-    backgroundColor: '#fff',
+    // backgroundColor set dynamically via useAppTheme
   },
 });
 
+export const SwipeableRow = React.memo(SwipeableRowInner);
 export default SwipeableRow;

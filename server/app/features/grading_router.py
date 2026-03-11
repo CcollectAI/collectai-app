@@ -29,7 +29,7 @@ from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/grading", tags=["grading"])
+router = APIRouter(prefix="/grading", tags=["Grading"])
 
 # Rate limit: 30 lookups per minute per user
 _lookup_limit = per_user_rate_limit(30, window_seconds=60, scope="grading_lookup")

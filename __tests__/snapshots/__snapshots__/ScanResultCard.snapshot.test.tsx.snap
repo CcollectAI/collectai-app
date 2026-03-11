@@ -1,0 +1,2391 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`] = `
+<View
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F7FAF9",
+      },
+    ]
+  }
+>
+  <RCTScrollView
+    bounces={false}
+    contentContainerStyle={
+      {
+        "paddingBottom": 100,
+      }
+    }
+  >
+    <View>
+      <View
+        style={
+          {
+            "height": 637.5,
+            "position": "relative",
+            "width": "100%",
+          }
+        }
+      >
+        <Image
+          accessibilityLabel="Scanned item photo"
+          resizeMode="cover"
+          source={
+            {
+              "uri": "file:///photo.jpg",
+            }
+          }
+          style={
+            {
+              "height": "100%",
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(0,0,0,0.15)",
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+            }
+          }
+        />
+        <View
+          accessibilityLabel="High Confidence: 87 percent"
+          accessibilityRole="text"
+          style={
+            [
+              {
+                "alignItems": "center",
+                "borderRadius": 20,
+                "borderWidth": 1,
+                "flexDirection": "row",
+                "gap": 6,
+                "left": 16,
+                "paddingHorizontal": 12,
+                "paddingVertical": 6,
+                "position": "absolute",
+                "top": 56,
+              },
+              {
+                "backgroundColor": "#22C55E20",
+                "borderColor": "#22C55E40",
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "borderRadius": 4,
+                  "height": 7,
+                  "width": 7,
+                },
+                {
+                  "backgroundColor": "#22C55E",
+                },
+              ]
+            }
+          />
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "letterSpacing": 0.3,
+                },
+                {
+                  "color": "#22C55E",
+                },
+              ]
+            }
+          >
+            High Confidence
+          </Text>
+        </View>
+        <View
+          accessibilityLabel="Retake photo"
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(0,0,0,0.45)",
+              "borderRadius": 20,
+              "height": 40,
+              "justifyContent": "center",
+              "position": "absolute",
+              "right": 16,
+              "top": 54,
+              "width": 40,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={false}
+            selectable={false}
+            style={
+              [
+                {
+                  "color": "#FFFFFF",
+                  "fontSize": 22,
+                },
+                undefined,
+                {
+                  "fontFamily": "ionicons",
+                  "fontStyle": "normal",
+                  "fontWeight": "normal",
+                },
+                {},
+              ]
+            }
+          >
+            
+          </Text>
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 20,
+              "borderWidth": 1,
+              "elevation": 6,
+              "marginHorizontal": 16,
+              "marginTop": -32,
+              "padding": 20,
+              "shadowColor": "#000",
+              "shadowOffset": {
+                "height": 4,
+                "width": 0,
+              },
+              "shadowOpacity": 0.08,
+              "shadowRadius": 12,
+            },
+            {
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#E2E8F0",
+            },
+          ]
+        }
+      >
+        <View
+          accessibilityLabel="Item name: Charizard Base Set Holo. "
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+        >
+          <Text
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "letterSpacing": -0.3,
+                  "lineHeight": 28,
+                },
+                {
+                  "color": "#0F172A",
+                },
+              ]
+            }
+          >
+            Charizard Base Set Holo
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "flexDirection": "row",
+              "flexWrap": "wrap",
+              "gap": 8,
+              "marginTop": 12,
+            }
+          }
+        >
+          <View
+            accessibilityLabel="Category: pokemon"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 8,
+                  "flexDirection": "row",
+                  "gap": 5,
+                  "paddingHorizontal": 10,
+                  "paddingVertical": 5,
+                },
+                {
+                  "backgroundColor": "#81D8D018",
+                },
+              ]
+            }
+          >
+            <Text
+              allowFontScaling={false}
+              selectable={false}
+              style={
+                [
+                  {
+                    "color": "#5FBFB6",
+                    "fontSize": 12,
+                  },
+                  undefined,
+                  {
+                    "fontFamily": "ionicons",
+                    "fontStyle": "normal",
+                    "fontWeight": "normal",
+                  },
+                  {},
+                ]
+              }
+            >
+              
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#5FBFB6",
+                  },
+                ]
+              }
+            >
+              Pokemon
+            </Text>
+          </View>
+          <View
+            accessibilityLabel="Condition: Near Mint"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 8,
+                  "flexDirection": "row",
+                  "gap": 5,
+                  "paddingHorizontal": 10,
+                  "paddingVertical": 5,
+                },
+                {
+                  "backgroundColor": "#E2E8F080",
+                },
+              ]
+            }
+          >
+            <Text
+              allowFontScaling={false}
+              selectable={false}
+              style={
+                [
+                  {
+                    "color": "#64748B",
+                    "fontSize": 12,
+                  },
+                  undefined,
+                  {
+                    "fontFamily": "ionicons",
+                    "fontStyle": "normal",
+                    "fontWeight": "normal",
+                  },
+                  {},
+                ]
+              }
+            >
+              
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#0F172A",
+                  },
+                ]
+              }
+            >
+              Near Mint
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 16,
+              "borderWidth": 1,
+              "marginHorizontal": 16,
+              "marginTop": 12,
+              "padding": 18,
+            },
+            {
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#E2E8F0",
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "gap": 8,
+              "marginBottom": 14,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={false}
+            selectable={false}
+            style={
+              [
+                {
+                  "color": "#5FBFB6",
+                  "fontSize": 18,
+                },
+                undefined,
+                {
+                  "fontFamily": "ionicons",
+                  "fontStyle": "normal",
+                  "fontWeight": "normal",
+                },
+                {},
+              ]
+            }
+          >
+            
+          </Text>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 15,
+                  "fontWeight": "700",
+                  "letterSpacing": 0.2,
+                },
+                {
+                  "color": "#0F172A",
+                },
+              ]
+            }
+          >
+            Estimated Value
+          </Text>
+        </View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 32,
+                "fontWeight": "800",
+                "letterSpacing": -0.5,
+                "marginBottom": 12,
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          $350
+        </Text>
+        <View
+          style={
+            {
+              "gap": 6,
+            }
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "borderRadius": 3,
+                  "height": 6,
+                  "overflow": "hidden",
+                  "position": "relative",
+                },
+                {
+                  "backgroundColor": "#E2E8F060",
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                [
+                  {
+                    "backgroundColor": "#81D8D0",
+                    "borderRadius": 3,
+                    "bottom": 0,
+                    "opacity": 0.5,
+                    "position": "absolute",
+                    "top": 0,
+                  },
+                  {
+                    "left": "40%",
+                    "width": "30%",
+                  },
+                ]
+              }
+            />
+            <View
+              style={
+                [
+                  {
+                    "backgroundColor": "#81D8D0",
+                    "borderColor": "#FFFFFF",
+                    "borderRadius": 6,
+                    "borderWidth": 2,
+                    "elevation": 3,
+                    "height": 12,
+                    "marginLeft": -6,
+                    "position": "absolute",
+                    "shadowColor": "#81D8D0",
+                    "shadowOffset": {
+                      "height": 0,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.4,
+                    "shadowRadius": 4,
+                    "top": -3,
+                    "width": 12,
+                  },
+                  {
+                    "left": "70%",
+                  },
+                ]
+              }
+            />
+          </View>
+          <View
+            style={
+              {
+                "flexDirection": "row",
+                "justifyContent": "space-between",
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "500",
+                  },
+                  {
+                    "color": "#64748B",
+                  },
+                ]
+              }
+            >
+              $200
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "500",
+                  },
+                  {
+                    "color": "#64748B",
+                  },
+                ]
+              }
+            >
+              $500
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          {
+            "gap": 10,
+            "marginHorizontal": 16,
+            "marginTop": 12,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "gap": 8,
+              "marginBottom": 14,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={false}
+            selectable={false}
+            style={
+              [
+                {
+                  "color": "#5FBFB6",
+                  "fontSize": 18,
+                },
+                undefined,
+                {
+                  "fontFamily": "ionicons",
+                  "fontStyle": "normal",
+                  "fontWeight": "normal",
+                },
+                {},
+              ]
+            }
+          >
+            
+          </Text>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 15,
+                  "fontWeight": "700",
+                  "letterSpacing": 0.2,
+                },
+                {
+                  "color": "#0F172A",
+                },
+              ]
+            }
+          >
+            Did you mean?
+          </Text>
+        </View>
+        <View
+          accessibilityLabel="Select Charizard Shadowless"
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            [
+              {
+                "alignItems": "center",
+                "borderRadius": 14,
+                "flexDirection": "row",
+                "gap": 12,
+                "padding": 12,
+                "position": "relative",
+              },
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "#E2E8F0",
+                "borderWidth": 1,
+              },
+            ]
+          }
+        >
+          <Image
+            accessibilityLabel="Image of Charizard Shadowless"
+            resizeMode="cover"
+            source={
+              {
+                "uri": "https://example.com/alt.jpg",
+              }
+            }
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E2E8F0",
+                "borderRadius": 10,
+                "height": 52,
+                "justifyContent": "center",
+                "width": 52,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "flex": 1,
+                "gap": 4,
+              }
+            }
+          >
+            <Text
+              numberOfLines={2}
+              style={
+                [
+                  {
+                    "fontSize": 14,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#0F172A",
+                  },
+                ]
+              }
+            >
+              Charizard Shadowless
+            </Text>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "flexWrap": "wrap",
+                  "gap": 6,
+                }
+              }
+            >
+              <View
+                style={
+                  [
+                    {
+                      "borderRadius": 4,
+                      "paddingHorizontal": 6,
+                      "paddingVertical": 2,
+                    },
+                    {
+                      "backgroundColor": "#81D8D015",
+                    },
+                  ]
+                }
+              >
+                <Text
+                  numberOfLines={1}
+                  style={
+                    [
+                      {
+                        "fontSize": 11,
+                        "fontWeight": "600",
+                      },
+                      {
+                        "color": "#5FBFB6",
+                      },
+                    ]
+                  }
+                >
+                  Holo Rare
+                </Text>
+              </View>
+              <Text
+                numberOfLines={1}
+                style={
+                  [
+                    {
+                      "fontSize": 11,
+                      "fontStyle": "italic",
+                      "fontWeight": "500",
+                    },
+                    {
+                      "color": "#64748B",
+                    },
+                  ]
+                }
+              >
+                base1
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              [
+                {
+                  "borderRadius": 10,
+                  "paddingHorizontal": 10,
+                  "paddingVertical": 5,
+                },
+                {
+                  "backgroundColor": "#81D8D012",
+                },
+              ]
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "fontWeight": "700",
+                  },
+                  {
+                    "color": "#5FBFB6",
+                  },
+                ]
+              }
+            >
+              82
+              %
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  </RCTScrollView>
+  <View
+    style={
+      [
+        {
+          "borderTopWidth": 1,
+          "bottom": 0,
+          "left": 0,
+          "paddingBottom": 40,
+          "paddingHorizontal": 20,
+          "paddingTop": 14,
+          "position": "absolute",
+          "right": 0,
+        },
+        {
+          "backgroundColor": "#F7FAF9",
+          "borderTopColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Add to collection"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 16,
+            "elevation": 4,
+            "flexDirection": "row",
+            "gap": 8,
+            "justifyContent": "center",
+            "paddingVertical": 16,
+            "shadowColor": "#81D8D0",
+            "shadowOffset": {
+              "height": 4,
+              "width": 0,
+            },
+            "shadowOpacity": 0.35,
+            "shadowRadius": 8,
+          },
+          {
+            "backgroundColor": "#81D8D0",
+          },
+        ]
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontSize": 22,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          {
+            "color": "#FFFFFF",
+            "fontSize": 17,
+            "fontWeight": "700",
+            "letterSpacing": 0.3,
+          }
+        }
+      >
+        Add to Collection
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
+<View
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F7FAF9",
+      },
+    ]
+  }
+>
+  <RCTScrollView
+    bounces={false}
+    contentContainerStyle={
+      {
+        "paddingBottom": 100,
+      }
+    }
+  >
+    <View>
+      <View
+        style={
+          {
+            "height": 637.5,
+            "position": "relative",
+            "width": "100%",
+          }
+        }
+      >
+        <Image
+          accessibilityLabel="Scanned item photo"
+          resizeMode="cover"
+          source={
+            {
+              "uri": "file:///photo.jpg",
+            }
+          }
+          style={
+            {
+              "height": "100%",
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(0,0,0,0.15)",
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+            }
+          }
+        />
+        <View
+          accessibilityLabel="High Confidence: 87 percent"
+          accessibilityRole="text"
+          style={
+            [
+              {
+                "alignItems": "center",
+                "borderRadius": 20,
+                "borderWidth": 1,
+                "flexDirection": "row",
+                "gap": 6,
+                "left": 16,
+                "paddingHorizontal": 12,
+                "paddingVertical": 6,
+                "position": "absolute",
+                "top": 56,
+              },
+              {
+                "backgroundColor": "#22C55E20",
+                "borderColor": "#22C55E40",
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "borderRadius": 4,
+                  "height": 7,
+                  "width": 7,
+                },
+                {
+                  "backgroundColor": "#22C55E",
+                },
+              ]
+            }
+          />
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "letterSpacing": 0.3,
+                },
+                {
+                  "color": "#22C55E",
+                },
+              ]
+            }
+          >
+            High Confidence
+          </Text>
+        </View>
+        <View
+          accessibilityLabel="Retake photo"
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(0,0,0,0.45)",
+              "borderRadius": 20,
+              "height": 40,
+              "justifyContent": "center",
+              "position": "absolute",
+              "right": 16,
+              "top": 54,
+              "width": 40,
+            }
+          }
+        >
+          <Text />
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 20,
+              "borderWidth": 1,
+              "elevation": 6,
+              "marginHorizontal": 16,
+              "marginTop": -32,
+              "padding": 20,
+              "shadowColor": "#000",
+              "shadowOffset": {
+                "height": 4,
+                "width": 0,
+              },
+              "shadowOpacity": 0.08,
+              "shadowRadius": 12,
+            },
+            {
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#E2E8F0",
+            },
+          ]
+        }
+      >
+        <View
+          accessibilityLabel="Item name: Charizard Base Set Holo. "
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+        >
+          <Text
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "letterSpacing": -0.3,
+                  "lineHeight": 28,
+                },
+                {
+                  "color": "#0F172A",
+                },
+              ]
+            }
+          >
+            Charizard Base Set Holo
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "flexDirection": "row",
+              "flexWrap": "wrap",
+              "gap": 8,
+              "marginTop": 12,
+            }
+          }
+        >
+          <View
+            accessibilityLabel="Category: pokemon"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 8,
+                  "flexDirection": "row",
+                  "gap": 5,
+                  "paddingHorizontal": 10,
+                  "paddingVertical": 5,
+                },
+                {
+                  "backgroundColor": "#81D8D018",
+                },
+              ]
+            }
+          >
+            <Text />
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#5FBFB6",
+                  },
+                ]
+              }
+            >
+              Pokemon
+            </Text>
+          </View>
+          <View
+            accessibilityLabel="Condition: Near Mint"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 8,
+                  "flexDirection": "row",
+                  "gap": 5,
+                  "paddingHorizontal": 10,
+                  "paddingVertical": 5,
+                },
+                {
+                  "backgroundColor": "#E2E8F080",
+                },
+              ]
+            }
+          >
+            <Text />
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#0F172A",
+                  },
+                ]
+              }
+            >
+              Near Mint
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 16,
+              "borderWidth": 1,
+              "marginHorizontal": 16,
+              "marginTop": 12,
+              "padding": 18,
+            },
+            {
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#E2E8F0",
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "gap": 8,
+              "marginBottom": 14,
+            }
+          }
+        >
+          <Text />
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 15,
+                  "fontWeight": "700",
+                  "letterSpacing": 0.2,
+                },
+                {
+                  "color": "#0F172A",
+                },
+              ]
+            }
+          >
+            Estimated Value
+          </Text>
+        </View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 32,
+                "fontWeight": "800",
+                "letterSpacing": -0.5,
+                "marginBottom": 12,
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          $350
+        </Text>
+        <View
+          style={
+            {
+              "gap": 6,
+            }
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "borderRadius": 3,
+                  "height": 6,
+                  "overflow": "hidden",
+                  "position": "relative",
+                },
+                {
+                  "backgroundColor": "#E2E8F060",
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                [
+                  {
+                    "backgroundColor": "#81D8D0",
+                    "borderRadius": 3,
+                    "bottom": 0,
+                    "opacity": 0.5,
+                    "position": "absolute",
+                    "top": 0,
+                  },
+                  {
+                    "left": "40%",
+                    "width": "30%",
+                  },
+                ]
+              }
+            />
+            <View
+              style={
+                [
+                  {
+                    "backgroundColor": "#81D8D0",
+                    "borderColor": "#FFFFFF",
+                    "borderRadius": 6,
+                    "borderWidth": 2,
+                    "elevation": 3,
+                    "height": 12,
+                    "marginLeft": -6,
+                    "position": "absolute",
+                    "shadowColor": "#81D8D0",
+                    "shadowOffset": {
+                      "height": 0,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.4,
+                    "shadowRadius": 4,
+                    "top": -3,
+                    "width": 12,
+                  },
+                  {
+                    "left": "70%",
+                  },
+                ]
+              }
+            />
+          </View>
+          <View
+            style={
+              {
+                "flexDirection": "row",
+                "justifyContent": "space-between",
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "500",
+                  },
+                  {
+                    "color": "#64748B",
+                  },
+                ]
+              }
+            >
+              $200
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "500",
+                  },
+                  {
+                    "color": "#64748B",
+                  },
+                ]
+              }
+            >
+              $500
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  </RCTScrollView>
+  <View
+    style={
+      [
+        {
+          "borderTopWidth": 1,
+          "bottom": 0,
+          "left": 0,
+          "paddingBottom": 40,
+          "paddingHorizontal": 20,
+          "paddingTop": 14,
+          "position": "absolute",
+          "right": 0,
+        },
+        {
+          "backgroundColor": "#F7FAF9",
+          "borderTopColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Add to collection"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 16,
+            "elevation": 4,
+            "flexDirection": "row",
+            "gap": 8,
+            "justifyContent": "center",
+            "paddingVertical": 16,
+            "shadowColor": "#81D8D0",
+            "shadowOffset": {
+              "height": 4,
+              "width": 0,
+            },
+            "shadowOpacity": 0.35,
+            "shadowRadius": 8,
+          },
+          {
+            "backgroundColor": "#81D8D0",
+          },
+        ]
+      }
+    >
+      <Text />
+      <Text
+        style={
+          {
+            "color": "#FFFFFF",
+            "fontSize": 17,
+            "fontWeight": "700",
+            "letterSpacing": 0.3,
+          }
+        }
+      >
+        Add to Collection
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
+<View
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F7FAF9",
+      },
+    ]
+  }
+>
+  <RCTScrollView
+    bounces={false}
+    contentContainerStyle={
+      {
+        "paddingBottom": 100,
+      }
+    }
+  >
+    <View>
+      <View
+        style={
+          {
+            "height": 637.5,
+            "position": "relative",
+            "width": "100%",
+          }
+        }
+      >
+        <Image
+          accessibilityLabel="Scanned item photo"
+          resizeMode="cover"
+          source={
+            {
+              "uri": "file:///photo.jpg",
+            }
+          }
+          style={
+            {
+              "height": "100%",
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(0,0,0,0.15)",
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+            }
+          }
+        />
+        <View
+          accessibilityLabel="Low Confidence: 30 percent"
+          accessibilityRole="text"
+          style={
+            [
+              {
+                "alignItems": "center",
+                "borderRadius": 20,
+                "borderWidth": 1,
+                "flexDirection": "row",
+                "gap": 6,
+                "left": 16,
+                "paddingHorizontal": 12,
+                "paddingVertical": 6,
+                "position": "absolute",
+                "top": 56,
+              },
+              {
+                "backgroundColor": "#EF444420",
+                "borderColor": "#EF444440",
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "borderRadius": 4,
+                  "height": 7,
+                  "width": 7,
+                },
+                {
+                  "backgroundColor": "#EF4444",
+                },
+              ]
+            }
+          />
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "letterSpacing": 0.3,
+                },
+                {
+                  "color": "#EF4444",
+                },
+              ]
+            }
+          >
+            Low Confidence
+          </Text>
+        </View>
+        <View
+          accessibilityLabel="Retake photo"
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(0,0,0,0.45)",
+              "borderRadius": 20,
+              "height": 40,
+              "justifyContent": "center",
+              "position": "absolute",
+              "right": 16,
+              "top": 54,
+              "width": 40,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={false}
+            selectable={false}
+            style={
+              [
+                {
+                  "color": "#FFFFFF",
+                  "fontSize": 22,
+                },
+                undefined,
+                {
+                  "fontFamily": "ionicons",
+                  "fontStyle": "normal",
+                  "fontWeight": "normal",
+                },
+                {},
+              ]
+            }
+          >
+            
+          </Text>
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 20,
+              "borderWidth": 1,
+              "elevation": 6,
+              "marginHorizontal": 16,
+              "marginTop": -32,
+              "padding": 20,
+              "shadowColor": "#000",
+              "shadowOffset": {
+                "height": 4,
+                "width": 0,
+              },
+              "shadowOpacity": 0.08,
+              "shadowRadius": 12,
+            },
+            {
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#E2E8F0",
+            },
+          ]
+        }
+      >
+        <View
+          accessibilityLabel="Item name: Unknown Card. "
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+        >
+          <Text
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "letterSpacing": -0.3,
+                  "lineHeight": 28,
+                },
+                {
+                  "color": "#0F172A",
+                },
+              ]
+            }
+          >
+            Unknown Card
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "flexDirection": "row",
+              "flexWrap": "wrap",
+              "gap": 8,
+              "marginTop": 12,
+            }
+          }
+        >
+          <View
+            accessibilityLabel="Category: pokemon"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 8,
+                  "flexDirection": "row",
+                  "gap": 5,
+                  "paddingHorizontal": 10,
+                  "paddingVertical": 5,
+                },
+                {
+                  "backgroundColor": "#81D8D018",
+                },
+              ]
+            }
+          >
+            <Text
+              allowFontScaling={false}
+              selectable={false}
+              style={
+                [
+                  {
+                    "color": "#5FBFB6",
+                    "fontSize": 12,
+                  },
+                  undefined,
+                  {
+                    "fontFamily": "ionicons",
+                    "fontStyle": "normal",
+                    "fontWeight": "normal",
+                  },
+                  {},
+                ]
+              }
+            >
+              
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#5FBFB6",
+                  },
+                ]
+              }
+            >
+              Pokemon
+            </Text>
+          </View>
+          <View
+            accessibilityLabel="Condition: Near Mint"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 8,
+                  "flexDirection": "row",
+                  "gap": 5,
+                  "paddingHorizontal": 10,
+                  "paddingVertical": 5,
+                },
+                {
+                  "backgroundColor": "#E2E8F080",
+                },
+              ]
+            }
+          >
+            <Text
+              allowFontScaling={false}
+              selectable={false}
+              style={
+                [
+                  {
+                    "color": "#64748B",
+                    "fontSize": 12,
+                  },
+                  undefined,
+                  {
+                    "fontFamily": "ionicons",
+                    "fontStyle": "normal",
+                    "fontWeight": "normal",
+                  },
+                  {},
+                ]
+              }
+            >
+              
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#0F172A",
+                  },
+                ]
+              }
+            >
+              Near Mint
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 16,
+              "borderWidth": 1,
+              "marginHorizontal": 16,
+              "marginTop": 12,
+              "padding": 18,
+            },
+            {
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#E2E8F0",
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "gap": 8,
+              "marginBottom": 14,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={false}
+            selectable={false}
+            style={
+              [
+                {
+                  "color": "#5FBFB6",
+                  "fontSize": 18,
+                },
+                undefined,
+                {
+                  "fontFamily": "ionicons",
+                  "fontStyle": "normal",
+                  "fontWeight": "normal",
+                },
+                {},
+              ]
+            }
+          >
+            
+          </Text>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 15,
+                  "fontWeight": "700",
+                  "letterSpacing": 0.2,
+                },
+                {
+                  "color": "#0F172A",
+                },
+              ]
+            }
+          >
+            Estimated Value
+          </Text>
+        </View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 32,
+                "fontWeight": "800",
+                "letterSpacing": -0.5,
+                "marginBottom": 12,
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          $10
+        </Text>
+        <View
+          style={
+            {
+              "gap": 6,
+            }
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "borderRadius": 3,
+                  "height": 6,
+                  "overflow": "hidden",
+                  "position": "relative",
+                },
+                {
+                  "backgroundColor": "#E2E8F060",
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                [
+                  {
+                    "backgroundColor": "#81D8D0",
+                    "borderRadius": 3,
+                    "bottom": 0,
+                    "opacity": 0.5,
+                    "position": "absolute",
+                    "top": 0,
+                  },
+                  {
+                    "left": "25%",
+                    "width": "25%",
+                  },
+                ]
+              }
+            />
+            <View
+              style={
+                [
+                  {
+                    "backgroundColor": "#81D8D0",
+                    "borderColor": "#FFFFFF",
+                    "borderRadius": 6,
+                    "borderWidth": 2,
+                    "elevation": 3,
+                    "height": 12,
+                    "marginLeft": -6,
+                    "position": "absolute",
+                    "shadowColor": "#81D8D0",
+                    "shadowOffset": {
+                      "height": 0,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.4,
+                    "shadowRadius": 4,
+                    "top": -3,
+                    "width": 12,
+                  },
+                  {
+                    "left": "50%",
+                  },
+                ]
+              }
+            />
+          </View>
+          <View
+            style={
+              {
+                "flexDirection": "row",
+                "justifyContent": "space-between",
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "500",
+                  },
+                  {
+                    "color": "#64748B",
+                  },
+                ]
+              }
+            >
+              $5
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                    "fontWeight": "500",
+                  },
+                  {
+                    "color": "#64748B",
+                  },
+                ]
+              }
+            >
+              $20
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  </RCTScrollView>
+  <View
+    style={
+      [
+        {
+          "borderTopWidth": 1,
+          "bottom": 0,
+          "left": 0,
+          "paddingBottom": 40,
+          "paddingHorizontal": 20,
+          "paddingTop": 14,
+          "position": "absolute",
+          "right": 0,
+        },
+        {
+          "backgroundColor": "#F7FAF9",
+          "borderTopColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Add to collection"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 16,
+            "elevation": 4,
+            "flexDirection": "row",
+            "gap": 8,
+            "justifyContent": "center",
+            "paddingVertical": 16,
+            "shadowColor": "#81D8D0",
+            "shadowOffset": {
+              "height": 4,
+              "width": 0,
+            },
+            "shadowOpacity": 0.35,
+            "shadowRadius": 8,
+          },
+          {
+            "backgroundColor": "#81D8D0",
+          },
+        ]
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontSize": 22,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          {
+            "color": "#FFFFFF",
+            "fontSize": 17,
+            "fontWeight": "700",
+            "letterSpacing": 0.3,
+          }
+        }
+      >
+        Add to Collection
+      </Text>
+    </View>
+  </View>
+</View>
+`;

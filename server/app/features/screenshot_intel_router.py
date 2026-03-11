@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from app.errors import error_response
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/screenshot-intel", tags=["screenshot-intel"])
+router = APIRouter(prefix="/screenshot-intel", tags=["Screenshot Intel"])
 logger = logging.getLogger(__name__)
 
 _screenshot_limit = per_user_rate_limit(10, window_seconds=60, scope="screenshot_intel")

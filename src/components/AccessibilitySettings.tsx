@@ -8,6 +8,7 @@ import { View, Text, Switch, StyleSheet } from 'react-native';
 import { useAccessibility } from '@/lib/accessibilityContext';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { featureFlags } from '@/config/featureFlags';
+import { fireHaptic, HapticIntent } from '@/haptics';
 
 type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
 
@@ -38,7 +39,7 @@ function SettingRow({ label, description, value, onValueChange, colors }: Settin
       </View>
       <Switch
         value={value}
-        onValueChange={onValueChange}
+        onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onValueChange(v); }}
         accessibilityLabel={label}
         accessibilityHint={`Toggle ${label.toLowerCase()}`}
         trackColor={{ false: colors.border, true: colors.accent }}

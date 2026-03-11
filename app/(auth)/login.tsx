@@ -1,5 +1,6 @@
 /**
  * Login screen — email/password sign-in with magic link, Apple, and Google options.
+ * Pro-grade: gradient bg, floating-label inputs, stagger reveal, gradient button.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -12,10 +13,13 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Google from 'expo-auth-session/providers/google';
@@ -23,11 +27,16 @@ import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/lib/supabase';
 import { useAuthContext } from '@/providers/useAuthContext';
 import { AnimatedPressable } from '@/motion';
+import { useStaggerReveal } from '@/motion/useStaggerReveal';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
 import { track } from '@/analytics/track';
+import { GradientBackground } from '@/components/auth/GradientBackground';
+import { AuthTextInput } from '@/components/auth/AuthTextInput';
+import { fonts } from '@/theme/tokens';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -35,16 +44,10 @@ const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
 
-const TIFFANY = '#81D8D0';
-const TIFFANY_DARK = '#5FBFB6';
-const NAVY = '#0F172A';
-const MUTED = '#64748B';
-const BORDER = '#E2E8F0';
-const INPUT_BG = '#F8FAFC';
-
 function LoginScreen() {
   const router = useRouter();
   const { settings } = useSettings();
+  const { colors, isDark } = useAppTheme();
   const { showToast } = useToast();
   const { signInDemo } = useAuthContext();
   const [email, setEmail] = useState('');
@@ -53,14 +56,14 @@ function LoginScreen() {
   const [appleAvailable, setAppleAvailable] = useState(false);
   const passwordRef = useRef<TextInput>(null);
 
-  // Check Apple Sign In availability (iOS only)
+  const { getItemStyle } = useStaggerReveal({ count: 7, staggerMs: 60, fromY: 16 });
+
   useEffect(() => {
     if (Platform.OS === 'ios') {
       AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => {});
     }
   }, []);
 
-  // Google auth session
   const googleEnabled = !!(GOOGLE_WEB_CLIENT_ID || GOOGLE_IOS_CLIENT_ID || GOOGLE_ANDROID_CLIENT_ID);
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest(
     googleEnabled
@@ -72,7 +75,6 @@ function LoginScreen() {
       : { clientId: 'placeholder' },
   );
 
-  // Handle Google sign-in response
   useEffect(() => {
     if (googleResponse?.type === 'success') {
       const { id_token } = googleResponse.params;
@@ -116,7 +118,7 @@ function LoginScreen() {
       router.replace('/(tabs)');
     } catch (e: unknown) {
       const code = (e as { code?: string })?.code;
-      if (code === 'ERR_REQUEST_CANCELED') return; // user cancelled
+      if (code === 'ERR_REQUEST_CANCELED') return;
       showToast({ message: e instanceof Error ? e.message : 'Apple sign in failed', type: 'error' });
     } finally {
       setLoading(false);
@@ -147,7 +149,6 @@ function LoginScreen() {
       });
       if (error) throw error;
       track({ name: 'user_logged_in', properties: { method: 'email' } });
-      // onAuthStateChange in AuthProvider handles the rest
       router.replace('/(tabs)');
     } catch (e: unknown) {
       showToast({ message: e instanceof Error ? e.message : 'Sign in failed', type: 'error' });
@@ -180,155 +181,212 @@ function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
+    <GradientBackground>
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          {/* Brand */}
-          <View style={styles.brandSection}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="diamond-outline" size={36} color={TIFFANY_DARK} />
-            </View>
-            <Text style={styles.brandSubtitle}>Welcome back</Text>
-          </View>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Brand */}
+            <Animated.View style={[styles.brandSection, getItemStyle(0)]}>
+              <View style={[styles.iconCircleOuter, { backgroundColor: colors.brand.base + '15' }]}>
+                {Platform.OS === 'ios' ? (
+                  <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={styles.iconCircle}>
+                    <Ionicons name="diamond-outline" size={40} color={colors.brand.dark} />
+                  </BlurView>
+                ) : (
+                  <View style={[styles.iconCircle, { backgroundColor: colors.brand.base + '25' }]}>
+                    <Ionicons name="diamond-outline" size={40} color={colors.brand.dark} />
+                  </View>
+                )}
+              </View>
+              <Text style={[styles.brandTitle, { color: colors.text, fontFamily: fonts.bold }]}>
+                CollectAI
+              </Text>
+              <Text style={[styles.brandSubtitle, { color: colors.muted }]}>Welcome back</Text>
+            </Animated.View>
 
-          {/* Form */}
-          <View style={styles.form}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              placeholderTextColor={MUTED}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-              accessibilityLabel="Email"
-              autoFocus
-              returnKeyType="next"
-              onSubmitEditing={() => passwordRef.current?.focus()}
-              testID="email-input"
-            />
+            {/* Form */}
+            <View style={styles.form}>
+              <Animated.View style={getItemStyle(1)}>
+                <AuthTextInput
+                  label="Email"
+                  icon="mail-outline"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoFocus
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  testID="email-input"
+                />
+              </Animated.View>
 
-            <Text style={[styles.label, { marginTop: 16 }]}>Password</Text>
-            <TextInput
-              ref={passwordRef}
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              placeholderTextColor={MUTED}
-              secureTextEntry
-              autoComplete="password"
-              accessibilityLabel="Password"
-              returnKeyType="go"
-              onSubmitEditing={handleSignIn}
-              testID="password-input"
-            />
+              <Animated.View style={[{ marginTop: 14 }, getItemStyle(2)]}>
+                <AuthTextInput
+                  ref={passwordRef}
+                  label="Password"
+                  icon="lock-closed-outline"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoComplete="password"
+                  returnKeyType="go"
+                  onSubmitEditing={handleSignIn}
+                  testID="password-input"
+                />
+              </Animated.View>
 
-            {loading ? (
-              <ActivityIndicator size="large" color={TIFFANY} style={{ marginTop: 24 }} />
-            ) : (
-              <>
+              <Animated.View style={getItemStyle(3)}>
                 <AnimatedPressable
-                  style={styles.signInBtn}
+                  style={styles.gradientBtnWrap}
                   onPress={handleSignIn}
+                  disabled={loading}
                   accessibilityRole="button"
                   accessibilityLabel="Sign in"
                 >
-                  <Text style={styles.signInBtnText}>Sign In</Text>
+                  <LinearGradient
+                    colors={[colors.brand.dark, colors.brand.base]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.gradientBtn}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.gradientBtnText}>Sign In</Text>
+                    )}
+                  </LinearGradient>
                 </AnimatedPressable>
 
-                <AnimatedPressable
-                  style={styles.forgotBtn}
-                  onPress={() => router.push('/(auth)/forgot-password')}
-                  accessibilityRole="link"
-                  accessibilityLabel="Forgot password"
-                >
-                  <Text style={styles.forgotText}>Forgot password?</Text>
-                </AnimatedPressable>
+                <View style={styles.linksRow}>
+                  <AnimatedPressable
+                    onPress={() => router.push('/(auth)/forgot-password')}
+                    accessibilityRole="link"
+                    accessibilityLabel="Forgot password"
+                  >
+                    <Text style={[styles.linkText, { color: colors.brand.dark }]}>Forgot password?</Text>
+                  </AnimatedPressable>
 
+                  <AnimatedPressable
+                    onPress={handleMagicLink}
+                    accessibilityRole="button"
+                    accessibilityLabel="Send magic link"
+                  >
+                    <View style={styles.magicLinkRow}>
+                      <Ionicons name="mail-outline" size={15} color={colors.brand.dark} />
+                      <Text style={[styles.linkText, { color: colors.brand.dark }]}>Magic link</Text>
+                    </View>
+                  </AnimatedPressable>
+                </View>
+              </Animated.View>
+            </View>
+
+            {/* Divider */}
+            <Animated.View style={[styles.dividerRow, getItemStyle(4)]}>
+              <LinearGradient
+                colors={['transparent', colors.border, 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.dividerGradient}
+              />
+              <Text style={[styles.dividerText, { color: colors.muted }]}>or</Text>
+              <LinearGradient
+                colors={['transparent', colors.border, 'transparent']}
+                start={{ x: 1, y: 0 }}
+                end={{ x: 0, y: 0 }}
+                style={styles.dividerGradient}
+              />
+            </Animated.View>
+
+            {/* Social Login */}
+            <Animated.View style={getItemStyle(5)}>
+              {appleAvailable && (
                 <AnimatedPressable
-                  style={styles.magicLinkBtn}
-                  onPress={handleMagicLink}
+                  style={[styles.socialBtn, { backgroundColor: isDark ? '#FFFFFF' : '#000000' }]}
+                  onPress={handleAppleSignIn}
                   accessibilityRole="button"
-                  accessibilityLabel="Send magic link"
+                  accessibilityLabel="Sign in with Apple"
                 >
-                  <Ionicons name="mail-outline" size={18} color={TIFFANY_DARK} />
-                  <Text style={styles.magicLinkText}>Email me a magic link</Text>
+                  <Ionicons name="logo-apple" size={20} color={isDark ? '#000000' : '#FFFFFF'} />
+                  <Text style={[styles.socialBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
+                    Continue with Apple
+                  </Text>
                 </AnimatedPressable>
-              </>
-            )}
-          </View>
+              )}
 
-          {/* Divider */}
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
+              {googleEnabled && (
+                <AnimatedPressable
+                  style={[
+                    styles.socialBtn,
+                    {
+                      backgroundColor: colors.background,
+                      borderWidth: 1.5,
+                      borderColor: colors.border,
+                      marginTop: appleAvailable ? 10 : 0,
+                    },
+                  ]}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                    googlePromptAsync();
+                  }}
+                  disabled={!googleRequest}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sign in with Google"
+                >
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#4285F4' }}>G</Text>
+                  <Text style={[styles.socialBtnText, { color: colors.text }]}>
+                    Continue with Google
+                  </Text>
+                </AnimatedPressable>
+              )}
 
-          {/* Social Login */}
-          {appleAvailable && (
-            <AnimatedPressable
-              style={styles.socialBtn}
-              onPress={handleAppleSignIn}
-              accessibilityRole="button"
-              accessibilityLabel="Sign in with Apple"
-            >
-              <Ionicons name="logo-apple" size={20} color={NAVY} />
-              <Text style={styles.socialBtnText}>Continue with Apple</Text>
-            </AnimatedPressable>
-          )}
+              {/* Demo Login */}
+              <AnimatedPressable
+                style={[
+                  styles.demoBtn,
+                  {
+                    borderColor: colors.brand.base,
+                    backgroundColor: colors.brand.base + '10',
+                    marginTop: (appleAvailable || googleEnabled) ? 16 : 0,
+                  },
+                ]}
+                onPress={handleDemoLogin}
+                accessibilityRole="button"
+                accessibilityLabel="Try demo mode"
+              >
+                <Ionicons name="play-circle-outline" size={20} color={colors.brand.dark} />
+                <Text style={[styles.demoBtnText, { color: colors.brand.dark }]}>Try Demo Mode</Text>
+              </AnimatedPressable>
+            </Animated.View>
 
-          {googleEnabled && (
-            <AnimatedPressable
-              style={[styles.socialBtn, appleAvailable && { marginTop: 10 }]}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                googlePromptAsync();
-              }}
-              disabled={!googleRequest}
-              accessibilityRole="button"
-              accessibilityLabel="Sign in with Google"
-            >
-              <Ionicons name="logo-google" size={18} color="#4285F4" />
-              <Text style={styles.socialBtnText}>Continue with Google</Text>
-            </AnimatedPressable>
-          )}
-
-          {/* Demo Login */}
-          <AnimatedPressable
-            style={[styles.demoBtn, (appleAvailable || googleEnabled) && { marginTop: 16 }]}
-            onPress={handleDemoLogin}
-            accessibilityRole="button"
-            accessibilityLabel="Try demo mode"
-          >
-            <Ionicons name="play-circle-outline" size={20} color={TIFFANY_DARK} />
-            <Text style={styles.demoBtnText}>Try Demo Mode</Text>
-          </AnimatedPressable>
-
-          {/* Footer */}
-          <AnimatedPressable
-            style={styles.footer}
-            onPress={() => router.push('/(auth)/register')}
-            accessibilityRole="link"
-            accessibilityLabel="Create an account"
-          >
-            <Text style={styles.footerText}>
-              Don't have an account?{' '}
-              <Text style={styles.footerLink}>Sign up</Text>
-            </Text>
-          </AnimatedPressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            {/* Footer */}
+            <Animated.View style={getItemStyle(6)}>
+              <AnimatedPressable
+                style={styles.footer}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  router.push('/(auth)/register');
+                }}
+                accessibilityRole="link"
+                accessibilityLabel="Create an account"
+              >
+                <Text style={[styles.footerText, { color: colors.muted }]}>
+                  Don't have an account?{' '}
+                  <Text style={{ color: colors.brand.dark, fontWeight: '600' }}>Sign up</Text>
+                </Text>
+              </AnimatedPressable>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -343,7 +401,6 @@ export default function LoginScreenWithBoundary() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   scroll: {
     flexGrow: 1,
@@ -355,75 +412,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: TIFFANY + '20',
+  iconCircleOuter: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
+  iconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  brandTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+  },
   brandSubtitle: {
     fontSize: 16,
-    color: MUTED,
     marginTop: 4,
   },
   form: {
     marginBottom: 32,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: NAVY,
-    marginBottom: 6,
+  gradientBtnWrap: {
+    marginTop: 24,
+    borderRadius: 16,
+    shadowColor: '#44A9A1',
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
-  input: {
-    backgroundColor: INPUT_BG,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: NAVY,
-  },
-  signInBtn: {
-    backgroundColor: TIFFANY,
-    borderRadius: 12,
+  gradientBtn: {
+    borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 24,
+    justifyContent: 'center',
+    minHeight: 54,
   },
-  signInBtnText: {
+  gradientBtnText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
-  forgotBtn: {
-    alignSelf: 'flex-end',
-    marginTop: 12,
+  linksRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 14,
+    paddingHorizontal: 4,
   },
-  forgotText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: TIFFANY_DARK,
-  },
-  magicLinkBtn: {
+  magicLinkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 12,
+    gap: 5,
   },
-  magicLinkText: {
-    fontSize: 14,
+  linkText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: TIFFANY_DARK,
   },
   dividerRow: {
     flexDirection: 'row',
@@ -431,14 +482,12 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
-  dividerLine: {
+  dividerGradient: {
     flex: 1,
     height: 1,
-    backgroundColor: BORDER,
   },
   dividerText: {
     fontSize: 13,
-    color: MUTED,
     fontWeight: '500',
   },
   socialBtn: {
@@ -447,15 +496,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    minHeight: 54,
   },
   socialBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: NAVY,
   },
   demoBtn: {
     flexDirection: 'row',
@@ -464,15 +510,12 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderWidth: 2,
-    borderColor: TIFFANY,
-    borderRadius: 12,
-    backgroundColor: TIFFANY + '10',
+    borderRadius: 16,
     marginBottom: 8,
   },
   demoBtnText: {
     fontSize: 15,
     fontWeight: '700',
-    color: TIFFANY_DARK,
   },
   footer: {
     alignItems: 'center',
@@ -480,10 +523,5 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: MUTED,
-  },
-  footerLink: {
-    color: TIFFANY_DARK,
-    fontWeight: '600',
   },
 });

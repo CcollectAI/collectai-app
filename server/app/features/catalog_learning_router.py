@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # Per-user: 10 suggestions per hour
 _suggest_user_limit = per_user_rate_limit(10, window_seconds=3600, scope="catalog_suggest")
 
-router = APIRouter(tags=["catalog-learning"])
+router = APIRouter(tags=["Catalog Learning"])
 
 
 # ---------------------------------------------------------------------------

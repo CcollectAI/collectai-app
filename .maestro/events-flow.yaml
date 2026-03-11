@@ -1,0 +1,20 @@
+appId: com.collectai.app
+---
+- launchApp
+# Navigate to Events tab
+- tapOn:
+    id: "tab-events"
+- assertVisible:
+    text: "Events"
+    timeout: 5000
+# Toggle calendar view if available
+- runFlow:
+    when:
+      visible:
+        id: "calendar-toggle"
+    commands:
+      - tapOn:
+          id: "calendar-toggle"
+      - assertVisible:
+          id: "calendar-grid"
+          timeout: 3000

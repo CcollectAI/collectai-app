@@ -24,7 +24,7 @@ from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/feedback", tags=["feedback"])
+router = APIRouter(prefix="/feedback", tags=["Feedback"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 10 feedback submissions per hour

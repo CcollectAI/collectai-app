@@ -70,7 +70,7 @@ const DEFAULT_CONFIG: FilterConfig = {
   sortBy: 'value_desc',
 };
 
-export function FilterSheet({
+function FilterSheetInner({
   visible,
   onClose,
   onApply,
@@ -811,4 +811,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const FilterSheet = React.memo(FilterSheetInner);
 export default FilterSheet;

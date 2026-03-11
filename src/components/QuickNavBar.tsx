@@ -48,6 +48,8 @@ export function QuickNavBar() {
           borderTopColor: colors.border,
         },
       ]}
+      accessibilityRole="tabbar"
+      accessibilityLabel="Main navigation"
     >
       {TABS.map((tab) => {
         const isActive = tab.matchPrefix ? pathname.startsWith(tab.matchPrefix) : false;

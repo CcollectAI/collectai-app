@@ -46,7 +46,7 @@ from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/marketplace/listings", tags=["marketplace-listings"])
+router = APIRouter(prefix="/marketplace/listings", tags=["Marketplace Listings"])
 logger = logging.getLogger(__name__)
 
 _listing_write_limit = per_user_rate_limit(30, window_seconds=60, scope="marketplace_listing_write")
@@ -284,7 +284,7 @@ class SalesListResponse(BaseModel):
 # ACCOUNTS endpoints
 # ===========================================================================================
 
-@router.get("/accounts", response_model=List[AccountResponse])
+@router.get("/accounts", response_model=List[AccountResponse], summary="List connected accounts")
 async def list_accounts(
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_listing_read_limit),
@@ -328,7 +328,7 @@ async def list_accounts(
 
 
 # Rate limit: accounts — connect (5/min per user)
-@router.post("/accounts", response_model=AccountResponse, status_code=201)
+@router.post("/accounts", response_model=AccountResponse, status_code=201, summary="Connect marketplace account")
 async def connect_account(
     payload: AccountCreate,
     user_id: str = Depends(get_current_user_id),
@@ -401,7 +401,7 @@ async def connect_account(
         raise error_response(500, "Failed to connect account", code=ErrorCode.DB_ERROR)
 
 
-@router.delete("/accounts/{account_id}", status_code=200)
+@router.delete("/accounts/{account_id}", status_code=200, summary="Disconnect marketplace account")
 async def disconnect_account(
     account_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -483,7 +483,7 @@ def _row_to_listing(r: dict) -> ListingResponse:
     )
 
 
-@router.get("", response_model=ListingsListResponse)
+@router.get("", response_model=ListingsListResponse, summary="List my listings")
 async def list_listings(
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
@@ -562,7 +562,7 @@ async def list_listings(
 
 
 # Rate limit: listings — create (10/min per user)
-@router.post("", response_model=ListingResponse, status_code=201)
+@router.post("", response_model=ListingResponse, status_code=201, summary="Create a listing")
 async def create_listing(
     payload: ListingCreate,
     user_id: str = Depends(get_current_user_id),
@@ -667,7 +667,7 @@ async def create_listing(
         raise error_response(500, "Failed to create listing", code=ErrorCode.DB_ERROR)
 
 
-@router.get("/{listing_id}", response_model=ListingResponse)
+@router.get("/{listing_id}", response_model=ListingResponse, summary="Get listing detail")
 async def get_listing(
     listing_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -696,7 +696,7 @@ async def get_listing(
         raise error_response(500, "Failed to get listing", code=ErrorCode.DB_ERROR)
 
 
-@router.patch("/{listing_id}", response_model=ListingResponse)
+@router.patch("/{listing_id}", response_model=ListingResponse, summary="Update a listing")
 async def update_listing(
     listing_id: str,
     payload: ListingUpdate,
@@ -774,7 +774,7 @@ async def update_listing(
         raise error_response(500, "Failed to update listing", code=ErrorCode.DB_ERROR)
 
 
-@router.delete("/{listing_id}", status_code=200)
+@router.delete("/{listing_id}", status_code=200, summary="Delist a listing")
 async def delete_listing(
     listing_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -822,7 +822,7 @@ async def delete_listing(
 
 
 # Rate limit: publish (5/min per user)
-@router.post("/{listing_id}/publish", response_model=ListingResponse)
+@router.post("/{listing_id}/publish", response_model=ListingResponse, summary="Publish a draft listing")
 async def publish_listing(
     listing_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -874,7 +874,7 @@ async def publish_listing(
 # SALES endpoints
 # ===========================================================================================
 
-@router.get("/sales", response_model=SalesListResponse)
+@router.get("/sales", response_model=SalesListResponse, summary="List completed sales")
 async def list_sales(
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
@@ -939,7 +939,7 @@ async def list_sales(
 
 
 # Rate limit: record sale (10/min per user)
-@router.post("/sales/{listing_id}/record", response_model=SaleResponse, status_code=201)
+@router.post("/sales/{listing_id}/record", response_model=SaleResponse, status_code=201, summary="Record a completed sale")
 async def record_sale(
     listing_id: str,
     payload: SaleRecord,
@@ -1040,8 +1040,8 @@ async def record_sale(
 # FEES endpoints
 # ===========================================================================================
 
-@router.get("/fees", response_model=List[FeeScheduleResponse])
-async def list_fee_schedules():
+@router.get("/fees", response_model=List[FeeScheduleResponse], summary="Get fee schedules")
+async def list_fee_schedules() -> list[FeeScheduleResponse]:
     """Get all marketplace fee schedules (public, no auth required)."""
     pool = get_db_pool()
     if pool is None:
@@ -1079,8 +1079,8 @@ async def list_fee_schedules():
         raise error_response(500, "Failed to list fee schedules", code=ErrorCode.DB_ERROR)
 
 
-@router.post("/fees/calculate", response_model=FeeCalculateResponse)
-async def calculate_fees(payload: FeeCalculateRequest):
+@router.post("/fees/calculate", response_model=FeeCalculateResponse, summary="Calculate estimated fees")
+async def calculate_fees(payload: FeeCalculateRequest) -> FeeCalculateResponse:
     """Calculate estimated fees and net proceeds for a price/marketplace combination (public)."""
     if payload.marketplace_id not in VALID_MARKETPLACES:
         raise error_response(

@@ -1,5 +1,5 @@
 """
-Import Gunpla (Gundam plastic model kit) catalog (500+ items).
+Import Gunpla (Gundam plastic model kit) catalog (700+ items).
 
 Layer 1 (Catalog):  Curated Gunpla kits → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
@@ -46,7 +46,7 @@ CATEGORY = "gunpla"
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Gunpla catalog — 500+ kits across all major grades, series, and formats."""
+    """Curated Gunpla catalog — 700+ kits across all major grades, series, and formats."""
 
     # (grade, scale, name, series, variant, rarity_tier, price_eur)
     # rarity_tier: grail (>200), high (100-200), mid (40-100), standard (<40)
@@ -928,6 +928,55 @@ def get_curated_catalog() -> list[dict]:
 
         # Metal Build — Premium
         ("Metal Build", "N/A", "Freedom Gundam Concept 2.0 (Metal Build)", "Gundam SEED", "Metal Build", "grail", 380),
+
+        # === EXPANSION ROUND 12 — 35 new items to solidify 700+ ===
+
+        # HG — Witch from Mercury Additional
+        ("HG", "1/144", "Gundam Schwarzette", "Witch from Mercury", "", "mid", 28),
+        ("HG", "1/144", "Beguir-Pente", "Witch from Mercury", "", "mid", 26),
+        ("HG", "1/144", "Zowort Heavy", "Witch from Mercury", "", "mid", 30),
+        ("HG", "1/144", "Darilbalde (Lauda's)", "Witch from Mercury", "", "mid", 28),
+        ("HG", "1/144", "Gundam Calibarn", "Witch from Mercury", "", "mid", 32),
+
+        # HG — IBO Additional
+        ("HG", "1/144", "Gundam Gremory", "Iron-Blooded Orphans", "", "mid", 35),
+        ("HG", "1/144", "Gundam Marchosias", "Iron-Blooded Orphans", "", "mid", 38),
+        ("HG", "1/144", "Gundam Hajiroboshi", "Iron-Blooded Orphans Urdr Hunt", "", "mid", 32),
+        ("HG", "1/144", "Gundam端 端白星 (Clear Color)", "Iron-Blooded Orphans Urdr Hunt", "Clear Color", "mid", 40),
+
+        # MG — SEED Freedom Movie
+        ("MG", "1/100", "Mighty Strike Freedom Gundam", "Gundam SEED Freedom", "", "high", 95),
+        ("MG", "1/100", "Immortal Justice Gundam", "Gundam SEED Freedom", "", "mid", 68),
+        ("MG", "1/100", "Rising Freedom Gundam", "Gundam SEED Freedom", "", "mid", 62),
+        ("MG", "1/100", "Black Knight Squad Shi-ve.A", "Gundam SEED Freedom", "", "mid", 72),
+
+        # RG — UC Classics
+        ("RG", "1/144", "Zeong", "Mobile Suit Gundam", "", "mid", 55),
+        ("RG", "1/144", "GP01 Zephyranthes", "Gundam 0083", "", "mid", 38),
+        ("RG", "1/144", "GP01Fb Full Burnern", "Gundam 0083", "", "mid", 42),
+
+        # Full Mechanics — Additional
+        ("Full Mechanics", "1/100", "Gundam Aerial (Full Mechanics)", "Witch from Mercury", "", "mid", 52),
+        ("Full Mechanics", "1/100", "Raider Gundam (Full Mechanics)", "Gundam SEED", "", "mid", 48),
+        ("Full Mechanics", "1/100", "Forbidden Gundam (Full Mechanics)", "Gundam SEED", "", "mid", 48),
+        ("Full Mechanics", "1/100", "Calamity Gundam (Full Mechanics)", "Gundam SEED", "", "mid", 48),
+
+        # Metal Build — Additional Premium
+        ("Metal Build", "N/A", "Destiny Gundam (Metal Build)", "Gundam SEED Destiny", "Metal Build", "grail", 350),
+        ("Metal Build", "N/A", "00 Raiser (Metal Build)", "Gundam 00", "Metal Build", "grail", 340),
+        ("Metal Build", "N/A", "Strike Noir (Metal Build)", "Gundam SEED Stargazer", "Metal Build", "grail", 320),
+        ("Metal Build", "N/A", "Crossbone Gundam X1 (Metal Build)", "Crossbone Gundam", "Metal Build", "grail", 310),
+        ("Metal Build", "N/A", "Aile Strike Gundam (Metal Build)", "Gundam SEED", "Metal Build", "grail", 280),
+
+        # HiRM — Hi-Resolution Model
+        ("HiRM", "1/100", "Barbatos Lupus Rex (HiRM)", "Iron-Blooded Orphans", "HiRM", "high", 140),
+        ("HiRM", "1/100", "Wing Gundam Zero EW (HiRM)", "Gundam Wing", "HiRM", "high", 135),
+        ("HiRM", "1/100", "Astray Red Frame (Powered Red) (HiRM)", "Gundam SEED Astray", "HiRM", "high", 145),
+
+        # P-Bandai — 2026 Web Exclusives
+        ("MG", "1/100", "Tallgeese Flugel (P-Bandai)", "Gundam Wing", "P-Bandai", "high", 130),
+        ("HG", "1/144", "Moon Gundam (P-Bandai Clear)", "Moon Gundam", "P-Bandai", "mid", 45),
+        ("RG", "1/144", "Wing Gundam (TV Ver.) (P-Bandai)", "Gundam Wing", "P-Bandai", "mid", 55),
     ]
 
     catalog = []

@@ -8,6 +8,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import type { SentryModule } from '@/../types/api';
@@ -16,6 +17,51 @@ try {
   Sentry = require('@sentry/react-native');
 } catch (_) {
   // @sentry/react-native not installed – skip silently
+}
+
+/** Functional fallback UI that respects dark mode */
+function ErrorFallback({
+  error,
+  errorInfo,
+  onRetry,
+}: {
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+  onRetry: () => void;
+}) {
+  const { colors } = useAppTheme();
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.content}>
+        <View style={styles.iconContainer}>
+          <Ionicons name="warning-outline" size={48} color={colors.danger} />
+        </View>
+        <Text style={[styles.title, { color: colors.text }]}>Something went wrong</Text>
+        <Text style={[styles.subtitle, { color: colors.muted }]}>
+          We encountered an unexpected error. Please try again.
+        </Text>
+
+        {__DEV__ && error && (
+          <ScrollView style={styles.errorDetails}>
+            <Text style={styles.errorTitle}>Error Details (Dev Only):</Text>
+            <Text style={styles.errorMessage}>
+              {error.toString()}
+            </Text>
+            {errorInfo && (
+              <Text style={styles.errorStack}>
+                {errorInfo.componentStack}
+              </Text>
+            )}
+          </ScrollView>
+        )}
+
+        <Pressable style={styles.retryButton} onPress={onRetry} accessibilityRole="button" accessibilityLabel="Try again">
+          <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
 }
 
 interface Props {
@@ -79,38 +125,13 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      // Default error UI
+      // Default error UI (functional component for theme hook access)
       return (
-        <View style={styles.container}>
-          <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="warning-outline" size={48} color="#EF4444" />
-            </View>
-            <Text style={styles.title}>Something went wrong</Text>
-            <Text style={styles.subtitle}>
-              We encountered an unexpected error. Please try again.
-            </Text>
-
-            {__DEV__ && this.state.error && (
-              <ScrollView style={styles.errorDetails}>
-                <Text style={styles.errorTitle}>Error Details (Dev Only):</Text>
-                <Text style={styles.errorMessage}>
-                  {this.state.error.toString()}
-                </Text>
-                {this.state.errorInfo && (
-                  <Text style={styles.errorStack}>
-                    {this.state.errorInfo.componentStack}
-                  </Text>
-                )}
-              </ScrollView>
-            )}
-
-            <Pressable style={styles.retryButton} onPress={this.handleRetry} accessibilityRole="button" accessibilityLabel="Try again">
-              <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </Pressable>
-          </View>
-        </View>
+        <ErrorFallback
+          error={this.state.error}
+          errorInfo={this.state.errorInfo}
+          onRetry={this.handleRetry}
+        />
       );
     }
 
@@ -121,7 +142,6 @@ export class ErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7FAF9',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -142,13 +162,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#0F172A',
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748B',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 20,

@@ -45,5 +45,8 @@ pytest-cov==7.0.0
 # Payments
 stripe==11.4.1
 
+# Database migrations
+alembic>=1.13.0
+
 # Monitoring
 sentry-sdk[fastapi]==2.22.0

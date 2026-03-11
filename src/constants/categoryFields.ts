@@ -179,7 +179,7 @@ const WARHAMMER_FIELDS: CategoryField[] = [
 // ---------------------------------------------------------------------------
 
 const RETRO_GAMES_FIELDS: CategoryField[] = [
-  { key: 'platform', label: 'Platform', type: 'select', icon: 'game-controller-outline', options: ['NES', 'SNES', 'N64', 'GameCube', 'Game Boy', 'GBA', 'DS', 'Genesis', 'Saturn', 'Dreamcast', 'PS1', 'PS2', 'Xbox', 'Atari', 'Other'] },
+  { key: 'platform', label: 'Platform', type: 'select', icon: 'game-controller-outline', options: ['NES', 'SNES', 'N64', 'GameCube', 'Wii', 'Game Boy', 'GBA', 'DS', 'Genesis', 'Saturn', 'Dreamcast', 'PS1', 'PS2', 'PSP', 'Xbox', 'PC', 'Atari', 'Other'] },
   { key: 'title', label: 'Game Title', placeholder: 'e.g. Super Mario World', type: 'text', icon: 'text-outline' },
   { key: 'region', label: 'Region', type: 'select', icon: 'globe-outline', options: ['NTSC (US)', 'PAL (EU)', 'NTSC-J (JP)'] },
   { key: 'completeness', label: 'Completeness', type: 'select', icon: 'checkbox-outline', options: ['Loose (Cart only)', 'CIB (Complete in Box)', 'Sealed', 'Graded'] },

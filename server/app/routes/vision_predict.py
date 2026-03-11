@@ -23,7 +23,7 @@ from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/vision-predict", tags=["vision-predict"])
+router = APIRouter(prefix="/vision-predict", tags=["Vision"])
 
 # Per-user: 20 requests per minute for vision classification
 _vision_user_limit = per_user_rate_limit(20, scope="vision")
@@ -62,7 +62,7 @@ class CategoriesResponse(BaseModel):
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@router.get("/health")
+@router.get("/health", summary="Vision service health check")
 async def health():
     """Health check for the vision-predict service."""
     from app.ml.vision_classifier import FAL_KEY, OPENAI_API_KEY
@@ -81,7 +81,7 @@ async def health():
     }
 
 
-@router.get("/categories", response_model=CategoriesResponse)
+@router.get("/categories", response_model=CategoriesResponse, summary="List supported categories")
 async def list_categories():
     """List all 36 supported collectible categories with descriptions."""
     from app.ml.vision_classifier import ALL_CATEGORIES, CATEGORY_DESCRIPTIONS
@@ -100,6 +100,8 @@ async def list_categories():
     "/classify",
     response_model=ClassificationResponse,
     dependencies=[Depends(get_current_user_id), Depends(_vision_user_limit)],
+    summary="Classify collectible image",
+    description="Uses a 3-tier classification approach: CLIP embeddings, OpenAI Vision, and heuristic fallback.",
 )
 async def classify_image(file: UploadFile = File(..., description="Image of a collectible item")):
     """

@@ -66,7 +66,7 @@ function ComparisonRow({
   );
 }
 
-export function ComparisonCard({
+function ComparisonCardInner({
   itemA,
   itemB,
   imageUriA,
@@ -337,4 +337,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const ComparisonCard = React.memo(ComparisonCardInner);
 export default ComparisonCard;

@@ -63,7 +63,7 @@ function MoverItem({ item, colors }: { item: ItemMover; colors: ThemeColors }) {
   );
 }
 
-export function InsightsCard({ insights, tierSummary, onViewDetails }: InsightsCardProps) {
+function InsightsCardInner({ insights, tierSummary, onViewDetails }: InsightsCardProps) {
   const { colors } = useAppTheme();
   const isPositive = insights.percentChange >= 0;
 
@@ -136,7 +136,7 @@ export function InsightsCard({ insights, tierSummary, onViewDetails }: InsightsC
             <Ionicons
               name={isPositive ? 'trending-up' : 'trending-down'}
               size={16}
-              color={isPositive ? '#0BA86C' : '#EF4444'}
+              color={isPositive ? colors.success : colors.error}
             />
             <Text
               style={[
@@ -360,4 +360,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const InsightsCard = React.memo(InsightsCardInner);
 export default InsightsCard;

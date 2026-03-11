@@ -1,9 +1,11 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { Link, usePathname, type Href } from "expo-router";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 export default function NotFoundScreen() {
   const pathname = usePathname();
+  const { colors } = useAppTheme();
 
   if (__DEV__) console.log("[+not-found] unmatched path:", pathname);
 
@@ -14,13 +16,13 @@ export default function NotFoundScreen() {
         alignItems: "center",
         justifyContent: "center",
         padding: 24,
-        backgroundColor: "#f1f5f9",
+        backgroundColor: colors.background,
       }}
     >
-      <Text style={{ fontSize: 20, fontWeight: "700", marginBottom: 8 }}>
+      <Text style={{ fontSize: 20, fontWeight: "700", marginBottom: 8, color: colors.text }}>
         Route not found
       </Text>
-      <Text style={{ marginBottom: 16, textAlign: "center" }}>
+      <Text style={{ marginBottom: 16, textAlign: "center", color: colors.muted }}>
         The path <Text style={{ fontWeight: "600" }}>{pathname}</Text> does not
         match any screen.
       </Text>
@@ -31,10 +33,10 @@ export default function NotFoundScreen() {
             paddingHorizontal: 20,
             paddingVertical: 10,
             borderRadius: 999,
-            backgroundColor: "#0f172a",
+            backgroundColor: colors.accent,
           }}
         >
-          <Text style={{ color: "white", fontWeight: "600" }}>
+          <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>
             Go to Portfolio
           </Text>
         </Pressable>

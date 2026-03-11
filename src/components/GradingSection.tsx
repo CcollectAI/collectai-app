@@ -115,7 +115,7 @@ interface GradingSectionProps {
 
 // ── Component ───────────────────────────────────────────────────────────
 
-export function GradingSection({
+function GradingSectionInner({
   theme,
   hapticsEnabled,
   gradingExpanded,
@@ -643,3 +643,5 @@ const s = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+export const GradingSection = React.memo(GradingSectionInner);

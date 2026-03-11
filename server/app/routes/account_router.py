@@ -17,7 +17,7 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 
-router = APIRouter(prefix="/account", tags=["account"])
+router = APIRouter(prefix="/account", tags=["Account"])
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +40,7 @@ class AccountDeleteResponse(BaseModel):
     message: str
 
 
-@router.delete("", response_model=AccountDeleteResponse)
+@router.delete("", response_model=AccountDeleteResponse, summary="Delete user account", description="Soft-deletes user data and removes Supabase auth. Required by App Store and Play Store policies.")
 async def delete_account(user_id: str = Depends(get_current_user_id)):
     """
     Delete the current user's account.

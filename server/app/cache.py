@@ -78,10 +78,13 @@ class CacheBackend(abc.ABC):
 class InMemoryCache(CacheBackend):
     """Dict-based cache with per-entry TTL (single-process only)."""
 
+    _CLEANUP_INTERVAL: int = 100
+
     def __init__(self) -> None:
         self._store: dict[str, tuple[Any, float]] = {}
         self._hits: int = 0
         self._misses: int = 0
+        self._set_counter: int = 0
 
     # -- CacheBackend interface --
 
@@ -100,6 +103,10 @@ class InMemoryCache(CacheBackend):
 
     async def set(self, key: str, value: Any, ttl: int = CACHE_TTL) -> None:
         self._store[key] = (value, time.monotonic() + ttl)
+        self._set_counter += 1
+        if self._set_counter >= self._CLEANUP_INTERVAL:
+            self._set_counter = 0
+            self.cleanup()
 
     async def delete(self, key: str) -> None:
         self._store.pop(key, None)

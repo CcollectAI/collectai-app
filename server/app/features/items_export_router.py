@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from app.auth import get_current_user_id
 from app.lib.db_helpers import get_db_pool
 
-router = APIRouter(prefix="/items-export", tags=["items-export"])
+router = APIRouter(prefix="/items-export", tags=["Items Export"])
 logger = logging.getLogger(__name__)
 
 

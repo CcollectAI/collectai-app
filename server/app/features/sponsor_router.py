@@ -31,7 +31,7 @@ from app.errors import error_response
 
 _log = logging.getLogger("collectai.sponsor")
 
-router = APIRouter(prefix="/events", tags=["events"])
+router = APIRouter(prefix="/events", tags=["Events"])
 
 _sponsor_checkout_limit = per_user_rate_limit(5, window_seconds=3600, scope="sponsor_checkout")
 

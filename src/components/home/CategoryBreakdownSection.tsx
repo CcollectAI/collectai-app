@@ -7,6 +7,7 @@
  */
 import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { AnimatedPressable } from "@/motion";
 import { SkeletonList } from "@/components/Skeleton";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -32,6 +33,8 @@ interface CategoryBreakdownSectionProps {
   breakdown: CategoryBreakdownItem[];
   loading: boolean;
   formatPrice: (amount: number) => string;
+  onCategoryPress?: (categoryName: string) => void;
+  resolveCategoryName?: (raw: string) => string;
 }
 
 // ── Component ──────────────────────────────────────────────────────────
@@ -41,7 +44,10 @@ function CategoryBreakdownSectionInner({
   breakdown,
   loading,
   formatPrice,
+  onCategoryPress,
+  resolveCategoryName,
 }: CategoryBreakdownSectionProps) {
+  const displayName = (raw: string) => resolveCategoryName?.(raw) ?? raw;
   return (
     <>
       <View style={s.sectionHeader}>
@@ -65,13 +71,15 @@ function CategoryBreakdownSectionInner({
             ];
             const barColor = barColors[idx] || theme.accent;
             return (
-              <View
+              <AnimatedPressable
                 key={cat.category}
                 style={s.breakdownBarRow}
-                accessibilityLabel={`${cat.category}: ${cat.percentage.toFixed(0)}% of portfolio`}
+                onPress={() => onCategoryPress?.(cat.category)}
+                accessibilityRole="button"
+                accessibilityLabel={`${displayName(cat.category)}: ${cat.percentage.toFixed(0)}% of portfolio. Tap to view category.`}
               >
                 <Text style={[s.breakdownBarLabel, { color: theme.text }]} numberOfLines={1}>
-                  {cat.category}
+                  {displayName(cat.category)}
                 </Text>
                 <View style={s.breakdownBarTrack}>
                   <View
@@ -84,7 +92,7 @@ function CategoryBreakdownSectionInner({
                 <Text style={[s.breakdownBarPct, { color: theme.muted }]}>
                   {cat.percentage.toFixed(0)}%
                 </Text>
-              </View>
+              </AnimatedPressable>
             );
           })}
 
@@ -96,13 +104,15 @@ function CategoryBreakdownSectionInner({
             style={s.breakdownCardsScroll}
           >
             {breakdown.map((cat) => (
-              <View
+              <AnimatedPressable
                 key={cat.category}
                 style={[s.breakdownCategoryCard, { backgroundColor: theme.background, borderColor: theme.border }]}
-                accessibilityLabel={`${cat.category}: ${cat.item_count} item${cat.item_count !== 1 ? "s" : ""}, ${formatPrice(cat.total_value)}, ${cat.percentage.toFixed(0)}%`}
+                onPress={() => onCategoryPress?.(cat.category)}
+                accessibilityRole="button"
+                accessibilityLabel={`${displayName(cat.category)}: ${cat.item_count} item${cat.item_count !== 1 ? "s" : ""}, ${formatPrice(cat.total_value)}, ${cat.percentage.toFixed(0)}%. Tap to view category.`}
               >
                 <Text style={[s.breakdownCatName, { color: theme.text }]} numberOfLines={1}>
-                  {cat.category}
+                  {displayName(cat.category)}
                 </Text>
                 <Text style={[s.breakdownCatItems, { color: theme.muted }]}>
                   {cat.item_count} item{cat.item_count !== 1 ? "s" : ""}
@@ -115,7 +125,7 @@ function CategoryBreakdownSectionInner({
                     {cat.percentage.toFixed(0)}%
                   </Text>
                 </View>
-              </View>
+              </AnimatedPressable>
             ))}
           </ScrollView>
         </View>

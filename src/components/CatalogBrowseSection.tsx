@@ -73,7 +73,7 @@ export interface CatalogBrowseSectionProps {
 
 // ── Component ──────────────────────────────────────────────────────────
 
-export function CatalogBrowseSection({
+function CatalogBrowseSectionInner({
   catalogExpanded,
   onToggleExpanded,
   catalogTotal,
@@ -374,3 +374,5 @@ const s = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+export const CatalogBrowseSection = React.memo(CatalogBrowseSectionInner);

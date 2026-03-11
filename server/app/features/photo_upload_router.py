@@ -35,7 +35,7 @@ from app.errors import error_response
 from app.lib.image_optimizer import generate_blurhash, optimize_image
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/photos", tags=["photos"])
+router = APIRouter(prefix="/photos", tags=["Photos"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 20 upload requests per hour (presign + server-side upload)

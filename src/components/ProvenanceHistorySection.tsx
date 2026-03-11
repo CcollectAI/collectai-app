@@ -59,11 +59,11 @@ export const ProvenanceHistorySection = React.memo(function ProvenanceHistorySec
         onPress={onToggleExpanded}
         style={s.sectionHeaderRow}
         accessibilityRole="button"
-        accessibilityLabel="Toggle ownership history"
+        accessibilityLabel="Toggle item history"
       >
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="time-outline" size={20} color={theme.accent} />
-          <Text style={[s.sectionTitle, { color: theme.text }]}>Ownership History</Text>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>Item History</Text>
         </View>
         {provenanceLoading ? (
           <ActivityIndicator size="small" color={theme.accent} />

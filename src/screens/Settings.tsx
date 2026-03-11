@@ -297,7 +297,7 @@ export default function Settings() {
               </View>
               <Switch
                 value={privacy.showCollectionValue}
-                onValueChange={(v) => updatePrivacy('showCollectionValue', v)}
+                onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); updatePrivacy('showCollectionValue', v); }}
                 trackColor={{ false: colors.border, true: colors.accent }}
                 thumbColor="#FFFFFF"
                 accessibilityLabel="Show collection value"
@@ -313,7 +313,7 @@ export default function Settings() {
               </View>
               <Switch
                 value={privacy.showItemCount}
-                onValueChange={(v) => updatePrivacy('showItemCount', v)}
+                onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); updatePrivacy('showItemCount', v); }}
                 trackColor={{ false: colors.border, true: colors.accent }}
                 thumbColor="#FFFFFF"
                 accessibilityLabel="Show item count"
@@ -329,7 +329,7 @@ export default function Settings() {
               </View>
               <Switch
                 value={privacy.allowDiscovery}
-                onValueChange={(v) => updatePrivacy('allowDiscovery', v)}
+                onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); updatePrivacy('allowDiscovery', v); }}
                 trackColor={{ false: colors.border, true: colors.accent }}
                 thumbColor="#FFFFFF"
                 accessibilityLabel="Allow discovery"
@@ -345,7 +345,7 @@ export default function Settings() {
               </View>
               <Switch
                 value={privacy.showOnlineStatus}
-                onValueChange={(v) => updatePrivacy('showOnlineStatus', v)}
+                onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); updatePrivacy('showOnlineStatus', v); }}
                 trackColor={{ false: colors.border, true: colors.accent }}
                 thumbColor="#FFFFFF"
                 accessibilityLabel="Show online status"

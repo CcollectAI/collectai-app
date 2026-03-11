@@ -149,7 +149,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
               Supabase so you can plug in the Twitch API later.
             </Text>
           </View>
-          <View style={styles.headerIcon}>
+          <View style={[styles.headerIcon, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons
               name="logo-twitch"
               size={20}
@@ -503,9 +503,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D6E4EC",
   },
   banner: {
     flexDirection: "row",

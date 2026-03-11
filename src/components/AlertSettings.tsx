@@ -45,7 +45,7 @@ function SettingRow({ label, description, value, onValueChange, colors }: Settin
       </View>
       <Switch
         value={value}
-        onValueChange={onValueChange}
+        onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onValueChange(v); }}
         accessibilityLabel={label}
         trackColor={{ false: colors.border, true: colors.accent }}
       />

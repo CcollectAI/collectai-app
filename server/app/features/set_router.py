@@ -28,7 +28,7 @@ from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/sets", tags=["sets"])
+router = APIRouter(prefix="/sets", tags=["Sets"])
 
 _set_progress_limit = per_user_rate_limit(30, window_seconds=60, scope="set_progress")
 

@@ -991,6 +991,106 @@ def _expanded_round8_anime_bluray() -> list[dict]:
         ("Discotek Media", "Rurouni Kenshin Complete", "Blu-ray", "Discotek Complete BD Collection", "high", 160),
         ("Discotek Media", "Initial D Complete Series", "Blu-ray", "Discotek Complete BD Collection", "high", 180),
         ("Discotek Media", "Cromartie High School Complete", "Blu-ray", "Discotek BD Remaster", "mid", 65),
+
+        # ── Expansion to 700+ ──────────────────────────────────────────────
+
+        # --- Aniplex USA Expansion ---
+        ("Aniplex USA", "Solo Leveling Complete Season 1", "Blu-ray", "Aniplex LE with Shadow Monarch Art Box", "high", 180),
+        ("Aniplex USA", "Oshi no Ko Complete Series", "Blu-ray", "Aniplex LE Complete Box Set with Idol Costume Art", "grail", 380),
+        ("Aniplex USA", "Sousou no Frieren Season 2", "Blu-ray", "Aniplex LE Box Set", "high", 200),
+        ("Aniplex USA", "Frieren Complete Season 1", "Blu-ray", "Aniplex LE Complete Box with Himmel Memorial Book", "grail", 350),
+        ("Aniplex USA", "Monogatari Series: Monster Season", "Blu-ray", "Aniplex LE with Shinobu Art Cards", "high", 190),
+        ("Aniplex USA", "Dandadan", "Blu-ray", "Aniplex LE Box Set with Turbo Granny Figure", "high", 200),
+        ("Aniplex USA", "Apothecary Diaries", "Blu-ray", "Aniplex LE Box Set with Maomao Art Book", "high", 180),
+        ("Aniplex USA", "Blue Lock", "Blu-ray", "Aniplex LE with Ego Character Art Set", "high", 170),
+        ("Aniplex USA", "Madoka Magica: Walpurgis Rising", "Blu-ray", "Aniplex LE with Witch Art Book", "grail", 350),
+
+        # --- JP Import Expansion ---
+        ("JP Import", "Dandadan Season 1", "Blu-ray", "JP BD Complete Box with Okarun Figure", "high", 250),
+        ("JP Import", "Sakamoto Days Season 1", "Blu-ray", "JP BD Complete Box Set", "high", 200),
+        ("JP Import", "Blue Lock Season 1", "Blu-ray", "JP BD Complete Box with Isagi Card Set", "high", 220),
+        ("JP Import", "Kaiju No. 8 Season 1", "Blu-ray", "JP BD Complete Box Set", "high", 210),
+        ("JP Import", "Wind Breaker Season 1", "Blu-ray", "JP BD Complete Box Set", "high", 190),
+        ("JP Import", "Shangri-La Frontier Season 1", "Blu-ray", "JP BD Complete Box Set", "high", 180),
+        ("JP Import", "Blue Box Season 1", "Blu-ray", "JP BD Complete Box with Chinatsu Art Card", "high", 185),
+        ("JP Import", "A Sign of Affection", "Blu-ray", "JP BD Complete Box Set", "high", 175),
+        ("JP Import", "My Happy Marriage", "Blu-ray", "JP BD Complete Box with Wedding Art Book", "high", 195),
+        ("JP Import", "Apothecary Diaries Season 1", "Blu-ray", "JP BD Complete Box Set", "high", 230),
+
+        # --- Crunchyroll LE Expansion ---
+        ("Crunchyroll", "Solo Leveling Season 1", "Blu-ray", "Crunchyroll LE with Sung Jinwoo Shadow Sleeve", "mid", 95),
+        ("Crunchyroll", "Kaiju No. 8 Season 1", "Blu-ray", "Crunchyroll LE with Kafka Hibino Art Card", "mid", 90),
+        ("Crunchyroll", "Delicious in Dungeon", "Blu-ray", "Crunchyroll LE with Recipe Booklet", "mid", 85),
+        ("Crunchyroll", "Metallic Rouge", "Blu-ray", "Crunchyroll LE", "mid", 75),
+        ("Crunchyroll", "Girls Band Cry", "Blu-ray", "Crunchyroll LE", "mid", 70),
+        ("Crunchyroll", "Sakamoto Days Season 1", "Blu-ray", "Crunchyroll LE with Taro Sakamoto Art Sleeve", "mid", 85),
+        ("Crunchyroll", "Blue Box", "Blu-ray", "Crunchyroll LE", "mid", 75),
+        ("Crunchyroll", "Dandadan Season 1", "Blu-ray", "Crunchyroll LE with Okarun Holographic Sleeve", "high", 110),
+
+        # --- GKIDS / Studio Ghibli 4K Expansion ---
+        ("GKIDS", "Howl's Moving Castle", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 48),
+        ("GKIDS", "My Neighbor Totoro", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 48),
+        ("GKIDS", "Castle in the Sky", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 45),
+        ("GKIDS", "Kiki's Delivery Service", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 45),
+        ("GKIDS", "Nausicaa of the Valley of the Wind", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 48),
+        ("GKIDS", "Porco Rosso", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 45),
+        ("GKIDS", "The Tale of the Princess Kaguya", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 48),
+        ("GKIDS", "When Marnie Was There", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 45),
+        ("GKIDS", "The Wind Rises", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 45),
+        ("GKIDS", "Grave of the Fireflies", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 48),
+        ("GKIDS", "Arrietty", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 42),
+        ("GKIDS", "From Up on Poppy Hill", "4K UHD", "GKIDS 4K Collector's Edition", "mid", 42),
+
+        # --- Sentai Filmworks Expansion ---
+        ("Sentai Filmworks", "Akame ga Kill! Complete", "Blu-ray", "Sentai LE Complete Collection", "mid", 75),
+        ("Sentai Filmworks", "Land of the Lustrous", "Blu-ray", "Sentai LE Steelbook", "high", 120),
+        ("Sentai Filmworks", "Girls' Last Tour Complete", "Blu-ray", "Sentai LE Complete Collection", "mid", 80),
+        ("Sentai Filmworks", "Bloom Into You Complete", "Blu-ray", "Sentai LE Complete Collection", "mid", 85),
+        ("Sentai Filmworks", "O Maidens in Your Savage Season", "Blu-ray", "Sentai LE Complete Collection", "mid", 70),
+        ("Sentai Filmworks", "Skip and Loafer", "Blu-ray", "Sentai LE Complete Collection", "mid", 65),
+        ("Sentai Filmworks", "Run with the Wind", "Blu-ray", "Sentai LE Complete Collection", "mid", 80),
+        ("Sentai Filmworks", "Chihayafuru Complete", "Blu-ray", "Sentai LE Complete Box Set", "high", 200),
+
+        # --- Steelbook Editions ---
+        ("Funimation", "Naruto Shippuden Final Arc", "Blu-ray", "Funimation Steelbook", "mid", 55),
+        ("Crunchyroll", "Jujutsu Kaisen 0 The Movie", "Blu-ray", "Crunchyroll Steelbook 4K", "mid", 65),
+        ("Funimation", "My Hero Academia: World Heroes' Mission", "Blu-ray", "Funimation Steelbook", "mid", 50),
+        ("Crunchyroll", "Chainsaw Man Part 2", "Blu-ray", "Crunchyroll Steelbook", "mid", 55),
+        ("Funimation", "One Piece Film Red Collector's", "Blu-ray", "Funimation Steelbook with Shanks Art Card", "mid", 60),
+        ("GKIDS", "Suzume Collector's Edition", "Blu-ray", "GKIDS Steelbook with Makoto Shinkai Booklet", "mid", 55),
+        ("GKIDS", "Look Back", "Blu-ray", "GKIDS Steelbook", "mid", 50),
+        ("Funimation", "The First Slam Dunk", "Blu-ray", "Funimation Steelbook with Court Art Card", "mid", 50),
+
+        # --- JP Concert / Live BDs Expansion ---
+        ("JP Import", "YOASOBI Arena Tour 2023 Dennou Seikatsu", "Blu-ray", "JP BD LE with Photobook", "high", 120),
+        ("JP Import", "Kenshi Yonezu TOUR 2023 Kick Back", "Blu-ray", "JP BD LE with Documentary", "high", 130),
+        ("JP Import", "Mrs. GREEN APPLE Arena Tour 2024", "Blu-ray", "JP BD LE", "high", 110),
+        ("JP Import", "RADWIMPS Asia Tour 2024", "Blu-ray", "JP BD LE", "high", 100),
+        ("JP Import", "Aimer Live in Budokan blanc et noir Day 2", "Blu-ray", "JP BD LE with Photo Set", "high", 115),
+        ("JP Import", "ClariS 1st Hall Concert Fairy Party", "Blu-ray", "JP BD LE", "mid", 85),
+        ("JP Import", "Kalafina Farewell Concert 2019", "Blu-ray", "JP BD LE", "high", 140),
+
+        # --- Discotek Media Expansion ---
+        ("Discotek Media", "Armored Trooper VOTOMS", "Blu-ray", "Discotek Complete BD Collection", "high", 200),
+        ("Discotek Media", "Martian Successor Nadesico", "Blu-ray", "Discotek Complete BD Collection", "high", 140),
+        ("Discotek Media", "Gunsmith Cats OVA", "Blu-ray", "Discotek BD Remaster", "mid", 65),
+        ("Discotek Media", "Beck: Mongolian Chop Squad", "Blu-ray", "Discotek Complete BD Collection", "high", 150),
+        ("Discotek Media", "Riding Bean", "Blu-ray", "Discotek BD Remaster", "mid", 55),
+        ("Discotek Media", "Votoms Complete", "Blu-ray", "Discotek BD Pailsen Files Remaster", "high", 160),
+        ("Discotek Media", "Megazone 23", "Blu-ray", "Discotek BD Complete Remaster", "high", 130),
+        ("Discotek Media", "Bubblegum Crisis", "Blu-ray", "Discotek BD Remaster", "high", 140),
+        ("Discotek Media", "Battle Angel Alita (Gunnm)", "Blu-ray", "Discotek BD Remaster", "mid", 70),
+
+        # --- Vintage / OOP BD Expansion ---
+        ("JP Import", "Royal Space Force: Wings of Honneamise", "Blu-ray", "JP BD LE Remaster", "high", 150),
+        ("JP Import", "Crusher Joe", "Blu-ray", "JP BD LE Remaster", "high", 130),
+        ("JP Import", "Dirty Pair Complete", "Blu-ray", "JP BD Complete Box Set", "high", 200),
+        ("JP Import", "Area 88 OVA", "Blu-ray", "JP BD Remaster", "high", 120),
+        ("JP Import", "Golgo 13: The Professional", "Blu-ray", "JP BD LE Remaster", "mid", 80),
+        ("JP Import", "Kimagure Orange Road", "Blu-ray", "JP BD Complete Box Set", "high", 250),
+        ("JP Import", "Cutey Honey Complete", "Blu-ray", "JP BD Complete Box Set", "high", 180),
+        ("JP Import", "El-Hazard OVA", "Blu-ray", "JP BD LE Remaster", "mid", 90),
+        ("JP Import", "Tenchi Muyo! Ryo-Ohki", "Blu-ray", "JP BD Complete Box Remaster", "high", 160),
     ]
     catalog = []
     for publisher, title, fmt, edition, tier, price in releases:

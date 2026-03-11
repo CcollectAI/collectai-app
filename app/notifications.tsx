@@ -5,6 +5,7 @@
  * pull-to-refresh, infinite scroll, and "Mark All Read" header action.
  */
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
   View,
   Text,
@@ -70,7 +71,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-export default function NotificationsScreen() {
+function NotificationsScreen() {
   const { colors: theme } = useAppTheme();
   const router = useRouter();
 
@@ -390,3 +391,11 @@ const s = StyleSheet.create({
     alignItems: "center",
   },
 });
+
+export default function NotificationsScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Notifications">
+      <NotificationsScreen />
+    </ScreenErrorBoundary>
+  );
+}

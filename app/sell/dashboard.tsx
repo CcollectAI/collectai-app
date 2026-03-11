@@ -81,7 +81,7 @@ type Tab = 'listings' | 'sales' | 'accounts';
 // ListingCard
 // ---------------------------------------------------------------------------
 
-function ListingCard({
+const ListingCard = React.memo(function ListingCard({
   listing,
   colors,
   currency,
@@ -161,13 +161,13 @@ function ListingCard({
       )}
     </AnimatedPressable>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // SaleCard
 // ---------------------------------------------------------------------------
 
-function SaleCard({
+const SaleCard = React.memo(function SaleCard({
   sale,
   colors,
   currency,
@@ -224,13 +224,13 @@ function SaleCard({
       </Text>
     </View>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // AccountCard
 // ---------------------------------------------------------------------------
 
-function AccountCard({
+const AccountCard = React.memo(function AccountCard({
   account,
   colors,
 }: {
@@ -261,13 +261,13 @@ function AccountCard({
       ]} />
     </View>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Revenue Summary Card
 // ---------------------------------------------------------------------------
 
-function RevenueSummary({
+const RevenueSummary = React.memo(function RevenueSummary({
   sales,
   colors,
   currency,
@@ -318,7 +318,7 @@ function RevenueSummary({
       </Text>
     </View>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Main Screen

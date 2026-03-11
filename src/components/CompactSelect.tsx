@@ -1,16 +1,17 @@
 import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View, Dimensions } from 'react-native';
 import Icon from '@/components/Icon';
-import { theme } from '@/theme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 const TIFFANY = '#81D8D0';
-const TIFFANY_LIGHT = '#E6F7F5';
 
 type Props = { title?:string; value?:string|null; options:string[]; placeholder?:string; onChange:(v:string)=>void; searchable?:boolean; };
 
 export default function CompactSelect({ title, value, options, placeholder='Select…', onChange, searchable=false }:Props) {
+  const { colors, isDark } = useAppTheme();
+  const tiffanyLight = isDark ? colors.brand.lighter : '#E6F7F5';
   const triggerRef = useRef<View>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -23,9 +24,9 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
   return (<>
     <View ref={triggerRef} collapsable={false}><AnimatedPressable onPress={show} style={{ alignSelf: 'flex-start' }} accessibilityRole="button" accessibilityLabel={`${title || 'Select'}: ${value || placeholder}`}>
       <View style={{
-        backgroundColor: theme.colors.card,
+        backgroundColor: colors.card,
         borderWidth: 1,
-        borderColor: theme.colors.border,
+        borderColor: colors.border,
         borderRadius: 10,
         paddingVertical: 8,
         paddingHorizontal: 12,
@@ -33,22 +34,22 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
         alignItems: 'center',
         gap: 6,
       }}>
-        <Text style={{ color: theme.colors.navy, fontWeight: '600', fontSize: 14 }}>{value || placeholder}</Text>
+        <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14 }}>{value || placeholder}</Text>
         <Icon name="chevron-down" />
       </View>
     </AnimatedPressable></View>
     <Modal visible={open} transparent animationType="fade" onRequestClose={hide}>
-      <Pressable onPress={hide} style={{ flex:1, backgroundColor:'rgba(0,0,0,0.15)' }} accessibilityRole="button" accessibilityLabel="Close dropdown">
+      <Pressable onPress={hide} style={{ flex:1, backgroundColor: colors.overlay }} accessibilityRole="button" accessibilityLabel="Close dropdown">
         <Pressable onPress={()=>{}} accessibilityRole="none" style={{
           position:'absolute', top, left, width:POPOVER_W,
-          backgroundColor: theme.colors.card,
-          borderWidth:1, borderColor: theme.colors.border,
+          backgroundColor: colors.card,
+          borderWidth:1, borderColor: colors.border,
           borderRadius: 14,
           padding:14, maxHeight:maxH,
           shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 6,
         }}>
           {title ? (<View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <Text style={{ color: theme.colors.navy, fontWeight:'700', fontSize: 15 }}>{title}</Text>
+            <Text style={{ color: colors.text, fontWeight:'700', fontSize: 15 }}>{title}</Text>
             <Pressable onPress={hide} accessibilityRole="button" accessibilityLabel="Close">
               <Icon name="close" />
             </Pressable>
@@ -58,12 +59,13 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
               value={query}
               onChangeText={setQuery}
               placeholder="Search…"
-              placeholderTextColor={theme.colors.subtext}
+              placeholderTextColor={colors.muted}
               accessibilityLabel="Search options"
               style={{
-                borderWidth:1, borderColor: theme.colors.border,
+                borderWidth:1, borderColor: colors.border,
                 borderRadius: 8,
-                padding:8, backgroundColor:'#fff', marginBottom:10, fontSize: 14,
+                padding:8, backgroundColor: colors.background, marginBottom:10, fontSize: 14,
+                color: colors.text,
               }}
             />
           ) : null}
@@ -75,12 +77,12 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
                   <View style={{
                     paddingVertical:10, paddingHorizontal: 8,
                     flexDirection:'row', alignItems:'center', justifyContent:'space-between',
-                    borderTopWidth: idx===0?0:1, borderColor: theme.colors.border,
-                    backgroundColor: selected ? TIFFANY_LIGHT : 'transparent',
+                    borderTopWidth: idx===0?0:1, borderColor: colors.border,
+                    backgroundColor: selected ? tiffanyLight : 'transparent',
                     borderRadius: selected ? 8 : 0,
                     marginVertical: selected ? 1 : 0,
                   }}>
-                    <Text style={{ color: selected ? TIFFANY : theme.colors.navy, fontWeight: selected?'700':'500', fontSize: 14 }}>{opt}</Text>
+                    <Text style={{ color: selected ? TIFFANY : colors.text, fontWeight: selected?'700':'500', fontSize: 14 }}>{opt}</Text>
                     {selected ? <Icon name="checkmark" color={TIFFANY} /> : null}
                   </View>
                 </AnimatedPressable>

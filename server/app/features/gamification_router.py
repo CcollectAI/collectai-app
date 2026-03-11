@@ -30,7 +30,7 @@ from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/gamification", tags=["gamification"])
+router = APIRouter(prefix="/gamification", tags=["Gamification"])
 
 # Rate limits
 _leaderboard_limit = per_user_rate_limit(30, window_seconds=60, scope="gamification_leaderboard")

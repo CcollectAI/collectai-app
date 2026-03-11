@@ -24,7 +24,7 @@ from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["catalog-browser"])
+router = APIRouter(tags=["Catalog Browser"])
 
 # Note: browse_catalog_items is public (no auth) and protected by the global
 # IP-based rate limit middleware. per_user_rate_limit is used only on

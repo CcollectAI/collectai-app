@@ -406,124 +406,9 @@ function BarcodeScanScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: inputMode === 'camera' ? 'Scan Barcode' : 'Import from URL' }} />
+      <Stack.Screen options={{ headerTitle: 'Scan Barcode' }} />
 
-      {/* Mode Toggle */}
       {scanState === 'scanning' && (
-        <View style={styles.modeToggleRow}>
-          <AnimatedPressable
-            style={[
-              styles.modeToggleButton,
-              inputMode === 'camera'
-                ? { backgroundColor: colors.accent }
-                : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
-            ]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); setInputMode('camera'); }}
-            accessibilityRole="button"
-            accessibilityLabel="Switch to camera scan mode"
-          >
-            <Ionicons name="scan-outline" size={22} color={inputMode === 'camera' ? '#fff' : colors.text} />
-            <Text style={[styles.modeToggleText, { color: inputMode === 'camera' ? '#fff' : colors.text }]}
-              allowFontScaling={false}
-            >
-              EAN / ISBN
-            </Text>
-          </AnimatedPressable>
-          <AnimatedPressable
-            style={[
-              styles.modeToggleButton,
-              inputMode === 'url'
-                ? { backgroundColor: colors.accent }
-                : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
-            ]}
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              if (userPlan === 'free') {
-                showToast({ message: 'URL import requires a Pro plan', type: 'warning' });
-                router.push('/subscription');
-                return;
-              }
-              setInputMode('url');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Switch to URL import mode"
-          >
-            <Ionicons name="link-outline" size={22} color={inputMode === 'url' ? '#fff' : colors.text} />
-            <Text style={[styles.modeToggleText, { color: inputMode === 'url' ? '#fff' : colors.text }]}
-              allowFontScaling={false}
-            >
-              Paste URL
-            </Text>
-            {userPlan === 'free' && (
-              <Ionicons name="lock-closed" size={15} color={inputMode === 'url' ? '#fff' : colors.muted} />
-            )}
-          </AnimatedPressable>
-        </View>
-      )}
-
-      {scanState === 'scanning' && inputMode === 'url' && (
-        <KeyboardAvoidingView
-          style={styles.scanningContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20}
-        >
-          <View style={styles.urlImportContainer}>
-            <View style={[styles.manualEntryCard, { backgroundColor: colors.card }]}>
-              <Text style={[styles.manualEntryTitle, { color: colors.text }]}>
-                Import from URL
-              </Text>
-              <Text style={[styles.manualEntryHelper, { color: colors.muted }]}>
-                Paste a link from eBay, Mercari, StockX, TCGPlayer, BrickLink, or other marketplaces
-              </Text>
-              <TextInput
-                style={[styles.urlInput, {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  color: colors.text,
-                }]}
-                placeholder="https://ebay.com/itm/..."
-                placeholderTextColor={colors.muted}
-                value={urlInput}
-                onChangeText={setUrlInput}
-                keyboardType="url"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="go"
-                onSubmitEditing={handleUrlSubmit}
-                accessibilityLabel="URL input field"
-                accessibilityHint="Paste a marketplace listing URL"
-              />
-              <AnimatedPressable
-                style={[styles.urlSubmitButton, {
-                  backgroundColor: colors.accent,
-                  opacity: !urlInput.startsWith('http') || isUrlSubmitting ? 0.5 : 1,
-                }]}
-                onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled }); handleUrlSubmit(); }}
-                disabled={!urlInput.startsWith('http') || isUrlSubmitting}
-                accessibilityLabel="Import from URL"
-                accessibilityRole="button"
-              >
-                {isUrlSubmitting ? (
-                  <ActivityIndicator size="small" color={colors.card} />
-                ) : (
-                  <>
-                    <Ionicons name="download-outline" size={18} color={colors.card} />
-                    <Text style={[styles.primaryButtonText, { color: colors.card }]}>Import</Text>
-                  </>
-                )}
-              </AnimatedPressable>
-            </View>
-            <View style={[styles.urlExamplesCard, { backgroundColor: colors.card }]}>
-              <Text style={[styles.urlExamplesTitle, { color: colors.muted }]}>Supported sites</Text>
-              <Text style={[styles.urlExamplesText, { color: colors.muted }]}>
-                eBay, Mercari, StockX, TCGPlayer, BrickLink, MyFigureCollection, Ktown4u, Weverse
-              </Text>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      )}
-
-      {scanState === 'scanning' && inputMode === 'camera' && (
         <KeyboardAvoidingView
           style={styles.scanningContainer}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -858,6 +743,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 16,
     marginHorizontal: 12,
+    marginTop: 4,
     overflow: 'hidden',
   },
   camera: {
@@ -1100,28 +986,8 @@ const styles = StyleSheet.create({
   manualEntryScrollContent: {
     flexGrow: 1,
   },
-  modeToggleRow: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 14,
-  },
-  modeToggleButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    minHeight: 52,
-  },
-  modeToggleText: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.2,
+  _modeToggleRemoved: {
+    // Mode toggle removed — barcode scan is now camera-only
   },
   urlImportContainer: {
     flex: 1,

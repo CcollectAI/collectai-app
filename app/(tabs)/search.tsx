@@ -1,4 +1,14 @@
 import { Redirect } from 'expo-router';
-export default function SearchRedirect() {
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+
+function SearchRedirect() {
   return <Redirect href="/(tabs)/marketplace" />;
+}
+
+export default function SearchRedirectWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Search">
+      <SearchRedirect />
+    </ScreenErrorBoundary>
+  );
 }

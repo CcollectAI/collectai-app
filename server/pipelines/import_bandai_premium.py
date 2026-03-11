@@ -1,18 +1,26 @@
 """
-Import Bandai Premium / P-Bandai exclusive figures catalog (500+ items).
+Import Bandai Premium / P-Bandai exclusive figures catalog (700+ items).
 
 Layer 1 (Catalog):  Curated P-Bandai exclusives → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
 Covers:
-- S.H.Figuarts web exclusives (Dragon Ball, Kamen Rider, Naruto, One Piece, Ultraman)
-- Robot Spirits (Gundam UC/Hathaway/WfM/SEED/00, Evangelion, Code Geass)
-- Chogokin / Soul of Chogokin vintage super robot
+- Gundam model kits (MG, PG, RG, HG P-Bandai exclusives, Clear/Coating/Titanium)
+- S.H.Figuarts web exclusives (Dragon Ball, Kamen Rider, Naruto, One Piece, Ultraman,
+  Marvel, Star Wars, Bleach, JoJo, Jujutsu Kaisen, Demon Slayer, My Hero Academia)
+- Robot Spirits (Gundam UC/Hathaway/WfM/SEED/SEED Freedom/00, Evangelion, Code Geass,
+  Full Metal Panic)
+- Super Robot Chogokin / Soul of Chogokin vintage super robot
 - Tamashii Nations event exclusives (TNE/SDCC/Tamashii World Tour)
 - Metal Build premium Gundam figures
-- DX Chogokin Macross Valkyries
+- DX Chogokin Macross Valkyries (all eras)
 - Figuarts ZERO Extra Battle (One Piece, Dragon Ball)
-- MG/PG/RG P-Bandai web exclusive model kits
+- MG/PG/RG/HG P-Bandai web exclusive model kits
+- Complete Selection Modification (CSM) Kamen Rider belts
+- Proplica prop replicas (Sailor Moon, Demon Slayer, Bleach, Dragon Ball)
+- S.H.MonsterArts (Godzilla, kaiju exclusives)
+- Figure-rise Standard / Figure-rise LABO
+- Premium candy toys (Super MiniPla/SMP), gashapon, Ichiban Kuji
 
 Usage:
     python -m pipelines.import_bandai_premium [--dry-run]
@@ -945,8 +953,271 @@ def _round7_bandai_expansion() -> list[tuple]:
     ]
 
 
+def _expansion_700_gunpla_pbandai() -> list[tuple]:
+    """P-Bandai exclusive Gunpla kits — MG/RG/HG coating, clear, titanium variants."""
+    return [
+        # MG P-Bandai exclusives
+        ("MG 1/100", "Wing Gundam Zero EW Ver.Ka (Special Coating)", "Gundam Wing EW", "P-Bandai", "high", 130),
+        ("MG 1/100", "Sazabi Ver.Ka (Special Coating)", "Gundam CCA", "P-Bandai", "high", 160),
+        ("MG 1/100", "Nu Gundam Ver.Ka (Titanium Finish)", "Gundam CCA", "P-Bandai", "high", 165),
+        ("MG 1/100", "Sinanju (Mechanical Clear)", "Gundam Unicorn", "P-Bandai", "high", 140),
+        ("MG 1/100", "Unicorn Gundam (Red/Green Frame Titanium)", "Gundam Unicorn", "P-Bandai", "high", 150),
+        ("MG 1/100", "Crossbone Gundam X1 Ver.Ka", "Crossbone Gundam", "P-Bandai", "mid", 85),
+        ("MG 1/100", "Gundam Mk-V", "Gundam Sentinel", "P-Bandai", "mid", 95),
+        ("MG 1/100", "Hazel Custom (Titans Color)", "Advance of Zeta", "P-Bandai", "mid", 90),
+        ("MG 1/100", "Powered GM", "Gundam 0083", "P-Bandai", "mid", 75),
+        ("MG 1/100", "Gundam Alex NT-1 Ver.2.0", "Gundam 0080", "P-Bandai", "mid", 80),
+        ("MG 1/100", "Rick Dom", "Mobile Suit Gundam", "P-Bandai", "mid", 75),
+        ("MG 1/100", "Zaku Cannon", "MSV", "P-Bandai", "mid", 70),
+        ("MG 1/100", "Gundam Exia Repair II", "Gundam 00", "P-Bandai", "mid", 85),
+        ("MG 1/100", "Gundam Kyrios", "Gundam 00", "P-Bandai", "mid", 80),
+        ("MG 1/100", "Gundam Virtue", "Gundam 00", "P-Bandai", "mid", 85),
+        ("MG 1/100", "Gundam Dynames", "Gundam 00", "P-Bandai", "mid", 80),
+        ("MG 1/100", "Gundam Astray Turn Red", "Gundam SEED Astray", "P-Bandai", "mid", 90),
+        ("MG 1/100", "Duel Gundam Assault Shroud", "Gundam SEED", "P-Bandai", "mid", 80),
+        ("MG 1/100", "Buster Gundam", "Gundam SEED", "P-Bandai", "mid", 75),
+        ("MG 1/100", "Blitz Gundam", "Gundam SEED", "P-Bandai", "mid", 75),
+        # RG P-Bandai exclusives
+        ("RG 1/144", "Strike Freedom Gundam (Titanium Finish)", "Gundam SEED Destiny", "P-Bandai", "mid", 80),
+        ("RG 1/144", "Destiny Gundam (Titanium Finish)", "Gundam SEED Destiny", "P-Bandai", "mid", 75),
+        ("RG 1/144", "00 Raiser (Trans-Am Clear)", "Gundam 00", "P-Bandai", "mid", 70),
+        ("RG 1/144", "Unicorn Gundam (Luminous Crystal)", "Gundam Unicorn", "P-Bandai", "mid", 80),
+        ("RG 1/144", "Banshee Norn (Final Battle Ver.)", "Gundam Unicorn", "P-Bandai", "mid", 75),
+        ("RG 1/144", "Nu Gundam (Metallic Coating)", "Gundam CCA", "P-Bandai", "mid", 80),
+        ("RG 1/144", "Sazabi (Special Coating)", "Gundam CCA", "P-Bandai", "mid", 80),
+        ("RG 1/144", "Gundam Astray Gold Frame Amatsu Hana", "Gundam SEED Astray", "P-Bandai", "mid", 70),
+        ("RG 1/144", "Freedom Gundam (Deactive Mode)", "Gundam SEED", "P-Bandai", "mid", 60),
+        # HG P-Bandai exclusives (Advance of Zeta, MSV, etc.)
+        ("HG 1/144", "Woundwort", "Advance of Zeta", "P-Bandai", "mid", 55),
+        ("HG 1/144", "Hazel II", "Advance of Zeta", "P-Bandai", "mid", 50),
+        ("HG 1/144", "Kehaar II", "Advance of Zeta", "P-Bandai", "mid", 50),
+        ("HG 1/144", "Hrududu II", "Advance of Zeta", "P-Bandai", "mid", 45),
+        ("HG 1/144", "Gaplant TR-5 Hrairoo", "Advance of Zeta", "P-Bandai", "mid", 55),
+        ("HG 1/144", "GM Quel", "Gundam 0083", "P-Bandai", "mid", 40),
+        ("HG 1/144", "Zaku I Sniper (Yonem Kirks)", "Gundam Thunderbolt", "P-Bandai", "mid", 40),
+        ("HG 1/144", "Atlas Gundam (Thunderbolt)", "Gundam Thunderbolt", "P-Bandai", "mid", 50),
+        ("HG 1/144", "Guncannon Detector", "Gundam Unicorn", "P-Bandai", "mid", 40),
+        ("HG 1/144", "Anksha", "Gundam Unicorn", "P-Bandai", "mid", 40),
+        ("HG 1/144", "Dreissen (Sleeves Custom)", "Gundam Unicorn", "P-Bandai", "mid", 45),
+    ]
+
+
+def _expansion_700_super_robot_chogokin() -> list[tuple]:
+    """Super Robot Chogokin & Soul of Chogokin exclusives."""
+    return [
+        ("Super Robot Chogokin", "Mazinger Z (Iron Cutter Edition)", "Mazinger Z", "P-Bandai", "high", 180),
+        ("Super Robot Chogokin", "Great Mazinger (Premium Edition)", "Great Mazinger", "P-Bandai", "high", 190),
+        ("Super Robot Chogokin", "Shin Getter 1 OVA Version", "Getter Robo", "P-Bandai", "high", 200),
+        ("Super Robot Chogokin", "Mazinkaiser SKL", "Mazinkaiser SKL", "Standard", "high", 170),
+        ("Super Robot Chogokin", "Genesic GaoGaiGar", "GaoGaiGar", "P-Bandai", "grail", 320),
+        ("Super Robot Chogokin", "Shin Mazinger Z (Gold Ver.)", "Shin Mazinger", "P-Bandai", "high", 200),
+        ("Super Robot Chogokin", "GaoFighGar", "GaoGaiGar FINAL", "P-Bandai", "high", 250),
+        ("Super Robot Chogokin", "Gravion Zwei Sol Gravion", "Gravion Zwei", "P-Bandai", "high", 220),
+        ("Soul of Chogokin", "GX-93 Space Pirate Captain Harlock", "Captain Harlock", "Standard", "high", 260),
+        ("Soul of Chogokin", "GX-92 Ideon", "Space Runaway Ideon", "Standard", "grail", 350),
+        ("Soul of Chogokin", "GX-79 Voltes V F.A.", "Voltes V", "Standard", "high", 270),
+        ("Soul of Chogokin", "GX-95 Gordian Warrior", "Gordian Warrior", "Standard", "high", 250),
+        ("Soul of Chogokin", "GX-81 Zamboace/Zambull/King Bial Set", "Zambot 3", "P-Bandai", "grail", 380),
+    ]
+
+
+def _expansion_700_shf_marvel_starwars() -> list[tuple]:
+    """S.H.Figuarts — Marvel & Star Wars exclusives."""
+    return [
+        # Marvel
+        ("S.H.Figuarts", "Iron Man Mark 50 Nano Weapon Set 2", "Avengers: Infinity War", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Iron Man Mark 85 (Final Battle Edition)", "Avengers: Endgame", "P-Bandai", "mid", 100),
+        ("S.H.Figuarts", "Captain America (Endgame Final Battle)", "Avengers: Endgame", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Thor (Endgame Final Battle)", "Avengers: Endgame", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Thanos (Final Battle Edition)", "Avengers: Endgame", "Standard", "mid", 110),
+        ("S.H.Figuarts", "Spider-Man (No Way Home Integrated Suit)", "Spider-Man: No Way Home", "P-Bandai", "mid", 85),
+        ("S.H.Figuarts", "Spider-Man (No Way Home Final Swing Suit)", "Spider-Man: No Way Home", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Doctor Strange (Multiverse of Madness)", "Doctor Strange MoM", "P-Bandai", "mid", 85),
+        ("S.H.Figuarts", "Black Panther (Wakanda Forever)", "Black Panther: Wakanda Forever", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Hulk (Avengers: Endgame)", "Avengers: Endgame", "P-Bandai", "mid", 100),
+        # Star Wars
+        ("S.H.Figuarts", "Darth Vader (Return of the Jedi)", "Star Wars", "Standard", "mid", 85),
+        ("S.H.Figuarts", "Darth Maul (Episode I)", "Star Wars", "Standard", "mid", 80),
+        ("S.H.Figuarts", "Luke Skywalker (Return of the Jedi)", "Star Wars", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Boba Fett (The Book of Boba Fett)", "Star Wars", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "The Mandalorian (Beskar Armor 2.0)", "Star Wars: The Mandalorian", "Standard", "mid", 85),
+        ("S.H.Figuarts", "Obi-Wan Kenobi (Revenge of the Sith)", "Star Wars", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Clone Trooper (Phase II)", "Star Wars", "P-Bandai", "mid", 85),
+        ("S.H.Figuarts", "Stormtrooper (A New Hope)", "Star Wars", "Standard", "mid", 70),
+        ("S.H.Figuarts", "Kylo Ren (The Rise of Skywalker)", "Star Wars", "P-Bandai", "mid", 80),
+        ("S.H.Figuarts", "Ahsoka Tano (The Mandalorian)", "Star Wars: The Mandalorian", "P-Bandai", "mid", 95),
+    ]
+
+
+def _expansion_700_shmonsterarts() -> list[tuple]:
+    """S.H.MonsterArts — Godzilla, Ultraman, and kaiju exclusives."""
+    return [
+        ("S.H.MonsterArts", "Godzilla (1954) First Generation", "Godzilla", "Standard", "high", 180),
+        ("S.H.MonsterArts", "Godzilla (1995 Burning)", "Godzilla vs. Destoroyah", "P-Bandai", "grail", 320),
+        ("S.H.MonsterArts", "Godzilla (2016 Shin Godzilla 2nd Form)", "Shin Godzilla", "P-Bandai", "high", 160),
+        ("S.H.MonsterArts", "Godzilla (2016 Shin Godzilla Frozen)", "Shin Godzilla", "P-Bandai", "high", 170),
+        ("S.H.MonsterArts", "Mothra (2019 King of the Monsters)", "Godzilla", "Standard", "high", 150),
+        ("S.H.MonsterArts", "Rodan (2019 King of the Monsters)", "Godzilla", "Standard", "high", 140),
+        ("S.H.MonsterArts", "Godzilla Earth (Planet of the Monsters)", "Godzilla Anime Trilogy", "P-Bandai", "high", 180),
+        ("S.H.MonsterArts", "Mechagodzilla (1974 Classic)", "Godzilla vs. Mechagodzilla", "P-Bandai", "high", 200),
+        ("S.H.MonsterArts", "Gigan (1972)", "Godzilla vs. Gigan", "P-Bandai", "high", 180),
+        ("S.H.MonsterArts", "Hedorah", "Godzilla vs. Hedorah", "P-Bandai", "high", 170),
+        ("S.H.MonsterArts", "Godzilla Junior", "Godzilla vs. Destoroyah", "P-Bandai", "mid", 120),
+        ("S.H.MonsterArts", "Kong (Godzilla x Kong: The New Empire)", "Godzilla x Kong", "Standard", "high", 140),
+        ("S.H.MonsterArts", "Skar King", "Godzilla x Kong", "P-Bandai", "high", 150),
+        ("S.H.MonsterArts", "Godzilla Evolved (Godzilla x Kong)", "Godzilla x Kong", "Standard", "high", 160),
+        ("S.H.MonsterArts", "Shimo", "Godzilla x Kong", "P-Bandai", "high", 150),
+    ]
+
+
+def _expansion_700_dx_chogokin_metal_build() -> list[tuple]:
+    """DX Chogokin Macross & Metal Build additions."""
+    return [
+        # DX Chogokin — Macross
+        ("DX Chogokin", "VF-0S Phoenix (Roy Focker)", "Macross Zero", "P-Bandai", "grail", 350),
+        ("DX Chogokin", "VF-0A Phoenix (Shin Kudo)", "Macross Zero", "P-Bandai", "high", 300),
+        ("DX Chogokin", "SV-51 Gamma (Nora Polyansky)", "Macross Zero", "P-Bandai", "high", 290),
+        ("DX Chogokin", "VF-171 Nightmare Plus (Armored)", "Macross Frontier", "P-Bandai", "high", 240),
+        ("DX Chogokin", "VF-25G Messiah (Michael Blanc)", "Macross Frontier", "P-Bandai", "high", 260),
+        ("DX Chogokin", "VF-19 Advance (Macross Frontier)", "Macross Frontier", "P-Bandai", "high", 280),
+        ("DX Chogokin", "VF-31F Siegfried (Messer Ihlefeld)", "Macross Delta", "P-Bandai", "high", 250),
+        ("DX Chogokin", "VF-31C Siegfried (Mirage Farina Jenius)", "Macross Delta", "P-Bandai", "high", 250),
+        ("DX Chogokin", "VF-31E Siegfried (Chuck Mustang)", "Macross Delta", "P-Bandai", "high", 240),
+        # Metal Build — Gundam SEED Freedom (2024 movie)
+        ("Metal Build", "Strike Freedom Gundam Type II", "Gundam SEED Freedom", "P-Bandai", "grail", 480),
+        ("Metal Build", "Mighty Strike Freedom Gundam", "Gundam SEED Freedom", "P-Bandai", "grail", 520),
+        ("Metal Build", "Immortal Justice Gundam", "Gundam SEED Freedom", "P-Bandai", "grail", 400),
+        ("Metal Build", "Rising Freedom Gundam", "Gundam SEED Freedom", "Standard", "high", 280),
+        ("Metal Build", "Destiny Gundam Spec II", "Gundam SEED Freedom", "P-Bandai", "grail", 420),
+        ("Metal Build", "Gundam Aerial (Full Weapons)", "Gundam: Witch from Mercury", "P-Bandai", "grail", 380),
+    ]
+
+
+def _expansion_700_robot_spirits_fmp() -> list[tuple]:
+    """Robot Spirits — Full Metal Panic, Gundam SEED Freedom, misc."""
+    return [
+        # Full Metal Panic
+        ("Robot Spirits", "ARX-7 Arbalest (Lambda Driver)", "Full Metal Panic! TSR", "P-Bandai", "mid", 95),
+        ("Robot Spirits", "ARX-8 Laevatein (Last Battle)", "Full Metal Panic! IV", "P-Bandai", "mid", 100),
+        ("Robot Spirits", "M9 Gernsback (Mao Custom)", "Full Metal Panic!", "P-Bandai", "mid", 80),
+        ("Robot Spirits", "M9D Falke", "Full Metal Panic!", "P-Bandai", "mid", 85),
+        ("Robot Spirits", "Plan-1055 Belial", "Full Metal Panic! IV", "P-Bandai", "mid", 90),
+        ("Robot Spirits", "Codarl (Venom)", "Full Metal Panic!", "P-Bandai", "mid", 80),
+        # Gundam SEED Freedom movie
+        ("Robot Spirits", "Rising Freedom Gundam ver. A.N.I.M.E.", "Gundam SEED Freedom", "P-Bandai", "high", 120),
+        ("Robot Spirits", "Immortal Justice Gundam ver. A.N.I.M.E.", "Gundam SEED Freedom", "P-Bandai", "high", 120),
+        ("Robot Spirits", "Destiny Gundam Spec II ver. A.N.I.M.E.", "Gundam SEED Freedom", "P-Bandai", "high", 130),
+        ("Robot Spirits", "Black Knight Squad Shi-ve.A ver. A.N.I.M.E.", "Gundam SEED Freedom", "P-Bandai", "mid", 90),
+        # Gundam misc
+        ("Robot Spirits", "Gundam Mk-III ver. A.N.I.M.E.", "Z-MSV", "P-Bandai", "mid", 90),
+        ("Robot Spirits", "Dijeh ver. A.N.I.M.E.", "Zeta Gundam", "P-Bandai", "mid", 85),
+        ("Robot Spirits", "Methuss ver. A.N.I.M.E.", "Zeta Gundam", "P-Bandai", "mid", 75),
+        ("Robot Spirits", "Barzam ver. A.N.I.M.E.", "Zeta Gundam", "P-Bandai", "mid", 70),
+        ("Robot Spirits", "Hamma Hamma ver. A.N.I.M.E.", "Gundam ZZ", "P-Bandai", "mid", 85),
+    ]
+
+
+def _expansion_700_csm_proplica_candy() -> list[tuple]:
+    """CSM Kamen Rider belts, Proplica props, candy toys & gashapon."""
+    return [
+        # CSM — Kamen Rider
+        ("CSM", "Amazon Driver", "Kamen Rider Amazon", "P-Bandai", "grail", 380),
+        ("CSM", "Typhoon Belt (Kamen Rider V3)", "Kamen Rider V3", "P-Bandai", "grail", 380),
+        ("CSM", "Accel Driver", "Kamen Rider W", "P-Bandai", "high", 300),
+        ("CSM", "Wizard Driver", "Kamen Rider Wizard", "P-Bandai", "grail", 340),
+        ("CSM", "Ghost Driver", "Kamen Rider Ghost", "P-Bandai", "high", 280),
+        ("CSM", "Drive Driver", "Kamen Rider Drive", "P-Bandai", "grail", 350),
+        ("CSM", "Sclashjelly & Sclash Driver", "Kamen Rider Build", "P-Bandai", "high", 280),
+        ("CSM", "Beyondriver", "Kamen Rider Zi-O", "P-Bandai", "high", 260),
+        ("CSM", "Shotriser (Kamen Rider Vulcan)", "Kamen Rider Zero-One", "P-Bandai", "high", 260),
+        ("CSM", "Revice Driver", "Kamen Rider Revice", "P-Bandai", "grail", 350),
+        # Proplica
+        ("Proplica", "Shinobu Kocho Nichirin Blade", "Demon Slayer", "P-Bandai", "high", 135),
+        ("Proplica", "Muichiro Tokito Nichirin Blade", "Demon Slayer", "P-Bandai", "high", 130),
+        ("Proplica", "Obanai Iguro Nichirin Blade", "Demon Slayer", "P-Bandai", "high", 130),
+        ("Proplica", "Mitsuri Kanroji Nichirin Blade", "Demon Slayer", "P-Bandai", "high", 140),
+        ("Proplica", "Sanemi Shinazugawa Nichirin Blade", "Demon Slayer", "P-Bandai", "high", 135),
+        ("Proplica", "Dragon Ball", "Dragon Ball", "Standard", "mid", 75),
+        ("Proplica", "Super Dragon Ball (Namekian)", "Dragon Ball Z", "P-Bandai", "mid", 85),
+        ("Proplica", "Demon Slayer Mark Sword (Yoriichi)", "Demon Slayer", "P-Bandai", "grail", 200),
+        ("Proplica", "Silver Crystal -Brilliant Color-", "Sailor Moon", "P-Bandai", "high", 130),
+        ("Proplica", "Chibi Moon Compact", "Sailor Moon SuperS", "P-Bandai", "mid", 95),
+        # Premium candy toys & gashapon
+        ("Shokugan", "Super MiniPla Gaogaigar Set", "GaoGaiGar", "Standard", "mid", 80),
+        ("Shokugan", "Super MiniPla Daizyujin (Megazord)", "Super Sentai Zyuranger", "Standard", "mid", 75),
+        ("Shokugan", "Super MiniPla Victory Robo", "Super Sentai GoGoV", "Standard", "mid", 70),
+        ("Shokugan", "Super MiniPla Dairen-Oh", "Super Sentai Dairanger", "Standard", "mid", 75),
+        ("Shokugan", "Super MiniPla Bio Robo", "Super Sentai Bioman", "P-Bandai", "mid", 80),
+        ("Shokugan", "SMP Dancouga (Full Set)", "Dancouga", "Standard", "mid", 90),
+        ("Shokugan", "SMP Godmars (Full Set)", "Six God Combination Godmars", "Standard", "mid", 85),
+        ("Shokugan", "SMP Baldios (Full Set)", "Space Warrior Baldios", "P-Bandai", "mid", 90),
+        ("Gashapon", "HG Gacha Evangelion Set (Complete)", "Evangelion", "Standard", "standard", 30),
+        ("Gashapon", "HG Gacha Godzilla 2024 Set", "Godzilla", "Standard", "standard", 25),
+    ]
+
+
+def _expansion_700_figurerise_misc() -> list[tuple]:
+    """Figure-rise Standard/LABO, misc Tamashii lines."""
+    return [
+        # Figure-rise Standard
+        ("Figure-rise Standard", "Kamen Rider Kuuga Mighty Form", "Kamen Rider Kuuga", "Standard", "mid", 40),
+        ("Figure-rise Standard", "Kamen Rider Faiz", "Kamen Rider 555", "Standard", "mid", 40),
+        ("Figure-rise Standard", "Kamen Rider Den-O Sword Form", "Kamen Rider Den-O", "Standard", "mid", 40),
+        ("Figure-rise Standard", "Kamen Rider OOO TaToBa Combo", "Kamen Rider OOO", "Standard", "mid", 40),
+        ("Figure-rise Standard", "Kamen Rider Double CycloneJoker (Gold Frame)", "Kamen Rider W", "P-Bandai", "mid", 55),
+        ("Figure-rise Standard", "Son Goku (New Spec Ver.)", "Dragon Ball Z", "Standard", "mid", 45),
+        ("Figure-rise Standard", "Vegeta (New Spec Ver.)", "Dragon Ball Z", "P-Bandai", "mid", 50),
+        ("Figure-rise Standard", "Cell Perfect Form", "Dragon Ball Z", "P-Bandai", "mid", 55),
+        ("Figure-rise Standard", "Frieza Final Form", "Dragon Ball Z", "Standard", "mid", 45),
+        ("Figure-rise Standard", "Amplified Dukemon (Gallantmon)", "Digimon", "Standard", "mid", 55),
+        ("Figure-rise Standard", "Amplified Magnamon", "Digimon", "P-Bandai", "mid", 65),
+        ("Figure-rise Standard", "Amplified Alphamon", "Digimon", "P-Bandai", "mid", 65),
+        # Figure-rise LABO
+        ("Figure-rise LABO", "Hatsune Miku V4X", "Vocaloid", "Standard", "mid", 50),
+        ("Figure-rise LABO", "Fumina Hoshino", "Gundam Build Fighters Try", "Standard", "mid", 45),
+        ("Figure-rise LABO", "Ladybug (Miraculous)", "Miraculous Ladybug", "Standard", "mid", 45),
+        # Ichiban Kuji / Lottery prizes
+        ("Ichiban Kuji", "Luffy Gear 5 Last One Prize", "One Piece", "Lottery Prize", "high", 180),
+        ("Ichiban Kuji", "Goku Ultra Instinct Last One Prize", "Dragon Ball Super", "Lottery Prize", "high", 160),
+        ("Ichiban Kuji", "Gojo Satoru Last One Prize", "Jujutsu Kaisen", "Lottery Prize", "high", 150),
+        ("Ichiban Kuji", "Tanjiro Kamado Last One Prize", "Demon Slayer", "Lottery Prize", "high", 140),
+        ("Ichiban Kuji", "Vegeta (Cell Saga) A Prize", "Dragon Ball Z", "Lottery Prize", "mid", 100),
+    ]
+
+
+def _expansion_700_shf_anime_tokusatsu() -> list[tuple]:
+    """S.H.Figuarts — additional anime, Bleach TYBW, My Hero Academia, misc."""
+    return [
+        # Bleach TYBW
+        ("S.H.Figuarts", "Ichigo Kurosaki (TYBW Bankai)", "Bleach TYBW", "Standard", "mid", 80),
+        ("S.H.Figuarts", "Byakuya Kuchiki (TYBW)", "Bleach TYBW", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Kenpachi Zaraki (TYBW)", "Bleach TYBW", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Sosuke Aizen (TYBW)", "Bleach TYBW", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Uryu Ishida (TYBW)", "Bleach TYBW", "P-Bandai", "mid", 80),
+        ("S.H.Figuarts", "Renji Abarai (TYBW)", "Bleach TYBW", "P-Bandai", "mid", 85),
+        # My Hero Academia
+        ("S.H.Figuarts", "Izuku Midoriya (Full Cowling)", "My Hero Academia", "Standard", "mid", 70),
+        ("S.H.Figuarts", "All Might (Weakened Form)", "My Hero Academia", "P-Bandai", "mid", 95),
+        ("S.H.Figuarts", "Katsuki Bakugo", "My Hero Academia", "Standard", "mid", 70),
+        ("S.H.Figuarts", "Shoto Todoroki", "My Hero Academia", "P-Bandai", "mid", 80),
+        # Dragon Ball Daima (2024)
+        ("S.H.Figuarts", "Piccolo (Daima Mini Ver.)", "Dragon Ball Daima", "P-Bandai", "mid", 85),
+        ("S.H.Figuarts", "Glorio (Daima)", "Dragon Ball Daima", "P-Bandai", "mid", 80),
+        ("S.H.Figuarts", "Masked Majin (Daima)", "Dragon Ball Daima", "P-Bandai", "mid", 90),
+        # One Piece (Film Red / Egghead)
+        ("S.H.Figuarts", "Zoro (Egghead Arc)", "One Piece", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Sanji (Egghead Arc)", "One Piece", "P-Bandai", "mid", 85),
+        ("S.H.Figuarts", "Jinbe (Wano)", "One Piece", "P-Bandai", "mid", 85),
+        # Kamen Rider (2024-2025 shows)
+        ("S.H.Figuarts", "Kamen Rider Gavv Gummy Form", "Kamen Rider Gavv", "P-Bandai", "mid", 80),
+        ("S.H.Figuarts", "Kamen Rider Gavv Chocolate Form", "Kamen Rider Gavv", "P-Bandai", "mid", 80),
+        ("S.H.Figuarts", "Kamen Rider Gotchard (Platinum Chemistry)", "Kamen Rider Gotchard", "P-Bandai", "mid", 90),
+        ("S.H.Figuarts", "Kamen Rider Gotchard (Tornado Hawk)", "Kamen Rider Gotchard", "P-Bandai", "mid", 80),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
-    """Curated Bandai Premium / P-Bandai exclusives catalog (500+ items)."""
+    """Curated Bandai Premium / P-Bandai exclusives catalog (700+ items)."""
 
     # (line, name, franchise, exclusive_type, rarity_tier, price_eur)
     # rarity_tier: grail (>300), high (150-300), mid (60-150), standard (<60)
@@ -1167,6 +1438,15 @@ def get_curated_catalog() -> list[dict]:
     items += _additional_sdcs_and_misc_kits()
     items += _additional_tamashii_2025_expansion()
     items += _round7_bandai_expansion()
+    items += _expansion_700_gunpla_pbandai()
+    items += _expansion_700_super_robot_chogokin()
+    items += _expansion_700_shf_marvel_starwars()
+    items += _expansion_700_shmonsterarts()
+    items += _expansion_700_dx_chogokin_metal_build()
+    items += _expansion_700_robot_spirits_fmp()
+    items += _expansion_700_csm_proplica_candy()
+    items += _expansion_700_figurerise_misc()
+    items += _expansion_700_shf_anime_tokusatsu()
 
     catalog = []
     for line, name, franchise, exclusive_type, tier, price in items:

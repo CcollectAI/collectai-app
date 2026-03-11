@@ -20,7 +20,7 @@ from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/activity", tags=["activity"])
+router = APIRouter(prefix="/activity", tags=["Activity"])
 
 _activity_log_limit = per_user_rate_limit(30, window_seconds=60, scope="activity_log")
 logger = logging.getLogger(__name__)

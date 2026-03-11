@@ -15,7 +15,7 @@ from app.auth import get_current_user_id
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/search", tags=["search"])
+router = APIRouter(prefix="/search", tags=["Search"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 60 unified search requests per minute (runs 4 DB queries per call)

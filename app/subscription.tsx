@@ -105,6 +105,7 @@ function SubscriptionScreen() {
   const { showToast } = useToast();
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [billingUnavailable, setBillingUnavailable] = useState(false);
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
   useEffect(() => {
@@ -112,7 +113,7 @@ function SubscriptionScreen() {
     getBillingStatus()
       .then(setBilling)
       .catch(() => {
-        showToast({ message: 'Could not load subscription info. Please try again later.', type: 'error' });
+        setBillingUnavailable(true);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -187,6 +188,16 @@ function SubscriptionScreen() {
 
         {loading ? (
           <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
+        ) : billingUnavailable ? (
+          <View style={styles.comingSoonSection}>
+            <View style={[styles.comingSoonIcon, { backgroundColor: colors.accent + '15' }]}>
+              <Ionicons name="rocket-outline" size={40} color={colors.accent} />
+            </View>
+            <Text style={[styles.comingSoonTitle, { color: colors.text }]}>Subscriptions Coming Soon</Text>
+            <Text style={[styles.comingSoonText, { color: colors.muted }]}>
+              We're setting up premium plans with advanced analytics, deal discovery, and more. Stay tuned!
+            </Text>
+          </View>
         ) : (
           <View style={styles.plans}>
             <PlanCard
@@ -353,5 +364,28 @@ const styles = StyleSheet.create({
   manageBtnText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  comingSoonSection: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+  },
+  comingSoonIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  comingSoonTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  comingSoonText: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });

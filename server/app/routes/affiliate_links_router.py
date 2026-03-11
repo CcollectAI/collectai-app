@@ -20,7 +20,7 @@ from app.rate_limit import per_ip_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/marketplace", tags=["marketplace"])
+router = APIRouter(prefix="/marketplace", tags=["Marketplace"])
 
 # Per-IP: 100 requests per minute for public affiliate links
 _affiliate_ip_limit = per_ip_rate_limit(100, scope="affiliate")
@@ -91,7 +91,7 @@ def _build_amiami_search_url(query: str) -> str:
     return f"https://www.amiami.com/eng/search/list/?s_keywords={quote_plus(query)}"
 
 
-@router.get("/affiliate-links", response_model=AffiliateLinksResponse, dependencies=[Depends(_affiliate_ip_limit)])
+@router.get("/affiliate-links", response_model=AffiliateLinksResponse, dependencies=[Depends(_affiliate_ip_limit)], summary="Get affiliate search links")
 async def get_affiliate_links(
     query: str = Query(..., min_length=1, max_length=500, description="Search query"),
     category: Optional[str] = Query(None, max_length=64, description="Item category"),
@@ -218,7 +218,7 @@ class TagAffiliateUrlResponse(BaseModel):
     source: str
 
 
-@router.post("/affiliate-url", response_model=TagAffiliateUrlResponse, dependencies=[Depends(_affiliate_ip_limit)])
+@router.post("/affiliate-url", response_model=TagAffiliateUrlResponse, dependencies=[Depends(_affiliate_ip_limit)], summary="Tag URL with affiliate params")
 async def tag_affiliate_url(
     payload: TagAffiliateUrlRequest,
     user_id: Optional[str] = Depends(get_optional_user_id),

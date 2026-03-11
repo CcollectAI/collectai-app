@@ -31,7 +31,7 @@ _intake_user_limit = per_user_rate_limit(30, scope="intake")
 
 router = APIRouter(
     prefix="/intake",
-    tags=["intake"],
+    tags=["Intake"],
     dependencies=[Depends(get_current_user_id), Depends(_intake_user_limit)],
 )
 
@@ -371,7 +371,7 @@ def _is_valid_image(data: bytes) -> bool:
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@router.post("/process", response_model=IntakeResultResponse)
+@router.post("/process", response_model=IntakeResultResponse, summary="Full intake processing", description="Accepts multipart form with optional image, barcode, and user hints. Barcode is tried first when both are provided, with vision as fallback.")
 async def intake_process(
     file: Optional[UploadFile] = File(None, description="Image of the collectible item"),
     barcode: Optional[str] = Form(None, max_length=50),
@@ -447,7 +447,7 @@ async def intake_process(
     return _intake_to_response(result)
 
 
-@router.post("/barcode-only", response_model=IntakeResultResponse)
+@router.post("/barcode-only", response_model=IntakeResultResponse, summary="Barcode-only intake")
 async def intake_barcode_only(
     req: BarcodeOnlyRequest,
     user_id: str = Depends(get_current_user_id),
@@ -499,7 +499,7 @@ async def intake_barcode_only(
     return _intake_to_response(result)
 
 
-@router.post("/image-only", response_model=IntakeResultResponse)
+@router.post("/image-only", response_model=IntakeResultResponse, summary="Image-only intake")
 async def intake_image_only(
     file: UploadFile = File(..., description="Image of the collectible item"),
     category: Optional[str] = Form(None, max_length=64),
@@ -565,7 +565,7 @@ async def intake_image_only(
     return _intake_to_response(result)
 
 
-@router.post("/url", response_model=IntakeResultResponse)
+@router.post("/url", response_model=IntakeResultResponse, summary="Import from URL", description="Paste a marketplace listing URL to get structured item data. Supports eBay, Mercari, StockX, TCGPlayer, BrickLink, and more.")
 async def intake_url(
     req: UrlImportRequest,
     user_id: str = Depends(get_current_user_id),
@@ -639,7 +639,7 @@ def _normalize_key(title: str) -> str:
     return key[:200]
 
 
-@router.post("/save", response_model=IntakeSaveResponse)
+@router.post("/save", response_model=IntakeSaveResponse, summary="Save intake result to collection", description="Persist an intake result as a new item in the user's collection. Called after scan identification when the user taps 'Add to Collection'.")
 async def intake_save(
     payload: IntakeSaveRequest,
     user_id: str = Depends(get_current_user_id),
@@ -747,7 +747,7 @@ async def intake_save(
 _multi_detect_limit = per_user_rate_limit(10, scope="intake_multi_detect")
 
 
-@router.post("/multi-detect", response_model=MultiDetectResponse, dependencies=[Depends(_multi_detect_limit)])
+@router.post("/multi-detect", response_model=MultiDetectResponse, dependencies=[Depends(_multi_detect_limit)], summary="Detect multiple items in image", description="Returns bounding boxes and category hints for each detected item in a single photograph.")
 async def intake_multi_detect(
     file: UploadFile = File(..., description="Image with multiple collectible items"),
     user_id: str = Depends(get_current_user_id),

@@ -55,7 +55,7 @@ interface CategorySpecificSectionProps {
   onSizeValueChange: (size: string) => void;
 }
 
-export function CategorySpecificSection({
+function CategorySpecificSectionInner({
   categorySlug,
   isDraft,
   itemId,
@@ -1239,3 +1239,5 @@ const s = StyleSheet.create({
   authLinkBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1 },
   authLinkBtnText: { fontSize: 13, fontWeight: "600" },
 });
+
+export const CategorySpecificSection = React.memo(CategorySpecificSectionInner);

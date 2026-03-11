@@ -109,7 +109,7 @@ export function ProvenanceTimeline({
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="small" color={colors.accent} />
         <Text style={[styles.loadingText, { color: colors.muted }]}>
-          Loading provenance...
+          Loading history...
         </Text>
       </View>
     );
@@ -120,7 +120,7 @@ export function ProvenanceTimeline({
       <View style={styles.emptyContainer}>
         <Ionicons name="document-text-outline" size={28} color={colors.muted} />
         <Text style={[styles.emptyText, { color: colors.muted }]}>
-          No provenance history yet
+          No history yet
         </Text>
       </View>
     );

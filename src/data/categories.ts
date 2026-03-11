@@ -583,6 +583,7 @@ export const CATEGORIES: Category[] = [
     collections: [
       { id: 'rg-nes-snes', name: 'NES & SNES Classics', itemCount: 0 },
       { id: 'rg-n64', name: 'N64 Collection', itemCount: 0 },
+      { id: 'rg-backyard-sports', name: 'Backyard Sports', itemCount: 0 },
     ],
     externalMarketplaces: [
       {

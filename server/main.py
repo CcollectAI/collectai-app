@@ -390,6 +390,14 @@ async def ops_worker_status(_: bool = Depends(require_ops_key)):
     return get_status()
 
 
+@app.get("/ops/worker-overdue")
+async def ops_worker_overdue(_: bool = Depends(require_ops_key)):
+    """Return list of workers that haven't run within 1.5x their expected interval."""
+    from app.worker_registry import get_overdue_workers
+    overdue = get_overdue_workers()
+    return {"overdue": overdue, "count": len(overdue)}
+
+
 @app.get("/ops/cache")
 async def ops_cache(_: bool = Depends(require_ops_key)):
     from app.cache import cache_stats

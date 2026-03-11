@@ -358,6 +358,9 @@ function ThreadDetailScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderMessage}
           contentContainerStyle={styles.messageList}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
           ListEmptyComponent={

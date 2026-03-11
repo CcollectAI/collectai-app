@@ -29,19 +29,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
 import type { EventKind, CreateEventInput, EventTemplate } from '@/data/events';
-import { CATEGORIES } from '@/constants/categories';
+// CATEGORIES moved to EventFormHeader
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useFormField, validateAll } from '@/hooks/useFormField';
 import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
-import CompactSelect from '@/components/CompactSelect';
+// CompactSelect moved to EventFormHeader
 import { BottomSheetModal } from '@/components/BottomSheetModal';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { KIND_ICON } from '@/constants/eventConstants';
+import { EventFormHeader } from '@/components/events/EventFormHeader';
+import { EventDateTimePicker } from '@/components/events/EventDateTimePicker';
+import { EventLocationSection } from '@/components/events/EventLocationSection';
+import { EventTicketingSection } from '@/components/events/EventTicketingSection';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -50,13 +54,7 @@ import { KIND_ICON } from '@/constants/eventConstants';
 type SaveState = 'idle' | 'saving';
 type EventFormat = 'in_person' | 'online' | 'hybrid';
 
-const EVENT_KINDS: { label: string; value: EventKind }[] = [
-  { label: 'Meetup', value: 'meetup' },
-  { label: 'Drop', value: 'collection_drop' },
-  { label: 'Stream', value: 'stream' },
-  { label: 'Convention', value: 'convention' },
-  { label: 'Release', value: 'release' },
-];
+// EVENT_KINDS moved to EventFormHeader component
 
 const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ionicons.glyphMap }[] = [
   { label: 'In-Person', value: 'in_person', icon: 'location-outline' },
@@ -298,70 +296,14 @@ const CreateEventScreen: React.FC = () => {
             </AnimatedPressable>
           )}
 
-          {/* ============================================================== */}
-          {/*  Section: Basic Information                                     */}
-          {/* ============================================================== */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Basic Information</Text>
-            </View>
-
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              {/* Title */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>
-                  Title <Text style={{ color: colors.accent }}>*</Text>
-                </Text>
-                <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={titleField.value}
-                    onChangeText={titleField.onChange}
-                    onBlur={titleField.onBlur}
-                    placeholder="e.g. Rotterdam TCG Meetup"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    accessibilityLabel="Event title"
-                  />
-                </View>
-                {titleField.touched && titleField.error && <Text style={styles.fieldError}>{titleField.error}</Text>}
-              </View>
-
-              {/* Kind dropdown */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>Kind</Text>
-                <CompactSelect
-                  title="Kind"
-                  value={EVENT_KINDS.find((k) => k.value === kind)?.label}
-                  options={EVENT_KINDS.map((k) => k.label)}
-                  onChange={(label) => {
-                    const match = EVENT_KINDS.find((k) => k.label === label);
-                    if (match) setKind(match.value);
-                  }}
-                />
-              </View>
-
-              {/* Category dropdown */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>Category (optional)</Text>
-                <CompactSelect
-                  title="Category"
-                  searchable
-                  value={categoryId ? CATEGORIES.find((c) => c.slug === categoryId)?.name ?? 'None' : 'None'}
-                  options={['None', ...CATEGORIES.map((c) => c.name)]}
-                  onChange={(name) => {
-                    if (name === 'None') {
-                      setCategoryId(undefined);
-                    } else {
-                      const match = CATEGORIES.find((c) => c.name === name);
-                      if (match) setCategoryId(match.slug);
-                    }
-                  }}
-                />
-              </View>
-            </View>
-          </View>
+          {/* Section: Basic Information */}
+          <EventFormHeader
+            titleField={titleField}
+            kind={kind}
+            onKindChange={setKind}
+            categoryId={categoryId}
+            onCategoryChange={setCategoryId}
+          />
 
           {/* ============================================================== */}
           {/*  Section: Format                                                */}
@@ -410,164 +352,33 @@ const CreateEventScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* ============================================================== */}
-          {/*  Section: Date & Time                                           */}
-          {/* ============================================================== */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="calendar-outline" size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Date & Time</Text>
-            </View>
+          {/* Section: Date & Time */}
+          <EventDateTimePicker
+            dateField={dateField}
+            time={time}
+            onTimeChange={setTime}
+            endDate={endDate}
+            onEndDateChange={setEndDate}
+          />
 
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              {/* Date */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>
-                  Date <Text style={{ color: colors.accent }}>*</Text>
-                </Text>
-                <View style={[styles.inputWrap, { borderColor: dateField.touched && dateField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={dateField.value}
-                    onChangeText={dateField.onChange}
-                    onBlur={dateField.onBlur}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    accessibilityLabel="Event date"
-                  />
-                </View>
-                {dateField.touched && dateField.error && <Text style={styles.fieldError}>{dateField.error}</Text>}
-              </View>
-
-              {/* Time */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>Time (optional)</Text>
-                <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="time-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={time}
-                    onChangeText={setTime}
-                    placeholder="19:30 CET"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    accessibilityLabel="Event time"
-                  />
-                </View>
-              </View>
-
-              {/* End Date */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>End Date (optional, for multi-day)</Text>
-                <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={endDate}
-                    onChangeText={setEndDate}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    accessibilityLabel="Event end date"
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* ============================================================== */}
-          {/*  Section: Location / Online URL                                 */}
-          {/* ============================================================== */}
-          {(showLocation || showOnlineUrl) && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name="location-outline" size={16} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  {showLocation && showOnlineUrl ? 'Location & Link' : showLocation ? 'Location' : 'Online Link'}
-                </Text>
-              </View>
-
-              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {/* Physical location */}
-                {showLocation && (
-                  <View style={styles.fieldBlock}>
-                    <Text style={[styles.fieldLabel, { color: colors.text }]}>Location</Text>
-                    <View style={styles.locationRow}>
-                      <View
-                        style={[
-                          styles.inputWrap,
-                          styles.locationInput,
-                          { borderColor: colors.border, backgroundColor: colors.background },
-                        ]}
-                      >
-                        <Ionicons name="location-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                        <TextInput
-                          value={location}
-                          onChangeText={(text) => {
-                            setLocation(text);
-                            // Clear coordinates when user manually edits
-                            if (latitude !== undefined) {
-                              setLatitude(undefined);
-                              setLongitude(undefined);
-                            }
-                          }}
-                          placeholder="e.g. Amsterdam, Netherlands"
-                          placeholderTextColor={colors.muted}
-                          style={[styles.input, { color: colors.text }]}
-                          accessibilityLabel="Event location"
-                        />
-                      </View>
-                      <AnimatedPressable
-                        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleUseMyLocation(); }}
-                        disabled={geoLoading}
-                        style={[
-                          styles.geoButton,
-                          {
-                            backgroundColor: colors.accent + '15',
-                            borderColor: colors.accent + '40',
-                          },
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel="Use my current location"
-                      >
-                        {geoLoading ? (
-                          <ActivityIndicator size="small" color={colors.accent} />
-                        ) : (
-                          <Ionicons name="navigate-outline" size={18} color={colors.accent} />
-                        )}
-                      </AnimatedPressable>
-                    </View>
-                    {latitude !== undefined && longitude !== undefined && (
-                      <Text style={[styles.geoHint, { color: colors.muted }]}>
-                        Coordinates captured ({latitude.toFixed(4)}, {longitude.toFixed(4)})
-                      </Text>
-                    )}
-                  </View>
-                )}
-
-                {/* Online URL */}
-                {showOnlineUrl && (
-                  <View style={showLocation ? styles.fieldBlock : undefined}>
-                    <Text style={[styles.fieldLabel, { color: colors.text }]}>Online URL</Text>
-                    <View style={[styles.inputWrap, { borderColor: onlineUrlField.touched && onlineUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
-                      <Ionicons name="link-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                      <TextInput
-                        value={onlineUrlField.value}
-                        onChangeText={onlineUrlField.onChange}
-                        onBlur={onlineUrlField.onBlur}
-                        placeholder="https://..."
-                        placeholderTextColor={colors.muted}
-                        style={[styles.input, { color: colors.text }]}
-                        autoCapitalize="none"
-                        keyboardType="url"
-                        accessibilityLabel="Online event URL"
-                      />
-                    </View>
-                    {onlineUrlField.touched && onlineUrlField.error && <Text style={styles.fieldError}>{onlineUrlField.error}</Text>}
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
+          {/* Section: Location / Online URL */}
+          <EventLocationSection
+            showLocation={showLocation}
+            showOnlineUrl={showOnlineUrl}
+            location={location}
+            onLocationChange={(text) => {
+              setLocation(text);
+              if (latitude !== undefined) {
+                setLatitude(undefined);
+                setLongitude(undefined);
+              }
+            }}
+            onUseMyLocation={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleUseMyLocation(); }}
+            geoLoading={geoLoading}
+            latitude={latitude}
+            longitude={longitude}
+            onlineUrlField={onlineUrlField}
+          />
 
           {/* ============================================================== */}
           {/*  Section: Description                                           */}
@@ -645,35 +456,12 @@ const CreateEventScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* ============================================================== */}
-          {/*  Section: Ticket Price (meetup/convention only)                 */}
-          {/* ============================================================== */}
+          {/* Section: Ticket Price (meetup/convention only) */}
           {(kind === 'meetup' || kind === 'convention') && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name="ticket-outline" size={16} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Ticket Price (optional)</Text>
-              </View>
-
-              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>Price in EUR (leave empty for free)</Text>
-                <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <Text style={{ color: colors.muted, marginRight: 4, fontSize: 16 }}>{'\u20AC'}</Text>
-                  <TextInput
-                    value={ticketPriceCents}
-                    onChangeText={setTicketPriceCents}
-                    placeholder="0.00"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    keyboardType="decimal-pad"
-                    accessibilityLabel="Ticket price in euros"
-                  />
-                </View>
-                <Text style={[styles.fieldHint, { color: colors.muted }]}>
-                  A 5% platform fee applies to paid tickets.
-                </Text>
-              </View>
-            </View>
+            <EventTicketingSection
+              ticketPriceCents={ticketPriceCents}
+              onTicketPriceChange={setTicketPriceCents}
+            />
           )}
 
           {/* ============================================================== */}
@@ -737,7 +525,7 @@ const CreateEventScreen: React.FC = () => {
                 </View>
                 <Switch
                   value={isPublic}
-                  onValueChange={setIsPublic}
+                  onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setIsPublic(v); }}
                   trackColor={{ false: colors.border, true: colors.accent + '60' }}
                   thumbColor={isPublic ? colors.accent : colors.muted}
                   ios_backgroundColor={colors.border}
@@ -762,7 +550,7 @@ const CreateEventScreen: React.FC = () => {
                 </View>
                 <Switch
                   value={saveAsTemplate}
-                  onValueChange={setSaveAsTemplate}
+                  onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setSaveAsTemplate(v); }}
                   trackColor={{ false: colors.border, true: colors.accent + '60' }}
                   thumbColor={saveAsTemplate ? colors.accent : colors.muted}
                   ios_backgroundColor={colors.border}
@@ -971,28 +759,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  /* Location row with geo button */
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  locationInput: {
-    flex: 1,
-  },
-  geoButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  geoHint: {
-    fontSize: 11,
-    marginTop: 4,
-    marginLeft: 4,
-  },
+  // (locationRow, locationInput, geoButton, geoHint moved to EventLocationSection)
 
   /* Public / Private toggle */
   toggleRow: {
@@ -1065,11 +832,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 4,
   },
-  fieldHint: {
-    fontSize: 12,
-    marginTop: 6,
-    marginLeft: 4,
-  },
+  // (fieldHint moved to EventTicketingSection)
 
   /* Bullet-point description */
   bulletList: {

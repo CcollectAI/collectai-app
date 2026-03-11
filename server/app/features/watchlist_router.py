@@ -14,7 +14,7 @@ from app.rate_limit import per_user_rate_limit
 
 import logging
 
-router = APIRouter(prefix="/watchlist", tags=["watchlist"])
+router = APIRouter(prefix="/watchlist", tags=["Watchlist"])
 
 _watchlist_write_limit = per_user_rate_limit(30, window_seconds=60, scope="watchlist_write")
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class WatchlistResponse(BaseModel):
 _WATCHLIST: dict[str, list[WatchlistItem]] = {}
 
 
-@router.get("/mine", response_model=WatchlistResponse)
+@router.get("/mine", response_model=WatchlistResponse, summary="List watchlist items")
 async def get_my_watchlist(
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
@@ -102,7 +102,7 @@ async def get_my_watchlist(
     return WatchlistResponse(items=items[offset:offset + limit])
 
 
-@router.post("/mine", response_model=WatchlistItem)
+@router.post("/mine", response_model=WatchlistItem, summary="Add item to watchlist")
 async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_current_user_id), _rl=Depends(_watchlist_write_limit)) -> WatchlistItem:
     pool = get_db_pool()
 
@@ -155,7 +155,7 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
     return item
 
 
-@router.delete("/mine/{watch_id}", response_model=WatchlistResponse)
+@router.delete("/mine/{watch_id}", response_model=WatchlistResponse, summary="Remove from watchlist")
 async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_current_user_id), _rl=Depends(_watchlist_write_limit)) -> WatchlistResponse:
     pool = get_db_pool()
 

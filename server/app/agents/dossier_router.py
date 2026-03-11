@@ -27,7 +27,7 @@ from app.errors import error_response
 from app.lib.error_codes import ErrorCode
 from app.agents.dossier_agent import generate_dossier, ItemDossier
 
-router = APIRouter(prefix="/dossier", tags=["dossier"])
+router = APIRouter(prefix="/dossier", tags=["Dossier"])
 logger = logging.getLogger(__name__)
 
 

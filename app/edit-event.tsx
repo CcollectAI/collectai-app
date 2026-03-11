@@ -686,7 +686,7 @@ const EditEventScreen: React.FC = () => {
                 </View>
                 <Switch
                   value={isPublic}
-                  onValueChange={setIsPublic}
+                  onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setIsPublic(v); }}
                   trackColor={{ false: colors.border, true: colors.accent + '60' }}
                   thumbColor={isPublic ? colors.accent : colors.muted}
                   ios_backgroundColor={colors.border}

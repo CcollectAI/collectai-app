@@ -6,6 +6,7 @@
  * on the category overview page.
  */
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
   View,
   Text,
@@ -33,7 +34,7 @@ import logger from "@/utils/logger";
 
 type FilterMode = "all" | "missing" | "owned";
 
-export default function CategoryBrowseScreen() {
+function CategoryBrowseScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -526,3 +527,11 @@ const s = StyleSheet.create({
     lineHeight: 20,
   },
 });
+
+export default function CategoryBrowseScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Category Browse">
+      <CategoryBrowseScreen />
+    </ScreenErrorBoundary>
+  );
+}

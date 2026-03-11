@@ -22,7 +22,7 @@ from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/social", tags=["social"])
+router = APIRouter(prefix="/social", tags=["Social"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 30 search requests per minute (expensive DB queries)

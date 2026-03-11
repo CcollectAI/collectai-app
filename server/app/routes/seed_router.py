@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from app.auth import require_ops_key
 
-router = APIRouter(prefix="/ops", tags=["ops"])
+router = APIRouter(prefix="/ops", tags=["Ops"])
 _log = logging.getLogger("collectai.seed_router")
 
 
@@ -50,7 +50,7 @@ class CleanupResponse(BaseModel):
 # POST /ops/seed-users
 # ---------------------------------------------------------------------------
 
-@router.post("/seed-users", response_model=SeedResponse)
+@router.post("/seed-users", response_model=SeedResponse, summary="Create seed test users")
 async def seed_users(
     dry_run: bool = Query(False, description="Preview without creating anything"),
     _: bool = Depends(require_ops_key),
@@ -70,7 +70,7 @@ async def seed_users(
 # DELETE /ops/seed-users
 # ---------------------------------------------------------------------------
 
-@router.delete("/seed-users", response_model=CleanupResponse)
+@router.delete("/seed-users", response_model=CleanupResponse, summary="Remove seed test users")
 async def delete_seed_users(
     _: bool = Depends(require_ops_key),
 ):

@@ -1,0 +1,2042 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Skeleton snapshots matches snapshot with custom dimensions 1`] = `
+<View
+  accessibilityLabel="Loading"
+  accessibilityRole="none"
+  collapsable={false}
+  style={
+    {
+      "backgroundColor": "#E2E8F0",
+      "borderRadius": 12,
+      "height": 40,
+      "opacity": 0.3,
+      "width": 200,
+    }
+  }
+/>
+`;
+
+exports[`Skeleton snapshots matches snapshot with default props 1`] = `
+<View
+  accessibilityLabel="Loading"
+  accessibilityRole="none"
+  collapsable={false}
+  style={
+    {
+      "backgroundColor": "#E2E8F0",
+      "borderRadius": 4,
+      "height": 16,
+      "opacity": 0.3,
+      "width": "100%",
+    }
+  }
+/>
+`;
+
+exports[`SkeletonAnalytics snapshot matches snapshot 1`] = `
+<View
+  style={
+    [
+      {
+        "borderRadius": 12,
+        "marginBottom": 12,
+        "padding": 16,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+    ]
+  }
+>
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 6,
+        "height": 24,
+        "opacity": 0.3,
+        "width": "50%",
+      }
+    }
+  />
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 12,
+        "height": 120,
+        "marginTop": 16,
+        "opacity": 0.3,
+        "width": "100%",
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginTop": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "opacity": 0.3,
+          "width": "30%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "opacity": 0.3,
+          "width": "30%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "opacity": 0.3,
+          "width": "30%",
+        }
+      }
+    />
+  </View>
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 4,
+        "height": 12,
+        "marginTop": 12,
+        "opacity": 0.3,
+        "width": "80%",
+      }
+    }
+  />
+</View>
+`;
+
+exports[`SkeletonCategoryPills snapshot matches snapshot 1`] = `
+<View
+  style={
+    {
+      "flexDirection": "row",
+      "gap": 8,
+      "marginBottom": 12,
+      "paddingHorizontal": 16,
+    }
+  }
+>
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 14,
+        "height": 28,
+        "opacity": 0.3,
+        "width": 80,
+      }
+    }
+  />
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 14,
+        "height": 28,
+        "opacity": 0.3,
+        "width": 100,
+      }
+    }
+  />
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 14,
+        "height": 28,
+        "opacity": 0.3,
+        "width": 70,
+      }
+    }
+  />
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 14,
+        "height": 28,
+        "opacity": 0.3,
+        "width": 90,
+      }
+    }
+  />
+</View>
+`;
+
+exports[`SkeletonChat snapshot matches snapshot 1`] = `
+<View
+  style={
+    [
+      {
+        "padding": 16,
+      },
+      {
+        "backgroundColor": "#F7FAF9",
+      },
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "marginBottom": 8,
+          "maxWidth": "75%",
+          "padding": 12,
+        },
+        {
+          "alignSelf": "flex-start",
+          "borderBottomLeftRadius": 4,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "opacity": 0.3,
+          "width": "60%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 6,
+          "opacity": 0.3,
+          "width": "40%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "marginBottom": 8,
+          "maxWidth": "75%",
+          "padding": 12,
+        },
+        {
+          "alignSelf": "flex-end",
+          "borderBottomRightRadius": 4,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "opacity": 0.3,
+          "width": "40%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "marginBottom": 8,
+          "maxWidth": "75%",
+          "padding": 12,
+        },
+        {
+          "alignSelf": "flex-start",
+          "borderBottomLeftRadius": 4,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "opacity": 0.3,
+          "width": "70%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 6,
+          "opacity": 0.3,
+          "width": "40%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "marginBottom": 8,
+          "maxWidth": "75%",
+          "padding": 12,
+        },
+        {
+          "alignSelf": "flex-end",
+          "borderBottomRightRadius": 4,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "marginBottom": 8,
+          "maxWidth": "75%",
+          "padding": 12,
+        },
+        {
+          "alignSelf": "flex-start",
+          "borderBottomLeftRadius": 4,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "opacity": 0.3,
+          "width": "30%",
+        }
+      }
+    />
+  </View>
+</View>
+`;
+
+exports[`SkeletonDeal snapshot matches snapshot 1`] = `
+<View
+  style={
+    [
+      {
+        "borderRadius": 12,
+        "marginBottom": 12,
+        "padding": 14,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 48,
+          "opacity": 0.3,
+          "width": 48,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginLeft": 12,
+        }
+      }
+    >
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 16,
+            "opacity": 0.3,
+            "width": "70%",
+          }
+        }
+      />
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 12,
+            "marginTop": 6,
+            "opacity": 0.3,
+            "width": "40%",
+          }
+        }
+      />
+    </View>
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 12,
+          "height": 24,
+          "opacity": 0.3,
+          "width": 60,
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      {
+        "marginTop": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 6,
+          "opacity": 0.3,
+          "width": "35%",
+        }
+      }
+    />
+  </View>
+</View>
+`;
+
+exports[`SkeletonEventCard snapshot matches snapshot 1`] = `
+<View
+  style={
+    {
+      "borderRadius": 12,
+      "marginBottom": 12,
+      "padding": 14,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 40,
+          "opacity": 0.3,
+          "width": 40,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginLeft": 12,
+        }
+      }
+    >
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 14,
+            "opacity": 0.3,
+            "width": "80%",
+          }
+        }
+      />
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 12,
+            "marginTop": 6,
+            "opacity": 0.3,
+            "width": "50%",
+          }
+        }
+      />
+    </View>
+  </View>
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 4,
+        "height": 12,
+        "marginTop": 12,
+        "opacity": 0.3,
+        "width": "100%",
+      }
+    }
+  />
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 4,
+        "height": 12,
+        "marginTop": 6,
+        "opacity": 0.3,
+        "width": "70%",
+      }
+    }
+  />
+</View>
+`;
+
+exports[`SkeletonGalleryGrid snapshot matches snapshot with 8 cells 1`] = `
+<View
+  style={
+    {
+      "flexDirection": "row",
+      "flexWrap": "wrap",
+      "gap": 12,
+      "paddingHorizontal": 12,
+    }
+  }
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+</View>
+`;
+
+exports[`SkeletonGalleryGrid snapshot matches snapshot with default count 1`] = `
+<View
+  style={
+    {
+      "flexDirection": "row",
+      "flexWrap": "wrap",
+      "gap": 12,
+      "paddingHorizontal": 12,
+    }
+  }
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "padding": 8,
+          "width": "47%",
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 8,
+          "height": 120,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "80%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 10,
+          "marginTop": 4,
+          "opacity": 0.3,
+          "width": "50%",
+        }
+      }
+    />
+  </View>
+</View>
+`;
+
+exports[`SkeletonItemCard snapshot matches snapshot 1`] = `
+<View
+  style={
+    {
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "marginBottom": 12,
+      "padding": 12,
+    }
+  }
+>
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 12,
+        "height": 80,
+        "opacity": 0.3,
+        "width": 80,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "justifyContent": "center",
+        "marginLeft": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 16,
+          "opacity": 0.3,
+          "width": "70%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "40%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "marginTop": 8,
+          "opacity": 0.3,
+          "width": "30%",
+        }
+      }
+    />
+  </View>
+</View>
+`;
+
+exports[`SkeletonItemRow snapshot matches snapshot 1`] = `
+<View
+  style={
+    {
+      "alignItems": "center",
+      "flexDirection": "row",
+      "marginBottom": 8,
+      "padding": 12,
+    }
+  }
+>
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 10,
+        "height": 56,
+        "opacity": 0.3,
+        "width": 56,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "marginLeft": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 14,
+          "opacity": 0.3,
+          "width": "60%",
+        }
+      }
+    />
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 12,
+          "marginTop": 6,
+          "opacity": 0.3,
+          "width": "35%",
+        }
+      }
+    />
+  </View>
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 4,
+        "height": 16,
+        "opacity": 0.3,
+        "width": 60,
+      }
+    }
+  />
+</View>
+`;
+
+exports[`SkeletonList snapshots matches snapshot with card type 1`] = `
+<View
+  style={
+    {
+      "paddingHorizontal": 16,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "marginBottom": 12,
+        "padding": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 12,
+          "height": 80,
+          "opacity": 0.3,
+          "width": 80,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "flex": 1,
+          "justifyContent": "center",
+          "marginLeft": 12,
+        }
+      }
+    >
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 16,
+            "opacity": 0.3,
+            "width": "70%",
+          }
+        }
+      />
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 12,
+            "marginTop": 8,
+            "opacity": 0.3,
+            "width": "40%",
+          }
+        }
+      />
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 14,
+            "marginTop": 8,
+            "opacity": 0.3,
+            "width": "30%",
+          }
+        }
+      />
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "marginBottom": 12,
+        "padding": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 12,
+          "height": 80,
+          "opacity": 0.3,
+          "width": 80,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "flex": 1,
+          "justifyContent": "center",
+          "marginLeft": 12,
+        }
+      }
+    >
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 16,
+            "opacity": 0.3,
+            "width": "70%",
+          }
+        }
+      />
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 12,
+            "marginTop": 8,
+            "opacity": 0.3,
+            "width": "40%",
+          }
+        }
+      />
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 14,
+            "marginTop": 8,
+            "opacity": 0.3,
+            "width": "30%",
+          }
+        }
+      />
+    </View>
+  </View>
+</View>
+`;
+
+exports[`SkeletonList snapshots matches snapshot with row type 1`] = `
+<View
+  style={
+    {
+      "paddingHorizontal": 16,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "marginBottom": 8,
+        "padding": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 10,
+          "height": 56,
+          "opacity": 0.3,
+          "width": 56,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginLeft": 12,
+        }
+      }
+    >
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 14,
+            "opacity": 0.3,
+            "width": "60%",
+          }
+        }
+      />
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 12,
+            "marginTop": 6,
+            "opacity": 0.3,
+            "width": "35%",
+          }
+        }
+      />
+    </View>
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 16,
+          "opacity": 0.3,
+          "width": 60,
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "marginBottom": 8,
+        "padding": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 10,
+          "height": 56,
+          "opacity": 0.3,
+          "width": 56,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginLeft": 12,
+        }
+      }
+    >
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 14,
+            "opacity": 0.3,
+            "width": "60%",
+          }
+        }
+      />
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 12,
+            "marginTop": 6,
+            "opacity": 0.3,
+            "width": "35%",
+          }
+        }
+      />
+    </View>
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 16,
+          "opacity": 0.3,
+          "width": 60,
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "marginBottom": 8,
+        "padding": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 10,
+          "height": 56,
+          "opacity": 0.3,
+          "width": 56,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginLeft": 12,
+        }
+      }
+    >
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 14,
+            "opacity": 0.3,
+            "width": "60%",
+          }
+        }
+      />
+      <View
+        accessibilityLabel="Loading"
+        accessibilityRole="none"
+        collapsable={false}
+        style={
+          {
+            "backgroundColor": "#E2E8F0",
+            "borderRadius": 4,
+            "height": 12,
+            "marginTop": 6,
+            "opacity": 0.3,
+            "width": "35%",
+          }
+        }
+      />
+    </View>
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 4,
+          "height": 16,
+          "opacity": 0.3,
+          "width": 60,
+        }
+      }
+    />
+  </View>
+</View>
+`;
+
+exports[`SkeletonPortfolioHeader snapshot matches snapshot 1`] = `
+<View
+  style={
+    {
+      "alignItems": "center",
+      "padding": 16,
+    }
+  }
+>
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 6,
+        "height": 32,
+        "opacity": 0.3,
+        "width": 120,
+      }
+    }
+  />
+  <View
+    accessibilityLabel="Loading"
+    accessibilityRole="none"
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#E2E8F0",
+        "borderRadius": 4,
+        "height": 16,
+        "marginTop": 8,
+        "opacity": 0.3,
+        "width": 80,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "marginTop": 16,
+        "width": "100%",
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Loading"
+      accessibilityRole="none"
+      collapsable={false}
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "borderRadius": 12,
+          "height": 150,
+          "opacity": 0.3,
+          "width": "100%",
+        }
+      }
+    />
+  </View>
+</View>
+`;

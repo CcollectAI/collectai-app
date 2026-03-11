@@ -31,6 +31,7 @@ import httpx
 import re
 
 from workers.retry import with_async_retry, log_dead_letter
+from app.worker_registry import record_run
 
 logging.basicConfig(
     level=logging.INFO,
@@ -614,11 +615,14 @@ async def main(mode: str = "queue", batch_size: int = DEFAULT_BATCH_SIZE) -> Non
             await _process_legacy_log(batch_size)
         else:
             logger.error("Unknown mode: %s (valid: queue, items, legacy, all)", mode)
+            await record_run("vision_ingest_worker", "error")
             return
 
+        await record_run("vision_ingest_worker", "ok")
     except Exception as e:
         log_dead_letter("vision_ingest_worker", {"mode": mode, "batch_size": batch_size}, e)
         logger.exception("vision_ingest_worker crashed: %r", e)
+        await record_run("vision_ingest_worker", "error")
 
 
 def _parse_args() -> argparse.Namespace:

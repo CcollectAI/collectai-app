@@ -6,6 +6,7 @@ import {
   computeOverallTier,
 } from '@/utils/statusScoring';
 import { LeaderboardRow, StatusBadge } from '@/components/StatusBadge';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 interface Props {
   items: CollectionStatusInput[];
@@ -22,6 +23,8 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
     [scores],
   );
 
+  const { colors } = useAppTheme();
+
   if (!items.length) {
     return (
       <View
@@ -30,7 +33,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
           marginVertical: 8,
           padding: 12,
           borderRadius: 12,
-          backgroundColor: '#e0f2fe',
+          backgroundColor: colors.brand.lighter,
         }}
       >
         <Text
@@ -38,6 +41,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
             fontSize: 13,
             fontWeight: '600',
             marginBottom: 4,
+            color: colors.text,
           }}
         >
           Status & leaderboard
@@ -45,7 +49,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
         <Text
           style={{
             fontSize: 11,
-            color: '#0f172a',
+            color: colors.text,
           }}
         >
           Start adding items to see your collection status, tiers, and
@@ -65,7 +69,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
           marginBottom: 10,
           padding: 12,
           borderRadius: 12,
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
         }}
       >
         <View
@@ -80,7 +84,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
               flex: 1,
               fontSize: 14,
               fontWeight: '700',
-              color: '#0f172a',
+              color: colors.text,
             }}
           >
             Your collector status
@@ -90,7 +94,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
         <Text
           style={{
             fontSize: 11,
-            color: '#6b7280',
+            color: colors.muted,
           }}
         >
           Avg points across your collections:{' '}
@@ -101,7 +105,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
             style={{
               marginTop: 2,
               fontSize: 11,
-              color: '#9ca3af',
+              color: colors.muted,
             }}
           >
             Based on completeness (sets finished) and rarity of items
@@ -115,7 +119,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
         style={{
           padding: 12,
           borderRadius: 12,
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
         }}
       >
         <Text
@@ -123,7 +127,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
             fontSize: 14,
             fontWeight: '700',
             marginBottom: 6,
-            color: '#0f172a',
+            color: colors.text,
           }}
         >
           Top collections (local)
@@ -140,7 +144,7 @@ export const ItemsStatusPanel: React.FC<Props> = ({ items }) => {
             style={{
               marginTop: 4,
               fontSize: 11,
-              color: '#9ca3af',
+              color: colors.muted,
             }}
           >
             Showing top {top.length} of {scores.length} collections

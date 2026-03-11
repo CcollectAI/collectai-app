@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
   Text,
@@ -31,8 +32,6 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { collectorsApi } from '@/api/collectorsApi';
-import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
-import { getMarketplacesForCategory } from '@/data/categories';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 
@@ -40,13 +39,21 @@ import { track } from '@/analytics/track';
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 const CATEGORIES = [...ALL_CATS.map((c) => c.name), 'Other'];
 
+// Extracted components
+import { WishlistItemCard } from '@/components/wishlist/WishlistItemCard';
+import { WishlistAddModal } from '@/components/wishlist/WishlistAddModal';
+import { WishlistAcquireModal } from '@/components/wishlist/WishlistAcquireModal';
+import { WishlistEditTargetModal } from '@/components/wishlist/WishlistEditTargetModal';
+import { WishlistCategoryPicker } from '@/components/wishlist/WishlistCategoryPicker';
+import { WishlistCongratsOverlay } from '@/components/wishlist/WishlistCongratsOverlay';
+
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function WatchlistTabScreen() {
+function WatchlistTabScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { user } = useAuthContext();
@@ -83,9 +90,6 @@ export default function WatchlistTabScreen() {
   const congratsScale = useRef(new Animated.Value(0)).current;
   const congratsOpacity = useRef(new Animated.Value(0)).current;
 
-  // Shop sheet state
-  const [shopItem, setShopItem] = useState<WatchlistItem | null>(null);
-  const [shopSheetVisible, setShopSheetVisible] = useState(false);
 
   const loadItems = useCallback(async () => {
     try {
@@ -245,24 +249,15 @@ export default function WatchlistTabScreen() {
     }
   };
 
-  // Shop flow
+  // Shop flow — always open external marketplace directly
   const handleShop = async (item: WatchlistItem) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    const marketplaces = getMarketplacesForCategory(item.category);
-
-    if (marketplaces.length === 1) {
-      // Single marketplace — go directly via affiliate link
-      try {
-        const res = await collectorsApi.getAffiliateLinks(item.title, item.category);
-        const url = res.links?.[0]?.affiliate_url || `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`;
-        Linking.openURL(url).catch(() => {});
-      } catch {
-        Linking.openURL(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`).catch(() => {});
-      }
-    } else {
-      // Multiple marketplaces — show picker sheet
-      setShopItem(item);
-      setShopSheetVisible(true);
+    try {
+      const res = await collectorsApi.getAffiliateLinks(item.title, item.category);
+      const url = res.links?.[0]?.affiliate_url || `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`;
+      Linking.openURL(url).catch(() => {});
+    } catch {
+      Linking.openURL(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(item.title)}`).catch(() => {});
     }
   };
 
@@ -493,7 +488,7 @@ export default function WatchlistTabScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right', 'top']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -502,7 +497,7 @@ export default function WatchlistTabScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right', 'top']}>
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
         <FlashList
           data={items}
@@ -769,14 +764,6 @@ export default function WatchlistTabScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
-      {/* Marketplace Picker Sheet */}
-      <MarketplacePickerSheet
-        visible={shopSheetVisible}
-        onClose={() => { setShopSheetVisible(false); setShopItem(null); }}
-        itemTitle={shopItem?.title ?? ''}
-        categoryId={shopItem?.category ?? undefined}
-      />
 
       {/* Congrats Overlay */}
       {showCongrats && (
@@ -1151,3 +1138,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+export default function WatchlistTabScreenWithBoundary() {
+  return (
+    <ScreenErrorBoundary screenName="Wishlist">
+      <WatchlistTabScreen />
+    </ScreenErrorBoundary>
+  );
+}

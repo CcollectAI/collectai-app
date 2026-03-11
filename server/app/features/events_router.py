@@ -32,7 +32,7 @@ from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/events", tags=["events"])
+router = APIRouter(prefix="/events", tags=["Events"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 30 event search requests per minute (expensive DB queries)
@@ -191,7 +191,7 @@ _MAX_IN_MEMORY_FOLLOWS = 500
 # ---------------------------------------------------------------------------
 
 
-@router.get("/search", response_model=EventListResponse)
+@router.get("/search", response_model=EventListResponse, summary="Search events")
 async def search_events(
     q: str = "",
     category: Optional[str] = None,
@@ -269,7 +269,7 @@ async def search_events(
         raise error_response(500, "Event search failed", code=ErrorCode.INTERNAL_ERROR)
 
 
-@router.get("", response_model=EventListResponse)
+@router.get("", response_model=EventListResponse, summary="List personalized events")
 async def list_events(
     category_id: Optional[str] = Query(None, description="Filter by category"),
     include_past: bool = Query(False, description="Include past events"),
@@ -362,7 +362,7 @@ async def list_events(
     return result
 
 
-@router.post("", response_model=EventResponse, status_code=201)
+@router.post("", response_model=EventResponse, status_code=201, summary="Create an event")
 async def create_event(
     request: CreateEventRequest,
     user_id: str = Depends(get_current_user_id),
@@ -472,7 +472,7 @@ async def create_event(
     return EventResponse(**event_data)
 
 
-@router.get("/nearby", response_model=EventListResponse)
+@router.get("/nearby", response_model=EventListResponse, summary="List nearby events")
 async def list_nearby_events(
     lat: float = Query(..., ge=-90, le=90, description="User latitude"),
     lon: float = Query(..., ge=-180, le=180, description="User longitude"),
@@ -588,7 +588,7 @@ async def list_nearby_events(
 # NOTE: These MUST be registered before /{event_id} to avoid route shadowing.
 # ---------------------------------------------------------------------------
 
-@router.get("/categories/followed")
+@router.get("/categories/followed", summary="List followed categories")
 async def list_followed_categories(
     user_id: str = Depends(get_current_user_id),
 ):
@@ -615,7 +615,7 @@ async def list_followed_categories(
     return {"categories": sorted(follows)}
 
 
-@router.post("/categories/{category_id}/follow")
+@router.post("/categories/{category_id}/follow", summary="Follow a category")
 async def follow_category(
     category_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -653,7 +653,7 @@ async def follow_category(
     return {"success": True, "category_id": category_id}
 
 
-@router.delete("/categories/{category_id}/follow")
+@router.delete("/categories/{category_id}/follow", summary="Unfollow a category")
 async def unfollow_category(
     category_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -685,7 +685,7 @@ async def unfollow_category(
     return {"success": True, "message": "Category unfollowed"}
 
 
-@router.get("/categories/{category_id}/following")
+@router.get("/categories/{category_id}/following", summary="Check category follow status")
 async def check_following_category(
     category_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -737,7 +737,7 @@ class DropAlertResponse(BaseModel):
 _IN_MEMORY_DROP_ALERTS: dict[str, dict[str, dict]] = {}  # user_id -> {event_id: {...}}
 
 
-@router.get("/my-alerts", response_model=List[DropAlertResponse])
+@router.get("/my-alerts", response_model=List[DropAlertResponse], summary="List my drop alerts")
 async def list_my_drop_alerts(
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_drop_alert_limit),
@@ -786,7 +786,7 @@ async def list_my_drop_alerts(
     ]
 
 
-@router.post("/{event_id}/alert", response_model=DropAlertResponse, status_code=201)
+@router.post("/{event_id}/alert", response_model=DropAlertResponse, status_code=201, summary="Subscribe to drop alert")
 async def subscribe_drop_alert(
     event_id: str,
     request: DropAlertRequest = DropAlertRequest(),
@@ -850,7 +850,7 @@ async def subscribe_drop_alert(
     )
 
 
-@router.delete("/{event_id}/alert")
+@router.delete("/{event_id}/alert", summary="Unsubscribe from drop alert")
 async def unsubscribe_drop_alert(
     event_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -896,7 +896,7 @@ _TEMPLATE_FIELDS = {"title", "kind", "category_id", "format", "location", "onlin
                     "description", "time", "image_url", "is_public", "max_attendees"}
 
 
-@router.get("/templates", response_model=List[TemplateResponse])
+@router.get("/templates", response_model=List[TemplateResponse], summary="List event templates")
 async def list_templates(
     user_id: str = Depends(get_current_user_id),
     limit: int = Query(default=20, ge=1, le=200),
@@ -934,7 +934,7 @@ async def list_templates(
     return []
 
 
-@router.post("/templates", response_model=TemplateResponse, status_code=201)
+@router.post("/templates", response_model=TemplateResponse, status_code=201, summary="Create event template")
 async def create_template(
     request: CreateTemplateRequest,
     user_id: str = Depends(get_current_user_id),
@@ -992,7 +992,7 @@ async def create_template(
     raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
 
-@router.delete("/templates/{template_id}")
+@router.delete("/templates/{template_id}", summary="Delete event template")
 async def delete_template(
     template_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -1029,7 +1029,7 @@ async def delete_template(
 # Endpoints — Unread announcement count (MUST be before /{event_id})
 # ---------------------------------------------------------------------------
 
-@router.get("/my-announcements/unread-count")
+@router.get("/my-announcements/unread-count", summary="Get unread announcement count")
 async def get_unread_announcement_count(
     user_id: str = Depends(get_current_user_id),
 ):
@@ -1066,7 +1066,7 @@ async def get_unread_announcement_count(
 # Endpoints — Single event + RSVP (parameterized routes last)
 # ---------------------------------------------------------------------------
 
-@router.get("/{event_id}", response_model=EventResponse)
+@router.get("/{event_id}", response_model=EventResponse, summary="Get event detail")
 async def get_event(
     event_id: str,
     user_id: Optional[str] = Depends(get_optional_user_id),
@@ -1141,7 +1141,7 @@ async def get_event(
     return EventResponse(**ev_copy)
 
 
-@router.patch("/{event_id}", response_model=EventResponse)
+@router.patch("/{event_id}", response_model=EventResponse, summary="Update an event")
 async def update_event(
     event_id: str,
     request: UpdateEventRequest,
@@ -1213,7 +1213,7 @@ async def update_event(
     return EventResponse(**ev)
 
 
-@router.delete("/{event_id}")
+@router.delete("/{event_id}", summary="Cancel an event")
 async def delete_event(
     event_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -1260,7 +1260,7 @@ async def delete_event(
 # Endpoints — Ticket Checkout
 # ---------------------------------------------------------------------------
 
-@router.post("/{event_id}/ticket-checkout")
+@router.post("/{event_id}/ticket-checkout", summary="Create ticket checkout session", description="Creates a Stripe Checkout Session for a paid event ticket with a 5% platform fee.")
 async def ticket_checkout(
     event_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -1356,7 +1356,7 @@ async def ticket_checkout(
 # Endpoints — RSVP
 # ---------------------------------------------------------------------------
 
-@router.post("/{event_id}/rsvp")
+@router.post("/{event_id}/rsvp", summary="RSVP to an event")
 async def rsvp_event(
     event_id: str,
     request: RsvpRequest,
@@ -1433,7 +1433,7 @@ async def rsvp_event(
     return {"success": True, "status": actual_status, "waitlisted": waitlisted}
 
 
-@router.delete("/{event_id}/rsvp")
+@router.delete("/{event_id}/rsvp", summary="Remove RSVP from event")
 async def unrsvp_event(
     event_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -1475,7 +1475,7 @@ async def unrsvp_event(
 # Endpoints — Duplicate
 # ---------------------------------------------------------------------------
 
-@router.post("/{event_id}/duplicate", response_model=EventResponse, status_code=201)
+@router.post("/{event_id}/duplicate", response_model=EventResponse, status_code=201, summary="Duplicate an event")
 async def duplicate_event(
     event_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -1673,7 +1673,7 @@ async def _send_announcement_dms(
         )
 
 
-@router.post("/{event_id}/announcements", response_model=AnnouncementResponse, status_code=201)
+@router.post("/{event_id}/announcements", response_model=AnnouncementResponse, status_code=201, summary="Post event announcement")
 async def post_announcement(
     event_id: str,
     request: AnnouncementRequest,
@@ -1754,7 +1754,7 @@ async def post_announcement(
     raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
 
 
-@router.get("/{event_id}/announcements", response_model=List[AnnouncementResponse])
+@router.get("/{event_id}/announcements", response_model=List[AnnouncementResponse], summary="List event announcements")
 async def list_announcements(
     event_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -1821,7 +1821,7 @@ async def list_announcements(
     return []
 
 
-@router.post("/{event_id}/announcements/{announcement_id}/read")
+@router.post("/{event_id}/announcements/{announcement_id}/read", summary="Mark announcement as read")
 async def mark_announcement_read(
     event_id: str,
     announcement_id: str,
@@ -1865,7 +1865,7 @@ class BatchReadRequest(BaseModel):
     announcement_ids: list[str] = Field(..., max_length=100)
 
 
-@router.post("/{event_id}/announcements/batch-read")
+@router.post("/{event_id}/announcements/batch-read", summary="Batch mark announcements read")
 async def batch_mark_announcements_read(
     event_id: str,
     body: BatchReadRequest,
@@ -1914,7 +1914,7 @@ async def batch_mark_announcements_read(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bool, limit: int = 50, offset: int = 0):
+async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bool, limit: int = 50, offset: int = 0) -> list:
     """Fetch events from the events table with optional filters."""
     conditions = ["status = 'published'"]
     params = []

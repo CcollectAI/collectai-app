@@ -6,6 +6,7 @@ import {
 } from '@/utils/statusScoring';
 import { useCollectionStatus } from '@/hooks/useCollectionStatus';
 import { LeaderboardRow } from '@/components/StatusBadge';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 interface Props {
   items: CollectionStatusInput[];
@@ -13,6 +14,7 @@ interface Props {
 
 export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
   const { scores, tier } = useCollectionStatus(items);
+  const { colors } = useAppTheme();
 
   const nearComplete: CollectionStatusScore[] = useMemo(
     () =>
@@ -41,7 +43,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
         style={{
           padding: 12,
           borderRadius: 12,
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
           marginBottom: 10,
         }}
       >
@@ -49,7 +51,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
           style={{
             fontSize: 14,
             fontWeight: '700',
-            color: '#0f172a',
+            color: colors.text,
             marginBottom: 6,
           }}
         >
@@ -59,7 +61,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
           <Text
             style={{
               fontSize: 11,
-              color: '#6b7280',
+              color: colors.muted,
             }}
           >
             Add items to build up your leaderboard and see which sets you are
@@ -70,7 +72,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
             <Text
               style={{
                 fontSize: 11,
-                color: '#6b7280',
+                color: colors.muted,
                 marginBottom: 4,
               }}
             >
@@ -92,7 +94,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
         style={{
           padding: 12,
           borderRadius: 12,
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
           marginBottom: 10,
         }}
       >
@@ -100,7 +102,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
           style={{
             fontSize: 14,
             fontWeight: '700',
-            color: '#0f172a',
+            color: colors.text,
             marginBottom: 6,
           }}
         >
@@ -110,7 +112,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
           <Text
             style={{
               fontSize: 11,
-              color: '#6b7280',
+              color: colors.muted,
             }}
           >
             No sets are near completion yet. Once you are 40–95% complete on a
@@ -128,7 +130,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
                   style={{
                     fontSize: 13,
                     fontWeight: '600',
-                    color: '#111827',
+                    color: colors.text,
                   }}
                 >
                   {s.key}
@@ -136,7 +138,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
                 <Text
                   style={{
                     fontSize: 11,
-                    color: '#6b7280',
+                    color: colors.muted,
                   }}
                 >
                   {s.category} · {s.ownedCount}/{s.expectedCount} · Missing{' '}
@@ -153,14 +155,14 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
         style={{
           padding: 12,
           borderRadius: 12,
-          backgroundColor: '#f9fafb',
+          backgroundColor: colors.card,
         }}
       >
         <Text
           style={{
             fontSize: 14,
             fontWeight: '700',
-            color: '#0f172a',
+            color: colors.text,
             marginBottom: 6,
           }}
         >
@@ -169,7 +171,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
         <Text
           style={{
             fontSize: 11,
-            color: '#6b7280',
+            color: colors.muted,
           }}
         >
           As you and other users run anti-fraud scans during purchases, this

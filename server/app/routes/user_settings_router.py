@@ -20,7 +20,7 @@ from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/settings", tags=["settings"])
+router = APIRouter(prefix="/settings", tags=["Settings"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 30 requests per minute for settings
@@ -74,7 +74,7 @@ class UserSettingsUpdateResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
-@router.get("", response_model=UserSettingsResponse, dependencies=[Depends(_settings_user_limit)])
+@router.get("", response_model=UserSettingsResponse, dependencies=[Depends(_settings_user_limit)], summary="Get user settings")
 async def get_user_settings(user_id: str = Depends(get_current_user_id)):
     """
     Return current user settings.
@@ -113,7 +113,7 @@ async def get_user_settings(user_id: str = Depends(get_current_user_id)):
         raise error_response(500, "Failed to fetch settings", code="DB_ERROR")
 
 
-@router.put("", response_model=UserSettingsUpdateResponse, dependencies=[Depends(_settings_user_limit)])
+@router.put("", response_model=UserSettingsUpdateResponse, dependencies=[Depends(_settings_user_limit)], summary="Update user settings")
 async def update_user_settings(
     request: UserSettingsUpdateRequest,
     user_id: str = Depends(get_current_user_id),

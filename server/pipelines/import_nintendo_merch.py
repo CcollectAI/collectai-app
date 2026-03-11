@@ -971,6 +971,79 @@ def get_curated_catalog() -> list[dict]:
         ("Pokemon", "Merch", "Pokemon Center Singapore Pikachu Merlion Keychain", "Pokemon Center Singapore", "mid", 35),
         ("Pokemon", "Plush", "Pokemon Center Kanazawa Pikachu Goldleaf Plush", "Pokemon Center Kanazawa", "high", 80),
         ("Pokemon", "Plush", "Pokemon Center Okinawa Pikachu Shisa Plush", "Pokemon Center Okinawa", "mid", 55),
+
+        # === EXPANSION ROUND 13 — 60 new items for 700+ ===
+
+        # ── Xenoblade Chronicles Merch ───────────────────────────────────
+        ("Xenoblade", "Figure", "Pyra 1/7 Scale Figure (Good Smile)", "", "high", 180),
+        ("Xenoblade", "Figure", "Mythra 1/7 Scale Figure (Good Smile)", "", "high", 175),
+        ("Xenoblade", "Figure", "Shulk Nendoroid", "", "mid", 55),
+        ("Xenoblade", "Figure", "Rex & Pyra Figma Set", "", "high", 130),
+        ("Xenoblade", "Figure", "Pneuma 1/7 Scale Figure", "", "high", 200),
+        ("Xenoblade", "Plush", "Nopon Riki Plush 8in", "Nintendo Store JP", "mid", 38),
+
+        # ── Fire Emblem Merch ────────────────────────────────────────────
+        ("Fire Emblem", "Figure", "Byleth (Male) Figma", "", "mid", 65),
+        ("Fire Emblem", "Figure", "Byleth (Female) Figma", "", "mid", 70),
+        ("Fire Emblem", "Figure", "Edelgard von Hresvelg 1/7 Scale", "", "high", 160),
+        ("Fire Emblem", "Figure", "Dimitri Alexandre Blaiddyd 1/7 Scale", "", "high", 155),
+        ("Fire Emblem", "Figure", "Lucina Figma", "", "mid", 75),
+        ("Fire Emblem", "Figure", "Lyn 1/7 Scale Figure (Intelligent Systems)", "", "high", 170),
+        ("Fire Emblem", "Amiibo", "Corrin (Player 2 Female) Amiibo", "", "high", 85),
+        ("Fire Emblem", "Art Book", "Fire Emblem Engage Art Book (JP)", "", "mid", 48),
+
+        # ── Metroid Merch ────────────────────────────────────────────────
+        ("Metroid", "Figure", "Samus Aran (Varia Suit) Figma", "", "mid", 75),
+        ("Metroid", "Figure", "Samus Aran (Zero Suit) Figma", "", "mid", 70),
+        ("Metroid", "Figure", "Metroid Dread Samus Nendoroid", "", "mid", 55),
+        ("Metroid", "Figure", "Dark Samus Amiibo (Smash Bros.)", "", "mid", 45),
+        ("Metroid", "Merch", "Metroid Dread E.M.M.I. Model Kit", "", "mid", 62),
+        ("Metroid", "Merch", "Metroid Prime Remastered Steelbook (EU)", "", "mid", 35),
+
+        # ── F-Zero / Star Fox Merch ──────────────────────────────────────
+        ("F-Zero", "Figure", "Captain Falcon Amiibo (Smash Bros.)", "", "mid", 30),
+        ("Star Fox", "Figure", "Fox McCloud Amiibo (Smash Bros.)", "", "mid", 28),
+        ("Star Fox", "Figure", "Arwing First4Figures Statue", "", "high", 200),
+        ("F-Zero", "Merch", "Blue Falcon Die-Cast Model (Club Nintendo)", "Club Nintendo", "high", 120),
+
+        # ── Earthbound / Mother Merch ────────────────────────────────────
+        ("Earthbound", "Figure", "Ness Nendoroid", "", "mid", 60),
+        ("Earthbound", "Plush", "Mr. Saturn Plush 6in", "Nintendo Store JP", "mid", 35),
+        ("Earthbound", "Merch", "Earthbound Beginnings Franklin Badge Replica", "Hobonichi", "high", 95),
+        ("Earthbound", "Art Book", "Mother 2 Illustration Book (Hobonichi)", "Hobonichi", "mid", 45),
+
+        # ── Nintendo Hardware Collectibles ───────────────────────────────
+        ("Nintendo", "Console", "Game & Watch: Super Mario Bros. (2020)", "", "mid", 55),
+        ("Nintendo", "Console", "Game & Watch: The Legend of Zelda (2021)", "", "mid", 60),
+        ("Nintendo", "Console", "Nintendo Switch Lite Hyrule Edition", "", "mid", 230),
+        ("Nintendo", "Console", "Nintendo Switch OLED Zelda TotK Edition", "", "high", 380),
+        ("Nintendo", "Console", "Nintendo 64 Funtastic Ice Blue (CIB)", "", "high", 250),
+        ("Nintendo", "Console", "Nintendo 64 Funtastic Watermelon Red (CIB)", "", "high", 280),
+        ("Nintendo", "Console", "Game Boy Micro Famicom Edition (JP)", "", "high", 320),
+        ("Nintendo", "Console", "GBA SP Famicom 20th Anniversary Edition", "", "high", 280),
+        ("Nintendo", "Console", "DS Lite Zelda Phantom Hourglass Gold Edition", "", "high", 200),
+
+        # ── My Nintendo Rewards (Physical) ───────────────────────────────
+        ("Mario", "My Nintendo", "My Nintendo Mario Pin Set (2024)", "My Nintendo", "mid", 30),
+        ("Zelda", "My Nintendo", "My Nintendo Zelda Carrying Case", "My Nintendo", "mid", 35),
+        ("Splatoon", "My Nintendo", "My Nintendo Splatoon 3 Poster Set", "My Nintendo", "standard", 20),
+        ("Pikmin", "My Nintendo", "My Nintendo Pikmin 4 Tote Bag", "My Nintendo", "standard", 22),
+        ("Mario", "My Nintendo", "My Nintendo Mario Hanafuda Cards", "My Nintendo", "mid", 40),
+
+        # ── Japanese Region Exclusives ───────────────────────────────────
+        ("Pokemon", "Figure", "Pokemon Center Mega Tokyo Pikachu Charizard Poncho Plush", "Pokemon Center Mega Tokyo", "high", 120),
+        ("Pokemon", "Merch", "Pokemon Center Yokohama Lapras Sailing Plush", "Pokemon Center Yokohama", "mid", 55),
+        ("Mario", "Figure", "Super Mario 35th Anniversary Pin Set (Complete)", "Nintendo Store JP", "high", 150),
+        ("Zelda", "Figure", "Zelda 35th Anniversary Game & Watch", "Nintendo Store JP", "mid", 65),
+        ("Kirby", "Merch", "Kirby Cafe Tokyo Exclusive Menu Plate Set", "Kirby Cafe Tokyo", "mid", 58),
+
+        # ── Additional Pokemon Center Plush ──────────────────────────────
+        ("Pokemon", "Plush", "Eevee Sitting Cuties Plush 6in", "Pokemon Center", "standard", 15),
+        ("Pokemon", "Plush", "Snorlax Bean Bag Plush 24in", "Pokemon Center", "high", 150),
+        ("Pokemon", "Plush", "Gengar Squishy Plush 12in", "Pokemon Center", "mid", 35),
+        ("Pokemon", "Plush", "Dragonite Sitting Cuties Plush 6in", "Pokemon Center", "standard", 15),
+        ("Pokemon", "Figure", "Pokemon Center 25th Anniversary Pikachu Figure", "Pokemon Center", "high", 95),
+        ("Pokemon", "Merch", "Pokemon Center Eeveelution Premium Collection Box", "Pokemon Center", "high", 120),
     ]
 
     # ── Batch 12: Store Exclusives, Movie Merch, OLED Editions (55 items) ──

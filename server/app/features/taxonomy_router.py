@@ -17,7 +17,7 @@ from app.errors import error_response
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/taxonomy", tags=["taxonomy"])
+router = APIRouter(prefix="/taxonomy", tags=["Taxonomy"])
 
 # Cache TTL for taxonomy data (changes very rarely)
 _TAXONOMY_TTL = 3600  # 1 hour

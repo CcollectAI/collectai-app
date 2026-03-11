@@ -17,7 +17,7 @@ from app.db import db_configured, get_conn
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/alerts", tags=["alerts"])
+router = APIRouter(prefix="/alerts", tags=["Alerts"])
 
 _alert_write_limit = per_user_rate_limit(20, window_seconds=60, scope="alert_write")
 

@@ -19,7 +19,7 @@ from app.rate_limit import per_ip_rate_limit
 
 import hashlib
 
-router = APIRouter(prefix="/geo", tags=["geo"])
+router = APIRouter(prefix="/geo", tags=["Geo"])
 logger = logging.getLogger(__name__)
 
 # Per-IP: 30 requests per minute for public geo detection
@@ -84,7 +84,7 @@ def _get_client_ip(request: Request) -> str:
     return ""
 
 
-@router.get("/detect", dependencies=[Depends(_geo_ip_limit)])
+@router.get("/detect", dependencies=[Depends(_geo_ip_limit)], summary="Detect region from IP")
 async def detect_region(request: Request):
     """Auto-detect user region from IP address.
 

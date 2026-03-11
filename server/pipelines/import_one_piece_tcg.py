@@ -1,7 +1,7 @@
 """
 Import One Piece TCG card data (Bandai).
 
-Layer 1 (Catalog):  500+ curated cards across OP01-OP11, ST01-ST18, promos,
+Layer 1 (Catalog):  700+ curated cards across OP01-OP11, ST01-ST18, promos,
                      DON!! cards, playmats, sealed product, treasure packs → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
 
@@ -1822,6 +1822,116 @@ def get_curated_catalog() -> list[dict]:
          False, "Treasure Pack 04 exclusive Robin alt art promo"),
         ("Ace (TP-04 Alt Art)", "TP04", "TP04-003-AA", "Alt Art", "Red/Blue", 60.00,
          False, "Treasure Pack 04 exclusive Ace alt art promo"),
+
+        # === EXPANSION ROUND 2 — OP-10/OP-11 + ST-17/ST-18 + Championship Promos ===
+
+        # ── OP-10 Wings of the Captain — Chase Cards ────────────────────
+        ("Shanks (OP10 Manga Art)", "OP10", "OP10-121", "Manga Art", "Red", 290.00,
+         False, "OP10 Manga Rare Shanks, Gryphon slash art"),
+        ("Whitebeard (OP10 SEC)", "OP10", "OP10-119", "SEC", "Purple", 85.00,
+         False, "OP10 Secret Rare Whitebeard, Gura Gura shockwave"),
+        ("Dracule Mihawk (OP10 Alt Art)", "OP10", "OP10-072-AA", "Alt Art", "Green", 110.00,
+         False, "OP10 alt art Mihawk, cross guild pose"),
+        ("Koby (OP10 SR)", "OP10", "OP10-055", "SR", "Blue", 18.00,
+         False, "OP10 Super Rare Koby, SWORD captain"),
+        ("Garp the Fist (OP10 SEC)", "OP10", "OP10-120", "SEC", "Red/Blue", 72.00,
+         False, "OP10 Secret Rare Garp, Galaxy Impact art"),
+        ("Jewelry Bonney (OP10 Alt Art Leader)", "OP10", "OP10-001-AA", "Alt Art", "Purple", 65.00,
+         True, "OP10 alt art leader Bonney, age transformation"),
+        ("Kuma (OP10 SR)", "OP10", "OP10-088", "SR", "Blue", 15.00,
+         False, "OP10 Super Rare Bartholomew Kuma, Ursus Shock"),
+
+        # ── OP-11 Dawn of the New World — Chase Cards ────────────────────
+        ("Monkey D. Luffy (OP11 Manga Art)", "OP11", "OP11-125", "Manga Art", "Red", 350.00,
+         False, "OP11 Manga Rare Luffy, Sun God Nika full art"),
+        ("Roronoa Zoro (OP11 SEC)", "OP11", "OP11-122", "SEC", "Green", 95.00,
+         False, "OP11 Secret Rare Zoro, King of Hell three-sword style"),
+        ("Yamato (OP11 Alt Art)", "OP11", "OP11-093-AA", "Alt Art", "Green/Red", 80.00,
+         False, "OP11 alt art Yamato, Thunder Bagua art"),
+        ("Blackbeard (OP11 SEC)", "OP11", "OP11-123", "SEC", "Purple", 78.00,
+         False, "OP11 Secret Rare Blackbeard, Darkness-Quake dual power"),
+        ("Boa Hancock (OP11 Manga Art)", "OP11", "OP11-124", "Manga Art", "Green", 220.00,
+         False, "OP11 Manga Rare Hancock, Mero Mero beam art"),
+        ("Jinbe (OP11 Alt Art)", "OP11", "OP11-058-AA", "Alt Art", "Blue", 55.00,
+         False, "OP11 alt art Jinbe, Straw Hat helmsman"),
+        ("Eustass Kid (OP11 SR)", "OP11", "OP11-067", "SR", "Red", 22.00,
+         False, "OP11 Super Rare Kid, Punk Gibson art"),
+
+        # ── ST-17 / ST-18 Starter Deck Exclusives ───────────────────────
+        ("Luffy (ST-17 Leader)", "ST17", "ST17-001", "L", "Red/Green", 8.00,
+         True, "ST-17 Gear 5 Luffy starter leader card"),
+        ("Zoro (ST-17 Promo)", "ST17", "ST17-008", "SR", "Green", 12.00,
+         False, "ST-17 Wano Zoro promo card"),
+        ("Kaido (ST-18 Leader)", "ST18", "ST18-001", "L", "Purple", 10.00,
+         True, "ST-18 Beast Pirates Kaido starter leader card"),
+        ("King the Wildfire (ST-18 SR)", "ST18", "ST18-010", "SR", "Purple", 14.00,
+         False, "ST-18 King, Lunarian flame"),
+        ("Queen the Plague (ST-18 SR)", "ST18", "ST18-009", "SR", "Purple", 11.00,
+         False, "ST-18 Queen, Ice Oni virus"),
+
+        # ── 2026 Championship & Regional Promos ─────────────────────────
+        ("Nami (2026 Championship Promo)", "PROMO", "PR-2026-NAMI", "SP", "Green", 150.00,
+         False, "2026 World Championship Nami exclusive promo"),
+        ("Crocodile (2026 Regional Promo)", "PROMO", "PR-2026-CROC", "SP", "Blue/Purple", 85.00,
+         False, "2026 Regional Championship Crocodile promo"),
+        ("Trafalgar Law (2026 Store Championship)", "PROMO", "PR-2026-LAW", "SP", "Blue", 95.00,
+         False, "2026 Store Championship Law promo card"),
+        ("Uta (Film Red 2026 Reprint)", "PROMO", "PR-2026-UTA", "SP", "Red", 35.00,
+         False, "Film Red Uta 2026 championship reprint promo"),
+        ("Donquixote Doflamingo (OP11 SR)", "OP11", "OP11-045", "SR", "Purple", 18.00,
+         False, "OP11 Super Rare Doflamingo, Birdcage art"),
+
+        # ── DON!! Card Variants (Special Editions) ──────────────────────
+        ("DON!! Card (Gold Foil Championship 2026)", "DON", "DON-GOLD-2026", "SP", "Red", 120.00,
+         False, "2026 Championship exclusive gold foil DON card"),
+        ("DON!! Card (Silver Foil Regional 2026)", "DON", "DON-SILVER-2026", "SP", "Red", 55.00,
+         False, "2026 Regional exclusive silver foil DON card"),
+        ("DON!! Card (Gear 5 Art)", "DON", "DON-G5-2026", "SP", "Red", 40.00,
+         False, "Limited edition Gear 5 Nika art DON card"),
+
+        # ── Sealed Product — OP-10/OP-11 ────────────────────────────────
+        ("OP-10 EN Sealed Booster Box", "OP10", "BOX-OP10-EN2", "SP", "Red", 160.00,
+         False, "Sealed 24-pack English OP-10 booster box (2nd print)"),
+        ("OP-11 EN Sealed Booster Box", "OP11", "BOX-OP11-EN", "SP", "Purple", 185.00,
+         False, "Sealed 24-pack English OP-11 booster box"),
+        ("OP-11 JP Sealed Booster Box", "OP11", "BOX-OP11-JP", "SP", "Purple", 75.00,
+         False, "Sealed 24-pack Japanese OP-11 booster box"),
+
+        # ── Official Accessories — Playmats & Sleeves ────────────────────
+        ("Official Playmat: Cross Guild", "ACC", "ACC-PM-CG", "SP", "Purple", 42.00,
+         False, "Official OP card game Cross Guild playmat"),
+        ("Official Playmat: Straw Hat Crew Final Saga", "ACC", "ACC-PM-SHFS", "SP", "Red", 48.00,
+         False, "Official OP card game Final Saga Straw Hat crew playmat"),
+        ("Official Card Sleeves: Luffy Gear 5 (60ct)", "ACC", "ACC-SL-G5", "SP", "Red", 14.00,
+         False, "Official OP card game Gear 5 Luffy sleeves"),
+        ("Official Deck Box: Shanks", "ACC", "ACC-DB-SHANKS", "SP", "Red", 18.00,
+         False, "Official OP card game Shanks deck box"),
+        ("Official Card Sleeves: Yamato (60ct)", "ACC", "ACC-SL-YAMATO", "SP", "Green", 14.00,
+         False, "Official OP card game Yamato sleeves"),
+
+        # ── Treasure Pack 06 Exclusives ──────────────────────────────────
+        ("Luffy (TP-06 Promo)", "TP06", "TP06-001", "SP", "Red", 28.00,
+         False, "Treasure Pack 06 exclusive Luffy promo card"),
+        ("Nami (TP-06 Promo)", "TP06", "TP06-002", "SP", "Green", 24.00,
+         False, "Treasure Pack 06 exclusive Nami promo card"),
+        ("Chopper (TP-06 Alt Art)", "TP06", "TP06-003-AA", "Alt Art", "Red", 35.00,
+         False, "Treasure Pack 06 exclusive Chopper alt art promo"),
+        ("Brook (TP-06 Promo)", "TP06", "TP06-004", "SP", "Purple", 20.00,
+         False, "Treasure Pack 06 exclusive Brook promo card"),
+        ("Franky (TP-06 Promo)", "TP06", "TP06-005", "SP", "Blue", 22.00,
+         False, "Treasure Pack 06 exclusive Franky promo card"),
+
+        # ── Japanese Exclusive Alt Arts ──────────────────────────────────
+        ("Shanks (JP Exclusive Alt Art OP10)", "OP10", "OP10-098-JAA", "Alt Art", "Red", 195.00,
+         False, "Japanese exclusive alt art Shanks from OP10"),
+        ("Luffy (JP Exclusive Art OP11)", "OP11", "OP11-001-JAA", "Alt Art", "Red", 180.00,
+         True, "Japanese exclusive leader alt art Luffy from OP11"),
+        ("Kaido (JP Exclusive Alt Art OP11)", "OP11", "OP11-089-JAA", "Alt Art", "Purple", 145.00,
+         False, "Japanese exclusive alt art Kaido dragon form from OP11"),
+        ("Big Mom (JP Exclusive SEC OP11)", "OP11", "OP11-126-JAA", "SEC", "Red/Purple", 130.00,
+         False, "Japanese exclusive Secret Rare Big Mom from OP11"),
+        ("Sabo (JP Exclusive Alt Art OP10)", "OP10", "OP10-065-JAA", "Alt Art", "Red/Blue", 115.00,
+         False, "Japanese exclusive alt art Sabo, flame emperor"),
     ]
 
     # ── OP-07/08/09 chase cards, promos, DON!! foils, Gear 5 variants (50 items) ──

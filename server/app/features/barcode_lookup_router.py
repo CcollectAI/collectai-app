@@ -29,7 +29,7 @@ from app.config import BARCODE_CACHE_TTL
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/barcode", tags=["barcode"])
+router = APIRouter(prefix="/barcode", tags=["Barcode"])
 
 _barcode_lookup_limit = per_user_rate_limit(20, window_seconds=60, scope="barcode_lookup")
 logger = logging.getLogger(__name__)

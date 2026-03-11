@@ -16,11 +16,13 @@ import {
 } from '@/utils/statusScoring';
 import logger from '@/utils/logger';
 import { formatPrice } from '@/lib/format';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 const MIN_COMPLETENESS = 0.4;
 const MAX_COMPLETENESS = 0.95;
 
 const SetsToCompleteScreen: React.FC = () => {
+  const { colors } = useAppTheme();
   const [items, setItems] = useState<CollectionStatusInput[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,13 +86,13 @@ const SetsToCompleteScreen: React.FC = () => {
   }, [items]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Sets to complete</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.text }]}>Sets to complete</Text>
+        <Text style={[styles.subtitle, { color: colors.muted }]}>
           Collections that are close to 100% complete. Use this view to decide
           what to hunt for next when searching or buying.
         </Text>
@@ -124,19 +126,19 @@ const SetsToCompleteScreen: React.FC = () => {
               s.expectedCount - s.ownedCount,
             );
             return (
-              <View key={s.key} style={styles.card}>
-                <Text style={styles.cardTitle}>{s.key}</Text>
-                <Text style={styles.cardMeta}>
+              <View key={s.key} style={[styles.card, { backgroundColor: colors.card }]}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>{s.key}</Text>
+                <Text style={[styles.cardMeta, { color: colors.muted }]}>
                   {s.category} · {s.ownedCount}/{s.expectedCount} items
                 </Text>
-                <Text style={styles.cardRow}>
+                <Text style={[styles.cardRow, { color: colors.text }]}>
                   Completeness:{' '}
                   {Math.round(s.completenessRatio * 100)}%
                 </Text>
-                <Text style={styles.cardRow}>
+                <Text style={[styles.cardRow, { color: colors.text }]}>
                   Missing items: {missing}
                 </Text>
-                <Text style={styles.cardRow}>
+                <Text style={[styles.cardRow, { color: colors.text }]}>
                   Estimated value: {formatPrice(s.valueTotal)}
                 </Text>
               </View>
@@ -151,7 +153,6 @@ const SetsToCompleteScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f1f5f9',
   },
   content: {
     paddingHorizontal: 16,
@@ -164,12 +165,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#0f172a',
   },
   subtitle: {
     marginTop: 4,
     fontSize: 12,
-    color: '#4b5563',
   },
   error: {
     fontSize: 13,
@@ -177,7 +176,6 @@ const styles = StyleSheet.create({
   },
   empty: {
     fontSize: 12,
-    color: '#6b7280',
     textAlign: 'center',
     paddingHorizontal: 16,
   },
@@ -185,7 +183,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
     shadowOpacity: 0.04,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
@@ -194,17 +191,14 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0f172a',
   },
   cardMeta: {
     marginTop: 2,
     fontSize: 11,
-    color: '#6b7280',
   },
   cardRow: {
     marginTop: 4,
     fontSize: 11,
-    color: '#111827',
   },
 });
 

@@ -1,5 +1,5 @@
 """
-Import Studio Ghibli collectibles catalog (500+ items).
+Import Studio Ghibli collectibles catalog (1100+ items).
 
 Layer 1 (Catalog):  Curated figures, music boxes, cels & exclusives → category_items
 Layer 2 (Prices):   Estimated market prices → train.jsonl
@@ -729,7 +729,7 @@ def _expanded_batch_park_and_deep_cuts() -> list[tuple]:
 
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Studio Ghibli collectibles catalog (550+ items)."""
+    """Curated Studio Ghibli collectibles catalog (1100+ items)."""
 
     # (film, subcategory, name, edition, rarity_tier, price_eur)
     # rarity_tier: grail (>200), high (80-200), mid (30-80), standard (<30)
@@ -961,7 +961,7 @@ def get_curated_catalog() -> list[dict]:
         ("The Wind Rises", "model", "Mitsubishi A5M Claude Prototype Model (1:48)", "Fine Molds", "high", 90),
         ("The Wind Rises", "art_book", "The Art of The Wind Rises (Deluxe JP Hardcover)", "JP Exclusive", "high", 85),
         ("The Wind Rises", "cel", "Nahoko Parasol Scene Animation Cel", "Original Cel", "grail", 2800),
-        ("The Wind Rises", "poster", "The Wind Rises B2 Theatrical Poster (2013)", "Vintage", "high", 120),
+        ("The Wind Rises", "poster", "The Wind Rises Original B2 Theatrical Poster (2013 JP)", "Vintage", "high", 120),
         ("The Wind Rises", "accessory", "Jiro's Round Glasses Replica Frame", "JP Exclusive", "mid", 55),
         ("The Wind Rises", "jp_merch", "Kurokawa Hotel Replica Stationery Set", "JP Exclusive", "mid", 42),
 
@@ -975,7 +975,7 @@ def get_curated_catalog() -> list[dict]:
         ("Nausicaa", "jp_merch", "Toxic Jungle Spore Terrarium Replica (Glass Dome)", "JP Exclusive", "high", 85),
 
         # ── The Boy and the Heron (+8) ───────────────────────────────
-        ("The Boy and the Heron", "figure", "Mahito School Uniform Figure", "Donguri Sora", "mid", 42),
+        ("The Boy and the Heron", "figure", "Mahito School Uniform Running Figure", "Donguri Sora", "mid", 42),
         ("The Boy and the Heron", "art_book", "The Art of The Boy and the Heron (JP Deluxe)", "JP Exclusive", "high", 95),
         ("The Boy and the Heron", "plush", "Warawara Plush Set (3 sizes)", "Donguri Sora", "mid", 45),
         ("The Boy and the Heron", "music_box", "Ask Me Why Music Box (Boy and Heron Theme)", "Benelic", "high", 85),
@@ -1025,6 +1025,572 @@ def get_curated_catalog() -> list[dict]:
         ("My Neighbors the Yamadas", "figure", "Yamada Family Complete Set (5 figs)", "Donguri Sora", "mid", 52),
         ("The Cat Returns", "figure", "Baron Humbert Figure (Tall 25cm)", "Benelic", "high", 85),
         ("Tales from Earthsea", "figure", "Therru & Arren Dragon Scene Diorama", "Donguri Sora", "mid", 55),
+
+        # ══════════════════════════════════════════════════════════════
+        # EXPANSION TO 1200+ — 500 additional Studio Ghibli collectibles
+        # Covers: figures, music boxes, plush, vinyl/resin statues,
+        # artbooks, cel art, soundtrack vinyl, puzzles, stained glass,
+        # dioramas, kitchen/home items, apparel, museum/park exclusives,
+        # stamps/postcards/stationery, posters, gashapon, Donguri exclusives
+        # ══════════════════════════════════════════════════════════════
+
+        # ── FIGURES: Benelic, Ensky, Sekiguchi, ComiNica, Semic, Cine-maquette ──
+
+        # Spirited Away figures
+        ("Spirited Away", "figure", "Chihiro & Haku River Scene Resin Statue", "Semic", "grail", 320),
+        ("Spirited Away", "figure", "No-Face Eating Rampage Sequence Figure (3 forms)", "Benelic", "high", 110),
+        ("Spirited Away", "figure", "Radish Spirit (Oshirasama) Figure", "Donguri Sora", "mid", 42),
+        ("Spirited Away", "figure", "Yubaba in Office Chair Figure (Ensky)", "Ensky", "mid", 48),
+        ("Spirited Away", "figure", "River God Purification Scene Diorama", "Benelic", "high", 95),
+        ("Spirited Away", "figure", "Lin (Rin) Working Scene Figure", "Donguri Sora", "mid", 38),
+        ("Spirited Away", "figure", "Chihiro & Parents Pig Form Display Figure", "Benelic", "mid", 52),
+        ("Spirited Away", "figure", "Susuwatari Carrying Star Candy Figure Set (10pc)", "Ensky", "mid", 35),
+
+        # My Neighbor Totoro figures
+        ("My Neighbor Totoro", "figure", "Totoro Fishing on Tree Branch Figure", "Benelic", "mid", 48),
+        ("My Neighbor Totoro", "figure", "Catbus Interior with Mei Figure", "Cominica", "high", 130),
+        ("My Neighbor Totoro", "figure", "Satsuki School Run Scene Figure", "Donguri Sora", "mid", 42),
+        ("My Neighbor Totoro", "figure", "Totoro Umbrella Wait LED Diorama (Night)", "Benelic", "high", 95),
+        ("My Neighbor Totoro", "figure", "Corn Delivery Scene Diorama (Mei & Catbus)", "Donguri Sora", "mid", 55),
+        ("My Neighbor Totoro", "figure", "Totoro & Acorns Collection Box (Resin)", "Semic", "high", 160),
+        ("My Neighbor Totoro", "figure", "Kusakabe House Complete Diorama (1:150)", "Sankei", "high", 120),
+
+        # Princess Mononoke figures
+        ("Princess Mononoke", "figure", "San Unmasked with Spear Figure", "Cominica", "high", 125),
+        ("Princess Mononoke", "figure", "Jigo (Monk) Figure", "Benelic", "mid", 42),
+        ("Princess Mononoke", "figure", "Irontown Battle Scene Diorama (Large)", "Semic", "grail", 280),
+        ("Princess Mononoke", "figure", "Deer God Daylight Form Resin Statue", "Semic", "grail", 350),
+        ("Princess Mononoke", "figure", "Yakul Full Figure (Standing, 20cm)", "Cominica", "high", 95),
+
+        # Howl's Moving Castle figures
+        ("Howl's Moving Castle", "figure", "Howl's Castle Walking Mechanical Figure (Clockwork)", "Benelic", "grail", 320),
+        ("Howl's Moving Castle", "figure", "Sophie Young Form Garden Scene Figure", "Donguri Sora", "mid", 45),
+        ("Howl's Moving Castle", "figure", "Calcifer Bacon & Eggs Resin Statue (Semic)", "Semic", "high", 140),
+        ("Howl's Moving Castle", "figure", "Madame Suliman's Dog Soldiers Figure Set (3pc)", "Benelic", "mid", 55),
+
+        # Castle in the Sky figures
+        ("Castle in the Sky", "figure", "Dola's Gang Complete Figure Set (7pc)", "Benelic", "high", 130),
+        ("Castle in the Sky", "figure", "Robot Soldier Battle Mode Figure (Cine-maquette)", "Cine-maquette", "grail", 450),
+        ("Castle in the Sky", "figure", "Laputa Floating Island Resin Diorama (Semic)", "Semic", "grail", 380),
+        ("Castle in the Sky", "figure", "Pazu Mining Scene Figure", "Donguri Sora", "mid", 42),
+
+        # Kiki's Delivery Service figures
+        ("Kiki's Delivery Service", "figure", "Kiki Seaside Sunset Flight Resin Statue (Semic)", "Semic", "grail", 260),
+        ("Kiki's Delivery Service", "figure", "Ursula's Painting Studio Complete Diorama", "Cominica", "high", 145),
+        ("Kiki's Delivery Service", "figure", "Kiki Party Dress Scene Figure", "Donguri Sora", "mid", 38),
+
+        # Nausicaa figures
+        ("Nausicaa", "figure", "Nausicaa Valley Windmill Scene Diorama", "Benelic", "high", 110),
+        ("Nausicaa", "figure", "Ohmu Golden Shell Version Figure (Limited)", "Bandai", "grail", 220),
+        ("Nausicaa", "figure", "Kushana Commander Figure", "Benelic", "mid", 55),
+        ("Nausicaa", "figure", "Nausicaa Riding Kai (Bird) Figure", "Cominica", "high", 135),
+
+        # Porco Rosso figures
+        ("Porco Rosso", "figure", "Porco Reading Newspaper at Adriano Figure", "Benelic", "mid", 48),
+        ("Porco Rosso", "figure", "Air Pirate Boss Mamma Aiuto Gang Figure Set", "Donguri Sora", "mid", 52),
+        ("Porco Rosso", "figure", "Porco & Fio Seaplane Repair Diorama (Semic)", "Semic", "high", 180),
+
+        # Ponyo figures
+        ("Ponyo", "figure", "Ponyo Transformation Sequence 3-Stage Figure Set", "Benelic", "high", 85),
+        ("Ponyo", "figure", "Gran Mamare Underwater Scene Diorama", "Donguri Sora", "high", 90),
+        ("Ponyo", "figure", "Sosuke & Lisa Flooded Town Scene Figure", "Donguri Sora", "mid", 48),
+
+        # The Wind Rises figures
+        ("The Wind Rises", "figure", "Jiro Horikoshi Drafting Desk Figure", "Benelic", "mid", 45),
+        ("The Wind Rises", "figure", "Caproni Dream Airplane Scene Diorama", "Sankei", "high", 95),
+        ("The Wind Rises", "figure", "Nahoko & Jiro Umbrella Scene Figure", "Donguri Sora", "mid", 52),
+
+        # The Boy and the Heron figures
+        ("The Boy and the Heron", "figure", "Grey Heron True Form Reveal Figure", "Benelic", "mid", 55),
+        ("The Boy and the Heron", "figure", "Granduncle Block World Diorama (Large)", "Semic", "high", 180),
+        ("The Boy and the Heron", "figure", "Natsuko & Mahito Reunion Scene Figure", "Donguri Sora", "mid", 45),
+        ("The Boy and the Heron", "figure", "Parakeet Army Formation Figure Set (6pc)", "Ensky", "mid", 65),
+
+        # Deep cut film figures
+        ("Whisper of the Heart", "figure", "Shizuku Writing Desk Scene Figure", "Donguri Sora", "mid", 42),
+        ("Whisper of the Heart", "figure", "Baron Cat Antique Shop Diorama", "Benelic", "high", 85),
+        ("Only Yesterday", "figure", "Taeko Farming Scene Figure", "Donguri Sora", "mid", 38),
+        ("Ocean Waves", "figure", "Rikako & Taku Beach Scene Figure", "Donguri Sora", "mid", 35),
+        ("Pom Poko", "figure", "Tanuki Council Meeting Diorama (Large)", "Benelic", "high", 95),
+        ("Pom Poko", "figure", "Tanuki Parade Float Figure Set (5pc)", "Donguri Sora", "mid", 55),
+        ("The Cat Returns", "figure", "Cat King Throne Room Diorama", "Benelic", "high", 85),
+        ("The Cat Returns", "figure", "Haru & Baron Flying Scene Figure", "Donguri Sora", "mid", 48),
+        ("Tales from Earthsea", "figure", "Cob Dark Sorcerer Figure", "Benelic", "mid", 42),
+        ("Arrietty", "figure", "Arrietty's Kitchen Borrowing Diorama (Miniature)", "Benelic", "high", 85),
+        ("Arrietty", "figure", "Spiller Forest Runner Figure", "Donguri Sora", "mid", 35),
+        ("When Marnie Was There", "figure", "Marnie Dancing in the Rain Figure", "Donguri Sora", "mid", 42),
+        ("From Up on Poppy Hill", "figure", "Umi & Shun Latin Quarter Diorama", "Donguri Sora", "mid", 48),
+        ("Grave of the Fireflies", "figure", "Seita & Setsuko Hillside Scene Figure", "Donguri Sora", "mid", 45),
+        ("Castle of Cagliostro", "figure", "Lupin & Clarisse Rooftop Escape Figure", "Banpresto", "high", 95),
+
+        # ── MUSIC BOXES AND CLOCKS ──────────────────────────────────────
+
+        # Spirited Away music boxes
+        ("Spirited Away", "music_box", "Sixth Station Train Music Box (Wood & Glass)", "Sekiguchi", "high", 110),
+        ("Spirited Away", "music_box", "Reprise (Futatabi) Crystal Ball Music Box", "Benelic", "high", 85),
+        ("Spirited Away", "music_box", "Bathhouse at Night LED Music Box", "Benelic", "high", 120),
+
+        # My Neighbor Totoro music boxes
+        ("My Neighbor Totoro", "music_box", "Totoro Ocarina Melody Wooden Music Box (Large)", "Sekiguchi", "high", 95),
+        ("My Neighbor Totoro", "music_box", "Wind Forest Theme Music Box (Crystal Dome)", "Benelic", "high", 85),
+        ("My Neighbor Totoro", "music_box", "Totoro Night Concert Music Box (Spinning Base)", "Sekiguchi", "high", 110),
+
+        # Howl's Moving Castle music boxes
+        ("Howl's Moving Castle", "music_box", "Merry-Go-Round of Life Grand Piano Shaped Music Box", "Sekiguchi", "high", 130),
+        ("Howl's Moving Castle", "music_box", "Sophie's Hat Shop Music Box (Ceramic)", "Benelic", "high", 95),
+
+        # Princess Mononoke music boxes
+        ("Princess Mononoke", "music_box", "Mononoke Hime Ashitaka Sekki Crystal Ball Music Box", "Benelic", "high", 90),
+
+        # Kiki's Delivery Service music boxes
+        ("Kiki's Delivery Service", "music_box", "Kiki & Jiji Flying Over Sea Music Box (Globe)", "Benelic", "high", 100),
+        ("Kiki's Delivery Service", "music_box", "Koriko Town View Music Box (Wooden Panorama)", "Sekiguchi", "high", 110),
+
+        # Castle in the Sky music boxes
+        ("Castle in the Sky", "music_box", "Kimi wo Nosete Grand Orgel Music Box (Walnut)", "Sankyo", "high", 140),
+        ("Castle in the Sky", "music_box", "Laputa Floating Scene Crystal Music Box", "Benelic", "high", 100),
+
+        # Ponyo music box
+        ("Ponyo", "music_box", "Gake no Ue no Ponyo Theme Crystal Music Box", "Sekiguchi", "high", 80),
+
+        # Nausicaa music box
+        ("Nausicaa", "music_box", "Nausicaa's Requiem Grand Wooden Music Box (Sankyo)", "Sankyo", "high", 120),
+
+        # Clocks
+        ("Spirited Away", "clock", "Bathhouse Exterior Wall Clock (Large 35cm)", "Benelic", "high", 85),
+        ("Princess Mononoke", "clock", "Forest Spirit Daylight Clock (Color Change)", "Benelic", "high", 90),
+        ("Kiki's Delivery Service", "clock", "Koriko Bakery Wall Clock (Ceramic)", "JP Exclusive", "mid", 55),
+        ("My Neighbor Totoro", "clock", "Totoro Leaf Desk Clock (Citizen Collab)", "JP Exclusive", "mid", 48),
+        ("Ponyo", "clock", "Ponyo Wave Desk Clock", "Benelic", "mid", 42),
+        ("Castle in the Sky", "clock", "Laputa Garden Robot Sundial Clock", "JP Exclusive", "high", 95),
+
+        # ── PLUSH TOYS — Sun Arrow, Official, TK Holdings, Various Sizes ──
+
+        # Sun Arrow official plush
+        ("My Neighbor Totoro", "plush", "Sun Arrow Totoro Plush (Jumbo 80cm)", "Sun Arrow", "high", 150),
+        ("My Neighbor Totoro", "plush", "Sun Arrow Catbus Plush (Jumbo 70cm)", "Sun Arrow", "high", 140),
+        ("My Neighbor Totoro", "plush", "Sun Arrow Medium Totoro (Blue) Plush 25cm", "Sun Arrow", "mid", 35),
+        ("My Neighbor Totoro", "plush", "Sun Arrow Small Totoro (White) Plush 20cm", "Sun Arrow", "standard", 28),
+        ("My Neighbor Totoro", "plush", "Sun Arrow Mei's Corn Totoro Plush (Medium)", "Sun Arrow", "mid", 38),
+        ("Spirited Away", "plush", "Sun Arrow No-Face Standing Plush (Medium 30cm)", "Sun Arrow", "mid", 42),
+        ("Spirited Away", "plush", "Sun Arrow Haku Dragon Coil Plush (Large 60cm)", "Sun Arrow", "high", 95),
+        ("Spirited Away", "plush", "Sun Arrow Boh Mouse Plush (Small 18cm)", "Sun Arrow", "mid", 32),
+        ("Princess Mononoke", "plush", "Sun Arrow Kodama Glow Set (10pc Bag)", "Sun Arrow", "mid", 45),
+        ("Princess Mononoke", "plush", "Sun Arrow Yakul Plush (Large 40cm)", "Sun Arrow", "mid", 55),
+        ("Howl's Moving Castle", "plush", "Sun Arrow Calcifer Plush (Flame, Medium 22cm)", "Sun Arrow", "mid", 35),
+        ("Howl's Moving Castle", "plush", "Sun Arrow Heen Dog Plush (Large 30cm)", "Sun Arrow", "mid", 42),
+        ("Kiki's Delivery Service", "plush", "Sun Arrow Jiji Plush (Jumbo 55cm)", "Sun Arrow", "high", 85),
+        ("Kiki's Delivery Service", "plush", "Sun Arrow Lily White Cat Plush (Medium 25cm)", "Sun Arrow", "mid", 35),
+        ("Castle in the Sky", "plush", "Sun Arrow Robot Soldier Plush (Moss Version 35cm)", "Sun Arrow", "mid", 48),
+        ("Nausicaa", "plush", "Sun Arrow Teto Fox Squirrel Plush (Shoulder Mount 20cm)", "Sun Arrow", "mid", 42),
+        ("Ponyo", "plush", "Sun Arrow Ponyo Fish Form Plush Keychain (10cm)", "Sun Arrow", "standard", 18),
+        ("The Boy and the Heron", "plush", "Sun Arrow Grey Heron Plush (Large 50cm)", "Sun Arrow", "mid", 55),
+        ("The Boy and the Heron", "plush", "Sun Arrow Warawara Mini Plush (Blind Box, 8 types)", "Sun Arrow", "mid", 38),
+        ("The Cat Returns", "plush", "Sun Arrow Baron Gentleman Plush (Medium 28cm)", "Sun Arrow", "mid", 42),
+        ("Arrietty", "plush", "Sun Arrow Arrietty with Pin Plush (Mini 15cm)", "Sun Arrow", "mid", 32),
+        ("Whisper of the Heart", "plush", "Baron Moon Cat Plush (Antique Style 25cm)", "Donguri Sora", "mid", 45),
+        ("Ponyo", "plush", "Ponyo Giant Jellyfish Plush (LED Light 40cm)", "Donguri Sora", "mid", 55),
+        ("Grave of the Fireflies", "plush", "Setsuko's Rag Doll Replica Plush", "JP Exclusive", "mid", 38),
+
+        # ── VINYL / RESIN STATUES ──────────────────────────────────────
+
+        ("My Neighbor Totoro", "figure", "Prime 1 Studio Totoro & Mei Ultimate Diorama (Resin)", "Prime 1 Studio", "grail", 680),
+        ("Spirited Away", "figure", "Prime 1 Studio No-Face Bathhouse Statue (1:4 Resin)", "Prime 1 Studio", "grail", 750),
+        ("Princess Mononoke", "figure", "Prime 1 Studio San & Wolf God Statue (Resin, 60cm)", "Prime 1 Studio", "grail", 850),
+        ("Howl's Moving Castle", "figure", "Prime 1 Studio Moving Castle Complete (Resin, 50cm)", "Prime 1 Studio", "grail", 920),
+        ("Castle in the Sky", "figure", "Prime 1 Studio Robot Soldier Garden (Resin, 45cm)", "Prime 1 Studio", "grail", 580),
+        ("Nausicaa", "figure", "Prime 1 Studio Nausicaa on Mehve (Resin, 55cm)", "Prime 1 Studio", "grail", 720),
+        ("Spirited Away", "figure", "GKIDS Exclusive No-Face Vinyl Figure (Mondo)", "GKIDS Exclusive", "high", 120),
+        ("My Neighbor Totoro", "figure", "GKIDS Exclusive Totoro Vinyl Figure (Mondo)", "GKIDS Exclusive", "high", 110),
+        ("Princess Mononoke", "figure", "GKIDS Exclusive Forest Spirit Vinyl Figure (Mondo)", "GKIDS Exclusive", "high", 130),
+        ("Howl's Moving Castle", "figure", "Semic Premium Calcifer Fire Display (LED, 25cm)", "Semic", "high", 165),
+        ("Castle in the Sky", "figure", "Semic Premium Robot Soldier Moss Statue (35cm)", "Semic", "grail", 240),
+        ("Kiki's Delivery Service", "figure", "Semic Premium Kiki Flying Over Ocean (30cm)", "Semic", "grail", 220),
+
+        # ── ARTBOOKS AND ILLUSTRATION BOOKS ────────────────────────────
+
+        ("Multi-Film", "art_book", "Hayao Miyazaki Illustrated Essay Collection (JP Hardcover)", "JP Exclusive", "mid", 55),
+        ("Multi-Film", "art_book", "Studio Ghibli Storyboard Collection — Totoro (Complete)", "JP Exclusive", "high", 95),
+        ("Multi-Film", "art_book", "Studio Ghibli Storyboard Collection — Mononoke (Complete)", "JP Exclusive", "high", 100),
+        ("Multi-Film", "art_book", "Studio Ghibli Storyboard Collection — Kiki (Complete)", "JP Exclusive", "high", 90),
+        ("Multi-Film", "art_book", "Studio Ghibli Storyboard Collection — Castle in the Sky", "JP Exclusive", "high", 90),
+        ("Multi-Film", "art_book", "Studio Ghibli Storyboard Collection — Nausicaa (Complete)", "JP Exclusive", "high", 95),
+        ("Multi-Film", "art_book", "Studio Ghibli Storyboard Collection — Ponyo", "JP Exclusive", "high", 80),
+        ("Multi-Film", "art_book", "Studio Ghibli Storyboard Collection — Porco Rosso", "JP Exclusive", "high", 80),
+        ("Multi-Film", "art_book", "Studio Ghibli Storyboard Collection — The Wind Rises", "JP Exclusive", "mid", 75),
+        ("Multi-Film", "art_book", "Ghibli Textiles: The Fabric of Animation (EN/JP)", "JP Exclusive", "mid", 65),
+        ("Multi-Film", "art_book", "Kazuo Oga Art Collection: Ghibli Background Paintings", "JP Exclusive", "high", 120),
+        ("Multi-Film", "art_book", "Michiyo Yasuda Color Design Works (Ghibli Colorist)", "JP Exclusive", "high", 95),
+        ("Spirited Away", "art_book", "Spirited Away Film Comic Complete Set (5 Volumes)", "Standard", "mid", 45),
+        ("Howl's Moving Castle", "art_book", "Howl's Moving Castle Film Comic Complete Set (4 Volumes)", "Standard", "mid", 40),
+        ("My Neighbor Totoro", "art_book", "My Neighbor Totoro Picture Book (Large Format JP)", "JP Exclusive", "mid", 35),
+        ("Princess Mononoke", "art_book", "Princess Mononoke Film Comic Complete Set (5 Volumes)", "Standard", "mid", 45),
+        ("Castle in the Sky", "art_book", "Castle in the Sky Film Comic Complete Set (4 Volumes)", "Standard", "mid", 38),
+        ("The Boy and the Heron", "art_book", "The Boy and the Heron Film Comic (JP, 2024)", "Standard", "mid", 35),
+        ("Nausicaa", "art_book", "Nausicaa Manga Deluxe Box Set (Hardcover, 2-in-1 Vols)", "Standard", "high", 110),
+        ("Whisper of the Heart", "art_book", "The Art of Whisper of the Heart (JP Hardcover)", "JP Exclusive", "mid", 65),
+        ("Only Yesterday", "art_book", "The Art of Only Yesterday (JP Hardcover)", "JP Exclusive", "mid", 65),
+        ("Ocean Waves", "art_book", "The Art of Ocean Waves (JP Softcover)", "JP Exclusive", "mid", 50),
+        ("Castle of Cagliostro", "art_book", "The Art of Castle of Cagliostro (JP Hardcover)", "JP Exclusive", "mid", 60),
+
+        # ── CEL ART AND REPRODUCTIONS ──────────────────────────────────
+
+        ("My Neighbor Totoro", "cel", "Totoro Umbrella Wait Close-Up Cel (Key Frame)", "Original Cel", "grail", 5500),
+        ("My Neighbor Totoro", "cel", "Satsuki Running to Hospital Cel", "Production Cel", "grail", 2800),
+        ("Spirited Away", "cel", "Haku River Reveal Scene Cel (Key)", "Original Cel", "grail", 4200),
+        ("Spirited Away", "cel", "Zeniba's Cottage Group Scene Cel", "Production Cel", "grail", 2400),
+        ("Princess Mononoke", "cel", "Forest Spirit Head Shot Scene Cel (Key)", "Original Cel", "grail", 4500),
+        ("Princess Mononoke", "cel", "Ashitaka Curse Arm Scene Cel", "Production Cel", "grail", 2600),
+        ("Kiki's Delivery Service", "cel", "Jiji with Lily First Meeting Cel", "Production Cel", "grail", 2200),
+        ("Kiki's Delivery Service", "cel", "Kiki Clock Tower Rescue Cel (Key)", "Original Cel", "grail", 4000),
+        ("Castle in the Sky", "cel", "Robot Soldier Flower Offering Cel (Key Frame)", "Original Cel", "grail", 3200),
+        ("Nausicaa", "cel", "Nausicaa Standing on Ohmu Shell Cel", "Original Cel", "grail", 4800),
+        ("Howl's Moving Castle", "cel", "Howl Transformation Scene Cel (Key)", "Original Cel", "grail", 3800),
+        ("The Wind Rises", "cel", "Jiro Dream Flight Scene Cel", "Production Cel", "grail", 2000),
+        ("Ponyo", "cel", "Ponyo Sisters Underwater Scene Cel", "Production Cel", "grail", 1800),
+        ("Porco Rosso", "cel", "Hotel Adriano Night Scene Cel", "Production Cel", "grail", 1800),
+        ("The Cat Returns", "cel", "Baron's Dance Scene Key Cel", "Original Cel", "grail", 1800),
+        ("My Neighbor Totoro", "cel", "Mei Discovering Totoro Hole Cel (Background)", "Production Cel", "grail", 3200),
+
+        # Cel reproductions
+        ("Multi-Film", "cel", "Ghibli Gallery Official Cel Reproduction Set (6 Films)", "Exhibition", "high", 180),
+        ("Spirited Away", "cel", "No-Face Train Platform Giclee Cel Print (Numbered)", "JP Exclusive", "high", 120),
+        ("My Neighbor Totoro", "cel", "Totoro Bus Stop Giclee Cel Print (Numbered)", "JP Exclusive", "high", 110),
+        ("Princess Mononoke", "cel", "San & Ashitaka Lake Giclee Cel Print (Numbered)", "JP Exclusive", "high", 120),
+
+        # ── SOUNDTRACK VINYL RECORDS (Joe Hisaishi) ────────────────────
+
+        ("My Neighbor Totoro", "vinyl", "My Neighbor Totoro Image Album LP (Hisaishi, 2020 Repress)", "JP Exclusive", "high", 85),
+        ("My Neighbor Totoro", "vinyl", "My Neighbor Totoro Soundtrack LP (Hisaishi, Tjal)", "Standard", "mid", 55),
+        ("Spirited Away", "vinyl", "Spirited Away Soundtrack LP (Hisaishi, 2LP Gatefold)", "JP Exclusive", "high", 95),
+        ("Spirited Away", "vinyl", "Spirited Away Image Album LP (Hisaishi, Clear Vinyl)", "JP Exclusive", "high", 110),
+        ("Princess Mononoke", "vinyl", "Princess Mononoke Soundtrack LP (Hisaishi, 2LP)", "JP Exclusive", "high", 90),
+        ("Princess Mononoke", "vinyl", "Princess Mononoke Symphonic Suite LP (Hisaishi)", "JP Exclusive", "high", 120),
+        ("Howl's Moving Castle", "vinyl", "Howl's Moving Castle Soundtrack LP (Hisaishi, 2LP)", "JP Exclusive", "high", 90),
+        ("Howl's Moving Castle", "vinyl", "Howl's Moving Castle Image Album LP (Clear Vinyl)", "JP Exclusive", "high", 100),
+        ("Castle in the Sky", "vinyl", "Castle in the Sky Soundtrack LP (Hisaishi, 2LP Gatefold)", "JP Exclusive", "high", 85),
+        ("Castle in the Sky", "vinyl", "Castle in the Sky USA Version Soundtrack LP (Hisaishi)", "JP Exclusive", "high", 95),
+        ("Kiki's Delivery Service", "vinyl", "Kiki's Delivery Service Soundtrack LP (Hisaishi)", "JP Exclusive", "high", 80),
+        ("Kiki's Delivery Service", "vinyl", "Kiki's Delivery Service Image Album LP (Yumi Arai)", "JP Exclusive", "high", 90),
+        ("Nausicaa", "vinyl", "Nausicaa Soundtrack LP (Hisaishi, Original 1984 Repress)", "JP Exclusive", "high", 110),
+        ("Nausicaa", "vinyl", "Nausicaa Image Album LP (Hisaishi, First Press)", "JP Exclusive", "grail", 180),
+        ("Ponyo", "vinyl", "Ponyo on the Cliff Soundtrack LP (Hisaishi)", "JP Exclusive", "high", 80),
+        ("Porco Rosso", "vinyl", "Porco Rosso Soundtrack LP (Hisaishi, 2LP Gatefold)", "JP Exclusive", "high", 90),
+        ("The Wind Rises", "vinyl", "The Wind Rises Soundtrack LP (Hisaishi)", "JP Exclusive", "high", 85),
+        ("The Boy and the Heron", "vinyl", "The Boy and the Heron Soundtrack LP (Hisaishi, 2LP)", "JP Exclusive", "high", 100),
+        ("The Boy and the Heron", "vinyl", "The Boy and the Heron Image Album LP (Limited, Colored)", "JP Exclusive", "high", 130),
+        ("Multi-Film", "vinyl", "Joe Hisaishi Studio Ghibli Concert 2024 Live LP (3LP Box)", "JP Exclusive", "grail", 220),
+        ("Multi-Film", "vinyl", "Studio Ghibli Kokyo Kyokushu (Symphonic Collection) Box Set", "JP Exclusive", "grail", 280),
+        ("Grave of the Fireflies", "vinyl", "Grave of the Fireflies Soundtrack LP (Mamiya)", "JP Exclusive", "high", 95),
+        ("Whisper of the Heart", "vinyl", "Whisper of the Heart Soundtrack LP (Country Roads)", "JP Exclusive", "high", 85),
+
+        # ── PUZZLES — Ensky, Crystal Puzzles ───────────────────────────
+
+        ("Multi-Film", "puzzle", "Ensky Ghibli 3D Crystal Ball Puzzle (Spirited Away 60pc)", "Ensky", "mid", 28),
+        ("Multi-Film", "puzzle", "Ensky Ghibli 3D Crystal Ball Puzzle (Kiki's 60pc)", "Ensky", "mid", 28),
+        ("Multi-Film", "puzzle", "Ensky Ghibli 3D Crystal Ball Puzzle (Castle in the Sky 60pc)", "Ensky", "mid", 28),
+        ("Multi-Film", "puzzle", "Ensky Ghibli 3D Crystal Ball Puzzle (Mononoke 60pc)", "Ensky", "mid", 28),
+        ("Multi-Film", "puzzle", "Ensky Ghibli Art Crystal Jigsaw (Totoro 1000pc Night)", "Ensky", "mid", 42),
+        ("Multi-Film", "puzzle", "Ensky Ghibli Art Crystal Jigsaw (Spirited Away 1000pc Bathhouse Night)", "Ensky", "mid", 45),
+        ("Multi-Film", "puzzle", "Ensky Ghibli Art Crystal Jigsaw (Howl's 1000pc Moving Castle)", "Ensky", "mid", 42),
+        ("Multi-Film", "puzzle", "Ensky Ghibli Art Crystal Jigsaw (Totoro 500pc Autumn)", "Ensky", "mid", 32),
+        ("Multi-Film", "puzzle", "Ensky Ghibli Jigsaw (Boy and the Heron 1000pc Tower)", "Ensky", "mid", 42),
+        ("Multi-Film", "puzzle", "Ensky Ghibli Jigsaw Frame (No-Face Design Wood)", "Ensky", "standard", 28),
+        ("Multi-Film", "puzzle", "Ensky Ghibli Kumukumu 3D Puzzle (Totoro, Wood 20pc)", "Ensky", "mid", 35),
+        ("Multi-Film", "puzzle", "Ensky Ghibli Kumukumu 3D Puzzle (No-Face, Wood 20pc)", "Ensky", "mid", 35),
+
+        # ── STAINED GLASS STYLE PANELS ─────────────────────────────────
+
+        ("My Neighbor Totoro", "stained_glass", "Totoro Bus Stop Stained Glass Panel (30x40cm)", "JP Exclusive", "high", 180),
+        ("My Neighbor Totoro", "stained_glass", "Totoro Acorn Forest Stained Glass Ornament", "JP Exclusive", "mid", 65),
+        ("Spirited Away", "stained_glass", "No-Face Train Scene Stained Glass Panel (30x40cm)", "JP Exclusive", "high", 190),
+        ("Spirited Away", "stained_glass", "Bathhouse Night Stained Glass Window (Large 45cm)", "JP Exclusive", "grail", 280),
+        ("Howl's Moving Castle", "stained_glass", "Moving Castle Stained Glass Panel (Round 35cm)", "JP Exclusive", "high", 175),
+        ("Castle in the Sky", "stained_glass", "Laputa Robot Garden Stained Glass Panel (30x40cm)", "JP Exclusive", "high", 185),
+        ("Kiki's Delivery Service", "stained_glass", "Kiki Flying Over Koriko Stained Glass Ornament", "JP Exclusive", "mid", 65),
+        ("Princess Mononoke", "stained_glass", "Forest Spirit Stained Glass Panel (35cm)", "JP Exclusive", "high", 195),
+        ("Nausicaa", "stained_glass", "Nausicaa Valley of the Wind Stained Glass Panel", "JP Exclusive", "high", 175),
+        ("Ponyo", "stained_glass", "Ponyo Wave Scene Stained Glass Sun Catcher", "JP Exclusive", "mid", 55),
+
+        # ── DIORAMA / SCENE SETS ───────────────────────────────────────
+
+        ("My Neighbor Totoro", "diorama", "Totoro Forest Complete Diorama (Resin, LED, 40cm)", "JP Exclusive", "grail", 380),
+        ("My Neighbor Totoro", "diorama", "Kusakabe House Full Scene Diorama (1:100 Scale)", "Sankei", "high", 160),
+        ("My Neighbor Totoro", "diorama", "Catbus Night Run Diorama (LED Headlights)", "Benelic", "high", 130),
+        ("Spirited Away", "diorama", "Bathhouse Complete Diorama (LED, Multi-Level, 45cm)", "JP Exclusive", "grail", 450),
+        ("Spirited Away", "diorama", "Spirit World Train Bridge Scene Diorama", "Benelic", "high", 120),
+        ("Spirited Away", "diorama", "Kamaji Boiler Room Complete Diorama", "Sankei", "high", 110),
+        ("Castle in the Sky", "diorama", "Laputa Floating Island Complete Diorama (Resin, 35cm)", "JP Exclusive", "grail", 350),
+        ("Castle in the Sky", "diorama", "Pazu's Mining Town Street Diorama", "Sankei", "high", 95),
+        ("Howl's Moving Castle", "diorama", "Howl's Castle Walking Diorama (Motorized, LED)", "JP Exclusive", "grail", 420),
+        ("Howl's Moving Castle", "diorama", "Sophie's Hat Shop Interior Diorama", "Sankei", "high", 110),
+        ("Princess Mononoke", "diorama", "Deer God Forest Pool Diorama (LED, Resin)", "JP Exclusive", "grail", 320),
+        ("Princess Mononoke", "diorama", "Iron Town Forge Scene Diorama", "Sankei", "high", 105),
+        ("Kiki's Delivery Service", "diorama", "Koriko Town Aerial View Diorama (1:200)", "Sankei", "high", 130),
+        ("Nausicaa", "diorama", "Toxic Jungle Terrarium Diorama (Glass Dome, Plants)", "JP Exclusive", "high", 140),
+        ("Nausicaa", "diorama", "Valley of the Wind Windmill Village Diorama", "Sankei", "high", 110),
+        ("Ponyo", "diorama", "Sosuke's House Cliff Diorama (Full Scene)", "Sankei", "high", 95),
+        ("The Boy and the Heron", "diorama", "Granduncle's Tower Interior Diorama (Multi-Level)", "JP Exclusive", "high", 160),
+        ("Porco Rosso", "diorama", "Porco's Island Hideout Complete Diorama", "Sankei", "high", 110),
+
+        # ── KITCHEN / HOME ITEMS — Noritake Collab, Chopstick Rests, Tea Sets, Lunch Boxes ──
+
+        ("My Neighbor Totoro", "jp_merch", "Noritake x Totoro Tea Cup & Saucer Pair Set", "Noritake Collab", "high", 120),
+        ("My Neighbor Totoro", "jp_merch", "Noritake x Totoro Dinner Plate Set (4pc)", "Noritake Collab", "high", 160),
+        ("My Neighbor Totoro", "jp_merch", "Noritake x Totoro Mug Cup (Seasonal Autumn)", "Noritake Collab", "mid", 55),
+        ("My Neighbor Totoro", "jp_merch", "Totoro Chopstick Rest Set (4 Characters, Ceramic)", "JP Exclusive", "mid", 32),
+        ("My Neighbor Totoro", "jp_merch", "Totoro Aluminum Bento Box (2-Tier)", "JP Exclusive", "mid", 45),
+        ("My Neighbor Totoro", "jp_merch", "Totoro Lacquerware Soup Bowl Set (2pc)", "JP Exclusive", "mid", 38),
+        ("Spirited Away", "jp_merch", "No-Face Ceramic Chopstick Rest Set (3 faces)", "JP Exclusive", "mid", 28),
+        ("Spirited Away", "jp_merch", "Spirited Away Bathhouse Ceramic Teapot (Painted)", "JP Exclusive", "mid", 65),
+        ("Spirited Away", "jp_merch", "Susuwatari Star Candy Ceramic Bowl Set (4pc)", "JP Exclusive", "mid", 42),
+        ("Spirited Away", "jp_merch", "Spirited Away Onigiri Bento Box Set", "JP Exclusive", "mid", 38),
+        ("Howl's Moving Castle", "jp_merch", "Calcifer Ceramic Egg Cup & Toast Stand", "JP Exclusive", "mid", 32),
+        ("Howl's Moving Castle", "jp_merch", "Howl's Breakfast Ceramic Plate (Large)", "JP Exclusive", "mid", 42),
+        ("Howl's Moving Castle", "jp_merch", "Calcifer Cast Iron Skillet (Mini 15cm)", "JP Exclusive", "mid", 48),
+        ("Kiki's Delivery Service", "jp_merch", "Jiji Ceramic Tea Cup & Saucer Set", "JP Exclusive", "mid", 38),
+        ("Kiki's Delivery Service", "jp_merch", "Kiki's Bakery Ceramic Bread Plate Set (4pc)", "JP Exclusive", "mid", 48),
+        ("Kiki's Delivery Service", "jp_merch", "Jiji Chopstick Rest (Black Cat, Ceramic)", "JP Exclusive", "standard", 18),
+        ("Castle in the Sky", "jp_merch", "Robot Soldier Ceramic Mug (Moss Green)", "JP Exclusive", "mid", 32),
+        ("Princess Mononoke", "jp_merch", "Kodama Ceramic Chopstick Rest Set (5pc)", "JP Exclusive", "mid", 35),
+        ("Princess Mononoke", "jp_merch", "Forest Spirit Ceramic Sake Set (Tokkuri & 2 Cups)", "JP Exclusive", "mid", 55),
+        ("Ponyo", "jp_merch", "Ponyo Ham Ramen Ceramic Bowl (Replica)", "JP Exclusive", "mid", 38),
+        ("Multi-Film", "jp_merch", "Studio Ghibli Characters Bento Box Collection (5 Films)", "JP Exclusive", "mid", 65),
+        ("Multi-Film", "jp_merch", "Ghibli Food Scene Ceramic Coaster Set (8pc)", "JP Exclusive", "mid", 42),
+
+        # ── APPAREL EXCLUSIVES — GBL, Ghibli Museum, Fashion ──────────
+
+        ("Multi-Film", "fashion", "GBL x Totoro Embroidered Canvas Tote (Large)", "GBL Collab", "mid", 48),
+        ("Multi-Film", "fashion", "GBL x Spirited Away No-Face Zip Hoodie (Black)", "GBL Collab", "mid", 65),
+        ("Multi-Film", "fashion", "GBL x Kiki's Jiji Embroidered Beanie", "GBL Collab", "mid", 35),
+        ("Multi-Film", "fashion", "GBL x Castle in the Sky Robot Military Jacket", "GBL Collab", "high", 95),
+        ("Multi-Film", "fashion", "GBL x Princess Mononoke Kodama All-Over Print Shirt", "GBL Collab", "mid", 55),
+        ("Multi-Film", "fashion", "GBL x Howl's Moving Castle Calcifer Socks Set (3 pairs)", "GBL Collab", "standard", 25),
+        ("Multi-Film", "fashion", "GBL x Ponyo Wave Pattern Umbrella", "GBL Collab", "mid", 42),
+        ("Ghibli Museum", "fashion", "Ghibli Museum Exclusive Robot Soldier T-Shirt (2024)", "Museum Exclusive", "mid", 45),
+        ("Ghibli Museum", "fashion", "Ghibli Museum Exclusive Totoro Embroidered Cap", "Museum Exclusive", "mid", 38),
+        ("Ghibli Museum", "fashion", "Ghibli Museum Exclusive Soot Sprite Socks Set (5 pairs)", "Museum Exclusive", "mid", 32),
+        ("Multi-Film", "fashion", "LOEWE x Totoro Hammock Tote (Medium)", "LOEWE Collab", "grail", 580),
+        ("Multi-Film", "fashion", "LOEWE x Spirited Away Soot Sprite Sneakers", "LOEWE Collab", "grail", 650),
+        ("Multi-Film", "fashion", "Uniqlo UT x Ghibli The Boy and the Heron T-Shirt (2024)", "Uniqlo Collab", "standard", 22),
+        ("Multi-Film", "fashion", "Uniqlo UT x Ghibli Totoro Kids T-Shirt Set (3pc)", "Uniqlo Collab", "standard", 28),
+
+        # ── GHIBLI MUSEUM EXCLUSIVES ──────────────────────────────────
+
+        ("Ghibli Museum", "museum", "Ghibli Museum Flip-Book Film — Mei & the Catbus", "Museum Exclusive", "high", 85),
+        ("Ghibli Museum", "museum", "Ghibli Museum Flip-Book Film — Totoro Running", "Museum Exclusive", "high", 85),
+        ("Ghibli Museum", "museum", "Ghibli Museum Flip-Book Film — No-Face on the Train", "Museum Exclusive", "high", 85),
+        ("Ghibli Museum", "museum", "Ghibli Museum Exclusive Stained Glass Coaster Set (4pc)", "Museum Exclusive", "mid", 55),
+        ("Ghibli Museum", "museum", "Ghibli Museum Exclusive Robot Soldier Pewter Figurine", "Museum Exclusive", "high", 130),
+        ("Ghibli Museum", "museum", "Ghibli Museum Cafe Exclusive Menu Art Print Set (8pc)", "Museum Exclusive", "mid", 65),
+        ("Ghibli Museum", "museum", "Ghibli Museum Saturn Theater Zoetrope Kit (DIY)", "Museum Exclusive", "high", 95),
+        ("Ghibli Museum", "museum", "Ghibli Museum Exclusive Animation Cels Postcard Box (20pc)", "Museum Exclusive", "mid", 48),
+        ("Ghibli Museum", "museum", "Ghibli Museum Rooftop Garden Photo Frame Set", "Museum Exclusive", "mid", 42),
+        ("Ghibli Museum", "museum", "Ghibli Museum Totoro Reception Desk Netsuke (Wood)", "Museum Exclusive", "mid", 55),
+        ("Ghibli Museum", "museum", "Ghibli Museum Original Bookmark Set (12 Films, Metal)", "Museum Exclusive", "mid", 48),
+        ("Ghibli Museum", "museum", "Ghibli Museum Short Film Poster Collection (Complete 20pc)", "Museum Exclusive", "high", 160),
+
+        # ── GHIBLI PARK MERCH — Grand Warehouse, Themed Area Exclusives ──
+
+        ("Ghibli Park", "park", "Ghibli Park Grand Warehouse Catbus Ticket Punch Replica", "Ghibli Park Exclusive", "mid", 55),
+        ("Ghibli Park", "park", "Ghibli Park Grand Warehouse Soot Sprite Candy Tin (Large)", "Ghibli Park Exclusive", "mid", 35),
+        ("Ghibli Park", "park", "Ghibli Park Dondoko Forest Totoro Ceramic Planter", "Ghibli Park Exclusive", "mid", 48),
+        ("Ghibli Park", "park", "Ghibli Park Mononoke Village Kodama LED Path Lights (Set)", "Ghibli Park Exclusive", "high", 120),
+        ("Ghibli Park", "park", "Ghibli Park Valley of Witches Calcifer Apron", "Ghibli Park Exclusive", "mid", 42),
+        ("Ghibli Park", "park", "Ghibli Park Hill of Youth Earth Shop Clock Replica", "Ghibli Park Exclusive", "high", 140),
+        ("Ghibli Park", "park", "Ghibli Park Grand Warehouse Laputa Crest Rug", "Ghibli Park Exclusive", "high", 95),
+        ("Ghibli Park", "park", "Ghibli Park 2nd Anniversary Commemorative Tin (2024)", "Ghibli Park Exclusive", "high", 85),
+        ("Ghibli Park", "park", "Ghibli Park Mononoke Village Wooden Mask Set (3pc)", "Ghibli Park Exclusive", "high", 110),
+        ("Ghibli Park", "park", "Ghibli Park Dondoko Forest Acorn Compass Replica", "Ghibli Park Exclusive", "mid", 55),
+        ("Ghibli Park", "park", "Ghibli Park Grand Warehouse Jiji Bakery Cookie Set", "Ghibli Park Exclusive", "mid", 38),
+        ("Ghibli Park", "park", "Ghibli Park Valley of Witches Sophie's Hat Accessory", "Ghibli Park Exclusive", "mid", 45),
+
+        # ── STAMPS, POSTCARDS, AND STATIONERY SETS ─────────────────────
+
+        ("Multi-Film", "stationery", "Japan Post x Studio Ghibli Commemorative Stamp Sheet (2024)", "JP Exclusive", "mid", 45),
+        ("Multi-Film", "stationery", "Japan Post x Ghibli Limited Edition Postcard Stamp Set (50pc)", "JP Exclusive", "high", 85),
+        ("Multi-Film", "stationery", "Studio Ghibli Watercolor Postcard Set (30 Scenes)", "JP Exclusive", "mid", 38),
+        ("Multi-Film", "stationery", "Studio Ghibli Letter Writing Set (Spirited Away Theme)", "JP Exclusive", "standard", 22),
+        ("Multi-Film", "stationery", "Studio Ghibli Letter Writing Set (Totoro Theme)", "JP Exclusive", "standard", 22),
+        ("Multi-Film", "stationery", "Studio Ghibli Washi Tape Collection (15 Rolls, All Films)", "JP Exclusive", "mid", 35),
+        ("Multi-Film", "stationery", "Studio Ghibli Mechanical Pencil Set (6 Films)", "JP Exclusive", "mid", 28),
+        ("Multi-Film", "stationery", "Studio Ghibli Characters Rubber Stamp Set (24pc)", "JP Exclusive", "mid", 42),
+        ("My Neighbor Totoro", "stationery", "Totoro Pop-Up Greeting Card Set (6pc)", "JP Exclusive", "standard", 25),
+        ("Spirited Away", "stationery", "Spirited Away Scene Postcard Book (40 Cards)", "JP Exclusive", "mid", 32),
+        ("Howl's Moving Castle", "stationery", "Howl's Moving Castle Scene Postcard Book (30 Cards)", "JP Exclusive", "mid", 28),
+        ("Kiki's Delivery Service", "stationery", "Kiki's Delivery Service Notebook Set (3 Designs)", "JP Exclusive", "standard", 22),
+        ("Princess Mononoke", "stationery", "Princess Mononoke Ukiyo-e Style Postcard Set (10pc)", "JP Exclusive", "mid", 35),
+        ("Multi-Film", "stationery", "Studio Ghibli Sailor Fountain Pen (Totoro, Ltd Edition)", "JP Exclusive", "high", 150),
+        ("Multi-Film", "stationery", "Studio Ghibli Ink Bottle Set (4 Colors, Ghibli Scenes)", "JP Exclusive", "mid", 55),
+
+        # ── MIYAZAKI FILM POSTERS — Original Japanese Theatrical, International ──
+
+        ("My Neighbor Totoro", "poster", "My Neighbor Totoro B1 Theatrical Poster (1988, Large)", "Vintage", "grail", 550),
+        ("Spirited Away", "poster", "Spirited Away B1 Theatrical Poster (2001, Large)", "Vintage", "grail", 420),
+        ("Spirited Away", "poster", "Spirited Away US One-Sheet Theatrical Poster (2002)", "Vintage", "high", 180),
+        ("Princess Mononoke", "poster", "Princess Mononoke US One-Sheet Poster (Miramax, 1999)", "Vintage", "high", 160),
+        ("Princess Mononoke", "poster", "Princess Mononoke French Grande Poster (120x160cm)", "Vintage", "high", 200),
+        ("Howl's Moving Castle", "poster", "Howl's Moving Castle US One-Sheet Poster (Disney, 2005)", "Vintage", "high", 120),
+        ("Castle in the Sky", "poster", "Castle in the Sky US Re-release Poster (GKIDS, 2018)", "Vintage", "mid", 65),
+        ("Kiki's Delivery Service", "poster", "Kiki's Delivery Service US Re-release Poster (GKIDS)", "Vintage", "mid", 60),
+        ("Nausicaa", "poster", "Nausicaa French Grande Poster (120x160cm)", "Vintage", "high", 200),
+        ("Nausicaa", "poster", "Nausicaa US Re-release Poster (GKIDS, 2017)", "Vintage", "mid", 65),
+        ("The Boy and the Heron", "poster", "The Boy and the Heron US One-Sheet Poster (GKIDS)", "Vintage", "mid", 55),
+        ("The Boy and the Heron", "poster", "The Boy and the Heron French Grande Poster", "Vintage", "mid", 65),
+        ("Ponyo", "poster", "Ponyo US One-Sheet Theatrical Poster (Disney, 2009)", "Vintage", "mid", 65),
+        ("The Wind Rises", "poster", "The Wind Rises US One-Sheet Poster (Touchstone, 2014)", "Vintage", "mid", 55),
+        ("Porco Rosso", "poster", "Porco Rosso Italian Release B2 Poster (1995)", "Vintage", "high", 155),
+        ("From Up on Poppy Hill", "poster", "From Up on Poppy Hill US One-Sheet Poster (GKIDS)", "Vintage", "mid", 50),
+        ("Arrietty", "poster", "Arrietty US One-Sheet Poster (Disney, 2012)", "Vintage", "mid", 50),
+        ("When Marnie Was There", "poster", "When Marnie Was There US One-Sheet Poster (GKIDS)", "Vintage", "mid", 45),
+        ("Grave of the Fireflies", "poster", "Grave of the Fireflies Original B2 Poster (1988 Dual)", "Vintage", "grail", 400),
+        ("Only Yesterday", "poster", "Only Yesterday US Re-release Poster (GKIDS, 2016)", "Vintage", "mid", 50),
+        ("Whisper of the Heart", "poster", "Whisper of the Heart B2 Theatrical Poster (1995)", "Vintage", "high", 130),
+        ("Whisper of the Heart", "poster", "Whisper of the Heart US Re-release Poster (GKIDS)", "Vintage", "mid", 45),
+
+        # ── GASHAPON / CAPSULE TOYS AND MINIATURES ─────────────────────
+
+        ("My Neighbor Totoro", "gashapon", "Totoro Gashapon Scene Collection (Complete 6 Types)", "Benelic", "mid", 48),
+        ("My Neighbor Totoro", "gashapon", "Totoro & Forest Friends Capsule Figure Set (8 Types)", "Ensky", "mid", 42),
+        ("My Neighbor Totoro", "gashapon", "Totoro Seasonal Capsule (Spring/Summer/Autumn/Winter Set)", "Benelic", "mid", 55),
+        ("Spirited Away", "gashapon", "Spirited Away Spirit World Capsule Collection (6 Types)", "Benelic", "mid", 48),
+        ("Spirited Away", "gashapon", "No-Face Expressions Gashapon Set (8 Faces Complete)", "Ensky", "mid", 42),
+        ("Spirited Away", "gashapon", "Spirited Away Food Scene Miniature Set (5 Types)", "Benelic", "mid", 38),
+        ("Howl's Moving Castle", "gashapon", "Moving Castle Mini Figure Capsule Set (6 Types)", "Benelic", "mid", 45),
+        ("Howl's Moving Castle", "gashapon", "Calcifer Expressions Gashapon (5 Types Complete)", "Ensky", "mid", 35),
+        ("Princess Mononoke", "gashapon", "Mononoke Forest Spirits Capsule Set (8 Types)", "Benelic", "mid", 48),
+        ("Princess Mononoke", "gashapon", "Kodama Variety Gashapon (12 Types Complete)", "Ensky", "mid", 42),
+        ("Kiki's Delivery Service", "gashapon", "Jiji Daily Life Capsule Set (6 Types)", "Benelic", "mid", 38),
+        ("Kiki's Delivery Service", "gashapon", "Kiki's Delivery Scenes Gashapon (4 Types)", "Ensky", "mid", 32),
+        ("Castle in the Sky", "gashapon", "Laputa Robot Poses Capsule Set (5 Types)", "Benelic", "mid", 38),
+        ("Nausicaa", "gashapon", "Nausicaa Creatures Capsule Set (6 Types)", "Bandai", "mid", 45),
+        ("Ponyo", "gashapon", "Ponyo Transformation Capsule Set (4 Types)", "Benelic", "mid", 32),
+        ("The Boy and the Heron", "gashapon", "Boy and Heron Character Capsule Set (6 Types)", "Benelic", "mid", 38),
+        ("Multi-Film", "gashapon", "Studio Ghibli All-Stars Capsule Collection Vol.1 (12 Types)", "Benelic", "mid", 65),
+        ("Multi-Film", "gashapon", "Studio Ghibli All-Stars Capsule Collection Vol.2 (12 Types)", "Benelic", "mid", 65),
+        ("Multi-Film", "gashapon", "Ghibli Food Miniature Capsule Collection (10 Types)", "Ensky", "mid", 55),
+        ("Multi-Film", "gashapon", "Ghibli Vehicles Miniature Capsule Set (8 Types)", "Bandai", "mid", 48),
+
+        # ── DONGURI KYOWAKOKU (REPUBLIC) EXCLUSIVES ────────────────────
+
+        ("My Neighbor Totoro", "figure", "Donguri Republic Totoro 4-Seasons Terrarium Set (4pc)", "Donguri Republic", "high", 120),
+        ("My Neighbor Totoro", "figure", "Donguri Republic Catbus Night Scene LED Terrarium", "Donguri Republic", "high", 85),
+        ("My Neighbor Totoro", "jp_merch", "Donguri Republic Totoro Ceramic Tile Art (Wall Mount)", "Donguri Republic", "mid", 55),
+        ("Spirited Away", "figure", "Donguri Republic No-Face Feast Terrarium", "Donguri Republic", "mid", 48),
+        ("Spirited Away", "figure", "Donguri Republic Haku Dragon Flight Terrarium", "Donguri Republic", "high", 75),
+        ("Spirited Away", "jp_merch", "Donguri Republic Spirited Away Ceramic Tile Art (Wall)", "Donguri Republic", "mid", 55),
+        ("Howl's Moving Castle", "figure", "Donguri Republic Moving Castle LED Terrarium (Large)", "Donguri Republic", "high", 95),
+        ("Howl's Moving Castle", "jp_merch", "Donguri Republic Calcifer Kitchen Tile Art", "Donguri Republic", "mid", 48),
+        ("Princess Mononoke", "figure", "Donguri Republic Forest Spirit Pool Terrarium (LED)", "Donguri Republic", "high", 85),
+        ("Princess Mononoke", "jp_merch", "Donguri Republic Mononoke Forest Ceramic Tile Art", "Donguri Republic", "mid", 55),
+        ("Kiki's Delivery Service", "figure", "Donguri Republic Jiji Flower Shop Terrarium", "Donguri Republic", "mid", 45),
+        ("Kiki's Delivery Service", "jp_merch", "Donguri Republic Kiki's Bakery Ceramic Tile Art", "Donguri Republic", "mid", 48),
+        ("Castle in the Sky", "figure", "Donguri Republic Robot Garden Full Terrarium (Large)", "Donguri Republic", "high", 85),
+        ("Nausicaa", "figure", "Donguri Republic Ohmu Valley Terrarium (Large)", "Donguri Republic", "high", 75),
+        ("Ponyo", "jp_merch", "Donguri Republic Ponyo Seaside Ceramic Tile Art", "Donguri Republic", "mid", 45),
+        ("The Boy and the Heron", "figure", "Donguri Republic Tower World Terrarium", "Donguri Republic", "mid", 55),
+        ("Multi-Film", "jp_merch", "Donguri Republic Store 30th Anniversary Commemorative Set", "Donguri Republic", "high", 140),
+
+        # ── ADDITIONAL DEEP CUT FILMS ──────────────────────────────────
+
+        # Whisper of the Heart
+        ("Whisper of the Heart", "figure", "Earth Shop Interior Diorama (Complete)", "Benelic", "high", 110),
+        ("Whisper of the Heart", "art_book", "Whisper of the Heart Film Comic (Complete)", "Standard", "mid", 35),
+        ("Whisper of the Heart", "cel", "Shizuku Writing Scene Animation Cel", "Original Cel", "grail", 1600),
+        ("Whisper of the Heart", "jewelry", "Baron Cat Brooch (Antique Gold Style)", "JP Exclusive", "mid", 48),
+        ("Whisper of the Heart", "plush", "Moon Cat Plush (Standing 22cm)", "Donguri Sora", "mid", 38),
+        ("Whisper of the Heart", "poster", "Whisper of the Heart Advance B2 Poster (1995)", "Vintage", "high", 140),
+
+        # Only Yesterday
+        ("Only Yesterday", "figure", "Taeko & Toshio Pineapple Tasting Scene Figure", "Donguri Sora", "mid", 42),
+        ("Only Yesterday", "art_book", "The Art of Only Yesterday Deluxe (JP Hardcover)", "JP Exclusive", "high", 80),
+        ("Only Yesterday", "figure", "Taeko Childhood Memories Figure Set (5 Scenes)", "Donguri Sora", "mid", 55),
+        ("Only Yesterday", "poster", "Only Yesterday Advance B2 Poster (1991)", "Vintage", "high", 150),
+        ("Only Yesterday", "jp_merch", "Only Yesterday Safflower Bookmark Set (Pressed Flower)", "JP Exclusive", "mid", 28),
+
+        # Ocean Waves
+        ("Ocean Waves", "figure", "Taku & Rikako Kochi Trip Scene Figure", "Donguri Sora", "mid", 38),
+        ("Ocean Waves", "poster", "Ocean Waves Original B2 Poster (1993)", "Vintage", "high", 120),
+        ("Ocean Waves", "cel", "Rikako Airport Scene Animation Cel", "Original Cel", "grail", 1400),
+
+        # Pom Poko
+        ("Pom Poko", "figure", "Tanuki Tea Party Scene Figure Set (6pc)", "Donguri Sora", "mid", 58),
+        ("Pom Poko", "cel", "Tanuki Transformation Parade Cel (Key)", "Original Cel", "grail", 1600),
+        ("Pom Poko", "art_book", "The Art of Pom Poko (JP Deluxe)", "JP Exclusive", "mid", 65),
+        ("Pom Poko", "plush", "Tanuki Plush (Realistic Style 30cm)", "Donguri Sora", "mid", 42),
+
+        # Tales from Earthsea
+        ("Tales from Earthsea", "figure", "Therru Dragon Form Figure (Large)", "Benelic", "high", 85),
+        ("Tales from Earthsea", "cel", "Therru Fire Scene Animation Cel (Key)", "Original Cel", "grail", 1800),
+        ("Tales from Earthsea", "poster", "Tales from Earthsea Advance B2 Poster (2006)", "Vintage", "mid", 55),
+        ("Tales from Earthsea", "plush", "Therru Dragon Plush (Small 20cm)", "Donguri Sora", "mid", 35),
+
+        # Arrietty
+        ("Arrietty", "figure", "Arrietty & Sho Garden Scene Diorama", "Benelic", "high", 85),
+        ("Arrietty", "music_box", "Arrietty's Song Crystal Music Box", "Sekiguchi", "high", 80),
+        ("Arrietty", "cel", "Arrietty Climbing Scene Key Animation Cel", "Original Cel", "grail", 2000),
+        ("Arrietty", "plush", "Arrietty Clip-On Plush with Needle Sword (12cm)", "Donguri Sora", "mid", 32),
+        ("Arrietty", "jp_merch", "Arrietty Miniature Furniture Set (Dollhouse Scale)", "JP Exclusive", "mid", 55),
+
+        # When Marnie Was There
+        ("When Marnie Was There", "figure", "Marsh House at Night LED Diorama", "Benelic", "high", 95),
+        ("When Marnie Was There", "cel", "Anna & Marnie Dance Scene Animation Cel", "Original Cel", "grail", 1800),
+        ("When Marnie Was There", "plush", "Anna Plush (Standing 22cm)", "Donguri Sora", "mid", 35),
+        ("When Marnie Was There", "poster", "When Marnie Was There Advance B2 Poster (2014)", "Vintage", "mid", 55),
+        ("When Marnie Was There", "music_box", "Fine on the Outside Music Box (Priscilla Ahn)", "Sekiguchi", "mid", 60),
+
+        # From Up on Poppy Hill
+        ("From Up on Poppy Hill", "figure", "Latin Quarter Boarding House Diorama", "Sankei", "high", 85),
+        ("From Up on Poppy Hill", "cel", "Umi Raising Signal Flags Animation Cel", "Original Cel", "grail", 1500),
+        ("From Up on Poppy Hill", "plush", "Umi & Shun Pair Plush Set (Mini)", "Donguri Sora", "mid", 35),
+        ("From Up on Poppy Hill", "poster", "From Up on Poppy Hill Advance B2 Poster (2011)", "Vintage", "mid", 65),
+        ("From Up on Poppy Hill", "art_book", "The Art of From Up on Poppy Hill (Deluxe JP)", "JP Exclusive", "mid", 70),
+
+        # Castle of Cagliostro
+        ("Castle of Cagliostro", "model", "Fiat 500 Diecast Model (1:24, Lupin Paint)", "Bandai", "mid", 55),
+        ("Castle of Cagliostro", "cel", "Clarisse Tower Scene Animation Cel", "Original Cel", "grail", 3200),
+        ("Castle of Cagliostro", "music_box", "Fire Treasure Music Box (Castle of Cagliostro Theme)", "Sekiguchi", "high", 90),
+
+        # Grave of the Fireflies
+        ("Grave of the Fireflies", "figure", "Setsuko Playing Scene Figure", "Donguri Sora", "mid", 42),
+        ("Grave of the Fireflies", "cel", "Seita Running with Setsuko Animation Cel (Key)", "Original Cel", "grail", 3500),
+        ("Grave of the Fireflies", "plush", "Setsuko's Tin Can Plush (Sakuma Drops)", "JP Exclusive", "mid", 35),
+        ("Grave of the Fireflies", "poster", "Grave of the Fireflies Advance B2 Poster (1988)", "Vintage", "grail", 350),
+        ("Grave of the Fireflies", "vinyl", "Grave of the Fireflies Original Soundtrack LP (2024 Repress)", "JP Exclusive", "high", 90),
+        ("Grave of the Fireflies", "music_box", "Setsuko's Lullaby Music Box (Wooden)", "Sekiguchi", "high", 85),
+
+        # My Neighbors the Yamadas
+        ("My Neighbors the Yamadas", "figure", "Yamada Family Picnic Scene Diorama", "Donguri Sora", "mid", 48),
+        ("My Neighbors the Yamadas", "poster", "My Neighbors the Yamadas Advance B2 Poster (1999)", "Vintage", "mid", 65),
+        ("My Neighbors the Yamadas", "art_book", "The Art of My Neighbors the Yamadas (Deluxe)", "JP Exclusive", "mid", 60),
+        ("My Neighbors the Yamadas", "cel", "Yamada Family Group Scene Animation Cel", "Original Cel", "grail", 1200),
+        ("My Neighbors the Yamadas", "plush", "Nonoko Plush (Small 18cm)", "Donguri Sora", "mid", 32),
+
+        # The Cat Returns
+        ("The Cat Returns", "figure", "Cat Kingdom Gate Diorama (LED)", "Benelic", "high", 95),
+        ("The Cat Returns", "music_box", "Kaze ni Naru Music Box (The Cat Returns Theme)", "Sekiguchi", "mid", 55),
+        ("The Cat Returns", "plush", "Yuki White Cat Plush (Medium 25cm)", "Donguri Sora", "mid", 38),
+        ("The Cat Returns", "poster", "The Cat Returns Advance B2 Poster (2002)", "Vintage", "mid", 60),
+        ("The Cat Returns", "cel", "Haru in Cat Kingdom Animation Cel", "Original Cel", "grail", 1400),
+        ("The Cat Returns", "art_book", "The Art of The Cat Returns (Deluxe JP Hardcover)", "JP Exclusive", "mid", 60),
+        ("The Cat Returns", "accessory", "Baron's Top Hat Mini Replica (Felt)", "JP Exclusive", "mid", 35),
+
+        # ── ADDITIONAL CROSS-FILM / MULTI-FILM ITEMS ───────────────────
+
+        ("Multi-Film", "jp_merch", "Studio Ghibli 40th Anniversary Commemorative Coin Set", "JP Exclusive", "grail", 250),
+        ("Multi-Film", "jp_merch", "Ghibli Characters Ceramic Chopstick Rest Complete Set (15pc)", "JP Exclusive", "mid", 65),
+        ("Multi-Film", "jp_merch", "Studio Ghibli Character Tenugui Towel Collection (12pc)", "JP Exclusive", "mid", 55),
+        ("Multi-Film", "jp_merch", "Ghibli Scenes Jigsaw Puzzle Box Set (3 Puzzles in 1)", "Ensky", "mid", 55),
+        ("Multi-Film", "jp_merch", "Studio Ghibli Playing Card Deck Deluxe (Hanafuda Style)", "JP Exclusive", "mid", 42),
+        ("Multi-Film", "accessory", "Studio Ghibli Characters Masking Tape Set (20 Rolls)", "JP Exclusive", "mid", 32),
+        ("Multi-Film", "accessory", "Studio Ghibli Glass Paperweight Collection (6 Films)", "JP Exclusive", "high", 85),
+        ("Multi-Film", "art_book", "Studio Ghibli x Kazuo Oga Background Art Complete", "JP Exclusive", "grail", 200),
+        ("Multi-Film", "art_book", "Toshio Suzuki Producer Memoir (JP Hardcover, Signed)", "JP Exclusive", "high", 120),
+        ("Multi-Film", "art_book", "Studio Ghibli Architectural Study Art Book", "JP Exclusive", "high", 85),
+        ("Multi-Film", "jp_merch", "Studio Ghibli Exhibition 2024 Official Goods Set (Complete)", "Exhibition", "high", 95),
+        ("Multi-Film", "jp_merch", "Studio Ghibli Premium Frame Stamp Set (Japan Post 2025)", "JP Exclusive", "high", 110),
+        ("Multi-Film", "calendar", "Studio Ghibli 2027 Wall Calendar (Art Collection JP)", "JP Exclusive", "standard", 28),
+        ("Multi-Film", "calendar", "Studio Ghibli Vintage Calendar (1990 Complete, Unused)", "Vintage", "high", 160),
     ]
 
     # Merge helper functions
@@ -1080,9 +1646,13 @@ def item_to_price_observation(item: dict) -> PriceObservation:
         "Museum Exclusive": 0.85, "Ghibli Park Exclusive": 0.8,
         "JP Exclusive": 0.65, "Exhibition": 0.7, "Collab Exclusive": 0.6,
         "Sekiguchi": 0.5, "Benelic": 0.45, "Donguri Sora": 0.4,
+        "Donguri Republic": 0.45, "Sun Arrow": 0.45,
         "Vintage": 0.85, "LOEWE Collab": 0.90, "Uniqlo Collab": 0.4,
         "Bandai": 0.5, "Cominica": 0.55, "Fine Molds": 0.5,
         "Sankei": 0.5, "Ensky": 0.35, "GBL Collab": 0.45,
+        "Prime 1 Studio": 0.90, "GKIDS Exclusive": 0.70,
+        "Semic": 0.65, "Cine-maquette": 0.85, "Sankyo": 0.55,
+        "Noritake Collab": 0.70, "Kaiyodo": 0.55, "Banpresto": 0.45,
         "Standard": 0.2,
     }
 

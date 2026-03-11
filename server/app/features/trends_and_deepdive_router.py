@@ -16,7 +16,7 @@ from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 
-router = APIRouter(prefix="/analytics", tags=["analytics"])
+router = APIRouter(prefix="/analytics", tags=["Analytics"])
 logger = logging.getLogger(__name__)
 
 # Per-user: 30 analytics requests per minute

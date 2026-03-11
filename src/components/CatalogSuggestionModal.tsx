@@ -46,7 +46,7 @@ const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({
   slug: c.slug,
 }));
 
-export default function CatalogSuggestionModal({
+function CatalogSuggestionModalInner({
   visible,
   onDismiss,
   source,
@@ -476,3 +476,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+export default React.memo(CatalogSuggestionModalInner);

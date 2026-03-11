@@ -28,15 +28,7 @@ import { useToast } from '@/components/Toast';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { QuickNavBar } from '@/components/QuickNavBar';
-
-const TIFFANY = '#81D8D0';
-const TIFFANY_DARK = '#5FBFB6';
-const NAVY = '#0F172A';
-const MUTED = '#64748B';
-const BORDER = '#E2E8F0';
-const SUCCESS = '#10B981';
-const DANGER = '#EF4444';
-const INPUT_BG = '#F8FAFC';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type MFAFactor = {
   id: string;
@@ -49,6 +41,14 @@ function MFASetupScreen() {
   const router = useRouter();
   const { settings } = useSettings();
   const { showToast } = useToast();
+  const { colors } = useAppTheme();
+  const TIFFANY = colors.brand.base;
+  const NAVY = colors.text;
+  const MUTED = colors.muted;
+  const BORDER = colors.border;
+  const SUCCESS = colors.success;
+  const DANGER = colors.danger;
+  const INPUT_BG = colors.card;
   const [loading, setLoading] = useState(true);
   const [factors, setFactors] = useState<MFAFactor[]>([]);
   const [enrolling, setEnrolling] = useState(false);
@@ -152,10 +152,10 @@ function MFASetupScreen() {
   }
 
   return (
-    <View style={styles.safe}>
+    <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Two-Factor Authentication</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: NAVY }]}>Two-Factor Authentication</Text>
+        <Text style={[styles.subtitle, { color: MUTED }]}>
           Add an extra layer of security to your account with TOTP authenticator app.
         </Text>
 
@@ -164,11 +164,11 @@ function MFASetupScreen() {
         ) : qrUri ? (
           /* Enrollment flow: show QR + code entry */
           <View style={styles.enrollSection}>
-            <Text style={styles.stepTitle}>1. Scan this QR code</Text>
-            <Text style={styles.stepDesc}>
+            <Text style={[styles.stepTitle, { color: NAVY }]}>1. Scan this QR code</Text>
+            <Text style={[styles.stepDesc, { color: MUTED }]}>
               Open your authenticator app (Google Authenticator, Authy, etc.) and scan this code:
             </Text>
-            <View style={styles.qrContainer}>
+            <View style={[styles.qrContainer, { borderColor: BORDER }]}>
               <Image
                 source={{ uri: qrUri }}
                 style={styles.qrImage}
@@ -176,9 +176,9 @@ function MFASetupScreen() {
               />
             </View>
 
-            <Text style={[styles.stepTitle, { marginTop: 24 }]}>2. Enter the 6-digit code</Text>
+            <Text style={[styles.stepTitle, { color: NAVY, marginTop: 24 }]}>2. Enter the 6-digit code</Text>
             <TextInput
-              style={styles.codeInput}
+              style={[styles.codeInput, { backgroundColor: INPUT_BG, borderColor: BORDER, color: NAVY }]}
               value={totpCode}
               onChangeText={(t) => setTotpCode(t.replace(/[^0-9]/g, ''))}
               placeholder="000000"
@@ -193,7 +193,7 @@ function MFASetupScreen() {
               <ActivityIndicator size="large" color={TIFFANY} style={{ marginTop: 16 }} />
             ) : (
               <AnimatedPressable
-                style={styles.primaryBtn}
+                style={[styles.primaryBtn, { backgroundColor: TIFFANY }]}
                 onPress={handleVerify}
                 accessibilityRole="button"
                 accessibilityLabel="Verify code"
@@ -212,7 +212,7 @@ function MFASetupScreen() {
               accessibilityRole="button"
               accessibilityLabel="Cancel enrollment"
             >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={[styles.cancelBtnText, { color: MUTED }]}>Cancel</Text>
             </AnimatedPressable>
           </View>
         ) : hasVerifiedFactor ? (
@@ -220,26 +220,26 @@ function MFASetupScreen() {
           <View style={styles.statusSection}>
             <View style={styles.statusBadge}>
               <Ionicons name="shield-checkmark" size={32} color={SUCCESS} />
-              <Text style={styles.statusText}>2FA is enabled</Text>
+              <Text style={[styles.statusText, { color: SUCCESS }]}>2FA is enabled</Text>
             </View>
-            <Text style={styles.statusDesc}>
+            <Text style={[styles.statusDesc, { color: MUTED }]}>
               Your account is protected with two-factor authentication.
             </Text>
 
             {factors
               .filter((f) => f.status === 'verified')
               .map((f) => (
-                <View key={f.id} style={styles.factorRow}>
+                <View key={f.id} style={[styles.factorRow, { borderColor: BORDER }]}>
                   <View>
-                    <Text style={styles.factorName}>{f.friendly_name || 'Authenticator'}</Text>
-                    <Text style={styles.factorType}>TOTP</Text>
+                    <Text style={[styles.factorName, { color: NAVY }]}>{f.friendly_name || 'Authenticator'}</Text>
+                    <Text style={[styles.factorType, { color: MUTED }]}>TOTP</Text>
                   </View>
                   <AnimatedPressable
                     onPress={() => handleUnenroll(f.id)}
                     accessibilityRole="button"
                     accessibilityLabel="Remove this factor"
                   >
-                    <Text style={styles.removeText}>Remove</Text>
+                    <Text style={[styles.removeText, { color: DANGER }]}>Remove</Text>
                   </AnimatedPressable>
                 </View>
               ))}
@@ -251,7 +251,7 @@ function MFASetupScreen() {
               <Ionicons name="shield-outline" size={32} color={MUTED} />
               <Text style={[styles.statusText, { color: MUTED }]}>2FA is not enabled</Text>
             </View>
-            <Text style={styles.statusDesc}>
+            <Text style={[styles.statusDesc, { color: MUTED }]}>
               Protect your account by enabling two-factor authentication with an authenticator app.
             </Text>
 
@@ -259,7 +259,7 @@ function MFASetupScreen() {
               <ActivityIndicator size="large" color={TIFFANY} style={{ marginTop: 24 }} />
             ) : (
               <AnimatedPressable
-                style={styles.primaryBtn}
+                style={[styles.primaryBtn, { backgroundColor: TIFFANY }]}
                 onPress={handleEnroll}
                 accessibilityRole="button"
                 accessibilityLabel="Enable two-factor authentication"
@@ -287,7 +287,6 @@ export default function MFASetupScreenWithBoundary() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   scroll: {
     paddingHorizontal: 24,
@@ -296,12 +295,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: NAVY,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: MUTED,
     lineHeight: 22,
     marginBottom: 32,
   },
@@ -317,11 +314,9 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 18,
     fontWeight: '700',
-    color: SUCCESS,
   },
   statusDesc: {
     fontSize: 14,
-    color: MUTED,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 24,
@@ -332,7 +327,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     borderWidth: 1,
-    borderColor: BORDER,
     borderRadius: 12,
     padding: 16,
     marginTop: 16,
@@ -340,17 +334,14 @@ const styles = StyleSheet.create({
   factorName: {
     fontSize: 15,
     fontWeight: '600',
-    color: NAVY,
   },
   factorType: {
     fontSize: 12,
-    color: MUTED,
     marginTop: 2,
   },
   removeText: {
     fontSize: 14,
     fontWeight: '600',
-    color: DANGER,
   },
   enrollSection: {
     alignItems: 'center',
@@ -358,13 +349,11 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: NAVY,
     alignSelf: 'flex-start',
     marginBottom: 6,
   },
   stepDesc: {
     fontSize: 14,
-    color: MUTED,
     lineHeight: 22,
     alignSelf: 'flex-start',
     marginBottom: 16,
@@ -374,16 +363,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: BORDER,
   },
   qrImage: {
     width: 200,
     height: 200,
   },
   codeInput: {
-    backgroundColor: INPUT_BG,
     borderWidth: 1,
-    borderColor: BORDER,
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -391,7 +377,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 8,
     textAlign: 'center',
-    color: NAVY,
     width: '100%',
     marginTop: 8,
   },
@@ -400,7 +385,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: TIFFANY,
     borderRadius: 12,
     paddingVertical: 16,
     width: '100%',
@@ -418,6 +402,5 @@ const styles = StyleSheet.create({
   cancelBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: MUTED,
   },
 });

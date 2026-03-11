@@ -21,7 +21,7 @@ from app.db import db_configured, get_conn
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/predict", tags=["predict"])
+router = APIRouter(prefix="/predict", tags=["Predictions"])
 
 
 class TrendDataPoint(BaseModel):

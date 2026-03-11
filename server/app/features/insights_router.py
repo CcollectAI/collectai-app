@@ -12,7 +12,7 @@ from app.config import OVEREXPOSURE_THRESHOLD, HIGH_RISK_THRESHOLD
 from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
 
-router = APIRouter(prefix="/insights", tags=["insights"])
+router = APIRouter(prefix="/insights", tags=["Insights"])
 logger = logging.getLogger(__name__)
 
 

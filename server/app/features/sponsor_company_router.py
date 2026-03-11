@@ -28,7 +28,7 @@ from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/sponsor-companies", tags=["sponsor-companies"])
+router = APIRouter(prefix="/sponsor-companies", tags=["Sponsor Companies"])
 
 _sponsor_company_limit = per_user_rate_limit(10, window_seconds=3600, scope="sponsor_company")
 logger = logging.getLogger(__name__)

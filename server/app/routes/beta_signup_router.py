@@ -23,7 +23,7 @@ from app.errors import error_response
 
 _log = logging.getLogger("collectai.beta_signup")
 
-router = APIRouter(tags=["beta"])
+router = APIRouter(tags=["Beta"])
 
 # ---------------------------------------------------------------------------
 # Email validation regex (same approach as rest of codebase — no new deps)
@@ -79,7 +79,7 @@ class BetaSignupRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@router.post("/api/beta-signup")
+@router.post("/api/beta-signup", summary="Submit beta signup")
 async def beta_signup(body: BetaSignupRequest, request: Request):
     """Collect a beta signup email. Public endpoint — no auth required."""
     pool = get_pool()
@@ -118,7 +118,7 @@ async def beta_signup(body: BetaSignupRequest, request: Request):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/ops/beta-signups")
+@router.get("/ops/beta-signups", summary="List beta signups")
 async def list_beta_signups(
     _: bool = Depends(require_ops_key),
     page: int = Query(1, ge=1),

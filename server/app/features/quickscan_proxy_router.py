@@ -13,12 +13,16 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel
 
 from app.errors import error_response
+from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(tags=["quickscan"])
+router = APIRouter(tags=["QuickScan"])
+
+_quickscan_limit = per_user_rate_limit(30, window_seconds=60, scope="quickscan_proxy")
+_quickscan_upload_limit = per_user_rate_limit(10, window_seconds=60, scope="quickscan_upload")
 
 
 # ---- Friendly category map ----
@@ -58,8 +62,8 @@ class QuickScanUploadResponse(BaseModel):
 
 # ---- Endpoints ----
 
-@router.post("/quickscan")
-async def quickscan_proxy(payload: QuickScanRequest):
+@router.post("/quickscan", summary="QuickScan proxy", description="Simplified QuickScan interface for the mobile app. Delegates to the advanced single or batch endpoint.")
+async def quickscan_proxy(payload: QuickScanRequest, _rl=Depends(_quickscan_limit)):
     """
     Proxy QuickScan endpoint that delegates to quickscan-advanced.
     If an image_id / image_ids are provided, we use the batch endpoint.
@@ -136,8 +140,8 @@ async def quickscan_proxy(payload: QuickScanRequest):
     }
 
 
-@router.post("/quickscan/upload-image", response_model=QuickScanUploadResponse)
-async def quickscan_upload_image(file: UploadFile = File(...)):
+@router.post("/quickscan/upload-image", response_model=QuickScanUploadResponse, summary="Upload image for QuickScan")
+async def quickscan_upload_image(file: UploadFile = File(...), _rl=Depends(_quickscan_upload_limit)):
     """
     Accept a user image for QuickScan, store it, and return an image_id
     that can be passed into /quickscan. Later, the advanced model can

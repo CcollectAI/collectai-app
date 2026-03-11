@@ -35,7 +35,7 @@ from app.errors import error_response
 
 _log = logging.getLogger("collectai.billing")
 
-router = APIRouter(prefix="/billing", tags=["billing"])
+router = APIRouter(prefix="/billing", tags=["Billing"])
 
 # ---------------------------------------------------------------------------
 # Lazy Stripe import (optional dependency)
@@ -217,7 +217,7 @@ async def _get_or_create_stripe_customer(user_id: str, stripe_mod: Any) -> str:
 # ---------------------------------------------------------------------------
 
 
-@router.post("/checkout-session")
+@router.post("/checkout-session", summary="Create checkout session")
 async def create_checkout_session(
     request: Request,
     user_id: str = Depends(get_current_user_id),
@@ -271,7 +271,7 @@ async def create_checkout_session(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/portal-session")
+@router.post("/portal-session", summary="Create billing portal session")
 async def create_portal_session(
     user_id: str = Depends(get_current_user_id),
 ):
@@ -307,7 +307,7 @@ async def create_portal_session(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/status")
+@router.get("/status", summary="Get subscription status")
 async def get_billing_status(
     user_id: str = Depends(get_current_user_id),
 ):
@@ -338,7 +338,7 @@ async def get_billing_status(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/webhook")
+@router.post("/webhook", summary="Handle Stripe webhook")
 async def stripe_webhook(
     request: Request,
     stripe_signature: str = Header(None, alias="Stripe-Signature"),

@@ -23,9 +23,11 @@ const LIGHT_COLORS = {
   tileScale: ["#B5E8E2", "#81D8D0", "#5AA3B8", "#3E8FA8"],
   // Light grey backdrop for QuickScan section
   quickscanBackdrop: "#F1F5F9",
-  success: "#10B981",
+  success: "#059669",
   warning: "#F59E0B",
   danger: "#EF4444",
+  error: "#EF4444",
+  info: "#3B82F6",
   // Semantic colors for components
   skeleton: "#E2E8F0",
   skeletonCard: "#FFFFFF",
@@ -64,8 +66,10 @@ const DARK_COLORS = {
   // Dark backdrop for QuickScan section
   quickscanBackdrop: "#0F172A",
   success: "#10B981",
-  warning: "#F59E0B",
-  danger: "#EF4444",
+  warning: "#FBBF24",
+  danger: "#F87171",
+  error: "#F87171",
+  info: "#60A5FA",
   // Semantic colors for components
   skeleton: "#1F2937",
   skeletonCard: "#0F172A",

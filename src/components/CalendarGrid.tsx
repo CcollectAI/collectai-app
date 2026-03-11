@@ -103,7 +103,7 @@ function buildMonthGrid(year: number, month: number) {
   return cells;
 }
 
-export function CalendarGrid({ events, selectedDate, onSelectDate }: CalendarGridProps) {
+function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridProps) {
   const { colors } = useAppTheme();
   const today = todayISO();
 
@@ -355,4 +355,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const CalendarGrid = React.memo(CalendarGridInner);
 export default CalendarGrid;

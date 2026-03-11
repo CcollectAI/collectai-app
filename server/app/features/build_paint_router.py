@@ -9,7 +9,7 @@ from typing import List, Dict, Any
 from app.errors import error_response
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/build-paint", tags=["build-paint"])
+router = APIRouter(prefix="/build-paint", tags=["Build & Paint"])
 
 _build_paint_limit = per_user_rate_limit(30, window_seconds=60, scope="build_paint")
 
