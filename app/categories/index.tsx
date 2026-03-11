@@ -139,9 +139,9 @@ function CategoriesListScreen() {
     const bannerUrl = catData?.bannerImageUrl;
     const showImage = bannerUrl && !failedImages.has(cat.id);
     const progressColor = cat.completionPct >= 75
-      ? '#22c55e'
+      ? colors.success
       : cat.completionPct >= 50
-        ? '#eab308'
+        ? colors.warning
         : colors.accent;
 
     return (
@@ -186,7 +186,7 @@ function CategoriesListScreen() {
               {cat.completionPct}%
             </Text>
             <View style={styles.statsRight}>
-              <Text style={[styles.ownedStat, { color: '#22c55e' }]}>
+              <Text style={[styles.ownedStat, { color: colors.success }]}>
                 {cat.ownedCount}
               </Text>
               <Text style={[styles.statSep, { color: colors.border }]}>/</Text>
@@ -228,7 +228,7 @@ function CategoriesListScreen() {
             accessibilityRole="button"
             accessibilityLabel="Retry loading categories"
           >
-            <Text style={styles.retryBtnText}>Retry</Text>
+            <Text style={[styles.retryBtnText, { color: colors.accentText }]}>Retry</Text>
           </AnimatedPressable>
         </View>
       ) : (
@@ -277,12 +277,12 @@ function CategoriesListScreen() {
                   accessibilityState={{ selected: isActive }}
                   accessibilityLabel={`Filter by ${fr.name}`}
                 >
-                  <View style={[styles.franchiseDot, { backgroundColor: isActive ? '#fff' : fr.accentColor }]} />
-                  <Text style={[styles.franchisePillText, { color: isActive ? '#fff' : colors.text }]}>
+                  <View style={[styles.franchiseDot, { backgroundColor: isActive ? colors.accentText : fr.accentColor }]} />
+                  <Text style={[styles.franchisePillText, { color: isActive ? colors.accentText : colors.text }]}>
                     {fr.name}
                   </Text>
                   {isActive && (
-                    <Ionicons name="close-circle" size={14} color="#fff" />
+                    <Ionicons name="close-circle" size={14} color={colors.accentText} />
                   )}
                 </Pressable>
               );
@@ -475,7 +475,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryBtnText: {
-    color: '#fff',
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
 });

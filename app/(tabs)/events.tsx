@@ -241,7 +241,7 @@ function EventsScreen() {
                 { backgroundColor: isPast ? colors.muted + '80' : colors.accent },
               ]}
             >
-              <Ionicons name={KIND_ICON[event.kind]} size={20} color="#ffffff" />
+              <Ionicons name={KIND_ICON[event.kind]} size={20} color={colors.accentText} />
             </View>
           )}
 
@@ -373,8 +373,8 @@ function EventsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Create new event"
         >
-          <Ionicons name="add" size={16} color="#fff" />
-          <Text style={styles.createEventPillText}>Create Event</Text>
+          <Ionicons name="add" size={16} color={colors.accentText} />
+          <Text style={[styles.createEventPillText, { color: colors.accentText }]}>Create Event</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
@@ -733,7 +733,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   createEventPillText: {
-    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
   },

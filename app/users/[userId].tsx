@@ -56,7 +56,7 @@ const AvatarCircle: React.FC<{ name: string; size?: number }> = ({ name, size = 
         },
       ]}
     >
-      <Text style={[styles.avatarText, { fontSize: size * 0.35 }]}>{initials}</Text>
+      <Text style={[styles.avatarText, { fontSize: size * 0.35, color: colors.accentText }]}>{initials}</Text>
     </View>
   );
 };
@@ -85,16 +85,11 @@ const SectionCard: React.FC<{
 // ─────────────────────────────────────────────────────────────────────────────
 // Badge Item Component
 // ─────────────────────────────────────────────────────────────────────────────
-const TIER_COLORS = {
-  bronze: '#CD7F32',
-  silver: '#C0C0C0',
-  gold: '#FFD700',
-  platinum: '#E5E4E2',
-};
+// Tier colors now sourced from theme (see BadgeItem below)
 
 const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean }> = ({ achievement, earned }) => {
   const { colors } = useAppTheme();
-  const tierColor = TIER_COLORS[achievement.tier];
+  const tierColor = colors.tier[achievement.tier];
 
   return (
     <View style={[styles.badgeItem, { opacity: earned ? 1 : 0.4 }]}>
@@ -348,9 +343,9 @@ function UserProfileScreen() {
 
         {/* Blocked banner */}
         {isUserBlocked && (
-          <View style={[styles.blockedBanner, { backgroundColor: '#EF444415' }]}>
-            <Ionicons name="ban-outline" size={16} color="#EF4444" />
-            <Text style={styles.blockedBannerText}>You have blocked this user</Text>
+          <View style={[styles.blockedBanner, { backgroundColor: colors.danger + '15' }]}>
+            <Ionicons name="ban-outline" size={16} color={colors.danger} />
+            <Text style={[styles.blockedBannerText, { color: colors.danger }]}>You have blocked this user</Text>
           </View>
         )}
 
@@ -373,7 +368,7 @@ function UserProfileScreen() {
               </Text>
               {profile.collectionCount != null && profile.collectionCount > 50 && (
                 <View style={[styles.verifiedBadge, { backgroundColor: colors.accent }]}>
-                  <Ionicons name="checkmark" size={10} color="#fff" />
+                  <Ionicons name="checkmark" size={10} color={colors.accentText} />
                 </View>
               )}
             </View>
@@ -425,9 +420,9 @@ function UserProfileScreen() {
                 <Ionicons
                   name={dmStatus === 'pending_outgoing' ? 'hourglass-outline' : 'chatbubble-outline'}
                   size={18}
-                  color="#FFFFFF"
+                  color={colors.accentText}
                 />
-                <Text style={styles.ctaBtnTextLight}>{messageButtonLabel}</Text>
+                <Text style={[styles.ctaBtnTextLight, { color: colors.accentText }]}>{messageButtonLabel}</Text>
               </AnimatedPressable>
 
               <AnimatedPressable
@@ -526,9 +521,9 @@ function UserProfileScreen() {
               <Ionicons
                 name={isUserBlocked ? 'checkmark-circle-outline' : 'ban-outline'}
                 size={20}
-                color={isUserBlocked ? colors.accent : '#EF4444'}
+                color={isUserBlocked ? colors.accent : colors.danger}
               />
-              <Text style={[styles.menuItemText, { color: isUserBlocked ? colors.text : '#EF4444' }]}>
+              <Text style={[styles.menuItemText, { color: isUserBlocked ? colors.text : colors.danger }]}>
                 {isUserBlocked ? 'Unblock User' : 'Block User'}
               </Text>
             </AnimatedPressable>
@@ -616,7 +611,6 @@ const styles = StyleSheet.create({
   blockedBannerText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#EF4444',
   },
   errorTitle: {
     fontSize: 18,
@@ -681,7 +675,6 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontWeight: '700',
-    color: '#fff',
   },
   profileInfo: {
     alignItems: 'center',
@@ -745,7 +738,6 @@ const styles = StyleSheet.create({
   ctaBtnTextLight: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
   },
 
   // Section card

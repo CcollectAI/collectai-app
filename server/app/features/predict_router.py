@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.db import db_configured, get_conn
+from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,7 @@ def _parse_json(val: Any) -> Any:
 async def get_price_evidence(
     item_id: str,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(30, scope="predict")),
 ):
     """
     Return the latest price prediction with explanation and evidence

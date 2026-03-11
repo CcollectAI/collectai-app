@@ -84,7 +84,7 @@ function ThresholdRow({ label, value, onValueChange, enabled, colors }: Threshol
             <Text
               style={[
                 styles.thresholdOptionText,
-                { color: value === opt ? '#FFFFFF' : colors.text },
+                { color: value === opt ? colors.accentText : colors.text },
               ]}
             >
               {opt}%
@@ -202,7 +202,7 @@ export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
             <Text
               style={[
                 styles.frequencyOptionText,
-                { color: prefs.frequency === opt.value ? '#FFFFFF' : colors.text },
+                { color: prefs.frequency === opt.value ? colors.accentText : colors.text },
               ]}
             >
               {opt.label}

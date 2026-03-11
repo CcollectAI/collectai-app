@@ -32,6 +32,7 @@ from app.config import (
 )
 from app.db import get_pool
 from app.errors import error_response
+from app.rate_limit import per_user_rate_limit
 
 _log = logging.getLogger("collectai.billing")
 
@@ -221,6 +222,7 @@ async def _get_or_create_stripe_customer(user_id: str, stripe_mod: Any) -> str:
 async def create_checkout_session(
     request: Request,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(10, scope="billing")),
 ):
     """Create a Stripe Checkout Session for upgrading to pro or premium."""
     stripe_mod = _get_stripe()
@@ -274,6 +276,7 @@ async def create_checkout_session(
 @router.post("/portal-session", summary="Create billing portal session")
 async def create_portal_session(
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(10, scope="billing")),
 ):
     """Create a Stripe Customer Portal session for managing subscriptions."""
     stripe_mod = _get_stripe()
@@ -310,6 +313,7 @@ async def create_portal_session(
 @router.get("/status", summary="Get subscription status")
 async def get_billing_status(
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(30, scope="billing")),
 ):
     """Return the current user's subscription plan, status, and feature limits."""
     if DEV_MODE and not DB_ENABLED:

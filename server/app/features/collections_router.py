@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/collections", tags=["Collections"])
 logger = logging.getLogger(__name__)
@@ -165,6 +166,7 @@ async def list_collections(
 async def get_user_progress(
     category: Optional[str] = Query(default=None, description="Filter by category"),
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(30, scope="collections")),
 ):
     """Get the authenticated user's set completion progress."""
     pool = get_db_pool()
@@ -259,6 +261,7 @@ async def get_collection_detail(
     user_id: str = Depends(get_current_user_id),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
+    _rl=Depends(per_user_rate_limit(30, scope="collections")),
 ):
     """Get a specific collection with its items and user ownership status."""
     pool = get_db_pool()
@@ -366,6 +369,7 @@ async def get_collection_detail(
 async def get_collection_progress(
     collection_id: str,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(30, scope="collections")),
 ):
     """Get user's completion progress for a specific collection, including missing items."""
     pool = get_db_pool()

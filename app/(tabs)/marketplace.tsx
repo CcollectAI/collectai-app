@@ -559,8 +559,8 @@ const SearchScreen: React.FC = () => {
                     ? darkTileColors[ci]
                     : colors.tileScale[ci];
                   const textColor = isDark
-                    ? '#FFFFFF'
-                    : ci >= 2 ? '#FFFFFF' : colors.text;
+                    ? colors.accentText
+                    : ci >= 2 ? colors.accentText : colors.text;
                   return (
                     <AnimatedPressable
                       key={cat.id}

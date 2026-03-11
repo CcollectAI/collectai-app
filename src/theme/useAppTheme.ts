@@ -43,6 +43,20 @@ const LIGHT_COLORS = {
   toastError: "#B71C1C",
   toastWarning: "#E65100",
   toastInfo: "#0D47A1",
+  // Semantic surface colors for badges/pills
+  successBg: "#DCFCE7",
+  warningBg: "#FEF3C7",
+  dangerBg: "#FEE2E2",
+  infoBg: "#DBEAFE",
+  // Button text on accent/colored backgrounds
+  accentText: "#FFFFFF",
+  // Tier badge colors (gamification)
+  tier: {
+    bronze: "#CD7F32",
+    silver: "#C0C0C0",
+    gold: "#FFD700",
+    platinum: "#E5E4E2",
+  },
   // Aliases for legacy components
   primary: "#40C9C6",
 };
@@ -85,6 +99,20 @@ const DARK_COLORS = {
   toastError: "#B71C1C",
   toastWarning: "#E65100",
   toastInfo: "#0D47A1",
+  // Semantic surface colors for badges/pills
+  successBg: "#064E3B",
+  warningBg: "#78350F",
+  dangerBg: "#7F1D1D",
+  infoBg: "#1E3A5F",
+  // Button text on accent/colored backgrounds
+  accentText: "#FFFFFF",
+  // Tier badge colors (gamification)
+  tier: {
+    bronze: "#CD7F32",
+    silver: "#C0C0C0",
+    gold: "#FFD700",
+    platinum: "#E5E4E2",
+  },
   // Aliases for legacy components
   primary: "#40C9C6",
 };

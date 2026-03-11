@@ -344,10 +344,10 @@ function WatchlistTabScreen() {
   const renderItem = ({ item }: { item: WatchlistItem }) => {
     const priorityColor =
       item.priority === 'high'
-        ? '#ef4444'
+        ? colors.danger
         : item.priority === 'medium'
-        ? '#f59e0b'
-        : '#22c55e';
+        ? colors.warning
+        : colors.success;
 
     return (
       <View style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -417,7 +417,7 @@ function WatchlistTabScreen() {
             accessibilityRole="button"
             accessibilityLabel={`Mark ${item.title} as acquired`}
           >
-            <Ionicons name="checkmark-circle" size={18} color="#fff" />
+            <Ionicons name="checkmark-circle" size={18} color={colors.accentText} />
             <Text style={styles.gotItBtnText}>I Got It!</Text>
           </AnimatedPressable>
         </View>
@@ -440,7 +440,7 @@ function WatchlistTabScreen() {
         accessibilityRole="button"
         accessibilityLabel="Add your first watchlist item"
       >
-        <Ionicons name="add" size={18} color="#fff" />
+        <Ionicons name="add" size={18} color={colors.accentText} />
         <Text style={styles.emptyBtnText}>Add your first item</Text>
       </AnimatedPressable>
       <View style={styles.emptyFeatures}>
@@ -479,7 +479,7 @@ function WatchlistTabScreen() {
         accessibilityRole="button"
         accessibilityLabel="Add item to watchlist"
       >
-        <Ionicons name="add" size={18} color="#fff" />
+        <Ionicons name="add" size={18} color={colors.accentText} />
         <Text style={styles.addPillText}>Add</Text>
       </AnimatedPressable>
     </View>
@@ -508,7 +508,7 @@ function WatchlistTabScreen() {
             styles.listContent,
             items.length === 0 && styles.listContentEmpty,
           ]}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#81D8D0" />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
           ListEmptyComponent={renderEmpty}
         />
       </Animated.View>
@@ -586,7 +586,7 @@ function WatchlistTabScreen() {
               accessibilityLabel="Add to watchlist"
             >
               {saving ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={colors.accentText} />
               ) : (
                 <Text style={styles.saveBtnText}>Add to Watchlist</Text>
               )}
@@ -690,10 +690,10 @@ function WatchlistTabScreen() {
                   accessibilityLabel="Add to my collection"
                 >
                   {acquiring ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={colors.accentText} />
                   ) : (
                     <>
-                      <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                      <Ionicons name="checkmark-circle" size={20} color={colors.accentText} />
                       <Text style={styles.acquireBtnText}>Add to My Collection</Text>
                     </>
                   )}
@@ -754,7 +754,7 @@ function WatchlistTabScreen() {
                   accessibilityLabel="Save target price"
                 >
                   {editTargetSaving ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={colors.accentText} />
                   ) : (
                     <Text style={styles.saveBtnText}>Save Target Price</Text>
                   )}
@@ -778,8 +778,8 @@ function WatchlistTabScreen() {
               },
             ]}
           >
-            <View style={[styles.congratsIconWrap, { backgroundColor: '#22c55e20' }]}>
-              <Ionicons name="trophy" size={48} color="#22c55e" />
+            <View style={[styles.congratsIconWrap, { backgroundColor: colors.success + '20' }]}>
+              <Ionicons name="trophy" size={48} color={colors.success} />
             </View>
             <Text style={[styles.congratsTitle, { color: colors.text }]}>Congrats!</Text>
             <Text style={[styles.congratsSubtitle, { color: colors.muted }]}>

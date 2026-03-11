@@ -219,7 +219,7 @@ function BuildPaintProjectsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}>
         <Animated.View style={animatedStyle}>
           {/* Add button */}
           <View style={styles.actionRow}>
@@ -229,8 +229,8 @@ function BuildPaintProjectsScreen() {
               accessibilityRole="button"
               accessibilityLabel="Create new project"
             >
-              <Ionicons name="add" size={20} color="#fff" />
-              <Text style={styles.addBtnText}>New Project</Text>
+              <Ionicons name="add" size={20} color={colors.accentText} />
+              <Text style={[styles.addBtnText, { color: colors.accentText }]}>New Project</Text>
             </AnimatedPressable>
           </View>
 
@@ -257,7 +257,7 @@ function BuildPaintProjectsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Create your first project"
                 >
-                  <Text style={styles.emptyCtaBtnText}>Create Your First Project</Text>
+                  <Text style={[styles.emptyCtaBtnText, { color: colors.accentText }]}>Create Your First Project</Text>
                 </AnimatedPressable>
               </View>
             </View>
@@ -455,9 +455,9 @@ function BuildPaintProjectsScreen() {
                 accessibilityLabel={creating ? 'Creating project' : 'Create project'}
               >
                 {creating ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={colors.accentText} />
                 ) : (
-                  <Text style={styles.createBtnText}>Create Project</Text>
+                  <Text style={[styles.createBtnText, { color: colors.accentText }]}>Create Project</Text>
                 )}
               </AnimatedPressable>
             </ScrollView>
@@ -738,7 +738,6 @@ const styles = StyleSheet.create({
   addBtnText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#fff",
   },
   errorBanner: {
     flexDirection: "row",
@@ -782,7 +781,6 @@ const styles = StyleSheet.create({
   emptyCtaBtnText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
   section: {
     marginBottom: 24,
@@ -1090,6 +1088,5 @@ const styles = StyleSheet.create({
   createBtnText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#fff",
   },
 });

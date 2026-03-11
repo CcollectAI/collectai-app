@@ -11,6 +11,7 @@ from app.auth import get_current_user_id
 from app.config import OVEREXPOSURE_THRESHOLD, HIGH_RISK_THRESHOLD
 from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/insights", tags=["Insights"])
 logger = logging.getLogger(__name__)
@@ -72,6 +73,7 @@ class HomeWidgetResponse(BaseModel):
 async def get_personalized_insights(
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
+    _rl=Depends(per_user_rate_limit(20, scope="insights")),
 ) -> PersonalizedInsightsResponse:
     """
     Personalized insights based on the user's actual portfolio composition:
@@ -265,7 +267,10 @@ async def get_personalized_insights(
 
 
 @router.get("/home-widget", response_model=HomeWidgetResponse)
-async def get_home_widget(user_id: str = Depends(get_current_user_id)) -> HomeWidgetResponse:
+async def get_home_widget(
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(30, scope="insights")),
+) -> HomeWidgetResponse:
     """
     'What's it worth today?' home widget snapshot.
     Computes real collection value and daily change from price_predictions.

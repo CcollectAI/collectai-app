@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from app.auth import get_current_user_id
 from app.lib.db_helpers import get_db_pool
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/items-export", tags=["Items Export"])
 logger = logging.getLogger(__name__)
@@ -28,7 +29,10 @@ class ItemsExportResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.get("/overview", response_model=ItemsExportResponse)
-async def export_items_overview(user_id: str = Depends(get_current_user_id)) -> ItemsExportResponse:
+async def export_items_overview(
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(5, scope="items_export")),
+) -> ItemsExportResponse:
     """
     Export the authenticated user's items as inline CSV.
 

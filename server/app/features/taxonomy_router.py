@@ -8,12 +8,13 @@ for frontend category dropdowns and taxonomy management.
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from starlette.responses import JSONResponse
 
 from app.cache import cache_get, cache_set
 from app.db import db_configured, get_conn
 from app.errors import error_response
+from app.rate_limit import per_ip_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +24,11 @@ router = APIRouter(prefix="/taxonomy", tags=["Taxonomy"])
 _TAXONOMY_TTL = 3600  # 1 hour
 
 
+_taxonomy_rl = per_ip_rate_limit(60, scope="taxonomy")
+
+
 @router.get("/current")
-async def taxonomy_current():
+async def taxonomy_current(_rl=Depends(_taxonomy_rl)):
     """Return the current (latest non-deprecated) taxonomy version with all categories."""
     cached = cache_get("taxonomy:current")
     if cached is not None:
@@ -63,7 +67,7 @@ async def taxonomy_current():
 
 
 @router.get("/versions")
-async def taxonomy_versions():
+async def taxonomy_versions(_rl=Depends(_taxonomy_rl)):
     """Return list of all taxonomy versions with metadata."""
     if not db_configured():
         return {"versions": [{"version": "v1.0", "status": "active"}]}

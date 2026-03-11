@@ -264,7 +264,7 @@ function MFASetupScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Enable two-factor authentication"
               >
-                <Ionicons name="shield-checkmark-outline" size={18} color="#FFF" />
+                <Ionicons name="shield-checkmark-outline" size={18} color={colors.accentText} />
                 <Text style={styles.primaryBtnText}>Enable 2FA</Text>
               </AnimatedPressable>
             )}

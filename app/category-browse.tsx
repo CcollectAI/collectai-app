@@ -117,7 +117,7 @@ function CategoryBrowseScreen() {
 
       return (
         <View style={[s.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[s.itemAccent, { backgroundColor: isOwned ? "#22c55e" : colors.accent }]} />
+          <View style={[s.itemAccent, { backgroundColor: isOwned ? colors.success : colors.accent }]} />
           <View style={s.itemBody}>
             <View style={s.itemTop}>
               <View style={s.itemInfo}>
@@ -137,9 +137,9 @@ function CategoryBrowseScreen() {
               </View>
 
               {isOwned ? (
-                <View style={[s.ownedBadge, { backgroundColor: "#22c55e15" }]}>
-                  <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
-                  <Text style={s.ownedBadgeText}>Owned</Text>
+                <View style={[s.ownedBadge, { backgroundColor: colors.success + "15" }]}>
+                  <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+                  <Text style={[s.ownedBadgeText, { color: colors.success }]}>Owned</Text>
                 </View>
               ) : (
                 <AnimatedPressable
@@ -150,11 +150,11 @@ function CategoryBrowseScreen() {
                   accessibilityLabel={`Mark "${item.title}" as owned`}
                 >
                   {isMarking ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={colors.accentText} />
                   ) : (
                     <>
-                      <Ionicons name="add" size={16} color="#fff" />
-                      <Text style={s.addBtnText}>Add</Text>
+                      <Ionicons name="add" size={16} color={colors.accentText} />
+                      <Text style={[s.addBtnText, { color: colors.accentText }]}>Add</Text>
                     </>
                   )}
                 </AnimatedPressable>
@@ -190,7 +190,7 @@ function CategoryBrowseScreen() {
           <Text style={[s.statsTitle, { color: colors.text }]}>Collection Progress</Text>
           <View style={s.statsRow}>
             <View style={s.statItem}>
-              <Text style={[s.statValue, { color: "#22c55e" }]}>{ownedCount}</Text>
+              <Text style={[s.statValue, { color: colors.success }]}>{ownedCount}</Text>
               <Text style={[s.statLabel, { color: colors.muted }]}>Owned</Text>
             </View>
             <View style={[s.statDivider, { backgroundColor: colors.border }]} />
@@ -210,7 +210,7 @@ function CategoryBrowseScreen() {
               style={[
                 s.progressFill,
                 {
-                  backgroundColor: "#22c55e",
+                  backgroundColor: colors.success,
                   width: items.length > 0 ? `${Math.round((ownedCount / items.length) * 100)}%` : "0%",
                 },
               ]}
@@ -262,11 +262,11 @@ function CategoryBrowseScreen() {
               accessibilityState={{ selected: active }}
               accessibilityLabel={`${f.label}: ${f.count}`}
             >
-              <Text style={[s.filterPillText, { color: active ? "#fff" : colors.text }]}>
+              <Text style={[s.filterPillText, { color: active ? colors.accentText : colors.text }]}>
                 {f.label}
               </Text>
-              <View style={[s.filterBadge, { backgroundColor: active ? "#ffffff30" : colors.border }]}>
-                <Text style={[s.filterBadgeText, { color: active ? "#fff" : colors.muted }]}>
+              <View style={[s.filterBadge, { backgroundColor: active ? colors.accentText + "30" : colors.border }]}>
+                <Text style={[s.filterBadgeText, { color: active ? colors.accentText : colors.muted }]}>
                   {f.count}
                 </Text>
               </View>
@@ -489,7 +489,6 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   ownedBadgeText: {
-    color: "#22c55e",
     fontSize: 12,
     fontWeight: "700",
   },
@@ -505,7 +504,6 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   addBtnText: {
-    color: "#fff",
     fontSize: 13,
     fontWeight: "600",
   },

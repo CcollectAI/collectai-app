@@ -427,7 +427,7 @@ function PortfolioScreen() {
               <Ionicons name="notifications-outline" size={22} color={colors.text} />
               {unreadNotifCount > 0 && (
                 <View style={[styles.notifBadge, { backgroundColor: colors.error }]}>
-                  <Text style={styles.notifBadgeText}>
+                  <Text style={[styles.notifBadgeText, { color: colors.accentText }]}>
                     {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
                   </Text>
                 </View>
@@ -465,8 +465,8 @@ function PortfolioScreen() {
               accessibilityRole="button"
               accessibilityLabel="Open QuickScan AI to scan your first item"
             >
-              <Ionicons name="camera" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={styles.emptyCtaText}>QuickScan AI</Text>
+              <Ionicons name="camera" size={20} color={colors.accentText} style={{ marginRight: 8 }} />
+              <Text style={[styles.emptyCtaText, { color: colors.accentText }]}>QuickScan AI</Text>
             </AnimatedPressable>
             <AnimatedPressable
               style={styles.emptySecondary}
@@ -545,7 +545,7 @@ function PortfolioScreen() {
           accessibilityLabel="Add an item to your collection"
         >
           <View style={[styles.addBannerIconWrap, { backgroundColor: colors.accent }]}>
-            <Ionicons name="add" size={18} color="#FFFFFF" />
+            <Ionicons name="add" size={18} color={colors.accentText} />
           </View>
           <View style={styles.addBannerText}>
             <Text style={[styles.addBannerTitle, { color: colors.text }]}>Add to Collection</Text>
@@ -603,7 +603,7 @@ function PortfolioScreen() {
             </View>
           </View>
           <View style={[styles.insightsCtaBtn, { backgroundColor: colors.accent }]}>
-            <Text style={styles.insightsCtaBtnText}>{limits.advanced_analytics ? "View" : "Upgrade"}</Text>
+            <Text style={[styles.insightsCtaBtnText, { color: colors.accentText }]}>{limits.advanced_analytics ? "View" : "Upgrade"}</Text>
           </View>
         </AnimatedPressable>
 
@@ -645,7 +645,7 @@ function PortfolioScreen() {
             </View>
           </View>
           <View style={[styles.analyticsBannerBtn, { backgroundColor: colors.accent }]}>
-            <Text style={styles.analyticsBannerBtnText}>{limits.deal_discovery ? "View" : "Upgrade"}</Text>
+            <Text style={[styles.analyticsBannerBtnText, { color: colors.accentText }]}>{limits.deal_discovery ? "View" : "Upgrade"}</Text>
           </View>
         </AnimatedPressable>
 
@@ -691,7 +691,7 @@ function PortfolioScreen() {
           accessibilityLabel="Close add item menu"
         >
           <View style={[styles.addMenuSheet, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityViewIsModal={true} accessibilityRole="menu" accessibilityLabel="Add item menu">
-            <View style={styles.addMenuHandle} />
+            <View style={[styles.addMenuHandle, { backgroundColor: colors.muted }]} />
             <TouchableOpacity
               onPress={() => { setAddMenuOpen(false); router.push('/quickscan'); }}
               style={styles.addMenuItem}

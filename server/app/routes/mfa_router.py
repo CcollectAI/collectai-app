@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from app.auth import get_current_user_id
 from app.config import SUPABASE_URL, SUPABASE_SERVICE_KEY
 from app.errors import error_response
+from app.rate_limit import per_user_rate_limit
 
 _log = logging.getLogger("collectai.mfa")
 
@@ -38,7 +39,10 @@ def _get_supabase_admin():
 
 
 @router.get("/status", summary="Get MFA enrollment status")
-async def mfa_status(user_id: str = Depends(get_current_user_id)):
+async def mfa_status(
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(20, scope="mfa")),
+):
     """Check if the user has MFA enrolled."""
     admin = _get_supabase_admin()
     if not admin:
@@ -74,6 +78,7 @@ async def mfa_status(user_id: str = Depends(get_current_user_id)):
 async def mfa_unenroll(
     request: Request,
     user_id: str = Depends(get_current_user_id),
+    _rl=Depends(per_user_rate_limit(5, scope="mfa_unenroll")),
 ):
     """Unenroll a TOTP factor. Requires the factor_id in the request body."""
     admin = _get_supabase_admin()

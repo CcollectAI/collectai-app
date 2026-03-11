@@ -28,8 +28,7 @@ import { ConditionGradeSection } from '@/components/ConditionGradeSection';
 import { submitScanFeedback } from '@/api/collectorsApi';
 import type { QuickScanResult, CatalogAlternative, CurrencyCode } from '@/data/types';
 
-const TIFFANY = '#81D8D0';
-const TIFFANY_DARK = '#5FBFB6';
+const TIFFANY = '#81D8D0'; // fallback for StyleSheet only
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Confidence ring SVG constants
@@ -230,7 +229,7 @@ function ScanResultCardInner({
           {editingField === 'name' ? (
             <View style={styles.feedbackEditRow}>
               <TextInput
-                style={[styles.feedbackInput, { color: colors.text, borderColor: TIFFANY }]}
+                style={[styles.feedbackInput, { color: colors.text, borderColor: colors.brand.base }]}
                 value={editValue}
                 onChangeText={setEditValue}
                 autoFocus
@@ -238,7 +237,7 @@ function ScanResultCardInner({
                 onSubmitEditing={handleSubmitFeedback}
                 accessibilityLabel="Edit item name"
               />
-              <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]} accessibilityRole="button" accessibilityLabel="Submit correction">
+              <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: colors.brand.base }]} accessibilityRole="button" accessibilityLabel="Submit correction">
                 <Ionicons name="checkmark" size={16} color="#FFF" />
               </AnimatedPressable>
               <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
@@ -261,7 +260,7 @@ function ScanResultCardInner({
             {editingField === 'category' ? (
               <View style={styles.feedbackEditRow}>
                 <TextInput
-                  style={[styles.feedbackInput, styles.feedbackInputSmall, { color: colors.text, borderColor: TIFFANY }]}
+                  style={[styles.feedbackInput, styles.feedbackInputSmall, { color: colors.text, borderColor: colors.brand.base }]}
                   value={editValue}
                   onChangeText={setEditValue}
                   autoFocus
@@ -269,7 +268,7 @@ function ScanResultCardInner({
                   onSubmitEditing={handleSubmitFeedback}
                   accessibilityLabel="Edit category value"
                 />
-                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]} accessibilityRole="button" accessibilityLabel="Submit category correction">
+                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: colors.brand.base }]} accessibilityRole="button" accessibilityLabel="Submit category correction">
                   <Ionicons name="checkmark" size={14} color="#FFF" />
                 </AnimatedPressable>
                 <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
@@ -281,15 +280,15 @@ function ScanResultCardInner({
                 onPress={() => handleStartEdit('category', scanResult.attributes.category)}
                 accessibilityRole="button"
                 accessibilityLabel={`Category: ${scanResult.attributes.category.replace(/_/g, ' ')}`}
-                style={[styles.categoryChip, { backgroundColor: TIFFANY + '18' }]}
+                style={[styles.categoryChip, { backgroundColor: colors.brand.base + '18' }]}
               >
-                <Ionicons name="pricetag" size={12} color={TIFFANY_DARK} />
-                <Text style={[styles.categoryChipText, { color: TIFFANY_DARK }]}>
+                <Ionicons name="pricetag" size={12} color={colors.brand.dark} />
+                <Text style={[styles.categoryChipText, { color: colors.brand.dark }]}>
                   {scanResult.attributes.category
                     .replace(/_/g, ' ')
                     .replace(/\b\w/g, (c) => c.toUpperCase())}
                 </Text>
-                {featureFlags.FEATURE_SCAN_FEEDBACK && <Ionicons name="pencil" size={10} color={TIFFANY_DARK} style={{ marginLeft: 4 }} />}
+                {featureFlags.FEATURE_SCAN_FEEDBACK && <Ionicons name="pencil" size={10} color={colors.brand.dark} style={{ marginLeft: 4 }} />}
               </AnimatedPressable>
             )}
             {!!scanResult.attributes.conditionGuess && editingField !== 'condition' && (
@@ -311,7 +310,7 @@ function ScanResultCardInner({
             {editingField === 'condition' && (
               <View style={styles.feedbackEditRow}>
                 <TextInput
-                  style={[styles.feedbackInput, styles.feedbackInputSmall, { color: colors.text, borderColor: TIFFANY }]}
+                  style={[styles.feedbackInput, styles.feedbackInputSmall, { color: colors.text, borderColor: colors.brand.base }]}
                   value={editValue}
                   onChangeText={setEditValue}
                   autoFocus
@@ -319,7 +318,7 @@ function ScanResultCardInner({
                   onSubmitEditing={handleSubmitFeedback}
                   accessibilityLabel="Edit condition value"
                 />
-                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]} accessibilityRole="button" accessibilityLabel="Submit condition correction">
+                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: colors.brand.base }]} accessibilityRole="button" accessibilityLabel="Submit condition correction">
                   <Ionicons name="checkmark" size={14} color="#FFF" />
                 </AnimatedPressable>
                 <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
@@ -345,7 +344,7 @@ function ScanResultCardInner({
         {priceBandMid > 0 && (
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="analytics-outline" size={18} color={TIFFANY_DARK} />
+              <Ionicons name="analytics-outline" size={18} color={colors.brand.dark} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Estimated Value</Text>
             </View>
             <Text style={[styles.priceHero, { color: colors.text }]}>
@@ -419,7 +418,7 @@ function ScanResultCardInner({
         {!!fc && (
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="checkmark-done-circle-outline" size={18} color={TIFFANY_DARK} />
+              <Ionicons name="checkmark-done-circle-outline" size={18} color={colors.brand.dark} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>AI Confidence</Text>
             </View>
             <View style={styles.ringsRow}>
@@ -434,7 +433,7 @@ function ScanResultCardInner({
         {detailEntries.length > 0 && (
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="list-outline" size={18} color={TIFFANY_DARK} />
+              <Ionicons name="list-outline" size={18} color={colors.brand.dark} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Detected Details</Text>
             </View>
             <View style={styles.detailsGrid}>
@@ -454,7 +453,7 @@ function ScanResultCardInner({
         {alts.length > 0 && (
           <View style={styles.altSection}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="swap-horizontal-outline" size={18} color={TIFFANY_DARK} />
+              <Ionicons name="swap-horizontal-outline" size={18} color={colors.brand.dark} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Did you mean?</Text>
             </View>
             {alts.map((alt, idx) => {
@@ -466,7 +465,7 @@ function ScanResultCardInner({
                     styles.altCard,
                     {
                       backgroundColor: colors.card,
-                      borderColor: isSelected ? TIFFANY : colors.border,
+                      borderColor: isSelected ? colors.brand.base : colors.border,
                       borderWidth: isSelected ? 2 : 1,
                     },
                   ]}
@@ -475,7 +474,7 @@ function ScanResultCardInner({
                   accessibilityLabel={`Select ${alt.title ?? 'alternative'}`}
                 >
                   {!!isSelected && (
-                    <View style={[styles.altSelectedBadge, { backgroundColor: TIFFANY }]}>
+                    <View style={[styles.altSelectedBadge, { backgroundColor: colors.brand.base }]}>
                       <Ionicons name="checkmark" size={10} color="#FFFFFF" />
                     </View>
                   )}
@@ -497,8 +496,8 @@ function ScanResultCardInner({
                         </Text>
                       )}
                       {!!alt.rarity && (
-                        <View style={[styles.altRarityBadge, { backgroundColor: TIFFANY + '15' }]}>
-                          <Text style={[styles.altRarity, { color: TIFFANY_DARK }]} numberOfLines={1}>
+                        <View style={[styles.altRarityBadge, { backgroundColor: colors.brand.base + '15' }]}>
+                          <Text style={[styles.altRarity, { color: colors.brand.dark }]} numberOfLines={1}>
                             {alt.rarity}
                           </Text>
                         </View>
@@ -510,8 +509,8 @@ function ScanResultCardInner({
                       )}
                     </View>
                   </View>
-                  <View style={[styles.altScoreBadge, { backgroundColor: TIFFANY + '12' }]}>
-                    <Text style={[styles.altScoreText, { color: TIFFANY_DARK }]}>
+                  <View style={[styles.altScoreBadge, { backgroundColor: colors.brand.base + '12' }]}>
+                    <Text style={[styles.altScoreText, { color: colors.brand.dark }]}>
                       {Math.round(alt.matchScore * 100)}%
                     </Text>
                   </View>
@@ -527,7 +526,7 @@ function ScanResultCardInner({
         style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}
       >
         <AnimatedPressable
-          style={[styles.addBtn, { backgroundColor: TIFFANY }]}
+          style={[styles.addBtn, { backgroundColor: colors.brand.base }]}
           onPress={onConfirm}
           accessibilityRole="button"
           accessibilityLabel="Add to collection"
