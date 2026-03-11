@@ -965,6 +965,155 @@ export const collectorsApi = {
     return `${API_BASE}/export/insurance-report?${params.toString()}`;
   },
 
+  // ── Social ──────────────────────────────────────────────────────────
+
+  searchUsers: (query: string, limit = 10) =>
+    get<{
+      users: Array<{
+        user_id: string;
+        display_name: string;
+        handle: string | null;
+        avatar_url: string | null;
+      }>;
+    }>(`/social/users/search?q=${encodeURIComponent(query)}&limit=${limit}`),
+
+  blockUser: (userId: string) =>
+    post(`/social/block/${encodeURIComponent(userId)}`),
+
+  unblockUser: (userId: string) =>
+    del(`/social/block/${encodeURIComponent(userId)}`),
+
+  listBlockedUsers: () =>
+    get<{
+      blocked: Array<{
+        user_id: string;
+        display_name: string | null;
+        blocked_at: string;
+      }>;
+    }>("/social/blocked"),
+
+  // ── Data Moat Analytics ────────────────────────────────────────────
+
+  getSupplyTrends: (category?: string, days = 30) => {
+    const sp = new URLSearchParams();
+    if (category) sp.set("category", category);
+    sp.set("days", String(days));
+    return get<{
+      trends: Array<{
+        date: string;
+        listing_count: number;
+        avg_price: number;
+        category: string;
+      }>;
+    }>(`/data-moat/supply-trends?${sp.toString()}`);
+  },
+
+  getDemandHeat: (category?: string) =>
+    get<{
+      items: Array<{
+        item_key: string;
+        title: string;
+        category: string;
+        demand_score: number;
+        search_count: number;
+      }>;
+    }>(`/data-moat/demand-heat${category ? `?category=${encodeURIComponent(category)}` : ""}`),
+
+  getScarcityScores: (category?: string) =>
+    get<{
+      items: Array<{
+        item_key: string;
+        title: string;
+        scarcity_score: number;
+        listing_count: number;
+        supply_trend: string;
+      }>;
+    }>(`/data-moat/scarcity${category ? `?category=${encodeURIComponent(category)}` : ""}`),
+
+  // ── Trends & Deep-Dive ──────────────────────────────────────────────
+
+  getCollectionTrends: (days = 30) =>
+    get(`/analytics/collection/trends?days=${days}`),
+
+  getCategoryDeepDive: (categoryId: string) =>
+    get(`/analytics/categories/${encodeURIComponent(categoryId)}/deep-dive`),
+
+  getItemTrends: (itemId: string) =>
+    get(`/analytics/items/${encodeURIComponent(itemId)}/trends`),
+
+  // ── Events (additional endpoints) ──────────────────────────────────
+
+  getNearbyEvents: (lat?: number, lng?: number, radiusKm = 50) => {
+    const sp = new URLSearchParams();
+    if (lat != null) sp.set("lat", String(lat));
+    if (lng != null) sp.set("lng", String(lng));
+    sp.set("radius_km", String(radiusKm));
+    return get(`/events/nearby?${sp.toString()}`);
+  },
+
+  getFollowedEventCategories: () =>
+    get<{ categories: string[] }>("/events/categories/followed"),
+
+  followEventCategory: (categoryId: string) =>
+    post(`/events/categories/${encodeURIComponent(categoryId)}/follow`),
+
+  unfollowEventCategory: (categoryId: string) =>
+    del(`/events/categories/${encodeURIComponent(categoryId)}/follow`),
+
+  // ── Build & Paint Step Templates ────────────────────────────────────
+
+  getStepTemplates: (categoryId?: string) =>
+    get(`/build/step-templates${categoryId ? `/${encodeURIComponent(categoryId)}` : ""}`),
+
+  // ── Marketplace Listing Accounts ──────────────────────────────────
+
+  listMarketplaceAccounts: () =>
+    get("/marketplace/listings/accounts"),
+
+  connectMarketplaceAccount: (payload: { marketplace_id: string; seller_name?: string; api_key?: string }) =>
+    post("/marketplace/listings/accounts", payload as Record<string, unknown>),
+
+  disconnectMarketplaceAccount: (accountId: string) =>
+    del(`/marketplace/listings/accounts/${encodeURIComponent(accountId)}`),
+
+  getMarketplaceFeeSchedules: () =>
+    get("/marketplace/listings/fees"),
+
+  listMarketplaceSales: (opts?: { marketplace_id?: string; limit?: number; offset?: number }) => {
+    const sp = new URLSearchParams();
+    if (opts?.marketplace_id) sp.set("marketplace_id", opts.marketplace_id);
+    if (opts?.limit) sp.set("limit", String(opts.limit));
+    if (opts?.offset) sp.set("offset", String(opts.offset));
+    const q = sp.toString();
+    return get(`/marketplace/listings/sales${q ? `?${q}` : ""}`);
+  },
+
+  recordMarketplaceSale: (listingId: string, payload: { sale_price: number; buyer_name?: string }) =>
+    post(`/marketplace/listings/sales/${encodeURIComponent(listingId)}/record`, payload as Record<string, unknown>),
+
+  // ── Deal Risk Flags ────────────────────────────────────────────────
+
+  getDealRiskFlags: (offerId: string) =>
+    get(`/deals/${encodeURIComponent(offerId)}/risk-flags`),
+
+  // ── Mandate Forecast ──────────────────────────────────────────────
+
+  getMandateForecast: (mandateId: string) =>
+    get(`/purchase/mandates/${encodeURIComponent(mandateId)}/forecast`),
+
+  // ── Verified Sales (Ground Truth) ──────────────────────────────────
+
+  submitVerifiedSale: (payload: {
+    item_id: string;
+    sale_price: number;
+    currency?: string;
+    sale_date?: string;
+    marketplace?: string;
+  }) => post("/feedback/verified-sale", payload as Record<string, unknown>),
+
+  listVerifiedSales: () =>
+    get("/feedback/verified-sales"),
+
   // ── Generic HTTP helpers (used by DataProvider implementations) ──────────
   get: <T = unknown>(path: string) => get<T>(path),
   post: <T = unknown>(path: string, body: Record<string, unknown> = {}) => post<T>(path, body),

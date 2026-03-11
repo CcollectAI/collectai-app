@@ -704,6 +704,18 @@ function ItemDetailScreen() {
 
     try {
       await dataProvider.submitFeedback(id, 'sale_price', salePrice.trim());
+
+      // Also submit as verified sale (ground truth for ML)
+      const parsedPrice = parseFloat(salePrice.trim().replace(/[^\d.]/g, ''));
+      if (parsedPrice > 0) {
+        collectorsApi.submitVerifiedSale({
+          item_id: id,
+          sale_price: parsedPrice,
+          currency: settings.currency,
+          sale_date: new Date().toISOString(),
+        }).catch((err) => { logger.warn('[ItemDetail] verified sale submission failed:', err); });
+      }
+
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Sale price recorded — thanks!', type: 'success' });
       setFeedbackMessage("Thanks! Sale price recorded.");

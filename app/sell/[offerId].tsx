@@ -35,6 +35,8 @@ import { AnimatedPressable } from '@/motion';
 import { SkeletonList } from '@/components/Skeleton';
 import type { Offer, OfferEvent, OfferStatus, UserReputation } from '@/data/types';
 import { track } from '@/analytics/track';
+import { collectorsApi } from '@/api/collectorsApi';
+import logger from '@/utils/logger';
 
 // ---------------------------------------------------------------------------
 // Status config
@@ -180,6 +182,8 @@ function OfferDetailScreen() {
   // Reputation
   const [sellerRep, setSellerRep] = useState<UserReputation | null>(null);
   const [buyerRep, setBuyerRep] = useState<UserReputation | null>(null);
+  // Risk flags
+  const [riskFlags, setRiskFlags] = useState<Array<{ flag: string; severity: string; message: string }>>([]);
 
   const currentUserId = user?.id;
   const isSeller = offer ? currentUserId === offer.sellerId : false;
@@ -199,6 +203,14 @@ function OfferDetailScreen() {
       ]);
       setSellerRep(sRep);
       setBuyerRep(bRep);
+
+      // Load risk flags (non-blocking)
+      collectorsApi.getDealRiskFlags(offerId)
+        .then((data) => {
+          const flags = (data as Record<string, unknown>)?.flags;
+          if (Array.isArray(flags)) setRiskFlags(flags);
+        })
+        .catch((err) => { logger.warn('[OfferDetail] risk flags fetch failed:', err); });
     } catch (err) {
       showToast({ message: 'Failed to load offer details', type: 'error' });
     } finally {
@@ -441,6 +453,21 @@ function OfferDetailScreen() {
             colors={colors}
           />
         </View>
+
+        {/* ── Risk flags ────────────────────────────────────────────────── */}
+        {riskFlags.length > 0 && (
+          <View style={[styles.riskSection, { backgroundColor: colors.warningBg, borderColor: colors.border }]}>
+            <View style={styles.riskHeader}>
+              <Ionicons name="warning-outline" size={16} color="#92400E" />
+              <Text style={[styles.riskTitle, { color: '#92400E' }]}>Risk Flags</Text>
+            </View>
+            {riskFlags.map((rf, i) => (
+              <Text key={i} style={[styles.riskText, { color: '#78350F' }]}>
+                {rf.severity === 'high' ? '\u26A0' : '\u24D8'} {rf.message}
+              </Text>
+            ))}
+          </View>
+        )}
 
         {/* ── Timeline ─────────────────────────────────────────────────── */}
         <View style={styles.timelineSection}>
@@ -896,6 +923,27 @@ const styles = StyleSheet.create({
   },
 
   // Reputation
+  riskSection: {
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  riskHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  riskTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  riskText: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 2,
+  },
   repRow: {
     flexDirection: 'row',
     gap: 10,

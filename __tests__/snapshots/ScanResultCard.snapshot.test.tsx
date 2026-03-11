@@ -21,6 +21,7 @@ jest.mock('../../src/hooks/useAppTheme', () => ({
       border: '#E2E8F0',
       skeleton: '#E2E8F0',
       success: '#10B981',
+      brand: { base: '#81D8D0', dark: '#5FBFB6' },
     },
   }),
 }));

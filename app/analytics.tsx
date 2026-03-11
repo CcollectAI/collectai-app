@@ -10,7 +10,7 @@
  */
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -38,6 +38,8 @@ import type { PortfolioSnapshot } from "@/analytics/portfolioMetrics";
 import { dataProvider } from "@/data";
 import type { CategorySummary } from "@/data/types";
 import { ScoreExplanationSheet } from "@/components/ScoreExplanationSheet";
+import { collectorsApi } from "@/api/collectorsApi";
+import logger from "@/utils/logger";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier-specific tokens (not theme-dependent)
@@ -101,6 +103,8 @@ function AnalyticsScreen() {
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [collectionTrends, setCollectionTrends] = useState<Record<string, unknown> | null>(null);
+
   const { data: analyticsData, loading, error, retry } = useAsync(
     () => Promise.all([
       fetchPortfolioSnapshot(),
@@ -108,6 +112,13 @@ function AnalyticsScreen() {
     ]).then(([snap, cats]) => ({ snapshot: snap, categorySummaries: cats })),
     [],
   );
+
+  // Fetch backend collection trends (enrichment)
+  useEffect(() => {
+    collectorsApi.getCollectionTrends(30)
+      .then((data) => { if (data) setCollectionTrends(data as Record<string, unknown>); })
+      .catch((err) => { logger.warn('[Analytics] collection trends fetch failed:', err); });
+  }, []);
 
   const snapshot = analyticsData?.snapshot ?? null;
   const categorySummaries = analyticsData?.categorySummaries ?? [];

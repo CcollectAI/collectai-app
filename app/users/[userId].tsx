@@ -25,6 +25,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import { getJSON, setJSON } from '@/lib/storage';
 import { ACHIEVEMENTS, type Achievement } from '@/lib/achievements';
+import { collectorsApi } from '@/api/collectorsApi';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { PresenceIndicator } from '@/components/PresenceIndicator';
@@ -241,8 +242,50 @@ function UserProfileScreen() {
     setRefreshing(false);
   }, [retry]);
 
-  // Derive badges from profile data
+  // Fetch real achievements from backend, fall back to client-side derivation
+  const [apiAchievements, setApiAchievements] = useState<Array<{ id: string; title: string; tier: string; earned: boolean }> | null>(null);
+  // Fetch gamification profile (XP, level, streak)
+  const [gamProfile, setGamProfile] = useState<{ xp: number; level: number; streak_days: number } | null>(null);
+  // Fetch active challenges
+  const [challenges, setChallenges] = useState<Array<{ id: string; title: string; progress: number; target: number; reward_xp: number }>>([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    collectorsApi.getAchievements()
+      .then((data) => {
+        if (data?.achievements?.length) {
+          setApiAchievements(data.achievements.map((a) => ({
+            id: a.id, title: a.title, tier: a.tier, earned: a.earned,
+          })));
+        }
+      })
+      .catch(() => { /* silent fallback to client-side */ });
+
+    collectorsApi.getGamificationProfile()
+      .then((data) => {
+        if (data?.level != null) setGamProfile({ xp: data.xp, level: data.level, streak_days: data.streak_days });
+      })
+      .catch(() => { /* silent */ });
+
+    collectorsApi.getActiveChallenges()
+      .then((data) => {
+        if (data?.challenges?.length) setChallenges(data.challenges);
+      })
+      .catch(() => { /* silent */ });
+  }, [userId]);
+
   const profileBadges = useMemo(() => {
+    // Use real backend data if available
+    if (apiAchievements?.length) {
+      return apiAchievements.slice(0, 8).map((a) => {
+        const localMatch = ACHIEVEMENTS.find((la) => la.id === a.id);
+        return {
+          ...(localMatch ?? { id: a.id, title: a.title, description: '', icon: 'ribbon-outline', category: 'collection' as const, tier: a.tier as 'bronze' | 'silver' | 'gold' | 'platinum', condition: () => a.earned }),
+          earned: a.earned,
+        };
+      });
+    }
+    // Fallback: derive from profile stats
     if (!profile) return [];
     const stats = {
       itemCount: profile.collectionCount ?? 0,
@@ -253,11 +296,10 @@ function UserProfileScreen() {
       feedbackCount: 0,
       joinedDaysAgo: 0,
     };
-    // Show up to 8 relevant badges (earned first, then locked)
     const earned = ACHIEVEMENTS.filter((a) => a.condition(stats));
     const locked = ACHIEVEMENTS.filter((a) => !a.condition(stats)).slice(0, Math.max(0, 8 - earned.length));
     return [...earned.map((a) => ({ ...a, earned: true })), ...locked.map((a) => ({ ...a, earned: false }))].slice(0, 8);
-  }, [profile]);
+  }, [profile, apiAchievements]);
 
   // Message button label based on DM status
   const messageButtonLabel = useMemo(() => {
@@ -394,11 +436,28 @@ function UserProfileScreen() {
               <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Value</Text>
             </View>
             <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.quickStat}>
-              <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.interests?.length ?? 0}</Text>
-              <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Categories</Text>
-            </View>
+            {gamProfile ? (
+              <View style={styles.quickStat}>
+                <Text style={[styles.quickStatValue, { color: colors.text }]}>Lv.{gamProfile.level}</Text>
+                <Text style={[styles.quickStatLabel, { color: colors.muted }]}>{gamProfile.xp} XP</Text>
+              </View>
+            ) : (
+              <View style={styles.quickStat}>
+                <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.interests?.length ?? 0}</Text>
+                <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Categories</Text>
+              </View>
+            )}
           </View>
+
+          {/* Streak badge */}
+          {gamProfile && gamProfile.streak_days > 0 && (
+            <View style={[styles.streakBadge, { backgroundColor: colors.tier.gold + '15', borderColor: colors.tier.gold + '30' }]}>
+              <Ionicons name="flame-outline" size={14} color={colors.tier.gold} />
+              <Text style={[styles.streakText, { color: colors.tier.gold }]}>
+                {gamProfile.streak_days} day streak
+              </Text>
+            </View>
+          )}
 
           {/* CTA Row */}
           {!isUserBlocked && (
@@ -470,6 +529,30 @@ function UserProfileScreen() {
                 <BadgeItem key={badge.id} achievement={badge} earned={badge.earned} />
               ))}
             </View>
+          </SectionCard>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            C2) Active Challenges
+        ═══════════════════════════════════════════════════════════════════ */}
+        {challenges.length > 0 && (
+          <SectionCard title="Active Challenges" icon="trophy-outline">
+            {challenges.slice(0, 3).map((ch) => {
+              const pct = ch.target > 0 ? Math.min(ch.progress / ch.target, 1) : 0;
+              return (
+                <View key={ch.id} style={styles.challengeRow}>
+                  <View style={styles.challengeInfo}>
+                    <Text style={[styles.challengeTitle, { color: colors.text }]} numberOfLines={1}>{ch.title}</Text>
+                    <Text style={[styles.challengeMeta, { color: colors.muted }]}>
+                      {ch.progress}/{ch.target} · +{ch.reward_xp} XP
+                    </Text>
+                  </View>
+                  <View style={[styles.challengeBar, { backgroundColor: colors.border }]}>
+                    <View style={[styles.challengeBarFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: colors.accent }]} />
+                  </View>
+                </View>
+              );
+            })}
           </SectionCard>
         )}
 
@@ -805,6 +888,52 @@ const styles = StyleSheet.create({
   interestText: {
     fontSize: 13,
     fontWeight: '500',
+  },
+
+  // Streak badge
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 12,
+  },
+  streakText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // Challenges
+  challengeRow: {
+    marginBottom: 12,
+  },
+  challengeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  challengeTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  challengeMeta: {
+    fontSize: 11,
+    marginLeft: 8,
+  },
+  challengeBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  challengeBarFill: {
+    height: 6,
+    borderRadius: 3,
   },
 
   // Menu modal

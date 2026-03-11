@@ -76,8 +76,8 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                 "top": 56,
               },
               {
-                "backgroundColor": "#22C55E20",
-                "borderColor": "#22C55E40",
+                "backgroundColor": "#10B98120",
+                "borderColor": "#10B98140",
               },
             ]
           }
@@ -91,7 +91,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                   "width": 7,
                 },
                 {
-                  "backgroundColor": "#22C55E",
+                  "backgroundColor": "#10B981",
                 },
               ]
             }
@@ -105,7 +105,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                   "letterSpacing": 0.3,
                 },
                 {
-                  "color": "#22C55E",
+                  "color": "#10B981",
                 },
               ]
             }
@@ -1068,8 +1068,8 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
                 "top": 56,
               },
               {
-                "backgroundColor": "#22C55E20",
-                "borderColor": "#22C55E40",
+                "backgroundColor": "#10B98120",
+                "borderColor": "#10B98140",
               },
             ]
           }
@@ -1083,7 +1083,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
                   "width": 7,
                 },
                 {
-                  "backgroundColor": "#22C55E",
+                  "backgroundColor": "#10B981",
                 },
               ]
             }
@@ -1097,7 +1097,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
                   "letterSpacing": 0.3,
                 },
                 {
-                  "color": "#22C55E",
+                  "color": "#10B981",
                 },
               ]
             }
@@ -1717,8 +1717,8 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                 "top": 56,
               },
               {
-                "backgroundColor": "#EF444420",
-                "borderColor": "#EF444440",
+                "backgroundColor": "undefined20",
+                "borderColor": "undefined40",
               },
             ]
           }
@@ -1732,7 +1732,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                   "width": 7,
                 },
                 {
-                  "backgroundColor": "#EF4444",
+                  "backgroundColor": undefined,
                 },
               ]
             }
@@ -1746,7 +1746,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                   "letterSpacing": 0.3,
                 },
                 {
-                  "color": "#EF4444",
+                  "color": undefined,
                 },
               ]
             }

@@ -1,15 +1,17 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
-import { View, Text, ScrollView, StyleSheet, Animated, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Animated, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { USER_PROFILES } from '@/data/users';
+import { collectorsApi } from '@/api/collectorsApi';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
+import logger from '@/utils/logger';
 
 const MEDAL_GOLD = '#eab308';
 const MEDAL_SILVER = '#9ca3af';
@@ -44,22 +46,57 @@ const LeaderboardScreen: React.FC = () => {
   const { settings } = useSettings();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [apiEntries, setApiEntries] = useState<Array<{
+    rank: number;
+    user_id: string;
+    display_name: string;
+    xp: number;
+    level: number;
+    avatar_url: string | null;
+  }> | null>(null);
+
+  const loadLeaderboard = useCallback(async () => {
+    try {
+      const data = await collectorsApi.getLeaderboard();
+      if (data?.entries?.length) {
+        setApiEntries(data.entries);
+      }
+    } catch (err) {
+      logger.warn('[Leaderboard] API fetch failed, using local fallback:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadLeaderboard(); }, [loadLeaderboard]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Data is derived from USER_PROFILES; allow UI to settle
-    await new Promise((r) => setTimeout(r, 300));
+    await loadLeaderboard();
     setRefreshing(false);
-  }, []);
+  }, [loadLeaderboard]);
 
-  const rankedUsers = useMemo(
-    () =>
-      [...USER_PROFILES].sort(
-        (a, b) =>
-          b.stats.totalEstimatedValueEur - a.stats.totalEstimatedValueEur,
-      ),
-    [],
-  );
+  // Use API data if available, fall back to local USER_PROFILES
+  const rankedUsers = useMemo(() => {
+    if (apiEntries?.length) {
+      return apiEntries.map((entry, i) => ({
+        id: entry.user_id,
+        displayName: entry.display_name,
+        handle: entry.display_name.toLowerCase().replace(/\s+/g, ''),
+        avatarColor: colors.accent,
+        stats: {
+          totalEstimatedValueEur: entry.xp,
+          totalItems: entry.level,
+          totalCategories: 0,
+          rarityScore: entry.level,
+        },
+      }));
+    }
+    return [...USER_PROFILES].sort(
+      (a, b) => b.stats.totalEstimatedValueEur - a.stats.totalEstimatedValueEur,
+    );
+  }, [apiEntries, colors.accent]);
 
   const { getItemStyle } = useStaggerReveal({
     count: rankedUsers.length,

@@ -228,10 +228,10 @@ function PortfolioScreen() {
 
     try {
       // Pass 2 (C): Real backend wiring
-      if (USE_REAL_BACKEND && collectorsClient?.getPortfolioTimeseries) {
+      if (USE_REAL_BACKEND) {
         try {
           const rangeParam = range.toLowerCase() as "1d" | "7d" | "30d" | "90d" | "1y" | "all";
-          const timeseriesData = await (collectorsClient as any).getPortfolioTimeseries(rangeParam);
+          const timeseriesData = await collectorsApi.getPortfolioTimeseries(rangeParam);
           const extractedSeries = extractSeries(timeseriesData);
           if (extractedSeries.length) {
             setSeries(extractedSeries);
@@ -239,14 +239,12 @@ function PortfolioScreen() {
             setSeries([]);
           }
 
-          if (collectorsClient?.getPortfolioItems) {
-            const itemsData = await (collectorsClient as any).getPortfolioItems();
-            const extractedItems = extractItems(itemsData);
-            if (extractedItems.length) {
-              setItems(extractedItems.sort((a, b) => b.value - a.value));
-            } else {
-              setItems([]);
-            }
+          const overviewData = await collectorsApi.getPortfolioOverview();
+          const extractedItems = extractItems(overviewData);
+          if (extractedItems.length) {
+            setItems(extractedItems.sort((a, b) => b.value - a.value));
+          } else {
+            setItems([]);
           }
         } catch (realErr: unknown) {
           logger.warn("[Portfolio] Real backend error, falling back:", realErr);
@@ -304,7 +302,7 @@ function PortfolioScreen() {
   // Load category breakdown
   useEffect(() => {
     setBreakdownLoading(true);
-    collectorsApi.get('/analytics/portfolio/category-breakdown')
+    collectorsApi.getPortfolioCategoryBreakdown()
       .then((res: unknown) => {
         const data = res as Record<string, unknown>;
         // Backend returns "breakdown", also check "categories" for compat
