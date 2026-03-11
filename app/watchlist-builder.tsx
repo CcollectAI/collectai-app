@@ -13,6 +13,7 @@
  * - B3.2: Bulk Actions (multi-select, bulk delete, CSV export)
  * - B3.3: Optimistic Updates (immediate UI feedback with rollback)
  * - B2.2: Drag-to-Reorder with Haptics (long-press move up/down)
+ * - B3.4/B3.5: Watchlist Sharing (text share via native sheet, CSV export)
  */
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -29,6 +30,7 @@ import {
   StyleSheet,
   Animated,
   RefreshControl,
+  Share,
 } from "react-native";
 import { useToast } from "@/components/Toast";
 import { Ionicons } from "@expo/vector-icons";
@@ -41,6 +43,7 @@ import { QuickNavBar } from "@/components/QuickNavBar";
 import { CATEGORY_SLUG_TO_NAME } from "@/constants/categories";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { saveCSVAndShare } from "@/export/csv";
+import { track } from "@/analytics/track";
 
 import { useAuthContext } from "@/providers/useAuthContext";
 import { dataProvider } from "@/data";
@@ -389,6 +392,49 @@ function WatchlistBuilderScreen() {
   }, [getSelectedItems, items, settings.currency, exitMultiSelectMode, showToast]);
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Resolve category slug to human-readable name (moved above share handlers)
+  const categoryDisplayName = useCallback((slug: string): string =>
+    CATEGORY_SLUG_TO_NAME[slug] || slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), []);
+
+  // B3.4/B3.5: Sharing — text list or CSV file
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleShareText = useCallback(async () => {
+    if (items.length === 0) {
+      showToast({ message: "No items to share.", type: "warning" });
+      return;
+    }
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+
+    const lines = items.map((item) => {
+      const parts: string[] = [item.title];
+      if (item.category) parts.push(`[${categoryDisplayName(item.category)}]`);
+      if (item.targetPrice != null) parts.push(`Target: ${item.targetPrice.toFixed(2)} ${settings.currency}`);
+      return parts.join(' — ');
+    });
+    const message = `My Watchlist (${items.length} items)\n\n${lines.join('\n')}`;
+
+    try {
+      await Share.share({ message });
+      track({ name: 'watchlist_shared', properties: { method: 'text', itemCount: items.length } });
+    } catch {
+      // user cancelled or share failed — no action needed
+    }
+  }, [items, settings.currency, categoryDisplayName, showToast]);
+
+  const handleShareCSV = useCallback(async () => {
+    if (items.length === 0) {
+      showToast({ message: "No items to export.", type: "warning" });
+      return;
+    }
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+
+    const csv = watchlistToCSV(items, settings.currency);
+    const filename = `watchlist_${new Date().toISOString().slice(0, 10)}.csv`;
+    await saveCSVAndShare(filename, csv);
+    track({ name: 'watchlist_shared', properties: { method: 'csv', itemCount: items.length } });
+  }, [items, settings.currency, showToast]);
+
+  // ─────────────────────────────────────────────────────────────────────────
   // B2.2: Reorder handlers with haptic feedback
   // ─────────────────────────────────────────────────────────────────────────
   const handleLongPress = useCallback((itemId: string) => {
@@ -451,9 +497,7 @@ function WatchlistBuilderScreen() {
     }
   }, [items, showToast]);
 
-  // Resolve category slug to human-readable name
-  const categoryDisplayName = useCallback((slug: string): string =>
-    CATEGORY_SLUG_TO_NAME[slug] || slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), []);
+  // categoryDisplayName moved above share handlers
 
   const handleCloseReorder = useCallback(() => setReorderItemId(null), []);
 
@@ -494,6 +538,28 @@ function WatchlistBuilderScreen() {
               <Text style={[styles.selectHeaderBtnText, { color: colors.accent }]}>
                 {isMultiSelectMode ? 'Cancel' : 'Select'}
               </Text>
+            </AnimatedPressable>
+          )}
+
+          {!isMultiSelectMode && items.length > 0 && (
+            <AnimatedPressable
+              style={[styles.shareHeaderBtn, { backgroundColor: colors.accent + '15' }]}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                Alert.alert(
+                  'Share Watchlist',
+                  `Share your ${items.length} watchlist items`,
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Share as Text', onPress: handleShareText },
+                    { text: 'Export CSV', onPress: handleShareCSV },
+                  ],
+                );
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Share watchlist"
+            >
+              <Ionicons name="share-outline" size={22} color={colors.brand?.dark ?? colors.accent} />
             </AnimatedPressable>
           )}
 
@@ -706,6 +772,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
+  },
+  shareHeaderBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    marginRight: 4,
   },
   selectHeaderBtn: {
     paddingHorizontal: 14,

@@ -8,12 +8,16 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { SponsorProfileCard } from '@/components/SponsorProfileCard';
 import { AnnouncementComposer } from '@/components/AnnouncementComposer';
-import { TierPickerPanel } from '@/components/sponsor/TierPickerPanel';
-import { CampaignsTable } from '@/components/sponsor/CampaignsTable';
-import { AnnouncementsListSection } from '@/components/sponsor/AnnouncementsListSection';
-import { EventPickerPanel } from '@/components/sponsor/EventPickerPanel';
 import {
-  ScrollView, View, Text, StyleSheet, ActivityIndicator, Animated, RefreshControl, Platform,
+  TierPickerPanel,
+  CampaignsTable,
+  AnnouncementsListSection,
+  EventPickerPanel,
+  SponsorKpiGrid,
+  SponsorQuickActions,
+} from '@/components/sponsor';
+import {
+  ScrollView, View, Text, StyleSheet, ActivityIndicator, Animated, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -28,12 +32,6 @@ import { useToast } from '@/components/Toast';
 import { EmptyState } from '@/components/EmptyState';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { track } from '@/analytics/track';
-
-const SHADOW_SM = Platform.select({
-  ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
-  android: { elevation: 1 },
-  default: {},
-}) as Record<string, unknown>;
 
 const SponsorDashboardScreen: React.FC = () => {
   const router = useRouter();
@@ -287,34 +285,15 @@ const SponsorDashboardScreen: React.FC = () => {
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
           {/* KPI Metrics Grid */}
-          <View style={styles.kpiGrid}>
-            {kpiMetrics.map((metric) => (
-              <View key={metric.label} style={[styles.kpiCard, { backgroundColor: colors.card, borderColor: colors.border }, SHADOW_SM]}>
-                <View style={[styles.kpiIconCircle, { backgroundColor: metric.color + '12' }]}>
-                  <Ionicons name={metric.icon} size={16} color={metric.color} />
-                </View>
-                <Text style={[styles.kpiValue, { color: colors.text }]}>{metric.value}</Text>
-                <Text style={[styles.kpiLabel, { color: colors.muted }]}>{metric.label}</Text>
-              </View>
-            ))}
-          </View>
+          <SponsorKpiGrid metrics={kpiMetrics} />
 
           {/* Quick Actions */}
           {!editing && !showTierPicker && !showEventPicker && (
-            <View style={[styles.actionsBar, { backgroundColor: colors.card, borderColor: colors.border }, SHADOW_SM]}>
-              <AnimatedPressable onPress={handleCreateEvent} style={[styles.actionBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel="New campaign">
-                <Ionicons name="add" size={15} color="#FFFFFF" />
-                <Text style={styles.actionBtnPrimaryText}>New Campaign</Text>
-              </AnimatedPressable>
-              <AnimatedPressable onPress={handleStartEdit} style={[styles.actionBtn, styles.actionBtnOutline, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel="Edit profile">
-                <Ionicons name="create-outline" size={14} color={colors.text} />
-                <Text style={[styles.actionBtnSecondaryText, { color: colors.text }]}>Edit Profile</Text>
-              </AnimatedPressable>
-              <AnimatedPressable onPress={handleAnnounce} style={[styles.actionBtn, styles.actionBtnOutline, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel="Send announcement">
-                <Ionicons name="megaphone-outline" size={14} color={colors.text} />
-                <Text style={[styles.actionBtnSecondaryText, { color: colors.text }]}>Announce</Text>
-              </AnimatedPressable>
-            </View>
+            <SponsorQuickActions
+              onCreateEvent={handleCreateEvent}
+              onEditProfile={handleStartEdit}
+              onAnnounce={handleAnnounce}
+            />
           )}
 
           {showTierPicker && (
@@ -390,16 +369,8 @@ const styles = StyleSheet.create({
   headerSubtitle: { fontSize: 12, marginTop: 2 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 16 },
-  kpiGrid: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  kpiCard: { flex: 1, alignItems: 'center', borderRadius: 12, borderWidth: 1, paddingVertical: 14, paddingHorizontal: 4, gap: 6 },
-  kpiIconCircle: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  kpiValue: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
-  kpiLabel: { fontSize: 9, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  actionsBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, borderWidth: 1, padding: 8, marginBottom: 24 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
-  actionBtnOutline: { borderWidth: 1, backgroundColor: 'transparent' },
-  actionBtnPrimaryText: { fontSize: 12, fontWeight: '600', color: '#FFFFFF' },
-  actionBtnSecondaryText: { fontSize: 12, fontWeight: '600' },
+  // kpiGrid, kpiCard, kpiIconCircle, kpiValue, kpiLabel moved to SponsorKpiGrid
+  // actionsBar, actionBtn, actionBtnOutline, actionBtnPrimaryText, actionBtnSecondaryText moved to SponsorQuickActions
   primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, paddingHorizontal: 18, borderRadius: 10 },
   primaryBtnText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
 });

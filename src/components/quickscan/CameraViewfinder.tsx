@@ -20,8 +20,9 @@ import type { EdgeClassification } from '@/lib/edgeClassifier';
 import type { CurrencyCode } from '@/data/types';
 import { BatchResultOverlay } from './BatchResultOverlay';
 import type { BatchScannedItem } from './BatchSummaryScreen';
+import { BRAND_COLORS } from '@/constants/colors';
 
-const TIFFANY = '#81D8D0';
+const TIFFANY = BRAND_COLORS.tiffany;
 const FRAME_SIZE = 260;
 const CORNER_LENGTH = 36;
 const CORNER_THICKNESS = 4;

@@ -29,7 +29,8 @@ type MarketplaceEvent =
   | { name: 'affiliate_link_opened'; properties: { domain: string } };
 
 type WatchlistEvent =
-  | { name: 'watchlist_item_added'; properties?: { category?: string } };
+  | { name: 'watchlist_item_added'; properties?: { category?: string } }
+  | { name: 'watchlist_shared'; properties: { method: 'text' | 'csv'; itemCount: number } };
 
 type EventEvent =
   | { name: 'event_rsvp'; properties: { event_id: string; status: string } };

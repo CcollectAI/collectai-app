@@ -16,8 +16,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { featureFlags } from '@/config/featureFlags';
 import type { EdgeClassification } from '@/lib/edgeClassifier';
+import { BRAND_COLORS } from '@/constants/colors';
 
-const TIFFANY = '#81D8D0';
+const TIFFANY = BRAND_COLORS.tiffany;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type AnalysisStep = {

@@ -15,9 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import type { CurrencyCode } from '@/data/types';
+import { BRAND_COLORS } from '@/constants/colors';
 
-const TIFFANY = '#81D8D0';
-const TIFFANY_DARK = '#5FBFB6';
+const TIFFANY = BRAND_COLORS.tiffany;
+const TIFFANY_DARK = BRAND_COLORS.tiffanyDark;
 
 export interface BatchScannedItem {
   id: string;

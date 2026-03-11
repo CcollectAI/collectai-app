@@ -46,7 +46,11 @@ const MangaSeriesProgress: React.FC<Props> = ({ categoryId, items, accentColor, 
       {seriesEntries.slice(0, 8).map(([seriesName, series]) => {
         const pct = series.total ? Math.min(100, Math.round((series.count / series.total) * 100)) : null;
         return (
-          <View key={seriesName} style={[styles.seriesProgressCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View
+            key={seriesName}
+            style={[styles.seriesProgressCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityLabel={`${seriesName}, ${pct !== null ? `${pct}% complete` : `${series.count} volumes collected`}`}
+          >
             <View style={styles.seriesProgressHeader}>
               <Text style={[styles.seriesProgressName, { color: colors.text }]} numberOfLines={1}>
                 {seriesName}

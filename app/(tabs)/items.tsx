@@ -28,7 +28,7 @@ import { dataProvider, type Item as DataItem } from "@/data";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from "@/motion";
-import { SkeletonList, SkeletonCategoryPills, SkeletonGalleryGrid } from "@/components/Skeleton";
+// Skeleton imports moved to ItemsLoadingState
 import { ItemGalleryGrid } from "@/components/ItemGalleryGrid";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import {
@@ -39,7 +39,7 @@ import { usePaginatedList } from "@/hooks/usePaginatedList";
 import haptics from "@/lib/haptics";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
-import { formatPrice } from "@/lib/format";
+// formatPrice moved to ItemsSectionFooter
 import { useToast } from "@/components/Toast";
 import { FilterSheet, FilterConfig, SortOption } from "@/components/FilterSheet";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -47,9 +47,18 @@ import logger from "@/utils/logger";
 import { BulkActionsToolbar } from '@/components/BulkActionsToolbar';
 import { ItemsListHeader } from '@/components/ItemsListHeader';
 import { GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
-import { ItemsGridHeader } from '@/components/items/ItemsGridHeader';
-import { ItemsFilterSummary } from '@/components/items/ItemsFilterSummary';
-import { ItemsBottomActionBar } from '@/components/items/ItemsBottomActionBar';
+import {
+  ItemsGridHeader,
+  ItemsFilterSummary,
+  ItemsBottomActionBar,
+  ItemsListItem,
+  ItemsCategoryModal,
+  ItemsEmptyState,
+  ItemsLoadingState,
+  ItemsErrorState,
+  ItemsSectionFooter,
+  ItemsFloatingAddButton,
+} from '@/components/items';
 
 type Item = {
   id: string;
@@ -585,42 +594,19 @@ const ItemsScreen: React.FC = () => {
 
   // Loading state with skeleton
   if (loading) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={styles.skeletonContainer}>
-          <View style={styles.skeletonHeader}>
-            <View style={{ width: 100, height: 24, backgroundColor: '#e2e8f0', borderRadius: 6 }} />
-            <View style={{ width: 150, height: 16, backgroundColor: '#e2e8f0', borderRadius: 4, marginTop: 8 }} />
-          </View>
-          <View style={styles.skeletonSearch}>
-            <View style={{ width: '100%', height: 44, backgroundColor: '#e2e8f0', borderRadius: 10 }} />
-          </View>
-          <SkeletonCategoryPills />
-          {viewMode === 'gallery' ? (
-            <SkeletonGalleryGrid count={6} />
-          ) : (
-            <SkeletonList count={6} type="row" />
-          )}
-        </View>
-      </SafeAreaView>
-    );
+    return <ItemsLoadingState viewMode={viewMode} />;
   }
 
   // Error state
   if (error) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={styles.centerContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color="#B42318" />
-          <Text style={[styles.errorText, { color: "#B42318" }]}>{error}</Text>
-          <AnimatedPressable style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            paginatedRefresh();
-          }} accessibilityRole="button" accessibilityLabel="Retry loading items">
-            <Text style={styles.retryText}>Retry</Text>
-          </AnimatedPressable>
-        </View>
-      </SafeAreaView>
+      <ItemsErrorState
+        error={error}
+        onRetry={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          paginatedRefresh();
+        }}
+      />
     );
   }
 
@@ -730,40 +716,7 @@ const ItemsScreen: React.FC = () => {
     />
   );
 
-  const emptyElement = (
-    <View style={styles.emptyContainer}>
-      <Text style={[styles.emptyText, { color: colors.muted }]}>
-        No items match your filters yet.
-      </Text>
-      <AnimatedPressable
-        onPress={() => router.push('/quickscan')}
-        style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
-        accessibilityRole="button"
-        accessibilityLabel="QuickScan AI"
-      >
-        <Ionicons name="camera-outline" size={18} color="#fff" />
-        <Text style={styles.emptyCtaBtnText}>QuickScan AI</Text>
-      </AnimatedPressable>
-      <AnimatedPressable
-        onPress={() => router.push('/add-manual')}
-        style={[styles.emptyCtaBtn, { borderColor: colors.border, borderWidth: 1, backgroundColor: colors.card }]}
-        accessibilityRole="button"
-        accessibilityLabel="Add item manually"
-      >
-        <Ionicons name="add-circle-outline" size={18} color={colors.text} />
-        <Text style={[styles.emptyCtaBtnTextSecondary, { color: colors.text }]}>Add Item Manually</Text>
-      </AnimatedPressable>
-      <AnimatedPressable
-        onPress={() => router.push('/barcode-scan')}
-        style={[styles.emptyCtaBtn, { borderColor: colors.border, borderWidth: 1, backgroundColor: colors.card }]}
-        accessibilityRole="button"
-        accessibilityLabel="Scan a barcode"
-      >
-        <Ionicons name="barcode-outline" size={18} color={colors.text} />
-        <Text style={[styles.emptyCtaBtnTextSecondary, { color: colors.text }]}>Scan Barcode</Text>
-      </AnimatedPressable>
-    </View>
-  );
+  const emptyElement = <ItemsEmptyState />;
 
   const refreshCtrl = (
     <RefreshControl
@@ -823,96 +776,17 @@ const ItemsScreen: React.FC = () => {
             </View>
           )}
           renderItem={({ item }) => (
-            <Animated.View style={getStaggerStyle(staggerIndexMap.current.get(item.id) ?? 0)}>
-              <AnimatedPressable
-                style={[
-                  styles.itemRow,
-                  { borderColor: colors.border },
-                  isMultiSelectMode && isSelected(item.id) && {
-                    backgroundColor: colors.accent + '15',
-                    borderColor: colors.accent,
-                  },
-                ]}
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  handleItemPress(item);
-                }}
-                onLongPress={() => handleLongPress(item.id)}
-                delayLongPress={400}
-                accessibilityRole="button"
-                accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
-                accessibilityHint={isMultiSelectMode ? "Tap to select or deselect" : "Long press to select multiple items"}
-              >
-                {isMultiSelectMode && (
-                  <View style={styles.checkboxContainer}>
-                    <View
-                      style={[
-                        styles.checkbox,
-                        { borderColor: colors.border },
-                        isSelected(item.id) && {
-                          backgroundColor: colors.accent,
-                          borderColor: colors.accent,
-                        },
-                      ]}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: isSelected(item.id) }}
-                      accessibilityLabel={`Select ${item.name}`}
-                    >
-                      {isSelected(item.id) && (
-                        <Ionicons name="checkmark" size={14} color="#fff" />
-                      )}
-                    </View>
-                  </View>
-                )}
-                {item.imageUrl ? (
-                  <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} accessibilityLabel={`Photo of ${item.name}`} />
-                ) : (
-                  <View style={[styles.itemThumbPlaceholder, { backgroundColor: colors.accent + '10' }]} accessibilityLabel={`No photo for ${item.name}`}>
-                    <Ionicons name="image-outline" size={18} color={colors.accent + '40'} />
-                  </View>
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.itemName, { color: colors.text }]}>
-                    {item.name}
-                  </Text>
-                  <Text style={[styles.itemMeta, { color: colors.muted }]}>
-                    <CategoryPill id={item.category} label={item.category} /> – {item.collectionName}
-                  </Text>
-                  {item.condition ? (
-                    GRADING_ELIGIBLE_CATEGORIES.has(item.category) ? (
-                      <View style={[styles.gradeBadge, { backgroundColor: colors.accent + '15' }]}>
-                        <Ionicons name="shield-checkmark-outline" size={11} color={colors.accent} />
-                        <Text style={[styles.gradeBadgeText, { color: colors.accent }]}>
-                          {item.condition}
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text style={[styles.itemCondition, { color: colors.muted }]}>
-                        {item.condition}
-                      </Text>
-                    )
-                  ) : null}
-                </View>
-                <View style={styles.itemRight}>
-                  <Text style={[styles.itemValue, { color: colors.text }]}>
-                    {formatPrice(item.value)}
-                  </Text>
-                </View>
-              </AnimatedPressable>
-            </Animated.View>
+            <ItemsListItem
+              item={item}
+              isMultiSelectMode={isMultiSelectMode}
+              isSelected={isSelected(item.id)}
+              staggerStyle={getStaggerStyle(staggerIndexMap.current.get(item.id) ?? 0)}
+              onPress={handleItemPress}
+              onLongPress={handleLongPress}
+            />
           )}
           renderSectionFooter={({ section }) => (
-            <View style={styles.categoryFooterRow}>
-              <View style={{ flex: 1 }} />
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={[styles.categoryTotalLabel, { color: colors.muted }]}>
-                  Collection total
-                </Text>
-                <Text style={[styles.categoryTotalValue, { color: colors.text }]}>
-                  {formatPrice(section.total)}
-                </Text>
-              </View>
-            </View>
+            <ItemsSectionFooter total={section.total} />
           )}
           ListHeaderComponent={headerElement}
           ListFooterComponent={footerElement}
@@ -935,79 +809,23 @@ const ItemsScreen: React.FC = () => {
 
       {/* Floating Add Item button — appears when scrolling */}
       {showFloatingAdd && !isMultiSelectMode && (
-        <AnimatedPressable
-          style={[styles.floatingAddBtn, { backgroundColor: colors.accent }]}
+        <ItemsFloatingAddButton
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
             router.push('/add');
           }}
-          accessibilityRole="button"
-          accessibilityLabel="Add new item"
-        >
-          <Ionicons name="add" size={22} color="#fff" />
-          <Text style={styles.floatingAddText}>Add Item</Text>
-        </AnimatedPressable>
+        />
       )}
       </KeyboardAvoidingView>
 
       {/* Category Change Modal */}
-      <Modal
+      <ItemsCategoryModal
         visible={categoryModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCategoryModalVisible(false)}
-      >
-        <AnimatedPressable
-          style={styles.modalOverlay}
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            setCategoryModalVisible(false);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Close category picker"
-        >
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]} accessibilityRole="menu">
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Change Category
-              </Text>
-              <Text style={[styles.modalSubtitle, { color: colors.muted }]}>
-                Move {selectedCount} item{selectedCount > 1 ? 's' : ''} to:
-              </Text>
-            </View>
-
-            <ScrollView style={styles.modalList}>
-              {allCategories.map((cat) => (
-                <AnimatedPressable
-                  key={cat}
-                  style={[styles.modalOption, { borderColor: colors.border }]}
-                  onPress={() => {
-                    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-                    handleBulkChangeCategory(cat);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Move to ${cat}`}
-                >
-                  <CategoryPill id={cat} label={cat} />
-                  <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-                </AnimatedPressable>
-              ))}
-            </ScrollView>
-
-            <AnimatedPressable
-              style={[styles.modalCancelBtn, { borderColor: colors.border }]}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                setCategoryModalVisible(false);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel category change"
-            >
-              <Text style={[styles.modalCancelText, { color: colors.muted }]}>Cancel</Text>
-            </AnimatedPressable>
-          </View>
-        </AnimatedPressable>
-      </Modal>
+        selectedCount={selectedCount}
+        allCategories={allCategories}
+        onChangeCategory={handleBulkChangeCategory}
+        onClose={() => setCategoryModalVisible(false)}
+      />
 
       {/* Advanced Filter Sheet */}
       <FilterSheet
@@ -1042,48 +860,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 80,
   },
-  // (loadingMoreContainer moved to ItemsBottomActionBar)
-  // Loading/Error states
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  errorText: {
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 6,
-  },
-  retryText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  // Skeleton loading styles
-  skeletonContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  skeletonHeader: {
-    marginBottom: 16,
-  },
-  skeletonSearch: {
-    marginBottom: 16,
-  },
+  // Loading/Error/Skeleton styles moved to ItemsLoadingState + ItemsErrorState
   // (viewToggleRow, viewToggleBtn, controlsRowNew, selectAllTextBtn, selectAllText moved to ItemsListHeader)
   // (headerRow, headerLeft, title, subtitle, headerIcons moved to ItemsGridHeader)
   actionButtonsRow: {
@@ -1136,33 +913,7 @@ const styles = StyleSheet.create({
   },
   // (searchRow, searchInputWrapper, searchIcon, searchInput, searchRowButton, filterDot moved to ItemsListHeader)
   // (filterSummaryRow, filterSummaryText, filterChipsRow, filterChip, filterChipText, filterClearButton, filterClearText, itemCount moved to ItemsFilterSummary)
-  emptyText: {
-    fontSize: 13,
-    marginTop: 16,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  emptyCtaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginTop: 12,
-  },
-  emptyCtaBtnText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emptyCtaBtnTextSecondary: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  // emptyText, emptyContainer, emptyCtaBtn styles moved to ItemsEmptyState
   categoryBlock: {
     marginTop: 10,
     paddingVertical: 8,
@@ -1174,160 +925,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginTop: 6,
-  },
-  itemThumb: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  itemThumbPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemName: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  itemMeta: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  itemCondition: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  gradeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 3,
-    marginTop: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  gradeBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  itemRight: {
-    marginLeft: 12,
-    alignItems: "flex-end",
-  },
-  itemValue: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  categoryFooterRow: {
-    flexDirection: "row",
-    marginTop: 6,
-  },
-  categoryTotalLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  categoryTotalValue: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
+  // itemRow, itemThumb, itemName, itemMeta, itemCondition, gradeBadge, itemRight, itemValue moved to ItemsListItem
+  // categoryFooterRow, categoryTotalLabel, categoryTotalValue moved to ItemsSectionFooter
   // (bottomActionBar, bottomActionTitle, bottomActionButtons, actionButtonPrimary, actionButtonPrimaryText, actionButtonSecondary, actionButtonSecondaryText, actionButtonDisabled, exportStatusBanner, exportStatusText moved to ItemsBottomActionBar)
   // (multiSelectHeader, multiSelectCloseBtn, multiSelectTitle, multiSelectActions, multiSelectActionBtn, multiSelectActionText moved to BulkActionsToolbar)
-  checkboxContainer: {
-    marginRight: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  // checkboxContainer, checkbox moved to ItemsListItem
   // (topBulkActionsBar, topBulkActionsRow, topBulkActionBtn, topBulkActionText, bulkActionsBar, bulkActionsRow, bulkActionBtn, bulkActionText moved to BulkActionsToolbar)
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 20,
-    paddingBottom: 34,
-    maxHeight: "70%",
-  },
-  modalHeader: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-  },
-  modalList: {
-    paddingHorizontal: 20,
-  },
-  modalOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  modalCancelBtn: {
-    marginTop: 16,
-    marginHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  modalCancelText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  floatingAddBtn: {
-    position: "absolute",
-    bottom: 24,
-    left: 24,
-    right: 24,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  floatingAddText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  // Modal styles moved to ItemsCategoryModal
+  // floatingAddBtn, floatingAddText moved to ItemsFloatingAddButton
 });
 
 function ItemsScreenWithBoundary() {

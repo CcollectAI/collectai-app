@@ -19,8 +19,16 @@ import os
 # ---------------------------------------------------------------------------
 
 SERVICE_VERSION: str = os.getenv("SERVICE_VERSION", "0.1.0")
+ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 DEV_MODE: bool = os.getenv("DEV_MODE", "false").lower() in ("true", "1", "yes")
 DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+
+# Safety: DEV_MODE must NEVER be active in production
+if DEV_MODE and ENVIRONMENT == "production":
+    raise RuntimeError(
+        "FATAL: DEV_MODE=true is forbidden when ENVIRONMENT=production. "
+        "This would bypass JWT authentication. Refusing to start."
+    )
 
 # ---------------------------------------------------------------------------
 # Database (asyncpg)

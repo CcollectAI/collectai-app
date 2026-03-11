@@ -11,8 +11,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { BRAND_COLORS } from '@/constants/colors';
 
-const TIFFANY = '#81D8D0';
+const TIFFANY = BRAND_COLORS.tiffany;
 
 interface PermissionScreenProps {
   onGrant: () => void;

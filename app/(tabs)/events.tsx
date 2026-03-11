@@ -36,7 +36,9 @@ import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
 import calendar, { parseEventDate, getCountdown } from '@/lib/calendar';
 import { CalendarGrid } from '@/components/CalendarGrid';
+import { WeekViewCalendar } from '@/components/events/WeekViewCalendar';
 import { useToast } from '@/components/Toast';
+import { SkeletonList } from '@/components/Skeleton';
 import logger from '@/utils/logger';
 
 function EventsScreen() {
@@ -49,7 +51,7 @@ function EventsScreen() {
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'week'>('list');
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
 
   // Paginated data fetching
@@ -342,17 +344,17 @@ function EventsScreen() {
           <AnimatedPressable
             onPress={() => {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              setViewMode((m) => (m === 'list' ? 'calendar' : 'list'));
+              setViewMode((m) => m === 'list' ? 'calendar' : m === 'calendar' ? 'week' : 'list');
               if (viewMode === 'calendar') setSelectedCalendarDate(null);
             }}
             accessibilityRole="button"
-            accessibilityLabel={viewMode === 'list' ? 'Switch to calendar view' : 'Switch to list view'}
+            accessibilityLabel={viewMode === 'list' ? 'Switch to month view' : viewMode === 'calendar' ? 'Switch to week view' : 'Switch to list view'}
             style={styles.viewToggleBtn}
           >
             <Ionicons
-              name={viewMode === 'list' ? 'calendar-outline' : 'list-outline'}
+              name={viewMode === 'list' ? 'calendar-outline' : viewMode === 'calendar' ? 'grid-outline' : 'list-outline'}
               size={22}
-              color={viewMode === 'calendar' ? colors.accent : colors.text}
+              color={viewMode !== 'list' ? colors.accent : colors.text}
             />
           </AnimatedPressable>
           <InboxHeaderButton color={colors.text} size={22} />
@@ -464,7 +466,9 @@ function EventsScreen() {
     </Animated.View>
   );
 
-  const emptyComponent = error ? (
+  const emptyComponent = loading ? (
+    <SkeletonList count={4} type="event" />
+  ) : error ? (
     <View style={styles.emptyContainer}>
       <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
@@ -529,7 +533,12 @@ function EventsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      {viewMode === 'calendar' ? (
+      {viewMode === 'week' ? (
+        <WeekViewCalendar
+          events={events}
+          onEventPress={(evt) => router.push(`/events/${evt.id}`)}
+        />
+      ) : viewMode === 'calendar' ? (
         <FlashList
           data={calendarFilteredEvents}
           keyExtractor={(item) => item.id}

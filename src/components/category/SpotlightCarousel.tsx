@@ -44,7 +44,10 @@ const SpotlightCarousel: React.FC<Props> = ({
           onScrollEnd(index);
         }}
         renderItem={({ item: slide }) => (
-          <View style={[styles.spotlightSlide, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View
+            style={[styles.spotlightSlide, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityLabel={`Spotlight: ${slide.title}`}
+          >
             {slide.imageUrl ? (
               <View style={styles.spotlightImageWrap}>
                 <Image source={{ uri: slide.imageUrl }} style={styles.spotlightImage} />
