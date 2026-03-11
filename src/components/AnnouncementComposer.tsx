@@ -15,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import type { CollectorsEvent } from '@/data/events';
-import type { AppColors } from '@/ui/theme';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 /* -------------------------------------------------------------------------- */
 /*  Helper                                                                     */
@@ -35,8 +35,6 @@ function getEventStatusColor(event: CollectorsEvent): string {
 /* -------------------------------------------------------------------------- */
 
 export type AnnouncementComposerProps = {
-  /** Theme colors from useAppTheme. */
-  colors: AppColors;
   /** List of events the sponsor owns — used for the event selector chips. */
   sponsoredEvents: CollectorsEvent[];
 
@@ -68,8 +66,7 @@ const SHADOW_MD = Platform.select({
 /*  Component                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export const AnnouncementComposer: React.FC<AnnouncementComposerProps> = ({
-  colors,
+const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
   sponsoredEvents,
   composeEventId,
   onComposeEventIdChange,
@@ -81,6 +78,7 @@ export const AnnouncementComposer: React.FC<AnnouncementComposerProps> = ({
   onCancel,
   onSend,
 }) => {
+  const { colors } = useAppTheme();
   return (
     <View style={[styles.composeCard, { backgroundColor: colors.card, borderColor: colors.accent }, SHADOW_MD]}>
       <View style={styles.composeHeader}>
@@ -201,6 +199,8 @@ export const AnnouncementComposer: React.FC<AnnouncementComposerProps> = ({
     </View>
   );
 };
+
+export const AnnouncementComposer = React.memo(AnnouncementComposerInner);
 
 /* -------------------------------------------------------------------------- */
 /*  Styles                                                                     */

@@ -6,6 +6,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { DURATION } from '@/motion/tokens';
 
 interface SkeletonProps {
   width?: number | string;
@@ -28,12 +29,12 @@ export function Skeleton({
       Animated.sequence([
         Animated.timing(shimmerAnim, {
           toValue: 1,
-          duration: 1000,
+          duration: DURATION.loop,
           useNativeDriver: true,
         }),
         Animated.timing(shimmerAnim, {
           toValue: 0,
-          duration: 1000,
+          duration: DURATION.loop,
           useNativeDriver: true,
         }),
       ])

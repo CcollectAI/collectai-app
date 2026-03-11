@@ -9,6 +9,7 @@ export const DURATION = {
   normal: 250,
   slow: 400,
   reveal: 300,
+  loop: 1000,
 } as const;
 
 export const EASING = {
@@ -23,6 +24,11 @@ export const EASING = {
 export const SCALE = {
   pressed: 0.97,
   hover: 1.02,
+} as const;
+
+export const SPRING = {
+  tension: 300,
+  friction: 10,
 } as const;
 
 export type DurationKey = keyof typeof DURATION;

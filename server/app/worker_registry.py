@@ -44,6 +44,77 @@ SCHEDULES = {
 }
 
 
+# Public alias — maps worker names to their expected run intervals in seconds.
+# Workers with interval 0 are on-demand/single-run and excluded from overdue checks.
+WORKER_INTERVALS: dict[str, int] = {
+    k: v for k, v in SCHEDULES.items() if v > 0
+}
+
+
+def is_overdue(worker_name: str) -> bool:
+    """Check if a worker hasn't run within 1.5x its expected interval.
+
+    Returns False for unknown workers or on-demand (interval=0) workers.
+    Workers that have never run are considered overdue if they have a schedule.
+    """
+    interval = SCHEDULES.get(worker_name, 0)
+    if interval <= 0:
+        return False
+
+    entry = _registry.get(worker_name)
+    if not entry or "last_run" not in entry:
+        # Never ran — overdue if it has a schedule
+        return True
+
+    elapsed = time.time() - entry["last_run"]
+    return elapsed > (interval * 1.5)
+
+
+def get_overdue_workers() -> list[dict]:
+    """Return all overdue workers with details.
+
+    Each entry contains:
+      - name: worker name
+      - expected_interval_s: configured interval in seconds
+      - last_run_ago_s: seconds since last run (or None if never ran)
+      - last_status: "ok" | "error" | None
+      - overdue_by_s: how many seconds past the 1.5x threshold
+    """
+    now = time.time()
+    overdue: list[dict] = []
+
+    for name, interval in SCHEDULES.items():
+        if interval <= 0:
+            continue
+
+        entry = _registry.get(name, {})
+        last_run = entry.get("last_run")
+        threshold = interval * 1.5
+
+        if last_run is None:
+            # Never ran
+            overdue.append({
+                "name": name,
+                "expected_interval_s": interval,
+                "last_run_ago_s": None,
+                "last_status": None,
+                "overdue_by_s": None,  # unknown — never ran
+            })
+            continue
+
+        elapsed = now - last_run
+        if elapsed > threshold:
+            overdue.append({
+                "name": name,
+                "expected_interval_s": interval,
+                "last_run_ago_s": round(elapsed, 1),
+                "last_status": entry.get("last_status"),
+                "overdue_by_s": round(elapsed - threshold, 1),
+            })
+
+    return overdue
+
+
 def record_run(worker_name: str, status: str = "ok") -> None:
     """Record a worker run completion (in-memory + best-effort DB persist)."""
     entry = _registry.setdefault(worker_name, {"runs": 0, "errors": 0})
@@ -57,7 +128,7 @@ def record_run(worker_name: str, status: str = "ok") -> None:
     try:
         _persist_run_to_db(worker_name, status)
     except Exception:
-        pass
+        logger.debug("[worker_registry] Failed to trigger DB persist for %s", worker_name)
 
 
 def _persist_run_to_db(worker_name: str, status: str) -> None:
@@ -75,9 +146,9 @@ def _persist_run_to_db(worker_name: str, status: str) -> None:
             loop.create_task(_async_persist_run(pool, worker_name, status))
         except RuntimeError:
             # No event loop running — skip DB persist
-            pass
+            logger.debug("[worker_registry] No event loop for DB persist of %s", worker_name)
     except Exception:
-        pass
+        logger.debug("[worker_registry] DB persist setup failed for %s", worker_name)
 
 
 async def _async_persist_run(pool, worker_name: str, status: str) -> None:
@@ -94,6 +165,95 @@ async def _async_persist_run(pool, worker_name: str, status: str) -> None:
             )
     except Exception as e:
         logger.debug("[worker_registry] Failed to persist run: %s", e)
+
+
+def get_worker_health() -> dict:
+    """Return comprehensive health report for all scheduled workers.
+
+    Returns a dict with:
+      - workers: list of per-worker health entries
+      - summary: counts of ok / overdue / never_run workers
+      - checked_at: ISO timestamp of the check
+
+    Each worker entry contains:
+      - name: worker name
+      - last_run: ISO timestamp of last run (or null)
+      - expected_interval_minutes: configured interval in minutes
+      - status: "ok" | "overdue" | "never_run" | "on_demand"
+      - minutes_overdue: minutes past the 1.5x threshold (0 if not overdue, null if never_run)
+      - last_status: "ok" | "error" | null
+      - total_runs: lifetime run count
+      - total_errors: lifetime error count
+    """
+    from datetime import datetime, timezone
+
+    now = time.time()
+    workers: list[dict] = []
+    counts = {"ok": 0, "overdue": 0, "never_run": 0, "on_demand": 0}
+
+    for name, interval in SCHEDULES.items():
+        entry = _registry.get(name, {})
+        last_run_epoch = entry.get("last_run")
+
+        if interval <= 0:
+            # On-demand / single-run workers
+            workers.append({
+                "name": name,
+                "last_run": (
+                    datetime.fromtimestamp(last_run_epoch, tz=timezone.utc).isoformat()
+                    if last_run_epoch else None
+                ),
+                "expected_interval_minutes": None,
+                "status": "on_demand",
+                "minutes_overdue": None,
+                "last_status": entry.get("last_status"),
+                "total_runs": entry.get("runs", 0),
+                "total_errors": entry.get("errors", 0),
+            })
+            counts["on_demand"] += 1
+            continue
+
+        interval_minutes = round(interval / 60, 1)
+        threshold = interval * 1.5
+
+        if last_run_epoch is None:
+            status = "never_run"
+            minutes_overdue = None
+            counts["never_run"] += 1
+        else:
+            elapsed = now - last_run_epoch
+            if elapsed > threshold:
+                status = "overdue"
+                minutes_overdue = round((elapsed - threshold) / 60, 1)
+                counts["overdue"] += 1
+            else:
+                status = "ok"
+                minutes_overdue = 0
+                counts["ok"] += 1
+
+        workers.append({
+            "name": name,
+            "last_run": (
+                datetime.fromtimestamp(last_run_epoch, tz=timezone.utc).isoformat()
+                if last_run_epoch else None
+            ),
+            "expected_interval_minutes": interval_minutes,
+            "status": status,
+            "minutes_overdue": minutes_overdue,
+            "last_status": entry.get("last_status"),
+            "total_runs": entry.get("runs", 0),
+            "total_errors": entry.get("errors", 0),
+        })
+
+    # Sort: overdue first, then never_run, then ok, then on_demand
+    status_order = {"overdue": 0, "never_run": 1, "ok": 2, "on_demand": 3}
+    workers.sort(key=lambda w: (status_order.get(w["status"], 9), w["name"]))
+
+    return {
+        "workers": workers,
+        "summary": counts,
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 def get_status() -> dict:

@@ -38,7 +38,7 @@ export function usePortfolioInsights(
 
     try {
       const [items, summary] = await Promise.all([
-        dataProvider.listItems(),
+        dataProvider.listItems({ limit: 50 }),  // Top items for movers calculation
         dataProvider.getPortfolioSummary(),
       ]);
 

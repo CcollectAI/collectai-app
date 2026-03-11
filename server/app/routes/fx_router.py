@@ -15,14 +15,14 @@ from app.rate_limit import per_ip_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/fx", tags=["fx"])
+router = APIRouter(prefix="/fx", tags=["FX"])
 
 # Per-IP: 60 requests per minute for public FX rates
 _fx_ip_limit = per_ip_rate_limit(60, scope="fx")
 
 
-@router.get("/rates", dependencies=[Depends(_fx_ip_limit)])
-async def fx_rates():
+@router.get("/rates", dependencies=[Depends(_fx_ip_limit)], summary="Get FX rates")
+async def fx_rates() -> dict:
     """Return live FX rates (cached 1 h, fallback to config defaults)."""
     to_eur = await get_rates()
     from_eur = await get_rates_from_eur()

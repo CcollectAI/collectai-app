@@ -17,7 +17,6 @@ import {
   RefreshControl,
   Modal,
   TouchableOpacity,
-  Image,
   Share,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,8 +25,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { formatPrice, formatDualPrice } from "@/lib/format";
 import { useSettings as useSettingsHook } from "@/lib/settings";
-import { InboxHeaderButton } from "@/components/InboxHeaderButton";
-import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+// InboxHeaderButton and ThemeToggleButton moved to MarketplacePageHeader
 import { CATEGORIES } from "@/data/categories";
 import { collectorsApi } from "@/api/collectorsApi";
 import { dataProvider, type Item as DataItem, type PublicUserProfile } from "@/data";
@@ -41,6 +39,10 @@ import { MarketplaceFilterPanel } from '@/components/MarketplaceFilterPanel';
 import { RecentSearchesSection } from '@/components/RecentSearchesSection';
 import { TrendingCategoriesGrid, type TrendingCategory } from '@/components/TrendingCategoriesGrid';
 import { SearchResultQuickView } from '@/components/SearchResultQuickView';
+import { SkeletonList } from '@/components/Skeleton';
+import { MarketplacePageHeader } from '@/components/marketplace/MarketplacePageHeader';
+import { MarketplaceResultCard, type MarketplaceResultItem } from '@/components/marketplace/MarketplaceResultCard';
+import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmptyState';
 
 // --- Types for marketplace API results ---
 type MarketplaceHit = {
@@ -190,7 +192,7 @@ const SearchScreen: React.FC = () => {
     let cancelled = false;
     (async () => {
       try {
-        const resp = await collectorsApi.fetchInsights() as any;
+        const resp = await collectorsApi.fetchInsights() as { trending_items?: Array<{ category?: string; change_pct?: number }> };
         if (cancelled || !resp?.trending_items?.length) return;
         const catMap = CATEGORIES.reduce<Record<string, string>>((m, c) => { m[c.id] = c.name; return m; }, {});
         const seen = new Set<string>();
@@ -291,7 +293,7 @@ const SearchScreen: React.FC = () => {
     if (searchId !== searchIdRef.current) return;
 
     // Map marketplace hits
-    const mktData = (mktResult.status === "fulfilled" ? mktResult.value : null) as any;
+    const mktData = (mktResult.status === "fulfilled" ? mktResult.value : null) as { hits?: MarketplaceHit[] } | null;
     const hits: MarketplaceHit[] = mktData?.hits ?? [];
     const mktResults: SearchResult[] = hits
       .filter((h) => !h.is_sold)
@@ -375,11 +377,12 @@ const SearchScreen: React.FC = () => {
     } else {
       setRefreshing(false);
     }
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
   }, [trimmedQuery, executeSearch, settings.hapticsEnabled]);
 
   const handleSubmitSearch = useCallback(() => {
     if (!trimmedQuery) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     // Persist recent search
     setRecent((prev) => {
       const existing = prev.filter(
@@ -390,7 +393,7 @@ const SearchScreen: React.FC = () => {
       return updated;
     });
     executeSearch(trimmedQuery);
-  }, [trimmedQuery, executeSearch]);
+  }, [trimmedQuery, executeSearch, settings.hapticsEnabled]);
 
   // Also trigger search when tapping a recent search chip
   const handleChipPress = useCallback((term: string) => {
@@ -480,20 +483,7 @@ const SearchScreen: React.FC = () => {
       >
         <Animated.View style={animatedStyle}>
         {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Search
-            </Text>
-            <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-              Find items, collections, and categories.
-            </Text>
-          </View>
-          <View style={styles.headerIcons}>
-            <InboxHeaderButton color={colors.text} size={22} />
-            <ThemeToggleButton size={22} />
-          </View>
-        </View>
+        <MarketplacePageHeader />
 
         {/* Search input + filter button */}
         <MarketplaceSearchBar
@@ -778,78 +768,20 @@ const SearchScreen: React.FC = () => {
         {trimmedQuery ? (
           <View style={styles.section}>
             {searchLoading ? (
-              <ActivityIndicator size="small" color={colors.accent} style={{ marginTop: 24 }} />
+              <SkeletonList count={6} type="card" />
             ) : (
               <>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>
                   Top result
                 </Text>
                 {topResult ? (
-                  <AnimatedPressable
-                    style={[
-                      styles.resultRow,
-                      { borderBottomColor: colors.border },
-                      topResult.domesticOnly && { opacity: 0.5 },
-                    ]}
-                    onPress={() => handleOpenResult(topResult)}
-                    disabled={topResult.domesticOnly}
-                    accessibilityRole={topResult.isMarketplace ? "link" : "button"}
-                    accessibilityLabel={`${topResult.name}, ${formatPrice(topResult.value)}`}
-                  >
-                    {topResult.image_url ? (
-                      <Image
-                        source={{ uri: topResult.image_url }}
-                        style={styles.resultThumbnail}
-                        accessibilityLabel={`Image of ${topResult.name}`}
-                      />
-                    ) : (
-                      <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
-                        <Ionicons
-                          name={topResult.domesticOnly ? "ban-outline" : topResult.isMarketplace ? "cart-outline" : "star-outline"}
-                          size={18}
-                          color={topResult.domesticOnly ? colors.muted : colors.accent}
-                        />
-                      </View>
-                    )}
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.resultTitle, { color: colors.text }]}>
-                        {topResult.name}
-                      </Text>
-                      <Text style={[styles.resultMeta, { color: colors.muted }]}>
-                        {topResult.isMarketplace
-                          ? `${topResult.source || "Marketplace"}${topResult.condition ? ` \u00B7 ${topResult.condition}` : ""}`
-                          : `${topResult.category} \u2022 ${topResult.collectionName}`}
-                      </Text>
-                      {topResult.secondaryPrice && (
-                        <Text style={[styles.resultSecondary, { color: colors.muted }]}>
-                          {topResult.secondaryPrice}
-                        </Text>
-                      )}
-                      {topResult.shippingHint && (
-                        <Text style={[styles.resultShipping, { color: colors.muted }]}>
-                          {topResult.shippingHint}
-                        </Text>
-                      )}
-                      {topResult.domesticOnly && (
-                        <View style={[styles.domesticBadge, { backgroundColor: colors.muted + '20' }]}>
-                          <Text style={[styles.domesticBadgeText, { color: colors.muted }]}>Domestic only</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={[styles.resultValue, { color: colors.text }]}>
-                      {formatPrice(topResult.value)}
-                    </Text>
-                  </AnimatedPressable>
+                  <MarketplaceResultCard
+                    item={topResult}
+                    onPress={handleOpenResult}
+                    isTopResult
+                  />
                 ) : (
-                  <View style={styles.noResultsBlock}>
-                    <Ionicons name="search-outline" size={32} color={colors.muted} style={{ marginBottom: 8 }} />
-                    <Text style={[styles.noResultsTitle, { color: colors.text }]}>
-                      No results found
-                    </Text>
-                    <Text style={[styles.emptyText, { color: colors.muted }]}>
-                      Try a different search term or browse by category below.
-                    </Text>
-                  </View>
+                  <MarketplaceEmptyState />
                 )}
 
                 {otherResults.length > 0 && (
@@ -863,62 +795,11 @@ const SearchScreen: React.FC = () => {
                       More results
                     </Text>
                     {otherResults.map((item) => (
-                      <AnimatedPressable
+                      <MarketplaceResultCard
                         key={item.id}
-                        style={[
-                          styles.resultRow,
-                          { borderBottomColor: colors.border },
-                          item.domesticOnly && { opacity: 0.5 },
-                        ]}
-                        onPress={() => handleOpenResult(item)}
-                        disabled={item.domesticOnly}
-                        accessibilityRole={item.isMarketplace ? "link" : "button"}
-                        accessibilityLabel={`${item.name}, ${formatPrice(item.value)}`}
-                      >
-                        {item.image_url ? (
-                          <Image
-                            source={{ uri: item.image_url }}
-                            style={styles.resultThumbnail}
-                            accessibilityLabel={`Image of ${item.name}`}
-                          />
-                        ) : (
-                          <View style={[styles.resultIcon, { backgroundColor: colors.accent + '15' }]}>
-                            <Ionicons
-                              name={item.domesticOnly ? "ban-outline" : item.isMarketplace ? "cart-outline" : "card-outline"}
-                              size={18}
-                              color={item.domesticOnly ? colors.muted : item.isMarketplace ? colors.accent : colors.muted}
-                            />
-                          </View>
-                        )}
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.resultTitle, { color: colors.text }]}>
-                            {item.name}
-                          </Text>
-                          <Text style={[styles.resultMeta, { color: colors.muted }]}>
-                            {item.isMarketplace
-                              ? `${item.source || "Marketplace"}${item.condition ? ` \u00B7 ${item.condition}` : ""}`
-                              : `${item.category} \u2022 ${item.collectionName}`}
-                          </Text>
-                          {item.secondaryPrice && (
-                            <Text style={[styles.resultSecondary, { color: colors.muted }]}>
-                              {item.secondaryPrice}
-                            </Text>
-                          )}
-                          {item.shippingHint && (
-                            <Text style={[styles.resultShipping, { color: colors.muted }]}>
-                              {item.shippingHint}
-                            </Text>
-                          )}
-                          {item.domesticOnly && (
-                            <View style={[styles.domesticBadge, { backgroundColor: colors.muted + '20' }]}>
-                              <Text style={[styles.domesticBadgeText, { color: colors.muted }]}>Domestic only</Text>
-                            </View>
-                          )}
-                        </View>
-                        <Text style={[styles.resultValue, { color: colors.text }]}>
-                          {formatPrice(item.value)}
-                        </Text>
-                      </AnimatedPressable>
+                        item={item}
+                        onPress={handleOpenResult}
+                      />
                     ))}
                   </>
                 )}
@@ -1001,28 +882,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 32,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
+  // (headerRow, headerLeft, headerTitle, headerSubtitle, headerIcons moved to MarketplacePageHeader)
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1062,54 +922,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
-  resultRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: undefined,
-  },
-  resultIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-    backgroundColor: undefined,
-  },
-  resultTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  resultMeta: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  resultValue: {
-    fontSize: 13,
-    fontWeight: "700",
-    marginLeft: 8,
-  },
-  resultSecondary: {
-    fontSize: 11,
-    marginTop: 1,
-  },
-  resultShipping: {
-    fontSize: 11,
-    marginTop: 1,
-  },
-  domesticBadge: {
-    alignSelf: "flex-start",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginTop: 4,
-  },
-  domesticBadgeText: {
-    fontSize: 10,
-    fontWeight: "600",
-  },
+  // (resultRow, resultIcon, resultTitle, resultMeta, resultValue, resultSecondary, resultShipping, domesticBadge, domesticBadgeText moved to MarketplaceResultCard)
   crossBorderDisclaimer: {
     fontSize: 11,
     textAlign: "center",
@@ -1117,14 +930,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontStyle: "italic",
   },
+  // (noResultsBlock moved to MarketplaceEmptyState)
   emptyText: {
     fontSize: 13,
     marginTop: 4,
     textAlign: "center",
-  },
-  noResultsBlock: {
-    alignItems: "center",
-    paddingVertical: 24,
   },
   noResultsTitle: {
     fontSize: 16,
@@ -1155,20 +965,7 @@ const styles = StyleSheet.create({
   },
   // (trending styles moved to TrendingCategoriesGrid component)
   // (search bar + filter button styles moved to MarketplaceSearchBar component)
-  resultThumbnail: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  resultThumbnailPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    marginRight: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  // (resultThumbnail, resultThumbnailPlaceholder moved to MarketplaceResultCard)
   filterModal: {
     flex: 1,
   },

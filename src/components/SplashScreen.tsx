@@ -1,22 +1,58 @@
 /**
  * Branded splash screen with animated CollectAI logo.
- * Uses Tiffany Blue (#81D8D0) background with white text.
+ * Gradient background with pulsing glow ring and staggered dot indicators.
  */
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { useSettings } from '@/lib/settings';
+import { fonts } from '@/theme/tokens';
+import { DURATION } from '@/motion/tokens';
 
 type Props = {
   onReady?: () => void;
 };
 
 export function SplashScreen({ onReady }: Props) {
+  const { settings } = useSettings();
   const logoScale = useRef(new Animated.Value(0.3)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
+  const textTranslateY = useRef(new Animated.Value(12)).current;
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
+  const glowScale = useRef(new Animated.Value(1)).current;
+  const dot0 = useRef(new Animated.Value(0.2)).current;
+  const dot1 = useRef(new Animated.Value(0.2)).current;
+  const dot2 = useRef(new Animated.Value(0.2)).current;
 
   useEffect(() => {
+    // Pulsing glow ring
+    const glowLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowScale, { toValue: 1.15, duration: DURATION.loop, useNativeDriver: true }),
+        Animated.timing(glowScale, { toValue: 1.0, duration: DURATION.loop, useNativeDriver: true }),
+      ]),
+    );
+    glowLoop.start();
+
+    // Sequential dot pulse
+    const dotAnims = [dot0, dot1, dot2];
+    const dotLoop = Animated.loop(
+      Animated.stagger(
+        200,
+        dotAnims.map((d) =>
+          Animated.sequence([
+            Animated.timing(d, { toValue: 1, duration: DURATION.slow, useNativeDriver: true }),
+            Animated.timing(d, { toValue: 0.2, duration: DURATION.slow, useNativeDriver: true }),
+          ]),
+        ),
+      ),
+    );
+    dotLoop.start();
+
+    // Main entrance sequence
     Animated.sequence([
       Animated.parallel([
         Animated.spring(logoScale, {
@@ -27,28 +63,46 @@ export function SplashScreen({ onReady }: Props) {
         }),
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 400,
+          duration: DURATION.slow,
           useNativeDriver: true,
         }),
       ]),
-      Animated.timing(textOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
+      Animated.parallel([
+        Animated.timing(textOpacity, { toValue: 1, duration: DURATION.reveal, useNativeDriver: true }),
+        Animated.timing(textTranslateY, { toValue: 0, duration: DURATION.reveal, useNativeDriver: true }),
+      ]),
       Animated.timing(subtitleOpacity, {
         toValue: 1,
-        duration: 300,
+        duration: DURATION.reveal,
         useNativeDriver: true,
       }),
     ]).start(() => {
-      if (onReady) setTimeout(onReady, 500);
+      if (onReady) {
+        fireHaptic(HapticIntent.CONFIDENCE_HIGH, { enabled: settings.hapticsEnabled });
+        setTimeout(onReady, 500);
+      }
     });
-  }, [logoScale, logoOpacity, textOpacity, subtitleOpacity, onReady]);
+
+    return () => {
+      glowLoop.stop();
+      dotLoop.stop();
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
-      <View style={styles.gradientTop} />
+      <LinearGradient
+        colors={['#44A9A1', '#81D8D0', '#AEE6E1']}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Glow ring behind logo */}
+      <Animated.View
+        style={[
+          styles.glowRing,
+          { opacity: logoOpacity, transform: [{ scale: glowScale }] },
+        ]}
+      />
 
       <Animated.View
         style={[
@@ -57,11 +111,16 @@ export function SplashScreen({ onReady }: Props) {
         ]}
       >
         <View style={styles.logoCircle}>
-          <Ionicons name="diamond" size={48} color="#81D8D0" />
+          <Ionicons name="diamond" size={52} color="#81D8D0" />
         </View>
       </Animated.View>
 
-      <Animated.Text style={[styles.appName, { opacity: textOpacity }]}>
+      <Animated.Text
+        style={[
+          styles.appName,
+          { opacity: textOpacity, transform: [{ translateY: textTranslateY }] },
+        ]}
+      >
         CollectAI
       </Animated.Text>
 
@@ -70,8 +129,8 @@ export function SplashScreen({ onReady }: Props) {
       </Animated.Text>
 
       <View style={styles.bottomDots}>
-        {[0, 1, 2].map((i) => (
-          <View key={i} style={[styles.dot, { opacity: 0.3 + i * 0.2 }]} />
+        {[dot0, dot1, dot2].map((d, i) => (
+          <Animated.View key={i} style={[styles.dot, { opacity: d }]} />
         ))}
       </View>
     </View>
@@ -81,43 +140,41 @@ export function SplashScreen({ onReady }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#81D8D0',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gradientTop: {
+  glowRing: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '30%',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   logoContainer: {
     marginBottom: 24,
   },
   logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
   },
   appName: {
     fontSize: 36,
-    fontWeight: '800',
+    fontFamily: fonts.black,
     color: '#FFFFFF',
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
   subtitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
     color: 'rgba(255,255,255,0.85)',
     marginTop: 8,
     letterSpacing: 2,

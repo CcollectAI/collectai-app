@@ -4,6 +4,7 @@
  * Returns stable shapes (no raw Supabase responses to UI).
  */
 
+import { API_LIMITS } from '@/constants/apiLimits';
 import type { DataProvider } from './DataProvider';
 import type {
   CurrencyCode,
@@ -87,7 +88,7 @@ export class SupabaseDataProvider implements DataProvider {
       .from('portfolio_values')
       .select('at,value')
       .order('at', { ascending: true })
-      .limit(365);
+      .limit(API_LIMITS.PORTFOLIO_VALUES_DAYS);
 
     if (valuesError) {
       logger.warn('[SupabaseDataProvider] getPortfolioSummary error:', valuesError);
@@ -123,7 +124,7 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   async listItems(pagination?: PaginationParams): Promise<Item[]> {
-    const limit = pagination?.limit ?? 200;
+    const limit = pagination?.limit ?? API_LIMITS.ITEMS_DEFAULT;
     const offset = pagination?.offset ?? 0;
     // JOIN price_predictions via FK (item_id → items.id)
     const { data, error } = await supabase
@@ -615,7 +616,7 @@ export class SupabaseDataProvider implements DataProvider {
       .select('id, title, category, updated_at, attributes_json, taxonomy_version, subtype_id, collections, images, price_predictions(q10, q50, q90, conf_score, asof)')
       .ilike('title', `%${escaped}%`)
       .order('updated_at', { ascending: false })
-      .limit(25);
+      .limit(API_LIMITS.RECENT_ITEMS);
 
     if (error) {
       logger.warn('[SupabaseDataProvider] searchItems error:', error);
@@ -850,7 +851,7 @@ export class SupabaseDataProvider implements DataProvider {
   // ─────────────────────────────────────────────────────────────────────────────
 
   async listAlertsFeed(pagination?: PaginationParams): Promise<AlertFeedItem[]> {
-    const limit = pagination?.limit ?? 50;
+    const limit = pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT;
     const offset = pagination?.offset ?? 0;
     const { data, error } = await supabase
       .from('v_alerts_feed_v1')
@@ -1123,9 +1124,9 @@ export class SupabaseDataProvider implements DataProvider {
 
     // Query all 3 tables in parallel; each can fail independently
     const [projectsRes, sessionsRes, twitchRes] = await Promise.allSettled([
-      supabase.from('build_paint_projects').select('id, status').limit(500),
-      supabase.from('build_paint_sessions').select('minutes').limit(2000),
-      supabase.from('twitch_creators').select('id, is_live').limit(500),
+      supabase.from('build_paint_projects').select('id, status').limit(API_LIMITS.BATCH_PROJECTS),
+      supabase.from('build_paint_sessions').select('minutes').limit(API_LIMITS.BATCH_LARGE),
+      supabase.from('twitch_creators').select('id, is_live').limit(API_LIMITS.BATCH_PROJECTS),
     ]);
 
     // Build & paint projects
@@ -1623,7 +1624,7 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   async listEvents(pagination?: PaginationParams): Promise<CollectorsEvent[]> {
-    const limit = pagination?.limit ?? 50;
+    const limit = pagination?.limit ?? API_LIMITS.ALERTS_DEFAULT;
     const offset = pagination?.offset ?? 0;
     // Use personalized RPC that filters to user's categories + followed categories
     const { data, error } = await supabase.rpc('rpc_list_personalized_events_v1', {

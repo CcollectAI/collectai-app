@@ -73,10 +73,14 @@ function ConfidenceRing({
   const { colors } = useAppTheme();
   const pct = Math.round(value * 100);
   const strokeDash = RING_CIRCUMFERENCE * value;
-  const ringColor = value >= 0.75 ? '#22C55E' : value >= 0.5 ? '#F59E0B' : '#EF4444';
+  const ringColor = value >= 0.75 ? colors.success : value >= 0.5 ? colors.warning : colors.error;
 
   return (
-    <View style={styles.ringItem}>
+    <View
+      style={styles.ringItem}
+      accessibilityLabel={`${label} confidence: ${pct} percent`}
+      accessibilityRole="text"
+    >
       <View style={styles.ringContainer}>
         <Svg width={RING_SIZE} height={RING_SIZE}>
           <Circle
@@ -121,7 +125,7 @@ function formatKey(k: string): string {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function ScanResultCard({
+function ScanResultCardInner({
   scanResult,
   capturedUri,
   currency,
@@ -145,11 +149,11 @@ export function ScanResultCard({
   const handleSubmitFeedback = useCallback(async () => {
     if (!editingField || !scanResult.scanSessionId) return;
     try {
-      const feedback: Record<string, string> = { scanSessionId: scanResult.scanSessionId };
+      const feedback: { scanSessionId: string; correctedName?: string; correctedCategory?: string; correctedCondition?: string } = { scanSessionId: scanResult.scanSessionId };
       if (editingField === 'name') feedback.correctedName = editValue;
       else if (editingField === 'category') feedback.correctedCategory = editValue;
       else if (editingField === 'condition') feedback.correctedCondition = editValue;
-      await submitScanFeedback(feedback as any);
+      await submitScanFeedback(feedback);
       setFeedbackSent(true);
       setEditingField(null);
       Alert.alert('Thanks!', 'Your correction helps improve future scans.');
@@ -183,7 +187,7 @@ export function ScanResultCard({
     : Math.round(scanResult.prediction.confidence * 100);
   const confLabel =
     overallConf >= 75 ? 'High Confidence' : overallConf >= 50 ? 'Moderate' : 'Low Confidence';
-  const confBadgeColor = overallConf >= 75 ? '#22C55E' : overallConf >= 50 ? '#F59E0B' : '#EF4444';
+  const confBadgeColor = overallConf >= 75 ? colors.success : overallConf >= 50 ? colors.warning : colors.error;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -195,6 +199,7 @@ export function ScanResultCard({
             source={{ uri: capturedUri }}
             style={styles.heroImage}
             resizeMode="cover"
+            accessibilityLabel="Scanned item photo"
           />
           <View style={styles.heroOverlay} />
           {/* Confidence badge on hero */}
@@ -203,6 +208,8 @@ export function ScanResultCard({
               styles.heroBadge,
               { backgroundColor: confBadgeColor + '20', borderColor: confBadgeColor + '40' },
             ]}
+            accessibilityLabel={`${confLabel}: ${overallConf} percent`}
+            accessibilityRole="text"
           >
             <View style={[styles.heroBadgeDot, { backgroundColor: confBadgeColor }]} />
             <Text style={[styles.heroBadgeText, { color: confBadgeColor }]}>{confLabel}</Text>
@@ -229,17 +236,20 @@ export function ScanResultCard({
                 autoFocus
                 returnKeyType="done"
                 onSubmitEditing={handleSubmitFeedback}
+                accessibilityLabel="Edit item name"
               />
-              <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]}>
+              <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]} accessibilityRole="button" accessibilityLabel="Submit correction">
                 <Ionicons name="checkmark" size={16} color="#FFF" />
               </AnimatedPressable>
-              <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn}>
+              <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
                 <Ionicons name="close" size={16} color={colors.muted} />
               </AnimatedPressable>
             </View>
           ) : (
             <AnimatedPressable
               onPress={() => handleStartEdit('name', scanResult.prediction.name || '')}
+              accessibilityRole="button"
+              accessibilityLabel={`Item name: ${scanResult.prediction.name || 'Unknown Item'}. ${featureFlags.FEATURE_SCAN_FEEDBACK ? 'Tap to correct' : ''}`}
               accessibilityHint={featureFlags.FEATURE_SCAN_FEEDBACK ? 'Tap to correct' : undefined}
             >
               <Text style={[styles.idName, { color: colors.text }]} numberOfLines={3}>
@@ -257,17 +267,20 @@ export function ScanResultCard({
                   autoFocus
                   returnKeyType="done"
                   onSubmitEditing={handleSubmitFeedback}
+                  accessibilityLabel="Edit category value"
                 />
-                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]}>
+                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]} accessibilityRole="button" accessibilityLabel="Submit category correction">
                   <Ionicons name="checkmark" size={14} color="#FFF" />
                 </AnimatedPressable>
-                <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn}>
+                <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
                   <Ionicons name="close" size={14} color={colors.muted} />
                 </AnimatedPressable>
               </View>
             ) : (
               <AnimatedPressable
                 onPress={() => handleStartEdit('category', scanResult.attributes.category)}
+                accessibilityRole="button"
+                accessibilityLabel={`Category: ${scanResult.attributes.category.replace(/_/g, ' ')}`}
                 style={[styles.categoryChip, { backgroundColor: TIFFANY + '18' }]}
               >
                 <Ionicons name="pricetag" size={12} color={TIFFANY_DARK} />
@@ -283,6 +296,8 @@ export function ScanResultCard({
               <AnimatedPressable
                 onPress={() => handleStartEdit('condition', scanResult.attributes.conditionGuess || '')}
                 style={[styles.conditionChip, { backgroundColor: colors.border + '80' }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Condition: ${scanResult.attributes.conditionGuess?.replace(/_/g, ' ') ?? 'unknown'}`}
               >
                 <Ionicons name="shield-checkmark" size={12} color={colors.muted} />
                 <Text style={[styles.conditionChipText, { color: colors.text }]}>
@@ -302,11 +317,12 @@ export function ScanResultCard({
                   autoFocus
                   returnKeyType="done"
                   onSubmitEditing={handleSubmitFeedback}
+                  accessibilityLabel="Edit condition value"
                 />
-                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]}>
+                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: TIFFANY }]} accessibilityRole="button" accessibilityLabel="Submit condition correction">
                   <Ionicons name="checkmark" size={14} color="#FFF" />
                 </AnimatedPressable>
-                <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn}>
+                <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
                   <Ionicons name="close" size={14} color={colors.muted} />
                 </AnimatedPressable>
               </View>
@@ -320,7 +336,7 @@ export function ScanResultCard({
           {feedbackSent && (
             <View style={styles.feedbackSentBadge}>
               <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
-              <Text style={{ color: '#22C55E', fontSize: 11, marginLeft: 4 }}>Correction submitted</Text>
+              <Text style={{ color: colors.success, fontSize: 11, marginLeft: 4 }}>Correction submitted</Text>
             </View>
           )}
         </View>
@@ -359,27 +375,27 @@ export function ScanResultCard({
 
         {/* Duplicate/variant banner */}
         {featureFlags.FEATURE_DUPLICATE_DETECTION && scanResult.duplicateInfo?.ownedCount ? (
-          <View style={[styles.section, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B40' }]}>
+          <View style={[styles.section, { backgroundColor: colors.warning + '15', borderColor: colors.warning + '40' }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="warning-outline" size={18} color="#F59E0B" />
-              <Text style={[styles.sectionTitle, { color: '#92400E' }]}>
+              <Ionicons name="warning-outline" size={18} color={colors.warning} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 You already have this!
               </Text>
             </View>
-            <Text style={{ color: '#92400E', fontSize: 13 }}>
+            <Text style={{ color: colors.text, fontSize: 13 }}>
               You own {scanResult.duplicateInfo.ownedCount} matching item(s) in your collection.
             </Text>
             {scanResult.duplicateInfo.setCompletion && (
-              <Text style={{ color: '#92400E', fontSize: 12, marginTop: 4 }}>
+              <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>
                 Set completion: {scanResult.duplicateInfo.setCompletion.pct}% ({scanResult.duplicateInfo.setCompletion.owned}/{scanResult.duplicateInfo.setCompletion.total})
               </Text>
             )}
           </View>
         ) : featureFlags.FEATURE_DUPLICATE_DETECTION && scanResult.duplicateInfo?.isVariant ? (
-          <View style={[styles.section, { backgroundColor: '#DBEAFE', borderColor: '#3B82F640' }]}>
+          <View style={[styles.section, { backgroundColor: colors.info + '15', borderColor: colors.info + '40' }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="git-branch-outline" size={18} color="#3B82F6" />
-              <Text style={[styles.sectionTitle, { color: '#1E40AF' }]}>
+              <Ionicons name="git-branch-outline" size={18} color={colors.info} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Variant of {scanResult.duplicateInfo.variantOf}
               </Text>
             </View>
@@ -464,7 +480,7 @@ export function ScanResultCard({
                     </View>
                   )}
                   {!!alt.imageUrl ? (
-                    <Image source={{ uri: alt.imageUrl }} style={styles.altImage} resizeMode="cover" />
+                    <Image source={{ uri: alt.imageUrl }} style={styles.altImage} resizeMode="cover" accessibilityLabel={`Image of ${alt.title ?? 'alternative'}`} />
                   ) : (
                     <View style={[styles.altImage, { backgroundColor: colors.border }]}>
                       <Ionicons name="image-outline" size={20} color={colors.muted} />
@@ -896,4 +912,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const ScanResultCard = React.memo(ScanResultCardInner);
 export default ScanResultCard;

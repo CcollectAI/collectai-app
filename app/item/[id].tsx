@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { router } from 'expo-router';
 import {
   ScrollView,
@@ -23,8 +23,12 @@ import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { showActionSheet } from "@/hooks/useActionSheetPicker";
+import { useItemGallery } from "@/hooks/useItemGallery";
+import { useItemGrading } from "@/hooks/useItemGrading";
+import { useItemPriceTrend } from "@/hooks/useItemPriceTrend";
+import { useItemProgress } from "@/hooks/useItemProgress";
+import { useItemMarketplace } from "@/hooks/useItemMarketplace";
 import { useAuthContext } from "@/providers/useAuthContext";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
@@ -118,9 +122,10 @@ const relativeTime = (iso: string | null | undefined): string => {
 
 // Predefined options for dropdown menus
 const COLLECTION_OPTIONS = ['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rocket', 'Gym Heroes', 'Neo Genesis', 'Other'];
-const CONDITION_OPTIONS = ['Not set', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor', 'PSA 10', 'PSA 9', 'PSA 8', 'PSA 7', 'BGS 10', 'BGS 9.5', 'Raw'];
+const CONDITION_OPTIONS_GENERAL = ['Not set', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
+const CONDITION_OPTIONS_GRADED = ['Not set', 'PSA 10', 'PSA 9', 'PSA 8', 'PSA 7', 'BGS 10', 'BGS 9.5', 'CGC 9.8', 'CGC 9.6', 'Raw', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
 // Pull from single source of truth — all 36 categories
-import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
+import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
 
 const CATEGORY_OPTIONS = [...ALL_CATS.map((c) => c.name), 'Other'];
 const CATEGORY_ID_MAP: Record<string, string> = {
@@ -170,149 +175,31 @@ function ItemDetailScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const inlineEditPending = useRef(false);
 
-  // Photo upload
+  // Photo & gallery management (extracted to useItemGallery hook)
   const { user } = useAuthContext();
+  const gallery = useItemGallery(id, isDraft, imageUri);
   const {
-    pickAndUpload,
-    uploading: photoUploading,
-    error: photoError,
-    photoUrl: userPhotoUrl,
-  } = usePhotoUpload(id || "draft");
-  const [userPhoto, setUserPhoto] = useState<string | null>(null);
-  const [zoomVisible, setZoomVisible] = useState(false);
-  const [zoomImageUri, setZoomImageUri] = useState<string | null>(null);
-
-  // ── Multi-photo gallery state ──────────────────────────────────────────
-  // ItemImage type imported from ItemGallerySection
-  const [galleryImages, setGalleryImages] = useState<ItemImage[]>([]);
-  const [galleryLoading, setGalleryLoading] = useState(false);
-  const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [pendingLabel, setPendingLabel] = useState<string | null>(null);
-  const galleryFlatListRef = useRef<FlatList>(null);
+    userPhoto, setUserPhoto,
+    zoomVisible, setZoomVisible,
+    zoomImageUri, setZoomImageUri,
+    galleryImages, setGalleryImages,
+    galleryLoading,
+    galleryActiveIndex, setGalleryActiveIndex,
+    imageUploading,
+    pendingLabel, setPendingLabel,
+    flatListRef: galleryFlatListRef,
+    displayImageUri,
+    effectiveGalleryImages,
+    photoUploading, photoError, userPhotoUrl,
+    handleGalleryUpload,
+    handleGalleryDelete,
+    handlePhotoUpload,
+    showPhotoSourcePicker,
+    showLabelPicker,
+    IMAGE_LABELS,
+    LABEL_DISPLAY,
+  } = gallery;
   const GALLERY_HEIGHT = 260;
-
-  const IMAGE_LABELS = ['front', 'back', 'detail', 'box', 'certificate', 'damage', 'other'] as const;
-  const LABEL_DISPLAY: Record<string, string> = {
-    front: 'Front',
-    back: 'Back',
-    detail: 'Detail',
-    box: 'Box',
-    certificate: 'Certificate',
-    damage: 'Damage',
-    other: 'Other',
-  };
-
-  // Resolved display image: first gallery image > userPhoto > imageUri > placeholder
-  const displayImageUri = galleryImages.length > 0
-    ? galleryImages[0].image_url
-    : (userPhoto || userPhotoUrl || imageUri);
-
-  // Effective gallery data: merge original imageUrl as synthetic entry when no gallery images exist
-  const effectiveGalleryImages = useMemo((): ItemImage[] => {
-    if (galleryImages.length > 0) return galleryImages;
-    // If no gallery images but the item has an original imageUrl, show it as the first entry
-    const fallbackUri = userPhoto || userPhotoUrl || imageUri;
-    if (fallbackUri) {
-      return [{
-        id: '__original__',
-        item_id: id || '',
-        image_url: fallbackUri,
-        label: null,
-        position: 0,
-        created_at: null,
-      }];
-    }
-    return [];
-  }, [galleryImages, userPhoto, userPhotoUrl, imageUri, id]);
-
-  // Load gallery images on mount (for saved items)
-  useEffect(() => {
-    if (!id || isDraft) return;
-    setGalleryLoading(true);
-    collectorsApi.listItemImages(id)
-      .then((data) => {
-        setGalleryImages(data.images || []);
-      })
-      .catch((err) => {
-        logger.warn('[ItemDetail] gallery images fetch error:', err);
-      })
-      .finally(() => setGalleryLoading(false));
-  }, [id, isDraft]);
-
-  // Upload a new gallery image
-  const handleGalleryUpload = useCallback(async (source: "camera" | "gallery", label?: string) => {
-    if (!id || isDraft) return;
-    setImageUploading(true);
-    try {
-      const url = await pickAndUpload(source);
-      if (url && id) {
-        // Also add to the item_images table via the API
-        const result = await collectorsApi.uploadItemImage(id, url, label || undefined);
-        setGalleryImages((prev) => [...prev, result]);
-        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-        showToast({ message: 'Photo added', type: 'success' });
-      }
-    } catch (err) {
-      logger.error('[ItemDetail] gallery upload error:', err);
-      showToast({ message: 'Failed to upload photo', type: 'error' });
-    } finally {
-      setImageUploading(false);
-      setPendingLabel(null);
-    }
-  }, [id, isDraft, pickAndUpload, settings.hapticsEnabled]);
-
-  // Delete a gallery image
-  const handleGalleryDelete = useCallback(async (imageId: string) => {
-    if (!id) return;
-    try {
-      await collectorsApi.deleteItemImage(id, imageId);
-      setGalleryImages((prev) => prev.filter((img) => img.id !== imageId));
-      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Photo removed', type: 'info' });
-    } catch (err) {
-      logger.error('[ItemDetail] gallery delete error:', err);
-      showToast({ message: 'Failed to remove photo', type: 'error' });
-    }
-  }, [id, settings.hapticsEnabled]);
-
-  const handlePhotoUpload = async (source: "camera" | "gallery") => {
-    if (!isDraft && id) {
-      // For saved items, use gallery upload flow
-      handleGalleryUpload(source, pendingLabel || undefined);
-      return;
-    }
-    const url = await pickAndUpload(source);
-    if (url) {
-      setUserPhoto(url);
-    }
-  };
-
-  const showLabelPicker = (callback: (label: string | null) => void) => {
-    const options = ['No Label', ...IMAGE_LABELS.map((l) => LABEL_DISPLAY[l])];
-    showActionSheet('Choose Photo Label', options, (index) => {
-      if (index === 0) callback(null); // No Label
-      else callback(IMAGE_LABELS[index - 1]);
-    });
-  };
-
-  const showPhotoSourcePicker = () => {
-    const doUpload = (source: "camera" | "gallery") => {
-      if (!isDraft && id) {
-        // Show label picker first, then upload
-        showLabelPicker((label) => {
-          setPendingLabel(label);
-          handleGalleryUpload(source, label || undefined);
-        });
-      } else {
-        handlePhotoUpload(source);
-      }
-    };
-
-    showActionSheet('Add Photo', ['Take Photo', 'Choose from Library'], (index) => {
-      doUpload(index === 0 ? 'camera' : 'gallery');
-    });
-  };
 
   // Confetti ref for draft result reveal
   const confettiRef = useRef<ConfettiBurstRef>(null);
@@ -378,20 +265,7 @@ function ItemDetailScreen() {
   // Expandable explanation state
   const [explanationExpanded, setExplanationExpanded] = useState(false);
 
-  // Provenance state
-  const [provenanceEvents, setProvenanceEvents] = useState<Array<{
-    id: string; eventType: string; timestamp: string;
-    note: string | null; source: string | null; metadata: Record<string, unknown>;
-  }>>([]);
-  const [authenticitySignals, setAuthenticitySignals] = useState<string[]>([]);
-  const [provenanceLoading, setProvenanceLoading] = useState(false);
-  const [provenanceExpanded, setProvenanceExpanded] = useState(false);
-
-  // Dossier state
-  const [dossierData, setDossierData] = useState<DossierData | null>(null);
-  const [dossierLoading, setDossierLoading] = useState(false);
-  const [dossierExpanded, setDossierExpanded] = useState(false);
-  const [dossierError, setDossierError] = useState(false);
+  // Provenance + Dossier state managed by useItemMarketplace hook above
 
   // ── Resolve category slug early — needed by grading, build, size, progress sections ──
   const categorySlug = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -403,39 +277,51 @@ function ItemDetailScreen() {
   const [itemCollections, setItemCollections] = useState<string[]>([]);
 
   // ── Grading service state ────────────────────────────────────────────
-  const GRADING_ELIGIBLE = new Set(['pokemon', 'mtg', 'yugioh', 'sportscards', 'comic_books', 'retro_games']);
-  const isGradingEligible = GRADING_ELIGIBLE.has(categorySlug);
+  const isGradingEligible = GRADING_ELIGIBLE_CATEGORIES.has(categorySlug);
+  const conditionOptions = isGradingEligible ? CONDITION_OPTIONS_GRADED : CONDITION_OPTIONS_GENERAL;
 
-  // Types imported from GradingSection component
+  // Grading management (extracted to useItemGrading hook)
+  const grading = useItemGrading(categorySlug, editableName);
+  const {
+    gradingExpanded, setGradingExpanded,
+    gradingLookupResult, setGradingLookupResult,
+    gradingLookupLoading,
+    gradingPopulation, setGradingPopulation,
+    gradingPopLoading,
+    gradingServices,
+    gradingModalVisible, setGradingModalVisible,
+    gradingCertInput, setGradingCertInput,
+    gradingServicePick, setGradingServicePick,
+    loadGradingServices,
+    handleGradingLookup,
+    loadGradingPopulation,
+  } = grading;
 
-  const [gradingExpanded, setGradingExpanded] = useState(false);
-  const [gradingLookupResult, setGradingLookupResult] = useState<GradingLookupResult | null>(null);
-  const [gradingLookupLoading, setGradingLookupLoading] = useState(false);
-  const [gradingPopulation, setGradingPopulation] = useState<PopulationReport | null>(null);
-  const [gradingPopLoading, setGradingPopLoading] = useState(false);
-  const [gradingServices, setGradingServices] = useState<GradingServiceInfo[]>([]);
-  const [gradingModalVisible, setGradingModalVisible] = useState(false);
-  const [gradingCertInput, setGradingCertInput] = useState('');
-  const [gradingServicePick, setGradingServicePick] = useState<'psa' | 'cgc' | 'bgs' | 'beckett'>('psa');
+  // Marketplace, affiliates, dossier, provenance (extracted to useItemMarketplace hook)
+  const marketplace = useItemMarketplace(id, isDraft, editableName, editableCategory);
+  const {
+    marketResults, marketLoading, marketExpanded, setMarketExpanded,
+    marketScannedAt, marketError, loadMarketResults,
+    affiliateLinks,
+    dossierData, dossierLoading, dossierExpanded, setDossierExpanded,
+    dossierError, loadDossier,
+    provenanceEvents, authenticitySignals,
+    provenanceLoading, provenanceExpanded, setProvenanceExpanded,
+  } = marketplace;
 
-  // Marketplace state
-  const [marketResults, setMarketResults] = useState<MarketHit[]>([]);
-  const [marketLoading, setMarketLoading] = useState(false);
-  const [marketExpanded, setMarketExpanded] = useState(false);
-  const [marketScannedAt, setMarketScannedAt] = useState<string | null>(null);
-  const [marketError, setMarketError] = useState(false);
-
-  // Affiliate links state
-  type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
-  const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
-
-  // Price trend chart state
-  const [priceTrendData, setPriceTrendData] = useState<PriceTrendData | null>(null);
-  const [priceTrendLoading, setPriceTrendLoading] = useState(false);
-  const [priceTrendRange, setPriceTrendRange] = useState(90); // default 3M
-  const [priceTrendVisible, setPriceTrendVisible] = useState(false); // lazy load trigger
-  const [priceTrendHoverValue, setPriceTrendHoverValue] = useState<number | null>(null);
-  const [priceTrendHoverDate, setPriceTrendHoverDate] = useState<string | null>(null);
+  // Price trend (extracted to useItemPriceTrend hook)
+  const priceTrend = useItemPriceTrend(id, isDraft);
+  const {
+    priceTrendData,
+    priceTrendLoading,
+    priceTrendRange,
+    priceTrendVisible, setPriceTrendVisible,
+    priceTrendHoverValue,
+    priceTrendHoverDate,
+    handleRangeChange: handlePriceTrendRangeChange,
+    chartData: priceTrendChartData,
+    handleHover: handlePriceTrendHover,
+  } = priceTrend;
   const { width: screenWidth } = useWindowDimensions();
   const GALLERY_WIDTH = screenWidth - 32; // 16px padding on each side
 
@@ -504,110 +390,20 @@ function ItemDetailScreen() {
     }
   }, [itemAttributes]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Progress tracking state (manga, comics, games) ──────────────────
-  const PROGRESS_CATEGORIES: Record<string, { statuses: string[]; label: string; icon: string }> = {
-    manga: { statuses: ['unread', 'reading', 'read'], label: 'Reading Progress', icon: 'book-outline' },
-    comic_books: { statuses: ['unread', 'reading', 'read'], label: 'Reading Progress', icon: 'book-outline' },
-    retro_games: { statuses: ['unplayed', 'playing', 'played', 'completed'], label: 'Play Progress', icon: 'game-controller-outline' },
-    board_games: { statuses: ['unplayed', 'playing', 'played', 'completed'], label: 'Play Progress', icon: 'dice-outline' },
-  };
-  const progressConfig = PROGRESS_CATEGORIES[categorySlug] ?? null;
-  const hasProgressTracking = progressConfig !== null;
-
-  const [progressStatus, setProgressStatus] = useState<string | null>(null);
-  const [progressPct, setProgressPct] = useState<number | null>(null);
-  const [progressNotes, setProgressNotes] = useState('');
-  const [progressLoading, setProgressLoading] = useState(false);
-  const [progressSaving, setProgressSaving] = useState(false);
-  const progressSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Load progress on mount for progress-trackable items
-  useEffect(() => {
-    if (!id || isDraft || !hasProgressTracking) return;
-    setProgressLoading(true);
-    collectorsApi.getItemProgress(id)
-      .then((data) => {
-        setProgressStatus(data.progress_status);
-        setProgressPct(data.progress_pct);
-        setProgressNotes(data.progress_notes || '');
-      })
-      .catch((err) => {
-        logger.warn('[ItemDetail] progress fetch error:', err);
-      })
-      .finally(() => setProgressLoading(false));
-  }, [id, isDraft, hasProgressTracking]);
-
-  // Auto-save progress changes with debounce
-  const saveProgress = useCallback((status: string | null, pct: number | null, pNotes: string) => {
-    if (!id || isDraft) return;
-    if (progressSaveTimer.current) clearTimeout(progressSaveTimer.current);
-    progressSaveTimer.current = setTimeout(async () => {
-      setProgressSaving(true);
-      try {
-        const payload: Record<string, unknown> = {};
-        if (status !== undefined) payload.progress_status = status;
-        if (pct !== undefined && pct !== null) payload.progress_pct = pct;
-        if (pNotes !== undefined) payload.progress_notes = pNotes;
-        await collectorsApi.updateItemProgress(id, payload as {
-          progress_status?: string;
-          progress_pct?: number;
-          progress_notes?: string;
-        });
-        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-      } catch (err) {
-        logger.warn('[ItemDetail] progress save error:', err);
-        showToast({ message: 'Failed to save progress', type: 'error' });
-      } finally {
-        setProgressSaving(false);
-      }
-    }, 600);
-  }, [id, isDraft, settings.hapticsEnabled]);
-
-  const handleProgressStatusChange = (newStatus: string) => {
-    setProgressStatus(newStatus);
-    saveProgress(newStatus, progressPct, progressNotes);
-  };
-
-  const handleProgressPctChange = (pct: number) => {
-    setProgressPct(pct);
-    saveProgress(progressStatus, pct, progressNotes);
-  };
-
-  const handleProgressNotesChange = (text: string) => {
-    setProgressNotes(text);
-    saveProgress(progressStatus, progressPct, text);
-  };
-
-  // Add to Watchlist state
-  const [watchlistModalVisible, setWatchlistModalVisible] = useState(false);
-  const [watchlistTargetPrice, setWatchlistTargetPrice] = useState('');
-  const [watchlistSaving, setWatchlistSaving] = useState(false);
-
-  const handleAddToWatchlist = async () => {
-    setWatchlistSaving(true);
-    try {
-      const targetPrice = watchlistTargetPrice.trim()
-        ? parseFloat(watchlistTargetPrice.replace(/[^0-9.]/g, ''))
-        : null;
-
-      await dataProvider.addWatchlistItem({
-        title: editableName,
-        category: editableCategory,
-        targetPrice: targetPrice && !isNaN(targetPrice) ? targetPrice : null,
-        notes: `Added from item detail: ${id}`,
-      });
-
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Added to watchlist!', type: 'success' });
-      setWatchlistModalVisible(false);
-      setWatchlistTargetPrice('');
-    } catch (err: unknown) {
-      logger.error('[ItemDetail] add to watchlist error:', err);
-      showToast({ message: 'Failed to add to watchlist', type: 'error' });
-    } finally {
-      setWatchlistSaving(false);
-    }
-  };
+  // Progress tracking (extracted to useItemProgress hook)
+  const progress = useItemProgress(id, isDraft, categorySlug);
+  const {
+    progressConfig,
+    hasProgressTracking,
+    progressStatus,
+    progressPct,
+    progressNotes,
+    progressLoading,
+    progressSaving,
+    handleStatusChange: handleProgressStatusChange,
+    handlePctChange: handleProgressPctChange,
+    handleNotesChange: handleProgressNotesChange,
+  } = progress;
 
   // (Price Alert section removed)
 
@@ -643,8 +439,9 @@ function ItemDetailScreen() {
   };
 
   const showConditionPicker = () => {
-    showActionSheet('Select Condition/Grade', CONDITION_OPTIONS, (index) => {
-      setEditableCondition(CONDITION_OPTIONS[index]);
+    const title = isGradingEligible ? 'Select Grade' : 'Select Condition';
+    showActionSheet(title, conditionOptions, (index) => {
+      setEditableCondition(conditionOptions[index]);
       if (inlineEditPending.current) {
         inlineEditPending.current = false;
         setTimeout(() => onSaveEdits(), 100);
@@ -725,30 +522,7 @@ function ItemDetailScreen() {
 
   // Empty fallback data — no fabricated mock data shown to users
 
-  // Load provenance history
-  useEffect(() => {
-    if (!id || isDraft) return;
-    setProvenanceLoading(true);
-    collectorsApi.getProvenance(id)
-      .then((data) => {
-        const events = data.events.map(e => ({
-          id: e.id,
-          eventType: e.event_type,
-          timestamp: e.timestamp,
-          note: e.note,
-          source: e.source,
-          metadata: e.metadata || {},
-        }));
-        setProvenanceEvents(events);
-        setAuthenticitySignals(data.authenticity_signals || []);
-      })
-      .catch((err) => {
-        logger.warn('[ItemDetail] provenance fetch error:', err);
-        setProvenanceEvents([]);
-        setAuthenticitySignals([]);
-      })
-      .finally(() => setProvenanceLoading(false));
-  }, [id, isDraft]);
+  // Provenance fetched by useItemMarketplace hook
 
   // Fetch linked build project (if buildable category)
   useEffect(() => {
@@ -763,77 +537,7 @@ function ItemDetailScreen() {
       .catch(() => {});
   }, [id, isDraft, itemIsBuildable]);
 
-  // Fetch affiliate links on mount (non-draft items)
-  useEffect(() => {
-    if (!id || isDraft || !name || name === 'Unknown item') return;
-    collectorsApi.getAffiliateLinks(name, editableCategory)
-      .then((data) => setAffiliateLinks(data.links))
-      .catch((err) => logger.warn('[ItemDetail] affiliate links fetch error:', err));
-  }, [id, isDraft, name, editableCategory]);
-
-  // Fetch price trend data (lazy — triggered when section scrolls into view)
-  const fetchPriceTrend = useCallback(async (days: number) => {
-    if (!id || isDraft) return;
-    setPriceTrendLoading(true);
-    try {
-      const data = await collectorsApi.getItemPriceTrend(id, days);
-      setPriceTrendData(data);
-      setPriceTrendHoverValue(null);
-      setPriceTrendHoverDate(null);
-    } catch (err) {
-      logger.warn('[ItemDetail] price trend fetch error:', err);
-      setPriceTrendData(null);
-    } finally {
-      setPriceTrendLoading(false);
-    }
-  }, [id, isDraft]);
-
-  // Lazy-load price trend when section becomes visible
-  useEffect(() => {
-    if (priceTrendVisible && !priceTrendData && !priceTrendLoading) {
-      fetchPriceTrend(priceTrendRange);
-    }
-  }, [priceTrendVisible, priceTrendData, priceTrendLoading, priceTrendRange, fetchPriceTrend]);
-
-  // Re-fetch when time range changes
-  const handlePriceTrendRangeChange = useCallback((days: number) => {
-    setPriceTrendRange(days);
-    fetchPriceTrend(days);
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-  }, [fetchPriceTrend, settings.hapticsEnabled]);
-
-  // Price trend chart data (extracted q50 values for the line chart)
-  const priceTrendChartData = useMemo(() => {
-    if (!priceTrendData?.data_points?.length) return [];
-    return priceTrendData.data_points.map((dp) => dp.q50);
-  }, [priceTrendData]);
-
-  // Price trend hover callback
-  const handlePriceTrendHover = useCallback((index: number, value: number) => {
-    setPriceTrendHoverValue(value);
-    if (priceTrendData?.data_points?.[index]) {
-      setPriceTrendHoverDate(priceTrendData.data_points[index].date);
-    }
-  }, [priceTrendData]);
-
-  // Load dossier on demand
-  const loadDossier = async () => {
-    if (!id || isDraft) return;
-    setDossierLoading(true);
-    setDossierError(false);
-    try {
-      const data = await collectorsApi.getDossier(id);
-      setDossierData(data || null);
-      setDossierExpanded(true);
-    } catch (err) {
-      logger.warn('[ItemDetail] dossier fetch error:', err);
-      setDossierData(null);
-      setDossierError(true);
-      setDossierExpanded(true);
-    } finally {
-      setDossierLoading(false);
-    }
-  };
+  // Affiliate links, price trend, and dossier managed by hooks above
 
   // ── Grading: auto-detect cert number from item attributes ──────────────
   const itemCertNumber = useMemo(() => {
@@ -843,77 +547,7 @@ function ItemDetailScreen() {
     return null; // Will be populated from item data if available
   }, [params]);
 
-  // Grading: load services on expand
-  const loadGradingServices = useCallback(async () => {
-    if (gradingServices.length > 0) return;
-    try {
-      const data = await collectorsApi.gradingServices(categorySlug);
-      setGradingServices(data.services || []);
-    } catch (err) {
-      logger.warn('[ItemDetail] grading services fetch error:', err);
-    }
-  }, [categorySlug, gradingServices.length]);
-
-  // Grading: cert lookup
-  const handleGradingLookup = useCallback(async () => {
-    if (!gradingCertInput.trim()) {
-      showToast({ message: 'Please enter a certification number', type: 'warning' });
-      return;
-    }
-    setGradingLookupLoading(true);
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    try {
-      const result = await collectorsApi.gradingLookup(gradingCertInput.trim(), gradingServicePick);
-      setGradingLookupResult(result);
-      setGradingModalVisible(false);
-      if (result.cert_verified) {
-        showToast({ message: `Verified: ${result.service_name} ${result.grade}`, type: 'success' });
-      } else {
-        showToast({ message: 'Certificate not found or not verified', type: 'warning' });
-      }
-    } catch (err) {
-      logger.warn('[ItemDetail] grading lookup error:', err);
-      showToast({ message: 'Failed to look up certificate', type: 'error' });
-    } finally {
-      setGradingLookupLoading(false);
-    }
-  }, [gradingCertInput, gradingServicePick, settings.hapticsEnabled, showToast]);
-
-  // Grading: load population report
-  const loadGradingPopulation = useCallback(async () => {
-    if (!editableName || gradingPopulation) return;
-    setGradingPopLoading(true);
-    try {
-      const data = await collectorsApi.gradingPopulation(editableName, categorySlug);
-      setGradingPopulation(data);
-    } catch (err) {
-      logger.warn('[ItemDetail] grading population error:', err);
-    } finally {
-      setGradingPopLoading(false);
-    }
-  }, [editableName, categorySlug, gradingPopulation]);
-
-  // Load marketplace results on demand
-  const loadMarketResults = async () => {
-    if (!editableName) return;
-    setMarketLoading(true);
-    setMarketError(false);
-    try {
-      const data = await collectorsApi.marketplaceSearch(editableName, { category: editableCategory }) as { results?: MarketHit[]; hits?: MarketHit[] };
-      const results = data.results || data.hits || [];
-      setMarketResults(results);
-      setMarketScannedAt(new Date().toISOString());
-      setMarketExpanded(true);
-    } catch (err) {
-      logger.warn('[ItemDetail] marketplace search error:', err);
-      setMarketResults([]);
-      setMarketError(true);
-      setMarketScannedAt(new Date().toISOString());
-      setMarketExpanded(true);
-    } finally {
-      setMarketLoading(false);
-    }
-  };
+  // Grading, marketplace, dossier functions managed by hooks above
 
   // Build PriceEstimate object from URL params for new PriceCard component
   const priceEstimate = useMemo((): PriceEstimate | null => {
@@ -1102,18 +736,7 @@ function ItemDetailScreen() {
     try {
       await Promise.all([
         collectorsApi.getPriceEvidence(id).then(setEvidenceData).catch(() => {}),
-        priceTrendVisible ? fetchPriceTrend(priceTrendRange) : Promise.resolve(),
-        collectorsApi.getProvenance(id).then((data) => {
-          setProvenanceEvents(data.events.map(e => ({
-            id: e.id,
-            eventType: e.event_type,
-            timestamp: e.timestamp,
-            note: e.note,
-            source: e.source,
-            metadata: e.metadata || {},
-          })));
-          setAuthenticitySignals(data.authenticity_signals || []);
-        }).catch(() => {}),
+        priceTrendVisible ? handlePriceTrendRangeChange(priceTrendRange) : Promise.resolve(),
         ...(marketResults.length > 0 || marketScannedAt ? [loadMarketResults()] : []),
       ]);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -1372,23 +995,6 @@ function ItemDetailScreen() {
                 <Ionicons name="share-outline" size={18} color={theme.accent} />
                 <Text style={[styles.quickActionLabel, { color: theme.text }]}>Share</Text>
               </AnimatedPressable>
-              <AnimatedPressable
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  handleAddToWatchlist();
-                }}
-                disabled={watchlistSaving}
-                style={[styles.quickActionBtn, { backgroundColor: theme.card, borderColor: theme.border, opacity: watchlistSaving ? 0.6 : 1 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Add to watchlist"
-              >
-                {watchlistSaving ? (
-                  <ActivityIndicator size={16} color={theme.accent} />
-                ) : (
-                  <Ionicons name="eye-outline" size={18} color={theme.accent} />
-                )}
-                <Text style={[styles.quickActionLabel, { color: theme.text }]}>Watch</Text>
-              </AnimatedPressable>
               {!isForSale ? (
                 <AnimatedPressable
                   onPress={() => {
@@ -1488,14 +1094,14 @@ function ItemDetailScreen() {
 
             <View style={styles.row}>
               <Text style={[styles.label, { color: theme.muted }]}>
-                Condition
+                {isGradingEligible ? 'Grade' : 'Condition'}
               </Text>
               {isDraft || isEditing ? (
                 <Pressable
                   onPress={showConditionPicker}
                   style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
                   accessibilityRole="button"
-                  accessibilityLabel={`Condition: ${editableCondition}. Tap to change`}
+                  accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}. Tap to change`}
                 >
                   <Text style={[styles.dropdownFieldTextSmall, { color: editableCondition === 'Not set' ? theme.muted : theme.text }]}>
                     {editableCondition}
@@ -1503,7 +1109,7 @@ function ItemDetailScreen() {
                   <Ionicons name="chevron-down" size={14} color={theme.muted} />
                 </Pressable>
               ) : (
-                <Text style={[styles.value, { color: theme.text }]} accessibilityLabel={`Condition: ${editableCondition}`}>{editableCondition}</Text>
+                <Text style={[styles.value, { color: theme.text }]} accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}`}>{editableCondition}</Text>
               )}
             </View>
 
@@ -1684,7 +1290,7 @@ function ItemDetailScreen() {
 
             {/* Price History section removed — data available via Full Report and Market Prices */}
 
-            {/* Provenance & History — collapsible */}
+            {/* Item History — collapsible */}
             {!isDraft && id && (
               <ProvenanceHistorySection
                 theme={theme}

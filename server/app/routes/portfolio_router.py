@@ -18,7 +18,7 @@ from app.errors import error_response
 from app.config import API_SHARED_SECRET, SIGNALS_BASE_URL
 from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(tags=["portfolio"])
+router = APIRouter(tags=["Portfolio"])
 
 _logger = logging.getLogger(__name__)
 
@@ -66,27 +66,31 @@ async def _proxy_signals(path: str) -> dict:
 
 # ---- Endpoints ----
 
-@router.get("/portfolio/overview", dependencies=[Depends(_portfolio_user_limit)])
-async def portfolio_overview(_: bool = Depends(require_api_key)):
+@router.get("/portfolio/overview", dependencies=[Depends(_portfolio_user_limit)], summary="Get portfolio overview")
+async def portfolio_overview(_: bool = Depends(require_api_key)) -> dict:
+    """Proxy portfolio overview from the Signals micro-service."""
     return await _proxy_signals("/portfolio/overview")
 
 
-@router.get("/portfolio/items", dependencies=[Depends(_portfolio_user_limit)])
-async def portfolio_items(_: bool = Depends(require_api_key)):
+@router.get("/portfolio/items", dependencies=[Depends(_portfolio_user_limit)], summary="Get portfolio items")
+async def portfolio_items(_: bool = Depends(require_api_key)) -> dict:
+    """Proxy portfolio item list from the Signals micro-service."""
     return await _proxy_signals("/portfolio/items")
 
 
-@router.get("/portfolio/timeseries", dependencies=[Depends(_portfolio_user_limit)])
-async def portfolio_timeseries(_: bool = Depends(require_api_key)):
+@router.get("/portfolio/timeseries", dependencies=[Depends(_portfolio_user_limit)], summary="Get portfolio timeseries")
+async def portfolio_timeseries(_: bool = Depends(require_api_key)) -> dict:
+    """Proxy portfolio timeseries data from the Signals micro-service."""
     return await _proxy_signals("/portfolio/timeseries")
 
 
-@router.get("/portfolio/summary")
-async def portfolio_summary():
-    """
-    Backend sync v1: lightweight portfolio summary based on the same
-    store that /items uses (_DEMO_ITEMS for now). Later this can be
-    swapped to Supabase/Signals without changing the mobile app.
+@router.get("/portfolio/summary", summary="Get portfolio summary")
+async def portfolio_summary() -> dict:
+    """Return lightweight portfolio summary from demo items.
+
+    Backend sync v1: based on the same store that /items uses
+    (_DEMO_ITEMS for now). Later this can be swapped to
+    Supabase/Signals without changing the mobile app.
     """
     from app.routes.items_router import get_demo_items
 

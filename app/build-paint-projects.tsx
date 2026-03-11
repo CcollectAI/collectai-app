@@ -39,10 +39,10 @@ import { QuickNavBar } from "@/components/QuickNavBar";
 const statusColor = (
   status: string | null | undefined,
   isCompleted: boolean,
-  themeColors: { accent: string; muted: string; border: string },
+  themeColors: { accent: string; muted: string; border: string; success: string },
 ) => {
   // Completed → success green tint
-  if (isCompleted) return { bg: "#10B981" + "20", text: "#10B981" };
+  if (isCompleted) return { bg: themeColors.success + "20", text: themeColors.success };
   const s = (status || "").toLowerCase();
   // Active → accent tint
   if (s === "active") return { bg: themeColors.accent + "20", text: themeColors.accent };
@@ -236,9 +236,9 @@ function BuildPaintProjectsScreen() {
 
           {/* Error state */}
           {error && (
-            <View style={[styles.errorBanner, { backgroundColor: "#EF444420", borderColor: "#EF4444" }]}>
-              <Ionicons name="warning-outline" size={18} color="#EF4444" />
-              <Text style={[styles.errorText, { color: "#EF4444" }]}>{error}</Text>
+            <View style={[styles.errorBanner, { backgroundColor: colors.error + '20', borderColor: colors.error }]}>
+              <Ionicons name="warning-outline" size={18} color={colors.error} />
+              <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
             </View>
           )}
 
@@ -483,6 +483,9 @@ function BuildPaintProjectsScreen() {
             <FlatList
               data={sortedCategories}
               keyExtractor={(item) => item.id}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={5}
               renderItem={({ item: cat }) => {
                 const vis = CATEGORY_VISUAL[cat.id];
                 const isBuildable = (BUILDABLE_CATEGORIES as readonly string[]).includes(cat.id);
@@ -543,6 +546,9 @@ function BuildPaintProjectsScreen() {
             <FlatList
               data={categoryItems}
               keyExtractor={(item) => item.id}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={5}
               renderItem={({ item }) => (
                 <AnimatedPressable
                   onPress={() => handleSelectItem(item)}
@@ -660,7 +666,7 @@ function ProjectCard({
                 styles.progressFill,
                 {
                   width: `${Math.min(Math.max(project.percent, 0), 100)}%`,
-                  backgroundColor: project.isCompleted ? "#10B981" : accentColor || colors.accent,
+                  backgroundColor: project.isCompleted ? colors.success : accentColor || colors.accent,
                 },
               ]}
             />

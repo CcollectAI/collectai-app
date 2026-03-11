@@ -22,7 +22,7 @@ from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/marketplace", tags=["marketplace"])
+router = APIRouter(prefix="/marketplace", tags=["Marketplace"])
 
 # Per-user: 60 search requests per minute
 _search_user_limit = per_user_rate_limit(60, window_seconds=60, scope="marketplace_search")
@@ -280,7 +280,7 @@ async def marketplace_comps(
 
 
 @router.get("/health")
-async def marketplace_health():
+async def marketplace_health() -> dict:
     """Check health of all configured market adapters."""
     from app.agents.marketplace_agent import MarketplaceAgent
 
@@ -296,7 +296,7 @@ async def marketplace_health():
 
 
 @router.get("/adapter-health")
-async def adapter_health():
+async def adapter_health() -> dict:
     """Combined adapter health + circuit breaker status for all 11 sources."""
     from app.agents.marketplace_agent import MarketplaceAgent
     from workers.circuit_breaker import all_circuit_status
@@ -321,7 +321,7 @@ async def adapter_health():
 # Helpers
 # ---------------------------------------------------------------------------
 
-async def _persist_hits(scored_hits, user_id: str):
+async def _persist_hits(scored_hits: list, user_id: str) -> None:
     """Write scored market hits into the market_hits table.
 
     Schema columns: provider, listing_id, title, price, currency,

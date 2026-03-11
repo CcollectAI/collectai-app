@@ -12,9 +12,12 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
+from app.rate_limit import per_user_rate_limit
 
-router = APIRouter(prefix="/marketplace/trust2", tags=["marketplace-trust"])
+router = APIRouter(prefix="/marketplace/trust2", tags=["Marketplace Trust"])
 logger = logging.getLogger(__name__)
+
+_trust_limit = per_user_rate_limit(30, window_seconds=60, scope="marketplace_trust")
 
 
 # ---------------------------------------------------------------------------
@@ -69,7 +72,7 @@ def _compute_badge(completed: int, avg_stars: float) -> str:
 
 
 @router.get("/seller/{user_id}", response_model=SellerReputation)
-async def get_seller_reputation(user_id: str, _caller: str = Depends(get_current_user_id)):
+async def get_seller_reputation(user_id: str, _caller: str = Depends(get_current_user_id), _rl=Depends(_trust_limit)):
     """
     Seller reputation endpoint.
 
@@ -141,7 +144,7 @@ async def get_seller_reputation(user_id: str, _caller: str = Depends(get_current
 
 
 @router.get("/listing/{listing_id}", response_model=MarketplaceTrustSnapshot)
-async def get_listing_trust_snapshot(listing_id: str, _caller: str = Depends(get_current_user_id)):
+async def get_listing_trust_snapshot(listing_id: str, _caller: str = Depends(get_current_user_id), _rl=Depends(_trust_limit)):
     """
     Trust snapshot for a listing.
 

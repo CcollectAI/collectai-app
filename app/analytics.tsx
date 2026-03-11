@@ -24,6 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable, useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { SkeletonList } from "@/components/Skeleton";
 import { formatPrice } from "@/lib/format";
 import { QuickNavBar } from "@/components/QuickNavBar";
@@ -39,9 +40,11 @@ import type { CategorySummary } from "@/data/types";
 import { ScoreExplanationSheet } from "@/components/ScoreExplanationSheet";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design Tokens (Collectr)
+// Tier-specific tokens (not theme-dependent)
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Static colors for StyleSheet (can't use hooks in static context)
+// Dynamic theme colors applied inline via useAppTheme()
 const COLORS = {
   tiffany: "#81D8D0",
   tiffanyDark: "#5FBFB6",
@@ -94,6 +97,7 @@ function AnalyticsScreen() {
   const router = useRouter();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
+  const { colors } = useAppTheme();
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -159,14 +163,14 @@ function AnalyticsScreen() {
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
 
         {/* Error Banner */}
         {error && (
           <View style={styles.errorBanner}>
-            <Ionicons name="warning-outline" size={16} color={COLORS.danger} />
+            <Ionicons name="warning-outline" size={16} color={colors.error} />
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
@@ -263,7 +267,7 @@ function AnalyticsScreen() {
               accessibilityRole="button"
               accessibilityLabel="How are scores calculated?"
             >
-              <Ionicons name="help-circle-outline" size={16} color={COLORS.tiffanyDark} />
+              <Ionicons name="help-circle-outline" size={16} color={colors.accent} />
               <Text style={styles.whyScoresText}>How are these scores calculated?</Text>
             </AnimatedPressable>
           </View>
@@ -332,8 +336,8 @@ function AnalyticsScreen() {
             {winnersLosers.winners.length > 0 && (
               <View style={styles.moversSection}>
                 <View style={styles.moversSectionHeader}>
-                  <Ionicons name="trending-up" size={16} color={COLORS.success} />
-                  <Text style={[styles.moversSectionTitle, { color: COLORS.success }]}>Winners</Text>
+                  <Ionicons name="trending-up" size={16} color={colors.success} />
+                  <Text style={[styles.moversSectionTitle, { color: colors.success }]}>Winners</Text>
                 </View>
                 {winnersLosers.winners.slice(0, 3).map((item) => (
                   <View key={item.id} style={styles.moverRow}>
@@ -350,8 +354,8 @@ function AnalyticsScreen() {
             {winnersLosers.losers.length > 0 && (
               <View style={styles.moversSection}>
                 <View style={styles.moversSectionHeader}>
-                  <Ionicons name="trending-down" size={16} color={COLORS.danger} />
-                  <Text style={[styles.moversSectionTitle, { color: COLORS.danger }]}>Losers</Text>
+                  <Ionicons name="trending-down" size={16} color={colors.error} />
+                  <Text style={[styles.moversSectionTitle, { color: colors.error }]}>Losers</Text>
                 </View>
                 {winnersLosers.losers.slice(0, 3).map((item) => (
                   <View key={item.id} style={styles.moverRow}>
@@ -413,9 +417,9 @@ function AnalyticsScreen() {
               const displayPct = Math.min(cat.completionPct, 100);
               const hasDuplicates = cat.ownedCount > cat.totalCount;
               const barColor =
-                displayPct >= 75 ? COLORS.success
-                : displayPct >= 50 ? COLORS.warning
-                : COLORS.tiffany;
+                displayPct >= 75 ? colors.success
+                : displayPct >= 50 ? colors.warning
+                : colors.accent;
               return (
                 <View key={cat.id} style={styles.completenessRow}>
                   <View style={styles.completenessInfo}>
@@ -423,7 +427,7 @@ function AnalyticsScreen() {
                     <View style={styles.completenessCountRow}>
                       {hasDuplicates && (
                         <View style={styles.dupBadge}>
-                          <Ionicons name="copy-outline" size={10} color={COLORS.muted} />
+                          <Ionicons name="copy-outline" size={10} color={colors.muted} />
                           <Text style={styles.dupBadgeText}>dupes</Text>
                         </View>
                       )}
@@ -459,10 +463,10 @@ function AnalyticsScreen() {
                 accessibilityRole="link"
                 accessibilityLabel="View all categories"
               >
-                <Text style={[styles.viewAllText, { color: COLORS.tiffanyDark }]}>
+                <Text style={[styles.viewAllText, { color: colors.accent }]}>
                   View all
                 </Text>
-                <Ionicons name="chevron-forward" size={14} color={COLORS.tiffanyDark} />
+                <Ionicons name="chevron-forward" size={14} color={colors.accent} />
               </AnimatedPressable>
             )}
           </View>

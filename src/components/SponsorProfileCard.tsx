@@ -15,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import type { SponsorCompany } from '@/data/events';
-import type { AppColors } from '@/ui/theme';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 /* -------------------------------------------------------------------------- */
 /*  Props                                                                      */
@@ -24,8 +24,6 @@ import type { AppColors } from '@/ui/theme';
 export type SponsorProfileCardProps = {
   /** The company data to display. */
   company: SponsorCompany;
-  /** Theme colors from useAppTheme. */
-  colors: AppColors;
   /** Member-since formatted string, e.g. "January 2026". */
   memberSince: string | null;
 
@@ -68,9 +66,8 @@ const SHADOW_SM = Platform.select({
 /*  Component                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export const SponsorProfileCard: React.FC<SponsorProfileCardProps> = ({
+const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
   company,
-  colors,
   memberSince,
   editing,
   editName,
@@ -89,6 +86,7 @@ export const SponsorProfileCard: React.FC<SponsorProfileCardProps> = ({
   onCancelEdit,
   onSaveEdit,
 }) => {
+  const { colors } = useAppTheme();
   return (
     <View style={styles.sectionWrap}>
       <Text style={[styles.sectionLabel, { color: colors.muted }]}>COMPANY PROFILE</Text>
@@ -278,6 +276,8 @@ export const SponsorProfileCard: React.FC<SponsorProfileCardProps> = ({
     </View>
   );
 };
+
+export const SponsorProfileCard = React.memo(SponsorProfileCardInner);
 
 /* -------------------------------------------------------------------------- */
 /*  Styles                                                                     */

@@ -17,11 +17,11 @@ from app.db import db_configured, get_conn
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/pipeline", tags=["pipeline"])
+router = APIRouter(prefix="/pipeline", tags=["Pipeline"])
 
 
-@router.get("/status")
-async def pipeline_status():
+@router.get("/status", summary="Get pipeline health status")
+async def pipeline_status() -> dict:
     """
     Return pipeline health summary.
 

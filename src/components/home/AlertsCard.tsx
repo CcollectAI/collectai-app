@@ -20,6 +20,8 @@ type AlertsCardProps = {
   showEmptyState?: boolean;
 };
 
+type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
+
 function getAlertIcon(type: AlertType): string {
   switch (type) {
     case 'price_drop':
@@ -35,22 +37,20 @@ function getAlertIcon(type: AlertType): string {
   }
 }
 
-function getAlertColor(type: AlertType): string {
+function getAlertColor(type: AlertType, colors: ThemeColors): string {
   switch (type) {
     case 'price_drop':
-      return '#EF4444';
+      return colors.error;
     case 'price_increase':
-      return '#0BA86C';
+      return colors.success;
     case 'new_listing':
-      return '#3B82F6';
+      return colors.info;
     case 'milestone':
-      return '#F59E0B';
+      return colors.warning;
     default:
-      return '#6B7280';
+      return colors.muted;
   }
 }
-
-type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
 
 type AlertItemProps = {
   alert: Alert;
@@ -61,7 +61,7 @@ type AlertItemProps = {
 };
 
 function AlertItem({ alert, colors, onPress, alertActive, onToggleAlert }: AlertItemProps) {
-  const iconColor = getAlertColor(alert.type);
+  const iconColor = getAlertColor(alert.type, colors);
 
   return (
     <AnimatedPressable
@@ -108,7 +108,7 @@ function AlertItem({ alert, colors, onPress, alertActive, onToggleAlert }: Alert
   );
 }
 
-export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, showEmptyState = true }: AlertsCardProps) {
+function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, showEmptyState = true }: AlertsCardProps) {
   const { colors } = useAppTheme();
   const unreadCount = alerts.filter((a) => !a.isRead).length;
   const [activeAlerts, setActiveAlerts] = useState<Set<string>>(() => new Set(alerts.map((a) => a.id)));
@@ -132,7 +132,7 @@ export function AlertsCard({ alerts, onAlertPress, onViewAll, onStartWatchlist, 
     return (
       <View
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        accessibilityRole={"region" as any}
+        accessibilityRole="summary"
         accessibilityLabel="Watchlist section"
       >
         {/* Header */}
@@ -379,4 +379,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const AlertsCard = React.memo(AlertsCardInner);
 export default AlertsCard;

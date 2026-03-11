@@ -46,6 +46,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from "@/utils/logger";
 import { BulkActionsToolbar } from '@/components/BulkActionsToolbar';
 import { ItemsListHeader } from '@/components/ItemsListHeader';
+import { GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
+import { ItemsGridHeader } from '@/components/items/ItemsGridHeader';
+import { ItemsFilterSummary } from '@/components/items/ItemsFilterSummary';
+import { ItemsBottomActionBar } from '@/components/items/ItemsBottomActionBar';
 
 type Item = {
   id: string;
@@ -85,7 +89,7 @@ const ItemsScreen: React.FC = () => {
         value: it.price,
         condition: undefined,
         notes: undefined,
-        imageUrl: (it as any).imageUrl,
+        imageUrl: it.imageUrl,
       }));
     },
     [],
@@ -173,13 +177,14 @@ const ItemsScreen: React.FC = () => {
   const stableReload = useCallback(() => { refreshRef.current(); }, []);
 
   // Optimistic mutation hooks for bulk operations
+  // ItemListSetter uses index signature; Item type is structurally compatible at runtime
   const optimisticBulkArchive = useOptimisticBulkArchive(setProviderItems as any, stableReload);
   const optimisticBulkDelete = useOptimisticBulkDelete(setProviderItems as any, stableReload);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await paginatedRefresh();
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     setRefreshing(false);
   }, [paginatedRefresh, settings.hapticsEnabled]);
 
@@ -548,12 +553,6 @@ const ItemsScreen: React.FC = () => {
     [filteredAndSortedByCategory]
   );
 
-  const hasAnyFilter =
-    !!categoryParam ||
-    !!collectionParam ||
-    !!filterCategory ||
-    query.trim().length > 0;
-
   // Detect when ScrollView is near the bottom to trigger loadMore + show floating add
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -667,21 +666,7 @@ const ItemsScreen: React.FC = () => {
           }}
         />
       ) : (
-        <View style={styles.headerRow}>
-          <View style={styles.headerLeft}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Items
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.muted }]}>
-              Portfolio total: {formatPrice(portfolioTotal)}
-            </Text>
-          </View>
-
-          <View style={styles.headerIcons}>
-            <InboxHeaderButton color={colors.text} size={22} />
-            <ThemeToggleButton size={22} />
-          </View>
-        </View>
+        <ItemsGridHeader portfolioTotal={portfolioTotal} />
       )}
 
       <ItemsListHeader
@@ -714,135 +699,35 @@ const ItemsScreen: React.FC = () => {
         isMultiSelectMode={isMultiSelectMode}
       />
 
-      {/* Active filter summary */}
-      {hasAnyFilter && (
-        <View style={styles.filterSummaryRow}>
-          <Text style={[styles.filterSummaryText, { color: colors.muted }]}>
-            Filtered by:
-          </Text>
-          <View style={styles.filterChipsRow}>
-            {categoryParam && (
-              <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
-                <Text style={[styles.filterChipText, { color: colors.text }]}>
-                  Category: {categoryParam}
-                </Text>
-              </View>
-            )}
-            {collectionParam && (
-              <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
-                <Text style={[styles.filterChipText, { color: colors.text }]}>
-                  Collection: {collectionParam}
-                </Text>
-              </View>
-            )}
-            {filterCategory && !categoryParam && (
-              <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
-                <Text style={[styles.filterChipText, { color: colors.text }]}>
-                  Category: {filterCategory}
-                </Text>
-              </View>
-            )}
-            {query.trim().length > 0 && (
-              <View style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.accent + '15' }]}>
-                <Text style={[styles.filterChipText, { color: colors.text }]}>
-                  Search: "{query.trim()}"
-                </Text>
-              </View>
-            )}
-          </View>
-          <AnimatedPressable
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              clearFilters();
-            }}
-            style={styles.filterClearButton}
-            accessibilityRole="button"
-            accessibilityLabel="Clear all filters"
-          >
-            <Text style={[styles.filterClearText, { color: colors.muted }]}>
-              Clear
-            </Text>
-          </AnimatedPressable>
-        </View>
-      )}
-
-      {/* Item count */}
-      <Text style={[styles.itemCount, { color: colors.muted }]}>
-        {filteredItemCount} item{filteredItemCount !== 1 ? 's' : ''}
-      </Text>
+      <ItemsFilterSummary
+        categoryParam={categoryParam}
+        collectionParam={collectionParam}
+        filterCategory={filterCategory}
+        query={query}
+        filteredItemCount={filteredItemCount}
+        onClearFilters={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          clearFilters();
+        }}
+      />
     </Animated.View>
   );
 
   // Shared footer element
   const footerElement = (
-    <>
-      {/* Bottom Action Bar */}
-      <View style={[styles.bottomActionBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.bottomActionTitle, { color: colors.text }]}>
-          Actions
-        </Text>
-
-        <View style={styles.bottomActionButtons}>
-          <AnimatedPressable
-            style={[
-              styles.actionButtonPrimary,
-              { backgroundColor: colors.accent },
-              exporting && styles.actionButtonDisabled,
-            ]}
-            onPress={() => {
-              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-              handleExportCSV();
-            }}
-            disabled={exporting}
-            accessibilityRole="button"
-            accessibilityLabel="Download collection overview as CSV"
-          >
-            {exporting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Ionicons name="download-outline" size={18} color="#FFFFFF" />
-            )}
-            <Text style={styles.actionButtonPrimaryText}>
-              {exporting ? 'Exporting...' : 'Download overview'}
-            </Text>
-          </AnimatedPressable>
-
-          <AnimatedPressable
-            style={[
-              styles.actionButtonSecondary,
-              { borderColor: colors.accent },
-            ]}
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              router.push('/build-paint-projects');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Open build and paint projects"
-          >
-            <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
-            <Text style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
-              Projects
-            </Text>
-          </AnimatedPressable>
-        </View>
-
-        {exportStatus && (
-          <View style={[styles.exportStatusBanner, { backgroundColor: colors.accent + '15' }]}>
-            <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
-            <Text style={[styles.exportStatusText, { color: colors.accent }]}>
-              {exportStatus}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Loading-more spinner at bottom of list */}
-      {isLoadingMore && (
-        <View style={styles.loadingMoreContainer}>
-          <ActivityIndicator size="small" color={colors.accent} />
-        </View>
-      )}
-    </>
+    <ItemsBottomActionBar
+      exporting={exporting}
+      exportStatus={exportStatus}
+      isLoadingMore={isLoadingMore}
+      onExportCSV={() => {
+        fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+        handleExportCSV();
+      }}
+      onOpenProjects={() => {
+        fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+        router.push('/build-paint-projects');
+      }}
+    />
   );
 
   const emptyElement = (
@@ -969,6 +854,9 @@ const ItemsScreen: React.FC = () => {
                           borderColor: colors.accent,
                         },
                       ]}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isSelected(item.id) }}
+                      accessibilityLabel={`Select ${item.name}`}
                     >
                       {isSelected(item.id) && (
                         <Ionicons name="checkmark" size={14} color="#fff" />
@@ -977,9 +865,9 @@ const ItemsScreen: React.FC = () => {
                   </View>
                 )}
                 {item.imageUrl ? (
-                  <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} />
+                  <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} accessibilityLabel={`Photo of ${item.name}`} />
                 ) : (
-                  <View style={[styles.itemThumbPlaceholder, { backgroundColor: colors.accent + '10' }]}>
+                  <View style={[styles.itemThumbPlaceholder, { backgroundColor: colors.accent + '10' }]} accessibilityLabel={`No photo for ${item.name}`}>
                     <Ionicons name="image-outline" size={18} color={colors.accent + '40'} />
                   </View>
                 )}
@@ -991,9 +879,18 @@ const ItemsScreen: React.FC = () => {
                     <CategoryPill id={item.category} label={item.category} /> – {item.collectionName}
                   </Text>
                   {item.condition ? (
-                    <Text style={[styles.itemCondition, { color: colors.muted }]}>
-                      {item.condition}
-                    </Text>
+                    GRADING_ELIGIBLE_CATEGORIES.has(item.category) ? (
+                      <View style={[styles.gradeBadge, { backgroundColor: colors.accent + '15' }]}>
+                        <Ionicons name="shield-checkmark-outline" size={11} color={colors.accent} />
+                        <Text style={[styles.gradeBadgeText, { color: colors.accent }]}>
+                          {item.condition}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={[styles.itemCondition, { color: colors.muted }]}>
+                        {item.condition}
+                      </Text>
+                    )
                   ) : null}
                 </View>
                 <View style={styles.itemRight}>
@@ -1145,11 +1042,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 80,
   },
-  // Loading more (infinite scroll)
-  loadingMoreContainer: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
+  // (loadingMoreContainer moved to ItemsBottomActionBar)
   // Loading/Error states
   centerContainer: {
     flex: 1,
@@ -1192,28 +1085,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   // (viewToggleRow, viewToggleBtn, controlsRowNew, selectAllTextBtn, selectAllText moved to ItemsListHeader)
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
+  // (headerRow, headerLeft, title, subtitle, headerIcons moved to ItemsGridHeader)
   actionButtonsRow: {
     flexDirection: "row",
     gap: 8,
@@ -1263,43 +1135,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   // (searchRow, searchInputWrapper, searchIcon, searchInput, searchRowButton, filterDot moved to ItemsListHeader)
-  filterSummaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-    marginBottom: 6,
-  },
-  filterSummaryText: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  filterChipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 4,
-    flex: 1,
-    paddingHorizontal: 4,
-  },
-  filterChip: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#CBD5F5",
-    backgroundColor: "#EFF6FF",
-  },
-  filterChipText: {
-    fontSize: 10,
-  },
-  filterClearButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  filterClearText: {
-    fontSize: 11,
-    textDecorationLine: "underline",
-  },
+  // (filterSummaryRow, filterSummaryText, filterChipsRow, filterChip, filterChipText, filterClearButton, filterClearText, itemCount moved to ItemsFilterSummary)
   emptyText: {
     fontSize: 13,
     marginTop: 16,
@@ -1326,12 +1162,6 @@ const styles = StyleSheet.create({
   emptyCtaBtnTextSecondary: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  itemCount: {
-    fontSize: 13,
-    fontWeight: '500',
-    paddingHorizontal: 16,
-    paddingVertical: 4,
   },
   categoryBlock: {
     marginTop: 10,
@@ -1379,6 +1209,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
+  gradeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 3,
+    marginTop: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  gradeBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
   itemRight: {
     marginLeft: 12,
     alignItems: "flex-end",
@@ -1399,71 +1243,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  // Bottom action bar
-  bottomActionBar: {
-    marginTop: 16,
-    marginBottom: 24,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  bottomActionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 14,
-  },
-  bottomActionButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  actionButtonPrimary: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  actionButtonPrimaryText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  actionButtonSecondary: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    gap: 8,
-    backgroundColor: "transparent",
-  },
-  actionButtonSecondaryText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  actionButtonDisabled: {
-    opacity: 0.6,
-  },
-  exportStatusBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  exportStatusText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
+  // (bottomActionBar, bottomActionTitle, bottomActionButtons, actionButtonPrimary, actionButtonPrimaryText, actionButtonSecondary, actionButtonSecondaryText, actionButtonDisabled, exportStatusBanner, exportStatusText moved to ItemsBottomActionBar)
   // (multiSelectHeader, multiSelectCloseBtn, multiSelectTitle, multiSelectActions, multiSelectActionBtn, multiSelectActionText moved to BulkActionsToolbar)
   checkboxContainer: {
     marginRight: 12,

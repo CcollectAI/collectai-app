@@ -44,7 +44,7 @@ export function useAlertsFeed(
     try {
       const [feedItems, items] = await Promise.all([
         dataProvider.listAlertsFeed(),
-        dataProvider.listItems(),
+        dataProvider.listItems({ limit: 25 }),  // Only top items for derived alerts
       ]);
 
       // Map backend AlertFeedItems to UI Alert type

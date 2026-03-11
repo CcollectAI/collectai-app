@@ -89,10 +89,10 @@ function CreateMandateScreen() {
     if (!params.id) return;
     (async () => {
       try {
-        const m = await collectorsApi.getMandate(params.id!) as any;
-        nameField.setValue(m.name);
+        const m = await collectorsApi.getMandate(params.id!) as { name?: string; category?: string; max_price?: number; min_trust_score?: number; allowed_sources?: string[]; region?: string; status?: string };
+        nameField.setValue(m.name ?? '');
         setCategory(m.category ?? null);
-        maxPriceField.setValue(String(m.max_price));
+        maxPriceField.setValue(String(m.max_price ?? ''));
         setMinTrust(m.min_trust_score ?? 0.6);
         setSelectedSources(m.allowed_sources ?? []);
         setRegion(m.region ?? "");
@@ -265,7 +265,7 @@ function CreateMandateScreen() {
               <Text style={[styles.sourceToggleLabel, { color: colors.text }]}>{s}</Text>
               <Switch
                 value={active}
-                onValueChange={() => toggleSource(s)}
+                onValueChange={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); toggleSource(s); }}
                 trackColor={{ false: colors.border, true: colors.accent + "80" }}
                 thumbColor={active ? colors.accent : colors.muted}
               />
@@ -294,7 +294,7 @@ function CreateMandateScreen() {
             <Text style={[styles.label, { color: colors.muted, marginBottom: 0 }]}>ACTIVE</Text>
             <Switch
               value={status === "active"}
-              onValueChange={(v) => setStatus(v ? "active" : "paused")}
+              onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setStatus(v ? "active" : "paused"); }}
               trackColor={{ false: colors.border, true: colors.accent + "80" }}
               thumbColor={status === "active" ? colors.accent : colors.muted}
             />

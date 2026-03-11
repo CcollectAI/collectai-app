@@ -37,6 +37,7 @@ import { AlertsCard } from "@/components/home/AlertsCard";
 import { PortfolioValueHeader } from "@/components/home/PortfolioValueHeader";
 import { ChartRangeSelector } from "@/components/home/ChartRangeSelector";
 import { CategoryBreakdownSection, type CategoryBreakdownItem } from "@/components/home/CategoryBreakdownSection";
+import { getCategoryByName, getCategoryById } from "@/data/categories";
 import { TopItemsList, type ItemRow } from "@/components/home/TopItemsList";
 import { FollowedCategoriesCarousel } from "@/components/home/FollowedCategoriesCarousel";
 import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
@@ -323,12 +324,12 @@ function PortfolioScreen() {
         logger.warn('[Portfolio] category breakdown fetch failed, using mock data:', err);
         // Mock data for development/testing
         setCategoryBreakdown([
-          { category: 'Pokemon Cards', item_count: 47, total_value: 3250, percentage: 35 },
-          { category: 'LEGO', item_count: 12, total_value: 1890, percentage: 20 },
-          { category: 'Manga', item_count: 86, total_value: 1420, percentage: 15 },
-          { category: 'Anime Figures', item_count: 8, total_value: 1200, percentage: 13 },
-          { category: 'Vinyl Records', item_count: 23, total_value: 980, percentage: 11 },
-          { category: 'K-pop Merch', item_count: 15, total_value: 560, percentage: 6 },
+          { category: 'pokemon', item_count: 47, total_value: 3250, percentage: 35 },
+          { category: 'lego', item_count: 12, total_value: 1890, percentage: 20 },
+          { category: 'manga', item_count: 86, total_value: 1420, percentage: 15 },
+          { category: 'anime_figures', item_count: 8, total_value: 1200, percentage: 13 },
+          { category: 'vinyl_records', item_count: 23, total_value: 980, percentage: 11 },
+          { category: 'kpop_merch', item_count: 15, total_value: 560, percentage: 6 },
         ]);
       })
       .finally(() => setBreakdownLoading(false));
@@ -425,7 +426,7 @@ function PortfolioScreen() {
             >
               <Ionicons name="notifications-outline" size={22} color={colors.text} />
               {unreadNotifCount > 0 && (
-                <View style={styles.notifBadge}>
+                <View style={[styles.notifBadge, { backgroundColor: colors.error }]}>
                   <Text style={styles.notifBadgeText}>
                     {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
                   </Text>
@@ -527,9 +528,9 @@ function PortfolioScreen() {
 
         {/* Error message (if any) */}
         {error && (
-          <View style={[styles.errorBanner, { backgroundColor: '#EF4444' + '15' }]}>
-            <Ionicons name="warning-outline" size={14} color="#EF4444" />
-            <Text style={[styles.errorText, { color: '#EF4444' }]}>{error}</Text>
+          <View style={[styles.errorBanner, { backgroundColor: colors.error + '15' }]}>
+            <Ionicons name="warning-outline" size={14} color={colors.error} />
+            <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
           </View>
         )}
 
@@ -567,6 +568,15 @@ function PortfolioScreen() {
           breakdown={categoryBreakdown}
           loading={breakdownLoading}
           formatPrice={(v) => formatPrice(v)}
+          resolveCategoryName={(raw) => {
+            const cat = getCategoryById(raw) ?? getCategoryByName(raw);
+            return cat?.name ?? raw;
+          }}
+          onCategoryPress={(catRaw) => {
+            const cat = getCategoryById(catRaw) ?? getCategoryByName(catRaw);
+            const categoryId = cat?.id ?? catRaw;
+            router.push({ pathname: '/(tabs)/items', params: { category: categoryId } });
+          }}
         />
 
         {/* Extended Portfolio Insights CTA */}
@@ -680,7 +690,7 @@ function PortfolioScreen() {
           accessibilityRole="button"
           accessibilityLabel="Close add item menu"
         >
-          <View style={[styles.addMenuSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.addMenuSheet, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityViewIsModal={true} accessibilityRole="menu" accessibilityLabel="Add item menu">
             <View style={styles.addMenuHandle} />
             <TouchableOpacity
               onPress={() => { setAddMenuOpen(false); router.push('/quickscan'); }}
