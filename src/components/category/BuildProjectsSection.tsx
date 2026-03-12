@@ -94,8 +94,8 @@ const BuildProjectsSection: React.FC<Props> = ({
         accessibilityRole="button"
         accessibilityLabel="Start a new build project"
       >
-        <Ionicons name="construct-outline" size={16} color="#fff" />
-        <Text style={styles.startBuildBtnText}>Start New Build</Text>
+        <Ionicons name="construct-outline" size={16} color={colors.accentText} />
+        <Text style={[styles.startBuildBtnText, { color: colors.accentText }]}>Start New Build</Text>
       </AnimatedPressable>
     </View>
   );
@@ -177,7 +177,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   startBuildBtnText: {
-    color: '#fff',
     fontSize: 13,
     fontWeight: '600',
   },

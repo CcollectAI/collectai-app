@@ -230,7 +230,7 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
                 <Text
                   style={[
                     styles.paintTypePillText,
-                    { color: newPaintType === pt ? "#fff" : colors.muted },
+                    { color: newPaintType === pt ? colors.accentText : colors.muted },
                   ]}
                 >
                   {pt}
@@ -304,9 +304,9 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
               accessibilityLabel="Save recipe"
             >
               {savingRecipes ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={colors.accentText} />
               ) : (
-                <Text style={styles.saveBtnText}>Save Recipe</Text>
+                <Text style={[styles.saveBtnText, { color: colors.accentText }]}>Save Recipe</Text>
               )}
             </AnimatedPressable>
           </View>
@@ -498,7 +498,6 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#fff",
   },
   applyTemplateBtn: {
     flexDirection: "row",

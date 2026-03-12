@@ -43,7 +43,7 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
   onToggleComplete,
 }: ProjectHeaderCardProps) {
   const { colors } = useAppTheme();
-  const progressBarColor = project.isCompleted ? "#34D399" : accentColor;
+  const progressBarColor = project.isCompleted ? colors.success : accentColor;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -70,8 +70,8 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
                 onToggleComplete();
               }}
-              trackColor={{ false: colors.border, true: "#34D399" }}
-              thumbColor="#fff"
+              trackColor={{ false: colors.border, true: colors.success }}
+              thumbColor={colors.accentText}
               accessibilityLabel="Mark project as complete"
             />
           )}
@@ -134,9 +134,9 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
             accessibilityLabel="Save progress"
           >
             {savingProgress ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.accentText} />
             ) : (
-              <Text style={styles.saveBtnText}>Save</Text>
+              <Text style={[styles.saveBtnText, { color: colors.accentText }]}>Save</Text>
             )}
           </AnimatedPressable>
         </View>
@@ -242,7 +242,6 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#fff",
   },
   notesSection: {
     marginTop: 16,

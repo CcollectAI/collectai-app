@@ -51,6 +51,7 @@ import logger from "@/utils/logger";
 import { useStoreReview } from "@/hooks/useStoreReview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AddMenuModal } from "@/components/home/AddMenuModal";
+import { DemandHeatSection } from "@/components/home/DemandHeatSection";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
 const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
@@ -488,6 +489,7 @@ function PortfolioScreen() {
               currency={settings.currency}
               formatPrice={formatPrice}
               animationsEnabled={settings.animationsEnabled}
+              tier={tierSummary?.tier}
             />
 
             {/* Range Toggles */}
@@ -576,6 +578,30 @@ function PortfolioScreen() {
           }}
         />
 
+        {/* Global Collection Stats */}
+        {categoryBreakdown.length > 0 && (
+          <View style={[styles.globalStats, { borderColor: colors.border }]}>
+            <View style={styles.globalStatItem}>
+              <Text style={[styles.globalStatValue, { color: colors.text }]}>{categoryBreakdown.length}</Text>
+              <Text style={[styles.globalStatLabel, { color: colors.muted }]}>Categories</Text>
+            </View>
+            <View style={[styles.globalStatDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.globalStatItem}>
+              <Text style={[styles.globalStatValue, { color: colors.text }]}>
+                {categoryBreakdown.reduce((sum, c) => sum + c.item_count, 0)}
+              </Text>
+              <Text style={[styles.globalStatLabel, { color: colors.muted }]}>Total Items</Text>
+            </View>
+            <View style={[styles.globalStatDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.globalStatItem}>
+              <Text style={[styles.globalStatValue, { color: colors.accent }]}>
+                {formatPrice(categoryBreakdown.reduce((sum, c) => sum + c.total_value, 0))}
+              </Text>
+              <Text style={[styles.globalStatLabel, { color: colors.muted }]}>Portfolio</Text>
+            </View>
+          </View>
+        )}
+
         {/* Extended Portfolio Insights CTA */}
         <AnimatedPressable
           style={[styles.insightsCta, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -645,6 +671,9 @@ function PortfolioScreen() {
             <Text style={[styles.analyticsBannerBtnText, { color: colors.accentText }]}>{limits.deal_discovery ? "View" : "Upgrade"}</Text>
           </View>
         </AnimatedPressable>
+
+        {/* Hot Right Now — Demand Heat */}
+        <DemandHeatSection />
 
         {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && limits.advanced_analytics && (
           <InsightsCard
@@ -886,6 +915,32 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
+  },
+
+  // Global Collection Stats
+  globalStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  globalStatItem: {
+    alignItems: "center",
+  },
+  globalStatValue: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  globalStatLabel: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  globalStatDivider: {
+    width: 1,
+    height: 28,
   },
 
   // Extended Portfolio Insights CTA

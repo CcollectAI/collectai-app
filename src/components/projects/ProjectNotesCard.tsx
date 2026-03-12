@@ -100,9 +100,9 @@ export const ProjectNotesCard = React.memo(function ProjectNotesCard({
           accessibilityLabel={addingNote ? "Adding note" : "Add note"}
         >
           {addingNote ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color={colors.accentText} />
           ) : (
-            <Text style={styles.addNoteBtnText}>Add Note</Text>
+            <Text style={[styles.addNoteBtnText, { color: colors.accentText }]}>Add Note</Text>
           )}
         </AnimatedPressable>
       </View>
@@ -170,6 +170,5 @@ const styles = StyleSheet.create({
   addNoteBtnText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#fff",
   },
 });

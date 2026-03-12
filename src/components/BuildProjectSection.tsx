@@ -10,6 +10,7 @@ import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 // ── Props interface ─────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ export const BuildProjectSection = React.memo(function BuildProjectSection({
   itemId,
   categorySlug,
 }: BuildProjectSectionProps) {
+  const { colors } = useAppTheme();
   return (
     <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
       <View style={s.sectionHeaderRow}>
@@ -86,8 +88,8 @@ export const BuildProjectSection = React.memo(function BuildProjectSection({
           accessibilityRole="button"
           accessibilityLabel="Start a build project for this item"
         >
-          <Ionicons name="add-circle-outline" size={18} color="#fff" />
-          <Text style={s.startBuildButtonText}>Start Build Project</Text>
+          <Ionicons name="add-circle-outline" size={18} color={colors.accentText} />
+          <Text style={[s.startBuildButtonText, { color: colors.accentText }]}>Start Build Project</Text>
         </Pressable>
       )}
     </View>
@@ -161,7 +163,7 @@ const s = StyleSheet.create({
     marginTop: 8,
   },
   startBuildButtonText: {
-    color: "#fff",
+    // color set inline via colors.accentText
     fontSize: 13,
     fontWeight: "600",
   },

@@ -141,16 +141,18 @@ const ItemsScreen: React.FC = () => {
 
   // Restore persisted view mode on mount
   useEffect(() => {
+    let cancelled = false;
     AsyncStorage.getItem(VIEW_MODE_KEY).then((stored) => {
-      if (stored === 'list' || stored === 'gallery') setViewMode(stored);
-    }).catch(() => {});
+      if (!cancelled && (stored === 'list' || stored === 'gallery')) setViewMode(stored);
+    }).catch((err) => logger.warn('[Items] view mode restore failed:', err));
+    return () => { cancelled = true; };
   }, []);
 
   // Toggle handler that persists the preference
   const toggleViewMode = useCallback(() => {
     const next = viewMode === 'list' ? 'gallery' : 'list';
     setViewMode(next);
-    AsyncStorage.setItem(VIEW_MODE_KEY, next).catch(() => {});
+    AsyncStorage.setItem(VIEW_MODE_KEY, next).catch((err) => logger.warn('[Items] view mode persist failed:', err));
   }, [viewMode]);
 
   const [categoryModalVisible, openCategoryModal, closeCategoryModal] = useModal();
@@ -590,8 +592,8 @@ const ItemsScreen: React.FC = () => {
     setQuery("");
     try {
       router.setParams({ category: undefined, collectionName: undefined });
-    } catch {
-      // ignore if not supported
+    } catch (err) {
+      logger.warn('[Items] setParams failed:', err);
     }
   };
 
@@ -922,7 +924,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#E2E8F0",
+    borderTopColor: "transparent",
   },
   categoryTitle: {
     fontSize: 16,

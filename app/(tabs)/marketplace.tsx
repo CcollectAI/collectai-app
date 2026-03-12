@@ -147,6 +147,7 @@ const SearchScreen: React.FC = () => {
   const [quickViewItem, setQuickViewItem] = useState<SearchResult | null>(null);
   const [quickViewVisible, openQuickView, closeQuickView] = useModal();
   const [demandHeat, setDemandHeat] = useState<Array<{ item_key: string; title: string; category: string; demand_score: number; search_count: number }>>([]);
+  const [regionalDemand, setRegionalDemand] = useState<Array<{ item_key: string; category: string; signal_count: number; region: string }>>([]);
   const debouncedUserQuery = useDebounce(userSearchQuery.trim(), 350);
 
   useEffect(() => {
@@ -157,6 +158,13 @@ const SearchScreen: React.FC = () => {
         const resp = data as { items?: Array<{ item_key: string; title: string; category: string; demand_score: number; search_count: number }> } | undefined;
         const items = resp?.items;
         if (Array.isArray(items) && items.length) setDemandHeat(items.slice(0, 6));
+      })
+      .catch(() => { /* silent */ });
+    collectorsApi.getDemandHeatByRegion()
+      .then((data) => {
+        if (cancelled) return;
+        const resp = data as { items?: Array<{ item_key: string; category: string; signal_count: number; region: string }> } | undefined;
+        if (Array.isArray(resp?.items)) setRegionalDemand(resp!.items.slice(0, 5));
       })
       .catch(() => { /* silent */ });
     return () => { cancelled = true; };
@@ -629,6 +637,42 @@ const SearchScreen: React.FC = () => {
                       <View style={[styles.demandScore, { backgroundColor: colors.accent + '15' }]}>
                         <Ionicons name="trending-up-outline" size={12} color={colors.accent} />
                         <Text style={[styles.demandScoreText, { color: colors.accent }]}>{item.demand_score}</Text>
+                      </View>
+                    </AnimatedPressable>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Regional demand insights (L1) */}
+            {regionalDemand.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  <Ionicons name="location-outline" size={16} color={colors.accent} /> Popular in Your Region
+                </Text>
+                <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>Trending near you based on collector activity</Text>
+                <View style={{ gap: 6, marginTop: 8 }}>
+                  {regionalDemand.map((item) => (
+                    <AnimatedPressable
+                      key={item.item_key}
+                      style={[styles.demandCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => {
+                        fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+                        setQuery(item.item_key.replace(/-/g, ' '));
+                        handleSubmitSearch();
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Search for ${item.item_key.replace(/-/g, ' ')}`}
+                    >
+                      <View style={[styles.demandRank, { backgroundColor: colors.accent + '20' }]}>
+                        <Ionicons name="location" size={14} color={colors.accent} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.demandTitle, { color: colors.text }]} numberOfLines={1}>{item.item_key.replace(/-/g, ' ')}</Text>
+                        <Text style={[styles.demandMeta, { color: colors.muted }]}>{item.category.replace(/_/g, ' ')} · {item.region}</Text>
+                      </View>
+                      <View style={[styles.demandScore, { backgroundColor: colors.warning + '15' }]}>
+                        <Text style={[styles.demandScoreText, { color: colors.warning }]}>{item.signal_count}</Text>
                       </View>
                     </AnimatedPressable>
                   ))}

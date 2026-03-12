@@ -1180,7 +1180,7 @@ function ItemDetailScreen() {
             {scarcityData && (
               <View style={[styles.scarcityBadge, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <View style={styles.scarcityRow}>
-                  <Ionicons name="diamond-outline" size={16} color={scarcityData.scarcity_score >= 7 ? theme.error : scarcityData.scarcity_score >= 4 ? '#F59E0B' : theme.success} />
+                  <Ionicons name="diamond-outline" size={16} color={scarcityData.scarcity_score >= 7 ? theme.error : scarcityData.scarcity_score >= 4 ? theme.warning : theme.success} />
                   <Text style={[styles.scarcityLabel, { color: theme.text }]}>
                     {scarcityData.scarcity_score >= 7 ? 'Rare' : scarcityData.scarcity_score >= 4 ? 'Moderate' : 'Common'}
                   </Text>

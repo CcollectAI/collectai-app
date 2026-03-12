@@ -12,12 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { useAppTheme } from "@/hooks/useAppTheme";
 
-// ── Semantic action colors (theme-independent) ──────────────────────────
-
-const ACTION_COLORS = {
-  archive: "#f97316",
-  archiveBg: "#f9731610",
-} as const;
+// Archive uses warning color from theme (resolved at render time)
 
 // ── Props interface ─────────────────────────────────────────────────────
 
@@ -120,14 +115,14 @@ export const BulkActionsToolbar = React.memo(function BulkActionsToolbar({
               </AnimatedPressable>
 
               <AnimatedPressable
-                style={[s.btn, { backgroundColor: ACTION_COLORS.archiveBg }]}
+                style={[s.btn, { backgroundColor: colors.warning + '10' }]}
                 onPress={onArchive}
                 disabled={disabled}
                 accessibilityRole="button"
                 accessibilityLabel="Archive selected items"
               >
-                <Ionicons name="archive-outline" size={18} color={ACTION_COLORS.archive} />
-                <Text style={[s.btnText, { color: ACTION_COLORS.archive }]}>Archive</Text>
+                <Ionicons name="archive-outline" size={18} color={colors.warning} />
+                <Text style={[s.btnText, { color: colors.warning }]}>Archive</Text>
               </AnimatedPressable>
 
               <AnimatedPressable

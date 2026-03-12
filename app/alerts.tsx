@@ -56,15 +56,20 @@ type ActiveTab = 'triggers' | 'rules';
 // Constants — badge colours & icons
 // ---------------------------------------------------------------------------
 
-const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  price_drop: { bg: '#16653420', text: '#166534' },
-  price_spike: { bg: '#92400e20', text: '#92400e' },
-  below_threshold: { bg: '#16653420', text: '#166534' },
-  restock: { bg: '#1e40af20', text: '#1e40af' },
-  drop_detected: { bg: '#6b21a820', text: '#6b21a8' },
-  completeness: { bg: '#0369a120', text: '#0369a1' },
-  rarity: { bg: '#9d174d20', text: '#9d174d' },
-};
+/** Resolve alert type → theme color. Must be called inside a component with colors. */
+function getTypeColor(colors: { success: string; warning: string; info: string; danger: string; accent: string; muted: string }, type: string): { bg: string; text: string } {
+  const MAP: Record<string, string> = {
+    price_drop: colors.success,
+    price_spike: colors.warning,
+    below_threshold: colors.success,
+    restock: colors.info,
+    drop_detected: colors.accent,
+    completeness: colors.info,
+    rarity: colors.danger,
+  };
+  const c = MAP[type] ?? colors.muted;
+  return { bg: c + '20', text: c };
+}
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   price_drop: 'trending-down',
@@ -98,6 +103,20 @@ function AlertsScreen() {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('triggers');
   const [refreshing, setRefreshing] = useState(false);
+  const [scarcityItems, setScarcityItems] = useState<{ item_key: string; title: string; scarcity_score: number; supply_trend: string }[]>([]);
+
+  // Fetch scarcity alerts (rare items in collection)
+  React.useEffect(() => {
+    let cancelled = false;
+    collectorsApi.getScarcityScores()
+      .then((data) => {
+        if (!cancelled && Array.isArray(data?.items)) {
+          setScarcityItems(data.items.filter((i) => i.scarcity_score >= 0.7).slice(0, 5));
+        }
+      })
+      .catch((err) => logger.warn('[Alerts] scarcity fetch failed:', err));
+    return () => { cancelled = true; };
+  }, []);
 
   // -----------------------------------------------------------------------
   // Paginated alert rules via usePaginatedList
@@ -210,8 +229,7 @@ function AlertsScreen() {
   // -----------------------------------------------------------------------
 
   const renderTrigger = ({ item }: { item: TriggerHistoryItem }) => {
-    const typeColor =
-      TYPE_COLORS[item.triggerType] || { bg: '#47556920', text: '#475569' };
+    const typeColor = getTypeColor(colors, item.triggerType);
     const typeIcon: keyof typeof Ionicons.glyphMap =
       TYPE_ICONS[item.triggerType] || 'notifications-outline';
     const typeLabel = item.triggerType
@@ -302,7 +320,7 @@ function AlertsScreen() {
   // -----------------------------------------------------------------------
 
   const renderAlert = ({ item }: { item: AlertFeedItem }) => {
-    const typeColor = TYPE_COLORS[item.type] || { bg: '#47556920', text: '#475569' };
+    const typeColor = getTypeColor(colors, item.type);
     const typeIcon: keyof typeof Ionicons.glyphMap =
       TYPE_ICONS[item.type] || 'notifications-outline';
     const typeLabel = item.type
@@ -469,6 +487,29 @@ function AlertsScreen() {
           removeClippedSubviews={true}
           maxToRenderPerBatch={10}
           windowSize={5}
+          ListHeaderComponent={scarcityItems.length > 0 ? (
+            <View style={[styles.scarcityCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.scarcityHeader}>
+                <Ionicons name="diamond-outline" size={16} color={colors.warning} />
+                <Text style={[styles.scarcityTitle, { color: colors.text }]}>Rare in Your Collection</Text>
+              </View>
+              {scarcityItems.map((item) => (
+                <View key={item.item_key} style={[styles.scarcityRow, { borderBottomColor: colors.border }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.scarcityName, { color: colors.text }]} numberOfLines={1}>
+                      {item.title || item.item_key.replace(/-/g, ' ')}
+                    </Text>
+                    <Text style={[styles.scarcityMeta, { color: colors.muted }]}>{item.supply_trend}</Text>
+                  </View>
+                  <View style={[styles.scarcityBadge, { backgroundColor: colors.warning + '20' }]}>
+                    <Text style={[styles.scarcityScore, { color: colors.warning }]}>
+                      {Math.round(item.scarcity_score * 100)}%
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : null}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -758,5 +799,48 @@ const styles = StyleSheet.create({
   retryBtnText: {
     color: '#fff',
     fontWeight: '600',
+  },
+
+  // Scarcity alerts (M5)
+  scarcityCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 12,
+  },
+  scarcityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  scarcityTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  scarcityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  scarcityName: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  scarcityMeta: {
+    fontSize: 11,
+    marginTop: 1,
+    textTransform: 'capitalize',
+  },
+  scarcityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  scarcityScore: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

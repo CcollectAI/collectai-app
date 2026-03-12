@@ -581,3 +581,75 @@ async def create_subscription_checkout(
     except Exception as e:
         logger.error("[sponsor] Stripe subscription checkout creation failed: %s", e)
         raise error_response(500, "Failed to create checkout session", code=ErrorCode.EXTERNAL_SERVICE_ERROR)
+
+
+# ---------------------------------------------------------------------------
+# Sponsor analytics
+# ---------------------------------------------------------------------------
+
+_analytics_limit = per_user_rate_limit(30, window_seconds=60, scope="sponsor_analytics")
+
+
+@router.get("/{company_id}/analytics", dependencies=[Depends(_analytics_limit)])
+async def get_sponsor_analytics(
+    company_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Return analytics for all events sponsored by this company."""
+    pool = await get_db_pool()
+    if not pool:
+        raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
+
+    async with pool.acquire() as conn:
+        # Verify ownership
+        owner = await conn.fetchval(
+            "SELECT admin_user_id FROM sponsor_companies WHERE id = $1", company_id
+        )
+        if not owner:
+            raise error_response(404, "Company not found", code=ErrorCode.NOT_FOUND)
+        if owner != user_id:
+            raise error_response(403, "Not the company admin", code=ErrorCode.FORBIDDEN)
+
+        # Aggregate analytics across all sponsored events
+        rows = await conn.fetch(
+            """
+            SELECT
+                e.id AS event_id,
+                e.title,
+                e.sponsor_tier,
+                e.sponsor_paid_at,
+                e.sponsor_expires_at,
+                COALESCE(sa.impressions, 0) AS impressions,
+                COALESCE(sa.clicks, 0) AS clicks,
+                COALESCE(sa.rsvps, 0) AS rsvps,
+                (SELECT COUNT(*) FROM event_attendees ea
+                 WHERE ea.event_id = e.id AND ea.status = 'going') AS total_attendees
+            FROM events e
+            LEFT JOIN event_sponsor_analytics sa ON sa.event_id = e.id
+            WHERE e.sponsor_company_id = $1
+            ORDER BY e.sponsor_paid_at DESC NULLS LAST
+            """,
+            company_id,
+        )
+
+        events = []
+        totals = {"impressions": 0, "clicks": 0, "rsvps": 0, "attendees": 0, "events": 0}
+        for r in rows:
+            events.append({
+                "event_id": r["event_id"],
+                "title": r["title"],
+                "tier": r["sponsor_tier"],
+                "paid_at": r["sponsor_paid_at"].isoformat() if r["sponsor_paid_at"] else None,
+                "expires_at": r["sponsor_expires_at"].isoformat() if r["sponsor_expires_at"] else None,
+                "impressions": r["impressions"],
+                "clicks": r["clicks"],
+                "rsvps": r["rsvps"],
+                "total_attendees": r["total_attendees"],
+            })
+            totals["impressions"] += r["impressions"]
+            totals["clicks"] += r["clicks"]
+            totals["rsvps"] += r["rsvps"]
+            totals["attendees"] += r["total_attendees"]
+            totals["events"] += 1
+
+        return {"events": events, "totals": totals}

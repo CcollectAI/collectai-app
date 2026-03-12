@@ -155,7 +155,8 @@ function BuildPaintProjectsScreen() {
     try {
       const items = await dataProvider.listItems();
       setCategoryItems(items.filter((i) => i.category === catId));
-    } catch {
+    } catch (err) {
+      logger.warn('[BuildPaintProjects] category items fetch failed:', err);
       setCategoryItems([]);
     } finally {
       setLoadingItems(false);
@@ -501,7 +502,7 @@ function BuildPaintProjectsScreen() {
                     accessibilityLabel={cat.name}
                   >
                     <View style={[styles.catDot, { backgroundColor: colors.accent }]} />
-                    <Ionicons name={(vis?.iconName || 'cube-outline') as any} size={20} color={colors.accent} />
+                    <Ionicons name={(vis?.iconName || 'cube-outline') as keyof typeof Ionicons.glyphMap} size={20} color={colors.accent} />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={[styles.catPickerName, { color: colors.text }]}>{cat.name}</Text>
                     </View>
@@ -600,7 +601,7 @@ function BuildPaintProjectsScreen() {
 }
 
 // Project Card Component
-function ProjectCard({
+const ProjectCard = React.memo(function ProjectCard({
   project,
   colors,
   onPress,
@@ -693,7 +694,7 @@ function ProjectCard({
       </View>
     </AnimatedPressable>
   );
-}
+});
 
 function formatRelativeDate(dateStr: string): string {
   if (!dateStr) return "";

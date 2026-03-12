@@ -109,7 +109,7 @@ export const ProjectStepsCard = React.memo(function ProjectStepsCard({
                   },
                 ]}
               >
-                {step.isDone && <Ionicons name="checkmark" size={14} color="#fff" />}
+                {step.isDone && <Ionicons name="checkmark" size={14} color={colors.accentText} />}
               </View>
               <Text
                 style={[
@@ -152,9 +152,9 @@ export const ProjectStepsCard = React.memo(function ProjectStepsCard({
           accessibilityLabel="Add step"
         >
           {addingStep ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color={colors.accentText} />
           ) : (
-            <Ionicons name="add" size={20} color="#fff" />
+            <Ionicons name="add" size={20} color={colors.accentText} />
           )}
         </AnimatedPressable>
       </View>

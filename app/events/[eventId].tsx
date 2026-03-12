@@ -98,13 +98,14 @@ function EventDetailScreen() {
 
   // Load host profile when event loads
   useEffect(() => {
-    if (event?.hostUserId) {
-      setHostProfileLoading(true);
-      dataProvider.getPublicUserProfile(event.hostUserId)
-        .then(setHostProfile)
-        .catch(() => setHostProfile(null))
-        .finally(() => setHostProfileLoading(false));
-    }
+    if (!event?.hostUserId) return;
+    let cancelled = false;
+    setHostProfileLoading(true);
+    dataProvider.getPublicUserProfile(event.hostUserId)
+      .then((p) => { if (!cancelled) setHostProfile(p); })
+      .catch(() => { if (!cancelled) setHostProfile(null); })
+      .finally(() => { if (!cancelled) setHostProfileLoading(false); });
+    return () => { cancelled = true; };
   }, [event?.hostUserId]);
 
   // Update RSVP status when event loads
@@ -117,23 +118,29 @@ function EventDetailScreen() {
   // Load drop alert status for this event
   useEffect(() => {
     if (!eventId || !currentUserId) return;
+    let cancelled = false;
     collectorsApi.listMyDropAlerts()
       .then((alerts) => {
+        if (cancelled) return;
         const hasAlert = Array.isArray(alerts) && alerts.some((a) => a.event_id === eventId);
         setAlertsOn(hasAlert);
       })
-      .catch(() => setAlertsOn(false));
+      .catch(() => { if (!cancelled) setAlertsOn(false); });
+    return () => { cancelled = true; };
   }, [eventId, currentUserId]);
 
   // Load announcement unread count
   useEffect(() => {
     if (!eventId) return;
+    let cancelled = false;
     dataProvider.listEventAnnouncements(eventId)
       .then((announcements) => {
+        if (cancelled) return;
         const unread = announcements.filter((a) => !a.isRead).length;
         setUnreadAnnouncementCount(unread);
       })
-      .catch(() => setUnreadAnnouncementCount(0));
+      .catch(() => { if (!cancelled) setUnreadAnnouncementCount(0); });
+    return () => { cancelled = true; };
   }, [eventId]);
 
   /* ---- derived values ---- */
@@ -416,6 +423,23 @@ function EventDetailScreen() {
 
         <EventHeroSection event={event} />
 
+        {/* Promote CTA for creators of non-sponsored events */}
+        {isCreator && !event.isSponsored && (
+          <AnimatedPressable
+            onPress={() => router.push('/sponsor/dashboard' as never)}
+            style={[styles.promoteCta, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '40' }]}
+            accessibilityRole="button"
+            accessibilityLabel="Promote this event"
+          >
+            <Ionicons name="megaphone-outline" size={18} color={colors.accent} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.promoteTitle, { color: colors.text }]}>Promote This Event</Text>
+              <Text style={[styles.promoteSubtitle, { color: colors.muted }]}>Reach more collectors with sponsored placement</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+          </AnimatedPressable>
+        )}
+
         <EventActionBar event={event} hapticsEnabled={settings.hapticsEnabled} />
 
         <EventRsvpSection
@@ -538,7 +562,21 @@ const styles = StyleSheet.create({
   menuBtn: {
     padding: 8,
   },
-  // section, sectionTitle moved to EventRelatedCategory + EventHostSection
-  // categoryCard, categoryName, categoryTagline moved to EventRelatedCategory
-  // menuOverlay, menuSheet, menuItem, menuItemText, menuDivider moved to EventCreatorMenu
+  promoteCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  promoteTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  promoteSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
 });

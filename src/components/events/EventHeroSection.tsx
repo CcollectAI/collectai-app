@@ -98,6 +98,16 @@ export const EventHeroSection = React.memo(function EventHeroSection({
         );
       })()}
 
+      {/* Ticket price badge */}
+      {event.ticketPriceCents != null && event.ticketPriceCents > 0 && (
+        <View style={[styles.ticketBadge, { backgroundColor: colors.warningBg, borderColor: colors.warning + '40' }]}>
+          <Ionicons name="ticket-outline" size={14} color={colors.warning} style={{ marginRight: 6 }} />
+          <Text style={[styles.ticketText, { color: colors.warning }]}>
+            Ticket required · {(event.ticketPriceCents / 100).toFixed(2)}
+          </Text>
+        </View>
+      )}
+
       {event.location && (
         <View style={styles.metaRow}>
           <Ionicons name="location-outline" size={16} color={colors.muted} style={{ marginRight: 6 }} />
@@ -190,6 +200,20 @@ const styles = StyleSheet.create({
   countdownText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  ticketBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  ticketText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   descriptionCard: {
     borderRadius: 12,

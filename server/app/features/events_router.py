@@ -1076,6 +1076,7 @@ async def get_unread_announcement_count(
 @router.get("/{event_id}", response_model=EventResponse, summary="Get event detail")
 async def get_event(
     event_id: str,
+    background_tasks: BackgroundTasks = None,
     user_id: Optional[str] = Depends(get_optional_user_id),
 ):
     """Get a single event by ID, including attendee count and user RSVP status."""
@@ -1123,6 +1124,10 @@ async def get_event(
                             event.user_rsvp_status = rsvp_row["status"]
                     except Exception as e:
                         logger.warning("[events] RSVP lookup failed for user=%s event=%s: %s", user_id, event_id, e)
+
+                # Increment sponsor impression (best-effort, non-blocking)
+                if event.is_sponsored and background_tasks:
+                    background_tasks.add_task(_increment_sponsor_impression, conn, event_id)
 
                 return event
 
@@ -1422,6 +1427,15 @@ async def rsvp_event(
                         actual_status,
                     )
                 logger.info("[events] RSVP: user=%s, event=%s, status=%s, waitlisted=%s", user_id, event_id, actual_status, waitlisted)
+
+                # Increment sponsor RSVP count if sponsored (best-effort)
+                if actual_status == "going":
+                    is_spons = await conn.fetchval(
+                        "SELECT is_sponsored FROM events WHERE id = $1", event_id
+                    )
+                    if is_spons:
+                        asyncio.ensure_future(_increment_sponsor_rsvp(event_id))
+
                 return {"success": True, "status": actual_status, "waitlisted": waitlisted}
 
         except HTTPException:
@@ -1972,6 +1986,42 @@ async def _count_events_basic(conn, category_id: Optional[str], include_past: bo
     where = f"WHERE {' AND '.join(conditions)}"
     result = await conn.fetchval(f"SELECT count(*) FROM events {where}", *params)
     return result or 0
+
+
+async def _increment_sponsor_impression(conn: Any, event_id: str) -> None:
+    """Best-effort increment of sponsor impression count."""
+    try:
+        pool = get_db_pool()
+        if pool:
+            async with pool.acquire() as c:
+                await c.execute(
+                    """
+                    UPDATE event_sponsor_analytics
+                    SET impressions = impressions + 1
+                    WHERE event_id = $1
+                    """,
+                    event_id,
+                )
+    except Exception as e:
+        logger.debug("[events] sponsor impression increment failed: %s", e)
+
+
+async def _increment_sponsor_rsvp(event_id: str) -> None:
+    """Best-effort increment of sponsor RSVP count."""
+    try:
+        pool = get_db_pool()
+        if pool:
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    UPDATE event_sponsor_analytics
+                    SET rsvps = rsvps + 1
+                    WHERE event_id = $1
+                    """,
+                    event_id,
+                )
+    except Exception as e:
+        logger.debug("[events] sponsor rsvp increment failed: %s", e)
 
 
 def _row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventResponse:

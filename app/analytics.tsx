@@ -29,6 +29,8 @@ import { SkeletonList } from "@/components/Skeleton";
 import { formatPrice } from "@/lib/format";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
+import { useBillingLimits } from "@/hooks/useBillingLimits";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 // Import analytics store
 import {
@@ -100,10 +102,14 @@ function AnalyticsScreen() {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
   const { colors } = useAppTheme();
+  const { limits } = useBillingLimits();
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const [collectionTrends, setCollectionTrends] = useState<Record<string, unknown> | null>(null);
+  const [predictionAccuracy, setPredictionAccuracy] = useState<{ category: string; mae: number; mape: number; r2: number }[] | null>(null);
+  const [categoryStats, setCategoryStats] = useState<Array<{ category: string; item_count: number; total_value: number; avg_value: number; change_7d: number; change_7d_pct: number; trend: string; max_item_value: number }>>([]);
+  const [categoryHealth, setCategoryHealth] = useState<Array<{ category: string; volatility: number; trend_strength: number; health: string }>>([]);
 
   const { data: analyticsData, loading, error, retry } = useAsync(
     () => Promise.all([
@@ -113,11 +119,34 @@ function AnalyticsScreen() {
     [],
   );
 
-  // Fetch backend collection trends (enrichment)
+  // Fetch backend collection trends + prediction accuracy (enrichment)
   useEffect(() => {
+    let cancelled = false;
     collectorsApi.getCollectionTrends(30)
-      .then((data) => { if (data) setCollectionTrends(data as Record<string, unknown>); })
+      .then((data) => { if (!cancelled && data) setCollectionTrends(data as Record<string, unknown>); })
       .catch((err) => { logger.warn('[Analytics] collection trends fetch failed:', err); });
+    collectorsApi.getPredictionAccuracy()
+      .then((data) => {
+        if (!cancelled && Array.isArray((data as { categories?: unknown[] })?.categories)) {
+          setPredictionAccuracy((data as { categories: { category: string; mae: number; mape: number; r2: number }[] }).categories);
+        }
+      })
+      .catch((err) => { logger.warn('[Analytics] prediction accuracy fetch failed:', err); });
+    collectorsApi.getPortfolioCategoryStats()
+      .then((data) => {
+        if (!cancelled && Array.isArray((data as { categories?: unknown[] })?.categories)) {
+          setCategoryStats((data as { categories: typeof categoryStats }).categories);
+        }
+      })
+      .catch((err) => { logger.warn('[Analytics] category stats fetch failed:', err); });
+    collectorsApi.getCategoryHealth()
+      .then((data) => {
+        if (!cancelled && Array.isArray((data as { health?: unknown[] })?.health)) {
+          setCategoryHealth((data as { health: typeof categoryHealth }).health);
+        }
+      })
+      .catch((err) => { logger.warn('[Analytics] category health fetch failed:', err); });
+    return () => { cancelled = true; };
   }, []);
 
   const snapshot = analyticsData?.snapshot ?? null;
@@ -177,6 +206,11 @@ function AnalyticsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
+
+        {/* Upgrade prompt for free-tier users */}
+        {!limits.advanced_analytics && (
+          <UpgradePrompt feature="Advanced Analytics" requiredPlan="Pro" />
+        )}
 
         {/* Error Banner */}
         {error && (
@@ -335,8 +369,59 @@ function AnalyticsScreen() {
           </View>
         )}
 
-        {/* Winners & Losers */}
-        {(winnersLosers.winners.length > 0 || winnersLosers.losers.length > 0) && (
+        {/* H1: Category Statistics Dashboard */}
+        {categoryStats.length > 0 && (
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="grid-outline" size={18} color={colors.accent} />
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Category Performance</Text>
+              <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{categoryStats.length} categories</Text>
+            </View>
+            {categoryStats.slice(0, 8).map((cat) => {
+              const trendIcon = cat.trend === 'up' ? 'trending-up' : cat.trend === 'down' ? 'trending-down' : 'remove-outline';
+              const trendColor = cat.trend === 'up' ? colors.success : cat.trend === 'down' ? colors.danger : colors.muted;
+              const healthEntry = categoryHealth.find((h) => h.category === cat.category);
+              const healthColor = healthEntry?.health === 'green' ? colors.success : healthEntry?.health === 'yellow' ? colors.warning : healthEntry?.health === 'red' ? colors.danger : colors.muted;
+              return (
+                <AnimatedPressable
+                  key={cat.category}
+                  style={[styles.catStatRow, { borderBottomColor: colors.border }]}
+                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push(`/categories/${encodeURIComponent(cat.category)}` as never); }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${cat.category.replace(/_/g, ' ')}: ${cat.item_count} items, ${formatPrice(cat.total_value)}, 7d ${cat.trend}`}
+                >
+                  <View style={styles.catStatLeft}>
+                    <View style={styles.catStatNameRow}>
+                      <Text style={[styles.catStatName, { color: colors.text }]} numberOfLines={1}>
+                        {cat.category.replace(/_/g, ' ')}
+                      </Text>
+                      {healthEntry && (
+                        <View style={[styles.healthDot, { backgroundColor: healthColor }]} />
+                      )}
+                    </View>
+                    <Text style={[styles.catStatMeta, { color: colors.muted }]}>
+                      {cat.item_count} items · avg {formatPrice(cat.avg_value)}
+                    </Text>
+                  </View>
+                  <View style={styles.catStatRight}>
+                    <Text style={[styles.catStatValue, { color: colors.text }]}>
+                      {formatPrice(cat.total_value)}
+                    </Text>
+                    <View style={styles.catStatTrend}>
+                      <Ionicons name={trendIcon} size={12} color={trendColor} />
+                      <Text style={[styles.catStatPct, { color: trendColor }]}>
+                        {cat.change_7d_pct > 0 ? '+' : ''}{cat.change_7d_pct.toFixed(1)}%
+                      </Text>
+                    </View>
+                  </View>
+                </AnimatedPressable>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Winners & Losers (Pro+) */}
+        {limits.advanced_analytics && (winnersLosers.winners.length > 0 || winnersLosers.losers.length > 0) && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Movers</Text>
@@ -482,6 +567,80 @@ function AnalyticsScreen() {
                 <Ionicons name="chevron-forward" size={14} color={colors.accent} />
               </AnimatedPressable>
             )}
+          </View>
+        )}
+
+        {/* ── M3: Cost Basis / DCA Overlay (Pro+) ── */}
+        {limits.advanced_analytics && pl && (
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="wallet-outline" size={18} color={colors.accent} />
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Cost Basis Summary</Text>
+            </View>
+            <View style={styles.dcaRow}>
+              <View style={styles.dcaStat}>
+                <Text style={[styles.dcaLabel, { color: colors.muted }]}>Total Invested</Text>
+                <Text style={[styles.dcaValue, { color: colors.text }]}>
+                  {formatPrice(pl.startValue, settings.currency ?? 'EUR')}
+                </Text>
+              </View>
+              <View style={styles.dcaStat}>
+                <Text style={[styles.dcaLabel, { color: colors.muted }]}>Current Value</Text>
+                <Text style={[styles.dcaValue, { color: colors.text }]}>
+                  {formatPrice(pl.currentValue, settings.currency ?? 'EUR')}
+                </Text>
+              </View>
+              <View style={styles.dcaStat}>
+                <Text style={[styles.dcaLabel, { color: colors.muted }]}>Unrealized P/L</Text>
+                <Text style={[styles.dcaValue, { color: isPositive ? colors.success : colors.danger }]}>
+                  {isPositive ? '+' : ''}{formatPrice(pl.deltaAbs, settings.currency ?? 'EUR')}
+                </Text>
+              </View>
+            </View>
+            {pl.startValue > 0 && (
+              <View style={[styles.dcaBar, { backgroundColor: colors.border + '40' }]}>
+                <View
+                  style={[
+                    styles.dcaBarFill,
+                    {
+                      backgroundColor: isPositive ? colors.success : colors.danger,
+                      width: `${Math.min(100, Math.max(5, (pl.currentValue / pl.startValue) * 100))}%`,
+                    },
+                  ]}
+                />
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* ── M4: Prediction Accuracy (Premium) ── */}
+        {limits.advanced_analytics && predictionAccuracy && predictionAccuracy.length > 0 && (
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="analytics-outline" size={18} color={colors.accent} />
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Prediction Accuracy</Text>
+            </View>
+            <View style={styles.predHeader}>
+              <Text style={[styles.predHeaderText, { color: colors.muted, flex: 2 }]}>Category</Text>
+              <Text style={[styles.predHeaderText, { color: colors.muted, flex: 1, textAlign: 'right' }]}>MAPE</Text>
+              <Text style={[styles.predHeaderText, { color: colors.muted, flex: 1, textAlign: 'right' }]}>R²</Text>
+            </View>
+            {predictionAccuracy.slice(0, 8).map((cat) => {
+              const r2Color = cat.r2 >= 0.8 ? colors.success : cat.r2 >= 0.5 ? colors.warning : colors.danger;
+              return (
+                <View key={cat.category} style={[styles.predRow, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.predCategory, { color: colors.text }]} numberOfLines={1}>
+                    {cat.category.replace(/_/g, ' ')}
+                  </Text>
+                  <Text style={[styles.predValue, { color: colors.muted }]}>
+                    {(cat.mape * 100).toFixed(1)}%
+                  </Text>
+                  <Text style={[styles.predValue, { color: r2Color, fontWeight: '700' }]}>
+                    {cat.r2.toFixed(2)}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -919,6 +1078,116 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 13,
+    fontWeight: "600",
+  },
+
+  // DCA Cost Basis (M3)
+  dcaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 12,
+  },
+  dcaStat: {
+    flex: 1,
+    alignItems: "center",
+  },
+  dcaLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  dcaValue: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  dcaBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  dcaBarFill: {
+    height: 6,
+    borderRadius: 3,
+  },
+
+  // Prediction Accuracy (M4)
+  predHeader: {
+    flexDirection: "row",
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
+    marginBottom: 4,
+  },
+  predHeaderText: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  predRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  predCategory: {
+    flex: 2,
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  predValue: {
+    flex: 1,
+    fontSize: 13,
+    textAlign: "right",
+  },
+
+  // Category Statistics (H1)
+  catStatRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  catStatLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  catStatNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  catStatName: {
+    fontSize: 14,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  healthDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  catStatMeta: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  catStatRight: {
+    alignItems: "flex-end",
+  },
+  catStatValue: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  catStatTrend: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 2,
+  },
+  catStatPct: {
+    fontSize: 11,
     fontWeight: "600",
   },
 });

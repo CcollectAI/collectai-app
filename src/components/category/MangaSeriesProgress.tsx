@@ -11,21 +11,45 @@ type Props = {
   colors: AppTheme['colors'];
 };
 
+/** Categories that support series/run/discography tracking. */
+const SERIES_CATEGORIES = new Set([
+  'manga', 'comic_books', 'anime_bluray', 'vinyl_records',
+]);
+
+/** Label used for the counter unit per category. */
+const UNIT_LABELS: Record<string, string> = {
+  manga: 'vol',
+  comic_books: 'issues',
+  anime_bluray: 'seasons',
+  vinyl_records: 'albums',
+};
+
+/** Total key in attributesJson per category. */
+const TOTAL_KEY: Record<string, string> = {
+  manga: 'total_volumes',
+  comic_books: 'total_issues',
+  anime_bluray: 'total_seasons',
+  vinyl_records: 'total_albums',
+};
+
 const MangaSeriesProgress: React.FC<Props> = ({ categoryId, items, accentColor, colors }) => {
-  if (categoryId !== 'manga' || items.length === 0) return null;
+  if (!categoryId || !SERIES_CATEGORIES.has(categoryId) || items.length === 0) return null;
+
+  const unitLabel = UNIT_LABELS[categoryId] ?? 'vol';
+  const totalKey = TOTAL_KEY[categoryId] ?? 'total_volumes';
 
   // Group items by series title (from attributes or name prefix)
   const seriesMap: Record<string, { count: number; total?: number; items: typeof items }> = {};
   for (const item of items) {
     const attrs = (item as Record<string, unknown>).attributesJson as Record<string, unknown> | undefined;
-    const seriesName = (attrs?.title as string) || item.name.replace(/\s*vol\.?\s*\d+.*/i, '').replace(/\s*#\d+.*/i, '').trim();
+    const seriesName = (attrs?.title as string) || (attrs?.series as string) || (attrs?.artist as string) || item.name.replace(/\s*vol\.?\s*\d+.*/i, '').replace(/\s*#\d+.*/i, '').replace(/\s*-\s*season\s*\d+.*/i, '').trim();
     if (!seriesName) continue;
     if (!seriesMap[seriesName]) {
       seriesMap[seriesName] = { count: 0, total: undefined, items: [] };
     }
     seriesMap[seriesName].count += 1;
     seriesMap[seriesName].items.push(item);
-    const totalVols = attrs?.total_volumes;
+    const totalVols = attrs?.[totalKey];
     if (totalVols && typeof totalVols === 'string' && parseInt(totalVols, 10) > 0) {
       seriesMap[seriesName].total = parseInt(totalVols, 10);
     }
@@ -56,7 +80,7 @@ const MangaSeriesProgress: React.FC<Props> = ({ categoryId, items, accentColor, 
                 {seriesName}
               </Text>
               <Text style={[styles.seriesProgressCount, { color: accentColor }]}>
-                {series.count}{series.total ? `/${series.total}` : ''} vol
+                {series.count}{series.total ? `/${series.total}` : ''} {unitLabel}
               </Text>
             </View>
             {pct !== null && (

@@ -28,6 +28,7 @@ import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { dataProvider } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
+import logger from '@/utils/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { formatPrice, getCurrencySymbol } from '@/lib/format';
 import { EmptyState } from '@/components/EmptyState';
@@ -371,6 +372,20 @@ function SellerDashboardScreen() {
   const accounts = dashboardData?.accounts ?? [];
   const feeSchedules = dashboardData?.feeSchedules ?? [];
 
+  // Actuals vs Predicted (L2)
+  const [predictionComps, setPredictionComps] = useState<Array<{ item_key: string; predicted: number; actual: number; category: string }>>([]);
+  useEffect(() => {
+    let cancelled = false;
+    collectorsApi.getPredictionAccuracy()
+      .then((data) => {
+        if (cancelled) return;
+        const resp = data as { comparisons?: Array<{ item_key: string; predicted: number; actual: number; category: string }> } | undefined;
+        if (Array.isArray(resp?.comparisons)) setPredictionComps(resp!.comparisons.slice(0, 6));
+      })
+      .catch((err) => logger.warn('[SellerDash] prediction accuracy fetch failed:', err));
+    return () => { cancelled = true; };
+  }, []);
+
   // Show toast on error
   useEffect(() => {
     if (dashboardError) {
@@ -492,7 +507,7 @@ function SellerDashboardScreen() {
             setBackendFeePreview({ fees: data.total_fees, net: price - data.total_fees });
           }
         })
-        .catch(() => { /* use local feePreview as fallback */ });
+        .catch((err) => logger.warn('[SellerDash] fee calc failed, using local:', err));
     }, 500); // debounce
     return () => clearTimeout(timer);
   }, [createPriceField.value, createMarketplace, showCreateModal]);
@@ -635,6 +650,39 @@ function SellerDashboardScreen() {
           renderItem={renderSale}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={<RevenueSummary sales={sales} colors={colors} currency={settings.currency} />}
+          ListFooterComponent={predictionComps.length > 0 ? (
+            <View style={[styles.predCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.predCardHeader}>
+                <Ionicons name="analytics-outline" size={16} color={colors.accent} />
+                <Text style={[styles.predCardTitle, { color: colors.text }]}>Actuals vs Predicted</Text>
+              </View>
+              {predictionComps.map((comp) => {
+                const diff = comp.actual - comp.predicted;
+                const diffPct = comp.predicted > 0 ? (diff / comp.predicted) * 100 : 0;
+                const isOver = diff >= 0;
+                return (
+                  <View key={comp.item_key} style={[styles.predCompRow, { borderBottomColor: colors.border }]}>
+                    <View style={{ flex: 2 }}>
+                      <Text style={[styles.predCompName, { color: colors.text }]} numberOfLines={1}>
+                        {comp.item_key.replace(/-/g, ' ')}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'capitalize' }}>
+                        {comp.category.replace(/_/g, ' ')}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                      <Text style={{ fontSize: 12, color: colors.muted }}>
+                        {formatPrice(comp.predicted, settings.currency)}
+                      </Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: isOver ? colors.success : colors.danger }}>
+                        {formatPrice(comp.actual, settings.currency)} ({isOver ? '+' : ''}{diffPct.toFixed(0)}%)
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
           ListEmptyComponent={
             <EmptyState
               icon="cash-outline"
@@ -992,4 +1040,11 @@ const styles = StyleSheet.create({
   createBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
   createBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
   fieldError: { fontSize: 12, marginTop: 2, marginLeft: 4, marginBottom: 4 },
+
+  // Actuals vs Predicted (L2)
+  predCard: { borderRadius: 12, borderWidth: 1, padding: 14, marginTop: 16 },
+  predCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  predCardTitle: { fontSize: 15, fontWeight: '700' },
+  predCompRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  predCompName: { fontSize: 13, fontWeight: '600' },
 });

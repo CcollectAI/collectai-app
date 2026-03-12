@@ -641,6 +641,29 @@ export default function Settings() {
 
         <AnimatedPressable
           style={styles.settingRow}
+          onPress={async () => {
+            try {
+              const { createPortalSession } = await import('@/api/collectorsApi');
+              const { url } = await createPortalSession();
+              if (url) Linking.openURL(url);
+            } catch {
+              showToast({ message: 'Failed to open billing portal', type: 'error' });
+            }
+          }}
+          accessibilityRole="link"
+          accessibilityLabel="Open billing portal"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Billing Portal</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Payment methods, invoices, cancel</Text>
+          </View>
+          <Ionicons name="open-outline" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
           onPress={() => router.push('/mfa-setup')}
           accessibilityRole="link"
           accessibilityLabel="Two-factor authentication"

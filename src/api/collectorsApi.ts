@@ -933,6 +933,13 @@ export const collectorsApi = {
 
   getPortfolioCategoryBreakdown: () => get("/portfolio/category-breakdown"),
 
+  getPortfolioCategoryStats: () => get("/portfolio/category-stats"),
+
+  getCategoryHealth: () => get("/portfolio/category-health"),
+
+  getCategoryCrossCorrelation: (category: string) =>
+    get(`/portfolio/category-correlation?category=${encodeURIComponent(category)}`),
+
   // ── Collections ─────────────────────────────────────────────────────
 
   listCollections: (category?: string) =>
@@ -1041,7 +1048,65 @@ export const collectorsApi = {
   getItemTrends: (itemId: string) =>
     get(`/analytics/items/${encodeURIComponent(itemId)}/trends`),
 
-  // ── Events (additional endpoints) ──────────────────────────────────
+  // ── Events — Core CRUD ─────────────────────────────────────────────
+
+  createEvent: (payload: Record<string, unknown>) =>
+    post("/events", payload),
+
+  getEventById: (eventId: string) =>
+    get(`/events/${encodeURIComponent(eventId)}`),
+
+  updateEvent: (eventId: string, updates: Record<string, unknown>) =>
+    patch(`/events/${encodeURIComponent(eventId)}`, updates),
+
+  deleteEvent: (eventId: string) =>
+    del(`/events/${encodeURIComponent(eventId)}`),
+
+  duplicateEvent: (eventId: string) =>
+    post(`/events/${encodeURIComponent(eventId)}/duplicate`),
+
+  // ── Events — RSVP ────────────────────────────────────────────────
+
+  rsvpEvent: (eventId: string, status: string = "going") =>
+    post(`/events/${encodeURIComponent(eventId)}/rsvp`, { status }),
+
+  unrsvpEvent: (eventId: string) =>
+    del(`/events/${encodeURIComponent(eventId)}/rsvp`),
+
+  // ── Events — Ticketing ────────────────────────────────────────────
+
+  createTicketCheckout: (eventId: string) =>
+    post(`/events/${encodeURIComponent(eventId)}/ticket-checkout`),
+
+  // ── Events — Announcements ────────────────────────────────────────
+
+  listEventAnnouncements: (eventId: string) =>
+    get(`/events/${encodeURIComponent(eventId)}/announcements`),
+
+  postEventAnnouncement: (eventId: string, payload: { body: string; title?: string; image_url?: string }) =>
+    post(`/events/${encodeURIComponent(eventId)}/announcements`, payload as Record<string, unknown>),
+
+  markAnnouncementRead: (eventId: string, announcementId: string) =>
+    post(`/events/${encodeURIComponent(eventId)}/announcements/${encodeURIComponent(announcementId)}/read`),
+
+  batchMarkAnnouncementsRead: (eventId: string, announcementIds: string[]) =>
+    post(`/events/${encodeURIComponent(eventId)}/announcements/batch-read`, { announcement_ids: announcementIds }),
+
+  getUnreadAnnouncementCount: () =>
+    get<{ unread_count: number }>("/events/my-announcements/unread-count"),
+
+  // ── Events — Templates ────────────────────────────────────────────
+
+  listEventTemplates: () =>
+    get("/events/templates"),
+
+  createEventTemplate: (name: string, fromEventId: string) =>
+    post("/events/templates", { name, from_event_id: fromEventId }),
+
+  deleteEventTemplate: (templateId: string) =>
+    del(`/events/templates/${encodeURIComponent(templateId)}`),
+
+  // ── Events — Drop Alerts & Categories ─────────────────────────────
 
   getNearbyEvents: (lat?: number, lng?: number, radiusKm = 50) => {
     const sp = new URLSearchParams();
@@ -1161,6 +1226,25 @@ export const collectorsApi = {
 
   listVerifiedSales: () =>
     get("/feedback/verified-sales"),
+
+  // ── Sponsor Analytics ──────────────────────────────────────────────
+
+  getSponsorAnalytics: (companyId: string) =>
+    get(`/sponsor-companies/${encodeURIComponent(companyId)}/analytics`),
+
+  // ── Supply & Demand Indicators ────────────────────────────────────
+
+  getDemandHeatByRegion: (category?: string, days = 7) => {
+    const sp = new URLSearchParams({ days: String(days) });
+    if (category) sp.set("category", category);
+    return get(`/data-moat/demand-heat/by-region?${sp.toString()}`);
+  },
+
+  getPredictionAccuracy: (category?: string, days = 30) => {
+    const sp = new URLSearchParams({ days: String(days) });
+    if (category) sp.set("category", category);
+    return get(`/data-moat/prediction-accuracy?${sp.toString()}`);
+  },
 
   // ── Generic HTTP helpers (used by DataProvider implementations) ──────────
   get: <T = unknown>(path: string) => get<T>(path),

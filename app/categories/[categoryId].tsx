@@ -41,6 +41,13 @@ import {
   FriendsFollowSection,
   ExternalMarketplacesSection,
   RelatedCategoriesSection,
+  SetProgressSection,
+  FeaturedCollectionsSection,
+  CategoryLeaderboardSection,
+  CategoryTipsSection,
+  CrossCategorySection,
+  CategoryGradingGuide,
+  NewReleasesSection,
 } from '@/components/category';
 
 function CategoryStoreScreen() {
@@ -408,6 +415,12 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
+        {/* 1.5. Category Tips (first-time visitors) */}
+        {categoryId && <CategoryTipsSection categoryId={categoryId} />}
+
+        {/* 1.7. Grading Standards */}
+        {categoryId && <CategoryGradingGuide categoryId={categoryId} />}
+
         {/* 2. Spotlight Carousel */}
         <SpotlightCarousel
           slides={data.spotlightSlides}
@@ -416,6 +429,17 @@ function CategoryStoreScreen() {
           onScrollEnd={setSpotlightIndex}
           colors={colors}
         />
+
+        {/* 2.5. New Releases */}
+        {categoryId && (
+          <NewReleasesSection
+            categoryId={categoryId}
+            onItemPress={(item) => router.push({
+              pathname: '/add-manual',
+              params: { name: item.title, category: categoryId, imageUri: item.image_url || '' },
+            })}
+          />
+        )}
 
         {/* 3. Items in this Category */}
         <CategoryItemsList
@@ -498,7 +522,24 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
-        {/* 4.5. Missing Items Checklist */}
+        {/* 4.5. Set Completion Progress */}
+        {categoryId && (
+          <SetProgressSection
+            categoryId={categoryId}
+            onSetPress={(setId) => router.push(`/categories/${categoryId}` as never)}
+          />
+        )}
+
+        {/* 4.55. Featured Collections */}
+        {categoryMeta && categoryId && (
+          <FeaturedCollectionsSection
+            collections={categoryMeta.collections}
+            categoryId={categoryId}
+            onCollectionPress={(name) => router.push({ pathname: '/(tabs)/items', params: { collection: name } })}
+          />
+        )}
+
+        {/* 4.6. Missing Items Checklist */}
         <MissingItemsChecklist
           missingItems={missingItems}
           recentlyOwned={recentlyOwned}
@@ -529,6 +570,9 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
+        {/* 5.5. Category Leaderboard */}
+        {categoryId && <CategoryLeaderboardSection categoryId={categoryId} />}
+
         {/* 6. External Marketplace Links */}
         {categoryMeta && (
           <ExternalMarketplacesSection
@@ -536,6 +580,14 @@ function CategoryStoreScreen() {
             affiliateLinks={affiliateLinks}
             onPress={handleMarketplaceHaptic}
             colors={colors}
+          />
+        )}
+
+        {/* 6.5. Cross-Category Correlation */}
+        {categoryId && (
+          <CrossCategorySection
+            categoryId={categoryId}
+            onCategoryPress={(catId) => router.push(`/categories/${catId}`)}
           />
         )}
 
