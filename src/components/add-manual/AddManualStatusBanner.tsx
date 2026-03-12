@@ -15,8 +15,8 @@ interface AddManualStatusBannerProps {
   isSaving: boolean;
 }
 
-function getBannerColors(type: BannerType, accentColor: string) {
-  if (type === 'error') return { bg: '#FEF2F2', border: '#EF4444', icon: 'warning-outline' as const, iconColor: '#EF4444' };
+function getBannerColors(type: BannerType, accentColor: string, dangerColor: string) {
+  if (type === 'error') return { bg: dangerColor + '15', border: dangerColor, icon: 'warning-outline' as const, iconColor: dangerColor };
   if (type === 'success') return { bg: accentColor + '15', border: accentColor, icon: 'checkmark-circle-outline' as const, iconColor: accentColor };
   return { bg: '#FEF3C7', border: '#F59E0B', icon: 'time-outline' as const, iconColor: '#F59E0B' };
 }
@@ -27,7 +27,7 @@ export const AddManualStatusBanner = React.memo(function AddManualStatusBanner({
   isSaving,
 }: AddManualStatusBannerProps) {
   const { colors } = useAppTheme();
-  const bannerColors = getBannerColors(type, colors.accent);
+  const bannerColors = getBannerColors(type, colors.accent, colors.danger);
 
   return (
     <View style={[styles.banner, { backgroundColor: bannerColors.bg, borderColor: bannerColors.border }]}>

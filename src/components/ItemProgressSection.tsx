@@ -9,14 +9,14 @@
 import React from "react";
 import { View, Text, Pressable, TextInput, ActivityIndicator, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_COLORS_BASE: Record<string, string> = {
   not_started: "#94A3B8",
   reading: "#3B82F6",
   playing: "#3B82F6",
   completed: "#22C55E",
   on_hold: "#F59E0B",
-  dropped: "#EF4444",
   plan_to_read: "#8B5CF6",
   plan_to_play: "#8B5CF6",
   replaying: "#06B6D4",
@@ -75,6 +75,8 @@ export function ItemProgressSection({
   onPctChange,
   onNotesChange,
 }: ItemProgressSectionProps) {
+  const { colors } = useAppTheme();
+  const STATUS_COLORS: Record<string, string> = { ...STATUS_COLORS_BASE, dropped: colors.danger };
   return (
     <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
       <View style={s.sectionHeaderRow}>

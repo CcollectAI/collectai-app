@@ -205,13 +205,13 @@ function ScanResultCardInner({
           <View
             style={[
               styles.heroBadge,
-              { backgroundColor: confBadgeColor + '20', borderColor: confBadgeColor + '40' },
+              { backgroundColor: '#FFFFFFEE', borderColor: confBadgeColor + '60' },
             ]}
             accessibilityLabel={`${confLabel}: ${overallConf} percent`}
             accessibilityRole="text"
           >
             <View style={[styles.heroBadgeDot, { backgroundColor: confBadgeColor }]} />
-            <Text style={[styles.heroBadgeText, { color: confBadgeColor }]}>{confLabel}</Text>
+            <Text style={[styles.heroBadgeText, { color: confBadgeColor }]}>{confLabel} · {overallConf}%</Text>
           </View>
           {/* Retake button on hero */}
           <AnimatedPressable
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   // Hero image
   heroContainer: {
     width: '100%',
-    height: SCREEN_WIDTH * 0.85,
+    height: SCREEN_WIDTH * 0.75,
     position: 'relative',
   },
   heroImage: {
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
   },
   heroBadge: {
     position: 'absolute',
-    top: 56,
+    bottom: 14,
     left: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
   },
   heroRetake: {
     position: 'absolute',
-    top: 54,
+    bottom: 14,
     right: 16,
     width: 40,
     height: 40,
@@ -597,9 +597,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // ID Card (overlaps hero)
+  // ID Card (below hero)
   idCard: {
-    marginTop: -32,
+    marginTop: 12,
     marginHorizontal: 16,
     padding: 20,
     borderRadius: 20,

@@ -52,7 +52,7 @@ class TestCreateAlert:
             json={
                 "trigger_type": "below_threshold",
                 "threshold_value": 50.0,
-                "item_id": "test-item-1",
+                "item_id": "00000000-0000-0000-0000-000000000001",
             },
         )
         assert resp.status_code == 200
@@ -122,7 +122,7 @@ class TestCreateAlert:
 class TestDeleteAlert:
     def test_delete_nonexistent_alert(self):
         """Deleting a non-existent alert returns 404 in offline mode."""
-        resp = client.delete("/alerts/mine/nonexistent-alert-id")
+        resp = client.delete("/alerts/mine/00000000-0000-0000-0000-000000000099")
         assert resp.status_code == 404
 
     def test_create_then_delete_alert(self):
@@ -165,6 +165,6 @@ class TestTriggerHistory:
 class TestMarkTriggerRead:
     def test_mark_trigger_read_offline(self):
         """Mark trigger read returns 200 in offline mode."""
-        resp = client.post("/alerts/trigger-history/some-trigger-id/read")
+        resp = client.post("/alerts/trigger-history/00000000-0000-0000-0000-000000000099/read")
         assert resp.status_code == 200
         assert resp.json()["ok"] is True

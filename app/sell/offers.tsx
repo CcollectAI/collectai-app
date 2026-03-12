@@ -31,19 +31,20 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { AnimatedPressable } from '@/motion';
 import type { Offer, OfferStatus } from '@/data/types';
+import { timeAgo } from '@/lib/timeAgo';
 
 // ---------------------------------------------------------------------------
 // Status badge config
 // ---------------------------------------------------------------------------
 
-const STATUS_CONFIG: Record<OfferStatus, { label: string; bg: string; fg: string }> = {
-  proposed: { label: 'Pending', bg: '#FEF3C7', fg: '#92400E' },
-  countered: { label: 'Countered', bg: '#DBEAFE', fg: '#1E40AF' },
-  accepted: { label: 'Accepted', bg: '#D1FAE5', fg: '#065F46' },
-  declined: { label: 'Declined', bg: '#FEE2E2', fg: '#991B1B' },
-  expired: { label: 'Expired', bg: '#F3F4F6', fg: '#6B7280' },
-  completed: { label: 'Completed', bg: '#D1FAE5', fg: '#065F46' },
-  cancelled: { label: 'Cancelled', bg: '#F3F4F6', fg: '#6B7280' },
+const STATUS_LABELS: Record<OfferStatus, string> = {
+  proposed: 'Pending',
+  countered: 'Countered',
+  accepted: 'Accepted',
+  declined: 'Declined',
+  expired: 'Expired',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
 };
 
 // ---------------------------------------------------------------------------
@@ -52,15 +53,7 @@ const STATUS_CONFIG: Record<OfferStatus, { label: string; bg: string; fg: string
 
 function relativeTime(iso: string | null | undefined): string {
   if (!iso) return '';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
+  return timeAgo(iso);
 }
 
 // ---------------------------------------------------------------------------
@@ -76,13 +69,16 @@ type Tab = 'active' | 'history';
 function OfferCard({
   offer,
   colors,
+  statusTokens,
   currency,
 }: {
   offer: Offer;
   colors: ReturnType<typeof useAppTheme>['colors'];
+  statusTokens: ReturnType<typeof useAppTheme>['status'];
   currency: string;
 }) {
-  const statusCfg = STATUS_CONFIG[offer.status] || STATUS_CONFIG.proposed;
+  const statusColor = statusTokens[offer.status as keyof typeof statusTokens] || statusTokens.proposed;
+  const statusLabel = STATUS_LABELS[offer.status] || STATUS_LABELS.proposed;
 
   return (
     <AnimatedPressable
@@ -92,7 +88,7 @@ function OfferCard({
       }}
       style={[styles.offerCard, { backgroundColor: colors.card, borderColor: colors.border }]}
       accessibilityRole="button"
-      accessibilityLabel={`Offer from ${offer.otherUserName} for ${offer.itemTitle}, ${statusCfg.label}`}
+      accessibilityLabel={`Offer from ${offer.otherUserName} for ${offer.itemTitle}, ${statusLabel}`}
     >
       {/* Item thumbnail */}
       <View style={[styles.offerThumb, { backgroundColor: colors.background }]}>
@@ -143,9 +139,9 @@ function OfferCard({
         <Text style={[styles.offerPrice, { color: colors.text }]}>
           {formatPrice(offer.currentPrice, currency as 'EUR')}
         </Text>
-        <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
-          <Text style={[styles.statusBadgeText, { color: statusCfg.fg }]}>
-            {statusCfg.label}
+        <View style={[styles.statusBadge, { backgroundColor: statusColor.bg }]}>
+          <Text style={[styles.statusBadgeText, { color: statusColor.fg }]}>
+            {statusLabel}
           </Text>
         </View>
       </View>
@@ -158,7 +154,7 @@ function OfferCard({
 // ---------------------------------------------------------------------------
 
 function OffersInboxScreen() {
-  const { colors } = useAppTheme();
+  const { colors, status: statusTokens } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
 
@@ -198,9 +194,9 @@ function OffersInboxScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: Offer }) => (
-      <OfferCard offer={item} colors={colors} currency={settings.currency} />
+      <OfferCard offer={item} colors={colors} statusTokens={statusTokens} currency={settings.currency} />
     ),
-    [colors, settings.currency],
+    [colors, statusTokens, settings.currency],
   );
 
   const keyExtractor = useCallback((item: Offer) => item.id, []);

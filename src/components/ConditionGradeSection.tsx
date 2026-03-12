@@ -12,12 +12,14 @@ import type { DefectAnnotation, SuggestedGrade } from '@/data/types';
 
 const TIFFANY_DARK = '#5FBFB6';
 
-const SEVERITY_COLORS: Record<string, string> = {
-  minor: '#22C55E',
-  moderate: '#F59E0B',
-  major: '#EF4444',
-  severe: '#991B1B',
-};
+function getSeverityColors(dangerColor: string): Record<string, string> {
+  return {
+    minor: '#22C55E',
+    moderate: '#F59E0B',
+    major: dangerColor,
+    severe: '#991B1B',
+  };
+}
 
 type Props = {
   defects: DefectAnnotation[];
@@ -26,6 +28,7 @@ type Props = {
 
 export function ConditionGradeSection({ defects, grade }: Props) {
   const { colors } = useAppTheme();
+  const SEVERITY_COLORS = getSeverityColors(colors.danger);
   const [expanded, setExpanded] = useState(false);
 
   if (!grade && defects.length === 0) {

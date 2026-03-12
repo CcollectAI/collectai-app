@@ -10,29 +10,11 @@ import {
   Image,
 } from "react-native";
 
-function ComingSoonScreen() {
-  const { colors } = useAppTheme();
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: 32 }}>
-      <Ionicons name="construct-outline" size={48} color={colors.muted} />
-      <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, marginTop: 16 }}>Coming Soon</Text>
-      <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
-        This feature is under development. Check back in the next update.
-      </Text>
-    </View>
-  );
-}
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatPrice, formatNumber } from "@/lib/format";
 type LoadState = "idle" | "loading" | "loaded" | "error";
-
-// Compatibility: replace old ./ui/theme usage with app theme hook
-const useAppColors = () => {
-  const { colors } = useAppTheme();
-  return colors;
-};
 
 type TwitchCreator = {
   id: string;
@@ -54,7 +36,7 @@ type TwitchCreator = {
 };
 
 const TwitchLeaderboardScreen: React.FC = () => {
-  const colors = useAppColors();
+  const { colors } = useAppTheme();
 
   const [state, setState] = useState<LoadState>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -88,10 +70,10 @@ const TwitchLeaderboardScreen: React.FC = () => {
 
         setCreators((data ?? []) as TwitchCreator[]);
         setState("loaded");
-      } catch (err: any) {
+      } catch (err) {
         setState("error");
         setErrorText(
-          err?.message || "Unexpected error while loading Twitch leaderboard."
+          (err instanceof Error ? err.message : null) || "Unexpected error while loading Twitch leaderboard."
         );
       }
     };
@@ -165,16 +147,16 @@ const TwitchLeaderboardScreen: React.FC = () => {
             {
               backgroundColor:
                 state === "error"
-                  ? "#FDECEC"
+                  ? colors.dangerBg
                   : state === "loading"
-                  ? "#FFF7E6"
-                  : "#E7F6F8",
+                  ? colors.warningBg
+                  : colors.successBg,
               borderColor:
                 state === "error"
-                  ? "#D64545"
+                  ? colors.danger
                   : state === "loading"
-                  ? "#F59E0B"
-                  : "#19A7AE",
+                  ? colors.warning
+                  : colors.success,
             },
           ]}
         >
@@ -191,8 +173,8 @@ const TwitchLeaderboardScreen: React.FC = () => {
                 size={18}
                 color={
                   state === "error"
-                    ? "#D64545"
-                    : "#19A7AE"
+                    ? colors.danger
+                    : colors.success
                 }
               />
             )}
@@ -208,7 +190,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
             </Text>
             {errorText ? (
               <Text
-                style={[styles.bannerError, { color: "#D64545" }]}
+                style={[styles.bannerError, { color: colors.danger }]}
                 numberOfLines={2}
               >
                 {errorText}
@@ -237,7 +219,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
               <Text style={[styles.summaryLabel, { color: colors.muted }]}>
                 Live now
               </Text>
-              <Text style={[styles.summaryValue, { color: "#0BA86C" }]}>
+              <Text style={[styles.summaryValue, { color: colors.success }]}>
                 {liveCount}
               </Text>
             </View>
@@ -313,14 +295,14 @@ const TwitchLeaderboardScreen: React.FC = () => {
                   </Text>
                 </View>
                 <View style={styles.liveRight}>
-                  <View style={styles.viewerPill}>
+                  <View style={[styles.viewerPill, { backgroundColor: colors.danger + '15' }]}>
                     <Ionicons
                       name="eye-outline"
                       size={12}
-                      color="#D64545"
+                      color={colors.danger}
                       style={{ marginRight: 4 }}
                     />
-                    <Text style={styles.viewerPillText}>
+                    <Text style={[styles.viewerPillText, { color: colors.danger }]}>
                       {c.current_viewers ?? 0}
                     </Text>
                   </View>
@@ -607,7 +589,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E7F6F8",
+    backgroundColor: "#81D8D010",
   },
   liveRight: {
     alignItems: "flex-end",
@@ -619,12 +601,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: "#FDECEC",
   },
   viewerPillText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#D64545",
   },
   partnerTag: {
     marginTop: 4,
@@ -651,13 +631,13 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E7F6F8",
+    backgroundColor: "#81D8D015",
     marginRight: 8,
   },
   rankText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#19A7AE",
+    color: "#81D8D0",
   },
   rankMain: {
     flex: 1,
@@ -697,10 +677,9 @@ const styles = StyleSheet.create({
 });
 
 function TwitchLeaderboardScreenWithBoundary() {
-  const Inner = __DEV__ ? TwitchLeaderboardScreen : ComingSoonScreen;
   return (
     <ScreenErrorBoundary screenName="Twitch Leaderboard">
-      <Inner />
+      <TwitchLeaderboardScreen />
     </ScreenErrorBoundary>
   );
 }

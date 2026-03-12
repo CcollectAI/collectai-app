@@ -314,7 +314,7 @@ async def list_my_progress(
 
 
 @router.get("/{set_id}")
-async def get_set_detail(set_id: str):
+async def get_set_detail(set_id: str) -> dict:
     """Get a set with its full list of set_items."""
     set_id = _validate_uuid(set_id, "set_id")
 

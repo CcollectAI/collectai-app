@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -96,7 +96,7 @@ async def propose_offer(
     body: ProposeOfferRequest,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_action_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -122,7 +122,7 @@ async def propose_offer(
             async with pool.acquire() as conn_xp:
                 await record_activity_xp(conn_xp, user_id, 5)
         except Exception:
-            pass
+            logger.debug("[deal_desk] XP award failed for propose (best-effort)")
 
         return data
     except Exception as exc:
@@ -147,7 +147,7 @@ async def counter_offer(
     body: CounterOfferRequest,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_action_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -199,7 +199,7 @@ async def respond_offer(
     body: RespondOfferRequest,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_action_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -250,7 +250,7 @@ async def cancel_offer(
     offer_id: str,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_action_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -302,7 +302,7 @@ async def mark_shipped(
     body: ShipRequest,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_action_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -354,7 +354,7 @@ async def complete_deal(
     body: CompleteRequest,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_action_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -363,18 +363,42 @@ async def complete_deal(
 
     try:
         async with pool.acquire() as conn:
-            # Pre-flight ownership check: only buyer can complete
-            is_buyer = await conn.fetchval(
-                "SELECT 1 FROM offers WHERE id = $1::uuid AND buyer_id = $2::uuid",
-                offer_id, user_id,
-            )
-            if not is_buyer:
-                raise error_response(403, "Only the buyer can complete the deal", code=ErrorCode.FORBIDDEN)
+            async with conn.transaction():
+                # Pre-flight ownership check: only buyer can complete
+                is_buyer = await conn.fetchval(
+                    "SELECT 1 FROM offers WHERE id = $1::uuid AND buyer_id = $2::uuid",
+                    offer_id, user_id,
+                )
+                if not is_buyer:
+                    raise error_response(403, "Only the buyer can complete the deal", code=ErrorCode.FORBIDDEN)
 
-            result = await conn.fetchval(
-                "SELECT rpc_complete_deal_v1($1::uuid, $2::smallint, $3::text)",
-                offer_id, body.stars, body.comment,
-            )
+                result = await conn.fetchval(
+                    "SELECT rpc_complete_deal_v1($1::uuid, $2::smallint, $3::text)",
+                    offer_id, body.stars, body.comment,
+                )
+
+                # Award XP for completing a deal (inside the same transaction)
+                try:
+                    from app.features.gamification_router import record_activity_xp
+                    deal_count = await conn.fetchval(
+                        """
+                        SELECT COUNT(*) FROM offers
+                        WHERE (seller_id = $1::uuid OR buyer_id = $1::uuid)
+                          AND status = 'completed'
+                        """,
+                        user_id,
+                    )
+                    achievement_checks = []
+                    deal_milestones = [
+                        (1, "trader_1"), (5, "trader_5"),
+                        (10, "trader_10"), (25, "trader_25"),
+                    ]
+                    for threshold, ach_id in deal_milestones:
+                        if deal_count >= threshold:
+                            achievement_checks.append((ach_id, deal_count))
+                    await record_activity_xp(conn, user_id, 25, achievement_checks or None)
+                except Exception:
+                    logger.debug("[deal_desk] XP award failed for deal completion (best-effort)")
 
         try:
             data = json.loads(result) if isinstance(result, str) else result
@@ -382,7 +406,7 @@ async def complete_deal(
             logger.error("Invalid JSON from RPC: %s", e)
             raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
 
-        # Record ground truth for data moat feedback loop (best-effort)
+        # Record ground truth for data moat feedback loop (best-effort, outside transaction)
         try:
             async with pool.acquire() as conn2:
                 offer_row = await conn2.fetchrow(
@@ -398,31 +422,7 @@ async def complete_deal(
                     source="deal_desk",
                 )
         except Exception:
-            pass
-
-        # Award XP for completing a deal (best-effort)
-        try:
-            from app.features.gamification_router import record_activity_xp
-            async with pool.acquire() as conn_xp:
-                deal_count = await conn_xp.fetchval(
-                    """
-                    SELECT COUNT(*) FROM offers
-                    WHERE (seller_id = $1::uuid OR buyer_id = $1::uuid)
-                      AND status = 'completed'
-                    """,
-                    user_id,
-                )
-                achievement_checks = []
-                deal_milestones = [
-                    (1, "trader_1"), (5, "trader_5"),
-                    (10, "trader_10"), (25, "trader_25"),
-                ]
-                for threshold, ach_id in deal_milestones:
-                    if deal_count >= threshold:
-                        achievement_checks.append((ach_id, deal_count))
-                await record_activity_xp(conn_xp, user_id, 25, achievement_checks or None)
-        except Exception:
-            pass
+            logger.debug("[deal_desk] Ground truth recording failed (best-effort)")
 
         return data
     except Exception as exc:
@@ -449,7 +449,7 @@ async def list_active_offers(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     _rl: None = Depends(_deal_read_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -497,7 +497,7 @@ async def list_deal_history(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     _rl: None = Depends(_deal_read_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -544,7 +544,7 @@ async def get_offer_detail(
     offer_id: str,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_read_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -610,7 +610,7 @@ async def get_offer_evidence(
     offer_id: str,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_read_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -677,7 +677,7 @@ async def get_user_reputation(
     target_user_id: str,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_read_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)
@@ -741,7 +741,7 @@ async def get_offer_risk_flags(
     offer_id: str,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_read_limit),
-):
+) -> Dict[str, Any]:
     """
     Risk assessment for an offer — detects price outliers and low seller scores.
 
@@ -841,7 +841,7 @@ async def toggle_for_sale(
     body: ToggleForSaleRequest,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_deal_action_limit),
-):
+) -> Dict[str, Any]:
     pool = get_db_pool()
     if not pool:
         raise error_response(503, "Database unavailable", code=ErrorCode.DB_UNAVAILABLE)

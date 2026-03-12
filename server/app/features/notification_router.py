@@ -14,9 +14,11 @@ Endpoints:
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -106,7 +108,7 @@ async def register_push_token(
     req: RegisterTokenRequest,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_register_token_limit),
-):
+) -> Dict[str, Any]:
     """Register an Expo push token for the current user."""
     if not req.push_token.startswith("ExponentPushToken["):
         raise error_response(400, "Invalid Expo push token format", code="VALIDATION_ERROR")
@@ -140,7 +142,7 @@ async def register_push_token(
 async def unregister_push_token(
     req: UnregisterTokenRequest,
     user_id: str = Depends(get_current_user_id),
-):
+) -> Dict[str, Any]:
     """Deactivate a push token (soft delete)."""
     if not db_configured():
         return {"unregistered": True}
@@ -168,7 +170,7 @@ async def list_push_tokens(
     user_id: str = Depends(get_current_user_id),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-):
+) -> Dict[str, Any]:
     """List all active push tokens for the current user."""
     if not db_configured():
         return {"tokens": []}
@@ -222,7 +224,7 @@ class NotificationPreferencesUpdate(BaseModel):
 @router.get("/preferences", summary="Get notification preferences")
 async def get_notification_preferences(
     user_id: str = Depends(get_current_user_id),
-):
+) -> Dict[str, Any]:
     """Get the current user's notification preferences."""
     if not db_configured():
         return {"preferences": DEFAULT_NOTIFICATION_PREFERENCES}
@@ -250,7 +252,7 @@ async def get_notification_preferences(
 async def update_notification_preferences(
     req: NotificationPreferencesUpdate,
     user_id: str = Depends(get_current_user_id),
-):
+) -> Dict[str, Any]:
     """Update the current user's notification preferences (partial merge)."""
     if not db_configured():
         return {"preferences": DEFAULT_NOTIFICATION_PREFERENCES}
@@ -304,11 +306,8 @@ async def get_notification_history(
     unread_only: bool = Query(default=False),
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_history_read_limit),
-):
+) -> Dict[str, Any]:
     """Return paginated notification history for the current user, newest first."""
-    import base64
-    from datetime import datetime
-
     if not db_configured():
         return {"notifications": [], "total_count": 0, "unread_count": 0, "next_cursor": None, "has_more": False}
 
@@ -411,7 +410,7 @@ async def mark_notification_read(
     notification_id: str,
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_mark_read_limit),
-):
+) -> Dict[str, Any]:
     """Mark a single notification as read. Ownership check enforced via user_id filter."""
     # Validate UUID format before hitting DB
     try:
@@ -465,7 +464,7 @@ async def mark_notification_read(
 async def mark_all_notifications_read(
     user_id: str = Depends(get_current_user_id),
     _rl: None = Depends(_mark_read_limit),
-):
+) -> Dict[str, Any]:
     """Mark all unread notifications as read for the current user."""
     if not db_configured():
         return {"updated_count": 0}

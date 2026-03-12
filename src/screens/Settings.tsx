@@ -618,8 +618,8 @@ export default function Settings() {
           accessibilityRole="button"
           accessibilityLabel="Sign out"
         >
-          <Ionicons name="log-out-outline" size={18} color="#EF4444" />
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Ionicons name="log-out-outline" size={18} color={colors.danger} />
+          <Text style={[styles.signOutText, { color: colors.danger }]}>Sign Out</Text>
         </AnimatedPressable>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -734,8 +734,8 @@ export default function Settings() {
           accessibilityRole="button"
           accessibilityLabel="Delete account"
         >
-          <Ionicons name="trash-outline" size={18} color="#EF4444" />
-          <Text style={styles.signOutText}>Delete Account</Text>
+          <Ionicons name="trash-outline" size={18} color={colors.danger} />
+          <Text style={[styles.signOutText, { color: colors.danger }]}>Delete Account</Text>
         </AnimatedPressable>
       </View>
 
@@ -808,6 +808,35 @@ export default function Settings() {
         >
           <View style={styles.settingInfo}>
             <Text style={[styles.settingLabel, { color: colors.text }]}>Terms of Service</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => router.push('/legal/user-policy')}
+          accessibilityRole="link"
+          accessibilityLabel="User Policy"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>User Policy</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => router.push('/condition-guide')}
+          accessibilityRole="link"
+          accessibilityLabel="Condition Guide"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Condition Guide</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Grading reference for all categories</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
@@ -981,7 +1010,6 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#EF4444',
   },
   pickerModal: {
     flex: 1,

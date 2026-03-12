@@ -67,7 +67,7 @@ export const InboxHeaderButton: React.FC<Props> = ({
     >
       <Ionicons name="chatbubble-ellipses-outline" size={size} color={iconColor} />
       {unreadCount > 0 && (
-        <View style={styles.badge}>
+        <View style={[styles.badge, { backgroundColor: colors.danger }]}>
           <Text style={styles.badgeText}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </Text>
@@ -89,7 +89,6 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#ef4444',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,

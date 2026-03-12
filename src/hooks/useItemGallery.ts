@@ -49,11 +49,13 @@ export function useItemGallery(itemId: string | undefined, isDraft: boolean, ima
 
   useEffect(() => {
     if (!itemId || isDraft) return;
+    let cancelled = false;
     setGalleryLoading(true);
     collectorsApi.listItemImages(itemId)
-      .then((data) => setGalleryImages(data.images || []))
+      .then((data) => { if (!cancelled) setGalleryImages(data.images || []); })
       .catch((err) => logger.warn('[useItemGallery] fetch error:', err))
-      .finally(() => setGalleryLoading(false));
+      .finally(() => { if (!cancelled) setGalleryLoading(false); });
+    return () => { cancelled = true; };
   }, [itemId, isDraft]);
 
   const handleGalleryUpload = useCallback(async (source: 'camera' | 'gallery', label?: string) => {

@@ -9,6 +9,7 @@ import {
   Text,
   FlatList,
   ScrollView,
+  Image,
   useWindowDimensions,
   StyleSheet,
   ViewToken,
@@ -402,7 +403,11 @@ function OnboardingScreen() {
                 >
                   {/* Gradient ring */}
                   <View style={[styles.iconRing, { borderColor: colors.brand.base + '40' }]}>
-                    <Ionicons name={item.icon} size={48} color={colors.brand.dark} />
+                    {item.icon === 'diamond-outline' ? (
+                      <Image source={require('../../assets/images/logo.png')} style={{ width: 64, height: 64 }} resizeMode="contain" />
+                    ) : (
+                      <Ionicons name={item.icon} size={48} color={colors.brand.dark} />
+                    )}
                   </View>
                 </Animated.View>
               )}

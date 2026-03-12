@@ -15,6 +15,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 // ── Props ───────────────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ function MarketplaceSearchBarInner({
   onOpenFilter,
   activeFilterCount,
 }: MarketplaceSearchBarProps) {
+  const { colors } = useAppTheme();
   return (
     <View style={s.searchFilterRow}>
       <View style={[s.searchRow, { borderColor: theme.border, flex: 1 }]}>
@@ -80,7 +82,7 @@ function MarketplaceSearchBarInner({
           color={activeFilterCount > 0 ? theme.accent : theme.muted}
         />
         {activeFilterCount > 0 && (
-          <View style={s.filterCountBadge}>
+          <View style={[s.filterCountBadge, { backgroundColor: colors.danger }]}>
             <Text style={s.filterCountBadgeText}>{activeFilterCount}</Text>
           </View>
         )}
@@ -126,7 +128,6 @@ const s = StyleSheet.create({
     position: "absolute",
     top: -4,
     right: -4,
-    backgroundColor: "#EF4444",
     borderRadius: 9,
     minWidth: 18,
     height: 18,

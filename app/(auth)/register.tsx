@@ -74,7 +74,7 @@ function RegisterScreen() {
     if (/[0-9]/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
 
-    if (score <= 1) return { label: 'Weak', percent: 20, color: '#EF4444' };
+    if (score <= 1) return { label: 'Weak', percent: 20, color: colors.danger };
     if (score === 2) return { label: 'Fair', percent: 40, color: '#F59E0B' };
     if (score === 3) return { label: 'Good', percent: 60, color: '#F59E0B' };
     if (score === 4) return { label: 'Strong', percent: 80, color: '#22C55E' };

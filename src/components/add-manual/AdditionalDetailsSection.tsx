@@ -34,6 +34,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
               accessibilityLabel="Source where item was purchased"
+              returnKeyType="next"
             />
           </View>
         </View>

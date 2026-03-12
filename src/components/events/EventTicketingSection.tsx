@@ -40,6 +40,7 @@ export const EventTicketingSection = React.memo(function EventTicketingSection({
             style={[styles.input, { color: colors.text }]}
             keyboardType="decimal-pad"
             accessibilityLabel="Ticket price in euros"
+            returnKeyType="done"
           />
         </View>
         <Text style={[styles.fieldHint, { color: colors.muted }]}>

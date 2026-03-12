@@ -8,6 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { PriceBand, ConfidenceTier, getConfidenceColor } from '@/types/priceExplanation';
 import type { CurrencyCode } from '@/data/types';
+import { formatPrice } from '@/lib/format';
 
 type RangeBarProps = {
   priceBand: PriceBand;
@@ -16,15 +17,6 @@ type RangeBarProps = {
   showLabels?: boolean;
   size?: 'small' | 'medium' | 'large';
 };
-
-function formatPrice(value: number, currency: CurrencyCode = 'EUR'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export function RangeBar({
   priceBand,

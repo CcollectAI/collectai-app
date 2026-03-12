@@ -182,7 +182,7 @@ function AnalyticsScreen() {
         {error && (
           <View style={styles.errorBanner}>
             <Ionicons name="warning-outline" size={16} color={colors.error} />
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
           </View>
         )}
 
@@ -192,7 +192,7 @@ function AnalyticsScreen() {
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Performance</Text>
               <View style={[styles.badge, isPositive ? styles.badgeSuccess : styles.badgeDanger]}>
-                <Text style={[styles.badgeText, isPositive ? styles.badgeTextSuccess : styles.badgeTextDanger]}>
+                <Text style={[styles.badgeText, isPositive ? styles.badgeTextSuccess : [styles.badgeTextDanger, { color: colors.danger }]]}>
                   {formatPct(pl.deltaPct)}
                 </Text>
               </View>
@@ -209,13 +209,13 @@ function AnalyticsScreen() {
               </View>
               <View style={styles.metricItem}>
                 <Text style={styles.metricLabel}>Total Gain/Loss</Text>
-                <Text style={[styles.metricValue, isPositive ? styles.textSuccess : styles.textDanger]}>
+                <Text style={[styles.metricValue, isPositive ? styles.textSuccess : [styles.textDanger, { color: colors.danger }]]}>
                   {pl.deltaAbs >= 0 ? "+" : ""}{formatPrice(pl.deltaAbs)}
                 </Text>
               </View>
               <View style={styles.metricItem}>
                 <Text style={styles.metricLabel}>Max Drawdown</Text>
-                <Text style={[styles.metricValue, styles.textDanger]}>
+                <Text style={[styles.metricValue, styles.textDanger, { color: colors.danger }]}>
                   {formatPct(pl.maxDrawdownPct, false)}
                 </Text>
               </View>
@@ -371,7 +371,7 @@ function AnalyticsScreen() {
                 {winnersLosers.losers.slice(0, 3).map((item) => (
                   <View key={item.id} style={styles.moverRow}>
                     <Text style={styles.moverName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={[styles.moverPct, styles.textDanger]}>
+                    <Text style={[styles.moverPct, styles.textDanger, { color: colors.danger }]}>
                       {formatPct(item.change1dPct ?? 0)}
                     </Text>
                   </View>
@@ -404,7 +404,9 @@ function AnalyticsScreen() {
                     <Text
                       style={[
                         styles.itemPct,
-                        (item.change1dPct ?? 0) >= 0 ? styles.textSuccess : styles.textDanger,
+                        (item.change1dPct ?? 0) >= 0
+                          ? styles.textSuccess
+                          : [styles.textDanger, { color: colors.danger }],
                       ]}
                     >
                       {formatPct(item.change1dPct)}

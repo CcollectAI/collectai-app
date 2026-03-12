@@ -141,7 +141,7 @@ function InsightsCardInner({ insights, tierSummary, onViewDetails }: InsightsCar
             <Text
               style={[
                 styles.changeValue,
-                { color: isPositive ? '#0BA86C' : '#EF4444' },
+                { color: isPositive ? '#0BA86C' : colors.danger },
               ]}
             >
               {formatPercent(insights.percentChange)}

@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import type { EventAnnouncement } from '@/data/events';
+import { timeAgo } from '@/lib/timeAgo';
+import { MS_PER_WEEK } from '@/constants/time';
 
 const SHADOW_SM = Platform.select({
   ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
@@ -14,15 +16,8 @@ const SHADOW_SM = Platform.select({
 function formatRelativeDate(dateStr?: string): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
+  const diff = Date.now() - date.getTime();
+  if (diff < MS_PER_WEEK) return timeAgo(date);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 

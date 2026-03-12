@@ -57,6 +57,12 @@ def _mock_pool():
     mock_conn.fetch = AsyncMock(return_value=[])
     mock_conn.execute = AsyncMock(return_value="UPDATE 1")
 
+    # Support conn.transaction() as async context manager (no-op in tests)
+    mock_tx = AsyncMock()
+    mock_tx.__aenter__ = AsyncMock(return_value=mock_tx)
+    mock_tx.__aexit__ = AsyncMock(return_value=False)
+    mock_conn.transaction = MagicMock(return_value=mock_tx)
+
     mock_acquire = AsyncMock()
     mock_acquire.__aenter__ = AsyncMock(return_value=mock_conn)
     mock_acquire.__aexit__ = AsyncMock(return_value=False)
@@ -368,8 +374,8 @@ class TestCompleteDeal:
         mock_get_pool.return_value = pool
 
         rpc_result = json.dumps({"offer_id": OFFER_UUID, "status": "completed"})
-        # First call: buyer IDOR check; second call: RPC
-        conn.fetchval = AsyncMock(side_effect=[1, rpc_result])
+        # First call: buyer IDOR check; second call: RPC; third call: deal_count for XP
+        conn.fetchval = AsyncMock(side_effect=[1, rpc_result, 1])
         # For the ground-truth recording (second pool.acquire → fetchrow)
         conn.fetchrow = AsyncMock(return_value=None)
 

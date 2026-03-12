@@ -70,7 +70,7 @@ _TIER_PRICE_IDS = {
 _stripe: Any = None
 
 
-def _get_stripe():
+def _get_stripe() -> Any:
     global _stripe
     if _stripe is None:
         try:

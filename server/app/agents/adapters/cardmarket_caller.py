@@ -11,6 +11,7 @@ Env vars:
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import logging
@@ -74,7 +75,6 @@ def _oauth_header(method: str, url: str, app_token: str, app_secret: str) -> str
     signing_key = f"{urllib.parse.quote(app_secret, safe='')}&"
 
     sig = hmac.new(signing_key.encode(), base.encode(), hashlib.sha256).digest()
-    import base64
     signature = base64.b64encode(sig).decode()
 
     params["oauth_signature"] = signature

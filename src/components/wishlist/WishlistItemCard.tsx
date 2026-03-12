@@ -36,7 +36,7 @@ export const WishlistItemCard = React.memo(function WishlistItemCard({
 
   const priorityColor =
     item.priority === 'high'
-      ? '#ef4444'
+      ? colors.danger
       : item.priority === 'medium'
       ? '#f59e0b'
       : '#22c55e';

@@ -225,7 +225,7 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
                 styles.capacityFill,
                 {
                   width: `${Math.min(100, (goingCount / event.maxAttendees) * 100)}%`,
-                  backgroundColor: goingCount >= event.maxAttendees ? '#EF4444' : colors.accent,
+                  backgroundColor: goingCount >= event.maxAttendees ? colors.danger : colors.accent,
                 },
               ]}
             />

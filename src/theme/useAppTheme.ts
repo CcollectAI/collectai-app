@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { radius, spacing, shadow } from "./tokens";
+import { radius, spacing, shadow, gap, iconSize, fontWeight, text, statusColors, statusColorsDark } from "./tokens";
 import { useSettings } from "../lib/settings";
 
 /**
@@ -131,11 +131,18 @@ export function useAppTheme() {
     updateSettings({ isDark: !isDark });
   }, [isDark, updateSettings]);
 
+  const status = isDark ? statusColorsDark : statusColors;
+
   return {
     colors,
     radius,
     spacing,
     shadow,
+    gap,
+    iconSize,
+    fontWeight,
+    text,
+    status,
     isDark,
     toggleTheme,
     ready,

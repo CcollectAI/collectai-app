@@ -28,6 +28,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { MS_PER_DAY } from '@/constants/time';
 
 // Message with local status for optimistic UI
 type LocalMessage = DmMessage & {
@@ -39,7 +40,7 @@ function formatDateSeparator(dateStr: string): string {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffDays = Math.floor((today.getTime() - msgDate.getTime()) / 86400000);
+  const diffDays = Math.floor((today.getTime() - msgDate.getTime()) / MS_PER_DAY);
 
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
@@ -295,7 +296,7 @@ function ThreadDetailScreen() {
                 <ActivityIndicator size="small" color={isMe ? '#fff' : colors.muted} style={{ marginLeft: 4 }} />
               )}
               {isFailed && (
-                <Ionicons name="alert-circle" size={14} color="#ef4444" style={{ marginLeft: 4 }} />
+                <Ionicons name="alert-circle" size={14} color={colors.danger} style={{ marginLeft: 4 }} />
               )}
             </View>
           </View>
@@ -307,9 +308,9 @@ function ThreadDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel="Tap to retry sending message"
           >
-            <Text style={styles.retryLabel}>Failed to send</Text>
-            <Ionicons name="refresh" size={12} color="#ef4444" style={{ marginLeft: 2 }} />
-            <Text style={styles.retryAction}>Tap to retry</Text>
+            <Text style={[styles.retryLabel, { color: colors.danger }]}>Failed to send</Text>
+            <Ionicons name="refresh" size={12} color={colors.danger} style={{ marginLeft: 2 }} />
+            <Text style={[styles.retryAction, { color: colors.danger }]}>Tap to retry</Text>
           </AnimatedPressable>
         )}
       </View>
@@ -362,7 +363,7 @@ function ThreadDetailScreen() {
           maxToRenderPerBatch={10}
           windowSize={5}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#81D8D0" />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="chatbubble-outline" size={48} color={colors.muted} />
@@ -575,12 +576,10 @@ const styles = StyleSheet.create({
   },
   retryLabel: {
     fontSize: 12,
-    color: '#ef4444',
     marginRight: 4,
   },
   retryAction: {
     fontSize: 12,
-    color: '#ef4444',
     fontWeight: '600',
     marginLeft: 2,
   },

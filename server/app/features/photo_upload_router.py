@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
@@ -54,7 +54,7 @@ ALLOWED_CONTENT_TYPES = {
 _s3_client = None
 
 
-def _get_s3():
+def _get_s3() -> Any:
     """Lazy-init boto3 S3 client."""
     global _s3_client
     if _s3_client is None:

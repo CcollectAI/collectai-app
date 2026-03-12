@@ -21,8 +21,8 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 /*  Helper                                                                     */
 /* -------------------------------------------------------------------------- */
 
-function getEventStatusColor(event: CollectorsEvent): string {
-  if (event.status === 'cancelled') return '#EF4444';
+function getEventStatusColor(event: CollectorsEvent, dangerColor: string): string {
+  if (event.status === 'cancelled') return dangerColor;
   if (event.status === 'draft') return '#F59E0B';
   const eventDate = new Date(event.date);
   const now = new Date();
@@ -107,7 +107,7 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
                     isSelected && { backgroundColor: colors.accent + '08' },
                   ]}
                 >
-                  <View style={[styles.statusDot, { backgroundColor: getEventStatusColor(ev) }]} />
+                  <View style={[styles.statusDot, { backgroundColor: getEventStatusColor(ev, colors.danger) }]} />
                   <Text
                     style={[styles.composeChipText, { color: isSelected ? colors.accent : colors.text }]}
                     numberOfLines={1}
@@ -158,7 +158,7 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
               Sent as a DM to all attendees
             </Text>
           </View>
-          <Text style={[styles.composeCharCount, { color: composeBody.length > 1800 ? '#EF4444' : colors.muted }]}>
+          <Text style={[styles.composeCharCount, { color: composeBody.length > 1800 ? colors.danger : colors.muted }]}>
             {composeBody.length}/2,000
           </Text>
         </View>

@@ -22,11 +22,23 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.config import (
+    DEV_MODE,
+    STRIPE_SECRET_KEY,
+    STRIPE_PRICE_ID_SPONSOR_SUB_FEATURED,
+    STRIPE_PRICE_ID_SPONSOR_SUB_PROMOTED,
+    STRIPE_PRICE_ID_SPONSOR_SUB_SPOTLIGHT,
+)
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
+
+try:
+    import stripe
+except ImportError:
+    stripe = None  # type: ignore[assignment]
 
 router = APIRouter(prefix="/sponsor-companies", tags=["Sponsor Companies"])
 
@@ -164,7 +176,7 @@ async def register_company(
 
 
 @router.get("/{company_id}", response_model=SponsorCompanyResponse)
-async def get_company(company_id: str):
+async def get_company(company_id: str) -> SponsorCompanyResponse:
     """Get public sponsor company profile."""
     try:
         uuid.UUID(company_id)
@@ -227,6 +239,7 @@ async def update_company(
             params = [company_id, user_id]
             idx = 3
             for key, val in updates.items():
+                assert key in _UPDATABLE_COLUMNS, f"Blocked column: {key}"
                 set_parts.append(f"{key} = ${idx}")
                 params.append(val)
                 idx += 1
@@ -324,9 +337,6 @@ async def create_event_checkout(
     company = dict(row)
 
     # Validate Stripe configuration BEFORE creating the draft event
-    from app.config import STRIPE_SECRET_KEY
-    import stripe
-
     if not STRIPE_SECRET_KEY:
         raise error_response(503, "Billing not configured")
 
@@ -414,12 +424,10 @@ async def create_event_demo(
     except ValueError:
         raise error_response(400, "Invalid company_id format", code=ErrorCode.VALIDATION_ERROR)
 
-    try:
-        from app.config import STRIPE_SECRET_KEY
-        if STRIPE_SECRET_KEY:
-            raise error_response(403, "Demo mode disabled — Stripe is configured", code=ErrorCode.FORBIDDEN)
-    except ImportError:
-        pass  # No Stripe config = demo OK
+    if not DEV_MODE:
+        raise error_response(403, "Demo mode is only available in development", code=ErrorCode.FORBIDDEN)
+    if STRIPE_SECRET_KEY:
+        raise error_response(403, "Demo mode disabled — Stripe is configured", code=ErrorCode.FORBIDDEN)
 
     pool = get_db_pool()
     if pool is None:
@@ -508,14 +516,6 @@ async def create_subscription_checkout(
     except Exception as e:
         logger.error("[sponsor] Error verifying company %s: %s", company_id, e)
         raise error_response(500, "Failed to verify company", code=ErrorCode.INTERNAL_ERROR)
-
-    from app.config import (
-        STRIPE_SECRET_KEY,
-        STRIPE_PRICE_ID_SPONSOR_SUB_FEATURED,
-        STRIPE_PRICE_ID_SPONSOR_SUB_PROMOTED,
-        STRIPE_PRICE_ID_SPONSOR_SUB_SPOTLIGHT,
-    )
-    import stripe
 
     if not STRIPE_SECRET_KEY:
         raise error_response(503, "Billing not configured")

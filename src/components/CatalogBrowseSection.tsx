@@ -18,6 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -89,6 +90,7 @@ function CatalogBrowseSectionInner({
   accentColor,
   colors,
 }: CatalogBrowseSectionProps) {
+  const { colors: themeColors } = useAppTheme();
   return (
     <View style={s.section}>
       <AnimatedPressable
@@ -177,7 +179,7 @@ function CatalogBrowseSectionInner({
                         <View style={[s.catalogRarityBadge, {
                           backgroundColor:
                             cItem.rarity === 'grail' ? '#F59E0B20' :
-                            cItem.rarity === 'high' ? '#EF444420' :
+                            cItem.rarity === 'high' ? themeColors.danger + '20' :
                             cItem.rarity === 'mid' ? '#3B82F620' :
                             colors.border,
                         }]}>

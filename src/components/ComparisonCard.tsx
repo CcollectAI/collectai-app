@@ -113,16 +113,16 @@ function ComparisonCardInner({
           <View
             style={[
               styles.deltaBanner,
-              { backgroundColor: priceDelta > 0 ? '#22C55E15' : '#EF444415' },
+              { backgroundColor: priceDelta > 0 ? '#22C55E15' : colors.danger + '15' },
             ]}
           >
             <Ionicons
               name={priceDelta > 0 ? 'arrow-up' : 'arrow-down'}
               size={16}
-              color={priceDelta > 0 ? '#22C55E' : '#EF4444'}
+              color={priceDelta > 0 ? '#22C55E' : colors.danger}
             />
             <Text
-              style={[styles.deltaText, { color: priceDelta > 0 ? '#22C55E' : '#EF4444' }]}
+              style={[styles.deltaText, { color: priceDelta > 0 ? '#22C55E' : colors.danger }]}
             >
               {priceDelta > 0 ? '+' : ''}
               {formatPrice(Math.abs(priceDelta), currency)} ({priceDeltaPct > 0 ? '+' : ''}

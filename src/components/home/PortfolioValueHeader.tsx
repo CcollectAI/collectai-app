@@ -8,6 +8,7 @@ import React from "react";
 import { View, Text, StyleSheet, type TextStyle } from "react-native";
 import { AnimatedCounter } from "@/motion";
 import type { Currency } from "@/lib/settings";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 // ── Props ──────────────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ function PortfolioValueHeaderInner({
   formatPrice: fp,
   animationsEnabled = true,
 }: PortfolioValueHeaderProps) {
+  const { colors } = useAppTheme();
   const isPositive = deltaPct >= 0;
 
   return (
@@ -61,7 +63,7 @@ function PortfolioValueHeaderInner({
         accessibilityLabel={`Collection value: ${fp(total)}`}
       />
       <Text
-        style={[s.deltaText, { color: isPositive ? "#10B981" : "#EF4444" }]}
+        style={[s.deltaText, { color: isPositive ? "#10B981" : colors.danger }]}
         accessibilityRole="text"
         accessibilityLabel={`Change: ${formatDelta(delta, currency, fp)}, ${formatPct(deltaPct)}`}
       >

@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { useModal } from '@/hooks/useModal';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   ScrollView,
@@ -102,7 +103,7 @@ const CreateEventScreen: React.FC = () => {
 
   /* ---- template state ---- */
   const [templates, setTemplates] = useState<EventTemplate[]>([]);
-  const [templateSheetOpen, setTemplateSheetOpen] = useState(false);
+  const [templateSheetOpen, openTemplateSheet, closeTemplateSheet] = useModal();
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
 
@@ -122,7 +123,7 @@ const CreateEventScreen: React.FC = () => {
     if (d.image_url) imageUrlField.onChange(d.image_url as string);
     if (d.online_url) onlineUrlField.onChange(d.online_url as string);
     if (d.is_public !== undefined) setIsPublic(d.is_public as boolean);
-    setTemplateSheetOpen(false);
+    closeTemplateSheet();
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
   }, [titleField, descriptionField, imageUrlField, onlineUrlField]);
 
@@ -248,7 +249,7 @@ const CreateEventScreen: React.FC = () => {
         {/* Template picker modal */}
         <BottomSheetModal
           visible={templateSheetOpen}
-          onClose={() => setTemplateSheetOpen(false)}
+          onClose={() => closeTemplateSheet()}
           title="From Template"
           colors={{ ...colors, background: colors.card }}
           maxHeight="60%"
@@ -285,7 +286,7 @@ const CreateEventScreen: React.FC = () => {
           {/* From Template button */}
           {templates.length > 0 && (
             <AnimatedPressable
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setTemplateSheetOpen(true); }}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); openTemplateSheet(); }}
               style={[styles.fromTemplateBtn, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
               accessibilityRole="button"
               accessibilityLabel="Create from template"
@@ -417,7 +418,7 @@ const CreateEventScreen: React.FC = () => {
                   </View>
                 )}
                 {/* WhatsApp-style add detail input */}
-                <View style={[styles.detailInputRow, { borderColor: descriptionField.touched && descriptionField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.detailInputRow, { borderColor: descriptionField.touched && descriptionField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                   <TextInput
                     value={detailDraft}
                     onChangeText={setDetailDraft}
@@ -450,7 +451,7 @@ const CreateEventScreen: React.FC = () => {
                     <Ionicons name="arrow-up" size={18} color="#fff" />
                   </AnimatedPressable>
                 </View>
-                {descriptionField.touched && descriptionField.error && <Text style={styles.fieldError}>{descriptionField.error}</Text>}
+                {descriptionField.touched && descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{descriptionField.error}</Text>}
               </View>
             </View>
           </View>
@@ -475,7 +476,7 @@ const CreateEventScreen: React.FC = () => {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View>
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>Image URL</Text>
-                <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                   <Ionicons name="image-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
                     value={imageUrlField.value}
@@ -487,9 +488,10 @@ const CreateEventScreen: React.FC = () => {
                     autoCapitalize="none"
                     keyboardType="url"
                     accessibilityLabel="Event image URL"
+                    returnKeyType="done"
                   />
                 </View>
-                {imageUrlField.touched && imageUrlField.error && <Text style={styles.fieldError}>{imageUrlField.error}</Text>}
+                {imageUrlField.touched && imageUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{imageUrlField.error}</Text>}
               </View>
             </View>
           </View>
@@ -567,6 +569,7 @@ const CreateEventScreen: React.FC = () => {
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
                       accessibilityLabel="Template name"
+                      returnKeyType="done"
                     />
                   </View>
                 </View>
@@ -827,7 +830,6 @@ const styles = StyleSheet.create({
   },
   fieldError: {
     fontSize: 12,
-    color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
   },

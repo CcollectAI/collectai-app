@@ -103,6 +103,7 @@ export const CategorySpecificFields = React.memo(function CategorySpecificFields
                   placeholderTextColor={colors.muted}
                   style={[styles.input, { color: colors.text }]}
                   accessibilityLabel={field.label}
+                  returnKeyType="next"
                 />
               </View>
             </View>

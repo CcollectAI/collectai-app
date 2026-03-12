@@ -79,6 +79,7 @@ class InMemoryCache(CacheBackend):
     """Dict-based cache with per-entry TTL (single-process only)."""
 
     _CLEANUP_INTERVAL: int = 100
+    MAX_ENTRIES: int = 10_000
 
     def __init__(self) -> None:
         self._store: dict[str, tuple[Any, float]] = {}
@@ -107,6 +108,9 @@ class InMemoryCache(CacheBackend):
         if self._set_counter >= self._CLEANUP_INTERVAL:
             self._set_counter = 0
             self.cleanup()
+        # Evict oldest entries when cache exceeds MAX_ENTRIES
+        if len(self._store) > self.MAX_ENTRIES:
+            self._evict_oldest(len(self._store) - self.MAX_ENTRIES)
 
     async def delete(self, key: str) -> None:
         self._store.pop(key, None)
@@ -126,6 +130,14 @@ class InMemoryCache(CacheBackend):
         for k in expired:
             del self._store[k]
         return len(expired)
+
+    def _evict_oldest(self, count: int) -> None:
+        """Evict *count* entries with the earliest expiration times."""
+        if count <= 0:
+            return
+        sorted_keys = sorted(self._store, key=lambda k: self._store[k][1])
+        for k in sorted_keys[:count]:
+            del self._store[k]
 
 
 # ---------------------------------------------------------------------------
@@ -350,6 +362,9 @@ def cache_set(key: str, value: Any, ttl: int = CACHE_TTL) -> None:
     b = get_backend()
     if isinstance(b, InMemoryCache):
         b._store[key] = (value, time.monotonic() + ttl)
+        # Enforce MAX_ENTRIES cap
+        if len(b._store) > b.MAX_ENTRIES:
+            b._evict_oldest(len(b._store) - b.MAX_ENTRIES)
         return
     try:
         loop = asyncio.get_running_loop()

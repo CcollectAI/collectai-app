@@ -15,6 +15,7 @@ Env vars:
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import logging
@@ -59,7 +60,6 @@ def _oauth_header(
     params: Optional[Dict[str, str]] = None,
 ) -> str:
     """Build OAuth 1.0a Authorization header for BrickLink API."""
-    import base64
     nonce = hashlib.md5(str(time.time()).encode()).hexdigest()
     timestamp = str(int(time.time()))
 

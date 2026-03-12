@@ -15,6 +15,7 @@ Endpoints:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 import time as _time
@@ -30,7 +31,13 @@ from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
+from app.config import STRIPE_SECRET_KEY
 from app.rate_limit import per_user_rate_limit
+
+try:
+    import stripe
+except ImportError:
+    stripe = None  # type: ignore[assignment]
 
 router = APIRouter(prefix="/events", tags=["Events"])
 logger = logging.getLogger(__name__)
@@ -1313,10 +1320,6 @@ async def ticket_checkout(
         logger.error("[events] Error checking event for ticket checkout: %s", e)
         raise error_response(500, "Failed to check event", code=ErrorCode.INTERNAL_ERROR)
 
-    import asyncio
-    from app.config import STRIPE_SECRET_KEY
-    import stripe
-
     if not STRIPE_SECRET_KEY:
         raise error_response(503, "Billing not configured")
 
@@ -1977,12 +1980,11 @@ def _row_to_event(row: dict[str, Any], user_id: Optional[str] = None) -> EventRe
     is_sponsored = bool(row.get("is_sponsored", False))
     sponsor_expires = row.get("sponsor_expires_at")
     if is_sponsored and sponsor_expires is not None:
-        from datetime import datetime as _dt, timezone as _tz
         try:
-            exp = sponsor_expires if isinstance(sponsor_expires, _dt) else _dt.fromisoformat(str(sponsor_expires))
+            exp = sponsor_expires if isinstance(sponsor_expires, datetime) else datetime.fromisoformat(str(sponsor_expires))
             if exp.tzinfo is None:
-                exp = exp.replace(tzinfo=_tz.utc)
-            if exp < _dt.now(_tz.utc):
+                exp = exp.replace(tzinfo=timezone.utc)
+            if exp < datetime.now(timezone.utc):
                 is_sponsored = False
         except (ValueError, TypeError):
             pass

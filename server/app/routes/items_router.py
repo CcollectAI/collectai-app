@@ -6,8 +6,10 @@ Provides create/list endpoints for items. Also includes batch operations.
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
@@ -149,9 +151,6 @@ async def list_items(
     cursor: Optional[str] = None,
 ):
     """List items in the user's collection with cursor-based pagination."""
-    import base64
-    from datetime import datetime
-
     # Clamp limit to [1, 200]
     limit = max(1, min(limit, 200))
     fetch_limit = limit + 1  # fetch one extra to detect has_more

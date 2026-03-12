@@ -79,7 +79,7 @@ async def get_personalized_insights(
     Personalized insights based on the user's actual portfolio composition:
     - Over-exposed categories (concentration risk)
     - Diversification suggestions
-    - Rare-set / retirement alerts   (TODO: needs catalogue metadata)
+    - Rare-set / retirement alerts   (requires catalogue metadata — see set_router)
     - Trending items from market data
     """
     limit, offset = pagination

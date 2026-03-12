@@ -11,6 +11,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
+import re
 from typing import Optional
 from uuid import UUID
 
@@ -20,10 +21,14 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
+from app.lib.error_codes import ErrorCode
+from app.lib.validators import is_valid_category
 from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/collections", tags=["Collections"])
 logger = logging.getLogger(__name__)
+
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 
 
 # ---------------------------------------------------------------------------
@@ -104,9 +109,7 @@ async def list_collections(
 ):
     """List all available collections, optionally filtered by category."""
     if category:
-        from app.lib.validators import is_valid_category
         if not is_valid_category(category):
-            from app.errors import error_response
             raise error_response(400, f"Unknown category: {category}")
     pool = get_db_pool()
 
@@ -264,6 +267,9 @@ async def get_collection_detail(
     _rl=Depends(per_user_rate_limit(30, scope="collections")),
 ):
     """Get a specific collection with its items and user ownership status."""
+    if not _UUID_RE.match(collection_id):
+        raise error_response(400, "Invalid collection_id format", code=ErrorCode.INVALID_UUID)
+
     pool = get_db_pool()
 
     if pool is not None:
@@ -372,6 +378,9 @@ async def get_collection_progress(
     _rl=Depends(per_user_rate_limit(30, scope="collections")),
 ):
     """Get user's completion progress for a specific collection, including missing items."""
+    if not _UUID_RE.match(collection_id):
+        raise error_response(400, "Invalid collection_id format", code=ErrorCode.INVALID_UUID)
+
     pool = get_db_pool()
 
     if pool is not None:

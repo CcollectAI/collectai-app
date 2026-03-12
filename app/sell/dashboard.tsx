@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useModal } from '@/hooks/useModal';
 import {
   View,
   Text,
@@ -63,13 +64,14 @@ const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ion
   discogs: { label: 'Discogs', icon: 'disc-outline', color: '#333333' },
 };
 
-const STATUS_CONFIG: Record<ListingStatus, { label: string; bg: string; fg: string }> = {
-  draft: { label: 'Draft', bg: '#F3F4F6', fg: '#6B7280' },
-  active: { label: 'Active', bg: '#D1FAE5', fg: '#065F46' },
-  sold: { label: 'Sold', bg: '#DBEAFE', fg: '#1E40AF' },
-  expired: { label: 'Expired', bg: '#FEF3C7', fg: '#92400E' },
-  delisted: { label: 'Delisted', bg: '#F3F4F6', fg: '#6B7280' },
-  error: { label: 'Error', bg: '#FEE2E2', fg: '#991B1B' },
+// Status badge colors pulled from tokens at render time via useAppTheme().status
+const STATUS_LABELS: Record<ListingStatus, string> = {
+  draft: 'Draft',
+  active: 'Active',
+  sold: 'Sold',
+  expired: 'Expired',
+  delisted: 'Delisted',
+  error: 'Error',
 };
 
 // ---------------------------------------------------------------------------
@@ -85,14 +87,16 @@ type Tab = 'listings' | 'sales' | 'accounts';
 const ListingCard = React.memo(function ListingCard({
   listing,
   colors,
+  status: statusTokens,
   currency,
 }: {
   listing: MarketplaceListing;
   colors: ReturnType<typeof useAppTheme>['colors'];
+  status: ReturnType<typeof useAppTheme>['status'];
   currency: CurrencyCode;
 }) {
   const mp = MARKETPLACE_CONFIG[listing.marketplaceId] ?? MARKETPLACE_CONFIG.collectai;
-  const statusCfg = STATUS_CONFIG[listing.status] ?? STATUS_CONFIG.draft;
+  const statusCfg = statusTokens[listing.status as keyof typeof statusTokens] ?? statusTokens.draft;
 
   return (
     <AnimatedPressable
@@ -102,7 +106,7 @@ const ListingCard = React.memo(function ListingCard({
       }}
       style={[styles.listingCard, { backgroundColor: colors.card, borderColor: colors.border }]}
       accessibilityRole="button"
-      accessibilityLabel={`${listing.listingTitle} on ${mp.label}, ${statusCfg.label}, ${formatPrice(listing.price, currency)}`}
+      accessibilityLabel={`${listing.listingTitle} on ${mp.label}, ${STATUS_LABELS[listing.status] ?? listing.status}, ${formatPrice(listing.price, currency)}`}
     >
       <View style={styles.listingTop}>
         {/* Marketplace badge */}
@@ -113,7 +117,7 @@ const ListingCard = React.memo(function ListingCard({
 
         {/* Status badge */}
         <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
-          <Text style={[styles.statusBadgeText, { color: statusCfg.fg }]}>{statusCfg.label}</Text>
+          <Text style={[styles.statusBadgeText, { color: statusCfg.fg }]}>{STATUS_LABELS[listing.status] ?? listing.status}</Text>
         </View>
       </View>
 
@@ -183,8 +187,8 @@ const SaleCard = React.memo(function SaleCard({
         <Text style={[styles.salePrice, { color: colors.text }]}>
           {formatPrice(sale.salePrice, currency)}
         </Text>
-        <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
-          <Text style={[styles.statusBadgeText, { color: '#065F46' }]}>
+        <View style={[styles.statusBadge, { backgroundColor: colors.successBg }]}>
+          <Text style={[styles.statusBadgeText, { color: colors.success }]}>
             {sale.status === 'completed' ? 'Completed' : sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}
           </Text>
         </View>
@@ -326,7 +330,7 @@ const RevenueSummary = React.memo(function RevenueSummary({
 // ---------------------------------------------------------------------------
 
 function SellerDashboardScreen() {
-  const { colors } = useAppTheme();
+  const { colors, status: statusTokens } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
 
@@ -335,14 +339,14 @@ function SellerDashboardScreen() {
   const [statusFilter, setStatusFilter] = useState<ListingStatus | 'all'>('all');
 
   // Create Listing modal state
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateModal, openCreateModal, closeCreateModal] = useModal();
   const createTitleField = useFormField(compose(required('Title'), maxLength('Title', 200)));
   const createPriceField = useFormField(compose(required('Price'), positiveNumber('Price')));
   const [createMarketplace, setCreateMarketplace] = useState<MarketplaceId>('collectai');
   const [creating, setCreating] = useState(false);
 
   // Connect marketplace modal state
-  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showConnectModal, openConnectModal, closeConnectModal] = useModal();
   const [connectMp, setConnectMp] = useState<MarketplaceId>('ebay');
   const [connectName, setConnectName] = useState('');
   const [connecting, setConnecting] = useState(false);
@@ -424,7 +428,7 @@ function SellerDashboardScreen() {
       });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       showToast({ message: 'Listing created as draft', type: 'success' });
-      setShowCreateModal(false);
+      closeCreateModal();
       createTitleField.reset();
       createPriceField.reset();
       loadData();
@@ -455,7 +459,7 @@ function SellerDashboardScreen() {
       await collectorsApi.connectMarketplaceAccount({ marketplace_id: connectMp, seller_name: connectName.trim() || undefined });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       showToast({ message: 'Account connected!', type: 'success' });
-      setShowConnectModal(false);
+      closeConnectModal();
       setConnectName('');
       loadData();
     } catch { showToast({ message: 'Failed to connect account', type: 'error' }); }
@@ -516,10 +520,10 @@ function SellerDashboardScreen() {
         ]}
         enableHaptics={settings.hapticsEnabled}
       >
-        <ListingCard listing={item} colors={colors} currency={settings.currency} />
+        <ListingCard listing={item} colors={colors} status={statusTokens} currency={settings.currency} />
       </SwipeableRow>
     ),
-    [colors, settings.currency, settings.hapticsEnabled, handleDelist],
+    [colors, statusTokens, settings.currency, settings.hapticsEnabled, handleDelist],
   );
 
   const renderSale = useCallback(
@@ -656,7 +660,7 @@ function SellerDashboardScreen() {
             <AnimatedPressable
               onPress={() => {
                 fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                setShowConnectModal(true);
+                openConnectModal();
               }}
               style={[styles.connectBtn, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
               accessibilityRole="button"
@@ -688,7 +692,7 @@ function SellerDashboardScreen() {
       {!loading && tab === 'listings' && (
         <AnimatedPressable
           style={[styles.fab, { backgroundColor: colors.accent }]}
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setShowCreateModal(true); }}
+          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); openCreateModal(); }}
           accessibilityRole="button"
           accessibilityLabel="Create new listing"
         >
@@ -702,14 +706,14 @@ function SellerDashboardScreen() {
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Create Listing</Text>
-              <AnimatedPressable onPress={() => setShowCreateModal(false)} accessibilityRole="button" accessibilityLabel="Close">
+              <AnimatedPressable onPress={() => closeCreateModal()} accessibilityRole="button" accessibilityLabel="Close">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
 
             <Text style={[styles.modalLabel, { color: colors.text }]}>Title</Text>
             <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: createTitleField.touched && createTitleField.error ? '#EF4444' : colors.border, color: colors.text }]}
+              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: createTitleField.touched && createTitleField.error ? colors.danger : colors.border, color: colors.text }]}
               value={createTitleField.value}
               onChangeText={createTitleField.onChange}
               onBlur={createTitleField.onBlur}
@@ -719,11 +723,11 @@ function SellerDashboardScreen() {
               returnKeyType="next"
               maxLength={200}
             />
-            {createTitleField.touched && createTitleField.error && <Text style={styles.fieldError}>{createTitleField.error}</Text>}
+            {createTitleField.touched && createTitleField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{createTitleField.error}</Text>}
 
             <Text style={[styles.modalLabel, { color: colors.text }]}>Price ({settings.currency})</Text>
             <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: createPriceField.touched && createPriceField.error ? '#EF4444' : colors.border, color: colors.text }]}
+              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: createPriceField.touched && createPriceField.error ? colors.danger : colors.border, color: colors.text }]}
               value={createPriceField.value}
               onChangeText={createPriceField.onChange}
               onBlur={createPriceField.onBlur}
@@ -732,7 +736,7 @@ function SellerDashboardScreen() {
               keyboardType="decimal-pad"
               returnKeyType="done"
             />
-            {createPriceField.touched && createPriceField.error && <Text style={styles.fieldError}>{createPriceField.error}</Text>}
+            {createPriceField.touched && createPriceField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{createPriceField.error}</Text>}
 
             <Text style={[styles.modalLabel, { color: colors.text }]}>Marketplace</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
@@ -792,7 +796,7 @@ function SellerDashboardScreen() {
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Connect Marketplace</Text>
-              <AnimatedPressable onPress={() => setShowConnectModal(false)} accessibilityRole="button" accessibilityLabel="Close">
+              <AnimatedPressable onPress={() => closeConnectModal()} accessibilityRole="button" accessibilityLabel="Close">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
@@ -987,5 +991,5 @@ const styles = StyleSheet.create({
   feeValue: { fontSize: 13, fontWeight: '600' },
   createBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
   createBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  fieldError: { fontSize: 12, color: '#EF4444', marginTop: 2, marginLeft: 4, marginBottom: 4 },
+  fieldError: { fontSize: 12, marginTop: 2, marginLeft: 4, marginBottom: 4 },
 });

@@ -19,6 +19,8 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
+from app.config import USD_TO_EUR, GBP_TO_EUR, JPY_TO_EUR
+
 from app.config import EBAY_CLIENT_ID as _CFG_EBAY_CLIENT_ID, EBAY_CLIENT_SECRET as _CFG_EBAY_CLIENT_SECRET
 from workers.circuit_breaker import ebay_circuit, CircuitOpenError
 
@@ -84,7 +86,6 @@ def _convert_price(price: float, currency: str, rates: Dict[str, float] | None =
         rate = (rates or {}).get(upper)
         if rate is None:
             # Fallback to config
-            from app.config import USD_TO_EUR, GBP_TO_EUR, JPY_TO_EUR
             _fallback = {"USD": USD_TO_EUR, "GBP": GBP_TO_EUR, "JPY": JPY_TO_EUR}
             rate = _fallback.get(upper)
         if rate is not None:

@@ -7,6 +7,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { dataProvider } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import type { UserPresence } from '@/data/types';
+import { timeAgo } from '@/lib/timeAgo';
 
 type Props = {
   userId: string;
@@ -15,14 +16,7 @@ type Props = {
 };
 
 function formatLastSeen(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return timeAgo(dateStr);
 }
 
 export function PresenceIndicator({ userId, size = 10, showLabel = false }: Props) {

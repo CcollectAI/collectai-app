@@ -54,8 +54,10 @@ function AgentHubScreen() {
         collectorsApi.listMandates(20, 0),
         collectorsApi.listDeals({ limit: 10, offset: 0 }),
       ]);
-      setMandates((mandateRes as any).mandates ?? []);
-      setDeals((dealRes as any).deals ?? []);
+      const mandateData = mandateRes as { mandates?: typeof mandates } | undefined;
+      const dealData = dealRes as { deals?: typeof deals } | undefined;
+      setMandates(mandateData?.mandates ?? []);
+      setDeals(dealData?.deals ?? []);
     } catch {
       setError('Could not load deals. Pull to refresh.');
     } finally {
@@ -84,8 +86,8 @@ function AgentHubScreen() {
   const dealStatusBadge = (status: string) => {
     const map: Record<string, { label: string; color: string }> = {
       discovered: { label: "New", color: colors.accent },
-      notified: { label: "Sent", color: "#6366F1" },
-      clicked: { label: "Viewed", color: "#8B5CF6" },
+      notified: { label: "Sent", color: colors.info },
+      clicked: { label: "Viewed", color: colors.warning },
       purchased: { label: "Bought", color: colors.success },
       declined: { label: "Skipped", color: colors.muted },
       expired: { label: "Expired", color: colors.danger },

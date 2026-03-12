@@ -77,6 +77,7 @@ export const EventLocationSection = React.memo(function EventLocationSection({
                   placeholderTextColor={colors.muted}
                   style={[styles.input, { color: colors.text }]}
                   accessibilityLabel="Event location"
+                  returnKeyType="next"
                 />
               </View>
               <AnimatedPressable
@@ -111,7 +112,7 @@ export const EventLocationSection = React.memo(function EventLocationSection({
         {showOnlineUrl && (
           <View style={showLocation ? styles.fieldBlock : undefined}>
             <Text style={[styles.fieldLabel, { color: colors.text }]}>Online URL</Text>
-            <View style={[styles.inputWrap, { borderColor: onlineUrlField.touched && onlineUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+            <View style={[styles.inputWrap, { borderColor: onlineUrlField.touched && onlineUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
               <Ionicons name="link-outline" size={16} color={colors.muted} style={styles.inputIcon} />
               <TextInput
                 value={onlineUrlField.value}
@@ -123,9 +124,10 @@ export const EventLocationSection = React.memo(function EventLocationSection({
                 autoCapitalize="none"
                 keyboardType="url"
                 accessibilityLabel="Online event URL"
+                returnKeyType="next"
               />
             </View>
-            {onlineUrlField.touched && onlineUrlField.error && <Text style={styles.fieldError}>{onlineUrlField.error}</Text>}
+            {onlineUrlField.touched && onlineUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{onlineUrlField.error}</Text>}
           </View>
         )}
       </View>
@@ -178,7 +180,6 @@ const styles = StyleSheet.create({
   },
   fieldError: {
     fontSize: 12,
-    color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
   },

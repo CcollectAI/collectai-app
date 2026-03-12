@@ -10,14 +10,13 @@ import React from "react";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 // ── Semantic action colors (theme-independent) ──────────────────────────
 
 const ACTION_COLORS = {
   archive: "#f97316",
   archiveBg: "#f9731610",
-  danger: "#ef4444",
-  dangerBg: "#ef444410",
 } as const;
 
 // ── Props interface ─────────────────────────────────────────────────────
@@ -61,6 +60,7 @@ export const BulkActionsToolbar = React.memo(function BulkActionsToolbar({
   onArchive,
   onDelete,
 }: BulkActionsToolbarProps) {
+  const { colors } = useAppTheme();
   return (
     <>
       {/* Header row */}
@@ -131,14 +131,14 @@ export const BulkActionsToolbar = React.memo(function BulkActionsToolbar({
               </AnimatedPressable>
 
               <AnimatedPressable
-                style={[s.btn, { backgroundColor: ACTION_COLORS.dangerBg }]}
+                style={[s.btn, { backgroundColor: colors.danger + '10' }]}
                 onPress={onDelete}
                 disabled={disabled}
                 accessibilityRole="button"
                 accessibilityLabel="Delete selected items"
               >
-                <Ionicons name="trash-outline" size={18} color={ACTION_COLORS.danger} />
-                <Text style={[s.btnText, { color: ACTION_COLORS.danger }]}>Delete</Text>
+                <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                <Text style={[s.btnText, { color: colors.danger }]}>Delete</Text>
               </AnimatedPressable>
             </View>
           )}

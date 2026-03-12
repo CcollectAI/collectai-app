@@ -57,7 +57,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
           <Text style={[styles.fieldLabel, { color: colors.text }]}>
             Item name <Text style={{ color: colors.accent }}>*</Text>
           </Text>
-          <View style={[styles.inputWrap, { borderColor: nameField.touched && nameField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+          <View style={[styles.inputWrap, { borderColor: nameField.touched && nameField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
             <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
             <TextInput
               value={nameField.value}
@@ -68,10 +68,11 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
               style={[styles.input, { color: colors.text }]}
               accessibilityLabel="Item name"
               testID="name-input"
+              returnKeyType="next"
             />
           </View>
           {nameField.touched && nameField.error && (
-            <Text style={styles.fieldError}>{nameField.error}</Text>
+            <Text style={[styles.fieldError, { color: colors.danger }]}>{nameField.error}</Text>
           )}
         </View>
 
@@ -113,6 +114,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
               accessibilityLabel="Set or series"
+              returnKeyType="next"
             />
           </View>
         </View>
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
   },
   inputIcon: { marginRight: 8 },
   input: { flex: 1, fontSize: 14, paddingVertical: 0 },
-  fieldError: { fontSize: 12, color: '#EF4444', marginTop: 4, marginLeft: 4 },
+  fieldError: { fontSize: 12, marginTop: 4, marginLeft: 4 },
   dropdownTrigger: {
     flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, height: 44,
   },

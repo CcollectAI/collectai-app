@@ -48,7 +48,7 @@ IMPORT_COLUMN_EXAMPLES = {
 # ---- Endpoints ----
 
 @router.get("/template")
-async def import_template():
+async def import_template() -> StreamingResponse:
     """Return a CSV template with headers + one example row."""
     buf = io.StringIO()
     writer = csv.writer(buf)

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useModal } from '@/hooks/useModal';
 import { useDebounce } from "@/hooks/useDebounce";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
@@ -37,7 +38,7 @@ import { track } from '@/analytics/track';
 import { MarketplaceSearchBar } from '@/components/MarketplaceSearchBar';
 import { MarketplaceFilterPanel } from '@/components/MarketplaceFilterPanel';
 import { RecentSearchesSection } from '@/components/RecentSearchesSection';
-import { TrendingCategoriesGrid, type TrendingCategory } from '@/components/TrendingCategoriesGrid';
+import type { TrendingCategory } from '@/components/TrendingCategoriesGrid';
 import { SearchResultQuickView } from '@/components/SearchResultQuickView';
 import { SkeletonList } from '@/components/Skeleton';
 import { MarketplacePageHeader } from '@/components/marketplace/MarketplacePageHeader';
@@ -139,22 +140,26 @@ const SearchScreen: React.FC = () => {
   const searchIdRef = useRef(0);
 
   // User search state
-  const [userSearchVisible, setUserSearchVisible] = useState(false);
+  const [userSearchVisible, openUserSearch, closeUserSearch] = useModal();
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSearchResults, setUserSearchResults] = useState<PublicUserProfile[]>([]);
   const [userSearchLoading, setUserSearchLoading] = useState(false);
   const [quickViewItem, setQuickViewItem] = useState<SearchResult | null>(null);
-  const [quickViewVisible, setQuickViewVisible] = useState(false);
+  const [quickViewVisible, openQuickView, closeQuickView] = useModal();
   const [demandHeat, setDemandHeat] = useState<Array<{ item_key: string; title: string; category: string; demand_score: number; search_count: number }>>([]);
   const debouncedUserQuery = useDebounce(userSearchQuery.trim(), 350);
 
   useEffect(() => {
+    let cancelled = false;
     collectorsApi.getDemandHeat()
       .then((data) => {
-        const items = (data as any)?.items;
+        if (cancelled) return;
+        const resp = data as { items?: Array<{ item_key: string; title: string; category: string; demand_score: number; search_count: number }> } | undefined;
+        const items = resp?.items;
         if (Array.isArray(items) && items.length) setDemandHeat(items.slice(0, 6));
       })
       .catch(() => { /* silent */ });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -181,14 +186,14 @@ const SearchScreen: React.FC = () => {
   }, [debouncedUserQuery]);
 
   const handleOpenUserProfile = useCallback((userId: string) => {
-    setUserSearchVisible(false);
+    closeUserSearch();
     setUserSearchQuery("");
     setUserSearchResults([]);
     router.push(`/users/${userId}`);
-  }, [router]);
+  }, [router, closeUserSearch]);
 
   // Filter state
-  const [filterVisible, setFilterVisible] = useState(false);
+  const [filterVisible, openFilter, closeFilter] = useModal();
   const [filterSources, setFilterSources] = useState<string[]>([]);
   const [filterConditions, setFilterConditions] = useState<string[]>([]);
   const [filterMinPrice, setFilterMinPrice] = useState("");
@@ -234,7 +239,9 @@ const SearchScreen: React.FC = () => {
 
   // Load persisted recent searches on mount
   useEffect(() => {
-    getJSON<string[]>(RECENT_SEARCHES_KEY, []).then(setRecent);
+    let cancelled = false;
+    getJSON<string[]>(RECENT_SEARCHES_KEY, []).then((v) => { if (!cancelled) setRecent(v); });
+    return () => { cancelled = true; };
   }, []);
 
   const trimmedQuery = query.trim();
@@ -415,7 +422,7 @@ const SearchScreen: React.FC = () => {
     if (item.domesticOnly) return;
     if (item.isMarketplace) {
       setQuickViewItem(item);
-      setQuickViewVisible(true);
+      openQuickView();
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     } else {
       router.push({
@@ -439,9 +446,9 @@ const SearchScreen: React.FC = () => {
         logger.warn('[Marketplace] Failed to open URL', err);
       });
     }
-    setQuickViewVisible(false);
+    closeQuickView();
     setQuickViewItem(null);
-  }, [quickViewItem]);
+  }, [quickViewItem, closeQuickView]);
 
   const handleQuickViewShare = useCallback(async () => {
     if (!quickViewItem) return;
@@ -501,7 +508,7 @@ const SearchScreen: React.FC = () => {
           query={query}
           onQueryChange={setQuery}
           onSubmit={handleSubmitSearch}
-          onOpenFilter={() => setFilterVisible(true)}
+          onOpenFilter={openFilter}
           activeFilterCount={activeFilterCount}
         />
 
@@ -509,7 +516,7 @@ const SearchScreen: React.FC = () => {
         {!trimmedQuery && (
           <AnimatedPressable
             style={[styles.findCollectorsButton, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
-            onPress={() => setUserSearchVisible(true)}
+            onPress={openUserSearch}
             accessibilityRole="button"
             accessibilityLabel="Find collectors"
           >
@@ -629,12 +636,7 @@ const SearchScreen: React.FC = () => {
               </View>
             )}
 
-            {/* Trending categories */}
-            <TrendingCategoriesGrid
-              theme={colors}
-              categories={trendingCategories}
-              onCategoryPress={handleOpenCategory}
-            />
+            {/* Trending categories removed */}
           </>
         )}
 
@@ -653,10 +655,10 @@ const SearchScreen: React.FC = () => {
           onSetFilterMaxPrice={setFilterMaxPrice}
           onSetFilterSort={setFilterSort}
           onApply={() => {
-            setFilterVisible(false);
+            closeFilter();
             if (trimmedQuery) executeSearch(trimmedQuery);
           }}
-          onClose={() => setFilterVisible(false)}
+          onClose={closeFilter}
           onReset={() => {
             setFilterSources([]);
             setFilterConditions([]);
@@ -672,7 +674,7 @@ const SearchScreen: React.FC = () => {
           animationType="slide"
           presentationStyle="pageSheet"
           onRequestClose={() => {
-            setUserSearchVisible(false);
+            closeUserSearch();
             setUserSearchQuery("");
             setUserSearchResults([]);
           }}
@@ -682,7 +684,7 @@ const SearchScreen: React.FC = () => {
             <View style={[styles.filterHeader, { borderBottomColor: colors.border }]}>
               <TouchableOpacity
                 onPress={() => {
-                  setUserSearchVisible(false);
+                  closeUserSearch();
                   setUserSearchQuery("");
                   setUserSearchResults([]);
                 }}
@@ -909,7 +911,7 @@ const SearchScreen: React.FC = () => {
         theme={colors}
         visible={quickViewVisible}
         item={quickViewItem}
-        onClose={() => { setQuickViewVisible(false); setQuickViewItem(null); }}
+        onClose={() => { closeQuickView(); setQuickViewItem(null); }}
         onOpenUrl={handleQuickViewOpen}
         onShare={handleQuickViewShare}
       />

@@ -261,7 +261,7 @@ let _objectStore: ObjectStore | null = null;
  */
 export function getObjectStore(): ObjectStore {
   if (!_objectStore) {
-    // TODO: Wire to storageApi (S3 presigned URLs) instead of mock
+    // Uses mock store until S3 presigned URL backend is configured
     _objectStore = new MockObjectStore();
   }
   return _objectStore;

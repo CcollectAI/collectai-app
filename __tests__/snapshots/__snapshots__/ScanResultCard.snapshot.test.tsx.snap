@@ -25,7 +25,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
       <View
         style={
           {
-            "height": 637.5,
+            "height": 562.5,
             "position": "relative",
             "width": "100%",
           }
@@ -67,17 +67,17 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                 "alignItems": "center",
                 "borderRadius": 20,
                 "borderWidth": 1,
+                "bottom": 14,
                 "flexDirection": "row",
                 "gap": 6,
                 "left": 16,
                 "paddingHorizontal": 12,
                 "paddingVertical": 6,
                 "position": "absolute",
-                "top": 56,
               },
               {
-                "backgroundColor": "#10B98120",
-                "borderColor": "#10B98140",
+                "backgroundColor": "#FFFFFFEE",
+                "borderColor": "#10B98160",
               },
             ]
           }
@@ -111,6 +111,9 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
             }
           >
             High Confidence
+             · 
+            87
+            %
           </Text>
         </View>
         <View
@@ -150,11 +153,11 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
               "alignItems": "center",
               "backgroundColor": "rgba(0,0,0,0.45)",
               "borderRadius": 20,
+              "bottom": 14,
               "height": 40,
               "justifyContent": "center",
               "position": "absolute",
               "right": 16,
-              "top": 54,
               "width": 40,
             }
           }
@@ -190,7 +193,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
               "borderWidth": 1,
               "elevation": 6,
               "marginHorizontal": 16,
-              "marginTop": -32,
+              "marginTop": 12,
               "padding": 20,
               "shadowColor": "#000",
               "shadowOffset": {
@@ -1017,7 +1020,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
       <View
         style={
           {
-            "height": 637.5,
+            "height": 562.5,
             "position": "relative",
             "width": "100%",
           }
@@ -1059,17 +1062,17 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
                 "alignItems": "center",
                 "borderRadius": 20,
                 "borderWidth": 1,
+                "bottom": 14,
                 "flexDirection": "row",
                 "gap": 6,
                 "left": 16,
                 "paddingHorizontal": 12,
                 "paddingVertical": 6,
                 "position": "absolute",
-                "top": 56,
               },
               {
-                "backgroundColor": "#10B98120",
-                "borderColor": "#10B98140",
+                "backgroundColor": "#FFFFFFEE",
+                "borderColor": "#10B98160",
               },
             ]
           }
@@ -1103,6 +1106,9 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
             }
           >
             High Confidence
+             · 
+            87
+            %
           </Text>
         </View>
         <View
@@ -1142,11 +1148,11 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
               "alignItems": "center",
               "backgroundColor": "rgba(0,0,0,0.45)",
               "borderRadius": 20,
+              "bottom": 14,
               "height": 40,
               "justifyContent": "center",
               "position": "absolute",
               "right": 16,
-              "top": 54,
               "width": 40,
             }
           }
@@ -1162,7 +1168,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
               "borderWidth": 1,
               "elevation": 6,
               "marginHorizontal": 16,
-              "marginTop": -32,
+              "marginTop": 12,
               "padding": 20,
               "shadowColor": "#000",
               "shadowOffset": {
@@ -1666,7 +1672,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
       <View
         style={
           {
-            "height": 637.5,
+            "height": 562.5,
             "position": "relative",
             "width": "100%",
           }
@@ -1708,17 +1714,17 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                 "alignItems": "center",
                 "borderRadius": 20,
                 "borderWidth": 1,
+                "bottom": 14,
                 "flexDirection": "row",
                 "gap": 6,
                 "left": 16,
                 "paddingHorizontal": 12,
                 "paddingVertical": 6,
                 "position": "absolute",
-                "top": 56,
               },
               {
-                "backgroundColor": "undefined20",
-                "borderColor": "undefined40",
+                "backgroundColor": "#FFFFFFEE",
+                "borderColor": "undefined60",
               },
             ]
           }
@@ -1752,6 +1758,9 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
             }
           >
             Low Confidence
+             · 
+            30
+            %
           </Text>
         </View>
         <View
@@ -1791,11 +1800,11 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
               "alignItems": "center",
               "backgroundColor": "rgba(0,0,0,0.45)",
               "borderRadius": 20,
+              "bottom": 14,
               "height": 40,
               "justifyContent": "center",
               "position": "absolute",
               "right": 16,
-              "top": 54,
               "width": 40,
             }
           }
@@ -1831,7 +1840,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
               "borderWidth": 1,
               "elevation": 6,
               "marginHorizontal": 16,
-              "marginTop": -32,
+              "marginTop": 12,
               "padding": 20,
               "shadowColor": "#000",
               "shadowOffset": {

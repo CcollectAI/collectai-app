@@ -135,7 +135,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
                 {/* Title (optional) */}
                 <View style={styles.fieldBlock}>
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>Title (optional)</Text>
-                  <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                  <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
                       value={titleField.value}
@@ -147,7 +147,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
                       accessibilityLabel="Announcement title"
                     />
                   </View>
-                  {titleField.touched && titleField.error && <Text style={styles.fieldError}>{titleField.error}</Text>}
+                  {titleField.touched && titleField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{titleField.error}</Text>}
                 </View>
 
                 {/* Body (required) */}
@@ -155,7 +155,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>
                     Message <Text style={{ color: colors.accent }}>*</Text>
                   </Text>
-                  <View style={[styles.inputWrapMultiline, { borderColor: bodyField.touched && bodyField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                  <View style={[styles.inputWrapMultiline, { borderColor: bodyField.touched && bodyField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <TextInput
                       value={bodyField.value}
                       onChangeText={bodyField.onChange}
@@ -172,11 +172,11 @@ const ComposeAnnouncementScreen: React.FC = () => {
                   </View>
                   <View style={styles.charCountRow}>
                     {bodyField.touched && bodyField.error ? (
-                      <Text style={styles.fieldError}>{bodyField.error}</Text>
+                      <Text style={[styles.fieldError, { color: colors.danger }]}>{bodyField.error}</Text>
                     ) : (
                       <View />
                     )}
-                    <Text style={[styles.charCount, { color: bodyLength > BODY_MAX_LENGTH ? '#EF4444' : colors.muted }]}>
+                    <Text style={[styles.charCount, { color: bodyLength > BODY_MAX_LENGTH ? colors.danger : colors.muted }]}>
                       {bodyLength}/{BODY_MAX_LENGTH}
                     </Text>
                   </View>
@@ -185,7 +185,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
                 {/* Image URL (optional) */}
                 <View>
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>Image URL (optional)</Text>
-                  <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                  <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="image-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
                       value={imageUrlField.value}
@@ -199,7 +199,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
                       accessibilityLabel="Image URL"
                     />
                   </View>
-                  {imageUrlField.touched && imageUrlField.error && <Text style={styles.fieldError}>{imageUrlField.error}</Text>}
+                  {imageUrlField.touched && imageUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{imageUrlField.error}</Text>}
                 </View>
               </View>
             </View>
@@ -365,7 +365,6 @@ const styles = StyleSheet.create({
   },
   fieldError: {
     fontSize: 12,
-    color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
   },

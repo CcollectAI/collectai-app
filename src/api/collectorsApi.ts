@@ -1060,10 +1060,58 @@ export const collectorsApi = {
   unfollowEventCategory: (categoryId: string) =>
     del(`/events/categories/${encodeURIComponent(categoryId)}/follow`),
 
+  // ── Set / Collection Tracking ────────────────────────────────────────
+
+  listSets: (categoryId?: string) =>
+    get(`/sets${categoryId ? `?category_id=${encodeURIComponent(categoryId)}` : ""}`),
+
+  getSetDetail: (setId: string) =>
+    get(`/sets/${encodeURIComponent(setId)}`),
+
+  getSetProgress: (setId: string) =>
+    get(`/sets/${encodeURIComponent(setId)}/progress`),
+
+  updateSetProgress: (setId: string, payload: { item_ids: string[]; action: "add" | "remove" }) =>
+    put(`/sets/${encodeURIComponent(setId)}/progress`, payload as Record<string, unknown>),
+
+  getMySetProgress: () =>
+    get("/sets/my-progress"),
+
+  // ── Sponsor Companies ────────────────────────────────────────────────
+
+  listMySponsorCompanies: () =>
+    get("/sponsor-companies/mine"),
+
+  createSponsorCompany: (payload: { name: string; contact_email: string; logo_url?: string; website_url?: string; description?: string }) =>
+    post("/sponsor-companies", payload as Record<string, unknown>),
+
+  getSponsorCompany: (companyId: string) =>
+    get(`/sponsor-companies/${encodeURIComponent(companyId)}`),
+
+  updateSponsorCompany: (companyId: string, payload: Record<string, unknown>) =>
+    patch(`/sponsor-companies/${encodeURIComponent(companyId)}`, payload),
+
+  deleteSponsorCompany: (companyId: string) =>
+    del(`/sponsor-companies/${encodeURIComponent(companyId)}`),
+
+  createSponsorEventCheckout: (companyId: string, payload: Record<string, unknown>) =>
+    post(`/sponsor-companies/${encodeURIComponent(companyId)}/create-event-checkout`, payload),
+
+  createSponsorSubscriptionCheckout: (companyId: string, payload: { tier: string }) =>
+    post(`/sponsor-companies/${encodeURIComponent(companyId)}/create-subscription-checkout`, payload as Record<string, unknown>),
+
   // ── Build & Paint Step Templates ────────────────────────────────────
 
   getStepTemplates: (categoryId?: string) =>
-    get(`/build/step-templates${categoryId ? `/${encodeURIComponent(categoryId)}` : ""}`),
+    get(`/build-paint/step-templates${categoryId ? `/${encodeURIComponent(categoryId)}` : ""}`),
+
+  // ── Task Queue ──────────────────────────────────────────────────────
+
+  enqueueTask: (payload: { task_type: string; payload?: Record<string, unknown> }) =>
+    post("/tasks/enqueue", payload as Record<string, unknown>),
+
+  getTaskStatus: (taskId: string) =>
+    get(`/tasks/${encodeURIComponent(taskId)}/status`),
 
   // ── Marketplace Listing Accounts ──────────────────────────────────
 

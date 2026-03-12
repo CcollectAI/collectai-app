@@ -37,19 +37,21 @@ import type { Offer, OfferEvent, OfferStatus, UserReputation } from '@/data/type
 import { track } from '@/analytics/track';
 import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
+import { timeAgo } from '@/lib/timeAgo';
 
 // ---------------------------------------------------------------------------
 // Status config
 // ---------------------------------------------------------------------------
 
-const STATUS_CONFIG: Record<OfferStatus, { label: string; bg: string; fg: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  proposed: { label: 'Pending', bg: '#FEF3C7', fg: '#92400E', icon: 'hourglass-outline' },
-  countered: { label: 'Countered', bg: '#DBEAFE', fg: '#1E40AF', icon: 'swap-horizontal-outline' },
-  accepted: { label: 'Accepted', bg: '#D1FAE5', fg: '#065F46', icon: 'checkmark-circle-outline' },
-  declined: { label: 'Declined', bg: '#FEE2E2', fg: '#991B1B', icon: 'close-circle-outline' },
-  expired: { label: 'Expired', bg: '#F3F4F6', fg: '#6B7280', icon: 'time-outline' },
-  completed: { label: 'Completed', bg: '#D1FAE5', fg: '#065F46', icon: 'checkmark-done-outline' },
-  cancelled: { label: 'Cancelled', bg: '#F3F4F6', fg: '#6B7280', icon: 'ban-outline' },
+// Status labels + icons — badge colors come from useAppTheme().status tokens
+const STATUS_META: Record<OfferStatus, { label: string; icon: keyof typeof Ionicons.glyphMap }> = {
+  proposed: { label: 'Pending', icon: 'hourglass-outline' },
+  countered: { label: 'Countered', icon: 'swap-horizontal-outline' },
+  accepted: { label: 'Accepted', icon: 'checkmark-circle-outline' },
+  declined: { label: 'Declined', icon: 'close-circle-outline' },
+  expired: { label: 'Expired', icon: 'time-outline' },
+  completed: { label: 'Completed', icon: 'checkmark-done-outline' },
+  cancelled: { label: 'Cancelled', icon: 'ban-outline' },
 };
 
 // ---------------------------------------------------------------------------
@@ -81,14 +83,7 @@ function formatDateTime(iso: string | null | undefined): string {
 
 function relativeTime(iso: string | null | undefined): string {
   if (!iso) return '';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return timeAgo(iso);
 }
 
 // ---------------------------------------------------------------------------
@@ -153,7 +148,7 @@ function ReputationBadge({
 // ---------------------------------------------------------------------------
 
 function OfferDetailScreen() {
-  const { colors } = useAppTheme();
+  const { colors, status: statusTokens } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
   const { user } = useAuthContext();
@@ -366,7 +361,8 @@ function OfferDetailScreen() {
     );
   }
 
-  const statusCfg = STATUS_CONFIG[offer.status] || STATUS_CONFIG.proposed;
+  const statusMeta = STATUS_META[offer.status] || STATUS_META.proposed;
+  const statusCfg = { ...statusMeta, ...(statusTokens[offer.status] || statusTokens.proposed) };
   const canRespond = isSeller && (offer.status === 'proposed' || offer.status === 'countered');
   const canCounter = (isSeller || isBuyer) && (offer.status === 'proposed' || offer.status === 'countered');
   const canCancel = isBuyer && (offer.status === 'proposed' || offer.status === 'countered');
@@ -458,11 +454,11 @@ function OfferDetailScreen() {
         {riskFlags.length > 0 && (
           <View style={[styles.riskSection, { backgroundColor: colors.warningBg, borderColor: colors.border }]}>
             <View style={styles.riskHeader}>
-              <Ionicons name="warning-outline" size={16} color="#92400E" />
-              <Text style={[styles.riskTitle, { color: '#92400E' }]}>Risk Flags</Text>
+              <Ionicons name="warning-outline" size={16} color={colors.warning} />
+              <Text style={[styles.riskTitle, { color: colors.warning }]}>Risk Flags</Text>
             </View>
             {riskFlags.map((rf, i) => (
-              <Text key={i} style={[styles.riskText, { color: '#78350F' }]}>
+              <Text key={i} style={[styles.riskText, { color: colors.text }]}>
                 {rf.severity === 'high' ? '\u26A0' : '\u24D8'} {rf.message}
               </Text>
             ))}
@@ -520,9 +516,9 @@ function OfferDetailScreen() {
 
         {/* ── Expiry info ──────────────────────────────────────────────── */}
         {offer.expiresAt && (offer.status === 'proposed' || offer.status === 'countered') && (
-          <View style={[styles.expiryBanner, { backgroundColor: '#FEF3C7' }]}>
-            <Ionicons name="time-outline" size={16} color="#92400E" />
-            <Text style={[styles.expiryText, { color: '#92400E' }]}>
+          <View style={[styles.expiryBanner, { backgroundColor: colors.warningBg }]}>
+            <Ionicons name="time-outline" size={16} color={colors.warning} />
+            <Text style={[styles.expiryText, { color: colors.warning }]}>
               Expires {relativeTime(offer.expiresAt)}
             </Text>
           </View>
@@ -540,7 +536,7 @@ function OfferDetailScreen() {
               {canRespond && (
                 <AnimatedPressable
                   onPress={handleAccept}
-                  style={[styles.actionBtn, { backgroundColor: '#059669' }]}
+                  style={[styles.actionBtn, { backgroundColor: colors.success }]}
                   accessibilityRole="button"
                   accessibilityLabel="Accept offer"
                 >
@@ -553,7 +549,7 @@ function OfferDetailScreen() {
               {canRespond && (
                 <AnimatedPressable
                   onPress={handleDecline}
-                  style={[styles.actionBtn, { backgroundColor: '#DC2626' }]}
+                  style={[styles.actionBtn, { backgroundColor: colors.danger }]}
                   accessibilityRole="button"
                   accessibilityLabel="Decline offer"
                 >
@@ -608,7 +604,7 @@ function OfferDetailScreen() {
               {canComplete && (
                 <AnimatedPressable
                   onPress={() => setCompleteVisible(true)}
-                  style={[styles.actionBtn, { backgroundColor: '#059669' }]}
+                  style={[styles.actionBtn, { backgroundColor: colors.success }]}
                   accessibilityRole="button"
                   accessibilityLabel="Confirm received and rate"
                 >
@@ -798,7 +794,7 @@ function OfferDetailScreen() {
               disabled={actionLoading}
               style={[
                 styles.modalConfirmBtn,
-                { backgroundColor: '#059669', opacity: actionLoading ? 0.5 : 1 },
+                { backgroundColor: colors.success, opacity: actionLoading ? 0.5 : 1 },
               ]}
               accessibilityRole="button"
               accessibilityLabel="Complete deal and submit rating"

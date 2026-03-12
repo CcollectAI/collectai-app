@@ -6,7 +6,7 @@ for frontend category dropdowns and taxonomy management.
 """
 
 import logging
-from typing import Optional
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from starlette.responses import JSONResponse
@@ -102,8 +102,8 @@ async def taxonomy_versions(_rl=Depends(_taxonomy_rl)):
         return {"versions": [{"version": "v1.0", "status": "active"}]}
 
 
-@router.get("/categories")
-async def taxonomy_categories():
+@router.get("/categories", response_model=None)
+async def taxonomy_categories() -> Union[JSONResponse, Dict[str, Any]]:
     """Return flat list of categories for the current taxonomy version (for UI dropdowns)."""
     cached = cache_get("taxonomy:categories")
     if cached is not None:
@@ -146,7 +146,7 @@ async def taxonomy_categories():
 
 
 @router.get("/{version}")
-async def taxonomy_by_version(version: str):
+async def taxonomy_by_version(version: str) -> Dict[str, Any]:
     """Return specific taxonomy version details."""
     if not db_configured():
         raise error_response(503, "Database not configured", code="DB_NOT_CONFIGURED")
@@ -216,7 +216,7 @@ _FALLBACK_CATEGORIES = [
 ]
 
 
-def _fallback_taxonomy():
+def _fallback_taxonomy() -> Dict[str, Any]:
     return {
         "version": "v1.0",
         "categories": [{"category_id": c, "display_name": c.replace("_", " ").title()} for c in _FALLBACK_CATEGORIES],
@@ -226,7 +226,7 @@ def _fallback_taxonomy():
     }
 
 
-def _fallback_category_list():
+def _fallback_category_list() -> List[Dict[str, Any]]:
     return [
         {"category_id": c, "display_name": c.replace("_", " ").title(), "subtypes": [], "collections": []}
         for c in _FALLBACK_CATEGORIES

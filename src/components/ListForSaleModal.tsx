@@ -214,7 +214,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                               <Text style={[styles.feeLabel, { color: colors.muted }]}>
                                 Fees
                               </Text>
-                              <Text style={[styles.feeValue, { color: '#EF4444' }]}>
+                              <Text style={[styles.feeValue, { color: colors.danger }]}>
                                 -{formatPrice(fee.totalFees, settings.currency)}
                               </Text>
                             </View>
@@ -348,7 +348,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                           </Text>
                         </View>
                         <View style={styles.comparisonRight}>
-                          <Text style={[styles.comparisonFees, { color: '#EF4444' }]}>
+                          <Text style={[styles.comparisonFees, { color: colors.danger }]}>
                             -{formatPrice(fb.totalFees, settings.currency)}
                           </Text>
                           <Text style={[styles.comparisonNet, { color: '#059669' }]}>

@@ -48,7 +48,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
           <Text style={[styles.fieldLabel, { color: colors.text }]}>
             Date <Text style={{ color: colors.accent }}>*</Text>
           </Text>
-          <View style={[styles.inputWrap, { borderColor: dateField.touched && dateField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+          <View style={[styles.inputWrap, { borderColor: dateField.touched && dateField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
             <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
             <TextInput
               value={dateField.value}
@@ -58,9 +58,10 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
               accessibilityLabel="Event date"
+              returnKeyType="next"
             />
           </View>
-          {dateField.touched && dateField.error && <Text style={styles.fieldError}>{dateField.error}</Text>}
+          {dateField.touched && dateField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{dateField.error}</Text>}
         </View>
 
         {/* Time */}
@@ -75,6 +76,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
               accessibilityLabel="Event time"
+              returnKeyType="next"
             />
           </View>
         </View>
@@ -91,6 +93,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
               accessibilityLabel="Event end date"
+              returnKeyType="next"
             />
           </View>
         </View>
@@ -144,7 +147,6 @@ const styles = StyleSheet.create({
   },
   fieldError: {
     fontSize: 12,
-    color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
   },

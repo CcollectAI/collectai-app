@@ -11,6 +11,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 
@@ -21,6 +22,11 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
+from app.config import (
+    USER_UPLOADS_S3_BUCKET as S3_BUCKET,
+    USER_UPLOADS_CDN_URL as CDN_URL,
+    AWS_REGION,
+)
 from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(tags=["Item Images"])
@@ -263,8 +269,6 @@ async def add_item_image(
     existing = [img for img in _mem_item_images if img["item_id"] == item_id]
     next_position = max((img["position"] for img in existing), default=-1) + 1
     img_id = _next_mem_id()
-    from datetime import datetime, timezone
-
     img_data = {
         "id": img_id,
         "item_id": item_id,
@@ -444,12 +448,6 @@ async def _upload_image_file(file: UploadFile, item_id: str, user_id: str) -> st
     """
     import uuid as _uuid
 
-    from app.config import (
-        USER_UPLOADS_S3_BUCKET as S3_BUCKET,
-        USER_UPLOADS_CDN_URL as CDN_URL,
-        AWS_REGION,
-    )
-
     try:
         from app.lib.image_optimizer import optimize_image
 
@@ -508,12 +506,6 @@ async def _upload_image_file(file: UploadFile, item_id: str, user_id: str) -> st
 def _try_delete_s3(image_url: str, user_id: str) -> None:
     """Best-effort S3 cleanup of a deleted image."""
     try:
-        from app.config import (
-            USER_UPLOADS_S3_BUCKET as S3_BUCKET,
-            USER_UPLOADS_CDN_URL as CDN_URL,
-            AWS_REGION,
-        )
-
         # Extract the photo key from the URL
         if CDN_URL and image_url.startswith(CDN_URL):
             photo_key = image_url[len(CDN_URL.rstrip("/")) + 1 :]

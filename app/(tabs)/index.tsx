@@ -19,8 +19,6 @@ import {
   ActivityIndicator,
   Animated,
   RefreshControl,
-  Modal,
-  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -52,13 +50,14 @@ import { collectorsApi, getNotificationHistory } from "@/api/collectorsApi";
 import logger from "@/utils/logger";
 import { useStoreReview } from "@/hooks/useStoreReview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AddMenuModal } from "@/components/home/AddMenuModal";
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
 const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
 const USE_REAL_BACKEND = SUPABASE_MODE === "real";
 
 // Keep imports conservative and optional.
-let analyticsApi: Record<string, unknown> | null = null;
+let analyticsApi: { fetchPortfolioSnapshot?: () => Promise<unknown>; [k: string]: unknown } | null = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   analyticsApi = require("@/store/portfolioAnalyticsStore");
@@ -259,15 +258,15 @@ function PortfolioScreen() {
 
         if (analyticsApi?.fetchPortfolioSnapshot) {
           try {
-            const snap = await (analyticsApi as any).fetchPortfolioSnapshot();
-            const extractedSeries = extractSeries(snap?.series || snap);
+            const snap = await analyticsApi.fetchPortfolioSnapshot() as Record<string, unknown> | undefined;
+            const extractedSeries = extractSeries((snap as Record<string, unknown>)?.series || snap);
             const extractedItems = extractItems(snap);
 
             baseSeries = extractedSeries.length ? extractedSeries : [];
             baseItems = extractedItems.length
               ? extractedItems.sort((a, b) => b.value - a.value)
               : [];
-            if (snap?.tierSummary) setTierSummary(snap.tierSummary);
+            if ((snap as Record<string, unknown>)?.tierSummary) setTierSummary((snap as Record<string, unknown>).tierSummary as typeof tierSummary);
           } catch (mockErr) {
             logger.warn("[Portfolio] Mock store error:", mockErr);
           }
@@ -391,7 +390,7 @@ function PortfolioScreen() {
 
   // Navigate to watchlist tab
   const handleWatchlistPress = () => {
-    router.push("/(tabs)/wishlist" as any);
+    router.push("/(tabs)/wishlist");
   };
 
   return (
@@ -614,7 +613,7 @@ function PortfolioScreen() {
               router.push({
                 pathname: '/(tabs)/wishlist',
                 params: { highlightId: alert.itemId || alert.id },
-              } as any);
+              });
             }}
             onStartWatchlist={handleWatchlistPress}
             showEmptyState={true}
@@ -674,72 +673,7 @@ function PortfolioScreen() {
         </Animated.View>
       </ScrollView>
 
-      {/* Add Item Menu (bottom sheet style) */}
-      <Modal
-        visible={addMenuOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setAddMenuOpen(false)}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setAddMenuOpen(false)}
-          style={styles.addMenuOverlay}
-          accessibilityRole="button"
-          accessibilityLabel="Close add item menu"
-        >
-          <View style={[styles.addMenuSheet, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityViewIsModal={true} accessibilityRole="menu" accessibilityLabel="Add item menu">
-            <View style={[styles.addMenuHandle, { backgroundColor: colors.muted }]} />
-            <TouchableOpacity
-              onPress={() => { setAddMenuOpen(false); router.push('/quickscan'); }}
-              style={styles.addMenuItem}
-              accessibilityRole="button"
-              accessibilityLabel="QuickScan AI"
-            >
-              <View style={[styles.addMenuIcon, { backgroundColor: colors.accent + '15' }]}>
-                <Ionicons name="camera-outline" size={20} color={colors.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.addMenuTitle, { color: colors.text }]}>QuickScan AI</Text>
-                <Text style={[styles.addMenuSubtitle, { color: colors.muted }]}>Snap a photo, get instant valuation</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
-            </TouchableOpacity>
-            <View style={[styles.addMenuDivider, { backgroundColor: colors.border }]} />
-            <TouchableOpacity
-              onPress={() => { setAddMenuOpen(false); router.push('/barcode-scan'); }}
-              style={styles.addMenuItem}
-              accessibilityRole="button"
-              accessibilityLabel="Scan barcode"
-            >
-              <View style={[styles.addMenuIcon, { backgroundColor: colors.accent + '15' }]}>
-                <Ionicons name="barcode-outline" size={20} color={colors.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.addMenuTitle, { color: colors.text }]}>Scan Barcode</Text>
-                <Text style={[styles.addMenuSubtitle, { color: colors.muted }]}>ISBN, EAN, or UPC</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
-            </TouchableOpacity>
-            <View style={[styles.addMenuDivider, { backgroundColor: colors.border }]} />
-            <TouchableOpacity
-              onPress={() => { setAddMenuOpen(false); router.push('/add-manual'); }}
-              style={styles.addMenuItem}
-              accessibilityRole="button"
-              accessibilityLabel="Add manually"
-            >
-              <View style={[styles.addMenuIcon, { backgroundColor: colors.accent + '15' }]}>
-                <Ionicons name="create-outline" size={20} color={colors.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.addMenuTitle, { color: colors.text }]}>Add Manually</Text>
-                <Text style={[styles.addMenuSubtitle, { color: colors.muted }]}>Enter item details</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <AddMenuModal visible={addMenuOpen} onClose={() => setAddMenuOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -785,7 +719,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     right: 0,
-    backgroundColor: "#EF4444",
     borderRadius: 8,
     minWidth: 16,
     height: 16,
@@ -1030,60 +963,6 @@ const styles = StyleSheet.create({
   addBannerSubtitle: {
     fontSize: 12,
     marginTop: 1,
-  },
-
-  // Add Menu (bottom sheet)
-  addMenuOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  addMenuSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    paddingTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  addMenuHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#D1D5DB',
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  addMenuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  addMenuIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addMenuTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  addMenuSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  addMenuDivider: {
-    height: 1,
-    marginHorizontal: 20,
   },
 
 });

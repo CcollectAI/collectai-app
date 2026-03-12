@@ -21,23 +21,27 @@ import {
  * fall back to the system font gracefully.
  */
 const defaultTextStyle = { fontFamily: "Roboto_400Regular" };
-const origTextRender = (Text as any).render;
-if (origTextRender) {
-  (Text as any).render = function (props: any, ref: any) {
-    const style = props.style
-      ? [defaultTextStyle, props.style]
-      : defaultTextStyle;
-    return origTextRender.call(this, { ...props, style }, ref);
-  };
-}
-const origInputRender = (TextInput as any).render;
-if (origInputRender) {
-  (TextInput as any).render = function (props: any, ref: any) {
-    const style = props.style
-      ? [defaultTextStyle, props.style]
-      : defaultTextStyle;
-    return origInputRender.call(this, { ...props, style }, ref);
-  };
+try {
+  const origTextRender = (Text as any).render;
+  if (origTextRender) {
+    (Text as any).render = function (props: any, ref: any) {
+      const style = props.style
+        ? [defaultTextStyle, props.style]
+        : defaultTextStyle;
+      return origTextRender.call(this, { ...props, style }, ref);
+    };
+  }
+  const origInputRender = (TextInput as any).render;
+  if (origInputRender) {
+    (TextInput as any).render = function (props: any, ref: any) {
+      const style = props.style
+        ? [defaultTextStyle, props.style]
+        : defaultTextStyle;
+      return origInputRender.call(this, { ...props, style }, ref);
+    };
+  }
+} catch {
+  // Font monkey-patch failed — system font will be used as fallback
 }
 import { SettingsProvider } from "@/lib/settings";
 import { ToastProvider } from "@/components/Toast";
@@ -275,6 +279,7 @@ function RootStack() {
         {/* Legal screens — no header (custom header inside) */}
         <Stack.Screen name="legal/privacy-policy" options={{ headerShown: false }} />
         <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
+        <Stack.Screen name="legal/user-policy" options={{ headerShown: false }} />
       </Stack>
 
       {/* Branded splash overlay — covers content while auth is resolving, fades out */}

@@ -143,7 +143,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
         <View style={styles.fieldRow}>
           <View style={[styles.fieldBlock, { flex: 1, marginRight: 8 }]}>
             <Text style={[styles.fieldLabel, { color: colors.text }]}>Purchase Price</Text>
-            <View style={[styles.inputWrap, { borderColor: purchasePriceField.touched && purchasePriceField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+            <View style={[styles.inputWrap, { borderColor: purchasePriceField.touched && purchasePriceField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
               <Text style={[styles.currencyPrefix, { color: colors.muted }]}>{currencySymbol}</Text>
               <TextInput
                 value={purchasePriceField.value}
@@ -154,15 +154,16 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
                 placeholderTextColor={colors.muted}
                 style={[styles.input, { color: colors.text }]}
                 accessibilityLabel="Purchase price"
+                returnKeyType="next"
               />
             </View>
             {purchasePriceField.touched && purchasePriceField.error && (
-              <Text style={styles.fieldError}>{purchasePriceField.error}</Text>
+              <Text style={[styles.fieldError, { color: colors.danger }]}>{purchasePriceField.error}</Text>
             )}
           </View>
           <View style={[styles.fieldBlock, { flex: 1 }]}>
             <Text style={[styles.fieldLabel, { color: colors.text }]}>Estimated Value</Text>
-            <View style={[styles.inputWrap, { borderColor: estimatedValueField.touched && estimatedValueField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+            <View style={[styles.inputWrap, { borderColor: estimatedValueField.touched && estimatedValueField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
               <Text style={[styles.currencyPrefix, { color: colors.muted }]}>{currencySymbol}</Text>
               <TextInput
                 value={estimatedValueField.value}
@@ -173,10 +174,11 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
                 placeholderTextColor={colors.muted}
                 style={[styles.input, { color: colors.text }]}
                 accessibilityLabel="Estimated value"
+                returnKeyType="done"
               />
             </View>
             {estimatedValueField.touched && estimatedValueField.error && (
-              <Text style={styles.fieldError}>{estimatedValueField.error}</Text>
+              <Text style={[styles.fieldError, { color: colors.danger }]}>{estimatedValueField.error}</Text>
             )}
           </View>
         </View>
@@ -198,7 +200,7 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, fontSize: 14, paddingVertical: 0 },
   currencyPrefix: { fontSize: 14, fontWeight: '600', marginRight: 4 },
-  fieldError: { fontSize: 12, color: '#EF4444', marginTop: 4, marginLeft: 4 },
+  fieldError: { fontSize: 12, marginTop: 4, marginLeft: 4 },
   dropdownTrigger: {
     flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, height: 44,
   },

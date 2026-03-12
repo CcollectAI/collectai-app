@@ -5,5 +5,5 @@ export async function logMetric(supa: any, m: {
   try { await supa.from('fn_metrics').insert({
     fn: m.fn, status: m.status, latency_ms: m.latency_ms ?? null,
     idem_key: m.idem_key ?? null, session_id: m.session_id ?? null, payload: m.payload ?? null
-  }) } catch (_) {}
+  }) } catch (e) { console.debug('[metrics] insert failed:', e) }
 }

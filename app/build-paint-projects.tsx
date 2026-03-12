@@ -35,6 +35,10 @@ import { useToast } from "@/components/Toast";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import logger from "@/utils/logger";
 import { QuickNavBar } from "@/components/QuickNavBar";
+import { timeAgo } from "@/lib/timeAgo";
+import { MS_PER_DAY } from "@/constants/time";
+
+const MS_PER_MONTH = 30 * MS_PER_DAY;
 
 const statusColor = (
   status: string | null | undefined,
@@ -694,14 +698,12 @@ function ProjectCard({
 function formatRelativeDate(dateStr: string): string {
   if (!dateStr) return "";
   const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diff = Date.now() - date.getTime();
+  const diffDays = Math.floor(diff / MS_PER_DAY);
 
   if (diffDays === 0) return "today";
   if (diffDays === 1) return "yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  if (diff < MS_PER_MONTH) return timeAgo(date);
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 

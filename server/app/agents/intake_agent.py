@@ -13,6 +13,9 @@ identified, categorised, and priced.
 
 from __future__ import annotations
 
+import asyncio
+import base64
+import json
 import logging
 import re
 from dataclasses import dataclass, field
@@ -20,6 +23,8 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 from urllib.parse import urlparse
 from uuid import uuid4
+
+from app.config import OPENAI_API_KEY, OPENAI_VISION_MODEL, CATALOG_LEARNING_ENABLED
 
 logger = logging.getLogger(__name__)
 
@@ -392,12 +397,7 @@ async def _validate_with_reprompt(
     focused validation pass.  Returns {"selected_index", "confidence",
     "reasoning"} or None on any error (graceful degradation).
     """
-    import base64
-    import json
-
     import httpx
-
-    from app.config import OPENAI_API_KEY, OPENAI_VISION_MODEL
 
     if not OPENAI_API_KEY:
         return None
@@ -821,7 +821,6 @@ async def _estimate_price(
 
 def _fire_catalog_miss(**kwargs) -> None:
     """Fire-and-forget wrapper for _log_catalog_miss (non-blocking)."""
-    import asyncio
     try:
         loop = asyncio.get_running_loop()
         loop.create_task(_log_catalog_miss(**kwargs))
@@ -837,11 +836,9 @@ async def _log_catalog_miss(
 ) -> None:
     """Best-effort insert into catalog_suggestions for learning pipeline."""
     try:
-        from app.config import CATALOG_LEARNING_ENABLED
         if not CATALOG_LEARNING_ENABLED or not user_id:
             return
 
-        import json
         pool = get_db_pool()
         if pool is None:
             return

@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.lib.validators import is_valid_barcode
 from app.lib.error_codes import ErrorCode
 from app.cache import cache_get, cache_set
 from app.config import BARCODE_CACHE_TTL
@@ -515,7 +516,6 @@ async def barcode_lookup(
     if not barcode:
         raise error_response(400, "Barcode is required", code=ErrorCode.VALIDATION_ERROR)
 
-    from app.lib.validators import is_valid_barcode
     if not is_valid_barcode(barcode):
         raise error_response(400, "Invalid barcode format", code=ErrorCode.VALIDATION_ERROR)
 

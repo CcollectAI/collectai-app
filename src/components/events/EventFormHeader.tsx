@@ -59,7 +59,7 @@ export const EventFormHeader = React.memo(function EventFormHeader({
           <Text style={[styles.fieldLabel, { color: colors.text }]}>
             Title <Text style={{ color: colors.accent }}>*</Text>
           </Text>
-          <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+          <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
             <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
             <TextInput
               value={titleField.value}
@@ -69,9 +69,10 @@ export const EventFormHeader = React.memo(function EventFormHeader({
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
               accessibilityLabel="Event title"
+              returnKeyType="next"
             />
           </View>
-          {titleField.touched && titleField.error && <Text style={styles.fieldError}>{titleField.error}</Text>}
+          {titleField.touched && titleField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{titleField.error}</Text>}
         </View>
 
         {/* Kind dropdown */}
@@ -156,7 +157,6 @@ const styles = StyleSheet.create({
   },
   fieldError: {
     fontSize: 12,
-    color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
   },

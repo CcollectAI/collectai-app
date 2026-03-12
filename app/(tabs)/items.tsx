@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { useModal } from '@/hooks/useModal';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
@@ -152,9 +153,9 @@ const ItemsScreen: React.FC = () => {
     AsyncStorage.setItem(VIEW_MODE_KEY, next).catch(() => {});
   }, [viewMode]);
 
-  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [categoryModalVisible, openCategoryModal, closeCategoryModal] = useModal();
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
+  const [filterSheetVisible, openFilterSheet, closeFilterSheet] = useModal();
   const [advancedFilter, setAdvancedFilter] = useState<FilterConfig>({
     categories: [],
     priceMin: null,
@@ -181,6 +182,7 @@ const ItemsScreen: React.FC = () => {
   });
 
   // Stable ref for refresh so optimistic rollback callbacks stay current
+  const exportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRef = useRef(paginatedRefresh);
   refreshRef.current = paginatedRefresh;
   const stableReload = useCallback(() => { refreshRef.current(); }, []);
@@ -264,7 +266,8 @@ const ItemsScreen: React.FC = () => {
     } finally {
       setExporting(false);
       // Clear status after 3 seconds
-      setTimeout(() => setExportStatus(null), 3000);
+      if (exportTimerRef.current) clearTimeout(exportTimerRef.current);
+      exportTimerRef.current = setTimeout(() => setExportStatus(null), 3000);
     }
   }, [showToast]);
 
@@ -382,7 +385,7 @@ const ItemsScreen: React.FC = () => {
     const count = selectedCount;
     const ids = [...selectedIds];
     setBulkActionLoading(true);
-    setCategoryModalVisible(false);
+    closeCategoryModal();
     try {
       for (const id of ids) {
         await dataProvider.updateItem(id, { category: newCategory });
@@ -636,7 +639,7 @@ const ItemsScreen: React.FC = () => {
           }}
           onChangeCategory={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            setCategoryModalVisible(true);
+            openCategoryModal();
           }}
           onExport={() => {
             fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
@@ -676,7 +679,7 @@ const ItemsScreen: React.FC = () => {
         }
         onOpenFilter={() => {
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-          setFilterSheetVisible(true);
+          openFilterSheet();
         }}
         onEnterMultiSelect={() => {
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -812,7 +815,7 @@ const ItemsScreen: React.FC = () => {
         <ItemsFloatingAddButton
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push('/add');
+            router.push('/(tabs)/add');
           }}
         />
       )}
@@ -824,13 +827,13 @@ const ItemsScreen: React.FC = () => {
         selectedCount={selectedCount}
         allCategories={allCategories}
         onChangeCategory={handleBulkChangeCategory}
-        onClose={() => setCategoryModalVisible(false)}
+        onClose={() => closeCategoryModal()}
       />
 
       {/* Advanced Filter Sheet */}
       <FilterSheet
         visible={filterSheetVisible}
-        onClose={() => setFilterSheetVisible(false)}
+        onClose={() => closeFilterSheet()}
         onApply={(config) => setAdvancedFilter(config)}
         currentConfig={advancedFilter}
         availableCategories={allCategories}

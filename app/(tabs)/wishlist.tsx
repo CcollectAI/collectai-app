@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useModal } from '@/hooks/useModal';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
@@ -64,7 +65,7 @@ function WatchlistTabScreen() {
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible, openModal, closeModal] = useModal();
   const [saving, setSaving] = useState(false);
 
   // Form state
@@ -72,16 +73,16 @@ function WatchlistTabScreen() {
   const [formCategory, setFormCategory] = useState('');
   const [formTargetPrice, setFormTargetPrice] = useState('');
   const [formNotes, setFormNotes] = useState('');
-  const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
+  const [categoryPickerVisible, openCategoryPicker, closeCategoryPicker] = useModal();
 
   // Edit target price state
-  const [editTargetModalVisible, setEditTargetModalVisible] = useState(false);
+  const [editTargetModalVisible, openEditTargetModal, closeEditTargetModal] = useModal();
   const [editTargetItem, setEditTargetItem] = useState<WatchlistItem | null>(null);
   const [editTargetValue, setEditTargetValue] = useState('');
   const [editTargetSaving, setEditTargetSaving] = useState(false);
 
   // "I Got It!" acquisition state
-  const [acquireModalVisible, setAcquireModalVisible] = useState(false);
+  const [acquireModalVisible, openAcquireModal, closeAcquireModal] = useModal();
   const [acquireItem, setAcquireItem] = useState<WatchlistItem | null>(null);
   const [acquirePrice, setAcquirePrice] = useState('');
   const [acquireNotes, setAcquireNotes] = useState('');
@@ -164,7 +165,7 @@ function WatchlistTabScreen() {
       }
 
       track({ name: 'watchlist_item_added', properties: { category: formCategory } });
-      setModalVisible(false);
+      closeModal();
       resetForm();
       loadItems();
     } catch (err: any) {
@@ -200,7 +201,7 @@ function WatchlistTabScreen() {
   const handleEditTarget = (item: WatchlistItem) => {
     setEditTargetItem(item);
     setEditTargetValue(item.targetPrice?.toString() || '');
-    setEditTargetModalVisible(true);
+    openEditTargetModal();
   };
 
   const handleSaveTargetPrice = async () => {
@@ -238,7 +239,7 @@ function WatchlistTabScreen() {
         showToast({ message: 'Target price updated', type: 'success' });
       }
 
-      setEditTargetModalVisible(false);
+      closeEditTargetModal();
       setEditTargetItem(null);
       setEditTargetValue('');
       loadItems();
@@ -266,7 +267,7 @@ function WatchlistTabScreen() {
     setAcquireItem(item);
     setAcquirePrice(item.targetPrice?.toString() || '');
     setAcquireNotes('');
-    setAcquireModalVisible(true);
+    openAcquireModal();
   };
 
   const playCongrats = () => {
@@ -324,7 +325,7 @@ function WatchlistTabScreen() {
         acquireNotes.trim() || undefined
       );
 
-      setAcquireModalVisible(false);
+      closeAcquireModal();
       setAcquireItem(null);
       setAcquirePrice('');
       setAcquireNotes('');
@@ -436,7 +437,7 @@ function WatchlistTabScreen() {
       </Text>
       <AnimatedPressable
         style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
-        onPress={() => setModalVisible(true)}
+        onPress={openModal}
         accessibilityRole="button"
         accessibilityLabel="Add your first watchlist item"
       >
@@ -475,7 +476,7 @@ function WatchlistTabScreen() {
 
       <AnimatedPressable
         style={[styles.addPill, { backgroundColor: colors.accent }]}
-        onPress={() => setModalVisible(true)}
+        onPress={openModal}
         accessibilityRole="button"
         accessibilityLabel="Add item to watchlist"
       >
@@ -514,7 +515,7 @@ function WatchlistTabScreen() {
       </Animated.View>
 
       {/* Add Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => { setModalVisible(false); resetForm(); }}>
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => { closeModal(); resetForm(); }}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -522,7 +523,7 @@ function WatchlistTabScreen() {
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Watchlist</Text>
-              <AnimatedPressable onPress={() => { setModalVisible(false); resetForm(); }} accessibilityRole="button" accessibilityLabel="Close add to watchlist form">
+              <AnimatedPressable onPress={() => { closeModal(); resetForm(); }} accessibilityRole="button" accessibilityLabel="Close add to watchlist form">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
@@ -542,7 +543,7 @@ function WatchlistTabScreen() {
             <Text style={[styles.label, { color: colors.text }]}>Category *</Text>
             <AnimatedPressable
               style={[styles.input, styles.pickerBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
-              onPress={() => setCategoryPickerVisible(true)}
+              onPress={() => openCategoryPicker()}
               accessibilityRole="button"
               accessibilityLabel={formCategory ? `Category: ${formCategory}. Tap to change` : "Select category"}
             >
@@ -596,10 +597,10 @@ function WatchlistTabScreen() {
       </Modal>
 
       {/* Category Picker Modal */}
-      <Modal visible={categoryPickerVisible} animationType="slide" transparent onRequestClose={() => setCategoryPickerVisible(false)}>
+      <Modal visible={categoryPickerVisible} animationType="slide" transparent onRequestClose={() => closeCategoryPicker()}>
         <AnimatedPressable
           style={styles.pickerOverlay}
-          onPress={() => setCategoryPickerVisible(false)}
+          onPress={() => closeCategoryPicker()}
           accessibilityRole="button"
           accessibilityLabel="Close category picker"
         >
@@ -614,7 +615,7 @@ function WatchlistTabScreen() {
                 ]}
                 onPress={() => {
                   setFormCategory(cat);
-                  setCategoryPickerVisible(false);
+                  closeCategoryPicker();
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={`${cat}${formCategory === cat ? ', selected' : ''}`}
@@ -630,7 +631,7 @@ function WatchlistTabScreen() {
       </Modal>
 
       {/* "I Got It!" Acquisition Modal */}
-      <Modal visible={acquireModalVisible} animationType="slide" transparent onRequestClose={() => { setAcquireModalVisible(false); setAcquireItem(null); }}>
+      <Modal visible={acquireModalVisible} animationType="slide" transparent onRequestClose={() => { closeAcquireModal(); setAcquireItem(null); }}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -638,7 +639,7 @@ function WatchlistTabScreen() {
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Add to Collection</Text>
-              <AnimatedPressable onPress={() => { setAcquireModalVisible(false); setAcquireItem(null); }} accessibilityRole="button" accessibilityLabel="Close acquisition form">
+              <AnimatedPressable onPress={() => { closeAcquireModal(); setAcquireItem(null); }} accessibilityRole="button" accessibilityLabel="Close acquisition form">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>
@@ -705,7 +706,7 @@ function WatchlistTabScreen() {
       </Modal>
 
       {/* Edit Target Price Modal */}
-      <Modal visible={editTargetModalVisible} animationType="slide" transparent onRequestClose={() => { setEditTargetModalVisible(false); setEditTargetItem(null); }}>
+      <Modal visible={editTargetModalVisible} animationType="slide" transparent onRequestClose={() => { closeEditTargetModal(); setEditTargetItem(null); }}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -713,7 +714,7 @@ function WatchlistTabScreen() {
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Set Target Price</Text>
-              <AnimatedPressable onPress={() => { setEditTargetModalVisible(false); setEditTargetItem(null); }} accessibilityRole="button" accessibilityLabel="Close target price editor">
+              <AnimatedPressable onPress={() => { closeEditTargetModal(); setEditTargetItem(null); }} accessibilityRole="button" accessibilityLabel="Close target price editor">
                 <Ionicons name="close" size={24} color={colors.muted} />
               </AnimatedPressable>
             </View>

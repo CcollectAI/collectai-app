@@ -12,7 +12,7 @@ export async function predictValue(input: PredictInput): Promise<PredictOut>{
     try{
       const resp = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(input) });
       if (resp.ok) return await resp.json() as PredictOut;
-    }catch(_){}
+    }catch(e){ /* prediction endpoint unavailable — falling back to heuristic */ }
   }
 
   // Local fallback heuristic (stub)

@@ -55,7 +55,7 @@ export const PhotoUploadSection = React.memo(function PhotoUploadSection({
           )}
 
           {photoError && (
-            <Text style={styles.photoError}>{photoError}</Text>
+            <Text style={[styles.photoError, { color: colors.danger }]}>{photoError}</Text>
           )}
         </View>
       </View>
@@ -81,5 +81,5 @@ const styles = StyleSheet.create({
   addPhotoBtnText: { fontSize: 13, fontWeight: '600' },
   photoUploadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   photoUploadingText: { fontSize: 13 },
-  photoError: { fontSize: 12, color: '#EF4444', marginTop: 8, textAlign: 'center' },
+  photoError: { fontSize: 12, marginTop: 8, textAlign: 'center' },
 });

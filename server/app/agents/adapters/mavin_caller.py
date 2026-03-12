@@ -16,6 +16,7 @@ Env vars:
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -163,7 +164,6 @@ class MavinCaller:
 
     def _parse_search_page(self, html: str, query: str, limit: int) -> List[Dict[str, Any]]:
         """Parse Mavin.io search results from HTML."""
-        import re
         results = []
 
         # Mavin shows sold items with prices in a structured format

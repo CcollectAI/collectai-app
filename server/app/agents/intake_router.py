@@ -11,8 +11,11 @@ Endpoints:
 
 from __future__ import annotations
 
+import json as _json
 import logging
+import re
 from typing import Any, Optional
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from pydantic import BaseModel, Field
@@ -21,6 +24,8 @@ from app.agents.intake_agent import IntakeResult, process_intake, process_url_im
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.config import INTAKE_MAX_IMAGE_BYTES as MAX_IMAGE_BYTES
+from app.db import db_configured, get_conn
+from app.lib.validators import is_valid_barcode
 from app.rate_limit import per_user_rate_limit
 from app.ssrf import validate_url
 
@@ -462,7 +467,6 @@ async def intake_barcode_only(
     if not barcode:
         raise error_response(400, "Barcode is required")
 
-    from app.lib.validators import is_valid_barcode
     if not is_valid_barcode(barcode):
         raise error_response(400, "Invalid barcode format")
 
@@ -632,7 +636,6 @@ class IntakeSaveResponse(BaseModel):
 
 def _normalize_key(title: str) -> str:
     """Generate a normalized_key from a title for dedup / matching."""
-    import re
     key = title.lower().strip()
     key = re.sub(r"[^a-z0-9\s]", "", key)
     key = re.sub(r"\s+", " ", key).strip()
@@ -650,12 +653,7 @@ async def intake_save(
     Called after barcode scan / image intake returns an identification,
     when the user taps "Add to Collection".
     """
-    from uuid import uuid4
-    import json as _json
-
     item_id = str(uuid4())
-
-    from app.db import db_configured, get_conn
 
     if not db_configured():
         # DB-disabled mode: return a mock saved item

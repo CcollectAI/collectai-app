@@ -5,6 +5,7 @@ import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { timeAgo } from '@/lib/timeAgo';
 
 interface ItemRefreshBarProps {
   predictionAt: string | null | undefined;
@@ -14,14 +15,7 @@ interface ItemRefreshBarProps {
 
 const relativeTime = (iso: string | null | undefined): string => {
   if (!iso) return '';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return timeAgo(iso);
 };
 
 export const ItemRefreshBar = React.memo(function ItemRefreshBar({ predictionAt, aiRefreshing, onRefresh }: ItemRefreshBarProps) {

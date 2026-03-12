@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from typing import List, Literal, Optional
+from uuid import uuid4
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -11,11 +13,14 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.features.pagination import pagination_params
+from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
 
 from app.db import db_configured, get_conn
 
 logger = logging.getLogger(__name__)
+
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 
 router = APIRouter(prefix="/alerts", tags=["Alerts"])
 
@@ -133,7 +138,10 @@ async def create_or_update_alert(
     - 'Alert me when category prices start trending'
     - 'Alert me when predicted value is unusually high'
     """
-    from uuid import uuid4
+    if alert_id is not None and not _UUID_RE.match(alert_id):
+        raise error_response(400, "Invalid alert_id format", code=ErrorCode.INVALID_UUID)
+    if payload.item_id is not None and not _UUID_RE.match(payload.item_id):
+        raise error_response(400, "Invalid item_id format", code=ErrorCode.INVALID_UUID)
 
     if alert_id is None:
         alert_id = str(uuid4())
@@ -208,6 +216,9 @@ async def delete_alert(alert_id: str, user_id: str = Depends(get_current_user_id
     """
     Delete/disable a user's alert (soft delete by setting active=false).
     """
+    if not _UUID_RE.match(alert_id):
+        raise error_response(400, "Invalid alert_id format", code=ErrorCode.INVALID_UUID)
+
     if not db_configured():
         existing = _IN_MEMORY_ALERTS.get(alert_id)
         if existing and existing.user_id == user_id:
@@ -296,6 +307,9 @@ async def get_trigger_history(
 @router.post("/trigger-history/{trigger_id}/read")
 async def mark_trigger_read(trigger_id: str, user_id: str = Depends(get_current_user_id)):
     """Mark a single trigger-history entry as read."""
+    if not _UUID_RE.match(trigger_id):
+        raise error_response(400, "Invalid trigger_id format", code=ErrorCode.INVALID_UUID)
+
     if not db_configured():
         return {"ok": True}
 

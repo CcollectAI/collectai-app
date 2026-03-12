@@ -286,7 +286,7 @@ const EditEventScreen: React.FC = () => {
     return (
       <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.centerContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+          <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>{authError}</Text>
           <AnimatedPressable
             onPress={() => router.back()}
@@ -335,7 +335,7 @@ const EditEventScreen: React.FC = () => {
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>
                   Title <Text style={{ color: colors.accent }}>*</Text>
                 </Text>
-                <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                   <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
                     value={titleField.value}
@@ -345,9 +345,10 @@ const EditEventScreen: React.FC = () => {
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
                     accessibilityLabel="Event title"
+                    returnKeyType="next"
                   />
                 </View>
-                {titleField.touched && titleField.error && <Text style={styles.fieldError}>{titleField.error}</Text>}
+                {titleField.touched && titleField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{titleField.error}</Text>}
               </View>
 
               {/* Kind dropdown */}
@@ -447,7 +448,7 @@ const EditEventScreen: React.FC = () => {
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>
                   Date <Text style={{ color: colors.accent }}>*</Text>
                 </Text>
-                <View style={[styles.inputWrap, { borderColor: dateField.touched && dateField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.inputWrap, { borderColor: dateField.touched && dateField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                   <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
                     value={dateField.value}
@@ -457,9 +458,10 @@ const EditEventScreen: React.FC = () => {
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
                     accessibilityLabel="Event date"
+                    returnKeyType="next"
                   />
                 </View>
-                {dateField.touched && dateField.error && <Text style={styles.fieldError}>{dateField.error}</Text>}
+                {dateField.touched && dateField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{dateField.error}</Text>}
               </View>
 
               {/* Time */}
@@ -474,6 +476,7 @@ const EditEventScreen: React.FC = () => {
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
                     accessibilityLabel="Event time"
+                    returnKeyType="next"
                   />
                 </View>
               </View>
@@ -490,6 +493,7 @@ const EditEventScreen: React.FC = () => {
                     placeholderTextColor={colors.muted}
                     style={[styles.input, { color: colors.text }]}
                     accessibilityLabel="Event end date"
+                    returnKeyType="next"
                   />
                 </View>
               </View>
@@ -536,6 +540,7 @@ const EditEventScreen: React.FC = () => {
                           placeholderTextColor={colors.muted}
                           style={[styles.input, { color: colors.text }]}
                           accessibilityLabel="Event location"
+                          returnKeyType="next"
                         />
                       </View>
                       <AnimatedPressable
@@ -570,7 +575,7 @@ const EditEventScreen: React.FC = () => {
                 {showOnlineUrl && (
                   <View style={showLocation ? styles.fieldBlock : undefined}>
                     <Text style={[styles.fieldLabel, { color: colors.text }]}>Online URL</Text>
-                    <View style={[styles.inputWrap, { borderColor: onlineUrlField.touched && onlineUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                    <View style={[styles.inputWrap, { borderColor: onlineUrlField.touched && onlineUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                       <Ionicons name="link-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                       <TextInput
                         value={onlineUrlField.value}
@@ -582,9 +587,10 @@ const EditEventScreen: React.FC = () => {
                         autoCapitalize="none"
                         keyboardType="url"
                         accessibilityLabel="Online event URL"
+                        returnKeyType="next"
                       />
                     </View>
-                    {onlineUrlField.touched && onlineUrlField.error && <Text style={styles.fieldError}>{onlineUrlField.error}</Text>}
+                    {onlineUrlField.touched && onlineUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{onlineUrlField.error}</Text>}
                   </View>
                 )}
               </View>
@@ -605,7 +611,7 @@ const EditEventScreen: React.FC = () => {
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>
                   Description <Text style={{ color: colors.accent }}>*</Text>
                 </Text>
-                <View style={[styles.inputWrapMultiline, { borderColor: descriptionField.touched && descriptionField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.inputWrapMultiline, { borderColor: descriptionField.touched && descriptionField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                   <TextInput
                     value={descriptionField.value}
                     onChangeText={descriptionField.onChange}
@@ -619,7 +625,7 @@ const EditEventScreen: React.FC = () => {
                     accessibilityLabel="Event description"
                   />
                 </View>
-                {descriptionField.touched && descriptionField.error && <Text style={styles.fieldError}>{descriptionField.error}</Text>}
+                {descriptionField.touched && descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{descriptionField.error}</Text>}
               </View>
             </View>
           </View>
@@ -636,7 +642,7 @@ const EditEventScreen: React.FC = () => {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View>
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>Image URL</Text>
-                <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                   <Ionicons name="image-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
                     value={imageUrlField.value}
@@ -648,9 +654,10 @@ const EditEventScreen: React.FC = () => {
                     autoCapitalize="none"
                     keyboardType="url"
                     accessibilityLabel="Event image URL"
+                    returnKeyType="done"
                   />
                 </View>
-                {imageUrlField.touched && imageUrlField.error && <Text style={styles.fieldError}>{imageUrlField.error}</Text>}
+                {imageUrlField.touched && imageUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{imageUrlField.error}</Text>}
               </View>
             </View>
           </View>
@@ -725,17 +732,17 @@ const EditEventScreen: React.FC = () => {
           {/* ============================================================== */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="warning-outline" size={16} color="#EF4444" />
-              <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>Danger Zone</Text>
+              <Ionicons name="warning-outline" size={16} color={colors.danger} />
+              <Text style={[styles.sectionTitle, { color: colors.danger }]}>Danger Zone</Text>
             </View>
 
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: '#EF444430' }]}>
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.danger + '30' }]}>
               <Text style={[styles.dangerHint, { color: colors.muted }]}>
                 Cancelling this event is permanent. All attendees will be notified.
               </Text>
               <AnimatedPressable
                 onPress={handleCancelEvent}
-                style={styles.cancelEventButton}
+                style={[styles.cancelEventButton, { backgroundColor: colors.danger }]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel event"
               >
@@ -964,7 +971,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: '#EF4444',
+    backgroundColor: '#EF4444', // overridden inline via colors.danger
   },
   cancelEventButtonText: {
     fontSize: 15,
@@ -974,7 +981,6 @@ const styles = StyleSheet.create({
 
   fieldError: {
     fontSize: 12,
-    color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
   },

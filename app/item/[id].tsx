@@ -83,6 +83,7 @@ import { ItemRefreshBar } from '@/components/item/ItemRefreshBar';
 import { ItemDraftActions } from '@/components/item/ItemDraftActions';
 import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
+import { timeAgo } from '@/lib/timeAgo';
 
 // DossierData and MarketHit types imported from extracted components
 
@@ -117,14 +118,7 @@ const toNum = (value: string | number | undefined | null): number | undefined =>
 // Helper: relative time display from ISO timestamp
 const relativeTime = (iso: string | null | undefined): string => {
   if (!iso) return '';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return timeAgo(iso);
 };
 
 // Predefined options for dropdown menus
@@ -551,14 +545,20 @@ function ItemDetailScreen() {
   // Fetch scarcity scores + market comps
   useEffect(() => {
     if (isDraft || !categorySlug) return;
+    let cancelled = false;
     collectorsApi.getScarcityScores(categorySlug).then((data) => {
-      const match = (data as any)?.items?.find((i: any) => i.item_key?.toLowerCase().includes(editableName.toLowerCase().slice(0, 20)));
+      if (cancelled) return;
+      const resp = data as { items?: Array<{ item_key: string; scarcity_score: number; listing_count: number; supply_trend: string }> } | undefined;
+      const match = resp?.items?.find((i) => i.item_key?.toLowerCase().includes(editableName.toLowerCase().slice(0, 20)));
       if (match) setScarcityData(match);
     }).catch(() => {});
     collectorsApi.marketplaceComps(editableName, categorySlug).then((data) => {
-      const comps = (data as any)?.comps;
+      if (cancelled) return;
+      const resp = data as { comps?: Array<{ source: string; title: string; price: number; currency: string }> } | undefined;
+      const comps = resp?.comps;
       if (Array.isArray(comps) && comps.length) setMarketComps(comps.slice(0, 5));
     }).catch(() => {});
+    return () => { cancelled = true; };
   }, [isDraft, categorySlug, editableName]);
 
   // Affiliate links, price trend, and dossier managed by hooks above
@@ -705,7 +705,7 @@ function ItemDetailScreen() {
     // Delay slightly to let keyboard height settle, then scroll notes into view
     setTimeout(() => {
       if (notesLayoutY.current > 0) {
-        (scrollViewRef.current as any)?.scrollTo?.({
+        (scrollViewRef.current as ScrollView | null)?.scrollTo?.({
           y: notesLayoutY.current - 60,
           animated: true,
         });

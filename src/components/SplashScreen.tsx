@@ -3,9 +3,8 @@
  * Gradient background with pulsing glow ring and staggered dot indicators.
  */
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { fonts } from '@/theme/tokens';
@@ -111,7 +110,11 @@ export function SplashScreen({ onReady }: Props) {
         ]}
       >
         <View style={styles.logoCircle}>
-          <Ionicons name="diamond" size={52} color="#81D8D0" />
+          <Image
+            source={require('../../assets/images/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
       </Animated.View>
 
@@ -165,6 +168,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 16,
     elevation: 10,
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 100,
+    height: 100,
   },
   appName: {
     fontSize: 36,

@@ -612,9 +612,9 @@ function WatchlistBuilderScreen() {
 
             {/* Error */}
             {error && (
-              <View style={[styles.errorBanner, { backgroundColor: colors.card, borderColor: '#EF444440' }]}>
-                <Ionicons name="warning-outline" size={16} color="#EF4444" />
-                <Text style={[styles.errorText, { color: '#EF4444' }]}>{error}</Text>
+              <View style={[styles.errorBanner, { backgroundColor: colors.card, borderColor: colors.danger + '40' }]}>
+                <Ionicons name="warning-outline" size={16} color={colors.danger} />
+                <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
                 <AnimatedPressable
                   onPress={handleRefresh}
                   accessibilityRole="button"

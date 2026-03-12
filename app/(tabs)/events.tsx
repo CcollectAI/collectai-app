@@ -32,7 +32,6 @@ import { useSettings } from '@/lib/settings';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { CountdownBadge } from '@/components/EventCountdown';
-import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
 import calendar, { parseEventDate, getCountdown } from '@/lib/calendar';
 import { CalendarGrid } from '@/components/CalendarGrid';
@@ -50,8 +49,6 @@ function EventsScreen() {
   const { settings } = useSettings();
   const { showToast } = useToast();
   const [refreshing, setRefreshing] = useState(false);
-  const [followedCategories, setFollowedCategories] = useState<string[]>([]);
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'week' | 'nearby'>('list');
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
@@ -77,32 +74,25 @@ function EventsScreen() {
     setItems: setEvents,
   } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 20 });
 
-  useEffect(() => {
-    dataProvider.listFollowedCategories().then(setFollowedCategories).catch((err) => { logger.warn('[Events] Failed to load followed categories', err); });
-  }, []);
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), [events]);
 
   // Search filter: match title case-insensitively
-  const searchFiltered = events.filter(
-    (e) => !searchQuery || e.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  const searchFiltered = useMemo(
+    () => events.filter(
+      (e) => !searchQuery || e.title.toLowerCase().includes(searchQuery.toLowerCase()),
+    ),
+    [events, searchQuery],
   );
 
-  const upcomingEvents = searchFiltered.filter((e) => {
-    const eventDate = parseEventDate(e.date, e.time);
-    return eventDate >= now;
-  });
-  const pastEvents = searchFiltered.filter((e) => {
-    const eventDate = parseEventDate(e.date, e.time);
-    return eventDate < now;
-  });
-
-  const filteredUpcoming = activeFilter
-    ? upcomingEvents.filter((e) => e.categoryId === activeFilter)
-    : upcomingEvents;
-  const filteredPast = activeFilter
-    ? pastEvents.filter((e) => e.categoryId === activeFilter)
-    : pastEvents;
+  const filteredUpcoming = useMemo(
+    () => searchFiltered.filter((e) => parseEventDate(e.date, e.time) >= now),
+    [searchFiltered, now],
+  );
+  const filteredPast = useMemo(
+    () => searchFiltered.filter((e) => parseEventDate(e.date, e.time) < now),
+    [searchFiltered, now],
+  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -121,8 +111,8 @@ function EventsScreen() {
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const data = await collectorsApi.getNearbyEvents(loc.coords.latitude, loc.coords.longitude, 50);
-      const events = (data as any)?.events;
-      if (Array.isArray(events)) setNearbyEvents(events);
+      const nearbyData = data as { events?: typeof nearbyEvents } | undefined;
+      if (Array.isArray(nearbyData?.events)) setNearbyEvents(nearbyData.events);
     } catch (err) {
       logger.warn('[Events] nearby events failed:', err);
       showToast({ message: 'Could not load nearby events', type: 'error' });
@@ -262,6 +252,8 @@ function EventsScreen() {
               source={{ uri: event.imageUrl }}
               style={styles.eventThumbnail}
               contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={150}
             />
           ) : (
             <View
@@ -370,22 +362,6 @@ function EventsScreen() {
           </Text>
         </View>
         <View style={styles.headerIcons}>
-          <AnimatedPressable
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              setViewMode((m) => m === 'list' ? 'calendar' : m === 'calendar' ? 'week' : m === 'week' ? 'nearby' : 'list');
-              if (viewMode === 'calendar') setSelectedCalendarDate(null);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={viewMode === 'list' ? 'Switch to month view' : viewMode === 'calendar' ? 'Switch to week view' : viewMode === 'week' ? 'Switch to nearby view' : 'Switch to list view'}
-            style={styles.viewToggleBtn}
-          >
-            <Ionicons
-              name={viewMode === 'list' ? 'calendar-outline' : viewMode === 'calendar' ? 'grid-outline' : viewMode === 'week' ? 'location-outline' : 'list-outline'}
-              size={22}
-              color={viewMode !== 'list' ? colors.accent : colors.text}
-            />
-          </AnimatedPressable>
           <InboxHeaderButton color={colors.text} size={22} />
           <ThemeToggleButton size={22} />
         </View>
@@ -418,6 +394,19 @@ function EventsScreen() {
           <Ionicons name="megaphone-outline" size={14} color={colors.accent} />
           <Text style={[styles.sponsorPillText, { color: colors.accent }]}>Sponsor</Text>
         </AnimatedPressable>
+
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push('/twitch');
+          }}
+          style={[styles.sponsorPill, { borderColor: '#9146FF', backgroundColor: '#9146FF' + '10' }]}
+          accessibilityRole="button"
+          accessibilityLabel="Twitch creators hub"
+        >
+          <Ionicons name="logo-twitch" size={14} color="#9146FF" />
+          <Text style={[styles.sponsorPillText, { color: '#9146FF' }]}>Twitch</Text>
+        </AnimatedPressable>
       </View>
 
       {/* Search Bar */}
@@ -444,54 +433,54 @@ function EventsScreen() {
         )}
       </View>
 
-      {/* Category Filter Chips */}
-      {followedCategories.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
-          <AnimatedPressable
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              setActiveFilter(null);
-            }}
-            style={[
-              styles.filterChip,
-              { borderColor: !activeFilter ? colors.accent : colors.border },
-              !activeFilter && { backgroundColor: colors.accent + '15' },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Show all categories"
-            accessibilityState={{ selected: !activeFilter }}
-          >
-            <Text style={[styles.filterChipText, { color: !activeFilter ? colors.accent : colors.muted }]}>
-              All
-            </Text>
-          </AnimatedPressable>
-          {followedCategories.map((catId) => {
-            const cat = ALL_CATS.find((c) => c.slug === catId);
-            const isActive = activeFilter === catId;
-            return (
-              <AnimatedPressable
-                key={catId}
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  setActiveFilter(isActive ? null : catId);
-                }}
-                style={[
-                  styles.filterChip,
-                  { borderColor: isActive ? colors.accent : colors.border },
-                  isActive && { backgroundColor: colors.accent + '15' },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={`Filter by ${cat?.name || catId}`}
-                accessibilityState={{ selected: isActive }}
-              >
-                <Text style={[styles.filterChipText, { color: isActive ? colors.accent : colors.muted }]}>
-                  {cat?.name || catId}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
-        </ScrollView>
-      )}
+      {/* View Mode Tabs — below search */}
+      <View style={[styles.viewModeTabs, { backgroundColor: colors.border + '40' }]}>
+        {([
+          { key: 'list' as const, icon: 'list-outline' as const, label: 'List' },
+          { key: 'week' as const, icon: 'grid-outline' as const, label: 'Week' },
+          { key: 'calendar' as const, icon: 'calendar-outline' as const, label: 'Month' },
+          { key: 'nearby' as const, icon: 'location-outline' as const, label: 'Nearby' },
+        ]).map((tab) => {
+          const isActive = viewMode === tab.key;
+          return (
+            <AnimatedPressable
+              key={tab.key}
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                setViewMode(tab.key);
+                if (tab.key !== 'calendar') setSelectedCalendarDate(null);
+              }}
+              style={[
+                styles.viewModeTab,
+                isActive && {
+                  backgroundColor: colors.card,
+                  shadowColor: '#000',
+                  shadowOpacity: 0.08,
+                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 1 },
+                  elevation: 2,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${tab.label} view`}
+              accessibilityState={{ selected: isActive }}
+            >
+              <Ionicons
+                name={isActive ? (tab.icon.replace('-outline', '') as any) : tab.icon}
+                size={15}
+                color={isActive ? colors.accent : colors.muted}
+              />
+              <Text style={[
+                styles.viewModeTabText,
+                { color: isActive ? colors.text : colors.muted },
+                isActive && { fontWeight: '700' },
+              ]}>
+                {tab.label}
+              </Text>
+            </AnimatedPressable>
+          );
+        })}
+      </View>
     </Animated.View>
   );
 
@@ -563,33 +552,44 @@ function EventsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {viewMode === 'nearby' ? (
-        <>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={refreshControlElement}
+        >
           {headerElement}
+          <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 4, marginBottom: 12 }]}>
+            Nearby Events
+          </Text>
           {nearbyLoading ? (
-            <View style={{ padding: 32, alignItems: 'center' }}>
+            <View style={styles.emptyContainer}>
               <ActivityIndicator size="large" color={colors.accent} />
               <Text style={[styles.emptySubtitle, { color: colors.muted, marginTop: 12 }]}>Finding events near you...</Text>
             </View>
           ) : nearbyEvents.length === 0 ? (
-            <View style={{ padding: 32, alignItems: 'center' }}>
+            <View style={styles.emptyContainer}>
               <Ionicons name="location-outline" size={48} color={colors.muted} />
               <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>No nearby events</Text>
               <Text style={[styles.emptySubtitle, { color: colors.muted }]}>No events found within 50km of your location</Text>
             </View>
           ) : (
-            <ScrollView contentContainerStyle={{ padding: 16 }}>
-              {nearbyEvents.map((ev) => (
-                <AnimatedPressable
-                  key={ev.id}
-                  style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                  onPress={() => router.push(`/events/${ev.id}`)}
-                  accessibilityRole="button"
-                  accessibilityLabel={ev.title}
-                >
-                  <View style={{ flex: 1 }}>
+            nearbyEvents.map((ev) => (
+              <AnimatedPressable
+                key={ev.id}
+                style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => router.push(`/events/${ev.id}`)}
+                accessibilityRole="button"
+                accessibilityLabel={ev.title}
+              >
+                <View style={styles.eventHeader}>
+                  <View style={[styles.eventIcon, { backgroundColor: colors.accent }]}>
+                    <Ionicons name="location" size={20} color={colors.accentText} />
+                  </View>
+                  <View style={styles.eventInfo}>
                     <Text style={[styles.eventTitle, { color: colors.text }]} numberOfLines={2}>{ev.title}</Text>
                     <Text style={[styles.eventMeta, { color: colors.muted }]}>{ev.date}</Text>
-                    {ev.location && <Text style={[styles.eventMeta, { color: colors.muted }]}>{ev.location}</Text>}
+                    {ev.location && <Text style={[styles.eventLocation, { color: colors.muted }]}>{ev.location}</Text>}
                   </View>
                   {ev.distance_km != null && (
                     <View style={[styles.distanceBadge, { backgroundColor: colors.accent + '15' }]}>
@@ -597,16 +597,21 @@ function EventsScreen() {
                       <Text style={[styles.distanceText, { color: colors.accent }]}>{ev.distance_km.toFixed(1)} km</Text>
                     </View>
                   )}
-                </AnimatedPressable>
-              ))}
-            </ScrollView>
+                </View>
+              </AnimatedPressable>
+            ))
           )}
-        </>
+        </ScrollView>
       ) : viewMode === 'week' ? (
-        <WeekViewCalendar
-          events={events}
-          onEventPress={(evt) => router.push(`/events/${evt.id}`)}
-        />
+        <View style={styles.scrollView}>
+          <View style={styles.scrollContent}>
+            {headerElement}
+          </View>
+          <WeekViewCalendar
+            events={events}
+            onEventPress={(evt) => router.push(`/events/${evt.id}`)}
+          />
+        </View>
       ) : viewMode === 'calendar' ? (
         <FlashList
           data={calendarFilteredEvents}
@@ -686,8 +691,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  viewToggleBtn: {
+  viewModeTabs: {
+    flexDirection: 'row',
+    borderRadius: 14,
     padding: 4,
+    marginBottom: 14,
+  },
+  viewModeTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 11,
+    borderRadius: 10,
+  },
+  viewModeTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.1,
   },
   section: {
     marginBottom: 16,
@@ -831,16 +853,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     paddingVertical: 0,
-  },
-  filterRow: {
-    marginBottom: 12,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginRight: 8,
   },
   filterChipText: {
     fontSize: 12,

@@ -59,7 +59,7 @@ function SwipeableRowInner({
   onAction,
   actionIcon = 'trash-outline',
   actionLabel = 'Delete',
-  actionColor = '#ef4444',
+  actionColor,
   deleteLabel,
   disabled = false,
   rightActions = [],
@@ -68,6 +68,7 @@ function SwipeableRowInner({
   enableHaptics = true,
 }: Props) {
   const { colors } = useAppTheme();
+  const resolvedActionColor = actionColor ?? colors.danger;
   const translateX = useRef(new Animated.Value(0)).current;
   const isOpen = useRef<'left' | 'right' | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -216,7 +217,7 @@ function SwipeableRowInner({
     // Legacy single action
     if (onDelete || onAction) {
       return (
-        <View style={[styles.actionContainer, { backgroundColor: actionColor }]}>
+        <View style={[styles.actionContainer, { backgroundColor: resolvedActionColor }]}>
           <Pressable
             style={styles.actionButton}
             onPress={() => handleAction()}

@@ -203,7 +203,7 @@ function CreateMandateScreen() {
         {/* Name */}
         <Text style={[styles.label, { color: colors.muted }]}>NAME</Text>
         <TextInput
-          style={[styles.input, { backgroundColor: colors.card, borderColor: nameField.touched && nameField.error ? '#EF4444' : colors.border, color: colors.text }]}
+          style={[styles.input, { backgroundColor: colors.card, borderColor: nameField.touched && nameField.error ? colors.danger : colors.border, color: colors.text }]}
           placeholder="e.g. Pokemon Grails under 200"
           placeholderTextColor={colors.muted}
           value={nameField.value}
@@ -211,7 +211,7 @@ function CreateMandateScreen() {
           onBlur={nameField.onBlur}
           accessibilityLabel="Search name"
         />
-        {nameField.touched && nameField.error && <Text style={styles.fieldError}>{nameField.error}</Text>}
+        {nameField.touched && nameField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{nameField.error}</Text>}
 
         {/* Category */}
         <Text style={[styles.label, { color: colors.muted }]}>CATEGORY (OPTIONAL)</Text>
@@ -228,7 +228,7 @@ function CreateMandateScreen() {
         {/* Max Price */}
         <Text style={[styles.label, { color: colors.muted }]}>MAX PRICE PER ITEM ({settings.currency})</Text>
         <TextInput
-          style={[styles.input, { backgroundColor: colors.card, borderColor: maxPriceField.touched && maxPriceField.error ? '#EF4444' : colors.border, color: colors.text }]}
+          style={[styles.input, { backgroundColor: colors.card, borderColor: maxPriceField.touched && maxPriceField.error ? colors.danger : colors.border, color: colors.text }]}
           placeholder="e.g. 400"
           placeholderTextColor={colors.muted}
           keyboardType="decimal-pad"
@@ -237,7 +237,7 @@ function CreateMandateScreen() {
           onBlur={maxPriceField.onBlur}
           accessibilityLabel="Maximum price per item"
         />
-        {maxPriceField.touched && maxPriceField.error && <Text style={styles.fieldError}>{maxPriceField.error}</Text>}
+        {maxPriceField.touched && maxPriceField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{maxPriceField.error}</Text>}
 
         {/* Min Trust Score */}
         <Text style={[styles.label, { color: colors.muted }]}>
@@ -426,5 +426,5 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   deleteBtnText: { fontSize: 14, fontWeight: "600" },
-  fieldError: { fontSize: 12, color: "#EF4444", marginTop: 4, marginLeft: 4 },
+  fieldError: { fontSize: 12, marginTop: 4, marginLeft: 4 },
 });

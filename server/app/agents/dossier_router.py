@@ -26,6 +26,7 @@ from app.db import db_configured, get_conn
 from app.errors import error_response
 from app.lib.error_codes import ErrorCode
 from app.agents.dossier_agent import generate_dossier, ItemDossier
+from app.rate_limit import per_user_rate_limit
 
 router = APIRouter(prefix="/dossier", tags=["Dossier"])
 logger = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ class DossierSummaryResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.get("/{item_id}", response_model=DossierResponse)
-async def get_dossier(item_id: str, user_id: str = Depends(get_current_user_id)):
+async def get_dossier(item_id: str, user_id: str = Depends(get_current_user_id), _rl: None = Depends(per_user_rate_limit(20, 60))):
     """Return full dossier for an item as JSON."""
     if not db_configured():
         raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
@@ -89,14 +90,14 @@ async def get_dossier(item_id: str, user_id: str = Depends(get_current_user_id))
             region=region,
             country_code=country,
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("[dossier] demand signal failed: %s", e)
 
     return DossierResponse(**dossier.to_dict())
 
 
 @router.get("/{item_id}/summary", response_model=DossierSummaryResponse)
-async def get_dossier_summary(item_id: str, user_id: str = Depends(get_current_user_id)):
+async def get_dossier_summary(item_id: str, user_id: str = Depends(get_current_user_id), _rl: None = Depends(per_user_rate_limit(30, 60))):
     """Return lightweight summary (identity + valuation + completeness)."""
     if not db_configured():
         raise error_response(503, "Database not available", code=ErrorCode.DB_UNAVAILABLE)
@@ -125,6 +126,7 @@ async def export_dossier_html(
     item_id: str,
     user_id: str = Depends(get_current_user_id),
     _plan: str = Depends(require_plan("pro")),
+    _rl: None = Depends(per_user_rate_limit(10, 60)),
 ):
     """Return dossier as a downloadable self-contained HTML document."""
     if not db_configured():

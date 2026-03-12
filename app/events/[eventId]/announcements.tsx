@@ -28,6 +28,8 @@ import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
+import { timeAgo } from '@/lib/timeAgo';
+import { MS_PER_WEEK } from '@/constants/time';
 
 /* -------------------------------------------------------------------------- */
 /*  Helper: format timestamp                                                    */
@@ -37,15 +39,8 @@ function formatTimestamp(iso?: string): string {
   if (!iso) return '';
   try {
     const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return 'Just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    const diffHrs = Math.floor(diffMin / 60);
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    const diffDays = Math.floor(diffHrs / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
+    const diff = Date.now() - d.getTime();
+    if (diff < MS_PER_WEEK) return timeAgo(d);
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   } catch {
     return '';

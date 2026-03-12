@@ -115,6 +115,21 @@ const LeaderboardScreen: React.FC = () => {
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
 
+        {/* Twitch Creators link */}
+        <AnimatedPressable
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push('/twitch-leaderboard');
+          }}
+          style={[styles.twitchLink, { backgroundColor: colors.card, borderColor: colors.border }]}
+          accessibilityRole="button"
+          accessibilityLabel="View Twitch creators leaderboard"
+        >
+          <Ionicons name="logo-twitch" size={18} color="#9146FF" />
+          <Text style={[styles.twitchLinkText, { color: colors.text }]}>Twitch Creators</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
         {/* Leaderboard list */}
         {rankedUsers.map((user, index) => {
           const medalColor = getMedalColor(index, colors.muted);
@@ -258,6 +273,20 @@ const styles = StyleSheet.create({
   rarityText: {
     marginTop: 2,
     fontSize: 11,
+  },
+  twitchLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  twitchLinkText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 

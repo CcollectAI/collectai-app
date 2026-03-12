@@ -14,7 +14,7 @@ import asyncio
 import logging
 import time
 from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, Request
@@ -550,8 +550,6 @@ async def _handle_sponsor_checkout_completed(pool: Any, session: dict):
     if not event_id:
         _log.warning("sponsor checkout.session.completed missing event_id in metadata")
         return
-
-    from datetime import timedelta
 
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(days=30)

@@ -245,7 +245,7 @@ const SponsorRegisterScreen: React.FC = () => {
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>
                     Company Name <Text style={{ color: colors.accent }}>*</Text>
                   </Text>
-                  <View style={[styles.inputWrap, { borderColor: nameField.touched && nameField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                  <View style={[styles.inputWrap, { borderColor: nameField.touched && nameField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="business-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
                       value={nameField.value}
@@ -259,7 +259,7 @@ const SponsorRegisterScreen: React.FC = () => {
                       onSubmitEditing={() => emailRef.current?.focus()}
                     />
                   </View>
-                  {nameField.touched && nameField.error && <Text style={styles.fieldError}>{nameField.error}</Text>}
+                  {nameField.touched && nameField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{nameField.error}</Text>}
                 </View>
 
                 {/* Contact Email */}
@@ -267,7 +267,7 @@ const SponsorRegisterScreen: React.FC = () => {
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>
                     Contact Email <Text style={{ color: colors.accent }}>*</Text>
                   </Text>
-                  <View style={[styles.inputWrap, { borderColor: contactEmailField.touched && contactEmailField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                  <View style={[styles.inputWrap, { borderColor: contactEmailField.touched && contactEmailField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="mail-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
                       ref={emailRef}
@@ -284,7 +284,7 @@ const SponsorRegisterScreen: React.FC = () => {
                       onSubmitEditing={() => websiteRef.current?.focus()}
                     />
                   </View>
-                  {contactEmailField.touched && contactEmailField.error && <Text style={styles.fieldError}>{contactEmailField.error}</Text>}
+                  {contactEmailField.touched && contactEmailField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{contactEmailField.error}</Text>}
                 </View>
 
                 {/* Logo Picker */}
@@ -311,13 +311,13 @@ const SponsorRegisterScreen: React.FC = () => {
                       </View>
                     )}
                   </AnimatedPressable>
-                  {logoError && <Text style={styles.fieldError}>{logoError}</Text>}
+                  {logoError && <Text style={[styles.fieldError, { color: colors.danger }]}>{logoError}</Text>}
                 </View>
 
                 {/* Website URL */}
                 <View style={styles.fieldBlock}>
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>Website (optional)</Text>
-                  <View style={[styles.inputWrap, { borderColor: websiteUrlField.touched && websiteUrlField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                  <View style={[styles.inputWrap, { borderColor: websiteUrlField.touched && websiteUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="globe-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
                       ref={websiteRef}
@@ -334,13 +334,13 @@ const SponsorRegisterScreen: React.FC = () => {
                       onSubmitEditing={() => descriptionRef.current?.focus()}
                     />
                   </View>
-                  {websiteUrlField.touched && websiteUrlField.error && <Text style={styles.fieldError}>{websiteUrlField.error}</Text>}
+                  {websiteUrlField.touched && websiteUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{websiteUrlField.error}</Text>}
                 </View>
 
                 {/* Description */}
                 <View>
                   <Text style={[styles.fieldLabel, { color: colors.text }]}>Description (optional)</Text>
-                  <View style={[styles.inputWrapMultiline, { borderColor: descriptionField.touched && descriptionField.error ? '#EF4444' : colors.border, backgroundColor: colors.background }]}>
+                  <View style={[styles.inputWrapMultiline, { borderColor: descriptionField.touched && descriptionField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <TextInput
                       ref={descriptionRef}
                       value={descriptionField.value}
@@ -355,7 +355,7 @@ const SponsorRegisterScreen: React.FC = () => {
                       accessibilityLabel="Company description"
                     />
                   </View>
-                  {descriptionField.touched && descriptionField.error && <Text style={styles.fieldError}>{descriptionField.error}</Text>}
+                  {descriptionField.touched && descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{descriptionField.error}</Text>}
                 </View>
               </View>
             </View>
@@ -645,7 +645,6 @@ const styles = StyleSheet.create({
   },
   fieldError: {
     fontSize: 12,
-    color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
   },

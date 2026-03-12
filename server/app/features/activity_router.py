@@ -40,7 +40,7 @@ async def get_user_activity(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user_id: str = Depends(get_current_user_id),
-):
+) -> dict:
     """Get activity feed for a user."""
     try:
         uuid.UUID(user_id)
@@ -83,7 +83,7 @@ async def log_activity(
     body: LogActivityInput,
     user_id: str = Depends(get_current_user_id),
     _rl=Depends(_activity_log_limit),
-):
+) -> dict:
     """Log an activity to the user's feed."""
     pool = get_db_pool()
     if not pool:

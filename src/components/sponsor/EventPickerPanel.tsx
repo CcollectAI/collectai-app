@@ -12,11 +12,11 @@ const SHADOW_MD = Platform.select({
   default: {},
 }) as Record<string, unknown>;
 
-function getEventStatus(event: CollectorsEvent): { label: string; color: string } {
-  if (event.status === 'cancelled') return { label: 'Cancelled', color: '#EF4444' };
-  if (event.status === 'draft') return { label: 'Draft', color: '#F59E0B' };
-  if (new Date(event.date) < new Date()) return { label: 'Past', color: '#94A3B8' };
-  return { label: 'Upcoming', color: '#10B981' };
+function getEventStatus(event: CollectorsEvent, colors: { danger: string; warning: string; muted: string; success: string }): { label: string; color: string } {
+  if (event.status === 'cancelled') return { label: 'Cancelled', color: colors.danger };
+  if (event.status === 'draft') return { label: 'Draft', color: colors.warning };
+  if (new Date(event.date) < new Date()) return { label: 'Past', color: colors.muted };
+  return { label: 'Upcoming', color: colors.success };
 }
 
 interface Props {
@@ -46,7 +46,7 @@ export const EventPickerPanel = React.memo(function EventPickerPanel({
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
       {events.map((event) => {
-        const status = getEventStatus(event);
+        const status = getEventStatus(event, colors);
         return (
           <AnimatedPressable
             key={event.id}

@@ -23,6 +23,7 @@ import {
   getConfidenceColor,
 } from '@/types/priceExplanation';
 import type { CurrencyCode } from '@/data/types';
+import { formatPrice } from '@/lib/format';
 import { RangeBar } from './RangeBar';
 
 type AffiliateLink = {
@@ -40,15 +41,6 @@ type PriceExplanationSheetProps = {
   currency?: CurrencyCode;
   affiliateLinks?: AffiliateLink[];
 };
-
-function formatPrice(value: number, currency: CurrencyCode = 'EUR'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export function PriceExplanationSheet({
   visible,

@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from app.config import TCGPLAYER_BEARER_TOKEN as _CFG_TCGPLAYER_BEARER_TOKEN
+from app.config import TCGPLAYER_BEARER_TOKEN as _CFG_TCGPLAYER_BEARER_TOKEN, USD_TO_EUR
 from workers.circuit_breaker import tcgplayer_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,6 @@ SUPPORTED_CATEGORIES = list(CATEGORY_TO_TCGPLAYER_ID.keys())
 def _convert_usd_to_eur(usd: float, rates: dict[str, float] | None = None) -> float:
     rate = (rates or {}).get("USD")
     if rate is None:
-        from app.config import USD_TO_EUR
         rate = USD_TO_EUR
     return round(usd * rate, 2)
 

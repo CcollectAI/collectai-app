@@ -32,6 +32,8 @@ import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { useAsync } from '@/hooks/useAsync';
+import { timeAgo } from '@/lib/timeAgo';
+import { MS_PER_WEEK } from '@/constants/time';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,16 +82,8 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  const diff = Date.now() - date.getTime();
+  if (diff < MS_PER_WEEK) return timeAgo(date);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 

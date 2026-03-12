@@ -4,6 +4,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from typing import List, Optional
+from uuid import uuid4
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -187,8 +188,6 @@ async def append_provenance_event(
     """
     Append a provenance/ownership event (transfer, sale, receipt scan, etc.).
     """
-    from uuid import uuid4
-
     if not db_configured():
         # Fallback: in-memory store
         timeline = _PROVENANCE.get(item_id)

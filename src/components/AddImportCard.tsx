@@ -131,14 +131,14 @@ export const AddImportCard: React.FC<Props> = ({
           </Text>
 
           {!!importSummary.error && (
-            <Text style={styles.errorText}>{importSummary.error}</Text>
+            <Text style={[styles.errorText, { color: colors.danger }]}>{importSummary.error}</Text>
           )}
 
           {Array.isArray(importSummary.errors) &&
             importSummary.errors.length > 0 && (
               <View style={styles.errorList}>
                 {importSummary.errors.slice(0, 3).map((err, idx) => (
-                  <Text key={idx} style={styles.errorItem}>
+                  <Text key={idx} style={[styles.errorItem, { color: colors.danger }]}>
                     Row {err.row}: {err.message}
                   </Text>
                 ))}
@@ -214,14 +214,12 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 4,
     fontSize: 12,
-    color: "#EF4444",
   },
   errorList: {
     marginTop: 4,
   },
   errorItem: {
     fontSize: 11,
-    color: "#EF4444",
   },
   moreErrorsText: {
     marginTop: 2,

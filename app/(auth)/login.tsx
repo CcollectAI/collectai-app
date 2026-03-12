@@ -14,6 +14,7 @@ import {
   ScrollView,
   StyleSheet,
   Animated,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -196,11 +197,11 @@ function LoginScreen() {
               <View style={[styles.iconCircleOuter, { backgroundColor: colors.brand.base + '15' }]}>
                 {Platform.OS === 'ios' ? (
                   <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={styles.iconCircle}>
-                    <Ionicons name="diamond-outline" size={40} color={colors.brand.dark} />
+                    <Image source={require('../../assets/images/logo.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
                   </BlurView>
                 ) : (
                   <View style={[styles.iconCircle, { backgroundColor: colors.brand.base + '25' }]}>
-                    <Ionicons name="diamond-outline" size={40} color={colors.brand.dark} />
+                    <Image source={require('../../assets/images/logo.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
                   </View>
                 )}
               </View>

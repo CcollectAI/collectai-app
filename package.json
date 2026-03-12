@@ -32,7 +32,6 @@
     "@shopify/flash-list": "2.0.2",
     "@supabase/supabase-js": "^2.86.0",
     "base-64": "^1.0.0",
-    "d3-shape": "^3.2.0",
     "expo": "~54.0.33",
     "expo-apple-authentication": "~8.0.8",
     "expo-auth-session": "~7.0.10",
@@ -97,7 +96,7 @@
   "jest": {
     "preset": "jest-expo",
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|@shopify/flash-list|lucide-react-native|react-native-svg|d3-shape)"
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|@shopify/flash-list|lucide-react-native|react-native-svg)"
     ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"

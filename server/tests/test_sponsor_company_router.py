@@ -254,3 +254,83 @@ class TestCreateEventDemo:
             },
         )
         assert resp.status_code == 503
+
+    def test_demo_missing_fields(self):
+        """Rejects demo request with missing required fields."""
+        resp = client.post(
+            f"/sponsor-companies/{VALID_UUID}/create-event-demo",
+            json={},
+        )
+        assert resp.status_code == 422
+
+    def test_demo_invalid_kind(self):
+        """Rejects demo request with invalid event_kind."""
+        resp = client.post(
+            f"/sponsor-companies/{VALID_UUID}/create-event-demo",
+            json={
+                "tier": "featured",
+                "event_title": "Demo Event",
+                "event_kind": "bad_kind",
+                "event_date": "2026-06-01",
+            },
+        )
+        assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# POST /sponsor-companies/{company_id}/create-subscription-checkout
+# ---------------------------------------------------------------------------
+
+class TestCreateSubscriptionCheckout:
+    def test_subscription_invalid_uuid(self):
+        """Rejects invalid company_id format."""
+        resp = client.post(
+            "/sponsor-companies/not-a-valid-uuid/create-subscription-checkout",
+            json={"tier": "featured"},
+        )
+        assert resp.status_code == 400
+
+    def test_subscription_invalid_tier(self):
+        """Rejects invalid tier value."""
+        resp = client.post(
+            f"/sponsor-companies/{VALID_UUID}/create-subscription-checkout",
+            json={"tier": "mega_ultra"},
+        )
+        assert resp.status_code == 422
+
+    def test_subscription_no_body(self):
+        """Rejects request with no body."""
+        resp = client.post(
+            f"/sponsor-companies/{VALID_UUID}/create-subscription-checkout",
+        )
+        assert resp.status_code == 422
+
+    def test_subscription_no_db(self):
+        """Returns 503 when DB pool is unavailable."""
+        resp = client.post(
+            f"/sponsor-companies/{VALID_UUID}/create-subscription-checkout",
+            json={"tier": "featured"},
+        )
+        assert resp.status_code == 503
+
+
+# ---------------------------------------------------------------------------
+# PATCH validation: disallowed columns
+# ---------------------------------------------------------------------------
+
+class TestUpdateCompanyValidation:
+    def test_update_disallowed_column(self):
+        """Rejects update with disallowed column."""
+        resp = client.patch(
+            f"/sponsor-companies/{VALID_UUID}",
+            json={"admin_user_id": "hacker"},
+        )
+        assert resp.status_code == 400
+
+    def test_update_valid_fields_no_db(self):
+        """Valid fields but no DB returns 503."""
+        resp = client.patch(
+            f"/sponsor-companies/{VALID_UUID}",
+            json={"name": "New Name", "description": "New desc"},
+        )
+        assert resp.status_code == 503

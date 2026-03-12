@@ -28,26 +28,15 @@ import { SkeletonList } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { timeAgoShort } from '@/lib/timeAgo';
+import { MS_PER_WEEK } from '@/constants/time';
 
-// Semantic color fallback — used in the static StyleSheet where hooks are not accessible.
-// Inside the component, prefer `colors.danger` from the theme instead.
-const FALLBACK_ERROR = '#ef4444';
 
 function formatRelativeTime(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
-
   const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m`;
-  if (diffHours < 24) return `${diffHours}h`;
-  if (diffDays < 7) return `${diffDays}d`;
-
+  const diff = Date.now() - date.getTime();
+  if (diff < MS_PER_WEEK) return timeAgoShort(date);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -300,26 +289,26 @@ function InboxScreen() {
                     )}
                   </AnimatedPressable>
                   <AnimatedPressable
-                    style={[styles.actionBtn, styles.declineBtn]}
+                    style={[styles.actionBtn, styles.declineBtn, { backgroundColor: colors.danger + '15', borderColor: colors.danger + '40' }]}
                     onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); handleDeclineRequest(req.threadId); }}
                     disabled={processingRequestId === req.threadId}
                     accessibilityRole="button"
                     accessibilityLabel={`Decline message request from ${req.fromUserName}`}
                   >
                     {processingRequestId === req.threadId ? (
-                      <ActivityIndicator size="small" color={colors.danger ?? FALLBACK_ERROR} />
+                      <ActivityIndicator size="small" color={colors.danger} />
                     ) : (
-                      <Text style={styles.declineBtnText}>Decline</Text>
+                      <Text style={[styles.declineBtnText, { color: colors.danger }]}>Decline</Text>
                     )}
                   </AnimatedPressable>
                   <AnimatedPressable
-                    style={[styles.blockBtn]}
+                    style={[styles.blockBtn, { backgroundColor: colors.danger + '10' }]}
                     onPress={() => { fireHaptic(HapticIntent.ALERT_TRIGGERED); handleBlockFromRequest(req); }}
                     disabled={processingRequestId === req.threadId}
                     accessibilityRole="button"
                     accessibilityLabel={`Block ${req.fromUserName}`}
                   >
-                    <Text style={[styles.blockBtnText, { color: colors.danger ?? FALLBACK_ERROR }]}>Block</Text>
+                    <Text style={[styles.blockBtnText, { color: colors.danger }]}>Block</Text>
                   </AnimatedPressable>
                 </View>
               </View>
@@ -553,14 +542,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   declineBtn: {
-    backgroundColor: '#EF444415',
     borderWidth: 1,
-    borderColor: '#EF444440',
   },
   declineBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: FALLBACK_ERROR,
   },
   acceptBtn: {
     // backgroundColor applied inline
@@ -576,7 +562,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EF444410',
   },
   blockBtnText: {
     fontSize: 13,

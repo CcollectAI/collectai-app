@@ -1,23 +1,26 @@
 /**
- * CalendarGrid — Monthly calendar view with event dots.
+ * CalendarGrid — Professional monthly calendar view with event dots.
  * Shows a month grid with navigation. Days with events display colored dots
- * by event kind. Tapping a day filters the event list. No external deps.
+ * by event kind. Tapping a day filters the event list.
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { CollectorsEvent, EventKind } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { AnimatedPressable } from '@/motion';
 
-/** Color mapping for event kinds — matches the spec colors. */
-const KIND_DOT_COLOR: Record<EventKind, string> = {
-  meetup: '#3B82F6',        // blue
-  collection_drop: '#22C55E', // green (sale-like)
-  release: '#F97316',       // orange
-  stream: '#EF4444',        // red
-  convention: '#A855F7',    // purple (bonus — distinct from the rest)
-};
+/** Color mapping for event kinds. */
+function getKindDotColor(dangerColor: string): Record<EventKind, string> {
+  return {
+    meetup: '#3B82F6',
+    collection_drop: '#22C55E',
+    release: '#F97316',
+    stream: dangerColor,
+    convention: '#A855F7',
+  };
+}
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = [
@@ -25,29 +28,27 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const GRID_PADDING = 12;
+const CELL_SIZE = Math.floor((SCREEN_WIDTH - 32 - GRID_PADDING * 2) / 7);
+
 interface CalendarGridProps {
   events: CollectorsEvent[];
-  selectedDate: string | null;            // ISO "YYYY-MM-DD" or null
+  selectedDate: string | null;
   onSelectDate: (date: string | null) => void;
 }
 
-/** Build an ISO date string "YYYY-MM-DD" from parts. */
 function toISO(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-/** Get today as ISO string. */
 function todayISO(): string {
   const d = new Date();
   return toISO(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-/**
- * Build a 6-row x 7-col grid of day cells for the given month.
- * Each cell: { day, month, year, iso, isCurrentMonth }.
- */
 function buildMonthGrid(year: number, month: number) {
-  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
 
@@ -59,44 +60,23 @@ function buildMonthGrid(year: number, month: number) {
     isCurrentMonth: boolean;
   }[] = [];
 
-  // Previous month trailing days
   const prevMonth = month === 0 ? 11 : month - 1;
   const prevYear = month === 0 ? year - 1 : year;
   for (let i = firstDay - 1; i >= 0; i--) {
     const d = daysInPrev - i;
-    cells.push({
-      day: d,
-      month: prevMonth,
-      year: prevYear,
-      iso: toISO(prevYear, prevMonth, d),
-      isCurrentMonth: false,
-    });
+    cells.push({ day: d, month: prevMonth, year: prevYear, iso: toISO(prevYear, prevMonth, d), isCurrentMonth: false });
   }
 
-  // Current month
   for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({
-      day: d,
-      month,
-      year,
-      iso: toISO(year, month, d),
-      isCurrentMonth: true,
-    });
+    cells.push({ day: d, month, year, iso: toISO(year, month, d), isCurrentMonth: true });
   }
 
-  // Next month leading days — fill to complete rows of 7
   const nextMonth = month === 11 ? 0 : month + 1;
   const nextYear = month === 11 ? year + 1 : year;
   const remaining = 7 - (cells.length % 7);
   if (remaining < 7) {
     for (let d = 1; d <= remaining; d++) {
-      cells.push({
-        day: d,
-        month: nextMonth,
-        year: nextYear,
-        iso: toISO(nextYear, nextMonth, d),
-        isCurrentMonth: false,
-      });
+      cells.push({ day: d, month: nextMonth, year: nextYear, iso: toISO(nextYear, nextMonth, d), isCurrentMonth: false });
     }
   }
 
@@ -105,18 +85,16 @@ function buildMonthGrid(year: number, month: number) {
 
 function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridProps) {
   const { colors } = useAppTheme();
+  const KIND_DOT_COLOR = getKindDotColor(colors.danger);
   const today = todayISO();
 
-  // Navigation state: which month is displayed
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
 
-  // Build a map: ISO date -> array of event kinds for that date
   const eventsByDate = useMemo(() => {
     const map: Record<string, EventKind[]> = {};
     for (const evt of events) {
-      // evt.date is ISO "YYYY-MM-DD" (possibly with time info stripped)
       const dateKey = evt.date.slice(0, 10);
       if (!map[dateKey]) map[dateKey] = [];
       if (!map[dateKey].includes(evt.kind)) {
@@ -129,21 +107,13 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
   const grid = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
 
   const goToPrev = useCallback(() => {
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear((y) => y - 1);
-    } else {
-      setViewMonth((m) => m - 1);
-    }
+    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
+    else { setViewMonth((m) => m - 1); }
   }, [viewMonth]);
 
   const goToNext = useCallback(() => {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear((y) => y + 1);
-    } else {
-      setViewMonth((m) => m + 1);
-    }
+    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
+    else { setViewMonth((m) => m + 1); }
   }, [viewMonth]);
 
   const goToToday = useCallback(() => {
@@ -154,57 +124,74 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
   }, [onSelectDate]);
 
   const handleDayPress = useCallback(
-    (iso: string) => {
-      // Toggle: if same date tapped again, deselect
-      onSelectDate(selectedDate === iso ? null : iso);
-    },
+    (iso: string) => { onSelectDate(selectedDate === iso ? null : iso); },
     [selectedDate, onSelectDate],
   );
 
-  // Split grid into rows of 7
   const rows: (typeof grid)[] = [];
   for (let i = 0; i < grid.length; i += 7) {
     rows.push(grid.slice(i, i + 7));
   }
 
+  // Count events this month for the summary
+  const monthEventCount = useMemo(() => {
+    let count = 0;
+    for (const key of Object.keys(eventsByDate)) {
+      if (key.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`)) {
+        count += eventsByDate[key].length;
+      }
+    }
+    return count;
+  }, [eventsByDate, viewYear, viewMonth]);
+
   return (
     <View
-      style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}
+      style={[styles.container, { backgroundColor: colors.card }]}
       accessibilityRole="none"
       accessibilityLabel="Calendar grid"
     >
-      {/* Month header with navigation */}
+      {/* Month header */}
       <View style={styles.header}>
-        <Pressable
+        <AnimatedPressable
           onPress={goToPrev}
-          hitSlop={12}
+          style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
           accessibilityRole="button"
           accessibilityLabel="Previous month"
         >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </Pressable>
+          <Ionicons name="chevron-back" size={18} color={colors.text} />
+        </AnimatedPressable>
 
         <Pressable onPress={goToToday} accessibilityRole="button" accessibilityLabel="Go to today">
           <Text style={[styles.monthTitle, { color: colors.text }]}>
             {MONTH_NAMES[viewMonth]} {viewYear}
           </Text>
+          {monthEventCount > 0 && (
+            <Text style={[styles.monthEventCount, { color: colors.muted }]}>
+              {monthEventCount} event{monthEventCount !== 1 ? 's' : ''}
+            </Text>
+          )}
         </Pressable>
 
-        <Pressable
+        <AnimatedPressable
           onPress={goToNext}
-          hitSlop={12}
+          style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
           accessibilityRole="button"
           accessibilityLabel="Next month"
         >
-          <Ionicons name="chevron-forward" size={22} color={colors.text} />
-        </Pressable>
+          <Ionicons name="chevron-forward" size={18} color={colors.text} />
+        </AnimatedPressable>
       </View>
 
       {/* Weekday labels */}
-      <View style={styles.weekdayRow}>
+      <View style={[styles.weekdayRow, { borderBottomColor: colors.border }]}>
         {WEEKDAY_LABELS.map((label) => (
           <View key={label} style={styles.weekdayCell}>
-            <Text style={[styles.weekdayText, { color: colors.muted }]}>{label}</Text>
+            <Text style={[
+              styles.weekdayText,
+              { color: label === 'Sun' || label === 'Sat' ? colors.muted + '80' : colors.muted },
+            ]}>
+              {label}
+            </Text>
           </View>
         ))}
       </View>
@@ -216,56 +203,53 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
             const isToday = cell.iso === today;
             const isSelected = cell.iso === selectedDate;
             const dots = eventsByDate[cell.iso] || [];
+            const hasEvents = dots.length > 0;
 
             return (
               <Pressable
                 key={cell.iso}
-                style={styles.dayCell}
+                style={[styles.dayCell, { height: CELL_SIZE }]}
                 onPress={() => handleDayPress(cell.iso)}
                 accessibilityRole="button"
                 accessibilityLabel={`${cell.day} ${MONTH_NAMES[cell.month]} ${cell.year}${dots.length ? `, ${dots.length} event${dots.length > 1 ? 's' : ''}` : ''}`}
                 accessibilityState={{ selected: isSelected }}
               >
-                {/* Today circle background */}
-                {isToday && !isSelected && (
-                  <View
+                <View style={[
+                  styles.dayCellInner,
+                  isToday && !isSelected && [styles.todayHighlight, { borderColor: colors.accent }],
+                  isSelected && [styles.selectedHighlight, { backgroundColor: colors.accent }],
+                  hasEvents && !isSelected && !isToday && { backgroundColor: colors.accent + '08' },
+                ]}>
+                  <Text
                     style={[
-                      styles.todayCircle,
-                      { borderColor: colors.accent },
+                      styles.dayText,
+                      {
+                        color: isSelected
+                          ? '#FFFFFF'
+                          : !cell.isCurrentMonth
+                            ? colors.muted + '40'
+                            : isToday
+                              ? colors.accent
+                              : colors.text,
+                      },
+                      isToday && { fontWeight: '800' },
+                      isSelected && { fontWeight: '700' },
                     ]}
-                  />
-                )}
-                {/* Selected highlight */}
-                {isSelected && (
-                  <View
-                    style={[
-                      styles.selectedCircle,
-                      { backgroundColor: colors.accent },
-                    ]}
-                  />
-                )}
-                <Text
-                  style={[
-                    styles.dayText,
-                    {
-                      color: isSelected
-                        ? '#FFFFFF'
-                        : cell.isCurrentMonth
-                          ? colors.text
-                          : colors.muted + '60',
-                    },
-                  ]}
-                >
-                  {cell.day}
-                </Text>
+                  >
+                    {cell.day}
+                  </Text>
+                </View>
 
-                {/* Event dots (max 3 shown) */}
-                {dots.length > 0 && (
+                {/* Event dots */}
+                {hasEvents && (
                   <View style={styles.dotRow}>
                     {dots.slice(0, 3).map((kind) => (
                       <View
                         key={kind}
-                        style={[styles.dot, { backgroundColor: KIND_DOT_COLOR[kind] }]}
+                        style={[
+                          styles.dot,
+                          { backgroundColor: isSelected ? '#FFFFFF' : KIND_DOT_COLOR[kind] },
+                        ]}
                       />
                     ))}
                   </View>
@@ -275,35 +259,66 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
           })}
         </View>
       ))}
+
+      {/* Legend */}
+      <View style={[styles.legend, { borderTopColor: colors.border }]}>
+        {(Object.entries(KIND_DOT_COLOR) as [EventKind, string][]).map(([kind, color]) => (
+          <View key={kind} style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: color }]} />
+            <Text style={[styles.legendText, { color: colors.muted }]}>
+              {kind.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+            </Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
-const CELL_SIZE = 40;
-
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 8,
+    borderRadius: 20,
+    paddingHorizontal: GRID_PADDING,
+    paddingTop: 16,
+    paddingBottom: 12,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    marginBottom: 12,
+    paddingHorizontal: 4,
+    marginBottom: 16,
+  },
+  navBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   monthTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
+    letterSpacing: 0.2,
+    textAlign: 'center',
+  },
+  monthEventCount: {
+    fontSize: 11,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 2,
   },
   weekdayRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   weekdayCell: {
     flex: 1,
@@ -311,7 +326,9 @@ const styles = StyleSheet.create({
   },
   weekdayText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   dayRow: {
     flexDirection: 'row',
@@ -320,38 +337,62 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: CELL_SIZE,
-    position: 'relative',
+    paddingVertical: 1,
+  },
+  dayCellInner: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayHighlight: {
+    borderWidth: 2,
+  },
+  selectedHighlight: {
+    shadowColor: '#81D8D0',
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   dayText: {
     fontSize: 14,
     fontWeight: '500',
-    zIndex: 1,
-  },
-  todayCircle: {
-    position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-  },
-  selectedCircle: {
-    position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
   },
   dotRow: {
     position: 'absolute',
-    bottom: 2,
+    bottom: 1,
     flexDirection: 'row',
     gap: 2,
-    zIndex: 1,
   },
   dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  legendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  legendText: {
+    fontSize: 10,
+    fontWeight: '500',
   },
 });
 

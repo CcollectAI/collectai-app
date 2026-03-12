@@ -34,15 +34,17 @@ type ConditionGrade = {
   priceImpact: string;
 };
 
-const CONDITION_GRADES: ConditionGrade[] = [
-  { name: 'Mint', abbreviation: 'M', color: '#10B981', priceImpact: '100% of market value' },
-  { name: 'Near Mint', abbreviation: 'NM', color: '#10B981', priceImpact: 'Typically 80-90% of mint value' },
-  { name: 'Excellent', abbreviation: 'EX', color: '#34D399', priceImpact: 'Typically 65-80% of mint value' },
-  { name: 'Very Good', abbreviation: 'VG', color: '#F59E0B', priceImpact: 'Typically 50-65% of mint value' },
-  { name: 'Good', abbreviation: 'G', color: '#F59E0B', priceImpact: 'Typically 35-50% of mint value' },
-  { name: 'Fair', abbreviation: 'FR', color: '#EF4444', priceImpact: 'Typically 20-35% of mint value' },
-  { name: 'Poor', abbreviation: 'PR', color: '#EF4444', priceImpact: 'Typically 5-20% of mint value' },
-];
+function getConditionGrades(dangerColor: string): ConditionGrade[] {
+  return [
+    { name: 'Mint', abbreviation: 'M', color: '#10B981', priceImpact: '100% of market value' },
+    { name: 'Near Mint', abbreviation: 'NM', color: '#10B981', priceImpact: 'Typically 80-90% of mint value' },
+    { name: 'Excellent', abbreviation: 'EX', color: '#34D399', priceImpact: 'Typically 65-80% of mint value' },
+    { name: 'Very Good', abbreviation: 'VG', color: '#F59E0B', priceImpact: 'Typically 50-65% of mint value' },
+    { name: 'Good', abbreviation: 'G', color: '#F59E0B', priceImpact: 'Typically 35-50% of mint value' },
+    { name: 'Fair', abbreviation: 'FR', color: dangerColor, priceImpact: 'Typically 20-35% of mint value' },
+    { name: 'Poor', abbreviation: 'PR', color: dangerColor, priceImpact: 'Typically 5-20% of mint value' },
+  ];
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Category-Specific Descriptions
@@ -172,6 +174,7 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
 
 function ConditionGuideScreen() {
   const { colors } = useAppTheme();
+  const CONDITION_GRADES = getConditionGrades(colors.danger);
   const { settings } = useSettings();
   const params = useLocalSearchParams<{ categoryId?: string }>();
   const [selectedCategory, setSelectedCategory] = useState(params.categoryId ?? 'default');

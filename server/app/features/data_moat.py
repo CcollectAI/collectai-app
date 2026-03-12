@@ -22,7 +22,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from app.auth import get_current_user_id
+from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
+from app.lib.error_codes import ErrorCode
+from app.lib.validators import is_valid_category
 from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
@@ -307,10 +310,7 @@ async def supply_trends_endpoint(
     _rl: None = Depends(_data_moat_limit),
 ):
     """Supply trend for an item over the last N days."""
-    from app.lib.validators import is_valid_category
     if not is_valid_category(category):
-        from app.errors import error_response
-        from app.lib.error_codes import ErrorCode
         raise error_response(400, f"Unknown category: {category}", code=ErrorCode.VALIDATION_ERROR)
     data = await get_supply_trend(category, item_key, days)
     return {"category": category, "item_key": item_key, "days": days, "trends": data}
@@ -324,10 +324,7 @@ async def demand_heat_endpoint(
     _rl: None = Depends(_data_moat_limit),
 ):
     """Top trending items by demand signal volume."""
-    from app.lib.validators import is_valid_category
     if not is_valid_category(category):
-        from app.errors import error_response
-        from app.lib.error_codes import ErrorCode
         raise error_response(400, f"Unknown category: {category}", code=ErrorCode.VALIDATION_ERROR)
     data = await get_demand_heat(category, limit)
     return {"category": category, "limit": limit, "items": data}

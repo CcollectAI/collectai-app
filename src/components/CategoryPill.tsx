@@ -40,6 +40,8 @@ const CategoryPillInner: React.FC<CategoryPillProps> = ({
   return (
     <AnimatedPressable
       onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${label ?? id} category`}
       style={[
         {
           paddingHorizontal: 10,

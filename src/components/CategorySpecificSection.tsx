@@ -19,6 +19,7 @@ import { View, Text, Pressable, ActivityIndicator, StyleSheet, Linking } from "r
 import { Ionicons } from "@expo/vector-icons";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { CATEGORY_VISUAL } from "@/data/categories";
+import { useAppTheme } from "@/theme/useAppTheme";
 import logger from "@/utils/logger";
 
 // Sneaker size options (US sizing)
@@ -71,6 +72,7 @@ function CategorySpecificSectionInner({
   onSizeValueChange,
 }: CategorySpecificSectionProps) {
   const id = itemId;
+  const { colors } = useAppTheme();
   const catVisual = CATEGORY_VISUAL[categorySlug as keyof typeof CATEGORY_VISUAL];
   const catAccent = catVisual?.accentColor ?? theme.accent;
 
@@ -219,9 +221,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {!!itemAttributes?.retirement_date && (
-            <View style={[s.legoRetirementBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="alert-circle" size={16} color="#D97706" />
-              <Text style={[s.legoRetirementText, { color: "#92400E" }]}>
+            <View style={[s.legoRetirementBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="alert-circle" size={16} color={colors.warning} />
+              <Text style={[s.legoRetirementText, { color: colors.warning }]}>
                 Retiring {String(itemAttributes.retirement_date)}
                 {new Date(String(itemAttributes.retirement_date)) <= new Date() ? " — RETIRED" : ""}
               </Text>
@@ -262,9 +264,9 @@ function CategorySpecificSectionInner({
           (typeof itemAttributes?.notes === "string" &&
             String(itemAttributes.notes).toLowerCase().includes("vaulted"))) && (
           <View style={[s.vaultedBadgeContainer, { borderTopColor: theme.border }]}>
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEE2E2" }]}>
-              <Ionicons name="lock-closed" size={16} color="#DC2626" />
-              <Text style={[s.vaultedBadgeText, { color: "#991B1B" }]}>Vaulted</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.dangerBg }]}>
+              <Ionicons name="lock-closed" size={16} color={colors.danger} />
+              <Text style={[s.vaultedBadgeText, { color: colors.danger }]}>Vaulted</Text>
             </View>
             <Text style={[s.vaultedHint, { color: theme.muted }]}>
               This Pop! has been retired from production. Vaulted items often increase in value.
@@ -277,7 +279,7 @@ function CategorySpecificSectionInner({
         <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
           <View style={s.sectionHeaderRow}>
             <View style={s.sectionHeaderLeft}>
-              <Ionicons name="shield-checkmark-outline" size={20} color="#22C55E" />
+              <Ionicons name="shield-checkmark-outline" size={20} color={colors.success} />
               <Text style={[s.sectionTitle, { color: theme.text }]}>Verify Authenticity</Text>
             </View>
           </View>
@@ -289,13 +291,13 @@ function CategorySpecificSectionInner({
                   logger.warn("[ItemDetail] Failed to open CheckCheck URL", err)
                 );
               }}
-              style={[s.authLinkBtn, { borderColor: "#22C55E" }]}
+              style={[s.authLinkBtn, { borderColor: colors.success }]}
               accessibilityRole="link"
               accessibilityLabel="Verify with CheckCheck"
             >
-              <Ionicons name="checkmark-circle-outline" size={16} color="#22C55E" />
-              <Text style={[s.authLinkBtnText, { color: "#22C55E" }]}>CheckCheck</Text>
-              <Ionicons name="open-outline" size={12} color="#22C55E" />
+              <Ionicons name="checkmark-circle-outline" size={16} color={colors.success} />
+              <Text style={[s.authLinkBtnText, { color: colors.success }]}>CheckCheck</Text>
+              <Ionicons name="open-outline" size={12} color={colors.success} />
             </Pressable>
             <Pressable
               onPress={() => {
@@ -304,13 +306,13 @@ function CategorySpecificSectionInner({
                   logger.warn("[ItemDetail] Failed to open Legit Check URL", err)
                 );
               }}
-              style={[s.authLinkBtn, { borderColor: "#3B82F6" }]}
+              style={[s.authLinkBtn, { borderColor: colors.info }]}
               accessibilityRole="link"
               accessibilityLabel="Verify with Legit Check"
             >
-              <Ionicons name="shield-checkmark-outline" size={16} color="#3B82F6" />
-              <Text style={[s.authLinkBtnText, { color: "#3B82F6" }]}>Legit Check</Text>
-              <Ionicons name="open-outline" size={12} color="#3B82F6" />
+              <Ionicons name="shield-checkmark-outline" size={16} color={colors.info} />
+              <Text style={[s.authLinkBtnText, { color: colors.info }]}>Legit Check</Text>
+              <Ionicons name="open-outline" size={12} color={colors.info} />
             </Pressable>
           </View>
         </View>
@@ -333,15 +335,15 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {itemAttributes?.key_issue === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="star" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>Key Issue</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="star" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Key Issue</Text>
             </View>
           )}
           {itemAttributes?.signed === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DBEAFE" }]}>
-              <Ionicons name="create" size={16} color="#2563EB" />
-              <Text style={[s.vaultedBadgeText, { color: "#1E40AF" }]}>Signed</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.infoBg }]}>
+              <Ionicons name="create" size={16} color={colors.info} />
+              <Text style={[s.vaultedBadgeText, { color: colors.info }]}>Signed</Text>
             </View>
           )}
           {!!itemAttributes?.grade && (
@@ -484,17 +486,17 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {!!itemAttributes?.age_statement && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="time" size={16} color="#B45309" />
-              <Text style={[s.vaultedBadgeText, { color: "#78350F" }]}>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="time" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>
                 {String(itemAttributes.age_statement)} Year
               </Text>
             </View>
           )}
           {itemAttributes?.sealed === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DCFCE7" }]}>
-              <Ionicons name="lock-closed" size={16} color="#16A34A" />
-              <Text style={[s.vaultedBadgeText, { color: "#166534" }]}>Sealed</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.successBg }]}>
+              <Ionicons name="lock-closed" size={16} color={colors.success} />
+              <Text style={[s.vaultedBadgeText, { color: colors.success }]}>Sealed</Text>
             </View>
           )}
         </View>
@@ -524,15 +526,15 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {itemAttributes?.working === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DCFCE7" }]}>
-              <Ionicons name="checkmark-circle" size={16} color="#16A34A" />
-              <Text style={[s.vaultedBadgeText, { color: "#166534" }]}>Working</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.successBg }]}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+              <Text style={[s.vaultedBadgeText, { color: colors.success }]}>Working</Text>
             </View>
           )}
           {itemAttributes?.working === false && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEE2E2" }]}>
-              <Ionicons name="close-circle" size={16} color="#DC2626" />
-              <Text style={[s.vaultedBadgeText, { color: "#991B1B" }]}>Not Working</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.dangerBg }]}>
+              <Ionicons name="close-circle" size={16} color={colors.danger} />
+              <Text style={[s.vaultedBadgeText, { color: colors.danger }]}>Not Working</Text>
             </View>
           )}
         </View>
@@ -562,17 +564,17 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {(itemAttributes?.chase === true || itemAttributes?.secret === true) && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="star" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="star" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>
                 {itemAttributes?.secret ? "Secret" : "Chase"}
               </Text>
             </View>
           )}
           {itemAttributes?.sealed === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DCFCE7" }]}>
-              <Ionicons name="lock-closed" size={16} color="#16A34A" />
-              <Text style={[s.vaultedBadgeText, { color: "#166534" }]}>Sealed</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.successBg }]}>
+              <Ionicons name="lock-closed" size={16} color={colors.success} />
+              <Text style={[s.vaultedBadgeText, { color: colors.success }]}>Sealed</Text>
             </View>
           )}
         </View>
@@ -609,9 +611,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {itemAttributes?.limited_edition === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="star" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>Limited Edition</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="star" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Limited Edition</Text>
             </View>
           )}
         </View>
@@ -648,15 +650,15 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {(itemAttributes?.foil === true || itemAttributes?.variant === "Foil" || itemAttributes?.variant === "foil") && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="sparkles" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>Foil / Holo</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="sparkles" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Foil / Holo</Text>
             </View>
           )}
           {(itemAttributes?.edition === "1st Edition" || itemAttributes?.printing === "1st Edition") && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DBEAFE" }]}>
-              <Ionicons name="ribbon" size={16} color="#2563EB" />
-              <Text style={[s.vaultedBadgeText, { color: "#1E40AF" }]}>1st Edition</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.infoBg }]}>
+              <Ionicons name="ribbon" size={16} color={colors.info} />
+              <Text style={[s.vaultedBadgeText, { color: colors.info }]}>1st Edition</Text>
             </View>
           )}
         </View>
@@ -700,15 +702,15 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {!!itemAttributes?.baf_figure && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DBEAFE" }]}>
-              <Ionicons name="construct" size={16} color="#2563EB" />
-              <Text style={[s.vaultedBadgeText, { color: "#1E40AF" }]}>BAF: {String(itemAttributes.baf_figure)}</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.infoBg }]}>
+              <Ionicons name="construct" size={16} color={colors.info} />
+              <Text style={[s.vaultedBadgeText, { color: colors.info }]}>BAF: {String(itemAttributes.baf_figure)}</Text>
             </View>
           )}
           {(itemAttributes?.limited_edition === true || itemAttributes?.edition === "Limited" || itemAttributes?.p_bandai === true || !!itemAttributes?.retailer_exclusive) && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="star" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="star" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>
                 {itemAttributes?.retailer_exclusive ? String(itemAttributes.retailer_exclusive) + " Exclusive" : "Limited / Exclusive"}
               </Text>
             </View>
@@ -740,17 +742,17 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {!!(itemAttributes?.completeness || itemAttributes?.boxed) && (
-            <View style={[s.vaultedBadge, { backgroundColor: itemAttributes?.completeness === "CIB" || itemAttributes?.boxed === true ? "#DCFCE7" : "#FEF3C7" }]}>
-              <Ionicons name="checkmark-done" size={16} color={itemAttributes?.completeness === "CIB" || itemAttributes?.boxed === true ? "#16A34A" : "#D97706"} />
-              <Text style={[s.vaultedBadgeText, { color: itemAttributes?.completeness === "CIB" || itemAttributes?.boxed === true ? "#166534" : "#92400E" }]}>
+            <View style={[s.vaultedBadge, { backgroundColor: itemAttributes?.completeness === "CIB" || itemAttributes?.boxed === true ? colors.successBg : colors.warningBg }]}>
+              <Ionicons name="checkmark-done" size={16} color={itemAttributes?.completeness === "CIB" || itemAttributes?.boxed === true ? colors.success : colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: itemAttributes?.completeness === "CIB" || itemAttributes?.boxed === true ? colors.success : colors.warning }]}>
                 {itemAttributes?.completeness ? String(itemAttributes.completeness) : (itemAttributes?.boxed ? "Boxed" : "Loose")}
               </Text>
             </View>
           )}
           {!!itemAttributes?.afa_grade && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DBEAFE" }]}>
-              <Ionicons name="shield-checkmark" size={16} color="#2563EB" />
-              <Text style={[s.vaultedBadgeText, { color: "#1E40AF" }]}>{String(itemAttributes.afa_grade)}</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.infoBg }]}>
+              <Ionicons name="shield-checkmark" size={16} color={colors.info} />
+              <Text style={[s.vaultedBadgeText, { color: colors.info }]}>{String(itemAttributes.afa_grade)}</Text>
             </View>
           )}
         </View>
@@ -787,15 +789,15 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {itemAttributes?.built === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DCFCE7" }]}>
-              <Ionicons name="checkmark-circle" size={16} color="#16A34A" />
-              <Text style={[s.vaultedBadgeText, { color: "#166534" }]}>Built</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.successBg }]}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+              <Text style={[s.vaultedBadgeText, { color: colors.success }]}>Built</Text>
             </View>
           )}
           {itemAttributes?.built === false && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DBEAFE" }]}>
-              <Ionicons name="cube" size={16} color="#2563EB" />
-              <Text style={[s.vaultedBadgeText, { color: "#1E40AF" }]}>Unbuilt</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.infoBg }]}>
+              <Ionicons name="cube" size={16} color={colors.info} />
+              <Text style={[s.vaultedBadgeText, { color: colors.info }]}>Unbuilt</Text>
             </View>
           )}
         </View>
@@ -832,9 +834,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {itemAttributes?.signed === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DBEAFE" }]}>
-              <Ionicons name="create" size={16} color="#2563EB" />
-              <Text style={[s.vaultedBadgeText, { color: "#1E40AF" }]}>Signed</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.infoBg }]}>
+              <Ionicons name="create" size={16} color={colors.info} />
+              <Text style={[s.vaultedBadgeText, { color: colors.info }]}>Signed</Text>
             </View>
           )}
           {!!(itemAttributes?.member) && (
@@ -877,15 +879,15 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {(itemAttributes?.sealed === true) && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DCFCE7" }]}>
-              <Ionicons name="lock-closed" size={16} color="#16A34A" />
-              <Text style={[s.vaultedBadgeText, { color: "#166534" }]}>Sealed</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.successBg }]}>
+              <Ionicons name="lock-closed" size={16} color={colors.success} />
+              <Text style={[s.vaultedBadgeText, { color: colors.success }]}>Sealed</Text>
             </View>
           )}
           {(itemAttributes?.limited === true || itemAttributes?.edition === "limited") && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="star" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>Limited Edition</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="star" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Limited Edition</Text>
             </View>
           )}
         </View>
@@ -922,9 +924,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {(itemAttributes?.park_exclusive === true || itemAttributes?.limited_edition === true || itemAttributes?.jp_exclusive === true) && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="star" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="star" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>
                 {itemAttributes?.park_exclusive ? "Park Exclusive" : itemAttributes?.jp_exclusive ? "JP Exclusive" : "Limited Edition"}
               </Text>
             </View>
@@ -963,9 +965,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {itemAttributes?.limited_quantity === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEE2E2" }]}>
-              <Ionicons name="alert-circle" size={16} color="#DC2626" />
-              <Text style={[s.vaultedBadgeText, { color: "#991B1B" }]}>Limited Quantity</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.dangerBg }]}>
+              <Ionicons name="alert-circle" size={16} color={colors.danger} />
+              <Text style={[s.vaultedBadgeText, { color: colors.danger }]}>Limited Quantity</Text>
             </View>
           )}
         </View>
@@ -1002,9 +1004,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {!!(itemAttributes?.store_exclusive) && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEE2E2" }]}>
-              <Ionicons name="lock-closed" size={16} color="#DC2626" />
-              <Text style={[s.vaultedBadgeText, { color: "#991B1B" }]}>{String(itemAttributes.store_exclusive)} Exclusive</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.dangerBg }]}>
+              <Ionicons name="lock-closed" size={16} color={colors.danger} />
+              <Text style={[s.vaultedBadgeText, { color: colors.danger }]}>{String(itemAttributes.store_exclusive)} Exclusive</Text>
             </View>
           )}
         </View>
@@ -1041,9 +1043,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {itemAttributes?.official === false && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="alert-circle" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>Unofficial</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="alert-circle" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Unofficial</Text>
             </View>
           )}
         </View>
@@ -1084,15 +1086,15 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {(itemAttributes?.has_tags === true) && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#DCFCE7" }]}>
-              <Ionicons name="pricetag" size={16} color="#16A34A" />
-              <Text style={[s.vaultedBadgeText, { color: "#166534" }]}>Has Tags</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.successBg }]}>
+              <Ionicons name="pricetag" size={16} color={colors.success} />
+              <Text style={[s.vaultedBadgeText, { color: colors.success }]}>Has Tags</Text>
             </View>
           )}
           {!!(itemAttributes?.exclusive_retailer || itemAttributes?.retailer) && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="lock-closed" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>{String(itemAttributes?.exclusive_retailer || itemAttributes?.retailer)} Exclusive</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="lock-closed" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>{String(itemAttributes?.exclusive_retailer || itemAttributes?.retailer)} Exclusive</Text>
             </View>
           )}
         </View>
@@ -1129,9 +1131,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {!!itemAttributes?.variant && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="sparkles" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>{String(itemAttributes.variant)}</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="sparkles" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>{String(itemAttributes.variant)}</Text>
             </View>
           )}
         </View>
@@ -1161,9 +1163,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {!!itemAttributes?.completeness && (
-            <View style={[s.vaultedBadge, { backgroundColor: itemAttributes.completeness === "sealed" ? "#DCFCE7" : "#FEF3C7" }]}>
-              <Ionicons name="checkmark-done" size={16} color={itemAttributes.completeness === "sealed" ? "#16A34A" : "#D97706"} />
-              <Text style={[s.vaultedBadgeText, { color: itemAttributes.completeness === "sealed" ? "#166534" : "#92400E" }]}>
+            <View style={[s.vaultedBadge, { backgroundColor: itemAttributes.completeness === "sealed" ? colors.successBg : colors.warningBg }]}>
+              <Ionicons name="checkmark-done" size={16} color={itemAttributes.completeness === "sealed" ? colors.success : colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: itemAttributes.completeness === "sealed" ? colors.success : colors.warning }]}>
                 {String(itemAttributes.completeness).toUpperCase()}
               </Text>
             </View>
@@ -1195,9 +1197,9 @@ function CategorySpecificSectionInner({
             </View>
           )}
           {itemAttributes?.chase === true && (
-            <View style={[s.vaultedBadge, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="star" size={16} color="#D97706" />
-              <Text style={[s.vaultedBadgeText, { color: "#92400E" }]}>Chase / Treasure Hunt</Text>
+            <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="star" size={16} color={colors.warning} />
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Chase / Treasure Hunt</Text>
             </View>
           )}
         </View>

@@ -37,14 +37,16 @@ export const EventHeroSection = React.memo(function EventHeroSection({
           source={{ uri: event.imageUrl }}
           style={styles.heroImage}
           contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={200}
         />
       )}
 
       {/* Cancelled banner */}
       {event.status === 'cancelled' && (
-        <View style={[styles.cancelledBanner, { backgroundColor: '#EF444415' }]}>
-          <Ionicons name="close-circle-outline" size={16} color="#EF4444" />
-          <Text style={styles.cancelledBannerText}>This event has been cancelled</Text>
+        <View style={[styles.cancelledBanner, { backgroundColor: colors.danger + '15' }]}>
+          <Ionicons name="close-circle-outline" size={16} color={colors.danger} />
+          <Text style={[styles.cancelledBannerText, { color: colors.danger }]}>This event has been cancelled</Text>
         </View>
       )}
 
@@ -134,7 +136,6 @@ const styles = StyleSheet.create({
   cancelledBannerText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#EF4444',
   },
   kindBadge: {
     alignSelf: 'flex-start',

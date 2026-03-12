@@ -88,7 +88,7 @@ export function SocialProofSection({ socialProof, currency }: Props) {
                   width: `${Math.min(100, scarcity.scarcityScore * 100)}%`,
                   backgroundColor:
                     scarcity.scarcityScore >= 0.7
-                      ? '#EF4444'
+                      ? colors.danger
                       : scarcity.scarcityScore >= 0.4
                         ? '#F59E0B'
                         : '#22C55E',

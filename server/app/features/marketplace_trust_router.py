@@ -196,7 +196,6 @@ async def get_listing_trust_snapshot(listing_id: str, _caller: str = Depends(get
             elif seller_score >= 80:
                 badge = "regular"
 
-            # TODO: Replace with real trades table once P2P marketplace ships
             trade_count = 0
             try:
                 trade_row = await conn.fetchval(

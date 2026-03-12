@@ -131,12 +131,12 @@ class TestCollectionDetail:
     """GET /collections/{collection_id} endpoint."""
 
     def test_not_found(self):
-        resp = client.get("/collections/nonexistent-id")
+        resp = client.get("/collections/00000000-0000-0000-0000-000000000099")
         assert resp.status_code == 404
 
     def test_found_in_memory(self):
         _mem_collections.append({
-            "id": "col-123",
+            "id": "00000000-0000-0000-0000-000000000001",
             "category": "pokemon",
             "collection_key": "base1",
             "display_name": "Base Set",
@@ -146,7 +146,7 @@ class TestCollectionDetail:
             "notes": "Base series",
         })
 
-        resp = client.get("/collections/col-123")
+        resp = client.get("/collections/00000000-0000-0000-0000-000000000001")
         assert resp.status_code == 200
         data = resp.json()
         assert data["display_name"] == "Base Set"
@@ -158,5 +158,5 @@ class TestCollectionProgress:
     """GET /collections/{collection_id}/progress endpoint."""
 
     def test_not_found(self):
-        resp = client.get("/collections/nonexistent-id/progress")
+        resp = client.get("/collections/00000000-0000-0000-0000-000000000099/progress")
         assert resp.status_code == 404

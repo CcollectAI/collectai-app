@@ -70,8 +70,8 @@ export const EventCreatorMenu = React.memo(function EventCreatorMenu({
             accessibilityRole="button"
             accessibilityLabel="Cancel event"
           >
-            <Ionicons name="close-circle-outline" size={20} color="#EF4444" />
-            <Text style={[styles.menuItemText, { color: '#EF4444' }]}>Cancel Event</Text>
+            <Ionicons name="close-circle-outline" size={20} color={colors.danger} />
+            <Text style={[styles.menuItemText, { color: colors.danger }]}>Cancel Event</Text>
           </AnimatedPressable>
 
           <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />

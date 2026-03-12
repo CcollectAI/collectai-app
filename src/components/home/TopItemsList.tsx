@@ -9,6 +9,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ function TopItemsListInner({
   formatPrice,
   hapticsEnabled = true,
 }: TopItemsListProps) {
+  const { colors } = useAppTheme();
   const gainers = items
     .filter((it) => (it.changePct ?? 0) > 0)
     .sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0))
@@ -118,7 +120,7 @@ function TopItemsListInner({
           >
             <View style={s.itemLeft}>
               <View style={s.moverLabel}>
-                <Ionicons name="trending-down" size={12} color="#EF4444" />
+                <Ionicons name="trending-down" size={12} color={colors.danger} />
                 <Text style={[s.itemName, { color: theme.text }]} numberOfLines={1}>
                   {it.name}
                 </Text>
@@ -129,7 +131,7 @@ function TopItemsListInner({
             </View>
             <View style={s.itemRight}>
               <Text style={[s.itemValue, { color: theme.text }]}>{formatPrice(it.value)}</Text>
-              <Text style={[s.itemPct, { color: "#EF4444" }]}>{formatPct(it.changePct)}</Text>
+              <Text style={[s.itemPct, { color: colors.danger }]}>{formatPct(it.changePct)}</Text>
             </View>
           </AnimatedPressable>
         );

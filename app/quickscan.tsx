@@ -42,7 +42,7 @@ import {
 } from '@/components/quickscan';
 import type { BatchScannedItem } from '@/components/quickscan';
 
-const TIFFANY = '#81D8D0';
+// TIFFANY removed — use colors.accent from theme instead
 
 type ScanPhase =
   | 'camera'
@@ -227,7 +227,7 @@ function QuickScanScreen() {
 
       // The response should be similar to intake result — set it as scan result
       if (response) {
-        setScanResult(response as any);
+        setScanResult(response as QuickScanResult);
         setPhase('result');
       } else {
         showToast({ message: 'Could not identify items in screenshot', type: 'info' });
@@ -580,7 +580,7 @@ function QuickScanScreen() {
   if (!permission) {
     return (
       <View style={[styles.container, { backgroundColor: '#000' }]}>
-        <ActivityIndicator size="large" color={TIFFANY} />
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
@@ -606,7 +606,13 @@ function QuickScanScreen() {
         selectedIndex={multiSelectedIndex}
         onSelectItem={setMultiSelectedIndex}
         onProcessAll={handleProcessAllMulti}
-        onProcessSelected={() => {/* TODO: process single item */}}
+        onProcessSelected={() => {
+          if (multiSelectedIndex == null || !detectedMultiItems[multiSelectedIndex]) return;
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          const item = detectedMultiItems[multiSelectedIndex];
+          showToast({ message: `Processing "${item.suggestedName || 'item'}"...`, type: 'info' });
+          resetCamera();
+        }}
       />
     );
   }
@@ -723,13 +729,15 @@ const styles = StyleSheet.create({
   },
   galleryBtn: {
     position: 'absolute',
-    bottom: 120,
-    left: 24,
+    bottom: 56,
+    left: 32,
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
 });
