@@ -58,19 +58,21 @@ function MFASetupScreen() {
   const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
-    loadFactors();
+    let cancelled = false;
+    loadFactors(cancelled);
+    return () => { cancelled = true; };
   }, []);
 
-  async function loadFactors() {
+  async function loadFactors(cancelled = false) {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error) throw error;
-      setFactors(data?.totp ?? []);
+      if (!cancelled) setFactors(data?.totp ?? []);
     } catch {
       // MFA not available or error
     } finally {
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     }
   }
 

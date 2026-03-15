@@ -293,9 +293,11 @@ function PortfolioScreen() {
 
   // Load category breakdown
   useEffect(() => {
+    let cancelled = false;
     setBreakdownLoading(true);
     collectorsApi.getPortfolioCategoryBreakdown()
       .then((res: unknown) => {
+        if (cancelled) return;
         const data = res as Record<string, unknown>;
         // Backend returns "breakdown", also check "categories" for compat
         const cats = Array.isArray(data?.breakdown)
@@ -312,16 +314,19 @@ function PortfolioScreen() {
       })
       .catch((err: unknown) => {
         logger.warn('[Portfolio] category breakdown fetch failed:', err);
-        setCategoryBreakdown([]);
+        if (!cancelled) setCategoryBreakdown([]);
       })
-      .finally(() => setBreakdownLoading(false));
+      .finally(() => { if (!cancelled) setBreakdownLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   // Load followed categories from onboarding
   useEffect(() => {
+    let cancelled = false;
     // Try local storage first (faster), then backend
     AsyncStorage.getItem('@collectai/followed_categories')
       .then((raw) => {
+        if (cancelled) return;
         if (raw) {
           try {
             const parsed = JSON.parse(raw);
@@ -336,11 +341,12 @@ function PortfolioScreen() {
     // Also try backend (more authoritative)
     collectorsApi.getFollowedCategories()
       .then((data) => {
-        if (data?.followed_categories?.length) {
+        if (!cancelled && data?.followed_categories?.length) {
           setFollowedCategories(data.followed_categories);
         }
       })
       .catch((err) => logger.warn('[Home] followed categories backend fetch error:', err));
+    return () => { cancelled = true; };
   }, []);
 
   const handleRefresh = useCallback(async () => {

@@ -8,6 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { collectorsApi } from '@/api/collectorsApi';
+import { MEDAL_COLORS } from '@/constants/colors';
 import logger from '@/utils/logger';
 
 type LeaderboardEntry = {
@@ -42,7 +43,7 @@ export default React.memo(function CategoryLeaderboardSection({ categoryId }: Pr
 
   if (entries.length === 0) return null;
 
-  const MEDAL_COLORS = [colors.warning, '#94A3B8', '#CD7F32'];
+  const medalColors = [MEDAL_COLORS.gold, MEDAL_COLORS.silver, MEDAL_COLORS.bronze];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -55,7 +56,7 @@ export default React.memo(function CategoryLeaderboardSection({ categoryId }: Pr
         <View key={entry.user_id} style={[styles.row, { borderBottomColor: colors.border }]} accessibilityLabel={`Rank ${idx + 1}: ${entry.display_name || `Collector ${entry.rank}`}, Level ${entry.level}, ${entry.xp} XP`}>
           <View style={styles.rankWrap}>
             {idx < 3 ? (
-              <Ionicons name="medal-outline" size={16} color={MEDAL_COLORS[idx]} />
+              <Ionicons name="medal-outline" size={16} color={medalColors[idx]} />
             ) : (
               <Text style={[styles.rankText, { color: colors.muted }]}>{idx + 1}</Text>
             )}

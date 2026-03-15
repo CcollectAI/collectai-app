@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import logger from '@/utils/logger';
 
 export type AccessibilitySettings = {
   /** High contrast mode enabled */
@@ -55,7 +56,9 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
         if (stored) {
           setSettings({ ...DEFAULTS, ...JSON.parse(stored) });
         }
-      } catch {}
+      } catch (e) {
+        logger.debug('[a11y] Failed to load accessibility settings:', e);
+      }
       setReady(true);
     })();
   }, []);
@@ -75,7 +78,9 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   const updateSettings = useCallback((patch: Partial<AccessibilitySettings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...patch };
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch((e) => {
+        logger.debug('[a11y] Failed to persist accessibility settings:', e);
+      });
       return next;
     });
   }, []);

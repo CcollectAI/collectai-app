@@ -15,6 +15,7 @@ import { QuickNavBar } from "@/components/QuickNavBar";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { supabase } from "@/lib/supabase";
+import { TWITCH_PURPLE } from "@/constants/colors";
 
 type TwitchStats = {
   liveCount: string;
@@ -104,10 +105,10 @@ function TwitchScreenInner() {
             <View
               style={[
                 styles.headerIcon,
-                { backgroundColor: "#9146FF" + "15", borderColor: "#9146FF" + "30" },
+                { backgroundColor: TWITCH_PURPLE + "15", borderColor: TWITCH_PURPLE + "30" },
               ]}
             >
-              <Ionicons name="logo-twitch" size={22} color="#9146FF" />
+              <Ionicons name="logo-twitch" size={22} color={TWITCH_PURPLE} />
             </View>
           </View>
 
@@ -132,7 +133,7 @@ function TwitchScreenInner() {
               <Text style={[styles.statLabel, { color: colors.muted }]}>Creators</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Ionicons name="gift" size={18} color="#9146FF" />
+              <Ionicons name="gift" size={18} color={TWITCH_PURPLE} />
               {statsLoading ? (
                 <ActivityIndicator size="small" color={colors.muted} style={{ marginVertical: 2 }} />
               ) : (
@@ -152,8 +153,8 @@ function TwitchScreenInner() {
             accessibilityRole="button"
             accessibilityLabel="View Twitch creator leaderboard"
           >
-            <View style={[styles.linkIconCircle, { backgroundColor: "#9146FF" + "15" }]}>
-              <Ionicons name="trophy" size={20} color="#9146FF" />
+            <View style={[styles.linkIconCircle, { backgroundColor: TWITCH_PURPLE + "15" }]}>
+              <Ionicons name="trophy" size={20} color={TWITCH_PURPLE} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.linkTitle, { color: colors.text }]}>

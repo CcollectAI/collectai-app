@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collectorsApi } from '@/api/collectorsApi';
 import { updateFxCache } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
+import logger from '@/utils/logger';
 
 export type ChartRange = '1D'|'7D'|'30D';
 /** @deprecated Use CurrencyCode from '@/data/types' for new code */
@@ -80,8 +81,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         updateFxCache(next);
         setSettings((prev) => ({ ...prev, fxRates: next }));
       }
-    } catch {
-      // keep existing / default rates on failure
+    } catch (e) {
+      logger.debug('[settings] FX rate fetch failed:', e);
     }
   }, []);
 
@@ -90,7 +91,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       try {
         const s = await AsyncStorage.getItem('@settings');
         if (s) setSettings({ ...DEFAULTS, ...(JSON.parse(s) as Settings) });
-      } catch {}
+      } catch (e) {
+        logger.warn('[settings] Failed to load settings from AsyncStorage:', e);
+      }
       setReady(true);
     })();
 
@@ -106,7 +109,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setSettings((prev) => {
       const next = { ...prev, ...patch };
       // Persist async (fire and forget)
-      AsyncStorage.setItem('@settings', JSON.stringify(next)).catch(() => {});
+      AsyncStorage.setItem('@settings', JSON.stringify(next)).catch((e) => {
+        logger.warn('[settings] Failed to persist settings:', e);
+      });
       return next;
     });
   }, []);

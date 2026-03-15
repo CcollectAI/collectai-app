@@ -52,8 +52,9 @@ import { PredictionAccuracySection } from '@/components/analytics/PredictionAccu
 // Tier-specific tokens (not theme-dependent)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Static fallback for StyleSheet (can't use hooks in static context).
-// Runtime code uses themeColors from useThemeColors() instead.
+// Static fallback for StyleSheet only — React hooks cannot be used in static context.
+// All runtime rendering code must use useAppTheme() colors instead of these values.
+// These exist solely because StyleSheet.create() requires literal values at module scope.
 const COLORS = {
   tiffany: "#81D8D0",
   tiffanyDark: "#5FBFB6",

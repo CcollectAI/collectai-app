@@ -30,20 +30,21 @@ import { useToast } from "@/components/Toast";
 import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, positiveNumber } from "@/lib/validate";
 import { QuickNavBar } from '@/components/QuickNavBar';
-import { showActionSheet } from '@/hooks/useActionSheetPicker';
+import { SelectField, type SelectOption } from '@/components/form/SelectField';
 
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 
-const CATEGORIES = ALL_CATS.map((c) => c.slug);
-
-const CATEGORY_OPTIONS = ["Any", ...CATEGORIES];
+const CATEGORY_OPTIONS: SelectOption[] = [
+  { label: 'Any', value: '' },
+  ...ALL_CATS.map((c) => ({ label: c.slug, value: c.slug })),
+];
 
 const SOURCES = [
   "ebay", "tcgplayer", "cardmarket", "mercari",
   "discogs", "stockx", "bricklink",
 ];
 
-const REGIONS = [
+const REGION_OPTIONS: SelectOption[] = [
   { value: "", label: "Any Region" },
   { value: "americas", label: "Americas" },
   { value: "europe", label: "Europe" },
@@ -52,9 +53,13 @@ const REGIONS = [
   { value: "oceania", label: "Oceania" },
 ];
 
-const REGION_LABELS = REGIONS.map((r) => r.label);
-
-const TRUST_OPTIONS = ["0.5", "0.6", "0.7", "0.8", "0.9"];
+const TRUST_OPTIONS: SelectOption[] = [
+  { label: "0.5", value: "0.5" },
+  { label: "0.6", value: "0.6" },
+  { label: "0.7", value: "0.7" },
+  { label: "0.8", value: "0.8" },
+  { label: "0.9", value: "0.9" },
+];
 
 export default function CreateMandateScreenWithBoundary() {
   return (
@@ -111,25 +116,17 @@ function CreateMandateScreen() {
     );
   };
 
-  // Action sheet handlers
-  const showCategoryPicker = () => {
-    showActionSheet('Select Category', CATEGORY_OPTIONS, (index) => {
-      const selected = CATEGORY_OPTIONS[index];
-      setCategory(selected === 'Any' ? null : selected);
-    });
-  };
+  const handleCategoryChange = useCallback((value: string) => {
+    setCategory(value || null);
+  }, []);
 
-  const showRegionPicker = () => {
-    showActionSheet('Select Region', REGION_LABELS, (index) => {
-      setRegion(REGIONS[index].value);
-    });
-  };
+  const handleRegionChange = useCallback((value: string) => {
+    setRegion(value);
+  }, []);
 
-  const showTrustScorePicker = () => {
-    showActionSheet('Select Min Trust Score', TRUST_OPTIONS, (index) => {
-      setMinTrust(parseFloat(TRUST_OPTIONS[index]));
-    });
-  };
+  const handleTrustChange = useCallback((value: string) => {
+    setMinTrust(parseFloat(value));
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!validateAll(nameField, maxPriceField)) return;
@@ -169,9 +166,6 @@ function CreateMandateScreen() {
       setSaving(false);
     }
   }, [nameField, maxPriceField, minTrust, selectedSources, region, category, status, isEdit, params.id]);
-
-  // Derive display label for current region
-  const regionLabel = REGIONS.find((r) => r.value === region)?.label ?? "Any Region";
 
   if (loading) {
     return (
@@ -214,16 +208,13 @@ function CreateMandateScreen() {
         {nameField.touched && nameField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{nameField.error}</Text>}
 
         {/* Category */}
-        <Text style={[styles.label, { color: colors.muted }]}>CATEGORY (OPTIONAL)</Text>
-        <AnimatedPressable
-          style={[styles.pickerRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={showCategoryPicker}
-        >
-          <Text style={[styles.pickerValue, { color: category ? colors.text : colors.muted }]}>
-            {category || "Any"}
-          </Text>
-          <Ionicons name="chevron-down" size={16} color={colors.muted} />
-        </AnimatedPressable>
+        <SelectField
+          label="CATEGORY (OPTIONAL)"
+          value={category ?? ''}
+          options={CATEGORY_OPTIONS}
+          onChange={handleCategoryChange}
+          placeholder="Any"
+        />
 
         {/* Max Price */}
         <Text style={[styles.label, { color: colors.muted }]}>MAX PRICE PER ITEM ({settings.currency})</Text>
@@ -240,18 +231,12 @@ function CreateMandateScreen() {
         {maxPriceField.touched && maxPriceField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{maxPriceField.error}</Text>}
 
         {/* Min Trust Score */}
-        <Text style={[styles.label, { color: colors.muted }]}>
-          MIN TRUST SCORE: {minTrust.toFixed(2)}
-        </Text>
-        <AnimatedPressable
-          style={[styles.pickerRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={showTrustScorePicker}
-        >
-          <Text style={[styles.pickerValue, { color: colors.text }]}>
-            {minTrust.toFixed(1)}
-          </Text>
-          <Ionicons name="chevron-down" size={16} color={colors.muted} />
-        </AnimatedPressable>
+        <SelectField
+          label={`MIN TRUST SCORE: ${minTrust.toFixed(2)}`}
+          value={minTrust.toFixed(1)}
+          options={TRUST_OPTIONS}
+          onChange={handleTrustChange}
+        />
         <Text style={[styles.hint, { color: colors.muted }]}>
           Higher = stricter seller/listing quality filter.
         </Text>
@@ -277,16 +262,13 @@ function CreateMandateScreen() {
         </Text>
 
         {/* Region */}
-        <Text style={[styles.label, { color: colors.muted }]}>REGION</Text>
-        <AnimatedPressable
-          style={[styles.pickerRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={showRegionPicker}
-        >
-          <Text style={[styles.pickerValue, { color: region ? colors.text : colors.muted }]}>
-            {regionLabel}
-          </Text>
-          <Ionicons name="chevron-down" size={16} color={colors.muted} />
-        </AnimatedPressable>
+        <SelectField
+          label="REGION"
+          value={region}
+          options={REGION_OPTIONS}
+          onChange={handleRegionChange}
+          placeholder="Any Region"
+        />
 
         {/* Status toggle (edit mode) */}
         {isEdit && (
@@ -369,20 +351,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     fontSize: 15,
-  },
-
-  pickerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-  },
-  pickerValue: {
-    fontSize: 15,
-    fontWeight: "500",
   },
 
   sourceToggleRow: {

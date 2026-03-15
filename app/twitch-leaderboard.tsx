@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatPrice, formatNumber } from "@/lib/format";
+import { BRAND_COLORS } from "@/constants/colors";
 type LoadState = "idle" | "loading" | "loaded" | "error";
 
 type TwitchCreator = {
@@ -245,7 +246,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
         >
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionHeaderLeft}>
-              <View style={styles.liveDot} />
+              <View style={[styles.liveDot, { backgroundColor: colors.danger }]} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Live now
               </Text>
@@ -307,7 +308,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
                     </Text>
                   </View>
                   {c.is_partner && (
-                    <Text style={styles.partnerTag}>Partner</Text>
+                    <Text style={[styles.partnerTag, { color: colors.accent }]}>Partner</Text>
                   )}
                 </View>
               </View>
@@ -425,8 +426,8 @@ const TwitchLeaderboardScreen: React.FC = () => {
 
                   {/* Score pill */}
                   <View style={styles.scorePill}>
-                    <Text style={styles.scoreLabel}>Score</Text>
-                    <Text style={styles.scoreValue}>
+                    <Text style={[styles.scoreLabel, { color: colors.muted }]}>Score</Text>
+                    <Text style={[styles.scoreValue, { color: colors.text }]}>
                       {formatNumber(c.score_30d)}
                     </Text>
                   </View>
@@ -563,7 +564,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#D64545",
+    // backgroundColor set inline via colors.danger
     marginRight: 6,
   },
   emptyText: {
@@ -589,7 +590,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#81D8D010",
+    backgroundColor: BRAND_COLORS.tiffany + "10",
   },
   liveRight: {
     alignItems: "flex-end",
@@ -610,7 +611,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 11,
     fontWeight: "600",
-    color: "#A855F7",
+    // color set inline via colors.accent
   },
   creatorName: {
     fontSize: 14,
@@ -631,13 +632,13 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#81D8D015",
+    backgroundColor: BRAND_COLORS.tiffany + "15",
     marginRight: 8,
   },
   rankText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#81D8D0",
+    color: BRAND_COLORS.tiffany,
   },
   rankMain: {
     flex: 1,
@@ -662,12 +663,12 @@ const styles = StyleSheet.create({
   },
   scoreLabel: {
     fontSize: 10,
-    color: "#647589",
+    // color set inline via colors.muted
   },
   scoreValue: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0C2233",
+    // color set inline via colors.text
     marginTop: 2,
   },
   separator: {

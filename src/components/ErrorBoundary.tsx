@@ -9,6 +9,8 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { BRAND_COLORS } from '@/constants/colors';
+import logger from '@/utils/logger';
 
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import type { SentryModule } from '@/../types/api';
@@ -33,7 +35,7 @@ function ErrorFallback({
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
+        <View style={[styles.iconContainer, { backgroundColor: colors.dangerBg }]}>
           <Ionicons name="warning-outline" size={48} color={colors.danger} />
         </View>
         <Text style={[styles.title, { color: colors.text }]}>Something went wrong</Text>
@@ -42,22 +44,22 @@ function ErrorFallback({
         </Text>
 
         {__DEV__ && error && (
-          <ScrollView style={styles.errorDetails}>
-            <Text style={styles.errorTitle}>Error Details (Dev Only):</Text>
-            <Text style={styles.errorMessage}>
+          <ScrollView style={[styles.errorDetails, { backgroundColor: colors.dangerBg }]}>
+            <Text style={[styles.errorTitle, { color: colors.danger }]}>Error Details (Dev Only):</Text>
+            <Text style={[styles.errorMessage, { color: colors.danger }]}>
               {error.toString()}
             </Text>
             {errorInfo && (
-              <Text style={styles.errorStack}>
+              <Text style={[styles.errorStack, { color: colors.danger }]}>
                 {errorInfo.componentStack}
               </Text>
             )}
           </ScrollView>
         )}
 
-        <Pressable style={styles.retryButton} onPress={onRetry} accessibilityRole="button" accessibilityLabel="Try again">
-          <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.retryButtonText}>Try Again</Text>
+        <Pressable style={[styles.retryButton, { backgroundColor: colors.accent }]} onPress={onRetry} accessibilityRole="button" accessibilityLabel="Try again">
+          <Ionicons name="refresh-outline" size={20} color={colors.accentText} />
+          <Text style={[styles.retryButtonText, { color: colors.accentText }]}>Try Again</Text>
         </Pressable>
       </View>
     </View>
@@ -103,10 +105,10 @@ export class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo);
     }
 
-    // Log to console in development
+    // Log error
     if (__DEV__) {
-      console.error('ErrorBoundary caught an error:', error);
-      console.error('Component stack:', errorInfo.componentStack);
+      logger.error('ErrorBoundary caught an error:', error);
+      logger.error('Component stack:', errorInfo.componentStack);
     }
   }
 
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FEE2E2',
+    // backgroundColor set inline via colors.dangerBg
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -174,7 +176,7 @@ const styles = StyleSheet.create({
   errorDetails: {
     maxHeight: 200,
     width: '100%',
-    backgroundColor: '#FEF2F2',
+    // backgroundColor set inline via colors.dangerBg
     borderRadius: 8,
     padding: 12,
     marginBottom: 24,
@@ -182,31 +184,31 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#991B1B',
+    // color set inline via colors.danger
     marginBottom: 8,
   },
   errorMessage: {
     fontSize: 11,
-    color: '#B91C1C',
+    // color set inline via colors.danger
     fontFamily: 'monospace',
     marginBottom: 8,
   },
   errorStack: {
     fontSize: 10,
-    color: '#7F1D1D',
+    // color set inline via colors.danger
     fontFamily: 'monospace',
   },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#81D8D0',
+    // backgroundColor set inline via colors.accent
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
     gap: 8,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    // color set inline via colors.accentText
     fontSize: 16,
     fontWeight: '600',
   },

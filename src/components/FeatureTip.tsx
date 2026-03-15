@@ -10,8 +10,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { useFeatureTour, type TipId } from '@/lib/featureTour';
-
-const TIFFANY = '#81D8D0';
+import { BRAND_COLORS } from '@/constants/colors';
 
 type FeatureTipProps = {
   /** Unique identifier for this tip */
@@ -74,7 +73,7 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   bubble: {
-    backgroundColor: TIFFANY,
+    backgroundColor: BRAND_COLORS.tiffany,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -108,7 +107,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 8,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: TIFFANY,
+    borderBottomColor: BRAND_COLORS.tiffany,
     marginBottom: -1,
   },
   pointerBottom: {
@@ -119,7 +118,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 8,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: TIFFANY,
+    borderTopColor: BRAND_COLORS.tiffany,
     marginTop: -1,
   },
 });

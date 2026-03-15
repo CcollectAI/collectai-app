@@ -43,9 +43,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import * as Location from 'expo-location';
 import logger from '@/utils/logger';
 import { radius, spacing, text, fontWeight, gap, shadow } from '@/theme/tokens';
-
-/** Twitch brand color — not a theme token (fixed external brand) */
-const TWITCH_PURPLE = '#9146FF';
+import { TWITCH_PURPLE } from '@/constants/colors';
 
 const VIEW_MODE_TABS = [
   { key: 'list' as const, icon: 'list-outline' as const, label: 'List' },

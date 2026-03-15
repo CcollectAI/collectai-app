@@ -64,9 +64,11 @@ function BarcodeScanScreen() {
   // Billing / paywall state
   const [userPlan, setUserPlan] = useState<BillingStatus['plan']>('free');
   useEffect(() => {
+    let cancelled = false;
     getBillingStatus()
-      .then((b) => setUserPlan(b.plan))
+      .then((b) => { if (!cancelled) setUserPlan(b.plan); })
       .catch(() => {}); // default to 'free' on error
+    return () => { cancelled = true; };
   }, []);
 
   // Catalog learning modal state
@@ -273,13 +275,15 @@ function BarcodeScanScreen() {
       setAffiliateLink(null);
       return;
     }
+    let cancelled = false;
     collectorsApi.getAffiliateLinks(lookupResult.title, lookupResult.categoryId || undefined, 1)
       .then((data) => {
-        if (data.links.length > 0) {
+        if (!cancelled && data.links.length > 0) {
           setAffiliateLink({ url: data.links[0].affiliate_url, label: data.links[0].label });
         }
       })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [scanState, lookupResult?.title, lookupResult?.categoryId]);
 
   // Reset to scanning state

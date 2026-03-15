@@ -5,9 +5,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   Pressable,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -29,9 +27,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useToast } from "@/components/Toast";
 import { dataProvider } from "@/data";
-import { PriceConfidenceGauge } from "@/components/PriceConfidenceGauge";
 import { ImageZoomModal } from "@/components/ImageZoomModal";
-import { PriceCard } from "@/components/PriceCard";
 import { PriceExplanationSheet } from "@/components/PriceExplanationSheet";
 import {
   PriceEstimate,
@@ -74,6 +70,8 @@ import { ItemRefreshBar } from '@/components/item/ItemRefreshBar';
 import { ItemDraftActions } from '@/components/item/ItemDraftActions';
 import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
+import { ItemPriceSection } from '@/components/item/ItemPriceSection';
+import { ItemNotesEditor } from '@/components/item/ItemNotesEditor';
 // DossierData and MarketHit types imported from extracted components
 
 // Price trend data shape
@@ -227,7 +225,6 @@ function ItemDetailScreen() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fire once on mount
 
-  const notesInputRef = useRef<TextInput | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const notesLayoutY = useRef(0);
 
@@ -438,14 +435,17 @@ function ItemDetailScreen() {
   // Fetch linked build project (if buildable category)
   useEffect(() => {
     if (!id || isDraft || !itemIsBuildable) return;
+    let cancelled = false;
     dataProvider.listBuildPaintProjectsByItem(id)
       .then((projects) => {
+        if (cancelled) return;
         if (projects.length > 0) {
           const p = projects[0];
           setLinkedProject({ id: p.id, title: p.title, pct: p.percent ?? 0 });
         }
       })
       .catch((err) => logger.warn('[ItemDetail] fetch error:', err));
+    return () => { cancelled = true; };
   }, [id, isDraft, itemIsBuildable]);
 
   // Affiliate links, price trend, dossier, scarcity, comps, evidence managed by hooks above
@@ -685,75 +685,21 @@ function ItemDetailScreen() {
           />
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            {/* New Explainable AI Interface - PriceCard with visual RangeBar */}
-            {featureFlags.FEATURE_EXPLAINABLE_AI_INTERFACES && priceEstimate && (
-              <View style={styles.priceCardSection}>
-                <PriceCard
-                  estimate={priceEstimate}
-                  onWhyThisPrice={() => setShowPriceExplanation(true)}
-                  showRangeBar={true}
-                  compact={false}
-                />
-              </View>
-            )}
-
-            {/* Legacy Price bands (q10/q50/q90) — shown when feature flag is off */}
-            {!featureFlags.FEATURE_EXPLAINABLE_AI_INTERFACES && (q10 || q50 || q90) && (
-              <View style={styles.priceBandsRow}>
-                <Text style={[styles.label, { color: theme.muted }]}>
-                  Price range
-                </Text>
-                <Text style={{ fontSize: text.md, fontWeight: fontWeight.medium, color: theme.text }}>
-                  {formatPrice(toNum(q10))} – {formatPrice(toNum(q50))} – {formatPrice(toNum(q90))}
-                </Text>
-              </View>
-            )}
-
-            {/* Legacy Confidence Gauge — shown when feature flag is off */}
-            {!featureFlags.FEATURE_EXPLAINABLE_AI_INTERFACES && confidence && (
-              <View style={styles.confidenceSection}>
-                <PriceConfidenceGauge
-                  confidence={parseFloat(confidence)}
-                  size="medium"
-                  colors={{
-                    text: theme.text,
-                    muted: theme.muted,
-                    background: theme.border,
-                  }}
-                />
-              </View>
-            )}
-
-            {/* Legacy Explanation — expandable "Why this price?" section */}
-            {!featureFlags.FEATURE_EXPLAINABLE_AI_INTERFACES && explanation && (
-              <View style={[styles.explanationBlock, { borderTopColor: theme.border }]}>
-                <Pressable
-                  onPress={() => setExplanationExpanded(!explanationExpanded)}
-                  style={styles.explanationHeaderRow}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Why this price${explanationExpanded ? ', expanded' : ', collapsed'}`}
-                >
-                  <View style={styles.explanationHeaderLeft}>
-                    <Ionicons name="help-circle-outline" size={18} color={theme.accent} />
-                    <Text style={[styles.explanationHeader, { color: theme.text }]}>
-                      Why this price?
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name={explanationExpanded ? "chevron-up" : "chevron-down"}
-                    size={18}
-                    color={theme.muted}
-                  />
-                </Pressable>
-                {explanationExpanded && (
-                  <View style={[styles.explanationContent, { backgroundColor: theme.background }]}>
-                    <Text style={[styles.explanationText, { color: theme.muted }]}>
-                      {explanation}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
+            {/* Price display — PriceCard, legacy bands, confidence, explanation, scarcity, comps */}
+            <ItemPriceSection
+              priceEstimate={priceEstimate}
+              onWhyThisPrice={() => setShowPriceExplanation(true)}
+              q10={q10}
+              q50={q50}
+              q90={q90}
+              confidence={confidence}
+              explanation={explanation}
+              explanationExpanded={explanationExpanded}
+              onToggleExplanation={() => setExplanationExpanded(!explanationExpanded)}
+              scarcityData={scarcityData}
+              marketComps={marketComps}
+              toNum={toNum}
+            />
 
             {/* Feedback section — shown for saved items */}
             {!isDraft && id && (
@@ -897,81 +843,15 @@ function ItemDetailScreen() {
               />
             )}
 
-            {/* Scarcity Badge */}
-            {scarcityData && (
-              <View style={[styles.scarcityBadge, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <View style={styles.scarcityRow}>
-                  <Ionicons name="diamond-outline" size={16} color={scarcityData.scarcity_score >= 7 ? theme.error : scarcityData.scarcity_score >= 4 ? theme.warning : theme.success} />
-                  <Text style={[styles.scarcityLabel, { color: theme.text }]}>
-                    {scarcityData.scarcity_score >= 7 ? 'Rare' : scarcityData.scarcity_score >= 4 ? 'Moderate' : 'Common'}
-                  </Text>
-                  <Text style={[styles.scarcityMeta, { color: theme.muted }]}>
-                    {scarcityData.listing_count} listings · Supply {scarcityData.supply_trend}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Market Comps */}
-            {marketComps.length > 0 && (
-              <View style={[styles.compsSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <Text style={[styles.compsTitle, { color: theme.text }]}>
-                  <Ionicons name="stats-chart-outline" size={14} color={theme.accent} /> Comparable Sales
-                </Text>
-                {marketComps.map((comp, i) => (
-                  <View key={i} style={[styles.compRow, i > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.compTitle, { color: theme.text }]} numberOfLines={1}>{comp.title}</Text>
-                      <Text style={[styles.compSource, { color: theme.muted }]}>{comp.source}</Text>
-                    </View>
-                    <Text style={[styles.compPrice, { color: theme.accent }]}>{formatPrice(comp.price, comp.currency as CurrencyCode)}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
             {/* Notes (editable) */}
-            <View
-              style={styles.notesBlock}
-              onLayout={(e) => { notesLayoutY.current = e.nativeEvent.layout.y; }}
-            >
-              <View style={styles.notesHeaderRow}>
-                <Text style={[styles.label, { color: theme.muted }]}>
-                  Notes
-                </Text>
-                {keyboardVisible && (
-                  <Pressable
-                    onPress={() => { onSaveNotes(); Keyboard.dismiss(); }}
-                    style={[styles.notesDoneBtn, { backgroundColor: theme.accent }]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Save notes"
-                  >
-                    <Text style={[styles.notesDoneBtnText, { color: theme.accentText }]}>Save</Text>
-                  </Pressable>
-                )}
-              </View>
-
-              <TextInput
-                ref={notesInputRef}
-                style={[
-                  styles.notesInput,
-                  {
-                    color: theme.text,
-                    borderColor: theme.border,
-                    backgroundColor: theme.background,
-                  },
-                ]}
-                placeholder="Add your notes about condition, origin, where you bought it, etc."
-                placeholderTextColor={theme.muted}
-                multiline
-                value={notes}
-                onChangeText={setNotes}
-                onFocus={scrollToNotes}
-                textAlignVertical="top"
-                blurOnSubmit={false}
-                accessibilityLabel="Item notes"
-              />
-            </View>
+            <ItemNotesEditor
+              notes={notes}
+              onChangeNotes={setNotes}
+              onSaveNotes={onSaveNotes}
+              keyboardVisible={keyboardVisible}
+              onLayout={(y) => { notesLayoutY.current = y; }}
+              onFocus={scrollToNotes}
+            />
 
             {/* Bottom spacer inside card */}
 
@@ -1063,11 +943,6 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   // draftSection, draftButtonsRow, saveDraftButton, scanAnotherButton, errorText moved to ItemDraftActions
-  priceBandsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 6,
-  },
   card: {
     borderWidth: 1,
     borderRadius: radius.md,
@@ -1075,85 +950,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   // name, editableNameInputSimple, dropdownFieldRow, editableValueInput, editableValueRow, currencySymbol moved to ItemDetailsCard
-  confidenceSection: {
-    marginTop: 12,
-  },
-  priceCardSection: {
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  // row moved to ItemDetailsCard
-  label: {
-    fontSize: text.md,
-  },
-  // value, valueHighlight moved to ItemDetailsCard
-  explanationBlock: {
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-  },
-  explanationHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  explanationHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: gap.md,
-  },
-  explanationHeader: {
-    fontSize: text.md,
-    fontWeight: fontWeight.semibold,
-  },
-  explanationContent: {
-    marginTop: 10,
-    padding: 12,
-    borderRadius: radius.sm,
-  },
-  explanationText: {
-    fontSize: text.md,
-    lineHeight: 19,
-  },
-  scarcityBadge: { borderRadius: radius.md, borderWidth: 1, padding: 10, marginTop: 10, marginBottom: 4 },
-  scarcityRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  scarcityLabel: { fontSize: text.md, fontWeight: fontWeight.semibold },
-  scarcityMeta: { fontSize: text.sm, flex: 1, textAlign: 'right' },
-  compsSection: { borderRadius: radius.md, borderWidth: 1, padding: 12, marginTop: 10 },
-  compsTitle: { fontSize: text.md, fontWeight: fontWeight.semibold, marginBottom: 8 },
-  compRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  compTitle: { fontSize: text.sm, fontWeight: fontWeight.medium },
-  compSource: { fontSize: text.xs, marginTop: 1 },
-  compPrice: { fontSize: text.md, fontWeight: fontWeight.bold, marginLeft: 8 },
-  notesBlock: {
-    marginTop: 16,
-  },
-  notesHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  notesDoneBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: radius.xs,
-  },
-  notesDoneBtnText: {
-    fontSize: text.md,
-    fontWeight: fontWeight.semibold,
-  },
-  notesInput: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: text.md,
-    lineHeight: 18,
-    minHeight: 100,
-    maxHeight: 220,
-  },
+  // priceBandsRow, confidenceSection, priceCardSection, label, explanationBlock/Header/Content/Text moved to ItemPriceSection
+  // scarcityBadge, scarcityRow, scarcityLabel, scarcityMeta, compsSection, compsTitle, compRow, compTitle, compSource, compPrice moved to ItemPriceSection
+  // notesBlock, notesHeaderRow, notesDoneBtn, notesDoneBtnText, notesInput moved to ItemNotesEditor
   // sectionBlock, sectionHeaderRow, sectionHeaderLeft, sectionTitle, affiliateLinkBtn, affiliateLinkText moved to ItemShopSection
   stickyButtonContainer: {
     position: 'absolute',

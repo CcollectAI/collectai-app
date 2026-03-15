@@ -10,6 +10,9 @@
 const TAG = '[CollectAI]';
 
 const logger = {
+  debug: (...args: unknown[]) => {
+    if (__DEV__) console.log(TAG, '[DEBUG]', ...args);
+  },
   info: (...args: unknown[]) => {
     if (__DEV__) console.log(TAG, ...args);
   },

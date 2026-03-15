@@ -14,6 +14,10 @@ Endpoints:
 - GET    /deals/{offer_id}/evidence    - Dossier snapshot
 - GET    /deals/reputation/{user_id}   - User reputation
 - PUT    /items/{item_id}/for-sale     - Toggle for_sale + asking price
+
+Implementation details extracted to:
+- deal_risk.py: risk flag computation, price outlier detection, reputation
+- deal_completion.py: shipping, delivery confirmation, rating logic
 """
 
 from __future__ import annotations
@@ -31,6 +35,9 @@ from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
+
+from app.agents.deal_risk import compute_risk_flags, get_reputation_data
+from app.agents.deal_completion import execute_ship, execute_complete
 
 router = APIRouter(tags=["Deal Desk"])
 logger = logging.getLogger(__name__)
@@ -311,25 +318,7 @@ async def mark_shipped(
 
     try:
         async with pool.acquire() as conn:
-            # Pre-flight ownership check: only seller can mark shipped
-            is_seller = await conn.fetchval(
-                "SELECT 1 FROM offers WHERE id = $1::uuid AND seller_id = $2::uuid",
-                offer_id, user_id,
-            )
-            if not is_seller:
-                raise error_response(403, "Only the seller can mark as shipped", code=ErrorCode.FORBIDDEN)
-
-            result = await conn.fetchval(
-                "SELECT rpc_mark_shipped_v1($1::uuid, $2::text)",
-                offer_id, body.tracking_info,
-            )
-
-        try:
-            data = json.loads(result) if isinstance(result, str) else result
-        except (json.JSONDecodeError, TypeError) as e:
-            logger.error("Invalid JSON from RPC: %s", e)
-            raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
-        return data
+            return await execute_ship(conn, offer_id, user_id, body.tracking_info)
     except Exception as exc:
         if hasattr(exc, "status_code"):
             raise exc
@@ -364,67 +353,7 @@ async def complete_deal(
     try:
         async with pool.acquire() as conn:
             async with conn.transaction():
-                # Pre-flight ownership check: only buyer can complete
-                is_buyer = await conn.fetchval(
-                    "SELECT 1 FROM offers WHERE id = $1::uuid AND buyer_id = $2::uuid",
-                    offer_id, user_id,
-                )
-                if not is_buyer:
-                    raise error_response(403, "Only the buyer can complete the deal", code=ErrorCode.FORBIDDEN)
-
-                result = await conn.fetchval(
-                    "SELECT rpc_complete_deal_v1($1::uuid, $2::smallint, $3::text)",
-                    offer_id, body.stars, body.comment,
-                )
-
-                # Award XP for completing a deal (inside the same transaction)
-                try:
-                    from app.features.gamification_router import record_activity_xp
-                    deal_count = await conn.fetchval(
-                        """
-                        SELECT COUNT(*) FROM offers
-                        WHERE (seller_id = $1::uuid OR buyer_id = $1::uuid)
-                          AND status = 'completed'
-                        """,
-                        user_id,
-                    )
-                    achievement_checks = []
-                    deal_milestones = [
-                        (1, "trader_1"), (5, "trader_5"),
-                        (10, "trader_10"), (25, "trader_25"),
-                    ]
-                    for threshold, ach_id in deal_milestones:
-                        if deal_count >= threshold:
-                            achievement_checks.append((ach_id, deal_count))
-                    await record_activity_xp(conn, user_id, 25, achievement_checks or None)
-                except Exception:
-                    logger.debug("[deal_desk] XP award failed for deal completion (best-effort)")
-
-        try:
-            data = json.loads(result) if isinstance(result, str) else result
-        except (json.JSONDecodeError, TypeError) as e:
-            logger.error("Invalid JSON from RPC: %s", e)
-            raise error_response(500, "Invalid response from database", code=ErrorCode.INTERNAL_ERROR)
-
-        # Record ground truth for data moat feedback loop (best-effort, outside transaction)
-        try:
-            async with pool.acquire() as conn2:
-                offer_row = await conn2.fetchrow(
-                    "SELECT item_id, current_price, currency FROM offers WHERE id = $1::uuid",
-                    offer_id,
-                )
-            if offer_row:
-                from app.features.data_moat import record_price_ground_truth
-                await record_price_ground_truth(
-                    item_id=str(offer_row["item_id"]),
-                    actual_price=float(offer_row["current_price"]),
-                    currency=offer_row["currency"] or "EUR",
-                    source="deal_desk",
-                )
-        except Exception:
-            logger.debug("[deal_desk] Ground truth recording failed (best-effort)")
-
-        return data
+                return await execute_complete(conn, pool, offer_id, user_id, body.stars, body.comment)
     except Exception as exc:
         if hasattr(exc, "status_code"):
             raise exc
@@ -661,17 +590,6 @@ async def get_offer_evidence(
 # GET /deals/reputation/{user_id} — User reputation
 # ---------------------------------------------------------------------------
 
-def _compute_trust_badge(completed: int, avg_stars: float) -> str:
-    """Determine trust badge from completed deals and average rating."""
-    if completed >= 50 and avg_stars >= 4.8:
-        return "verified"
-    if completed >= 20 and avg_stars >= 4.5:
-        return "power"
-    if completed >= 5:
-        return "regular"
-    return "new"
-
-
 @router.get("/deals/reputation/{target_user_id}", summary="Get user reputation", description="Returns completed deals, average rating, trust score, badge level, and dispute rate for a user.")
 async def get_user_reputation(
     target_user_id: str,
@@ -686,51 +604,7 @@ async def get_user_reputation(
 
     try:
         async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                """
-                SELECT
-                    COUNT(*) FILTER (WHERE o.status = 'completed') AS completed_deals,
-                    COALESCE(AVG(dr.stars), 0) AS avg_stars,
-                    COUNT(dr.id) AS total_ratings
-                FROM offers o
-                LEFT JOIN deal_ratings dr ON dr.offer_id = o.id AND dr.rated_id = $1::uuid
-                WHERE o.seller_id = $1::uuid OR o.buyer_id = $1::uuid
-                """,
-                target_user_id,
-            )
-
-            completed = int(row["completed_deals"]) if row else 0
-            avg_stars = float(row["avg_stars"]) if row and row["avg_stars"] else 0.0
-            total_ratings = int(row["total_ratings"]) if row else 0
-
-            # Compute trust score: avg_stars normalized to 0-100, boosted by trade count
-            trust_score = min(100.0, (avg_stars / 5.0) * 80 + min(20.0, completed * 2)) if completed > 0 else 0.0
-            badge = _compute_trust_badge(completed, avg_stars)
-
-            # Count disputes (cancelled/declined)
-            dispute_count = 0
-            if completed > 0:
-                dispute_count = await conn.fetchval(
-                    """
-                    SELECT COUNT(*) FROM offers
-                    WHERE (seller_id = $1::uuid OR buyer_id = $1::uuid)
-                      AND status IN ('cancelled', 'declined')
-                    """,
-                    target_user_id,
-                ) or 0
-
-            dispute_rate = dispute_count / (completed + dispute_count) if (completed + dispute_count) > 0 else 0.0
-
-        return {
-            "user_id": target_user_id,
-            "avg_stars": round(avg_stars, 2),
-            "total_ratings": total_ratings,
-            "completed_deals": completed,
-            "trust_score": round(trust_score, 1),
-            "badge": badge,
-            "disputes": dispute_count,
-            "dispute_rate": round(dispute_rate, 4),
-        }
+            return await get_reputation_data(conn, target_user_id)
     except Exception:
         logger.exception("get_user_reputation failed")
         raise error_response(500, "Failed to get reputation", code=ErrorCode.INTERNAL_ERROR)
@@ -755,75 +629,10 @@ async def get_offer_risk_flags(
 
     try:
         async with pool.acquire() as conn:
-            # Verify access
-            offer = await conn.fetchrow(
-                """
-                SELECT id, item_id, current_price, currency, seller_id, buyer_id
-                FROM offers
-                WHERE id = $1::uuid AND (seller_id = $2::uuid OR buyer_id = $2::uuid)
-                """,
-                offer_id, user_id,
-            )
-            if not offer:
+            result = await compute_risk_flags(conn, offer_id, user_id)
+            if result is None:
                 raise error_response(404, "Offer not found", code=ErrorCode.NOT_FOUND)
-
-            flags = []
-            offer_price = float(offer["current_price"]) if offer["current_price"] else None
-
-            # Price outlier check: compare offer price to market_hits for the item
-            if offer_price and offer["item_id"]:
-                item_row = await conn.fetchrow(
-                    "SELECT normalized_key FROM items WHERE id = $1::uuid",
-                    str(offer["item_id"]),
-                )
-                if item_row and item_row["normalized_key"]:
-                    avg_row = await conn.fetchrow(
-                        """
-                        SELECT AVG(price) AS avg_price, STDDEV_POP(price) AS stddev_price, COUNT(*) AS sample_count
-                        FROM market_hits
-                        WHERE normalized_key = $1 AND price IS NOT NULL
-                        """,
-                        item_row["normalized_key"],
-                    )
-                    if avg_row and avg_row["avg_price"] and avg_row["stddev_price"]:
-                        avg_price = float(avg_row["avg_price"])
-                        stddev = float(avg_row["stddev_price"])
-                        if stddev > 0 and abs(offer_price - avg_price) > 2 * stddev:
-                            flags.append({
-                                "risk_level": "high" if abs(offer_price - avg_price) > 3 * stddev else "medium",
-                                "reason": f"Price ({offer_price:.2f}) is >2 std deviations from avg ({avg_price:.2f})",
-                            })
-
-            # Seller trust check
-            seller_id = str(offer["seller_id"])
-            seller_completed = await conn.fetchval(
-                "SELECT COUNT(*) FROM offers WHERE seller_id = $1::uuid AND status = 'completed'",
-                seller_id,
-            ) or 0
-            seller_avg = await conn.fetchval(
-                "SELECT COALESCE(AVG(stars), 0) FROM deal_ratings WHERE rated_id = $1::uuid",
-                seller_id,
-            ) or 0.0
-            seller_score = min(100.0, (float(seller_avg) / 5.0) * 80 + min(20.0, seller_completed * 2)) if seller_completed > 0 else 0.0
-
-            if seller_completed > 0 and seller_score < 60:
-                flags.append({
-                    "risk_level": "medium",
-                    "reason": f"Seller trust score below threshold ({seller_score:.0f}/100)",
-                })
-
-            if seller_completed == 0:
-                flags.append({
-                    "risk_level": "low",
-                    "reason": "New seller — no completed trades yet",
-                })
-
-        return {
-            "offer_id": offer_id,
-            "risk_flags": flags,
-            "seller_trust_score": round(seller_score, 1),
-            "seller_badge": _compute_trust_badge(seller_completed, float(seller_avg)),
-        }
+            return result
     except Exception as exc:
         if hasattr(exc, "status_code"):
             raise exc

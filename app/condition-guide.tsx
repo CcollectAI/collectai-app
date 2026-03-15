@@ -19,9 +19,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
-
-const TIFFANY = '#81D8D0';
-const TIFFANY_DARK = '#5FBFB6';
+import { BRAND_COLORS } from '@/constants/colors';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Condition Grade Definitions
@@ -34,15 +32,15 @@ type ConditionGrade = {
   priceImpact: string;
 };
 
-function getConditionGrades(dangerColor: string): ConditionGrade[] {
+function getConditionGrades(themeColors: { success: string; warning: string; danger: string }): ConditionGrade[] {
   return [
-    { name: 'Mint', abbreviation: 'M', color: '#10B981', priceImpact: '100% of market value' },
-    { name: 'Near Mint', abbreviation: 'NM', color: '#10B981', priceImpact: 'Typically 80-90% of mint value' },
-    { name: 'Excellent', abbreviation: 'EX', color: '#34D399', priceImpact: 'Typically 65-80% of mint value' },
-    { name: 'Very Good', abbreviation: 'VG', color: '#F59E0B', priceImpact: 'Typically 50-65% of mint value' },
-    { name: 'Good', abbreviation: 'G', color: '#F59E0B', priceImpact: 'Typically 35-50% of mint value' },
-    { name: 'Fair', abbreviation: 'FR', color: dangerColor, priceImpact: 'Typically 20-35% of mint value' },
-    { name: 'Poor', abbreviation: 'PR', color: dangerColor, priceImpact: 'Typically 5-20% of mint value' },
+    { name: 'Mint', abbreviation: 'M', color: themeColors.success, priceImpact: '100% of market value' },
+    { name: 'Near Mint', abbreviation: 'NM', color: themeColors.success, priceImpact: 'Typically 80-90% of mint value' },
+    { name: 'Excellent', abbreviation: 'EX', color: themeColors.success, priceImpact: 'Typically 65-80% of mint value' },
+    { name: 'Very Good', abbreviation: 'VG', color: themeColors.warning, priceImpact: 'Typically 50-65% of mint value' },
+    { name: 'Good', abbreviation: 'G', color: themeColors.warning, priceImpact: 'Typically 35-50% of mint value' },
+    { name: 'Fair', abbreviation: 'FR', color: themeColors.danger, priceImpact: 'Typically 20-35% of mint value' },
+    { name: 'Poor', abbreviation: 'PR', color: themeColors.danger, priceImpact: 'Typically 5-20% of mint value' },
   ];
 }
 
@@ -174,7 +172,7 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
 
 function ConditionGuideScreen() {
   const { colors } = useAppTheme();
-  const CONDITION_GRADES = getConditionGrades(colors.danger);
+  const CONDITION_GRADES = getConditionGrades({ success: colors.success, warning: colors.warning, danger: colors.danger });
   const { settings } = useSettings();
   const params = useLocalSearchParams<{ categoryId?: string }>();
   const [selectedCategory, setSelectedCategory] = useState(params.categoryId ?? 'default');
@@ -207,7 +205,7 @@ function ConditionGuideScreen() {
           accessibilityLabel={`Category: ${selectedLabel}. Tap to change`}
         >
           <View style={styles.categorySelectorLeft}>
-            <Ionicons name="grid-outline" size={18} color={TIFFANY_DARK} />
+            <Ionicons name="grid-outline" size={18} color={BRAND_COLORS.tiffanyDark} />
             <Text style={[styles.categorySelectorLabel, { color: colors.muted }]}>
               Category
             </Text>
@@ -244,7 +242,7 @@ function ConditionGuideScreen() {
                     }}
                     style={[
                       styles.categoryPickerItem,
-                      isSelected && { backgroundColor: TIFFANY + '15' },
+                      isSelected && { backgroundColor: BRAND_COLORS.tiffany + '15' },
                     ]}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: isSelected }}
@@ -253,14 +251,14 @@ function ConditionGuideScreen() {
                     <Text
                       style={[
                         styles.categoryPickerItemText,
-                        { color: isSelected ? TIFFANY_DARK : colors.text },
+                        { color: isSelected ? BRAND_COLORS.tiffanyDark : colors.text },
                         isSelected && { fontWeight: '600' },
                       ]}
                     >
                       {cat.label}
                     </Text>
                     {isSelected && (
-                      <Ionicons name="checkmark" size={18} color={TIFFANY_DARK} />
+                      <Ionicons name="checkmark" size={18} color={BRAND_COLORS.tiffanyDark} />
                     )}
                   </Pressable>
                 );

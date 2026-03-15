@@ -12,9 +12,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
-
-const MEDAL_COLORS = { gold: '#eab308', silver: '#9ca3af', bronze: '#b45309' } as const;
-const TWITCH_PURPLE = '#9146FF';
+import { MEDAL_COLORS, TWITCH_PURPLE } from '@/constants/colors';
 
 const AvatarCircle = React.memo<{ name: string; color: string }>(({ name, color }) => {
   const initials =

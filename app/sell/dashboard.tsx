@@ -15,13 +15,9 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  Modal,
-  TextInput,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
@@ -31,7 +27,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { radius, text, fontWeight, gap, shadow } from '@/theme/tokens';
-import { formatPrice, getCurrencySymbol } from '@/lib/format';
+import { formatPrice } from '@/lib/format';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonList } from '@/components/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -39,8 +35,12 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { AnimatedPressable } from '@/motion';
 import { SwipeableRow, SwipeActions } from '@/components/SwipeableRow';
 import { useAsync } from '@/hooks/useAsync';
+import { MARKETPLACE_BRAND_COLORS } from '@/constants/colors';
 import { useFormField, validateAll } from '@/hooks/useFormField';
 import { compose, required, maxLength, positiveNumber } from '@/lib/validate';
+import { CreateListingModal } from '@/components/sell/CreateListingModal';
+import { ConnectMarketplaceModal } from '@/components/sell/ConnectMarketplaceModal';
+import { PredictionCompsCard } from '@/components/sell/PredictionCompsCard';
 import type {
   MarketplaceListing,
   MarketplaceSale,
@@ -56,14 +56,14 @@ import type {
 // ---------------------------------------------------------------------------
 
 const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
-  collectai: { label: 'CollectAI P2P', icon: 'people-outline', color: '#81D8D0' },
-  ebay: { label: 'eBay', icon: 'cart-outline', color: '#E53238' },
-  mercari: { label: 'Mercari', icon: 'storefront-outline', color: '#4DC8F0' },
-  cardmarket: { label: 'Cardmarket', icon: 'card-outline', color: '#1A3C7D' },
-  stockx: { label: 'StockX', icon: 'trending-up-outline', color: '#006340' },
-  bricklink: { label: 'BrickLink', icon: 'cube-outline', color: '#D01012' },
-  tcgplayer: { label: 'TCGPlayer', icon: 'layers-outline', color: '#363A5D' },
-  discogs: { label: 'Discogs', icon: 'disc-outline', color: '#333333' },
+  collectai: { label: 'CollectAI P2P', icon: 'people-outline', color: MARKETPLACE_BRAND_COLORS.collectai.color },
+  ebay: { label: 'eBay', icon: 'cart-outline', color: MARKETPLACE_BRAND_COLORS.ebay.color },
+  mercari: { label: 'Mercari', icon: 'storefront-outline', color: MARKETPLACE_BRAND_COLORS.mercari.color },
+  cardmarket: { label: 'Cardmarket', icon: 'card-outline', color: MARKETPLACE_BRAND_COLORS.cardmarket.color },
+  stockx: { label: 'StockX', icon: 'trending-up-outline', color: MARKETPLACE_BRAND_COLORS.stockx.color },
+  bricklink: { label: 'BrickLink', icon: 'cube-outline', color: MARKETPLACE_BRAND_COLORS.bricklink.color },
+  tcgplayer: { label: 'TCGPlayer', icon: 'layers-outline', color: MARKETPLACE_BRAND_COLORS.tcgplayer.color },
+  discogs: { label: 'Discogs', icon: 'disc-outline', color: MARKETPLACE_BRAND_COLORS.discogs.color },
 };
 
 // Status badge colors pulled from tokens at render time via useAppTheme().status
@@ -482,36 +482,7 @@ function SellerDashboardScreen() {
     finally { setConnecting(false); }
   }, [connectMp, connectName, connecting, loadData, showToast]);
 
-  // Compute fee preview for create modal
-  const feePreview = useMemo(() => {
-    const price = parseFloat(createPriceField.value.replace(/[^\d.]/g, ''));
-    if (!Number.isFinite(price) || price <= 0) return null;
-    const schedule = feeSchedules.find((f) => f.marketplaceId === createMarketplace);
-    if (!schedule) return null;
-    const fees = (price * (schedule.baseFeePct + schedule.paymentProcessingPct) / 100) + schedule.fixedFee;
-    return { fees: Math.round(fees * 100) / 100, net: Math.round((price - fees) * 100) / 100 };
-  }, [createPriceField.value, createMarketplace, feeSchedules]);
-
-  const [backendFeePreview, setBackendFeePreview] = useState<{ fees: number; net: number } | null>(null);
-
-  // Fetch accurate fees from backend when price or marketplace changes
-  useEffect(() => {
-    const price = parseFloat(createPriceField.value.replace(/[^\d.]/g, ''));
-    if (!Number.isFinite(price) || price <= 0 || !showCreateModal) {
-      setBackendFeePreview(null);
-      return;
-    }
-    const timer = setTimeout(() => {
-      collectorsApi.calculateMarketplaceFees({ price, marketplace_id: createMarketplace, category: undefined })
-        .then((data: any) => {
-          if (data?.total_fees != null) {
-            setBackendFeePreview({ fees: data.total_fees, net: price - data.total_fees });
-          }
-        })
-        .catch((err) => logger.warn('[SellerDash] fee calc failed, using local:', err));
-    }, 500); // debounce
-    return () => clearTimeout(timer);
-  }, [createPriceField.value, createMarketplace, showCreateModal]);
+  // Fee preview logic moved to CreateListingModal component
 
   // Filter listings by status
   const filteredListings = useMemo(() => {
@@ -579,6 +550,7 @@ function SellerDashboardScreen() {
               tab === t && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
             ]}
             accessibilityRole="tab"
+            accessibilityLabel={`${t.charAt(0).toUpperCase() + t.slice(1)} tab`}
             accessibilityState={{ selected: tab === t }}
           >
             <Text style={[styles.tabBtnText, { color: tab === t ? colors.accent : colors.muted }]}>
@@ -608,6 +580,7 @@ function SellerDashboardScreen() {
                     isActive && { backgroundColor: colors.accent + '15' },
                   ]}
                   accessibilityRole="button"
+                  accessibilityLabel={`Filter by ${s === 'all' ? 'all statuses' : s}`}
                   accessibilityState={{ selected: isActive }}
                 >
                   <Text style={[styles.filterChipText, { color: isActive ? colors.accent : colors.muted }]}>
@@ -626,7 +599,7 @@ function SellerDashboardScreen() {
                 subtitle={`You don't have any ${statusFilter} listings right now. Try a different filter or create a new listing.`}
                 colors={colors}
                 action={
-                  <Pressable onPress={() => setStatusFilter('all')}>
+                  <Pressable onPress={() => setStatusFilter('all')} accessibilityRole="button" accessibilityLabel="Show all listings">
                     <Text style={{ color: colors.accent, fontWeight: fontWeight.semibold, marginTop: 8 }}>Show All Listings</Text>
                   </Pressable>
                 }
@@ -638,7 +611,7 @@ function SellerDashboardScreen() {
                 subtitle="List your collectibles across eBay, Mercari, Cardmarket, and more -- all from one dashboard. Tap the + button to create your first listing!"
                 colors={colors}
                 action={
-                  <Pressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); openCreateModal(); }}>
+                  <Pressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); openCreateModal(); }} accessibilityRole="button" accessibilityLabel="Create your first listing">
                     <Text style={{ color: colors.accent, fontWeight: fontWeight.semibold, marginTop: 8 }}>Create Your First Listing</Text>
                   </Pressable>
                 }
@@ -666,37 +639,7 @@ function SellerDashboardScreen() {
           keyExtractor={(item) => item.id}
           ListHeaderComponent={<RevenueSummary sales={sales} colors={colors} currency={settings.currency} />}
           ListFooterComponent={predictionComps.length > 0 ? (
-            <View style={[styles.predCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.predCardHeader}>
-                <Ionicons name="analytics-outline" size={16} color={colors.accent} />
-                <Text style={[styles.predCardTitle, { color: colors.text }]}>Actuals vs Predicted</Text>
-              </View>
-              {predictionComps.map((comp) => {
-                const diff = comp.actual - comp.predicted;
-                const diffPct = comp.predicted > 0 ? (diff / comp.predicted) * 100 : 0;
-                const isOver = diff >= 0;
-                return (
-                  <View key={comp.item_key} style={[styles.predCompRow, { borderBottomColor: colors.border }]}>
-                    <View style={{ flex: 2 }}>
-                      <Text style={[styles.predCompName, { color: colors.text }]} numberOfLines={1}>
-                        {comp.item_key.replace(/-/g, ' ')}
-                      </Text>
-                      <Text style={{ fontSize: text.sm, color: colors.muted, textTransform: 'capitalize' }}>
-                        {comp.category.replace(/_/g, ' ')}
-                      </Text>
-                    </View>
-                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                      <Text style={{ fontSize: text.sm, color: colors.muted }}>
-                        {formatPrice(comp.predicted, settings.currency)}
-                      </Text>
-                      <Text style={{ fontSize: text.md, fontWeight: fontWeight.bold, color: isOver ? colors.success : colors.danger }}>
-                        {formatPrice(comp.actual, settings.currency)} ({isOver ? '+' : ''}{diffPct.toFixed(0)}%)
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
+            <PredictionCompsCard comparisons={predictionComps} currency={settings.currency} />
           ) : null}
           ListEmptyComponent={
             <EmptyState
@@ -764,138 +707,30 @@ function SellerDashboardScreen() {
       )}
 
       {/* Create Listing Modal */}
-      <Modal visible={showCreateModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Create Listing</Text>
-              <AnimatedPressable onPress={() => closeCreateModal()} accessibilityRole="button" accessibilityLabel="Close">
-                <Ionicons name="close" size={24} color={colors.muted} />
-              </AnimatedPressable>
-            </View>
-
-            <Text style={[styles.modalLabel, { color: colors.text }]}>Title</Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: createTitleField.touched && createTitleField.error ? colors.danger : colors.border, color: colors.text }]}
-              value={createTitleField.value}
-              onChangeText={createTitleField.onChange}
-              onBlur={createTitleField.onBlur}
-              placeholder="Item title"
-              placeholderTextColor={colors.muted}
-              autoFocus
-              returnKeyType="next"
-              maxLength={200}
-            />
-            {createTitleField.touched && createTitleField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{createTitleField.error}</Text>}
-
-            <Text style={[styles.modalLabel, { color: colors.text }]}>Price ({settings.currency})</Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: createPriceField.touched && createPriceField.error ? colors.danger : colors.border, color: colors.text }]}
-              value={createPriceField.value}
-              onChangeText={createPriceField.onChange}
-              onBlur={createPriceField.onBlur}
-              placeholder={`${getCurrencySymbol(settings.currency)} 0.00`}
-              placeholderTextColor={colors.muted}
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-            />
-            {createPriceField.touched && createPriceField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{createPriceField.error}</Text>}
-
-            <Text style={[styles.modalLabel, { color: colors.text }]}>Marketplace</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-              {(['collectai', 'ebay', 'mercari', 'cardmarket'] as MarketplaceId[]).map((mp) => {
-                const cfg = MARKETPLACE_CONFIG[mp];
-                const isActive = createMarketplace === mp;
-                return (
-                  <Pressable
-                    key={mp}
-                    onPress={() => setCreateMarketplace(mp)}
-                    style={[styles.mpChip, { borderColor: isActive ? cfg?.color ?? colors.accent : colors.border }, isActive && { backgroundColor: (cfg?.color ?? colors.accent) + '15' }]}
-                  >
-                    <Text style={[styles.mpChipText, { color: isActive ? cfg?.color ?? colors.accent : colors.muted }]}>{cfg?.label ?? mp}</Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            {/* Fee preview — prefer backend calculation, fall back to local */}
-            {(() => {
-              const displayFees = backendFeePreview ?? feePreview;
-              if (!displayFees) return null;
-              return (
-                <View style={[styles.feePreview, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  <View style={styles.feeRow}>
-                    <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. fees{backendFeePreview ? '' : ' (local)'}</Text>
-                    <Text style={[styles.feeValue, { color: colors.error }]}>-{formatPrice(displayFees.fees, settings.currency)}</Text>
-                  </View>
-                  <View style={styles.feeRow}>
-                    <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. net</Text>
-                    <Text style={[styles.feeValue, { color: colors.success }]}>{formatPrice(displayFees.net, settings.currency)}</Text>
-                  </View>
-                </View>
-              );
-            })()}
-
-            <AnimatedPressable
-              style={[styles.createBtn, { backgroundColor: colors.accent }, creating && { opacity: 0.7 }]}
-              onPress={handleCreateListing}
-              disabled={creating}
-              accessibilityRole="button"
-              accessibilityLabel={creating ? 'Creating listing' : 'Create listing'}
-            >
-              {creating ? (
-                <ActivityIndicator size="small" color={colors.accentText} />
-              ) : (
-                <Text style={[styles.createBtnText, { color: colors.accentText }]}>Create as Draft</Text>
-              )}
-            </AnimatedPressable>
-          </View>
-        </View>
-      </Modal>
+      <CreateListingModal
+        visible={showCreateModal}
+        onClose={closeCreateModal}
+        titleField={createTitleField}
+        priceField={createPriceField}
+        marketplace={createMarketplace}
+        onMarketplaceChange={setCreateMarketplace}
+        feeSchedules={feeSchedules}
+        currency={settings.currency}
+        creating={creating}
+        onCreateListing={handleCreateListing}
+      />
 
       {/* Connect Marketplace Modal */}
-      <Modal visible={showConnectModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Connect Marketplace</Text>
-              <AnimatedPressable onPress={() => closeConnectModal()} accessibilityRole="button" accessibilityLabel="Close">
-                <Ionicons name="close" size={24} color={colors.muted} />
-              </AnimatedPressable>
-            </View>
-            <Text style={[styles.modalLabel, { color: colors.text }]}>Marketplace</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-              {(['ebay', 'mercari', 'cardmarket', 'stockx', 'discogs', 'bricklink'] as MarketplaceId[]).map((mp) => {
-                const cfg = MARKETPLACE_CONFIG[mp];
-                const isActive = connectMp === mp;
-                return (
-                  <Pressable key={mp} onPress={() => setConnectMp(mp)} style={[styles.mpChip, { borderColor: isActive ? cfg?.color ?? colors.accent : colors.border }, isActive && { backgroundColor: (cfg?.color ?? colors.accent) + '15' }]}>
-                    <Text style={[styles.mpChipText, { color: isActive ? cfg?.color ?? colors.accent : colors.muted }]}>{cfg?.label ?? mp}</Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-            <Text style={[styles.modalLabel, { color: colors.text }]}>Seller Name (optional)</Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
-              value={connectName}
-              onChangeText={setConnectName}
-              placeholder="Your seller username"
-              placeholderTextColor={colors.muted}
-              returnKeyType="done"
-            />
-            <AnimatedPressable
-              style={[styles.createBtn, { backgroundColor: colors.accent }, connecting && { opacity: 0.7 }]}
-              onPress={handleConnect}
-              disabled={connecting}
-              accessibilityRole="button"
-              accessibilityLabel="Connect account"
-            >
-              {connecting ? <ActivityIndicator size="small" color={colors.accentText} /> : <Text style={[styles.createBtnText, { color: colors.accentText }]}>Connect</Text>}
-            </AnimatedPressable>
-          </View>
-        </View>
-      </Modal>
+      <ConnectMarketplaceModal
+        visible={showConnectModal}
+        onClose={closeConnectModal}
+        selectedMp={connectMp}
+        onMpChange={setConnectMp}
+        sellerName={connectName}
+        onSellerNameChange={setConnectName}
+        connecting={connecting}
+        onConnect={handleConnect}
+      />
 
       <QuickNavBar />
     </View>
@@ -1036,27 +871,6 @@ const styles = StyleSheet.create({
     ...shadow.floating,
   },
 
-  // Create Listing Modal
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalContent: { borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 20, paddingBottom: 40 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: text.xl, fontWeight: fontWeight.bold },
-  modalLabel: { fontSize: text.md, fontWeight: fontWeight.semibold, marginBottom: 6, marginTop: gap.md },
-  modalInput: { borderRadius: radius.sm, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, fontSize: text.lg, marginBottom: gap.md },
-  mpChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.md, borderWidth: 1, marginRight: gap.md },
-  mpChipText: { fontSize: text.sm, fontWeight: fontWeight.semibold },
-  feePreview: { borderRadius: radius.sm, borderWidth: 1, padding: 12, marginBottom: gap.xl },
-  feeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  feeLabel: { fontSize: text.sm },
-  feeValue: { fontSize: text.md, fontWeight: fontWeight.semibold },
-  createBtn: { borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
-  createBtnText: { fontSize: text.lg, fontWeight: fontWeight.bold },
-  fieldError: { fontSize: text.sm, marginTop: 2, marginLeft: 4, marginBottom: 4 },
-
-  // Actuals vs Predicted (L2)
-  predCard: { borderRadius: radius.md, borderWidth: 1, padding: 14, marginTop: 16 },
-  predCardHeader: { flexDirection: 'row', alignItems: 'center', gap: gap.md, marginBottom: 10 },
-  predCardTitle: { fontSize: text.lg, fontWeight: fontWeight.bold },
-  predCompRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: gap.md, borderBottomWidth: StyleSheet.hairlineWidth },
-  predCompName: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  // Modal styles moved to CreateListingModal and ConnectMarketplaceModal components
+  // Prediction comps styles moved to PredictionCompsCard component
 });
