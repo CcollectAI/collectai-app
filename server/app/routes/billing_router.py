@@ -26,6 +26,10 @@ from app.config import (
     DEV_MODE,
     STRIPE_PRICE_ID_PREMIUM,
     STRIPE_PRICE_ID_PRO,
+    STRIPE_PRICE_PREMIUM_MONTHLY,
+    STRIPE_PRICE_PREMIUM_YEARLY,
+    STRIPE_PRICE_PRO_MONTHLY,
+    STRIPE_PRICE_PRO_YEARLY,
     STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET,
     SUPABASE_URL,
@@ -64,10 +68,43 @@ def _get_stripe():
 # Plan → price ID mapping
 # ---------------------------------------------------------------------------
 
+# Centralized price resolution: monthly/yearly env vars take precedence over
+# the legacy single-price-per-plan vars.  This lets you configure granular
+# billing intervals while remaining backwards-compatible.
+_PLAN_PRICES_BY_INTERVAL: dict[str, dict[str, str]] = {
+    "pro": {
+        "monthly": STRIPE_PRICE_PRO_MONTHLY or STRIPE_PRICE_ID_PRO,
+        "yearly": STRIPE_PRICE_PRO_YEARLY or STRIPE_PRICE_ID_PRO,
+    },
+    "premium": {
+        "monthly": STRIPE_PRICE_PREMIUM_MONTHLY or STRIPE_PRICE_ID_PREMIUM,
+        "yearly": STRIPE_PRICE_PREMIUM_YEARLY or STRIPE_PRICE_ID_PREMIUM,
+    },
+}
+
+# Legacy flat lookup (for webhook reverse mapping)
 _PLAN_PRICES = {
     "pro": STRIPE_PRICE_ID_PRO,
     "premium": STRIPE_PRICE_ID_PREMIUM,
 }
+
+# Reverse lookup: price_id → plan name (includes all intervals)
+_PRICE_TO_PLAN: dict[str, str] = {}
+for _plan_name, _intervals in _PLAN_PRICES_BY_INTERVAL.items():
+    for _price_id in _intervals.values():
+        if _price_id:
+            _PRICE_TO_PLAN[_price_id] = _plan_name
+
+
+def _resolve_price_id(plan: str, interval: str = "monthly") -> str | None:
+    """Resolve the Stripe Price ID for a given plan and billing interval.
+
+    Returns None if no price ID is configured for the combination.
+    """
+    intervals = _PLAN_PRICES_BY_INTERVAL.get(plan)
+    if not intervals:
+        return None
+    return intervals.get(interval) or intervals.get("monthly") or None
 
 PLAN_LIMITS = {
     "free": {"max_mandates": 3, "deal_discovery": False, "dossier_pdf": False, "advanced_analytics": False},
@@ -234,12 +271,20 @@ async def create_checkout_session(
 
     body = await request.json()
     plan = body.get("plan", "").lower()
-    if plan not in _PLAN_PRICES:
+    interval = body.get("interval", "monthly").lower()
+    if plan not in _PLAN_PRICES_BY_INTERVAL:
         raise error_response(400, f"Invalid plan: {plan}. Choose 'pro' or 'premium'.")
+    if interval not in ("monthly", "yearly"):
+        raise error_response(400, f"Invalid interval: {interval}. Choose 'monthly' or 'yearly'.")
 
-    price_id = _PLAN_PRICES[plan]
+    price_id = _resolve_price_id(plan, interval)
     if not price_id:
-        raise error_response(503, f"Price ID not configured for plan '{plan}'")
+        raise error_response(
+            503,
+            f"Stripe Price ID not configured for {plan}/{interval}. "
+            f"Set STRIPE_PRICE_{plan.upper()}_{'MONTHLY' if interval == 'monthly' else 'YEARLY'} "
+            f"in your environment variables.",
+        )
 
     # Prevent duplicate checkout for already-subscribed users
     existing = await _get_subscription(user_id)
@@ -252,7 +297,8 @@ async def create_checkout_session(
         session = await asyncio.to_thread(
             stripe_mod.checkout.Session.create,
             customer=customer_id,
-            payment_method_types=["card"],
+            # Let Stripe auto-detect payment methods (card, iDEAL, Bancontact, SEPA, etc.)
+            # based on customer location and currency.
             line_items=[{"price": price_id, "quantity": 1}],
             mode="subscription",
             success_url="collectai://subscription?checkout=success&session_id={CHECKOUT_SESSION_ID}",
@@ -470,14 +516,12 @@ async def _handle_subscription_updated(pool: Any, subscription: dict):
     except Exception:
         pass  # Table may not exist yet — fall through to user subscriptions
 
-    # Map Stripe price to plan
+    # Map Stripe price to plan using centralized reverse lookup
     items = subscription.get("items", {}).get("data", [])
     price_id = items[0]["price"]["id"] if items else None
-    plan = "free"  # default if price not recognised
-    if price_id == STRIPE_PRICE_ID_PREMIUM:
-        plan = "premium"
-    elif price_id == STRIPE_PRICE_ID_PRO:
-        plan = "pro"
+    plan = _PRICE_TO_PLAN.get(price_id, "free") if price_id else "free"
+    if plan == "free" and price_id:
+        _log.warning("Unrecognised Stripe price_id '%s' — defaulting to free plan", price_id)
 
     await pool.execute(
         """

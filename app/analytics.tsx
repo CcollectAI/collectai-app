@@ -40,11 +40,13 @@ import {
 import type { PortfolioSnapshot } from "@/analytics/portfolioMetrics";
 import { dataProvider } from "@/data";
 import type { CategorySummary } from "@/data/types";
-import { ScoreExplanationSheet } from "@/components/ScoreExplanationSheet";
 import { collectorsApi } from "@/api/collectorsApi";
 import logger from "@/utils/logger";
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
 import { CategoryPerformanceSection } from '@/components/CategoryPerformanceSection';
+import { PortfolioTierBadge } from '@/components/analytics/PortfolioTierBadge';
+import { WinnersLosersSection } from '@/components/analytics/WinnersLosersSection';
+import { PredictionAccuracySection } from '@/components/analytics/PredictionAccuracySection';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier-specific tokens (not theme-dependent)
@@ -66,21 +68,6 @@ const COLORS = {
   danger: "#EF4444",
 };
 
-// TIER_COLORS are fixed brand colors (not theme-dependent)
-const TIER_COLORS: Record<string, string> = {
-  Diamond: "#A78BFA",
-  Gold: "#FBBF24",
-  Silver: "#94A3B8",
-  Unranked: "#64748B",
-};
-
-const TIER_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  Diamond: "diamond-outline",
-  Gold: "trophy-outline",
-  Silver: "medal-outline",
-  Unranked: "help-circle-outline",
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Formatting helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,10 +75,6 @@ const TIER_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 function formatPct(p: number, includeSign = true): string {
   const sign = includeSign && p > 0 ? "+" : "";
   return `${sign}${(p * 100).toFixed(2)}%`;
-}
-
-function formatScore(s: number): string {
-  return `${Math.round(s * 100)}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -113,7 +96,6 @@ function AnalyticsScreen() {
     danger: colors.danger,
   }), [colors]);
   const { limits } = useBillingLimits();
-  const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -287,73 +269,8 @@ function AnalyticsScreen() {
 
         {/* Portfolio Tier Card */}
         {tierSummary && (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Portfolio Tier</Text>
-            </View>
-
-            <AnimatedPressable
-              style={styles.tierBadgeContainer}
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push("/leaderboard"); }}
-              accessibilityRole="button"
-              accessibilityLabel={`${tierSummary.tier} tier — view leaderboard`}
-            >
-              <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[tierSummary.tier] + "20" }]}>
-                <Ionicons
-                  name={TIER_ICONS[tierSummary.tier]}
-                  size={28}
-                  color={TIER_COLORS[tierSummary.tier]}
-                />
-                <Text style={[styles.tierLabel, { color: TIER_COLORS[tierSummary.tier] }]}>
-                  {tierSummary.tier}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={TIER_COLORS[tierSummary.tier]}
-                  style={{ marginLeft: 4 }}
-                />
-              </View>
-              <Text style={styles.tierTapHint}>Tap to view leaderboard</Text>
-            </AnimatedPressable>
-
-            <View style={styles.scoresRow}>
-              <View style={styles.scoreItem}>
-                <Text style={styles.scoreValue}>{formatScore(tierSummary.rarityScore)}</Text>
-                <Text style={styles.scoreLabel}>Rarity</Text>
-              </View>
-              <View style={styles.scoreDivider} />
-              <View style={styles.scoreItem}>
-                <Text style={styles.scoreValue}>{formatScore(tierSummary.completenessScore)}</Text>
-                <Text style={styles.scoreLabel}>Completeness</Text>
-              </View>
-              <View style={styles.scoreDivider} />
-              <View style={styles.scoreItem}>
-                <Text style={styles.scoreValue}>{formatScore(tierSummary.diversificationScore)}</Text>
-                <Text style={styles.scoreLabel}>Diversity</Text>
-              </View>
-            </View>
-
-            <AnimatedPressable
-              style={styles.whyScoresBtn}
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); setScoreSheetVisible(true); }}
-              accessibilityRole="button"
-              accessibilityLabel="How are scores calculated?"
-            >
-              <Ionicons name="help-circle-outline" size={16} color={colors.accent} />
-              <Text style={styles.whyScoresText}>How are these scores calculated?</Text>
-            </AnimatedPressable>
-          </View>
+          <PortfolioTierBadge tierSummary={tierSummary} />
         )}
-
-        <ScoreExplanationSheet
-          visible={scoreSheetVisible}
-          onClose={() => setScoreSheetVisible(false)}
-          rarityScore={tierSummary?.rarityScore}
-          completenessScore={tierSummary?.completenessScore}
-          diversificationScore={tierSummary?.diversificationScore}
-          tier={tierSummary?.tier}
-        />
 
         {/* Category Allocations */}
         {allocations.length > 0 && (
@@ -401,49 +318,11 @@ function AnalyticsScreen() {
         <CategoryPerformanceSection categoryStats={categoryStats} categoryHealth={categoryHealth} />
 
         {/* Winners & Losers (Pro+) */}
-        {limits.advanced_analytics && (winnersLosers.winners.length > 0 || winnersLosers.losers.length > 0) && (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Movers</Text>
-              <Text style={styles.cardSubtitle}>24h change</Text>
-            </View>
-
-            {/* Winners */}
-            {winnersLosers.winners.length > 0 && (
-              <View style={styles.moversSection}>
-                <View style={styles.moversSectionHeader}>
-                  <Ionicons name="trending-up" size={16} color={colors.success} />
-                  <Text style={[styles.moversSectionTitle, { color: colors.success }]}>Winners</Text>
-                </View>
-                {winnersLosers.winners.slice(0, 3).map((item) => (
-                  <View key={item.id} style={styles.moverRow}>
-                    <Text style={styles.moverName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={[styles.moverPct, styles.textSuccess]}>
-                      {formatPct(item.change1dPct ?? 0)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {/* Losers */}
-            {winnersLosers.losers.length > 0 && (
-              <View style={styles.moversSection}>
-                <View style={styles.moversSectionHeader}>
-                  <Ionicons name="trending-down" size={16} color={colors.error} />
-                  <Text style={[styles.moversSectionTitle, { color: colors.error }]}>Losers</Text>
-                </View>
-                {winnersLosers.losers.slice(0, 3).map((item) => (
-                  <View key={item.id} style={styles.moverRow}>
-                    <Text style={styles.moverName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={[styles.moverPct, styles.textDanger, { color: colors.danger }]}>
-                      {formatPct(item.change1dPct ?? 0)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
+        {limits.advanced_analytics && (
+          <WinnersLosersSection
+            winners={winnersLosers.winners}
+            losers={winnersLosers.losers}
+          />
         )}
 
         {/* Items Summary */}
@@ -595,33 +474,7 @@ function AnalyticsScreen() {
 
         {/* ── M4: Prediction Accuracy (Premium) ── */}
         {limits.advanced_analytics && predictionAccuracy && predictionAccuracy.length > 0 && (
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="analytics-outline" size={18} color={colors.accent} />
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Prediction Accuracy</Text>
-            </View>
-            <View style={styles.predHeader}>
-              <Text style={[styles.predHeaderText, { color: colors.muted, flex: 2 }]}>Category</Text>
-              <Text style={[styles.predHeaderText, { color: colors.muted, flex: 1, textAlign: 'right' }]}>MAPE</Text>
-              <Text style={[styles.predHeaderText, { color: colors.muted, flex: 1, textAlign: 'right' }]}>R²</Text>
-            </View>
-            {predictionAccuracy.slice(0, 8).map((cat) => {
-              const r2Color = cat.r2 >= 0.8 ? colors.success : cat.r2 >= 0.5 ? colors.warning : colors.danger;
-              return (
-                <View key={cat.category} style={[styles.predRow, { borderBottomColor: colors.border }]}>
-                  <Text style={[styles.predCategory, { color: colors.text }]} numberOfLines={1}>
-                    {cat.category.replace(/_/g, ' ')}
-                  </Text>
-                  <Text style={[styles.predValue, { color: colors.muted }]}>
-                    {(cat.mape * 100).toFixed(1)}%
-                  </Text>
-                  <Text style={[styles.predValue, { color: r2Color, fontWeight: fontWeight.bold }]}>
-                    {cat.r2.toFixed(2)}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+          <PredictionAccuracySection data={predictionAccuracy} />
         )}
 
         {/* Bottom spacing */}
@@ -807,68 +660,6 @@ const styles = StyleSheet.create({
     color: COLORS.danger,
   },
 
-  // Tier
-  tierBadgeContainer: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  tierBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: radius.xl,
-  },
-  tierLabel: {
-    fontSize: text.xl,
-    fontWeight: fontWeight.extrabold,
-  },
-  tierTapHint: {
-    fontSize: text.sm,
-    color: COLORS.muted,
-    marginTop: 6,
-  },
-  scoresRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scoreItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  scoreValue: {
-    fontSize: text['2xl'],
-    fontWeight: fontWeight.extrabold,
-    color: COLORS.navy,
-  },
-  scoreLabel: {
-    fontSize: text.sm,
-    color: COLORS.muted,
-    marginTop: 2,
-  },
-  scoreDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: COLORS.border,
-  },
-  whyScoresBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  whyScoresText: {
-    fontSize: text.md,
-    fontWeight: fontWeight.semibold,
-    color: COLORS.tiffanyDark,
-  },
-
   // Allocations
   allocationBar: {
     flexDirection: "row",
@@ -915,39 +706,6 @@ const styles = StyleSheet.create({
   allocationPct: {
     fontSize: text.sm,
     color: COLORS.muted,
-  },
-
-  // Movers
-  moversSection: {
-    marginBottom: 16,
-  },
-  moversSectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 10,
-  },
-  moversSectionTitle: {
-    fontSize: text.md,
-    fontWeight: fontWeight.bold,
-  },
-  moverRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  moverName: {
-    flex: 1,
-    fontSize: text.md,
-    color: COLORS.navy,
-    marginRight: 12,
-  },
-  moverPct: {
-    fontSize: text.md,
-    fontWeight: fontWeight.bold,
   },
 
   // Items
@@ -1094,38 +852,6 @@ const styles = StyleSheet.create({
   dcaBarFill: {
     height: 6,
     borderRadius: 3,
-  },
-
-  // Prediction Accuracy (M4)
-  predHeader: {
-    flexDirection: "row",
-    paddingBottom: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
-    marginBottom: 4,
-  },
-  predHeaderText: {
-    fontSize: text.sm,
-    fontWeight: fontWeight.semibold,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  predRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  predCategory: {
-    flex: 2,
-    fontSize: text.md,
-    fontWeight: fontWeight.semibold,
-    textTransform: "capitalize",
-  },
-  predValue: {
-    flex: 1,
-    fontSize: text.md,
-    textAlign: "right",
   },
 
 });

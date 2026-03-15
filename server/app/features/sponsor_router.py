@@ -139,7 +139,7 @@ async def create_sponsor_checkout(
 
     try:
         session = stripe_mod.checkout.Session.create(
-            payment_method_types=["card"],
+            # Auto-detect payment methods (card, iDEAL, SEPA, etc.) by region
             line_items=[{"price": price_id, "quantity": 1}],
             mode="payment",
             success_url=f"collectai://events/{body.event_id}?sponsor=success",

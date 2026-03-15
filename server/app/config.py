@@ -117,6 +117,8 @@ MAX_BODY_BYTES: int = int(os.getenv("MAX_BODY_BYTES", str(10 * 1024 * 1024)))  #
 # ---------------------------------------------------------------------------
 
 AWS_REGION: str = os.environ.get("AWS_REGION", "eu-west-1")
+# General-purpose S3 bucket alias (defaults to catalog images bucket)
+AWS_S3_BUCKET: str = os.environ.get("AWS_S3_BUCKET", "")
 
 # Catalog images bucket (used by s3_client, photo_upload_router)
 # NOTE: Enable S3 Intelligent-Tiering on these buckets for 30-50% storage
@@ -196,9 +198,17 @@ CAD_TO_EUR: float = float(os.getenv("CAD_TO_EUR", "0.66"))
 # Marketplace API credentials
 # ---------------------------------------------------------------------------
 
+# eBay: EBAY_CLIENT_ID/SECRET are sandbox; EBAY_APP_ID is the production Finding API key
+# Get from https://developer.ebay.com/my/keys (Production column)
 EBAY_CLIENT_ID: str = os.getenv("EBAY_CLIENT_ID", "")
 EBAY_CLIENT_SECRET: str = os.getenv("EBAY_CLIENT_SECRET", "")
+EBAY_APP_ID: str = os.getenv("EBAY_APP_ID", "")  # Production App ID (Finding/Browse API)
+
+# TCGPlayer: BEARER_TOKEN is the legacy token; PUBLIC/PRIVATE keys are for OAuth flow
+# Get from https://developer.tcgplayer.com/developer-applications
 TCGPLAYER_BEARER_TOKEN: str = os.getenv("TCGPLAYER_BEARER_TOKEN", "")
+TCGPLAYER_PUBLIC_KEY: str = os.getenv("TCGPLAYER_PUBLIC_KEY", "")
+TCGPLAYER_PRIVATE_KEY: str = os.getenv("TCGPLAYER_PRIVATE_KEY", "")
 CARDMARKET_APP_TOKEN: str = os.getenv("CARDMARKET_APP_TOKEN", "")
 CARDMARKET_APP_SECRET: str = os.getenv("CARDMARKET_APP_SECRET", "")
 DISCOGS_PERSONAL_TOKEN: str = os.getenv("DISCOGS_PERSONAL_TOKEN", "")
@@ -261,8 +271,16 @@ TASK_WORKER_POLL_INTERVAL: float = float(os.getenv("TASK_WORKER_POLL_INTERVAL", 
 
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-STRIPE_PRICE_ID_PRO: str = os.getenv("STRIPE_PRICE_ID_PRO", "")
-STRIPE_PRICE_ID_PREMIUM: str = os.getenv("STRIPE_PRICE_ID_PREMIUM", "")
+
+# Plan subscription price IDs (create in Stripe Dashboard → Products → Prices)
+# Pro plan
+STRIPE_PRICE_ID_PRO: str = os.getenv("STRIPE_PRICE_ID_PRO", "")  # legacy/default
+STRIPE_PRICE_PRO_MONTHLY: str = os.getenv("STRIPE_PRICE_PRO_MONTHLY", "")  # e.g. price_xxx
+STRIPE_PRICE_PRO_YEARLY: str = os.getenv("STRIPE_PRICE_PRO_YEARLY", "")   # e.g. price_yyy
+# Premium plan
+STRIPE_PRICE_ID_PREMIUM: str = os.getenv("STRIPE_PRICE_ID_PREMIUM", "")  # legacy/default
+STRIPE_PRICE_PREMIUM_MONTHLY: str = os.getenv("STRIPE_PRICE_PREMIUM_MONTHLY", "")  # e.g. price_xxx
+STRIPE_PRICE_PREMIUM_YEARLY: str = os.getenv("STRIPE_PRICE_PREMIUM_YEARLY", "")   # e.g. price_yyy
 
 # Sponsored events tiers (one-time payments)
 STRIPE_PRICE_ID_SPONSOR_FEATURED: str = os.getenv("STRIPE_PRICE_ID_SPONSOR_FEATURED", "")
@@ -367,13 +385,35 @@ def validate_config() -> None:
                 "Set to your domain (e.g. api.collectai.app,collectai.app) to prevent host header attacks."
             )
 
+    # --- Stripe price ID validation ---
+    # At least one price ID per plan should be set for billing to work.
+    if STRIPE_SECRET_KEY:
+        stripe_warnings: list[str] = []
+        # Pro: check monthly/yearly or legacy fallback
+        if not STRIPE_PRICE_PRO_MONTHLY and not STRIPE_PRICE_PRO_YEARLY and not STRIPE_PRICE_ID_PRO:
+            stripe_warnings.append(
+                "No Stripe Price ID for Pro plan. "
+                "Set STRIPE_PRICE_PRO_MONTHLY/STRIPE_PRICE_PRO_YEARLY or STRIPE_PRICE_ID_PRO."
+            )
+        # Premium: check monthly/yearly or legacy fallback
+        if not STRIPE_PRICE_PREMIUM_MONTHLY and not STRIPE_PRICE_PREMIUM_YEARLY and not STRIPE_PRICE_ID_PREMIUM:
+            stripe_warnings.append(
+                "No Stripe Price ID for Premium plan. "
+                "Set STRIPE_PRICE_PREMIUM_MONTHLY/STRIPE_PRICE_PREMIUM_YEARLY or STRIPE_PRICE_ID_PREMIUM."
+            )
+        for w in stripe_warnings:
+            _log.warning(w)
+
     # --- Warn about optional-but-important keys ---
     warn_keys = {
         "EBAY_CLIENT_ID": EBAY_CLIENT_ID,
         "EBAY_CLIENT_SECRET": EBAY_CLIENT_SECRET,
+        "EBAY_APP_ID": EBAY_APP_ID,
         "OPENAI_API_KEY": OPENAI_API_KEY,
         "FAL_KEY": FAL_KEY,
         "TCGPLAYER_BEARER_TOKEN": TCGPLAYER_BEARER_TOKEN,
+        "TCGPLAYER_PUBLIC_KEY": TCGPLAYER_PUBLIC_KEY,
+        "TCGPLAYER_PRIVATE_KEY": TCGPLAYER_PRIVATE_KEY,
         "SUPABASE_SERVICE_KEY": SUPABASE_SERVICE_KEY,
         "SENTRY_DSN": SENTRY_DSN or "",
     }

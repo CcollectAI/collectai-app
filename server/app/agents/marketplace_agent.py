@@ -13,10 +13,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 
 from app.agents.adapters.ebay_caller import EbayCaller
@@ -63,244 +60,29 @@ from app.lib.region_marketplace_config import (
     get_crawl4ai_sites,
 )
 
+# Re-export routing config and helpers so existing imports keep working
+from app.agents.marketplace_routing import (  # noqa: F401
+    SOURCE_RELIABILITY,
+    RECENCY_7D_BOOST,
+    RECENCY_30D_BOOST,
+    SOLD_BONUS,
+    CONDITION_MATCH_BONUS,
+    ADAPTER_CATEGORY_ROUTING,
+    adapter_serves_category,
+)
+from app.agents.marketplace_helpers import (  # noqa: F401
+    ScoredMarketHit,
+    AggregationResult,
+    _content_hash,
+    _parse_sold_date,
+    _compute_recency_score,
+    _compute_provenance_score,
+    _compute_aggregate_confidence,
+    dedup_and_score,
+    _inflight,
+)
+
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Source reliability weights
-# ---------------------------------------------------------------------------
-
-SOURCE_RELIABILITY: Dict[str, float] = {
-    "ebay_sold": 0.95,
-    "tcgplayer": 0.90,
-    "mavin": 0.80,
-    "mavin_sold": 0.85,
-    "mercari_us": 0.70,
-    "mercari_us_sold": 0.75,
-    "ebay_listed": 0.70,
-    "whatnot": 0.65,
-    "whatnot_sold": 0.75,
-    "vinted": 0.65,
-    "vinted_sold": 0.70,
-    "firecrawl": 0.65,
-    "firecrawl_sold": 0.70,
-    "crawl4ai": 0.60,
-    "crawl4ai_sold": 0.65,
-    "catawiki": 0.80,
-    "catawiki_sold": 0.90,
-    "whisky_auctioneer": 0.85,
-    "whisky_auctioneer_sold": 0.95,
-    "mandarake": 0.75,
-    "bezel": 0.80,
-    "bezel_sold": 0.85,
-    "chrono24": 0.70,
-    "chrono24_sold": 0.75,
-    "keh": 0.85,
-    "mpb": 0.80,
-    "drop": 0.75,
-    "gouletpens": 0.80,
-    "brickeconomy": 0.85,
-    "brickeconomy_sold": 0.90,
-    "popmart": 0.75,
-    "booth": 0.70,
-    "scalemates": 0.75,
-    "ktown4u": 0.75,
-    "comicbookrealm": 0.80,
-    "comicbookrealm_sold": 0.85,
-    "masterofmalt": 0.80,
-    "pricecharting": 0.85,
-    "pricecharting_sold": 0.90,
-    "yahoo_auctions": 0.75,
-    "yahoo_auctions_sold": 0.80,
-    "stockx": 0.85,
-    "stockx_sold": 0.90,
-    "discogs": 0.80,
-    "discogs_sold": 0.85,
-    "cardmarket": 0.85,
-    "cardmarket_sold": 0.90,
-    "bricklink": 0.90,
-    "bricklink_sold": 0.95,
-    "scrapedo": 0.70,
-    "scrapedo_sold": 0.75,
-    "grailed": 0.70,
-    "grailed_sold": 0.75,
-    "google_shopping": 0.75,
-    "etsy": 0.75,
-    "etsy_sold": 0.65,
-    "comc": 0.80,
-    "comc_sold": 0.85,
-    "reverb": 0.80,
-    "reverb_sold": 0.85,
-    "abebooks": 0.80,
-    "abebooks_sold": 0.80,
-}
-
-# Bonus scores
-RECENCY_7D_BOOST = 0.10
-RECENCY_30D_BOOST = 0.05
-SOLD_BONUS = 0.15
-CONDITION_MATCH_BONUS = 0.10
-
-# In-flight request dedup — concurrent identical searches wait for the first
-# caller to finish rather than issuing duplicate adapter calls.
-_inflight: Dict[str, asyncio.Future] = {}
-
-
-# ---------------------------------------------------------------------------
-# Data classes
-# ---------------------------------------------------------------------------
-
-@dataclass
-class ScoredMarketHit:
-    """A market hit enriched with provenance scoring."""
-    hit: Dict[str, Any]
-    provenance_score: float
-    source_reliability: float
-    recency_score: float
-    is_sold: bool
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "hit": self.hit,
-            "provenance_score": round(self.provenance_score, 4),
-            "source_reliability": round(self.source_reliability, 4),
-            "recency_score": round(self.recency_score, 4),
-            "is_sold": self.is_sold,
-        }
-
-
-@dataclass
-class AggregationResult:
-    """Result of an aggregated marketplace search."""
-    hits: List[ScoredMarketHit]
-    total_sources_queried: int
-    successful_sources: int
-    aggregate_confidence: float
-    dedup_count: int
-    query_metadata: Dict[str, Any]
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "hits": [h.to_dict() for h in self.hits],
-            "total_sources_queried": self.total_sources_queried,
-            "successful_sources": self.successful_sources,
-            "aggregate_confidence": round(self.aggregate_confidence, 4),
-            "dedup_count": self.dedup_count,
-            "query_metadata": self.query_metadata,
-        }
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _content_hash(source: str, raw_id: str) -> str:
-    """Compute a SHA-256 content hash for deduplication."""
-    payload = f"{source}:{raw_id}"
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-
-
-def _parse_sold_date(sold_at: Optional[str]) -> Optional[datetime]:
-    """Attempt to parse a sold/end date string into a datetime."""
-    if not sold_at:
-        return None
-    # Try ISO 8601 first, then common variations
-    for fmt in (
-        "%Y-%m-%dT%H:%M:%S.%fZ",
-        "%Y-%m-%dT%H:%M:%SZ",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%d",
-    ):
-        try:
-            dt = datetime.strptime(sold_at, fmt)
-            return dt.replace(tzinfo=timezone.utc)
-        except ValueError:
-            continue
-    return None
-
-
-def _compute_recency_score(sold_at: Optional[str]) -> float:
-    """Compute recency score based on when the item sold."""
-    if not sold_at:
-        return 0.0
-    dt = _parse_sold_date(sold_at)
-    if not dt:
-        return 0.0
-
-    now = datetime.now(timezone.utc)
-    age = now - dt
-    if age <= timedelta(days=7):
-        return RECENCY_7D_BOOST
-    elif age <= timedelta(days=30):
-        return RECENCY_30D_BOOST
-    return 0.0
-
-
-def _compute_provenance_score(
-    hit: Dict[str, Any],
-    query_condition: Optional[str] = None,
-) -> tuple[float, float, float, bool]:
-    """Compute provenance score for a single market hit.
-
-    Returns (provenance_score, source_reliability, recency_score, is_sold).
-    """
-    source = hit.get("source", "")
-    is_sold = bool(hit.get("is_sold", False))
-
-    # Determine source reliability key
-    if source == "ebay":
-        reliability_key = "ebay_sold" if is_sold else "ebay_listed"
-    elif source == "tcgplayer":
-        reliability_key = "tcgplayer"
-    else:
-        reliability_key = source
-
-    source_reliability = SOURCE_RELIABILITY.get(reliability_key, 0.50)
-
-    # Recency boost
-    recency_score = _compute_recency_score(hit.get("sold_at"))
-
-    # Sold bonus
-    sold_bonus = SOLD_BONUS if is_sold else 0.0
-
-    # Condition match bonus
-    condition_bonus = 0.0
-    if query_condition and hit.get("condition"):
-        hit_cond = str(hit.get("condition", "")).lower().strip()
-        query_cond = query_condition.lower().strip()
-        if query_cond in hit_cond or hit_cond in query_cond:
-            condition_bonus = CONDITION_MATCH_BONUS
-
-    provenance_score = min(
-        1.0,
-        source_reliability + recency_score + sold_bonus + condition_bonus,
-    )
-
-    return provenance_score, source_reliability, recency_score, is_sold
-
-
-def _compute_aggregate_confidence(
-    scored_hits: List[ScoredMarketHit],
-    total_sources: int,
-    successful_sources: int,
-) -> float:
-    """Compute aggregate confidence for the entire search.
-
-    Weighted by provenance scores, source coverage, and result count.
-    """
-    if not scored_hits or total_sources == 0:
-        return 0.0
-
-    # Source coverage factor (0-0.4)
-    coverage = (successful_sources / total_sources) * 0.4
-
-    # Result depth factor (0-0.3) — more results = higher confidence, caps at 20
-    result_depth = min(len(scored_hits) / 20.0, 1.0) * 0.3
-
-    # Average provenance quality (0-0.3)
-    avg_provenance = sum(h.provenance_score for h in scored_hits) / len(scored_hits)
-    quality = avg_provenance * 0.3
-
-    return min(1.0, coverage + result_depth + quality)
 
 
 # ---------------------------------------------------------------------------
@@ -353,88 +135,137 @@ class MarketplaceAgent:
         self._reverb = ReverbCaller()
         self._abebooks = AbeBooksCaller()
 
+    # Map adapter name -> (instance, extra_kwargs_builder | None)
+    # This keeps the routing DRY between aggregate_search and find_sold_comps.
+    def _adapter_map(self) -> Dict[str, Any]:
+        """Return name->instance mapping for all adapters."""
+        return {
+            "ebay": self._ebay,
+            "tcgplayer": self._tcgplayer,
+            "firecrawl": self._firecrawl,
+            "crawl4ai": self._crawl4ai,
+            "mercari_us": self._mercari_us,
+            "whatnot": self._whatnot,
+            "vinted": self._vinted,
+            "mavin": self._mavin,
+            "catawiki": self._catawiki,
+            "whisky_auctioneer": self._whisky_auctioneer,
+            "mandarake": self._mandarake,
+            "bezel": self._bezel,
+            "chrono24": self._chrono24,
+            "keh": self._keh,
+            "mpb": self._mpb,
+            "drop": self._drop,
+            "gouletpens": self._gouletpens,
+            "brickeconomy": self._brickeconomy,
+            "popmart": self._popmart,
+            "booth": self._booth,
+            "scalemates": self._scalemates,
+            "ktown4u": self._ktown4u,
+            "comicbookrealm": self._comicbookrealm,
+            "masterofmalt": self._masterofmalt,
+            "pricecharting": self._pricecharting,
+            "yahoo_auctions": self._yahoo_auctions,
+            "stockx": self._stockx,
+            "discogs": self._discogs,
+            "cardmarket": self._cardmarket,
+            "bricklink": self._bricklink,
+            "scrapedo": self._scrapedo,
+            "grailed": self._grailed,
+            "google_shopping": self._google_shopping,
+            "etsy": self._etsy,
+            "comc": self._comc,
+            "reverb": self._reverb,
+            "abebooks": self._abebooks,
+        }
+
     @property
     def adapters_configured(self) -> Dict[str, bool]:
         """Return which adapters are configured."""
-        return {
-            "ebay": self._ebay.configured,
-            "tcgplayer": self._tcgplayer.configured,
-            "firecrawl": self._firecrawl.configured,
-            "crawl4ai": self._crawl4ai.configured,
-            "mercari_us": self._mercari_us.configured,
-            "whatnot": self._whatnot.configured,
-            "vinted": self._vinted.configured,
-            "mavin": self._mavin.configured,
-            "catawiki": self._catawiki.configured,
-            "whisky_auctioneer": self._whisky_auctioneer.configured,
-            "mandarake": self._mandarake.configured,
-            "bezel": self._bezel.configured,
-            "chrono24": self._chrono24.configured,
-            "keh": self._keh.configured,
-            "mpb": self._mpb.configured,
-            "drop": self._drop.configured,
-            "gouletpens": self._gouletpens.configured,
-            "brickeconomy": self._brickeconomy.configured,
-            "popmart": self._popmart.configured,
-            "booth": self._booth.configured,
-            "scalemates": self._scalemates.configured,
-            "ktown4u": self._ktown4u.configured,
-            "comicbookrealm": self._comicbookrealm.configured,
-            "masterofmalt": self._masterofmalt.configured,
-            "pricecharting": self._pricecharting.configured,
-            "yahoo_auctions": self._yahoo_auctions.configured,
-            "stockx": self._stockx.configured,
-            "discogs": self._discogs.configured,
-            "cardmarket": self._cardmarket.configured,
-            "bricklink": self._bricklink.configured,
-            "scrapedo": self._scrapedo.configured,
-            "grailed": self._grailed.configured,
-            "google_shopping": self._google_shopping.configured,
-            "etsy": self._etsy.configured,
-            "comc": self._comc.configured,
-            "reverb": self._reverb.configured,
-            "abebooks": self._abebooks.configured,
-        }
+        return {name: inst.configured for name, inst in self._adapter_map().items()}
 
     async def close(self) -> None:
         """Close all adapter HTTP clients."""
-        await self._ebay.close()
-        await self._tcgplayer.close()
-        await self._firecrawl.close()
-        await self._crawl4ai.close()
-        await self._mercari_us.close()
-        await self._whatnot.close()
-        await self._vinted.close()
-        await self._mavin.close()
-        await self._catawiki.close()
-        await self._whisky_auctioneer.close()
-        await self._mandarake.close()
-        await self._bezel.close()
-        await self._chrono24.close()
-        await self._keh.close()
-        await self._mpb.close()
-        await self._drop.close()
-        await self._gouletpens.close()
-        await self._brickeconomy.close()
-        await self._popmart.close()
-        await self._booth.close()
-        await self._scalemates.close()
-        await self._ktown4u.close()
-        await self._comicbookrealm.close()
-        await self._masterofmalt.close()
-        await self._pricecharting.close()
-        await self._yahoo_auctions.close()
-        await self._stockx.close()
-        await self._discogs.close()
-        await self._cardmarket.close()
-        await self._bricklink.close()
-        await self._scrapedo.close()
-        await self._grailed.close()
-        await self._google_shopping.close()
-        await self._etsy.close()
-        await self._comc.close()
-        await self._reverb.close()
-        await self._abebooks.close()
+        for inst in self._adapter_map().values():
+            await inst.close()
+
+    # ------------------------------------------------------------------
+    # Internal: build task list from routing config
+    # ------------------------------------------------------------------
+
+    def _build_search_tasks(
+        self,
+        query: str,
+        category: Optional[str],
+        limit: int,
+        region: Optional[str],
+        mode: str = "search",
+    ) -> tuple[list[tuple[str, Any]], int]:
+        """Build the list of (source_name, coroutine) tasks.
+
+        *mode* is "search" for aggregate_search or "sold" for find_sold_comps.
+
+        Returns (tasks, total_sources).
+        """
+        tasks: list[tuple[str, Any]] = []
+        total_sources = 0
+
+        ebay_mktplace = get_ebay_marketplace_id(region)
+        fc_sites = get_firecrawl_sites(region, category)
+        c4_sites = get_crawl4ai_sites(region, category)
+
+        amap = self._adapter_map()
+
+        for adapter_name, inst in amap.items():
+            if not inst.configured:
+                continue
+            if not should_use_adapter(region, adapter_name):
+                continue
+            if not adapter_serves_category(adapter_name, category):
+                continue
+
+            # Build kwargs for this adapter
+            kw: Dict[str, Any] = {"query": query, "category": category, "limit": limit}
+
+            if adapter_name == "ebay":
+                kw["marketplace_id"] = ebay_mktplace
+            elif adapter_name == "firecrawl":
+                kw["region_sites"] = fc_sites
+            elif adapter_name == "crawl4ai":
+                kw["region_sites"] = c4_sites
+            elif adapter_name in ("vinted", "mpb"):
+                kw["region"] = region
+            elif adapter_name == "google_shopping":
+                kw["region"] = region
+
+            if mode == "search":
+                # eBay gets two tasks: listed + sold
+                if adapter_name == "ebay":
+                    total_sources += 1
+                    tasks.append(("ebay_listed", inst.search(**kw)))
+                    total_sources += 1
+                    kw_sold = dict(kw)
+                    tasks.append(("ebay_sold", inst.sold_comps(**kw_sold)))
+                else:
+                    total_sources += 1
+                    tasks.append((adapter_name, inst.search(**kw)))
+            else:
+                # sold comps mode
+                if adapter_name == "ebay":
+                    total_sources += 1
+                    tasks.append(("ebay_sold", inst.sold_comps(**kw)))
+                elif adapter_name == "google_shopping":
+                    # Google Shopping has no sold comps — skip
+                    continue
+                else:
+                    total_sources += 1
+                    suffix = f"{adapter_name}_sold" if not adapter_name.endswith("_sold") else adapter_name
+                    if hasattr(inst, "sold_comps"):
+                        tasks.append((suffix, inst.sold_comps(**kw)))
+                    else:
+                        tasks.append((suffix, inst.search(**kw)))
+
+        return tasks, total_sources
 
     # ------------------------------------------------------------------
     # Core search
@@ -502,225 +333,9 @@ class MarketplaceAgent:
         cache_set_fn,
     ) -> AggregationResult:
         """Internal: perform the actual adapter queries (called after cache miss)."""
-        all_hits: List[Dict[str, Any]] = []
-        total_sources = 0
-        successful_sources = 0
-        source_errors: List[str] = []
-
-        ebay_mktplace = get_ebay_marketplace_id(region)
-        fc_sites = get_firecrawl_sites(region, category)
-        c4_sites = get_crawl4ai_sites(region, category)
-
-        # Determine which adapters to query
-        tasks = []
-
-        # eBay active listings
-        if self._ebay.configured and should_use_adapter(region, "ebay"):
-            total_sources += 1
-            tasks.append(("ebay_listed", self._ebay.search(query, category=category, limit=limit, marketplace_id=ebay_mktplace)))
-
-        # eBay sold comps
-        if self._ebay.configured and include_sold and should_use_adapter(region, "ebay"):
-            total_sources += 1
-            tasks.append(("ebay_sold", self._ebay.sold_comps(query, category=category, limit=limit, marketplace_id=ebay_mktplace)))
-
-        # TCGPlayer (only for TCG categories or if no category specified)
-        tcg_categories = {"pokemon", "mtg", "yugioh", "lorcana", "digimon", "one_piece_tcg"}
-        if self._tcgplayer.configured and should_use_adapter(region, "tcgplayer") and (category is None or category in tcg_categories):
-            total_sources += 1
-            tasks.append(("tcgplayer", self._tcgplayer.search(query, category=category, limit=limit)))
-
-        # Firecrawl (web search for sites without direct APIs)
-        if self._firecrawl.configured and should_use_adapter(region, "firecrawl"):
-            total_sources += 1
-            tasks.append(("firecrawl", self._firecrawl.search(query, category=category, limit=limit, region_sites=fc_sites)))
-
-        # Crawl4AI (local web crawler — parallel to Firecrawl)
-        if self._crawl4ai.configured and should_use_adapter(region, "crawl4ai"):
-            total_sources += 1
-            tasks.append(("crawl4ai", self._crawl4ai.search(query, category=category, limit=limit, region_sites=c4_sites)))
-
-        # Scrape.do (managed proxy scraper — all categories, 98% success rate)
-        if self._scrapedo.configured and should_use_adapter(region, "scrapedo"):
-            total_sources += 1
-            tasks.append(("scrapedo", self._scrapedo.search(query, category=category, limit=limit)))
-
-        # Grailed (fashion/streetwear resale — sneakers, designer toys, funko, hot toys, pop fandom)
-        grailed_categories = {"sneakers", "hot_toys", "funko", "designer_toys", "pop_fandom"}
-        if self._grailed.configured and should_use_adapter(region, "grailed") and (category is None or category in grailed_categories):
-            total_sources += 1
-            tasks.append(("grailed", self._grailed.search(query, category=category, limit=limit)))
-
-        # Google Shopping (SerpAPI — all categories, aggregated retailer prices)
-        if self._google_shopping.configured and should_use_adapter(region, "google_shopping"):
-            total_sources += 1
-            tasks.append(("google_shopping", self._google_shopping.search(query, category=category, limit=limit, region=region)))
-
-        # Mercari US (broad collectible coverage)
-        if self._mercari_us.configured and should_use_adapter(region, "mercari_us"):
-            total_sources += 1
-            tasks.append(("mercari_us", self._mercari_us.search(query, category=category, limit=limit)))
-
-        # WhatNot (live auctions — TCG, Funko, sports cards, action figures, Nintendo)
-        whatnot_categories = {"pokemon", "mtg", "yugioh", "lorcana", "funko", "sportscards", "designer_toys", "hot_toys", "anime_figures", "kpop_merch", "action_figures", "vintage_toys", "marvel_legends", "nintendo_merch", "blind_box", "plush_collectibles", "disney", "lego", "comic_books", "digimon", "one_piece_tcg", "sneakers", "retro_games", "warhammer", "oop_board_games", "city_pop_vinyl"}
-        if self._whatnot.configured and should_use_adapter(region, "whatnot") and (category is None or category in whatnot_categories):
-            total_sources += 1
-            tasks.append(("whatnot", self._whatnot.search(query, category=category, limit=limit)))
-
-        # Vinted (European secondhand marketplace)
-        if self._vinted.configured and should_use_adapter(region, "vinted"):
-            total_sources += 1
-            tasks.append(("vinted", self._vinted.search(query, category=category, limit=limit, region=region)))
-
-        # Mavin.io (sold price aggregator — high quality)
-        if self._mavin.configured and should_use_adapter(region, "mavin"):
-            total_sources += 1
-            tasks.append(("mavin", self._mavin.search(query, category=category, limit=limit)))
-
-        # Catawiki (European auction house — luxury/niche collectibles)
-        catawiki_categories = {"whiskey", "vintage_cameras", "watches", "pens", "designer_toys", "comic_books", "vintage_toys", "loungefly", "vinyl_records", "diecast", "oop_board_games", "niche_perfumery"}
-        if self._catawiki.configured and should_use_adapter(region, "catawiki") and (category is None or category in catawiki_categories):
-            total_sources += 1
-            tasks.append(("catawiki", self._catawiki.search(query, category=category, limit=limit)))
-
-        # Whisky Auctioneer (world's largest online whisky auction)
-        if self._whisky_auctioneer.configured and should_use_adapter(region, "whisky_auctioneer") and (category is None or category == "whiskey"):
-            total_sources += 1
-            tasks.append(("whisky_auctioneer", self._whisky_auctioneer.search(query, category=category, limit=limit)))
-
-        # Mandarake (Japan's #1 collectible retailer — JP market)
-        mandarake_categories = {"anime_figures", "bandai_premium", "ghibli", "jp_event", "jp_magazine", "hot_toys", "gunpla", "designer_toys", "manga", "vtuber", "nintendo_merch", "one_piece", "digimon", "blind_box", "plush_collectibles"}
-        if self._mandarake.configured and should_use_adapter(region, "mandarake") and (category is None or category in mandarake_categories):
-            total_sources += 1
-            tasks.append(("mandarake", self._mandarake.search(query, category=category, limit=limit)))
-
-        # Bezel (trusted watch marketplace — US-focused)
-        if self._bezel.configured and should_use_adapter(region, "bezel") and (category is None or category == "watches"):
-            total_sources += 1
-            tasks.append(("bezel", self._bezel.search(query, category=category, limit=limit)))
-
-        # Chrono24 (world's largest watch marketplace — global)
-        if self._chrono24.configured and should_use_adapter(region, "chrono24") and (category is None or category == "watches"):
-            total_sources += 1
-            tasks.append(("chrono24", self._chrono24.search(query, category=category, limit=limit)))
-
-        # KEH (world's largest used camera dealer — professional grading)
-        if self._keh.configured and should_use_adapter(region, "keh") and (category is None or category == "vintage_cameras"):
-            total_sources += 1
-            tasks.append(("keh", self._keh.search(query, category=category, limit=limit)))
-
-        # MPB (major used camera marketplace — US + EU)
-        if self._mpb.configured and should_use_adapter(region, "mpb") and (category is None or category == "vintage_cameras"):
-            total_sources += 1
-            tasks.append(("mpb", self._mpb.search(query, category=category, limit=limit, region=region)))
-
-        # Drop.com (artisan keycap marketplace — US + EU)
-        if self._drop.configured and should_use_adapter(region, "drop") and (category is None or category == "keycaps"):
-            total_sources += 1
-            tasks.append(("drop", self._drop.search(query, category=category, limit=limit)))
-
-        # GouletPens (leading fountain pen retailer — US)
-        if self._gouletpens.configured and should_use_adapter(region, "gouletpens") and (category is None or category == "pens"):
-            total_sources += 1
-            tasks.append(("gouletpens", self._gouletpens.search(query, category=category, limit=limit)))
-
-        # BrickEconomy (LEGO value tracker — global)
-        if self._brickeconomy.configured and should_use_adapter(region, "brickeconomy") and (category is None or category == "lego"):
-            total_sources += 1
-            tasks.append(("brickeconomy", self._brickeconomy.search(query, category=category, limit=limit)))
-
-        # PopMart (leading blind box / designer toy marketplace — global)
-        popmart_categories = {"blind_box", "designer_toys"}
-        if self._popmart.configured and should_use_adapter(region, "popmart") and (category is None or category in popmart_categories):
-            total_sources += 1
-            tasks.append(("popmart", self._popmart.search(query, category=category, limit=limit)))
-
-        # Booth.pm (Japanese indie/doujin marketplace — JP-focused)
-        booth_categories = {"vtuber", "jp_event", "designer_toys", "kpop_lightsticks"}
-        if self._booth.configured and should_use_adapter(region, "booth") and (category is None or category in booth_categories):
-            total_sources += 1
-            tasks.append(("booth", self._booth.search(query, category=category, limit=limit)))
-
-        # ScaleMates (definitive scale model database — global)
-        scalemates_categories = {"scale_models", "gunpla", "diecast"}
-        if self._scalemates.configured and should_use_adapter(region, "scalemates") and (category is None or category in scalemates_categories):
-            total_sources += 1
-            tasks.append(("scalemates", self._scalemates.search(query, category=category, limit=limit)))
-
-        # KTown4U (leading Korean K-pop merchandise retailer — KR-focused)
-        ktown4u_categories = {"kpop", "kpop_lightsticks", "blind_box"}
-        if self._ktown4u.configured and should_use_adapter(region, "ktown4u") and (category is None or category in ktown4u_categories):
-            total_sources += 1
-            tasks.append(("ktown4u", self._ktown4u.search(query, category=category, limit=limit)))
-
-        # ComicBookRealm (comic book price guide — global)
-        if self._comicbookrealm.configured and should_use_adapter(region, "comicbookrealm") and (category is None or category == "comic_books"):
-            total_sources += 1
-            tasks.append(("comicbookrealm", self._comicbookrealm.search(query, category=category, limit=limit)))
-
-        # Master of Malt (UK whisky retailer — EU-focused)
-        if self._masterofmalt.configured and should_use_adapter(region, "masterofmalt") and (category is None or category == "whiskey"):
-            total_sources += 1
-            tasks.append(("masterofmalt", self._masterofmalt.search(query, category=category, limit=limit)))
-
-        # PriceCharting (retro games, amiibo, Nintendo merch — price guide data)
-        pricecharting_categories = {"retro_games", "retro_handhelds", "pokemon", "nintendo_merch", "sportscards"}
-        if self._pricecharting.configured and should_use_adapter(region, "pricecharting") and (category is None or category in pricecharting_categories):
-            total_sources += 1
-            tasks.append(("pricecharting", self._pricecharting.search(query, category=category, limit=limit)))
-
-        # Yahoo Auctions JP (Japanese market — anime, Nintendo, vintage collectibles)
-        yahoo_categories = {"bandai_premium", "jp_event", "jp_magazine", "ghibli", "anime_figures", "retro_pokemon", "vtuber", "gunpla", "anime_bluray", "anime_soundtrack", "anime_ost_vinyl", "one_piece", "hot_toys", "nintendo_merch", "kpop_merch", "keycaps", "scale_models", "warhammer", "digimon", "one_piece_tcg", "manga", "designer_toys", "blind_box", "plush_collectibles", "city_pop_vinyl", "oop_board_games"}
-        if self._yahoo_auctions.configured and should_use_adapter(region, "yahoo_auctions") and (category is None or category in yahoo_categories):
-            total_sources += 1
-            tasks.append(("yahoo_auctions", self._yahoo_auctions.search(query, category=category, limit=limit)))
-
-        # StockX (authenticated resale — sneakers, funko, designer toys, collectibles)
-        stockx_categories = {"sneakers", "designer_toys", "funko", "kpop_merch", "taylor_swift", "pop_fandom", "loungefly", "hot_toys", "nintendo_merch", "blind_box"}
-        if self._stockx.configured and should_use_adapter(region, "stockx") and (category is None or category in stockx_categories):
-            total_sources += 1
-            tasks.append(("stockx", self._stockx.search(query, category=category, limit=limit)))
-
-        # Discogs (music collectibles — vinyl, soundtracks, K-pop, fandom)
-        discogs_categories = {"vinyl_records", "anime_ost_vinyl", "anime_soundtrack", "kpop_merch", "taylor_swift", "pop_fandom", "bluray_steelbook", "kpop_lightsticks", "city_pop_vinyl"}
-        if self._discogs.configured and should_use_adapter(region, "discogs") and (category is None or category in discogs_categories):
-            total_sources += 1
-            tasks.append(("discogs", self._discogs.search(query, category=category, limit=limit)))
-
-        # Cardmarket (European TCG marketplace — all trading card games)
-        cardmarket_categories = {"pokemon", "mtg", "yugioh", "lorcana", "digimon", "one_piece_tcg"}
-        if self._cardmarket.configured and should_use_adapter(region, "cardmarket") and (category is None or category in cardmarket_categories):
-            total_sources += 1
-            tasks.append(("cardmarket", self._cardmarket.search(query, category=category, limit=limit)))
-
-        # BrickLink (LEGO marketplace — sets, minifigs, parts)
-        if self._bricklink.configured and should_use_adapter(region, "bricklink") and (category is None or category == "lego"):
-            total_sources += 1
-            tasks.append(("bricklink", self._bricklink.search(query, category=category, limit=limit)))
-
-        # Etsy (handmade, vintage, craft collectibles — 12 categories)
-        etsy_categories = {"vintage_toys", "watches", "pens", "plush_collectibles", "blind_box", "vintage_cameras", "keycaps", "diorama", "custom_builds", "scale_models", "designer_toys", "funko"}
-        if self._etsy.configured and should_use_adapter(region, "etsy") and (category is None or category in etsy_categories):
-            total_sources += 1
-            tasks.append(("etsy", self._etsy.search(query, category=category, limit=limit)))
-
-        # COMC (Check Out My Cards — consignment card marketplace)
-        comc_categories = {"sportscards", "pokemon", "mtg", "yugioh"}
-        if self._comc.configured and should_use_adapter(region, "comc") and (category is None or category in comc_categories):
-            total_sources += 1
-            tasks.append(("comc", self._comc.search(query, category=category, limit=limit)))
-
-        # Reverb (music gear + vinyl records marketplace)
-        reverb_categories = {"vinyl_records", "anime_ost_vinyl"}
-        if self._reverb.configured and should_use_adapter(region, "reverb") and (category is None or category in reverb_categories):
-            total_sources += 1
-            tasks.append(("reverb", self._reverb.search(query, category=category, limit=limit)))
-
-        # AbeBooks (books, comics, manga — Amazon-owned)
-        abebooks_categories = {"comic_books", "manga"}
-        if self._abebooks.configured and should_use_adapter(region, "abebooks") and (category is None or category in abebooks_categories):
-            total_sources += 1
-            tasks.append(("abebooks", self._abebooks.search(query, category=category, limit=limit)))
+        tasks, total_sources = self._build_search_tasks(
+            query, category, limit, region, mode="search",
+        )
 
         if not tasks:
             logger.warning("[MarketplaceAgent] No adapters configured for query: %s", query)
@@ -732,6 +347,10 @@ class MarketplaceAgent:
                 dedup_count=0,
                 query_metadata={"query": query, "category": category, "region": region},
             )
+
+        all_hits: List[Dict[str, Any]] = []
+        successful_sources = 0
+        source_errors: List[str] = []
 
         # Execute all adapter queries concurrently
         results = await asyncio.gather(
@@ -749,43 +368,15 @@ class MarketplaceAgent:
             else:
                 logger.warning("[MarketplaceAgent] %s returned unexpected type: %s", source_name, type(result))
 
-        # Deduplicate by content hash
-        seen_hashes: set[str] = set()
-        unique_hits: List[Dict[str, Any]] = []
-        dedup_count = 0
-
-        for hit in all_hits:
-            ch = _content_hash(hit.get("source", ""), hit.get("raw_id", ""))
-            if ch in seen_hashes:
-                dedup_count += 1
-                continue
-            seen_hashes.add(ch)
-            hit["content_hash"] = ch
-            unique_hits.append(hit)
-
-        # Score each hit
-        scored_hits: List[ScoredMarketHit] = []
-        for hit in unique_hits:
-            prov, reliability, recency, is_sold = _compute_provenance_score(
-                hit, query_condition=condition,
-            )
-            scored_hits.append(ScoredMarketHit(
-                hit=hit,
-                provenance_score=prov,
-                source_reliability=reliability,
-                recency_score=recency,
-                is_sold=is_sold,
-            ))
-
-        # Sort by provenance score descending, then by price descending
-        scored_hits.sort(key=lambda h: (h.provenance_score, h.hit.get("price", 0)), reverse=True)
+        # Deduplicate and score
+        scored_hits, dedup_count = dedup_and_score(all_hits, condition=condition)
 
         # Compute aggregate confidence
         aggregate_confidence = _compute_aggregate_confidence(
             scored_hits, total_sources, successful_sources,
         )
 
-        result = AggregationResult(
+        agg_result = AggregationResult(
             hits=scored_hits,
             total_sources_queried=total_sources,
             successful_sources=successful_sources,
@@ -804,9 +395,9 @@ class MarketplaceAgent:
 
         # Cache successful results
         if scored_hits:
-            cache_set_fn(cache_key, result, cache_ttl)
+            cache_set_fn(cache_key, agg_result, cache_ttl)
 
-        return result
+        return agg_result
 
     # ------------------------------------------------------------------
     # Sold comps + DB persistence
@@ -833,212 +424,9 @@ class MarketplaceAgent:
             logger.debug("[MarketplaceAgent] comps cache hit for %s", cache_key)
             return cached
 
-        all_hits: List[Dict[str, Any]] = []
-        total_sources = 0
-        successful_sources = 0
-        source_errors: List[str] = []
-
-        ebay_mktplace = get_ebay_marketplace_id(region)
-        fc_sites = get_firecrawl_sites(region, category)
-        c4_sites = get_crawl4ai_sites(region, category)
-
-        tasks = []
-
-        # eBay sold comps
-        if self._ebay.configured and should_use_adapter(region, "ebay"):
-            total_sources += 1
-            tasks.append(("ebay_sold", self._ebay.sold_comps(query, category=category, limit=limit, marketplace_id=ebay_mktplace)))
-
-        # TCGPlayer sold comps
-        tcg_categories = {"pokemon", "mtg", "yugioh", "lorcana", "digimon", "one_piece_tcg"}
-        if self._tcgplayer.configured and should_use_adapter(region, "tcgplayer") and (category is None or category in tcg_categories):
-            total_sources += 1
-            tasks.append(("tcgplayer_sold", self._tcgplayer.sold_comps(query, category=category, limit=limit)))
-
-        # Firecrawl sold comps (web search)
-        if self._firecrawl.configured and should_use_adapter(region, "firecrawl"):
-            total_sources += 1
-            tasks.append(("firecrawl_sold", self._firecrawl.sold_comps(query, category=category, limit=limit, region_sites=fc_sites)))
-
-        # Crawl4AI sold comps (local web crawler)
-        if self._crawl4ai.configured and should_use_adapter(region, "crawl4ai"):
-            total_sources += 1
-            tasks.append(("crawl4ai_sold", self._crawl4ai.sold_comps(query, category=category, limit=limit, region_sites=c4_sites)))
-
-        # Scrape.do sold comps (managed proxy scraper — all categories)
-        if self._scrapedo.configured and should_use_adapter(region, "scrapedo"):
-            total_sources += 1
-            tasks.append(("scrapedo_sold", self._scrapedo.sold_comps(query, category=category, limit=limit)))
-
-        # Grailed sold comps (fashion/streetwear resale — sold listings page)
-        grailed_categories = {"sneakers", "hot_toys", "funko", "designer_toys", "pop_fandom"}
-        if self._grailed.configured and should_use_adapter(region, "grailed") and (category is None or category in grailed_categories):
-            total_sources += 1
-            tasks.append(("grailed_sold", self._grailed.sold_comps(query, category=category, limit=limit)))
-
-        # Google Shopping — no sold comps (returns empty list, so skip to save API calls)
-
-        # Mercari US sold comps
-        if self._mercari_us.configured and should_use_adapter(region, "mercari_us"):
-            total_sources += 1
-            tasks.append(("mercari_us_sold", self._mercari_us.sold_comps(query, category=category, limit=limit)))
-
-        # WhatNot sold comps (auction results)
-        whatnot_categories = {"pokemon", "mtg", "yugioh", "lorcana", "funko", "sportscards", "designer_toys", "hot_toys", "anime_figures", "kpop_merch", "action_figures", "vintage_toys", "marvel_legends", "nintendo_merch", "blind_box", "plush_collectibles", "disney", "lego", "comic_books", "digimon", "one_piece_tcg", "sneakers", "retro_games", "warhammer", "oop_board_games", "city_pop_vinyl"}
-        if self._whatnot.configured and should_use_adapter(region, "whatnot") and (category is None or category in whatnot_categories):
-            total_sources += 1
-            tasks.append(("whatnot_sold", self._whatnot.sold_comps(query, category=category, limit=limit)))
-
-        # Vinted sold comps (European secondhand)
-        if self._vinted.configured and should_use_adapter(region, "vinted"):
-            total_sources += 1
-            tasks.append(("vinted_sold", self._vinted.sold_comps(query, category=category, limit=limit, region=region)))
-
-        # Mavin.io sold comps (aggregated sold data — highest quality)
-        if self._mavin.configured and should_use_adapter(region, "mavin"):
-            total_sources += 1
-            tasks.append(("mavin_sold", self._mavin.sold_comps(query, category=category, limit=limit)))
-
-        # Catawiki sold comps (European auction hammer prices)
-        catawiki_categories = {"whiskey", "vintage_cameras", "watches", "pens", "designer_toys", "comic_books", "vintage_toys", "loungefly", "vinyl_records", "diecast", "oop_board_games", "niche_perfumery"}
-        if self._catawiki.configured and should_use_adapter(region, "catawiki") and (category is None or category in catawiki_categories):
-            total_sources += 1
-            tasks.append(("catawiki_sold", self._catawiki.sold_comps(query, category=category, limit=limit)))
-
-        # Whisky Auctioneer sold comps (real auction hammer prices — highest reliability for whisky)
-        if self._whisky_auctioneer.configured and should_use_adapter(region, "whisky_auctioneer") and (category is None or category == "whiskey"):
-            total_sources += 1
-            tasks.append(("whisky_auctioneer_sold", self._whisky_auctioneer.sold_comps(query, category=category, limit=limit)))
-
-        # Bezel sold comps (trusted watch marketplace)
-        if self._bezel.configured and should_use_adapter(region, "bezel") and (category is None or category == "watches"):
-            total_sources += 1
-            tasks.append(("bezel_sold", self._bezel.sold_comps(query, category=category, limit=limit)))
-
-        # Chrono24 sold comps (world's largest watch marketplace)
-        if self._chrono24.configured and should_use_adapter(region, "chrono24") and (category is None or category == "watches"):
-            total_sources += 1
-            tasks.append(("chrono24_sold", self._chrono24.sold_comps(query, category=category, limit=limit)))
-
-        # KEH sold comps (no sold history — returns empty)
-        if self._keh.configured and should_use_adapter(region, "keh") and (category is None or category == "vintage_cameras"):
-            total_sources += 1
-            tasks.append(("keh_sold", self._keh.sold_comps(query, category=category, limit=limit)))
-
-        # MPB sold comps (no sold history — returns empty)
-        if self._mpb.configured and should_use_adapter(region, "mpb") and (category is None or category == "vintage_cameras"):
-            total_sources += 1
-            tasks.append(("mpb_sold", self._mpb.sold_comps(query, category=category, limit=limit, region=region)))
-
-        # Drop sold comps (no sold history — returns empty)
-        if self._drop.configured and should_use_adapter(region, "drop") and (category is None or category == "keycaps"):
-            total_sources += 1
-            tasks.append(("drop_sold", self._drop.sold_comps(query, category=category, limit=limit)))
-
-        # GouletPens sold comps (no sold history — returns empty)
-        if self._gouletpens.configured and should_use_adapter(region, "gouletpens") and (category is None or category == "pens"):
-            total_sources += 1
-            tasks.append(("gouletpens_sold", self._gouletpens.sold_comps(query, category=category, limit=limit)))
-
-        # BrickEconomy sold comps (price history data — high quality for LEGO)
-        if self._brickeconomy.configured and should_use_adapter(region, "brickeconomy") and (category is None or category == "lego"):
-            total_sources += 1
-            tasks.append(("brickeconomy_sold", self._brickeconomy.sold_comps(query, category=category, limit=limit)))
-
-        # PopMart sold comps (retail site — no sold history, returns empty)
-        popmart_categories = {"blind_box", "designer_toys"}
-        if self._popmart.configured and should_use_adapter(region, "popmart") and (category is None or category in popmart_categories):
-            total_sources += 1
-            tasks.append(("popmart_sold", self._popmart.sold_comps(query, category=category, limit=limit)))
-
-        # Booth sold comps (indie marketplace — no sold history, returns empty)
-        booth_categories = {"vtuber", "jp_event", "designer_toys", "kpop_lightsticks"}
-        if self._booth.configured and should_use_adapter(region, "booth") and (category is None or category in booth_categories):
-            total_sources += 1
-            tasks.append(("booth_sold", self._booth.sold_comps(query, category=category, limit=limit)))
-
-        # ScaleMates sold comps (reference site — no sold history, returns empty)
-        scalemates_categories = {"scale_models", "gunpla", "diecast"}
-        if self._scalemates.configured and should_use_adapter(region, "scalemates") and (category is None or category in scalemates_categories):
-            total_sources += 1
-            tasks.append(("scalemates_sold", self._scalemates.sold_comps(query, category=category, limit=limit)))
-
-        # KTown4U sold comps (retail storefront — no sold history, returns empty)
-        ktown4u_categories = {"kpop", "kpop_lightsticks", "blind_box"}
-        if self._ktown4u.configured and should_use_adapter(region, "ktown4u") and (category is None or category in ktown4u_categories):
-            total_sources += 1
-            tasks.append(("ktown4u_sold", self._ktown4u.sold_comps(query, category=category, limit=limit)))
-
-        # ComicBookRealm sold comps (guide values as reference pricing)
-        if self._comicbookrealm.configured and should_use_adapter(region, "comicbookrealm") and (category is None or category == "comic_books"):
-            total_sources += 1
-            tasks.append(("comicbookrealm_sold", self._comicbookrealm.sold_comps(query, category=category, limit=limit)))
-
-        # Master of Malt sold comps (retail storefront — no sold history, returns empty)
-        if self._masterofmalt.configured and should_use_adapter(region, "masterofmalt") and (category is None or category == "whiskey"):
-            total_sources += 1
-            tasks.append(("masterofmalt_sold", self._masterofmalt.sold_comps(query, category=category, limit=limit)))
-
-        # PriceCharting sold comps (retro games, amiibo, Nintendo merch — historical pricing)
-        pricecharting_categories = {"retro_games", "retro_handhelds", "pokemon", "nintendo_merch", "sportscards"}
-        if self._pricecharting.configured and should_use_adapter(region, "pricecharting") and (category is None or category in pricecharting_categories):
-            total_sources += 1
-            tasks.append(("pricecharting_sold", self._pricecharting.sold_comps(query, category=category, limit=limit)))
-
-        # Yahoo Auctions JP sold comps (Japanese market — auction results)
-        yahoo_categories = {"bandai_premium", "jp_event", "jp_magazine", "ghibli", "anime_figures", "retro_pokemon", "vtuber", "gunpla", "anime_bluray", "anime_soundtrack", "anime_ost_vinyl", "one_piece", "hot_toys", "nintendo_merch", "kpop_merch", "keycaps", "scale_models", "warhammer", "digimon", "one_piece_tcg", "manga", "designer_toys", "blind_box", "plush_collectibles", "city_pop_vinyl", "oop_board_games"}
-        if self._yahoo_auctions.configured and should_use_adapter(region, "yahoo_auctions") and (category is None or category in yahoo_categories):
-            total_sources += 1
-            tasks.append(("yahoo_auctions_sold", self._yahoo_auctions.sold_comps(query, category=category, limit=limit)))
-
-        # StockX sold comps (authenticated resale — sneakers, funko, designer toys, collectibles)
-
-        # Etsy sold comps (no sold-only API — returns empty)
-        etsy_categories = {"vintage_toys", "watches", "pens", "plush_collectibles", "blind_box", "vintage_cameras", "keycaps", "diorama", "custom_builds", "scale_models", "designer_toys", "funko"}
-        if self._etsy.configured and should_use_adapter(region, "etsy") and (category is None or category in etsy_categories):
-            total_sources += 1
-            tasks.append(("etsy_sold", self._etsy.sold_comps(query, category=category, limit=limit)))
-
-        # StockX sold comps (authenticated resale — sneakers, funko, designer toys, collectibles)
-        stockx_categories = {"sneakers", "designer_toys", "funko", "kpop_merch", "taylor_swift", "pop_fandom", "loungefly", "hot_toys", "nintendo_merch", "blind_box"}
-        if self._stockx.configured and should_use_adapter(region, "stockx") and (category is None or category in stockx_categories):
-            total_sources += 1
-            tasks.append(("stockx_sold", self._stockx.sold_comps(query, category=category, limit=limit)))
-
-        # Discogs sold comps (music collectibles — vinyl, soundtracks, K-pop, fandom)
-        discogs_categories = {"vinyl_records", "anime_ost_vinyl", "anime_soundtrack", "kpop_merch", "taylor_swift", "pop_fandom", "bluray_steelbook", "kpop_lightsticks", "city_pop_vinyl"}
-        if self._discogs.configured and should_use_adapter(region, "discogs") and (category is None or category in discogs_categories):
-            total_sources += 1
-            tasks.append(("discogs_sold", self._discogs.sold_comps(query, category=category, limit=limit)))
-
-        # Cardmarket sold comps (European TCG marketplace — all trading card games)
-        cardmarket_categories = {"pokemon", "mtg", "yugioh", "lorcana", "digimon", "one_piece_tcg"}
-        if self._cardmarket.configured and should_use_adapter(region, "cardmarket") and (category is None or category in cardmarket_categories):
-            total_sources += 1
-            tasks.append(("cardmarket_sold", self._cardmarket.sold_comps(query, category=category, limit=limit)))
-
-        # BrickLink sold comps (LEGO marketplace — sets, minifigs, parts)
-        if self._bricklink.configured and should_use_adapter(region, "bricklink") and (category is None or category == "lego"):
-            total_sources += 1
-            tasks.append(("bricklink_sold", self._bricklink.sold_comps(query, category=category, limit=limit)))
-
-        # COMC sold comps (consignment card marketplace — recently sold)
-        comc_categories = {"sportscards", "pokemon", "mtg", "yugioh"}
-        if self._comc.configured and should_use_adapter(region, "comc") and (category is None or category in comc_categories):
-            total_sources += 1
-            tasks.append(("comc_sold", self._comc.sold_comps(query, category=category, limit=limit)))
-
-        # Reverb sold comps (music gear + vinyl records — sold listings)
-        reverb_categories = {"vinyl_records", "anime_ost_vinyl"}
-        if self._reverb.configured and should_use_adapter(region, "reverb") and (category is None or category in reverb_categories):
-            total_sources += 1
-            tasks.append(("reverb_sold", self._reverb.sold_comps(query, category=category, limit=limit)))
-
-        # AbeBooks sold comps (no sold data — returns empty)
-        abebooks_categories = {"comic_books", "manga"}
-        if self._abebooks.configured and should_use_adapter(region, "abebooks") and (category is None or category in abebooks_categories):
-            total_sources += 1
-            tasks.append(("abebooks_sold", self._abebooks.sold_comps(query, category=category, limit=limit)))
+        tasks, total_sources = self._build_search_tasks(
+            query, category, limit, region, mode="sold",
+        )
 
         if not tasks:
             return AggregationResult(
@@ -1049,6 +437,10 @@ class MarketplaceAgent:
                 dedup_count=0,
                 query_metadata={"query": query, "category": category, "region": region, "mode": "sold_comps"},
             )
+
+        all_hits: List[Dict[str, Any]] = []
+        successful_sources = 0
+        source_errors: List[str] = []
 
         results = await asyncio.gather(
             *[task for _, task in tasks],
@@ -1063,41 +455,14 @@ class MarketplaceAgent:
                 successful_sources += 1
                 all_hits.extend(result)
 
-        # Deduplicate
-        seen_hashes: set[str] = set()
-        unique_hits: List[Dict[str, Any]] = []
-        dedup_count = 0
-
-        for hit in all_hits:
-            ch = _content_hash(hit.get("source", ""), hit.get("raw_id", ""))
-            if ch in seen_hashes:
-                dedup_count += 1
-                continue
-            seen_hashes.add(ch)
-            hit["content_hash"] = ch
-            unique_hits.append(hit)
-
-        # Score
-        scored_hits: List[ScoredMarketHit] = []
-        for hit in unique_hits:
-            prov, reliability, recency, is_sold = _compute_provenance_score(
-                hit, query_condition=condition,
-            )
-            scored_hits.append(ScoredMarketHit(
-                hit=hit,
-                provenance_score=prov,
-                source_reliability=reliability,
-                recency_score=recency,
-                is_sold=is_sold,
-            ))
-
-        scored_hits.sort(key=lambda h: (h.provenance_score, h.hit.get("price", 0)), reverse=True)
+        # Deduplicate and score
+        scored_hits, dedup_count = dedup_and_score(all_hits, condition=condition)
 
         aggregate_confidence = _compute_aggregate_confidence(
             scored_hits, total_sources, successful_sources,
         )
 
-        result = AggregationResult(
+        agg_result = AggregationResult(
             hits=scored_hits,
             total_sources_queried=total_sources,
             successful_sources=successful_sources,
@@ -1116,9 +481,9 @@ class MarketplaceAgent:
 
         # Cache successful results
         if scored_hits:
-            cache_set(cache_key, result, _COMPS_CACHE_TTL)
+            cache_set(cache_key, agg_result, _COMPS_CACHE_TTL)
 
-        return result
+        return agg_result
 
     async def persist_comps_to_db(
         self,
@@ -1191,112 +556,13 @@ class MarketplaceAgent:
     async def health_check(self) -> Dict[str, Any]:
         """Check health of all configured adapters."""
         checks: Dict[str, Any] = {}
-
         tasks = []
-        if self._ebay.configured:
-            tasks.append(("ebay", self._ebay.health_check()))
-        else:
-            checks["ebay"] = {"configured": False, "healthy": False}
 
-        if self._tcgplayer.configured:
-            tasks.append(("tcgplayer", self._tcgplayer.health_check()))
-        else:
-            checks["tcgplayer"] = {"configured": False, "healthy": False}
-
-        if self._firecrawl.configured:
-            tasks.append(("firecrawl", self._firecrawl.health_check()))
-        else:
-            checks["firecrawl"] = {"configured": False, "healthy": False}
-
-        if self._crawl4ai.configured:
-            tasks.append(("crawl4ai", self._crawl4ai.health_check()))
-        else:
-            checks["crawl4ai"] = {"configured": False, "healthy": False}
-
-        if self._mercari_us.configured:
-            tasks.append(("mercari_us", self._mercari_us.health_check()))
-        else:
-            checks["mercari_us"] = {"configured": False, "healthy": False}
-
-        if self._whatnot.configured:
-            tasks.append(("whatnot", self._whatnot.health_check()))
-        else:
-            checks["whatnot"] = {"configured": False, "healthy": False}
-
-        if self._vinted.configured:
-            tasks.append(("vinted", self._vinted.health_check()))
-        else:
-            checks["vinted"] = {"configured": False, "healthy": False}
-
-        if self._mavin.configured:
-            tasks.append(("mavin", self._mavin.health_check()))
-        else:
-            checks["mavin"] = {"configured": False, "healthy": False}
-
-        if self._catawiki.configured:
-            tasks.append(("catawiki", self._catawiki.health_check()))
-        else:
-            checks["catawiki"] = {"configured": False, "healthy": False}
-
-        if self._whisky_auctioneer.configured:
-            tasks.append(("whisky_auctioneer", self._whisky_auctioneer.health_check()))
-        else:
-            checks["whisky_auctioneer"] = {"configured": False, "healthy": False}
-
-        if self._mandarake.configured:
-            tasks.append(("mandarake", self._mandarake.health_check()))
-        else:
-            checks["mandarake"] = {"configured": False, "healthy": False}
-
-        if self._bezel.configured:
-            tasks.append(("bezel", self._bezel.health_check()))
-        else:
-            checks["bezel"] = {"configured": False, "healthy": False}
-
-        if self._chrono24.configured:
-            tasks.append(("chrono24", self._chrono24.health_check()))
-        else:
-            checks["chrono24"] = {"configured": False, "healthy": False}
-
-        if self._keh.configured:
-            tasks.append(("keh", self._keh.health_check()))
-        else:
-            checks["keh"] = {"configured": False, "healthy": False}
-
-        if self._mpb.configured:
-            tasks.append(("mpb", self._mpb.health_check()))
-        else:
-            checks["mpb"] = {"configured": False, "healthy": False}
-
-        if self._drop.configured:
-            tasks.append(("drop", self._drop.health_check()))
-        else:
-            checks["drop"] = {"configured": False, "healthy": False}
-
-        if self._gouletpens.configured:
-            tasks.append(("gouletpens", self._gouletpens.health_check()))
-        else:
-            checks["gouletpens"] = {"configured": False, "healthy": False}
-
-        if self._brickeconomy.configured:
-            tasks.append(("brickeconomy", self._brickeconomy.health_check()))
-        else:
-            checks["brickeconomy"] = {"configured": False, "healthy": False}
-
-        if self._ktown4u.configured:
-            tasks.append(("ktown4u", self._ktown4u.health_check()))
-        else:
-            checks["ktown4u"] = {"configured": False, "healthy": False}
-
-        if self._comicbookrealm.configured:
-            tasks.append(("comicbookrealm", self._comicbookrealm.health_check()))
-        else:
-            checks["comicbookrealm"] = {"configured": False, "healthy": False}
-
-        if self._masterofmalt.configured:
-            tasks.append(("masterofmalt", self._masterofmalt.health_check()))
-        else:
-            checks["masterofmalt"] = {"configured": False, "healthy": False}
+        for name, inst in self._adapter_map().items():
+            if inst.configured:
+                tasks.append((name, inst.health_check()))
+            else:
+                checks[name] = {"configured": False, "healthy": False}
 
         if tasks:
             results = await asyncio.gather(

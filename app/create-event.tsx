@@ -42,6 +42,7 @@ import { BottomSheetModal } from '@/components/BottomSheetModal';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { FormField } from '@/components/form';
 import { KIND_ICON } from '@/constants/eventConstants';
 import { EventFormHeader } from '@/components/events/EventFormHeader';
 import { EventDateTimePicker } from '@/components/events/EventDateTimePicker';
@@ -474,25 +475,17 @@ const CreateEventScreen: React.FC = () => {
             </View>
 
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>Image URL</Text>
-                <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="image-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={imageUrlField.value}
-                    onChangeText={imageUrlField.onChange}
-                    onBlur={imageUrlField.onBlur}
-                    placeholder="https://example.com/event-image.jpg"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    autoCapitalize="none"
-                    keyboardType="url"
-                    accessibilityLabel="Event image URL"
-                    returnKeyType="done"
-                  />
-                </View>
-                {imageUrlField.touched && imageUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{imageUrlField.error}</Text>}
-              </View>
+              <FormField
+                label="Image URL"
+                value={imageUrlField.value}
+                onChangeText={imageUrlField.onChange}
+                onBlur={imageUrlField.onBlur}
+                placeholder="https://example.com/event-image.jpg"
+                error={imageUrlField.touched && imageUrlField.error ? imageUrlField.error : null}
+                autoCapitalize="none"
+                keyboardType="url"
+                returnKeyType="done"
+              />
             </View>
           </View>
 
@@ -559,19 +552,14 @@ const CreateEventScreen: React.FC = () => {
                 />
               </View>
               {saveAsTemplate && (
-                <View style={[styles.fieldBlock, { marginTop: 12 }]}>
-                  <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                    <Ionicons name="bookmark-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                    <TextInput
-                      value={templateName}
-                      onChangeText={setTemplateName}
-                      placeholder="Template name"
-                      placeholderTextColor={colors.muted}
-                      style={[styles.input, { color: colors.text }]}
-                      accessibilityLabel="Template name"
-                      returnKeyType="done"
-                    />
-                  </View>
+                <View style={{ marginTop: 12 }}>
+                  <FormField
+                    label="Template Name"
+                    value={templateName}
+                    onChangeText={setTemplateName}
+                    placeholder="Template name"
+                    returnKeyType="done"
+                  />
                 </View>
               )}
             </View>

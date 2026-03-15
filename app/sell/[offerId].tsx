@@ -41,6 +41,9 @@ import logger from '@/utils/logger';
 import { timeAgo } from '@/lib/timeAgo';
 import { STATUS_LABELS } from '@/constants/dealStatus';
 import { radius, text, fontWeight } from '@/theme/tokens';
+import { OfferTimeline } from '@/components/sell/OfferTimeline';
+import { CounterOfferForm } from '@/components/sell/CounterOfferForm';
+import { ReputationBadges } from '@/components/sell/ReputationBadges';
 
 // ---------------------------------------------------------------------------
 // Status config
@@ -58,100 +61,13 @@ const STATUS_META: Record<OfferStatus, { label: string; icon: keyof typeof Ionic
 };
 
 // ---------------------------------------------------------------------------
-// Event type display config
-// ---------------------------------------------------------------------------
-
-const EVENT_DISPLAY_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; label: string; colorKey: 'accent' | 'info' | 'success' | 'danger' | 'muted' | 'warning' }> = {
-  proposed: { icon: 'pricetag-outline', label: 'Offer proposed', colorKey: 'accent' },
-  countered: { icon: 'swap-horizontal-outline', label: 'Counter-offer', colorKey: 'info' },
-  accepted: { icon: 'checkmark-circle-outline', label: 'Offer accepted', colorKey: 'success' },
-  declined: { icon: 'close-circle-outline', label: 'Offer declined', colorKey: 'danger' },
-  cancelled: { icon: 'ban-outline', label: 'Offer cancelled', colorKey: 'muted' },
-  shipped: { icon: 'airplane-outline', label: 'Marked as shipped', colorKey: 'accent' },
-  completed: { icon: 'checkmark-done-outline', label: 'Deal completed', colorKey: 'success' },
-  expired: { icon: 'time-outline', label: 'Offer expired', colorKey: 'muted' },
-};
-
-function getEventDisplay(eventType: string, colors: ReturnType<typeof useAppTheme>['colors']) {
-  const meta = EVENT_DISPLAY_META[eventType];
-  if (!meta) return { icon: 'ellipsis-horizontal-outline' as keyof typeof Ionicons.glyphMap, label: eventType, color: colors.muted };
-  return { icon: meta.icon, label: meta.label, color: colors[meta.colorKey] };
-}
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatDateTime(iso: string | null | undefined): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
-    ' at ' +
-    d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-}
 
 function relativeTime(iso: string | null | undefined): string {
   if (!iso) return '';
   return timeAgo(iso);
 }
-
-// ---------------------------------------------------------------------------
-// Star display
-// ---------------------------------------------------------------------------
-
-const StarRating = React.memo(function StarRating({ stars, size = 14 }: { stars: number; size?: number }) {
-  const { colors } = useAppTheme();
-  const fullStars = Math.floor(stars);
-  const hasHalf = stars - fullStars >= 0.25;
-  return (
-    <View style={{ flexDirection: 'row', gap: 1 }}>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Ionicons
-          key={i}
-          name={i < fullStars ? 'star' : (i === fullStars && hasHalf ? 'star-half' : 'star-outline')}
-          size={size}
-          color={colors.warning}
-        />
-      ))}
-    </View>
-  );
-});
-
-// ---------------------------------------------------------------------------
-// ReputationBadge
-// ---------------------------------------------------------------------------
-
-const ReputationBadge = React.memo(function ReputationBadge({
-  label,
-  reputation,
-  colors,
-}: {
-  label: string;
-  reputation: UserReputation | null;
-  colors: ReturnType<typeof useAppTheme>['colors'];
-}) {
-  if (!reputation) return null;
-  return (
-    <View style={[styles.repBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Text style={[styles.repLabel, { color: colors.muted }]}>{label}</Text>
-      <View style={styles.repRow}>
-        {reputation.totalRatings > 0 ? (
-          <>
-            <StarRating stars={reputation.avgStars} />
-            <Text style={[styles.repScore, { color: colors.text }]}>
-              {reputation.avgStars.toFixed(1)}
-            </Text>
-          </>
-        ) : (
-          <Text style={[styles.repNoRating, { color: colors.muted }]}>No ratings yet</Text>
-        )}
-      </View>
-      <Text style={[styles.repDeals, { color: colors.muted }]}>
-        {reputation.completedDeals} deal{reputation.completedDeals !== 1 ? 's' : ''} completed
-      </Text>
-    </View>
-  );
-});
 
 // ---------------------------------------------------------------------------
 // Main screen
@@ -491,18 +407,12 @@ function OfferDetailScreen() {
         </Pressable>
 
         {/* ── Reputation row ───────────────────────────────────────────── */}
-        <View style={styles.repRow}>
-          <ReputationBadge
-            label={isSeller ? 'Your reputation (Seller)' : 'Seller'}
-            reputation={sellerRep}
-            colors={colors}
-          />
-          <ReputationBadge
-            label={isBuyer ? 'Your reputation (Buyer)' : 'Buyer'}
-            reputation={buyerRep}
-            colors={colors}
-          />
-        </View>
+        <ReputationBadges
+          isSeller={isSeller}
+          isBuyer={isBuyer}
+          sellerRep={sellerRep}
+          buyerRep={buyerRep}
+        />
 
         {/* ── Risk flags ────────────────────────────────────────────────── */}
         {riskFlags.length > 0 && (
@@ -520,49 +430,7 @@ function OfferDetailScreen() {
         )}
 
         {/* ── Timeline ─────────────────────────────────────────────────── */}
-        <View style={styles.timelineSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Negotiation Timeline</Text>
-          {events.length === 0 ? (
-            <Text style={[styles.noEvents, { color: colors.muted }]}>No events yet</Text>
-          ) : (
-            events.map((ev, idx) => {
-              const evDisplay = getEventDisplay(ev.eventType, colors);
-              const isLast = idx === events.length - 1;
-
-              return (
-                <View key={ev.id} style={styles.timelineItem}>
-                  {/* Vertical line */}
-                  {!isLast && (
-                    <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />
-                  )}
-                  {/* Dot */}
-                  <View style={[styles.timelineDot, { backgroundColor: evDisplay.color }]}>
-                    <Ionicons name={evDisplay.icon} size={14} color="#fff" />
-                  </View>
-                  {/* Content */}
-                  <View style={styles.timelineContent}>
-                    <Text style={[styles.timelineLabel, { color: colors.text }]}>
-                      {evDisplay.label}
-                    </Text>
-                    {ev.price != null && (
-                      <Text style={[styles.timelinePrice, { color: colors.accent }]}>
-                        {formatPrice(ev.price, (offer.currency || settings.currency) as 'EUR')}
-                      </Text>
-                    )}
-                    {ev.message ? (
-                      <Text style={[styles.timelineMessage, { color: colors.muted }]}>
-                        &ldquo;{ev.message}&rdquo;
-                      </Text>
-                    ) : null}
-                    <Text style={[styles.timelineTime, { color: colors.muted }]}>
-                      {formatDateTime(ev.createdAt)}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </View>
+        <OfferTimeline events={events} currency={offer.currency || settings.currency} />
 
         {/* ── Expiry info ──────────────────────────────────────────────── */}
         {offer.expiresAt && (offer.status === 'proposed' || offer.status === 'countered') && (
@@ -670,68 +538,16 @@ function OfferDetailScreen() {
       <QuickNavBar />
 
       {/* ── Counter-offer modal ────────────────────────────────────────── */}
-      <Modal
+      <CounterOfferForm
         visible={counterVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setCounterVisible(false)}
-      >
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Counter-Offer</Text>
-              <Pressable onPress={() => setCounterVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.muted} />
-              </Pressable>
-            </View>
-
-            <Text style={[styles.modalLabel, { color: colors.muted }]}>Your price</Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              value={counterPrice}
-              onChangeText={setCounterPrice}
-              keyboardType="decimal-pad"
-              placeholder="0.00"
-              placeholderTextColor={colors.muted}
-              autoFocus
-            />
-
-            <Text style={[styles.modalLabel, { color: colors.muted }]}>Message (optional)</Text>
-            <TextInput
-              style={[styles.modalTextarea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              value={counterMessage}
-              onChangeText={setCounterMessage}
-              placeholder="Add a message..."
-              placeholderTextColor={colors.muted}
-              multiline
-              maxLength={2000}
-            />
-
-            <AnimatedPressable
-              onPress={handleCounter}
-              disabled={actionLoading || !counterPrice.trim()}
-              style={[
-                styles.modalConfirmBtn,
-                { backgroundColor: colors.accent, opacity: actionLoading || !counterPrice.trim() ? 0.5 : 1 },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Send counter-offer"
-            >
-              {actionLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="swap-horizontal" size={18} color="#fff" />
-                  <Text style={styles.modalConfirmBtnText}>Send Counter-Offer</Text>
-                </>
-              )}
-            </AnimatedPressable>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        onClose={() => setCounterVisible(false)}
+        onSubmit={handleCounter}
+        counterPrice={counterPrice}
+        onCounterPriceChange={setCounterPrice}
+        counterMessage={counterMessage}
+        onCounterMessageChange={setCounterMessage}
+        actionLoading={actionLoading}
+      />
 
       {/* ── Shipping modal ─────────────────────────────────────────────── */}
       <Modal
@@ -957,7 +773,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
 
-  // Reputation
+  // Risk flags
   riskSection: {
     padding: 12,
     borderRadius: radius.sm,
@@ -979,95 +795,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 2,
   },
-  repRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
-  repBadge: {
-    flex: 1,
-    padding: 10,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-  },
-  repLabel: {
-    fontSize: text.xs,
-    fontWeight: fontWeight.medium,
-    marginBottom: 4,
-  },
-  repScore: {
-    fontSize: text.md,
-    fontWeight: fontWeight.bold,
-    marginLeft: 6,
-  },
-  repNoRating: {
-    fontSize: text.sm,
-    fontStyle: 'italic',
-  },
-  repDeals: {
-    fontSize: text.xs,
-    marginTop: 4,
-  },
-
-  // Timeline
-  timelineSection: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: text.lg,
-    fontWeight: fontWeight.bold,
-    marginBottom: 14,
-  },
-  noEvents: {
-    fontSize: text.md,
-    fontStyle: 'italic',
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    paddingLeft: 4,
-    marginBottom: 18,
-    position: 'relative',
-  },
-  timelineLine: {
-    position: 'absolute',
-    left: 15,
-    top: 28,
-    bottom: -18,
-    width: 2,
-    borderRadius: 1,
-  },
-  timelineDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  timelineContent: {
-    flex: 1,
-    paddingTop: 2,
-  },
-  timelineLabel: {
-    fontSize: text.md,
-    fontWeight: fontWeight.semibold,
-  },
-  timelinePrice: {
-    fontSize: text.lg,
-    fontWeight: fontWeight.bold,
-    marginTop: 2,
-  },
-  timelineMessage: {
-    fontSize: text.md,
-    fontStyle: 'italic',
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  timelineTime: {
-    fontSize: text.xs,
-    marginTop: 4,
-  },
-
   // Expiry banner
   expiryBanner: {
     flexDirection: 'row',
@@ -1120,7 +847,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
 
-  // Modals
+  // Modals (shipping + completion — counter-offer is now in CounterOfferForm)
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',

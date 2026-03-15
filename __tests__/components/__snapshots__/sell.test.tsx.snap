@@ -1,0 +1,936 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CounterOfferForm matches snapshot 1`] = `
+<Modal
+  animationType="slide"
+  onRequestClose={[MockFunction]}
+  transparent={true}
+  visible={true}
+>
+  <View
+    onLayout={[Function]}
+    style={
+      [
+        {
+          "backgroundColor": "rgba(0,0,0,0.4)",
+          "flex": 1,
+          "justifyContent": "flex-end",
+        },
+        {
+          "paddingBottom": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "borderTopLeftRadius": 16,
+            "borderTopRightRadius": 16,
+            "padding": 20,
+            "paddingBottom": 40,
+          },
+          {
+            "backgroundColor": "#FFFFFF",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "justifyContent": "space-between",
+            "marginBottom": 20,
+          }
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 20,
+                "fontWeight": "700",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Counter-Offer
+        </Text>
+        <View
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+        >
+          <Text
+            allowFontScaling={false}
+            selectable={false}
+            style={
+              [
+                {
+                  "color": "#64748B",
+                  "fontSize": 24,
+                },
+                undefined,
+                {
+                  "fontFamily": "ionicons",
+                  "fontStyle": "normal",
+                  "fontWeight": "normal",
+                },
+                {},
+              ]
+            }
+          >
+            
+          </Text>
+        </View>
+      </View>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "500",
+              "marginBottom": 6,
+              "marginTop": 8,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Your price
+      </Text>
+      <TextInput
+        autoFocus={true}
+        keyboardType="decimal-pad"
+        onChangeText={[MockFunction]}
+        placeholder="0.00"
+        placeholderTextColor="#64748B"
+        style={
+          [
+            {
+              "borderRadius": 8,
+              "borderWidth": 1,
+              "fontSize": 16,
+              "paddingHorizontal": 14,
+              "paddingVertical": 12,
+            },
+            {
+              "backgroundColor": "#F8FAFC",
+              "borderColor": "#E2E8F0",
+              "color": "#0F172A",
+            },
+          ]
+        }
+        value="100"
+      />
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "500",
+              "marginBottom": 6,
+              "marginTop": 8,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Message (optional)
+      </Text>
+      <TextInput
+        maxLength={2000}
+        multiline={true}
+        onChangeText={[MockFunction]}
+        placeholder="Add a message..."
+        placeholderTextColor="#64748B"
+        style={
+          [
+            {
+              "borderRadius": 8,
+              "borderWidth": 1,
+              "fontSize": 14,
+              "minHeight": 80,
+              "paddingHorizontal": 14,
+              "paddingVertical": 12,
+              "textAlignVertical": "top",
+            },
+            {
+              "backgroundColor": "#F8FAFC",
+              "borderColor": "#E2E8F0",
+              "color": "#0F172A",
+            },
+          ]
+        }
+        value=""
+      />
+      <View
+        accessibilityLabel="Send counter-offer"
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": false,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "borderRadius": 12,
+              "flexDirection": "row",
+              "gap": 8,
+              "justifyContent": "center",
+              "marginTop": 20,
+              "paddingVertical": 14,
+            },
+            {
+              "backgroundColor": "#81D8D0",
+              "opacity": 1,
+            },
+          ]
+        }
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#fff",
+                "fontSize": 18,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          style={
+            {
+              "color": "#fff",
+              "fontSize": 16,
+              "fontWeight": "600",
+            }
+          }
+        >
+          Send Counter-Offer
+        </Text>
+      </View>
+    </View>
+  </View>
+</Modal>
+`;
+
+exports[`OfferTimeline matches snapshot with events 1`] = `
+<View
+  style={
+    {
+      "marginBottom": 16,
+    }
+  }
+>
+  <Text
+    style={
+      [
+        {
+          "fontSize": 16,
+          "fontWeight": "700",
+          "marginBottom": 14,
+        },
+        {
+          "color": "#0F172A",
+        },
+      ]
+    }
+  >
+    Negotiation Timeline
+  </Text>
+  <View
+    style={
+      {
+        "flexDirection": "row",
+        "marginBottom": 18,
+        "paddingLeft": 4,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "borderRadius": 1,
+            "bottom": -18,
+            "left": 15,
+            "position": "absolute",
+            "top": 28,
+            "width": 2,
+          },
+          {
+            "backgroundColor": "#E2E8F0",
+          },
+        ]
+      }
+    />
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 14,
+            "height": 28,
+            "justifyContent": "center",
+            "marginRight": 12,
+            "width": 28,
+          },
+          {
+            "backgroundColor": "#81D8D0",
+          },
+        ]
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#fff",
+              "fontSize": 14,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "flex": 1,
+          "paddingTop": 2,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "600",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Offer proposed
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "700",
+              "marginTop": 2,
+            },
+            {
+              "color": "#81D8D0",
+            },
+          ]
+        }
+      >
+        EUR 100
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 10,
+              "marginTop": 4,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Mar 10 at 12:00 PM
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flexDirection": "row",
+        "marginBottom": 18,
+        "paddingLeft": 4,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 14,
+            "height": 28,
+            "justifyContent": "center",
+            "marginRight": 12,
+            "width": 28,
+          },
+          {
+            "backgroundColor": "#3B82F6",
+          },
+        ]
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#fff",
+              "fontSize": 14,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "flex": 1,
+          "paddingTop": 2,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "600",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Counter-offer
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "700",
+              "marginTop": 2,
+            },
+            {
+              "color": "#81D8D0",
+            },
+          ]
+        }
+      >
+        EUR 120
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 10,
+              "marginTop": 4,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Mar 10 at 12:00 PM
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ReputationBadges matches snapshot with both reputations 1`] = `
+<View
+  style={
+    {
+      "flexDirection": "row",
+      "gap": 10,
+      "marginBottom": 16,
+    }
+  }
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "flex": 1,
+          "padding": 10,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 10,
+            "fontWeight": "500",
+            "marginBottom": 4,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Your reputation (Seller)
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flexDirection": "row",
+            "gap": 1,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+      </View>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "700",
+              "marginLeft": 6,
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        4.8
+      </Text>
+    </View>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 10,
+            "marginTop": 4,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      15
+       deal
+      s
+       completed
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "flex": 1,
+          "padding": 10,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 10,
+            "fontWeight": "500",
+            "marginBottom": 4,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Buyer
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flexDirection": "row",
+            "gap": 1,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#F59E0B",
+                "fontSize": 14,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+      </View>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "700",
+              "marginLeft": 6,
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        3.5
+      </Text>
+    </View>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 10,
+            "marginTop": 4,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      3
+       deal
+      s
+       completed
+    </Text>
+  </View>
+</View>
+`;

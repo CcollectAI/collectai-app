@@ -116,14 +116,25 @@ def get_overdue_workers() -> list[dict]:
     return overdue
 
 
-def record_run(worker_name: str, status: str = "ok") -> None:
-    """Record a worker run completion (in-memory + best-effort DB persist)."""
-    entry = _registry.setdefault(worker_name, {"runs": 0, "errors": 0})
+def record_run(worker_name: str, status: str = "ok", duration_s: Optional[float] = None) -> None:
+    """Record a worker run completion (in-memory + best-effort DB persist).
+
+    Args:
+        worker_name: identifier for the worker
+        status: "ok" or "error"
+        duration_s: wall-clock seconds the run took (optional)
+    """
+    entry = _registry.setdefault(worker_name, {"runs": 0, "errors": 0, "total_duration_s": 0.0, "duration_count": 0})
     entry["last_run"] = time.time()
     entry["last_status"] = status
     entry["runs"] += 1
     if status != "ok":
         entry["errors"] += 1
+    if duration_s is not None:
+        entry.setdefault("total_duration_s", 0.0)
+        entry.setdefault("duration_count", 0)
+        entry["total_duration_s"] += duration_s
+        entry["duration_count"] += 1
 
     # Best-effort persist to DB (non-blocking)
     try:
@@ -178,13 +189,14 @@ def get_worker_health() -> dict:
 
     Each worker entry contains:
       - name: worker name
-      - last_run: ISO timestamp of last run (or null)
+      - last_run_at: ISO timestamp of last run (or null)
       - expected_interval_minutes: configured interval in minutes
       - status: "ok" | "overdue" | "never_run" | "on_demand"
-      - minutes_overdue: minutes past the 1.5x threshold (0 if not overdue, null if never_run)
       - last_status: "ok" | "error" | null
-      - total_runs: lifetime run count
+      - run_count: lifetime run count
       - total_errors: lifetime error count
+      - average_duration_s: mean wall-clock seconds per run (or null)
+      - minutes_overdue: minutes past the 1.5x threshold (0 if not overdue, null if never_run)
     """
     from datetime import datetime, timezone
 
@@ -195,12 +207,14 @@ def get_worker_health() -> dict:
     for name, interval in SCHEDULES.items():
         entry = _registry.get(name, {})
         last_run_epoch = entry.get("last_run")
+        dur_count = entry.get("duration_count", 0)
+        avg_dur = round(entry["total_duration_s"] / dur_count, 2) if dur_count > 0 else None
 
         if interval <= 0:
             # On-demand / single-run workers
             workers.append({
                 "name": name,
-                "last_run": (
+                "last_run_at": (
                     datetime.fromtimestamp(last_run_epoch, tz=timezone.utc).isoformat()
                     if last_run_epoch else None
                 ),
@@ -208,8 +222,9 @@ def get_worker_health() -> dict:
                 "status": "on_demand",
                 "minutes_overdue": None,
                 "last_status": entry.get("last_status"),
-                "total_runs": entry.get("runs", 0),
+                "run_count": entry.get("runs", 0),
                 "total_errors": entry.get("errors", 0),
+                "average_duration_s": avg_dur,
             })
             counts["on_demand"] += 1
             continue
@@ -234,7 +249,7 @@ def get_worker_health() -> dict:
 
         workers.append({
             "name": name,
-            "last_run": (
+            "last_run_at": (
                 datetime.fromtimestamp(last_run_epoch, tz=timezone.utc).isoformat()
                 if last_run_epoch else None
             ),
@@ -242,8 +257,9 @@ def get_worker_health() -> dict:
             "status": status,
             "minutes_overdue": minutes_overdue,
             "last_status": entry.get("last_status"),
-            "total_runs": entry.get("runs", 0),
+            "run_count": entry.get("runs", 0),
             "total_errors": entry.get("errors", 0),
+            "average_duration_s": avg_dur,
         })
 
     # Sort: overdue first, then never_run, then ok, then on_demand

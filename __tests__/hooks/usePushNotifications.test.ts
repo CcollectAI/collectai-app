@@ -174,7 +174,187 @@ describe('usePushNotifications', () => {
       },
     });
 
-    expect(mockPush).toHaveBeenCalledWith('/home/portfolio');
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/');
+  });
+
+  it('navigates to portfolio on weekly_digest notification', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: { type: 'weekly_digest' },
+          },
+        },
+      },
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/');
+  });
+
+  it('navigates to specific item on item_value_change notification', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: { type: 'item_value_change', item_id: 'item-xyz' },
+          },
+        },
+      },
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/item/item-xyz');
+  });
+
+  it('navigates to event screen on event_id notification', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: { event_id: 'event-123' },
+          },
+        },
+      },
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/events/event-123');
+  });
+
+  it('navigates to chat thread on thread_id notification', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: { thread_id: 'thread-abc' },
+          },
+        },
+      },
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/chat/thread-abc');
+  });
+
+  it('navigates to alerts on alert_id notification', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: { alert_id: 'alert-456' },
+          },
+        },
+      },
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/alerts');
+  });
+
+  it('navigates to inbox on connection_request notification', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: { connection_request_id: 'req-789' },
+          },
+        },
+      },
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/inbox');
+  });
+
+  it('navigates to project on project_id notification', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: { project_id: 'proj-001' },
+          },
+        },
+      },
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/projects/proj-001');
+  });
+
+  it('navigates to category on category_id notification', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: { category_id: 'pokemon_tcg' },
+          },
+        },
+      },
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/categories/pokemon_tcg');
+  });
+
+  it('navigates to user profile on user_id notification', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: { user_id: 'user-999' },
+          },
+        },
+      },
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/users/user-999');
+  });
+
+  it('does nothing when notification data is empty', async () => {
+    renderHook(() => usePushNotifications('user-1'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    notificationResponseCallback!({
+      notification: {
+        request: {
+          content: {
+            data: {},
+          },
+        },
+      },
+    });
+
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('clears badge count on initial setup', async () => {

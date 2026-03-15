@@ -759,7 +759,7 @@ function SellerDashboardScreen() {
           accessibilityRole="button"
           accessibilityLabel="Create new listing"
         >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
+          <Ionicons name="add" size={28} color={colors.accentText} />
         </AnimatedPressable>
       )}
 
@@ -844,9 +844,9 @@ function SellerDashboardScreen() {
               accessibilityLabel={creating ? 'Creating listing' : 'Create listing'}
             >
               {creating ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={colors.accentText} />
               ) : (
-                <Text style={styles.createBtnText}>Create as Draft</Text>
+                <Text style={[styles.createBtnText, { color: colors.accentText }]}>Create as Draft</Text>
               )}
             </AnimatedPressable>
           </View>
@@ -891,7 +891,7 @@ function SellerDashboardScreen() {
               accessibilityRole="button"
               accessibilityLabel="Connect account"
             >
-              {connecting ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.createBtnText}>Connect</Text>}
+              {connecting ? <ActivityIndicator size="small" color={colors.accentText} /> : <Text style={[styles.createBtnText, { color: colors.accentText }]}>Connect</Text>}
             </AnimatedPressable>
           </View>
         </View>
@@ -1050,7 +1050,7 @@ const styles = StyleSheet.create({
   feeLabel: { fontSize: text.sm },
   feeValue: { fontSize: text.md, fontWeight: fontWeight.semibold },
   createBtn: { borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
-  createBtnText: { color: '#FFFFFF', fontSize: text.lg, fontWeight: fontWeight.bold },
+  createBtnText: { fontSize: text.lg, fontWeight: fontWeight.bold },
   fieldError: { fontSize: text.sm, marginTop: 2, marginLeft: 4, marginBottom: 4 },
 
   // Actuals vs Predicted (L2)

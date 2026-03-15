@@ -1,0 +1,2160 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AppearanceSection matches snapshot 1`] = `
+[
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "borderWidth": 1,
+          "padding": 16,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "gap": 8,
+          "marginBottom": 16,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#81D8D0",
+              "fontSize": 18,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "600",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Region & Currency
+      </Text>
+    </View>
+    <View
+      accessibilityLabel="Change region"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingVertical": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "marginRight": 16,
+          }
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 16,
+                "fontWeight": "500",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Region
+        </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 12,
+                "marginTop": 2,
+              },
+              {
+                "color": "#64748B",
+              },
+            ]
+          }
+        >
+          Europe
+        </Text>
+      </View>
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#64748B",
+              "fontSize": 16,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+    <View
+      style={
+        [
+          {
+            "height": 1,
+            "marginVertical": 8,
+          },
+          {
+            "backgroundColor": "#E2E8F0",
+          },
+        ]
+      }
+    />
+    <View
+      accessibilityLabel="Change currency"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingVertical": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "marginRight": 16,
+          }
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 16,
+                "fontWeight": "500",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Currency
+        </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 12,
+                "marginTop": 2,
+              },
+              {
+                "color": "#64748B",
+              },
+            ]
+          }
+        >
+          EUR
+        </Text>
+      </View>
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#64748B",
+              "fontSize": 16,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+  </View>,
+  <View
+    style={
+      [
+        {
+          "borderRadius": 12,
+          "borderWidth": 1,
+          "padding": 16,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "gap": 8,
+          "marginBottom": 16,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#81D8D0",
+              "fontSize": 18,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "600",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Preferences
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingVertical": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "marginRight": 16,
+          }
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 16,
+                "fontWeight": "500",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Dark mode
+        </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 12,
+                "marginTop": 2,
+              },
+              {
+                "color": "#64748B",
+              },
+            ]
+          }
+        >
+          Switch between light and dark theme
+        </Text>
+      </View>
+      <RCTSwitch
+        accessibilityLabel="Dark mode"
+        accessibilityRole="switch"
+        onChange={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        onTintColor="#81D8D0"
+        style={
+          {
+            "alignSelf": "flex-start",
+          }
+        }
+        thumbTintColor="#FFFFFF"
+        tintColor="#E2E8F0"
+        value={false}
+      />
+    </View>
+    <View
+      style={
+        [
+          {
+            "height": 1,
+            "marginVertical": 8,
+          },
+          {
+            "backgroundColor": "#E2E8F0",
+          },
+        ]
+      }
+    />
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingVertical": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "marginRight": 16,
+          }
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 16,
+                "fontWeight": "500",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Haptic feedback
+        </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 12,
+                "marginTop": 2,
+              },
+              {
+                "color": "#64748B",
+              },
+            ]
+          }
+        >
+          Vibration feedback for interactions
+        </Text>
+      </View>
+      <RCTSwitch
+        accessibilityLabel="Haptic feedback"
+        accessibilityRole="switch"
+        onChange={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        onTintColor="#81D8D0"
+        style={
+          {
+            "alignSelf": "flex-start",
+          }
+        }
+        thumbTintColor="#FFFFFF"
+        tintColor="#E2E8F0"
+        value={true}
+      />
+    </View>
+    <View
+      style={
+        [
+          {
+            "height": 1,
+            "marginVertical": 8,
+          },
+          {
+            "backgroundColor": "#E2E8F0",
+          },
+        ]
+      }
+    />
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingVertical": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "marginRight": 16,
+          }
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 16,
+                "fontWeight": "500",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Animations
+        </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 12,
+                "marginTop": 2,
+              },
+              {
+                "color": "#64748B",
+              },
+            ]
+          }
+        >
+          Enable micro-animations throughout the app
+        </Text>
+      </View>
+      <RCTSwitch
+        accessibilityLabel="Animations"
+        accessibilityRole="switch"
+        onChange={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        onTintColor="#81D8D0"
+        style={
+          {
+            "alignSelf": "flex-start",
+          }
+        }
+        thumbTintColor="#FFFFFF"
+        tintColor="#E2E8F0"
+        value={true}
+      />
+    </View>
+  </View>,
+]
+`;
+
+exports[`PrivacySettingsSection matches snapshot after loading 1`] = `
+<View
+  style={
+    [
+      {
+        "borderRadius": 12,
+        "borderWidth": 1,
+        "padding": 16,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+      },
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "gap": 8,
+        "marginBottom": 16,
+      }
+    }
+  >
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#81D8D0",
+            "fontSize": 18,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 16,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      Privacy
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Show collection value
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Display your total collection value on your profile
+      </Text>
+    </View>
+    <RCTSwitch
+      accessibilityLabel="Show collection value"
+      accessibilityRole="switch"
+      onChange={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      onTintColor="#81D8D0"
+      style={
+        {
+          "alignSelf": "flex-start",
+        }
+      }
+      thumbTintColor="#FFFFFF"
+      tintColor="#E2E8F0"
+      value={true}
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Show item count
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Display how many items you have collected
+      </Text>
+    </View>
+    <RCTSwitch
+      accessibilityLabel="Show item count"
+      accessibilityRole="switch"
+      onChange={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      onTintColor="#81D8D0"
+      style={
+        {
+          "alignSelf": "flex-start",
+        }
+      }
+      thumbTintColor="#FFFFFF"
+      tintColor="#E2E8F0"
+      value={true}
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Allow discovery
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Let other collectors find you by interests
+      </Text>
+    </View>
+    <RCTSwitch
+      accessibilityLabel="Allow discovery"
+      accessibilityRole="switch"
+      onChange={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      onTintColor="#81D8D0"
+      style={
+        {
+          "alignSelf": "flex-start",
+        }
+      }
+      thumbTintColor="#FFFFFF"
+      tintColor="#E2E8F0"
+      value={true}
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Show online status
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Let others see when you're active
+      </Text>
+    </View>
+    <RCTSwitch
+      accessibilityLabel="Show online status"
+      accessibilityRole="switch"
+      onChange={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      onTintColor="#81D8D0"
+      style={
+        {
+          "alignSelf": "flex-start",
+        }
+      }
+      thumbTintColor="#FFFFFF"
+      tintColor="#E2E8F0"
+      value={false}
+    />
+  </View>
+</View>
+`;
+
+exports[`ProfileEditSection matches snapshot 1`] = `
+<View
+  style={
+    [
+      {
+        "borderRadius": 12,
+        "borderWidth": 1,
+        "padding": 16,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+      },
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "gap": 8,
+        "marginBottom": 16,
+      }
+    }
+  >
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#81D8D0",
+            "fontSize": 18,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 16,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      Account
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        TestUser
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        test@example.com
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Edit profile"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Edit Profile
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Change your username and bio
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#64748B",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Change password"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Change Password
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Update your account password
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#64748B",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Sign out"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "gap": 8,
+        "paddingVertical": 12,
+      }
+    }
+  >
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#EF4444",
+            "fontSize": 18,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 16,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#EF4444",
+          },
+        ]
+      }
+    >
+      Sign Out
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Manage subscription"
+    accessibilityRole="link"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Subscription
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Manage your plan
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#64748B",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Open billing portal"
+    accessibilityRole="link"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Billing Portal
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Payment methods, invoices, cancel
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#64748B",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Two-factor authentication"
+    accessibilityRole="link"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Two-Factor Auth
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Secure your account with 2FA
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#64748B",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="My Listings and Offers"
+    accessibilityRole="link"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        My Listings & Offers
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Manage items for sale and P2P offers
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#64748B",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Blocked Users"
+    accessibilityRole="link"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Blocked Users
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Manage users you've blocked
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#64748B",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Export insurance valuation report"
+    accessibilityRole="link"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 8,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "marginRight": 16,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "fontWeight": "500",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Export Insurance Report
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "marginTop": 2,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Generate a PDF-ready valuation report for insurance
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#81D8D0",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "height": 1,
+          "marginVertical": 8,
+        },
+        {
+          "backgroundColor": "#E2E8F0",
+        },
+      ]
+    }
+  />
+  <View
+    accessibilityLabel="Delete account"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "gap": 8,
+        "paddingVertical": 12,
+      }
+    }
+  >
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#EF4444",
+            "fontSize": 18,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 16,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#EF4444",
+          },
+        ]
+      }
+    >
+      Delete Account
+    </Text>
+  </View>
+</View>
+`;

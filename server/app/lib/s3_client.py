@@ -177,6 +177,57 @@ def get_cdn_url(key: str) -> Optional[str]:
     return None
 
 
+def generate_upload_url(
+    key: str,
+    content_type: str = "application/octet-stream",
+    expires_in: int = DEFAULT_EXPIRES_IN,
+    bucket: Optional[str] = None,
+) -> str:
+    """Convenience wrapper: generate a presigned upload URL or raise.
+
+    Unlike ``generate_presigned_upload`` (which returns None on failure),
+    this function raises ``RuntimeError`` when S3 is not configured — making
+    it suitable for endpoints that *require* S3.
+
+    Args:
+        key: S3 object key.
+        content_type: MIME type (default ``application/octet-stream``).
+        expires_in: URL expiry in seconds (default 3600).
+        bucket: Override bucket (defaults to CATALOG_IMAGES_S3_BUCKET).
+    """
+    url = generate_presigned_upload(bucket or DEFAULT_BUCKET, key, content_type, expires_in)
+    if url is None:
+        raise RuntimeError(
+            "S3 is not configured. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
+            "environment variables, and ensure boto3 is installed."
+        )
+    return url
+
+
+def generate_download_url(
+    key: str,
+    expires_in: int = DEFAULT_EXPIRES_IN,
+    bucket: Optional[str] = None,
+) -> str:
+    """Convenience wrapper: generate a presigned download URL or raise.
+
+    Unlike ``generate_presigned_download`` (which returns None on failure),
+    this function raises ``RuntimeError`` when S3 is not configured.
+
+    Args:
+        key: S3 object key.
+        expires_in: URL expiry in seconds (default 3600).
+        bucket: Override bucket (defaults to CATALOG_IMAGES_S3_BUCKET).
+    """
+    url = generate_presigned_download(bucket or DEFAULT_BUCKET, key, expires_in)
+    if url is None:
+        raise RuntimeError(
+            "S3 is not configured. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
+            "environment variables, and ensure boto3 is installed."
+        )
+    return url
+
+
 def get_public_url(key: str, bucket: Optional[str] = None) -> str:
     """
     Return the best available public URL for an S3 object.

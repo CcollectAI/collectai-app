@@ -1,0 +1,907 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#FFFFFF",
+      "borderColor": "#E2E8F0",
+      "borderRadius": 12,
+      "borderWidth": 1,
+      "elevation": 2,
+      "marginBottom": 16,
+      "padding": 16,
+      "shadowColor": "#000",
+      "shadowOffset": {
+        "height": 4,
+        "width": 0,
+      },
+      "shadowOpacity": 0.06,
+      "shadowRadius": 8,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginBottom": 16,
+      }
+    }
+  >
+    <Text
+      style={
+        {
+          "color": "#0F172A",
+          "fontSize": 16,
+          "fontWeight": "700",
+        }
+      }
+    >
+      Portfolio Tier
+    </Text>
+  </View>
+  <View
+    accessibilityLabel="Diamond tier — view leaderboard"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "marginBottom": 20,
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 24,
+            "flexDirection": "row",
+            "gap": 10,
+            "paddingHorizontal": 20,
+            "paddingVertical": 12,
+          },
+          {
+            "backgroundColor": "#A78BFA20",
+          },
+        ]
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#A78BFA",
+              "fontSize": 28,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 20,
+              "fontWeight": "800",
+            },
+            {
+              "color": "#A78BFA",
+            },
+          ]
+        }
+      >
+        Diamond
+      </Text>
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#A78BFA",
+              "fontSize": 16,
+            },
+            {
+              "marginLeft": 4,
+            },
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+    <Text
+      style={
+        {
+          "color": "#64748B",
+          "fontSize": 12,
+          "marginTop": 6,
+        }
+      }
+    >
+      Tap to view leaderboard
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "center",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flex": 1,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#0F172A",
+            "fontSize": 24,
+            "fontWeight": "800",
+          }
+        }
+      >
+        85
+      </Text>
+      <Text
+        style={
+          {
+            "color": "#64748B",
+            "fontSize": 12,
+            "marginTop": 2,
+          }
+        }
+      >
+        Rarity
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "height": 32,
+          "width": 1,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flex": 1,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#0F172A",
+            "fontSize": 24,
+            "fontWeight": "800",
+          }
+        }
+      >
+        72
+      </Text>
+      <Text
+        style={
+          {
+            "color": "#64748B",
+            "fontSize": 12,
+            "marginTop": 2,
+          }
+        }
+      >
+        Completeness
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "backgroundColor": "#E2E8F0",
+          "height": 32,
+          "width": 1,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flex": 1,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#0F172A",
+            "fontSize": 24,
+            "fontWeight": "800",
+          }
+        }
+      >
+        60
+      </Text>
+      <Text
+        style={
+          {
+            "color": "#64748B",
+            "fontSize": 12,
+            "marginTop": 2,
+          }
+        }
+      >
+        Diversity
+      </Text>
+    </View>
+  </View>
+  <View
+    accessibilityLabel="How are scores calculated?"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "borderTopColor": "#E2E8F0",
+        "borderTopWidth": 1,
+        "flexDirection": "row",
+        "gap": 6,
+        "justifyContent": "center",
+        "marginTop": 16,
+        "paddingTop": 12,
+      }
+    }
+  >
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#81D8D0",
+            "fontSize": 16,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#5FBFB6",
+          "fontSize": 14,
+          "fontWeight": "600",
+        }
+      }
+    >
+      How are these scores calculated?
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`PredictionAccuracySection matches snapshot with multiple categories 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+        "borderRadius": 12,
+        "borderWidth": 1,
+        "elevation": 2,
+        "marginBottom": 16,
+        "padding": 16,
+        "shadowColor": "#000",
+        "shadowOffset": {
+          "height": 4,
+          "width": 0,
+        },
+        "shadowOpacity": 0.06,
+        "shadowRadius": 8,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+      },
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginBottom": 16,
+      }
+    }
+  >
+    <Text
+      allowFontScaling={false}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#81D8D0",
+            "fontSize": 18,
+          },
+          undefined,
+          {
+            "fontFamily": "ionicons",
+            "fontStyle": "normal",
+            "fontWeight": "normal",
+          },
+          {},
+        ]
+      }
+    >
+      
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "color": "#0F172A",
+            "fontSize": 16,
+            "fontWeight": "700",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      Prediction Accuracy
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "borderBottomColor": "#E2E8F0",
+        "borderBottomWidth": 0.5,
+        "flexDirection": "row",
+        "marginBottom": 4,
+        "paddingBottom": 8,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "600",
+            "letterSpacing": 0.5,
+            "textTransform": "uppercase",
+          },
+          {
+            "color": "#64748B",
+            "flex": 2,
+          },
+        ]
+      }
+    >
+      Category
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "600",
+            "letterSpacing": 0.5,
+            "textTransform": "uppercase",
+          },
+          {
+            "color": "#64748B",
+            "flex": 1,
+            "textAlign": "right",
+          },
+        ]
+      }
+    >
+      MAPE
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "600",
+            "letterSpacing": 0.5,
+            "textTransform": "uppercase",
+          },
+          {
+            "color": "#64748B",
+            "flex": 1,
+            "textAlign": "right",
+          },
+        ]
+      }
+    >
+      R²
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderBottomWidth": 0.5,
+          "flexDirection": "row",
+          "paddingVertical": 8,
+        },
+        {
+          "borderBottomColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 2,
+            "fontSize": 14,
+            "fontWeight": "600",
+            "textTransform": "capitalize",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      pokemon
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "flex": 1,
+            "fontSize": 14,
+            "textAlign": "right",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      12.0
+      %
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "flex": 1,
+            "fontSize": 14,
+            "textAlign": "right",
+          },
+          {
+            "color": "#10B981",
+            "fontWeight": "700",
+          },
+        ]
+      }
+    >
+      0.85
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderBottomWidth": 0.5,
+          "flexDirection": "row",
+          "paddingVertical": 8,
+        },
+        {
+          "borderBottomColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 2,
+            "fontSize": 14,
+            "fontWeight": "600",
+            "textTransform": "capitalize",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      lego
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "flex": 1,
+            "fontSize": 14,
+            "textAlign": "right",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      8.0
+      %
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "flex": 1,
+            "fontSize": 14,
+            "textAlign": "right",
+          },
+          {
+            "color": "#10B981",
+            "fontWeight": "700",
+          },
+        ]
+      }
+    >
+      0.92
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`WinnersLosersSection matches snapshot with winners and losers 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#FFFFFF",
+      "borderColor": "#E2E8F0",
+      "borderRadius": 12,
+      "borderWidth": 1,
+      "elevation": 2,
+      "marginBottom": 16,
+      "padding": 16,
+      "shadowColor": "#000",
+      "shadowOffset": {
+        "height": 4,
+        "width": 0,
+      },
+      "shadowOpacity": 0.06,
+      "shadowRadius": 8,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginBottom": 16,
+      }
+    }
+  >
+    <Text
+      style={
+        {
+          "color": "#0F172A",
+          "fontSize": 16,
+          "fontWeight": "700",
+        }
+      }
+    >
+      Movers
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#64748B",
+          "fontSize": 14,
+        }
+      }
+    >
+      24h change
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "marginBottom": 16,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "gap": 6,
+          "marginBottom": 10,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#10B981",
+              "fontSize": 16,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "700",
+            },
+            {
+              "color": "#10B981",
+            },
+          ]
+        }
+      >
+        Winners
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "borderBottomColor": "#E2E8F0",
+          "borderBottomWidth": 1,
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingVertical": 8,
+        }
+      }
+    >
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#0F172A",
+            "flex": 1,
+            "fontSize": 14,
+            "marginRight": 12,
+          }
+        }
+      >
+        Up Item
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "700",
+            },
+            {
+              "color": "#10B981",
+            },
+          ]
+        }
+      >
+        +5.00%
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "marginBottom": 16,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "gap": 6,
+          "marginBottom": 10,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#EF4444",
+              "fontSize": 16,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "700",
+            },
+            {
+              "color": "#EF4444",
+            },
+          ]
+        }
+      >
+        Losers
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "borderBottomColor": "#E2E8F0",
+          "borderBottomWidth": 1,
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingVertical": 8,
+        }
+      }
+    >
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#0F172A",
+            "flex": 1,
+            "fontSize": 14,
+            "marginRight": 12,
+          }
+        }
+      >
+        Down Item
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "700",
+            },
+            {
+              "color": "#EF4444",
+            },
+            {
+              "color": "#EF4444",
+            },
+          ]
+        }
+      >
+        -3.00%
+      </Text>
+    </View>
+  </View>
+</View>
+`;

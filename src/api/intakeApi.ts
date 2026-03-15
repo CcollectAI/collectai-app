@@ -1,0 +1,131 @@
+/**
+ * Intake, QuickScan, and catalog suggestion API methods.
+ */
+import { get, post, postMultipart, getAuthHeaders, fetchWithRetry, parseErrorResponse, API_BASE, REQUEST_TIMEOUT_MS } from "./httpClient";
+import type { IntakeResultResponse } from "./types";
+
+// QuickScan
+export const quickscanSingle = () => post("/quickscan-advanced/single");
+
+// Intake — image-only (vision pipeline: CLIP + GPT-4o-mini + heuristic)
+export const intakeImageOnly = (imageUri: string) => {
+  const formData = new FormData();
+  const filename = imageUri.split("/").pop() || "scan.jpg";
+  // React Native's FormData accepts this shape for file uploads
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formData.append("file", { uri: imageUri, name: filename, type: "image/jpeg" } as any);
+  return postMultipart<IntakeResultResponse>("/intake/image-only", formData);
+};
+
+export const quickscanBatch = (image_ids: string[]) =>
+  post("/quickscan-advanced/batch", { image_ids });
+
+// URL Import (via Firecrawl)
+export const processIntakeUrl = (
+  url: string,
+  hints?: { category?: string; name?: string; condition?: string },
+) =>
+  post<IntakeResultResponse>("/intake/url", {
+    url,
+    ...(hints ?? {}),
+  });
+
+// Intake Agent
+export const processIntake = (
+  barcode?: string,
+  barcodeType?: string,
+  hints?: Record<string, unknown>,
+) =>
+  post<IntakeResultResponse>("/intake/barcode-only", {
+    barcode: barcode ?? "",
+    barcode_type: barcodeType,
+    ...(hints ?? {}),
+  });
+
+// Save intake result to collection
+export const intakeSave = (payload: {
+  title: string;
+  category?: string;
+  condition?: string;
+  subtype_id?: string;
+  taxonomy_version?: string;
+  attributes?: Record<string, unknown>;
+  images?: string[];
+  barcode?: string;
+  estimated_price?: number;
+}) =>
+  post<{
+    id: string;
+    title: string;
+    category: string | null;
+    created: boolean;
+  }>("/intake/save", payload);
+
+export const processIntakeWithImage = async (formData: FormData): Promise<IntakeResultResponse> => {
+  const auth = await getAuthHeaders();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API_BASE}/intake/process`, {
+      method: "POST",
+      headers: { ...auth },
+      body: formData,
+      signal: controller.signal,
+    });
+    if (!res.ok) throw await parseErrorResponse("POST", "/intake/process", res);
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+// Catalog Learning — submit suggestion for unrecognized items
+export const submitCatalogSuggestion = (payload: {
+  source: "barcode" | "photo" | "manual" | "url";
+  input_data: Record<string, unknown>;
+  suggested_name: string;
+  suggested_category?: string;
+}) =>
+  post<{
+    id: string;
+    status: string;
+    matched_existing: boolean;
+  }>("/catalog/suggest", payload);
+
+// Screenshot intelligence
+export const analyzeScreenshot = (payload: { image_base64?: string; screenshot_id?: string; source?: string; note?: string }) =>
+  post("/screenshot-intel/analyze", payload as Record<string, unknown>);
+
+// Catalog Browser
+export const browseCatalogItems = (categoryId: string, opts?: {
+  q?: string;
+  limit?: number;
+  offset?: number;
+  rarity?: string;
+}) => {
+  const sp = new URLSearchParams();
+  if (opts?.q) sp.set('q', opts.q);
+  if (opts?.limit) sp.set('limit', String(opts.limit));
+  if (opts?.offset) sp.set('offset', String(opts.offset));
+  if (opts?.rarity) sp.set('rarity', opts.rarity);
+  const query = sp.toString();
+  return get<{
+    items: Array<{
+      id: string;
+      category: string;
+      item_key: string;
+      title: string;
+      brand: string | null;
+      rarity: string | null;
+      notes: string | null;
+      image_url: string | null;
+      external_id: string | null;
+      set_code: string | null;
+      estimated_price: number | null;
+    }>;
+    total: number;
+    limit: number;
+    offset: number;
+    category_id: string;
+  }>(`/catalog/${encodeURIComponent(categoryId)}/items${query ? `?${query}` : ''}`);
+};

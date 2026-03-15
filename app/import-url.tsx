@@ -104,6 +104,7 @@ function ImportUrlScreen() {
           <AnimatedPressable
             style={[styles.submitBtn, {
               backgroundColor: colors.accent,
+              shadowColor: colors.accent,
               opacity: !urlInput.startsWith('http') || isSubmitting ? 0.5 : 1,
             }]}
             onPress={handleSubmit}
@@ -112,11 +113,11 @@ function ImportUrlScreen() {
             accessibilityRole="button"
           >
             {isSubmitting ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.accentText} />
             ) : (
               <>
-                <Ionicons name="download-outline" size={20} color="#fff" />
-                <Text style={styles.submitBtnText}>Import Item</Text>
+                <Ionicons name="download-outline" size={20} color={colors.accentText} />
+                <Text style={[styles.submitBtnText, { color: colors.accentText }]}>Import Item</Text>
               </>
             )}
           </AnimatedPressable>
@@ -197,14 +198,12 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 14,
     overflow: 'hidden',
-    shadowColor: '#81D8D0',
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
   submitBtnText: {
-    color: '#fff',
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
