@@ -1,0 +1,750 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ItemNotesEditor matches snapshot with keyboard visible 1`] = `
+<View
+  onLayout={[Function]}
+  style={
+    {
+      "marginTop": 16,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 14,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Notes
+    </Text>
+    <View
+      accessibilityLabel="Save notes"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        [
+          {
+            "borderRadius": 6,
+            "paddingHorizontal": 14,
+            "paddingVertical": 6,
+          },
+          {
+            "backgroundColor": "#81D8D0",
+          },
+        ]
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "600",
+            },
+            {
+              "color": "#FFFFFF",
+            },
+          ]
+        }
+      >
+        Save
+      </Text>
+    </View>
+  </View>
+  <TextInput
+    accessibilityLabel="Item notes"
+    blurOnSubmit={false}
+    multiline={true}
+    onChangeText={[MockFunction]}
+    onFocus={[MockFunction]}
+    placeholder="Add your notes about condition, origin, where you bought it, etc."
+    placeholderTextColor="#64748B"
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "borderWidth": 1,
+          "fontSize": 14,
+          "lineHeight": 18,
+          "marginTop": 8,
+          "maxHeight": 220,
+          "minHeight": 100,
+          "paddingHorizontal": 10,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#F8FAFC",
+          "borderColor": "#E2E8F0",
+          "color": "#0F172A",
+        },
+      ]
+    }
+    textAlignVertical="top"
+    value="Mint condition, purchased at local shop"
+  />
+</View>
+`;
+
+exports[`ItemNotesEditor renders with minimal props and matches snapshot 1`] = `
+<View
+  onLayout={[Function]}
+  style={
+    {
+      "marginTop": 16,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 14,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Notes
+    </Text>
+  </View>
+  <TextInput
+    accessibilityLabel="Item notes"
+    blurOnSubmit={false}
+    multiline={true}
+    onChangeText={[MockFunction]}
+    onFocus={[MockFunction]}
+    placeholder="Add your notes about condition, origin, where you bought it, etc."
+    placeholderTextColor="#64748B"
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "borderWidth": 1,
+          "fontSize": 14,
+          "lineHeight": 18,
+          "marginTop": 8,
+          "maxHeight": 220,
+          "minHeight": 100,
+          "paddingHorizontal": 10,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#F8FAFC",
+          "borderColor": "#E2E8F0",
+          "color": "#0F172A",
+        },
+      ]
+    }
+    textAlignVertical="top"
+    value=""
+  />
+</View>
+`;
+
+exports[`ItemPriceSection matches snapshot with scarcity and comps 1`] = `
+[
+  <View
+    style={
+      {
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginTop": 6,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 14,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Price range
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#0F172A",
+          "fontSize": 14,
+          "fontWeight": "500",
+        }
+      }
+    >
+      80
+       – 
+      120
+       – 
+      200
+    </Text>
+  </View>,
+  <View
+    style={
+      {
+        "marginTop": 12,
+      }
+    }
+  >
+    <Text>
+      Confidence: 
+      0.9
+    </Text>
+  </View>,
+  <View
+    style={
+      [
+        {
+          "borderTopWidth": 1,
+          "marginTop": 16,
+          "paddingTop": 12,
+        },
+        {
+          "borderTopColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Why this price, expanded"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingVertical": 4,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 8,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": "#81D8D0",
+                "fontSize": 18,
+              },
+              undefined,
+              {
+                "fontFamily": "ionicons",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 14,
+                "fontWeight": "600",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Why this price?
+        </Text>
+      </View>
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#64748B",
+              "fontSize": 18,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+    <View
+      style={
+        [
+          {
+            "borderRadius": 10,
+            "marginTop": 10,
+            "padding": 12,
+          },
+          {
+            "backgroundColor": "#F8FAFC",
+          },
+        ]
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "lineHeight": 19,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Strong market data
+      </Text>
+    </View>
+  </View>,
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "borderWidth": 1,
+          "marginBottom": 4,
+          "marginTop": 10,
+          "padding": 10,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "gap": 8,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#EF4444",
+              "fontSize": 16,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "600",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Rare
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "flex": 1,
+              "fontSize": 12,
+              "textAlign": "right",
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        1
+         listings · Supply 
+        declining
+      </Text>
+    </View>
+  </View>,
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "borderWidth": 1,
+          "marginTop": 10,
+          "padding": 12,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 14,
+            "fontWeight": "600",
+            "marginBottom": 8,
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#81D8D0",
+              "fontSize": 14,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+       Comparable Sales
+    </Text>
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "paddingVertical": 8,
+          },
+          false,
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+          }
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            [
+              {
+                "fontSize": 12,
+                "fontWeight": "500",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Recent Sale
+        </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 10,
+                "marginTop": 1,
+              },
+              {
+                "color": "#64748B",
+              },
+            ]
+          }
+        >
+          eBay
+        </Text>
+      </View>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+              "fontWeight": "700",
+              "marginLeft": 8,
+            },
+            {
+              "color": "#81D8D0",
+            },
+          ]
+        }
+      >
+        EUR 130
+      </Text>
+    </View>
+  </View>,
+]
+`;
+
+exports[`ItemPriceSection renders with legacy price bands and matches snapshot 1`] = `
+[
+  <View
+    style={
+      {
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginTop": 6,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 14,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Price range
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#0F172A",
+          "fontSize": 14,
+          "fontWeight": "500",
+        }
+      }
+    >
+      100
+       – 
+      200
+       – 
+      350
+    </Text>
+  </View>,
+  <View
+    style={
+      {
+        "marginTop": 12,
+      }
+    }
+  >
+    <Text>
+      Confidence: 
+      0.85
+    </Text>
+  </View>,
+  <View
+    style={
+      [
+        {
+          "borderTopWidth": 1,
+          "marginTop": 16,
+          "paddingTop": 12,
+        },
+        {
+          "borderTopColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="Why this price, collapsed"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingVertical": 4,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 8,
+          }
+        }
+      >
+        <Text />
+        <Text
+          style={
+            [
+              {
+                "fontSize": 14,
+                "fontWeight": "600",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Why this price?
+        </Text>
+      </View>
+      <Text />
+    </View>
+  </View>,
+]
+`;

@@ -1,0 +1,521 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ConditionGradeSelector renders with defects 1`] = `
+<Text>
+  ConditionGradeSection: 
+  VG
+  , 
+  1
+   defects
+</Text>
+`;
+
+exports[`ConditionGradeSelector renders with grade data and matches snapshot 1`] = `
+<Text>
+  ConditionGradeSection: 
+  NM
+  , 
+  0
+   defects
+</Text>
+`;
+
+exports[`ConditionGradeSelector renders with null grade 1`] = `
+<Text>
+  ConditionGradeSection: 
+  N/A
+  , 
+  0
+   defects
+</Text>
+`;
+
+exports[`ScanFeedbackPanel matches snapshot with feedback enabled 1`] = `
+<View
+  style={
+    [
+      {
+        "borderRadius": 20,
+        "borderWidth": 1,
+        "elevation": 6,
+        "marginHorizontal": 16,
+        "marginTop": 12,
+        "padding": 20,
+        "shadowColor": "#000",
+        "shadowOffset": {
+          "height": 4,
+          "width": 0,
+        },
+        "shadowOpacity": 0.08,
+        "shadowRadius": 12,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+      },
+    ]
+  }
+>
+  <View
+    accessibilityHint="Tap to correct"
+    accessibilityLabel="Item name: Charizard. Tap to correct"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+  >
+    <Text
+      numberOfLines={3}
+      style={
+        [
+          {
+            "fontSize": 22,
+            "fontWeight": "800",
+            "letterSpacing": -0.3,
+            "lineHeight": 28,
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      Charizard
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "flexDirection": "row",
+        "flexWrap": "wrap",
+        "gap": 8,
+        "marginTop": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Category: Pokemon"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 8,
+            "flexDirection": "row",
+            "gap": 5,
+            "paddingHorizontal": 10,
+            "paddingVertical": 5,
+          },
+          {
+            "backgroundColor": "#81D8D018",
+          },
+        ]
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#5FBFB6",
+              "fontSize": 12,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "fontWeight": "600",
+            },
+            {
+              "color": "#5FBFB6",
+            },
+          ]
+        }
+      >
+        Pokemon
+      </Text>
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#5FBFB6",
+              "fontSize": 10,
+            },
+            {
+              "marginLeft": 4,
+            },
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+    <View
+      accessibilityLabel="Condition: mint"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 8,
+            "flexDirection": "row",
+            "gap": 5,
+            "paddingHorizontal": 10,
+            "paddingVertical": 5,
+          },
+          {
+            "backgroundColor": "#E2E8F080",
+          },
+        ]
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#64748B",
+              "fontSize": 12,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "fontWeight": "600",
+            },
+            {
+              "color": "#0F172A",
+            },
+          ]
+        }
+      >
+        Mint
+      </Text>
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#64748B",
+              "fontSize": 10,
+            },
+            {
+              "marginLeft": 4,
+            },
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+  </View>
+  <Text
+    style={
+      [
+        {
+          "fontSize": 11,
+          "fontStyle": "italic",
+          "marginTop": 8,
+        },
+        {
+          "color": "#64748B",
+        },
+      ]
+    }
+  >
+    Tap name, category, or condition to correct
+  </Text>
+</View>
+`;
+
+exports[`ScanFeedbackPanel renders with minimal props and matches snapshot 1`] = `
+<View
+  style={
+    [
+      {
+        "borderRadius": 20,
+        "borderWidth": 1,
+        "elevation": 6,
+        "marginHorizontal": 16,
+        "marginTop": 12,
+        "padding": 20,
+        "shadowColor": "#000",
+        "shadowOffset": {
+          "height": 4,
+          "width": 0,
+        },
+        "shadowOpacity": 0.08,
+        "shadowRadius": 12,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+      },
+    ]
+  }
+>
+  <View
+    accessibilityLabel="Item name: Charizard Base Set. "
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+  >
+    <Text
+      numberOfLines={3}
+      style={
+        [
+          {
+            "fontSize": 22,
+            "fontWeight": "800",
+            "letterSpacing": -0.3,
+            "lineHeight": 28,
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      Charizard Base Set
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "flexDirection": "row",
+        "flexWrap": "wrap",
+        "gap": 8,
+        "marginTop": 12,
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Category: Pokemon"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 8,
+            "flexDirection": "row",
+            "gap": 5,
+            "paddingHorizontal": 10,
+            "paddingVertical": 5,
+          },
+          {
+            "backgroundColor": "#81D8D018",
+          },
+        ]
+      }
+    >
+      <Text />
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "fontWeight": "600",
+            },
+            {
+              "color": "#5FBFB6",
+            },
+          ]
+        }
+      >
+        Pokemon
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ScanSocialProof renders when socialProof data is provided 1`] = `
+<Text>
+  SocialProofSection: 
+  42
+   collectors
+</Text>
+`;

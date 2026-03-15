@@ -36,6 +36,8 @@ import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
+import { WishlistStatsBar } from '@/components/wishlist/WishlistStatsBar';
+import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls';
 
 const CONGRATS_DISPLAY_DURATION = 2000;
 const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
@@ -179,6 +181,7 @@ function WatchlistTabScreen() {
   };
 
   const handleRemove = (item: WatchlistItem) => {
+    fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     Alert.alert(
       'Remove from Watchlist',
       `Remove "${item.title}" from your watchlist?`,
@@ -202,6 +205,7 @@ function WatchlistTabScreen() {
 
   // Edit target price flow
   const handleEditTarget = (item: WatchlistItem) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setEditTargetItem(item);
     setEditTargetValue(item.targetPrice?.toString() || '');
     openEditTargetModal();
@@ -267,6 +271,7 @@ function WatchlistTabScreen() {
 
   // "I Got It!" flow
   const handleGotIt = (item: WatchlistItem) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setAcquireItem(item);
     setAcquirePrice(item.targetPrice?.toString() || '');
     setAcquireNotes('');
@@ -447,7 +452,10 @@ function WatchlistTabScreen() {
       </Text>
       <AnimatedPressable
         style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
-        onPress={openModal}
+        onPress={() => {
+          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+          openModal();
+        }}
         accessibilityRole="button"
         accessibilityLabel="Add your first watchlist item"
       >
@@ -471,29 +479,20 @@ function WatchlistTabScreen() {
     </View>
   );
 
+  const handleAlertsPress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push('/alerts');
+  }, [router, settings.hapticsEnabled]);
+
+  const handleAddPress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    openModal();
+  }, [settings.hapticsEnabled, openModal]);
+
   const renderHeader = () => (
     <>
-      <View style={styles.actionRow}>
-      <AnimatedPressable
-        style={[styles.alertsPill, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => router.push('/alerts')}
-        accessibilityRole="button"
-        accessibilityLabel="View price alerts"
-      >
-        <Ionicons name="notifications-outline" size={16} color={colors.accent} />
-        <Text style={[styles.alertsPillText, { color: colors.accent }]}>Alerts</Text>
-      </AnimatedPressable>
-
-      <AnimatedPressable
-        style={[styles.addPill, { backgroundColor: colors.accent }]}
-        onPress={openModal}
-        accessibilityRole="button"
-        accessibilityLabel="Add item to watchlist"
-      >
-        <Ionicons name="add" size={18} color={colors.accentText} />
-        <Text style={[styles.addPillText, { color: colors.accentText }]}>Add</Text>
-      </AnimatedPressable>
-    </View>
+      <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} />
+      <WishlistStatsBar items={items} currency={settings.currency} />
     </>
   );
 
@@ -811,37 +810,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  alertsPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    gap: 6,
-  },
-  alertsPillText: {
-    fontSize: text.md,
-    fontWeight: fontWeight.semibold,
-  },
-  addPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: radius.pill,
-    gap: 6,
-  },
-  addPillText: {
-    fontSize: text.md,
-    fontWeight: fontWeight.semibold,
   },
   listContent: {
     padding: 16,

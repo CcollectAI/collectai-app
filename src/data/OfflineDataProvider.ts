@@ -10,6 +10,7 @@
  */
 
 import { dataProvider } from '@/data';
+import { collectorsApi } from '@/api/collectorsApi';
 import {
   enqueueMutation,
   replayQueue,
@@ -107,6 +108,35 @@ async function executeMutation(type: MutationType, args: unknown[]): Promise<voi
       await dataProvider.createBuildPaintProject(
         args[0] as Parameters<typeof dataProvider.createBuildPaintProject>[0],
       );
+      break;
+    case 'deleteEvent':
+      await collectorsApi.deleteEvent(args[0] as string);
+      break;
+    case 'updateEvent':
+      await dataProvider.updateEvent(
+        args[0] as string,
+        args[1] as Parameters<typeof dataProvider.updateEvent>[1],
+      );
+      break;
+    case 'submitFeedback':
+      await dataProvider.submitFeedback(
+        args[0] as string,
+        args[1] as 'sale_price' | 'disagree' | 'accurate',
+        args[2] as string | undefined,
+      );
+      break;
+    case 'toggleForSale':
+      await dataProvider.toggleForSale(
+        args[0] as string,
+        args[1] as boolean,
+        args[2] as number | undefined,
+      );
+      break;
+    case 'archiveItem':
+      await dataProvider.archiveItem(args[0] as string);
+      break;
+    case 'unarchiveItem':
+      await dataProvider.unarchiveItem(args[0] as string);
       break;
     default:
       logger.warn(`[OfflineQueue] Unknown mutation type: ${type}`);

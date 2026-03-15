@@ -34,6 +34,9 @@ import { useAsync } from '@/hooks/useAsync';
 import useAuth from '@/hooks/useAuth';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
+import { UserStatsSection } from '@/components/users/UserStatsSection';
+import { UserAchievementsSection } from '@/components/users/UserAchievementsSection';
+import { UserCollectionPreview } from '@/components/users/UserCollectionPreview';
 
 type DmStatusType = 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined';
 
@@ -66,59 +69,6 @@ const AvatarCircle = React.memo(function AvatarCircle({ name, size = 64 }: { nam
   );
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Section Card Component
-// ─────────────────────────────────────────────────────────────────────────────
-const SectionCard = React.memo(function SectionCard({ title, icon, children }: {
-  title: string;
-  icon?: keyof typeof Ionicons.glyphMap;
-  children: React.ReactNode;
-}) {
-  const { colors } = useAppTheme();
-
-  return (
-    <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <View style={styles.sectionHeader}>
-        {icon && <Ionicons name={icon} size={16} color={colors.accent} />}
-        <Text style={[styles.sectionTitle, { color: colors.muted }]}>{title}</Text>
-      </View>
-      {children}
-    </View>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Badge Item Component
-// ─────────────────────────────────────────────────────────────────────────────
-// Tier colors now sourced from theme (see BadgeItem below)
-
-const BadgeItem = React.memo(function BadgeItem({ achievement, earned, isRecent }: { achievement: Achievement; earned: boolean; isRecent?: boolean }) {
-  const { colors } = useAppTheme();
-  const tierColor = colors.tier[achievement.tier];
-
-  return (
-    <View style={[styles.badgeItem, { opacity: earned ? 1 : 0.4 }]}>
-      <View style={[styles.badgeIcon, { backgroundColor: earned ? tierColor + '20' : colors.border + '40' }]}>
-        <Ionicons
-          name={achievement.icon as keyof typeof Ionicons.glyphMap}
-          size={20}
-          color={earned ? tierColor : colors.muted}
-        />
-        {isRecent && (
-          <View style={[styles.newBadgeDot, { backgroundColor: colors.accent }]}>
-            <Text style={[styles.newBadgeText, { color: colors.accentText }]}>!</Text>
-          </View>
-        )}
-      </View>
-      <Text
-        style={[styles.badgeLabel, { color: earned ? colors.text : colors.muted }]}
-        numberOfLines={1}
-      >
-        {achievement.title}
-      </Text>
-    </View>
-  );
-});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Screen
@@ -471,42 +421,7 @@ function UserProfileScreen() {
             {userId && <PresenceIndicator userId={userId} size={8} showLabel />}
           </View>
 
-          {/* Quick stats row */}
-          <View style={[styles.quickStatsRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
-            <View style={styles.quickStat}>
-              <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.collectionCount ?? 0}</Text>
-              <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Items</Text>
-            </View>
-            <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.quickStat}>
-              <Text style={[styles.quickStatValue, { color: colors.text }]}>
-                {profile.collectionValueEur ? `\u20AC${Math.round(profile.collectionValueEur / 1000)}k` : '\u2014'}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Value</Text>
-            </View>
-            <View style={[styles.quickStatDivider, { backgroundColor: colors.border }]} />
-            {gamProfile ? (
-              <View style={styles.quickStat}>
-                <Text style={[styles.quickStatValue, { color: colors.text }]}>Lv.{gamProfile.level}</Text>
-                <Text style={[styles.quickStatLabel, { color: colors.muted }]}>{gamProfile.xp} XP</Text>
-              </View>
-            ) : (
-              <View style={styles.quickStat}>
-                <Text style={[styles.quickStatValue, { color: colors.text }]}>{profile.interests?.length ?? 0}</Text>
-                <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Categories</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Streak badge */}
-          {gamProfile && gamProfile.streak_days > 0 && (
-            <View style={[styles.streakBadge, { backgroundColor: colors.tier.gold + '15', borderColor: colors.tier.gold + '30' }]}>
-              <Ionicons name="flame-outline" size={14} color={colors.tier.gold} />
-              <Text style={[styles.streakText, { color: colors.tier.gold }]}>
-                {gamProfile.streak_days} day streak
-              </Text>
-            </View>
-          )}
+          <UserStatsSection profile={profile} gamProfile={gamProfile} />
 
           {/* CTA Row */}
           {!isUserBlocked && (
@@ -559,72 +474,15 @@ function UserProfileScreen() {
           )}
         </View>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            B) Bio Card
-        ═══════════════════════════════════════════════════════════════════ */}
-        {profile.bio && (
-          <SectionCard title="About" icon="person-outline">
-            <Text style={[styles.bioText, { color: colors.text }]}>{profile.bio}</Text>
-          </SectionCard>
-        )}
+        {/* Achievements (badges + challenges) */}
+        <UserAchievementsSection
+          profileBadges={profileBadges}
+          recentAchievementIds={recentAchievementIds}
+          challenges={challenges}
+        />
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            C) Badges Card — derived from achievements system
-        ═══════════════════════════════════════════════════════════════════ */}
-        {profileBadges.length > 0 && (
-          <SectionCard title="Badges" icon="ribbon-outline">
-            <View style={styles.badgesGrid}>
-              {profileBadges.map((badge) => (
-                <BadgeItem key={badge.id} achievement={badge} earned={badge.earned} isRecent={recentAchievementIds.has(badge.id)} />
-              ))}
-            </View>
-          </SectionCard>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            C2) Active Challenges
-        ═══════════════════════════════════════════════════════════════════ */}
-        {challenges.length > 0 && (
-          <SectionCard title="Active Challenges" icon="trophy-outline">
-            {challenges.slice(0, 3).map((ch) => {
-              const pct = ch.target > 0 ? Math.min(ch.progress / ch.target, 1) : 0;
-              return (
-                <View key={ch.id} style={styles.challengeRow}>
-                  <View style={styles.challengeInfo}>
-                    <Text style={[styles.challengeTitle, { color: colors.text }]} numberOfLines={1}>{ch.title}</Text>
-                    <Text style={[styles.challengeMeta, { color: colors.muted }]}>
-                      {ch.progress}/{ch.target} · +{ch.reward_xp} XP
-                    </Text>
-                  </View>
-                  <View style={[styles.challengeBar, { backgroundColor: colors.border }]}>
-                    <View style={[styles.challengeBarFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: colors.accent }]} />
-                  </View>
-                </View>
-              );
-            })}
-          </SectionCard>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            D) Interests Card
-        ═══════════════════════════════════════════════════════════════════ */}
-        {profile.interests && profile.interests.length > 0 && (
-          <SectionCard title="Interests" icon="heart-outline">
-            <View style={styles.interestsRow}>
-              {profile.interests.map((interest, idx) => (
-                <AnimatedPressable
-                  key={idx}
-                  style={[styles.interestPill, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '30' }]}
-                  onPress={() => router.push(`/categories/${encodeURIComponent(interest)}`)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Browse ${interest}`}
-                >
-                  <Text style={[styles.interestText, { color: colors.accent }]}>{interest}</Text>
-                </AnimatedPressable>
-              ))}
-            </View>
-          </SectionCard>
-        )}
+        {/* Bio + Interests */}
+        <UserCollectionPreview profile={profile} />
 
         {/* Bottom spacing */}
         <View style={{ height: 32 }} />
@@ -820,32 +678,6 @@ const styles = StyleSheet.create({
     fontSize: textToken.lg,
     marginTop: 4,
   },
-  quickStatsRow: {
-    flexDirection: 'row',
-    marginTop: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    width: '100%',
-  },
-  quickStat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  quickStatDivider: {
-    width: 1,
-    height: 32,
-    marginHorizontal: 8,
-  },
-  quickStatValue: {
-    fontSize: textToken.xl,
-    fontWeight: fw.bold,
-  },
-  quickStatLabel: {
-    fontSize: textToken.sm,
-    marginTop: 2,
-  },
   ctaRow: {
     flexDirection: 'row',
     marginTop: 24,
@@ -872,132 +704,6 @@ const styles = StyleSheet.create({
     fontWeight: fw.semibold,
   },
 
-  // Section card
-  sectionCard: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    padding: 16,
-    marginTop: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: textToken.sm,
-    fontWeight: fw.semibold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  // Bio
-  bioText: {
-    fontSize: textToken.md,
-    lineHeight: 20,
-  },
-
-  // Badges
-  badgesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  badgeItem: {
-    alignItems: 'center',
-    width: 72,
-  },
-  badgeIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  badgeLabel: {
-    fontSize: textToken.xs,
-    fontWeight: fw.semibold,
-    textAlign: 'center',
-  },
-  newBadgeDot: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  newBadgeText: {
-    fontSize: textToken.xs,
-    fontWeight: fw.extrabold,
-  },
-
-  // Interests
-  interestsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  interestPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.md,
-    borderWidth: 1,
-  },
-  interestText: {
-    fontSize: textToken.md,
-    fontWeight: fw.medium,
-  },
-
-  // Streak badge
-  streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    marginTop: 12,
-  },
-  streakText: {
-    fontSize: textToken.sm,
-    fontWeight: fw.semibold,
-  },
-
-  // Challenges
-  challengeRow: {
-    marginBottom: 12,
-  },
-  challengeInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  challengeTitle: {
-    fontSize: textToken.md,
-    fontWeight: fw.semibold,
-    flex: 1,
-  },
-  challengeMeta: {
-    fontSize: textToken.xs,
-    marginLeft: 8,
-  },
-  challengeBar: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  challengeBarFill: {
-    height: 6,
-    borderRadius: 3,
-  },
 
   // Menu modal
   menuOverlay: {

@@ -373,12 +373,14 @@ function PortfolioScreen() {
 
   // Navigation handlers (useCallback to prevent re-renders in child components)
   const handleOpenNotifications = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push('/notifications');
-  }, [router]);
+  }, [router, settings.hapticsEnabled]);
 
   const handleOpenSettings = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push('/settings');
-  }, [router]);
+  }, [router, settings.hapticsEnabled]);
 
   const handleOpenAddMenu = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -396,14 +398,16 @@ function PortfolioScreen() {
   }, [router, settings.hapticsEnabled]);
 
   const handleCategoryPress = useCallback((catSlug: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push({ pathname: '/categories/[categoryId]', params: { categoryId: catSlug } });
-  }, [router]);
+  }, [router, settings.hapticsEnabled]);
 
   const handleBreakdownCategoryPress = useCallback((catRaw: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     const cat = getCategoryById(catRaw) ?? getCategoryByName(catRaw);
     const categoryId = cat?.id ?? catRaw;
     router.push({ pathname: '/(tabs)/items', params: { category: categoryId } });
-  }, [router]);
+  }, [router, settings.hapticsEnabled]);
 
   const handleInsightsCtaPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -411,12 +415,13 @@ function PortfolioScreen() {
   }, [router, settings.hapticsEnabled, limits.advanced_analytics]);
 
   const handleAlertPress = useCallback((alert: { id: string; itemId?: string }) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     markAsRead(alert.id);
     router.push({
       pathname: '/(tabs)/wishlist',
       params: { highlightId: alert.itemId || alert.id },
     });
-  }, [router, markAsRead]);
+  }, [router, markAsRead, settings.hapticsEnabled]);
 
   const handleDealAgentPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -425,6 +430,7 @@ function PortfolioScreen() {
 
   // Navigate to item detail
   const handleItemPress = useCallback((item: ItemRow) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push({
       pathname: "/item/[id]",
       params: {
@@ -434,17 +440,19 @@ function PortfolioScreen() {
         value: String(item.value),
       },
     });
-  }, [router]);
+  }, [router, settings.hapticsEnabled]);
 
   // Navigate to analytics
   const handleAnalyticsPress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push("/analytics");
-  }, [router]);
+  }, [router, settings.hapticsEnabled]);
 
   // Navigate to watchlist tab
   const handleWatchlistPress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push("/(tabs)/wishlist");
-  }, [router]);
+  }, [router, settings.hapticsEnabled]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>

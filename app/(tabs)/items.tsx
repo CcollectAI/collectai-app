@@ -406,6 +406,7 @@ const ItemsScreen: React.FC = () => {
 
   // Open item detail
   const handleOpenItem = useCallback((item: Item) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push({
       pathname: "/item/[id]",
       params: {
@@ -418,24 +419,26 @@ const ItemsScreen: React.FC = () => {
         notes: item.notes ?? "",
       },
     });
-  }, [router]);
+  }, [router, settings.hapticsEnabled]);
 
   // Handle long press to enter multi-select
   const handleLongPress = useCallback((itemId: string) => {
     if (!isMultiSelectMode) {
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       enterMultiSelectMode();
       toggleItem(itemId);
     }
-  }, [isMultiSelectMode, enterMultiSelectMode, toggleItem]);
+  }, [isMultiSelectMode, enterMultiSelectMode, toggleItem, settings.hapticsEnabled]);
 
   // Handle item press in multi-select mode
   const handleItemPress = useCallback((item: Item) => {
     if (isMultiSelectMode) {
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
       toggleItem(item.id);
     } else {
       handleOpenItem(item);
     }
-  }, [isMultiSelectMode, toggleItem, handleOpenItem]);
+  }, [isMultiSelectMode, toggleItem, handleOpenItem, settings.hapticsEnabled]);
 
   const categoryParam =
     typeof params.category === "string" ? params.category : undefined;

@@ -1,0 +1,1459 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CreateProjectModal renders nothing meaningful when not visible 1`] = `null`;
+
+exports[`CreateProjectModal renders when visible and matches snapshot 1`] = `
+<Modal
+  animationType="slide"
+  onRequestClose={[Function]}
+  transparent={true}
+  visible={true}
+>
+  <View
+    onLayout={[Function]}
+    style={
+      [
+        {
+          "backgroundColor": "rgba(0,0,0,0.5)",
+          "flex": 1,
+          "justifyContent": "flex-end",
+        },
+        {
+          "paddingBottom": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "borderTopLeftRadius": 20,
+            "borderTopRightRadius": 20,
+            "maxHeight": "85%",
+            "padding": 24,
+            "paddingBottom": 40,
+          },
+          {
+            "backgroundColor": "#FFFFFF",
+          },
+        ]
+      }
+    >
+      <RCTScrollView
+        showsVerticalScrollIndicator={false}
+      >
+        <View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "justifyContent": "space-between",
+                "marginBottom": 24,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 20,
+                    "fontWeight": "700",
+                  },
+                  {
+                    "color": "#0F172A",
+                  },
+                ]
+              }
+            >
+              New Project
+            </Text>
+            <View
+              accessibilityLabel="Close"
+              accessibilityRole="button"
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": undefined,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessibilityValue={
+                {
+                  "max": undefined,
+                  "min": undefined,
+                  "now": undefined,
+                  "text": undefined,
+                }
+              }
+              accessible={true}
+              collapsable={false}
+              focusable={true}
+              onBlur={[Function]}
+              onClick={[Function]}
+              onFocus={[Function]}
+              onResponderGrant={[Function]}
+              onResponderMove={[Function]}
+              onResponderRelease={[Function]}
+              onResponderTerminate={[Function]}
+              onResponderTerminationRequest={[Function]}
+              onStartShouldSetResponder={[Function]}
+            >
+              <Text
+                allowFontScaling={false}
+                selectable={false}
+                style={
+                  [
+                    {
+                      "color": "#64748B",
+                      "fontSize": 24,
+                    },
+                    undefined,
+                    {
+                      "fontFamily": "ionicons",
+                      "fontStyle": "normal",
+                      "fontWeight": "normal",
+                    },
+                    {},
+                  ]
+                }
+              >
+                
+              </Text>
+            </View>
+          </View>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                  "marginBottom": 8,
+                },
+                {
+                  "color": "#0F172A",
+                },
+              ]
+            }
+          >
+            Category
+          </Text>
+          <View
+            accessibilityLabel="Select category"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 12,
+                  "borderWidth": 1,
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "paddingHorizontal": 14,
+                  "paddingVertical": 12,
+                },
+                {
+                  "backgroundColor": "#F8FAFC",
+                  "borderColor": "#E2E8F0",
+                },
+              ]
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 15,
+                  },
+                  {
+                    "color": "#64748B",
+                  },
+                ]
+              }
+            >
+              Select a category...
+            </Text>
+            <Text
+              allowFontScaling={false}
+              selectable={false}
+              style={
+                [
+                  {
+                    "color": "#64748B",
+                    "fontSize": 18,
+                  },
+                  undefined,
+                  {
+                    "fontFamily": "ionicons",
+                    "fontStyle": "normal",
+                    "fontWeight": "normal",
+                  },
+                  {},
+                ]
+              }
+            >
+              
+            </Text>
+          </View>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                  "marginBottom": 8,
+                },
+                {
+                  "color": "#0F172A",
+                  "marginTop": 16,
+                },
+              ]
+            }
+          >
+            Title *
+          </Text>
+          <TextInput
+            accessibilityLabel="Project title"
+            onChangeText={[Function]}
+            placeholder="e.g., Warhammer Kill Team squad"
+            placeholderTextColor="#64748B"
+            style={
+              [
+                {
+                  "borderRadius": 12,
+                  "borderWidth": 1,
+                  "fontSize": 15,
+                  "paddingHorizontal": 14,
+                  "paddingVertical": 12,
+                },
+                {
+                  "backgroundColor": "#F8FAFC",
+                  "borderColor": "#E2E8F0",
+                  "color": "#0F172A",
+                },
+              ]
+            }
+            value=""
+          />
+          <View
+            accessibilityLabel="Create project"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": true,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 12,
+                  "justifyContent": "center",
+                  "marginTop": 24,
+                  "paddingVertical": 14,
+                },
+                {
+                  "backgroundColor": "#E2E8F0",
+                  "opacity": 1,
+                },
+              ]
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 15,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#FFFFFF",
+                  },
+                ]
+              }
+            >
+              Create Project
+            </Text>
+          </View>
+        </View>
+      </RCTScrollView>
+    </View>
+  </View>
+</Modal>
+`;
+
+exports[`ProjectCard matches snapshot for completed project 1`] = `
+<View
+  accessibilityLabel="Finished Gunpla, 100% complete, completed"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "borderRadius": 12,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "marginBottom": 12,
+        "overflow": "hidden",
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+      },
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": 4,
+        },
+        {
+          "backgroundColor": "#81D8D0",
+        },
+      ]
+    }
+  />
+  <View
+    style={
+      [
+        {
+          "flex": 1,
+          "padding": 16,
+        },
+        {
+          "paddingLeft": 12,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "marginBottom": 12,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+          }
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            [
+              {
+                "fontSize": 16,
+                "fontWeight": "600",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Finished Gunpla
+        </Text>
+        <View
+          style={
+            {
+              "gap": 4,
+              "marginTop": 4,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "gap": 6,
+              }
+            }
+          >
+            <View
+              style={
+                [
+                  {
+                    "borderRadius": 4,
+                    "height": 8,
+                    "width": 8,
+                  },
+                  {
+                    "backgroundColor": "#81D8D0",
+                  },
+                ]
+              }
+            />
+            <Text
+              numberOfLines={1}
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                  },
+                  {
+                    "color": "#64748B",
+                  },
+                ]
+              }
+            >
+              Warhammer
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 999,
+              "marginLeft": 8,
+              "paddingHorizontal": 10,
+              "paddingVertical": 4,
+            },
+            {
+              "backgroundColor": "#10B98120",
+            },
+          ]
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 11,
+                "fontWeight": "600",
+                "textTransform": "capitalize",
+              },
+              {
+                "color": "#10B981",
+              },
+            ]
+          }
+        >
+          Completed
+        </Text>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "gap": 10,
+          "marginBottom": 8,
+        }
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "borderRadius": 3,
+              "flex": 1,
+              "height": 6,
+              "overflow": "hidden",
+            },
+            {
+              "backgroundColor": "#E2E8F0",
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            [
+              {
+                "borderRadius": 3,
+                "height": "100%",
+              },
+              {
+                "backgroundColor": "#10B981",
+                "width": "100%",
+              },
+            ]
+          }
+        />
+      </View>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "fontWeight": "600",
+              "minWidth": 36,
+              "textAlign": "right",
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        100
+        %
+      </Text>
+    </View>
+    <Text
+      numberOfLines={2}
+      style={
+        [
+          {
+            "fontSize": 13,
+            "marginBottom": 8,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Priming done, base coat next
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 11,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Updated 
+        Jun 10
+      </Text>
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": "#64748B",
+              "fontSize": 16,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ProjectCard renders with minimal props and matches snapshot 1`] = `
+<View
+  accessibilityLabel="Paint Warhammer Squad, 45% complete, active"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "borderRadius": 12,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "marginBottom": 12,
+        "overflow": "hidden",
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+      },
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": 4,
+        },
+        {
+          "backgroundColor": "#81D8D0",
+        },
+      ]
+    }
+  />
+  <View
+    style={
+      [
+        {
+          "flex": 1,
+          "padding": 16,
+        },
+        {
+          "paddingLeft": 12,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "marginBottom": 12,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+          }
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            [
+              {
+                "fontSize": 16,
+                "fontWeight": "600",
+              },
+              {
+                "color": "#0F172A",
+              },
+            ]
+          }
+        >
+          Paint Warhammer Squad
+        </Text>
+        <View
+          style={
+            {
+              "gap": 4,
+              "marginTop": 4,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "gap": 6,
+              }
+            }
+          >
+            <View
+              style={
+                [
+                  {
+                    "borderRadius": 4,
+                    "height": 8,
+                    "width": 8,
+                  },
+                  {
+                    "backgroundColor": "#81D8D0",
+                  },
+                ]
+              }
+            />
+            <Text
+              numberOfLines={1}
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                  },
+                  {
+                    "color": "#64748B",
+                  },
+                ]
+              }
+            >
+              Warhammer
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 999,
+              "marginLeft": 8,
+              "paddingHorizontal": 10,
+              "paddingVertical": 4,
+            },
+            {
+              "backgroundColor": "#81D8D020",
+            },
+          ]
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 11,
+                "fontWeight": "600",
+                "textTransform": "capitalize",
+              },
+              {
+                "color": "#81D8D0",
+              },
+            ]
+          }
+        >
+          active
+        </Text>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "gap": 10,
+          "marginBottom": 8,
+        }
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "borderRadius": 3,
+              "flex": 1,
+              "height": 6,
+              "overflow": "hidden",
+            },
+            {
+              "backgroundColor": "#E2E8F0",
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            [
+              {
+                "borderRadius": 3,
+                "height": "100%",
+              },
+              {
+                "backgroundColor": "#81D8D0",
+                "width": "45%",
+              },
+            ]
+          }
+        />
+      </View>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+              "fontWeight": "600",
+              "minWidth": 36,
+              "textAlign": "right",
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        45
+        %
+      </Text>
+    </View>
+    <Text
+      numberOfLines={2}
+      style={
+        [
+          {
+            "fontSize": 13,
+            "marginBottom": 8,
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Priming done, base coat next
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 11,
+            },
+            {
+              "color": "#64748B",
+            },
+          ]
+        }
+      >
+        Updated 
+        Jun 10
+      </Text>
+      <Text />
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ProjectFilters matches snapshot with completed selected 1`] = `
+<View
+  style={
+    {
+      "flexDirection": "row",
+      "gap": 8,
+      "marginBottom": 16,
+    }
+  }
+>
+  <View
+    accessibilityLabel="All (10)"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": false,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 20,
+          "borderWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "paddingHorizontal": 14,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 13,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      All
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "500",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      10
+    </Text>
+  </View>
+  <View
+    accessibilityLabel="Current (6)"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": false,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 20,
+          "borderWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "paddingHorizontal": 14,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 13,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Current
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "500",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      6
+    </Text>
+  </View>
+  <View
+    accessibilityLabel="Completed (4)"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": true,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 20,
+          "borderWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "paddingHorizontal": 14,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#81D8D020",
+          "borderColor": "#81D8D0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 13,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#81D8D0",
+          },
+        ]
+      }
+    >
+      Completed
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "500",
+          },
+          {
+            "color": "#81D8D0",
+          },
+        ]
+      }
+    >
+      4
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ProjectFilters renders with counts and matches snapshot 1`] = `
+<View
+  style={
+    {
+      "flexDirection": "row",
+      "gap": 8,
+      "marginBottom": 16,
+    }
+  }
+>
+  <View
+    accessibilityLabel="All (10)"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": true,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 20,
+          "borderWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "paddingHorizontal": 14,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#81D8D020",
+          "borderColor": "#81D8D0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 13,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#81D8D0",
+          },
+        ]
+      }
+    >
+      All
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "500",
+          },
+          {
+            "color": "#81D8D0",
+          },
+        ]
+      }
+    >
+      10
+    </Text>
+  </View>
+  <View
+    accessibilityLabel="Current (6)"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": false,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 20,
+          "borderWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "paddingHorizontal": 14,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 13,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Current
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "500",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      6
+    </Text>
+  </View>
+  <View
+    accessibilityLabel="Completed (4)"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": false,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 20,
+          "borderWidth": 1,
+          "flexDirection": "row",
+          "gap": 6,
+          "paddingHorizontal": 14,
+          "paddingVertical": 8,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#E2E8F0",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontSize": 13,
+            "fontWeight": "600",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      Completed
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "fontSize": 12,
+            "fontWeight": "500",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      4
+    </Text>
+  </View>
+</View>
+`;

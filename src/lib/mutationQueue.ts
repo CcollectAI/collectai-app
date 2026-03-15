@@ -25,8 +25,14 @@ export type MutationType =
   | 'addWatchlistItem'
   | 'removeWatchlistItem'
   | 'createEvent'
+  | 'updateEvent'
+  | 'deleteEvent'
   | 'updateWatchlistItem'
-  | 'createBuildPaintProject';
+  | 'createBuildPaintProject'
+  | 'submitFeedback'
+  | 'toggleForSale'
+  | 'archiveItem'
+  | 'unarchiveItem';
 
 export type QueuedMutation = {
   id: string;

@@ -13,13 +13,9 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  ScrollView,
-  TextInput,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Animated,
-  Linking,
 } from 'react-native';
 // SafeAreaView removed — Stack header handles safe area
 import { router, Stack } from 'expo-router';
@@ -28,13 +24,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { dataProvider, type BarcodeLookupResult } from '@/data';
 import { collectorsApi, type IntakeResultResponse, getBillingStatus, type BillingStatus } from '@/api/collectorsApi';
-import { AnimatedPressable, useEnterReveal } from '@/motion';
+import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
-import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import CatalogSuggestionModal, { type CatalogSuggestionSource } from '@/components/CatalogSuggestionModal';
+import { BarcodeResultCard } from '@/components/barcode/BarcodeResultCard';
+import { BarcodeModeSelector } from '@/components/barcode/BarcodeModeSelector';
 
 /** Barcode types accepted by the scanner */
 const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
@@ -44,7 +41,6 @@ type InputMode = 'camera' | 'url';
 
 function BarcodeScanScreen() {
   const { colors } = useAppTheme();
-  const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
   const { showToast } = useToast();
 
@@ -442,60 +438,13 @@ function BarcodeScanScreen() {
             </CameraView>
           </View>
 
-          {/* Manual ISBN Entry - Upgraded card design */}
-          <ScrollView
-            style={styles.manualEntryScroll}
-            contentContainerStyle={styles.manualEntryScrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={[styles.manualEntryCard, { backgroundColor: colors.card }]}>
-              <Text style={[styles.manualEntryTitle, { color: colors.text }]}>
-                Manual Entry
-              </Text>
-              <Text style={[styles.manualEntryHelper, { color: colors.muted }]}>
-                Can't scan? Type the ISBN code from the back cover
-              </Text>
-              <View style={styles.manualEntryRow}>
-                <TextInput
-                  style={[styles.manualInput, {
-                    backgroundColor: colors.background,
-                    borderColor: colors.border,
-                    color: colors.text
-                  }]}
-                  placeholder="978-0-123456-78-9"
-                  placeholderTextColor={colors.muted}
-                  value={manualIsbn}
-                  onChangeText={setManualIsbn}
-                  keyboardType="number-pad"
-                  maxLength={17}
-                  returnKeyType="search"
-                  onSubmitEditing={handleManualSubmit}
-                  accessibilityLabel="ISBN input field"
-                  accessibilityHint="Enter 10 or 13 digit ISBN number"
-                />
-                <AnimatedPressable
-                  style={[styles.manualSubmitButton, {
-                    backgroundColor: colors.accent,
-                    opacity: manualIsbn.length < 10 || isManualSubmitting ? 0.5 : 1
-                  }]}
-                  onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled }); handleManualSubmit(); }}
-                  disabled={manualIsbn.length < 10 || isManualSubmitting}
-                  accessibilityLabel="Look up ISBN"
-                  accessibilityRole="button"
-                >
-                  {isManualSubmitting ? (
-                    <ActivityIndicator size="small" color={colors.card} />
-                  ) : (
-                    <>
-                      <Ionicons name="search" size={18} color={colors.card} />
-                      <Text style={[styles.primaryButtonText, { color: colors.card }]}>Look Up</Text>
-                    </>
-                  )}
-                </AnimatedPressable>
-              </View>
-            </View>
-          </ScrollView>
+          <BarcodeModeSelector
+            manualIsbn={manualIsbn}
+            onChangeIsbn={setManualIsbn}
+            onSubmit={handleManualSubmit}
+            isSubmitting={isManualSubmitting}
+            hapticsEnabled={settings.hapticsEnabled}
+          />
         </KeyboardAvoidingView>
       )}
 
@@ -514,121 +463,18 @@ function BarcodeScanScreen() {
       )}
 
       {scanState === 'result' && lookupResult && (
-        <ScrollView style={styles.resultContainer} contentContainerStyle={styles.resultContent}>
-          {/* Product card */}
-          <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.productHeader}>
-              <Ionicons name="checkmark-circle" size={32} color={colors.accent} />
-              <Text style={[styles.productFound, { color: colors.text }]}>Product Found</Text>
-            </View>
-
-            <Text style={[styles.productTitle, { color: colors.text }]}>
-              {lookupResult.title || 'Unknown Product'}
-            </Text>
-
-            {lookupResult.categoryId && (
-              <View style={styles.productMeta}>
-                <Ionicons name="folder-outline" size={16} color={colors.muted} />
-                <Text style={[styles.productMetaText, { color: colors.muted }]}>
-                  {lookupResult.categoryId}
-                  {intakeResult ? ` (${Math.round(intakeResult.category_confidence * 100)}% confidence)` : ''}
-                </Text>
-              </View>
-            )}
-
-            {intakeResult?.identification_method && (
-              <View style={styles.productMeta}>
-                <Ionicons name="bulb-outline" size={16} color={colors.muted} />
-                <Text style={[styles.productMetaText, { color: colors.muted }]}>
-                  Identified via: {intakeResult.identification_method.replace(/_/g, ' ')}
-                </Text>
-              </View>
-            )}
-
-            {lookupResult.collections && lookupResult.collections.length > 0 && (
-              <View style={styles.collectionsRow}>
-                {lookupResult.collections.map((tag) => (
-                  <View key={tag} style={[styles.collectionTag, { backgroundColor: colors.accent + '20' }]}>
-                    <Text style={[styles.collectionTagText, { color: colors.accent }]}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {lookupResult.priceBand && (
-              <View style={[styles.priceCard, { backgroundColor: colors.background }]}>
-                <Text style={[styles.priceLabel, { color: colors.muted }]}>Estimated Price</Text>
-                <Text style={[styles.priceValue, { color: colors.text }]}>
-                  {formatPrice(lookupResult.priceBand.q50, settings.currency)}
-                </Text>
-                <Text style={[styles.priceRange, { color: colors.muted }]}>
-                  Range: {formatPrice(lookupResult.priceBand.q10, settings.currency)} – {formatPrice(lookupResult.priceBand.q90, settings.currency)}
-                </Text>
-              </View>
-            )}
-
-            {scannedCode && (
-              <Text style={[styles.barcodeInfo, { color: colors.muted }]}>
-                {scannedCode.type.toUpperCase()}: {scannedCode.value}
-              </Text>
-            )}
-          </View>
-
-          {/* Action buttons - Reordered: Scan another left, Save right */}
-          <View style={styles.actionButtonsRow}>
-            <AnimatedPressable
-              style={[styles.secondaryButtonHalf, { borderColor: colors.border }]}
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); handleRescan(); }}
-              accessibilityRole="button"
-              accessibilityLabel="Scan another barcode"
-            >
-              <Ionicons name="scan-outline" size={18} color={colors.text} />
-              <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Scan Another</Text>
-            </AnimatedPressable>
-
-            <AnimatedPressable
-              style={[styles.primaryButtonHalf, { backgroundColor: colors.accent, opacity: isSaving ? 0.7 : 1 }]}
-              onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled }); handleSaveToCollection(); }}
-              disabled={isSaving}
-              accessibilityRole="button"
-              accessibilityLabel="Save to collection"
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color={colors.card} />
-              ) : (
-                <>
-                  <Ionicons name="add-circle-outline" size={18} color={colors.card} />
-                  <Text style={[styles.primaryButtonText, { color: colors.card }]}>Save</Text>
-                </>
-              )}
-            </AnimatedPressable>
-          </View>
-
-          <AnimatedPressable
-            style={[styles.watchlistButton, { borderColor: colors.border }]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); handleAddToWatchlist(); }}
-            accessibilityRole="button"
-            accessibilityLabel="Add to watchlist instead"
-          >
-            <Ionicons name="eye-outline" size={18} color={colors.muted} />
-            <Text style={[styles.watchlistButtonText, { color: colors.muted }]}>Add to Watchlist Instead</Text>
-          </AnimatedPressable>
-
-          {affiliateLink && (
-            <AnimatedPressable
-              style={[styles.watchlistButton, { borderColor: colors.border, marginTop: 8 }]}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                Linking.openURL(affiliateLink.url).catch(() => {});
-              }}
-              accessibilityRole="link"
-              accessibilityLabel={affiliateLink.label}
-            >
-              <Ionicons name="open-outline" size={18} color={colors.accent} />
-              <Text style={[styles.watchlistButtonText, { color: colors.accent }]}>{affiliateLink.label}</Text>
-            </AnimatedPressable>
-          )}
-        </ScrollView>
+        <BarcodeResultCard
+          lookupResult={lookupResult}
+          intakeResult={intakeResult}
+          scannedCode={scannedCode}
+          affiliateLink={affiliateLink}
+          isSaving={isSaving}
+          currency={settings.currency}
+          hapticsEnabled={settings.hapticsEnabled}
+          onRescan={handleRescan}
+          onSave={handleSaveToCollection}
+          onAddToWatchlist={handleAddToWatchlist}
+        />
       )}
 
       {scanState === 'error' && (
@@ -816,100 +662,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontFamily: 'monospace',
   },
-  resultContainer: {
-    flex: 1,
-  },
-  resultContent: {
-    padding: 16,
-  },
-  productCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 16,
-  },
-  productHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  productFound: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  productTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  productMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  productMetaText: {
-    fontSize: 14,
-  },
-  collectionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 12,
-  },
-  collectionTag: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  collectionTagText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  priceCard: {
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  priceLabel: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  priceValue: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  priceRange: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  barcodeInfo: {
-    fontSize: 12,
-    fontFamily: 'monospace',
-    marginTop: 8,
-  },
-  actionButtons: {
-    gap: 12,
-  },
-  actionButtonsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 16,
-    borderRadius: 12,
-  },
-  primaryButtonHalf: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
     paddingVertical: 16,
     borderRadius: 12,
   },
@@ -926,30 +683,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  secondaryButtonHalf: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: '500',
-  },
-  watchlistButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
-    marginTop: 8,
-  },
-  watchlistButtonText: {
-    fontSize: 13,
   },
   rescanButton: {
     flexDirection: 'row',
@@ -982,13 +718,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
     gap: 12,
     width: '100%',
-  },
-  manualEntryScroll: {
-    maxHeight: 200,
-    marginTop: 4,
-  },
-  manualEntryScrollContent: {
-    flexGrow: 1,
   },
   _modeToggleRemoved: {
     // Mode toggle removed — barcode scan is now camera-only
@@ -1030,44 +759,5 @@ const styles = StyleSheet.create({
   urlExamplesText: {
     fontSize: 13,
     lineHeight: 18,
-  },
-  manualEntryCard: {
-    margin: 16,
-    marginTop: 12,
-    padding: 20,
-    borderRadius: 16,
-  },
-  manualEntryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  manualEntryHelper: {
-    fontSize: 13,
-    marginBottom: 16,
-    lineHeight: 18,
-  },
-  manualEntryRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  manualInput: {
-    flex: 1,
-    height: 52,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    fontSize: 17,
-    fontFamily: 'monospace',
-    letterSpacing: 1,
-  },
-  manualSubmitButton: {
-    flexDirection: 'row',
-    height: 50,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
   },
 });
