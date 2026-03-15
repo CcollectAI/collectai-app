@@ -62,21 +62,13 @@ async def close() -> None:
 # Public API
 # ---------------------------------------------------------------------------
 
-async def scrape_url(
+async def _raw_scrape_url(
     url: str,
     formats: list[str] | None = None,
     extract_schema: dict[str, Any] | None = None,
 ) -> Optional[dict[str, Any]]:
     """
-    Scrape a single URL via Firecrawl /scrape.
-
-    Args:
-        url: The URL to scrape.
-        formats: Output formats (default: ["markdown"]).
-        extract_schema: Optional JSON schema for structured extraction.
-
-    Returns:
-        Dict with keys like 'markdown', 'metadata', 'extract', or None on failure.
+    Internal: hit the Firecrawl /scrape endpoint without caching.
     """
     if not configured():
         logger.debug("Firecrawl not configured (no API key)")
@@ -112,19 +104,42 @@ async def scrape_url(
         return None
 
 
-async def search_web(
+async def scrape_url(
+    url: str,
+    formats: list[str] | None = None,
+    extract_schema: dict[str, Any] | None = None,
+) -> Optional[dict[str, Any]]:
+    """
+    Scrape a single URL via Firecrawl /scrape with global URL dedup cache.
+
+    Args:
+        url: The URL to scrape.
+        formats: Output formats (default: ["markdown"]).
+        extract_schema: Optional JSON schema for structured extraction.
+
+    Returns:
+        Dict with keys like 'markdown', 'metadata', 'extract', or None on failure.
+    """
+    from app.lib.scrape_cache import ENRICH_CACHE_TTL, cached_scrape
+
+    # When custom formats or extraction schemas are requested, bypass cache
+    # because the result shape differs from a plain markdown scrape.
+    if extract_schema or (formats and formats != ["markdown"]):
+        return await _raw_scrape_url(url, formats=formats, extract_schema=extract_schema)
+
+    return await cached_scrape(
+        url,
+        lambda u: _raw_scrape_url(u, formats=formats, extract_schema=extract_schema),
+        ttl=ENRICH_CACHE_TTL,
+    )
+
+
+async def _raw_search_web(
     query: str,
     limit: int = 10,
 ) -> list[dict[str, Any]]:
     """
-    Search the web via Firecrawl /search.
-
-    Args:
-        query: Search query string.
-        limit: Max results to return.
-
-    Returns:
-        List of result dicts with 'url', 'title', 'markdown', 'metadata'.
+    Internal: hit the Firecrawl /search endpoint without caching.
     """
     if not configured():
         logger.debug("Firecrawl not configured (no API key)")
@@ -155,6 +170,29 @@ async def search_web(
     except Exception:
         logger.error("[Firecrawl] /search failed for '%s'", query, exc_info=True)
         return []
+
+
+async def search_web(
+    query: str,
+    limit: int = 10,
+) -> list[dict[str, Any]]:
+    """
+    Search the web via Firecrawl /search with global dedup cache (6h TTL).
+
+    Args:
+        query: Search query string.
+        limit: Max results to return.
+
+    Returns:
+        List of result dicts with 'url', 'title', 'markdown', 'metadata'.
+    """
+    from app.lib.scrape_cache import SCRAPE_CACHE_TTL, cached_search
+
+    return await cached_search(
+        query,
+        lambda q: _raw_search_web(q, limit=limit),
+        ttl=SCRAPE_CACHE_TTL,
+    )
 
 
 async def extract_structured(

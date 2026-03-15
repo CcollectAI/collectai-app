@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import type { WatchlistItem } from "@/data/types";
+import { radius, text as textToken, fontWeight as fw, shadow } from "@/theme/tokens";
 
 // ── Props ──────────────────────────────────────────────────────────────
 
@@ -24,6 +25,8 @@ interface WatchlistWidgetProps {
   watchlistItems: WatchlistItem[];
   onItemPress: (item: WatchlistItem) => void;
   onViewAll: () => void;
+  /** Called when the user taps the refresh icon to reload watchlist data. */
+  onRefresh?: () => void;
   formatPrice: (amount: number) => string;
   hapticsEnabled?: boolean;
 }
@@ -35,6 +38,7 @@ function WatchlistWidgetInner({
   watchlistItems,
   onItemPress,
   onViewAll,
+  onRefresh,
   formatPrice,
   hapticsEnabled = true,
 }: WatchlistWidgetProps) {
@@ -43,7 +47,22 @@ function WatchlistWidgetInner({
   return (
     <>
       <View style={s.sectionHeader}>
-        <Text style={[s.sectionTitle, { color: theme.text }]}>Watchlist</Text>
+        <View style={s.sectionHeaderLeft}>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>Watchlist</Text>
+          {onRefresh && (
+            <AnimatedPressable
+              onPress={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
+                onRefresh();
+              }}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh watchlist"
+            >
+              <Ionicons name="refresh-outline" size={18} color={theme.muted} />
+            </AnimatedPressable>
+          )}
+        </View>
         <AnimatedPressable
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
@@ -73,7 +92,7 @@ function WatchlistWidgetInner({
                 onItemPress(it);
               }}
               accessibilityRole="button"
-              accessibilityLabel={`Watchlist item: ${it.title}`}
+              accessibilityLabel={`Watchlist item: ${it.title ?? 'Watchlist Item'}, ${it.category ?? 'unknown category'}${it.targetPrice != null ? `, target ${formatPrice(it.targetPrice)}` : ', no target price'}`}
             >
               <View style={s.watchlistLeft}>
                 <View style={s.watchlistNameRow}>
@@ -116,6 +135,11 @@ export const WatchlistWidget = React.memo(WatchlistWidgetInner);
 // ── Styles ─────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
+  sectionHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -123,22 +147,18 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: textToken.xl,
+    fontWeight: fw.extrabold,
   },
   seeAllLink: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: textToken.md,
+    fontWeight: fw.semibold,
   },
   listCard: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radius.md,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadow.card,
     marginBottom: 20,
   },
   watchlistRow: {
@@ -163,12 +183,12 @@ const s = StyleSheet.create({
     marginRight: 6,
   },
   itemName: {
-    fontWeight: "700",
-    fontSize: 14,
+    fontWeight: fw.bold,
+    fontSize: textToken.md,
   },
   itemCategory: {
-    fontWeight: "600",
-    fontSize: 12,
+    fontWeight: fw.semibold,
+    fontSize: textToken.sm,
     marginTop: 2,
   },
   watchlistRight: {
@@ -181,12 +201,12 @@ const s = StyleSheet.create({
     marginRight: 4,
   },
   targetPrice: {
-    fontWeight: "700",
-    fontSize: 13,
+    fontWeight: fw.bold,
+    fontSize: textToken.md,
   },
   noTarget: {
-    fontWeight: "500",
-    fontSize: 12,
+    fontWeight: fw.medium,
+    fontSize: textToken.sm,
     fontStyle: "italic",
   },
 });

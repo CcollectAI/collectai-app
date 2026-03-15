@@ -511,7 +511,6 @@ def get_curated_catalog() -> list[dict]:
         ("Nintendo", "Nintendo 3DS Kingdom Hearts 3D DDD", "Nintendo 3DS", "Kingdom Hearts Dream Drop Distance Silver (Japan)", "Japan Exclusive", "high", 150, 320),
         ("Nintendo", "Nintendo 3DS Monster Hunter 3G", "Nintendo 3DS", "Monster Hunter 3G White (Japan)", "Japan Exclusive", "high", 110, 230),
         ("Nintendo", "Nintendo 3DS XL Red/Black", "Nintendo 3DS XL", "Red/Black", "Standard", "mid", 65, 140),
-        ("Nintendo", "Nintendo 3DS XL Blue/Black", "Nintendo 3DS XL", "Blue/Black", "Standard", "mid", 65, 140),
         ("Nintendo", "Nintendo 3DS XL Pikachu Yellow", "Nintendo 3DS XL", "Pikachu Yellow Limited", "Special Edition", "high", 150, 320),
         ("Nintendo", "Nintendo 3DS XL Pokemon XY Blue", "Nintendo 3DS XL", "Pokemon X and Y Blue", "Special Edition", "high", 120, 250),
         ("Nintendo", "Nintendo 3DS XL Year of Luigi", "Nintendo 3DS XL", "Year of Luigi Green (NA)", "Special Edition", "high", 130, 270),
@@ -853,7 +852,18 @@ def get_curated_catalog() -> list[dict]:
     # GBA SP LEs, WonderSwan Color, TurboExpress, N-Gage, Bandai WonderSwan)
     catalog.extend(_expanded_round8_retro_handhelds())
 
-    return catalog
+    # Variant expansion — ~115 color/edition variants across major handhelds
+    catalog.extend(_variant_expansion())
+
+    # Deduplicate by ('name',) (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = item["name"]
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _expanded_round7_retro_handhelds() -> list[dict]:
@@ -1032,7 +1042,6 @@ def _expanded_round8_retro_handhelds() -> list[dict]:
         # === ROUND 9 — 91 new items to reach 700+ ===
 
         # --- Game Boy Color Special Editions (+8) ---
-        ("Nintendo", "Game Boy Color Tommy Hilfiger", "Game Boy Color", "Tommy Hilfiger Limited (NA)", "Special Edition", "high", 150, 320),
         ("Nintendo", "Game Boy Color Ozzy Osbourne Bat", "Game Boy Color", "Ozzy Osbourne Bat Purple (Japan)", "Japan Exclusive", "grail", 300, 600),
         ("Nintendo", "Game Boy Color Toys R Us Clear Purple", "Game Boy Color", "Toys R Us Exclusive Clear Purple (NA)", "Special Edition", "high", 100, 210),
         ("Nintendo", "Game Boy Color Daiei Hawks Orange", "Game Boy Color", "Daiei Hawks Orange (Japan)", "Japan Exclusive", "high", 120, 250),
@@ -1044,7 +1053,6 @@ def _expanded_round8_retro_handhelds() -> list[dict]:
         # --- Neo Geo Pocket Color Games (+8) ---
         ("SNK", "Sonic Pocket Adventure NGPC", "Neo Geo Pocket Color", "Sonic the Hedgehog Pocket Adventure (Game)", "Standard", "high", 65, 140),
         ("SNK", "Match of the Millennium NGPC (Japanese)", "Neo Geo Pocket Color", "SNK vs Capcom MOTM (Game, Japan)", "Japan Exclusive", "high", 80, 170),
-        ("SNK", "Metal Slug 1st Mission NGPC", "Neo Geo Pocket Color", "Metal Slug 1st Mission (Game)", "Standard", "high", 70, 150),
         ("SNK", "Puzzle Bobble Mini NGPC", "Neo Geo Pocket Color", "Puzzle Bobble Mini (Game, Japan)", "Japan Exclusive", "mid", 40, 85),
         ("SNK", "Neo Turf Masters NGPC", "Neo Geo Pocket Color", "Neo Turf Masters / Big Tournament Golf (Game)", "Standard", "high", 85, 175),
         ("SNK", "Crush Roller NGPC", "Neo Geo Pocket Color", "Crush Roller (Game, Japan)", "Japan Exclusive", "mid", 45, 95),
@@ -1080,21 +1088,16 @@ def _expanded_round8_retro_handhelds() -> list[dict]:
         ("Bandai", "Rhyme Rider Kerorican WSC", "WonderSwan Color", "Rhyme Rider Kerorican (Game, Japan)", "Japan Exclusive", "mid", 40, 85),
 
         # --- Game Boy Advance SP Limited Editions (+8) ---
-        ("Nintendo", "Game Boy Advance SP Torchic Orange", "Game Boy Advance SP", "Pokemon Torchic Orange (Japan)", "Japan Exclusive", "grail", 240, 480),
         ("Nintendo", "Game Boy Advance SP Rayquaza Green", "Game Boy Advance SP", "Pokemon Rayquaza Green (Japan)", "Japan Exclusive", "grail", 280, 560),
         ("Nintendo", "Game Boy Advance SP Groudon Red", "Game Boy Advance SP", "Pokemon Groudon Red (Japan)", "Japan Exclusive", "grail", 250, 500),
         ("Nintendo", "Game Boy Advance SP Kyogre Blue", "Game Boy Advance SP", "Pokemon Kyogre Blue (Japan)", "Japan Exclusive", "grail", 260, 520),
         ("Nintendo", "Game Boy Advance SP Classic NES Black", "Game Boy Advance SP", "Classic NES Black AGS-001 (NA)", "Special Edition", "high", 100, 210),
         ("Nintendo", "Game Boy Advance SP Pearl Blue AGS-101", "Game Boy Advance SP", "Pearl Blue AGS-101 Backlit (NA)", "Standard", "high", 110, 230),
-        ("Nintendo", "Game Boy Advance SP Surf Blue", "Game Boy Advance SP", "Surf Blue AGS-001 (Japan)", "Japan Exclusive", "high", 100, 210),
-        ("Nintendo", "Game Boy Advance SP Final Fantasy Tactics", "Game Boy Advance SP", "Final Fantasy Tactics Pearl White (Japan)", "Japan Exclusive", "high", 130, 270),
 
         # --- DS Lite Special Editions (+8) ---
         ("Nintendo", "Nintendo DS Lite Pokemon Diamond Pearl Dialga Palkia", "Nintendo DS Lite", "Pokemon Diamond Pearl Dialga Palkia (Japan)", "Japan Exclusive", "high", 110, 230),
         ("Nintendo", "Nintendo DS Lite Crimson/Black Mario", "Nintendo DS Lite", "Crimson/Black Mario Limited (NA)", "Special Edition", "high", 80, 170),
         ("Nintendo", "Nintendo DS Lite Pikachu Yellow (JP Edition)", "Nintendo DS Lite", "Pikachu Yellow (Japan)", "Japan Exclusive", "high", 120, 250),
-        ("Nintendo", "Nintendo DS Lite Ice Blue", "Nintendo DS Lite", "Ice Blue (Japan)", "Japan Exclusive", "mid", 60, 130),
-        ("Nintendo", "Nintendo DS Lite Metallic Rose", "Nintendo DS Lite", "Metallic Rose (Japan)", "Japan Exclusive", "mid", 65, 140),
         ("Nintendo", "Nintendo DS Lite Love Plus+ Nene", "Nintendo DS Lite", "Love Plus+ Nene Deluxe (Japan)", "Japan Exclusive", "high", 150, 310),
         ("Nintendo", "Nintendo DS Lite Kingdom Hearts 358/2 Days", "Nintendo DS Lite", "Kingdom Hearts 358/2 Days Silver (Japan)", "Japan Exclusive", "high", 130, 270),
         ("Nintendo", "Nintendo DS Lite Guitar Hero On Tour Pack", "Nintendo DS Lite", "Guitar Hero On Tour White Bundle (NA)", "Console Bundle", "mid", 60, 130),
@@ -1104,7 +1107,6 @@ def _expanded_round8_retro_handhelds() -> list[dict]:
         ("Sony", "PSP-3000 Kingdom Hearts Birth by Sleep White", "PSP-3000", "Kingdom Hearts Birth by Sleep White (Japan)", "Japan Exclusive", "high", 120, 250),
         ("Sony", "PSP-3000 Dissidia Final Fantasy Silver", "PSP-3000", "Dissidia Final Fantasy 20th Anniversary Silver (Japan)", "Japan Exclusive", "high", 130, 270),
         ("Sony", "PSP-3000 Gundam vs Gundam Red", "PSP-3000", "Gundam vs Gundam Red Char's Custom (Japan)", "Japan Exclusive", "high", 140, 290),
-        ("Sony", "PSP-2000 God of War Red", "PSP-2000", "God of War Chains of Olympus Red (NA)", "Special Edition", "high", 90, 190),
         ("Sony", "PSP-3000 Gran Turismo Silver", "PSP-3000", "Gran Turismo Racing Pack Silver (EU)", "Console Bundle", "mid", 70, 150),
         ("Sony", "PSP-1000 Metal Gear Solid Platinum Silver", "PSP-1000", "Metal Gear Solid Peace Walker Platinum Silver (Japan)", "Japan Exclusive", "high", 120, 250),
         ("Sony", "PSP-3000 Hatsune Miku Project Diva 2nd", "PSP-3000", "Hatsune Miku Project Diva 2nd Turquoise (Japan)", "Japan Exclusive", "high", 160, 330),
@@ -1131,12 +1133,10 @@ def _expanded_round8_retro_handhelds() -> list[dict]:
         ("Bandai", "Tamagotchi Connection V5 Celebrity Blue", "Tamagotchi", "Connection V5 Celebrity Blue (2008)", "Standard", "mid", 25, 55),
         ("Bandai", "Tamagotchi iD L 15th Anniversary Royal Purple", "Tamagotchi", "iD L 15th Anniversary Royal Purple (Japan)", "Japan Exclusive", "high", 80, 170),
         ("Bandai", "Tamagotchi On Wonder Garden Turquoise", "Tamagotchi", "On Wonder Garden Turquoise (NA)", "Standard", "mid", 35, 70),
-        ("Bandai", "Tamagotchi Pix Party Confetti", "Tamagotchi", "Pix Party Confetti Pink (NA)", "Standard", "mid", 30, 60),
         ("Bandai", "Tamagotchi Uni Lavender", "Tamagotchi", "Uni Lavender (2023)", "Standard", "mid", 45, 65),
         ("Bandai", "Tamagotchi Smart Niziu Special Set", "Tamagotchi", "Smart NiziU Special Set (Japan)", "Japan Exclusive", "high", 100, 200),
 
         # --- More Modern Retro Handhelds (+6) ---
-        ("Retroid", "Retroid Pocket 4 Pro", "Retroid Pocket 4 Pro", "Black Pro 8GB", "Modded/Custom", "mid", 90, 115),
         ("Anbernic", "Anbernic RG556 Black", "RG556", "Black AMOLED", "Modded/Custom", "mid", 85, 110),
         ("Anbernic", "Anbernic RG353M Silver Metal", "RG353M", "Silver Metal Body", "Modded/Custom", "mid", 70, 90),
         ("Powkiddy", "Powkiddy RGB30 Clear Purple", "RGB30", "Clear Purple", "Modded/Custom", "mid", 45, 60),
@@ -1147,6 +1147,256 @@ def _expanded_round8_retro_handhelds() -> list[dict]:
         ("Epoch", "Epoch Game Pocket Computer Astro Bomber", "Game Pocket Computer", "Astro Bomber Cartridge (Japan)", "Japan Exclusive", "high", 80, 170),
         ("Milton Bradley", "MB Microvision Block Buster", "Microvision", "Block Buster Cartridge", "Standard", "mid", 40, 85),
         ("Watara", "Watara Supervision Green Console", "Supervision", "Green Console (PAL)", "Standard", "mid", 35, 70),
+    ]
+    catalog = []
+    for brand, name, platform, variant_note, condition, rarity_tier, price_loose, price_cib in items:
+        if "Japan" in variant_note or condition == "Japan Exclusive":
+            region = "JPN"
+        elif "NA" in variant_note:
+            region = "NA"
+        else:
+            region = "EU"
+        is_limited = condition in ("Limited Color", "Special Edition", "Japan Exclusive", "Anniversary")
+        year = _platform_year(platform, name)
+        catalog.append({
+            "brand": brand,
+            "name": name,
+            "platform": platform,
+            "variant_note": variant_note,
+            "condition": condition,
+            "rarity_tier": rarity_tier,
+            "price_loose_eur": price_loose,
+            "price_cib_eur": price_cib,
+            "region": region,
+            "is_limited_edition": is_limited,
+            "year": year,
+        })
+    return catalog
+
+
+def _variant_expansion() -> list[dict]:
+    """~115 color and edition variants for major retro handhelds.
+
+    Covers shell colors, limited editions, and regional exclusives for:
+    Game Boy (Play It Loud), Game Boy Pocket, Game Boy Light, Game Boy Color,
+    Game Boy Advance, GBA SP, DS Lite, PSP, 3DS/3DS XL, Neo Geo Pocket Color,
+    Sega Game Gear, Atari Lynx, and WonderSwan.
+    """
+    items = [
+        # ---------------------------------------------------------------
+        # Game Boy DMG-01 — Play It Loud colors not yet covered
+        # (existing: Gray, Red, Green, Yellow, Black, Clear, White, Blue, Ice Blue)
+        # ---------------------------------------------------------------
+        ("Nintendo", "Game Boy DMG-01 Play It Loud Vibrant Yellow", "Game Boy", "Play It Loud Vibrant Yellow (JP)", "Limited Color", "high", 75, 155),
+        ("Nintendo", "Game Boy DMG-01 Deep Green", "Game Boy", "Deep Green (Japan)", "Japan Exclusive", "high", 70, 145),
+
+        # ---------------------------------------------------------------
+        # Game Boy Pocket — colors not yet listed
+        # (existing: Silver, Ice Blue, Clear Purple, Red, Green, Yellow, Pink, Black, Gold, Extreme Green)
+        # ---------------------------------------------------------------
+        ("Nintendo", "Game Boy Pocket Clear", "Game Boy Pocket", "Clear/Transparent", "Limited Color", "high", 75, 155),
+        ("Nintendo", "Game Boy Pocket Blue", "Game Boy Pocket", "Blue", "Standard", "mid", 35, 75),
+        ("Nintendo", "Game Boy Pocket Atomic Purple", "Game Boy Pocket", "Atomic Purple (NA)", "Limited Color", "high", 80, 165),
+
+        # ---------------------------------------------------------------
+        # Game Boy Light — additional JP colors
+        # (existing: Gold, Silver, Astro Boy, Famitsu, Tezuka Osamu, Pikachu)
+        # ---------------------------------------------------------------
+        ("Nintendo", "Game Boy Light Clear Yellow", "Game Boy Light", "Clear Yellow (Japan)", "Japan Exclusive", "grail", 240, 490),
+
+        # ---------------------------------------------------------------
+        # Game Boy Color — shell colors not yet covered
+        # (existing: Grape, Berry, Teal, Dandelion, Kiwi, Atomic Purple, Clear, Midnight Blue + many JP exclusives)
+        # ---------------------------------------------------------------
+        ("Nintendo", "Game Boy Color Teal (NA)", "Game Boy Color", "Teal Jade (NA Release)", "Standard", "mid", 38, 80),
+        ("Nintendo", "Game Boy Color Berry (EU)", "Game Boy Color", "Berry Pink (EU Release)", "Standard", "mid", 40, 85),
+        ("Nintendo", "Game Boy Color Grape (EU)", "Game Boy Color", "Grape Purple (EU Release)", "Standard", "mid", 40, 85),
+        ("Nintendo", "Game Boy Color Dandelion (EU)", "Game Boy Color", "Dandelion Yellow (EU Release)", "Standard", "mid", 42, 90),
+        ("Nintendo", "Game Boy Color Kiwi (EU)", "Game Boy Color", "Kiwi Green (EU Release)", "Standard", "mid", 42, 88),
+        ("Nintendo", "Game Boy Color Clear Purple", "Game Boy Color", "Clear/Atomic Purple (NA)", "Standard", "mid", 45, 95),
+        ("Nintendo", "Game Boy Color Neotones Midnight Blue", "Game Boy Color", "Neotones Midnight Blue (Japan)", "Japan Exclusive", "high", 75, 155),
+        ("Nintendo", "Game Boy Color Ice Blue (JP)", "Game Boy Color", "Ice Blue Translucent (Japan)", "Japan Exclusive", "high", 80, 165),
+
+        # ---------------------------------------------------------------
+        # Game Boy Advance — all standard colors
+        # (existing: Indigo, Glacier, Flame Red, White/Arctic, Spice Orange, Black, Fuchsia, Gold, Midnight Blue)
+        # ---------------------------------------------------------------
+        ("Nintendo", "Game Boy Advance Glacier Clear", "Game Boy Advance", "Glacier Clear Milky Blue (NA)", "Standard", "mid", 50, 110),
+        ("Nintendo", "Game Boy Advance Arctic White (NA)", "Game Boy Advance", "Arctic White (NA Release)", "Standard", "mid", 50, 110),
+        ("Nintendo", "Game Boy Advance Orange (JP)", "Game Boy Advance", "Orange (Japan)", "Japan Exclusive", "high", 80, 170),
+        ("Nintendo", "Game Boy Advance Platinum", "Game Boy Advance", "Platinum Silver", "Standard", "mid", 48, 105),
+        ("Nintendo", "Game Boy Advance Clear Blue", "Game Boy Advance", "Clear Blue Toys R Us (Japan)", "Japan Exclusive", "high", 100, 210),
+        ("Nintendo", "Game Boy Advance Suicune Blue", "Game Boy Advance", "Pokemon Center Suicune Blue (Japan)", "Japan Exclusive", "grail", 190, 390),
+
+        # ---------------------------------------------------------------
+        # Game Boy Advance SP — colors & editions
+        # (existing: Cobalt, Graphite, AGS-101 Pearl, NES, Pikachu, Tribal, FFT, Famicom, many Pokemon CEs)
+        # ---------------------------------------------------------------
+        ("Nintendo", "Game Boy Advance SP Pearl Blue AGS-001", "Game Boy Advance SP", "Pearl Blue AGS-001", "Standard", "mid", 55, 115),
+        ("Nintendo", "Game Boy Advance SP Cobalt Blue AGS-101", "Game Boy Advance SP", "Cobalt Blue AGS-101 Backlit", "Standard", "high", 95, 200),
+        ("Nintendo", "Game Boy Advance SP Graphite AGS-101", "Game Boy Advance SP", "Graphite AGS-101 Backlit", "Standard", "high", 95, 200),
+        ("Nintendo", "Game Boy Advance SP Flame Red AGS-101", "Game Boy Advance SP", "Flame Red AGS-101 Backlit", "Standard", "high", 100, 210),
+        ("Nintendo", "Game Boy Advance SP Pearl Pink AGS-101", "Game Boy Advance SP", "Pearl Pink AGS-101 Backlit", "Standard", "high", 100, 210),
+        ("Nintendo", "Game Boy Advance SP Famicom Color (JP)", "Game Boy Advance SP", "Famicom Color Wine Red/White (Japan)", "Japan Exclusive", "high", 120, 250),
+        ("Nintendo", "Game Boy Advance SP Platinum Silver", "Game Boy Advance SP", "Platinum Silver AGS-001", "Standard", "mid", 55, 115),
+        ("Nintendo", "Game Boy Advance SP Snow White", "Game Boy Advance SP", "Snow White AGS-001 (EU)", "Standard", "mid", 58, 120),
+        ("Nintendo", "Game Boy Advance SP Midnight Blue", "Game Boy Advance SP", "Midnight Blue AGS-001 (Japan)", "Japan Exclusive", "high", 80, 170),
+        ("Nintendo", "Game Boy Advance SP Mario vs DK", "Game Boy Advance SP", "Mario vs Donkey Kong Red (EU)", "Special Edition", "high", 130, 270),
+        ("Nintendo", "Game Boy Advance SP Famicom Mini 20th Anniversary", "Game Boy Advance SP", "Famicom Mini Vol.2 20th Anniversary (Japan)", "Japan Exclusive", "grail", 230, 460),
+
+        # ---------------------------------------------------------------
+        # Nintendo DS Lite — all standard + LE colors
+        # (existing: Polar White, Crimson/Black, Enamel Navy, Metallic Rose, Ice Blue, Jet Black, Onyx, Coral Pink)
+        # ---------------------------------------------------------------
+        ("Nintendo", "Nintendo DS Lite Cobalt Blue/Black", "Nintendo DS Lite", "Cobalt Blue/Black", "Standard", "mid", 30, 65),
+        ("Nintendo", "Nintendo DS Lite Noble Pink", "Nintendo DS Lite", "Noble Pink", "Standard", "mid", 35, 70),
+        ("Nintendo", "Nintendo DS Lite Gloss Silver", "Nintendo DS Lite", "Gloss Silver", "Standard", "mid", 30, 65),
+        ("Nintendo", "Nintendo DS Lite Crimson Red", "Nintendo DS Lite", "Crimson Red (Japan)", "Japan Exclusive", "mid", 35, 70),
+        ("Nintendo", "Nintendo DS Lite Crystal White", "Nintendo DS Lite", "Crystal White (Japan)", "Japan Exclusive", "mid", 32, 65),
+        ("Nintendo", "Nintendo DS Lite Enamel Navy (EU)", "Nintendo DS Lite", "Enamel Navy (EU Release)", "Standard", "mid", 30, 65),
+        ("Nintendo", "Nintendo DS Lite Gross White (EU)", "Nintendo DS Lite", "Gross White (EU Release)", "Standard", "standard", 25, 55),
+        ("Nintendo", "Nintendo DS Lite Turquoise", "Nintendo DS Lite", "Turquoise (Japan)", "Japan Exclusive", "mid", 35, 75),
+        ("Nintendo", "Nintendo DS Lite Lime Green", "Nintendo DS Lite", "Lime Green (Japan)", "Japan Exclusive", "mid", 38, 78),
+        ("Nintendo", "Nintendo DS Lite Mario Red", "Nintendo DS Lite", "New Super Mario Bros Red (NA)", "Special Edition", "high", 75, 160),
+
+        # ---------------------------------------------------------------
+        # Sony PSP — all colors & editions
+        # (existing: Piano Black, Ceramic White, Silver, Ice Silver, Vibrant Blue, Radiant Red, Pearl White, many JP)
+        # ---------------------------------------------------------------
+        ("Sony", "PSP-1000 Champagne Gold", "PSP-1000", "Champagne Gold (Japan)", "Japan Exclusive", "high", 65, 135),
+        ("Sony", "PSP-2000 Piano Black", "PSP-2000", "Piano Black Slim", "Standard", "mid", 35, 75),
+        ("Sony", "PSP-2000 Ceramic White", "PSP-2000", "Ceramic White Slim", "Standard", "mid", 35, 75),
+        ("Sony", "PSP-2000 Mystic Silver", "PSP-2000", "Mystic Silver Slim", "Standard", "mid", 38, 80),
+        ("Sony", "PSP-2000 Deep Red", "PSP-2000", "Deep Red (Japan)", "Japan Exclusive", "mid", 45, 95),
+        ("Sony", "PSP-2000 Matt Bronze", "PSP-2000", "Matt Bronze (Japan)", "Japan Exclusive", "mid", 50, 100),
+        ("Sony", "PSP-3000 Mystic Silver", "PSP-3000", "Mystic Silver", "Standard", "mid", 42, 88),
+        ("Sony", "PSP-3000 Piano Black", "PSP-3000", "Piano Black", "Standard", "mid", 40, 85),
+        ("Sony", "PSP-3000 God of War Edition", "PSP-3000", "God of War Ghost of Sparta Red/Black (NA)", "Special Edition", "high", 90, 190),
+        ("Sony", "PSP-1000 Crisis Core FF VII Bundle", "PSP-1000", "Crisis Core FFVII Silver Bundle (NA)", "Console Bundle", "high", 95, 200),
+
+        # ---------------------------------------------------------------
+        # Nintendo 3DS / 3DS XL — colors & special editions
+        # (existing: Aqua Blue, Cosmo Black, Flame Red, Midnight Purple, many SEs)
+        # ---------------------------------------------------------------
+        ("Nintendo", "Nintendo 3DS Pearl Pink", "Nintendo 3DS", "Pearl Pink", "Standard", "mid", 60, 130),
+        ("Nintendo", "Nintendo 3DS Ice White", "Nintendo 3DS", "Ice White", "Standard", "mid", 58, 125),
+        ("Nintendo", "Nintendo 3DS Cobalt Blue", "Nintendo 3DS", "Cobalt Blue", "Standard", "mid", 60, 130),
+        ("Nintendo", "Nintendo 3DS Misty Pink", "Nintendo 3DS", "Misty Pink (Japan)", "Japan Exclusive", "mid", 65, 140),
+        ("Nintendo", "Nintendo 3DS Pure White (JP)", "Nintendo 3DS", "Pure White (Japan)", "Japan Exclusive", "mid", 60, 130),
+        ("Nintendo", "Nintendo 3DS Pikachu Limited Yellow", "Nintendo 3DS", "Pikachu Limited Edition Yellow (Japan)", "Japan Exclusive", "high", 150, 310),
+        ("Nintendo", "Nintendo 3DS Fire Emblem Awakening Cobalt", "Nintendo 3DS", "Fire Emblem Awakening Cobalt Blue (NA)", "Special Edition", "high", 140, 290),
+        ("Nintendo", "Nintendo 3DS Monster Hunter 4 White", "Nintendo 3DS", "Monster Hunter 4 Limited White (Japan)", "Japan Exclusive", "high", 120, 250),
+        ("Nintendo", "Nintendo 3DS XL Silver/Black", "Nintendo 3DS XL", "Silver/Black", "Standard", "mid", 65, 140),
+        ("Nintendo", "Nintendo 3DS XL White/Pink", "Nintendo 3DS XL", "White/Pink", "Standard", "mid", 68, 145),
+        ("Nintendo", "Nintendo 3DS XL Zelda Triforce Gold", "Nintendo 3DS XL", "Zelda Triforce Gold (Japan)", "Japan Exclusive", "high", 160, 340),
+        ("Nintendo", "Nintendo 3DS XL Fire Emblem Awakening Blue", "Nintendo 3DS XL", "Fire Emblem Awakening Blue (NA)", "Special Edition", "high", 150, 310),
+        ("Nintendo", "Nintendo 3DS XL Monster Hunter 4 Silver", "Nintendo 3DS XL", "Monster Hunter 4 Silver (Japan)", "Japan Exclusive", "high", 130, 270),
+        ("Nintendo", "New Nintendo 3DS XL Monster Hunter Cross", "New Nintendo 3DS XL", "Monster Hunter X/Cross Hunting Life (Japan)", "Japan Exclusive", "high", 135, 280),
+        ("Nintendo", "New Nintendo 3DS XL Fire Emblem Fates White", "New Nintendo 3DS XL", "Fire Emblem Fates White (Japan)", "Japan Exclusive", "high", 145, 300),
+
+        # ---------------------------------------------------------------
+        # Neo Geo Pocket Color — additional shell colors
+        # (existing: Anthracite, Crystal Blue, Platinum Silver, Camo Blue, Carbon Black,
+        #  Crystal Yellow, Stone Blue, Solid Silver, Crystal Clear, Aqua Blue, Platinum Blue, Dark Blue)
+        # ---------------------------------------------------------------
+        ("SNK", "Neo Geo Pocket Color Pearl White", "Neo Geo Pocket Color", "Pearl White", "Standard", "high", 90, 190),
+        ("SNK", "Neo Geo Pocket Color Crystal Green", "Neo Geo Pocket Color", "Crystal Green", "Limited Color", "high", 100, 210),
+        ("SNK", "Neo Geo Pocket Color Camouflage Green", "Neo Geo Pocket Color", "Camouflage Green", "Limited Color", "high", 110, 230),
+        ("SNK", "Neo Geo Pocket Color Cotton Candy Blue", "Neo Geo Pocket Color", "Cotton Candy Blue (Japan)", "Japan Exclusive", "high", 105, 220),
+        ("SNK", "Neo Geo Pocket Color Capcom Red", "Neo Geo Pocket Color", "Capcom VS SNK Red (Japan)", "Japan Exclusive", "high", 120, 250),
+
+        # ---------------------------------------------------------------
+        # Sega Game Gear — special editions
+        # (existing: Black, Blue, White, Coca-Cola Red, Yellow, Smoke, Red, Kids Gear, Majesco)
+        # ---------------------------------------------------------------
+        ("Sega", "Game Gear Crystal Blue", "Game Gear", "Crystal Blue (Japan)", "Japan Exclusive", "high", 115, 240),
+        ("Sega", "Game Gear Gunstar Heroes Edition", "Game Gear", "Gunstar Heroes Bundle (Japan)", "Japan Exclusive", "high", 130, 270),
+        ("Sega", "Game Gear Black Sega Sports", "Game Gear", "Sports Edition Black", "Special Edition", "high", 70, 150),
+        ("Sega", "Game Gear Columns Bundle", "Game Gear", "Columns Pack-In Bundle (NA)", "Console Bundle", "mid", 40, 90),
+        ("Sega", "Game Gear TV Tuner Pack Bundle", "Game Gear", "TV Tuner Pack Bundle (NA)", "Console Bundle", "high", 80, 170),
+
+        # ---------------------------------------------------------------
+        # Atari Lynx — I and II variants
+        # (existing: Lynx I, Lynx II, Lynx I Cal Games Bundle, Lynx II Batman Returns, McWill Mod)
+        # ---------------------------------------------------------------
+        ("Atari", "Atari Lynx I White Edition", "Atari Lynx", "White Edition PAG-0200", "Limited Color", "high", 100, 220),
+        ("Atari", "Atari Lynx II Clear Shell", "Atari Lynx II", "Clear/Transparent Shell (Aftermarket)", "Modded/Custom", "high", 90, 190),
+        ("Atari", "Atari Lynx I Sun Visor Bundle", "Atari Lynx", "Sun Visor + Pouch Bundle (NA)", "Console Bundle", "high", 130, 280),
+        ("Atari", "Atari Lynx II Todd's Adventures Bundle", "Atari Lynx II", "Todd's Adventures Slime World Bundle", "Console Bundle", "high", 95, 210),
+        ("Atari", "Atari Lynx I Chip's Challenge Pack", "Atari Lynx", "Chip's Challenge Pack-In (NA)", "Console Bundle", "high", 110, 240),
+
+        # ---------------------------------------------------------------
+        # WonderSwan — color variants
+        # (existing: Crystal Blue, Wine Red, Silver, Skeleton Black, Crystal Orange/Black, One Piece, many games)
+        # ---------------------------------------------------------------
+        ("Bandai", "WonderSwan Color Pearl Blue", "WonderSwan Color", "Pearl Blue (Japan)", "Japan Exclusive", "high", 65, 140),
+        ("Bandai", "WonderSwan Color Sherbet Pink", "WonderSwan Color", "Sherbet Pink (Japan)", "Japan Exclusive", "high", 70, 150),
+        ("Bandai", "WonderSwan Color Crystal Red", "WonderSwan Color", "Crystal Red (Japan)", "Japan Exclusive", "high", 70, 150),
+        ("Bandai", "WonderSwan Color Crystal White", "WonderSwan Color", "Crystal White (Japan)", "Japan Exclusive", "high", 60, 130),
+        ("Bandai", "WonderSwan Original Blue Metallic", "WonderSwan", "Blue Metallic (Japan)", "Japan Exclusive", "high", 55, 120),
+        ("Bandai", "WonderSwan Original Wine Red", "WonderSwan", "Wine Red (Japan)", "Japan Exclusive", "high", 60, 130),
+        ("Bandai", "WonderSwan Original Skeleton Green", "WonderSwan", "Skeleton Green (Japan)", "Japan Exclusive", "high", 65, 140),
+        ("Bandai", "WonderSwan Original Sherbet Melon Pink", "WonderSwan", "Sherbet Melon Pink (Japan)", "Japan Exclusive", "high", 70, 150),
+        ("Bandai", "WonderSwan Color Gundam SEED", "WonderSwan Color", "Gundam SEED Limited (Japan)", "Japan Exclusive", "high", 110, 230),
+        ("Bandai", "SwanCrystal Violet", "SwanCrystal", "Violet (Japan)", "Japan Exclusive", "high", 75, 160),
+        ("Bandai", "SwanCrystal Blue", "SwanCrystal", "Blue (Japan)", "Japan Exclusive", "high", 70, 150),
+
+        # ---------------------------------------------------------------
+        # Game Boy Advance — more regional/color variants
+        # ---------------------------------------------------------------
+        ("Nintendo", "Game Boy Advance Transparent Pink", "Game Boy Advance", "Transparent Milky Pink (Japan)", "Japan Exclusive", "high", 85, 175),
+        ("Nintendo", "Game Boy Advance Clear Orange", "Game Boy Advance", "Clear Orange (Japan)", "Japan Exclusive", "high", 90, 185),
+
+        # ---------------------------------------------------------------
+        # Game Boy Color — more shell color variants
+        # ---------------------------------------------------------------
+        ("Nintendo", "Game Boy Color Lime Green (JP)", "Game Boy Color", "Lime Green (Japan)", "Japan Exclusive", "high", 70, 145),
+        ("Nintendo", "Game Boy Color Sakura Pink", "Game Boy Color", "Sakura Pink (Japan)", "Japan Exclusive", "high", 75, 155),
+
+        # ---------------------------------------------------------------
+        # DS Lite — more JP colors
+        # ---------------------------------------------------------------
+        ("Nintendo", "Nintendo DS Lite Gross Silver (JP)", "Nintendo DS Lite", "Gross Silver (Japan)", "Japan Exclusive", "mid", 32, 68),
+        ("Nintendo", "Nintendo DS Lite Candy Pink", "Nintendo DS Lite", "Candy Pink (Japan)", "Japan Exclusive", "mid", 38, 78),
+
+        # ---------------------------------------------------------------
+        # PSP — more editions
+        # ---------------------------------------------------------------
+        ("Sony", "PSP-2000 Star Wars White Bundle", "PSP-2000", "Star Wars Battlefront Renegade Squadron White (NA)", "Console Bundle", "high", 80, 170),
+        ("Sony", "PSP-3000 Final Fantasy Dissidia 012 White", "PSP-3000", "Dissidia 012 Final Fantasy White (Japan)", "Japan Exclusive", "high", 115, 240),
+        ("Sony", "PSP-1000 Metal Gear Solid Camo", "PSP-1000", "Metal Gear Solid Portable Ops Camo Green (Japan)", "Japan Exclusive", "high", 110, 230),
+
+        # ---------------------------------------------------------------
+        # 3DS — more special editions
+        # ---------------------------------------------------------------
+        ("Nintendo", "Nintendo 3DS Zelda Ocarina of Time 3D", "Nintendo 3DS", "Zelda Ocarina of Time 3D Green (EU)", "Special Edition", "high", 140, 290),
+        ("Nintendo", "Nintendo 3DS XL Luigi Mansion Green", "Nintendo 3DS XL", "Luigi's Mansion Dark Moon Green (NA)", "Special Edition", "high", 130, 270),
+        ("Nintendo", "Nintendo 3DS XL Animal Crossing New Leaf", "Nintendo 3DS XL", "Animal Crossing New Leaf Pop (NA)", "Special Edition", "high", 120, 250),
+        ("Nintendo", "New Nintendo 3DS XL Super NES Edition", "New Nintendo 3DS XL", "Super NES / Super Famicom Edition (NA)", "Special Edition", "high", 170, 350),
+        ("Nintendo", "New Nintendo 3DS XL Zelda Hyrule Gold", "New Nintendo 3DS XL", "Legend of Zelda Hyrule Gold (EU)", "Special Edition", "high", 165, 340),
+
+        # ---------------------------------------------------------------
+        # Sega Game Gear — more variants
+        # ---------------------------------------------------------------
+        ("Sega", "Game Gear Sonic Blue Limited", "Game Gear", "Sonic Blue Pack-In (EU)", "Console Bundle", "high", 85, 175),
+        ("Sega", "Game Gear Green (JP)", "Game Gear", "Green (Japan)", "Japan Exclusive", "high", 120, 250),
+
+        # ---------------------------------------------------------------
+        # Neo Geo Pocket Color — final colors
+        # ---------------------------------------------------------------
+        ("SNK", "Neo Geo Pocket Color Metallic Blue", "Neo Geo Pocket Color", "Metallic Blue", "Standard", "high", 88, 185),
+        ("SNK", "Neo Geo Pocket Color Crystal Red", "Neo Geo Pocket Color", "Crystal Red", "Limited Color", "high", 105, 220),
+
+        # ---------------------------------------------------------------
+        # Atari Lynx — more bundles
+        # ---------------------------------------------------------------
+        ("Atari", "Atari Lynx II Blue Lightning Pack", "Atari Lynx II", "Blue Lightning Pack-In (NA)", "Console Bundle", "high", 90, 200),
+
+        # ---------------------------------------------------------------
+        # WonderSwan — final variants
+        # ---------------------------------------------------------------
+        ("Bandai", "WonderSwan Original Mother Pink", "WonderSwan", "Mother Pink (Japan)", "Japan Exclusive", "high", 75, 160),
+        ("Bandai", "WonderSwan Color Gundam Wing Blue", "WonderSwan Color", "Gundam Wing Endless Duel Blue (Japan)", "Japan Exclusive", "high", 100, 210),
     ]
     catalog = []
     for brand, name, platform, variant_note, condition, rarity_tier, price_loose, price_cib in items:

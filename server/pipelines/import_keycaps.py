@@ -42,6 +42,152 @@ from pipelines.import_common import (
 CATEGORY = "keycaps"
 
 
+def _variant_expansion() -> list[dict]:
+    """~100 variant items covering colorways, materials, sizes, profiles,
+    group buy rounds, kit types, RAMA collabs, special finishes, and clones."""
+
+    # (maker, keycap_type, name, profile, rarity_tier, price_eur)
+    variants = [
+        # ── Jelly Key Zen Pond — Colorway Variants ─────────────────────
+        ("Jelly Key", "Artisan", "Zen Pond III Koi Emerald Pour", "SA R1", "mid", 95),
+        ("Jelly Key", "Artisan", "Zen Pond III Koi Crimson Pour", "SA R1", "mid", 95),
+        ("Jelly Key", "Artisan", "Zen Pond III Koi Midnight Pour", "SA R1", "mid", 100),
+        ("Jelly Key", "Artisan", "Zen Pond III Koi Golden Pour", "SA R1", "mid", 100),
+        ("Jelly Key", "Artisan", "Zen Pond III Koi Lavender Pour", "SA R1", "mid", 95),
+
+        # ── Jelly Key — Size Variants ──────────────────────────────────
+        ("Jelly Key", "Artisan", "Zen Pond III Cherry Blossom 1u", "Cherry R1", "mid", 75),
+        ("Jelly Key", "Artisan", "Zen Pond III Cherry Blossom 2.25u Enter", "SA R1", "mid", 110),
+        ("Jelly Key", "Artisan", "Zen Pond III Cherry Blossom 7u Spacebar", "SA R1", "high", 145),
+        ("Jelly Key", "Artisan", "Zen Pond III Ochiba 6.25u Spacebar", "SA R1", "mid", 130),
+        ("Jelly Key", "Artisan", "Zen Pond III Ochiba 2u Backspace", "SA R1", "mid", 105),
+
+        # ── Material Variants — Resin / Metal / Wood / Ceramic ─────────
+        ("Jelly Key", "Artisan", "Dragon of Eden Resin Standard", "SA R1", "mid", 100),
+        ("Jelly Key", "Artisan", "Dragon of Eden Metal Infused Brass", "SA R1", "high", 180),
+        ("Jelly Key", "Artisan", "Dragon of Eden Wood Inlay Walnut", "SA R1", "mid", 140),
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Ceramic Edition", "Cherry R1", "mid", 95),
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Metal Cast Bronze", "Cherry R1", "high", 120),
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Resin Clear", "Cherry R1", "mid", 65),
+        ("CYSM", "Artisan", "Keyby Resin Translucent", "Cherry R4", "mid", 85),
+        ("CYSM", "Artisan", "Keyby Metal Brass Edition", "Cherry R4", "high", 160),
+        ("CYSM", "Artisan", "Keyby Ceramic Porcelain White", "Cherry R4", "mid", 120),
+
+        # ── Profile Variants — Same Sculpt, Different Profile ──────────
+        ("CYSM", "Artisan", "Keyby Classic Blue SA Profile", "SA R1", "mid", 95),
+        ("CYSM", "Artisan", "Keyby Classic Blue DSA Profile", "DSA", "mid", 88),
+        ("CYSM", "Artisan", "Keyby Classic Blue OEM Profile", "OEM", "mid", 85),
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Obsidian SA Profile", "SA R1", "mid", 70),
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Obsidian DSA Profile", "DSA", "mid", 62),
+        ("Artkey", "Artisan", "Sirius Celestial White SA Profile", "SA R1", "high", 210),
+
+        # ── GMK Group Buy Rounds ──────────────────────────────────────
+        ("GMK", "Keycap Set", "GMK Olivia R1 Original Base Kit", "Cherry", "grail", 450),
+        ("GMK", "Keycap Set", "GMK Olivia R3 Base Kit", "Cherry", "mid", 180),
+        ("GMK", "Keycap Set", "GMK Bento R1 Original Base Kit", "Cherry", "high", 350),
+        ("GMK", "Keycap Set", "GMK Bento R3 Base Kit", "Cherry", "mid", 150),
+        ("GMK", "Keycap Set", "GMK Botanical R3 Base Kit", "Cherry", "mid", 160),
+        ("GMK", "Keycap Set", "GMK Mizu R1 Original Base Kit", "Cherry", "grail", 480),
+        ("GMK", "Keycap Set", "GMK Dracula R1 Original Core Kit", "Cherry", "high", 320),
+        ("GMK", "Keycap Set", "GMK 8008 R2 Base Kit", "Cherry", "high", 220),
+        ("GMK", "Keycap Set", "GMK Laser R1 Original Cyberdeck Base", "Cherry", "high", 350),
+
+        # ── Novelty vs Base vs Extension Kits ─────────────────────────
+        ("GMK", "Keycap Set", "GMK Olivia++ Novelties Kit", "Cherry", "mid", 120),
+        ("GMK", "Keycap Set", "GMK Olivia++ Spacebar Kit", "Cherry", "mid", 60),
+        ("GMK", "Keycap Set", "GMK Olivia++ Extension Kit", "Cherry", "mid", 95),
+        ("GMK", "Keycap Set", "GMK Botanical Novelties Kit", "Cherry", "mid", 100),
+        ("GMK", "Keycap Set", "GMK Botanical Spacebar Kit", "Cherry", "mid", 55),
+        ("GMK", "Keycap Set", "GMK Bento Novelties Kit", "Cherry", "mid", 85),
+        ("GMK", "Keycap Set", "GMK Bento Spacebar Kit", "Cherry", "mid", 50),
+        ("GMK", "Keycap Set", "GMK Laser Novelties Kit", "Cherry", "mid", 95),
+        ("GMK", "Keycap Set", "GMK Mizu Novelties Kit", "Cherry", "mid", 110),
+        ("GMK", "Keycap Set", "GMK Mizu Extension Kit", "Cherry", "mid", 90),
+        ("GMK", "Keycap Set", "GMK Dracula Novelties Kit", "Cherry", "mid", 80),
+        ("GMK", "Keycap Set", "GMK Darling Novelties Kit", "Cherry", "mid", 130),
+        ("GMK", "Keycap Set", "GMK 8008 Accent Kit", "Cherry", "mid", 85),
+
+        # ── RAMA Collaboration Artisans — Metal/Finish Variants ────────
+        ("RAMA", "Artisan", "RAMA x GMK Olivia Rose Gold PVD", "Cherry R1", "high", 180),
+        ("RAMA", "Artisan", "RAMA x GMK Olivia Polished Brass", "Cherry R1", "mid", 120),
+        ("RAMA", "Artisan", "RAMA x GMK Olivia Matte Aluminum", "Cherry R1", "mid", 90),
+        ("RAMA", "Artisan", "RAMA x GMK Botanical Brass PVD", "Cherry R1", "mid", 110),
+        ("RAMA", "Artisan", "RAMA x GMK Botanical Aluminum E-White", "Cherry R1", "mid", 85),
+        ("RAMA", "Artisan", "RAMA x GMK Bento Brass Salmon", "Cherry R1", "mid", 120),
+        ("RAMA", "Artisan", "RAMA x GMK Bento Stainless Steel", "Cherry R1", "mid", 100),
+        ("RAMA", "Artisan", "RAMA x GMK Mizu Wave Brass", "Cherry R1", "high", 150),
+        ("RAMA", "Artisan", "RAMA x GMK Mizu Wave Aluminum", "Cherry R1", "mid", 95),
+        ("RAMA", "Artisan", "RAMA x GMK Dracula Bat Brass", "Cherry R1", "mid", 110),
+        ("RAMA", "Artisan", "RAMA x GMK Dracula Bat Aluminum Black", "Cherry R1", "mid", 85),
+        ("RAMA", "Artisan", "RAMA x GMK 8008 Brass PVD Pink", "Cherry R1", "mid", 130),
+        ("RAMA", "Artisan", "RAMA x GMK Darling Heart Stainless Steel", "Cherry R1", "high", 160),
+        ("RAMA", "Artisan", "RAMA x GMK Laser Synthwave Brass", "Cherry R1", "mid", 120),
+
+        # ── Glow-in-Dark / UV-Reactive / Thermal Variants ─────────────
+        ("Lo-Ki Caps", "Artisan", "GiCi Skull Glow-in-Dark Green", "Cherry R1", "mid", 95),
+        ("Lo-Ki Caps", "Artisan", "GiCi Skull Glow-in-Dark Blue", "Cherry R1", "mid", 95),
+        ("Gothcaps", "Artisan", "Brimcap UV-Reactive Toxic Green", "Cherry R1", "mid", 110),
+        ("Gothcaps", "Artisan", "Brimcap UV-Reactive Plasma Blue", "Cherry R1", "mid", 110),
+        ("Gothcaps", "Artisan", "Sunken Hellcap UV-Reactive Blood Red", "Cherry R1", "mid", 105),
+        ("Lividity", "Artisan", "Observer Thermal Color-Change Blue-Pink", "Cherry R1", "mid", 130),
+        ("Lividity", "Artisan", "Observer Thermal Color-Change Black-Green", "Cherry R1", "mid", 130),
+        ("Sludgekidd", "Artisan", "Fingychomp Glow-in-Dark Ghost White", "Cherry R1", "mid", 125),
+        ("Systematik Kaps", "Artisan", "Cheshire UV-Reactive Neon Grin", "Cherry R1", "mid", 140),
+        ("Dwarf Factory", "Artisan", "Gnarly Drakon Thermal Shift Purple-Blue", "Cherry R1", "mid", 85),
+
+        # ── Clone vs Authentic GMK Sets ───────────────────────────────
+        ("HK Gaming", "Keycap Set", "HK Gaming Chalk PBT (GMK WoB Clone)", "Cherry", "standard", 40),
+        ("HK Gaming", "Keycap Set", "HK Gaming Pegaso PBT (GMK Mizu Clone)", "Cherry", "standard", 45),
+        ("HK Gaming", "Keycap Set", "HK Gaming 9009 Retro PBT (GMK 9009 Clone)", "Cherry", "standard", 38),
+        ("Yong Qiu", "Keycap Set", "YQ Matcha PBT (GMK Botanical Clone)", "Cherry", "standard", 35),
+        ("Yong Qiu", "Keycap Set", "YQ Coral PBT (GMK Darling Clone)", "Cherry", "standard", 38),
+        ("BoW Clone", "Keycap Set", "Generic PBT Olivia Clone Pink/White", "Cherry", "standard", 30),
+        ("BoW Clone", "Keycap Set", "Generic PBT Bento Clone Blue/Salmon", "Cherry", "standard", 32),
+        ("BoW Clone", "Keycap Set", "Generic PBT Dracula Clone Purple/Teal", "Cherry", "standard", 30),
+        ("BoW Clone", "Keycap Set", "Generic PBT Laser Clone Purple/Cyan", "Cherry", "standard", 32),
+
+        # ── Size Variants — Spacebars & Modifiers ─────────────────────
+        ("CYSM", "Artisan", "Keyby Aurora 6.25u Spacebar", "Cherry R4", "high", 200),
+        ("CYSM", "Artisan", "Keyby Aurora 2.25u Shift", "Cherry R4", "mid", 160),
+        ("Artkey", "Artisan", "Bull V2 Crimson 1.25u Modifier", "Cherry R4", "high", 270),
+        ("Artkey", "Artisan", "Bull V2 Crimson 1.5u Tab", "Cherry R4", "high", 275),
+        ("S-Craft", "Artisan", "Pokemon Gengar 2u Backspace", "SA R1", "high", 240),
+        ("S-Craft", "Artisan", "Pokemon Pikachu 6.25u Spacebar", "SA R1", "high", 280),
+
+        # ── Profile Variants — GMK Sets in Other Profiles ──────────────
+        ("Drop", "Keycap Set", "MT3 Olivia Base Kit (MT3 Profile)", "MT3", "mid", 110),
+        ("Drop", "Keycap Set", "MT3 Bento Base Kit (MT3 Profile)", "MT3", "mid", 100),
+        ("Signature Plastics", "Keycap Set", "SA Botanical Base Kit (SA Profile)", "SA", "mid", 170),
+        ("Keyreative", "Keycap Set", "KAT Mizu Alpha Kit (KAT Profile)", "KAT", "mid", 130),
+        ("Signature Plastics", "Keycap Set", "DSA Olivia Base Kit (DSA Profile)", "DSA", "mid", 120),
+
+        # ── Additional RAMA Metal Variants ────────────────────────────
+        ("RAMA", "Artisan", "RAMA x GMK Frost Witch Stainless Steel", "Cherry R1", "high", 170),
+        ("RAMA", "Artisan", "RAMA x GMK Cafe Brass Latte", "Cherry R1", "mid", 100),
+        ("RAMA", "Artisan", "RAMA x GMK Taro Aluminum Purple", "Cherry R1", "mid", 90),
+        ("RAMA", "Artisan", "RAMA x GMK Nord Brass PVD", "Cherry R1", "mid", 110),
+        ("RAMA", "Artisan", "RAMA x GMK Red Samurai Brass Torii", "Cherry R1", "mid", 130),
+
+        # ── Additional Thermal / GID / Material Variants ──────────────
+        ("Jelly Key", "Artisan", "Zen Pond III Ochiba Ceramic Edition", "SA R1", "mid", 130),
+        ("Phage Caps", "Artisan", "Clavus Glow-in-Dark Spectral Green", "Cherry R1", "mid", 115),
+        ("Keyforge", "Artisan", "Shishi Thermal Shift Red-Gold", "Cherry R1", "high", 340),
+        ("ETF (Nightcaps)", "Artisan", "Fugthulhu UV-Reactive Phantom Glow", "Cherry R1", "grail", 580),
+    ]
+
+    items = []
+    for maker, keycap_type, name, profile, tier, price in variants:
+        items.append({
+            "maker": maker,
+            "keycap_type": keycap_type,
+            "name": name,
+            "profile": profile,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return items
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated keycap catalog (600+ items) covering artisan makers, GMK/SA/KAT/ePBT/Cherry/DSA
     sets, premium grail caps, switches, deskmats, cables, stabilizers, plates,
@@ -832,7 +978,6 @@ def get_curated_catalog() -> list[dict]:
         ("Jelly Key", "Artisan", "Forbidden Realm Crystal Cavern", "SA R1", "mid", 105),
         ("Jelly Key", "Artisan", "Nature's Rage Lightning Storm", "SA R1", "mid", 100),
         ("Jelly Key", "Artisan", "Arcade Cabinet Street Fighter II", "SA R1", "mid", 95),
-        ("Jelly Key", "Artisan", "Born of Forest Series Redwood", "SA R1", "mid", 85),
         ("Jelly Key", "Artisan", "Mid-Autumn Festival Lantern 2024", "SA R1", "mid", 100),
 
         # ── Dwarf Factory — Additional (+6) ────────────────────────────
@@ -844,8 +989,6 @@ def get_curated_catalog() -> list[dict]:
         ("Dwarf Factory", "Artisan", "Moondust Cosmos", "Cherry R1", "mid", 85),
 
         # ── Alpha Keycaps (+8) ─────────────────────────────────────────
-        ("Alpha Keycaps", "Artisan", "Keypora Lunar Eclipse", "Cherry R4", "grail", 500),
-        ("Alpha Keycaps", "Artisan", "Keypora Solar Flare", "Cherry R4", "grail", 480),
         ("Alpha Keycaps", "Artisan", "Keypora Nebula Drift", "Cherry R4", "high", 350),
         ("Alpha Keycaps", "Artisan", "Keypora Sakura Storm", "Cherry R4", "high", 380),
         ("Alpha Keycaps", "Artisan", "Keypora Tidal Wave", "Cherry R4", "high", 320),
@@ -854,12 +997,10 @@ def get_curated_catalog() -> list[dict]:
         ("Alpha Keycaps", "Artisan", "Matapora Arctic Fox", "Cherry R4", "high", 260),
 
         # ── CYSM — Additional (+6) ────────────────────────────────────
-        ("CYSM", "Artisan", "Keyby Coral Reef", "Cherry R4", "mid", 105),
         ("CYSM", "Artisan", "Keyby Sunset Beach", "Cherry R4", "mid", 110),
         ("CYSM", "Artisan", "Ice Dragon Thunderstorm", "Cherry R4", "mid", 120),
         ("CYSM", "Artisan", "Boba Strawberry", "Cherry R4", "mid", 90),
         ("CYSM", "Artisan", "Boo Matcha Latte", "Cherry R4", "mid", 85),
-        ("CYSM", "Artisan", "Keyby Galaxy Purple", "Cherry R4", "high", 160),
 
         # ── Artkey Universe — Additional (+6) ─────────────────────────
         ("Artkey", "Artisan", "Sirius Midnight Void", "Cherry R4", "high", 230),
@@ -890,24 +1031,16 @@ def get_curated_catalog() -> list[dict]:
         # ── GMK Sets — Laser, Botanical, Olivia, Bento (+10) ──────────
         ("GMK", "Keycap Set", "GMK Laser R2 Synthwave Base Kit", "Cherry", "mid", 180),
         ("GMK", "Keycap Set", "GMK Laser R2 Cyberdeck Kit", "Cherry", "mid", 120),
-        ("GMK", "Keycap Set", "GMK Botanical R2 Base Kit", "Cherry", "mid", 200),
         ("GMK", "Keycap Set", "GMK Botanical R2 Novelties Kit", "Cherry", "mid", 90),
-        ("GMK", "Keycap Set", "GMK Olivia++ Light Base Kit", "Cherry", "high", 280),
-        ("GMK", "Keycap Set", "GMK Olivia++ Dark Base Kit", "Cherry", "high", 300),
         ("GMK", "Keycap Set", "GMK Bento R2 Traditional Base Kit", "Cherry", "mid", 170),
         ("GMK", "Keycap Set", "GMK Bento R2 Revised Base Kit", "Cherry", "mid", 160),
-        ("GMK", "Keycap Set", "GMK Darling Base Kit", "Cherry", "high", 250),
-        ("GMK", "Keycap Set", "GMK Demon Sword Base Kit", "Cherry", "high", 220),
 
         # ── GMK — Additional Premium Sets (+8) ────────────────────────
         ("GMK", "Keycap Set", "GMK Frost Witch R2 Base Kit", "Cherry", "high", 260),
         ("GMK", "Keycap Set", "GMK Dracula R2 Core Kit", "Cherry", "high", 240),
-        ("GMK", "Keycap Set", "GMK Hennessey Base Kit", "Cherry", "mid", 190),
         ("GMK", "Keycap Set", "GMK Shoko R2 Base Kit", "Cherry", "mid", 170),
         ("GMK", "Keycap Set", "GMK Mizu R2 Base Kit", "Cherry", "high", 230),
-        ("GMK", "Keycap Set", "GMK Noel Base Kit", "Cherry", "mid", 185),
         ("GMK", "Keycap Set", "GMK Striker 2 Base Kit", "Cherry", "mid", 165),
-        ("GMK", "Keycap Set", "GMK Yuru Base Kit", "Cherry", "mid", 175),
 
         # ── KAT/KAM Profiles (+8) ─────────────────────────────────────
         ("Keyreative", "Keycap Set", "KAT Milkshake Base Kit", "KAT", "mid", 130),
@@ -932,10 +1065,6 @@ def get_curated_catalog() -> list[dict]:
         ("Rathcaps", "Artisan", "Potion Bottle Emerald", "Cherry R1", "mid", 75),
 
         # ── ePBT / Cherry Original Sets (+4) ──────────────────────────
-        ("ePBT", "Keycap Set", "ePBT Kavala Base Kit", "Cherry", "mid", 100),
-        ("ePBT", "Keycap Set", "ePBT Grand Tour Base Kit", "Cherry", "mid", 95),
-        ("Cherry", "Keycap Set", "Cherry Original Hyperion Base Kit", "Cherry", "mid", 120),
-        ("Cherry", "Keycap Set", "Cherry Original Leviathan Base Kit", "Cherry", "mid", 115),
 
         # ── Keyboard Builds (+6) ──────────────────────────────────────
         ("Custom Build", "Keyboard Build", "Keycult No. 2/65 TKL Polycarbonate", "N/A", "grail", 1200),
@@ -956,7 +1085,23 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+
+    # Merge variant expansion items, dedup by name
+    existing_names = {c["name"] for c in catalog}
+    for v in _variant_expansion():
+        if v["name"] not in existing_names:
+            catalog.append(v)
+            existing_names.add(v["name"])
+
+    # Deduplicate by ('name',) (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = item["name"]
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
@@ -41,6 +42,17 @@ import { SkeletonList } from '@/components/Skeleton';
 import { collectorsApi } from '@/api/collectorsApi';
 import * as Location from 'expo-location';
 import logger from '@/utils/logger';
+import { radius, spacing, text, fontWeight, gap, shadow } from '@/theme/tokens';
+
+/** Twitch brand color — not a theme token (fixed external brand) */
+const TWITCH_PURPLE = '#9146FF';
+
+const VIEW_MODE_TABS = [
+  { key: 'list' as const, icon: 'list-outline' as const, label: 'List' },
+  { key: 'week' as const, icon: 'grid-outline' as const, label: 'Week' },
+  { key: 'calendar' as const, icon: 'calendar-outline' as const, label: 'Month' },
+  { key: 'nearby' as const, icon: 'location-outline' as const, label: 'Nearby' },
+] as const;
 
 function EventsScreen() {
   const router = useRouter();
@@ -54,6 +66,8 @@ function EventsScreen() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
   const [nearbyEvents, setNearbyEvents] = useState<Array<{ id: string; title: string; date: string; location?: string; distance_km?: number }>>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError, setNearbyError] = useState(false);
+  const [kindFilter, setKindFilter] = useState<string | null>(null);
 
   // Paginated data fetching
   const eventFetcher = useCallback(
@@ -75,14 +89,28 @@ function EventsScreen() {
   } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 20 });
 
 
-  const now = useMemo(() => new Date(), [events]);
+  const [now, setNow] = useState(() => new Date());
 
-  // Search filter: match title case-insensitively
+  useFocusEffect(
+    useCallback(() => {
+      setNow(new Date());
+    }, []),
+  );
+
+  // Search + kind filter
   const searchFiltered = useMemo(
-    () => events.filter(
-      (e) => !searchQuery || e.title.toLowerCase().includes(searchQuery.toLowerCase()),
-    ),
-    [events, searchQuery],
+    () => events.filter((e) => {
+      if (searchQuery && !e.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (kindFilter && e.kind !== kindFilter) return false;
+      return true;
+    }),
+    [events, searchQuery, kindFilter],
+  );
+
+  // Unique event kinds for filter chips
+  const availableKinds = useMemo(
+    () => Array.from(new Set(events.map((e) => e.kind))).filter(Boolean),
+    [events],
   );
 
   const filteredUpcoming = useMemo(
@@ -102,6 +130,7 @@ function EventsScreen() {
 
   const loadNearbyEvents = useCallback(async () => {
     setNearbyLoading(true);
+    setNearbyError(false);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -112,9 +141,16 @@ function EventsScreen() {
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const data = await collectorsApi.getNearbyEvents(loc.coords.latitude, loc.coords.longitude, 50);
       const nearbyData = data as { events?: typeof nearbyEvents } | undefined;
-      if (Array.isArray(nearbyData?.events)) setNearbyEvents(nearbyData.events);
+      if (Array.isArray(nearbyData?.events)) {
+        // Sort by distance (closest first)
+        const sorted = [...nearbyData.events].sort(
+          (a, b) => (a.distance_km ?? Infinity) - (b.distance_km ?? Infinity),
+        );
+        setNearbyEvents(sorted);
+      }
     } catch (err) {
       logger.warn('[Events] nearby events failed:', err);
+      setNearbyError(true);
       showToast({ message: 'Could not load nearby events', type: 'error' });
     } finally {
       setNearbyLoading(false);
@@ -122,7 +158,13 @@ function EventsScreen() {
   }, [showToast]);
 
   useEffect(() => {
-    if (viewMode === 'nearby') loadNearbyEvents();
+    let cancelled = false;
+    if (viewMode === 'nearby') {
+      loadNearbyEvents().finally(() => {
+        if (cancelled) return; // prevent setState after unmount
+      });
+    }
+    return () => { cancelled = true; };
   }, [viewMode, loadNearbyEvents]);
 
   // SectionList sections for upcoming + past events
@@ -149,26 +191,30 @@ function EventsScreen() {
 
   const handleAttend = async (event: CollectorsEvent) => {
     // Optimistic update: toggle attendance state immediately
-    await optimisticRsvp.mutate({
-      eventId: event.id,
-      currentlyAttending: !!event.isAttending,
-    });
+    try {
+      await optimisticRsvp.mutate({
+        eventId: event.id,
+        currentlyAttending: !!event.isAttending,
+      });
 
-    // If RSVP succeeded and user is now attending, silently add to calendar
-    if (!event.isAttending && !optimisticRsvp.error) {
-      try {
-        const eventDate = parseEventDate(event.date, event.time);
-        await calendar.addToCalendar({
-          eventId: event.id,
-          title: event.title,
-          startDate: eventDate,
-          location: event.location,
-          notes: `CollectAI Event: ${KIND_LABEL[event.kind]}`,
-        });
-      } catch (calErr) {
-        // Calendar add is non-critical; don't fail the RSVP for this
-        logger.warn('[EventsScreen] calendar add error:', calErr);
+      // If RSVP succeeded and user is now attending, silently add to calendar
+      if (!event.isAttending) {
+        try {
+          const eventDate = parseEventDate(event.date, event.time);
+          await calendar.addToCalendar({
+            eventId: event.id,
+            title: event.title,
+            startDate: eventDate,
+            location: event.location,
+            notes: `CollectAI Event: ${KIND_LABEL[event.kind]}`,
+          });
+        } catch (calErr) {
+          // Calendar add is non-critical; don't fail the RSVP for this
+          logger.warn('[EventsScreen] calendar add error:', calErr);
+        }
       }
+    } catch (err: unknown) {
+      logger.warn('[EventsScreen] RSVP error:', err);
     }
   };
 
@@ -226,10 +272,11 @@ function EventsScreen() {
             borderColor: isSponsored
               ? colors.accent
               : isPast ? colors.border : colors.accent + '40',
+            opacity: isPast ? 0.6 : 1,
           },
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`${isSponsored ? 'Sponsored: ' : ''}${event.title}, ${KIND_LABEL[event.kind]}, ${event.date}`}
+        accessibilityLabel={`${isSponsored ? 'Sponsored: ' : ''}${event.title}, ${KIND_LABEL[event.kind]}, ${event.date}${isPast ? ', past event' : ''}`}
       >
         {/* Sponsored badge */}
         {isSponsored && (
@@ -400,12 +447,12 @@ function EventsScreen() {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
             router.push('/twitch');
           }}
-          style={[styles.sponsorPill, { borderColor: '#9146FF', backgroundColor: '#9146FF' + '10' }]}
+          style={[styles.sponsorPill, { borderColor: TWITCH_PURPLE, backgroundColor: TWITCH_PURPLE + '10' }]}
           accessibilityRole="button"
           accessibilityLabel="Twitch creators hub"
         >
-          <Ionicons name="logo-twitch" size={14} color="#9146FF" />
-          <Text style={[styles.sponsorPillText, { color: '#9146FF' }]}>Twitch</Text>
+          <Ionicons name="logo-twitch" size={14} color={TWITCH_PURPLE} />
+          <Text style={[styles.sponsorPillText, { color: TWITCH_PURPLE }]}>Twitch</Text>
         </AnimatedPressable>
       </View>
 
@@ -433,14 +480,69 @@ function EventsScreen() {
         )}
       </View>
 
+      {/* Kind filter chips */}
+      {availableKinds.length > 1 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.kindFilterRow}
+          contentContainerStyle={styles.kindFilterContent}
+        >
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setKindFilter(null);
+            }}
+            style={[
+              styles.kindChip,
+              {
+                backgroundColor: !kindFilter ? colors.accent : colors.card,
+                borderColor: !kindFilter ? colors.accent : colors.border,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Show all event types"
+            accessibilityState={{ selected: !kindFilter }}
+          >
+            <Text style={[styles.kindChipText, { color: !kindFilter ? colors.accentText : colors.text }]}>All</Text>
+          </AnimatedPressable>
+          {availableKinds.map((kind) => {
+            const active = kindFilter === kind;
+            return (
+              <AnimatedPressable
+                key={kind}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  setKindFilter(active ? null : kind);
+                }}
+                style={[
+                  styles.kindChip,
+                  {
+                    backgroundColor: active ? colors.accent : colors.card,
+                    borderColor: active ? colors.accent : colors.border,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${KIND_LABEL[kind] || kind}`}
+                accessibilityState={{ selected: active }}
+              >
+                <Ionicons
+                  name={KIND_ICON[kind]}
+                  size={13}
+                  color={active ? colors.accentText : colors.muted}
+                />
+                <Text style={[styles.kindChipText, { color: active ? colors.accentText : colors.text }]}>
+                  {KIND_LABEL[kind] || kind}
+                </Text>
+              </AnimatedPressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
       {/* View Mode Tabs — below search */}
       <View style={[styles.viewModeTabs, { backgroundColor: colors.border + '40' }]}>
-        {([
-          { key: 'list' as const, icon: 'list-outline' as const, label: 'List' },
-          { key: 'week' as const, icon: 'grid-outline' as const, label: 'Week' },
-          { key: 'calendar' as const, icon: 'calendar-outline' as const, label: 'Month' },
-          { key: 'nearby' as const, icon: 'location-outline' as const, label: 'Nearby' },
-        ]).map((tab) => {
+        {VIEW_MODE_TABS.map((tab) => {
           const isActive = viewMode === tab.key;
           return (
             <AnimatedPressable
@@ -454,7 +556,7 @@ function EventsScreen() {
                 styles.viewModeTab,
                 isActive && {
                   backgroundColor: colors.card,
-                  shadowColor: '#000',
+                  shadowColor: colors.text,
                   shadowOpacity: 0.08,
                   shadowRadius: 4,
                   shadowOffset: { width: 0, height: 1 },
@@ -466,14 +568,14 @@ function EventsScreen() {
               accessibilityState={{ selected: isActive }}
             >
               <Ionicons
-                name={isActive ? (tab.icon.replace('-outline', '') as any) : tab.icon}
+                name={isActive ? (tab.icon.replace('-outline', '') as keyof typeof Ionicons.glyphMap) : tab.icon}
                 size={15}
                 color={isActive ? colors.accent : colors.muted}
               />
               <Text style={[
                 styles.viewModeTabText,
                 { color: isActive ? colors.text : colors.muted },
-                isActive && { fontWeight: '700' },
+                isActive && { fontWeight: fontWeight.bold },
               ]}>
                 {tab.label}
               </Text>
@@ -563,9 +665,24 @@ function EventsScreen() {
             Nearby Events
           </Text>
           {nearbyLoading ? (
+            <SkeletonList count={3} type="event" />
+          ) : nearbyError ? (
             <View style={styles.emptyContainer}>
-              <ActivityIndicator size="large" color={colors.accent} />
-              <Text style={[styles.emptySubtitle, { color: colors.muted, marginTop: 12 }]}>Finding events near you...</Text>
+              <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
+              <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>Could not load nearby events</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>Check your connection and try again.</Text>
+              <AnimatedPressable
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  loadNearbyEvents();
+                }}
+                style={[styles.retryBtn, { backgroundColor: colors.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading nearby events"
+              >
+                <Ionicons name="refresh-outline" size={16} color={colors.accentText} />
+                <Text style={[styles.retryBtnText, { color: colors.accentText }]}>Retry</Text>
+              </AnimatedPressable>
             </View>
           ) : nearbyEvents.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -578,9 +695,12 @@ function EventsScreen() {
               <AnimatedPressable
                 key={ev.id}
                 style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => router.push(`/events/${ev.id}`)}
+                onPress={() => {
+                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                  router.push(`/events/${ev.id}`);
+                }}
                 accessibilityRole="button"
-                accessibilityLabel={ev.title}
+                accessibilityLabel={`${ev.title}, ${ev.date}${ev.distance_km != null ? `, ${ev.distance_km.toFixed(1)} km away` : ''}`}
               >
                 <View style={styles.eventHeader}>
                   <View style={[styles.eventIcon, { backgroundColor: colors.accent }]}>
@@ -679,11 +799,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: text['2xl'],
+    fontWeight: fontWeight.bold,
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: text.sm,
     marginTop: 4,
   },
   headerIcons: {
@@ -693,7 +813,7 @@ const styles = StyleSheet.create({
   },
   viewModeTabs: {
     flexDirection: 'row',
-    borderRadius: 14,
+    borderRadius: radius.lg,
     padding: 4,
     marginBottom: 14,
   },
@@ -704,26 +824,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 11,
-    borderRadius: 10,
+    borderRadius: radius.sm,
   },
   viewModeTabText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     letterSpacing: 0.1,
   },
   section: {
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
     marginBottom: 10,
   },
   eventCard: {
-    borderRadius: 16,
+    borderRadius: radius.md,
     borderWidth: 1,
     padding: 12,
     marginBottom: 10,
+    ...shadow.card,
   },
   sponsoredBadgeRow: {
     flexDirection: 'row',
@@ -737,14 +858,14 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: radius.xs,
   },
   sponsoredBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
   },
   sponsorNameText: {
-    fontSize: 11,
+    fontSize: text.sm,
     flex: 1,
   },
   eventHeader: {
@@ -762,7 +883,7 @@ const styles = StyleSheet.create({
   eventThumbnail: {
     width: 48,
     height: 48,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     marginRight: 10,
   },
   eventInfo: {
@@ -775,17 +896,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   eventTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     flex: 1,
   },
   eventMeta: {
     marginTop: 2,
-    fontSize: 11,
+    fontSize: text.sm,
   },
   eventLocation: {
     marginTop: 2,
-    fontSize: 11,
+    fontSize: text.sm,
   },
   eventActions: {
     flexDirection: 'row',
@@ -801,13 +922,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: radius.xs,
     borderWidth: 1,
     gap: 6,
   },
   actionBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
   },
   actionRow: {
     flexDirection: 'row',
@@ -821,11 +942,11 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: radius.lg,
   },
   createEventPillText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   sponsorPill: {
     flexDirection: 'row',
@@ -833,17 +954,17 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: radius.lg,
     borderWidth: 1,
   },
   sponsorPillText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -851,15 +972,15 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: text.md,
     paddingVertical: 0,
   },
   filterChipText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
   },
   attendeeCountText: {
-    fontSize: 11,
+    fontSize: text.sm,
     marginTop: 2,
   },
   emptyContainer: {
@@ -867,12 +988,12 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
     marginTop: 16,
   },
   emptySubtitle: {
-    fontSize: 13,
+    fontSize: text.md,
     marginTop: 4,
   },
   loadingMoreContainer: {
@@ -885,12 +1006,44 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: radius.xs,
     marginLeft: 8,
   },
   distanceText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  kindFilterRow: {
+    marginBottom: 10,
+  },
+  kindFilterContent: {
+    gap: 8,
+  },
+  kindChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  kindChipText: {
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: radius.sm,
+    marginTop: 16,
+  },
+  retryBtnText: {
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
 });
 

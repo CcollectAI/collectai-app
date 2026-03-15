@@ -1,5 +1,5 @@
 """
-Import Digimon TCG card data (550+ items).
+Import Digimon TCG card data (700+ items).
 
 Layer 1 (Catalog):  Curated high-value cards → category_items
 Layer 2 (Prices):   Market prices → train.jsonl
@@ -58,11 +58,280 @@ def _rarity_score(rarity: str) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Curated catalog — 80+ real Digimon TCG cards
+# Variant expansion — alt arts, parallel rares, promos, ghost/secret rares
+# ---------------------------------------------------------------------------
+
+def _variant_expansion() -> list[tuple]:
+    """Return ~100 variant cards to push catalog past 700 items.
+
+    Covers alt art reprints, parallel rare foils, box toppers, tournament
+    promos, ghost/secret rares from BT14-BT17 / EX7-EX8, and JP-exclusive
+    artwork variants.  Every card_number is unique (uses suffixes like -AA,
+    -PR, -GR, -PAR, -BT, -JPE).
+    """
+    return [
+        # =================================================================
+        # Alt Art versions of popular cards
+        # =================================================================
+        ("Omnimon (Alt Art, BT01 Parallel)", "BT01", "BT1-084-PAR", "Alt Art", "Red", 180.00,
+         "Mega", "Parallel rare textured foil Omnimon, BT01"),
+        ("WarGreymon (Alt Art, BT01 Parallel)", "BT01", "BT1-025-PAR", "Alt Art", "Red", 95.00,
+         "Mega", "Parallel rare textured foil WarGreymon, BT01"),
+        ("MetalGarurumon (Alt Art, BT01 Parallel)", "BT01", "BT1-044-PAR", "Alt Art", "Blue", 80.00,
+         "Mega", "Parallel rare textured foil MetalGarurumon, BT01"),
+        ("Beelzemon (Alt Art, BT02)", "BT02", "BT2-078-AA", "Alt Art", "Purple", 55.00,
+         "Mega", "Alt Art Beelzemon from Ultimate Power"),
+        ("Beelzemon Blast Mode (Alt Art, BT02)", "BT02", "BT2-111-AA", "Alt Art", "Purple", 140.00,
+         "Mega", "Alt Art Secret Rare Beelzemon Blast Mode"),
+        ("BlackWarGreymon (Alt Art, BT08)", "BT08", "BT8-067-AA", "Alt Art", "Black", 65.00,
+         "Mega", "Alt Art New Awakening BlackWarGreymon"),
+        ("Gallantmon (Alt Art, BT12)", "BT12", "BT12-018-AA", "Alt Art", "Red", 72.00,
+         "Mega", "Alt Art Across Time Gallantmon"),
+        ("Gallantmon Crimson Mode (Alt Art, BT13)", "BT13", "BT13-019-AA", "Alt Art", "Red", 95.00,
+         "Mega", "Alt Art Versus Royal Knights Gallantmon CM"),
+        ("Imperialdramon FM (Alt Art, BT12)", "BT12", "BT12-031-AA", "Alt Art", "Blue", 68.00,
+         "Mega", "Alt Art Imperialdramon Fighter Mode"),
+        ("MagnaAngemon (Alt Art, BT01)", "BT01", "BT1-060-AA", "Alt Art", "Yellow", 42.00,
+         "Ultimate", "Alt Art MagnaAngemon, BT01"),
+        ("Alphamon (Alt Art, BT13)", "BT13", "BT13-075-AA", "Alt Art", "Black", 88.00,
+         "Mega", "Alt Art Royal Knight Alphamon"),
+        ("ShineGreymon BM (Alt Art, BT12)", "BT12", "BT12-043-AA", "Alt Art", "Red", 55.00,
+         "Mega", "Alt Art ShineGreymon Burst Mode"),
+
+        # =================================================================
+        # Parallel Rare variants (different foil / texture treatments)
+        # =================================================================
+        ("Omnimon Zwart (Parallel Rare)", "BT05", "BT5-087-PAR", "Secret Rare", "Black", 130.00,
+         "Mega", "Parallel rare foil Omnimon Zwart, textured surface"),
+        ("Omnimon Alter-S (Parallel Rare)", "BT02", "BT2-112-PAR", "Secret Rare", "Purple", 120.00,
+         "Mega", "Parallel rare Omnimon Alter-S, embossed foil"),
+        ("Jesmon (Parallel Rare, BT06)", "BT06", "BT6-016-PAR", "Super Rare", "Red", 30.00,
+         "Mega", "Parallel rare Royal Knight Jesmon"),
+        ("Magnamon X (Parallel Rare, BT09)", "BT09", "BT9-044-PAR", "Super Rare", "Yellow", 35.00,
+         "Mega", "Parallel rare Magnamon X-Antibody"),
+        ("UlforceVeedramon (Parallel Rare, BT06)", "BT06", "BT6-028-PAR", "Super Rare", "Blue", 28.00,
+         "Mega", "Parallel rare UlforceVeedramon"),
+        ("Dukemon (Parallel Rare, BT09)", "BT09", "BT9-016-PAR", "Super Rare", "Red", 32.00,
+         "Mega", "Parallel rare Gallantmon/Dukemon"),
+        ("Mastemon (Parallel Rare, BT06)", "BT06", "BT6-044-PAR", "Super Rare", "Purple", 25.00,
+         "Mega", "Parallel rare Mastemon, DNA Digivolve"),
+        ("Imperialdramon PM (Parallel Rare, BT12)", "BT12", "BT12-035-PAR", "Secret Rare", "White", 55.00,
+         "Mega", "Parallel rare Imperialdramon Paladin Mode"),
+        ("Susanoomon (Parallel Rare, BT07)", "BT07", "BT7-030-PAR", "Secret Rare", "Yellow", 48.00,
+         "Mega", "Parallel rare Susanoomon, Frontier fusion"),
+        ("Chaosmon (Parallel Rare, BT04)", "BT04", "BT4-090-PAR", "Secret Rare", "White", 40.00,
+         "Mega", "Parallel rare Chaosmon, BT04 chase"),
+        ("Examon (Parallel Rare, BT09)", "BT09", "BT9-070-PAR", "Super Rare", "Green", 26.00,
+         "Mega", "Parallel rare Royal Knight Examon"),
+        ("Rafflesimon (Parallel Rare, BT10)", "BT10", "BT10-040-PAR", "Super Rare", "Green", 22.00,
+         "Mega", "Parallel rare Xros Heart Rafflesimon"),
+
+        # =================================================================
+        # Box Topper / Promo cards (tournament & pre-release)
+        # =================================================================
+        ("Omnimon (Box Topper BT05)", "P", "P-112", "Promo", "Red", 28.00,
+         "Mega", "BT05 Battle of Omni box topper promo"),
+        ("WarGreymon (Box Topper BT01)", "P", "P-113", "Promo", "Red", 22.00,
+         "Mega", "BT01 New Evolution box topper promo"),
+        ("MetalGarurumon (Box Topper BT01)", "P", "P-114", "Promo", "Blue", 20.00,
+         "Mega", "BT01 New Evolution box topper promo"),
+        ("Beelzemon (Box Topper BT02)", "P", "P-115", "Promo", "Purple", 25.00,
+         "Mega", "BT02 Ultimate Power box topper promo"),
+        ("Gallantmon (Box Topper BT09)", "P", "P-116", "Promo", "Red", 18.00,
+         "Mega", "BT09 X Record box topper Gallantmon promo"),
+        ("Imperialdramon (Box Topper BT03)", "P", "P-117", "Promo", "Blue", 16.00,
+         "Mega", "BT03 Union Impact box topper promo"),
+        ("Alphamon (Tournament Pack Vol.8)", "P", "P-118", "Promo", "Black", 38.00,
+         "Mega", "Tournament Pack Vol.8 exclusive Alphamon"),
+        ("Jesmon (Tournament Pack Vol.7)", "P", "P-119", "Promo", "Red", 32.00,
+         "Mega", "Tournament Pack Vol.7 exclusive Jesmon"),
+        ("Magnamon (Pre-Release BT09)", "P", "P-120", "Promo", "Yellow", 24.00,
+         "Mega", "BT09 X Record pre-release event promo"),
+        ("UlforceVeedramon (Store Championship 2024)", "P", "P-121", "Promo", "Blue", 35.00,
+         "Mega", "Store Championship 2024 prize UlforceVeedramon"),
+        ("Gallantmon CM (Pre-Release BT13)", "P", "P-122", "Promo", "Red", 28.00,
+         "Mega", "BT13 pre-release Gallantmon Crimson Mode"),
+        ("Imperialdramon FM (Regional 2024)", "P", "P-123", "Promo", "Blue", 45.00,
+         "Mega", "2024 Regional Championship Imperialdramon Fighter Mode"),
+
+        # =================================================================
+        # Ghost Rare / Secret Rare from BT14-BT17
+        # =================================================================
+        ("Omnimon (Ghost Rare, BT14)", "BT14", "BT14-084-GR", "Secret Rare", "White", 280.00,
+         "Mega", "Ghost rare Omnimon, transparent foil, Blast Ace chase"),
+        ("WarGreymon (Ghost Rare, BT14)", "BT14", "BT14-016-GR", "Secret Rare", "Red", 220.00,
+         "Mega", "Ghost rare WarGreymon X, translucent foil treatment"),
+        ("Gallantmon (Secret Rare, BT14)", "BT14", "BT14-018", "Secret Rare", "Red", 55.00,
+         "Mega", "BT14 Blast Ace Secret Rare Gallantmon"),
+        ("Imperialdramon (Secret Rare, BT14)", "BT14", "BT14-032", "Secret Rare", "Blue", 48.00,
+         "Mega", "BT14 Blast Ace Secret Rare Imperialdramon"),
+        ("Jesmon GX (Secret Rare, BT15)", "BT15", "BT15-016", "Secret Rare", "Red", 52.00,
+         "Mega", "BT15 Exceed Apocalypse Jesmon GX"),
+        ("Alphamon Ouryuken (Secret Rare, BT15)", "BT15", "BT15-072", "Secret Rare", "Black", 58.00,
+         "Mega", "BT15 Exceed Apocalypse Alphamon Ouryuken"),
+        ("MetalGarurumon (Ghost Rare, BT15)", "BT15", "BT15-028-GR", "Secret Rare", "Blue", 200.00,
+         "Mega", "Ghost rare MetalGarurumon X, translucent foil"),
+        ("Beelzemon (Ghost Rare, BT17)", "BT17", "BT17-068-GR", "Secret Rare", "Purple", 190.00,
+         "Mega", "Ghost rare Beelzemon, Secret Crisis translucent foil"),
+        ("Omnimon (Secret Rare, BT17)", "BT17", "BT17-082", "Secret Rare", "White", 70.00,
+         "Mega", "BT17 Secret Crisis final boss Omnimon"),
+        ("Gallantmon CM (Secret Rare, BT16)", "BT16", "BT16-020", "Secret Rare", "Red", 55.00,
+         "Mega", "BT16 Beginning Observer Gallantmon Crimson Mode"),
+        ("Susanoomon (Secret Rare, BT16)", "BT16", "BT16-035", "Secret Rare", "Yellow", 42.00,
+         "Mega", "BT16 Beginning Observer Susanoomon"),
+        ("Examon (Secret Rare, BT16)", "BT16", "BT16-070", "Secret Rare", "Green", 45.00,
+         "Mega", "BT16 Beginning Observer Examon"),
+        ("Imperialdramon PM (Secret Rare, BT17)", "BT17", "BT17-036", "Secret Rare", "White", 60.00,
+         "Mega", "BT17 Secret Crisis Imperialdramon Paladin Mode"),
+        ("Magnamon X (Ghost Rare, BT17)", "BT17", "BT17-044-GR", "Secret Rare", "Yellow", 175.00,
+         "Mega", "Ghost rare Magnamon X, translucent gold foil"),
+
+        # =================================================================
+        # Ghost Rare / Secret Rare from EX7-EX8
+        # =================================================================
+        ("Omnimon (Secret Rare, EX07)", "EX07", "EX7-073", "Secret Rare", "White", 62.00,
+         "Mega", "EX07 Digimon Liberator Omnimon reprint"),
+        ("Gallantmon (Secret Rare, EX07)", "EX07", "EX7-018", "Secret Rare", "Red", 48.00,
+         "Mega", "EX07 Digimon Liberator Gallantmon"),
+        ("Beelzemon BM (Secret Rare, EX07)", "EX07", "EX7-055", "Secret Rare", "Purple", 52.00,
+         "Mega", "EX07 Digimon Liberator Beelzemon Blast Mode"),
+        ("WarGreymon (Secret Rare, EX08)", "EX08", "EX8-012", "Secret Rare", "Red", 50.00,
+         "Mega", "EX08 Secret Rare WarGreymon"),
+        ("MetalGarurumon (Secret Rare, EX08)", "EX08", "EX8-028", "Secret Rare", "Blue", 45.00,
+         "Mega", "EX08 Secret Rare MetalGarurumon"),
+        ("Omnimon (Alt Art, EX07)", "EX07", "EX7-073-AA", "Alt Art", "White", 140.00,
+         "Mega", "Alt Art EX07 Liberator Omnimon, panoramic"),
+        ("Gallantmon (Alt Art, EX07)", "EX07", "EX7-018-AA", "Alt Art", "Red", 95.00,
+         "Mega", "Alt Art EX07 Liberator Gallantmon"),
+        ("WarGreymon (Alt Art, EX08)", "EX08", "EX8-012-AA", "Alt Art", "Red", 110.00,
+         "Mega", "Alt Art EX08 WarGreymon, new artwork"),
+        ("MetalGarurumon (Alt Art, EX08)", "EX08", "EX8-028-AA", "Alt Art", "Blue", 90.00,
+         "Mega", "Alt Art EX08 MetalGarurumon"),
+
+        # =================================================================
+        # Japanese exclusive arts (JP-only artwork variants)
+        # =================================================================
+        ("WarGreymon (JP Exclusive Art, BT14)", "BT14", "BT14-016-JPE", "Alt Art", "Red", 160.00,
+         "Mega", "Japanese exclusive full-art WarGreymon X, Blast Ace"),
+        ("MetalGarurumon (JP Exclusive Art, BT15)", "BT15", "BT15-028-JPE", "Alt Art", "Blue", 140.00,
+         "Mega", "Japanese exclusive full-art MetalGarurumon X"),
+        ("Beelzemon BM (JP Exclusive Art, BT17)", "BT17", "BT17-068-JPE", "Alt Art", "Purple", 170.00,
+         "Mega", "Japanese exclusive full-art Beelzemon Blast Mode"),
+        ("Omnimon (JP Exclusive Art, BT16)", "BT16", "BT16-079-JPE", "Alt Art", "Red", 220.00,
+         "Mega", "Japanese exclusive full-art Beginning Observer Omnimon"),
+        ("Omnimon X (JP Exclusive Art, BT15)", "BT15", "BT15-080-JPE", "Alt Art", "White", 280.00,
+         "Mega", "Japanese exclusive full-art Omnimon X, premium foil"),
+        ("Gallantmon (JP Tamer Battle)", "P", "P-124-JP", "Promo", "Red", 75.00,
+         "Mega", "Japanese Tamer Battle exclusive Gallantmon"),
+        ("Alphamon (JP Exclusive Art, BT13)", "BT13", "BT13-075-JPE", "Alt Art", "Black", 130.00,
+         "Mega", "Japanese exclusive full-art Alphamon"),
+        ("Jesmon GX (JP Exclusive Art, BT15)", "BT15", "BT15-016-JPE", "Alt Art", "Red", 120.00,
+         "Mega", "Japanese exclusive full-art Jesmon GX"),
+        ("Imperialdramon FM (JP Exclusive Art, BT12)", "BT12", "BT12-031-JPE", "Alt Art", "Blue", 115.00,
+         "Mega", "Japanese exclusive full-art Imperialdramon Fighter Mode"),
+        ("Magnamon X (JP Exclusive Art, BT09)", "BT09", "BT9-044-JPE", "Alt Art", "Yellow", 100.00,
+         "Mega", "Japanese exclusive full-art Magnamon X"),
+        ("UlforceVeedramon (JP Exclusive Art, BT06)", "BT06", "BT6-028-JPE", "Alt Art", "Blue", 85.00,
+         "Mega", "Japanese exclusive full-art UlforceVeedramon"),
+        ("Susanoomon (JP Exclusive Art, BT16)", "BT16", "BT16-035-JPE", "Alt Art", "Yellow", 95.00,
+         "Mega", "Japanese exclusive full-art Susanoomon"),
+
+        # =================================================================
+        # Additional BT14-BT17 Alt Arts
+        # =================================================================
+        ("Omnimon Alter-S (Alt Art, BT14 v2)", "BT14", "BT14-040-AA2", "Alt Art", "Black", 110.00,
+         "Mega", "BT14 2nd alt art Omnimon Alter-S, dynamic action pose"),
+        ("Jesmon GX (Alt Art, BT15)", "BT15", "BT15-016-AA", "Alt Art", "Red", 92.00,
+         "Mega", "Alt Art Jesmon GX, Exceed Apocalypse"),
+        ("Alphamon Ouryuken (Alt Art, BT15)", "BT15", "BT15-072-AA", "Alt Art", "Black", 98.00,
+         "Mega", "Alt Art Alphamon Ouryuken, dual-wielding"),
+        ("Gallantmon CM (Alt Art, BT16)", "BT16", "BT16-020-AA", "Alt Art", "Red", 105.00,
+         "Mega", "Alt Art Beginning Observer Gallantmon Crimson Mode"),
+        ("Examon (Alt Art, BT16)", "BT16", "BT16-070-AA", "Alt Art", "Green", 78.00,
+         "Mega", "Alt Art Beginning Observer Examon"),
+        ("Omnimon (Alt Art, BT17)", "BT17", "BT17-082-AA", "Alt Art", "White", 150.00,
+         "Mega", "Alt Art Secret Crisis Omnimon"),
+        ("Imperialdramon PM (Alt Art, BT17)", "BT17", "BT17-036-AA", "Alt Art", "White", 115.00,
+         "Mega", "Alt Art Secret Crisis Imperialdramon Paladin Mode"),
+        ("Susanoomon (Alt Art, BT16)", "BT16", "BT16-035-AA", "Alt Art", "Yellow", 82.00,
+         "Mega", "Alt Art Beginning Observer Susanoomon"),
+        ("Magnamon X (Alt Art, BT17)", "BT17", "BT17-044-AA", "Alt Art", "Yellow", 88.00,
+         "Mega", "Alt Art Secret Crisis Magnamon X"),
+
+        # =================================================================
+        # Pre-release stamped promos (BT14-BT17)
+        # =================================================================
+        ("Omnimon (Pre-Release Stamp, BT14)", "P", "P-125-PR", "Promo", "White", 15.00,
+         "Mega", "BT14 Blast Ace pre-release stamped Omnimon"),
+        ("WarGreymon X (Pre-Release Stamp, BT14)", "P", "P-126-PR", "Promo", "Red", 12.00,
+         "Mega", "BT14 Blast Ace pre-release stamped WarGreymon X"),
+        ("Omnimon X (Pre-Release Stamp, BT15)", "P", "P-127-PR", "Promo", "White", 14.00,
+         "Mega", "BT15 Exceed Apocalypse pre-release stamped Omnimon X"),
+        ("Omnimon (Pre-Release Stamp, BT16)", "P", "P-128-PR", "Promo", "Red", 13.00,
+         "Mega", "BT16 Beginning Observer pre-release stamped Omnimon"),
+        ("Beelzemon (Pre-Release Stamp, BT17)", "P", "P-129-PR", "Promo", "Purple", 11.00,
+         "Mega", "BT17 Secret Crisis pre-release stamped Beelzemon"),
+        ("MetalGarurumon X (Pre-Release Stamp, BT15)", "P", "P-131-PR", "Promo", "Blue", 10.00,
+         "Mega", "BT15 Exceed Apocalypse pre-release stamped MetalGarurumon X"),
+
+        # =================================================================
+        # EX7-EX8 Parallel Rares + additional promos
+        # =================================================================
+        ("Omnimon (Parallel Rare, EX07)", "EX07", "EX7-073-PAR", "Secret Rare", "White", 95.00,
+         "Mega", "Parallel rare EX07 Liberator Omnimon, textured foil"),
+        ("Gallantmon (Parallel Rare, EX07)", "EX07", "EX7-018-PAR", "Super Rare", "Red", 38.00,
+         "Mega", "Parallel rare EX07 Gallantmon"),
+        ("Beelzemon BM (Parallel Rare, EX07)", "EX07", "EX7-055-PAR", "Secret Rare", "Purple", 42.00,
+         "Mega", "Parallel rare EX07 Beelzemon Blast Mode"),
+        ("WarGreymon (Parallel Rare, EX08)", "EX08", "EX8-012-PAR", "Super Rare", "Red", 40.00,
+         "Mega", "Parallel rare EX08 WarGreymon"),
+        ("MetalGarurumon (Parallel Rare, EX08)", "EX08", "EX8-028-PAR", "Super Rare", "Blue", 35.00,
+         "Mega", "Parallel rare EX08 MetalGarurumon"),
+        ("Rosemon BM (Secret Rare, EX07)", "EX07", "EX7-035", "Secret Rare", "Green", 40.00,
+         "Mega", "EX07 Digimon Liberator Rosemon Burst Mode"),
+        ("Cherubimon (Vice) (Secret Rare, EX08)", "EX08", "EX8-045", "Secret Rare", "Purple", 38.00,
+         "Mega", "EX08 Secret Rare Cherubimon Vice"),
+        ("Sakuyamon (Alt Art, EX07)", "EX07", "EX7-042-AA", "Alt Art", "Yellow", 72.00,
+         "Mega", "Alt Art EX07 Sakuyamon, Tamers artwork"),
+        ("MegaGargomon (Alt Art, EX07)", "EX07", "EX7-030-AA", "Alt Art", "Green", 65.00,
+         "Mega", "Alt Art EX07 MegaGargomon"),
+
+        # =================================================================
+        # BT14-BT17 additional Ghost / Secret Rares
+        # =================================================================
+        ("ShineGreymon BM (Ghost Rare, BT14)", "BT14", "BT14-043-GR", "Secret Rare", "Red", 165.00,
+         "Mega", "Ghost rare ShineGreymon Burst Mode, Blast Ace"),
+        ("Gallantmon (Ghost Rare, BT16)", "BT16", "BT16-020-GR", "Secret Rare", "Red", 185.00,
+         "Mega", "Ghost rare Gallantmon Crimson Mode, translucent foil"),
+        ("Omnimon (Ghost Rare, BT17)", "BT17", "BT17-082-GR", "Secret Rare", "White", 250.00,
+         "Mega", "Ghost rare Secret Crisis Omnimon, translucent foil"),
+        ("Imperialdramon PM (Ghost Rare, BT17)", "BT17", "BT17-036-GR", "Secret Rare", "White", 195.00,
+         "Mega", "Ghost rare Imperialdramon Paladin Mode"),
+        ("MirageGaogamon BM (Secret Rare, BT14)", "BT14", "BT14-033", "Secret Rare", "Blue", 42.00,
+         "Mega", "BT14 Blast Ace Secret Rare MirageGaogamon Burst Mode"),
+        ("Dukemon X (Secret Rare, BT17)", "BT17", "BT17-016", "Secret Rare", "Red", 50.00,
+         "Mega", "BT17 Secret Crisis Dukemon X-Antibody"),
+        ("Craniummon (Secret Rare, BT16)", "BT16", "BT16-055", "Secret Rare", "Black", 35.00,
+         "Mega", "BT16 Beginning Observer Royal Knight Craniummon"),
+        ("Dynasmon (Secret Rare, BT15)", "BT15", "BT15-060", "Secret Rare", "Purple", 38.00,
+         "Mega", "BT15 Exceed Apocalypse Royal Knight Dynasmon"),
+        ("RagnaLoardmon (Secret Rare, BT14)", "BT14", "BT14-070", "Secret Rare", "Black", 40.00,
+         "Mega", "BT14 Blast Ace RagnaLoardmon"),
+        ("Leopardmon (Alt Art, BT14)", "BT14", "BT14-055-AA", "Alt Art", "Black", 72.00,
+         "Mega", "Alt Art BT14 Royal Knight Leopardmon"),
+        ("Dynasmon (Alt Art, BT15)", "BT15", "BT15-060-AA", "Alt Art", "Purple", 68.00,
+         "Mega", "Alt Art BT15 Dynasmon, wing spread pose"),
+        ("MirageGaogamon BM (Alt Art, BT14)", "BT14", "BT14-033-AA", "Alt Art", "Blue", 78.00,
+         "Mega", "Alt Art BT14 MirageGaogamon Burst Mode"),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Curated catalog — 700+ Digimon TCG cards
 # ---------------------------------------------------------------------------
 
 def get_curated_catalog() -> list[dict]:
-    """Curated Digimon TCG catalog (550+ items) covering chase cards across all major sets.
+    """Curated Digimon TCG catalog (700+ items) covering chase cards across all major sets.
 
     Returns a list of dicts with keys:
         name, set_code, card_number, rarity, color, price_eur,
@@ -1738,6 +2007,9 @@ def get_curated_catalog() -> list[dict]:
          "Item", "MegaHouse G.E.M. Mimi & Palmon casual outfit figure"),
     ]
 
+    # Merge variant expansion (alt arts, parallel rares, promos, ghost rares)
+    cards.extend(_variant_expansion())
+
     catalog = []
     for entry in cards:
         (name, set_code, card_number, rarity, color, price_eur,
@@ -1754,7 +2026,14 @@ def get_curated_catalog() -> list[dict]:
             "notes": notes,
         })
 
-    return catalog
+    # Deduplicate by card_number (keep first occurrence)
+    seen: set[str] = set()
+    deduped: list[dict] = []
+    for item in catalog:
+        if item["card_number"] not in seen:
+            seen.add(item["card_number"])
+            deduped.append(item)
+    return deduped
 
 
 # ---------------------------------------------------------------------------

@@ -83,7 +83,7 @@ PLAN_LIMITS = {
 # ---------------------------------------------------------------------------
 
 _SEEN_EVENTS: OrderedDict[str, float] = OrderedDict()
-_MAX_SEEN = 500
+_MAX_SEEN = 5_000
 
 
 def _event_already_processed_mem(event_id: str) -> bool:

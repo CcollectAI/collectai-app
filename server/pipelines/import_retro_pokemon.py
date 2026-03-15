@@ -9,7 +9,7 @@ Sources:
   TOMY figures, Burger King promos, Hasbro, vintage accessories,
   Bandai figures, fast food promos, vintage plush, electronic toys,
   Japanese exclusives, VHS/DVD media, stationery & school supplies
-- Focus on 1990s-2000s era Pokemon merchandise (500+ items)
+- Focus on 1990s-2000s era Pokemon merchandise (750+ items)
 
 Usage:
     python -m pipelines.import_retro_pokemon [--dry-run]
@@ -36,8 +36,110 @@ from pipelines.import_common import (
 CATEGORY = "retro_pokemon"
 
 
+def _variant_expansion() -> list[dict]:
+    """Graded, edition, language, sealed-product, and error/misprint variants.
+
+    ~55 items covering:
+    - PSA 10 graded versions of key cards
+    - 1st Edition vs Unlimited vs Shadowless variants
+    - Different language versions (Japanese, English, German, French)
+    - Sealed product variants (booster box, booster pack, theme deck)
+    - CGC / BGS graded alternatives
+    - Error / misprint variants
+    """
+    # Format matches main catalog: brand, name, condition_note, rarity_tier,
+    # price_loose, price_boxed
+    _raw = [
+        # ── PSA 10 Graded — Key Cards ────────────────────────────────────
+        ("PSA", "PSA 10 Base Set 1st Edition Charizard Holo #4", "PSA 10 Gem Mint", "grail", 300000, 420000),
+        ("PSA", "PSA 10 Base Set Shadowless Charizard Holo #4", "PSA 10 Gem Mint", "grail", 40000, 55000),
+        ("PSA", "PSA 10 Base Set Unlimited Charizard Holo #4", "PSA 10 Gem Mint", "grail", 5000, 8000),
+        ("PSA", "PSA 10 Base Set 1st Edition Blastoise Holo #2", "PSA 10 Gem Mint", "grail", 40000, 60000),
+        ("PSA", "PSA 10 Base Set 1st Edition Venusaur Holo #15", "PSA 10 Gem Mint", "grail", 30000, 45000),
+        ("PSA", "PSA 10 Base Set Shadowless Blastoise Holo #2", "PSA 10 Gem Mint", "grail", 8000, 14000),
+        ("PSA", "PSA 10 Base Set Shadowless Venusaur Holo #15", "PSA 10 Gem Mint", "grail", 7000, 12000),
+        ("PSA", "PSA 10 Base Set 1st Edition Alakazam Holo #1", "PSA 10 Gem Mint", "grail", 15000, 25000),
+        ("PSA", "PSA 10 Base Set 1st Edition Chansey Holo #3", "PSA 10 Gem Mint", "grail", 8000, 14000),
+        ("PSA", "PSA 10 Base Set 1st Edition Mewtwo Holo #10", "PSA 10 Gem Mint", "grail", 18000, 28000),
+        ("PSA", "PSA 10 Base Set 1st Edition Raichu Holo #14", "PSA 10 Gem Mint", "grail", 6000, 10000),
+        ("PSA", "PSA 10 Jungle 1st Edition Flareon Holo #3", "PSA 10 Gem Mint", "grail", 3000, 5500),
+        ("PSA", "PSA 10 Fossil 1st Edition Gengar Holo #5", "PSA 10 Gem Mint", "grail", 4000, 7000),
+        ("PSA", "PSA 10 Neo Genesis 1st Edition Lugia Holo #9", "PSA 10 Gem Mint", "grail", 15000, 25000),
+        ("PSA", "PSA 10 Neo Destiny Shining Charizard 1st Ed #107", "PSA 10 Gem Mint", "grail", 12000, 20000),
+        ("PSA", "PSA 10 Gold Star Charizard EX Dragon Frontiers #100", "PSA 10 Gem Mint", "grail", 25000, 40000),
+
+        # ── BGS 9.5 / 10 Graded Alternatives ────────────────────────────
+        ("BGS", "BGS 9.5 Base Set 1st Edition Charizard Holo #4", "BGS 9.5 Gem Mint", "grail", 100000, 160000),
+        ("BGS", "BGS 10 Base Set 1st Edition Charizard Holo #4 (Pristine)", "BGS 10 Pristine", "grail", 500000, 700000),
+        ("BGS", "BGS 9.5 Base Set Shadowless Charizard Holo #4", "BGS 9.5 Gem Mint", "grail", 15000, 25000),
+        ("BGS", "BGS 9.5 Neo Genesis 1st Edition Lugia Holo #9", "BGS 9.5 Gem Mint", "grail", 8000, 14000),
+        ("BGS", "BGS 9.5 Gold Star Rayquaza EX Deoxys #107", "BGS 9.5 Gem Mint", "grail", 6000, 10000),
+
+        # ── CGC Graded Alternatives ──────────────────────────────────────
+        ("CGC", "CGC 9.5 Base Set 1st Edition Charizard Holo #4", "CGC 9.5 Gem Mint", "grail", 80000, 130000),
+        ("CGC", "CGC 10 Base Set Shadowless Charizard Holo #4 (Perfect)", "CGC 10 Perfect", "grail", 60000, 90000),
+        ("CGC", "CGC 9.5 Neo Destiny Shining Charizard 1st Ed #107", "CGC 9.5 Gem Mint", "grail", 8000, 14000),
+        ("CGC", "CGC 9.5 Gym Challenge Blaine's Charizard 1st Ed #2", "CGC 9.5 Gem Mint", "grail", 3000, 5500),
+        ("CGC", "CGC 9.5 Skyridge Charizard Holo #H3", "CGC 9.5 Gem Mint", "grail", 4000, 7000),
+
+        # ── 1st Edition vs Unlimited vs Shadowless Variants ──────────────
+        ("WOTC", "Base Set 1st Edition Gyarados Holo #6", "Near Mint", "grail", 1000, 2500),
+        ("WOTC", "Base Set Shadowless Gyarados Holo #6", "Near Mint", "high", 80, 200),
+        ("WOTC", "Base Set Shadowless Mewtwo Holo #10", "Near Mint", "grail", 200, 500),
+        ("WOTC", "Base Set Shadowless Alakazam Holo #1", "Near Mint", "grail", 150, 400),
+        ("WOTC", "Base Set 1st Edition Ninetales Holo #12", "Near Mint", "grail", 600, 1500),
+        ("WOTC", "Base Set Shadowless Ninetales Holo #12", "Near Mint", "high", 60, 160),
+        ("WOTC", "Base Set 1st Edition Zapdos Holo #16", "Near Mint", "grail", 800, 2000),
+        ("WOTC", "Base Set Shadowless Zapdos Holo #16", "Near Mint", "high", 80, 200),
+        ("WOTC", "Base Set 1st Edition Clefairy Holo #5", "Near Mint", "grail", 500, 1200),
+        ("WOTC", "Base Set Shadowless Clefairy Holo #5", "Near Mint", "high", 50, 130),
+
+        # ── Language Variants (German, French, Japanese) ─────────────────
+        ("WOTC DE", "German Base Set Charizard Holo #4 (Glurak)", "Near Mint", "grail", 400, 1000),
+        ("WOTC DE", "German Base Set Blastoise Holo #2 (Turtok)", "Near Mint", "high", 100, 280),
+        ("WOTC DE", "German Base Set Venusaur Holo #15 (Bisaflor)", "Near Mint", "high", 80, 220),
+        ("WOTC FR", "French Base Set Charizard Holo #4 (Dracaufeu)", "Near Mint", "grail", 350, 900),
+        ("WOTC FR", "French Base Set Blastoise Holo #2 (Tortank)", "Near Mint", "high", 90, 250),
+        ("WOTC FR", "French Base Set Venusaur Holo #15 (Florizarre)", "Near Mint", "high", 70, 200),
+        ("WOTC JP", "Japanese Jungle Flareon Holo #136", "Near Mint", "mid", 25, 65),
+        ("WOTC JP", "Japanese Fossil Gengar Holo #94", "Near Mint", "mid", 30, 80),
+        ("WOTC JP", "Japanese Team Rocket Dark Charizard Holo #6", "Near Mint", "high", 60, 160),
+
+        # ── Sealed Product Variants ──────────────────────────────────────
+        ("WOTC", "Base Set 1st Edition Booster Pack (Light)", "Sealed", "grail", 3000, 5500),
+        ("WOTC", "Base Set Theme Deck (2-Player Starter)", "Sealed", "high", 80, 200),
+        ("WOTC", "Jungle Theme Deck — Water Blast", "Sealed", "high", 70, 180),
+        ("WOTC", "Fossil Theme Deck — Lockdown", "Sealed", "high", 70, 180),
+        ("WOTC", "Team Rocket Theme Deck — Trouble", "Sealed", "high", 80, 200),
+        ("WOTC", "Neo Genesis Theme Deck — Cold Fusion (Japanese)", "Sealed", "high", 60, 150),
+        ("WOTC JP", "Japanese Base Set Booster Box (60 packs)", "Sealed", "grail", 15000, 28000),
+        ("WOTC JP", "Japanese Base Set Booster Pack (Sealed)", "Sealed", "grail", 250, 500),
+        ("WOTC JP", "Japanese Neo Genesis Booster Box", "Sealed", "grail", 5000, 10000),
+
+        # ── Error / Misprint Variants ────────────────────────────────────
+        ("WOTC", "Base Set Vulpix Error (No HP — Stage 1 misprint)", "Near Mint", "grail", 500, 1200),
+        ("WOTC", "Jungle Electrode Error (No Symbol 1st Print)", "Near Mint", "high", 80, 200),
+        ("WOTC", "Fossil Krabby Error (Prerelease Misprint)", "Near Mint", "grail", 200, 500),
+        ("WOTC", "Base Set Red Cheeks Pikachu Error #58", "Near Mint", "high", 60, 160),
+        ("WOTC", "Base Set Wartortle Error (Squirtle Stage Misprint)", "Near Mint", "high", 100, 280),
+        ("WOTC", "Jungle Butterfree Error ('d' Edition Symbol)", "Near Mint", "high", 60, 160),
+    ]
+
+    return [
+        {
+            "brand": brand,
+            "name": name,
+            "condition_note": condition_note,
+            "rarity_tier": tier,
+            "price_loose": price_loose,
+            "price_boxed": price_boxed,
+        }
+        for brand, name, condition_note, tier, price_loose, price_boxed in _raw
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
-    """Curated retro Pokemon accessories & merch catalog (500+ items)."""
+    """Curated retro Pokemon accessories & merch catalog (750+ items)."""
 
     # Format: (brand, name, condition_note, rarity_tier, price_loose, price_boxed)
     # rarity_tier: grail (>100), high (50-100), mid (20-50), standard (<20)
@@ -942,7 +1044,19 @@ def get_curated_catalog() -> list[dict]:
             "price_loose": price_loose,
             "price_boxed": price_boxed,
         })
-    return catalog
+
+    # Inject graded / variant / language / sealed expansions
+    catalog.extend(_variant_expansion())
+
+    # Deduplicate by ('brand', 'name') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["brand"], item["name"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

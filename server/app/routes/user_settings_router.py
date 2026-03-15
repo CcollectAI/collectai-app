@@ -4,12 +4,15 @@ User settings router for managing per-user preferences.
 Endpoints:
 - GET  /settings - Return current user settings (currency, region, locale)
 - PUT  /settings - Upsert user settings with validation
+- GET  /settings/alert-preferences - Return user's alert preferences (or defaults)
+- PATCH /settings/alert-preferences - Upsert alert preferences
 """
 
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import Literal
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException
@@ -208,3 +211,196 @@ async def update_user_settings(
     except asyncpg.PostgresError as e:
         logger.error("[settings] Error upserting user settings: %s", e)
         raise error_response(500, "Failed to save settings", code="DB_ERROR")
+
+
+# ---------------------------------------------------------------------------
+# Alert Preferences — models
+# ---------------------------------------------------------------------------
+VALID_FREQUENCIES = frozenset({"immediate", "daily", "weekly"})
+
+DEFAULT_ALERT_PREFS: dict = {
+    "price_drop_enabled": True,
+    "price_drop_threshold": 10,
+    "new_listing_enabled": True,
+    "milestone_enabled": True,
+    "price_increase_enabled": False,
+    "price_increase_threshold": 20,
+    "frequency": "daily",
+}
+
+
+class AlertPreferencesResponse(BaseModel):
+    """User alert preference values."""
+    price_drop_enabled: bool = Field(True, description="Enable price drop alerts")
+    price_drop_threshold: int = Field(10, ge=1, le=100, description="Price drop % threshold")
+    new_listing_enabled: bool = Field(True, description="Enable new listing alerts")
+    milestone_enabled: bool = Field(True, description="Enable milestone alerts")
+    price_increase_enabled: bool = Field(False, description="Enable price increase alerts")
+    price_increase_threshold: int = Field(20, ge=1, le=100, description="Price increase % threshold")
+    frequency: Literal["immediate", "daily", "weekly"] = Field("daily", description="Notification frequency")
+
+
+class AlertPreferencesUpdateRequest(BaseModel):
+    """Partial update for alert preferences. All fields optional."""
+    price_drop_enabled: bool | None = None
+    price_drop_threshold: int | None = Field(None, ge=1, le=100)
+    new_listing_enabled: bool | None = None
+    milestone_enabled: bool | None = None
+    price_increase_enabled: bool | None = None
+    price_increase_threshold: int | None = Field(None, ge=1, le=100)
+    frequency: Literal["immediate", "daily", "weekly"] | None = None
+
+
+# ---------------------------------------------------------------------------
+# Alert Preferences — endpoints
+# ---------------------------------------------------------------------------
+@router.get(
+    "/alert-preferences",
+    response_model=AlertPreferencesResponse,
+    dependencies=[Depends(_settings_user_limit)],
+    summary="Get alert preferences",
+)
+async def get_alert_preferences(user_id: str = Depends(get_current_user_id)) -> AlertPreferencesResponse:
+    """
+    Return the user's saved alert preferences.
+
+    If no row exists, returns sensible defaults without inserting.
+    """
+    pool = get_db_pool()
+
+    if pool is None:
+        return AlertPreferencesResponse(**DEFAULT_ALERT_PREFS)
+
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT price_drop_enabled, price_drop_threshold,
+                       new_listing_enabled, milestone_enabled,
+                       price_increase_enabled, price_increase_threshold,
+                       frequency
+                FROM user_alert_preferences
+                WHERE user_id = $1
+                """,
+                user_id,
+            )
+
+        if row is None:
+            return AlertPreferencesResponse(**DEFAULT_ALERT_PREFS)
+
+        return AlertPreferencesResponse(
+            price_drop_enabled=row["price_drop_enabled"],
+            price_drop_threshold=row["price_drop_threshold"],
+            new_listing_enabled=row["new_listing_enabled"],
+            milestone_enabled=row["milestone_enabled"],
+            price_increase_enabled=row["price_increase_enabled"],
+            price_increase_threshold=row["price_increase_threshold"],
+            frequency=row["frequency"],
+        )
+
+    except asyncpg.PostgresError as e:
+        logger.error("[settings] Error fetching alert preferences: %s", e)
+        raise error_response(500, "Failed to fetch alert preferences", code="DB_ERROR")
+
+
+@router.patch(
+    "/alert-preferences",
+    response_model=AlertPreferencesResponse,
+    dependencies=[Depends(_settings_user_limit)],
+    summary="Update alert preferences",
+)
+async def update_alert_preferences(
+    request: AlertPreferencesUpdateRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> AlertPreferencesResponse:
+    """
+    Upsert user alert preferences.
+
+    Accepts partial updates — only provided fields are changed.
+    Uses INSERT ... ON CONFLICT DO UPDATE for atomic upsert.
+    """
+    # Validate frequency if provided
+    if request.frequency is not None and request.frequency not in VALID_FREQUENCIES:
+        raise error_response(
+            400,
+            f"Invalid frequency. Valid: {', '.join(sorted(VALID_FREQUENCIES))}",
+            code="VALIDATION_ERROR",
+        )
+
+    # At least one field must be provided
+    update_data = request.model_dump(exclude_none=True)
+    if not update_data:
+        raise error_response(
+            400,
+            "At least one alert preference field must be provided",
+            code="VALIDATION_ERROR",
+        )
+
+    pool = get_db_pool()
+
+    if pool is None:
+        merged = {**DEFAULT_ALERT_PREFS, **update_data}
+        return AlertPreferencesResponse(**merged)
+
+    try:
+        now = datetime.now(timezone.utc)
+
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO user_alert_preferences (
+                    user_id,
+                    price_drop_enabled, price_drop_threshold,
+                    new_listing_enabled, milestone_enabled,
+                    price_increase_enabled, price_increase_threshold,
+                    frequency, updated_at
+                )
+                VALUES (
+                    $1,
+                    COALESCE($2, true), COALESCE($3, 10),
+                    COALESCE($4, true), COALESCE($5, true),
+                    COALESCE($6, false), COALESCE($7, 20),
+                    COALESCE($8, 'daily'), $9
+                )
+                ON CONFLICT (user_id) DO UPDATE SET
+                    price_drop_enabled     = COALESCE($2, user_alert_preferences.price_drop_enabled),
+                    price_drop_threshold   = COALESCE($3, user_alert_preferences.price_drop_threshold),
+                    new_listing_enabled    = COALESCE($4, user_alert_preferences.new_listing_enabled),
+                    milestone_enabled      = COALESCE($5, user_alert_preferences.milestone_enabled),
+                    price_increase_enabled = COALESCE($6, user_alert_preferences.price_increase_enabled),
+                    price_increase_threshold = COALESCE($7, user_alert_preferences.price_increase_threshold),
+                    frequency              = COALESCE($8, user_alert_preferences.frequency),
+                    updated_at             = $9
+                RETURNING price_drop_enabled, price_drop_threshold,
+                          new_listing_enabled, milestone_enabled,
+                          price_increase_enabled, price_increase_threshold,
+                          frequency
+                """,
+                user_id,
+                request.price_drop_enabled,
+                request.price_drop_threshold,
+                request.new_listing_enabled,
+                request.milestone_enabled,
+                request.price_increase_enabled,
+                request.price_increase_threshold,
+                request.frequency,
+                now,
+            )
+
+        logger.info("[settings] Upserted alert preferences for user=%s", user_id)
+
+        return AlertPreferencesResponse(
+            price_drop_enabled=row["price_drop_enabled"],
+            price_drop_threshold=row["price_drop_threshold"],
+            new_listing_enabled=row["new_listing_enabled"],
+            milestone_enabled=row["milestone_enabled"],
+            price_increase_enabled=row["price_increase_enabled"],
+            price_increase_threshold=row["price_increase_threshold"],
+            frequency=row["frequency"],
+        )
+
+    except HTTPException:
+        raise
+    except asyncpg.PostgresError as e:
+        logger.error("[settings] Error upserting alert preferences: %s", e)
+        raise error_response(500, "Failed to save alert preferences", code="DB_ERROR")

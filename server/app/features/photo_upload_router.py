@@ -47,6 +47,8 @@ ALLOWED_CONTENT_TYPES = {
     "image/webp": "webp",
 }
 
+_MAX_IMAGE_EDGE = 1200
+
 # ---------------------------------------------------------------------------
 # Lazy S3 client
 # ---------------------------------------------------------------------------
@@ -252,7 +254,7 @@ async def upload_photo(
 
     # Optimize image
     try:
-        optimized_bytes, width, height = optimize_image(raw_bytes, max_edge=1200)
+        optimized_bytes, width, height = optimize_image(raw_bytes, max_edge=_MAX_IMAGE_EDGE)
     except ValueError as e:
         raise error_response(400, str(e), code="VALIDATION_ERROR")
     except (OSError, IOError) as e:

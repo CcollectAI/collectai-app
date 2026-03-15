@@ -88,6 +88,59 @@ PRESSING_SCORES: dict[str, float] = {
 # Curated catalog — 200+ items, zero overlap with import_anime_ost_vinyl.py
 # ---------------------------------------------------------------------------
 
+def _variant_expansion(catalog: list[dict]) -> list[dict]:
+    """Generate color/pressing variants for anime vinyl items.
+
+    Creates ~20+ new entries: alternate color pressings, picture discs,
+    Japanese OG vs reissue variants.
+    """
+    variants: list[dict] = []
+    existing_keys = {(i["title"], i["pressing"], i["color"]) for i in catalog}
+
+    # --- Color variants for black vinyl items ---
+    black_items = [i for i in catalog if i["color"] == "Black"]
+    color_options = [
+        ("Red Translucent", 1.15, "high"),
+        ("Clear", 1.10, "high"),
+        ("Blue Marble", 1.20, "high"),
+        ("Splatter", 1.30, "grail"),
+    ]
+    for item in black_items[:10]:
+        for color, mult, tier in color_options:
+            key = (item["title"], item["pressing"], color)
+            if key not in existing_keys:
+                existing_keys.add(key)
+                variants.append({
+                    "label": item["label"],
+                    "title": item["title"],
+                    "franchise": item["franchise"],
+                    "pressing": item["pressing"],
+                    "color": color,
+                    "rarity_tier": tier,
+                    "price_eur": round(item["price_eur"] * mult, 2),
+                })
+
+    # --- Picture disc variants for high-value items ---
+    grail_items = [i for i in catalog if i["rarity_tier"] == "grail"]
+    for item in grail_items[:6]:
+        color = "Picture Disc"
+        key = (item["title"], item["pressing"], color)
+        if key not in existing_keys:
+            existing_keys.add(key)
+            variants.append({
+                "label": item["label"],
+                "title": item["title"],
+                "franchise": item["franchise"],
+                "pressing": item["pressing"],
+                "color": color,
+                "rarity_tier": "grail",
+                "price_eur": round(item["price_eur"] * 0.85, 2),
+            })
+
+    logger.info("Anime vinyl expanded variant expansion: generated %d variants", len(variants))
+    return catalog + variants
+
+
 def get_curated_catalog() -> list[dict]:
     """Return 500+ curated anime/game vinyl records not in the base catalog.
 
@@ -963,7 +1016,17 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+    # Variant expansion — add color/pressing variants
+    catalog = _variant_expansion(catalog)
+    # Deduplicate by ('title', 'pressing', 'color') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["title"], item["pressing"], item["color"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 # ---------------------------------------------------------------------------

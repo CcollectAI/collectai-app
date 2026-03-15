@@ -311,7 +311,7 @@ async def list_events(
                     # Try the personalized RPC first
                     try:
                         rows = await conn.fetch(
-                            "SELECT * FROM rpc_list_personalized_events_v1($1, $2, $3) LIMIT $4 OFFSET $5",
+                            "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM rpc_list_personalized_events_v1($1, $2, $3) LIMIT $4 OFFSET $5",
                             user_id,
                             category_id,
                             include_past,
@@ -528,7 +528,7 @@ async def list_nearby_events(
 
                 rows = await conn.fetch(
                     """
-                    SELECT *,
+                    SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at,
                         (6371 * acos(LEAST(1.0, GREATEST(-1.0,
                             cos(radians($1)) * cos(radians(latitude))
                             * cos(radians(longitude) - radians($2))
@@ -1093,7 +1093,7 @@ async def get_event(
                 # Try the view with attendee info first
                 try:
                     row = await conn.fetchrow(
-                        "SELECT * FROM v_events_with_attendees_v1 WHERE id = $1",
+                        "SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at, attendees FROM v_events_with_attendees_v1 WHERE id = $1",
                         event_id,
                     )
                 except Exception as view_err:
@@ -1931,10 +1931,18 @@ async def batch_mark_announcements_read(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bool, limit: int = 50, offset: int = 0) -> list:
-    """Fetch events from the events table with optional filters."""
-    conditions = ["status = 'published'"]
-    params = []
+def _build_event_conditions(
+    category_id: Optional[str],
+    include_past: bool,
+    user_id: Optional[str] = None,
+) -> tuple[list[str], list, int]:
+    """Build WHERE conditions + params for event queries.
+
+    All column names are hardcoded string literals — no user input enters
+    column positions, so this is safe from SQL injection.
+    """
+    conditions: list[str] = ["status = 'published'"]
+    params: list = []
     param_idx = 1
 
     if not include_past:
@@ -1947,9 +1955,33 @@ async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bo
         params.append(category_id)
         param_idx += 1
 
+    if user_id:
+        conditions.append(f"(is_public = true OR created_by = ${param_idx})")
+        params.append(user_id)
+        param_idx += 1
+    else:
+        conditions.append("is_public = true")
+
+    return conditions, params, param_idx
+
+
+_EVENT_COLUMNS = (
+    "id, title, kind, category_id, date, time, end_date, location, "
+    "online_url, image_url, description, format, status, is_public, "
+    "latitude, longitude, created_by, source, attendee_count, "
+    "going_count, interested_count, max_attendees, created_at, "
+    "is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at"
+)
+
+
+async def _fetch_events_basic(
+    conn: Any, category_id: Optional[str], include_past: bool, limit: int = 50, offset: int = 0,
+) -> list[dict]:
+    """Fetch events from the events table with optional filters."""
+    conditions, params, param_idx = _build_event_conditions(category_id, include_past)
     where = f"WHERE {' AND '.join(conditions)}"
     query = (
-        f"SELECT id, title, kind, category_id, date, time, end_date, location, online_url, image_url, description, format, status, is_public, latitude, longitude, created_by, source, attendee_count, going_count, interested_count, max_attendees, created_at, is_sponsored, sponsor_name, sponsor_logo_url, sponsor_expires_at FROM events {where} "
+        f"SELECT {_EVENT_COLUMNS} FROM events {where} "
         f"ORDER BY (is_sponsored AND (sponsor_expires_at IS NULL OR sponsor_expires_at > now())) DESC, "
         f"date ASC "
         f"LIMIT ${param_idx} OFFSET ${param_idx + 1}"
@@ -1959,30 +1991,11 @@ async def _fetch_events_basic(conn, category_id: Optional[str], include_past: bo
     return await conn.fetch(query, *params)
 
 
-async def _count_events_basic(conn, category_id: Optional[str], include_past: bool, user_id: Optional[str] = None) -> int:
+async def _count_events_basic(
+    conn: Any, category_id: Optional[str], include_past: bool, user_id: Optional[str] = None,
+) -> int:
     """Count total events matching filters (without LIMIT/OFFSET)."""
-    conditions = ["status = 'published'"]
-    params = []
-    param_idx = 1
-
-    if not include_past:
-        conditions.append(f"date >= ${param_idx}")
-        params.append(date.today().isoformat())
-        param_idx += 1
-
-    if category_id:
-        conditions.append(f"category_id = ${param_idx}")
-        params.append(category_id)
-        param_idx += 1
-
-    # Exclude private events unless user is the creator
-    if user_id:
-        conditions.append(f"(is_public = true OR created_by = ${param_idx})")
-        params.append(user_id)
-        param_idx += 1
-    else:
-        conditions.append("is_public = true")
-
+    conditions, params, _ = _build_event_conditions(category_id, include_past, user_id)
     where = f"WHERE {' AND '.join(conditions)}"
     result = await conn.fetchval(f"SELECT count(*) FROM events {where}", *params)
     return result or 0

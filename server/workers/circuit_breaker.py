@@ -199,6 +199,13 @@ ktown4u_circuit = CircuitBreaker("ktown4u", max_failures=5, cooldown_seconds=60)
 comicbookrealm_circuit = CircuitBreaker("comicbookrealm", max_failures=5, cooldown_seconds=60)
 masterofmalt_circuit = CircuitBreaker("masterofmalt", max_failures=5, cooldown_seconds=60)
 yahoo_auctions_circuit = CircuitBreaker("yahoo_auctions", max_failures=5, cooldown_seconds=60)
+scrapedo_circuit = CircuitBreaker("scrapedo", max_failures=5, cooldown_seconds=120)
+grailed_circuit = CircuitBreaker("grailed", max_failures=5, cooldown_seconds=120)
+google_shopping_circuit = CircuitBreaker("google_shopping", max_failures=5, cooldown_seconds=60)
+etsy_circuit = CircuitBreaker("etsy", max_failures=5, cooldown_seconds=60)
+comc_circuit = CircuitBreaker("comc", max_failures=5, cooldown_seconds=60)
+reverb_circuit = CircuitBreaker("reverb", max_failures=5, cooldown_seconds=60)
+abebooks_circuit = CircuitBreaker("abebooks", max_failures=5, cooldown_seconds=60)
 
 
 def all_circuit_status() -> list[dict]:
@@ -218,5 +225,10 @@ def all_circuit_status() -> list[dict]:
             popmart_circuit, booth_circuit, scalemates_circuit,
             ktown4u_circuit, comicbookrealm_circuit, masterofmalt_circuit,
             yahoo_auctions_circuit,
+            scrapedo_circuit,
+            grailed_circuit,
+            google_shopping_circuit,
+            etsy_circuit,
+            comc_circuit, reverb_circuit, abebooks_circuit,
         )
     ]

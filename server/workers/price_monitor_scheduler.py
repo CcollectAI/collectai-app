@@ -23,14 +23,16 @@ logger = logging.getLogger(__name__)
 
 INTERVAL_SECS = int(os.getenv("MONITOR_INTERVAL_SECS", "3600"))
 
-# Graceful shutdown flag
+# Graceful shutdown
 _shutdown = False
+_shutdown_event = asyncio.Event()
 
 
 def _handle_signal(signum, frame):
     global _shutdown
     logger.info("Received signal %d, shutting down after current cycle", signum)
     _shutdown = True
+    _shutdown_event.set()
 
 
 async def scheduler_loop():
@@ -53,11 +55,12 @@ async def scheduler_loop():
             log_dead_letter("price_monitor_scheduler", {}, e)
             logger.exception("Price monitor cycle failed: %r", e)
 
-        # Sleep in small increments so we can respond to shutdown quickly
-        for _ in range(INTERVAL_SECS):
-            if _shutdown:
-                break
-            await asyncio.sleep(1)
+        # Wait for shutdown signal or interval timeout
+        try:
+            await asyncio.wait_for(_shutdown_event.wait(), timeout=INTERVAL_SECS)
+            break  # shutdown was signaled
+        except asyncio.TimeoutError:
+            pass  # normal timeout, continue to next iteration
 
     logger.info("Price monitor scheduler stopped")
 

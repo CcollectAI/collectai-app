@@ -50,6 +50,8 @@ VALID_CATEGORY_IDS: frozenset[str] = frozenset({
     "whiskey", "vintage_cameras", "pens",
     # Legacy
     "diecast", "sportscards", "retro_handhelds",
+    # New Categories
+    "oop_board_games", "city_pop_vinyl", "niche_perfumery",
 })
 
 

@@ -13,11 +13,10 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
 
-const MEDAL_GOLD = '#eab308';
-const MEDAL_SILVER = '#9ca3af';
-const MEDAL_BRONZE = '#b45309';
+const MEDAL_COLORS = { gold: '#eab308', silver: '#9ca3af', bronze: '#b45309' } as const;
+const TWITCH_PURPLE = '#9146FF';
 
-const AvatarCircle: React.FC<{ name: string; color: string }> = ({ name, color }) => {
+const AvatarCircle = React.memo<{ name: string; color: string }>(({ name, color }) => {
   const initials =
     name
       .split(' ')
@@ -30,12 +29,12 @@ const AvatarCircle: React.FC<{ name: string; color: string }> = ({ name, color }
       <Text style={styles.avatarText}>{initials}</Text>
     </View>
   );
-};
+});
 
 function getMedalColor(index: number, fallback: string): string {
-  if (index === 0) return MEDAL_GOLD;
-  if (index === 1) return MEDAL_SILVER;
-  if (index === 2) return MEDAL_BRONZE;
+  if (index === 0) return MEDAL_COLORS.gold;
+  if (index === 1) return MEDAL_COLORS.silver;
+  if (index === 2) return MEDAL_COLORS.bronze;
   return fallback;
 }
 
@@ -125,7 +124,7 @@ const LeaderboardScreen: React.FC = () => {
           accessibilityRole="button"
           accessibilityLabel="View Twitch creators leaderboard"
         >
-          <Ionicons name="logo-twitch" size={18} color="#9146FF" />
+          <Ionicons name="logo-twitch" size={18} color={TWITCH_PURPLE} />
           <Text style={[styles.twitchLinkText, { color: colors.text }]}>Twitch Creators</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>

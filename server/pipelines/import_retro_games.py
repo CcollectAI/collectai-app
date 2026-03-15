@@ -1249,7 +1249,15 @@ def get_curated_catalog() -> list[dict]:
     # ── Batch: Saturn, Neo Geo AES, TG-16, Jaguar, 3DO, CIB variants (55 items) ──
     items += _additional_retro_2025_expansion()
 
-    return items
+    # Deduplicate by ('platform', 'name') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in items:
+        _key = (item["platform"], item["name"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

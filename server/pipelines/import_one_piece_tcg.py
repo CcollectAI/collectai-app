@@ -43,7 +43,8 @@ CATEGORY = "one_piece_tcg"
 # One Piece TCG rarity → edition score
 # ---------------------------------------------------------------------------
 
-_ALT_ART_KEYWORDS = {"Alt Art", "Manga Art", "SEC", "SP", "Special Art"}
+_ALT_ART_KEYWORDS = {"Alt Art", "Manga Art", "SEC", "SP", "Special Art",
+                     "Parallel Rare", "Serial Numbered", "Box Topper", "Promo"}
 
 
 def _edition_score(rarity: str) -> float:
@@ -169,6 +170,251 @@ def _additional_op_2025_expansion() -> list[tuple]:
          False, "Awakened Kid, Assign magnetic attraction"),
         ("Vinsmoke Reiju (OP09)", "OP09", "OP09-038", "SR", "Green", 11.00,
          False, "Germa 66 Poison Pink, support effect"),
+    ]
+
+
+def _variant_expansion() -> list[tuple]:
+    """~100 variant items: alt arts, parallel rares, SP cards, promos, serial numbered, box toppers."""
+    return [
+        # =================================================================
+        # Alt Art Leader Variants
+        # =================================================================
+        ("Kaido (Alt Art Leader)", "OP03", "OP03-099-AAL", "Alt Art", "Purple", 110.00,
+         True, "OP03 alt art leader Kaido, dragon form full art"),
+        ("Charlotte Katakuri (Alt Art Leader)", "OP03", "OP03-001-AAL", "Alt Art", "Yellow", 85.00,
+         True, "OP03 alt art leader Katakuri, mochi powers"),
+        ("Eustass Kid (Alt Art Leader)", "OP02", "OP02-001-AAL", "Alt Art", "Red/Green", 78.00,
+         True, "OP02 alt art leader Kid, magnetic punk"),
+        ("Crocodile (Alt Art Leader)", "OP04", "OP04-001-AAL", "Alt Art", "Blue/Black", 92.00,
+         True, "OP04 alt art leader Crocodile, sand storm art"),
+        ("Rob Lucci (Alt Art Leader)", "OP05", "OP05-001-AAL", "Alt Art", "Black", 88.00,
+         True, "OP05 alt art leader Lucci, Awakened Zoan"),
+        ("Nami (Alt Art Leader)", "OP06", "OP06-001-AAL", "Alt Art", "Green/Yellow", 72.00,
+         True, "OP06 alt art leader Nami, Clima-Tact art"),
+        ("Smoker (Alt Art Leader)", "OP04", "OP04-083-AAL", "Alt Art", "Blue", 65.00,
+         True, "OP04 alt art leader Smoker, Loguetown art"),
+        ("Boa Hancock (Alt Art Leader)", "OP06", "OP06-042-AAL", "Alt Art", "Blue/Purple", 95.00,
+         True, "OP06 alt art leader Hancock, Love-Love Beam"),
+        ("Dracule Mihawk (Alt Art Leader)", "OP05", "OP05-041-AAL", "Alt Art", "Green/Black", 82.00,
+         True, "OP05 alt art leader Mihawk, World's Strongest Swordsman"),
+        ("Sabo (Alt Art Leader)", "OP04", "OP04-039-AAL", "Alt Art", "Red/Blue", 90.00,
+         True, "OP04 alt art leader Sabo, flame emperor"),
+
+        # =================================================================
+        # Manga Art / Special Art Variants
+        # =================================================================
+        ("Roronoa Zoro (Manga Art)", "OP06", "OP06-118-MA", "Manga Art", "Green", 260.00,
+         False, "OP06 Manga Rare Zoro, Enma slash panel"),
+        ("Nami (Manga Art)", "OP05", "OP05-119-MA", "Manga Art", "Green", 220.00,
+         False, "OP05 Manga Rare Nami, thunderbolt tempo panel"),
+        ("Nico Robin (Manga Art)", "OP04", "OP04-119-MA", "Manga Art", "Blue", 195.00,
+         False, "OP04 Manga Rare Robin, Demonio Fleur art"),
+        ("Sanji (Manga Art)", "OP03", "OP03-119-MA", "Manga Art", "Red", 185.00,
+         False, "OP03 Manga Rare Sanji, Ifrit Jambe panel"),
+        ("Boa Hancock (Special Art)", "OP06", "OP06-073-SA", "Special Art", "Blue", 175.00,
+         False, "OP06 Special Art Hancock, Amazon Lily panoramic"),
+        ("Trafalgar Law (Manga Art)", "OP05", "OP05-120-MA", "Manga Art", "Red/Blue", 240.00,
+         False, "OP05 Manga Rare Law, Puncture Wille panel"),
+        ("Jinbe (Manga Art)", "OP06", "OP06-119-MA", "Manga Art", "Blue", 160.00,
+         False, "OP06 Manga Rare Jinbe, Fish-Man Karate art"),
+        ("Franky (Special Art)", "OP04", "OP04-073-SA", "Special Art", "Red", 130.00,
+         False, "OP04 Special Art General Franky, Radical Beam"),
+        ("Brook (Special Art)", "OP05", "OP05-073-SA", "Special Art", "Purple", 140.00,
+         False, "OP05 Special Art Soul King Brook, ice slash"),
+        ("Usopp (Manga Art)", "OP03", "OP03-120-MA2", "Manga Art", "Green", 145.00,
+         False, "OP03 Manga Rare God Usopp, Dressrosa panel"),
+
+        # =================================================================
+        # Parallel Rare Variants (different foil patterns)
+        # =================================================================
+        ("Monkey D. Luffy (Parallel Rare)", "OP01", "OP01-003-PAR", "Parallel Rare", "Red", 45.00,
+         True, "OP01 parallel foil Luffy leader, textured holo"),
+        ("Shanks (Parallel Rare)", "OP01", "OP01-120-PAR", "Parallel Rare", "Red", 85.00,
+         False, "OP01 parallel foil SEC Shanks, rainbow stamp"),
+        ("Portgas D. Ace (Parallel Rare)", "OP02", "OP02-013-PAR", "Parallel Rare", "Red/Blue", 65.00,
+         True, "OP02 parallel foil Ace leader, fire fist pattern"),
+        ("Kaido (Parallel Rare)", "OP03", "OP03-099-PAR", "Parallel Rare", "Purple", 55.00,
+         False, "OP03 parallel foil Kaido, dragon scale texture"),
+        ("Yamato (Parallel Rare)", "OP03", "OP03-123-PAR", "Parallel Rare", "Green/Yellow", 70.00,
+         False, "OP03 parallel foil SEC Yamato, ice breath pattern"),
+        ("Trafalgar Law (Parallel Rare)", "OP01", "OP01-002-PAR", "Parallel Rare", "Red/Green", 40.00,
+         True, "OP01 parallel foil Law leader, Room effect texture"),
+        ("Edward Newgate (Parallel Rare)", "OP02", "OP02-001-PAR", "Parallel Rare", "Red", 60.00,
+         True, "OP02 parallel foil Whitebeard leader, quake pattern"),
+        ("Boa Hancock (Parallel Rare)", "OP01", "OP01-078-PAR", "Parallel Rare", "Blue", 38.00,
+         False, "OP01 parallel foil Hancock, love heart foil"),
+        ("Donquixote Doflamingo (Parallel Rare OP04)", "OP04", "OP04-031-PAR", "Parallel Rare", "Blue", 42.00,
+         False, "OP04 parallel foil Doflamingo, string art pattern"),
+        ("Crocodile (Parallel Rare OP04)", "OP04", "OP04-058-PAR", "Parallel Rare", "Blue/Black", 48.00,
+         False, "OP04 parallel foil Crocodile, sand vortex texture"),
+
+        # =================================================================
+        # Promotional Cards (tournament prizes, magazine promos, pre-release)
+        # =================================================================
+        ("Monkey D. Luffy (Championship 2024 Promo)", "PROMO", "P-OP01-PR", "Promo", "Red", 350.00,
+         False, "Regional Championship 2024 winner promo, gold border"),
+        ("Roronoa Zoro (Championship 2024 Promo)", "PROMO", "P-OP02-PR", "Promo", "Green", 280.00,
+         False, "Regional Championship 2024 top-8 promo, gold border"),
+        ("Trafalgar Law (World Finals Promo)", "PROMO", "P-WF01-PR", "Promo", "Red/Blue", 420.00,
+         False, "2024 World Finals exclusive, numbered 1/500"),
+        ("Shanks (Pre-Release Promo)", "PROMO", "P-PR01-PR", "Promo", "Red", 25.00,
+         False, "OP01 pre-release promo, stamped foil"),
+        ("Nami (Pre-Release Promo)", "PROMO", "P-PR02-PR", "Promo", "Green", 18.00,
+         False, "OP02 pre-release promo, stamped foil"),
+        ("Portgas D. Ace (Magazine Promo)", "PROMO", "P-MAG01-PR", "Promo", "Red/Blue", 35.00,
+         False, "V-Jump magazine exclusive promo, Japan only"),
+        ("Kaido (Magazine Promo)", "PROMO", "P-MAG02-PR", "Promo", "Purple", 30.00,
+         False, "Saikyo Jump magazine exclusive promo"),
+        ("Luffy Gear 5 (Store Championship Promo)", "PROMO", "P-SC01-PR", "Promo", "Red", 55.00,
+         False, "2024 Official Store Championship top-4 promo"),
+        ("Yamato (Pre-Release Promo OP03)", "PROMO", "P-PR03-PR", "Promo", "Green/Yellow", 22.00,
+         False, "OP03 pre-release event promo, stamped"),
+        ("Uta (Film Red Promo)", "PROMO", "P-FR01-PR", "Promo", "Red", 45.00,
+         False, "One Piece Film Red theater exclusive promo card"),
+        ("Monkey D. Luffy (Treasure Cup Promo)", "PROMO", "P-TC01-PR", "Promo", "Red", 150.00,
+         False, "Treasure Cup tournament winner exclusive promo"),
+        ("Sanji (Regional Qualifier Promo)", "PROMO", "P-RQ01-PR", "Promo", "Red", 40.00,
+         False, "2024 Regional Qualifier participation promo"),
+
+        # =================================================================
+        # Japanese vs English Chase Card Variants
+        # =================================================================
+        ("Monkey D. Luffy Gear 5 (JP Manga Art)", "OP07", "OP07-109-JP", "Manga Art", "Red", 380.00,
+         False, "Japanese-exclusive Gear 5 manga art, first printing"),
+        ("Shanks (JP Manga Art OP08)", "OP08", "OP08-118-JP", "Manga Art", "Red", 420.00,
+         False, "Japanese-exclusive Shanks manga art, Marineford panel"),
+        ("Luffy Nika (JP Manga Art OP09)", "OP09", "OP09-119-JP", "Manga Art", "Red", 450.00,
+         False, "Japanese-exclusive Nika Luffy manga art, Joy Boy splash"),
+        ("Roronoa Zoro (EN Exclusive Alt Art)", "OP06", "OP06-025-EN", "Alt Art", "Green", 155.00,
+         False, "English-exclusive alt art Zoro, western market only"),
+        ("Trafalgar Law (EN Exclusive Alt Art)", "OP05", "OP05-069-EN", "Alt Art", "Red/Blue", 140.00,
+         False, "English-exclusive alt art Law, western market release"),
+        ("Nami (JP Exclusive SEC)", "OP05", "OP05-120-JP", "SEC", "Green", 165.00,
+         False, "Japanese-exclusive SEC Nami, Cat Burglar full art"),
+        ("Monkey D. Luffy (EN 1st Edition OP01)", "OP01", "OP01-003-1ED", "Alt Art", "Red", 95.00,
+         True, "English 1st Edition stamp leader Luffy, OP01 first print run"),
+        ("Shanks (EN 1st Edition SEC)", "OP01", "OP01-120-1ED", "SEC", "Red", 250.00,
+         False, "English 1st Edition SEC Shanks, premium chase"),
+
+        # =================================================================
+        # Serial Numbered Cards
+        # =================================================================
+        ("Monkey D. Luffy (Serial Numbered /500)", "OP01", "OP01-003-SN500", "Serial Numbered", "Red", 800.00,
+         True, "Serial numbered /500, OP01 championship prize card"),
+        ("Shanks (Serial Numbered /250)", "OP01", "OP01-120-SN250", "Serial Numbered", "Red", 1200.00,
+         False, "Serial numbered /250, ultra-premium chase SEC"),
+        ("Portgas D. Ace (Serial Numbered /500)", "OP02", "OP02-013-SN500", "Serial Numbered", "Red/Blue", 650.00,
+         True, "Serial numbered /500, Ace leader championship card"),
+        ("Roronoa Zoro (Serial Numbered /250)", "OP06", "OP06-025-SN250", "Serial Numbered", "Green", 900.00,
+         False, "Serial numbered /250, King of Hell exclusive"),
+        ("Trafalgar Law (Serial Numbered /500)", "OP05", "OP05-069-SN500", "Serial Numbered", "Red/Blue", 750.00,
+         False, "Serial numbered /500, KROOM art tournament prize"),
+        ("Kaido (Serial Numbered /100)", "OP03", "OP03-099-SN100", "Serial Numbered", "Purple", 1500.00,
+         False, "Serial numbered /100, World Finals exclusive dragon art"),
+        ("Boa Hancock (Serial Numbered /500)", "OP06", "OP06-073-SN500", "Serial Numbered", "Blue", 550.00,
+         False, "Serial numbered /500, Amazon Lily art chase"),
+
+        # =================================================================
+        # Box Topper / Case Hit Variants
+        # =================================================================
+        ("Monkey D. Luffy (OP01 Box Topper)", "OP01", "OP01-003-BT", "Box Topper", "Red", 35.00,
+         True, "OP01 booster box topper, exclusive foil stamp"),
+        ("Shanks (OP01 Case Hit)", "OP01", "OP01-120-CH", "Box Topper", "Red", 280.00,
+         False, "OP01 case hit Shanks, 1 per sealed case"),
+        ("Trafalgar Law (OP02 Box Topper)", "OP02", "OP02-069-BT", "Box Topper", "Red/Green", 28.00,
+         False, "OP02 booster box topper, exclusive Law art"),
+        ("Yamato (OP03 Box Topper)", "OP03", "OP03-123-BT", "Box Topper", "Green/Yellow", 32.00,
+         False, "OP03 booster box topper, Yamato exclusive art"),
+        ("Luffy Gear 5 (OP07 Case Hit)", "OP07", "OP07-109-CH", "Box Topper", "Red", 450.00,
+         False, "OP07 case hit Gear 5 Luffy, 1 per sealed case"),
+        ("Shanks (OP08 Case Hit)", "OP08", "OP08-118-CH", "Box Topper", "Red", 380.00,
+         False, "OP08 case hit Shanks Manga Art variant, 1 per case"),
+        ("Nika Luffy (OP09 Box Topper)", "OP09", "OP09-119-BT", "Box Topper", "Red", 55.00,
+         False, "OP09 booster box topper, Joy Boy reveal art"),
+        ("Kaido (OP03 Case Hit)", "OP03", "OP03-099-CH", "Box Topper", "Purple", 200.00,
+         False, "OP03 case hit Kaido, dragon form, 1 per sealed case"),
+
+        # =================================================================
+        # SP (Special Parallel) Cards
+        # =================================================================
+        ("Monkey D. Luffy (SP OP01)", "OP01", "OP01-003-SP", "SP", "Red", 180.00,
+         True, "OP01 Special Parallel Luffy, full art textured foil"),
+        ("Roronoa Zoro (SP OP01)", "OP01", "OP01-025-SP", "SP", "Green", 150.00,
+         False, "OP01 Special Parallel Zoro, embossed foil"),
+        ("Shanks (SP OP01)", "OP01", "OP01-120-SP", "SP", "Red", 350.00,
+         False, "OP01 Special Parallel SEC Shanks, premium texture"),
+        ("Portgas D. Ace (SP OP02)", "OP02", "OP02-013-SP", "SP", "Red/Blue", 220.00,
+         True, "OP02 Special Parallel Ace leader, flame texture"),
+        ("Edward Newgate (SP OP02)", "OP02", "OP02-001-SP", "SP", "Red", 190.00,
+         True, "OP02 Special Parallel Whitebeard, quake ripple foil"),
+        ("Yamato (SP OP03)", "OP03", "OP03-123-SP", "SP", "Green/Yellow", 165.00,
+         False, "OP03 Special Parallel SEC Yamato, ice crystal texture"),
+        ("Kaido (SP OP03)", "OP03", "OP03-099-SP", "SP", "Purple", 140.00,
+         False, "OP03 Special Parallel Kaido, scales embossed foil"),
+        ("Boa Hancock (SP OP06)", "OP06", "OP06-073-SP", "SP", "Blue", 175.00,
+         False, "OP06 Special Parallel Hancock, heart pattern foil"),
+        ("Trafalgar Law (SP OP05)", "OP05", "OP05-069-SP2", "SP", "Red/Blue", 185.00,
+         False, "OP05 Special Parallel Law, sphere of influence foil"),
+        ("Sanji (SP OP03)", "OP03", "OP03-017-SP", "SP", "Red", 125.00,
+         False, "OP03 Special Parallel Sanji, Ifrit Jambe flames"),
+
+        # =================================================================
+        # SEC (Secret Rare) Alternate Arts
+        # =================================================================
+        ("Shanks (SEC Alt Art OP01)", "OP01", "OP01-120-SECAA", "SEC", "Red", 320.00,
+         False, "OP01 SEC alternate art Shanks, Gryphon stance"),
+        ("Yamato (SEC Alt Art OP03)", "OP03", "OP03-123-SECAA", "SEC", "Green/Yellow", 145.00,
+         False, "OP03 SEC alternate art Yamato, Thunder Bagua"),
+        ("Portgas D. Ace (SEC Alt Art OP02)", "OP02", "OP02-120-SECAA", "SEC", "Red/Blue", 280.00,
+         False, "OP02 SEC alternate art Ace, Entrust the Future"),
+        ("Boa Hancock (SEC Alt Art OP06)", "OP06", "OP06-120-SECAA", "SEC", "Blue/Purple", 160.00,
+         False, "OP06 SEC alternate art Hancock, Slave Arrow"),
+        ("Monkey D. Luffy (SEC Alt Art OP04)", "OP04", "OP04-120-SECAA", "SEC", "Red", 200.00,
+         False, "OP04 SEC alternate art Luffy, Bound Man Snakeman"),
+        ("Nami (SEC Alt Art OP05)", "OP05", "OP05-118-SECAA", "SEC", "Green", 135.00,
+         False, "OP05 SEC alternate art Nami, Zeus thundercloud"),
+        ("Rob Lucci (SEC Alt Art OP05)", "OP05", "OP05-119-SECAA", "SEC", "Black", 120.00,
+         False, "OP05 SEC alternate art Lucci, Awakened form"),
+        ("Charlotte Katakuri (SEC Alt Art OP03)", "OP03", "OP03-122-SECAA", "SEC", "Yellow", 130.00,
+         False, "OP03 SEC alternate art Katakuri, Muso Donuts"),
+        ("Eustass Kid (SEC Alt Art OP02)", "OP02", "OP02-119-SECAA", "SEC", "Red/Green", 115.00,
+         False, "OP02 SEC alternate art Kid, Punk Gibson"),
+        ("Crocodile (SEC Alt Art OP04)", "OP04", "OP04-119-SECAA", "SEC", "Blue/Black", 140.00,
+         False, "OP04 SEC alternate art Crocodile, Ground Secco"),
+
+        # =================================================================
+        # Additional Variants (SP parallels, promos, language exclusives)
+        # =================================================================
+        ("Monkey D. Luffy (SP OP04)", "OP04", "OP04-003-SP", "SP", "Red", 160.00,
+         False, "OP04 Special Parallel Luffy, Snakeman texture foil"),
+        ("Nico Robin (SP OP04)", "OP04", "OP04-064-SP", "SP", "Blue", 200.00,
+         False, "OP04 Special Parallel Robin, Demonio Fleur foil"),
+        ("Blackbeard (SP OP08)", "OP08", "OP08-069-SP", "SP", "Black", 155.00,
+         False, "OP08 Special Parallel Blackbeard, darkness vortex foil"),
+        ("Rob Lucci (SP OP07)", "OP07", "OP07-098-SP", "SP", "Black", 130.00,
+         False, "OP07 Special Parallel SEC Lucci, Awakened leopard foil"),
+        ("Nami (Parallel Rare OP06)", "OP06", "OP06-016-PAR", "Parallel Rare", "Green/Yellow", 35.00,
+         False, "OP06 parallel foil Nami, Zeus lightning texture"),
+        ("Sanji (Parallel Rare OP03)", "OP03", "OP03-017-PAR", "Parallel Rare", "Red", 32.00,
+         False, "OP03 parallel foil Sanji, Diable Jambe pattern"),
+        ("Nico Robin (Parallel Rare OP04)", "OP04", "OP04-064-PAR", "Parallel Rare", "Blue", 50.00,
+         False, "OP04 parallel foil Robin, flower petal texture"),
+        ("Marco (JP Exclusive Alt Art OP02)", "OP02", "OP02-018-JAA", "Alt Art", "Green", 125.00,
+         False, "Japanese exclusive alt art Marco, blue phoenix flames"),
+        ("Boa Hancock (JP Exclusive Manga Art)", "OP06", "OP06-069-JPMA", "Manga Art", "Green/Yellow", 210.00,
+         False, "Japanese exclusive manga art Hancock, Amazon Lily panel"),
+        ("Crocodile (EN Exclusive Alt Art)", "OP04", "OP04-058-EN", "Alt Art", "Blue/Black", 120.00,
+         False, "English-exclusive alt art Crocodile, Alabasta desert art"),
+        ("Monkey D. Luffy (Anime Expo 2024 Promo)", "PROMO", "P-AX24-PR", "Promo", "Red", 85.00,
+         False, "Anime Expo 2024 exclusive Luffy promo, limited 2000"),
+        ("Roronoa Zoro (Jump Festa 2025 Promo)", "PROMO", "P-JF25-PR", "Promo", "Green", 95.00,
+         False, "Jump Festa 2025 exclusive Zoro, Enma blade art"),
+        ("Shanks (Serial Numbered /100)", "OP08", "OP08-118-SN100", "Serial Numbered", "Red", 2500.00,
+         False, "Serial numbered /100, World Championship grand prize Shanks"),
+        ("Yamato (Serial Numbered /500)", "OP03", "OP03-123-SN500", "Serial Numbered", "Green/Yellow", 600.00,
+         False, "Serial numbered /500, tournament prize Yamato art"),
+        ("Edward Newgate (Serial Numbered /250)", "OP02", "OP02-001-SN250", "Serial Numbered", "Red", 850.00,
+         True, "Serial numbered /250, Whitebeard championship exclusive"),
     ]
 
 
@@ -1937,6 +2183,9 @@ def get_curated_catalog() -> list[dict]:
     # ── OP-07/08/09 chase cards, promos, DON!! foils, Gear 5 variants (50 items) ──
     cards_raw += _additional_op_2025_expansion()
 
+    # ── Variant expansion: alt arts, parallel rares, SP, promos, serial numbered (~100 items) ──
+    cards_raw += _variant_expansion()
+
     catalog = []
     for entry in cards_raw:
         (name, set_code, card_number, rarity, color, price_eur,
@@ -1953,7 +2202,14 @@ def get_curated_catalog() -> list[dict]:
             "notes": notes,
         })
 
-    return catalog
+    # Deduplicate by card_number (keep first occurrence)
+    seen: set[str] = set()
+    deduped: list[dict] = []
+    for item in catalog:
+        if item["card_number"] not in seen:
+            seen.add(item["card_number"])
+            deduped.append(item)
+    return deduped
 
 
 # ---------------------------------------------------------------------------

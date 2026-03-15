@@ -997,6 +997,9 @@ def get_curated_catalog() -> list[dict]:
         ("1989", "merch", "1989 Polaroid Photo Set (Official 13 Cards)", "Store Exclusive", "mid", 45),
     ]
 
+    # ── Variant expansion — vinyl colors, signed CDs, exclusives ──
+    items += _variant_expansion()
+
     catalog = []
     for album, item_type, name, variant, tier, price in items:
         catalog.append({
@@ -1007,7 +1010,112 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+    # Deduplicate by ('album', 'name', 'variant') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["album"], item["name"], item["variant"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
+
+
+def _variant_expansion() -> list[tuple]:
+    """Vinyl color variants, signed CDs, international exclusives & format variants.
+
+    Taylor Swift releases are known for retailer-exclusive colored vinyl pressings
+    (Target lavender/gold/rose, standard black, RSD editions), signed CD inserts,
+    international exclusives (Japan, UK), picture discs, and cassette color variants.
+    ~60 items targeting 750+ total.
+    """
+    return [
+        # ── Midnights — additional Target / RSD / international pressings ──
+        ("Midnights", "vinyl", "Midnights Target Exclusive Lavender Vinyl (3am Edition)", "Lavender 3am (Target)", "high", 65),
+        ("Midnights", "vinyl", "Midnights Japan Exclusive Vinyl (w/ Bonus Track)", "Japan Exclusive", "high", 80),
+        ("Midnights", "vinyl", "Midnights Signed CD Insert", "Signed CD", "high", 90),
+        ("Midnights", "cassette", "Midnights Moonstone Blue Cassette", "Moonstone Blue Cassette", "mid", 30),
+        ("Midnights", "cassette", "Midnights Jade Green Cassette", "Jade Green Cassette", "mid", 30),
+        ("Midnights", "cassette", "Midnights Mahogany Cassette", "Mahogany Cassette", "mid", 30),
+        ("Midnights", "cassette", "Midnights Blood Moon Cassette", "Blood Moon Cassette", "mid", 32),
+
+        # ── TTPD — vinyl colors & signed editions ──
+        ("TTPD", "vinyl", "TTPD Target Exclusive Ivory Vinyl", "Ivory (Target)", "mid", 42),
+        ("TTPD", "vinyl", "TTPD The Manuscript Gold Vinyl", "Manuscript Gold", "mid", 50),
+        ("TTPD", "vinyl", "TTPD Parchment Beige Vinyl", "Parchment Beige", "mid", 45),
+        ("TTPD", "vinyl", "TTPD RSD Black Friday Pressing", "RSD Black Friday", "high", 75),
+        ("TTPD", "vinyl", "TTPD Signed CD Insert (w/ Heart Drawing)", "Signed CD Heart", "grail", 150),
+        ("TTPD", "cassette", "TTPD Phantom Clear Cassette", "Phantom Clear", "mid", 28),
+
+        # ── 1989 (Taylor's Version) — vinyl colors ──
+        ("1989 TV", "vinyl", "1989 TV Rose Garden Pink Vinyl (Target)", "Rose Garden Pink (Target)", "mid", 45),
+        ("1989 TV", "vinyl", "1989 TV Tangerine Vinyl", "Tangerine", "mid", 40),
+        ("1989 TV", "vinyl", "1989 TV Crystal Skies Blue Vinyl", "Crystal Skies Blue", "mid", 42),
+        ("1989 TV", "vinyl", "1989 TV Sunrise Boulevard Yellow Vinyl", "Sunrise Blvd Yellow", "mid", 40),
+        ("1989 TV", "vinyl", "1989 TV Aquamarine Green Vinyl", "Aquamarine Green", "mid", 42),
+        ("1989 TV", "vinyl", "1989 TV Japan Exclusive Vinyl (w/ Bonus Tracks)", "Japan Exclusive", "high", 85),
+        ("1989 TV", "vinyl", "1989 TV Signed CD Insert", "Signed CD", "high", 95),
+
+        # ── Speak Now (Taylor's Version) — vinyl colors ──
+        ("Speak Now TV", "vinyl", "Speak Now TV Orchid Marbled Vinyl (Target)", "Orchid Marbled (Target)", "mid", 48),
+        ("Speak Now TV", "vinyl", "Speak Now TV Violet Vinyl", "Violet", "mid", 38),
+        ("Speak Now TV", "vinyl", "Speak Now TV Lilac Marbled Vinyl", "Lilac Marbled", "mid", 42),
+        ("Speak Now TV", "vinyl", "Speak Now TV Signed CD Insert", "Signed CD", "high", 90),
+
+        # ── Red (Taylor's Version) — vinyl colors ──
+        ("Red TV", "vinyl", "Red TV Target Exclusive Red Vinyl", "Red (Target)", "mid", 45),
+        ("Red TV", "vinyl", "Red TV Standard Black Vinyl (4LP)", "Standard Black", "standard", 30),
+        ("Red TV", "vinyl", "Red TV Signed CD Insert", "Signed CD", "high", 85),
+
+        # ── Fearless (Taylor's Version) — vinyl colors ──
+        ("Fearless TV", "vinyl", "Fearless TV Target Exclusive Gold Vinyl", "Gold (Target)", "mid", 48),
+        ("Fearless TV", "vinyl", "Fearless TV Standard Black Vinyl (3LP)", "Standard Black", "standard", 28),
+        ("Fearless TV", "vinyl", "Fearless TV Signed CD Insert", "Signed CD", "high", 80),
+
+        # ── Folklore — additional pressings ──
+        ("Folklore", "vinyl", "Folklore Standard Black Vinyl", "Standard Black", "standard", 28),
+        ("Folklore", "vinyl", "Folklore Clandestine Meetings Vinyl (Betty's Garden)", "Betty's Garden", "mid", 45),
+        ("Folklore", "vinyl", "Folklore RSD Exclusive Red Vinyl", "RSD Red", "high", 75),
+        ("Folklore", "vinyl", "Folklore Signed CD Insert", "Signed CD", "high", 85),
+        ("Folklore", "cassette", "Folklore Stolen Lullabies Cassette", "Stolen Lullabies", "mid", 35),
+
+        # ── Evermore — additional pressings ──
+        ("Evermore", "vinyl", "Evermore Standard Black Vinyl (2LP)", "Standard Black", "standard", 28),
+        ("Evermore", "vinyl", "Evermore Transparent Green Vinyl (UK)", "Transparent Green (UK)", "mid", 50),
+        ("Evermore", "vinyl", "Evermore Signed CD Insert", "Signed CD", "high", 80),
+
+        # ── Lover — additional pressings ──
+        ("Lover", "vinyl", "Lover Target Exclusive Pink Vinyl", "Pink (Target)", "mid", 45),
+        ("Lover", "vinyl", "Lover Signed CD Insert", "Signed CD", "high", 85),
+
+        # ── Reputation — pressings ──
+        ("Reputation", "vinyl", "Reputation Picture Disc Vinyl (2LP)", "Picture Disc", "high", 90),
+        ("Reputation", "vinyl", "Reputation Orange Translucent Vinyl (FYE)", "Orange (FYE Exclusive)", "high", 110),
+        ("Reputation", "vinyl", "Reputation Signed CD Insert", "Signed CD", "grail", 160),
+        ("Reputation", "cassette", "Reputation Clear Cassette", "Clear Cassette", "mid", 35),
+
+        # ── 1989 (Original) — pressings ──
+        ("1989", "vinyl", "1989 Crystal Clear Vinyl (RSD)", "Crystal Clear (RSD)", "high", 120),
+        ("1989", "vinyl", "1989 Standard Black Vinyl (2LP)", "Standard Black", "mid", 35),
+        ("1989", "vinyl", "1989 Pink Vinyl (Japan)", "Pink (Japan)", "high", 95),
+
+        # ── Debut / Fearless (Original) — rare pressings ──
+        ("Debut", "vinyl", "Taylor Swift (Debut) Standard Black Vinyl", "Standard Black", "mid", 55),
+        ("Debut", "vinyl", "Taylor Swift (Debut) RSD Turquoise Vinyl", "Turquoise (RSD)", "high", 130),
+        ("Debut", "vinyl", "Taylor Swift (Debut) Signed CD (Early Career)", "Signed CD Early", "grail", 350),
+        ("Fearless", "vinyl", "Fearless (Original) Gold Vinyl", "Gold Original", "high", 90),
+        ("Fearless", "vinyl", "Fearless (Original) Standard Black Vinyl", "Standard Black", "mid", 50),
+
+        # ── Cross-album picture discs & box sets ──
+        ("Eras Tour", "vinyl", "Eras Tour Exclusive Picture Disc (All Eras Art)", "Picture Disc", "grail", 200),
+        ("Midnights", "vinyl", "Midnights Picture Disc Vinyl", "Picture Disc", "high", 65),
+        ("TTPD", "vinyl", "TTPD Picture Disc Vinyl (Quill & Ink Art)", "Picture Disc", "high", 70),
+
+        # ── International exclusives ──
+        ("Folklore", "vinyl", "Folklore Japan Exclusive Vinyl (w/ Bonus Track)", "Japan Exclusive", "high", 80),
+        ("Lover", "vinyl", "Lover Japan Exclusive Deluxe (w/ Bonus Tracks)", "Japan Deluxe", "high", 70),
+        ("Red TV", "vinyl", "Red TV Japan Exclusive Vinyl (w/ Bonus Tracks)", "Japan Exclusive", "high", 85),
+    ]
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

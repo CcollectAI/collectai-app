@@ -2,11 +2,12 @@
  * AddMenuModal — Bottom-sheet menu for adding items (QuickScan, Barcode, Manual).
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, Keyboard } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { radius, text as textToken, fontWeight as fw, shadow } from '@/theme/tokens';
 
 interface AddMenuModalProps {
   visible: boolean;
@@ -21,6 +22,12 @@ const MENU_ITEMS = [
 
 export const AddMenuModal = React.memo(function AddMenuModal({ visible, onClose }: AddMenuModalProps) {
   const { colors } = useAppTheme();
+
+  useEffect(() => {
+    if (visible) {
+      Keyboard.dismiss();
+    }
+  }, [visible]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -45,7 +52,7 @@ export const AddMenuModal = React.memo(function AddMenuModal({ visible, onClose 
                 onPress={() => { onClose(); router.push(item.route); }}
                 style={styles.menuItem}
                 accessibilityRole="button"
-                accessibilityLabel={item.title}
+                accessibilityLabel={`${item.title}: ${item.subtitle}`}
               >
                 <View style={[styles.iconCircle, { backgroundColor: colors.accent + '15' }]}>
                   <Ionicons name={item.icon} size={20} color={colors.accent} />
@@ -71,17 +78,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   sheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
     paddingTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
+    ...shadow.elevated,
   },
   handle: {
     width: 36,
@@ -100,16 +103,16 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: textToken.lg,
+    fontWeight: fw.semibold,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: textToken.md,
     marginTop: 2,
   },
   divider: {

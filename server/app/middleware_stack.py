@@ -50,7 +50,7 @@ def install_middlewares(app: FastAPI) -> FastAPI:
     )
 
     # Gzip compression — compress responses >=1 KB to reduce bandwidth
-    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    app.add_middleware(GZipMiddleware, minimum_size=2000)
 
     # Trusted host middleware (only if explicitly configured)
     if TRUSTED_HOSTS and TRUSTED_HOSTS != [""]:

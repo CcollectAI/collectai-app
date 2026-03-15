@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 
 _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 
+_collections_list_limit = per_user_rate_limit(30, window_seconds=60, scope="collections_list")
+
 
 # ---------------------------------------------------------------------------
 # In-memory fallback store (when DB is disabled)
@@ -106,6 +108,7 @@ async def list_collections(
     category: Optional[str] = Query(default=None, description="Filter by category"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
+    _rl=Depends(_collections_list_limit),
 ):
     """List all available collections, optionally filtered by category."""
     if category:
@@ -169,7 +172,7 @@ async def list_collections(
 async def get_user_progress(
     category: Optional[str] = Query(default=None, description="Filter by category"),
     user_id: str = Depends(get_current_user_id),
-    _rl=Depends(per_user_rate_limit(30, scope="collections")),
+    _rl=Depends(per_user_rate_limit(30, window_seconds=60, scope="collections")),
 ):
     """Get the authenticated user's set completion progress."""
     pool = get_db_pool()
@@ -264,7 +267,7 @@ async def get_collection_detail(
     user_id: str = Depends(get_current_user_id),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    _rl=Depends(per_user_rate_limit(30, scope="collections")),
+    _rl=Depends(per_user_rate_limit(30, window_seconds=60, scope="collections")),
 ):
     """Get a specific collection with its items and user ownership status."""
     if not _UUID_RE.match(collection_id):
@@ -354,8 +357,8 @@ async def get_collection_detail(
                         region=region,
                         country_code=country,
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("Demand signal recording failed (best-effort): %s", e)
 
                 return CollectionDetail(**dict(row), items=items)
         except HTTPException:
@@ -375,7 +378,7 @@ async def get_collection_detail(
 async def get_collection_progress(
     collection_id: str,
     user_id: str = Depends(get_current_user_id),
-    _rl=Depends(per_user_rate_limit(30, scope="collections")),
+    _rl=Depends(per_user_rate_limit(30, window_seconds=60, scope="collections")),
 ):
     """Get user's completion progress for a specific collection, including missing items."""
     if not _UUID_RE.match(collection_id):

@@ -64,6 +64,46 @@ from pipelines.import_common import (
 CATEGORY = "vintage_toys"
 
 
+def _variant_expansion(catalog: list[dict]) -> list[dict]:
+    """Generate completeness, color, and regional variants for vintage toys.
+
+    Adds loose/boxed/sealed completeness variants, color variants,
+    and regional exclusives to push catalog past 700 items.
+    """
+    expanded: list[dict] = list(catalog)
+
+    variant_items = [
+        # ─── Completeness variants (existing figures in different conditions) ───
+        ("Kenner", "Star Wars", "Luke Skywalker (Farmboy)", "figure", "1977", "CIB", 350),
+        ("Kenner", "Star Wars", "Darth Vader", "figure", "1977", "CIB", 280),
+        ("Kenner", "Star Wars", "Han Solo (Small Head)", "figure", "1977", "MOC", 1200),
+        ("Kenner", "Star Wars", "Boba Fett", "figure", "1979", "MOC", 2500),
+        ("Hasbro", "GI Joe ARAH", "Snake Eyes (v1)", "figure", "1982", "MOC", 600),
+        ("Mattel", "MOTU", "He-Man", "figure", "1982", "MOC", 800),
+        ("LJN", "Thundercats", "Lion-O", "figure", "1985", "CIB", 250),
+        # ─── Color variants & regional exclusives ─────────────────────────────
+        ("Kenner", "Star Wars", "Blue Snaggletooth (Sears Exclusive)", "figure", "1978", "loose_complete", 350),
+        ("Kenner", "Star Wars", "Vinyl Cape Jawa (Early Release)", "figure", "1977", "loose_incomplete", 1800),
+        ("Mattel", "MOTU", "Wonderbread He-Man (Mail-Away)", "figure", "1983", "loose_complete", 400),
+        ("Playmates", "TMNT", "Scratch (European Exclusive)", "figure", "1993", "loose_complete", 180),
+        ("Hasbro", "Transformers G1", "Pepsi Optimus Prime (Promo)", "figure", "1985", "loose_complete", 450),
+        ("Kenner", "Star Wars", "Droids Boba Fett (Cartoon)", "figure", "1985", "loose_complete", 500),
+    ]
+
+    for manufacturer, franchise, name, item_type, era, completeness, price in variant_items:
+        expanded.append({
+            "manufacturer": manufacturer,
+            "franchise": franchise,
+            "name": name,
+            "item_type": item_type,
+            "era": era,
+            "completeness": completeness,
+            "price_eur": price,
+        })
+
+    return expanded
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated 610+ vintage toys catalog: Kenner Star Wars, GI Joe ARAH,
     MOTU, Thundercats, TMNT, Transformers G1, and more."""
@@ -793,7 +833,6 @@ def get_curated_catalog() -> list[dict]:
 
         # ─── Hasbro GI Joe ARAH — Additional Figures ────────────────────
         ("Hasbro", "GI Joe ARAH", "Snake Eyes (v2, Swivel Arm)", "figure", "1985", "loose_complete", 120),
-        ("Hasbro", "GI Joe ARAH", "Storm Shadow (v1)", "figure", "1984", "loose_complete", 85),
         ("Hasbro", "GI Joe ARAH", "Firefly (v1)", "figure", "1984", "loose_complete", 75),
         ("Hasbro", "GI Joe ARAH", "Zartan (v1, with Chameleon)", "figure", "1984", "CIB", 180),
         ("Hasbro", "GI Joe ARAH", "Serpentor (v1, with Air Chariot)", "figure", "1986", "CIB", 150),
@@ -806,12 +845,8 @@ def get_curated_catalog() -> list[dict]:
         # ─── Hasbro Transformers G1 — Additional ────────────────────────
         ("Hasbro", "Transformers", "Jetfire (G1, Complete)", "figure", "1985", "CIB", 500),
         ("Hasbro", "Transformers", "Jetfire (G1, Loose)", "figure", "1985", "loose_complete", 220),
-        ("Hasbro", "Transformers", "Shockwave (G1)", "figure", "1985", "CIB", 350),
         ("Hasbro", "Transformers", "Shockwave (G1, Loose)", "figure", "1985", "loose_complete", 150),
-        ("Hasbro", "Transformers", "Omega Supreme (G1)", "figure", "1985", "CIB", 450),
         ("Hasbro", "Transformers", "Omega Supreme (G1, Loose)", "figure", "1985", "loose_complete", 200),
-        ("Hasbro", "Transformers", "Metroplex (G1)", "figure", "1986", "CIB", 400),
-        ("Hasbro", "Transformers", "Trypticon (G1)", "figure", "1986", "CIB", 380),
         ("Hasbro", "Transformers", "Predaking (G1, Gift Set)", "figure", "1986", "CIB", 600),
         ("Hasbro", "Transformers", "Bruticus (G1, Gift Set)", "figure", "1986", "CIB", 350),
 
@@ -878,7 +913,6 @@ def get_curated_catalog() -> list[dict]:
 
         # ─── Additional Vintage Toys (+5) ──────────────────────────────────
         ("Hasbro", "Transformers G1", "Jetfire (Complete)", "figure", "1985", "loose_complete", 280),
-        ("Mattel", "MOTU", "Castle Grayskull (Complete)", "playset", "1982", "CIB", 350),
         ("Kenner", "Star Wars", "Imperial Shuttle (Complete)", "vehicle", "1984", "CIB", 400),
         ("LJN", "Thundercats", "Mumm-Ra (Ever-Living Form)", "figure", "1986", "loose_complete", 120),
         ("Playmates", "TMNT", "Technodrome Playset", "playset", "1990", "CIB", 250),
@@ -895,7 +929,19 @@ def get_curated_catalog() -> list[dict]:
             "completeness": completeness,
             "price_eur": price,
         })
-    return catalog
+
+    # Expand with completeness/color/regional variants before dedup
+    catalog = _variant_expansion(catalog)
+
+    # Deduplicate by ('manufacturer', 'name', 'completeness') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["manufacturer"], item["name"], item["completeness"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

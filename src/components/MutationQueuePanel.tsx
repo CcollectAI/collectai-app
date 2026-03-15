@@ -41,6 +41,9 @@ const MUTATION_ICONS: Record<MutationType, keyof typeof Ionicons.glyphMap> = {
   sendMessage: 'chatbubble-outline',
   addWatchlistItem: 'eye-outline',
   removeWatchlistItem: 'eye-off-outline',
+  createEvent: 'calendar-outline',
+  updateWatchlistItem: 'eye-outline',
+  createBuildPaintProject: 'color-palette-outline',
 };
 
 const MUTATION_LABELS: Record<MutationType, string> = {
@@ -51,6 +54,9 @@ const MUTATION_LABELS: Record<MutationType, string> = {
   sendMessage: 'Send message',
   addWatchlistItem: 'Add to watchlist',
   removeWatchlistItem: 'Remove from watchlist',
+  createEvent: 'Create event',
+  updateWatchlistItem: 'Update watchlist item',
+  createBuildPaintProject: 'Create build project',
 };
 
 function previewText(mutation: QueuedMutation): string {

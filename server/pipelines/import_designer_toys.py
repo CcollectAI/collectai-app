@@ -779,7 +779,16 @@ def get_curated_catalog() -> list[dict]:
         })
 
     catalog.extend(_batch_art_toys_2025())
-    return catalog
+    catalog.extend(_batch_variants_2026())
+    # Deduplicate by ('brand', 'line', 'name') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["brand"], item["line"], item["name"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _batch_art_toys_2025() -> list[dict]:
@@ -860,7 +869,6 @@ def _batch_art_toys_2025() -> list[dict]:
         ("Clutter", "Magazine", "Clutter Magazine x DCON Exclusive Canbot Set (4 pcs)", "Limited", "mid", 250),
 
         # ── KAWS - Additional Editions ─────────────────────────────────────
-        ("KAWS", "Companion", "Companion Resting Place Brown 2013", "Limited", "grail", 3200),
         ("KAWS", "Companion", "Companion Five Years Later Black", "Limited", "grail", 2400),
         ("KAWS", "Together", "Together Grey Open Edition 2018", "Open Edition", "mid", 280),
         ("KAWS", "Together", "Together Brown Open Edition 2018", "Open Edition", "mid", 300),
@@ -929,13 +937,10 @@ def _batch_art_toys_2025() -> list[dict]:
         ("KAWS", "Holiday", "Holiday Taipei Seated", "Limited", "high", 700),
         ("KAWS", "Holiday", "Holiday Space Chrome Silver", "Limited", "grail", 1800),
         ("KAWS", "Holiday", "Holiday Space Glow in the Dark", "Limited", "grail", 2000),
-        ("KAWS", "Small Lie", "Small Lie Brown", "Open Edition", "mid", 260),
         ("KAWS", "Gone", "Gone Companion Brown", "Open Edition", "mid", 430),
         ("KAWS", "FAMILY", "Family Brown", "Open Edition", "mid", 480),
         ("KAWS", "FAMILY", "Family Black", "Open Edition", "mid", 500),
-        ("KAWS", "Separated", "Separated Companion Black", "Open Edition", "mid", 380),
         ("KAWS", "Along the Way", "Along the Way Grey", "Open Edition", "mid", 450),
-        ("KAWS", "Along the Way", "Along the Way Black", "Open Edition", "mid", 470),
         ("KAWS", "Take", "Take Companion Grey", "Open Edition", "mid", 400),
         ("KAWS", "Passing Through", "Passing Through Black", "Open Edition", "mid", 420),
 
@@ -995,7 +1000,6 @@ def _batch_art_toys_2025() -> list[dict]:
         ("Daniel Arsham", "Eroded", "Eroded Porsche 911 Turbo Crystal", "Limited", "grail", 6000),
         ("Daniel Arsham", "Eroded", "Eroded Gameboy Crystal Relic", "Limited", "grail", 3200),
         ("Daniel Arsham", "Crystal Relic", "Crystal Relic Camera 002", "Limited", "grail", 3800),
-        ("Daniel Arsham", "Future Relic", "Future Relic 09 Eroded Turntable", "Limited", "grail", 4200),
         ("Daniel Arsham", "Eroded", "Eroded Mickey Mouse Figure", "Limited", "grail", 5500),
 
         # ── James Jean x AllRightsReserved (Round 5) ──────────────────────
@@ -1016,7 +1020,6 @@ def _batch_art_toys_2025() -> list[dict]:
 
         # ── BE@RBRICK 100%+400% New Collabs (+6) ────────────────────────
         ("Medicom", "Bearbrick 400%", "Bearbrick 400% Jean-Michel Basquiat V8", "Collab", "mid", 350),
-        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Banksy Flower Bomber", "Collab", "high", 700),
         ("Medicom", "Bearbrick 400%", "Bearbrick 400% Nike SB Dunk Low Chicago", "Collab", "high", 650),
         ("Medicom", "Bearbrick 400%", "Bearbrick 400% Travis Scott Cactus Jack", "Collab", "high", 850),
         ("Medicom", "Bearbrick 400%", "Bearbrick 400% Stussy 40th Anniversary", "Collab", "mid", 480),
@@ -1046,6 +1049,179 @@ def _batch_art_toys_2025() -> list[dict]:
         ("Hebru Brantley", "Flyboy", "Flyboy Chrome Gold 12-inch (ComplexCon)", "Collab", "grail", 1500),
         ("Luke Chueh", "Possessed", "Possessed Bear OG Pink 8-inch", "Limited", "mid", 350),
         ("Luke Chueh", "Possessed", "Possessed Bear Black & White 8-inch", "Limited", "mid", 380),
+    ]
+
+    catalog = []
+    for brand, line, name, edition, tier, price in items:
+        catalog.append({
+            "brand": brand,
+            "line": line,
+            "name": name,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _batch_variants_2026() -> list[dict]:
+    """Batch 9 — Size variants (100%/400%/1000%), colorway variants for KAWS,
+    Daniel Arsham, Takashi Murakami, Ron English, Coarse, Superplastic. ~100 items."""
+
+    items = [
+        # ── Bearbrick KAWS Size Variants ─────────────────────────────────────
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% KAWS Dissected Grey", "Collab", "standard", 25),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% KAWS Dissected Grey", "Collab", "high", 800),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% KAWS Dissected Grey", "Collab", "grail", 6000),
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% KAWS Dissected Brown", "Collab", "standard", 25),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% KAWS Dissected Brown", "Collab", "high", 750),
+
+        # ── Bearbrick BAPE Size Variants ─────────────────────────────────────
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% BAPE Camo Green", "Collab", "standard", 20),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% BAPE Camo Green", "Collab", "mid", 350),
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% BAPE ABC Camo Pink", "Collab", "standard", 22),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% BAPE ABC Camo Pink", "Collab", "mid", 380),
+
+        # ── Bearbrick Pushead Size Variants ──────────────────────────────────
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% Pushead Silver", "Collab", "standard", 30),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Pushead Silver", "Collab", "high", 600),
+        ("Medicom", "Bearbrick 100%+400%", "Bearbrick 100%+400% Pushead V3 Clear", "Collab", "high", 700),
+
+        # ── Bearbrick Keith Haring Size Variants ─────────────────────────────
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% Keith Haring V1", "Collab", "standard", 18),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Keith Haring V1", "Collab", "mid", 300),
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% Keith Haring V5", "Collab", "standard", 18),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Keith Haring V5", "Collab", "mid", 280),
+
+        # ── Bearbrick Basquiat Size Variants ─────────────────────────────────
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% Basquiat V1", "Collab", "standard", 20),
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% Basquiat V2", "Collab", "standard", 18),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Basquiat V2", "Collab", "mid", 320),
+
+        # ── Bearbrick Fragment Size Variants ─────────────────────────────────
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% Fragment Design Black", "Collab", "standard", 25),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Fragment Design Black", "Collab", "high", 500),
+
+        # ── Bearbrick Stussy Size Variants ───────────────────────────────────
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% Stussy Black", "Collab", "standard", 20),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Stussy Black", "Collab", "grail", 3800),
+
+        # ── Bearbrick Atmos Size Variants ────────────────────────────────────
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% Atmos Elephant", "Collab", "standard", 18),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Atmos Elephant Print", "Collab", "mid", 400),
+
+        # ── Bearbrick CLOT Size Variants ─────────────────────────────────────
+        ("Medicom", "Bearbrick 100%", "Bearbrick 100% CLOT Silk Royal", "Collab", "standard", 25),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% CLOT Silk Royal", "Collab", "grail", 4200),
+
+        # ── Bearbrick Golden/Chrome/Neon Colorways ───────────────────────────
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Chrome Gold", "Limited", "high", 700),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Chrome Silver", "Limited", "high", 650),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Neon Green", "Limited", "mid", 400),
+        ("Medicom", "Bearbrick 400%", "Bearbrick 400% Neon Pink", "Limited", "mid", 420),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Chrome Gold", "Limited", "grail", 5500),
+        ("Medicom", "Bearbrick 1000%", "Bearbrick 1000% Neon Orange", "Limited", "grail", 3500),
+
+        # ── KAWS Companion Standing Colorways ────────────────────────────────
+        ("KAWS", "Companion", "Companion Standing Blush 2019", "Open Edition", "mid", 320),
+        ("KAWS", "Companion", "Companion Standing Full Body Brown 2017", "Open Edition", "mid", 350),
+        ("KAWS", "Companion", "Companion Flayed Brown Open Edition 2016", "Open Edition", "mid", 360),
+
+        # ── KAWS Companion Sitting Colorways ─────────────────────────────────
+        ("KAWS", "Companion", "Companion Sitting Brown 2018", "Open Edition", "mid", 370),
+        ("KAWS", "Companion", "Companion Sitting Blush 2018", "Open Edition", "mid", 360),
+
+        # ── KAWS Companion Resting Colorways ─────────────────────────────────
+        ("KAWS", "Companion", "Resting Place Grey 2013", "Limited", "high", 1300),
+
+        # ── KAWS BFF Additional Colorways ────────────────────────────────────
+        ("KAWS", "BFF", "BFF Open Edition Grey", "Open Edition", "mid", 380),
+        ("KAWS", "BFF", "BFF Plush Pink (36-inch)", "Limited", "high", 850),
+        ("KAWS", "BFF", "BFF Plush Black (36-inch)", "Limited", "high", 950),
+
+        # ── KAWS What Party Colorways ────────────────────────────────────────
+        ("KAWS", "WHAT PARTY", "What Party Pink", "Open Edition", "mid", 155),
+        ("KAWS", "WHAT PARTY", "What Party Blue", "Open Edition", "mid", 160),
+        ("KAWS", "WHAT PARTY", "What Party Black", "Open Edition", "mid", 165),
+        ("KAWS", "WHAT PARTY", "What Party Chum (White)", "Open Edition", "mid", 170),
+
+        # ── KAWS Small Lie Additional Colorways ──────────────────────────────
+        ("KAWS", "Small Lie", "Small Lie Pink", "Open Edition", "mid", 280),
+
+        # ── KAWS Gone Colorways ──────────────────────────────────────────────
+        ("KAWS", "Gone", "Gone Companion Brown 2019", "Open Edition", "mid", 440),
+
+        # ── KAWS Holiday Location Variants ───────────────────────────────────
+        ("KAWS", "Holiday", "Holiday Japan (Mt. Fuji) Black", "Limited", "high", 950),
+        ("KAWS", "Holiday", "Holiday Singapore Brown", "Limited", "high", 820),
+        ("KAWS", "Holiday", "Holiday UK Grey Seated", "Limited", "high", 680),
+
+        # ── KAWS Together Colorways ──────────────────────────────────────────
+        ("KAWS", "Together", "Together Grey 2018 (2nd Release)", "Open Edition", "mid", 440),
+
+        # ── Daniel Arsham Eroded Material Variants ───────────────────────────
+        ("Daniel Arsham", "Eroded", "Eroded Pikachu (White Crystal)", "Limited", "grail", 3000),
+        ("Daniel Arsham", "Eroded", "Eroded Rubik's Cube (Blue Crystal)", "Limited", "high", 950),
+        ("Daniel Arsham", "Eroded", "Eroded Rubik's Cube (White Crystal)", "Limited", "high", 900),
+        ("Daniel Arsham", "Eroded", "Eroded Gameboy (Pink Crystal)", "Limited", "high", 1100),
+        ("Daniel Arsham", "Eroded", "Eroded Gameboy (White Crystal)", "Limited", "high", 1050),
+        ("Daniel Arsham", "Eroded", "Eroded Basketball (Pink Crystal)", "Limited", "high", 850),
+        ("Daniel Arsham", "Eroded", "Eroded Basketball (White Crystal)", "Limited", "high", 780),
+        ("Daniel Arsham", "Eroded", "Eroded Teddy Bear (White Crystal)", "Limited", "grail", 2200),
+        ("Daniel Arsham", "Crystal Relic", "Crystal Relic Air Jordan 4 (Blue)", "Limited", "grail", 3200),
+        ("Daniel Arsham", "Future Relic", "Future Relic 06 Eroded Camera (Black)", "Limited", "grail", 2200),
+
+        # ── Takashi Murakami Flower Cushion Colorways ────────────────────────
+        ("Takashi Murakami", "Flower", "Flower Plush Cushion Pink 30cm", "Standard", "standard", 85),
+        ("Takashi Murakami", "Flower", "Flower Plush Cushion Yellow 30cm", "Standard", "standard", 80),
+        ("Takashi Murakami", "Flower", "Flower Plush Cushion Red 60cm", "Standard", "mid", 210),
+        ("Takashi Murakami", "Flower", "Flower Plush Cushion Blue 60cm", "Standard", "mid", 210),
+        ("Takashi Murakami", "Flower", "Flower Plush Cushion Purple 30cm", "Standard", "standard", 85),
+
+        # ── Takashi Murakami DOB Colorways ───────────────────────────────────
+        ("Takashi Murakami", "Mr. DOB", "Mr. DOB Figure Silver Chrome 10-inch", "Limited", "high", 1100),
+        ("Takashi Murakami", "Mr. DOB", "Mr. DOB Figure Red/Black 25cm", "Limited", "high", 900),
+        ("Takashi Murakami", "Mr. DOB", "Mr. DOB Figure Blue/White 25cm", "Limited", "high", 850),
+
+        # ── Ron English Grin Colorways ───────────────────────────────────────
+        ("Ron English", "Grin", "Grin Neon Pink 8-inch", "Limited", "mid", 380),
+        ("Ron English", "Grin", "Grin Black Matte 8-inch", "Limited", "mid", 350),
+        ("Ron English", "Grin", "Grin Clear Blue 8-inch", "Limited", "mid", 320),
+        ("Ron English", "Grin", "Grin Silver Chrome 8-inch", "Limited", "high", 550),
+
+        # ── Ron English MC Supersized Colorways ──────────────────────────────
+        ("Ron English", "MC Supersized", "MC Supersized Neon Yellow 10-inch", "Limited", "high", 620),
+        ("Ron English", "MC Supersized", "MC Supersized Black Matte 10-inch", "Limited", "high", 580),
+
+        # ── J Balvin Variants ────────────────────────────────────────────────
+        ("J Balvin", "Collab", "J Balvin x McDonald's Happy Meal Figure Gold", "Collab", "mid", 250),
+        ("J Balvin", "Collab", "J Balvin x McDonald's Happy Meal Figure Neon Green", "Collab", "mid", 220),
+        ("J Balvin", "Superplastic", "J Balvin Janky Chrome 8-inch", "Collab", "high", 650),
+        ("J Balvin", "Collab", "J Balvin x Takashi Murakami Flower Figure Pink", "Collab", "high", 850),
+
+        # ── Coarse Omen Colorway Variants ────────────────────────────────────
+        ("Coarse", "Omen", "Omen Blaze Red 10-inch", "Limited", "mid", 450),
+        ("Coarse", "Omen", "Omen Frost White 10-inch", "Limited", "high", 500),
+        ("Coarse", "Omen", "Omen Neon 10-inch (Art Basel)", "Collab", "high", 750),
+        ("Coarse", "Omen", "Omen Chrome Gold 10-inch", "Limited", "high", 850),
+
+        # ── Coarse Pain Colorway Variants ────────────────────────────────────
+        ("Coarse", "Pain", "Pain Bloom Pink 14-inch", "Limited", "high", 750),
+        ("Coarse", "Pain", "Pain Frost White 14-inch", "Limited", "high", 680),
+
+        # ── Superplastic Janky Colorway Variants ─────────────────────────────
+        ("Superplastic", "Janky", "Janky x Guggimon Chrome Gold 8-inch", "Limited", "mid", 350),
+        ("Superplastic", "Janky", "Janky x Guggimon Neon Blue 8-inch", "Limited", "mid", 300),
+
+        # ── Superplastic Guggimon Colorway Variants ──────────────────────────
+        ("Superplastic", "Guggimon", "Guggimon Ghost White 8-inch", "Limited", "mid", 280),
+        ("Superplastic", "Guggimon", "Guggimon Lava Red 8-inch", "Limited", "mid", 300),
+        ("Superplastic", "Guggimon", "Guggimon Glow-in-Dark 12-inch", "Limited", "high", 600),
+        ("Superplastic", "Guggimon", "Guggimon Diamond Blue 8-inch", "Limited", "mid", 350),
+
+        # ── Superplastic Kranky Colorway Variants ────────────────────────────
+        ("Superplastic", "Kranky", "Kranky Chrome Silver 8-inch", "Limited", "mid", 300),
+        ("Superplastic", "Kranky", "Kranky Neon Pink 8-inch", "Limited", "mid", 280),
     ]
 
     catalog = []

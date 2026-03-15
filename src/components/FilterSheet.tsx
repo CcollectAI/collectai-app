@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
+import { PriceRangeFilter } from '@/components/PriceRangeFilter';
 
 export type SortOption = 'value_desc' | 'value_asc' | 'name_asc' | 'name_desc' | 'date_desc' | 'date_asc';
 
@@ -391,39 +392,12 @@ function FilterSheetInner({
             </Pressable>
             {expandedSection === 'price' && (
               <View style={styles.sectionContent}>
-                <View style={styles.priceInputRow}>
-                  <View style={styles.priceInputWrapper}>
-                    <Text style={[styles.priceLabel, { color: colors.muted }]}>Min</Text>
-                    <TextInput
-                      style={[
-                        styles.priceInput,
-                        { borderColor: colors.border, color: colors.text },
-                      ]}
-                      placeholder="0"
-                      placeholderTextColor={colors.muted}
-                      keyboardType="numeric"
-                      value={config.priceMin?.toString() || ''}
-                      onChangeText={(v) => handlePriceChange('priceMin', v)}
-                      accessibilityLabel="Minimum price"
-                    />
-                  </View>
-                  <Text style={[styles.priceDash, { color: colors.muted }]}>—</Text>
-                  <View style={styles.priceInputWrapper}>
-                    <Text style={[styles.priceLabel, { color: colors.muted }]}>Max</Text>
-                    <TextInput
-                      style={[
-                        styles.priceInput,
-                        { borderColor: colors.border, color: colors.text },
-                      ]}
-                      placeholder="No limit"
-                      placeholderTextColor={colors.muted}
-                      keyboardType="numeric"
-                      value={config.priceMax?.toString() || ''}
-                      onChangeText={(v) => handlePriceChange('priceMax', v)}
-                      accessibilityLabel="Maximum price"
-                    />
-                  </View>
-                </View>
+                <PriceRangeFilter
+                  priceMin={config.priceMin}
+                  priceMax={config.priceMax}
+                  onPriceChange={handlePriceChange}
+                  colors={colors}
+                />
               </View>
             )}
 
@@ -704,30 +678,6 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  priceInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  priceInputWrapper: {
-    flex: 1,
-  },
-  priceLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  priceInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  priceDash: {
-    fontSize: 16,
-    marginTop: 16,
   },
   footer: {
     flexDirection: 'row',

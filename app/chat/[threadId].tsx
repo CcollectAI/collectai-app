@@ -19,8 +19,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type DmMessage, type DmThread, type PublicUserProfile } from '@/data';
+import { supabase } from '@/lib/supabase';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { SkeletonChat } from '@/components/Skeleton';
@@ -29,6 +31,7 @@ import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { MS_PER_DAY } from '@/constants/time';
+import { radius, text, fontWeight } from '@/theme/tokens';
 
 // Message with local status for optimistic UI
 type LocalMessage = DmMessage & {
@@ -72,9 +75,13 @@ function ThreadDetailScreen() {
 
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const presenceChannelRef = useRef<any>(null);
+  const isNearBottomRef = useRef(true);
 
-  // Current user ID (fallback for rendering before profile loads)
-  const currentUserId = currentUser?.id ?? 'collector-aurora';
+  // Current user ID (empty string fallback before profile loads)
+  const currentUserId = currentUser?.id ?? '';
 
   // Load messages
   const loadMessages = useCallback(async () => {
@@ -118,41 +125,126 @@ function ThreadDetailScreen() {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
   }, [loadMessages, settings.hapticsEnabled]);
 
+  // Initial data load
   useEffect(() => {
     loadMessages();
     loadThreadInfo();
     loadCurrentUser();
-    // Mark thread as read (best-effort)
-    if (threadId) {
-      dataProvider.markThreadRead(threadId).catch(() => {});
-    }
-  }, [loadMessages, loadThreadInfo, loadCurrentUser, threadId]);
+  }, [loadMessages, loadThreadInfo, loadCurrentUser]);
 
-  // Poll for other user's typing status every 3 seconds
+  // Mark thread as read on mount + whenever screen regains focus
+  useFocusEffect(
+    useCallback(() => {
+      if (!threadId) return;
+      try {
+        dataProvider.markThreadRead(threadId).catch((err) => logger.info('[Chat] markRead error:', err));
+      } catch {
+        // Non-critical
+      }
+    }, [threadId])
+  );
+
+  // Supabase Realtime subscription for new messages (replaces 8s polling)
   useEffect(() => {
     if (!threadId) return;
-    const interval = setInterval(async () => {
-      try {
-        const typing = await dataProvider.isOtherUserTyping(threadId);
-        setOtherTyping(typing);
-      } catch {
-        // Non-critical: silently ignore
-      }
-    }, 1500);
-    return () => clearInterval(interval);
-  }, [threadId]);
 
-  // Signal typing when user types (debounced — only sends every 3 seconds)
-  const handleTextChange = useCallback((text: string) => {
-    setInputText(text);
-    if (!threadId || !text.trim()) return;
+    const channel = supabase.channel(`thread-${threadId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'dm_messages',
+        filter: `thread_id=eq.${threadId}`,
+      }, (payload) => {
+        const newMsg = payload.new as Record<string, unknown>;
+        setMessages((prev) => {
+          // Avoid duplicates (optimistic messages already in list)
+          if (prev.some((m) => m.id === newMsg.id)) return prev;
+          return [...prev, {
+            id: newMsg.id as string,
+            threadId: newMsg.thread_id as string,
+            authorUserId: newMsg.author_user_id as string,
+            text: newMsg.text as string,
+            createdAt: newMsg.created_at as string,
+            readAt: (newMsg.read_at as string) ?? null,
+            localStatus: 'sent',
+          }];
+        });
+        // Mark as read if the new message is from the other user
+        if (newMsg.author_user_id !== currentUserId) {
+          dataProvider.markThreadRead(threadId).catch((err) => logger.info('[Chat] markRead error:', err));
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'dm_messages',
+        filter: `thread_id=eq.${threadId}`,
+      }, (payload) => {
+        // Sync read receipts when messages are updated (e.g. read_at set)
+        const updated = payload.new as Record<string, unknown>;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === updated.id
+              ? { ...m, readAt: (updated.read_at as string) ?? m.readAt }
+              : m
+          )
+        );
+      })
+      .subscribe();
 
-    if (!typingTimeoutRef.current) {
-      dataProvider.setTyping(threadId).catch(() => {});
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [threadId, currentUserId]);
+
+  // Realtime presence for typing indicators (replaces polling)
+  useEffect(() => {
+    if (!threadId || !currentUserId) return;
+
+    const presenceChannel = supabase.channel(`typing-${threadId}`, {
+      config: { presence: { key: currentUserId } },
+    });
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        // Check if any user other than us is typing
+        const otherUsers = Object.keys(state).filter((key) => key !== currentUserId);
+        const anyoneTyping = otherUsers.some((key) => {
+          const presences = state[key] as Array<{ typing?: boolean }>;
+          return presences?.some((p) => p.typing);
+        });
+        setOtherTyping(anyoneTyping);
+      })
+      .subscribe();
+
+    // Store ref so typing handler can access it
+    presenceChannelRef.current = presenceChannel;
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+      presenceChannelRef.current = null;
+    };
+  }, [threadId, currentUserId]);
+
+  // Signal typing via Realtime presence (debounced — broadcasts every 3 seconds)
+  const handleTextChange = useCallback((newText: string) => {
+    setInputText(newText);
+    if (!threadId || !newText.trim()) return;
+
+    // Broadcast typing=true via presence (debounced to every 3s)
+    if (!typingTimeoutRef.current && presenceChannelRef.current) {
+      presenceChannelRef.current.track({ typing: true }).catch(() => {});
       typingTimeoutRef.current = setTimeout(() => {
         typingTimeoutRef.current = null;
       }, 3000);
     }
+
+    // Clear typing after 3s of inactivity
+    if (typingClearRef.current) clearTimeout(typingClearRef.current);
+    typingClearRef.current = setTimeout(() => {
+      presenceChannelRef.current?.track({ typing: false }).catch(() => {});
+    }, 3000);
   }, [threadId]);
 
   // Send message with optimistic UI
@@ -164,8 +256,9 @@ function ThreadDetailScreen() {
     setInputText('');
     setSending(true);
 
-    // Clear typing indicator
-    if (threadId) dataProvider.clearTyping(threadId).catch(() => {});
+    // Clear typing indicator via presence
+    if (typingClearRef.current) clearTimeout(typingClearRef.current);
+    presenceChannelRef.current?.track({ typing: false }).catch(() => {});
 
     // Optimistic: add message with 'sending' status
     const optimisticMsg: LocalMessage = {
@@ -232,8 +325,20 @@ function ThreadDetailScreen() {
     }
   };
 
+  const handleScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number }; layoutMeasurement: { height: number }; contentSize: { height: number } } }) => {
+    const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+    const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
+    isNearBottomRef.current = distanceFromBottom <= 150;
+  }, []);
+
+  const handleContentSizeChange = useCallback(() => {
+    if (isNearBottomRef.current) {
+      flatListRef.current?.scrollToEnd({ animated: false });
+    }
+  }, []);
+
   const renderMessage = ({ item, index }: { item: LocalMessage; index: number }) => {
-    const isMe = item.authorUserId === currentUserId;
+    const isMe = currentUserId ? item.authorUserId === currentUserId : false;
     const isSending = item.localStatus === 'sending';
     const isFailed = item.localStatus === 'failed';
     const previousMessage = index > 0 ? messages[index - 1] : null;
@@ -265,7 +370,7 @@ function ThreadDetailScreen() {
               {otherAvatar ? (
                 <Image source={{ uri: otherAvatar }} style={styles.avatarImage} accessibilityLabel={`${threadInfo?.otherUserName || 'User'} avatar`} />
               ) : (
-                <Text style={styles.avatarInitial}>{otherInitial}</Text>
+                <Text style={[styles.avatarInitial, { color: colors.accentText }]}>{otherInitial}</Text>
               )}
             </View>
           )}
@@ -277,23 +382,23 @@ function ThreadDetailScreen() {
                 : [styles.theirMessage, { backgroundColor: colors.card }],
             ]}
           >
-            <Text style={[styles.messageText, { color: isMe ? '#fff' : colors.text }]}>
+            <Text style={[styles.messageText, { color: isMe ? colors.accentText : colors.text }]}>
               {item.text}
             </Text>
             <View style={styles.messageFooter}>
-              <Text style={[styles.messageTime, { color: isMe ? 'rgba(255,255,255,0.7)' : colors.muted }]}>
+              <Text style={[styles.messageTime, { color: isMe ? colors.accentText + 'B3' : colors.muted }]}>
                 {formatTime(item.createdAt)}
               </Text>
               {isMe && item.localStatus === 'sent' && (
                 <Ionicons
                   name={item.readAt ? 'checkmark-done' : 'checkmark'}
                   size={14}
-                  color={item.readAt ? (isMe ? 'rgba(255,255,255,0.9)' : colors.accent) : (isMe ? 'rgba(255,255,255,0.5)' : colors.muted)}
+                  color={item.readAt ? (isMe ? colors.accentText + 'E6' : colors.accent) : (isMe ? colors.accentText + '80' : colors.muted)}
                   style={{ marginLeft: 4 }}
                 />
               )}
               {isSending && (
-                <ActivityIndicator size="small" color={isMe ? '#fff' : colors.muted} style={{ marginLeft: 4 }} />
+                <ActivityIndicator size="small" color={isMe ? colors.accentText : colors.muted} style={{ marginLeft: 4 }} />
               )}
               {isFailed && (
                 <Ionicons name="alert-circle" size={14} color={colors.danger} style={{ marginLeft: 4 }} />
@@ -362,7 +467,9 @@ function ThreadDetailScreen() {
           removeClippedSubviews={true}
           maxToRenderPerBatch={10}
           windowSize={5}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          onScroll={handleScroll}
+          scrollEventThrottle={100}
+          onContentSizeChange={handleContentSizeChange}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -394,6 +501,7 @@ function ThreadDetailScreen() {
             style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             multiline
             maxLength={1000}
+            returnKeyType="send"
           />
           <AnimatedPressable
             onPress={handleSend}
@@ -406,9 +514,9 @@ function ThreadDetailScreen() {
             accessibilityLabel={sending ? 'Sending message' : 'Send message'}
           >
             {sending ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.accentText} />
             ) : (
-              <Ionicons name="send" size={18} color="#fff" />
+              <Ionicons name="send" size={18} color={colors.accentText} />
             )}
           </AnimatedPressable>
         </View>
@@ -423,7 +531,6 @@ function formatTime(dateStr: string): string {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-// Static styles only — no theme tokens
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -443,8 +550,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: text.xl,
+    fontWeight: fontWeight.semibold,
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 8,
@@ -485,27 +592,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarInitial: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
   },
   messageBubble: {
     maxWidth: '78%',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 18,
+    borderRadius: radius.lg,
   },
   myMessage: {
     alignSelf: 'flex-end',
-    borderBottomRightRadius: 6,
+    borderBottomRightRadius: radius.xs,
   },
   theirMessage: {
     alignSelf: 'flex-start',
-    borderBottomLeftRadius: 6,
+    borderBottomLeftRadius: radius.xs,
     borderWidth: 0,
   },
   messageText: {
-    fontSize: 15,
+    fontSize: text.lg,
     lineHeight: 20,
   },
   messageFooter: {
@@ -514,7 +620,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   messageTime: {
-    fontSize: 11,
+    fontSize: text.xs,
   },
   emptyContainer: {
     flex: 1,
@@ -523,12 +629,12 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
     marginTop: 12,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: text.md,
     marginTop: 4,
     textAlign: 'center',
   },
@@ -538,7 +644,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   typingText: {
-    fontSize: 13,
+    fontSize: text.md,
     fontStyle: 'italic',
   },
   composer: {
@@ -553,16 +659,16 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 36,
     maxHeight: 100,
-    borderRadius: 18,
+    borderRadius: radius.lg,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    fontSize: 16,
+    fontSize: text.lg,
     borderWidth: 0,
   },
   sendBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -575,12 +681,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   retryLabel: {
-    fontSize: 12,
+    fontSize: text.sm,
     marginRight: 4,
   },
   retryAction: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
     marginLeft: 2,
   },
   dateSeparator: {
@@ -594,8 +700,8 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
   },
   dateSeparatorText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: text.sm,
+    fontWeight: fontWeight.medium,
   },
 });
 

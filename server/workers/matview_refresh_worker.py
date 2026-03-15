@@ -54,12 +54,14 @@ MATVIEWS = [
 ]
 
 _shutdown = False
+_shutdown_event = asyncio.Event()
 
 
 def _handle_signal(sig, _frame):
     global _shutdown
     logger.info("Received signal %s, shutting down...", sig)
     _shutdown = True
+    _shutdown_event.set()
 
 
 @with_async_retry(max_retries=2, base_delay=5.0, max_delay=30.0)
@@ -142,10 +144,11 @@ async def _demand_loop():
         except Exception as e:
             record_run("matview_demand", "error")
             logger.exception("demand refresh crashed: %r", e)
-        for _ in range(DEMAND_INTERVAL):
-            if _shutdown:
-                break
-            await asyncio.sleep(1)
+        try:
+            await asyncio.wait_for(_shutdown_event.wait(), timeout=DEMAND_INTERVAL)
+            break  # shutdown was signaled
+        except asyncio.TimeoutError:
+            pass  # normal timeout, continue to next iteration
 
 
 async def _supply_loop():
@@ -157,10 +160,11 @@ async def _supply_loop():
         except Exception as e:
             record_run("matview_supply", "error")
             logger.exception("supply refresh crashed: %r", e)
-        for _ in range(SUPPLY_INTERVAL):
-            if _shutdown:
-                break
-            await asyncio.sleep(1)
+        try:
+            await asyncio.wait_for(_shutdown_event.wait(), timeout=SUPPLY_INTERVAL)
+            break  # shutdown was signaled
+        except asyncio.TimeoutError:
+            pass  # normal timeout, continue to next iteration
 
 
 async def scheduler_loop():

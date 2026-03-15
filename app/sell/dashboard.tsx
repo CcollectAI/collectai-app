@@ -30,6 +30,7 @@ import { dataProvider } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { radius, text, fontWeight, gap, shadow } from '@/theme/tokens';
 import { formatPrice, getCurrencySymbol } from '@/lib/format';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonList } from '@/components/Skeleton';
@@ -416,7 +417,7 @@ function SellerDashboardScreen() {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
             showToast({ message: 'Listing removed', type: 'success' });
             loadData();
-          } catch { showToast({ message: 'Failed to delist', type: 'error' }); }
+          } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: 'Failed to delist', type: 'error' }); }
         },
       },
     ]);
@@ -447,7 +448,7 @@ function SellerDashboardScreen() {
       createTitleField.reset();
       createPriceField.reset();
       loadData();
-    } catch { showToast({ message: 'Failed to create listing', type: 'error' }); }
+    } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: 'Failed to create listing', type: 'error' }); }
     finally { setCreating(false); }
   }, [createTitleField, createPriceField, createMarketplace, settings.currency, loadData, showToast]);
 
@@ -461,7 +462,7 @@ function SellerDashboardScreen() {
           fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
           showToast({ message: 'Account disconnected', type: 'success' });
           loadData();
-        } catch { showToast({ message: 'Failed to disconnect', type: 'error' }); }
+        } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: 'Failed to disconnect', type: 'error' }); }
       }},
     ]);
   }, [loadData, showToast]);
@@ -477,7 +478,7 @@ function SellerDashboardScreen() {
       closeConnectModal();
       setConnectName('');
       loadData();
-    } catch { showToast({ message: 'Failed to connect account', type: 'error' }); }
+    } catch (err) { logger.warn('[SellerDash] action failed:', err); showToast({ message: 'Failed to connect account', type: 'error' }); }
     finally { setConnecting(false); }
   }, [connectMp, connectName, connecting, loadData, showToast]);
 
@@ -618,17 +619,31 @@ function SellerDashboardScreen() {
           </ScrollView>
 
           {filteredListings.length === 0 ? (
-            <EmptyState
-              icon="pricetags-outline"
-              title="No listings yet"
-              subtitle="List your collectibles on eBay, Mercari, Cardmarket, and more from one place"
-              colors={colors}
-              action={
-                <Pressable onPress={() => router.push('/(tabs)/items')}>
-                  <Text style={{ color: colors.accent, fontWeight: '600', marginTop: 8 }}>List an Item</Text>
-                </Pressable>
-              }
-            />
+            statusFilter !== 'all' ? (
+              <EmptyState
+                icon="filter-outline"
+                title={`No ${statusFilter} listings`}
+                subtitle={`You don't have any ${statusFilter} listings right now. Try a different filter or create a new listing.`}
+                colors={colors}
+                action={
+                  <Pressable onPress={() => setStatusFilter('all')}>
+                    <Text style={{ color: colors.accent, fontWeight: fontWeight.semibold, marginTop: 8 }}>Show All Listings</Text>
+                  </Pressable>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon="rocket-outline"
+                title="Ready to start selling?"
+                subtitle="List your collectibles across eBay, Mercari, Cardmarket, and more -- all from one dashboard. Tap the + button to create your first listing!"
+                colors={colors}
+                action={
+                  <Pressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); openCreateModal(); }}>
+                    <Text style={{ color: colors.accent, fontWeight: fontWeight.semibold, marginTop: 8 }}>Create Your First Listing</Text>
+                  </Pressable>
+                }
+              />
+            )
           ) : (
             <FlatList
               data={filteredListings}
@@ -666,15 +681,15 @@ function SellerDashboardScreen() {
                       <Text style={[styles.predCompName, { color: colors.text }]} numberOfLines={1}>
                         {comp.item_key.replace(/-/g, ' ')}
                       </Text>
-                      <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'capitalize' }}>
+                      <Text style={{ fontSize: text.sm, color: colors.muted, textTransform: 'capitalize' }}>
                         {comp.category.replace(/_/g, ' ')}
                       </Text>
                     </View>
                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                      <Text style={{ fontSize: 12, color: colors.muted }}>
+                      <Text style={{ fontSize: text.sm, color: colors.muted }}>
                         {formatPrice(comp.predicted, settings.currency)}
                       </Text>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: isOver ? colors.success : colors.danger }}>
+                      <Text style={{ fontSize: text.md, fontWeight: fontWeight.bold, color: isOver ? colors.success : colors.danger }}>
                         {formatPrice(comp.actual, settings.currency)} ({isOver ? '+' : ''}{diffPct.toFixed(0)}%)
                       </Text>
                     </View>
@@ -867,6 +882,7 @@ function SellerDashboardScreen() {
               onChangeText={setConnectName}
               placeholder="Your seller username"
               placeholderTextColor={colors.muted}
+              returnKeyType="done"
             />
             <AnimatedPressable
               style={[styles.createBtn, { backgroundColor: colors.accent }, connecting && { opacity: 0.7 }]}
@@ -911,24 +927,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
-  tabBtnText: { fontSize: 13, fontWeight: '600' },
+  tabBtnText: { fontSize: text.md, fontWeight: fontWeight.semibold },
 
   filterRow: { maxHeight: 48 },
   filterContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
   filterChip: {
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: 14,
+    borderRadius: radius.md,
     borderWidth: 1,
     marginRight: 6,
   },
-  filterChipText: { fontSize: 12, fontWeight: '600' },
+  filterChipText: { fontSize: text.sm, fontWeight: fontWeight.semibold },
 
   listContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 },
 
   // Listing card
   listingCard: {
-    borderRadius: 14,
+    borderRadius: radius.md,
     borderWidth: 1,
     padding: 12,
     marginBottom: 10,
@@ -942,47 +958,47 @@ const styles = StyleSheet.create({
   mpBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: gap.xs,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: radius.xs,
   },
-  mpBadgeText: { fontSize: 11, fontWeight: '600' },
+  mpBadgeText: { fontSize: text.xs, fontWeight: fontWeight.semibold },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: radius.xs,
   },
-  statusBadgeText: { fontSize: 11, fontWeight: '600' },
-  listingTitle: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
-  listingMeta: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 8 },
-  listingPrice: { fontSize: 16, fontWeight: '700' },
-  listingNet: { fontSize: 12 },
-  metricsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  statusBadgeText: { fontSize: text.xs, fontWeight: fontWeight.semibold },
+  listingTitle: { fontSize: text.md, fontWeight: fontWeight.semibold, marginBottom: 6 },
+  listingMeta: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: gap.md },
+  listingPrice: { fontSize: text.lg, fontWeight: fontWeight.bold },
+  listingNet: { fontSize: text.sm },
+  metricsRow: { flexDirection: 'row', alignItems: 'center', gap: gap.xl },
   metricItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  metricText: { fontSize: 12 },
-  formatBadge: { borderWidth: 1, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  formatText: { fontSize: 10, fontWeight: '600' },
-  syncedText: { fontSize: 10, marginTop: 6 },
+  metricText: { fontSize: text.sm },
+  formatBadge: { borderWidth: 1, borderRadius: radius.xs, paddingHorizontal: 6, paddingVertical: 2 },
+  formatText: { fontSize: text.xs, fontWeight: fontWeight.semibold },
+  syncedText: { fontSize: text.xs, marginTop: 6 },
 
   // Sale card
-  saleCard: { borderRadius: 14, borderWidth: 1, padding: 12, marginBottom: 10 },
+  saleCard: { borderRadius: radius.md, borderWidth: 1, padding: 12, marginBottom: 10 },
   saleTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  salePrice: { fontSize: 16, fontWeight: '700' },
-  saleBuyer: { fontSize: 12, marginBottom: 8 },
+  salePrice: { fontSize: text.lg, fontWeight: fontWeight.bold },
+  saleBuyer: { fontSize: text.sm, marginBottom: 8 },
   financialRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
   financialItem: { alignItems: 'center' },
-  financialLabel: { fontSize: 10, marginBottom: 2 },
-  financialValue: { fontSize: 13, fontWeight: '600' },
-  saleDate: { fontSize: 10 },
+  financialLabel: { fontSize: text.xs, marginBottom: 2 },
+  financialValue: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  saleDate: { fontSize: text.xs },
 
   // Account card
-  accountCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, padding: 12, marginBottom: 10, gap: 12 },
-  accountIcon: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  accountCard: { flexDirection: 'row', alignItems: 'center', borderRadius: radius.md, borderWidth: 1, padding: 12, marginBottom: 10, gap: gap.xl },
+  accountIcon: { width: 48, height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   accountInfo: { flex: 1 },
-  accountName: { fontSize: 14, fontWeight: '600' },
-  accountSeller: { fontSize: 12, marginTop: 2 },
-  accountDate: { fontSize: 11, marginTop: 2 },
+  accountName: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  accountSeller: { fontSize: text.sm, marginTop: 2 },
+  accountDate: { fontSize: text.xs, marginTop: 2 },
   accountStatusDot: { width: 10, height: 10, borderRadius: 5 },
 
   // Connect button
@@ -990,22 +1006,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: gap.md,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     marginBottom: 16,
   },
-  connectBtnText: { fontSize: 14, fontWeight: '600' },
+  connectBtnText: { fontSize: text.md, fontWeight: fontWeight.semibold },
 
   // Revenue summary
-  summaryCard: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16 },
-  summaryTitle: { fontSize: 14, fontWeight: '700', marginBottom: 12 },
+  summaryCard: { borderRadius: radius.md, borderWidth: 1, padding: 16, marginBottom: 16 },
+  summaryTitle: { fontSize: text.md, fontWeight: fontWeight.bold, marginBottom: gap.xl },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryItem: { alignItems: 'center', flex: 1 },
-  summaryLabel: { fontSize: 11, marginBottom: 4 },
-  summaryValue: { fontSize: 16, fontWeight: '700' },
-  summaryCount: { fontSize: 11, marginTop: 10, textAlign: 'center' },
+  summaryLabel: { fontSize: text.xs, marginBottom: gap.xs },
+  summaryValue: { fontSize: text.lg, fontWeight: fontWeight.bold },
+  summaryCount: { fontSize: text.xs, marginTop: 10, textAlign: 'center' },
 
   // FAB
   fab: {
@@ -1017,34 +1033,30 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
+    ...shadow.floating,
   },
 
   // Create Listing Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
+  modalContent: { borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 20, paddingBottom: 40 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '700' },
-  modalLabel: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 8 },
-  modalInput: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 8 },
-  mpChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1, marginRight: 8 },
-  mpChipText: { fontSize: 12, fontWeight: '600' },
-  feePreview: { borderRadius: 10, borderWidth: 1, padding: 12, marginBottom: 12 },
+  modalTitle: { fontSize: text.xl, fontWeight: fontWeight.bold },
+  modalLabel: { fontSize: text.md, fontWeight: fontWeight.semibold, marginBottom: 6, marginTop: gap.md },
+  modalInput: { borderRadius: radius.sm, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, fontSize: text.lg, marginBottom: gap.md },
+  mpChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.md, borderWidth: 1, marginRight: gap.md },
+  mpChipText: { fontSize: text.sm, fontWeight: fontWeight.semibold },
+  feePreview: { borderRadius: radius.sm, borderWidth: 1, padding: 12, marginBottom: gap.xl },
   feeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  feeLabel: { fontSize: 12 },
-  feeValue: { fontSize: 13, fontWeight: '600' },
-  createBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
-  createBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  fieldError: { fontSize: 12, marginTop: 2, marginLeft: 4, marginBottom: 4 },
+  feeLabel: { fontSize: text.sm },
+  feeValue: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  createBtn: { borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
+  createBtnText: { color: '#FFFFFF', fontSize: text.lg, fontWeight: fontWeight.bold },
+  fieldError: { fontSize: text.sm, marginTop: 2, marginLeft: 4, marginBottom: 4 },
 
   // Actuals vs Predicted (L2)
-  predCard: { borderRadius: 12, borderWidth: 1, padding: 14, marginTop: 16 },
-  predCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  predCardTitle: { fontSize: 15, fontWeight: '700' },
-  predCompRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  predCompName: { fontSize: 13, fontWeight: '600' },
+  predCard: { borderRadius: radius.md, borderWidth: 1, padding: 14, marginTop: 16 },
+  predCardHeader: { flexDirection: 'row', alignItems: 'center', gap: gap.md, marginBottom: 10 },
+  predCardTitle: { fontSize: text.lg, fontWeight: fontWeight.bold },
+  predCompRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: gap.md, borderBottomWidth: StyleSheet.hairlineWidth },
+  predCompName: { fontSize: text.md, fontWeight: fontWeight.semibold },
 });

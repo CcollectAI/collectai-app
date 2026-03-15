@@ -920,6 +920,173 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
+    catalog.extend(_batch_character_variants_2026())
+    # Deduplicate by ('line', 'number', 'name') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["line"], item["number"], item["name"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
+
+
+def _batch_character_variants_2026() -> list[dict]:
+    """Batch — Character variant types: Chase, Flocked, GITD, Metallic,
+    Diamond, Blacklight, Art Series, Die-Cast. ~100 items."""
+
+    pops = [
+        # ── Marvel: Iron Man Variants ────────────────────────────────────
+        ("Marvel", "SE", "Iron Man (Chase, Helmet Up)", "", "high", 120),
+        ("Marvel", "SE", "Iron Man (Flocked, Mark 50)", "BoxLunch", "mid", 55),
+        ("Marvel", "SE", "Iron Man (Metallic, Infinity War)", "Funko-Shop", "high", 130),
+        ("Marvel", "SE", "Iron Man (Blacklight)", "Target", "mid", 40),
+        ("Marvel", "SE", "Iron Man (Die-Cast)", "Funko-Shop", "high", 180),
+        ("Marvel", "SE", "Iron Man (Diamond Collection)", "Hot Topic", "mid", 50),
+
+        # ── Marvel: Spider-Man Variants ──────────────────────────────────
+        ("Marvel", "SE", "Spider-Man (Chase, Unmasked)", "", "high", 110),
+        ("Marvel", "SE", "Spider-Man (Glow-in-Dark, Symbiote)", "Entertainment Earth", "high", 100),
+        ("Marvel", "SE", "Spider-Man (Metallic, Classic)", "Funko-Shop", "high", 140),
+        ("Marvel", "SE", "Spider-Man (Blacklight, Neon)", "Target", "mid", 45),
+        ("Marvel", "SE", "Spider-Man (Diamond Collection)", "Hot Topic", "mid", 45),
+        ("Marvel", "SE", "Spider-Man (Die-Cast)", "Funko-Shop", "high", 200),
+
+        # ── Marvel: Deadpool Variants ────────────────────────────────────
+        ("Marvel", "SE", "Deadpool (Chase, Unmasked)", "", "high", 100),
+        ("Marvel", "SE", "Deadpool (Flocked)", "BoxLunch", "mid", 50),
+        ("Marvel", "SE", "Deadpool (Metallic, X-Force)", "Funko-Shop", "high", 120),
+        ("Marvel", "SE", "Deadpool (Blacklight)", "Target", "mid", 42),
+        ("Marvel", "SE", "Deadpool (Diamond Collection)", "Hot Topic", "mid", 40),
+
+        # ── Star Wars: Darth Vader Variants ──────────────────────────────
+        ("Star Wars", "SE", "Darth Vader (Chase, Helmet Removed)", "", "high", 150),
+        ("Star Wars", "SE", "Darth Vader (Metallic Chrome)", "Funko-Shop", "high", 200),
+        ("Star Wars", "SE", "Darth Vader (Glow-in-Dark, Force Lightning)", "Funko-Shop", "high", 130),
+        ("Star Wars", "SE", "Darth Vader (Diamond Collection)", "Hot Topic", "mid", 55),
+        ("Star Wars", "SE", "Darth Vader (Die-Cast)", "Funko-Shop", "high", 220),
+        ("Star Wars", "SE", "Darth Vader (Blacklight)", "Target", "mid", 60),
+
+        # ── Star Wars: Mandalorian Variants ──────────────────────────────
+        ("Star Wars", "SE", "The Mandalorian (Chase, Unmasked)", "", "high", 120),
+        ("Star Wars", "SE", "The Mandalorian (Chrome, Beskar)", "Funko-Shop", "high", 140),
+        ("Star Wars", "SE", "The Mandalorian (Glow-in-Dark)", "Funko-Shop", "mid", 55),
+        ("Star Wars", "SE", "The Mandalorian (Diamond Collection)", "Hot Topic", "mid", 40),
+
+        # ── Star Wars: Grogu Variants ────────────────────────────────────
+        ("Star Wars", "SE", "Grogu (Chase, Force Lift)", "", "high", 100),
+        ("Star Wars", "SE", "Grogu (Flocked)", "Funko-Shop", "high", 110),
+        ("Star Wars", "SE", "Grogu (Diamond Collection)", "Hot Topic", "mid", 38),
+        ("Star Wars", "SE", "Grogu (Glow-in-Dark, Using Force)", "Entertainment Earth", "mid", 55),
+
+        # ── Disney: Mickey Mouse Variants ────────────────────────────────
+        ("Disney", "SE", "Mickey Mouse (Chase, Conductor)", "", "high", 250),
+        ("Disney", "SE", "Mickey Mouse (Glow-in-Dark, Sorcerer)", "BoxLunch", "high", 180),
+        ("Disney", "SE", "Mickey Mouse (Diamond Collection)", "Hot Topic", "mid", 55),
+        ("Disney", "SE", "Mickey Mouse (Metallic, Rainbow)", "Funko-Shop", "high", 160),
+        ("Disney", "SE", "Mickey Mouse (Blacklight)", "Target", "mid", 50),
+
+        # ── Disney: Stitch Variants ──────────────────────────────────────
+        ("Disney", "SE", "Stitch (Glow-in-Dark, Alien)", "Funko-Shop", "mid", 65),
+        ("Disney", "SE", "Stitch (Diamond Collection)", "Hot Topic", "mid", 50),
+        ("Disney", "SE", "Stitch (Blacklight)", "Target", "mid", 55),
+        ("Disney", "SE", "Stitch (Metallic, Blue Chrome)", "Funko-Shop", "high", 140),
+
+        # ── Anime: Naruto Variants ───────────────────────────────────────
+        ("Naruto", "SE", "Naruto (Chase, Nine-Tails Mode)", "", "high", 150),
+        ("Naruto", "SE", "Naruto (Metallic, Sage Mode)", "SDCC 2023", "high", 200),
+        ("Naruto", "SE", "Naruto (Glow-in-Dark, Rasengan)", "Entertainment Earth", "mid", 65),
+        ("Naruto", "SE", "Naruto (Blacklight)", "Target", "mid", 55),
+
+        # ── Anime: Goku Variants ─────────────────────────────────────────
+        ("Dragon Ball Z", "SE", "Goku (Chase, Ultra Instinct Sign)", "", "high", 180),
+        ("Dragon Ball Z", "SE", "Goku (Metallic, Super Saiyan Blue)", "SDCC 2022", "high", 250),
+        ("Dragon Ball Z", "SE", "Goku (Glow-in-Dark, Kamehameha)", "Entertainment Earth", "mid", 70),
+        ("Dragon Ball Z", "SE", "Goku (Diamond Collection)", "Hot Topic", "mid", 45),
+
+        # ── Anime: Luffy Variants ────────────────────────────────────────
+        ("One Piece", "SE", "Luffy (Chase, Gear Second)", "", "high", 130),
+        ("One Piece", "SE", "Luffy (Metallic, Gear Five)", "Funko-Shop", "high", 180),
+        ("One Piece", "SE", "Luffy (Glow-in-Dark, Red Hawk)", "Entertainment Earth", "mid", 60),
+
+        # ── Anime: Deku Variants ─────────────────────────────────────────
+        ("My Hero Academia", "SE", "Deku (Chase, Shoot Style)", "", "high", 140),
+        ("My Hero Academia", "SE", "Deku (Metallic, Full Cowling)", "Funko-Shop", "high", 160),
+        ("My Hero Academia", "SE", "Deku (Glow-in-Dark, One For All 100%)", "Entertainment Earth", "mid", 65),
+
+        # ── DC: Batman Variants ──────────────────────────────────────────
+        ("DC Heroes", "SE", "Batman (Chase, Unmasked Bruce Wayne)", "", "high", 180),
+        ("DC Heroes", "SE", "Batman (Glow-in-Dark, Hush)", "Target", "mid", 55),
+        ("DC Heroes", "SE", "Batman (Diamond Collection)", "Hot Topic", "mid", 45),
+        ("DC Heroes", "SE", "Batman (Die-Cast, Black Chrome)", "Funko-Shop", "high", 250),
+        ("DC Heroes", "SE", "Batman (Blacklight)", "Target", "mid", 50),
+        ("DC Heroes", "SE", "Batman (Art Series, Jim Lee B&W)", "Target", "mid", 55),
+
+        # ── DC: Joker Variants ───────────────────────────────────────────
+        ("DC Heroes", "SE", "Joker (Chase, Unmasked Bank Robber)", "", "high", 200),
+        ("DC Heroes", "SE", "Joker (Glow-in-Dark, Blacklight)", "Target", "mid", 60),
+        ("DC Heroes", "SE", "Joker (Metallic, Classic)", "Funko-Shop", "high", 160),
+        ("DC Heroes", "SE", "Joker (Diamond Collection)", "Hot Topic", "mid", 50),
+
+        # ── Horror: Pennywise Variants ───────────────────────────────────
+        ("Horror", "SE", "Pennywise (Chase, Sepia Toned)", "", "high", 120),
+        ("Horror", "SE", "Pennywise (Glow-in-Dark, Deadlights)", "Funko-Shop", "high", 140),
+        ("Horror", "SE", "Pennywise (Metallic, Blue Eyes)", "SDCC 2023", "high", 180),
+        ("Horror", "SE", "Pennywise (Diamond Collection)", "Hot Topic", "mid", 50),
+
+        # ── Horror: Michael Myers Variants ───────────────────────────────
+        ("Horror", "SE", "Michael Myers (Chase, Unmasked)", "", "high", 250),
+        ("Horror", "SE", "Michael Myers (Glow-in-Dark, Blood Splatter)", "Funko-Shop", "high", 200),
+        ("Horror", "SE", "Michael Myers (Blacklight)", "Target", "mid", 65),
+
+        # ── Horror: Ghostface Variants ───────────────────────────────────
+        ("Horror", "SE", "Ghostface (Chase, Bloody)", "", "high", 120),
+        ("Horror", "SE", "Ghostface (Glow-in-Dark)", "Funko-Shop", "mid", 65),
+        ("Horror", "SE", "Ghostface (Diamond Collection)", "Hot Topic", "mid", 45),
+        ("Horror", "SE", "Ghostface (Blacklight)", "Target", "mid", 55),
+
+        # ── Movies: Marty McFly Variants ─────────────────────────────────
+        ("Movies", "SE", "Marty McFly (Chase, Hazmat Suit)", "", "high", 150),
+        ("Movies", "SE", "Marty McFly (Metallic, Guitar)", "Funko-Shop", "high", 180),
+        ("Movies", "SE", "Marty McFly (Glow-in-Dark, Plutonium)", "Entertainment Earth", "mid", 65),
+
+        # ── Convention Exclusives: SDCC Variants ─────────────────────────
+        ("Convention Exclusive", "SE", "Iron Man (Mark 1, Metallic) (SDCC 2023)", "SDCC 2023", "high", 280),
+        ("Convention Exclusive", "SE", "Spider-Man (Symbiote, Glow) (SDCC 2023)", "SDCC 2023", "high", 250),
+        ("Convention Exclusive", "SE", "Batman (Knightfall, Metallic) (SDCC 2023)", "SDCC 2023", "high", 220),
+        ("Convention Exclusive", "SE", "Goku (Kaioken, Glow) (SDCC 2023)", "SDCC 2023", "high", 300),
+
+        # ── Convention Exclusives: NYCC Variants ─────────────────────────
+        ("Convention Exclusive", "SE", "Deadpool (Pirate, Metallic) (NYCC 2023)", "NYCC 2023", "high", 180),
+        ("Convention Exclusive", "SE", "Stitch (Elvis, Flocked) (NYCC 2023)", "NYCC 2023", "high", 220),
+        ("Convention Exclusive", "SE", "Naruto (Baryon Mode, Metallic) (NYCC 2023)", "NYCC 2023", "high", 260),
+
+        # ── Funko Shop Exclusives: Die-Cast ──────────────────────────────
+        ("Funko Shop", "SE", "Spider-Man (Die-Cast, Red & Blue)", "Funko-Shop", "high", 190),
+        ("Funko Shop", "SE", "Darth Vader (Die-Cast, Chrome)", "Funko-Shop", "high", 210),
+        ("Funko Shop", "SE", "Iron Man (Die-Cast, Mark III)", "Funko-Shop", "high", 200),
+        ("Funko Shop", "SE", "Batman (Die-Cast, Classic)", "Funko-Shop", "high", 220),
+        ("Funko Shop", "SE", "Captain America (Die-Cast, Shield)", "Funko-Shop", "high", 190),
+
+        # ── Blacklight Series ────────────────────────────────────────────
+        ("Blacklight", "SE", "Venom (Blacklight)", "Target", "mid", 50),
+        ("Blacklight", "SE", "Carnage (Blacklight)", "Target", "mid", 55),
+        ("Blacklight", "SE", "Doctor Strange (Blacklight)", "Target", "mid", 48),
+        ("Blacklight", "SE", "Captain America (Blacklight)", "Target", "mid", 45),
+        ("Blacklight", "SE", "Thor (Blacklight)", "Target", "mid", 45),
+    ]
+
+    catalog = []
+    for line, number, name, exclusive, tier, price in pops:
+        catalog.append({
+            "line": line,
+            "number": number,
+            "name": name,
+            "exclusive": exclusive,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
     return catalog
 
 

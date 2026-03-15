@@ -22,6 +22,7 @@ import { dataProvider, type PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { useToast } from '@/components/Toast';
 import { getJSON, setJSON } from '@/lib/storage';
 import { ACHIEVEMENTS, type Achievement } from '@/lib/achievements';
@@ -30,13 +31,15 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { PresenceIndicator } from '@/components/PresenceIndicator';
 import { useAsync } from '@/hooks/useAsync';
+import useAuth from '@/hooks/useAuth';
+import logger from '@/utils/logger';
 
 type DmStatusType = 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Avatar Component
 // ─────────────────────────────────────────────────────────────────────────────
-const AvatarCircle: React.FC<{ name: string; size?: number }> = ({ name, size = 64 }) => {
+const AvatarCircle = React.memo(function AvatarCircle({ name, size = 64 }: { name: string; size?: number }) {
   const { colors } = useAppTheme();
   const initials = name
     .split(' ')
@@ -60,16 +63,16 @@ const AvatarCircle: React.FC<{ name: string; size?: number }> = ({ name, size = 
       <Text style={[styles.avatarText, { fontSize: size * 0.35, color: colors.accentText }]}>{initials}</Text>
     </View>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section Card Component
 // ─────────────────────────────────────────────────────────────────────────────
-const SectionCard: React.FC<{
+const SectionCard = React.memo(function SectionCard({ title, icon, children }: {
   title: string;
   icon?: keyof typeof Ionicons.glyphMap;
   children: React.ReactNode;
-}> = ({ title, icon, children }) => {
+}) {
   const { colors } = useAppTheme();
 
   return (
@@ -81,14 +84,14 @@ const SectionCard: React.FC<{
       {children}
     </View>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Badge Item Component
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier colors now sourced from theme (see BadgeItem below)
 
-const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean; isRecent?: boolean }> = ({ achievement, earned, isRecent }) => {
+const BadgeItem = React.memo(function BadgeItem({ achievement, earned, isRecent }: { achievement: Achievement; earned: boolean; isRecent?: boolean }) {
   const { colors } = useAppTheme();
   const tierColor = colors.tier[achievement.tier];
 
@@ -102,7 +105,7 @@ const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean; isRecent?
         />
         {isRecent && (
           <View style={[styles.newBadgeDot, { backgroundColor: colors.accent }]}>
-            <Text style={styles.newBadgeText}>!</Text>
+            <Text style={[styles.newBadgeText, { color: colors.accentText }]}>!</Text>
           </View>
         )}
       </View>
@@ -114,7 +117,7 @@ const BadgeItem: React.FC<{ achievement: Achievement; earned: boolean; isRecent?
       </Text>
     </View>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Screen
@@ -123,6 +126,7 @@ function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { user: currentUser } = useAuth();
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [isUserBlocked, setIsUserBlocked] = useState(false);
@@ -243,7 +247,7 @@ function UserProfileScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    retry();
+    await retry();
     setRefreshing(false);
   }, [retry]);
 
@@ -258,36 +262,59 @@ function UserProfileScreen() {
 
   useEffect(() => {
     if (!userId) return;
-    collectorsApi.getAchievements()
-      .then((data) => {
-        if (data?.achievements?.length) {
-          setApiAchievements(data.achievements.map((a) => ({
-            id: a.id, title: a.title, tier: a.tier, earned: a.earned,
-          })));
-        }
-      })
-      .catch(() => { /* silent fallback to client-side */ });
+    const isOwnProfile = userId === currentUser?.id;
 
-    collectorsApi.getGamificationProfile()
-      .then((data) => {
-        if (data?.level != null) setGamProfile({ xp: data.xp, level: data.level, streak_days: data.streak_days });
-      })
-      .catch(() => { /* silent */ });
+    if (isOwnProfile) {
+      // Fetch full gamification data for authenticated user
+      collectorsApi.getAchievements()
+        .then((data) => {
+          if (data?.achievements?.length) {
+            setApiAchievements(data.achievements.map((a) => ({
+              id: a.id, title: a.title, tier: a.tier, earned: a.earned,
+            })));
+          }
+        })
+        .catch((err) => logger.info('[UserProfile] API fallback:', err));
 
-    collectorsApi.getActiveChallenges()
-      .then((data) => {
-        if (data?.challenges?.length) setChallenges(data.challenges);
-      })
-      .catch(() => { /* silent */ });
+      collectorsApi.getGamificationProfile()
+        .then((data) => {
+          if (data?.level != null) setGamProfile({ xp: data.xp, level: data.level, streak_days: data.streak_days });
+        })
+        .catch((err) => logger.info('[UserProfile] API fallback:', err));
 
-    collectorsApi.getRecentAchievements()
-      .then((data) => {
-        if (data?.achievements?.length) {
-          setRecentAchievementIds(new Set(data.achievements.map((a) => a.id)));
-        }
-      })
-      .catch(() => { /* silent */ });
-  }, [userId]);
+      collectorsApi.getActiveChallenges()
+        .then((data) => {
+          if (data?.challenges?.length) setChallenges(data.challenges);
+        })
+        .catch((err) => logger.info('[UserProfile] API fallback:', err));
+
+      collectorsApi.getRecentAchievements()
+        .then((data) => {
+          if (data?.achievements?.length) {
+            setRecentAchievementIds(new Set(data.achievements.map((a) => a.id)));
+          }
+        })
+        .catch((err) => logger.info('[UserProfile] API fallback:', err));
+    } else {
+      // Fetch public gamification profile for other users
+      collectorsApi.getPublicGamificationProfile(userId)
+        .then((data) => {
+          if (data?.profile) {
+            const p = data.profile;
+            setGamProfile({ xp: p.total_xp, level: p.level, streak_days: p.current_streak });
+
+            // Map recent achievements into the badges display
+            if (p.recent_achievements?.length) {
+              setApiAchievements(p.recent_achievements.map((a) => ({
+                id: a.id, title: a.title, tier: a.tier, earned: true,
+              })));
+              setRecentAchievementIds(new Set(p.recent_achievements.map((a) => a.id)));
+            }
+          }
+        })
+        .catch((err) => logger.info('[UserProfile] Public gamification fallback:', err));
+    }
+  }, [userId, currentUser?.id]);
 
   const profileBadges = useMemo(() => {
     // Use real backend data if available
@@ -691,8 +718,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   backText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: textToken.lg,
+    fontWeight: fw.medium,
   },
   menuBtn: {
     padding: 8,
@@ -703,20 +730,20 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     marginBottom: 12,
   },
   blockedBannerText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: textToken.md,
+    fontWeight: fw.semibold,
   },
   errorTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: textToken.xl,
+    fontWeight: fw.bold,
     marginTop: 16,
   },
   errorSubtitle: {
-    fontSize: 14,
+    fontSize: textToken.md,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -724,17 +751,17 @@ const styles = StyleSheet.create({
     marginTop: 24,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: radius.sm,
     borderWidth: 1,
   },
   retryBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: textToken.md,
+    fontWeight: fw.semibold,
   },
 
   // Profile card
   profileCard: {
-    borderRadius: 20,
+    borderRadius: radius.lg,
     borderWidth: 1,
     paddingTop: 60,
     paddingHorizontal: 24,
@@ -751,7 +778,7 @@ const styles = StyleSheet.create({
   },
   avatarRing: {
     padding: 4,
-    borderRadius: 50,
+    borderRadius: radius.pill,
     borderWidth: 3,
     marginTop: -20,
   },
@@ -772,18 +799,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
-    fontWeight: '700',
+    fontWeight: fw.bold,
   },
   profileInfo: {
     alignItems: 'center',
     marginTop: 16,
   },
   displayName: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: textToken['2xl'],
+    fontWeight: fw.bold,
   },
   handle: {
-    fontSize: 15,
+    fontSize: textToken.lg,
     marginTop: 4,
   },
   quickStatsRow: {
@@ -791,7 +818,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderRadius: 16,
+    borderRadius: radius.md,
     borderWidth: 1,
     width: '100%',
   },
@@ -805,11 +832,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   quickStatValue: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: textToken.xl,
+    fontWeight: fw.bold,
   },
   quickStatLabel: {
-    fontSize: 12,
+    fontSize: textToken.sm,
     marginTop: 2,
   },
   ctaRow: {
@@ -825,22 +852,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: radius.md,
     gap: 8,
   },
   ctaBtnPrimary: {},
   ctaBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: textToken.lg,
+    fontWeight: fw.semibold,
   },
   ctaBtnTextLight: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: textToken.lg,
+    fontWeight: fw.semibold,
   },
 
   // Section card
   sectionCard: {
-    borderRadius: 16,
+    borderRadius: radius.md,
     borderWidth: 1,
     padding: 16,
     marginTop: 16,
@@ -852,15 +879,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
 
   // Bio
   bioText: {
-    fontSize: 14,
+    fontSize: textToken.md,
     lineHeight: 20,
   },
 
@@ -883,8 +910,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   badgeLabel: {
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: textToken.xs,
+    fontWeight: fw.semibold,
     textAlign: 'center',
   },
   newBadgeDot: {
@@ -898,9 +925,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   newBadgeText: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontSize: textToken.xs,
+    fontWeight: fw.extrabold,
   },
 
   // Interests
@@ -912,12 +938,12 @@ const styles = StyleSheet.create({
   interestPill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: radius.md,
     borderWidth: 1,
   },
   interestText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: textToken.md,
+    fontWeight: fw.medium,
   },
 
   // Streak badge
@@ -928,13 +954,13 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     marginTop: 12,
   },
   streakText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
   },
 
   // Challenges
@@ -948,12 +974,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   challengeTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: textToken.md,
+    fontWeight: fw.semibold,
     flex: 1,
   },
   challengeMeta: {
-    fontSize: 11,
+    fontSize: textToken.xs,
     marginLeft: 8,
   },
   challengeBar: {
@@ -973,8 +999,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   menuSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingVertical: 8,
@@ -988,8 +1014,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   menuItemText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: textToken.lg,
+    fontWeight: fw.medium,
   },
   menuDivider: {
     height: 1,

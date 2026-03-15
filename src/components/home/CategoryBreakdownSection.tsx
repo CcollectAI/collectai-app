@@ -9,6 +9,7 @@ import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { AnimatedPressable } from "@/motion";
 import { SkeletonList } from "@/components/Skeleton";
+import { radius, text as textToken, fontWeight as fw } from "@/theme/tokens";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -152,12 +153,12 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: textToken.xl,
+    fontWeight: fw.extrabold,
   },
   breakdownCard: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 14,
     marginBottom: 20,
   },
@@ -168,26 +169,26 @@ const s = StyleSheet.create({
   },
   breakdownBarLabel: {
     width: 80,
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
     marginRight: 8,
   },
   breakdownBarTrack: {
     flex: 1,
     height: 10,
-    borderRadius: 5,
+    borderRadius: radius.xs,
     backgroundColor: "#E2E8F020",
     overflow: "hidden",
     marginRight: 8,
   },
   breakdownBarFill: {
     height: "100%",
-    borderRadius: 5,
+    borderRadius: radius.xs,
   },
   breakdownBarPct: {
     width: 36,
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
     textAlign: "right",
   },
   breakdownCardsScroll: {
@@ -198,36 +199,36 @@ const s = StyleSheet.create({
   },
   breakdownCategoryCard: {
     width: 130,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     padding: 10,
   },
   breakdownCatName: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: textToken.md,
+    fontWeight: fw.bold,
     marginBottom: 2,
   },
   breakdownCatItems: {
-    fontSize: 11,
+    fontSize: textToken.sm,
     marginBottom: 4,
   },
   breakdownCatValue: {
-    fontSize: 14,
-    fontWeight: "800",
+    fontSize: textToken.md,
+    fontWeight: fw.extrabold,
     marginBottom: 6,
   },
   breakdownPctBadge: {
     alignSelf: "flex-start",
-    borderRadius: 6,
+    borderRadius: radius.xs,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   breakdownPctBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: textToken.sm,
+    fontWeight: fw.bold,
   },
   breakdownEmpty: {
-    fontSize: 13,
+    fontSize: textToken.md,
     textAlign: "center",
     paddingVertical: 16,
   },

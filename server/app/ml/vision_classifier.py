@@ -63,6 +63,8 @@ ALL_CATEGORIES: list[str] = [
     "digimon", "one_piece_tcg",
     # Legacy
     "diecast", "sportscards", "retro_handhelds",
+    # New Categories
+    "oop_board_games", "city_pop_vinyl", "niche_perfumery",
 ]
 
 # Short text descriptions for each category (used by CLIP zero-shot matching).
@@ -118,6 +120,9 @@ CATEGORY_DESCRIPTIONS: dict[str, str] = {
     "pens": "Fountain pen, luxury pen, Montblanc, Pelikan, Sailor, Pilot Namiki, writing instrument",
     "digimon": "Digimon trading card, Digimon Card Game, Omnimon, Agumon, collectible card",
     "one_piece_tcg": "One Piece trading card game, One Piece TCG card, Luffy card, manga art card",
+    "oop_board_games": "Out-of-print board game, Kickstarter exclusive board game, sealed euro game, Gloomhaven, Kingdom Death",
+    "city_pop_vinyl": "Japanese City Pop vinyl record, Tatsuro Yamashita LP, Mariya Takeuchi vinyl, future funk record",
+    "niche_perfumery": "Niche perfume bottle, fragrance collection, Creed Aventus, Tom Ford Private Blend, MFK Baccarat Rouge",
 }
 
 # Condition keywords for heuristic detection
@@ -387,6 +392,24 @@ CATEGORY_PROMPTS: dict[str, str] = {
         "pressing_year, variant (colored/picture disc/limited/OBI strip), "
         "speed (33/45 RPM), format (LP/EP/single/box set), "
         "is_sealed (boolean), condition_notes."
+    ),
+    # New Categories
+    "oop_board_games": (
+        "Extract: game_name, publisher (Fantasy Flight/CMON/Stonemaier/Chip Theory), "
+        "designer, player_count, edition (1st Edition/Kickstarter Deluxe/Retail/Collector's), "
+        "is_sealed (boolean), completeness (complete/missing pieces), condition_notes."
+    ),
+    "city_pop_vinyl": (
+        "Extract: artist (Tatsuro Yamashita/Mariya Takeuchi/Anri/etc), album_title, "
+        "label (Nippon Columbia/Air Records/Moon Records), catalog_number, "
+        "pressing (OG/reissue/remaster), has_obi_strip (boolean), "
+        "vinyl_color, format (LP/2xLP/7\"/12\"), condition_notes."
+    ),
+    "niche_perfumery": (
+        "Extract: house (MFK/Tom Ford/Creed/Xerjoff/etc), fragrance_name, "
+        "concentration (EDT/EDP/Extrait/Parfum), bottle_size_ml, "
+        "fill_level (full/partial), batch_code, "
+        "is_box_included (boolean), condition_notes."
     ),
 }
 

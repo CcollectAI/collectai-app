@@ -14,6 +14,7 @@ from app.rate_limit import per_user_rate_limit
 from app.db import db_configured, get_conn
 from app.errors import error_response
 from app.features.pagination import pagination_params
+from app.lib.error_codes import ErrorCode
 
 router = APIRouter(prefix="/provenance", tags=["Provenance"])
 logger = logging.getLogger(__name__)
@@ -91,6 +92,12 @@ async def get_provenance(
     - authenticity signals list
     """
     limit, offset = pagination
+
+    import uuid as _uuid_mod
+    try:
+        _uuid_mod.UUID(item_id)
+    except ValueError:
+        raise error_response(400, "Invalid item_id format", code=ErrorCode.VALIDATION_ERROR)
 
     if not db_configured():
         # Fallback: in-memory store

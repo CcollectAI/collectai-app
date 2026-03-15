@@ -49,6 +49,78 @@ from pipelines.import_common import (
 CATEGORY = "anime_soundtrack"
 
 
+def _variant_expansion(catalog: list[dict]) -> list[dict]:
+    """Generate pressing/format variants for anime soundtrack items.
+
+    Creates ~35+ new entries: colored vinyl vs black, limited box sets,
+    Japanese vs international pressings, picture disc variants.
+    """
+    variants: list[dict] = []
+    existing_keys = {(i["title"], i["franchise"], i["format"]) for i in catalog}
+
+    # --- Vinyl color variants for existing vinyl items ---
+    vinyl_items = [i for i in catalog if i["format"] == "Vinyl"]
+    color_variants = [
+        ("Clear Vinyl", 0.85, "high"),
+        ("Red Translucent Vinyl", 0.90, "high"),
+        ("Blue Translucent Vinyl", 0.90, "high"),
+        ("Splatter Vinyl", 1.10, "grail"),
+        ("Picture Disc Vinyl", 0.75, "high"),
+    ]
+    for item in vinyl_items[:12]:
+        for color_label, mult, tier in color_variants:
+            variant_title = f"{item['title']} ({color_label})"
+            key = (variant_title, item["franchise"], "Vinyl")
+            if key not in existing_keys:
+                existing_keys.add(key)
+                variants.append({
+                    "franchise": item["franchise"],
+                    "composer": item["composer"],
+                    "title": variant_title,
+                    "format": "Vinyl",
+                    "edition": f"Limited {color_label}",
+                    "rarity_tier": tier,
+                    "price_eur": round(item["price_eur"] * mult, 2),
+                })
+
+    # --- Japanese pressing variants for non-JP CDs ---
+    cd_items = [i for i in catalog
+                if i["format"] == "CD" and "Japanese" not in i.get("edition", "")]
+    for item in cd_items[:10]:
+        variant_title = f"{item['title']} (Japanese Pressing)"
+        key = (variant_title, item["franchise"], "CD")
+        if key not in existing_keys:
+            existing_keys.add(key)
+            variants.append({
+                "franchise": item["franchise"],
+                "composer": item["composer"],
+                "title": variant_title,
+                "format": "CD",
+                "edition": "Japanese Pressing",
+                "rarity_tier": "high",
+                "price_eur": round(item["price_eur"] * 1.8, 2),
+            })
+
+    # --- Box set upgrades for standard CDs ---
+    for item in cd_items[:8]:
+        variant_title = f"{item['title']} (Deluxe Box Set)"
+        key = (variant_title, item["franchise"], "CD Box")
+        if key not in existing_keys:
+            existing_keys.add(key)
+            variants.append({
+                "franchise": item["franchise"],
+                "composer": item["composer"],
+                "title": variant_title,
+                "format": "CD Box",
+                "edition": "Limited Deluxe",
+                "rarity_tier": "grail",
+                "price_eur": round(item["price_eur"] * 3.0, 2),
+            })
+
+    logger.info("Anime soundtrack variant expansion: generated %d variants", len(variants))
+    return catalog + variants
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated anime soundtrack / limited media catalog (500+ items)."""
 
@@ -1068,7 +1140,17 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+    # Variant expansion — add pressing/format variants
+    catalog = _variant_expansion(catalog)
+    # Deduplicate by ('title', 'franchise', 'format') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["title"], item["franchise"], item["format"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

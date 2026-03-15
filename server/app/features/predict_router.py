@@ -80,7 +80,7 @@ def _parse_json(val: Any) -> Any:
 async def get_price_evidence(
     item_id: str,
     user_id: str = Depends(get_current_user_id),
-    _rl=Depends(per_user_rate_limit(30, scope="predict")),
+    _rl=Depends(per_user_rate_limit(30, window_seconds=60, scope="predict")),
 ):
     """
     Return the latest price prediction with explanation and evidence

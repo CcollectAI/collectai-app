@@ -165,8 +165,8 @@ async def unified_search(
             region=region,
             country_code=country,
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("[search] demand signal recording failed: %s", e)
 
     return {
         "items": items,

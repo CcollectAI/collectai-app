@@ -70,6 +70,11 @@ export const CATEGORIES: Category[] = [
   { slug: 'watches', name: 'Watches', tint: '#92400E' },
   { slug: 'sneakers', name: 'Sneakers', tint: '#1D4ED8' },
   { slug: 'retro_handhelds', name: 'Retro Handhelds', tint: '#7E57C2' },
+
+  // Phase 5 — New Categories (3)
+  { slug: 'oop_board_games', name: 'OOP Board Games', tint: '#6D4C41' },
+  { slug: 'city_pop_vinyl', name: 'City Pop Vinyl', tint: '#E040FB' },
+  { slug: 'niche_perfumery', name: 'Niche Perfumery', tint: '#CE93D8' },
 ];
 
 /** Look up a Category by slug */

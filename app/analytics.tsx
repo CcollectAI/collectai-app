@@ -10,6 +10,7 @@
  */
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
+import { BRAND_COLORS } from '@/constants/colors';
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
@@ -42,13 +43,15 @@ import type { CategorySummary } from "@/data/types";
 import { ScoreExplanationSheet } from "@/components/ScoreExplanationSheet";
 import { collectorsApi } from "@/api/collectorsApi";
 import logger from "@/utils/logger";
+import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
+import { CategoryPerformanceSection } from '@/components/CategoryPerformanceSection';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier-specific tokens (not theme-dependent)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Static colors for StyleSheet (can't use hooks in static context)
-// Dynamic theme colors applied inline via useAppTheme()
+// Static fallback for StyleSheet (can't use hooks in static context).
+// Runtime code uses themeColors from useThemeColors() instead.
 const COLORS = {
   tiffany: "#81D8D0",
   tiffanyDark: "#5FBFB6",
@@ -61,16 +64,14 @@ const COLORS = {
   success: "#10B981",
   warning: "#F59E0B",
   danger: "#EF4444",
-  diamond: "#A78BFA",
-  gold: "#FBBF24",
-  silver: "#94A3B8",
 };
 
+// TIER_COLORS are fixed brand colors (not theme-dependent)
 const TIER_COLORS: Record<string, string> = {
-  Diamond: COLORS.diamond,
-  Gold: COLORS.gold,
-  Silver: COLORS.silver,
-  Unranked: COLORS.muted,
+  Diamond: "#A78BFA",
+  Gold: "#FBBF24",
+  Silver: "#94A3B8",
+  Unranked: "#64748B",
 };
 
 const TIER_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -102,9 +103,19 @@ function AnalyticsScreen() {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { settings } = useSettings();
   const { colors } = useAppTheme();
+  const themeColors = useMemo(() => ({
+    background: colors.card,
+    text: colors.text,
+    muted: colors.muted,
+    border: colors.border,
+    accent: colors.accent,
+    success: colors.success,
+    danger: colors.danger,
+  }), [colors]);
   const { limits } = useBillingLimits();
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [collectionTrends, setCollectionTrends] = useState<Record<string, unknown> | null>(null);
   const [predictionAccuracy, setPredictionAccuracy] = useState<{ category: string; mae: number; mape: number; r2: number }[] | null>(null);
@@ -119,59 +130,67 @@ function AnalyticsScreen() {
     [],
   );
 
-  // Fetch backend collection trends + prediction accuracy (enrichment)
+  // Fetch backend collection trends + prediction accuracy (enrichment) — parallelized
   useEffect(() => {
     let cancelled = false;
-    collectorsApi.getCollectionTrends(30)
-      .then((data) => { if (!cancelled && data) setCollectionTrends(data as Record<string, unknown>); })
-      .catch((err) => { logger.warn('[Analytics] collection trends fetch failed:', err); });
-    collectorsApi.getPredictionAccuracy()
-      .then((data) => {
-        if (!cancelled && Array.isArray((data as { categories?: unknown[] })?.categories)) {
-          setPredictionAccuracy((data as { categories: { category: string; mae: number; mape: number; r2: number }[] }).categories);
-        }
-      })
-      .catch((err) => { logger.warn('[Analytics] prediction accuracy fetch failed:', err); });
-    collectorsApi.getPortfolioCategoryStats()
-      .then((data) => {
-        if (!cancelled && Array.isArray((data as { categories?: unknown[] })?.categories)) {
-          setCategoryStats((data as { categories: typeof categoryStats }).categories);
-        }
-      })
-      .catch((err) => { logger.warn('[Analytics] category stats fetch failed:', err); });
-    collectorsApi.getCategoryHealth()
-      .then((data) => {
-        if (!cancelled && Array.isArray((data as { health?: unknown[] })?.health)) {
-          setCategoryHealth((data as { health: typeof categoryHealth }).health);
-        }
-      })
-      .catch((err) => { logger.warn('[Analytics] category health fetch failed:', err); });
+    Promise.allSettled([
+      collectorsApi.getCollectionTrends(30),
+      collectorsApi.getPredictionAccuracy(),
+      collectorsApi.getPortfolioCategoryStats(),
+      collectorsApi.getCategoryHealth(),
+    ]).then(([trendsResult, accuracyResult, statsResult, healthResult]) => {
+      if (cancelled) return;
+      if (trendsResult.status === 'fulfilled' && trendsResult.value) {
+        setCollectionTrends(trendsResult.value as Record<string, unknown>);
+      } else if (trendsResult.status === 'rejected') {
+        logger.warn('[Analytics] collection trends fetch failed:', trendsResult.reason);
+      }
+      if (accuracyResult.status === 'fulfilled') {
+        const data = accuracyResult.value as { categories?: { category: string; mae: number; mape: number; r2: number }[] } | undefined;
+        if (Array.isArray(data?.categories)) setPredictionAccuracy(data!.categories);
+      } else {
+        logger.warn('[Analytics] prediction accuracy fetch failed:', accuracyResult.reason);
+      }
+      if (statsResult.status === 'fulfilled') {
+        const data = statsResult.value as { categories?: typeof categoryStats } | undefined;
+        if (Array.isArray(data?.categories)) setCategoryStats(data!.categories);
+      } else {
+        logger.warn('[Analytics] category stats fetch failed:', statsResult.reason);
+      }
+      if (healthResult.status === 'fulfilled') {
+        const data = healthResult.value as { health?: typeof categoryHealth } | undefined;
+        if (Array.isArray(data?.health)) setCategoryHealth(data!.health);
+      } else {
+        logger.warn('[Analytics] category health fetch failed:', healthResult.reason);
+      }
+    });
     return () => { cancelled = true; };
-  }, []);
+  }, [refreshKey]);
 
   const snapshot = analyticsData?.snapshot ?? null;
   const categorySummaries = analyticsData?.categorySummaries ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    retry();
+    setRefreshKey((k) => k + 1);
+    await retry();
     setRefreshing(false);
   }, [retry]);
 
-  // Derived data
-  const { pl, allocations, winnersLosers, tierSummary, items } = snapshot ?? {
+  // M4: Memoize derived snapshot data to avoid recomputing on every render
+  const { pl, allocations, winnersLosers, tierSummary, items } = useMemo(() => snapshot ?? {
     pl: null,
     allocations: [],
     winnersLosers: { winners: [], losers: [], neutral: [] },
     tierSummary: null,
     items: [],
-  };
+  }, [snapshot]);
 
-  const isPositive = (pl?.deltaPct ?? 0) >= 0;
+  const isPositive = useMemo(() => (pl?.deltaPct ?? 0) >= 0, [pl?.deltaPct]);
 
   // Category colors for allocation bars
   const categoryColors = useMemo(() => {
-    const colors = ["#81D8D0", "#5FBFB6", "#44A9A1", "#2D8A84", "#1F6B66"];
+    const colors = [BRAND_COLORS.tiffany, BRAND_COLORS.tiffanyDark, "#44A9A1", "#2D8A84", "#1F6B66"];
     const map: Record<string, string> = {};
     allocations.forEach((a, i) => {
       map[a.category] = colors[i % colors.length];
@@ -214,9 +233,18 @@ function AnalyticsScreen() {
 
         {/* Error Banner */}
         {error && (
-          <View style={styles.errorBanner}>
+          <View style={[styles.errorBanner, { backgroundColor: colors.dangerBg }]}>
             <Ionicons name="warning-outline" size={16} color={colors.error} />
             <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
+            <AnimatedPressable
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); retry(); }}
+              style={[styles.errorRetryBtn, { backgroundColor: colors.danger }]}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading analytics data"
+            >
+              <Ionicons name="refresh-outline" size={14} color="#fff" />
+              <Text style={styles.errorRetryText}>Retry</Text>
+            </AnimatedPressable>
           </View>
         )}
 
@@ -225,7 +253,7 @@ function AnalyticsScreen() {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Performance</Text>
-              <View style={[styles.badge, isPositive ? styles.badgeSuccess : styles.badgeDanger]}>
+              <View style={[styles.badge, { backgroundColor: isPositive ? colors.successBg : colors.dangerBg }]}>
                 <Text style={[styles.badgeText, isPositive ? styles.badgeTextSuccess : [styles.badgeTextDanger, { color: colors.danger }]]}>
                   {formatPct(pl.deltaPct)}
                 </Text>
@@ -235,16 +263,16 @@ function AnalyticsScreen() {
             <View style={styles.metricsGrid}>
               <View style={styles.metricItem}>
                 <Text style={styles.metricLabel}>Current Value</Text>
-                <Text style={styles.metricValue}>{formatPrice(pl.currentValue)}</Text>
+                <Text style={styles.metricValue}>{formatPrice(pl.currentValue, settings.currency ?? 'EUR')}</Text>
               </View>
               <View style={styles.metricItem}>
                 <Text style={styles.metricLabel}>Starting Value</Text>
-                <Text style={styles.metricValueMuted}>{formatPrice(pl.startValue)}</Text>
+                <Text style={styles.metricValueMuted}>{formatPrice(pl.startValue, settings.currency ?? 'EUR')}</Text>
               </View>
               <View style={styles.metricItem}>
                 <Text style={styles.metricLabel}>Total Gain/Loss</Text>
                 <Text style={[styles.metricValue, isPositive ? styles.textSuccess : [styles.textDanger, { color: colors.danger }]]}>
-                  {pl.deltaAbs >= 0 ? "+" : ""}{formatPrice(pl.deltaAbs)}
+                  {pl.deltaAbs >= 0 ? "+" : ""}{formatPrice(pl.deltaAbs, settings.currency ?? 'EUR')}
                 </Text>
               </View>
               <View style={styles.metricItem}>
@@ -266,7 +294,7 @@ function AnalyticsScreen() {
 
             <AnimatedPressable
               style={styles.tierBadgeContainer}
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push("/leaderboard"); }}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push("/leaderboard"); }}
               accessibilityRole="button"
               accessibilityLabel={`${tierSummary.tier} tier — view leaderboard`}
             >
@@ -308,7 +336,7 @@ function AnalyticsScreen() {
 
             <AnimatedPressable
               style={styles.whyScoresBtn}
-              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setScoreSheetVisible(true); }}
+              onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); setScoreSheetVisible(true); }}
               accessibilityRole="button"
               accessibilityLabel="How are scores calculated?"
             >
@@ -360,7 +388,7 @@ function AnalyticsScreen() {
                     <Text style={styles.allocationName}>{a.category}</Text>
                   </View>
                   <View style={styles.allocationRight}>
-                    <Text style={styles.allocationValue}>{formatPrice(a.totalValue)}</Text>
+                    <Text style={styles.allocationValue}>{formatPrice(a.totalValue, settings.currency ?? 'EUR')}</Text>
                     <Text style={styles.allocationPct}>{formatPct(a.weight, false)}</Text>
                   </View>
                 </View>
@@ -370,55 +398,7 @@ function AnalyticsScreen() {
         )}
 
         {/* H1: Category Statistics Dashboard */}
-        {categoryStats.length > 0 && (
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="grid-outline" size={18} color={colors.accent} />
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Category Performance</Text>
-              <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{categoryStats.length} categories</Text>
-            </View>
-            {categoryStats.slice(0, 8).map((cat) => {
-              const trendIcon = cat.trend === 'up' ? 'trending-up' : cat.trend === 'down' ? 'trending-down' : 'remove-outline';
-              const trendColor = cat.trend === 'up' ? colors.success : cat.trend === 'down' ? colors.danger : colors.muted;
-              const healthEntry = categoryHealth.find((h) => h.category === cat.category);
-              const healthColor = healthEntry?.health === 'green' ? colors.success : healthEntry?.health === 'yellow' ? colors.warning : healthEntry?.health === 'red' ? colors.danger : colors.muted;
-              return (
-                <AnimatedPressable
-                  key={cat.category}
-                  style={[styles.catStatRow, { borderBottomColor: colors.border }]}
-                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push(`/categories/${encodeURIComponent(cat.category)}` as never); }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${cat.category.replace(/_/g, ' ')}: ${cat.item_count} items, ${formatPrice(cat.total_value)}, 7d ${cat.trend}`}
-                >
-                  <View style={styles.catStatLeft}>
-                    <View style={styles.catStatNameRow}>
-                      <Text style={[styles.catStatName, { color: colors.text }]} numberOfLines={1}>
-                        {cat.category.replace(/_/g, ' ')}
-                      </Text>
-                      {healthEntry && (
-                        <View style={[styles.healthDot, { backgroundColor: healthColor }]} />
-                      )}
-                    </View>
-                    <Text style={[styles.catStatMeta, { color: colors.muted }]}>
-                      {cat.item_count} items · avg {formatPrice(cat.avg_value)}
-                    </Text>
-                  </View>
-                  <View style={styles.catStatRight}>
-                    <Text style={[styles.catStatValue, { color: colors.text }]}>
-                      {formatPrice(cat.total_value)}
-                    </Text>
-                    <View style={styles.catStatTrend}>
-                      <Ionicons name={trendIcon} size={12} color={trendColor} />
-                      <Text style={[styles.catStatPct, { color: trendColor }]}>
-                        {cat.change_7d_pct > 0 ? '+' : ''}{cat.change_7d_pct.toFixed(1)}%
-                      </Text>
-                    </View>
-                  </View>
-                </AnimatedPressable>
-              );
-            })}
-          </View>
-        )}
+        <CategoryPerformanceSection categoryStats={categoryStats} categoryHealth={categoryHealth} />
 
         {/* Winners & Losers (Pro+) */}
         {limits.advanced_analytics && (winnersLosers.winners.length > 0 || winnersLosers.losers.length > 0) && (
@@ -484,7 +464,7 @@ function AnalyticsScreen() {
                   <Text style={styles.itemCategory}>{item.category}</Text>
                 </View>
                 <View style={styles.itemRight}>
-                  <Text style={styles.itemValue}>{formatPrice(item.currentValue)}</Text>
+                  <Text style={styles.itemValue}>{formatPrice(item.currentValue, settings.currency ?? 'EUR')}</Text>
                   {item.change1dPct !== undefined && (
                     <Text
                       style={[
@@ -557,7 +537,7 @@ function AnalyticsScreen() {
             {activeCategories.length > 8 && (
               <AnimatedPressable
                 style={styles.viewAllBtn}
-                onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push("/categories"); }}
+                onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push("/categories"); }}
                 accessibilityRole="link"
                 accessibilityLabel="View all categories"
               >
@@ -635,7 +615,7 @@ function AnalyticsScreen() {
                   <Text style={[styles.predValue, { color: colors.muted }]}>
                     {(cat.mape * 100).toFixed(1)}%
                   </Text>
-                  <Text style={[styles.predValue, { color: r2Color, fontWeight: '700' }]}>
+                  <Text style={[styles.predValue, { color: r2Color, fontWeight: fontWeight.bold }]}>
                     {cat.r2.toFixed(2)}
                   </Text>
                 </View>
@@ -682,7 +662,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     color: COLORS.muted,
-    fontSize: 14,
+    fontSize: text.md,
   },
 
   // Header
@@ -703,14 +683,14 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   headerLabel: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
     color: COLORS.muted,
     letterSpacing: 0.5,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "800",
+    fontSize: text['2xl'],
+    fontWeight: fontWeight.extrabold,
     color: COLORS.navy,
   },
   refreshBtn: {
@@ -725,30 +705,39 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#FEF2F2",
     padding: 12,
-    borderRadius: 12,
+    borderRadius: radius.md,
     marginBottom: 16,
   },
   errorText: {
     color: COLORS.danger,
-    fontSize: 13,
+    fontSize: text.md,
     flex: 1,
+  },
+  errorRetryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+    marginLeft: 8,
+  },
+  errorRetryText: {
+    color: "#fff",
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
   },
 
   // Cards
   card: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: 16,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadow.card,
   },
   cardHeader: {
     flexDirection: "row",
@@ -757,12 +746,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: text.lg,
+    fontWeight: fontWeight.bold,
     color: COLORS.navy,
   },
   cardSubtitle: {
-    fontSize: 13,
+    fontSize: text.md,
     color: COLORS.muted,
   },
 
@@ -770,17 +759,13 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: radius.md,
   },
-  badgeSuccess: {
-    backgroundColor: "#ECFDF5",
-  },
-  badgeDanger: {
-    backgroundColor: "#FEF2F2",
-  },
+  badgeSuccess: {},
+  badgeDanger: {},
   badgeText: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
   },
   badgeTextSuccess: {
     color: COLORS.success,
@@ -799,18 +784,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   metricLabel: {
-    fontSize: 12,
+    fontSize: text.sm,
     color: COLORS.muted,
     marginBottom: 4,
   },
   metricValue: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: text.xl,
+    fontWeight: fontWeight.bold,
     color: COLORS.navy,
   },
   metricValueMuted: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: text.xl,
+    fontWeight: fontWeight.bold,
     color: COLORS.muted,
   },
 
@@ -833,14 +818,14 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 24,
+    borderRadius: radius.xl,
   },
   tierLabel: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: text.xl,
+    fontWeight: fontWeight.extrabold,
   },
   tierTapHint: {
-    fontSize: 11,
+    fontSize: text.sm,
     color: COLORS.muted,
     marginTop: 6,
   },
@@ -854,12 +839,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scoreValue: {
-    fontSize: 24,
-    fontWeight: "800",
+    fontSize: text['2xl'],
+    fontWeight: fontWeight.extrabold,
     color: COLORS.navy,
   },
   scoreLabel: {
-    fontSize: 11,
+    fontSize: text.sm,
     color: COLORS.muted,
     marginTop: 2,
   },
@@ -879,8 +864,8 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
   },
   whyScoresText: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     color: COLORS.tiffanyDark,
   },
 
@@ -888,7 +873,7 @@ const styles = StyleSheet.create({
   allocationBar: {
     flexDirection: "row",
     height: 8,
-    borderRadius: 4,
+    borderRadius: radius.xs,
     overflow: "hidden",
     marginBottom: 16,
   },
@@ -915,20 +900,20 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   allocationName: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     color: COLORS.navy,
   },
   allocationRight: {
     alignItems: "flex-end",
   },
   allocationValue: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
     color: COLORS.navy,
   },
   allocationPct: {
-    fontSize: 12,
+    fontSize: text.sm,
     color: COLORS.muted,
   },
 
@@ -943,8 +928,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   moversSectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
   },
   moverRow: {
     flexDirection: "row",
@@ -956,13 +941,13 @@ const styles = StyleSheet.create({
   },
   moverName: {
     flex: 1,
-    fontSize: 14,
+    fontSize: text.md,
     color: COLORS.navy,
     marginRight: 12,
   },
   moverPct: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
   },
 
   // Items
@@ -981,12 +966,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   itemName: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     color: COLORS.navy,
   },
   itemCategory: {
-    fontSize: 12,
+    fontSize: text.sm,
     color: COLORS.muted,
     marginTop: 2,
   },
@@ -994,13 +979,13 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   itemValue: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
     color: COLORS.navy,
   },
   itemPct: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
     marginTop: 2,
   },
 
@@ -1015,8 +1000,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   completenessName: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     color: COLORS.navy,
     flex: 1,
     marginRight: 8,
@@ -1027,7 +1012,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   completenessCount: {
-    fontSize: 12,
+    fontSize: text.sm,
     color: COLORS.muted,
   },
   dupBadge: {
@@ -1037,11 +1022,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
     paddingHorizontal: 5,
     paddingVertical: 1,
-    borderRadius: 4,
+    borderRadius: radius.xs,
   },
   dupBadgeText: {
     fontSize: 9,
-    fontWeight: "600",
+    fontWeight: fontWeight.semibold,
     color: COLORS.muted,
   },
   completenessBarWrap: {
@@ -1061,8 +1046,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   completenessPct: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: text.sm,
+    fontWeight: fontWeight.bold,
     color: COLORS.navy,
     minWidth: 36,
     textAlign: "right",
@@ -1077,8 +1062,8 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
   },
   viewAllText: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
 
   // DCA Cost Basis (M3)
@@ -1093,13 +1078,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dcaLabel: {
-    fontSize: 11,
-    fontWeight: "500",
+    fontSize: text.sm,
+    fontWeight: fontWeight.medium,
     marginBottom: 4,
   },
   dcaValue: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
   },
   dcaBar: {
     height: 6,
@@ -1120,8 +1105,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   predHeaderText: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: text.sm,
+    fontWeight: fontWeight.semibold,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -1133,61 +1118,14 @@ const styles = StyleSheet.create({
   },
   predCategory: {
     flex: 2,
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     textTransform: "capitalize",
   },
   predValue: {
     flex: 1,
-    fontSize: 13,
+    fontSize: text.md,
     textAlign: "right",
   },
 
-  // Category Statistics (H1)
-  catStatRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  catStatLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  catStatNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  catStatName: {
-    fontSize: 14,
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-  healthDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  catStatMeta: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  catStatRight: {
-    alignItems: "flex-end",
-  },
-  catStatValue: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  catStatTrend: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    marginTop: 2,
-  },
-  catStatPct: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
 });

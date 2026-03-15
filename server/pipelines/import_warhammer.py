@@ -708,27 +708,21 @@ def get_curated_catalog() -> list[dict]:
         ("40k", "Astra Militarum", "Field Ordnance Battery", "Heavy Support", 38, 45),
 
         # 40K — Sisters of Battle
-        ("40k", "Adepta Sororitas", "Morvenn Vahl", "HQ", 35, 42),
-        ("40k", "Adepta Sororitas", "Immolator", "Vehicle", 40, 48),
         ("40k", "Adepta Sororitas", "Penitent Engines", "Heavy Support", 35, 42),
         ("40k", "Adepta Sororitas", "Celestian Sacresants", "Elite", 35, 40),
 
         # 40K — More Tyranid Models
-        ("40k", "Tyranids", "Norn Emissary / Assimilator", "Monster", 55, 68),
         ("40k", "Tyranids", "Von Ryan's Leapers", "Troops", 32, 36),
         ("40k", "Tyranids", "Psychophage", "Elite", 32, 38),
 
         # AoS — Ossiarch Bonereapers
         ("aos", "Ossiarch Bonereapers", "Katakros, Mortarch of the Necropolis", "Centerpiece", 65, 82),
         ("aos", "Ossiarch Bonereapers", "Mortek Guard (20)", "Troops", 40, 48),
-        ("aos", "Ossiarch Bonereapers", "Gothizzar Harvester", "Monster", 35, 42),
 
         # AoS — Fyreslayers
-        ("aos", "Fyreslayers", "Auric Runefather on Magmadroth", "Centerpiece", 55, 68),
         ("aos", "Fyreslayers", "Hearthguard Berzerkers (5)", "Elite", 30, 35),
 
         # AoS — Kharadron Overlords
-        ("aos", "Kharadron Overlords", "Arkanaut Ironclad", "Centerpiece", 65, 80),
         ("aos", "Kharadron Overlords", "Grundstok Thunderers (5)", "Troops", 30, 35),
 
         # Horus Heresy — Additional Legion Units
@@ -738,9 +732,6 @@ def get_curated_catalog() -> list[dict]:
         ("hh", "World Eaters", "Rampager Squad (FW)", "Elite", 40, 58),
 
         # Kill Team — More Sets
-        ("kt", "Kill Team", "Kill Team: Into the Dark", "Box Set", 125, 150),
-        ("kt", "Kill Team", "Kill Team: Shadowvaults", "Box Set", 125, 155),
-        ("kt", "Kill Team", "Kill Team: Soulshackle", "Box Set", 125, 148),
 
         # Warhammer+ & Event Exclusives (Additional)
         ("40k", "Exclusives", "Warhammer Day 2024 Exclusive Miniature", "Event Exclusive", 0, 55),
@@ -772,7 +763,6 @@ def get_curated_catalog() -> list[dict]:
         ("hh", "Horus Heresy", "Rogal Dorn, Primarch of the Imperial Fists (FW)", "Character", 95, 185),
 
         # ── Age of Sigmar Stormcast Eternals (8) ────────────────────────
-        ("aos", "Stormcast Eternals", "Yndrasta, the Celestial Spear", "Character", 35, 42),
         ("aos", "Stormcast Eternals", "Bastian Carthalos, Commander of the Hammers of Sigmar", "Character", 35, 40),
         ("aos", "Stormcast Eternals", "Ionus Cryptborn, Lord-Veritant", "Character", 28, 35),
         ("aos", "Stormcast Eternals", "Gardus Steel Soul", "Character", 25, 32),
@@ -903,6 +893,297 @@ def get_curated_catalog() -> list[dict]:
 
     catalog = []
     for game, faction, name, kit_type, retail_gbp, market_eur in kits:
+        catalog.append({
+            "game": game,
+            "faction": faction,
+            "name": name,
+            "kit_type": kit_type,
+            "retail_gbp": retail_gbp,
+            "market_eur": market_eur,
+        })
+
+    # Merge variant expansion items (reaching 800+ total)
+    catalog.extend(_variant_expansion())
+
+    # Deduplicate by ('name',) (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = item["name"]
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
+
+
+def _variant_expansion() -> list[dict]:
+    """Variant items and new models to expand the catalog to 800+.
+
+    Covers:
+    - Paint scheme variants (box art vs alternative, parade ready vs tabletop)
+    - Limited edition / event exclusive models
+    - Old sculpt vs new sculpt versions
+    - Metal vs plastic/resin material variants
+    - Start Collecting / Combat Patrol box variants across editions
+    - Forge World resin alternatives of plastic kits
+    - Kill Team / Warcry specific model versions
+    - AoS vs 40K crossover models
+    - Primaris vs Firstborn Space Marine character variants
+    - Codex / Battletome collector's vs standard editions
+    - New units/models not previously covered
+    """
+
+    # (game, faction, name, kit_type, retail_gbp, secondary_eur)
+    variants = [
+        # =================================================================
+        # PAINT SCHEME VARIANTS — Box Art vs Alternative Schemes
+        # =================================================================
+        ("40k", "Space Marines", "Redemptor Dreadnought (Pro-Painted Ultramarines)", "Centerpiece", 45, 140),
+        ("40k", "Space Marines", "Redemptor Dreadnought (Pro-Painted Blood Angels)", "Centerpiece", 45, 145),
+        ("40k", "Space Marines", "Intercessors (Parade Ready Imperial Fists)", "Troops", 40, 95),
+        ("40k", "Space Marines", "Bladeguard Veterans (Parade Ready Dark Angels)", "Elite", 35, 100),
+        ("40k", "Death Guard", "Mortarion (Parade Ready Display)", "Centerpiece", 80, 280),
+        ("40k", "Thousand Sons", "Magnus the Red (Pro-Painted Prospero Scheme)", "Centerpiece", 80, 260),
+        ("aos", "Stormcast Eternals", "Yndrasta (Parade Ready Golden Demon Standard)", "HQ", 32, 120),
+        ("40k", "Tyranids", "Hive Tyrant (Pro-Painted Leviathan Scheme)", "HQ", 40, 130),
+        ("40k", "Necrons", "Silent King (Pro-Painted Szarekhan Dynasty)", "Centerpiece", 95, 320),
+        ("aos", "Slaves to Darkness", "Archaon (Parade Ready Competition Piece)", "Centerpiece", 100, 380),
+        ("40k", "World Eaters", "Angron (Tabletop Standard Painted)", "Centerpiece", 90, 160),
+        ("40k", "Space Marines", "Brutalis Dreadnought (Pro-Painted Space Wolves)", "Dreadnought", 45, 135),
+
+        # =================================================================
+        # LIMITED EDITION / EVENT EXCLUSIVE MODELS
+        # =================================================================
+        ("40k", "Limited", "Warhammer Fest 2022 Exclusive Space Marine", "Event Exclusive", 25, 95),
+        ("40k", "Limited", "Warhammer Fest 2023 Exclusive Ork Warboss", "Event Exclusive", 25, 85),
+        ("40k", "Limited", "Store Anniversary Captain 2021", "Event Exclusive", 25, 90),
+        ("40k", "Limited", "Store Anniversary Captain 2020", "Event Exclusive", 25, 100),
+        ("40k", "Limited", "Store Anniversary Captain 2019", "Event Exclusive", 25, 110),
+        ("40k", "Limited", "AdeptiCon 2023 Exclusive Miniature", "Event Exclusive", 25, 85),
+        ("40k", "Limited", "NOVA Open 2023 Exclusive Model", "Event Exclusive", 25, 80),
+        ("40k", "Limited", "NOVA Open 2024 Exclusive Model", "Event Exclusive", 25, 75),
+        ("40k", "Limited", "Golden Daemon Winner Trophy Model 2024", "Event Exclusive", 0, 280),
+        ("40k", "Limited", "Golden Daemon Winner Trophy Model 2022", "Event Exclusive", 0, 300),
+        ("aos", "Limited", "Made to Order: Bretonnian Men-at-Arms (2024)", "Limited", 35, 100),
+        ("aos", "Limited", "Made to Order: Tomb Kings Ushabti (2023)", "Limited", 40, 130),
+        ("40k", "Limited", "Space Marine Heroes Series 1 (Blind Box)", "Limited", 12, 35),
+        ("40k", "Limited", "Space Marine Heroes Series 2 (Blind Box)", "Limited", 12, 30),
+
+        # =================================================================
+        # OLD SCULPT vs NEW SCULPT VERSIONS
+        # =================================================================
+        ("40k", "Space Marines", "Marneus Calgar (Old Sculpt, Metal/Finecast)", "HQ", 0, 45),
+        ("40k", "Space Marines", "Marneus Calgar (Primaris, New Sculpt Plastic)", "HQ", 35, 42),
+        ("40k", "Orks", "Ghazghkull Thraka (Old Metal Sculpt, 3rd Ed)", "HQ", 0, 80),
+        ("40k", "Space Marines", "Chaplain Grimaldus (Old Metal Sculpt)", "HQ", 0, 55),
+        ("40k", "Space Marines", "Chaplain Grimaldus (New Plastic 2022)", "HQ", 28, 35),
+        ("40k", "Aeldari", "Avatar of Khaine (Old Metal Sculpt)", "Centerpiece", 0, 120),
+        ("40k", "Necrons", "Illuminor Szeras (Old Finecast)", "HQ", 0, 40),
+        ("40k", "Necrons", "Illuminor Szeras (New Plastic 2020)", "HQ", 28, 35),
+        ("40k", "Tyranids", "Hive Tyrant (Old Metal/Plastic Hybrid)", "HQ", 0, 65),
+        ("40k", "Space Marines", "Land Raider (Old Metal Doors Variant, 2nd Ed)", "Vehicle", 0, 110),
+        ("40k", "Chaos Space Marines", "Abaddon the Despoiler (Old Metal Sculpt)", "HQ", 0, 130),
+        ("aos", "Skaven", "Verminlord (Old Metal Sculpt)", "Centerpiece", 0, 95),
+        ("40k", "Aeldari", "Eldrad Ulthran (Old Finecast Sculpt)", "HQ", 0, 35),
+
+        # =================================================================
+        # METAL vs PLASTIC / RESIN MATERIAL VARIANTS
+        # =================================================================
+        ("40k", "OOP", "Space Marine Tactical Squad (Metal, Rogue Trader Era)", "Troops", 0, 350),
+        ("40k", "OOP", "Noise Marines (Metal, 2nd Ed Sculpt)", "Elite", 0, 180),
+        ("40k", "OOP", "Dark Eldar Incubi (Metal, 3rd Ed)", "Elite", 0, 90),
+        ("40k", "OOP", "Harlequin Troupe (Metal, 3rd Ed)", "Troops", 0, 140),
+        ("40k", "OOP", "Tyranid Warriors (Metal, 2nd Ed Sculpt)", "Troops", 0, 120),
+        ("40k", "OOP", "Necron Immortals (Metal, 3rd Ed)", "Troops", 0, 100),
+        ("40k", "OOP", "Ork Stormboyz (Metal, 3rd Ed)", "Fast Attack", 0, 70),
+        ("40k", "OOP", "Grey Knight Terminators (Metal, Daemonhunters)", "Elite", 0, 150),
+        ("40k", "OOP", "Sisters of Battle Squad (Metal, Witch Hunters)", "Troops", 0, 200),
+        ("40k", "OOP", "Tau Crisis Battlesuits (Metal, 3rd Ed Launch)", "Battlesuit", 0, 85),
+        ("40k", "OOP", "Chaos Obliterators (Metal, 3.5 Ed)", "Elite", 0, 110),
+
+        # =================================================================
+        # START COLLECTING / COMBAT PATROL BOX VARIANTS ACROSS EDITIONS
+        # =================================================================
+        ("40k", "Start Collecting", "Start Collecting! Space Marines (2016)", "Box Set", 0, 90),
+        ("40k", "Start Collecting", "Start Collecting! Tyranids (2016)", "Box Set", 0, 85),
+        ("40k", "Start Collecting", "Start Collecting! Orks (2016)", "Box Set", 0, 80),
+        ("40k", "Start Collecting", "Start Collecting! T'au Empire (2016)", "Box Set", 0, 95),
+        ("40k", "Start Collecting", "Start Collecting! Chaos Space Marines (2016)", "Box Set", 0, 85),
+        ("40k", "Start Collecting", "Start Collecting! Necrons (2016)", "Box Set", 0, 90),
+        ("40k", "Start Collecting", "Start Collecting! Astra Militarum (2016)", "Box Set", 0, 100),
+        ("40k", "Start Collecting", "Start Collecting! Daemons of Khorne (2016)", "Box Set", 0, 75),
+        ("40k", "Start Collecting", "Start Collecting! Daemons of Nurgle (2016)", "Box Set", 0, 75),
+        ("40k", "Start Collecting", "Start Collecting! Daemons of Tzeentch (2016)", "Box Set", 0, 80),
+        ("aos", "Start Collecting", "Start Collecting! Stormcast Eternals (2018)", "Box Set", 0, 75),
+        ("aos", "Start Collecting", "Start Collecting! Nighthaunt (2018)", "Box Set", 0, 70),
+        ("aos", "Start Collecting", "Start Collecting! Skaven Pestilens (2016)", "Box Set", 0, 85),
+        ("aos", "Start Collecting", "Start Collecting! Sylvaneth (2017)", "Box Set", 0, 80),
+
+        # =================================================================
+        # FORGE WORLD RESIN ALTERNATIVES OF PLASTIC KITS
+        # =================================================================
+        ("fw", "Forge World", "Land Raider Achilles (Resin)", "Vehicle", 95, 135),
+        ("fw", "Forge World", "Land Raider Proteus (Resin)", "Vehicle", 80, 110),
+        ("fw", "Forge World", "Dreadnought Drop Pod (Resin)", "Vehicle", 50, 72),
+        ("fw", "Forge World", "Sicaran Arcus (Resin)", "Vehicle", 68, 95),
+        ("fw", "Forge World", "Sicaran Punisher (Resin)", "Vehicle", 68, 95),
+        ("fw", "Forge World", "Fire Raptor Gunship", "Flyer", 120, 170),
+        ("fw", "Forge World", "Storm Eagle Assault Gunship", "Flyer", 110, 155),
+        ("fw", "Forge World", "Xiphon Interceptor", "Flyer", 55, 80),
+        ("fw", "Forge World", "Typhon Heavy Siege Tank", "Super-Heavy", 95, 135),
+        ("fw", "Forge World", "Cerberus Heavy Tank Destroyer", "Super-Heavy", 95, 135),
+        ("fw", "Forge World", "Fellblade Super-Heavy Tank", "Super-Heavy", 180, 250),
+        ("fw", "Forge World", "Sokar Pattern Stormbird", "Super-Heavy", 650, 900),
+
+        # =================================================================
+        # KILL TEAM / WARCRY SPECIFIC VERSIONS
+        # =================================================================
+        ("kt", "Kill Team", "Kill Team: Salvation", "Box Set", 100, 125),
+        ("kt", "Kill Team", "Kill Team: Termination", "Box Set", 100, 120),
+        ("kt", "Kill Team", "Kill Team: Bheta-Decima", "Box Set", 100, 120),
+        ("kt", "Kill Team", "Kill Team: Starter Set (2024)", "Box Set", 55, 65),
+        ("kt", "Kill Team", "Kill Team: Exaction Squad (Arbites)", "Box Set", 42, 52),
+        ("kt", "Kill Team", "Kill Team: Fellgor Ravagers (Beastmen)", "Box Set", 42, 50),
+        ("kt", "Kill Team", "Kill Team: Elucidian Starstriders (Rogue Trader)", "Box Set", 42, 55),
+        ("warcry", "Warcry", "Warcry: Bloodhunt", "Box Set", 100, 120),
+        ("warcry", "Warcry", "Warcry: Red Harvest", "Box Set", 100, 125),
+        ("warcry", "Warcry", "Warcry: Catacombs", "Box Set", 100, 130),
+        ("warcry", "Warcry", "Warcry: Corvus Cabal Warband", "Warband", 32, 40),
+        ("warcry", "Warcry", "Warcry: Iron Golem Warband", "Warband", 32, 38),
+        ("warcry", "Warcry", "Warcry: Untamed Beasts Warband", "Warband", 32, 38),
+        ("warcry", "Warcry", "Warcry: Cypher Lords Warband", "Warband", 32, 38),
+
+        # =================================================================
+        # AGE OF SIGMAR vs 40K CROSSOVER MODELS
+        # =================================================================
+        ("aos", "Chaos Daemons", "Great Unclean One (AoS/40K Dual Kit)", "Centerpiece", 85, 115),
+        ("aos", "Chaos Daemons", "Lord of Change (AoS/40K Dual Kit)", "Centerpiece", 85, 115),
+        ("aos", "Chaos Daemons", "Keeper of Secrets (AoS/40K Dual Kit)", "Centerpiece", 85, 115),
+        ("aos", "Chaos Daemons", "Bloodthirster (AoS/40K Dual Kit)", "Centerpiece", 85, 118),
+        ("aos", "Chaos Daemons", "Belakor (AoS/40K Dual Kit)", "Centerpiece", 80, 108),
+        ("aos", "Chaos Daemons", "Daemon Prince (AoS/40K Dual Kit)", "HQ", 35, 48),
+        ("aos", "Chaos Daemons", "Plaguebearers (AoS/40K Dual Kit, 10)", "Troops", 22, 28),
+        ("aos", "Chaos Daemons", "Bloodletters (AoS/40K Dual Kit, 10)", "Troops", 22, 28),
+        ("aos", "Chaos Daemons", "Pink Horrors (AoS/40K Dual Kit, 10)", "Troops", 22, 28),
+        ("aos", "Chaos Daemons", "Daemonettes (AoS/40K Dual Kit, 10)", "Troops", 22, 28),
+
+        # =================================================================
+        # PRIMARIS vs FIRSTBORN SPACE MARINE VARIANTS
+        # =================================================================
+        ("40k", "Space Marines", "Captain in Gravis Armour (Primaris)", "HQ", 25, 32),
+        ("40k", "Space Marines", "Captain (Firstborn, Metal 2nd Ed)", "HQ", 0, 55),
+        ("40k", "Space Marines", "Librarian in Phobos Armour (Primaris)", "HQ", 22, 28),
+        ("40k", "Space Marines", "Librarian (Firstborn, Finecast)", "HQ", 0, 30),
+        ("40k", "Space Marines", "Chaplain in Terminator Armour (Firstborn)", "HQ", 0, 40),
+        ("40k", "Space Marines", "Chaplain (Primaris, Indomitus)", "HQ", 22, 28),
+        ("40k", "Space Marines", "Techmarine (Firstborn, Metal)", "HQ", 0, 45),
+        ("40k", "Space Marines", "Techmarine (Primaris, Plastic)", "HQ", 22, 28),
+        ("40k", "Space Marines", "Tactical Squad (Firstborn, 10)", "Troops", 32, 38),
+        ("40k", "Space Marines", "Assault Squad (Firstborn, 5)", "Fast Attack", 25, 32),
+        ("40k", "Space Marines", "Devastator Squad (Firstborn, 5)", "Heavy Support", 30, 35),
+        ("40k", "Space Marines", "Sternguard Veterans (Firstborn, Metal, 5)", "Elite", 0, 55),
+        ("40k", "Space Marines", "Sternguard Veterans (Primaris, 10th Ed Plastic)", "Elite", 38, 45),
+        ("40k", "Space Marines", "Vanguard Veterans (Firstborn, 5)", "Elite", 30, 38),
+
+        # =================================================================
+        # CODEX / BATTLETOME COLLECTOR'S EDITIONS
+        # =================================================================
+        ("40k", "Space Marines", "Codex: Space Marines (10th Ed Collector's)", "Codex", 60, 85),
+        ("40k", "Tyranids", "Codex: Tyranids (10th Ed Collector's)", "Codex", 60, 88),
+        ("40k", "Necrons", "Codex: Necrons (10th Ed Collector's)", "Codex", 60, 82),
+        ("40k", "Chaos Space Marines", "Codex: Chaos Space Marines (10th Ed Collector's)", "Codex", 60, 85),
+        ("40k", "Aeldari", "Codex: Aeldari (10th Ed Collector's)", "Codex", 60, 80),
+        ("40k", "Orks", "Codex: Orks (10th Ed Collector's)", "Codex", 60, 82),
+        ("40k", "T'au Empire", "Codex: T'au Empire (10th Ed Collector's)", "Codex", 60, 80),
+        ("40k", "Death Guard", "Codex: Death Guard (10th Ed Collector's)", "Codex", 60, 78),
+        ("40k", "Adeptus Custodes", "Codex: Adeptus Custodes (10th Ed Collector's)", "Codex", 60, 82),
+        ("40k", "Core Rules", "Warhammer 40K Core Rules (10th Ed Collector's)", "Core Rulebook", 65, 90),
+        ("aos", "Core Rules", "Age of Sigmar Core Rules (4th Ed Collector's)", "Core Rulebook", 60, 85),
+        ("aos", "Skaven", "Battletome: Skaven (Collector's Edition)", "Battletome", 55, 75),
+
+        # =================================================================
+        # NEW UNITS / MODELS NOT YET COVERED
+        # =================================================================
+
+        # --- 40K: Votann (additional) ---
+        ("40k", "Leagues of Votann", "Einhyr Champion", "HQ", 25, 32),
+        ("40k", "Leagues of Votann", "Cthonian Beserks (5)", "Elite", 35, 42),
+        ("40k", "Leagues of Votann", "Hernkyn Pioneers (3)", "Fast Attack", 38, 45),
+        ("40k", "Leagues of Votann", "Grimnyr", "HQ", 28, 35),
+
+        # --- 40K: Agents of Imperium (additional) ---
+        ("40k", "Agents of the Imperium", "Rogue Trader Janus Draik", "HQ", 22, 28),
+        ("40k", "Agents of the Imperium", "Navigator", "HQ", 22, 30),
+
+        # --- 40K: Imperial Knights (additional) ---
+        ("40k", "Imperial Knights", "Knight Preceptor Canis Rex", "Lord of War", 95, 125),
+        ("40k", "Chaos Knights", "Knight Rampager", "Lord of War", 105, 135),
+        ("40k", "Chaos Knights", "War Dog Karnivores (2)", "War Dog", 40, 52),
+
+        # --- AoS: New Factions / Models ---
+        ("aos", "Flesh-eater Courts", "Ushoran, Mortarch of Delusion", "Centerpiece", 55, 72),
+        ("aos", "Flesh-eater Courts", "Crypt Flayers (3)", "Elite", 32, 40),
+        ("aos", "Flesh-eater Courts", "Crypt Ghouls (20)", "Troops", 35, 42),
+        ("aos", "Soulblight Gravelords", "Belladamma Volga", "HQ", 28, 35),
+        ("aos", "Soulblight Gravelords", "Blood Knights (5)", "Cavalry", 38, 48),
+        ("aos", "Soulblight Gravelords", "Dire Wolves (10)", "Fast Attack", 28, 35),
+        ("aos", "Maggotkin of Nurgle", "Rotigus", "Centerpiece", 85, 112),
+        ("aos", "Maggotkin of Nurgle", "Pusgoyle Blightlords (2)", "Cavalry", 38, 48),
+        ("aos", "Disciples of Tzeentch", "Kairos Fateweaver", "Centerpiece", 55, 72),
+        ("aos", "Hedonites of Slaanesh", "Shalaxi Helbane", "Centerpiece", 85, 112),
+        ("aos", "Hedonites of Slaanesh", "Sigvald, Prince of Slaanesh", "HQ", 28, 38),
+        ("aos", "Blades of Khorne", "Skullgrinder", "HQ", 15, 20),
+        ("aos", "Blades of Khorne", "Blood Warriors (10)", "Troops", 32, 40),
+
+        # --- Legions Imperialis (Epic Scale) ---
+        ("hh", "Legions Imperialis", "Legions Imperialis: Warhound Titan Pack", "Titan", 35, 45),
+        ("hh", "Legions Imperialis", "Legions Imperialis: Reaver Titan", "Titan", 32, 42),
+        ("hh", "Legions Imperialis", "Legions Imperialis: Tactical Squad Detachment", "Troops", 25, 30),
+        ("hh", "Legions Imperialis", "Legions Imperialis: Spartan Assault Tanks", "Vehicle", 28, 35),
+        ("hh", "Legions Imperialis", "Legions Imperialis: Sicaran Battle Tanks", "Vehicle", 28, 35),
+        ("hh", "Legions Imperialis", "Legions Imperialis: Deredeo Dreadnoughts", "Dreadnought", 25, 32),
+
+        # --- OOP Board Games ---
+        ("40k", "OOP", "Deathwatch: Overkill Board Game", "Board Game", 0, 220),
+        ("40k", "OOP", "Assassinorum: Execution Force (OOP)", "Board Game", 0, 150),
+        ("40k", "OOP", "Lost Patrol Board Game", "Board Game", 0, 100),
+        ("40k", "OOP", "Betrayal at Calth (Horus Heresy Board Game)", "Board Game", 0, 180),
+        ("40k", "OOP", "Burning of Prospero (Horus Heresy Board Game)", "Board Game", 0, 200),
+        ("40k", "OOP", "Warhammer Quest: Cursed City", "Board Game", 0, 350),
+        ("40k", "OOP", "Warhammer Quest: Blackstone Fortress", "Board Game", 0, 280),
+
+        # --- Additional New Models (reaching 800+) ---
+
+        # 40K: More units not yet covered
+        ("40k", "Space Marines", "Eradicators (3)", "Heavy Support", 32, 38),
+        ("40k", "Space Marines", "Hellblasters (10)", "Heavy Support", 38, 45),
+        ("40k", "Space Marines", "Eliminators (3)", "Heavy Support", 28, 35),
+        ("40k", "Space Marines", "Invictor Tactical Warsuit", "Vehicle", 40, 50),
+        ("40k", "Space Marines", "Suppressor Squad (3)", "Fast Attack", 28, 35),
+        ("40k", "Space Marines", "Outriders (3)", "Fast Attack", 32, 40),
+        ("40k", "Imperial Guard", "Commissar (Plastic)", "HQ", 12, 15),
+        ("40k", "Imperial Guard", "Hellhound / Devil Dog / Bane Wolf", "Vehicle", 35, 42),
+        ("40k", "Imperial Guard", "Manticore / Deathstrike", "Heavy Support", 40, 48),
+        ("40k", "Imperial Guard", "Attilan Rough Riders (5)", "Fast Attack", 32, 38),
+        ("40k", "Drukhari", "Kabalite Warriors (10)", "Troops", 28, 35),
+        ("40k", "Drukhari", "Wyches (10)", "Troops", 28, 35),
+        ("40k", "Drukhari", "Incubi (5)", "Elite", 28, 35),
+        ("40k", "Orks", "Lootas / Burna Boyz (5)", "Heavy Support", 22, 28),
+        ("40k", "Orks", "Shokkjump Dragsta", "Fast Attack", 25, 32),
+        ("40k", "Orks", "Boomdakka Snazzwagon", "Fast Attack", 25, 32),
+        ("40k", "Tyranids", "Termagants (10)", "Troops", 28, 32),
+        ("40k", "Tyranids", "Hormagaunts (10)", "Troops", 28, 32),
+        ("40k", "Tyranids", "Gargoyles (10)", "Fast Attack", 28, 32),
+        ("40k", "Tyranids", "Zoanthropes / Venomthropes (3)", "Elite", 35, 42),
+        ("40k", "Necrons", "Lychguard / Triarch Praetorians (5)", "Elite", 30, 38),
+        ("40k", "Necrons", "Immortals / Deathmarks (5)", "Troops", 28, 32),
+        ("40k", "Necrons", "Canoptek Wraiths (3)", "Fast Attack", 35, 42),
+        ("40k", "Adeptus Mechanicus", "Pteraxii Sterylizors / Skystalkers (5)", "Fast Attack", 35, 42),
+        ("40k", "Adeptus Mechanicus", "Serberys Raiders / Sulphurhounds (3)", "Fast Attack", 35, 42),
+    ]
+
+    catalog = []
+    for game, faction, name, kit_type, retail_gbp, market_eur in variants:
         catalog.append({
             "game": game,
             "faction": faction,

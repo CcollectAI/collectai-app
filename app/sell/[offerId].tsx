@@ -5,7 +5,7 @@
  * counter-offer modal, shipping/completion flows, and reputation display.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   View,
@@ -18,6 +18,7 @@ import {
   RefreshControl,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { Image } from 'expo-image';
@@ -38,6 +39,8 @@ import { track } from '@/analytics/track';
 import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { timeAgo } from '@/lib/timeAgo';
+import { STATUS_LABELS } from '@/constants/dealStatus';
+import { radius, text, fontWeight } from '@/theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Status config
@@ -45,29 +48,35 @@ import { timeAgo } from '@/lib/timeAgo';
 
 // Status labels + icons — badge colors come from useAppTheme().status tokens
 const STATUS_META: Record<OfferStatus, { label: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  proposed: { label: 'Pending', icon: 'hourglass-outline' },
-  countered: { label: 'Countered', icon: 'swap-horizontal-outline' },
-  accepted: { label: 'Accepted', icon: 'checkmark-circle-outline' },
-  declined: { label: 'Declined', icon: 'close-circle-outline' },
-  expired: { label: 'Expired', icon: 'time-outline' },
-  completed: { label: 'Completed', icon: 'checkmark-done-outline' },
-  cancelled: { label: 'Cancelled', icon: 'ban-outline' },
+  proposed: { label: STATUS_LABELS.proposed, icon: 'hourglass-outline' },
+  countered: { label: STATUS_LABELS.countered, icon: 'swap-horizontal-outline' },
+  accepted: { label: STATUS_LABELS.accepted, icon: 'checkmark-circle-outline' },
+  declined: { label: STATUS_LABELS.declined, icon: 'close-circle-outline' },
+  expired: { label: STATUS_LABELS.expired, icon: 'time-outline' },
+  completed: { label: STATUS_LABELS.completed, icon: 'checkmark-done-outline' },
+  cancelled: { label: STATUS_LABELS.cancelled, icon: 'ban-outline' },
 };
 
 // ---------------------------------------------------------------------------
 // Event type display config
 // ---------------------------------------------------------------------------
 
-const EVENT_DISPLAY: Record<string, { icon: keyof typeof Ionicons.glyphMap; label: string; color: string }> = {
-  proposed: { icon: 'pricetag-outline', label: 'Offer proposed', color: '#2563EB' },
-  countered: { icon: 'swap-horizontal-outline', label: 'Counter-offer', color: '#7C3AED' },
-  accepted: { icon: 'checkmark-circle-outline', label: 'Offer accepted', color: '#059669' },
-  declined: { icon: 'close-circle-outline', label: 'Offer declined', color: '#DC2626' },
-  cancelled: { icon: 'ban-outline', label: 'Offer cancelled', color: '#6B7280' },
-  shipped: { icon: 'airplane-outline', label: 'Marked as shipped', color: '#2563EB' },
-  completed: { icon: 'checkmark-done-outline', label: 'Deal completed', color: '#059669' },
-  expired: { icon: 'time-outline', label: 'Offer expired', color: '#6B7280' },
+const EVENT_DISPLAY_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; label: string; colorKey: 'accent' | 'info' | 'success' | 'danger' | 'muted' | 'warning' }> = {
+  proposed: { icon: 'pricetag-outline', label: 'Offer proposed', colorKey: 'accent' },
+  countered: { icon: 'swap-horizontal-outline', label: 'Counter-offer', colorKey: 'info' },
+  accepted: { icon: 'checkmark-circle-outline', label: 'Offer accepted', colorKey: 'success' },
+  declined: { icon: 'close-circle-outline', label: 'Offer declined', colorKey: 'danger' },
+  cancelled: { icon: 'ban-outline', label: 'Offer cancelled', colorKey: 'muted' },
+  shipped: { icon: 'airplane-outline', label: 'Marked as shipped', colorKey: 'accent' },
+  completed: { icon: 'checkmark-done-outline', label: 'Deal completed', colorKey: 'success' },
+  expired: { icon: 'time-outline', label: 'Offer expired', colorKey: 'muted' },
 };
+
+function getEventDisplay(eventType: string, colors: ReturnType<typeof useAppTheme>['colors']) {
+  const meta = EVENT_DISPLAY_META[eventType];
+  if (!meta) return { icon: 'ellipsis-horizontal-outline' as keyof typeof Ionicons.glyphMap, label: eventType, color: colors.muted };
+  return { icon: meta.icon, label: meta.label, color: colors[meta.colorKey] };
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -90,7 +99,8 @@ function relativeTime(iso: string | null | undefined): string {
 // Star display
 // ---------------------------------------------------------------------------
 
-function StarRating({ stars, size = 14 }: { stars: number; size?: number }) {
+const StarRating = React.memo(function StarRating({ stars, size = 14 }: { stars: number; size?: number }) {
+  const { colors } = useAppTheme();
   const fullStars = Math.floor(stars);
   const hasHalf = stars - fullStars >= 0.25;
   return (
@@ -100,18 +110,18 @@ function StarRating({ stars, size = 14 }: { stars: number; size?: number }) {
           key={i}
           name={i < fullStars ? 'star' : (i === fullStars && hasHalf ? 'star-half' : 'star-outline')}
           size={size}
-          color="#F59E0B"
+          color={colors.warning}
         />
       ))}
     </View>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // ReputationBadge
 // ---------------------------------------------------------------------------
 
-function ReputationBadge({
+const ReputationBadge = React.memo(function ReputationBadge({
   label,
   reputation,
   colors,
@@ -141,7 +151,7 @@ function ReputationBadge({
       </Text>
     </View>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Main screen
@@ -207,6 +217,7 @@ function OfferDetailScreen() {
         })
         .catch((err) => { logger.warn('[OfferDetail] risk flags fetch failed:', err); });
     } catch (err) {
+      logger.warn('[OfferDetail] action failed:', err);
       showToast({ message: 'Failed to load offer details', type: 'error' });
     } finally {
       setLoading(false);
@@ -226,35 +237,62 @@ function OfferDetailScreen() {
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
-  const handleAccept = async () => {
+  const handleAccept = () => {
     if (!offerId || actionLoading) return;
-    setActionLoading(true);
-    try {
-      await dataProvider.respondToOffer(offerId, true);
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Offer accepted!', type: 'success' });
-      track({ name: 'offer_created', properties: { offer_id: offerId as string } });
-      await loadData();
-    } catch (err) {
-      showToast({ message: 'Failed to accept offer', type: 'error' });
-    } finally {
-      setActionLoading(false);
-    }
+    Alert.alert(
+      'Accept Offer',
+      `Accept this offer for ${offer ? formatPrice(offer.currentPrice, (offer.currency || settings.currency) as 'EUR') : 'the listed price'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Accept',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await dataProvider.respondToOffer(offerId, true);
+              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+              showToast({ message: 'Offer accepted!', type: 'success' });
+              track({ name: 'offer_created', properties: { offer_id: offerId as string } });
+              await loadData();
+            } catch (err) {
+              logger.warn('[OfferDetail] action failed:', err);
+              showToast({ message: 'Failed to accept offer', type: 'error' });
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
-  const handleDecline = async () => {
+  const handleDecline = () => {
     if (!offerId || actionLoading) return;
-    setActionLoading(true);
-    try {
-      await dataProvider.respondToOffer(offerId, false);
-      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Offer declined', type: 'info' });
-      await loadData();
-    } catch (err) {
-      showToast({ message: 'Failed to decline offer', type: 'error' });
-    } finally {
-      setActionLoading(false);
-    }
+    Alert.alert(
+      'Decline Offer',
+      'Are you sure you want to decline this offer? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Decline',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await dataProvider.respondToOffer(offerId, false);
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              showToast({ message: 'Offer declined', type: 'info' });
+              await loadData();
+            } catch (err) {
+              logger.warn('[OfferDetail] action failed:', err);
+              showToast({ message: 'Failed to decline offer', type: 'error' });
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleCancel = async () => {
@@ -266,6 +304,7 @@ function OfferDetailScreen() {
       showToast({ message: 'Offer cancelled', type: 'info' });
       await loadData();
     } catch (err) {
+      logger.warn('[OfferDetail] action failed:', err);
       showToast({ message: 'Failed to cancel offer', type: 'error' });
     } finally {
       setActionLoading(false);
@@ -289,27 +328,41 @@ function OfferDetailScreen() {
       setCounterMessage('');
       await loadData();
     } catch (err) {
+      logger.warn('[OfferDetail] action failed:', err);
       showToast({ message: 'Failed to send counter-offer', type: 'error' });
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleShip = async () => {
+  const handleShip = () => {
     if (!offerId || actionLoading) return;
-    setActionLoading(true);
-    try {
-      await dataProvider.markShipped(offerId, trackingInfo.trim() || undefined);
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Marked as shipped', type: 'success' });
-      setShipVisible(false);
-      setTrackingInfo('');
-      await loadData();
-    } catch (err) {
-      showToast({ message: 'Failed to mark as shipped', type: 'error' });
-    } finally {
-      setActionLoading(false);
-    }
+    Alert.alert(
+      'Confirm Shipment',
+      'Mark this item as shipped? The buyer will be notified.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await dataProvider.markShipped(offerId, trackingInfo.trim() || undefined);
+              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+              showToast({ message: 'Marked as shipped', type: 'success' });
+              setShipVisible(false);
+              setTrackingInfo('');
+              await loadData();
+            } catch (err) {
+              logger.warn('[OfferDetail] action failed:', err);
+              showToast({ message: 'Failed to mark as shipped', type: 'error' });
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleComplete = async () => {
@@ -325,6 +378,7 @@ function OfferDetailScreen() {
       setRatingComment('');
       await loadData();
     } catch (err) {
+      logger.warn('[OfferDetail] action failed:', err);
       showToast({ message: 'Failed to complete deal', type: 'error' });
     } finally {
       setActionLoading(false);
@@ -472,11 +526,7 @@ function OfferDetailScreen() {
             <Text style={[styles.noEvents, { color: colors.muted }]}>No events yet</Text>
           ) : (
             events.map((ev, idx) => {
-              const evDisplay = EVENT_DISPLAY[ev.eventType] || {
-                icon: 'ellipsis-horizontal-outline' as keyof typeof Ionicons.glyphMap,
-                label: ev.eventType,
-                color: colors.muted,
-              };
+              const evDisplay = getEventDisplay(ev.eventType, colors);
               const isLast = idx === events.length - 1;
 
               return (
@@ -764,7 +814,10 @@ function OfferDetailScreen() {
               {[1, 2, 3, 4, 5].map((star) => (
                 <Pressable
                   key={star}
-                  onPress={() => setRatingStars(star)}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                    setRatingStars(star);
+                  }}
                   style={styles.starPickerBtn}
                   accessibilityRole="button"
                   accessibilityLabel={`Rate ${star} star${star !== 1 ? 's' : ''}`}
@@ -772,7 +825,7 @@ function OfferDetailScreen() {
                   <Ionicons
                     name={star <= ratingStars ? 'star' : 'star-outline'}
                     size={36}
-                    color="#F59E0B"
+                    color={colors.warning}
                   />
                 </Pressable>
               ))}
@@ -831,20 +884,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
   scroll: {
     flex: 1,
   },
@@ -860,15 +899,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   errorText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
   },
 
   // Item card
   itemCard: {
     flexDirection: 'row',
     padding: 12,
-    borderRadius: 14,
+    borderRadius: radius.md,
     borderWidth: 1,
     gap: 12,
     marginBottom: 16,
@@ -876,7 +915,7 @@ const styles = StyleSheet.create({
   itemThumb: {
     width: 72,
     height: 72,
-    borderRadius: 12,
+    borderRadius: radius.md,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
@@ -890,8 +929,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   itemTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -899,29 +938,29 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: radius.xs,
   },
   statusBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: text.xs,
+    fontWeight: fontWeight.semibold,
   },
   itemPriceCol: {
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
   itemPriceLabel: {
-    fontSize: 11,
+    fontSize: text.xs,
     marginBottom: 2,
   },
   itemPrice: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: text.xl,
+    fontWeight: fontWeight.bold,
   },
 
   // Reputation
   riskSection: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     marginBottom: 16,
   },
@@ -932,11 +971,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   riskTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   riskText: {
-    fontSize: 12,
+    fontSize: text.sm,
     lineHeight: 18,
     marginBottom: 2,
   },
@@ -948,25 +987,25 @@ const styles = StyleSheet.create({
   repBadge: {
     flex: 1,
     padding: 10,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
   },
   repLabel: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: text.xs,
+    fontWeight: fontWeight.medium,
     marginBottom: 4,
   },
   repScore: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
     marginLeft: 6,
   },
   repNoRating: {
-    fontSize: 12,
+    fontSize: text.sm,
     fontStyle: 'italic',
   },
   repDeals: {
-    fontSize: 11,
+    fontSize: text.xs,
     marginTop: 4,
   },
 
@@ -975,12 +1014,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: text.lg,
+    fontWeight: fontWeight.bold,
     marginBottom: 14,
   },
   noEvents: {
-    fontSize: 13,
+    fontSize: text.md,
     fontStyle: 'italic',
   },
   timelineItem: {
@@ -1010,22 +1049,22 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   timelineLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   timelinePrice: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: text.lg,
+    fontWeight: fontWeight.bold,
     marginTop: 2,
   },
   timelineMessage: {
-    fontSize: 13,
+    fontSize: text.md,
     fontStyle: 'italic',
     marginTop: 4,
     lineHeight: 18,
   },
   timelineTime: {
-    fontSize: 11,
+    fontSize: text.xs,
     marginTop: 4,
   },
 
@@ -1035,12 +1074,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     marginBottom: 16,
   },
   expiryText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: text.md,
+    fontWeight: fontWeight.medium,
   },
 
   // Action bar
@@ -1060,12 +1099,12 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: radius.sm,
   },
   actionBtnText: {
     color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   actionBtnOutline: {
     flexDirection: 'row',
@@ -1073,12 +1112,12 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
   },
   actionBtnOutlineText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
 
   // Modals
@@ -1088,8 +1127,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     padding: 20,
     paddingBottom: 40,
   },
@@ -1100,28 +1139,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: text.xl,
+    fontWeight: fontWeight.bold,
   },
   modalLabel: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: text.md,
+    fontWeight: fontWeight.medium,
     marginBottom: 6,
     marginTop: 8,
   },
   modalInput: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: text.lg,
   },
   modalTextarea: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 14,
+    fontSize: text.md,
     minHeight: 80,
     textAlignVertical: 'top',
   },
@@ -1131,13 +1170,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: radius.md,
     marginTop: 20,
   },
   modalConfirmBtnText: {
     color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
   },
 
   // Star picker

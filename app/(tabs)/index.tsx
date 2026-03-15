@@ -52,6 +52,7 @@ import { useStoreReview } from "@/hooks/useStoreReview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AddMenuModal } from "@/components/home/AddMenuModal";
 import { DemandHeatSection } from "@/components/home/DemandHeatSection";
+import { radius, spacing, text, fontWeight, gap, shadow } from '@/theme/tokens';
 
 // Feature flag check: real mode when EXPO_PUBLIC_SUPABASE_MODE=real
 const SUPABASE_MODE = process.env.EXPO_PUBLIC_SUPABASE_MODE ?? "mock";
@@ -64,17 +65,6 @@ try {
   analyticsApi = require("@/store/portfolioAnalyticsStore");
 } catch {
   analyticsApi = null;
-}
-
-// Optional: collectors client for real backend
-let collectorsClient: Record<string, unknown> | null = null;
-if (USE_REAL_BACKEND) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    collectorsClient = require("@/services/collectorsClient");
-  } catch {
-    collectorsClient = null;
-  }
 }
 
 type RangeKey = "1D" | "7D" | "30D" | "90D" | "1Y" | "ALL";
@@ -190,9 +180,11 @@ function PortfolioScreen() {
   // Notification unread badge
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   useEffect(() => {
+    let cancelled = false;
     getNotificationHistory({ limit: 1, offset: 0 })
-      .then((data) => setUnreadNotifCount(data.unread_count))
-      .catch(() => {});
+      .then((data) => { if (!cancelled) setUnreadNotifCount(data.unread_count); })
+      .catch((err) => logger.warn('[Home] notification count fetch error:', err));
+    return () => { cancelled = true; };
   }, []);
 
   // Data insights & alerts (feature flagged)
@@ -319,16 +311,8 @@ function PortfolioScreen() {
         setCategoryBreakdown(cats);
       })
       .catch((err: unknown) => {
-        logger.warn('[Portfolio] category breakdown fetch failed, using mock data:', err);
-        // Mock data for development/testing
-        setCategoryBreakdown([
-          { category: 'pokemon', item_count: 47, total_value: 3250, percentage: 35 },
-          { category: 'lego', item_count: 12, total_value: 1890, percentage: 20 },
-          { category: 'manga', item_count: 86, total_value: 1420, percentage: 15 },
-          { category: 'anime_figures', item_count: 8, total_value: 1200, percentage: 13 },
-          { category: 'vinyl_records', item_count: 23, total_value: 980, percentage: 11 },
-          { category: 'kpop_merch', item_count: 15, total_value: 560, percentage: 6 },
-        ]);
+        logger.warn('[Portfolio] category breakdown fetch failed:', err);
+        setCategoryBreakdown([]);
       })
       .finally(() => setBreakdownLoading(false));
   }, []);
@@ -347,7 +331,7 @@ function PortfolioScreen() {
           } catch {}
         }
       })
-      .catch(() => {});
+      .catch((err) => logger.warn('[Home] followed categories local fetch error:', err));
 
     // Also try backend (more authoritative)
     collectorsApi.getFollowedCategories()
@@ -356,7 +340,7 @@ function PortfolioScreen() {
           setFollowedCategories(data.followed_categories);
         }
       })
-      .catch(() => {});
+      .catch((err) => logger.warn('[Home] followed categories backend fetch error:', err));
   }, []);
 
   const handleRefresh = useCallback(async () => {
@@ -418,7 +402,7 @@ function PortfolioScreen() {
           <View style={styles.headerIcons}>
             <AnimatedPressable
               onPress={() => router.push('/notifications')}
-              style={{ padding: 4, position: 'relative' }}
+              style={styles.iconBtnRelative}
               accessibilityRole="button"
               accessibilityLabel={`Notifications${unreadNotifCount > 0 ? `, ${unreadNotifCount} unread` : ''}`}
             >
@@ -435,7 +419,7 @@ function PortfolioScreen() {
             <ThemeToggleButton size={22} />
             <AnimatedPressable
               onPress={() => router.push('/settings')}
-              style={{ padding: 4 }}
+              style={styles.iconBtn}
               accessibilityRole="button"
               accessibilityLabel="Open settings"
             >
@@ -463,7 +447,7 @@ function PortfolioScreen() {
               accessibilityRole="button"
               accessibilityLabel="Open QuickScan AI to scan your first item"
             >
-              <Ionicons name="camera" size={20} color={colors.accentText} style={{ marginRight: 8 }} />
+              <Ionicons name="camera" size={20} color={colors.accentText} style={styles.iconMarginRight} />
               <Text style={[styles.emptyCtaText, { color: colors.accentText }]}>QuickScan AI</Text>
             </AnimatedPressable>
             <AnimatedPressable
@@ -732,11 +716,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: text['2xl'],
+    fontWeight: fontWeight.bold,
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: text.sm,
     marginTop: 4,
   },
   headerIcons: {
@@ -748,7 +732,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     right: 0,
-    borderRadius: 8,
+    borderRadius: radius.xs,
     minWidth: 16,
     height: 16,
     alignItems: "center",
@@ -756,22 +740,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   notifBadgeText: {
-    color: "#fff",
     fontSize: 9,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
   },
   // Chart card
   chartCard: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 16,
     marginBottom: 16,
     minHeight: 220,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadow.card,
   },
   loadingContainer: {
     flex: 1,
@@ -780,7 +759,7 @@ const styles = StyleSheet.create({
     minHeight: 190,
   },
   loadingText: {
-    fontSize: 12,
+    fontSize: text.sm,
     marginTop: 8,
   },
 
@@ -800,13 +779,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emptyHeadline: {
-    fontSize: 24,
-    fontWeight: "800",
+    fontSize: text['2xl'],
+    fontWeight: fontWeight.extrabold,
     marginBottom: 8,
     textAlign: "center",
   },
   emptySubtitle: {
-    fontSize: 15,
+    fontSize: text.lg,
     lineHeight: 22,
     textAlign: "center",
     marginBottom: 28,
@@ -818,22 +797,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     width: "100%",
     maxWidth: 280,
   },
   emptyCtaText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: text.lg,
+    fontWeight: fontWeight.bold,
   },
   emptySecondary: {
     marginTop: 16,
     paddingVertical: 8,
   },
   emptySecondaryText: {
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: text.lg,
+    fontWeight: fontWeight.medium,
     textDecorationLine: "underline",
   },
 
@@ -844,17 +822,17 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: radius.xs,
     marginBottom: 12,
   },
   errorText: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: text.sm,
+    fontWeight: fontWeight.medium,
   },
 
   // Mode indicator (dev)
   modeIndicator: {
-    fontSize: 10,
+    fontSize: text.xs,
     textAlign: "center",
     marginBottom: 8,
   },
@@ -862,7 +840,7 @@ const styles = StyleSheet.create({
   // Analytics Banner
   analyticsBanner: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 16,
     marginBottom: 20,
     flexDirection: "row",
@@ -877,7 +855,7 @@ const styles = StyleSheet.create({
   analyticsIconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: radius.xs,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -886,23 +864,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   analyticsBannerTitle: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     marginBottom: 2,
   },
   analyticsBannerSubtitle: {
-    fontSize: 12,
+    fontSize: text.sm,
   },
   analyticsBannerBtn: {
     paddingVertical: 8,
     paddingHorizontal: 14,
-    borderRadius: 8,
+    borderRadius: radius.xs,
     marginLeft: 12,
   },
   analyticsBannerBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
 
   // Section header
@@ -913,8 +890,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: text.xl,
+    fontWeight: fontWeight.extrabold,
   },
 
   // Global Collection Stats
@@ -931,11 +908,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   globalStatValue: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: text.xl,
+    fontWeight: fontWeight.extrabold,
   },
   globalStatLabel: {
-    fontSize: 11,
+    fontSize: text.sm,
     marginTop: 2,
   },
   globalStatDivider: {
@@ -949,7 +926,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 14,
     marginBottom: 20,
   },
@@ -962,7 +939,7 @@ const styles = StyleSheet.create({
   insightsCtaIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -971,22 +948,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   insightsCtaTitle: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: text.md,
+    fontWeight: fontWeight.bold,
   },
   insightsCtaSub: {
-    fontSize: 12,
+    fontSize: text.sm,
     marginTop: 2,
   },
   insightsCtaBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: radius.xs,
   },
   insightsCtaBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
 
   // Add Banner (inline, replaces FAB)
@@ -995,7 +971,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     marginTop: 16,
     marginBottom: 4,
@@ -1003,7 +979,7 @@ const styles = StyleSheet.create({
   addBannerIconWrap: {
     width: 34,
     height: 34,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1012,19 +988,30 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   addBannerTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: text.lg,
+    fontWeight: fontWeight.bold,
   },
   addBannerSubtitle: {
-    fontSize: 12,
+    fontSize: text.sm,
     marginTop: 1,
   },
 
+  // Extracted inline styles
+  iconBtn: {
+    padding: 4,
+  },
+  iconBtnRelative: {
+    padding: 4,
+    position: "relative",
+  },
+  iconMarginRight: {
+    marginRight: 8,
+  },
 });
 
 export default function PortfolioScreenWithBoundary() {
   return (
-    <ScreenErrorBoundary screenName="Portfolio">
+    <ScreenErrorBoundary screenName="Portfolio" fallbackMessage="Your portfolio data could not be displayed. Check your connection and try again.">
       <PortfolioScreen />
     </ScreenErrorBoundary>
   );

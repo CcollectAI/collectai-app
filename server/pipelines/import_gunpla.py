@@ -45,6 +45,34 @@ from pipelines.import_common import (
 CATEGORY = "gunpla"
 
 
+def _variant_expansion() -> list[tuple]:
+    """P-Bandai exclusives, clear color variants, titanium finish, and expo exclusives."""
+    return [
+        # ── P-Bandai Exclusives — 2026 Late Wave ──────────────────────────
+        ("MG", "1/100", "Gundam Epyon EW (P-Bandai)", "Gundam Wing", "P-Bandai", "high", 125),
+        ("MG", "1/100", "Gerbera Tetra (P-Bandai)", "Gundam 0083", "P-Bandai", "high", 110),
+        ("RG", "1/144", "Zeta Gundam (Biosensor Image Color) (P-Bandai)", "Zeta Gundam", "P-Bandai", "high", 68),
+        ("HG", "1/144", "Gundam Lfrith Ur (P-Bandai)", "Witch from Mercury", "P-Bandai", "mid", 42),
+        ("HG", "1/144", "Gundam Calibarn (Clear Color) (P-Bandai)", "Witch from Mercury", "P-Bandai", "mid", 40),
+
+        # ── Clear Color Variants ──────────────────────────────────────────
+        ("RG", "1/144", "Strike Freedom Gundam (Clear Color)", "Gundam SEED Destiny", "Clear Color", "high", 70),
+        ("RG", "1/144", "Unicorn Gundam (Clear Color)", "Gundam Unicorn", "Clear Color", "high", 65),
+        ("MG", "1/100", "Freedom Gundam Ver.2.0 (Clear Color)", "Gundam SEED", "Clear Color", "high", 85),
+        ("HG", "1/144", "Aerial Rebuild (Clear Color)", "Witch from Mercury", "Clear Color", "mid", 38),
+
+        # ── Titanium Finish Variants ──────────────────────────────────────
+        ("RG", "1/144", "Wing Gundam Zero EW (Titanium Finish)", "Gundam Wing", "Titanium Finish", "high", 80),
+        ("MG", "1/100", "Unicorn Gundam (Titanium Finish)", "Gundam Unicorn", "Titanium Finish", "grail", 200),
+        ("RG", "1/144", "Sazabi (Titanium Finish)", "Char's Counterattack", "Titanium Finish", "high", 90),
+
+        # ── Expo / Event Exclusives ───────────────────────────────────────
+        ("MG", "1/100", "Strike Freedom Gundam (GBWC Metallic)", "Gundam SEED Destiny", "Expo", "grail", 250),
+        ("HG", "1/144", "RX-78-2 Gundam (Tokyo Olympic Color)", "Mobile Suit Gundam", "Expo", "high", 60),
+        ("RG", "1/144", "Gundam Exia (Trans-Am Infinity)", "Gundam 00", "Expo", "high", 75),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated Gunpla catalog — 700+ kits across all major grades, series, and formats."""
 
@@ -979,6 +1007,8 @@ def get_curated_catalog() -> list[dict]:
         ("RG", "1/144", "Wing Gundam (TV Ver.) (P-Bandai)", "Gundam Wing", "P-Bandai", "mid", 55),
     ]
 
+    kits = kits + _variant_expansion()
+
     catalog = []
     for grade, scale, name, series, variant, tier, price in kits:
         catalog.append({
@@ -990,7 +1020,15 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+    # Deduplicate by ('grade', 'name', 'variant') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["grade"], item["name"], item["variant"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

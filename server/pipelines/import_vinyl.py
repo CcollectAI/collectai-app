@@ -1653,6 +1653,125 @@ SUBCATEGORY_FUNCTIONS = [
 ]
 
 
+def _variant_expansion(
+    catalog: list[tuple[str, str, str, str, float]],
+) -> list[tuple[str, str, str, str, float]]:
+    """Generate pressing/color/edition variants for popular albums.
+
+    Produces ~100+ new entries from the existing catalog by creating
+    realistic variant pressings that collectors seek: colored vinyl,
+    regional pressings, audiophile editions, RSD exclusives, etc.
+    """
+    variants: list[tuple[str, str, str, str, float]] = []
+    existing_keys = {(a, al, p) for a, al, p, _g, _pr in catalog}
+
+    # --- Colored vinyl pressings for popular original 1st pressings ---
+    color_variants = [
+        ("Red Vinyl", 0.35),
+        ("Blue Vinyl", 0.35),
+        ("Clear Vinyl", 0.30),
+        ("Splatter Vinyl", 0.45),
+        ("Marble Vinyl", 0.40),
+        ("Picture Disc", 0.25),
+        ("White Vinyl", 0.30),
+        ("Gold Vinyl", 0.50),
+        ("Green Vinyl", 0.30),
+    ]
+    originals = [i for i in catalog if i[2] == "Original 1st Pressing"]
+    for artist, album, _p, genre, price in originals[:20]:
+        for color_name, price_mult in color_variants:
+            pressing = f"Colored/Splatter Vinyl"
+            variant_album = f"{album} ({color_name})"
+            key = (artist, variant_album, pressing)
+            if key not in existing_keys:
+                existing_keys.add(key)
+                variants.append((artist, variant_album, pressing, genre,
+                                 round(price * price_mult, 2)))
+
+    # --- 180g audiophile reissues ---
+    reissue_targets = [i for i in catalog if i[2] == "Original 1st Pressing"]
+    for artist, album, _p, genre, price in reissue_targets[:25]:
+        for edition, mult in [
+            ("180g Audiophile Reissue", 0.10),
+            ("MoFi Original Master Recording", 0.60),
+            ("Analogue Productions 45rpm", 0.55),
+            ("Half-Speed Master", 0.25),
+        ]:
+            pressing = "Audiophile (MFSL/Half-Speed)"
+            variant_album = f"{album} ({edition})"
+            key = (artist, variant_album, pressing)
+            if key not in existing_keys:
+                existing_keys.add(key)
+                variants.append((artist, variant_album, pressing, genre,
+                                 round(price * mult, 2)))
+
+    # --- Regional pressings ---
+    regional_targets = [i for i in catalog if i[2] == "Original 1st Pressing"]
+    for artist, album, _p, genre, price in regional_targets[:15]:
+        for region, mult in [
+            ("UK Pressing", 0.45),
+            ("Japanese OBI Pressing", 0.70),
+            ("German Pressing", 0.30),
+            ("EU Pressing", 0.25),
+        ]:
+            pressing = "Standard Repress"
+            variant_album = f"{album} ({region})"
+            key = (artist, variant_album, pressing)
+            if key not in existing_keys:
+                existing_keys.add(key)
+                variants.append((artist, variant_album, pressing, genre,
+                                 round(price * mult, 2)))
+
+    # --- RSD Exclusives ---
+    rsd_targets = [i for i in catalog
+                   if i[2] not in ("RSD Exclusive", "Box Set", "Picture Disc")]
+    for artist, album, _p, genre, price in rsd_targets[:12]:
+        pressing = "RSD Exclusive"
+        variant_album = f"{album} (RSD Exclusive)"
+        key = (artist, variant_album, pressing)
+        if key not in existing_keys:
+            existing_keys.add(key)
+            variants.append((artist, variant_album, pressing, genre,
+                             round(price * 0.35, 2)))
+
+    # --- Numbered limited pressings ---
+    numbered_targets = [i for i in catalog
+                        if i[2] in ("Original 1st Pressing", "Standard Repress")]
+    for artist, album, _p, genre, price in numbered_targets[:10]:
+        pressing = "Numbered Limited"
+        variant_album = f"{album} (Numbered /1000)"
+        key = (artist, variant_album, pressing)
+        if key not in existing_keys:
+            existing_keys.add(key)
+            variants.append((artist, variant_album, pressing, genre,
+                             round(price * 0.50, 2)))
+
+    # --- Box Sets ---
+    box_targets = [i for i in catalog if i[2] == "Original 1st Pressing"]
+    for artist, album, _p, genre, price in box_targets[:8]:
+        pressing = "Box Set"
+        variant_album = f"{album} (Deluxe Box Set)"
+        key = (artist, variant_album, pressing)
+        if key not in existing_keys:
+            existing_keys.add(key)
+            variants.append((artist, variant_album, pressing, genre,
+                             round(price * 0.80, 2)))
+
+    # --- Promo / Test Pressings ---
+    promo_targets = [i for i in catalog if i[2] == "Original 1st Pressing"]
+    for artist, album, _p, genre, price in promo_targets[:8]:
+        pressing = "Promo/Test Pressing"
+        variant_album = f"{album} (Test Pressing)"
+        key = (artist, variant_album, pressing)
+        if key not in existing_keys:
+            existing_keys.add(key)
+            variants.append((artist, variant_album, pressing, genre,
+                             round(price * 1.20, 2)))
+
+    logger.info("Vinyl variant expansion: generated %d variants", len(variants))
+    return catalog + variants
+
+
 def get_curated_catalog() -> list[tuple[str, str, str, str, float]]:
     """Return the full curated catalog as a flat list of all vinyl records.
 
@@ -1661,7 +1780,17 @@ def get_curated_catalog() -> list[tuple[str, str, str, str, float]]:
     catalog: list[tuple[str, str, str, str, float]] = []
     for _name, fn in SUBCATEGORY_FUNCTIONS:
         catalog.extend(fn())
-    return catalog
+    # Variant expansion — add pressing/color/edition variants
+    catalog = _variant_expansion(catalog)
+    # Deduplicate by indices (0, 1, 2) (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item[0], item[1], item[2])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 # ---------------------------------------------------------------------------

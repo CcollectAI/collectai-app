@@ -1024,6 +1024,105 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
+    catalog.extend(_variant_expansion())
+    # Deduplicate by ('franchise', 'name', 'item_type') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["franchise"], item["name"], item["item_type"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
+
+
+def _variant_expansion() -> list[dict]:
+    """Exclusive/size/finish variants for existing Loungefly designs. ~60 items."""
+    variants = [
+        # Mini Backpack → Regular Backpack variants
+        ("Disney", "Cinderella Castle Sequin Regular Backpack", "Backpack", "Disney Parks", "high", 110),
+        ("Disney", "Mickey Mouse Holographic Regular Backpack", "Backpack", "Disney Parks", "high", 100),
+        ("Disney", "Villains Scene AOP Regular Backpack", "Backpack", "Vaulted", "grail", 220),
+        ("Sanrio", "Hello Kitty Monster Costumes Regular Backpack", "Backpack", "Hot Topic", "mid", 75),
+        ("Pokemon", "Eevee Evolutions Regular Backpack", "Backpack", "BoxLunch", "mid", 85),
+        # Mini Backpack → Crossbody Bag variants
+        ("Disney", "Cinderella Castle Sequin Crossbody Bag", "Crossbody Bag", "Disney Parks", "mid", 65),
+        ("Disney", "Sleeping Beauty Castle Crossbody Bag", "Crossbody Bag", "Disney Parks", "mid", 60),
+        ("Disney", "Haunted Mansion Black Widow Bride Crossbody Bag", "Crossbody Bag", "Vaulted", "high", 180),
+        ("Studio Ghibli", "Spirited Away No-Face Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 58),
+        ("Studio Ghibli", "My Neighbor Totoro Catbus Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 55),
+        ("Disney", "Maleficent Dragon Crossbody Bag", "Crossbody Bag", "Hot Topic", "standard", 45),
+        # Mini Backpack → Wallet variants
+        ("Disney", "Cinderella Castle Sequin Zip-Around Wallet", "Wallet", "Disney Parks", "standard", 40),
+        ("Disney", "Villains Scene AOP Zip-Around Wallet", "Wallet", "Vaulted", "high", 100),
+        ("Disney", "Haunted Mansion Black Widow Bride Wallet", "Wallet", "Vaulted", "high", 120),
+        ("Sanrio", "Hello Kitty Monster Costumes Wallet", "Wallet", "Hot Topic", "standard", 35),
+        ("Pokemon", "Eevee Evolutions Zip-Around Wallet", "Wallet", "BoxLunch", "standard", 38),
+        ("Disney", "Up Adventure Book Zip-Around Wallet", "Wallet", "BoxLunch", "standard", 38),
+        # BoxLunch exclusive → Hot Topic exclusive of same design (renamed to distinguish)
+        ("Disney", "Wall-E & Eve Boot Plant Mini Backpack (HT Edition)", "Mini Backpack", "Hot Topic", "mid", 65),
+        ("Disney", "Up Adventure Book Mini Backpack (HT Edition)", "Mini Backpack", "Hot Topic", "mid", 60),
+        ("Studio Ghibli", "Spirited Away No-Face Mini Backpack (HT Edition)", "Mini Backpack", "Hot Topic", "mid", 68),
+        # Disney Parks → BoxLunch exclusive crossovers
+        ("Disney", "Sleeping Beauty Castle Mini Backpack (BL Edition)", "Mini Backpack", "BoxLunch", "mid", 65),
+        ("Disney", "Orange Bird Mini Backpack (BoxLunch Rerelease)", "Mini Backpack", "BoxLunch Rerelease", "high", 150),
+        # Glow-in-the-dark variants
+        ("Disney", "Nightmare Before Christmas Blacklight GITD Mini Backpack", "Mini Backpack", "Hot Topic GITD", "high", 95),
+        ("Disney", "Haunted Mansion Hitchhiking Ghosts GITD Mini Backpack", "Mini Backpack", "Disney Parks GITD", "high", 130),
+        ("Disney", "Villains Scene AOP GITD Mini Backpack", "Mini Backpack", "Vaulted GITD", "grail", 250),
+        ("Disney", "Ursula Iridescent GITD Mini Backpack", "Mini Backpack", "Hot Topic GITD", "mid", 75),
+        ("Marvel", "Venom Glow-in-the-Dark Mini Backpack", "Mini Backpack", "BoxLunch GITD", "mid", 72),
+        ("Star Wars", "Darth Vader Glow-in-the-Dark Mini Backpack", "Mini Backpack", "BoxLunch GITD", "mid", 68),
+        # Sequin → Standard variants (same design, different finish)
+        ("Disney", "Cinderella Castle Standard Mini Backpack", "Mini Backpack", "Disney Parks", "standard", 48),
+        ("Disney", "Fantasia Sorcerer Mickey Standard Mini Backpack", "Mini Backpack", "Standard", "mid", 65),
+        ("Disney", "Snow White Evil Queen Standard Mini Backpack", "Mini Backpack", "Standard", "mid", 60),
+        # Disney Parks → Disneyland Paris / Tokyo Disney exclusives
+        ("Disney", "Cinderella Castle Sequin Mini Backpack (DLP)", "Mini Backpack", "Disneyland Paris", "high", 95),
+        ("Disney", "Mickey Mouse Holographic Mini Backpack (TDL)", "Mini Backpack", "Tokyo Disney", "high", 100),
+        ("Disney", "Sleeping Beauty Castle Mini Backpack (DLP)", "Mini Backpack", "Disneyland Paris", "high", 90),
+        # Funko Shop exclusive variants
+        ("Disney", "Maleficent Dragon Mini Backpack (Funko Shop)", "Mini Backpack", "Funko Shop", "high", 95),
+        ("Sanrio", "Hello Kitty 50th Anniversary Mini Backpack", "Mini Backpack", "Funko Shop", "mid", 72),
+        ("Disney", "Stitch Shoppe Ariel Mini Backpack (Funko Shop)", "Mini Backpack", "Funko Shop", "mid", 68),
+        # SDCC / NYCC convention exclusives
+        ("Disney", "Haunted Mansion Hitchhiking Ghosts SDCC Mini Backpack", "Mini Backpack", "SDCC Exclusive", "grail", 220),
+        ("Marvel", "Spider-Man Across the Spider-Verse SDCC Mini Backpack", "Mini Backpack", "SDCC Exclusive", "high", 120),
+        ("Star Wars", "Ahsoka Tano NYCC Mini Backpack", "Mini Backpack", "NYCC Exclusive", "high", 110),
+        ("Disney", "Figment SDCC Mini Backpack", "Mini Backpack", "SDCC Exclusive", "high", 140),
+        # Holiday / Seasonal variants
+        ("Disney", "Mickey & Minnie Holiday 2024 Mini Backpack", "Mini Backpack", "Holiday LE", "mid", 68),
+        ("Disney", "Nightmare Before Christmas Holiday Mini Backpack", "Mini Backpack", "Holiday LE", "mid", 72),
+        ("Sanrio", "Hello Kitty Valentine's Day Mini Backpack", "Mini Backpack", "Seasonal LE", "mid", 65),
+        ("Disney", "Stitch Halloween Cosplay Mini Backpack", "Mini Backpack", "Hot Topic Seasonal", "mid", 60),
+        ("Disney", "Mickey Ears Spirit Jersey Mini Backpack (Christmas)", "Mini Backpack", "Disney Parks Seasonal", "mid", 75),
+        # Collector Pin sets (bag + pin combos)
+        ("Disney", "Orange Bird Mini Backpack + Pin Set", "Mini Backpack Set", "Disney Parks Bundle", "grail", 300),
+        ("Disney", "Figment Mini Backpack + Pin Set", "Mini Backpack Set", "EPCOT Bundle", "high", 180),
+        ("Disney", "Haunted Mansion Mini Backpack + Pin Set", "Mini Backpack Set", "Disney Parks Bundle", "grail", 280),
+        # Additional retailer-exclusive crossbody variants
+        ("Marvel", "Spider-Man Across the Spider-Verse Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 52),
+        ("Star Wars", "Ahsoka Tano Crossbody Bag", "Crossbody Bag", "BoxLunch", "mid", 50),
+        ("Pokemon", "Pikachu Cosplay Crossbody Bag", "Crossbody Bag", "BoxLunch", "standard", 42),
+        ("Horror", "Chucky Doll Cosplay Crossbody Bag", "Crossbody Bag", "Hot Topic", "standard", 45),
+        ("Sanrio", "Cinnamoroll Cloud Crossbody Bag", "Crossbody Bag", "Hot Topic", "standard", 40),
+        # Additional wallet variants
+        ("Marvel", "Spider-Man Across the Spider-Verse Zip-Around Wallet", "Wallet", "BoxLunch", "standard", 35),
+        ("Star Wars", "Grogu Cosplay Zip-Around Wallet", "Wallet", "BoxLunch", "standard", 36),
+        ("Horror", "Ghostface Cosplay Zip-Around Wallet", "Wallet", "Hot Topic", "standard", 34),
+        ("Sanrio", "Kuromi Halloween Zip-Around Wallet", "Wallet", "Hot Topic Seasonal", "standard", 38),
+        ("Disney", "Encanto Mirabel Zip-Around Wallet", "Wallet", "Standard", "standard", 32),
+    ]
+    catalog = []
+    for franchise, name, item_type, exclusive, tier, price in variants:
+        catalog.append({
+            "franchise": franchise,
+            "name": name,
+            "item_type": item_type,
+            "exclusive": exclusive,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
     return catalog
 
 

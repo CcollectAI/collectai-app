@@ -38,6 +38,43 @@ from pipelines.import_common import (
 CATEGORY = "scale_models"
 
 
+def _variant_expansion() -> list[tuple]:
+    """Scale variants (1/72 vs 1/48 vs 1/32), limited edition boxings, and photo-etch detail sets."""
+    return [
+        # ── Scale Variants — Same Aircraft in Different Scales ────────────
+        ("Tamiya", "Aircraft", "Spitfire Mk.IXc", "1/32", "high", 85),
+        ("Tamiya", "Aircraft", "P-51D Mustang", "1/32", "high", 90),
+        ("Tamiya", "Aircraft", "Bf 109 G-6", "1/32", "high", 82),
+        ("Tamiya", "Aircraft", "Fw 190 D-9", "1/32", "high", 88),
+        ("Tamiya", "Aircraft", "P-51D Mustang", "1/72", "standard", 22),
+        ("Tamiya", "Aircraft", "Bf 109 G-6", "1/72", "standard", 20),
+        ("Hasegawa", "Aircraft", "P-47D Thunderbolt", "1/32", "high", 80),
+        ("Hasegawa", "Aircraft", "P-47D Thunderbolt", "1/72", "standard", 18),
+        ("Eduard", "Aircraft", "Spitfire Mk.I Profipack", "1/72", "mid", 35),
+        ("Eduard", "Aircraft", "Bf 109 E-4 Profipack", "1/72", "mid", 32),
+
+        # ── Limited Edition Boxings ───────────────────────────────────────
+        ("Eduard", "Aircraft", "Spitfire Mk.IXc (Royal Class)", "1/48", "high", 95),
+        ("Eduard", "Aircraft", "Bf 109 G-6 (Dual Combo)", "1/48", "high", 75),
+        ("Eduard", "Aircraft", "Fw 190 A-8 (Royal Class)", "1/48", "grail", 110),
+        ("Tamiya", "Armor", "Tiger I (Late Version) Ace Commander", "1/35", "high", 80),
+        ("Tamiya", "Armor", "Panther Ausf.D (Special Edition)", "1/35", "high", 85),
+        ("Meng Model", "Armor", "Panther Ausf.A (Late) (Special Edition)", "1/35", "high", 90),
+        ("Wingnut Wings", "Aircraft", "Fokker D.VII (Dual Combo)", "1/32", "grail", 140),
+        ("Trumpeter", "Ship", "Bismarck (Deluxe Edition)", "1/350", "grail", 180),
+
+        # ── Photo-Etch Detail Sets ────────────────────────────────────────
+        ("Eduard", "Accessories", "Spitfire Mk.IX PE Detail Set", "1/48", "standard", 22),
+        ("Eduard", "Accessories", "Bf 109 G-6 PE Detail Set", "1/48", "standard", 20),
+        ("Eduard", "Accessories", "P-51D Mustang PE Detail Set", "1/48", "standard", 24),
+        ("Eduard", "Accessories", "B-17G Flying Fortress PE Interior", "1/48", "mid", 38),
+        ("Eduard", "Accessories", "Tiger I PE Detail Set", "1/35", "standard", 28),
+        ("Eduard", "Accessories", "Panther Ausf.G PE Detail Set", "1/35", "standard", 26),
+        ("Voyager Model", "Accessories", "King Tiger PE Detail Set", "1/35", "mid", 42),
+        ("Voyager Model", "Accessories", "M4A3 Sherman PE Detail Set", "1/35", "mid", 40),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated scale model kit catalog — 619 items across 7 subcategories."""
 
@@ -835,9 +872,6 @@ def get_curated_catalog() -> list[dict]:
         ("Tamiya", "Armor", "Panther Ausf.D (Battle of Kursk)", "1/35", "mid", 52),
         ("Tamiya", "Armor", "M1A2 Abrams (Operation Iraqi Freedom)", "1/35", "mid", 68),
         ("Tamiya", "Armor", "T-72M1 (Modern Russian MBT)", "1/35", "mid", 48),
-        ("Tamiya", "Armor", "Churchill Mk.VII", "1/35", "mid", 45),
-        ("Tamiya", "Armor", "Type 90 Tank (JGSDF)", "1/35", "mid", 55),
-        ("Tamiya", "Armor", "Cromwell Mk.IV", "1/35", "mid", 42),
         ("Tamiya", "Armor", "M26 Pershing (T26E3)", "1/35", "mid", 48),
 
         # ── Trumpeter 1/350 Ships ────────────────────────────────────────
@@ -855,22 +889,17 @@ def get_curated_catalog() -> list[dict]:
         ("Airfix", "Aircraft", "Avro Lancaster B.III (Dambusters)", "1/72", "mid", 48),
         ("Airfix", "Aircraft", "de Havilland Mosquito B.XVI", "1/72", "mid", 40),
         ("Airfix", "Aircraft", "Hawker Hurricane Mk.I", "1/72", "standard", 15),
-        ("Airfix", "Aircraft", "Avro Vulcan B.2", "1/72", "high", 95),
         ("Airfix", "Aircraft", "BAe Harrier GR.9", "1/72", "mid", 35),
-        ("Airfix", "Aircraft", "Handley Page Halifax B.III", "1/72", "mid", 55),
         ("Airfix", "Aircraft", "Bristol Blenheim Mk.IV", "1/72", "standard", 28),
 
         # ── Revell 1/72 Aircraft ─────────────────────────────────────────
         ("Revell", "Aircraft", "F-14A Tomcat (Top Gun)", "1/72", "mid", 35),
         ("Revell", "Aircraft", "SR-71A Blackbird", "1/72", "mid", 42),
-        ("Revell", "Aircraft", "B-17G Flying Fortress", "1/72", "mid", 55),
-        ("Revell", "Aircraft", "Eurofighter Typhoon", "1/72", "standard", 25),
         ("Revell", "Aircraft", "F/A-18E Super Hornet", "1/72", "standard", 22),
         ("Revell", "Aircraft", "Heinkel He 111 H-6", "1/72", "mid", 38),
 
         # ── Meng Models ──────────────────────────────────────────────────
         ("Meng Model", "Armor", "Sd.Kfz.171 Panther Ausf.A (Late)", "1/35", "high", 82),
-        ("Meng Model", "Armor", "PLA ZTQ-15 Light Tank", "1/35", "mid", 65),
         ("Meng Model", "Armor", "M2A3 Bradley IFV w/ BUSK III", "1/35", "mid", 70),
         ("Meng Model", "Armor", "Leopard 2A7+ (German MBT)", "1/35", "high", 85),
         ("Meng Model", "SD Cute", "World War Toons Sherman (SD)", "SD", "standard", 18),
@@ -886,7 +915,6 @@ def get_curated_catalog() -> list[dict]:
 
         # ── Rye Field Model 1/35 ─────────────────────────────────────────
         ("RFM (Rye Field Model)", "Armor", "Tiger I Late Production w/ Zimmerit & Full Interior", "1/35", "high", 95),
-        ("RFM (Rye Field Model)", "Armor", "Panzer IV Ausf.J Late w/ Full Interior", "1/35", "high", 88),
         ("RFM (Rye Field Model)", "Armor", "M4A3E8 Sherman w/ Workable Track Links", "1/35", "mid", 55),
         ("RFM (Rye Field Model)", "Armor", "Leopard 2A6 Main Battle Tank w/ Full Interior", "1/35", "high", 90),
         ("RFM (Rye Field Model)", "Armor", "T-34/85 Model 1944 No.174 Factory", "1/35", "mid", 48),
@@ -896,9 +924,7 @@ def get_curated_catalog() -> list[dict]:
         ("Tamiya", "Armor", "M41 Walker Bulldog", "1/35", "mid", 40),
         ("Tamiya", "Armor", "Jagdpanzer IV/70(V) Lang", "1/35", "mid", 48),
         ("Tamiya", "Armor", "Cromwell Mk.IV Cruiser Tank", "1/35", "mid", 42),
-        ("Tamiya", "Armor", "M26 Pershing (T26E3)", "1/35", "mid", 50),
         ("Tamiya", "Armor", "StuG III Ausf.G (Finnish Army)", "1/35", "mid", 45),
-        ("Tamiya", "Armor", "Centurion Mk.III", "1/35", "mid", 52),
         ("Tamiya", "Armor", "Type 10 Tank (JGSDF)", "1/35", "mid", 55),
         ("Tamiya", "Armor", "Sd.Kfz.234/2 Puma", "1/35", "mid", 44),
         ("Tamiya", "Armor", "Nashorn German Heavy SP Gun", "1/35", "mid", 46),
@@ -925,8 +951,6 @@ def get_curated_catalog() -> list[dict]:
         ("Revell", "Car", "Mercedes-Benz 300 SL Gullwing", "1/24", "mid", 40),
 
         # ── Trumpeter Ships ──────────────────────────────────────────────────
-        ("Trumpeter", "Ship", "Bismarck (German Battleship)", "1/350", "high", 110),
-        ("Trumpeter", "Ship", "USS Hornet CV-8", "1/350", "high", 105),
         ("Trumpeter", "Ship", "HMS Hood (Battlecruiser)", "1/350", "high", 115),
         ("Trumpeter", "Ship", "Yamato (Japanese Battleship)", "1/350", "grail", 160),
         ("Trumpeter", "Ship", "USS Fletcher DD-445", "1/350", "mid", 65),
@@ -952,10 +976,6 @@ def get_curated_catalog() -> list[dict]:
 
         # ── Wingnut Wings WWI (Discontinued/Collectible) ─────────────────────
         ("Wingnut Wings", "Aircraft", "Fokker E.III Eindecker", "1/32", "grail", 220),
-        ("Wingnut Wings", "Aircraft", "Sopwith Camel (Clerget)", "1/32", "grail", 250),
-        ("Wingnut Wings", "Aircraft", "Albatros D.Va", "1/32", "grail", 240),
-        ("Wingnut Wings", "Aircraft", "SE.5a (Hisso)", "1/32", "grail", 230),
-        ("Wingnut Wings", "Aircraft", "Fokker Dr.I Triplane", "1/32", "grail", 280),
         ("Wingnut Wings", "Aircraft", "Pfalz D.IIIa", "1/32", "grail", 210),
         ("Wingnut Wings", "Aircraft", "Halberstadt CL.II", "1/32", "grail", 260),
 
@@ -987,7 +1007,6 @@ def get_curated_catalog() -> list[dict]:
 
         # ── Additional Scale Models (+8) ────────────────────────────────────
         ("Wingnut Wings", "Aircraft", "Sopwith Camel F.1", "1/32", "high", 95),
-        ("Wingnut Wings", "Aircraft", "Fokker Dr.I Triplane", "1/32", "high", 90),
         ("Bronco Models", "Armor", "CV-33 Tankette Series II", "1/35", "standard", 28),
         ("Meng Model", "Armor", "Merkava Mk.4M w/Trophy APS", "1/35", "mid", 65),
         ("Meng Model", "Aircraft", "F-35A Lightning II", "1/48", "mid", 58),
@@ -995,6 +1014,8 @@ def get_curated_catalog() -> list[dict]:
         ("Academy", "Aircraft", "F-14A Tomcat (US Navy)", "1/48", "mid", 42),
         ("Academy", "Armor", "M1A2 SEP Abrams TUSK II", "1/35", "mid", 48),
     ]
+
+    kits = kits + _variant_expansion()
 
     catalog = []
     for manufacturer, model_type, name, scale, tier, price in kits:
@@ -1006,7 +1027,15 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+    # Deduplicate by ('manufacturer', 'name', 'scale') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["manufacturer"], item["name"], item["scale"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

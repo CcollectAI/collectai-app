@@ -816,7 +816,16 @@ def get_curated_catalog() -> list[dict]:
         })
 
     catalog.extend(_batch_premium_diecast_2025())
-    return catalog
+    catalog.extend(_variant_expansion())
+    # Deduplicate by ('brand', 'name', 'scale', 'variant') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["brand"], item["name"], item["scale"], item["variant"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _batch_premium_diecast_2025() -> list[dict]:
@@ -1099,6 +1108,103 @@ def _batch_premium_diecast_2025() -> list[dict]:
 
     catalog = []
     for brand, name, scale, variant, tier, price in items:
+        catalog.append({
+            "brand": brand,
+            "name": name,
+            "scale": scale,
+            "variant": variant,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _variant_expansion() -> list[dict]:
+    """Scale/color/chase/convention variants for existing diecast models. ~70 items."""
+    variants = [
+        # Super Treasure Hunt chase variants
+        ("Hot Wheels $TH", "Toyota AE86 Sprinter Trueno", "1:64", "Super Treasure Hunt ZAMAC", "high", 95),
+        ("Hot Wheels $TH", "Porsche 911 GT3 RS", "1:64", "Super Treasure Hunt Chrome", "high", 85),
+        ("Hot Wheels $TH", "Nissan Skyline GT-R (BNR32)", "1:64", "Super Treasure Hunt ZAMAC", "high", 90),
+        ("Hot Wheels $TH", "'92 BMW M3", "1:64", "Super Treasure Hunt Raw", "high", 80),
+        ("Hot Wheels $TH", "McLaren Senna", "1:64", "Super Treasure Hunt ZAMAC", "grail", 130),
+        ("Hot Wheels $TH", "Mazda RX-7 (FD)", "1:64", "Super Treasure Hunt Chrome", "high", 85),
+        # Greenlight Green Machine chase
+        ("Greenlight", "1967 Ford Mustang GT Fastback", "1:64", "Green Machine Chase", "high", 80),
+        ("Greenlight", "1969 Chevrolet Camaro Z/28", "1:64", "Green Machine Chase", "high", 75),
+        ("Greenlight", "1970 Dodge Challenger R/T", "1:64", "Green Machine Chase", "high", 70),
+        ("Greenlight", "1977 Pontiac Firebird Trans Am", "1:64", "Green Machine Chase", "high", 85),
+        ("Greenlight", "1971 Plymouth Hemi 'Cuda", "1:64", "Green Machine Chase", "high", 90),
+        ("Greenlight", "2021 Ford Bronco Wildtrak", "1:64", "Green Machine Chase", "mid", 55),
+        # Raw / Error Card variants
+        ("Hot Wheels", "Custom '67 Pontiac Firebird", "1:64", "Error Card (Wrong Base)", "high", 100),
+        ("Hot Wheels", "Bone Shaker", "1:64", "Error Card (Misprint)", "high", 120),
+        ("Hot Wheels", "'55 Chevy Bel Air Gasser", "1:64", "Raw Unpainted Prototype", "grail", 250),
+        ("Hot Wheels", "Nissan Skyline GT-R (R34)", "1:64", "ZAMAC Edition", "mid", 45),
+        ("Hot Wheels", "Mazda RX-7 (FD)", "1:64", "ZAMAC Edition", "mid", 40),
+        # Convention exclusives
+        ("Hot Wheels RLC", "'55 Chevy Bel Air Gasser", "1:64", "2024 Nationals Convention", "grail", 280),
+        ("Hot Wheels RLC", "Custom Mustang (Spectraflame)", "1:64", "2023 Collectors Convention", "grail", 220),
+        ("Hot Wheels RLC", "'69 Dodge Charger R/T", "1:64", "Japan Convention Exclusive", "grail", 250),
+        ("Hot Wheels", "Volkswagen T1 Drag Bus", "1:64", "Mexico Convention 2024", "high", 150),
+        ("Hot Wheels", "Datsun Bluebird 510", "1:64", "Brazil Convention 2024", "high", 140),
+        # Scale variants — 1:64 → 1:43 upgrades
+        ("AUTOart", "Toyota AE86 Sprinter Trueno", "1:18", "Initial D Version", "grail", 350),
+        ("AUTOart", "Mazda RX-7 (FD) Spirit R", "1:18", "Composite", "high", 280),
+        ("AUTOart", "Nissan Skyline GT-R (BNR32)", "1:18", "V-Spec II Composite", "grail", 320),
+        ("Kyosho", "Porsche 911 GT3 RS", "1:43", "High-End Resin", "high", 120),
+        ("Kyosho", "McLaren Senna", "1:43", "High-End Resin", "high", 130),
+        ("Kyosho", "BMW M3 (E30)", "1:43", "High-End Resin", "mid", 90),
+        ("Minichamps", "Porsche 911 GT3 RS", "1:43", "Minichamps Street", "high", 100),
+        ("Minichamps", "McLaren Senna", "1:43", "Minichamps Street", "high", 110),
+        # 1:24 scale variants
+        ("Jada Toys", "Nissan Skyline GT-R (R34)", "1:24", "JDM Tuners Series", "standard", 30),
+        ("Jada Toys", "Toyota Supra MK4", "1:24", "JDM Tuners Series", "standard", 28),
+        ("Jada Toys", "Mazda RX-7 (FD)", "1:24", "JDM Tuners Series", "standard", 28),
+        ("Jada Toys", "Honda S2000 AP1", "1:24", "JDM Tuners Series", "standard", 25),
+        ("Maisto", "Lamborghini Aventador SVJ", "1:24", "Special Edition", "standard", 22),
+        ("Maisto", "Ford GT (2017)", "1:24", "Special Edition", "standard", 20),
+        ("Maisto", "Porsche 911 (992) GT3", "1:24", "Special Edition", "standard", 22),
+        # Color variants
+        ("AUTOart", "Lamborghini Aventador SVJ", "1:18", "Composite Matte Black", "grail", 380),
+        ("AUTOart", "Nissan GT-R (R35) Nismo", "1:18", "Composite Brilliant White Pearl", "grail", 310),
+        ("AUTOart", "McLaren 720S", "1:18", "Composite Azores Orange", "high", 260),
+        ("AUTOart", "Porsche 911 (993) Carrera", "1:18", "Composite Arena Red", "high", 210),
+        ("AUTOart", "Ford GT (2017)", "1:18", "Composite Triple Yellow", "high", 210),
+        # Tarmac Works / Inno64 premium chase
+        ("Tarmac Works", "Nissan Skyline GT-R (R34) V-Spec II", "1:64", "Global64 Chase Green", "high", 95),
+        ("Tarmac Works", "Toyota GR Supra (A90)", "1:64", "Global64 Chase Red", "high", 85),
+        ("Tarmac Works", "Mitsubishi Lancer Evo VI TME", "1:64", "Global64 Chase Silver", "high", 90),
+        ("Inno64", "Honda Civic Type R (EK9)", "1:64", "Chrome Chase", "high", 80),
+        ("Inno64", "Nissan Silvia S13 Pandem Rocket Bunny", "1:64", "Chrome Chase", "high", 85),
+        ("Inno64", "Toyota Sprinter Trueno AE86", "1:64", "Chrome Chase", "high", 75),
+        # M2 Machines chase variants
+        ("M2 Machines", "1970 Ford Mustang Boss 302", "1:64", "Raw Chase 1/750", "high", 100),
+        ("M2 Machines", "1969 Pontiac GTO Judge", "1:64", "Raw Chase 1/750", "high", 95),
+        ("M2 Machines", "1957 Chevrolet Bel Air", "1:64", "Raw Chase 1/750", "high", 90),
+        ("M2 Machines", "1971 Plymouth Hemi 'Cuda", "1:64", "Raw Chase 1/750", "high", 105),
+        # Johnny Lightning White Lightning chase
+        ("Johnny Lightning", "1969 Chevrolet Camaro SS", "1:64", "White Lightning Chase", "high", 70),
+        ("Johnny Lightning", "1970 Plymouth Superbird", "1:64", "White Lightning Chase", "high", 80),
+        ("Johnny Lightning", "1965 Ford Mustang 2+2", "1:64", "White Lightning Chase", "mid", 55),
+        ("Johnny Lightning", "1967 Chevrolet Chevelle SS", "1:64", "White Lightning Chase", "mid", 60),
+        # ZAMAC / Chrome finishes
+        ("Hot Wheels", "'70 Chevelle SS", "1:64", "ZAMAC Edition 2023", "mid", 35),
+        ("Hot Wheels", "Tesla Model S", "1:64", "ZAMAC Edition", "mid", 35),
+        ("Hot Wheels", "'69 Dodge Charger R/T", "1:64", "Chrome Finish", "mid", 50),
+        ("Hot Wheels", "Porsche 911 GT3 RS", "1:64", "Chrome Finish", "mid", 45),
+        # Matchbox scale variants
+        ("Matchbox", "No. 75 Ferrari Berlinetta", "1:64", "Superfast Reissue 2024", "mid", 40),
+        ("Matchbox", "No. 41 Ford GT40", "1:64", "70th Anniversary Reissue", "mid", 45),
+        ("Matchbox", "No. 5 Lotus Europa", "1:64", "Superfast Reissue 2024", "standard", 30),
+        # BBR / MR Collection exclusive colors
+        ("BBR", "Ferrari SF90 Stradale", "1:18", "Giallo Modena LE 99", "grail", 480),
+        ("BBR", "Ferrari 296 GTB", "1:18", "Verde British Racing LE 50", "grail", 520),
+        ("MR Collection", "Lamborghini Revuelto", "1:18", "Blu Nethuns LE 49", "grail", 550),
+        ("MR Collection", "Bugatti Chiron Sport", "1:18", "Atlantic Blue LE 99", "grail", 480),
+    ]
+    catalog = []
+    for brand, name, scale, variant, tier, price in variants:
         catalog.append({
             "brand": brand,
             "name": name,

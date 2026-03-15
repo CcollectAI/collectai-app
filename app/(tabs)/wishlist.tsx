@@ -3,7 +3,7 @@
  * No custom header (Stack header is unified).
  */
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useModal } from '@/hooks/useModal';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
@@ -35,18 +35,14 @@ import { useToast } from '@/components/Toast';
 import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
+import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
+
+const CONGRATS_DISPLAY_DURATION = 2000;
+const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
 
 // Pull from single source of truth — all 36 categories + "Other"
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 const CATEGORIES = [...ALL_CATS.map((c) => c.name), 'Other'];
-
-// Extracted components
-import { WishlistItemCard } from '@/components/wishlist/WishlistItemCard';
-import { WishlistAddModal } from '@/components/wishlist/WishlistAddModal';
-import { WishlistAcquireModal } from '@/components/wishlist/WishlistAcquireModal';
-import { WishlistEditTargetModal } from '@/components/wishlist/WishlistEditTargetModal';
-import { WishlistCategoryPicker } from '@/components/wishlist/WishlistCategoryPicker';
-import { WishlistCongratsOverlay } from '@/components/wishlist/WishlistCongratsOverlay';
 
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '';
@@ -90,7 +86,14 @@ function WatchlistTabScreen() {
   const [showCongrats, setShowCongrats] = useState(false);
   const congratsScale = useRef(new Animated.Value(0)).current;
   const congratsOpacity = useRef(new Animated.Value(0)).current;
+  const congratsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Clean up congrats timer on unmount
+  useEffect(() => {
+    return () => {
+      if (congratsTimerRef.current) clearTimeout(congratsTimerRef.current);
+    };
+  }, []);
 
   const loadItems = useCallback(async () => {
     try {
@@ -278,9 +281,7 @@ function WatchlistTabScreen() {
     Animated.parallel([
       Animated.spring(congratsScale, {
         toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
+        ...CONGRATS_SPRING,
       }),
       Animated.timing(congratsOpacity, {
         toValue: 1,
@@ -290,7 +291,8 @@ function WatchlistTabScreen() {
     ]).start();
 
     // Animate out after delay
-    setTimeout(() => {
+    if (congratsTimerRef.current) clearTimeout(congratsTimerRef.current);
+    congratsTimerRef.current = setTimeout(() => {
       Animated.parallel([
         Animated.timing(congratsScale, {
           toValue: 0,
@@ -307,7 +309,7 @@ function WatchlistTabScreen() {
         congratsScale.setValue(0);
         congratsOpacity.setValue(0);
       });
-    }, 2000);
+    }, CONGRATS_DISPLAY_DURATION);
   };
 
   const handleConfirmAcquire = async () => {
@@ -341,6 +343,14 @@ function WatchlistTabScreen() {
       setAcquiring(false);
     }
   };
+
+  // M2: Memoize sorted watchlist items (sorted by priority: high > medium > low)
+  const sortedItems = useMemo(() => {
+    const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    return [...items].sort(
+      (a, b) => (priorityOrder[a.priority ?? 'low'] ?? 2) - (priorityOrder[b.priority ?? 'low'] ?? 2),
+    );
+  }, [items]);
 
   const renderItem = ({ item }: { item: WatchlistItem }) => {
     const priorityColor =
@@ -419,7 +429,7 @@ function WatchlistTabScreen() {
             accessibilityLabel={`Mark ${item.title} as acquired`}
           >
             <Ionicons name="checkmark-circle" size={18} color={colors.accentText} />
-            <Text style={styles.gotItBtnText}>I Got It!</Text>
+            <Text style={[styles.gotItBtnText, { color: colors.accentText }]}>I Got It!</Text>
           </AnimatedPressable>
         </View>
       </View>
@@ -442,7 +452,7 @@ function WatchlistTabScreen() {
         accessibilityLabel="Add your first watchlist item"
       >
         <Ionicons name="add" size={18} color={colors.accentText} />
-        <Text style={styles.emptyBtnText}>Add your first item</Text>
+        <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>Add your first item</Text>
       </AnimatedPressable>
       <View style={styles.emptyFeatures}>
         <View style={styles.emptyFeatureRow}>
@@ -481,7 +491,7 @@ function WatchlistTabScreen() {
         accessibilityLabel="Add item to watchlist"
       >
         <Ionicons name="add" size={18} color={colors.accentText} />
-        <Text style={styles.addPillText}>Add</Text>
+        <Text style={[styles.addPillText, { color: colors.accentText }]}>Add</Text>
       </AnimatedPressable>
     </View>
     </>
@@ -501,13 +511,13 @@ function WatchlistTabScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right', 'top']}>
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
         <FlashList
-          data={items}
+          data={sortedItems}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={[
             styles.listContent,
-            items.length === 0 && styles.listContentEmpty,
+            sortedItems.length === 0 && styles.listContentEmpty,
           ]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
           ListEmptyComponent={renderEmpty}
@@ -589,7 +599,7 @@ function WatchlistTabScreen() {
               {saving ? (
                 <ActivityIndicator size="small" color={colors.accentText} />
               ) : (
-                <Text style={styles.saveBtnText}>Add to Watchlist</Text>
+                <Text style={[styles.saveBtnText, { color: colors.accentText }]}>Add to Watchlist</Text>
               )}
             </AnimatedPressable>
           </View>
@@ -695,7 +705,7 @@ function WatchlistTabScreen() {
                   ) : (
                     <>
                       <Ionicons name="checkmark-circle" size={20} color={colors.accentText} />
-                      <Text style={styles.acquireBtnText}>Add to My Collection</Text>
+                      <Text style={[styles.acquireBtnText, { color: colors.accentText }]}>Add to My Collection</Text>
                     </>
                   )}
                 </AnimatedPressable>
@@ -757,7 +767,7 @@ function WatchlistTabScreen() {
                   {editTargetSaving ? (
                     <ActivityIndicator size="small" color={colors.accentText} />
                   ) : (
-                    <Text style={styles.saveBtnText}>Save Target Price</Text>
+                    <Text style={[styles.saveBtnText, { color: colors.accentText }]}>Save Target Price</Text>
                   )}
                 </AnimatedPressable>
               </>
@@ -813,26 +823,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: radius.pill,
     borderWidth: 1,
     gap: 6,
   },
   alertsPillText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   addPill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: radius.pill,
     gap: 6,
   },
   addPillText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   listContent: {
     padding: 16,
@@ -842,9 +851,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemCard: {
-    borderRadius: 14,
+    borderRadius: radius.md,
     padding: 14,
     borderWidth: 1,
+    ...shadow.card,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -864,8 +874,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   itemTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
     flex: 1,
   },
   removeBtn: {
@@ -880,15 +890,15 @@ const styles = StyleSheet.create({
   categoryBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: radius.md,
   },
   categoryText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: text.sm,
+    fontWeight: fontWeight.medium,
   },
   targetPrice: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   targetPressable: {
     flexDirection: 'row',
@@ -896,16 +906,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   setTargetText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: text.sm,
+    fontWeight: fontWeight.medium,
   },
   notes: {
-    fontSize: 13,
+    fontSize: text.md,
     marginTop: 8,
     lineHeight: 18,
   },
   dateAdded: {
-    fontSize: 11,
+    fontSize: text.sm,
     marginTop: 6,
   },
   emptyContainer: {
@@ -916,12 +926,12 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: text.xl,
+    fontWeight: fontWeight.bold,
     marginTop: 16,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: text.md,
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
@@ -931,14 +941,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 24,
+    borderRadius: radius.xl,
     marginTop: 24,
     gap: 6,
   },
   emptyBtnText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
   },
   emptyIconWrap: {
     width: 80,
@@ -957,7 +966,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   emptyFeatureText: {
-    fontSize: 14,
+    fontSize: text.md,
   },
   modalOverlay: {
     flex: 1,
@@ -965,8 +974,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     padding: 20,
     paddingBottom: 40,
   },
@@ -977,20 +986,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: text.xl,
+    fontWeight: fontWeight.bold,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     marginBottom: 6,
     marginTop: 12,
   },
   input: {
-    borderRadius: 10,
+    borderRadius: radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: text.lg,
     borderWidth: 1,
   },
   textArea: {
@@ -1005,13 +1014,12 @@ const styles = StyleSheet.create({
   saveBtn: {
     marginTop: 24,
     paddingVertical: 14,
-    borderRadius: 24,
+    borderRadius: radius.xl,
     alignItems: 'center',
   },
   saveBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
   },
   pickerOverlay: {
     flex: 1,
@@ -1022,12 +1030,12 @@ const styles = StyleSheet.create({
   },
   pickerContent: {
     width: '100%',
-    borderRadius: 16,
+    borderRadius: radius.md,
     padding: 16,
   },
   pickerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: text.lg,
+    fontWeight: fontWeight.bold,
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -1037,10 +1045,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: radius.xs,
   },
   pickerItemText: {
-    fontSize: 15,
+    fontSize: text.lg,
   },
   // Action button row
   cardActions: {
@@ -1055,13 +1063,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 20,
+    borderRadius: radius.pill,
     borderWidth: 1,
     gap: 6,
   },
   shopBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   gotItBtn: {
     flex: 1,
@@ -1070,23 +1078,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 20,
+    borderRadius: radius.pill,
     gap: 6,
   },
   gotItBtnText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   // Acquire modal styles
   acquireItemPreview: {
     padding: 14,
-    borderRadius: 12,
+    borderRadius: radius.md,
     marginBottom: 16,
   },
   acquireItemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
     marginBottom: 8,
   },
   acquireBtn: {
@@ -1095,16 +1102,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 20,
     paddingVertical: 14,
-    borderRadius: 24,
+    borderRadius: radius.xl,
     gap: 8,
   },
   acquireBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
   },
   helperText: {
-    fontSize: 12,
+    fontSize: text.sm,
     marginTop: 4,
     marginBottom: 8,
   },
@@ -1119,7 +1125,7 @@ const styles = StyleSheet.create({
   congratsContent: {
     alignItems: 'center',
     padding: 32,
-    borderRadius: 24,
+    borderRadius: radius.xl,
     minWidth: 240,
   },
   congratsIconWrap: {
@@ -1131,12 +1137,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   congratsTitle: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: text['2xl'],
+    fontWeight: fontWeight.bold,
     marginBottom: 4,
   },
   congratsSubtitle: {
-    fontSize: 14,
+    fontSize: text.md,
   },
 });
 

@@ -19,6 +19,7 @@ import { useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { fireHaptic, HapticIntent } from "@/haptics";
+import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import {
   getNotificationHistory,
   markNotificationRead,
@@ -26,6 +27,7 @@ import {
   type NotificationItem,
 } from "@/api/collectorsApi";
 import { QuickNavBar } from "@/components/QuickNavBar";
+import logger from '@/utils/logger';
 import type { Href } from "expo-router";
 import { timeAgo } from "@/lib/timeAgo";
 import { MS_PER_WEEK } from "@/constants/time";
@@ -94,7 +96,8 @@ function NotificationsScreen() {
         }
         setTotalCount(data.total_count);
         setUnreadCount(data.unread_count);
-      } catch {
+      } catch (err) {
+        logger.warn('[Notifications] fetch failed:', err);
         // Fall back to mock data when backend is unavailable
         if (replace && offset === 0) {
           setNotifications(MOCK_NOTIFICATIONS);
@@ -135,8 +138,8 @@ function NotificationsScreen() {
         ),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
-      markNotificationRead(item.id).catch(() => {
-        // Rollback on error
+      markNotificationRead(item.id).catch((err) => {
+        logger.info('[Notifications] mark-read rollback:', err);
         setNotifications((prev) =>
           prev.map((n) =>
             n.id === item.id ? { ...n, read_at: null } : n,
@@ -162,21 +165,29 @@ function NotificationsScreen() {
   const handleMarkAllRead = useCallback(async () => {
     setMarkingAllRead(true);
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+
+    // Optimistically update UI before API call
+    const previousNotifications = notifications;
+    const previousUnreadCount = unreadCount;
+    setNotifications((prev) =>
+      prev.map((n) => ({
+        ...n,
+        read_at: n.read_at || new Date().toISOString(),
+      })),
+    );
+    setUnreadCount(0);
+
     try {
       await markAllNotificationsRead();
-      setNotifications((prev) =>
-        prev.map((n) => ({
-          ...n,
-          read_at: n.read_at || new Date().toISOString(),
-        })),
-      );
-      setUnreadCount(0);
-    } catch {
-      // Silently fail
+    } catch (err) {
+      logger.warn('[Notifications] mark-all-read failed:', err);
+      // Rollback on failure
+      setNotifications(previousNotifications);
+      setUnreadCount(previousUnreadCount);
     } finally {
       setMarkingAllRead(false);
     }
-  }, []);
+  }, [notifications, unreadCount]);
 
   const renderItem = useCallback(
     ({ item }: { item: NotificationItem }) => {
@@ -218,7 +229,7 @@ function NotificationsScreen() {
                 s.rowTitle,
                 {
                   color: theme.text,
-                  fontWeight: isUnread ? "700" : "500",
+                  fontWeight: isUnread ? fw.bold : fw.medium,
                 },
               ]}
               numberOfLines={1}
@@ -275,7 +286,7 @@ function NotificationsScreen() {
                 {markingAllRead ? (
                   <ActivityIndicator size="small" color={theme.accent} />
                 ) : (
-                  <Text style={{ color: theme.accent, fontSize: 14, fontWeight: "600" }}>
+                  <Text style={{ color: theme.accent, fontSize: textToken.md, fontWeight: fw.semibold }}>
                     Mark All Read
                   </Text>
                 )}
@@ -349,14 +360,14 @@ const s = StyleSheet.create({
     gap: 2,
   },
   rowTitle: {
-    fontSize: 14,
+    fontSize: textToken.md,
   },
   rowBody: {
-    fontSize: 13,
+    fontSize: textToken.md,
     lineHeight: 18,
   },
   rowTime: {
-    fontSize: 11,
+    fontSize: textToken.xs,
     marginTop: 2,
   },
   unreadDot: {
@@ -373,12 +384,12 @@ const s = StyleSheet.create({
     gap: 8,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: textToken.xl,
+    fontWeight: fw.bold,
     marginTop: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: textToken.md,
     textAlign: "center",
     lineHeight: 20,
   },

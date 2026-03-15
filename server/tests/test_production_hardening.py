@@ -297,31 +297,12 @@ class TestPolicyEngineRecency:
 
 
 # ---------------------------------------------------------------------------
-# Package 4: Trust Wiring
+# Package 4: Trust Wiring (marketplace_trust_router merged into deal_desk_router)
 # ---------------------------------------------------------------------------
 
-class TestTrustScoreComputation:
-    """Tests for trust badge computation."""
-
-    def test_compute_badge_verified(self):
-        from app.features.marketplace_trust_router import _compute_badge
-        assert _compute_badge(50, 4.8) == "verified"
-        assert _compute_badge(100, 5.0) == "verified"
-
-    def test_compute_badge_power(self):
-        from app.features.marketplace_trust_router import _compute_badge
-        assert _compute_badge(20, 4.5) == "power"
-        assert _compute_badge(30, 4.6) == "power"
-
-    def test_compute_badge_regular(self):
-        from app.features.marketplace_trust_router import _compute_badge
-        assert _compute_badge(5, 3.0) == "regular"
-        assert _compute_badge(10, 4.0) == "regular"
-
-    def test_compute_badge_new(self):
-        from app.features.marketplace_trust_router import _compute_badge
-        assert _compute_badge(0, 0.0) == "new"
-        assert _compute_badge(3, 4.9) == "new"
+# _compute_badge tests removed — marketplace_trust_router was deleted
+# after merging trust logic into deal_desk_router. Badge computation
+# is tested via deal_desk reputation endpoint tests.
 
 
 class TestStubRoutersRemoved:

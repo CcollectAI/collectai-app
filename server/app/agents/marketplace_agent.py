@@ -49,6 +49,13 @@ from app.agents.adapters.stockx_caller import StockXCaller
 from app.agents.adapters.discogs_caller import DiscogsCaller
 from app.agents.adapters.cardmarket_caller import CardmarketCaller
 from app.agents.adapters.bricklink_caller import BrickLinkCaller
+from app.agents.adapters.scrapedo_caller import ScrapedoCaller
+from app.agents.adapters.grailed_caller import GrailedCaller
+from app.agents.adapters.google_shopping_caller import GoogleShoppingCaller
+from app.agents.adapters.etsy_caller import EtsyCaller
+from app.agents.adapters.comc_caller import COMCCaller
+from app.agents.adapters.reverb_caller import ReverbCaller
+from app.agents.adapters.abebooks_caller import AbeBooksCaller
 from app.lib.region_marketplace_config import (
     should_use_adapter,
     get_ebay_marketplace_id,
@@ -112,6 +119,19 @@ SOURCE_RELIABILITY: Dict[str, float] = {
     "cardmarket_sold": 0.90,
     "bricklink": 0.90,
     "bricklink_sold": 0.95,
+    "scrapedo": 0.70,
+    "scrapedo_sold": 0.75,
+    "grailed": 0.70,
+    "grailed_sold": 0.75,
+    "google_shopping": 0.75,
+    "etsy": 0.75,
+    "etsy_sold": 0.65,
+    "comc": 0.80,
+    "comc_sold": 0.85,
+    "reverb": 0.80,
+    "reverb_sold": 0.85,
+    "abebooks": 0.80,
+    "abebooks_sold": 0.80,
 }
 
 # Bonus scores
@@ -325,6 +345,13 @@ class MarketplaceAgent:
         self._discogs = DiscogsCaller()
         self._cardmarket = CardmarketCaller()
         self._bricklink = BrickLinkCaller()
+        self._scrapedo = ScrapedoCaller()
+        self._grailed = GrailedCaller()
+        self._google_shopping = GoogleShoppingCaller()
+        self._etsy = EtsyCaller()
+        self._comc = COMCCaller()
+        self._reverb = ReverbCaller()
+        self._abebooks = AbeBooksCaller()
 
     @property
     def adapters_configured(self) -> Dict[str, bool]:
@@ -360,6 +387,13 @@ class MarketplaceAgent:
             "discogs": self._discogs.configured,
             "cardmarket": self._cardmarket.configured,
             "bricklink": self._bricklink.configured,
+            "scrapedo": self._scrapedo.configured,
+            "grailed": self._grailed.configured,
+            "google_shopping": self._google_shopping.configured,
+            "etsy": self._etsy.configured,
+            "comc": self._comc.configured,
+            "reverb": self._reverb.configured,
+            "abebooks": self._abebooks.configured,
         }
 
     async def close(self) -> None:
@@ -394,6 +428,13 @@ class MarketplaceAgent:
         await self._discogs.close()
         await self._cardmarket.close()
         await self._bricklink.close()
+        await self._scrapedo.close()
+        await self._grailed.close()
+        await self._google_shopping.close()
+        await self._etsy.close()
+        await self._comc.close()
+        await self._reverb.close()
+        await self._abebooks.close()
 
     # ------------------------------------------------------------------
     # Core search
@@ -499,13 +540,29 @@ class MarketplaceAgent:
             total_sources += 1
             tasks.append(("crawl4ai", self._crawl4ai.search(query, category=category, limit=limit, region_sites=c4_sites)))
 
+        # Scrape.do (managed proxy scraper — all categories, 98% success rate)
+        if self._scrapedo.configured and should_use_adapter(region, "scrapedo"):
+            total_sources += 1
+            tasks.append(("scrapedo", self._scrapedo.search(query, category=category, limit=limit)))
+
+        # Grailed (fashion/streetwear resale — sneakers, designer toys, funko, hot toys, pop fandom)
+        grailed_categories = {"sneakers", "hot_toys", "funko", "designer_toys", "pop_fandom"}
+        if self._grailed.configured and should_use_adapter(region, "grailed") and (category is None or category in grailed_categories):
+            total_sources += 1
+            tasks.append(("grailed", self._grailed.search(query, category=category, limit=limit)))
+
+        # Google Shopping (SerpAPI — all categories, aggregated retailer prices)
+        if self._google_shopping.configured and should_use_adapter(region, "google_shopping"):
+            total_sources += 1
+            tasks.append(("google_shopping", self._google_shopping.search(query, category=category, limit=limit, region=region)))
+
         # Mercari US (broad collectible coverage)
         if self._mercari_us.configured and should_use_adapter(region, "mercari_us"):
             total_sources += 1
             tasks.append(("mercari_us", self._mercari_us.search(query, category=category, limit=limit)))
 
         # WhatNot (live auctions — TCG, Funko, sports cards, action figures, Nintendo)
-        whatnot_categories = {"pokemon", "mtg", "yugioh", "lorcana", "funko", "sportscards", "designer_toys", "hot_toys", "anime_figures", "kpop_merch", "action_figures", "vintage_toys", "marvel_legends", "nintendo_merch", "blind_box", "plush_collectibles", "disney", "lego", "comic_books", "digimon", "one_piece_tcg", "sneakers", "retro_games", "warhammer"}
+        whatnot_categories = {"pokemon", "mtg", "yugioh", "lorcana", "funko", "sportscards", "designer_toys", "hot_toys", "anime_figures", "kpop_merch", "action_figures", "vintage_toys", "marvel_legends", "nintendo_merch", "blind_box", "plush_collectibles", "disney", "lego", "comic_books", "digimon", "one_piece_tcg", "sneakers", "retro_games", "warhammer", "oop_board_games", "city_pop_vinyl"}
         if self._whatnot.configured and should_use_adapter(region, "whatnot") and (category is None or category in whatnot_categories):
             total_sources += 1
             tasks.append(("whatnot", self._whatnot.search(query, category=category, limit=limit)))
@@ -521,7 +578,7 @@ class MarketplaceAgent:
             tasks.append(("mavin", self._mavin.search(query, category=category, limit=limit)))
 
         # Catawiki (European auction house — luxury/niche collectibles)
-        catawiki_categories = {"whiskey", "vintage_cameras", "watches", "pens", "designer_toys", "comic_books", "vintage_toys", "loungefly", "vinyl_records", "diecast"}
+        catawiki_categories = {"whiskey", "vintage_cameras", "watches", "pens", "designer_toys", "comic_books", "vintage_toys", "loungefly", "vinyl_records", "diecast", "oop_board_games", "niche_perfumery"}
         if self._catawiki.configured and should_use_adapter(region, "catawiki") and (category is None or category in catawiki_categories):
             total_sources += 1
             tasks.append(("catawiki", self._catawiki.search(query, category=category, limit=limit)))
@@ -613,7 +670,7 @@ class MarketplaceAgent:
             tasks.append(("pricecharting", self._pricecharting.search(query, category=category, limit=limit)))
 
         # Yahoo Auctions JP (Japanese market — anime, Nintendo, vintage collectibles)
-        yahoo_categories = {"bandai_premium", "jp_event", "jp_magazine", "ghibli", "anime_figures", "retro_pokemon", "vtuber", "gunpla", "anime_bluray", "anime_soundtrack", "anime_ost_vinyl", "one_piece", "hot_toys", "nintendo_merch", "kpop_merch", "keycaps", "scale_models", "warhammer", "digimon", "one_piece_tcg", "manga", "designer_toys", "blind_box", "plush_collectibles"}
+        yahoo_categories = {"bandai_premium", "jp_event", "jp_magazine", "ghibli", "anime_figures", "retro_pokemon", "vtuber", "gunpla", "anime_bluray", "anime_soundtrack", "anime_ost_vinyl", "one_piece", "hot_toys", "nintendo_merch", "kpop_merch", "keycaps", "scale_models", "warhammer", "digimon", "one_piece_tcg", "manga", "designer_toys", "blind_box", "plush_collectibles", "city_pop_vinyl", "oop_board_games"}
         if self._yahoo_auctions.configured and should_use_adapter(region, "yahoo_auctions") and (category is None or category in yahoo_categories):
             total_sources += 1
             tasks.append(("yahoo_auctions", self._yahoo_auctions.search(query, category=category, limit=limit)))
@@ -625,7 +682,7 @@ class MarketplaceAgent:
             tasks.append(("stockx", self._stockx.search(query, category=category, limit=limit)))
 
         # Discogs (music collectibles — vinyl, soundtracks, K-pop, fandom)
-        discogs_categories = {"vinyl_records", "anime_ost_vinyl", "anime_soundtrack", "kpop_merch", "taylor_swift", "pop_fandom", "bluray_steelbook", "kpop_lightsticks"}
+        discogs_categories = {"vinyl_records", "anime_ost_vinyl", "anime_soundtrack", "kpop_merch", "taylor_swift", "pop_fandom", "bluray_steelbook", "kpop_lightsticks", "city_pop_vinyl"}
         if self._discogs.configured and should_use_adapter(region, "discogs") and (category is None or category in discogs_categories):
             total_sources += 1
             tasks.append(("discogs", self._discogs.search(query, category=category, limit=limit)))
@@ -640,6 +697,30 @@ class MarketplaceAgent:
         if self._bricklink.configured and should_use_adapter(region, "bricklink") and (category is None or category == "lego"):
             total_sources += 1
             tasks.append(("bricklink", self._bricklink.search(query, category=category, limit=limit)))
+
+        # Etsy (handmade, vintage, craft collectibles — 12 categories)
+        etsy_categories = {"vintage_toys", "watches", "pens", "plush_collectibles", "blind_box", "vintage_cameras", "keycaps", "diorama", "custom_builds", "scale_models", "designer_toys", "funko"}
+        if self._etsy.configured and should_use_adapter(region, "etsy") and (category is None or category in etsy_categories):
+            total_sources += 1
+            tasks.append(("etsy", self._etsy.search(query, category=category, limit=limit)))
+
+        # COMC (Check Out My Cards — consignment card marketplace)
+        comc_categories = {"sportscards", "pokemon", "mtg", "yugioh"}
+        if self._comc.configured and should_use_adapter(region, "comc") and (category is None or category in comc_categories):
+            total_sources += 1
+            tasks.append(("comc", self._comc.search(query, category=category, limit=limit)))
+
+        # Reverb (music gear + vinyl records marketplace)
+        reverb_categories = {"vinyl_records", "anime_ost_vinyl"}
+        if self._reverb.configured and should_use_adapter(region, "reverb") and (category is None or category in reverb_categories):
+            total_sources += 1
+            tasks.append(("reverb", self._reverb.search(query, category=category, limit=limit)))
+
+        # AbeBooks (books, comics, manga — Amazon-owned)
+        abebooks_categories = {"comic_books", "manga"}
+        if self._abebooks.configured and should_use_adapter(region, "abebooks") and (category is None or category in abebooks_categories):
+            total_sources += 1
+            tasks.append(("abebooks", self._abebooks.search(query, category=category, limit=limit)))
 
         if not tasks:
             logger.warning("[MarketplaceAgent] No adapters configured for query: %s", query)
@@ -784,13 +865,26 @@ class MarketplaceAgent:
             total_sources += 1
             tasks.append(("crawl4ai_sold", self._crawl4ai.sold_comps(query, category=category, limit=limit, region_sites=c4_sites)))
 
+        # Scrape.do sold comps (managed proxy scraper — all categories)
+        if self._scrapedo.configured and should_use_adapter(region, "scrapedo"):
+            total_sources += 1
+            tasks.append(("scrapedo_sold", self._scrapedo.sold_comps(query, category=category, limit=limit)))
+
+        # Grailed sold comps (fashion/streetwear resale — sold listings page)
+        grailed_categories = {"sneakers", "hot_toys", "funko", "designer_toys", "pop_fandom"}
+        if self._grailed.configured and should_use_adapter(region, "grailed") and (category is None or category in grailed_categories):
+            total_sources += 1
+            tasks.append(("grailed_sold", self._grailed.sold_comps(query, category=category, limit=limit)))
+
+        # Google Shopping — no sold comps (returns empty list, so skip to save API calls)
+
         # Mercari US sold comps
         if self._mercari_us.configured and should_use_adapter(region, "mercari_us"):
             total_sources += 1
             tasks.append(("mercari_us_sold", self._mercari_us.sold_comps(query, category=category, limit=limit)))
 
         # WhatNot sold comps (auction results)
-        whatnot_categories = {"pokemon", "mtg", "yugioh", "lorcana", "funko", "sportscards", "designer_toys", "hot_toys", "anime_figures", "kpop_merch", "action_figures", "vintage_toys", "marvel_legends", "nintendo_merch", "blind_box", "plush_collectibles", "disney", "lego", "comic_books", "digimon", "one_piece_tcg", "sneakers", "retro_games", "warhammer"}
+        whatnot_categories = {"pokemon", "mtg", "yugioh", "lorcana", "funko", "sportscards", "designer_toys", "hot_toys", "anime_figures", "kpop_merch", "action_figures", "vintage_toys", "marvel_legends", "nintendo_merch", "blind_box", "plush_collectibles", "disney", "lego", "comic_books", "digimon", "one_piece_tcg", "sneakers", "retro_games", "warhammer", "oop_board_games", "city_pop_vinyl"}
         if self._whatnot.configured and should_use_adapter(region, "whatnot") and (category is None or category in whatnot_categories):
             total_sources += 1
             tasks.append(("whatnot_sold", self._whatnot.sold_comps(query, category=category, limit=limit)))
@@ -806,7 +900,7 @@ class MarketplaceAgent:
             tasks.append(("mavin_sold", self._mavin.sold_comps(query, category=category, limit=limit)))
 
         # Catawiki sold comps (European auction hammer prices)
-        catawiki_categories = {"whiskey", "vintage_cameras", "watches", "pens", "designer_toys", "comic_books", "vintage_toys", "loungefly", "vinyl_records", "diecast"}
+        catawiki_categories = {"whiskey", "vintage_cameras", "watches", "pens", "designer_toys", "comic_books", "vintage_toys", "loungefly", "vinyl_records", "diecast", "oop_board_games", "niche_perfumery"}
         if self._catawiki.configured and should_use_adapter(region, "catawiki") and (category is None or category in catawiki_categories):
             total_sources += 1
             tasks.append(("catawiki_sold", self._catawiki.sold_comps(query, category=category, limit=limit)))
@@ -892,10 +986,18 @@ class MarketplaceAgent:
             tasks.append(("pricecharting_sold", self._pricecharting.sold_comps(query, category=category, limit=limit)))
 
         # Yahoo Auctions JP sold comps (Japanese market — auction results)
-        yahoo_categories = {"bandai_premium", "jp_event", "jp_magazine", "ghibli", "anime_figures", "retro_pokemon", "vtuber", "gunpla", "anime_bluray", "anime_soundtrack", "anime_ost_vinyl", "one_piece", "hot_toys", "nintendo_merch", "kpop_merch", "keycaps", "scale_models", "warhammer", "digimon", "one_piece_tcg", "manga", "designer_toys", "blind_box", "plush_collectibles"}
+        yahoo_categories = {"bandai_premium", "jp_event", "jp_magazine", "ghibli", "anime_figures", "retro_pokemon", "vtuber", "gunpla", "anime_bluray", "anime_soundtrack", "anime_ost_vinyl", "one_piece", "hot_toys", "nintendo_merch", "kpop_merch", "keycaps", "scale_models", "warhammer", "digimon", "one_piece_tcg", "manga", "designer_toys", "blind_box", "plush_collectibles", "city_pop_vinyl", "oop_board_games"}
         if self._yahoo_auctions.configured and should_use_adapter(region, "yahoo_auctions") and (category is None or category in yahoo_categories):
             total_sources += 1
             tasks.append(("yahoo_auctions_sold", self._yahoo_auctions.sold_comps(query, category=category, limit=limit)))
+
+        # StockX sold comps (authenticated resale — sneakers, funko, designer toys, collectibles)
+
+        # Etsy sold comps (no sold-only API — returns empty)
+        etsy_categories = {"vintage_toys", "watches", "pens", "plush_collectibles", "blind_box", "vintage_cameras", "keycaps", "diorama", "custom_builds", "scale_models", "designer_toys", "funko"}
+        if self._etsy.configured and should_use_adapter(region, "etsy") and (category is None or category in etsy_categories):
+            total_sources += 1
+            tasks.append(("etsy_sold", self._etsy.sold_comps(query, category=category, limit=limit)))
 
         # StockX sold comps (authenticated resale — sneakers, funko, designer toys, collectibles)
         stockx_categories = {"sneakers", "designer_toys", "funko", "kpop_merch", "taylor_swift", "pop_fandom", "loungefly", "hot_toys", "nintendo_merch", "blind_box"}
@@ -904,7 +1006,7 @@ class MarketplaceAgent:
             tasks.append(("stockx_sold", self._stockx.sold_comps(query, category=category, limit=limit)))
 
         # Discogs sold comps (music collectibles — vinyl, soundtracks, K-pop, fandom)
-        discogs_categories = {"vinyl_records", "anime_ost_vinyl", "anime_soundtrack", "kpop_merch", "taylor_swift", "pop_fandom", "bluray_steelbook", "kpop_lightsticks"}
+        discogs_categories = {"vinyl_records", "anime_ost_vinyl", "anime_soundtrack", "kpop_merch", "taylor_swift", "pop_fandom", "bluray_steelbook", "kpop_lightsticks", "city_pop_vinyl"}
         if self._discogs.configured and should_use_adapter(region, "discogs") and (category is None or category in discogs_categories):
             total_sources += 1
             tasks.append(("discogs_sold", self._discogs.sold_comps(query, category=category, limit=limit)))
@@ -919,6 +1021,24 @@ class MarketplaceAgent:
         if self._bricklink.configured and should_use_adapter(region, "bricklink") and (category is None or category == "lego"):
             total_sources += 1
             tasks.append(("bricklink_sold", self._bricklink.sold_comps(query, category=category, limit=limit)))
+
+        # COMC sold comps (consignment card marketplace — recently sold)
+        comc_categories = {"sportscards", "pokemon", "mtg", "yugioh"}
+        if self._comc.configured and should_use_adapter(region, "comc") and (category is None or category in comc_categories):
+            total_sources += 1
+            tasks.append(("comc_sold", self._comc.sold_comps(query, category=category, limit=limit)))
+
+        # Reverb sold comps (music gear + vinyl records — sold listings)
+        reverb_categories = {"vinyl_records", "anime_ost_vinyl"}
+        if self._reverb.configured and should_use_adapter(region, "reverb") and (category is None or category in reverb_categories):
+            total_sources += 1
+            tasks.append(("reverb_sold", self._reverb.sold_comps(query, category=category, limit=limit)))
+
+        # AbeBooks sold comps (no sold data — returns empty)
+        abebooks_categories = {"comic_books", "manga"}
+        if self._abebooks.configured and should_use_adapter(region, "abebooks") and (category is None or category in abebooks_categories):
+            total_sources += 1
+            tasks.append(("abebooks_sold", self._abebooks.sold_comps(query, category=category, limit=limit)))
 
         if not tasks:
             return AggregationResult(

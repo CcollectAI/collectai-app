@@ -245,12 +245,11 @@ async def _enrich_category(
     limit: int,
     stats: IngestStats,
 ) -> list[CatalogItem]:
-    """Run enrichment for a single category using Firecrawl search."""
-    from app.lib.firecrawl_client import search_web, configured
+    """Run enrichment for a single category using smart search (Firecrawl)."""
+    from app.lib.smart_scrape import smart_search_web
 
-    if not configured():
-        logger.warning("Firecrawl not configured — skipping %s", category)
-        return []
+    # search_web is Firecrawl-only (Crawl4AI has no search endpoint),
+    # but we use the smart_search_web wrapper for consistency.
 
     items: list[CatalogItem] = []
     seen_keys: set[str] = set()
@@ -263,7 +262,7 @@ async def _enrich_category(
 
         search_query = f"{query} site:{site}"
         try:
-            results = await search_web(search_query, limit=5)
+            results = await smart_search_web(search_query, limit=5)
         except Exception as e:
             logger.error("Search failed for '%s': %s", search_query, e)
             stats.transform_errors += 1

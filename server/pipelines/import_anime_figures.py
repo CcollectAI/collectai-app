@@ -47,6 +47,47 @@ from pipelines.import_common import (
 CATEGORY = "anime_figures"
 
 
+def _variant_expansion(catalog: list[dict]) -> list[dict]:
+    """Generate scale, manufacturer, and limited edition variants for anime figures.
+
+    Adds 1/4 vs 1/7 vs 1/8 scale variants, different manufacturer versions
+    of the same character, and limited painted/exclusive editions.
+    """
+    expanded: list[dict] = list(catalog)
+
+    variant_figures = [
+        # ─── Scale variants (same character, different scales) ─────────────
+        ("Good Smile Company", "Scale", "Tanjiro Kamado 1/7 Ver.", "Demon Slayer", "1/7", "high", 220),
+        ("FREEing", "B-style", "Nezuko Kamado Bunny Ver.", "Demon Slayer", "1/4", "grail", 420),
+        ("Kotobukiya", "Scale", "Gojo Satoru 1/8 Ver.", "Jujutsu Kaisen", "1/8", "mid", 170),
+        ("Alter", "Scale", "Rem 1/7 Ver.", "Re:Zero", "1/7", "high", 260),
+        ("FREEing", "B-style", "Rem Bunny Ver. 2nd", "Re:Zero", "1/4", "grail", 500),
+        # ─── Manufacturer variants (different makers, same character) ──────
+        ("Alter", "Scale", "Gojo Satoru Alter Ver.", "Jujutsu Kaisen", "1/7", "grail", 400),
+        ("Kotobukiya", "Scale", "Zero Two Kotobukiya Ver.", "DARLING in the FRANXX", "1/7", "high", 240),
+        ("Max Factory", "Scale", "Miku Max Factory Racing Ver.", "Vocaloid", "1/7", "high", 280),
+        ("eStream", "Scale", "Rem eStream Crystal Dress", "Re:Zero", "1/7", "grail", 550),
+        ("Myethos", "Scale", "Miku Myethos Shaohua Ver.", "Vocaloid", "1/7", "grail", 480),
+        # ─── Limited/painted editions ──────────────────────────────────────
+        ("Good Smile Company", "Scale", "Miku 15th Anniversary Ltd.", "Vocaloid", "1/8", "grail", 600),
+        ("Prime 1 Studio", "Premium", "Guts Berserker Armor Bloody", "Berserk", "1/4", "grail", 1200),
+        ("Aniplex", "Scale", "Shinobu Kocho Limited Color", "Demon Slayer", "1/8", "grail", 380),
+    ]
+
+    for manufacturer, figure_type, character, series, scale, tier, price in variant_figures:
+        expanded.append({
+            "manufacturer": manufacturer,
+            "figure_type": figure_type,
+            "character": character,
+            "series": series,
+            "scale": scale,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+
+    return expanded
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated anime figure catalog covering major manufacturers and series (550+ items)."""
 
@@ -856,7 +897,6 @@ def get_curated_catalog() -> list[dict]:
         ("Good Smile Company", "Scale", "Toji Fushiguro", "Jujutsu Kaisen", "1/7", "high", 250),
         ("Aniplex", "Scale", "Nobara Kugisaki", "Jujutsu Kaisen", "1/7", "mid", 190),
         ("Kotobukiya", "Scale", "Maki Zenin", "Jujutsu Kaisen", "1/7", "mid", 180),
-        ("FREEing", "Scale", "Nobara Kugisaki Bunny Ver.", "Jujutsu Kaisen", "1/4", "grail", 460),
         ("MegaHouse", "Scale", "Choso", "Jujutsu Kaisen", "1/8", "mid", 175),
         ("eStream", "Scale", "Gojo Satoru Domain Expansion", "Jujutsu Kaisen", "1/7", "grail", 520),
         ("Banpresto", "King of Artist", "Toji Fushiguro KoA", "Jujutsu Kaisen", "Non-scale", "standard", 35),
@@ -899,7 +939,6 @@ def get_curated_catalog() -> list[dict]:
         ("Kotobukiya", "ARTFX", "Himmel Legendary Hero Pose", "Frieren: Beyond Journey's End", "1/8", "mid", 180),
         ("FREEing", "Scale", "Frieren Bunny Ver.", "Frieren: Beyond Journey's End", "1/4", "grail", 490),
         ("Bandai", "S.H.Figuarts", "Frieren Action Figure", "Frieren: Beyond Journey's End", "Non-scale", "mid", 90),
-        ("Good Smile Company", "Nendoroid", "Fern Nendoroid", "Frieren: Beyond Journey's End", "Nendoroid", "standard", 55),
         ("Banpresto", "Grandista", "Stark Grandista Figure", "Frieren: Beyond Journey's End", "Non-scale", "standard", 38),
 
         # ── Chainsaw Man - Additional Figures (Round 5) ────────────────
@@ -910,7 +949,6 @@ def get_curated_catalog() -> list[dict]:
         ("eStream", "Scale", "Power Blood Fiend Transformation", "Chainsaw Man", "1/7", "grail", 500),
         ("Banpresto", "Vibration Stars", "Denji Vibration Stars", "Chainsaw Man", "Non-scale", "standard", 28),
         ("Good Smile Company", "Scale", "War Devil Yoru", "Chainsaw Man", "1/7", "high", 250),
-        ("FREEing", "Scale", "Makima Bunny Ver.", "Chainsaw Man", "1/4", "grail", 480),
 
         # ── Blue Lock - Figures (Round 5) ──────────────────────────────
         ("Good Smile Company", "Scale", "Isagi Yoichi Shooting Ver.", "Blue Lock", "1/7", "high", 220),
@@ -936,7 +974,6 @@ def get_curated_catalog() -> list[dict]:
         ("Kotobukiya", "ARTFX", "Aqua Hoshino Dark Star Ver.", "Oshi no Ko", "1/8", "high", 200),
         ("Good Smile Company", "Scale", "Akane Kurokawa 'Ai' Cosplay", "Oshi no Ko", "1/7", "high", 230),
         ("eStream", "Scale", "Ruby Hoshino Stage Performance", "Oshi no Ko", "1/7", "high", 280),
-        ("Good Smile Company", "Nendoroid", "Ai Hoshino Nendoroid", "Oshi no Ko", "Nendoroid", "standard", 58),
 
         # ── Alter Premium Scales (Round 5) ─────────────────────────────
         ("Alter", "Scale", "Tohka Yatogami Astral Dress", "Date A Live", "1/7", "high", 280),
@@ -1000,10 +1037,6 @@ def get_curated_catalog() -> list[dict]:
         ("Kotobukiya", "ARTFX J", "Frieren Magic Circle Casting", "Frieren: Beyond Journey's End", "1/8", "mid", 195),
 
         # ── FREEing B-Style Bunny Figures (+5) ──────────────────────────
-        ("FREEing", "Scale", "Marin Kitagawa Bunny Ver.", "My Dress-Up Darling", "1/4", "grail", 500),
-        ("FREEing", "Scale", "Megumin Bunny Ver.", "KonoSuba", "1/4", "grail", 460),
-        ("FREEing", "Scale", "Ai Hoshino Bunny Ver.", "Oshi no Ko", "1/4", "grail", 510),
-        ("FREEing", "Scale", "Fern Bunny Ver.", "Frieren: Beyond Journey's End", "1/4", "grail", 480),
         ("FREEing", "Scale", "Momo Ayase Bunny Ver.", "Dandadan", "1/4", "grail", 470),
 
         # ── Prime 1 Studio & Tsume Art Grails (+5) ──────────────────────
@@ -1031,7 +1064,19 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+
+    # Expand with scale/manufacturer/limited variants before dedup
+    catalog = _variant_expansion(catalog)
+
+    # Deduplicate by ('manufacturer', 'character', 'scale', 'figure_type') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["manufacturer"], item["character"], item["scale"], item["figure_type"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

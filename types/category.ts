@@ -45,6 +45,9 @@ export const CategoryList = [
 
   // --- Legacy (3) ---
   'diecast','sportscards','retro_handhelds',
+
+  // --- New Categories (3) ---
+  'oop_board_games','city_pop_vinyl','niche_perfumery',
 ] as const;
 
 export type Category = typeof CategoryList[number];
@@ -550,6 +553,42 @@ export const AttrSchemas: Record<Category, z.ZodObject<any>> = {
     boxed: z.boolean().optional(),
     working_condition: z.string().optional(),
   }),
+
+  // =========================================================================
+  // New Categories
+  // =========================================================================
+  oop_board_games: z.object({
+    publisher: z.string().optional(),       // Fantasy Flight, CMON, Stonemaier, etc.
+    designer: z.string().optional(),        // Uwe Rosenberg, Reiner Knizia, etc.
+    player_count: z.string().optional(),    // 1-4, 2-5, etc.
+    play_time: z.string().optional(),       // 60min, 90-120min, etc.
+    edition: z.string().optional(),         // 1st Edition, Kickstarter Deluxe, Retail, etc.
+    bgg_rating: z.string().optional(),      // BoardGameGeek rating
+    condition: z.string().optional(),       // sealed, punched_complete, incomplete, damaged_box
+    year: z.string().optional(),
+  }),
+  city_pop_vinyl: z.object({
+    artist: z.string().optional(),          // Tatsuro Yamashita, Mariya Takeuchi, etc.
+    album: z.string().optional(),
+    label: z.string().optional(),           // Nippon Columbia, Air Records, etc.
+    pressing: z.string().optional(),        // OG pressing, reissue, remaster
+    color: z.string().optional(),           // black, colored, picture disc
+    format: z.string().optional(),          // LP, 2xLP, 7", 12"
+    year: z.string().optional(),
+    condition: z.string().optional(),       // M, NM, VG+, VG, G+, G (Goldmine)
+    obi: z.boolean().optional(),            // Japanese OBI strip included
+  }),
+  niche_perfumery: z.object({
+    house: z.string().optional(),           // MFK, Tom Ford, Creed, Xerjoff, etc.
+    fragrance_name: z.string().optional(),
+    concentration: z.string().optional(),   // EDT, EDP, Extrait, Parfum
+    size_ml: z.string().optional(),         // 30, 50, 100, 200
+    gender: z.string().optional(),          // unisex, masculine, feminine
+    fragrance_family: z.string().optional(), // woody, oriental, floral, fresh, oud
+    fill_level: z.string().optional(),      // full, 90%, 75%, 50%, partial
+    batch_code: z.string().optional(),
+    year: z.string().optional(),
+  }),
 };
 
 // Friendly labels for UI
@@ -634,4 +673,9 @@ export const CategoryLabels: Record<Category, string> = {
   diecast: 'Diecast',
   sportscards: 'Sports Cards',
   retro_handhelds: 'Retro Handhelds',
+
+  // New Categories
+  oop_board_games: 'OOP Board Games & KS Exclusives',
+  city_pop_vinyl: 'City Pop & Future Funk Vinyl',
+  niche_perfumery: 'Niche & High-End Perfumery',
 };

@@ -16,7 +16,8 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [anch, setAnch] = useState<{x:number;y:number;w:number;h:number}|null>(null);
-  const show = () => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); try { // @ts-ignore
+  // @ts-ignore — measureInWindow exists on View ref but is not in RN type definitions
+  const show = () => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); try {
     triggerRef.current?.measureInWindow?.((x:number,y:number,w:number,h:number)=>{ setAnch({x,y,w,h}); setOpen(true); }); } catch { setAnch(null); setOpen(true); } };
   const hide = () => { setOpen(false); setQuery(''); };
   const filtered = query ? options.filter(o=>o.toLowerCase().includes(query.toLowerCase())) : options;

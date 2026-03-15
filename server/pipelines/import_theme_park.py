@@ -823,8 +823,17 @@ def get_curated_catalog() -> list[dict]:
 
     # Round 7 expansion — 50 items
     catalog.extend(_expanded_round7_theme_park())
+    catalog.extend(_variant_expansion())
 
-    return catalog
+    # Deduplicate by ('park', 'name', 'edition') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["park"], item["name"], item["edition"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _expanded_round7_theme_park() -> list[dict]:
@@ -1084,6 +1093,76 @@ def _expanded_round7_theme_park() -> list[dict]:
     ]
     catalog = []
     for park, subcategory, name, edition, tier, price in items:
+        catalog.append({
+            "park": park,
+            "subcategory": subcategory,
+            "name": name,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _variant_expansion() -> list[dict]:
+    """Park-exclusive / year / seasonal variants for existing theme park items. ~50 items."""
+    variants = [
+        # Disneyland vs Disney World versions of same item
+        ("Disney Parks", "popcorn_bucket", "Figment Popcorn Bucket (WDW Magic Kingdom)", "WDW Exclusive", "high", 100),
+        ("Disney Parks", "popcorn_bucket", "Purple Wall Popcorn Bucket (Disneyland)", "DL Exclusive", "high", 75),
+        ("Disney Parks", "popcorn_bucket", "Mickey Balloon Popcorn Bucket (DL)", "DL Exclusive", "mid", 50),
+        ("Disney Parks", "popcorn_bucket", "Slinky Dog Popcorn Bucket (DL)", "DL Exclusive", "mid", 38),
+        # Tokyo Disney vs Shanghai Disney versions
+        ("Tokyo Disney", "snack_case", "Duffy Snack Case (TDL)", "TDL Exclusive", "mid", 50),
+        ("Shanghai Disney", "snack_case", "Duffy Snack Case (Shanghai)", "Shanghai Exclusive", "high", 65),
+        ("Shanghai Disney", "plush", "LinaBell Plush (Shanghai Exclusive)", "Shanghai Exclusive", "high", 90),
+        ("Hong Kong Disney", "plush", "LinaBell Plush (HKDL Exclusive)", "HKDL Exclusive", "high", 80),
+        ("Shanghai Disney", "merch", "Zootopia Grand Opening Spirit Jersey", "Grand Opening", "high", 85),
+        ("Shanghai Disney", "merch", "Shanghai Disney 8th Anniversary Tee", "Anniversary LE", "mid", 45),
+        # Annual Passholder exclusives
+        ("Disney Parks", "ap_exclusive", "WDW Annual Passholder Magnet Set 2024", "AP Exclusive", "mid", 35),
+        ("Disney Parks", "ap_exclusive", "DL Annual Passholder Magnet Set 2024", "AP Exclusive", "mid", 35),
+        ("Disney Parks", "ap_exclusive", "WDW AP Exclusive Figment Pin 2024", "AP Exclusive", "high", 60),
+        ("Disney Parks", "ap_exclusive", "DL AP Exclusive Haunted Mansion Pin 2024", "AP Exclusive", "high", 65),
+        ("Disney Parks", "ap_exclusive", "WDW AP Exclusive Spirit Jersey 2024", "AP Exclusive", "mid", 55),
+        ("Tokyo Disney", "ap_exclusive", "TDR Annual Passport Exclusive StellaLou Plush", "AP Exclusive", "high", 70),
+        # Seasonal / Holiday overlays
+        ("Disney Parks", "seasonal", "Mickey's Not So Scary Halloween Popcorn Bucket 2024", "Halloween LE", "high", 90),
+        ("Disney Parks", "seasonal", "Mickey's Very Merry Christmas Party Popcorn Bucket 2024", "Christmas LE", "high", 95),
+        ("Disney Parks", "seasonal", "EPCOT Food & Wine Festival Figment Bucket 2024", "Festival LE", "high", 110),
+        ("Disney Parks", "seasonal", "EPCOT Flower & Garden Figment Topiary Figure 2024", "Festival LE", "high", 85),
+        ("Disney Parks", "seasonal", "WDW 4th of July Spirit Jersey 2024", "Holiday LE", "mid", 50),
+        ("Tokyo Disney", "seasonal", "TDL Halloween 2024 Duffy Costume Plush Set", "Halloween LE", "high", 95),
+        ("Tokyo Disney", "seasonal", "TDL Christmas 2024 StellaLou Costume Set", "Christmas LE", "high", 90),
+        # Opening day vs general release
+        ("USJ", "merch", "Super Nintendo World Grand Opening Tee (Staff Only)", "Staff Exclusive", "grail", 250),
+        ("USJ", "merch", "Donkey Kong Country Grand Opening Cast Member Pin", "Cast Exclusive", "grail", 180),
+        ("Disney Parks", "merch", "Tiana's Bayou Adventure Grand Opening Pin (Cast)", "Cast Exclusive", "grail", 160),
+        ("Disney Parks", "merch", "Tiana's Bayou Adventure Grand Opening Ears", "Grand Opening", "high", 80),
+        ("Disney Parks", "merch", "Tiana's Bayou Adventure General Release Ears", "Park Exclusive", "mid", 35),
+        # Different year variants of annual merchandise
+        ("Disney Parks", "pin_event", "Disneyland AP Exclusive Pin Set (2023)", "AP Exclusive 2023", "high", 75),
+        ("Disney Parks", "pin_event", "Disneyland AP Exclusive Pin Set (2022)", "AP Exclusive 2022", "high", 80),
+        ("Disney Parks", "pin_event", "EPCOT Festival Pin Board Complete Set 2023", "Festival LE 2023", "high", 95),
+        ("Disney Parks", "pin_event", "EPCOT Festival Pin Board Complete Set 2022", "Festival LE 2022", "high", 105),
+        ("Tokyo Disney", "pins", "Tokyo Disney 35th Anniversary Pin Set", "Anniversary LE 35th", "high", 110),
+        # Disneyland Paris exclusives of WDW items
+        ("Disneyland Paris", "popcorn_bucket", "Ratatouille Remy Popcorn Bucket", "DLP Exclusive", "high", 85),
+        ("Disneyland Paris", "popcorn_bucket", "DLP Castle Popcorn Bucket 30th Anniversary", "Anniversary LE", "high", 100),
+        ("Disneyland Paris", "merch", "DLP 30th Anniversary Spirit Jersey", "Anniversary LE", "mid", 55),
+        # Epic Universe (Universal Orlando) Grand Opening
+        ("Epic Universe", "merch", "Epic Universe Grand Opening Spirit Jersey", "Grand Opening", "high", 75),
+        ("Epic Universe", "merch", "Epic Universe Grand Opening Pin Set", "Grand Opening", "high", 85),
+        ("Epic Universe", "merch", "How to Train Your Dragon Isle Opening Day Figure", "Grand Opening", "high", 90),
+        ("Epic Universe", "merch", "Ministry of Magic Grand Opening Wand Set", "Grand Opening", "grail", 150),
+        ("Epic Universe", "merch", "Super Nintendo World Orlando Grand Opening Set", "Grand Opening", "high", 120),
+        # Hong Kong Disneyland
+        ("Hong Kong Disney", "merch", "HKDL Frozen World Grand Opening Ears", "Grand Opening", "high", 65),
+        ("Hong Kong Disney", "merch", "HKDL World of Frozen Elsa Crystal Figure", "Grand Opening", "high", 90),
+        ("Hong Kong Disney", "pins", "HKDL 20th Anniversary Celebration Pin Set", "Anniversary LE", "high", 80),
+    ]
+    catalog = []
+    for park, subcategory, name, edition, tier, price in variants:
         catalog.append({
             "park": park,
             "subcategory": subcategory,

@@ -164,8 +164,6 @@ def _round7_plush_expansion() -> list[tuple]:
         # ── Jellycat Limited Editions (15) ────────────────────────────────
         ("Jellycat Bashful Luxe Bunny Luna", "Jellycat", "Bashful Luxe", 'Medium 31cm', 65, "Rare", True, "Silver shimmer plush, retired 2022"),
         ("Jellycat Bashful Luxe Bunny Willow", "Jellycat", "Bashful Luxe", 'Medium 31cm', 70, "Rare", True, "Rose gold shimmer, LE 2021"),
-        ("Jellycat Amuseable Croissant", "Jellycat", "Amuseable", 'Medium 20cm', 28, "Common", False, "Golden croissant with cordy legs"),
-        ("Jellycat Amuseable Avocado", "Jellycat", "Amuseable", 'Medium 20cm', 25, "Common", False, "Two-tone green, smiling pit"),
         ("Jellycat Amuseable Watermelon", "Jellycat", "Amuseable", 'Large 38cm', 45, "Uncommon", False, "Large slice, embroidered seeds"),
         ("Jellycat Amuseable Pineapple", "Jellycat", "Amuseable", 'Medium 25cm', 30, "Common", False, "Tufted green top, golden body"),
         ("Jellycat Amuseable Latte", "Jellycat", "Amuseable", 'Medium 20cm', 28, "Common", False, "Latte cup with foam swirl"),
@@ -174,7 +172,6 @@ def _round7_plush_expansion() -> list[tuple]:
         ("Jellycat Bashful Blush Bunny Huge", "Jellycat", "Bashful", 'Huge 51cm', 75, "Uncommon", False, "Blush pink, extra large"),
         ("Jellycat Odyssey Octopus Large", "Jellycat", "Odyssey", 'Large 49cm', 55, "Uncommon", False, "Eight cordy tentacles, teal"),
         ("Jellycat Storm Octopus", "Jellycat", "Storm", 'Large 49cm', 50, "Common", False, "Blue-grey, curly tentacles"),
-        ("Jellycat Fuddlewuddle Dragon", "Jellycat", "Fuddlewuddle", 'Medium 23cm', 30, "Common", False, "Green dragon, soft wings"),
         ("Jellycat Vivacious Vegetable Carrot", "Jellycat", "Vivacious Veg", 'Medium 17cm', 18, "Common", False, "Orange carrot with green leaf top"),
         ("Jellycat Bashful Cottontail Bunny LE 2024", "Jellycat", "Bashful", 'Medium 31cm', 45, "Rare", False, "2024 spring limited edition, pastel speckled"),
 
@@ -266,8 +263,107 @@ def _round7_plush_expansion() -> list[tuple]:
     ]
 
 
+def _variant_expansion() -> list[dict]:
+    """Generate 40+ size variants, retailer exclusives, and seasonal editions."""
+    variants: list[dict] = []
+
+    # ── Squishmallows size variants (popular characters in different sizes) ──
+    _sqm_size_variants = [
+        # (name_base, series, sizes_with_prices, rarity, is_retired, notes_base)
+        ("Connor the Cow", "Original Squad",
+         [('5"', 10), ('8"', 20), ('16"', 70), ('24" Jumbo', 130)],
+         "Uncommon", False, "Black and white cow"),
+        ("Wendy the Frog", "Original Squad",
+         [('5"', 8), ('8"', 15), ('16"', 40), ('24" Jumbo', 85)],
+         "Common", False, "Green frog"),
+        ("Caedyn the Pink Cow", "Valentine Squad",
+         [('5"', 18), ('8"', 35), ('16"', 110), ('24" Jumbo', 195)],
+         "HTF", False, "Pink cow, Valentine exclusive"),
+        ("Ronnie the Cow", "Original Squad",
+         [('5"', 10), ('8"', 18), ('16"', 55), ('24" Jumbo', 100)],
+         "Uncommon", False, "Brown spotted cow"),
+        ("Avery the Mallard Duck", "Original Squad",
+         [('5"', 8), ('8"', 15), ('16"', 45)],
+         "Uncommon", False, "Green mallard"),
+        ("Santino the Platypus", "Learning Squad",
+         [('5"', 8), ('8"', 18), ('16"', 50)],
+         "Uncommon", False, "Teal platypus"),
+    ]
+    for name_base, series, sizes, rarity, is_retired, notes_base in _sqm_size_variants:
+        for size, price in sizes:
+            variants.append({
+                "name": name_base, "brand": "Squishmallows",
+                "series": series, "size": size,
+                "price_eur": price, "rarity": rarity,
+                "is_retired": is_retired,
+                "notes": f"{notes_base}, {size} size variant",
+            })
+
+    # ── Squishmallows retailer exclusives ──
+    _sqm_exclusives = [
+        ("Brina the Bigfoot Target Exclusive", "Squishmallows", "Target Exclusive", '12"', 85, "HTF", True, "Pink bigfoot, Target exclusive 2022, retired"),
+        ("Archie the Axolotl Costco Exclusive", "Squishmallows", "Costco Exclusive", '20"', 55, "Rare", False, "Oversized Costco-only axolotl"),
+        ("Malcolm the Mushroom Walgreens Exclusive", "Squishmallows", "Walgreens Exclusive", '12"', 75, "HTF", True, "Walgreens-only variant, retired 2022"),
+        ("Emily the Bat Five Below Exclusive", "Squishmallows", "Five Below Exclusive", '8"', 30, "Uncommon", False, "Five Below variant, purple accent"),
+        ("Belana the Cow Walmart Exclusive", "Squishmallows", "Walmart Exclusive", '16"', 70, "Rare", False, "Blue cow, Walmart stackable"),
+        ("Wendy the Frog Hot Topic Exclusive", "Squishmallows", "Hot Topic Exclusive", '8"', 40, "Rare", True, "Hot Topic exclusive, dark green variant, retired"),
+        ("Connor the Cow Claire's Exclusive", "Squishmallows", "Claire's Exclusive", '8"', 35, "Rare", False, "Claire's pastel pink cow variant"),
+        ("Jack the Black Cat Target Exclusive", "Squishmallows", "Target Exclusive", '16"', 95, "HTF", True, "Target Halloween 2021, jumbo, retired"),
+    ]
+    for name, brand, series, size, price, rarity, is_retired, notes in _sqm_exclusives:
+        variants.append({
+            "name": name, "brand": brand, "series": series,
+            "size": size, "price_eur": price, "rarity": rarity,
+            "is_retired": is_retired, "notes": notes,
+        })
+
+    # ── Squishmallows holiday/seasonal editions ──
+    _sqm_seasonal = [
+        ("Emily the Bat Valentine", "Squishmallows", "Valentine Squad", '12"', 55, "Rare", True, "Valentine 2022 pink hearts variant, retired"),
+        ("Archie the Axolotl Christmas", "Squishmallows", "Holiday Squad", '12"', 50, "Rare", True, "Christmas 2022 with Santa hat, retired"),
+        ("Wendy the Frog Easter", "Squishmallows", "Easter Squad", '12"', 40, "Uncommon", False, "Easter 2024, pastel floral belly"),
+        ("Connor the Cow Halloween", "Squishmallows", "Halloween Squad", '12"', 60, "Rare", False, "Halloween 2024, skeleton print cow"),
+        ("Malcolm the Mushroom Spring", "Squishmallows", "Spring Squad", '12"', 50, "Uncommon", False, "Spring 2024, pastel mushroom with flowers"),
+        ("Caedyn the Pink Cow Christmas", "Squishmallows", "Holiday Squad", '12"', 80, "Rare", False, "Christmas 2024 with antlers and red nose"),
+        ("Benny the Bigfoot Summer", "Squishmallows", "Summer Squad", '12"', 35, "Uncommon", False, "Summer 2024 beach edition with sunglasses"),
+        ("Ronnie the Cow St Patrick's", "Squishmallows", "St Patrick's Squad", '12"', 45, "Uncommon", True, "St Patrick's 2023, clover spots, retired"),
+        ("Avery the Mallard Duck Fall", "Squishmallows", "Fall Squad", '12"', 35, "Uncommon", False, "Fall 2024, autumn leaf pattern"),
+        ("Belana the Cow Valentine", "Squishmallows", "Valentine Squad", '12"', 65, "Rare", False, "Valentine 2024, heart pattern blue cow"),
+    ]
+    for name, brand, series, size, price, rarity, is_retired, notes in _sqm_seasonal:
+        variants.append({
+            "name": name, "brand": brand, "series": series,
+            "size": size, "price_eur": price, "rarity": rarity,
+            "is_retired": is_retired, "notes": notes,
+        })
+
+    # ── Jellycat size variants ──
+    _jellycat_sizes = [
+        ("Jellycat Bashful Bunny Beige", "Bashful",
+         [('Tiny 13cm', 12), ('Small 18cm', 18), ('Huge 51cm', 65), ('Really Big 67cm', 95)],
+         "Common", False, "Classic beige bunny"),
+        ("Jellycat Bartholomew Bear", "Bartholomew",
+         [('Small 18cm', 20), ('Huge 46cm', 60), ('Really Big 58cm', 90)],
+         "Uncommon", False, "Brown teddy bear"),
+        ("Jellycat Amuseable Avocado", "Amuseable",
+         [('Tiny 10cm', 10), ('Small 20cm', 18), ('Huge 30cm', 50)],
+         "Common", False, "Smiling avocado with stone"),
+    ]
+    for name_base, series, sizes, rarity, is_retired, notes_base in _jellycat_sizes:
+        for size, price in sizes:
+            variants.append({
+                "name": f"{name_base} {size.split()[0]}", "brand": "Jellycat",
+                "series": series, "size": size,
+                "price_eur": price, "rarity": rarity,
+                "is_retired": is_retired,
+                "notes": f"{notes_base}, {size} size",
+            })
+
+    return variants
+
+
 def get_curated_catalog() -> list[dict]:
-    """Curated plush collectibles catalog: 500+ items across 18 sub-categories."""
+    """Curated plush collectibles catalog: 700+ items across 18 sub-categories."""
 
     # Format: (name, brand, series, size, price_eur, rarity, is_retired, notes)
 
@@ -331,15 +427,11 @@ def get_curated_catalog() -> list[dict]:
         ("Pikachu Build-A-Bear", "Build-A-Bear", "Pokémon", 'Standard 40cm', 55, "Uncommon", False, "Pokémon collab, online exclusive"),
         ("Eevee Build-A-Bear", "Build-A-Bear", "Pokémon", 'Standard 40cm', 55, "Uncommon", False, "Pokémon collab, online exclusive"),
         ("Charmander Build-A-Bear", "Build-A-Bear", "Pokémon", 'Standard 40cm', 60, "Uncommon", True, "Retired Pokémon collab"),
-        ("Toothless Build-A-Bear", "Build-A-Bear", "How to Train Your Dragon", 'Standard 40cm', 45, "Uncommon", False, "DreamWorks licensed"),
         ("Grogu Build-A-Bear", "Build-A-Bear", "Star Wars", 'Standard 35cm', 50, "Uncommon", False, "The Child / Baby Yoda"),
         ("Baby Yoda Sound Build-A-Bear", "Build-A-Bear", "Star Wars", 'Standard 35cm', 75, "Rare", True, "With sound chip, limited run"),
-        ("Spider-Man Build-A-Bear", "Build-A-Bear", "Marvel", 'Standard 40cm', 50, "Uncommon", False, "Marvel licensed"),
         ("Stitch Build-A-Bear", "Build-A-Bear", "Disney", 'Standard 40cm', 65, "Rare", True, "Online exclusive, retired 2023"),
 
         # ── Pokémon Center Plush (10) ───────────────────────────────────
-        ("Pikachu Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 15, "Common", False, "Pokémon Fit / Sitting Cuties line"),
-        ("Eevee Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 15, "Common", False, "Pokémon Fit / Sitting Cuties line"),
         ("Snorlax Large Plush", "Pokémon Center", "Large Scale", '60cm', 120, "Rare", False, "Oversized sleeping Snorlax"),
         ("Life-Size Mewtwo Plush", "Pokémon Center", "Life-Size", '150cm', 450, "HTF", False, "Japan-exclusive life-size, limited stock"),
         ("Charizard Premium Plush", "Pokémon Center", "Premium Collection", '35cm', 55, "Uncommon", False, "Detailed premium quality"),
@@ -400,7 +492,6 @@ def get_curated_catalog() -> list[dict]:
         ("Pikachu Pair Plush Wedding Set", "Pokémon Center", "Special Edition", 'Pair 20cm each', 55, "Uncommon", True, "Bride & groom Pikachu pair, retired"),
 
         # ── San-X: Rilakkuma / Sumikko Gurashi (6) ───────────────────────
-        ("Rilakkuma Classic Lying Down", "San-X", "Rilakkuma", 'Medium 30cm', 35, "Common", False, "Classic lazy bear lying pose"),
         ("Rilakkuma x Deli Theme JP Exclusive", "San-X", "Rilakkuma", 'Medium 25cm', 55, "Rare", False, "Japan-only deli sandwich theme"),
         ("Korilakkuma Strawberry Cat", "San-X", "Rilakkuma", 'Medium 25cm', 40, "Uncommon", False, "White bear with strawberry, cat ears"),
         ("Sumikko Gurashi Tokage Plush", "San-X", "Sumikko Gurashi", 'Medium 20cm', 28, "Common", False, "Shy dinosaur pretending to be lizard"),
@@ -457,7 +548,6 @@ def get_curated_catalog() -> list[dict]:
         ("Bashful Bunny Forest", "Jellycat", "Bashful", 'Medium 31cm', 80, "Rare", True, "Retired 2019 forest green colour"),
         ("Jellycat Liberty Bunny London", "Jellycat", "London Collection", 'Medium 27cm', 70, "Rare", False, "Liberty London floral fabric ears"),
         ("Jellycat Fuddlewuddle Lion", "Jellycat", "Fuddlewuddle", 'Medium 23cm', 30, "Common", False, "Golden lion with mane"),
-        ("Jellycat Storm Octopus", "Jellycat", "Marine", 'Large 49cm', 55, "Uncommon", False, "Inky blue octopus, corduroy tentacles"),
         ("Jellycat Bashful Bunny Plum", "Jellycat", "Bashful", 'Medium 31cm', 90, "Rare", True, "Retired 2018 plum colour, collector grail"),
 
         # ── Sanrio — Expanded Characters (6) ────────────────────────────
@@ -473,7 +563,6 @@ def get_curated_catalog() -> list[dict]:
         ("Bulbasaur Build-A-Bear", "Build-A-Bear", "Pokémon", 'Standard 40cm', 55, "Uncommon", False, "Pokémon collab, online exclusive"),
         ("Sonic the Hedgehog Build-A-Bear", "Build-A-Bear", "Sonic", 'Standard 40cm', 45, "Uncommon", False, "SEGA licensed"),
         ("Super Mario Build-A-Bear", "Build-A-Bear", "Nintendo", 'Standard 40cm', 50, "Uncommon", False, "Nintendo licensed Mario"),
-        ("Elsa Frozen Build-A-Bear", "Build-A-Bear", "Disney", 'Standard 40cm', 45, "Uncommon", True, "Disney Frozen collab, retired"),
         ("Harry Potter Hedwig Build-A-Bear", "Build-A-Bear", "Harry Potter", 'Standard 35cm', 55, "Rare", True, "WB licensed owl, retired"),
 
         # ── Pokémon Center — Expanded JP Exclusives (6) ─────────────────
@@ -482,7 +571,6 @@ def get_curated_catalog() -> list[dict]:
         ("Pikachu Hokkaido Lavender", "Pokémon Center", "Regional Exclusive", 'Medium 22cm', 65, "Rare", False, "Hokkaido store-only, lavender theme"),
         ("Gengar Plush Cushion Large", "Pokémon Center", "Large Scale", '50cm', 85, "Uncommon", False, "Oversized Gengar face cushion"),
         ("Vaporeon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Eeveelution sitting pose"),
-        ("Umbreon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Dark-type Eeveelution sitting pose"),
 
         # ── Pusheen (6) ─────────────────────────────────────────────────
         ("Pusheen Classic Plush", "Pusheen", "Classic", 'Medium 25cm', 22, "Common", False, "Grey tabby cat, iconic design"),
@@ -610,7 +698,6 @@ def get_curated_catalog() -> list[dict]:
         ("Della the Duck", "Squishmallows", "Easter Squad", '12"', 60, "Rare", True, "Floral duck, Easter 2021, retired"),
 
         # ── Squishmallows — HugMees & Stackables (6) ─────────────────
-        ("Connor the Cow HugMee", "Squishmallows", "HugMees", '14"', 45, "Uncommon", False, "Elongated cow hugging shape"),
         ("Wendy the Frog HugMee", "Squishmallows", "HugMees", '14"', 40, "Uncommon", False, "Elongated frog hugging shape"),
         ("Emily the Bat HugMee", "Squishmallows", "HugMees", '14"', 50, "Uncommon", False, "Elongated bat hugging shape"),
         ("Connor the Cow Stackable", "Squishmallows", "Stackables", '12"', 30, "Common", False, "Flat stackable cow shape"),
@@ -624,9 +711,7 @@ def get_curated_catalog() -> list[dict]:
         ("Dragonite Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Dragon type sitting pose"),
         ("Togepi Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 15, "Common", False, "Egg pokemon sitting pose"),
         ("Mew Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 20, "Common", False, "Mythical pink sitting pose"),
-        ("Sylveon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Fairy Eeveelution sitting pose"),
         ("Espeon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Psychic Eeveelution sitting pose"),
-        ("Glaceon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Ice Eeveelution sitting pose"),
         ("Leafeon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Grass Eeveelution sitting pose"),
         ("Flareon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Fire Eeveelution sitting pose"),
         ("Jolteon Sitting Cuties", "Pokémon Center", "Sitting Cuties", 'Small 15cm', 18, "Common", False, "Electric Eeveelution sitting pose"),
@@ -908,10 +993,6 @@ def get_curated_catalog() -> list[dict]:
         # ── Squishmallows — More HTF & Size Variants (10) ──────────────
         ("Brina the Bigfoot Pink", "Squishmallows", "Original Squad", '16"', 55, "HTF", True, "Pink bigfoot, discontinued 2022"),
         ("Joelle the Bigfoot Purple", "Squishmallows", "Original Squad", '12"', 40, "Uncommon", False, "Purple bigfoot with bow"),
-        ("Avery the Mallard Duck", "Squishmallows", "Original Squad", '12"', 30, "Common", False, "Green mallard duck"),
-        ("Gordon the Shark", "Squishmallows", "Sea Life Squad", '16"', 35, "Common", False, "Grey shark with grin"),
-        ("Omar the Bear", "Squishmallows", "Original Squad", '12"', 25, "Common", False, "Brown bear with scarf"),
-        ("Heather the Dragonfly", "Squishmallows", "Original Squad", '12"', 30, "Common", False, "Purple dragonfly"),
         ("Luther the Shark Tie-Dye", "Squishmallows", "Tie-Dye Squad", '12"', 40, "Uncommon", False, "Tie-dye shark exclusive"),
         ("Orin the Orange Worm", "Squishmallows", "Original Squad", '12"', 25, "Common", False, "Orange worm caterpillar"),
         ("Aziza the Strawberry", "Squishmallows", "Fruit Squad", '12"', 28, "Common", False, "Pink strawberry with face"),
@@ -919,22 +1000,13 @@ def get_curated_catalog() -> list[dict]:
 
         # ── Jellycat — New 2024/2025 Releases (10) ─────────────────────
         ("Jellycat Amuseable Sourdough", "Jellycat", "Amuseable", 'Medium 27cm', 30, "Common", False, "Bread loaf with scored top"),
-        ("Jellycat Amuseable Croissant", "Jellycat", "Amuseable", 'Medium 20cm', 28, "Common", False, "Golden flaky croissant"),
         ("Jellycat Amuseable Pretzel", "Jellycat", "Amuseable", 'Medium 18cm', 25, "Common", False, "Twisted pretzel shape"),
         ("Jellycat Vivacious Vegetable Leek", "Jellycat", "Vivacious Vegetable", 'Medium 22cm', 28, "Common", False, "Green leek with legs"),
         ("Jellycat Vivacious Vegetable Mushroom", "Jellycat", "Vivacious Vegetable", 'Medium 17cm', 25, "Common", False, "Brown capped mushroom"),
-        ("Jellycat Bashful Blush Bunny Huge", "Jellycat", "Bashful", 'Huge 51cm', 75, "Uncommon", False, "Oversized blush pink bunny"),
         ("Jellycat Bashful Luxe Willow Bunny", "Jellycat", "Bashful Luxe", 'Medium 31cm', 45, "Uncommon", False, "Premium green tonal bunny"),
-        ("Jellycat Cordy Roy Fox", "Jellycat", "Cordy Roy", 'Medium 26cm', 85, "Rare", True, "Retired 2018, corduroy fox"),
-        ("Jellycat Odyssey Octopus Large", "Jellycat", "Odyssey", 'Large 49cm', 55, "Uncommon", False, "Long tentacle octopus"),
         ("Jellycat Amuseable Sports Cricket Ball", "Jellycat", "Amuseable Sports", 'Small 9cm', 18, "Common", False, "Red cricket ball with legs"),
 
         # ── Build-A-Bear — More Licensed (5) ──────────────────────────
-        ("Snorlax Build-A-Bear", "Build-A-Bear", "Pokémon", 'Standard 40cm', 65, "Uncommon", False, "Pokémon sleeping giant collab"),
-        ("Toothless Build-A-Bear", "Build-A-Bear", "How to Train Your Dragon", 'Standard 40cm', 55, "Uncommon", True, "DreamWorks Night Fury, retired"),
-        ("Sonic the Hedgehog Build-A-Bear", "Build-A-Bear", "Sonic", 'Standard 40cm', 50, "Uncommon", False, "SEGA licensed blue hedgehog"),
-        ("Spider-Man Build-A-Bear", "Build-A-Bear", "Marvel", 'Standard 40cm', 50, "Uncommon", False, "Marvel web-slinger licensed"),
-        ("Stitch Build-A-Bear", "Build-A-Bear", "Disney", 'Standard 40cm', 55, "Uncommon", False, "Disney experiment 626"),
 
         # ── Pokemon Center — More Exclusives (5) ──────────────────────
         ("Sylveon Plush", "Pokémon Center", "Standard", 'Medium 25cm', 30, "Common", False, "Fairy eeveelution ribbon plush"),
@@ -944,9 +1016,7 @@ def get_curated_catalog() -> list[dict]:
         ("Fuecoco Plush", "Pokémon Center", "Scarlet & Violet", 'Medium 20cm', 25, "Common", False, "Gen 9 fire croc starter"),
 
         # ── Sanrio — More Characters (5) ──────────────────────────────
-        ("Pochacco Classic Plush", "Sanrio", "Pochacco", 'Medium 25cm', 28, "Common", False, "Athletic white dog character"),
         ("Tuxedosam Classic Plush", "Sanrio", "Tuxedosam", 'Medium 22cm', 28, "Common", False, "Penguin in tuxedo from 1978"),
-        ("Little Twin Stars Kiki & Lala Set", "Sanrio", "Little Twin Stars", 'Pair 20cm each', 50, "Uncommon", False, "Twin star siblings pair set"),
         ("Badtz-Maru Large Plush", "Sanrio", "Badtz-Maru", 'Large 35cm', 35, "Common", False, "Mischievous penguin character"),
         ("Hello Kitty 50th Anniversary", "Sanrio", "Hello Kitty", 'Large 40cm', 85, "Rare", False, "2024 golden 50th anniversary edition"),
 
@@ -954,7 +1024,6 @@ def get_curated_catalog() -> list[dict]:
         ("StellaLou Rabbit", "Disney", "Duffy & Friends", 'Medium 30cm', 60, "Uncommon", False, "Tokyo Disney Sea ballet rabbit"),
         ("Spirit Jersey Stitch Plush", "Disney", "Spirit Jersey", 'Medium 30cm', 45, "Uncommon", False, "Stitch in park spirit jersey"),
         ("Figment Plush Large", "Disney", "EPCOT", 'Large 45cm', 50, "Uncommon", False, "EPCOT purple dragon mascot"),
-        ("Orange Bird Plush", "Disney", "Magic Kingdom", 'Medium 25cm', 40, "Uncommon", True, "Adventureland citrus bird, retired"),
         ("Pascal Tangled Plush", "Disney", "Tangled", 'Small 18cm', 20, "Common", False, "Color-changing chameleon"),
 
         # ── More Ghibli Plush (5) ─────────────────────────────────────
@@ -1004,7 +1073,19 @@ def get_curated_catalog() -> list[dict]:
             "is_retired": is_retired,
             "notes": notes,
         })
-    return catalog
+
+    # ── Variant expansion: size variants, retailer exclusives, seasonal ──
+    catalog.extend(_variant_expansion())
+
+    # Deduplicate by ('name', 'brand', 'size') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["name"], item["brand"], item["size"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

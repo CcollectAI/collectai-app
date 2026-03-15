@@ -967,7 +967,15 @@ def get_curated_catalog() -> list[dict]:
         })
 
     catalog.extend(_batch_fandom_collectibles_2025())
-    return catalog
+    # Deduplicate by ('artist', 'name', 'variant') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["artist"], item["name"], item["variant"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _batch_fandom_collectibles_2025() -> list[dict]:

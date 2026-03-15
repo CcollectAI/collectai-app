@@ -14,7 +14,6 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Image } from 'expo-image';
@@ -32,20 +31,8 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { AnimatedPressable } from '@/motion';
 import type { Offer, OfferStatus } from '@/data/types';
 import { timeAgo } from '@/lib/timeAgo';
-
-// ---------------------------------------------------------------------------
-// Status badge config
-// ---------------------------------------------------------------------------
-
-const STATUS_LABELS: Record<OfferStatus, string> = {
-  proposed: 'Pending',
-  countered: 'Countered',
-  accepted: 'Accepted',
-  declined: 'Declined',
-  expired: 'Expired',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
+import { STATUS_LABELS } from '@/constants/dealStatus';
+import { radius, text, fontWeight } from '@/theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Relative time helper
@@ -66,7 +53,7 @@ type Tab = 'active' | 'history';
 // OfferCard component
 // ---------------------------------------------------------------------------
 
-function OfferCard({
+const OfferCard = React.memo(function OfferCard({
   offer,
   colors,
   statusTokens,
@@ -147,7 +134,7 @@ function OfferCard({
       </View>
     </AnimatedPressable>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Main screen
@@ -268,7 +255,7 @@ function OffersInboxScreen() {
           keyExtractor={keyExtractor}
           contentContainerStyle={styles.listContent}
           removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
+          maxToRenderPerBatch={8}
           windowSize={5}
           refreshControl={
             <RefreshControl
@@ -302,20 +289,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
   tabBar: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -328,8 +301,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   listContent: {
     paddingHorizontal: 16,
@@ -340,7 +313,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 14,
+    borderRadius: radius.md,
     borderWidth: 1,
     marginBottom: 10,
     gap: 12,
@@ -348,7 +321,7 @@ const styles = StyleSheet.create({
   offerThumb: {
     width: 56,
     height: 56,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
@@ -361,8 +334,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   offerItemTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     marginBottom: 4,
   },
   offerMetaRow: {
@@ -384,31 +357,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   offerAvatarInitial: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: text.xs,
+    fontWeight: fontWeight.bold,
   },
   offerUserName: {
-    fontSize: 12,
+    fontSize: text.sm,
     flex: 1,
   },
   offerTime: {
-    fontSize: 11,
+    fontSize: text.xs,
   },
   offerRight: {
     alignItems: 'flex-end',
     gap: 6,
   },
   offerPrice: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: text.lg,
+    fontWeight: fontWeight.bold,
   },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: radius.xs,
   },
   statusBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: text.xs,
+    fontWeight: fontWeight.semibold,
   },
 });

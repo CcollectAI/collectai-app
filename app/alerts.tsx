@@ -200,6 +200,7 @@ function AlertsScreen() {
     async (triggerId: string) => {
       // Optimistic update via local read tracking
       setReadIds((prev) => new Set(prev).add(triggerId));
+      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
       try {
         await collectorsApi.markTriggerRead(triggerId);
       } catch {
@@ -208,7 +209,7 @@ function AlertsScreen() {
         loadTriggers();
       }
     },
-    [loadTriggers],
+    [loadTriggers, settings.hapticsEnabled],
   );
 
   // -----------------------------------------------------------------------

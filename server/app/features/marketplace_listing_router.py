@@ -542,7 +542,17 @@ async def list_listings(
             params.append(offset)
             rows = await conn.fetch(
                 f"""
-                SELECT *
+                SELECT id, user_id, item_id, account_id, marketplace_id,
+                       external_listing_id, listing_url, listing_title,
+                       listing_description, price, currency, original_price,
+                       format, auction_duration_days, auction_start_price,
+                       buy_it_now_price, quantity, condition_label, condition_notes,
+                       shipping_method, shipping_cost, ships_international,
+                       returns_accepted, returns_days, status, status_message,
+                       views_count, watchers_count, offers_count,
+                       estimated_fees, estimated_net, fee_percentage,
+                       listed_at, expires_at, sold_at, synced_at,
+                       created_at, updated_at
                 FROM marketplace_listings
                 WHERE {where_clause}
                 ORDER BY created_at DESC
@@ -683,7 +693,18 @@ async def get_listing(
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT * FROM marketplace_listings WHERE id = $1 AND user_id = $2",
+                """SELECT id, user_id, item_id, account_id, marketplace_id,
+                       external_listing_id, listing_url, listing_title,
+                       listing_description, price, currency, original_price,
+                       format, auction_duration_days, auction_start_price,
+                       buy_it_now_price, quantity, condition_label, condition_notes,
+                       shipping_method, shipping_cost, ships_international,
+                       returns_accepted, returns_days, status, status_message,
+                       views_count, watchers_count, offers_count,
+                       estimated_fees, estimated_net, fee_percentage,
+                       listed_at, expires_at, sold_at, synced_at,
+                       created_at, updated_at
+                FROM marketplace_listings WHERE id = $1 AND user_id = $2""",
                 listing_id, user_id,
             )
             if not row:
@@ -897,7 +918,12 @@ async def list_sales(
 
             rows = await conn.fetch(
                 """
-                SELECT *
+                SELECT id, listing_id, user_id, buyer_name,
+                       buyer_marketplace_id, buyer_rating, sale_price,
+                       currency, shipping_cost_actual, platform_fee,
+                       payment_processing_fee, net_proceeds,
+                       tracking_number, carrier, shipped_at, delivered_at,
+                       status, sold_at, created_at, updated_at
                 FROM marketplace_sales
                 WHERE user_id = $1
                 ORDER BY sold_at DESC

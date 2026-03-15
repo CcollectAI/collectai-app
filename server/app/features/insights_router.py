@@ -73,7 +73,7 @@ class HomeWidgetResponse(BaseModel):
 async def get_personalized_insights(
     user_id: str = Depends(get_current_user_id),
     pagination: tuple[int, int] = Depends(pagination_params),
-    _rl=Depends(per_user_rate_limit(20, scope="insights")),
+    _rl=Depends(per_user_rate_limit(20, window_seconds=60, scope="insights")),
 ) -> PersonalizedInsightsResponse:
     """
     Personalized insights based on the user's actual portfolio composition:

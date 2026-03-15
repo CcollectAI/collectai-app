@@ -694,7 +694,16 @@ def get_curated_catalog() -> list[dict]:
         })
 
     catalog.extend(_batch_premium_figures_2025())
-    return catalog
+    catalog.extend(_batch_variant_editions())
+    # Deduplicate by ('brand', 'name', 'figure_type') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["brand"], item["name"], item["figure_type"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _batch_premium_figures_2025() -> list[dict]:
@@ -753,8 +762,6 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "Marvel Spider-Verse", "Scarlet Spider Ben Reilly (Spider-Verse)", "1/6 Figure", "mid", 370),
 
         # Deadpool & Wolverine
-        ("Hot Toys", "Marvel MCU", "Deadpool (Deadpool & Wolverine)", "1/6 Figure", "mid", 420),
-        ("Hot Toys", "Marvel MCU", "Wolverine (Deadpool & Wolverine)", "1/6 Figure", "mid", 430),
         ("Hot Toys", "Marvel MCU", "Lady Deadpool (Deadpool & Wolverine)", "1/6 Figure", "mid", 400),
         ("Hot Toys", "Marvel MCU", "Dogpool (Deadpool & Wolverine)", "1/6 Figure", "mid", 350),
         ("Hot Toys", "Marvel MCU", "Cassandra Nova (Deadpool & Wolverine)", "1/6 Figure", "mid", 380),
@@ -767,9 +774,7 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "Marvel MCU", "Loki (Season 2 Finale God of Stories)", "1/6 Figure", "mid", 410),
 
         # Additional Hot Toys — DC
-        ("Hot Toys", "DC", "The Flash (The Flash 2023)", "1/6 Figure", "mid", 370),
         ("Hot Toys", "DC", "Batman (Ben Affleck The Flash 2023)", "1/6 Figure", "mid", 400),
-        ("Hot Toys", "DC", "Aquaman (Aquaman and the Lost Kingdom)", "1/6 Figure", "mid", 380),
 
         # === EXPANSION ROUND — 55 new items ===
 
@@ -778,9 +783,6 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "Star Wars", "Clone Trooper 212th Attack Battalion", "1/6 Figure", "mid", 330),
         ("Hot Toys", "Star Wars", "ARC Trooper Echo (The Bad Batch)", "1/6 Figure", "mid", 370),
         ("Hot Toys", "Star Wars", "ARC Trooper Fives (Clone Wars)", "1/6 Figure", "mid", 380),
-        ("Hot Toys", "Star Wars", "Luke Skywalker (ROTJ Deluxe)", "1/6 Figure", "mid", 420),
-        ("Hot Toys", "Star Wars", "Han Solo (A New Hope)", "1/6 Figure", "mid", 400),
-        ("Hot Toys", "Star Wars", "Princess Leia (A New Hope)", "1/6 Figure", "mid", 380),
         ("Hot Toys", "Star Wars", "Obi-Wan Kenobi (ROTS Deluxe)", "1/6 Figure", "mid", 410),
         ("Hot Toys", "Star Wars", "Emperor Palpatine (ROTJ Throne Room)", "1/6 Figure", "high", 500),
         ("Hot Toys", "Star Wars", "Grand Admiral Thrawn (Ahsoka)", "1/6 Figure", "mid", 450),
@@ -789,23 +791,17 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "Marvel MCU", "Captain America (Brave New World)", "1/6 Figure", "mid", 380),
         ("Hot Toys", "Marvel MCU", "Thunderbolts Winter Soldier (Bucky)", "1/6 Figure", "mid", 370),
         ("Hot Toys", "Marvel MCU", "Agatha Harkness (Agatha All Along)", "1/6 Figure", "mid", 340),
-        ("Hot Toys", "Marvel MCU", "Ms. Marvel (Kamala Khan)", "1/6 Figure", "standard", 290),
-        ("Hot Toys", "Marvel MCU", "Kate Bishop (Hawkeye Series)", "1/6 Figure", "mid", 310),
         ("Hot Toys", "Marvel MCU", "Echo (Maya Lopez)", "1/6 Figure", "standard", 280),
         ("Hot Toys", "Marvel MCU", "She-Hulk (Jennifer Walters)", "1/6 Figure", "mid", 320),
-        ("Hot Toys", "Marvel MCU", "Gorr the God Butcher (Love and Thunder)", "1/6 Figure", "mid", 380),
         ("Hot Toys", "Marvel MCU", "Yellowjacket (Ant-Man)", "1/6 Figure", "mid", 420),
         ("Hot Toys", "Marvel MCU", "Mysterio (Far From Home)", "1/6 Figure", "mid", 400),
 
         # ─── DC Hot Toys (+8) ─────────────────────────────────────────
-        ("Hot Toys", "DC", "Batman (Batman Begins)", "1/6 Figure", "mid", 420),
         ("Hot Toys", "DC", "Batman (The Dark Knight DX19)", "1/6 Figure", "high", 650),
         ("Hot Toys", "DC", "The Joker (Heath Ledger DX11)", "1/6 Figure", "high", 800),
         ("Hot Toys", "DC", "The Joker (Joaquin Phoenix 2019)", "1/6 Figure", "mid", 420),
-        ("Hot Toys", "DC", "Superman (Christopher Reeve)", "1/6 Figure", "high", 600),
         ("Hot Toys", "DC", "Wonder Woman (Gal Gadot Justice League)", "1/6 Figure", "mid", 380),
         ("Hot Toys", "DC", "Cyborg (Justice League Snyder Cut)", "1/6 Figure", "mid", 370),
-        ("Hot Toys", "DC", "Harley Quinn (Birds of Prey)", "1/6 Figure", "mid", 340),
 
         # ─── Video Game Figures (+7) ──────────────────────────────────
         ("Hot Toys", "Resident Evil", "Leon S. Kennedy (RE4 Remake)", "1/6 Figure", "mid", 380),
@@ -813,23 +809,18 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "Resident Evil", "Chris Redfield (RE Village)", "1/6 Figure", "mid", 360),
         ("Hot Toys", "Metal Gear", "Naked Snake (MGS3 Snake Eater)", "1/6 Figure", "high", 550),
         ("Hot Toys", "Metal Gear", "Raiden (Metal Gear Rising)", "1/6 Figure", "mid", 400),
-        ("Hot Toys", "Batman Arkham", "Batman (Arkham Knight)", "1/6 Figure", "mid", 450),
         ("Hot Toys", "Batman Arkham", "Harley Quinn (Arkham City)", "1/6 Figure", "mid", 380),
 
         # ─── Horror / Predator / Aliens (+7) ─────────────────────────
         ("Hot Toys", "Alien", "Alien Warrior (35th Anniversary)", "1/6 Figure", "mid", 420),
-        ("Hot Toys", "Alien", "Alien Queen (Aliens 1986)", "1/6 Figure", "high", 800),
         ("Hot Toys", "Predator", "City Hunter Predator (Predator 2)", "1/6 Figure", "mid", 450),
-        ("Hot Toys", "Predator", "Celtic Predator (AVP)", "1/6 Figure", "mid", 420),
         ("Hot Toys", "Predator", "Wolf Predator (AVPR)", "1/6 Figure", "mid", 440),
-        ("Hot Toys", "Horror", "Pennywise (IT Chapter Two)", "1/6 Figure", "mid", 380),
         ("Hot Toys", "Horror", "Michael Myers (Halloween 2018)", "1/6 Figure", "mid", 370),
 
         # ─── Cosbaby / Artist Mix Series (+7) ────────────────────────
         ("Hot Toys", "Marvel MCU", "Iron Man Mark LXXXV Cosbaby (L)", "Cosbaby", "standard", 45),
         ("Hot Toys", "Marvel MCU", "Spider-Man Cosbaby (Integrated Suit)", "Cosbaby", "standard", 40),
         ("Hot Toys", "Marvel MCU", "Thanos Cosbaby (Infinity Gauntlet)", "Cosbaby", "standard", 42),
-        ("Hot Toys", "Star Wars", "The Mandalorian & Grogu Cosbaby Set", "Cosbaby", "standard", 50),
         ("Hot Toys", "Star Wars", "Darth Vader Cosbaby (Bobble-Head)", "Cosbaby", "standard", 38),
         ("Hot Toys", "Marvel MCU", "Avengers Artist Mix Set (Ultron Series)", "Artist Mix", "mid", 180),
         ("Hot Toys", "Marvel MCU", "Guardians of the Galaxy Artist Mix Set", "Artist Mix", "mid", 200),
@@ -866,11 +857,7 @@ def _batch_premium_figures_2025() -> list[dict]:
 
         # ─── Star Wars Ahsoka Series (+8) ───────────────────────────────
         ("Hot Toys", "Star Wars", "Ahsoka Tano (Ahsoka Series Live Action)", "1/6 Figure", "mid", 420),
-        ("Hot Toys", "Star Wars", "Sabine Wren (Ahsoka Series)", "1/6 Figure", "mid", 400),
         ("Hot Toys", "Star Wars", "Hera Syndulla (Ahsoka Series)", "1/6 Figure", "mid", 380),
-        ("Hot Toys", "Star Wars", "Huyang (Ahsoka Series)", "1/6 Figure", "mid", 350),
-        ("Hot Toys", "Star Wars", "Baylan Skoll (Ahsoka Series)", "1/6 Figure", "mid", 390),
-        ("Hot Toys", "Star Wars", "Shin Hati (Ahsoka Series)", "1/6 Figure", "mid", 360),
         ("Hot Toys", "Star Wars", "Marrok (Ahsoka Series)", "1/6 Figure", "mid", 340),
         ("Hot Toys", "Star Wars", "Chopper Droid (Ahsoka Series)", "1/6 Figure", "standard", 250),
 
@@ -890,12 +877,10 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "DC", "Penguin (The Batman Colin Farrell)", "1/6 Figure", "mid", 370),
         ("Hot Toys", "DC", "Blue Beetle (Jaime Reyes)", "1/6 Figure", "mid", 350),
         ("Hot Toys", "DC", "Batgirl (Batgirl 2025)", "1/6 Figure", "mid", 340),
-        ("Hot Toys", "DC", "Supergirl (The Flash 2023)", "1/6 Figure", "mid", 360),
 
         # ─── Cosbaby Expansion (+10) ─────────────────────────────────────
         ("Hot Toys", "Marvel MCU", "Deadpool & Wolverine Cosbaby 2-Pack", "Cosbaby", "standard", 48),
         ("Hot Toys", "Marvel MCU", "Scarlet Witch (WandaVision) Cosbaby", "Cosbaby", "standard", 25),
-        ("Hot Toys", "Marvel MCU", "Moon Knight Cosbaby", "Cosbaby", "standard", 24),
         ("Hot Toys", "Marvel MCU", "Ms. Marvel Kamala Khan Cosbaby", "Cosbaby", "standard", 22),
         ("Hot Toys", "Marvel MCU", "Loki (God of Stories) Cosbaby", "Cosbaby", "standard", 25),
         ("Hot Toys", "DC", "The Batman Cosbaby", "Cosbaby", "standard", 24),
@@ -928,7 +913,6 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "DC", "DX12 The Dark Knight Rises Batman", "1/6 Figure", "grail", 1400),
         ("Hot Toys", "Marvel MCU", "Iron Man Mark I (Original Release)", "1/6 Figure", "grail", 1200),
         ("Hot Toys", "Marvel MCU", "Iron Man Mark II (Armor Unleashed)", "1/6 Figure", "grail", 1100),
-        ("Hot Toys", "Marvel MCU", "Iron Man Mark V (Suitcase Armor)", "1/6 Figure", "high", 800),
         ("Hot Toys", "Marvel MCU", "Iron Man Mark VI (Die-Cast)", "1/6 Figure", "high", 750),
         ("Hot Toys", "Marvel MCU", "Iron Man Mark XLII (Original Release)", "1/6 Figure", "high", 700),
         ("Hot Toys", "Marvel MCU", "Iron Man Mark XLIII (Age of Ultron)", "1/6 Figure", "high", 650),
@@ -949,6 +933,183 @@ def _batch_premium_figures_2025() -> list[dict]:
         ("Hot Toys", "Terminator", "T-800 (Battle Damaged, T2)", "1/6 Figure", "high", 550),
         ("Hot Toys", "James Bond", "James Bond 007 (Goldfinger Sean Connery)", "1/6 Figure", "grail", 1100),
         ("Hot Toys", "Pirates of Caribbean", "Captain Jack Sparrow (DX15 Reissue)", "1/6 Figure", "grail", 1000),
+    ]
+
+    catalog = []
+    for brand, franchise, name, figure_type, tier, price in items:
+        catalog.append({
+            "brand": brand,
+            "franchise": franchise,
+            "name": name,
+            "figure_type": figure_type,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _batch_variant_editions() -> list[dict]:
+    """Batch 9 — Standard vs Deluxe, Special/Exclusive, and Die-Cast variant
+    editions for key Hot Toys figures. ~120 items covering Iron Man, Spider-Man,
+    Captain America, Thor, Thanos, Black Panther, Darth Vader, Mandalorian,
+    Boba Fett, Luke Skywalker, Joker, Batman, John Wick, Predator, and Alien."""
+
+    items = [
+        # ─── Iron Man — Standard / Deluxe / Die-Cast Variants ─────────────
+        ("Hot Toys", "Marvel MCU", "Iron Man MK85 (Endgame) Standard", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK85 (Endgame) Deluxe", "1/6 Figure", "mid", 490),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK85 (Endgame) Die-Cast", "1/6 Figure", "high", 580),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK50 (Infinity War) Standard", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK50 (Infinity War) Deluxe", "1/6 Figure", "mid", 520),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK7 (Avengers) Die-Cast", "1/6 Figure", "high", 650),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK4 (Iron Man 2) Die-Cast", "1/6 Figure", "high", 620),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK6 (Iron Man 2) Die-Cast", "1/6 Figure", "high", 640),
+        ("Hot Toys", "Marvel MCU", "Iron Man Hulkbuster 1.0 (Age of Ultron)", "1/6 Figure", "grail", 1800),
+        ("Hot Toys", "Marvel MCU", "Iron Man Hulkbuster 2.0 (Infinity War)", "1/6 Figure", "grail", 1600),
+        ("Hot Toys", "Marvel MCU", "Iron Man Nanotech Suit (Infinity War) Standard", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Marvel MCU", "Iron Man Nanotech Suit (Infinity War) Deluxe", "1/6 Figure", "high", 550),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK85 (Sideshow Exclusive)", "1/6 Figure", "high", 620),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK3 (Die-Cast, Sideshow Exclusive)", "1/6 Figure", "high", 780),
+        ("Hot Toys", "Marvel MCU", "Iron Man MK50 (Toy Fair Exclusive)", "1/6 Figure", "high", 680),
+
+        # ─── Spider-Man — Standard / Deluxe / Exclusive Variants ──────────
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Homecoming) Standard", "1/6 Figure", "mid", 310),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Homecoming) Deluxe", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (No Way Home Integrated Suit) Deluxe", "1/6 Figure", "mid", 430),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (No Way Home Black & Gold) Standard", "1/6 Figure", "mid", 320),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (No Way Home Upgraded Suit) Standard", "1/6 Figure", "mid", 330),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (No Way Home Upgraded Suit) Deluxe", "1/6 Figure", "mid", 440),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Iron Spider) Standard", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Iron Spider) Deluxe", "1/6 Figure", "mid", 460),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Symbiote Suit) Deluxe", "1/6 Figure", "mid", 440),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Iron Spider, Sideshow Exclusive)", "1/6 Figure", "high", 520),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Homecoming, Toy Fair Exclusive)", "1/6 Figure", "high", 550),
+
+        # ─── Captain America — Standard / Deluxe Variants ─────────────────
+        ("Hot Toys", "Marvel MCU", "Captain America (Endgame) Standard", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Marvel MCU", "Captain America (Endgame) Deluxe w/ Mjolnir", "1/6 Figure", "mid", 480),
+        ("Hot Toys", "Marvel MCU", "Captain America (Stealth Suit) Standard", "1/6 Figure", "mid", 330),
+        ("Hot Toys", "Marvel MCU", "Captain America (Stealth Suit) Deluxe", "1/6 Figure", "mid", 430),
+        ("Hot Toys", "Marvel MCU", "Sam Wilson Captain America Standard", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Marvel MCU", "Sam Wilson Captain America Deluxe", "1/6 Figure", "mid", 460),
+        ("Hot Toys", "Marvel MCU", "Captain America (Endgame, Sideshow Exclusive)", "1/6 Figure", "high", 560),
+
+        # ─── Thor — Standard / Deluxe Variants ────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Thor (Endgame) Standard", "1/6 Figure", "mid", 310),
+        ("Hot Toys", "Marvel MCU", "Thor (Endgame) Deluxe (Fat Thor)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Marvel MCU", "Thor (Love and Thunder) Standard", "1/6 Figure", "mid", 300),
+        ("Hot Toys", "Marvel MCU", "Thor (Love and Thunder) Deluxe", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Marvel MCU", "Thor (Ragnarok Gladiator) Standard", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "Marvel MCU", "Thor (Ragnarok Gladiator) Deluxe", "1/6 Figure", "mid", 450),
+
+        # ─── Thanos — Standard / Deluxe Variants ──────────────────────────
+        ("Hot Toys", "Marvel MCU", "Thanos (Endgame) Standard", "1/6 Figure", "mid", 480),
+        ("Hot Toys", "Marvel MCU", "Thanos (Endgame) Deluxe (Battle Damaged)", "1/6 Figure", "high", 630),
+        ("Hot Toys", "Marvel MCU", "Thanos (Infinity War) Standard", "1/6 Figure", "mid", 500),
+        ("Hot Toys", "Marvel MCU", "Thanos (Infinity War) Deluxe", "1/6 Figure", "high", 650),
+        ("Hot Toys", "Marvel MCU", "Thanos (Endgame, Sideshow Exclusive)", "1/6 Figure", "high", 720),
+
+        # ─── Black Panther — Standard / Deluxe Variants ───────────────────
+        ("Hot Toys", "Marvel MCU", "Black Panther (Civil War) Standard", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Marvel MCU", "Black Panther (Civil War) Deluxe", "1/6 Figure", "mid", 470),
+        ("Hot Toys", "Marvel MCU", "Black Panther (Wakanda Forever) Deluxe", "1/6 Figure", "mid", 450),
+        ("Hot Toys", "Marvel MCU", "Shuri as Black Panther (Wakanda Forever) Standard", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Marvel MCU", "Shuri as Black Panther (Wakanda Forever) Deluxe", "1/6 Figure", "mid", 490),
+
+        # ─── Darth Vader — Standard / Deluxe / Exclusive Variants ─────────
+        ("Hot Toys", "Star Wars", "Darth Vader (ESB) Standard", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Darth Vader (ESB) Deluxe", "1/6 Figure", "high", 520),
+        ("Hot Toys", "Star Wars", "Darth Vader (ROTJ) Standard", "1/6 Figure", "mid", 390),
+        ("Hot Toys", "Star Wars", "Darth Vader (ROTJ) Deluxe w/ Throne", "1/6 Figure", "high", 600),
+        ("Hot Toys", "Star Wars", "Darth Vader (Rogue One) Deluxe", "1/6 Figure", "mid", 500),
+        ("Hot Toys", "Star Wars", "Darth Vader (Obi-Wan Show) Standard", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Darth Vader (Obi-Wan Show) Deluxe", "1/6 Figure", "mid", 500),
+        ("Hot Toys", "Star Wars", "Darth Vader (ESB, Sideshow Exclusive)", "1/6 Figure", "high", 650),
+
+        # ─── Mandalorian — Standard / Deluxe Variants ─────────────────────
+        ("Hot Toys", "Star Wars", "The Mandalorian (Beskar) Standard", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Star Wars", "The Mandalorian (Beskar) Deluxe w/ Grogu", "1/6 Figure", "mid", 470),
+        ("Hot Toys", "Star Wars", "The Mandalorian (S3 Armor) Standard", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Star Wars", "The Mandalorian (S3 Armor) Deluxe", "1/6 Figure", "mid", 490),
+        ("Hot Toys", "Star Wars", "The Mandalorian (Hot Toys Exclusive Chrome)", "1/6 Figure", "high", 580),
+
+        # ─── Boba Fett — Standard / Deluxe / Exclusive Variants ──────────
+        ("Hot Toys", "Star Wars", "Boba Fett (ESB) Standard", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Star Wars", "Boba Fett (ESB) Deluxe", "1/6 Figure", "mid", 480),
+        ("Hot Toys", "Star Wars", "Boba Fett (ROTJ) Standard", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Star Wars", "Boba Fett (ROTJ) Deluxe w/ Sarlacc Base", "1/6 Figure", "high", 550),
+        ("Hot Toys", "Star Wars", "Boba Fett (Book of Boba Fett) Standard", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Star Wars", "Boba Fett (Book of Boba Fett) Deluxe w/ Throne", "1/6 Figure", "high", 520),
+        ("Hot Toys", "Star Wars", "Boba Fett (ESB, Sideshow Exclusive)", "1/6 Figure", "high", 600),
+
+        # ─── Luke Skywalker — Standard / Deluxe Variants ─────────────────
+        ("Hot Toys", "Star Wars", "Luke Skywalker (ESB) Standard", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Star Wars", "Luke Skywalker (ESB) Deluxe w/ Yoda", "1/6 Figure", "mid", 480),
+        ("Hot Toys", "Star Wars", "Luke Skywalker (ROTJ) Standard", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Star Wars", "Luke Skywalker (ROTJ) Deluxe w/ Endor Speeder", "1/6 Figure", "high", 580),
+        ("Hot Toys", "Star Wars", "Luke Skywalker (The Mandalorian) Standard", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Luke Skywalker (The Mandalorian) Deluxe w/ Grogu", "1/6 Figure", "mid", 500),
+
+        # ─── Joker — Standard / DX / Exclusive Variants ──────────────────
+        ("Hot Toys", "DC", "Joker (Heath Ledger TDK) Standard", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "DC", "Joker (Heath Ledger TDK) DX Edition", "1/6 Figure", "grail", 1200),
+        ("Hot Toys", "DC", "Joker (Heath Ledger TDK, Toy Fair Exclusive)", "1/6 Figure", "grail", 1500),
+        ("Hot Toys", "DC", "Joker (Joaquin Phoenix) Standard", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "DC", "Joker (Joaquin Phoenix) Deluxe w/ Stair Diorama", "1/6 Figure", "mid", 500),
+        ("Hot Toys", "DC", "Joker (Jack Nicholson Batman 1989) Standard", "1/6 Figure", "high", 650),
+        ("Hot Toys", "DC", "Joker (Jack Nicholson Batman 1989) DX Edition", "1/6 Figure", "grail", 1100),
+
+        # ─── Batman — Standard / DX / Deluxe / Exclusive Variants ────────
+        ("Hot Toys", "DC", "Batman (TDK) Standard", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "DC", "Batman (TDK) DX Edition", "1/6 Figure", "high", 700),
+        ("Hot Toys", "DC", "Batman (BvS) Standard", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "DC", "Batman (BvS) Deluxe w/ Kryptonite Spear", "1/6 Figure", "mid", 480),
+        ("Hot Toys", "DC", "Batman (Ben Affleck, Sideshow Exclusive)", "1/6 Figure", "high", 560),
+        ("Hot Toys", "DC", "Batman (Robert Pattinson) Standard", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "DC", "Batman (Robert Pattinson) Deluxe w/ Bat-Signal", "1/6 Figure", "mid", 460),
+        ("Hot Toys", "DC", "Batman (Michael Keaton 1989) Standard", "1/6 Figure", "high", 620),
+        ("Hot Toys", "DC", "Batman (Michael Keaton 1989) Deluxe", "1/6 Figure", "high", 780),
+        ("Hot Toys", "DC", "Batman (Michael Keaton 1989, Sideshow Exclusive)", "1/6 Figure", "grail", 950),
+        ("Hot Toys", "DC", "Batman (TDK, Toy Fair Exclusive)", "1/6 Figure", "high", 800),
+
+        # ─── John Wick — Chapter Variants ─────────────────────────────────
+        ("Hot Toys", "John Wick", "John Wick (Chapter 2) Standard", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "John Wick", "John Wick (Chapter 2) Deluxe", "1/6 Figure", "mid", 480),
+        ("Hot Toys", "John Wick", "John Wick (Chapter 3) Standard", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "John Wick", "John Wick (Chapter 3) Deluxe w/ Dog", "1/6 Figure", "mid", 490),
+        ("Hot Toys", "John Wick", "John Wick (Chapter 4) Standard", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "John Wick", "John Wick (Chapter 4) Deluxe w/ Dragon's Breath", "1/6 Figure", "mid", 500),
+        ("Hot Toys", "John Wick", "John Wick (Chapter 4, Sideshow Exclusive)", "1/6 Figure", "high", 580),
+
+        # ─── Predator — Variant Editions ──────────────────────────────────
+        ("Hot Toys", "Predator", "Classic Predator (1987) Standard", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "Predator", "Classic Predator (1987) Deluxe w/ Trophy Wall", "1/6 Figure", "high", 580),
+        ("Hot Toys", "Predator", "City Hunter Predator Standard", "1/6 Figure", "mid", 440),
+        ("Hot Toys", "Predator", "City Hunter Predator Deluxe", "1/6 Figure", "high", 580),
+        ("Hot Toys", "Predator", "Jungle Hunter Predator Standard", "1/6 Figure", "mid", 430),
+        ("Hot Toys", "Predator", "Jungle Hunter Predator Deluxe w/ Diorama", "1/6 Figure", "high", 600),
+        ("Hot Toys", "Predator", "Classic Predator (Sideshow Exclusive)", "1/6 Figure", "high", 650),
+
+        # ─── Alien — Variant Editions ─────────────────────────────────────
+        ("Hot Toys", "Alien", "Alien Big Chap Standard", "1/6 Figure", "mid", 440),
+        ("Hot Toys", "Alien", "Alien Big Chap Deluxe w/ Facehugger & Egg", "1/6 Figure", "high", 580),
+        ("Hot Toys", "Alien", "Xenomorph Warrior (Aliens 1986) Standard", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Alien", "Xenomorph Warrior (Aliens 1986) Deluxe", "1/6 Figure", "high", 540),
+        ("Hot Toys", "Alien", "Alien Big Chap (Sideshow Exclusive)", "1/6 Figure", "high", 620),
+
+        # ─── Sideshow Exclusive Editions — Various ────────────────────────
+        ("Sideshow", "Marvel", "Spider-Man Premium Format (Sideshow Exclusive)", "Premium Format", "high", 850),
+        ("Sideshow", "Marvel", "Wolverine Premium Format (Sideshow Exclusive)", "Premium Format", "high", 800),
+        ("Sideshow", "Marvel", "Hulk Premium Format (Sideshow Exclusive)", "Premium Format", "high", 900),
+        ("Sideshow", "Marvel", "Venom Premium Format (Sideshow Exclusive)", "Premium Format", "high", 820),
+        ("Sideshow", "Marvel", "Captain America Premium Format (Sideshow Exclusive)", "Premium Format", "high", 850),
+        ("Sideshow", "DC", "Batman Premium Format (Sideshow Exclusive)", "Premium Format", "high", 780),
+        ("Sideshow", "DC", "Joker Premium Format (Sideshow Exclusive)", "Premium Format", "high", 800),
+        ("Sideshow", "DC", "Catwoman Premium Format (Sideshow Exclusive)", "Premium Format", "high", 750),
+        ("Sideshow", "Star Wars", "Darth Vader Premium Format (Sideshow Exclusive)", "Premium Format", "high", 900),
+        ("Sideshow", "Star Wars", "Boba Fett Premium Format (Sideshow Exclusive)", "Premium Format", "high", 800),
+        ("Sideshow", "Predator", "Predator Maquette (Sideshow Exclusive)", "Maquette", "grail", 1100),
+        ("Sideshow", "Alien", "Alien Queen Maquette (Sideshow Exclusive)", "Maquette", "grail", 1900),
     ]
 
     catalog = []

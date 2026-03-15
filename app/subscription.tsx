@@ -20,6 +20,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import {
+  ApiError,
   getBillingStatus,
   createCheckoutSession,
   createPortalSession,
@@ -106,16 +107,32 @@ function SubscriptionScreen() {
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [billingUnavailable, setBillingUnavailable] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [upgrading, setUpgrading] = useState<string | null>(null);
+
+  function fetchBilling() {
+    setLoading(true);
+    setFetchError(null);
+    setBillingUnavailable(false);
+    getBillingStatus()
+      .then(setBilling)
+      .catch((err: unknown) => {
+        // 404 or 501 means billing is not configured yet — show "Coming Soon"
+        if (err instanceof ApiError && (err.status === 404 || err.status === 501)) {
+          setBillingUnavailable(true);
+        } else {
+          setFetchError(
+            err instanceof Error ? err.message : 'Could not load subscription info.',
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }
 
   useEffect(() => {
     track({ name: 'subscription_screen_viewed' });
-    getBillingStatus()
-      .then(setBilling)
-      .catch(() => {
-        setBillingUnavailable(true);
-      })
-      .finally(() => setLoading(false));
+    fetchBilling();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function isValidUrl(url: unknown): url is string {
@@ -188,6 +205,22 @@ function SubscriptionScreen() {
 
         {loading ? (
           <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
+        ) : fetchError ? (
+          <View style={styles.comingSoonSection}>
+            <View style={[styles.comingSoonIcon, { backgroundColor: colors.danger + '15' }]}>
+              <Ionicons name="cloud-offline-outline" size={40} color={colors.danger} />
+            </View>
+            <Text style={[styles.comingSoonTitle, { color: colors.text }]}>Something Went Wrong</Text>
+            <Text style={[styles.comingSoonText, { color: colors.muted }]}>{fetchError}</Text>
+            <AnimatedPressable
+              style={[styles.selectBtn, { backgroundColor: colors.accent, marginTop: 20, paddingHorizontal: 32 }]}
+              onPress={fetchBilling}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading subscription"
+            >
+              <Text style={styles.selectBtnText}>Retry</Text>
+            </AnimatedPressable>
+          </View>
         ) : billingUnavailable ? (
           <View style={styles.comingSoonSection}>
             <View style={[styles.comingSoonIcon, { backgroundColor: colors.accent + '15' }]}>

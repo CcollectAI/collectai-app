@@ -52,6 +52,13 @@ ISSUE_TYPE_SCORES: dict[str, float] = {
     "Variant Cover": 0.70,
     "CGC 9.8": 0.90,
     "CGC 9.6": 0.85,
+    "CGC 9.4": 0.82,
+    "CGC 9.2": 0.80,
+    "CGC 9.0": 0.78,
+    "CGC 8.0": 0.72,
+    "CGC 6.0": 0.60,
+    "CGC 4.0": 0.50,
+    "CGC 2.0": 0.40,
     "First Print": 0.60,
     "TPB": 0.30,
     "Omnibus": 0.55,
@@ -503,7 +510,6 @@ def get_curated_catalog() -> list[dict]:
         ("Marvel", "X-Men", "X-Men #14 (1st Sentinels)", "Silver Age Key", "grail", 3000.0),
         ("Marvel", "Avengers", "Avengers #16 (New Avengers lineup, Cap's Kooky Quartet)", "Silver Age Key", "grail", 2000.0),
         ("Marvel", "Fantastic Four", "Fantastic Four #45 (1st Inhumans)", "Silver Age Key", "grail", 4000.0),
-        ("Marvel", "Fantastic Four", "Fantastic Four #52 (1st Black Panther)", "Silver Age Key", "grail", 15000.0),
         ("Marvel", "Avengers", "Avengers #55 (1st Ultron)", "Silver Age Key", "grail", 3000.0),
 
         # ── 36. Silver Age — DC First Appearances (8) ──────────────────────
@@ -725,7 +731,19 @@ def get_curated_catalog() -> list[dict]:
     # Marvel Bronze Age, Modern spec, CGC graded slabs)
     catalog.extend(_expanded_round8_comic_books())
 
-    return catalog
+    # Round 10 expansion — ~120 items: variant covers, CGC graded tiers,
+    # signature series, modern keys, independent/Image keys
+    catalog.extend(_expanded_variant_covers_graded_modern())
+
+    # Deduplicate by ('publisher', 'name') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["publisher"], item["name"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _expanded_round7_comic_books() -> list[dict]:
@@ -747,7 +765,6 @@ def _expanded_round7_comic_books() -> list[dict]:
         ("Dark Horse", "Hellboy", "Hellboy: Seed of Destruction #1 (1994, Mike Mignola)", "Modern Key", "high", 200.0),
         ("Dark Horse", "Sin City", "Sin City: The Hard Goodbye TPB (1991, Frank Miller, 1st print)", "First Print", "high", 150.0),
         ("Dark Horse", "The Mask", "The Mask #1 (1991, 1st Dark Horse series)", "Modern Key", "mid", 80.0),
-        ("Dark Horse", "Concrete", "Concrete #1 (1987, Paul Chadwick)", "Modern Key", "mid", 40.0),
         ("Dark Horse", "Star Wars Dark Empire", "Star Wars: Dark Empire #1 (1991, Tom Veitch)", "Modern Key", "mid", 60.0),
         ("Dark Horse", "Aliens", "Aliens #1 (1988, 1st Dark Horse Aliens)", "Modern Key", "high", 200.0),
         ("Dark Horse", "Predator", "Predator #1 (1989, 1st comic appearance)", "Modern Key", "high", 120.0),
@@ -766,8 +783,7 @@ def _expanded_round7_comic_books() -> list[dict]:
         ("BOOM!", "Something is Killing the Children", "SIKTC #7 (2020, 1st Cecilia)", "Modern Key", "mid", 50.0),
         ("BOOM!", "House of Slaughter", "House of Slaughter #1 (2021, Tynion/Dell'Edera)", "Modern Key", "mid", 40.0),
         ("Image", "Ice Cream Man", "Ice Cream Man #1 (2018, W. Maxwell Prince, 1st print)", "Modern Key", "high", 200.0),
-        ("Image", "Department of Truth", "Department of Truth #1 (2020, James Tynion IV)", "Modern Key", "mid", 60.0),
-        ("Image", "Radiant Black", "Radiant Black #1 (2021, Kyle Higgins)", "Modern Key", "mid", 30.0),
+        ("Image", "Department of Truth", "Department of Truth #1 (2020, James Tynion IV, 2nd print)", "Modern Key", "mid", 60.0),
         ("Image", "Void Rivals", "Void Rivals #1 (2023, Robert Kirkman, 1st Energon Universe)", "Modern Key", "high", 100.0),
         ("Image", "Void Rivals", "Void Rivals #1 (2023, 2nd print, 1st Transformers cameo)", "Modern Key", "mid", 40.0),
         ("Image", "Universal Monsters: Dracula", "Universal Monsters: Dracula #1 (2023, James Tynion IV)", "Modern Key", "mid", 30.0),
@@ -1004,6 +1020,227 @@ def _expanded_round8_comic_books() -> list[dict]:
     return catalog
 
 
+def _expanded_variant_covers_graded_modern() -> list[dict]:
+    """~120 new items: variant covers of key issues, CGC/CBCS graded tiers,
+    signature series, modern keys (2015-2025), and independent/Image keys."""
+    comics: list[tuple[str, str, str, str, str, float]] = [
+        # ── 54. ASM #300 Variant Covers & Grades ────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom, 1988) Newsstand Edition", "Variant Cover", "grail", 3500.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom, 1988) Direct Edition", "Modern Key", "grail", 2200.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CGC 9.6", "CGC 9.6", "grail", 4000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CGC 9.4", "CGC 9.4", "grail", 3200.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CGC 9.2", "CGC 9.2", "grail", 2800.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CGC 9.0", "CGC 9.0", "grail", 2400.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CGC 8.0", "CGC 8.0", "grail", 1800.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CGC 6.0", "CGC 6.0", "grail", 1000.0),
+
+        # ── 55. Batman #1 (New 52) Variant Covers ───────────────────────────
+        ("DC", "Batman", "Batman #1 (New 52, 2011) Jim Lee 1:200 Variant", "Variant Cover", "grail", 800.0),
+        ("DC", "Batman", "Batman #1 (New 52, 2011) Blank Sketch Variant", "Variant Cover", "high", 250.0),
+        ("DC", "Batman", "Batman #1 (New 52, 2011) CGC 9.8", "CGC 9.8", "grail", 600.0),
+
+        # ── 56. X-Men #1 (1991 Jim Lee) All 5 Covers + Gatefold ────────────
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee) Cover A (Wolverine/Cyclops)", "Modern Key", "high", 120.0),
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee) Cover B (Beast/Storm)", "Modern Key", "high", 100.0),
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee) Cover C (Rogue/Psylocke)", "Modern Key", "high", 100.0),
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee) Cover D (Magneto)", "Modern Key", "high", 100.0),
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee) Cover E (Professor X/Magneto)", "Modern Key", "mid", 80.0),
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee) Gatefold Variant (all 4 covers combined)", "Variant Cover", "high", 250.0),
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee) CGC 9.8 (Cover A)", "CGC 9.8", "high", 400.0),
+
+        # ── 57. Spawn #1 Variants & Grades ──────────────────────────────────
+        ("Image", "Spawn", "Spawn #1 (1992) Newsstand Edition", "Variant Cover", "high", 250.0),
+        ("Image", "Spawn", "Spawn #1 (1992) CGC 9.8 (Newsstand)", "CGC 9.8", "grail", 1200.0),
+
+        # ── 58. Ultimate Fallout #4 Variants ─────────────────────────────────
+        ("Marvel", "Ultimate Fallout", "Ultimate Fallout #4 (1st Miles Morales) Djurdjevic Variant", "Variant Cover", "grail", 1500.0),
+        ("Marvel", "Ultimate Fallout", "Ultimate Fallout #4 (1st Miles Morales) 2nd Print", "Modern Key", "high", 300.0),
+
+        # ── 59. Edge of Spider-Verse #2 Variants ────────────────────────────
+        ("Marvel", "Edge of Spider-Verse", "Edge of Spider-Verse #2 (1st Spider-Gwen) Greg Land Variant", "Variant Cover", "grail", 600.0),
+        ("Marvel", "Edge of Spider-Verse", "Edge of Spider-Verse #2 (1st Spider-Gwen) CGC 9.6", "CGC 9.6", "grail", 1000.0),
+
+        # ── 60. Venom: Lethal Protector #1 Variants ─────────────────────────
+        ("Marvel", "Venom", "Venom: Lethal Protector #1 (1993) Gold Edition", "Variant Cover", "grail", 500.0),
+        ("Marvel", "Venom", "Venom: Lethal Protector #1 (1993) Black Error Variant", "Variant Cover", "grail", 800.0),
+        ("Marvel", "Venom", "Venom: Lethal Protector #1 (1993) Newsstand Edition", "Variant Cover", "high", 350.0),
+        ("Marvel", "Venom", "Venom: Lethal Protector #1 (1993) CGC 9.6", "CGC 9.6", "high", 180.0),
+
+        # ── 61. Walking Dead #1 CGC Tiers ────────────────────────────────────
+        ("Image", "Walking Dead", "Walking Dead #1 (2003) CGC 9.6", "CGC 9.6", "grail", 5000.0),
+        ("Image", "Walking Dead", "Walking Dead #1 (2003) CGC 9.4", "CGC 9.4", "grail", 3500.0),
+
+        # ── 62. Amazing Fantasy #15 CGC Grade Tiers ─────────────────────────
+        ("Marvel", "Amazing Fantasy", "Amazing Fantasy #15 (1st Spider-Man) CGC 6.0", "CGC 6.0", "grail", 50000.0),
+        ("Marvel", "Amazing Fantasy", "Amazing Fantasy #15 (1st Spider-Man) CGC 4.0", "CGC 4.0", "grail", 25000.0),
+        ("Marvel", "Amazing Fantasy", "Amazing Fantasy #15 (1st Spider-Man) CGC 2.0", "CGC 2.0", "grail", 12000.0),
+
+        # ── 63. Incredible Hulk #181 CGC Grade Tiers ─────────────────────────
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 (1st Wolverine) CGC 9.4", "CGC 9.4", "grail", 30000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 (1st Wolverine) CGC 8.0", "CGC 8.0", "grail", 12000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 (1st Wolverine) CGC 6.0", "CGC 6.0", "grail", 6000.0),
+
+        # ── 64. Giant-Size X-Men #1 CGC Grade Tiers ─────────────────────────
+        ("Marvel", "Giant-Size X-Men", "Giant-Size X-Men #1 (1975) CGC 9.8", "CGC 9.8", "grail", 100000.0),
+        ("Marvel", "Giant-Size X-Men", "Giant-Size X-Men #1 (1975) CGC 9.4", "CGC 9.4", "grail", 25000.0),
+        ("Marvel", "Giant-Size X-Men", "Giant-Size X-Men #1 (1975) CGC 8.0", "CGC 8.0", "grail", 8000.0),
+
+        # ── 65. ASM #129 CGC Grade Tiers ─────────────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #129 (1st Punisher) CGC 9.8", "CGC 9.8", "grail", 50000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #129 (1st Punisher) CGC 9.4", "CGC 9.4", "grail", 15000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #129 (1st Punisher) CGC 8.0", "CGC 8.0", "grail", 4000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #129 (1st Punisher) CGC 6.0", "CGC 6.0", "grail", 2000.0),
+
+        # ── 66. New Mutants #98 CGC Grade Tiers ──────────────────────────────
+        ("Marvel", "New Mutants", "New Mutants #98 (1st Deadpool) CGC 9.6", "CGC 9.6", "grail", 5000.0),
+        ("Marvel", "New Mutants", "New Mutants #98 (1st Deadpool) CGC 9.4", "CGC 9.4", "grail", 3000.0),
+        ("Marvel", "New Mutants", "New Mutants #98 (1st Deadpool) CGC 9.0", "CGC 9.0", "grail", 2000.0),
+
+        # ── 67. Signature Series — Stan Lee ──────────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #300 Signed by Stan Lee CGC SS 9.6", "Signed", "grail", 12000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 Signed by Stan Lee CGC SS 8.0", "Signed", "grail", 40000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #129 Signed by Stan Lee CGC SS 9.0", "Signed", "grail", 25000.0),
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee) Signed by Stan Lee CGC SS 9.8", "Signed", "grail", 2000.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four #1 (1961) Signed by Stan Lee CGC SS 3.0", "Signed", "grail", 80000.0),
+
+        # ── 68. Signature Series — Todd McFarlane ────────────────────────────
+        ("Image", "Spawn", "Spawn #1 Signed by Todd McFarlane (raw, witnessed)", "Signed", "grail", 500.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #298 Signed by Todd McFarlane CGC SS 9.8", "Signed", "grail", 1500.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #299 Signed by Todd McFarlane CGC SS 9.8", "Signed", "grail", 1200.0),
+
+        # ── 69. Signature Series — Jim Lee ───────────────────────────────────
+        ("Marvel", "X-Men", "X-Men #1 (1991) Signed by Jim Lee CGC SS 9.8", "Signed", "grail", 1500.0),
+        ("DC", "Batman", "Batman #608 (Hush) Signed by Jim Lee CGC SS 9.8", "Signed", "grail", 800.0),
+        ("Image", "WildC.A.T.s", "WildC.A.T.s #1 Signed by Jim Lee CGC SS 9.8", "Signed", "high", 300.0),
+
+        # ── 70. Something is Killing the Children #1 Variants ────────────────
+        ("BOOM!", "Something is Killing the Children", "SIKTC #1 (2019) Jenny Frison 1:25 Variant", "Variant Cover", "grail", 2000.0),
+        ("BOOM!", "Something is Killing the Children", "SIKTC #1 (2019) LCBK (Local Comic Book Day) Variant", "Variant Cover", "grail", 1500.0),
+        ("BOOM!", "Something is Killing the Children", "SIKTC #1 (2019) 2nd Print", "Modern Key", "high", 200.0),
+        ("BOOM!", "Something is Killing the Children", "SIKTC #1 (2019) CGC 9.6", "CGC 9.6", "grail", 800.0),
+
+        # ── 71. Department of Truth #1 ───────────────────────────────────────
+        ("Image", "Department of Truth", "Department of Truth #1 (2020) CGC 9.8", "CGC 9.8", "high", 350.0),
+
+        # ── 72. Ice Cream Man #1 ─────────────────────────────────────────────
+        ("Image", "Ice Cream Man", "Ice Cream Man #1 (2018, Cover A, 1st print)", "Modern Key", "high", 180.0),
+        ("Image", "Ice Cream Man", "Ice Cream Man #1 (2018) 1:10 Morazzo B&W Variant", "Variant Cover", "high", 400.0),
+
+        # ── 73. Saga #1 Variants & Grades ────────────────────────────────────
+        ("Image", "Saga", "Saga #1 (2012) CGC 9.6", "CGC 9.6", "grail", 600.0),
+
+        # ── 74. Paper Girls #1 ───────────────────────────────────────────────
+        ("Image", "Paper Girls", "Paper Girls #1 (2015, BKV/Cliff Chiang, Cover A)", "Modern Key", "high", 130.0),
+        ("Image", "Paper Girls", "Paper Girls #1 (2015) 1:25 Variant", "Variant Cover", "high", 350.0),
+
+        # ── 75. Immortal Hulk #1 ─────────────────────────────────────────────
+        ("Marvel", "Immortal Hulk", "Immortal Hulk #1 (2018, Al Ewing, Cover A)", "Modern Key", "mid", 70.0),
+        ("Marvel", "Immortal Hulk", "Immortal Hulk #1 (2018) CGC 9.8", "CGC 9.8", "high", 250.0),
+
+        # ── 76. House of X / Powers of X ─────────────────────────────────────
+        ("Marvel", "House of X", "House of X #1 (2019, Hickman, Cover A)", "Modern Key", "mid", 35.0),
+        ("Marvel", "House of X", "House of X #2 (2019, Moira reveal)", "Modern Key", "mid", 25.0),
+        ("Marvel", "Powers of X", "Powers of X #1 (2019, Hickman, Cover A)", "Modern Key", "mid", 25.0),
+        ("Marvel", "House of X", "House of X #1 (2019) CGC 9.8", "CGC 9.8", "high", 120.0),
+
+        # ── 77. Batman #89 & #92 (1st Punchline) ────────────────────────────
+        ("DC", "Batman", "Batman #89 (1st Punchline) CGC 9.8", "CGC 9.8", "grail", 500.0),
+        ("DC", "Batman", "Batman #92 (1st Punchline full) CGC 9.8", "CGC 9.8", "high", 250.0),
+        ("DC", "Batman", "Batman #89 (2020) 2nd Print Variant", "Variant Cover", "mid", 50.0),
+        ("DC", "Batman", "Batman #92 (2020) Artgerm Variant", "Variant Cover", "mid", 60.0),
+
+        # ── 78. Strange Academy #1 ──────────────────────────────────────────
+        ("Marvel", "Strange Academy", "Strange Academy #1 (2020, Skottie Young, 1st print)", "Modern Key", "mid", 80.0),
+        ("Marvel", "Strange Academy", "Strange Academy #1 (2020) 1:25 Opena Variant", "Variant Cover", "high", 200.0),
+        ("Marvel", "Strange Academy", "Strange Academy #1 (2020) CGC 9.8", "CGC 9.8", "high", 250.0),
+
+        # ── 79. Miles Morales: Spider-Man #1 (2023) ──────────────────────────
+        ("Marvel", "Miles Morales: Spider-Man", "Miles Morales: Spider-Man #1 (2023, Ziglar/Vicentini)", "Modern Key", "mid", 25.0),
+        ("Marvel", "Miles Morales: Spider-Man", "Miles Morales: Spider-Man #1 (2023) 1:25 Variant", "Variant Cover", "mid", 80.0),
+        ("Marvel", "Miles Morales: Spider-Man", "Miles Morales: Spider-Man #1 (2023) CGC 9.8", "CGC 9.8", "mid", 100.0),
+
+        # ── 80. TMNT #1 (Mirage, 1984) ──────────────────────────────────────
+        ("Mirage", "TMNT", "TMNT #1 (1984, Eastman/Laird, 1st print, B&W) CGC 9.4", "CGC 9.4", "grail", 50000.0),
+        ("Mirage", "TMNT", "TMNT #1 (1984, Eastman/Laird, 1st print, B&W) CGC 8.0", "CGC 8.0", "grail", 15000.0),
+        ("Mirage", "TMNT", "TMNT #1 (1984, Eastman/Laird, 1st print, B&W) CGC 6.0", "CGC 6.0", "grail", 8000.0),
+        ("Mirage", "TMNT", "TMNT #1 (1984, 3rd print, color cover)", "First Print", "high", 200.0),
+
+        # ── 81. Invincible #1 Variants & Grades ─────────────────────────────
+        ("Image", "Invincible", "Invincible #1 (2003) CGC 9.6", "CGC 9.6", "grail", 4000.0),
+        ("Image", "Invincible", "Invincible #1 (2003) CGC 9.4", "CGC 9.4", "grail", 3000.0),
+
+        # ── 82. The Boys #1 ─────────────────────────────────────────────────
+        ("Dynamite", "The Boys", "The Boys #1 (2006, Garth Ennis/Darick Robertson, 1st print)", "Modern Key", "high", 350.0),
+        ("Dynamite", "The Boys", "The Boys #1 (2006) CGC 9.8", "CGC 9.8", "grail", 1200.0),
+        ("Dynamite", "The Boys", "The Boys #2 (2006, 1st Female of the Species)", "Modern Key", "high", 150.0),
+
+        # ── 83. Preacher #1 ─────────────────────────────────────────────────
+        ("DC/Vertigo", "Preacher", "Preacher #1 (1995, Garth Ennis/Steve Dillon, 1st print)", "Modern Key", "high", 300.0),
+        ("DC/Vertigo", "Preacher", "Preacher #1 (1995) CGC 9.8", "CGC 9.8", "grail", 1000.0),
+
+        # ── 84. Y: The Last Man #1 ──────────────────────────────────────────
+        ("DC/Vertigo", "Y: The Last Man", "Y: The Last Man #1 (2002, BKV/Pia Guerra, 1st print)", "Modern Key", "high", 350.0),
+        ("DC/Vertigo", "Y: The Last Man", "Y: The Last Man #1 (2002) CGC 9.8", "CGC 9.8", "grail", 1200.0),
+
+        # ── 85. Batman Adventures #12 CGC Grade Tiers ────────────────────────
+        ("DC", "Batman Adventures", "Batman Adventures #12 (1st Harley Quinn) CGC 9.6", "CGC 9.6", "grail", 3500.0),
+        ("DC", "Batman Adventures", "Batman Adventures #12 (1st Harley Quinn) CGC 9.4", "CGC 9.4", "grail", 2500.0),
+        ("DC", "Batman Adventures", "Batman Adventures #12 (1st Harley Quinn) CGC 9.0", "CGC 9.0", "grail", 1800.0),
+
+        # ── 86. ASM #361 (1st Carnage) CGC Tiers ────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #361 (1st Carnage) CGC 9.6", "CGC 9.6", "grail", 600.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #361 (1st Carnage) CGC 9.4", "CGC 9.4", "high", 400.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #361 (1st Carnage) Newsstand Edition", "Variant Cover", "high", 450.0),
+
+        # ── 87. Hulk #181 Signature Series ───────────────────────────────────
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 Signed by Herb Trimpe CGC SS 7.0", "Signed", "grail", 20000.0),
+
+        # ── 88. Additional Modern Keys — Affordable Entry ────────────────────
+        ("DC", "Batman", "Batman #100 (2020, Joker War finale, Ghost-Maker)", "Modern Key", "mid", 30.0),
+        ("Marvel", "Venom", "Venom #3 (2018, 1st full Knull) CGC 9.8", "CGC 9.8", "grail", 600.0),
+        ("Marvel", "Thor", "Thor #6 (2020, Black Winter, Donny Cates) CGC 9.8", "CGC 9.8", "high", 200.0),
+        ("Marvel", "Carnage", "Carnage #1 (2022, Ram V) CGC 9.8", "CGC 9.8", "mid", 80.0),
+        ("Marvel", "Spider-Gwen", "Spider-Gwen #1 (2015, Jason Latour) CGC 9.8", "CGC 9.8", "high", 350.0),
+        ("Image", "Geiger", "Geiger #1 (2021, Geoff Johns) CGC 9.8", "CGC 9.8", "mid", 80.0),
+        ("Image", "Radiant Black", "Radiant Black #1 (2021, Kyle Higgins) CGC 9.8", "CGC 9.8", "high", 120.0),
+        ("Marvel", "Moon Knight", "Moon Knight #1 (2021, Jed MacKay) CGC 9.8", "CGC 9.8", "high", 100.0),
+
+        # ── 89. Edge of Spider-Verse #2 CGC Tiers ───────────────────────────
+        ("Marvel", "Edge of Spider-Verse", "Edge of Spider-Verse #2 (1st Spider-Gwen) CGC 9.4", "CGC 9.4", "grail", 700.0),
+
+        # ── 90. Signature Series — Rob Liefeld ──────────────────────────────
+        ("Marvel", "New Mutants", "New Mutants #87 Signed by Rob Liefeld CGC SS 9.8", "Signed", "grail", 1500.0),
+
+        # ── 91. Spawn Signature Graded Tiers ─────────────────────────────────
+        ("Image", "Spawn", "Spawn #1 Signed by Todd McFarlane CGC SS 9.6", "Signed", "grail", 800.0),
+        ("Image", "Spawn", "Spawn #1 CGC 9.6", "CGC 9.6", "high", 250.0),
+
+        # ── 92. Walking Dead #1 Signature ────────────────────────────────────
+        ("Image", "Walking Dead", "Walking Dead #1 Signed by Tony Moore CGC SS 9.8", "Signed", "grail", 12000.0),
+
+        # ── 93. SIKTC CGC Grade Tiers ────────────────────────────────────────
+        ("BOOM!", "Something is Killing the Children", "SIKTC #1 (2019) CGC 9.4", "CGC 9.4", "grail", 600.0),
+
+        # ── 94. ASM #252 Variants ────────────────────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #252 (1st Black Suit) Newsstand Edition", "Variant Cover", "high", 500.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #252 (1st Black Suit) CGC 9.6", "CGC 9.6", "grail", 1500.0),
+
+        # ── 95. Invincible #1 Signed ─────────────────────────────────────────
+        ("Image", "Invincible", "Invincible #1 Signed by Ryan Ottley CGC SS 9.8", "Signed", "grail", 9000.0),
+    ]
+    catalog = []
+    for publisher, series, name, issue_type, rarity_tier, price_eur in comics:
+        catalog.append({
+            "publisher": publisher,
+            "series": series,
+            "name": name,
+            "issue_type": issue_type,
+            "rarity_tier": rarity_tier,
+            "price_eur": price_eur,
+        })
+    return catalog
+
+
 def item_to_catalog_item(item: dict) -> CatalogItem:
     """Convert a curated dict to a CatalogItem row."""
     publisher = item["publisher"]
@@ -1042,6 +1279,20 @@ def item_to_price_observation(item: dict) -> PriceObservation:
         cond = 0.98
     elif "CGC 9.6" in issue_type:
         cond = 0.96
+    elif "CGC 9.4" in issue_type:
+        cond = 0.94
+    elif "CGC 9.2" in issue_type:
+        cond = 0.92
+    elif "CGC 9.0" in issue_type:
+        cond = 0.90
+    elif "CGC 8.0" in issue_type:
+        cond = 0.80
+    elif "CGC 6.0" in issue_type:
+        cond = 0.60
+    elif "CGC 4.0" in issue_type:
+        cond = 0.40
+    elif "CGC 2.0" in issue_type:
+        cond = 0.20
     elif issue_type in ("TPB", "Omnibus", "Absolute Edition"):
         cond = 0.90
     elif "Golden Age" in issue_type:
@@ -1054,6 +1305,8 @@ def item_to_price_observation(item: dict) -> PriceObservation:
     # Edition score: first print / key > reprint / collected
     if issue_type in ("Golden Age Key", "Silver Age Key", "Bronze Age Key"):
         edition = 0.95
+    elif issue_type.startswith("CGC"):
+        edition = 0.90  # CGC slabbed = authenticated first print
     elif issue_type in ("Modern Key", "Convention Exclusive", "Signed"):
         edition = 0.80
     elif issue_type in ("Variant Cover", "First Print"):

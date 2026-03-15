@@ -31,7 +31,7 @@ class ItemsExportResponse(BaseModel):
 @router.get("/overview", response_model=ItemsExportResponse)
 async def export_items_overview(
     user_id: str = Depends(get_current_user_id),
-    _rl=Depends(per_user_rate_limit(5, scope="items_export")),
+    _rl=Depends(per_user_rate_limit(5, window_seconds=60, scope="items_export")),
 ) -> ItemsExportResponse:
     """
     Export the authenticated user's items as inline CSV.
@@ -93,7 +93,7 @@ async def export_items_overview(
             )
 
     except Exception as e:
-        logger.error(f"[items-export/overview] DB error: {e}")
+        logger.error("[items-export/overview] DB error: %s", e)
         return ItemsExportResponse(
             download_url=None,
             csv_inline="id,title,category,condition,grade,estimated_value,currency\n",

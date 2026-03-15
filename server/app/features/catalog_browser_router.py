@@ -181,8 +181,8 @@ async def browse_catalog_items(
             category=category_id,
             query_text=q,
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("[catalog_browser] demand signal recording failed: %s", e)
 
     return CatalogBrowseResponse(
         items=items,

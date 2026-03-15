@@ -239,12 +239,8 @@ async def _crawl_event_pages(
     targets: list[dict[str, Any]],
     since_days: int,
 ) -> list[ScrapedEvent]:
-    """Crawl all target pages and extract events."""
-    from app.lib.firecrawl_client import scrape_url, configured
-
-    if not configured():
-        logger.error("Firecrawl not configured (no API key) — cannot crawl event pages")
-        return []
+    """Crawl all target pages and extract events (Crawl4AI first, Firecrawl fallback)."""
+    from app.lib.smart_scrape import smart_scrape
 
     all_events: list[ScrapedEvent] = []
     cutoff_date = (datetime.now(timezone.utc) - timedelta(days=since_days)).strftime("%Y-%m-%d")
@@ -258,7 +254,7 @@ async def _crawl_event_pages(
         logger.info("Crawling: %s (%s)", description, url)
 
         try:
-            result = await scrape_url(url, formats=["markdown"])
+            result = await smart_scrape(url, formats=["markdown"])
             if not result or not result.get("markdown"):
                 logger.warning("  No markdown returned for %s", url)
                 continue

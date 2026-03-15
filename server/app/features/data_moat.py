@@ -72,8 +72,8 @@ async def get_user_geo(user_id: Optional[str]) -> tuple[Optional[str], Optional[
                     "oceania": "AU", "other": None,
                 }
                 return row["region"], _REGION_TO_CODE.get(row["region"])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("[data_moat] get_user_geo lookup failed: %s", e)
     return None, None
 
 
@@ -369,13 +369,13 @@ async def data_moat_health(
             try:
                 sv = await conn.fetchval("SELECT count(*) FROM mv_supply_trend")
                 supply_view_count = sv or 0
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("[data_moat] mv_supply_trend count failed: %s", e)
             try:
                 dv = await conn.fetchval("SELECT count(*) FROM mv_demand_heat")
                 demand_view_count = dv or 0
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("[data_moat] mv_demand_heat count failed: %s", e)
 
             return {
                 "ok": True,

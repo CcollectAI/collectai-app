@@ -314,7 +314,6 @@ def get_curated_catalog() -> list[dict]:
         ("King Records", "Nadesico OST (Takayuki Hattori)", "Nadesico", "Japanese OG Pressing", "Black", "high", 75),
         ("Victor", "Outlaw Star OST", "Outlaw Star", "Japanese OG Pressing", "Black", "high", 70),
         ("Sunrise Music", "Gundam 08th MS Team OST", "Gundam 08th MS Team", "Japanese OG Pressing", "Black", "high", 80),
-        ("Nippon Columbia", "Getter Robo OST (Shunsuke Kikuchi)", "Getter Robo", "Japanese OG Pressing", "Black", "grail", 155),
 
         # ── iam8bit / Boutique Expansion ──────────────────────────────────
         ("iam8bit", "Death Stranding OST (Ludvig Forssell) 3LP", "Death Stranding", "US Pressing", "BB Amber", "high", 65),
@@ -831,7 +830,6 @@ def get_curated_catalog() -> list[dict]:
         # ── Data Discs — Game/Anime Crossover ───────────────────────────
         ("Data Discs", "Sonic the Hedgehog OST (Masato Nakamura)", "Sonic", "EU Pressing", "Classic Blue", "high", 55),
         ("Data Discs", "Sonic the Hedgehog 2 OST", "Sonic", "EU Pressing", "Gold Translucent", "high", 60),
-        ("Data Discs", "Streets of Rage 2 OST (Yuzo Koshiro)", "Streets of Rage", "EU Pressing", "Red Translucent", "high", 65),
         ("Data Discs", "Streets of Rage 3 OST", "Streets of Rage", "EU Pressing", "Green/Purple Splatter", "high", 58),
         ("Data Discs", "Shenmue OST (Takenobu Mitsuyoshi)", "Shenmue", "EU Pressing", "Cherry Blossom Pink", "high", 70),
         ("Data Discs", "Shenmue II OST", "Shenmue", "EU Pressing", "Orange Translucent", "high", 65),
@@ -862,7 +860,6 @@ def get_curated_catalog() -> list[dict]:
 
         # ── Evangelion Pressings (+12) ─────────────────────────────────
         ("King Records", "Evangelion: Death & Rebirth OST (Shiro Sagisu)", "Evangelion", "Japanese Pressing", "Black", "high", 90),
-        ("King Records", "Evangelion 2.0 You Can (Not) Advance OST", "Evangelion", "Japanese Pressing", "Black", "high", 80),
         ("King Records", "Evangelion 3.0 You Can (Not) Redo OST", "Evangelion", "Japanese Pressing", "Black", "high", 85),
         ("King Records", "Evangelion 3.0+1.0 Thrice Upon a Time OST (3LP)", "Evangelion", "Japanese Pressing", "Black", "grail", 150),
         ("King Records", "Evangelion: A Cruel Angel's Thesis (7\" Single)", "Evangelion", "Japanese OG Pressing", "Black", "high", 70),
@@ -885,7 +882,6 @@ def get_curated_catalog() -> list[dict]:
         ("Tiger Lab Vinyl", "Cowboy Bebop Vitaminless", "Cowboy Bebop", "US Pressing", "Green Marble", "high", 65),
 
         # ── Studio Ghibli Vinyl (+10) ──────────────────────────────────
-        ("Milan Records", "Porco Rosso Soundtrack (Joe Hisaishi)", "Porco Rosso", "EU/US Pressing", "Black", "mid", 32),
         ("Milan Records", "The Tale of the Princess Kaguya Soundtrack", "Princess Kaguya", "EU/US Pressing", "Black", "mid", 30),
         ("Milan Records", "From Up on Poppy Hill Soundtrack", "From Up on Poppy Hill", "EU/US Pressing", "Black", "mid", 28),
         ("Milan Records", "When Marnie Was There Soundtrack", "When Marnie Was There", "EU/US Pressing", "Black", "mid", 28),
@@ -998,7 +994,15 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+    # Deduplicate by ('title', 'pressing', 'variant') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["title"], item["pressing"], item["variant"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

@@ -9,7 +9,7 @@
  * - Submit listings to all selected marketplaces at once
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -34,8 +34,9 @@ import {
   LISTING_FORMATS,
   CONDITION_LABELS,
 } from '@/hooks/useListForSale';
-import type { MarketplaceId, ListingFormat, CurrencyCode } from '@/data/types';
+import type { MarketplaceId } from '@/data/types';
 import type { ConditionLabel } from '@/hooks/useListForSale';
+import { radius, text as textToken, fontWeight as fw, shadow } from '@/theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -82,6 +83,34 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
       onSuccess?.();
     }
   }, [submit, onSuccess, settings.hapticsEnabled]);
+
+  /** Returns an error message if the price string is invalid, or null if valid/empty. */
+  const validatePrice = useCallback((price: string): string | null => {
+    if (!price || price.trim() === '') return null;
+    const num = parseFloat(price);
+    if (isNaN(num)) return 'Enter a valid number';
+    if (num <= 0) return 'Price must be greater than 0';
+    if (num > 999_999_999) return 'Price is too high';
+    return null;
+  }, []);
+
+  /** Map of marketplace IDs to their price validation errors. */
+  const priceErrors = useMemo(() => {
+    const errors: Record<string, string | null> = {};
+    for (const mp of MARKETPLACE_OPTIONS) {
+      const priceStr = marketplaces[mp.id]?.price ?? '';
+      const isSelected = marketplaces[mp.id]?.selected ?? false;
+      if (isSelected) {
+        errors[mp.id] = validatePrice(priceStr);
+      }
+    }
+    return errors;
+  }, [marketplaces, validatePrice]);
+
+  const hasAnyPriceError = useMemo(
+    () => Object.values(priceErrors).some((e) => e != null),
+    [priceErrors],
+  );
 
   const handleToggle = useCallback(
     (mpId: MarketplaceId) => {
@@ -197,9 +226,13 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                             {getCurrencySymbol(settings.currency)}
                           </Text>
                           <TextInput
-                            style={[styles.priceInput, { color: colors.text }]}
+                            style={[
+                              styles.priceInput,
+                              { color: colors.text },
+                              priceErrors[mp.id] ? { borderBottomWidth: 1, borderBottomColor: colors.danger } : undefined,
+                            ]}
                             value={priceStr}
-                            onChangeText={(text) => setMarketplacePrice(mp.id, text)}
+                            onChangeText={(t) => setMarketplacePrice(mp.id, t)}
                             keyboardType="decimal-pad"
                             placeholder="0.00"
                             placeholderTextColor={colors.muted}
@@ -207,6 +240,11 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                             accessibilityLabel={`Price for ${mp.label}`}
                           />
                         </View>
+                        {priceErrors[mp.id] && (
+                          <Text style={[styles.priceError, { color: colors.danger }]}>
+                            {priceErrors[mp.id]}
+                          </Text>
+                        )}
 
                         {fee && (
                           <View style={styles.feePreviewRow}>
@@ -223,7 +261,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                               <Text style={[styles.feeLabel, { color: colors.muted }]}>
                                 You receive
                               </Text>
-                              <Text style={[styles.feeValue, { color: '#059669' }]}>
+                              <Text style={[styles.feeValue, { color: colors.success }]}>
                                 {formatPrice(fee.netProceeds, settings.currency)}
                               </Text>
                             </View>
@@ -314,7 +352,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                         style={[
                           styles.conditionLabel,
                           { color: isActive ? colors.accent : colors.text },
-                          isActive && { fontWeight: '700' },
+                          isActive && { fontWeight: fw.bold },
                         ]}
                       >
                         {c}
@@ -351,7 +389,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                           <Text style={[styles.comparisonFees, { color: colors.danger }]}>
                             -{formatPrice(fb.totalFees, settings.currency)}
                           </Text>
-                          <Text style={[styles.comparisonNet, { color: '#059669' }]}>
+                          <Text style={[styles.comparisonNet, { color: colors.success }]}>
                             {formatPrice(fb.netProceeds, settings.currency)}
                           </Text>
                         </View>
@@ -363,9 +401,9 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
 
               {/* ── Error Message ─────────────────────────────────── */}
               {error && (
-                <View style={[styles.errorBanner, { backgroundColor: '#FEE2E2' }]}>
-                  <Ionicons name="alert-circle" size={16} color="#991B1B" />
-                  <Text style={[styles.errorText, { color: '#991B1B' }]}>{error}</Text>
+                <View style={[styles.errorBanner, { backgroundColor: colors.dangerBg }]}>
+                  <Ionicons name="alert-circle" size={16} color={colors.danger} />
+                  <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
                 </View>
               )}
             </ScrollView>
@@ -374,11 +412,11 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
             <View style={[styles.footer, { borderTopColor: colors.border }]}>
               <AnimatedPressable
                 onPress={handleSubmit}
-                disabled={!canSubmit || submitting}
+                disabled={!canSubmit || submitting || hasAnyPriceError}
                 style={[
                   styles.submitBtn,
                   { backgroundColor: colors.accent },
-                  (!canSubmit || submitting) && { opacity: 0.5 },
+                  (!canSubmit || submitting || hasAnyPriceError) && { opacity: 0.5 },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={
@@ -424,14 +462,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
   sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     maxHeight: '92%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 12,
+    ...shadow.floating,
   },
   handle: {
     width: 36,
@@ -455,9 +489,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontSize: textToken.xl,
+    fontWeight: fw.bold,
+
   },
 
   scrollBody: {
@@ -471,13 +505,13 @@ const styles = StyleSheet.create({
 
   // ── Section labels ──────────────────────────────────────────────────
   sectionLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontSize: textToken.md,
+    fontWeight: fw.bold,
+
     marginBottom: 4,
   },
   sectionHint: {
-    fontSize: 12,
+    fontSize: textToken.sm,
     marginBottom: 12,
   },
 
@@ -494,25 +528,25 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 6,
+    borderRadius: radius.xs,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   mpLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'Roboto',
+    fontSize: textToken.md,
+    fontWeight: fw.semibold,
+
     flex: 1,
   },
   mpFeeBadge: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: textToken.xs,
+    fontWeight: fw.medium,
   },
 
   // ── Per-marketplace price section ───────────────────────────────────
   mpPriceSection: {
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     padding: 12,
     marginLeft: 32,
@@ -524,15 +558,20 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   currencyPrefix: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: textToken.lg,
+    fontWeight: fw.semibold,
+  },
+  priceError: {
+    fontSize: textToken.xs,
+    fontWeight: fw.medium,
+    marginTop: 4,
   },
   priceInput: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: textToken.lg,
+    fontWeight: fw.semibold,
     paddingVertical: 4,
-    fontFamily: 'Roboto',
+
   },
   feePreviewRow: {
     flexDirection: 'row',
@@ -545,13 +584,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   feeLabel: {
-    fontSize: 11,
+    fontSize: textToken.xs,
     marginBottom: 2,
   },
   feeValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontSize: textToken.md,
+    fontWeight: fw.bold,
+
   },
   feeDivider: {
     width: 1,
@@ -571,7 +610,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
   },
   radio: {
@@ -588,9 +627,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   formatLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: 'Roboto',
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
+
   },
 
   // ── Condition selector ──────────────────────────────────────────────
@@ -601,26 +640,26 @@ const styles = StyleSheet.create({
   conditionChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: radius.pill,
     borderWidth: 1,
   },
   conditionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    fontFamily: 'Roboto',
+    fontSize: textToken.md,
+    fontWeight: fw.semibold,
+
   },
 
   // ── Fee comparison card ─────────────────────────────────────────────
   comparisonCard: {
-    borderRadius: 14,
+    borderRadius: radius.md,
     borderWidth: 1,
     padding: 14,
     marginTop: 20,
   },
   comparisonTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontSize: textToken.md,
+    fontWeight: fw.bold,
+
     marginBottom: 10,
   },
   comparisonRow: {
@@ -640,8 +679,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   comparisonMpName: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: textToken.md,
+    fontWeight: fw.semibold,
   },
   comparisonRight: {
     flexDirection: 'row',
@@ -649,12 +688,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   comparisonFees: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
   },
   comparisonNet: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: textToken.md,
+    fontWeight: fw.bold,
   },
 
   // ── Error banner ────────────────────────────────────────────────────
@@ -663,12 +702,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     marginTop: 12,
   },
   errorText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: textToken.md,
+    fontWeight: fw.medium,
     flex: 1,
   },
 
@@ -685,13 +724,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: radius.md,
   },
   submitBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-    fontFamily: 'Roboto',
+    fontSize: textToken.lg,
+    fontWeight: fw.bold,
+
   },
 });
 

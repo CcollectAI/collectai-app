@@ -23,7 +23,10 @@ export type MutationType =
   | 'rsvpEvent'
   | 'sendMessage'
   | 'addWatchlistItem'
-  | 'removeWatchlistItem';
+  | 'removeWatchlistItem'
+  | 'createEvent'
+  | 'updateWatchlistItem'
+  | 'createBuildPaintProject';
 
 export type QueuedMutation = {
   id: string;

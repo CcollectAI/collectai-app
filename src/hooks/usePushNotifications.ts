@@ -171,7 +171,7 @@ export function usePushNotifications(userId: string | null) {
 
         // Value change / weekly digest -> open portfolio
         if (data.type === "value_change" || data.type === "weekly_digest") {
-          router.push(`/home/portfolio` as Href);
+          router.push(`/(tabs)/` as Href);
           return;
         }
 

@@ -38,6 +38,12 @@ logger = logging.getLogger(__name__)
 # Cache TTL for external barcode lookups (24 hours — ISBN data rarely changes)
 _BARCODE_CACHE_TTL = BARCODE_CACHE_TTL
 
+# Timeout constants for external API calls
+_OL_TOTAL_TIMEOUT = 10.0  # max total seconds for all chained Open Library calls
+_OL_MAX_AUTHORS = 3  # limit chained author lookups
+_AUTHOR_LOOKUP_TIMEOUT = 5.0  # per-request timeout for Open Library
+_GOOGLE_BOOKS_TIMEOUT = 8.0  # per-request timeout for Google Books API
+
 
 # ---------------------------------------------------------------------------
 # Category classification rules
@@ -277,7 +283,7 @@ async def _lookup_local_catalog(barcode: str, pool) -> Optional[dict]:
             if row:
                 return dict(row)
     except Exception as e:
-        logger.warning(f"[barcode] Local catalog lookup error: {e}")
+        logger.warning("[barcode] Local catalog lookup error: %s", e)
 
     return None
 
@@ -292,15 +298,12 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
     if cached is not None:
         return cached
 
-    _OL_TOTAL_TIMEOUT = 10.0  # max total seconds for all chained OL calls
-    _OL_MAX_AUTHORS = 3  # limit chained author lookups
-
     url = f"https://openlibrary.org/isbn/{isbn}.json"
     try:
         import time as _time
         _deadline = _time.monotonic() + _OL_TOTAL_TIMEOUT
 
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=_AUTHOR_LOOKUP_TIMEOUT) as client:
             resp = await client.get(url, follow_redirects=True)
             if resp.status_code != 200:
                 logger.debug("[barcode] Open Library %d for ISBN %s", resp.status_code, isbn)
@@ -385,9 +388,9 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
             return result
 
     except httpx.TimeoutException:
-        logger.warning(f"[barcode] Open Library timeout for ISBN {isbn}")
+        logger.warning("[barcode] Open Library timeout for ISBN %s", isbn)
     except Exception as e:
-        logger.warning(f"[barcode] Open Library error for ISBN {isbn}: {e}")
+        logger.warning("[barcode] Open Library error for ISBN %s: %s", isbn, e)
 
     return None
 
@@ -400,7 +403,7 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
 
     url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
+        async with httpx.AsyncClient(timeout=_GOOGLE_BOOKS_TIMEOUT) as client:
             resp = await client.get(url)
             if resp.status_code != 200:
                 return None
@@ -441,9 +444,9 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
             return result
 
     except httpx.TimeoutException:
-        logger.warning(f"[barcode] Google Books timeout for ISBN {isbn}")
+        logger.warning("[barcode] Google Books timeout for ISBN %s", isbn)
     except Exception as e:
-        logger.warning(f"[barcode] Google Books error for ISBN {isbn}: {e}")
+        logger.warning("[barcode] Google Books error for ISBN %s: %s", isbn, e)
 
     return None
 
@@ -486,7 +489,7 @@ async def _lookup_market_price(category: str, title: Optional[str], pool) -> Opt
                 currency=rows[0]["currency"] or "EUR",
             )
     except Exception as e:
-        logger.debug(f"[barcode] Market price lookup error: {e}")
+        logger.debug("[barcode] Market price lookup error: %s", e)
 
     return None
 

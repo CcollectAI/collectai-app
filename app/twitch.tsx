@@ -2,8 +2,8 @@
  * Twitch Landing — Creator & Drops Hub.
  * Shows live creators, recent drops, and links to the full leaderboard.
  */
-import React from "react";
-import { View, Text, ScrollView, StyleSheet, Animated } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, ScrollView, StyleSheet, Animated, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -14,12 +14,70 @@ import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
+import { supabase } from "@/lib/supabase";
+
+type TwitchStats = {
+  liveCount: string;
+  creatorsCount: string;
+  dropsCount: string;
+};
+
+const PLACEHOLDER: TwitchStats = { liveCount: "\u2014", creatorsCount: "\u2014", dropsCount: "\u2014" };
+
+function useTwitchStats(): { stats: TwitchStats; loading: boolean } {
+  const [stats, setStats] = useState<TwitchStats>(PLACEHOLDER);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        if (!supabase || typeof supabase.from !== "function") {
+          return;
+        }
+
+        // Fetch total creators count
+        const { count: totalCount, error: totalErr } = await supabase
+          .from("twitch_creators")
+          .select("id", { count: "exact", head: true });
+
+        if (cancelled) return;
+        if (totalErr) return; // table likely doesn't exist
+
+        // Fetch live creators count
+        const { count: liveCount, error: liveErr } = await supabase
+          .from("twitch_creators")
+          .select("id", { count: "exact", head: true })
+          .eq("is_live", true);
+
+        if (cancelled) return;
+
+        setStats({
+          liveCount: liveErr ? "\u2014" : String(liveCount ?? 0),
+          creatorsCount: String(totalCount ?? 0),
+          dropsCount: "\u2014", // No drops table yet
+        });
+      } catch {
+        // Table doesn't exist or network error — keep placeholder dashes
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  return { stats, loading };
+}
 
 function TwitchScreenInner() {
   const { colors } = useAppTheme();
   const router = useRouter();
   const { settings } = useSettings();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { stats, loading: statsLoading } = useTwitchStats();
 
   return (
     <SafeAreaView
@@ -57,18 +115,30 @@ function TwitchScreenInner() {
           <View style={[styles.statsRow]}>
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="videocam" size={18} color={colors.error} />
-              <Text style={[styles.statValue, { color: colors.text }]}>Live</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>Streams</Text>
+              {statsLoading ? (
+                <ActivityIndicator size="small" color={colors.muted} style={{ marginVertical: 2 }} />
+              ) : (
+                <Text style={[styles.statValue, { color: colors.text }]}>{stats.liveCount}</Text>
+              )}
+              <Text style={[styles.statLabel, { color: colors.muted }]}>Live Streams</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="people" size={18} color={colors.accent} />
-              <Text style={[styles.statValue, { color: colors.text }]}>Creators</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>Tracked</Text>
+              {statsLoading ? (
+                <ActivityIndicator size="small" color={colors.muted} style={{ marginVertical: 2 }} />
+              ) : (
+                <Text style={[styles.statValue, { color: colors.text }]}>{stats.creatorsCount}</Text>
+              )}
+              <Text style={[styles.statLabel, { color: colors.muted }]}>Creators</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="gift" size={18} color="#9146FF" />
-              <Text style={[styles.statValue, { color: colors.text }]}>Drops</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>Active</Text>
+              {statsLoading ? (
+                <ActivityIndicator size="small" color={colors.muted} style={{ marginVertical: 2 }} />
+              ) : (
+                <Text style={[styles.statValue, { color: colors.text }]}>{stats.dropsCount}</Text>
+              )}
+              <Text style={[styles.statLabel, { color: colors.muted }]}>Active Drops</Text>
             </View>
           </View>
 

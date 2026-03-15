@@ -459,7 +459,7 @@ async def get_category_deep_dive(
                 ),
                 ranked AS (
                     SELECT
-                        *,
+                        normalized_key, name, trades, first_price, last_price, price_cnt,
                         CASE WHEN first_price > 0 AND price_cnt >= 2
                              THEN (last_price - first_price) / first_price
                              ELSE 0
@@ -470,7 +470,8 @@ async def get_category_deep_dive(
                                                              ELSE 0 END) DESC)                                                          AS mover_rank
                     FROM per_key
                 )
-                SELECT *
+                SELECT normalized_key, name, trades, first_price, last_price,
+                       price_cnt, change_pct, trade_rank, mover_rank
                 FROM ranked
                 WHERE trade_rank <= 10 OR mover_rank <= 10
                 """,
@@ -516,8 +517,8 @@ async def get_category_deep_dive(
                     region=region,
                     country_code=country,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Demand signal recording failed (best-effort): %s", e)
 
             result = CategoryDeepDiveResponse(
                 category=category,

@@ -2,24 +2,19 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { router } from 'expo-router';
 import {
   ScrollView,
-  FlatList,
   View,
   Text,
   StyleSheet,
   TextInput,
   Pressable,
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Animated,
   RefreshControl,
-  Share,
-  Modal,
   useWindowDimensions,
 } from "react-native";
-import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -29,7 +24,7 @@ import { useItemGrading } from "@/hooks/useItemGrading";
 import { useItemPriceTrend } from "@/hooks/useItemPriceTrend";
 import { useItemProgress } from "@/hooks/useItemProgress";
 import { useItemMarketplace } from "@/hooks/useItemMarketplace";
-import { useAuthContext } from "@/providers/useAuthContext";
+import { useItemDetail } from "@/hooks/useItemDetail";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useToast } from "@/components/Toast";
@@ -45,20 +40,16 @@ import {
   DEFAULT_DISCLAIMER,
 } from "@/types/priceExplanation";
 import { featureFlags } from "@/config/featureFlags";
+import { radius, text, fontWeight, gap, shadow } from "@/theme/tokens";
 import { collectorsApi } from "@/api/collectorsApi";
-import { ProvenanceTimeline } from "@/components/ProvenanceTimeline";
-import { Linking } from "react-native";
 import logger from "@/utils/logger";
-import { ItemAttributesSection } from "@/components/ItemAttributesSection";
-import { formatPrice, formatNumber, getCurrencySymbol } from "@/lib/format";
+import { formatPrice, getCurrencySymbol } from "@/lib/format";
 import type { CurrencyCode } from "@/data/types";
 import { AnimatedPressable } from "@/motion";
 import { isBuildableCategory } from "@/constants/buildStepTemplates";
-import { CATEGORY_VISUAL } from "@/data/categories";
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { ConfettiBurst, ConfettiBurstRef } from '@/components/ConfettiBurst';
-import InteractiveLineChart from '@/components/InteractiveLineChart';
 import { Skeleton } from '@/components/Skeleton';
 import { ListForSaleModal } from '@/components/ListForSaleModal';
 import { useListForSale } from '@/hooks/useListForSale';
@@ -83,8 +74,6 @@ import { ItemRefreshBar } from '@/components/item/ItemRefreshBar';
 import { ItemDraftActions } from '@/components/item/ItemDraftActions';
 import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
-import { timeAgo } from '@/lib/timeAgo';
-
 // DossierData and MarketHit types imported from extracted components
 
 // Price trend data shape
@@ -96,18 +85,9 @@ interface PriceTrendData {
   period_days: number;
 }
 
-// Time range options for the price chart
-const PRICE_CHART_RANGES = [
-  { label: '1W', days: 7 },
-  { label: '1M', days: 30 },
-  { label: '3M', days: 90 },
-  { label: '6M', days: 180 },
-  { label: '1Y', days: 365 },
-] as const;
-
 // Sneaker/watch sizes moved to CategorySpecificSection component
 
-// Helper: parse string|number to number for formatPrice/formatNumber
+// Helper: parse string|number to number for formatPrice
 const toNum = (value: string | number | undefined | null): number | undefined => {
   if (value === undefined || value === null || value === '') return undefined;
   const num = typeof value === 'string' ? parseFloat(value) : value;
@@ -115,11 +95,7 @@ const toNum = (value: string | number | undefined | null): number | undefined =>
   return num;
 };
 
-// Helper: relative time display from ISO timestamp
-const relativeTime = (iso: string | null | undefined): string => {
-  if (!iso) return '';
-  return timeAgo(iso);
-};
+
 
 // Predefined options for dropdown menus
 const COLLECTION_OPTIONS = ['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rocket', 'Gym Heroes', 'Neo Genesis', 'Other'];
@@ -173,25 +149,59 @@ function ItemDetailScreen() {
   } = params;
 
   const isDraft = id === 'draft' || draft === '1';
-  const [isEditing, setIsEditing] = useState(false);
   const inlineEditPending = useRef(false);
 
+  // ── Resolve category slug early — needed by grading, build, size, progress sections ──
+  const categorySlugRaw = CATEGORY_ID_MAP[category] || category.toLowerCase().replace(/[^a-z0-9_]/g, '');
+
+  // ── Consolidated local state (useItemDetail hook) ──────────────────────
+  const detail = useItemDetail({
+    id, isDraft,
+    initialName: name, initialCategory: category, initialCollection: collection,
+    initialCondition: condition, initialValue: value, initialNotes: initialNotes,
+    imageUri, categorySlug: categorySlugRaw, q50,
+  });
+  const {
+    isEditing, setIsEditing,
+    editableName, setEditableName,
+    editableCategory, setEditableCategory,
+    editableCollection, setEditableCollection,
+    editableCondition, setEditableCondition,
+    editableValue, setEditableValue,
+    notes, setNotes,
+    savingNotes, savingDraft, saveError,
+    onSaveNotes, onSaveDraft, onSaveEdits,
+    showSalePriceInput, setShowSalePriceInput,
+    salePrice, setSalePrice,
+    submittingFeedback, feedbackMessage,
+    onSubmitSalePrice, onPriceDisagree,
+    keyboardVisible, keyboardHeight,
+    explanationExpanded, setExplanationExpanded,
+    showPriceExplanation, setShowPriceExplanation,
+    showStickyButton, setShowStickyButton,
+    aiRefreshing, setAiRefreshing,
+    pullRefreshing, setPullRefreshing,
+    isForSale, setIsForSale,
+    askingPriceValue, setAskingPriceValue,
+    forSaleLoading, handleListForSale, handleUnlist,
+    evidenceData, setEvidenceData,
+    itemAttributes, taxonomyVersion, subtypeId, itemCollections,
+    scarcityData, marketComps,
+    linkedProject, setLinkedProject,
+  } = detail;
+
   // Photo & gallery management (extracted to useItemGallery hook)
-  const { user } = useAuthContext();
   const gallery = useItemGallery(id, isDraft, imageUri);
   const {
-    userPhoto, setUserPhoto,
     zoomVisible, setZoomVisible,
     zoomImageUri, setZoomImageUri,
-    galleryImages, setGalleryImages,
     galleryLoading,
     galleryActiveIndex, setGalleryActiveIndex,
     imageUploading,
-    pendingLabel, setPendingLabel,
     flatListRef: galleryFlatListRef,
     displayImageUri,
     effectiveGalleryImages,
-    photoUploading, photoError, userPhotoUrl,
+    photoUploading, photoError,
     handleGalleryUpload,
     handleGalleryDelete,
     handlePhotoUpload,
@@ -217,65 +227,19 @@ function ItemDetailScreen() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fire once on mount
 
-  const [notes, setNotes] = useState(initialNotes || "");
-  const [savingNotes, setSavingNotes] = useState(false);
-  const [savingDraft, setSavingDraft] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const notesInputRef = useRef<TextInput | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const notesLayoutY = useRef(0);
 
-  // Track keyboard visibility and height
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardVisible(true);
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardVisible(false);
-      setKeyboardHeight(0);
-    });
-    return () => { showSub.remove(); hideSub.remove(); };
-  }, []);
-
-  // Feedback state
-  const [showSalePriceInput, setShowSalePriceInput] = useState(false);
-  const [salePrice, setSalePrice] = useState("");
-  const [submittingFeedback, setSubmittingFeedback] = useState(false);
-  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-
-  // Quick-edit state (draft mode)
-  const [editableName, setEditableName] = useState(name);
-  const [editableCategory, setEditableCategory] = useState(category);
 
   // Track item view on mount
   useEffect(() => {
     if (id) track({ name: 'item_viewed', properties: { item_id: id as string, category: editableCategory } });
   }, []);
 
-  const [editableCollection, setEditableCollection] = useState(collection);
-  const [editableCondition, setEditableCondition] = useState(condition);
-  const [editableValue, setEditableValue] = useState(value);
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [isEditingCategory, setIsEditingCategory] = useState(false);
-
-  // Expandable explanation state
-  const [explanationExpanded, setExplanationExpanded] = useState(false);
-
   // Provenance + Dossier state managed by useItemMarketplace hook above
 
-  // ── Resolve category slug early — needed by grading, build, size, progress sections ──
   const categorySlug = CATEGORY_ID_MAP[editableCategory] || editableCategory.toLowerCase().replace(/[^a-z0-9_]/g, '');
-
-  // Item attributes from DB (attributes_json, taxonomy_version, subtype_id, collections)
-  const [itemAttributes, setItemAttributes] = useState<Record<string, unknown> | null>(null);
-  const [taxonomyVersion, setTaxonomyVersion] = useState<string | undefined>();
-  const [subtypeId, setSubtypeId] = useState<string | undefined>();
-  const [itemCollections, setItemCollections] = useState<string[]>([]);
 
   // ── Grading service state ────────────────────────────────────────────
   const isGradingEligible = GRADING_ELIGIBLE_CATEGORIES.has(categorySlug);
@@ -313,12 +277,9 @@ function ItemDetailScreen() {
   // Price trend (extracted to useItemPriceTrend hook)
   const priceTrend = useItemPriceTrend(id, isDraft);
   const {
-    priceTrendData,
     priceTrendLoading,
     priceTrendRange,
     priceTrendVisible, setPriceTrendVisible,
-    priceTrendHoverValue,
-    priceTrendHoverDate,
     handleRangeChange: handlePriceTrendRangeChange,
     chartData: priceTrendChartData,
     handleHover: handlePriceTrendHover,
@@ -326,15 +287,6 @@ function ItemDetailScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const GALLERY_WIDTH = screenWidth - 32; // 16px padding on each side
 
-  // AI Intelligence refresh state
-  const [aiRefreshing, setAiRefreshing] = useState(false);
-  const [pullRefreshing, setPullRefreshing] = useState(false);
-
-  // For-Sale listing state
-  const [isForSale, setIsForSale] = useState(false);
-  const [askingPriceValue, setAskingPriceValue] = useState('');
-  const [forSaleModalVisible, setForSaleModalVisible] = useState(false);
-  const [forSaleLoading, setForSaleLoading] = useState(false);
 
   // Multi-marketplace listing modal
   const listForSaleHook = useListForSale({
@@ -344,14 +296,9 @@ function ItemDetailScreen() {
     suggestedPrice: toNum(editableValue) || toNum(q50) || undefined,
   });
 
-  // Scarcity + Market Comps state
-  const [scarcityData, setScarcityData] = useState<{ scarcity_score: number; listing_count: number; supply_trend: string } | null>(null);
-  const [marketComps, setMarketComps] = useState<Array<{ source: string; title: string; price: number; currency: string }>>([]);
-
   // Build project state — for buildable categories
   const itemIsBuildable = isBuildableCategory(categorySlug);
   const buildAccent = theme.accent;
-  const [linkedProject, setLinkedProject] = useState<{ id: string; title: string; pct: number } | null>(null);
 
   // ── Size-specific pricing state (sneakers, watches) ──────────────────
   const [itemSizeValue, setItemSizeValue] = useState<string>(
@@ -482,48 +429,7 @@ function ItemDetailScreen() {
     showConditionPicker();
   };
 
-  // Scroll tracking for sticky save button
-  const [showStickyButton, setShowStickyButton] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
-
-  // Price explanation sheet state (for new explainable AI interface)
-  const [showPriceExplanation, setShowPriceExplanation] = useState(false);
-
-  // Evidence data from backend (lazy-loaded for PriceExplanationSheet)
-  const [evidenceData, setEvidenceData] = useState<{
-    explanation: string | null;
-    evidence_summary: {
-      sources: Array<{ source: string; count: number; avg_price: number; date_range?: string }>;
-      total_comps: number;
-    } | null;
-    evidence_hit_ids: string[];
-    prediction_at: string | null;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!id || isDraft) return;
-    collectorsApi.getPriceEvidence(id)
-      .then(setEvidenceData)
-      .catch((err) => logger.warn('[ItemDetail] evidence fetch error:', err));
-    // Auto-refresh evidence data every 5 minutes
-    const evidenceInterval = setInterval(() => {
-      collectorsApi.getPriceEvidence(id).then(setEvidenceData).catch(() => {});
-    }, 300000); // 5 min
-    return () => clearInterval(evidenceInterval);
-  }, [id, isDraft]);
-
-  useEffect(() => {
-    if (!id || isDraft) return;
-    dataProvider.listItems().then((items) => {
-      const item = items.find((i) => i.id === id);
-      if (item) {
-        setItemAttributes(item.attributesJson || null);
-        setTaxonomyVersion(item.taxonomyVersion);
-        setSubtypeId(item.subtypeId);
-        setItemCollections(item.collections || []);
-      }
-    }).catch((err) => logger.warn('[ItemDetail] item attributes fetch error:', err));
-  }, [id, isDraft]);
 
   // Empty fallback data — no fabricated mock data shown to users
 
@@ -539,37 +445,10 @@ function ItemDetailScreen() {
           setLinkedProject({ id: p.id, title: p.title, pct: p.percent ?? 0 });
         }
       })
-      .catch(() => {});
+      .catch((err) => logger.warn('[ItemDetail] fetch error:', err));
   }, [id, isDraft, itemIsBuildable]);
 
-  // Fetch scarcity scores + market comps
-  useEffect(() => {
-    if (isDraft || !categorySlug) return;
-    let cancelled = false;
-    collectorsApi.getScarcityScores(categorySlug).then((data) => {
-      if (cancelled) return;
-      const resp = data as { items?: Array<{ item_key: string; scarcity_score: number; listing_count: number; supply_trend: string }> } | undefined;
-      const match = resp?.items?.find((i) => i.item_key?.toLowerCase().includes(editableName.toLowerCase().slice(0, 20)));
-      if (match) setScarcityData(match);
-    }).catch(() => {});
-    collectorsApi.marketplaceComps(editableName, categorySlug).then((data) => {
-      if (cancelled) return;
-      const resp = data as { comps?: Array<{ source: string; title: string; price: number; currency: string }> } | undefined;
-      const comps = resp?.comps;
-      if (Array.isArray(comps) && comps.length) setMarketComps(comps.slice(0, 5));
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [isDraft, categorySlug, editableName]);
-
-  // Affiliate links, price trend, and dossier managed by hooks above
-
-  // ── Grading: auto-detect cert number from item attributes ──────────────
-  const itemCertNumber = useMemo(() => {
-    // Check common attribute names for cert/grade data
-    const attrs = params as Record<string, string | undefined>;
-    // Look in item attributes passed via URL params or local state
-    return null; // Will be populated from item data if available
-  }, [params]);
+  // Affiliate links, price trend, dossier, scarcity, comps, evidence managed by hooks above
 
   // Grading, marketplace, dossier functions managed by hooks above
 
@@ -633,73 +512,6 @@ function ItemDetailScreen() {
     };
   }, [priceEstimate, explanation, condition, editableCategory, evidenceData]);
 
-  const onSaveNotes = () => {
-    setSavingNotes(true);
-    // Notes are local-only for now
-    setTimeout(() => {
-      setSavingNotes(false);
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Notes saved locally', type: 'info' });
-    }, 300);
-  };
-
-  const onSaveDraft = async () => {
-    if (!isDraft) return;
-
-    setSavingDraft(true);
-    setSaveError(null);
-
-    try {
-      const persisted = await dataProvider.persistQuickscanDraft({
-        photoUri: imageUri || '',
-        categoryId: editableCategory,
-        title: editableName,
-        notes: notes || undefined,
-      });
-
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Item saved to collection', type: 'success' });
-
-      // Navigate to saved item with all editable values
-      router.replace({
-        pathname: '/item/[id]',
-        params: {
-          id: persisted.id,
-          name: persisted.title,
-          category: persisted.categoryId,
-          collection: editableCollection,
-          condition: editableCondition,
-          value: editableValue || String(q50 || value || 0),
-          imageUri: persisted.imageUrl || '',
-        },
-      });
-    } catch (err: unknown) {
-      logger.error('[ItemDetail] save draft error:', err);
-      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-      setSaveError(err instanceof Error ? err.message : 'Failed to save item');
-    } finally {
-      setSavingDraft(false);
-    }
-  };
-
-  const onSaveEdits = async () => {
-    if (!id || isDraft) return;
-    setSavingNotes(true);
-    try {
-      await dataProvider.updateItem(id, {
-        name: editableName,
-        category: editableCategory,
-      });
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Changes saved', type: 'success' });
-      setIsEditing(false);
-    } catch (err: unknown) {
-      logger.error('[ItemDetail] save edits error:', err);
-      showToast({ message: 'Failed to save changes', type: 'error' });
-    } finally {
-      setSavingNotes(false);
-    }
-  };
 
   const scrollToNotes = () => {
     // Delay slightly to let keyboard height settle, then scroll notes into view
@@ -713,65 +525,13 @@ function ItemDetailScreen() {
     }, 300);
   };
 
-  const onSubmitSalePrice = async () => {
-    if (!salePrice.trim() || !id || isDraft) return;
-
-    setSubmittingFeedback(true);
-    setFeedbackMessage(null);
-
-    try {
-      await dataProvider.submitFeedback(id, 'sale_price', salePrice.trim());
-
-      // Also submit as verified sale (ground truth for ML)
-      const parsedPrice = parseFloat(salePrice.trim().replace(/[^\d.]/g, ''));
-      if (parsedPrice > 0) {
-        collectorsApi.submitVerifiedSale({
-          item_id: id,
-          sale_price: parsedPrice,
-          currency: settings.currency,
-          sale_date: new Date().toISOString(),
-        }).catch((err) => { logger.warn('[ItemDetail] verified sale submission failed:', err); });
-      }
-
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Sale price recorded — thanks!', type: 'success' });
-      setFeedbackMessage("Thanks! Sale price recorded.");
-      setShowSalePriceInput(false);
-      setSalePrice("");
-    } catch (err: unknown) {
-      logger.error('[ItemDetail] feedback error:', err);
-      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-      setFeedbackMessage("Failed to submit feedback");
-    } finally {
-      setSubmittingFeedback(false);
-    }
-  };
-
-  const onPriceDisagree = async () => {
-    if (!id || isDraft) return;
-
-    setSubmittingFeedback(true);
-    setFeedbackMessage(null);
-
-    try {
-      await dataProvider.submitFeedback(id, 'disagree', 'inaccurate');
-      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-      setFeedbackMessage("Thanks for the feedback!");
-    } catch (err: unknown) {
-      logger.error('[ItemDetail] feedback error:', err);
-      setFeedbackMessage("Failed to submit feedback");
-    } finally {
-      setSubmittingFeedback(false);
-    }
-  };
-
   // Refresh all AI intelligence data at once
-  const refreshAllIntelligence = async () => {
+  const refreshAllIntelligence = useCallback(async () => {
     if (!id || isDraft || aiRefreshing) return;
     setAiRefreshing(true);
     try {
       await Promise.all([
-        collectorsApi.getPriceEvidence(id).then(setEvidenceData).catch(() => {}),
+        collectorsApi.getPriceEvidence(id).then(setEvidenceData).catch((err) => logger.warn('[ItemDetail] fetch error:', err)),
         priceTrendVisible ? handlePriceTrendRangeChange(priceTrendRange) : Promise.resolve(),
         ...(marketResults.length > 0 || marketScannedAt ? [loadMarketResults()] : []),
       ]);
@@ -781,54 +541,14 @@ function ItemDetailScreen() {
     } finally {
       setAiRefreshing(false);
     }
-  };
+  }, [id, isDraft, aiRefreshing, setAiRefreshing, setEvidenceData, priceTrendVisible, handlePriceTrendRangeChange, priceTrendRange, marketResults.length, marketScannedAt, loadMarketResults, settings.hapticsEnabled]);
 
-  const handlePullRefresh = async () => {
+  const handlePullRefresh = useCallback(async () => {
     if (isDraft || !id) return;
     setPullRefreshing(true);
     await refreshAllIntelligence();
     setPullRefreshing(false);
-  };
-
-  // ── For-Sale listing handlers ────────────────────────────────────────
-  const handleListForSale = async () => {
-    if (!id || isDraft || forSaleLoading) return;
-    const price = parseFloat(askingPriceValue);
-    if (isNaN(price) || price <= 0) {
-      showToast({ message: 'Enter a valid asking price', type: 'error' });
-      return;
-    }
-    setForSaleLoading(true);
-    try {
-      await dataProvider.toggleForSale(id, true, price);
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Item listed for sale!', type: 'success' });
-      setIsForSale(true);
-      setForSaleModalVisible(false);
-    } catch (err: unknown) {
-      logger.error('[ItemDetail] list for sale error:', err);
-      showToast({ message: 'Failed to list item for sale', type: 'error' });
-    } finally {
-      setForSaleLoading(false);
-    }
-  };
-
-  const handleUnlist = async () => {
-    if (!id || isDraft || forSaleLoading) return;
-    setForSaleLoading(true);
-    try {
-      await dataProvider.toggleForSale(id, false);
-      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Item unlisted', type: 'info' });
-      setIsForSale(false);
-      setAskingPriceValue('');
-    } catch (err: unknown) {
-      logger.error('[ItemDetail] unlist error:', err);
-      showToast({ message: 'Failed to unlist item', type: 'error' });
-    } finally {
-      setForSaleLoading(false);
-    }
-  };
+  }, [isDraft, id, setPullRefreshing, refreshAllIntelligence]);
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -983,7 +703,7 @@ function ItemDetailScreen() {
                 <Text style={[styles.label, { color: theme.muted }]}>
                   Price range
                 </Text>
-                <Text style={{ fontSize: 14, fontWeight: '500', color: theme.text }}>
+                <Text style={{ fontSize: text.md, fontWeight: fontWeight.medium, color: theme.text }}>
                   {formatPrice(toNum(q10))} – {formatPrice(toNum(q50))} – {formatPrice(toNum(q90))}
                 </Text>
               </View>
@@ -996,9 +716,9 @@ function ItemDetailScreen() {
                   confidence={parseFloat(confidence)}
                   size="medium"
                   colors={{
-                    text: theme.text ?? '#1F2937',
-                    muted: theme.muted ?? '#64748B',
-                    background: theme.border ?? '#E2E8F0',
+                    text: theme.text,
+                    muted: theme.muted,
+                    background: theme.border,
                   }}
                 />
               </View>
@@ -1146,6 +866,7 @@ function ItemDetailScreen() {
                 progressLoading={progressLoading}
                 progressSaving={progressSaving}
                 theme={theme}
+                hapticsEnabled={settings.hapticsEnabled}
                 onStatusChange={handleProgressStatusChange}
                 onPctChange={handleProgressPctChange}
                 onNotesChange={handleProgressNotesChange}
@@ -1225,7 +946,7 @@ function ItemDetailScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Save notes"
                   >
-                    <Text style={styles.notesDoneBtnText}>Save</Text>
+                    <Text style={[styles.notesDoneBtnText, { color: theme.accentText }]}>Save</Text>
                   </Pressable>
                 )}
               </View>
@@ -1241,7 +962,7 @@ function ItemDetailScreen() {
                   },
                 ]}
                 placeholder="Add your notes about condition, origin, where you bought it, etc."
-                placeholderTextColor={theme.muted ?? '#64748B'}
+                placeholderTextColor={theme.muted}
                 multiline
                 value={notes}
                 onChangeText={setNotes}
@@ -1271,11 +992,11 @@ function ItemDetailScreen() {
               accessibilityLabel="Save to collection"
             >
               {savingDraft ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={theme.accentText} />
               ) : (
                 <>
-                  <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
-                  <Text style={styles.stickyButtonText}>Save to Collection</Text>
+                  <Ionicons name="checkmark-circle" size={20} color={theme.accentText} />
+                  <Text style={[styles.stickyButtonText, { color: theme.accentText }]}>Save to Collection</Text>
                 </>
               )}
             </Pressable>
@@ -1349,7 +1070,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: radius.md,
     padding: 16,
     gap: 10,
   },
@@ -1363,14 +1084,13 @@ const styles = StyleSheet.create({
   },
   // row moved to ItemDetailsCard
   label: {
-    fontSize: 13,
+    fontSize: text.md,
   },
   // value, valueHighlight moved to ItemDetailsCard
   explanationBlock: {
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
   },
   explanationHeaderRow: {
     flexDirection: 'row',
@@ -1381,31 +1101,31 @@ const styles = StyleSheet.create({
   explanationHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: gap.md,
   },
   explanationHeader: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   explanationContent: {
     marginTop: 10,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: radius.sm,
   },
   explanationText: {
-    fontSize: 13,
+    fontSize: text.md,
     lineHeight: 19,
   },
-  scarcityBadge: { borderRadius: 12, borderWidth: 1, padding: 10, marginTop: 10, marginBottom: 4 },
+  scarcityBadge: { borderRadius: radius.md, borderWidth: 1, padding: 10, marginTop: 10, marginBottom: 4 },
   scarcityRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  scarcityLabel: { fontSize: 13, fontWeight: '600' },
-  scarcityMeta: { fontSize: 11, flex: 1, textAlign: 'right' },
-  compsSection: { borderRadius: 14, borderWidth: 1, padding: 12, marginTop: 10 },
-  compsTitle: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  scarcityLabel: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  scarcityMeta: { fontSize: text.sm, flex: 1, textAlign: 'right' },
+  compsSection: { borderRadius: radius.md, borderWidth: 1, padding: 12, marginTop: 10 },
+  compsTitle: { fontSize: text.md, fontWeight: fontWeight.semibold, marginBottom: 8 },
   compRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  compTitle: { fontSize: 12, fontWeight: '500' },
-  compSource: { fontSize: 10, marginTop: 1 },
-  compPrice: { fontSize: 13, fontWeight: '700', marginLeft: 8 },
+  compTitle: { fontSize: text.sm, fontWeight: fontWeight.medium },
+  compSource: { fontSize: text.xs, marginTop: 1 },
+  compPrice: { fontSize: text.md, fontWeight: fontWeight.bold, marginLeft: 8 },
   notesBlock: {
     marginTop: 16,
   },
@@ -1417,20 +1137,19 @@ const styles = StyleSheet.create({
   notesDoneBtn: {
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: radius.xs,
   },
   notesDoneBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   notesInput: {
     marginTop: 8,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    fontSize: 13,
+    fontSize: text.md,
     lineHeight: 18,
     minHeight: 100,
     maxHeight: 220,
@@ -1451,13 +1170,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
+    borderRadius: radius.md,
+    gap: gap.md,
   },
   stickyButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
   },
   // refreshBar, editBar, forSaleBar, quickActionsRow styles moved to extracted components
   // Progress Tracking styles moved to ItemProgressSection component

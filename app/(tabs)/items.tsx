@@ -4,7 +4,6 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
-import { CategoryPill } from '@/components/CategoryPill';
 import {
   View,
   Text,
@@ -15,10 +14,8 @@ import {
   Alert,
   Animated,
   RefreshControl,
-  Modal,
   KeyboardAvoidingView,
   Platform,
-  Image,
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
@@ -37,17 +34,16 @@ import {
   useOptimisticBulkDelete,
 } from "@/hooks/useOptimisticItems";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
-import haptics from "@/lib/haptics";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 // formatPrice moved to ItemsSectionFooter
 import { useToast } from "@/components/Toast";
-import { FilterSheet, FilterConfig, SortOption } from "@/components/FilterSheet";
+import { FilterSheet, FilterConfig } from "@/components/FilterSheet";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from "@/utils/logger";
 import { BulkActionsToolbar } from '@/components/BulkActionsToolbar';
 import { ItemsListHeader } from '@/components/ItemsListHeader';
-import { GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
+import { radius, text, fontWeight } from '@/theme/tokens';
 import {
   ItemsGridHeader,
   ItemsFilterSummary,
@@ -72,9 +68,13 @@ type Item = {
   imageUrl?: string;
 };
 
-type SortKey = "value_desc" | "value_asc" | "title";
-
 const VIEW_MODE_KEY = '@collectai/items_view_mode';
+
+const ITEMS_PAGE_SIZE = 20;
+const STAGGER_MS = 40;
+const STATUS_CLEAR_DELAY_MS = 3000;
+const SCROLL_LOAD_THRESHOLD = 0.5;
+const FLOATING_BUTTON_SCROLL_PX = 100;
 
 const ItemsScreen: React.FC = () => {
   const router = useRouter();
@@ -85,7 +85,6 @@ const ItemsScreen: React.FC = () => {
   const { showToast } = useToast();
 
   const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("value_desc");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   // Paginated data fetching
   const itemFetcher = useCallback(
@@ -114,13 +113,13 @@ const ItemsScreen: React.FC = () => {
     loadMore,
     refresh: paginatedRefresh,
     setItems: setProviderItems,
-  } = usePaginatedList<Item>(itemFetcher, { pageSize: 20 });
+  } = usePaginatedList<Item>(itemFetcher, { pageSize: ITEMS_PAGE_SIZE });
 
   // Stagger animation for list items — compute flat index map
   const { getItemStyle: getStaggerStyle } = useStaggerReveal({
     count: (providerItems ?? []).length,
     enabled: settings.animationsEnabled && !loading,
-    staggerMs: 40,
+    staggerMs: STAGGER_MS,
   });
   // Pre-compute flat index per item id for stagger animation
   const staggerIndexMap = useRef(new Map<string, number>());
@@ -269,7 +268,7 @@ const ItemsScreen: React.FC = () => {
       setExporting(false);
       // Clear status after 3 seconds
       if (exportTimerRef.current) clearTimeout(exportTimerRef.current);
-      exportTimerRef.current = setTimeout(() => setExportStatus(null), 3000);
+      exportTimerRef.current = setTimeout(() => setExportStatus(null), STATUS_CLEAR_DELAY_MS);
     }
   }, [showToast]);
 
@@ -308,17 +307,17 @@ const ItemsScreen: React.FC = () => {
           dialogTitle: 'Export Selected Items',
           UTI: 'public.comma-separated-values-text',
         });
-        haptics.success();
+        fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       }
       exitMultiSelectMode();
     } catch (err: unknown) {
       logger.warn('[Items] bulk export error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to export selected items', type: 'error' });
-      haptics.error();
+      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     } finally {
       setBulkActionLoading(false);
     }
-  }, [selectedCount, selectedItems, exitMultiSelectMode]);
+  }, [selectedCount, selectedItems, exitMultiSelectMode, settings.hapticsEnabled, showToast]);
 
   // Bulk archive (mark as archived/sold) — with optimistic update
   const handleBulkArchive = useCallback(async () => {
@@ -337,12 +336,12 @@ const ItemsScreen: React.FC = () => {
             const ids = [...selectedIds];
             exitMultiSelectMode();
             // Optimistic: removes items from list immediately, reverts on error
-            await optimisticBulkArchive.mutate(ids);
-            if (!optimisticBulkArchive.error) {
-              haptics.success();
-            } else {
-              showToast({ message: optimisticBulkArchive.error.message || 'Failed to archive items', type: 'error' });
-              haptics.error();
+            try {
+              await optimisticBulkArchive.mutate(ids);
+              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+            } catch (err: unknown) {
+              showToast({ message: (err as Error)?.message || 'Failed to archive items', type: 'error' });
+              fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
             }
           },
         },
@@ -367,12 +366,12 @@ const ItemsScreen: React.FC = () => {
             const ids = [...selectedIds];
             exitMultiSelectMode();
             // Optimistic: removes items from list immediately, reverts on error
-            await optimisticBulkDelete.mutate(ids);
-            if (!optimisticBulkDelete.error) {
-              haptics.success();
-            } else {
-              showToast({ message: optimisticBulkDelete.error.message || 'Failed to delete items', type: 'error' });
-              haptics.error();
+            try {
+              await optimisticBulkDelete.mutate(ids);
+              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+            } catch (err: unknown) {
+              showToast({ message: (err as Error)?.message || 'Failed to delete items', type: 'error' });
+              fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
             }
           },
         },
@@ -392,18 +391,18 @@ const ItemsScreen: React.FC = () => {
       for (const id of ids) {
         await dataProvider.updateItem(id, { category: newCategory });
       }
-      haptics.success();
+      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       exitMultiSelectMode();
       showToast({ message: `${count} item${count > 1 ? 's' : ''} moved to ${newCategory}`, type: 'success' });
       await paginatedRefresh();
     } catch (err: unknown) {
       logger.warn('[Items] bulk category change error:', err);
       showToast({ message: 'Could not update items', type: 'error' });
-      haptics.error();
+      fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     } finally {
       setBulkActionLoading(false);
     }
-  }, [selectedCount, selectedIds, exitMultiSelectMode, paginatedRefresh]);
+  }, [selectedCount, selectedIds, exitMultiSelectMode, paginatedRefresh, settings.hapticsEnabled, showToast]);
 
   // Open item detail
   const handleOpenItem = useCallback((item: Item) => {
@@ -572,11 +571,11 @@ const ItemsScreen: React.FC = () => {
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
       const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
-      if (distanceFromBottom < layoutMeasurement.height * 0.5) {
+      if (distanceFromBottom < layoutMeasurement.height * SCROLL_LOAD_THRESHOLD) {
         loadMore();
       }
       // Show floating add button when user scrolls down past 100px
-      setShowFloatingAdd(contentOffset.y > 100);
+      setShowFloatingAdd(contentOffset.y > FLOATING_BUTTON_SCROLL_PX);
     },
     [loadMore],
   );
@@ -721,7 +720,17 @@ const ItemsScreen: React.FC = () => {
     />
   );
 
-  const emptyElement = <ItemsEmptyState />;
+  const emptyElement = query.trim() ? (
+    <View style={{ alignItems: 'center', paddingVertical: 32 }}>
+      <Ionicons name="search-outline" size={40} color={colors.muted} />
+      <Text style={{ color: colors.muted, fontSize: text.lg, marginTop: 12 }}>
+        No items match your search
+      </Text>
+      <Text style={{ color: colors.muted, fontSize: text.md, marginTop: 4 }}>
+        Try a different keyword or clear filters
+      </Text>
+    </View>
+  ) : <ItemsEmptyState />;
 
   const refreshCtrl = (
     <RefreshControl
@@ -868,54 +877,6 @@ const styles = StyleSheet.create({
   // Loading/Error/Skeleton styles moved to ItemsLoadingState + ItemsErrorState
   // (viewToggleRow, viewToggleBtn, controlsRowNew, selectAllTextBtn, selectAllText moved to ItemsListHeader)
   // (headerRow, headerLeft, title, subtitle, headerIcons moved to ItemsGridHeader)
-  actionButtonsRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 12,
-  },
-  actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 6,
-    minHeight: 36,
-  },
-  actionBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  wishlistBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 4,
-  },
-  wishlistBtnText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  iconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  filterActiveDot: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
   // (searchRow, searchInputWrapper, searchIcon, searchInput, searchRowButton, filterDot moved to ItemsListHeader)
   // (filterSummaryRow, filterSummaryText, filterChipsRow, filterChip, filterChipText, filterClearButton, filterClearText, itemCount moved to ItemsFilterSummary)
   // emptyText, emptyContainer, emptyCtaBtn styles moved to ItemsEmptyState
@@ -927,8 +888,8 @@ const styles = StyleSheet.create({
     borderTopColor: "transparent",
   },
   categoryTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: text.lg,
+    fontWeight: fontWeight.bold,
   },
   // itemRow, itemThumb, itemName, itemMeta, itemCondition, gradeBadge, itemRight, itemValue moved to ItemsListItem
   // categoryFooterRow, categoryTotalLabel, categoryTotalValue moved to ItemsSectionFooter

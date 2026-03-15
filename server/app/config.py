@@ -159,10 +159,22 @@ FIRECRAWL_BASE_URL: str = os.getenv("FIRECRAWL_BASE_URL", "https://api.firecrawl
 # Crawl4AI (local web crawler)
 # ---------------------------------------------------------------------------
 
-CRAWL4AI_ENABLED: bool = os.getenv("CRAWL4AI_ENABLED", "false").lower() in ("1", "true", "yes")
+CRAWL4AI_ENABLED: bool = os.getenv("CRAWL4AI_ENABLED", "true").lower() in ("1", "true", "yes")
 CRAWL4AI_MAX_CONCURRENT: int = int(os.getenv("CRAWL4AI_MAX_CONCURRENT", "3"))
 CRAWL4AI_TIMEOUT: int = int(os.getenv("CRAWL4AI_TIMEOUT", "30"))
 CRAWL4AI_HEADLESS: bool = os.getenv("CRAWL4AI_HEADLESS", "true").lower() in ("1", "true", "yes")
+
+# ---------------------------------------------------------------------------
+# Scrape.do (managed proxy scraping service)
+# ---------------------------------------------------------------------------
+
+SCRAPEDO_API_KEY: str = os.getenv("SCRAPEDO_API_KEY", "")
+
+# ---------------------------------------------------------------------------
+# SerpAPI (Google Shopping)
+# ---------------------------------------------------------------------------
+
+SERPAPI_API_KEY: str = os.getenv("SERPAPI_API_KEY", "")
 
 # ---------------------------------------------------------------------------
 # FX rates (shared across marketplace adapters)
@@ -192,6 +204,7 @@ CARDMARKET_APP_SECRET: str = os.getenv("CARDMARKET_APP_SECRET", "")
 DISCOGS_PERSONAL_TOKEN: str = os.getenv("DISCOGS_PERSONAL_TOKEN", "")
 PRICECHARTING_API_KEY: str = os.getenv("PRICECHARTING_API_KEY", "")
 STOCKX_API_KEY: str = os.getenv("STOCKX_API_KEY", "")
+ETSY_API_KEY: str = os.getenv("ETSY_API_KEY", "")
 BRICKLINK_CONSUMER_KEY: str = os.getenv("BRICKLINK_CONSUMER_KEY", "")
 BRICKLINK_CONSUMER_SECRET: str = os.getenv("BRICKLINK_CONSUMER_SECRET", "")
 BRICKLINK_TOKEN: str = os.getenv("BRICKLINK_TOKEN", "")
@@ -271,7 +284,7 @@ REDIS_URL: str | None = os.environ.get("REDIS_URL")
 # Cache TTLs & thresholds
 # ---------------------------------------------------------------------------
 
-CACHE_TTL: int = int(os.environ.get("CACHE_TTL", "300"))
+CACHE_TTL: int = int(os.environ.get("CACHE_TTL", "600"))
 PRESIGN_EXPIRY: int = int(os.environ.get("PRESIGN_EXPIRY", "300"))
 FX_CACHE_TTL: int = int(os.environ.get("FX_CACHE_TTL", "28800"))
 GEO_CACHE_TTL: int = int(os.environ.get("GEO_CACHE_TTL", "86400"))

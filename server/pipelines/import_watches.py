@@ -98,9 +98,9 @@ BRAND_TIER: dict[str, float] = {
     "Junghans": 0.5,
     "Longines": 0.5,
     "Oris": 0.5,
-    "Christopher Ward": 0.5,
-    "Baltic": 0.5,
-    "Ming": 0.5,
+    "Christopher Ward": 0.75,
+    "Baltic": 0.75,
+    "Ming": 0.80,
     "Seiko": 0.5,
     "Marathon": 0.5,
     "Universal Geneve": 0.5,
@@ -121,22 +121,22 @@ BRAND_TIER: dict[str, float] = {
     "F.P. Journe": 0.95,
     "MB&F": 0.95,
     "Breguet": 0.9,
-    # Microbrands (0.35)
-    "Lorier": 0.35,
-    "Halios": 0.35,
-    "Zelos": 0.35,
+    # Premium Microbrands (0.75-0.85)
+    "Lorier": 0.75,
+    "Halios": 0.80,
+    "Zelos": 0.75,
     "Squale": 0.35,
     "Steinhart": 0.35,
     "Dan Henry": 0.35,
     "Boldr": 0.30,
-    "Brew": 0.30,
+    "Brew": 0.75,
     # Budget Icons (0.3)
     "Bulova": 0.3,
     "Luminox": 0.3,
     "Glycine": 0.35,
     "Invicta": 0.2,
     # Japanese Affordable (0.4-0.6)
-    "Kurono Tokyo": 0.6,
+    "Kurono Tokyo": 0.80,
     "Orient Star": 0.4,
     "Minase": 0.55,
     # German Value (0.4-0.5)
@@ -154,8 +154,74 @@ BRAND_TIER: dict[str, float] = {
     # Niche Independents (0.4-0.5)
     "Yema": 0.4,
     "Norqain": 0.45,
-    "Farer": 0.4,
+    "Farer": 0.75,
     "Formex": 0.4,
+    # Microbrands — Expansion (0.30-0.40)
+    "Islander": 0.30,
+    "San Martin": 0.30,
+    "Pagani Design": 0.25,
+    "Sugess": 0.25,
+    "Escapement Time": 0.25,
+    "Proxima": 0.30,
+    "Heimdallr": 0.25,
+    "Addiesdive": 0.25,
+    "Tandorio": 0.25,
+    "Cadisen": 0.25,
+    "Merkur": 0.30,
+    "Baltany": 0.30,
+    "Bertucci": 0.25,
+    "Nodus": 0.35,
+    "Vaer": 0.35,
+    "Oak & Oscar": 0.40,
+    "Traska": 0.35,
+    "Autodromo": 0.75,
+    "Marlin": 0.30,
+    "RZE": 0.35,
+    "Monta": 0.80,
+    "Mercer": 0.30,
+    "Gruppo Gamma": 0.35,
+    "NTH": 0.35,
+    "Undone": 0.30,
+    "Tsao Baltimore": 0.35,
+    "Furlan Marri": 0.35,
+    "Nezumi": 0.35,
+    "Bravur": 0.35,
+    "Astor+Banks": 0.35,
+    "Spinnaker": 0.30,
+    "AVI-8": 0.30,
+    "Gavox": 0.30,
+    "Phoibos": 0.30,
+    "Axios": 0.30,
+    "Maen": 0.35,
+    "Wolbrook": 0.30,
+    "Unimatic": 0.75,
+    "anOrdain": 0.80,
+    "MING": 0.80,
+    "Atelier Wen": 0.40,
+    "Venezianico": 0.35,
+    "Direnzo": 0.35,
+    "Marloe": 0.35,
+    "Straum": 0.35,
+    "Studio Underd0g": 0.35,
+    "Sartory Billard": 0.40,
+    "Serica": 0.40,
+    # Affordable mainstream expansion
+    "Fossil": 0.20,
+    "Skagen": 0.20,
+    "Movado": 0.35,
+    "Bulova": 0.30,
+    "Alpina": 0.40,
+    "Victorinox": 0.30,
+    "Mondaine": 0.30,
+    "Braun": 0.25,
+    "Rotary": 0.25,
+    "Philip Watch": 0.30,
+    "Corniche": 0.30,
+    "MVMT": 0.20,
+    "Daniel Wellington": 0.15,
+    "Edox": 0.35,
+    "Raymond Weil": 0.40,
+    "Ebel": 0.40,
     # Additional haute horlogerie / luxury
     "Girard-Perregaux": 0.85,
     "Glashutte Original": 0.8,
@@ -564,8 +630,6 @@ def _cartier_watches() -> list[tuple]:
          "Manual Cal. 9611 MC", "Stainless Steel", "Current Production", 12000),
         ("Cartier", "Tank Must", "WSTA0065",
          "Quartz Cal. 076", "Stainless Steel", "Current Production", 3100),
-        ("Cartier", "Tank Francaise Medium", "WSTA0065",
-         "Quartz Cal. 057", "Stainless Steel", "Current Production", 3800),
         ("Cartier", "Tank Louis Cartier", "W1529756",
          "Manual Cal. 8971 MC", "18k Yellow Gold", "Current Production", 12500),
         ("Cartier", "Ballon Bleu 36mm", "WSBB0044",
@@ -670,8 +734,6 @@ def _jlc_watches() -> list[tuple]:
 def _timex_watches() -> list[tuple]:
     """8 Timex watches — collectible Marlin, Q Timex reissues, collaborations."""
     return [
-        ("Timex", "Marlin Automatic", "TW2T22700",
-         "Automatic Miyota 8215", "Stainless Steel", "Current Production", 200),
         ("Timex", "Marlin Hand-Wound", "TW2T18200",
          "Manual Cal. 2115", "Stainless Steel", "Current Production", 160),
         ("Timex", "Marlin Automatic Snoopy", "TW2U71200",
@@ -1549,48 +1611,18 @@ def _expanded_batch_premium_brands() -> list[tuple]:
     """50 additional watches — Grand Seiko, Tudor, Cartier, IWC, Breitling, Nomos, Bell & Ross, Longines."""
     return [
         # ── Grand Seiko (8) ────────────────────────────────────────────────
-        ("Grand Seiko", "Spring Drive Snowflake SBGA211", "SBGA211",
-         "Spring Drive Cal. 9R65", "Titanium", "Current Production", 5800),
-        ("Grand Seiko", "Hi-Beat GMT SBGJ201", "SBGJ201",
-         "Automatic Hi-Beat Cal. 9S86", "Stainless Steel", "Current Production", 6200),
         ("Grand Seiko", "Heritage Collection SBGH271 Seasons Autumn", "SBGH271",
          "Automatic Hi-Beat Cal. 9S85", "Stainless Steel", "Limited Edition", 6800),
-        ("Grand Seiko", "Heritage Collection SBGY007 Omiwatari", "SBGY007",
-         "Spring Drive Cal. 9R02", "Platinum", "Limited Edition", 28000),
         ("Grand Seiko", "Elegance SBGK005 Mt. Iwate", "SBGK005",
          "Manual Cal. 9S63", "Stainless Steel", "Current Production", 5500),
-        ("Grand Seiko", "Sport Collection SBGE257 Spring Drive GMT", "SBGE257",
-         "Spring Drive Cal. 9R66", "Stainless Steel", "Current Production", 6000),
-        ("Grand Seiko", "Heritage Collection SBGA413 Shunbun", "SBGA413",
-         "Spring Drive Cal. 9R65", "Stainless Steel", "Limited Edition", 6500),
-        ("Grand Seiko", "Evolution 9 SLGA007 White Birch", "SLGA007",
-         "Spring Drive Cal. 9RA2", "Stainless Steel", "Current Production", 9200),
 
-        # ── Tudor (8) ─────────────────────────────────────────────────────
-        ("Tudor", "Black Bay 58 925 Silver", "M79010SG-0001",
-         "Automatic Cal. MT5400", "Silver", "Current Production", 4200),
-        ("Tudor", "Black Bay 58 Navy Blue", "M79030B-0001",
-         "Automatic Cal. MT5402", "Stainless Steel", "Current Production", 3800),
-        ("Tudor", "Pelagos FXD Marine Nationale", "M25707B/23-0001",
-         "Automatic Cal. MT5602", "Titanium", "Special Edition", 4500),
-        ("Tudor", "Pelagos 39 Black", "M25407N-0001",
-         "Automatic Cal. MT5400", "Titanium", "Current Production", 4100),
-        ("Tudor", "Ranger 39mm", "M79950-0001",
-         "Automatic Cal. MT5402", "Stainless Steel", "Current Production", 3100),
-        ("Tudor", "Black Bay Pro GMT", "M79470-0001",
-         "Automatic Cal. MT5652", "Stainless Steel", "Current Production", 3900),
-        ("Tudor", "Black Bay Chrono S&G", "M79363N-0001",
-         "Automatic Cal. MT5813", "Steel/Gold", "Current Production", 5800),
+        # ── Tudor (4) ─────────────────────────────────────────────────────
         ("Tudor", "Black Bay 54 37mm", "M79000N-0001",
          "Automatic Cal. MT5400", "Stainless Steel", "Current Production", 3600),
 
         # ── Cartier (6) ───────────────────────────────────────────────────
-        ("Cartier", "Santos de Cartier Medium Steel", "WSSA0029",
-         "Automatic Cal. 1847 MC", "Stainless Steel", "Current Production", 7200),
         ("Cartier", "Santos de Cartier Large Two-Tone", "W2SA0006",
          "Automatic Cal. 1847 MC", "Steel/Gold", "Current Production", 11500),
-        ("Cartier", "Tank Française Medium Steel", "WSTA0065",
-         "Automatic Cal. 1853 MC", "Stainless Steel", "Current Production", 5800),
         ("Cartier", "Tank Française Small Steel Quartz", "WSTA0064",
          "Quartz Cal. 057", "Stainless Steel", "Current Production", 4200),
         ("Cartier", "Tank Must Large SolarBeat", "WSTA0055",
@@ -1598,15 +1630,13 @@ def _expanded_batch_premium_brands() -> list[tuple]:
         ("Cartier", "Pasha de Cartier 41mm Chronograph", "WSPA0018",
          "Automatic Cal. 1904-CH MC", "Stainless Steel", "Current Production", 9500),
 
-        # ── IWC (6) ───────────────────────────────────────────────────────
+        # ── IWC (5) ───────────────────────────────────────────────────────
         ("IWC", "Portugieser Automatic 40", "IW358305",
          "Automatic Cal. 82200", "Stainless Steel", "Current Production", 7500),
         ("IWC", "Portugieser Chronograph", "IW371617",
          "Automatic Cal. 69355", "Stainless Steel", "Current Production", 8900),
         ("IWC", "Big Pilot 43mm", "IW329303",
          "Automatic Cal. 82100", "Stainless Steel", "Current Production", 9200),
-        ("IWC", "Pilot's Watch Mark XX", "IW328203",
-         "Automatic Cal. 32111", "Stainless Steel", "Current Production", 5400),
         ("IWC", "Spitfire Pilot Chronograph 41mm", "IW387903",
          "Automatic Cal. 69385", "Stainless Steel", "Current Production", 6800),
         ("IWC", "Pilot's Watch Chronograph Top Gun Ceratanium", "IW389101",
@@ -1637,8 +1667,6 @@ def _expanded_batch_premium_brands() -> list[tuple]:
          "Manual Cal. Alpha", "Stainless Steel", "Current Production", 1440),
         ("Nomos", "Metro Neomatik 41 Update", "1106",
          "Automatic Cal. DUW 6101", "Stainless Steel", "Current Production", 3600),
-        ("Nomos", "Zurich Weltzeit Nachtblau", "807",
-         "Automatic Cal. DUW 5201", "Stainless Steel", "Current Production", 4800),
 
         # ── Bell & Ross (5) ───────────────────────────────────────────────
         ("Bell & Ross", "BR 03-92 Diver Blue Bronze", "BR0392-D-LU-BR/SCA",
@@ -1829,8 +1857,6 @@ def _expansion_round3_watches() -> list[tuple]:
          "Quartz Module 3229", "Resin", "Limited Edition", 350),
 
         # ── Seiko Presage Limited Editions (10) ─────────────────────────
-        ("Seiko", "Presage Arita Porcelain Dial SPB171J1", "SPB171J1",
-         "Automatic Cal. 6R35", "Stainless Steel", "Limited Edition", 2200),
         ("Seiko", "Presage Urushi Lacquer Dial SRQ033J1", "SRQ033J1",
          "Automatic Cal. 8R48", "Stainless Steel", "Limited Edition", 3500),
         ("Seiko", "Presage 60th Anniversary Enamel SPB093J1", "SPB093J1",
@@ -1855,10 +1881,6 @@ def _expansion_round3_watches() -> list[tuple]:
          "Quartz ETA", "Ceramic/Plastic", "Special Edition", 500),
         ("Swatch", "MoonSwatch Mission to Jupiter Brown", "SO33J700",
          "Quartz ETA", "Ceramic/Plastic", "Special Edition", 360),
-        ("Swatch", "MoonSwatch Mission to Venus Pink", "SO33P100",
-         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 380),
-        ("Swatch", "MoonSwatch Mission to the Sun Gold", "SO33T100",
-         "Quartz ETA", "Ceramic/Plastic", "Special Edition", 420),
         ("Swatch", "MoonSwatch Mission to Earth Green", "SO33G700",
          "Quartz ETA", "Ceramic/Plastic", "Special Edition", 370),
         ("Swatch", "MoonSwatch Mission to Uranus Teal", "SO33U700",
@@ -1875,60 +1897,26 @@ def _expansion_round3_watches() -> list[tuple]:
         # ── Omega Speedmaster Specials (10) ─────────────────────────────
         ("Omega", "Speedmaster Moonwatch Apollo 11 50th Anniversary", "310.20.42.50.01.001",
          "Manual Cal. 3861", "Stainless Steel", "Anniversary Edition", 12000),
-        ("Omega", "Speedmaster Silver Snoopy Award 50th Anniversary", "310.32.42.50.02.001",
-         "Manual Cal. 3861", "Stainless Steel", "Anniversary Edition", 25000),
         ("Omega", "Speedmaster Dark Side of the Moon Apollo 8", "311.92.44.30.01.001",
          "Manual Cal. 1869", "Ceramic", "Limited Edition", 9500),
-        ("Omega", "Speedmaster First Omega in Space", "311.32.40.30.01.001",
-         "Manual Cal. 1861", "Stainless Steel", "Discontinued Classic", 6500),
         ("Omega", "Speedmaster '57 1957 Trilogy", "311.10.39.30.01.001",
          "Manual Cal. 1861", "Stainless Steel", "Limited Edition", 8500),
         ("Omega", "Speedmaster CK2998 Pulsometer", "311.33.40.30.02.001",
          "Manual Cal. 1861", "Stainless Steel", "Limited Edition", 7500),
-        ("Omega", "Speedmaster Ultraman Limited Edition", "311.12.42.30.01.001",
-         "Manual Cal. 1861", "Stainless Steel", "Limited Edition", 8000),
-        ("Omega", "Speedmaster Moonwatch Co-Axial Hesalite", "310.30.42.50.01.001",
-         "Manual Cal. 3861", "Stainless Steel", "Current Production", 7500),
         ("Omega", "Speedmaster Racing Co-Axial White Dial", "329.30.44.51.04.001",
          "Automatic Cal. 9900", "Stainless Steel", "Current Production", 8200),
         ("Omega", "Speedmaster Super Racing Co-Axial", "329.32.44.51.01.001",
          "Automatic Cal. 9920", "Stainless Steel", "Current Production", 9500),
 
-        # ── Tudor Black Bay Heritage (10) ───────────────────────────────
-        ("Tudor", "Black Bay Fifty-Eight Navy Blue", "M79030B-0001",
-         "Automatic Cal. MT5402", "Stainless Steel", "Current Production", 3200),
+        # ── Tudor Black Bay Heritage (2) ───────────────────────────────
         ("Tudor", "Black Bay Fifty-Eight Bronze", "M79012M-0001",
          "Automatic Cal. MT5400", "Bronze", "Current Production", 3800),
-        ("Tudor", "Black Bay Chrono S&G", "M79363N-0001",
-         "Automatic Cal. MT5813", "Steel/Gold", "Current Production", 5800),
-        ("Tudor", "Black Bay GMT", "M79830RB-0001",
-         "Automatic Cal. MT5652", "Stainless Steel", "Current Production", 3900),
-        ("Tudor", "Black Bay Pro", "M79470-0001",
-         "Automatic Cal. MT5652", "Stainless Steel", "Current Production", 3600),
-        ("Tudor", "Black Bay 54", "M79000N-0001",
-         "Automatic Cal. MT5400", "Stainless Steel", "Current Production", 3400),
-        ("Tudor", "Black Bay Ceramic", "M79210CNU-0001",
-         "Automatic Cal. MT5602-1U", "Ceramic", "Current Production", 4500),
-        ("Tudor", "Pelagos 39 Black", "M25407N-0001",
-         "Automatic Cal. MT5400", "Titanium", "Current Production", 3900),
         ("Tudor", "Pelagos FXD Marine Nationale", "M25707KN-0001",
          "Automatic Cal. MT5602", "Titanium", "Limited Edition", 4800),
-        ("Tudor", "Black Bay 58 925 Silver", "M79010SG-0001",
-         "Automatic Cal. MT5400", "Silver", "Limited Edition", 4200),
 
         # ── Grand Seiko Seasonal Dials (10) ─────────────────────────────
-        ("Grand Seiko", "Spring Drive Snowflake", "SBGA211",
-         "Spring Drive Cal. 9R65", "Titanium", "Current Production", 5800),
-        ("Grand Seiko", "Elegance Omiwatari Frozen Lake", "SBGY007",
-         "Spring Drive Cal. 9R02", "Stainless Steel", "Limited Edition", 12000),
-        ("Grand Seiko", "Heritage Shunbun Spring", "SBGA413",
-         "Spring Drive Cal. 9R65", "Stainless Steel", "Limited Edition", 6500),
-        ("Grand Seiko", "Elegance Shizukuishi Autumn Leaf", "SBGK005",
-         "Manual Cal. 9S63", "Stainless Steel", "Limited Edition", 7500),
         ("Grand Seiko", "Heritage Shunkū Sky Flake", "SBGA407",
          "Spring Drive Cal. 9R65", "Stainless Steel", "Current Production", 5500),
-        ("Grand Seiko", "Heritage White Birch", "SLGH005",
-         "Automatic Hi-Beat Cal. 9SA5", "Stainless Steel", "Current Production", 9200),
         ("Grand Seiko", "Evolution 9 Rikka Summer Blue", "SLGA021",
          "Spring Drive Cal. 9RA2", "Titanium", "Limited Edition", 11000),
         ("Grand Seiko", "Elegance Fuji-san Blue", "SBGD205",
@@ -1961,12 +1949,6 @@ def _expansion_round3_watches() -> list[tuple]:
          "Automatic Cal. 9051", "Stainless Steel", "Limited Edition", 750),
 
         # ── Omega Seamaster & Constellation (10) ────────────────────────
-        ("Omega", "Seamaster Planet Ocean 600M Ultra Deep", "215.30.46.21.01.001",
-         "Automatic Cal. 8912", "Stainless Steel", "Current Production", 7200),
-        ("Omega", "Seamaster Aqua Terra 150M Green", "220.10.41.21.10.001",
-         "Automatic Cal. 8900", "Stainless Steel", "Current Production", 5600),
-        ("Omega", "Seamaster 300 Bronze Gold", "234.92.41.21.10.001",
-         "Automatic Cal. 8912", "Bronze", "Current Production", 12500),
         ("Omega", "Seamaster Diver 300M James Bond 60th Anniversary", "210.30.42.20.03.002",
          "Automatic Cal. 8806", "Stainless Steel", "Anniversary Edition", 8500),
         ("Omega", "Seamaster Railmaster Co-Axial Denim", "220.12.40.20.03.001",
@@ -1979,14 +1961,8 @@ def _expansion_round3_watches() -> list[tuple]:
          "Automatic Cal. 9900", "Stainless Steel", "Current Production", 8900),
         ("Omega", "Seamaster Aqua Terra Worldtimer", "220.12.43.22.03.001",
          "Automatic Cal. 8938", "Stainless Steel", "Current Production", 7200),
-        ("Omega", "Seamaster 300M Necton Edition", "210.32.42.20.01.002",
-         "Automatic Cal. 8806", "Stainless Steel", "Special Edition", 6200),
 
         # ── Additional Watches (+10) ──────────────────────────────────────
-        ("Longines", "Spirit Zulu Time GMT", "L3.812.4.53.6",
-         "Automatic L844.4", "Stainless Steel", "Current Production", 2750),
-        ("Longines", "Legend Diver Bronze", "L3.774.1.50.2",
-         "Automatic L888.5", "Bronze", "Current Production", 2900),
         ("Nomos", "Tangente Neomatik 41 Update", "180.S2",
          "Automatic DUW 6101", "Stainless Steel", "Current Production", 3200),
         ("Nomos", "Club Campus Neomatik", "748.S2",
@@ -2001,8 +1977,1506 @@ def _expansion_round3_watches() -> list[tuple]:
          "Automatic SW 220-1", "Stainless Steel", "Current Production", 1790),
         ("Mido", "Ocean Star 600 Chronometer", "M026.608.11.051.01",
          "Automatic Cal. 80", "Stainless Steel", "Current Production", 1350),
-        ("Mido", "Baroncelli Heritage Gent", "M027.407.16.010.00",
-         "Automatic Cal. 80", "Stainless Steel", "Current Production", 850),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Affordable & Microbrand Expansion (2026-03-14)
+# ---------------------------------------------------------------------------
+
+def _microbrand_expansion_watches() -> list[tuple]:
+    """50 microbrand watches — popular enthusiast-favorite microbrands under 2K."""
+    return [
+        # Nodus
+        ("Nodus", "Avalon II 38mm Blue", "AVL2-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 650),
+        ("Nodus", "Contrail III GMT", "CNT3-GMT-BLK", "Automatic Miyota 9075", "Stainless Steel",
+         "Current Production", 750),
+        ("Nodus", "Sector Field 36mm", "SEC-36-GRN", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 550),
+        # Vaer
+        ("Vaer", "C5 Field Black 40mm", "C5-BLK-40", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 499),
+        ("Vaer", "D5 Tropic Diver", "D5-TRP-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 549),
+        ("Vaer", "A5 Automatic White 36mm", "A5-WHT-36", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 399),
+        ("Vaer", "S5 Solar Field Titanium", "S5-TI-GRN", "Solar Seiko V187", "Titanium",
+         "Current Production", 329),
+        # Traska
+        ("Traska", "Summiteer GMT Black", "SUM-GMT-BLK", "Automatic Miyota 9075", "Stainless Steel",
+         "Current Production", 650),
+        ("Traska", "Freediver V3 Seafoam", "FDV3-SEA", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 550),
+        ("Traska", "Commuter Black", "COM-BLK", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 450),
+        # Oak & Oscar
+        ("Oak & Oscar", "Olmsted 38.5 Green", "OLM-38-GRN", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 1490),
+        ("Oak & Oscar", "Burnham Day-Date", "BRN-DD-BLU", "Automatic Miyota 9132", "Stainless Steel",
+         "Current Production", 1590),
+        # Autodromo
+        ("Autodromo", "Group B Series 2 Night Stage", "GBS2-NGT", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 875),
+        ("Autodromo", "Intereuropa Rattrapante", "INT-RAT-BLK", "Mecaquartz Seiko VK67", "Stainless Steel",
+         "Limited Edition", 1200),
+        # Monta
+        ("Monta", "Oceanking 600m Black", "OK-BLK-600", "Automatic Sellita SW300-1", "Stainless Steel",
+         "Current Production", 1950),
+        ("Monta", "Noble Date Blue", "NOB-BLU-DT", "Automatic Sellita SW300-1", "Stainless Steel",
+         "Current Production", 1750),
+        ("Monta", "Atlas GMT Pepsi", "ATL-GMT-PEP", "Automatic Sellita SW330-2", "Stainless Steel",
+         "Current Production", 2190),
+        # NTH
+        ("NTH", "Nacken Modern Blue", "NTH-NAC-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 575),
+        ("NTH", "Barracuda Vintage Black", "NTH-BAR-BLK", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 575),
+        # Furlan Marri
+        ("Furlan Marri", "Mechaquartz Salmon 38mm", "FM-SAL-38", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 289),
+        ("Furlan Marri", "Mechanical Hand-Wind White", "FM-HW-WHT", "Manual Seagull ST3600", "Stainless Steel",
+         "Current Production", 349),
+        # Unimatic
+        ("Unimatic", "Modello Uno U1S-8N Black", "U1S-8N", "Automatic Seiko NH35", "Stainless Steel",
+         "Limited Edition", 750),
+        ("Unimatic", "Modello Due U2S-MP Steel", "U2S-MP", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 500),
+        # anOrdain
+        ("anOrdain", "Model 1 Fumé Iron Cream", "M1-FC", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 1850),
+        ("anOrdain", "Model 2 Enamel Blue Cairn", "M2-BC", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 1650),
+        # Atelier Wen
+        ("Atelier Wen", "Perception Porcelain White", "PER-WHT", "Automatic Hangzhou 5000A", "Stainless Steel",
+         "Current Production", 1288),
+        ("Atelier Wen", "Hao Guilloché Blue", "HAO-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 788),
+        # Venezianico
+        ("Venezianico", "Nereide GMT 39mm Aqua", "VNZ-GMT-AQA", "Automatic Miyota 9075", "Stainless Steel",
+         "Current Production", 619),
+        ("Venezianico", "Redentore Ultraleggero 40mm", "VNZ-RED-UL", "Automatic Miyota 82S5", "Stainless Steel",
+         "Current Production", 389),
+        # Serica
+        ("Serica", "5303-2 Field Watch", "5303-2", "Automatic ETA 2801-2", "Stainless Steel",
+         "Current Production", 990),
+        ("Serica", "4512 California Dial", "4512", "Manual ETA 7001", "Stainless Steel",
+         "Current Production", 890),
+        # Studio Underd0g
+        ("Studio Underd0g", "Dessert Watch Mint Chip", "DW-MNT", "Automatic Miyota 8215", "Stainless Steel",
+         "Current Production", 495),
+        ("Studio Underd0g", "Dessert Watch Blueberry", "DW-BLB", "Automatic Miyota 8215", "Stainless Steel",
+         "Current Production", 495),
+        # Sartory Billard
+        ("Sartory Billard", "SB04 Grey Sector", "SB04-GRY", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 1200),
+        # Marloe
+        ("Marloe", "Morar Salmon", "MOR-SAL", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 599),
+        ("Marloe", "Coniston Blue", "CON-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 529),
+        # Straum
+        ("Straum", "Opphav Green", "OPH-GRN", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 699),
+        # Spinnaker
+        ("Spinnaker", "Fleuss Automatic Blue", "SP-5055-BLU", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 299),
+        ("Spinnaker", "Bradner 42mm Vintage", "SP-5062-VIN", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 279),
+        ("Spinnaker", "Croft 3912 GMT", "SP-5130-GMT", "Automatic Seiko NH34", "Stainless Steel",
+         "Current Production", 399),
+        # Phoibos
+        ("Phoibos", "Proteus 300m Black", "PY028C", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 289),
+        ("Phoibos", "Eagle Ray 200m Bronze", "PY021C-BRZ", "Automatic Miyota 9015", "Bronze",
+         "Current Production", 399),
+        # Gruppo Gamma
+        ("Gruppo Gamma", "Venturo Field II Black", "VF2-BLK", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 550),
+        # RZE
+        ("RZE", "Resolute Ti Blue", "RES-TI-BLU", "Automatic Miyota 9015", "Titanium",
+         "Current Production", 499),
+        ("RZE", "Endeavour Ti GMT", "END-TI-GMT", "Automatic Miyota 9075", "Titanium",
+         "Current Production", 599),
+        # Axios
+        ("Axios", "Ironclad 40mm Chrono Blue", "IC-40-BLU", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 399),
+        # Nezumi
+        ("Nezumi", "Voiture Chronograph Panda", "VOI-PAN", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 399),
+        # Maen
+        ("Maen", "Hudson 38 Automatic Ice Blue", "HUD-38-ICE", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 479),
+        # Bravur
+        ("Bravur", "BW003 Scandinavian Blue", "BW003-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 650),
+    ]
+
+
+def _chinese_value_watches() -> list[tuple]:
+    """30 Chinese-made value watches — popular on enthusiast forums, under 500 EUR."""
+    return [
+        # San Martin
+        ("San Martin", "SN004-G V4 Submariner Homage", "SN004-GV4", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 210),
+        ("San Martin", "SN0021-G BB58 Homage", "SN0021-G", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 220),
+        ("San Martin", "SN007-G Pilot Flieger 39mm", "SN007-G", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 180),
+        ("San Martin", "SN0108-G 62MAS Diver 200m", "SN0108-G", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 250),
+        ("San Martin", "SN0054-G Explorer Homage 36mm", "SN0054-G", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 165),
+        ("San Martin", "SN0116-G GMT Pepsi", "SN0116-G", "Automatic Seiko NH34", "Stainless Steel",
+         "Current Production", 280),
+        # Pagani Design
+        ("Pagani Design", "PD-1661 Daytona Homage Black", "PD-1661-BLK", "Quartz Seiko VK63", "Stainless Steel",
+         "Current Production", 85),
+        ("Pagani Design", "PD-1662 GMT Batman", "PD-1662-BAT", "Automatic Seiko NH34", "Stainless Steel",
+         "Current Production", 100),
+        ("Pagani Design", "PD-1679 Seamaster Homage Blue", "PD-1679-BLU", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 80),
+        ("Pagani Design", "PD-1685 Speedmaster Homage Panda", "PD-1685-PAN", "Quartz Seiko VK63", "Stainless Steel",
+         "Current Production", 90),
+        # Sugess
+        ("Sugess", "SU1901 Chronograph Panda 40mm", "SU1901-PAN", "Manual Seagull ST1901", "Stainless Steel",
+         "Current Production", 250),
+        ("Sugess", "SU1908 Moon Phase Dress", "SU1908-WHT", "Manual Seagull ST2108", "Stainless Steel",
+         "Current Production", 200),
+        ("Sugess", "SU2025 Tourbillon Heritage", "SU2025-TRB", "Manual Seagull ST8000", "Stainless Steel",
+         "Current Production", 350),
+        # Islander
+        ("Islander", "ISL-40 Diver Black 200m", "ISL-40-BLK", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 199),
+        ("Islander", "ISL-69 Field Watch Green", "ISL-69-GRN", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 229),
+        ("Islander", "ISL-94 Port Jefferson Diver", "ISL-94-BLU", "Automatic Seiko NH38", "Stainless Steel",
+         "Current Production", 249),
+        # Escapement Time
+        ("Escapement Time", "King Seiko Homage Blue", "ET-KS-BLU", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 120),
+        ("Escapement Time", "Dress Watch Guilloché Silver", "ET-DR-SLV", "Automatic Miyota 8215", "Stainless Steel",
+         "Current Production", 100),
+        # Proxima
+        ("Proxima", "PX1681 MM300 Homage Black", "PX1681-BLK", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 230),
+        ("Proxima", "PX01 Turtle Diver Bronze", "PX01-BRZ", "Automatic Seiko NH35", "Bronze",
+         "Current Production", 280),
+        # Heimdallr
+        ("Heimdallr", "Monster Diver V2 Orange", "HMD-MON-ORG", "Automatic Seiko NH36", "Stainless Steel",
+         "Current Production", 130),
+        ("Heimdallr", "SKX007 Homage Turtle", "HMD-SKX-BLK", "Automatic Seiko NH36", "Stainless Steel",
+         "Current Production", 110),
+        # Merkur
+        ("Merkur", "Flieger Type-B Pilot 42mm", "MK-PIL-B", "Manual Seagull ST3621", "Stainless Steel",
+         "Current Production", 200),
+        ("Merkur", "Handwinding Chronograph Reverse Panda", "MK-CHR-RP", "Manual Seagull ST1901", "Stainless Steel",
+         "Current Production", 280),
+        # Baltany
+        ("Baltany", "1926 Explorer Homage 36mm", "BAL-1926-WHT", "Automatic Seiko NH38", "Stainless Steel",
+         "Current Production", 130),
+        ("Baltany", "Dirty Dozen Military 36mm", "BAL-DD-BLK", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 120),
+        ("Baltany", "Bubble Back Bronze Salmon", "BAL-BB-SAL", "Automatic Miyota 8215", "Bronze",
+         "Current Production", 160),
+        # Cadisen
+        ("Cadisen", "C8185 Dress Watch Silver", "C8185-SLV", "Automatic Miyota 8215", "Stainless Steel",
+         "Current Production", 70),
+        # Tandorio
+        ("Tandorio", "62MAS Diver Teal 38mm", "TND-62-TEA", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 95),
+        # Addiesdive
+        ("Addiesdive", "Pilot Flieger 42mm Bronze", "AD-FLI-BRZ", "Automatic Seiko NH35", "Bronze",
+         "Current Production", 110),
+    ]
+
+
+def _affordable_mainstream_expansion() -> list[tuple]:
+    """40 affordable mainstream brand watches — well-known brands under 3K EUR."""
+    return [
+        # Hamilton (more affordable range)
+        ("Hamilton", "Khaki Field Quartz 38mm", "H68201143", "Quartz ETA F06.115", "Stainless Steel",
+         "Current Production", 350),
+        ("Hamilton", "Ventura Quartz", "H24411732", "Quartz ETA 956.412", "Stainless Steel",
+         "Current Production", 495),
+        ("Hamilton", "Khaki Navy Pioneer Auto 40mm", "H77715553", "Automatic H-10", "Stainless Steel",
+         "Current Production", 895),
+        ("Hamilton", "Jazzmaster Thinline Auto 40mm", "H38525811", "Automatic H-10", "Stainless Steel",
+         "Current Production", 625),
+        # Tissot (more models)
+        ("Tissot", "PRX 35mm Quartz Green", "T137.210.11.091.00", "Quartz ETA F06.115", "Stainless Steel",
+         "Current Production", 325),
+        ("Tissot", "Classic Dream 42mm", "T129.410.16.013.00", "Quartz ETA F06.115", "Stainless Steel",
+         "Current Production", 225),
+        ("Tissot", "Everytime 40mm", "T143.410.16.031.00", "Quartz ETA F06.115", "Stainless Steel",
+         "Current Production", 195),
+        # Citizen (more Eco-Drive)
+        ("Citizen", "Eco-Drive Corso BM7100-59E", "BM7100-59E", "Eco-Drive Cal. E111", "Stainless Steel",
+         "Current Production", 175),
+        ("Citizen", "Eco-Drive Chandler BM8180-03E", "BM8180-03E", "Eco-Drive Cal. E101", "Stainless Steel",
+         "Current Production", 125),
+        ("Citizen", "Eco-Drive Paradigm AW1550-50E", "AW1550-50E", "Eco-Drive Cal. E111", "Stainless Steel",
+         "Current Production", 250),
+        ("Citizen", "Automatic NY0086-16LE Promaster Fugu", "NY0086-16LE", "Automatic Cal. 8204", "Stainless Steel",
+         "Limited Edition", 350),
+        # Orient (more affordable automatics)
+        ("Orient", "Ray II Black FAA02004B", "FAA02004B", "Automatic Cal. F6922", "Stainless Steel",
+         "Current Production", 175),
+        ("Orient", "Tristar Gold Dial", "FAB00009P9", "Automatic Cal. 46943", "Stainless Steel",
+         "Current Production", 80),
+        ("Orient", "Sun & Moon V3 Blue", "RA-AK0011D", "Automatic Cal. F6B24", "Stainless Steel",
+         "Current Production", 280),
+        ("Orient", "Defender II Field RA-AK0401L", "RA-AK0401L", "Automatic Cal. F6922", "Stainless Steel",
+         "Current Production", 175),
+        # Seiko (affordable line)
+        ("Seiko", "5 Sports SRPD55 Black", "SRPD55K1", "Automatic Cal. 4R36", "Stainless Steel",
+         "Current Production", 250),
+        ("Seiko", "5 Sports Field SRPE65 Green", "SRPE65K1", "Automatic Cal. 4R36", "Stainless Steel",
+         "Current Production", 275),
+        ("Seiko", "5 Sports GMT SSK001 Black", "SSK001", "Automatic Cal. 4R34", "Stainless Steel",
+         "Current Production", 375),
+        ("Seiko", "5 Sports SNXS77 Datejust Style", "SNXS77K1", "Automatic Cal. 7S26", "Stainless Steel",
+         "Current Production", 130),
+        ("Seiko", "Prospex King Turtle SRPE05", "SRPE05K1", "Automatic Cal. 4R36", "Stainless Steel",
+         "Current Production", 450),
+        ("Seiko", "Prospex SNE573 Solar Tuna", "SNE573P1", "Solar V157", "Stainless Steel",
+         "Current Production", 350),
+        # Casio (dressy & affordable)
+        ("Casio", "Edifice EFR-S108D Slim Chrono", "EFR-S108D-1AV", "Quartz Module", "Stainless Steel",
+         "Current Production", 120),
+        ("Casio", "Oceanus OCW-T200S Titanium Solar", "OCW-T200S-1AJF", "Tough Solar Module", "Titanium",
+         "Current Production", 500),
+        ("Casio", "Lineage LCW-M170TD Titanium", "LCW-M170TD-7AJF", "Tough Solar Module", "Titanium",
+         "Current Production", 180),
+        # Timex (more models)
+        ("Timex", "Expedition North Titanium Solar", "TW2V40600", "Solar", "Titanium",
+         "Current Production", 200),
+        # Victorinox
+        ("Victorinox", "INOX Automatic 43mm", "241834", "Automatic ETA 2824-2", "Stainless Steel",
+         "Current Production", 750),
+        ("Victorinox", "Fieldforce Chrono 42mm", "241853", "Quartz Ronda 5021.D", "Stainless Steel",
+         "Current Production", 350),
+        # Alpina
+        ("Alpina", "Startimer Pilot Auto 44mm", "AL-525NN4S6", "Automatic AL-525", "Stainless Steel",
+         "Current Production", 750),
+        ("Alpina", "Seastrong Diver 300 Auto", "AL-525LBN4V6", "Automatic AL-525", "Stainless Steel",
+         "Current Production", 850),
+        # Mondaine
+        ("Mondaine", "Official Swiss Railways Classic 40mm", "A660.30360.16SBB", "Quartz Ronda 763", "Stainless Steel",
+         "Current Production", 280),
+        ("Mondaine", "SBB Essence 41mm", "MS1.41120.RB", "Quartz Ronda 783", "Stainless Steel",
+         "Current Production", 250),
+        # Raymond Weil
+        ("Raymond Weil", "Freelancer Auto 42mm Blue", "2780-ST-50001", "Automatic RW4200", "Stainless Steel",
+         "Current Production", 1295),
+        ("Raymond Weil", "Toccata Classic 39mm", "5485-STC-00300", "Quartz", "Stainless Steel",
+         "Current Production", 595),
+        # Frederique Constant
+        ("Frederique Constant", "Classics Auto 40mm", "FC-303S5B6", "Automatic FC-303", "Stainless Steel",
+         "Current Production", 895),
+        ("Frederique Constant", "Highlife Automatic 41mm", "FC-303S4NH6B", "Automatic FC-303", "Stainless Steel",
+         "Current Production", 1295),
+        # Movado
+        ("Movado", "Museum Classic 40mm Black", "0607199", "Quartz", "Stainless Steel",
+         "Current Production", 495),
+    ]
+
+
+def _value_diver_watches() -> list[tuple]:
+    """30 value diver watches — popular affordable divers under 1K EUR."""
+    return [
+        # Casio Duro family
+        ("Casio", "Duro Marlin MDV-107D Silver", "MDV-107D-1A1V", "Quartz Module", "Stainless Steel",
+         "Current Production", 70),
+        ("Casio", "Duro MDV-106G Gold Accent", "MDV-106G-1AV", "Quartz Module", "Stainless Steel",
+         "Current Production", 55),
+        # Invicta (actually popular budget)
+        ("Invicta", "Pro Diver 8927OB Two-Tone Auto", "8927OB", "Automatic NH35A", "Stainless Steel",
+         "Current Production", 85),
+        ("Invicta", "Pro Diver 9094 Swiss Quartz", "9094", "Quartz ISA 1198/30", "Stainless Steel",
+         "Current Production", 65),
+        # Citizen Promaster affordable
+        ("Citizen", "Promaster Diver BN0150-28E", "BN0150-28E", "Eco-Drive Cal. E168", "Stainless Steel",
+         "Current Production", 180),
+        # Seiko divers
+        ("Seiko", "Prospex SBDC101 Willard Black", "SBDC101", "Automatic Cal. 6R35", "Stainless Steel",
+         "Current Production", 900),
+        ("Seiko", "Prospex SNE586 Solar Street Series", "SNE586P1", "Solar V157", "Stainless Steel",
+         "Current Production", 290),
+        ("Seiko", "Prospex SRPH75 King Samurai Blue", "SRPH75K1", "Automatic Cal. 4R35", "Stainless Steel",
+         "Current Production", 400),
+        # Orient divers
+        ("Orient", "Mako III RA-AA0814R Green", "RA-AA0814R", "Automatic Cal. F6922", "Stainless Steel",
+         "Current Production", 250),
+        ("Orient", "Triton RA-EL0002B 200m Power Reserve", "RA-EL0002B", "Automatic Cal. F6727", "Stainless Steel",
+         "Current Production", 380),
+        # Certina divers
+        ("Certina", "DS Action Diver Powermatic 80", "C032.407.11.041.00", "Automatic Powermatic 80", "Stainless Steel",
+         "Current Production", 575),
+        # Longines affordable diver
+        ("Longines", "HydroConquest 41mm Automatic Blue", "L3.781.4.96.6", "Automatic L888.5", "Stainless Steel",
+         "Current Production", 1275),
+        # Tissot divers
+        ("Tissot", "Seastar 2000 Professional Powermatic 80", "T120.607.11.041.00", "Automatic Powermatic 80", "Stainless Steel",
+         "Current Production", 775),
+        # Deep value divers
+        ("Vostok", "Amphibia Scuba Dude 710", "710059", "Automatic Cal. 2416B", "Stainless Steel",
+         "Current Production", 90),
+        # Marathon
+        ("Marathon", "Medium Diver Automatic MSAR 36mm", "WW194026", "Automatic ETA 2824-2", "Stainless Steel",
+         "Military Issue", 900),
+        # Squale divers
+        ("Squale", "1545 30 Atmos Tropic Ceramica", "1545-TRP", "Automatic ETA 2824-2", "Stainless Steel",
+         "Current Production", 750),
+        ("Squale", "SUB-39 GMT Vintage", "SUB39-GMT-VIN", "Automatic ETA 2893-2", "Stainless Steel",
+         "Current Production", 900),
+        # Doxa divers
+        ("Doxa", "SUB 200T Sharkhunter Black", "804.10.101.21", "Automatic ETA 2824-2", "Stainless Steel",
+         "Current Production", 890),
+        ("Doxa", "SUB 300 Searambler Silver Lung", "821.10.021.10", "Automatic ETA 2824-2", "Stainless Steel",
+         "Current Production", 1550),
+        # Zodiac divers
+        ("Zodiac", "Super Sea Wolf Pro-Diver", "ZO3552", "Automatic STP 1-11", "Stainless Steel",
+         "Current Production", 995),
+        # Yema divers
+        ("Yema", "Superman Heritage 39mm", "YSUP2022-AMS", "Automatic YEMA2000", "Stainless Steel",
+         "Current Production", 990),
+        ("Yema", "Navygraf Heritage", "YNAV2022-3MNS", "Automatic YEMA2000", "Stainless Steel",
+         "Current Production", 890),
+        # NTH Sub
+        ("NTH", "Oberon 40mm Orange Diver", "NTH-OBR-ORG", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 575),
+        # Glycine Combat Sub
+        ("Glycine", "Combat Sub 46mm Bronze", "GL0318", "Automatic GL 224", "Bronze",
+         "Current Production", 580),
+        # Undone
+        ("Undone", "Aquadeep 500m Black Ti", "AQD-TI-BLK", "Automatic Seiko NH35", "Titanium",
+         "Current Production", 450),
+        # Wolbrook (French microbrand)
+        ("Wolbrook", "Skindiver WT Automatic", "WB-SKD-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 590),
+        # Maen (Dutch microbrand)
+        ("Maen", "Hudson 38 Diver Blue", "HUD-38-DVR-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 449),
+    ]
+
+
+def _affordable_dress_field_watches() -> list[tuple]:
+    """40 affordable dress & field watches — popular sub-2K pieces."""
+    return [
+        # Junghans
+        ("Junghans", "Max Bill Handwinding 34mm", "027/3701.04", "Manual J805.1", "Stainless Steel",
+         "Current Production", 695),
+        ("Junghans", "Form A Automatic 39mm", "027/4730.00", "Automatic J800.1", "Stainless Steel",
+         "Current Production", 795),
+        # Nomos affordable range
+        ("Nomos", "Club Campus 36 Night", "709.S3", "Manual Cal. Alpha", "Stainless Steel",
+         "Current Production", 990),
+        ("Nomos", "Tangente 33 Duo", "120.S2", "Manual Cal. Alpha", "Stainless Steel",
+         "Current Production", 1300),
+        # Sinn
+        ("Sinn", "556 A Red Seconds", "556.0104", "Automatic SW 200-1", "Stainless Steel",
+         "Current Production", 1290),
+        # Baltic
+        ("Baltic", "MR01 Micro Rotor Silver", "MR01-SLV", "Automatic Miyota 9122", "Stainless Steel",
+         "Current Production", 630),
+        ("Baltic", "HMS 002 Blue Gilt", "HMS002-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 490),
+        ("Baltic", "Bicompax 002 Salmon", "BC002-SAL", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 580),
+        # Christopher Ward
+        ("Christopher Ward", "C63 Sealander Auto 39mm", "C63-39ADA1-SWK0S", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 695),
+        ("Christopher Ward", "C1 Moonglow 40mm", "C1-40AMG1-SWK0B", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 825),
+        ("Christopher Ward", "C60 Trident Pro 600 42mm", "C60-42ADA3-SWK0B", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 895),
+        ("Christopher Ward", "C65 Sandhurst Bronze", "C65-41BRZ-SAL", "Automatic Sellita SW200-1", "Bronze",
+         "Current Production", 795),
+        # Farer
+        ("Farer", "Lander IV 39.5mm", "LND4-BLU", "Automatic SW200-1", "Stainless Steel",
+         "Current Production", 895),
+        ("Farer", "Carnegie GMT 39.5mm", "CRN-GMT-BLU", "Automatic SW330-1", "Stainless Steel",
+         "Current Production", 1195),
+        ("Farer", "Bernina Chrono 39mm", "BRN-CHR-WHT", "Automatic SW510", "Stainless Steel",
+         "Current Production", 1395),
+        # Formex
+        ("Formex", "Essence 39 Auto Chronometre Blue", "ESS-39-BLU", "Automatic COSC Sellita", "Stainless Steel",
+         "Current Production", 995),
+        ("Formex", "Reef 39 Auto Black", "REF-39-BLK", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 845),
+        # Norqain
+        ("Norqain", "Freedom 60 Chrono 40mm", "FR60-CHR-40", "Automatic Sellita SW510 BH", "Stainless Steel",
+         "Current Production", 2490),
+        ("Norqain", "Adventure Sport Auto 42mm", "ADV-42-BLU", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 1790),
+        # Longines affordable
+        ("Longines", "Conquest Classic 40mm Blue", "L4.312.4.96.6", "Quartz L296", "Stainless Steel",
+         "Current Production", 850),
+        ("Longines", "Master Collection 40mm Auto", "L2.793.4.97.6", "Automatic L888.5", "Stainless Steel",
+         "Current Production", 1900),
+        # Oris affordable
+        ("Oris", "Divers Sixty-Five 40mm Bronze", "01 733 7707 4355", "Automatic SW200-1", "Bronze",
+         "Current Production", 1750),
+        # Mido
+        ("Mido", "Multifort Patrimony", "M040.407.36.060.00", "Automatic Cal. 80", "Stainless Steel",
+         "Current Production", 950),
+        ("Mido", "Commander Shade Grey", "M021.407.11.411.00", "Automatic Cal. 80", "Stainless Steel",
+         "Current Production", 750),
+        # Baume & Mercier
+        ("Baume & Mercier", "Classima Auto 42mm", "M0A10453", "Automatic ETA 2892-A2", "Stainless Steel",
+         "Current Production", 1450),
+        ("Baume & Mercier", "Riviera Auto 42mm Blue", "M0A10620", "Automatic ETA 2892-A2", "Stainless Steel",
+         "Current Production", 2950),
+        # Edox
+        ("Edox", "SkyDiver Military Bronze LE", "80115-BRZN-NDR", "Automatic ETA 2824-2", "Bronze",
+         "Limited Edition", 990),
+        ("Edox", "Les Vauberts Open Heart Auto", "85014-3-NIN", "Automatic ETA 2824-2", "Stainless Steel",
+         "Current Production", 750),
+        # Bertucci
+        ("Bertucci", "A-2T Classic Field Ti", "12086", "Quartz Swiss ISA", "Titanium",
+         "Current Production", 89),
+        ("Bertucci", "A-11T Americana 42mm", "13331", "Quartz Swiss ISA", "Titanium",
+         "Current Production", 99),
+        # Dan Henry (more)
+        ("Dan Henry", "1947 Dress Chrono Silver", "1947-SLV", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 230),
+        ("Dan Henry", "2024 World Timer", "2024-WT-BLU", "Mecaquartz Seiko VK73", "Stainless Steel",
+         "Current Production", 280),
+        # Undone
+        ("Undone", "Basecamp Auto Cali Dial", "BSC-CAL-WHT", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 350),
+        ("Undone", "Urban Tropical 40mm", "URB-TRP-BLU", "Automatic Miyota 8215", "Stainless Steel",
+         "Current Production", 299),
+        # Tsao Baltimore
+        ("Tsao Baltimore", "Torsk-Diver Marine Green", "TSK-DVR-GRN", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 695),
+        # Astor+Banks
+        ("Astor+Banks", "Fortitude Diver v2 Black", "FRT-V2-BLK", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 695),
+    ]
+
+
+def _mid_range_enthusiast_watches() -> list[tuple]:
+    """30 mid-range enthusiast watches — EUR 1K-5K sweet spot."""
+    return [
+        # Sinn (more)
+        ("Sinn", "104 I St Sa Pilot White", "104.012", "Automatic SW 220-1", "Stainless Steel",
+         "Current Production", 1790),
+        ("Sinn", "856 UTC Tegimented", "856.011", "Automatic ETA 2893-2", "Stainless Steel",
+         "Current Production", 2490),
+        ("Sinn", "903 St Navigator Chrono", "903.040", "Manual Valjoux 7750", "Stainless Steel",
+         "Current Production", 2950),
+        # Nomos (more)
+        ("Nomos", "Metro 38.5 Date Urban Blue", "1115.S2", "Automatic DUW 6101", "Stainless Steel",
+         "Current Production", 3200),
+        ("Nomos", "Ludwig 38 White", "231", "Manual Cal. Alpha", "Stainless Steel",
+         "Current Production", 1700),
+        ("Nomos", "Ahoi Neomatik 36.3mm", "562.S3", "Automatic DUW 3001", "Stainless Steel",
+         "Current Production", 2800),
+        # Oris
+        ("Oris", "Aquis Date 41.5mm Green", "01 733 7766 4157", "Automatic Oris 733", "Stainless Steel",
+         "Current Production", 1850),
+        ("Oris", "Big Crown ProPilot Big Date 41mm", "01 751 7761 4065", "Automatic Oris 751", "Stainless Steel",
+         "Current Production", 1650),
+        # Longines
+        ("Longines", "Spirit Pilot Chrono 42mm", "L3.820.4.93.6", "Automatic L688.4", "Stainless Steel",
+         "Current Production", 2950),
+        ("Longines", "Record 40mm COSC Blue", "L2.821.4.96.6", "Automatic L888.4", "Stainless Steel",
+         "Current Production", 1700),
+        # Tissot PRX
+        # Hamilton higher-end
+        ("Hamilton", "Khaki Aviation X-Wind GMT Chrono", "H77912135", "Quartz H-31", "Stainless Steel",
+         "Current Production", 1095),
+        # Grand Seiko entry
+        ("Grand Seiko", "Heritage SBGP001 Quartz 40mm", "SBGP001", "Quartz Cal. 9F85", "Stainless Steel",
+         "Current Production", 2800),
+        ("Grand Seiko", "Heritage SBGA373 Spring Drive", "SBGA373", "Spring Drive Cal. 9R65", "Stainless Steel",
+         "Current Production", 4800),
+        # Tudor entry
+        ("Tudor", "1926 41mm Opaline", "M91650-0011", "Automatic Cal. T603", "Stainless Steel",
+         "Current Production", 1700),
+        # Bell & Ross
+        ("Bell & Ross", "BR 05 Black Steel 40mm", "BR05A-BL-ST/SST", "Automatic BR-CAL.321", "Stainless Steel",
+         "Current Production", 4300),
+        # Rado
+        ("Rado", "Captain Cook Auto 37mm Green", "R32500318", "Automatic Powermatic 80", "Stainless Steel",
+         "Current Production", 1050),
+        ("Rado", "DiaStar Original 38mm", "R12160253", "Automatic R764", "Ceramic/Steel",
+         "Current Production", 1750),
+        # Ming (highly collectible microbrand)
+        ("MING", "27.02 Field Watch Black", "2702-BLK", "Automatic ETA 2824-2", "Stainless Steel",
+         "Limited Edition", 1950),
+        ("MING", "18.01 Diver H41 Blue", "1801-BLU", "Automatic Sellita SW300-1", "Stainless Steel",
+         "Limited Edition", 2950),
+        # Zodiac (more)
+        ("Zodiac", "Super Sea Wolf Topper Edition", "ZO9290", "Automatic STP 1-11", "Stainless Steel",
+         "Limited Edition", 1495),
+        # Christopher Ward
+        ("Christopher Ward", "C60 Sapphire 40mm", "C60-40SPH-SWK0B", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 995),
+        # Stowa
+        ("Stowa", "Flieger Classic 36 Date", "FL-CLS-36-DT", "Automatic ETA 2824-2", "Stainless Steel",
+         "Current Production", 890),
+        ("Stowa", "Partitio Classic White", "PA-CLS-WHT", "Manual Unitas 6498", "Stainless Steel",
+         "Current Production", 850),
+        # Yema
+        ("Yema", "Speedgraf Meca-Quartz Panda", "YMHF1573-ZW", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 449),
+        # Direnzo
+        ("Direnzo", "DRZ 04 Mondial Blue", "DRZ04-BLU", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 990),
+    ]
+
+
+def _g_shock_affordable_expansion() -> list[tuple]:
+    """30 G-Shock & Casio affordable watches — popular collectible models under 1K."""
+    return [
+        # Classic squares
+        ("G-Shock", "DW-5600E-1V Classic Square", "DW-5600E-1V", "Quartz Module 3229", "Resin",
+         "Current Production", 65),
+        ("G-Shock", "GW-M5610U-1 Solar Multiband 6", "GW-M5610U-1", "Tough Solar Module 3459", "Resin",
+         "Current Production", 130),
+        ("G-Shock", "GMW-B5000D-1 Full Metal Silver", "GMW-B5000D-1", "Tough Solar Module 3459", "Stainless Steel",
+         "Current Production", 450),
+        # CasiOak
+        ("G-Shock", "GA-2100-1A1 CasiOak Black", "GA-2100-1A1", "Quartz Module 5611", "Resin",
+         "Current Production", 80),
+        ("G-Shock", "GA-2110SU-3A CasiOak Olive", "GA-2110SU-3A", "Quartz Module 5611", "Resin",
+         "Current Production", 100),
+        ("G-Shock", "GM-2100-1A Metal CasiOak", "GM-2100-1A", "Quartz Module 5611", "Stainless Steel",
+         "Current Production", 180),
+        ("G-Shock", "GM-B2100D-1A Full Metal CasiOak", "GM-B2100D-1A", "Tough Solar Module 5674", "Stainless Steel",
+         "Current Production", 400),
+        # Mudmaster & Rangeman
+        ("G-Shock", "GG-B100-1B3 Mudmaster", "GG-B100-1B3", "Quartz Module 5571", "Resin",
+         "Current Production", 320),
+        ("G-Shock", "GPR-H1000-1 Rangeman Heart Rate", "GPR-H1000-1", "Tough Solar Module", "Resin",
+         "Current Production", 600),
+        ("G-Shock", "GWG-2000-1A1 Mudmaster Carbon Core", "GWG-2000-1A1", "Tough Solar Module 5678", "Carbon",
+         "Current Production", 520),
+        # Frogman
+        ("G-Shock", "GWF-A1000-1A4 Frogman Analog", "GWF-A1000-1A4", "Tough Solar Module 5624", "Carbon",
+         "Current Production", 650),
+        # Solar & Multiband
+        ("G-Shock", "GW-9400-1 Rangeman", "GW-9400-1", "Tough Solar Module 3410", "Resin",
+         "Current Production", 250),
+        ("G-Shock", "GW-B5600BC-1B Composite Band", "GW-B5600BC-1B", "Tough Solar Module 3461", "Resin",
+         "Current Production", 150),
+        # G-STEEL
+        ("G-Shock", "GST-B400D-1A G-STEEL Slim", "GST-B400D-1A", "Tough Solar Module 5637", "Stainless Steel",
+         "Current Production", 350),
+        ("G-Shock", "GST-B500D-1A G-STEEL Octagon", "GST-B500D-1A", "Tough Solar Module 5641", "Stainless Steel",
+         "Current Production", 400),
+        # Vintage & retro
+        ("Casio", "A168WA-1 Classic Silver Retro", "A168WA-1", "Quartz Module", "Stainless Steel",
+         "Current Production", 25),
+        ("Casio", "AE-1200WH World Time Silver", "AE-1200WHD-1AV", "Quartz Module", "Stainless Steel",
+         "Current Production", 35),
+        ("Casio", "F-91W Classic Digital", "F-91W-1", "Quartz Module", "Resin",
+         "Current Production", 15),
+        ("Casio", "CA-53W Calculator Watch", "CA-53W-1", "Quartz Module", "Resin",
+         "Current Production", 25),
+        ("Casio", "W-800H Classic Digital", "W-800H-1AV", "Quartz Module", "Resin",
+         "Current Production", 20),
+        # Pro Trek
+        ("Casio", "Pro Trek PRW-6900Y Solar Climber", "PRW-6900Y-1", "Tough Solar Module", "Resin",
+         "Current Production", 350),
+        ("Casio", "Pro Trek PRG-340 Slim", "PRG-340-1", "Tough Solar Module", "Resin",
+         "Current Production", 180),
+        # Baby-G (collectible)
+        ("Casio", "Baby-G BGA-310 Pastel Pink", "BGA-310-4A", "Quartz Module", "Resin",
+         "Current Production", 90),
+        ("Casio", "Baby-G BGD-565 Classic Mini Square", "BGD-565-4", "Quartz Module", "Resin",
+         "Current Production", 70),
+        # MR-G premium
+        ("G-Shock", "MRG-B5000B-1 Titanium Cobarion", "MRG-B5000B-1", "Tough Solar Module 3496", "Titanium",
+         "Current Production", 2500),
+        # MT-G
+        ("G-Shock", "MTG-B3000D-1A MT-G Slim", "MTG-B3000D-1A", "Tough Solar Module 5672", "Stainless Steel",
+         "Current Production", 800),
+        ("G-Shock", "MTG-B2000D-1A Rainbow Phoenix", "MTG-B2000D-1A", "Tough Solar Module 5606", "Stainless Steel",
+         "Limited Edition", 950),
+        # Affordable digital
+        ("Casio", "WS-1500H Tide Graph", "WS-1500H-1AV", "Quartz Module", "Resin",
+         "Current Production", 40),
+        ("Casio", "DW-291H 200m Digital", "DW-291H-1AV", "Quartz Module", "Resin",
+         "Current Production", 35),
+    ]
+
+
+def _accessible_luxury_watches() -> list[tuple]:
+    """20 accessible luxury watches — EUR 2K-5K range, entry-level Swiss & Japanese."""
+    return [
+        # Omega entry
+        ("Omega", "Seamaster Aqua Terra 38mm Grey", "220.10.38.20.06.001", "Automatic Cal. 8800", "Stainless Steel",
+         "Current Production", 4700),
+        # Longines
+        ("Longines", "Flagship Heritage 38.5mm", "L4.795.4.78.2", "Automatic L888.5", "Stainless Steel",
+         "Current Production", 1825),
+        # Breitling entry
+        ("Breitling", "Superocean Automatic 42 Blue", "A17375E71C1S1", "Automatic B17", "Stainless Steel",
+         "Current Production", 3800),
+        # Grand Seiko
+        ("Grand Seiko", "Heritage SBGX261 Quartz Black", "SBGX261", "Quartz Cal. 9F62", "Stainless Steel",
+         "Current Production", 2400),
+        # Frederique Constant
+        ("Frederique Constant", "Slimline Moonphase Auto", "FC-775S4S6", "Automatic FC-775", "Stainless Steel",
+         "Current Production", 2495),
+        # Baume & Mercier
+        ("Baume & Mercier", "Classima Dual Time 42mm", "M0A10482", "Quartz ETA 2893-2", "Stainless Steel",
+         "Current Production", 1650),
+        # Rado
+        ("Rado", "Captain Cook High-Tech Ceramic 43mm", "R32127162", "Automatic R802", "Ceramic",
+         "Current Production", 2350),
+        # Oris
+        ("Oris", "Aquis Date 39.5mm Turquoise", "01 733 7732 4155", "Automatic Oris 733", "Stainless Steel",
+         "Current Production", 1900),
+        # Monta
+        ("Monta", "Triumph GMT Black", "TRI-GMT-BLK", "Automatic Sellita SW330-2", "Stainless Steel",
+         "Current Production", 2290),
+        # Norqain
+        ("Norqain", "Wild One 42mm Skeleton", "WO-42-SKL", "Automatic Kenissi", "Carbon",
+         "Current Production", 3490),
+        # Glashutte Original entry
+        ("Glashutte Original", "SeaQ 1969 39.5mm", "1-39-11-09-81-70", "Automatic Cal. 39-11", "Stainless Steel",
+         "Current Production", 4900),
+        # Blancpain entry
+        ("Blancpain", "Fifty Fathoms Bathyscaphe 38mm", "5100-1110-B52A", "Automatic Cal. 1150", "Stainless Steel",
+         "Current Production", 4800),
+        # Ulysse Nardin entry
+        ("Ulysse Nardin", "Diver 42mm Blue", "8163-175-7M/93", "Automatic UN-816", "Stainless Steel",
+         "Current Production", 4500),
+        # Bell & Ross entry
+        ("Bell & Ross", "BR V2-92 Steel Heritage", "BRV292-HER-ST/SRB", "Automatic BR-CAL.302", "Stainless Steel",
+         "Current Production", 2700),
+        # Ebel
+        ("Ebel", "Sport Classic Gent Auto 40mm", "1216432", "Automatic ETA 2892-A2", "Stainless Steel",
+         "Current Production", 1750),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Luxury Variants Expansion — Men's & Women's (2026-03-14)
+# ---------------------------------------------------------------------------
+
+def _cartier_variants_watches() -> list[tuple]:
+    """40 Cartier variants — full range men's & women's, materials, sizes."""
+    return [
+        # Santos — men's
+        ("Cartier", "Santos de Cartier Small Steel", "WSSA0038", "Automatic 1847 MC", "Stainless Steel",
+         "Current Production", 5700),
+        ("Cartier", "Santos de Cartier Large Rose Gold", "WGSA0019", "Automatic 1847 MC", "18k Rose Gold",
+         "Current Production", 17500),
+        ("Cartier", "Santos de Cartier Medium Blue Dial", "WSSA0030", "Automatic 1847 MC", "Stainless Steel",
+         "Current Production", 7200),
+        ("Cartier", "Santos de Cartier Medium Two-Tone", "W2SA0007", "Automatic 1847 MC", "Steel/Gold",
+         "Current Production", 9950),
+        ("Cartier", "Santos de Cartier Chronograph Steel", "WSSA0037", "Automatic 1904-CH MC", "Stainless Steel",
+         "Current Production", 9450),
+        # Santos — women's
+        ("Cartier", "Santos-Dumont Small Rose Gold", "WGSA0022", "Quartz 157", "18k Rose Gold",
+         "Current Production", 9800),
+        ("Cartier", "Santos-Dumont Large Steel", "WSSA0022", "Manual 430 MC", "Stainless Steel",
+         "Current Production", 4300),
+        # Tank — men's
+        ("Cartier", "Tank Must Large Silver", "WSTA0056", "Quartz SolarBeat", "Stainless Steel",
+         "Current Production", 3100),
+        ("Cartier", "Tank Must XL Skeleton", "WHTA0002", "Manual 9627 MC", "Stainless Steel",
+         "Limited Edition", 10500),
+        ("Cartier", "Tank Louis Cartier Small Rose Gold", "WGTA0011", "Quartz 157", "18k Rose Gold",
+         "Current Production", 11000),
+        ("Cartier", "Tank Américaine Medium Rose Gold", "WGTA0024", "Automatic 1847 MC", "18k Rose Gold",
+         "Current Production", 15000),
+        ("Cartier", "Tank Cintrée Platinum", "WGTA0061", "Manual 8971 MC", "Platinum",
+         "Limited Edition", 32000),
+        # Tank — women's
+        ("Cartier", "Tank Must Small Steel", "WSTA0051", "Quartz SolarBeat", "Stainless Steel",
+         "Current Production", 2760),
+        ("Cartier", "Tank Française Small Diamond Bezel", "W4TA0008", "Quartz 157", "Stainless Steel",
+         "Current Production", 6500),
+        ("Cartier", "Tank Louis Cartier Mini Rose Gold", "WGTA0023", "Quartz 157", "18k Rose Gold",
+         "Current Production", 9500),
+        # Ballon Bleu — men's
+        ("Cartier", "Ballon Bleu 40mm Steel Blue", "WSBB0061", "Automatic 1847 MC", "Stainless Steel",
+         "Current Production", 6800),
+        ("Cartier", "Ballon Bleu 40mm Rose Gold", "WGBB0035", "Automatic 1847 MC", "18k Rose Gold",
+         "Current Production", 22000),
+        # Ballon Bleu — women's
+        ("Cartier", "Ballon Bleu 33mm Steel Silver", "WSBB0044S", "Automatic 076", "Stainless Steel",
+         "Current Production", 5400),
+        ("Cartier", "Ballon Bleu 28mm Steel Quartz", "WSBB0067", "Quartz 157", "Stainless Steel",
+         "Current Production", 4200),
+        ("Cartier", "Ballon Bleu 33mm Diamond", "W4BB0016", "Automatic 076", "Stainless Steel",
+         "Current Production", 8500),
+        # Panthère — women's
+        ("Cartier", "Panthère Medium Yellow Gold", "WGPN0009", "Quartz 157", "18k Yellow Gold",
+         "Current Production", 18500),
+        ("Cartier", "Panthère Mini Steel", "WSPN0019", "Quartz 157", "Stainless Steel",
+         "Current Production", 3400),
+        ("Cartier", "Panthère Medium Two-Tone", "W2PN0007", "Quartz 157", "Steel/Gold",
+         "Current Production", 7500),
+        # Pasha — unisex/men's
+        ("Cartier", "Pasha 41mm Steel Blue Grid", "WSPA0038", "Automatic 1847 MC", "Stainless Steel",
+         "Current Production", 7500),
+        ("Cartier", "Pasha 35mm Steel", "WSPA0012", "Automatic 1847 MC", "Stainless Steel",
+         "Current Production", 6300),
+        # Ronde — women's
+        ("Cartier", "Ronde Must 29mm Steel", "WSRN0031", "Quartz 157", "Stainless Steel",
+         "Current Production", 2700),
+        ("Cartier", "Ronde Louis Cartier 36mm Rose Gold", "W6800251", "Manual 430 MC", "18k Rose Gold",
+         "Current Production", 12000),
+        # Clé — unisex
+        ("Cartier", "Clé de Cartier 35mm Steel", "WSCL0005", "Automatic 1847 MC", "Stainless Steel",
+         "Current Production", 5900),
+        # Drive — men's
+        ("Cartier", "Drive de Cartier Steel", "WSNM0004", "Automatic 1847 MC", "Stainless Steel",
+         "Current Production", 6500),
+        # Tonneau — men's
+        ("Cartier", "Tonneau Large Rose Gold", "WGTO0003", "Manual 8971 MC", "18k Rose Gold",
+         "Limited Edition", 35000),
+        # Baignoire — women's
+        ("Cartier", "Baignoire Small Rose Gold", "WGBA0015", "Quartz 157", "18k Rose Gold",
+         "Current Production", 13000),
+        ("Cartier", "Baignoire Allongée Medium WG", "WGBA0017", "Manual 1917 MC", "18k White Gold",
+         "Current Production", 22000),
+        # Santos Galbée — women's
+        ("Cartier", "Santos Galbée Small Two-Tone", "W20012C4", "Quartz", "Steel/Gold",
+         "Discontinued Classic", 3500),
+        # Vintage collectibles
+        ("Cartier", "Vintage Tank Basculante Steel", "2386", "Manual", "Stainless Steel",
+         "Vintage Pre-1970", 5500),
+        ("Cartier", "Vintage Crash Yellow Gold", "W7200002", "Manual Cal. 080", "18k Yellow Gold",
+         "Vintage Pre-1970", 85000),
+        # Affordable entry
+        ("Cartier", "Ronde Solo Steel 36mm Quartz", "WSRN0012", "Quartz 690", "Stainless Steel",
+         "Current Production", 2550),
+        ("Cartier", "Tank Must Large Green", "WSTA0056G", "Quartz SolarBeat", "Stainless Steel",
+         "Current Production", 3100),
+        ("Cartier", "Tank Must Large Blue", "WSTA0055B", "Quartz SolarBeat", "Stainless Steel",
+         "Current Production", 3100),
+        ("Cartier", "Santos de Cartier Medium Green Dial", "WSSA0062", "Automatic 1847 MC", "Stainless Steel",
+         "Current Production", 7200),
+        ("Cartier", "Santos de Cartier Large Skeleton ADLC", "WHSA0009", "Manual 9611 MC", "Stainless Steel",
+         "Limited Edition", 14500),
+    ]
+
+
+def _ap_variants_watches() -> list[tuple]:
+    """35 Audemars Piguet variants — Royal Oak, RO Offshore, Code 11.59, men's & women's."""
+    return [
+        # Royal Oak — men's sizes & materials
+        ("Audemars Piguet", "Royal Oak Selfwinding 41mm Blue", "15500ST.OO.1220ST.02", "Automatic Cal. 4302", "Stainless Steel",
+         "Current Production", 36000),
+        ("Audemars Piguet", "Royal Oak Selfwinding 37mm Steel Blue", "15450ST.OO.1256ST.03", "Automatic Cal. 3120", "Stainless Steel",
+         "Current Production", 28000),
+        ("Audemars Piguet", "Royal Oak Selfwinding 41mm Rose Gold", "15510OR.OO.1320OR.01", "Automatic Cal. 4302", "18k Rose Gold",
+         "Current Production", 55000),
+        ("Audemars Piguet", "Royal Oak Selfwinding 41mm Green Dial", "15510ST.OO.1320ST.04", "Automatic Cal. 4302", "Stainless Steel",
+         "Current Production", 38000),
+        ("Audemars Piguet", "Royal Oak Selfwinding 41mm Black Ceramic", "15400CE.OO.1225CE.01", "Automatic Cal. 3120", "Ceramic",
+         "Discontinued Classic", 55000),
+        ("Audemars Piguet", "Royal Oak Chronograph 41mm Panda", "26331ST.OO.1220ST.03", "Automatic Cal. 2385", "Stainless Steel",
+         "Current Production", 42000),
+        ("Audemars Piguet", "Royal Oak Chronograph 41mm Rose Gold", "26331OR.OO.1220OR.01", "Automatic Cal. 2385", "18k Rose Gold",
+         "Current Production", 68000),
+        ("Audemars Piguet", "Royal Oak Tourbillon 41mm", "26530ST.OO.1220ST.01", "Manual Cal. 2950", "Stainless Steel",
+         "Current Production", 160000),
+        ("Audemars Piguet", "Royal Oak Perpetual Calendar 41mm Blue", "26574ST.OO.1220ST.02", "Automatic Cal. 5134", "Stainless Steel",
+         "Current Production", 80000),
+        ("Audemars Piguet", "Royal Oak Jumbo 39mm 50th Anniversary", "16202BA.OO.1240BA.01", "Automatic Cal. 7121", "18k Yellow Gold",
+         "Anniversary Edition", 60000),
+        ("Audemars Piguet", "Royal Oak Frosted Gold 37mm", "15454OR.GG.1259OR.03", "Automatic Cal. 3120", "18k Rose Gold",
+         "Current Production", 52000),
+        # Royal Oak — women's
+        ("Audemars Piguet", "Royal Oak Selfwinding 34mm Steel Blue", "77350ST.OO.1261ST.01", "Automatic Cal. 5800", "Stainless Steel",
+         "Current Production", 22000),
+        ("Audemars Piguet", "Royal Oak Selfwinding 34mm Rose Gold", "77350OR.OO.1261OR.01", "Automatic Cal. 5800", "18k Rose Gold",
+         "Current Production", 38000),
+        ("Audemars Piguet", "Royal Oak Quartz 33mm Steel", "67650ST.OO.1261ST.01", "Quartz Cal. 2713", "Stainless Steel",
+         "Current Production", 16000),
+        ("Audemars Piguet", "Royal Oak Mini 33mm Diamond Bezel", "67651ST.ZZ.1261ST.01", "Quartz Cal. 2713", "Stainless Steel",
+         "Current Production", 24000),
+        ("Audemars Piguet", "Royal Oak Frosted Gold 34mm White Gold", "77244BC.GG.1272BC.01", "Automatic Cal. 5800", "18k White Gold",
+         "Current Production", 48000),
+        # Offshore — men's
+        ("Audemars Piguet", "Royal Oak Offshore 44mm Steel Black", "26400IO.OO.A004CA.02", "Automatic Cal. 3126/3840", "Stainless Steel",
+         "Current Production", 35000),
+        ("Audemars Piguet", "Royal Oak Offshore Diver 42mm Green", "15720ST.OO.A052CA.01", "Automatic Cal. 4308", "Stainless Steel",
+         "Current Production", 30000),
+        ("Audemars Piguet", "Royal Oak Offshore Chronograph 43mm Ceramic", "26405CE.OO.A002CA.02", "Automatic Cal. 3126/3840", "Ceramic",
+         "Current Production", 38000),
+        ("Audemars Piguet", "Royal Oak Offshore Tourbillon 44mm", "26421OR.OO.A002CA.01", "Manual Cal. 2951", "18k Rose Gold",
+         "Current Production", 200000),
+        # Code 11.59 — men's & women's
+        ("Audemars Piguet", "Code 11.59 Selfwinding 41mm Blue Lacquer", "15210OR.OO.A028CR.01", "Automatic Cal. 4302", "18k Rose Gold",
+         "Current Production", 28000),
+        ("Audemars Piguet", "Code 11.59 Chronograph 41mm", "26393OR.OO.A002CR.01", "Automatic Cal. 4401", "18k Rose Gold",
+         "Current Production", 45000),
+        ("Audemars Piguet", "Code 11.59 Starwheel 41mm", "26396NR.OO.D002CR.01", "Automatic Cal. 4310", "Ceramic",
+         "Current Production", 52000),
+        ("Audemars Piguet", "Code 11.59 34mm Rose Gold White", "77410OR.OO.A018CR.01", "Automatic Cal. 5909", "18k Rose Gold",
+         "Current Production", 25000),
+        # Millenary — women's
+        ("Audemars Piguet", "Millenary Ladies Rose Gold MOP", "77247OR.ZZ.A812CR.01", "Automatic Cal. 5201", "18k Rose Gold",
+         "Current Production", 28000),
+        # Royal Oak Concept
+        ("Audemars Piguet", "Royal Oak Concept Supersonnerie", "26577TI.OO.D002CA.01", "Manual Cal. 2956", "Titanium",
+         "Limited Edition", 500000),
+        # Vintage / discontinued
+        ("Audemars Piguet", "Royal Oak 36mm 14790ST Vintage", "14790ST", "Automatic Cal. 2225", "Stainless Steel",
+         "Discontinued Classic", 18000),
+        ("Audemars Piguet", "Royal Oak Offshore End of Days", "25770SN.O.0009KE.01", "Automatic Cal. 2226/2840", "Stainless Steel",
+         "Discontinued Classic", 35000),
+        # Entry level (used market)
+        ("Audemars Piguet", "Royal Oak Quartz 33mm Vintage Steel", "67450ST", "Quartz Cal. 2612", "Stainless Steel",
+         "Discontinued Classic", 12000),
+        ("Audemars Piguet", "Royal Oak Date 36mm 14790ST White", "14790ST.OO.0789ST.08", "Automatic Cal. 2225", "Stainless Steel",
+         "Discontinued Classic", 16000),
+    ]
+
+
+def _jlc_variants_watches() -> list[tuple]:
+    """30 Jaeger-LeCoultre variants — Reverso, Master, Polaris, Rendez-Vous, men's & women's."""
+    return [
+        # Reverso — men's
+        ("Jaeger-LeCoultre", "Reverso Classic Medium Thin", "Q2548520", "Manual Cal. 822/2", "Stainless Steel",
+         "Current Production", 5500),
+        ("Jaeger-LeCoultre", "Reverso Tribute Duoface Rose Gold", "Q3912420", "Manual Cal. 854A/2", "18k Rose Gold",
+         "Current Production", 17000),
+        ("Jaeger-LeCoultre", "Reverso Classic Large Duoface", "Q3848420", "Manual Cal. 854A/2", "Stainless Steel",
+         "Current Production", 10500),
+        ("Jaeger-LeCoultre", "Reverso Tribute Chronograph", "Q3858590", "Manual Cal. 860", "Stainless Steel",
+         "Current Production", 14000),
+        ("Jaeger-LeCoultre", "Reverso Hybris Mechanica Quadriptyque", "QUAD-1234", "Manual Cal. 185", "18k Rose Gold",
+         "Limited Edition", 1500000),
+        # Reverso — women's
+        ("Jaeger-LeCoultre", "Reverso One Duetto Steel", "Q3348120", "Quartz Cal. 844", "Stainless Steel",
+         "Current Production", 5800),
+        ("Jaeger-LeCoultre", "Reverso One Duetto Rose Gold Diamond", "Q3352420", "Quartz Cal. 844", "18k Rose Gold",
+         "Current Production", 17500),
+        ("Jaeger-LeCoultre", "Reverso Classic Small Steel", "Q2618530", "Manual Cal. 846/1", "Stainless Steel",
+         "Current Production", 4500),
+        ("Jaeger-LeCoultre", "Reverso One Precious Flowers", "Q3292401", "Manual Cal. 846/1", "18k White Gold",
+         "Limited Edition", 55000),
+        # Master — men's
+        ("Jaeger-LeCoultre", "Master Ultra Thin 39mm Silver", "Q1218420", "Automatic Cal. 896A", "Stainless Steel",
+         "Current Production", 6500),
+        ("Jaeger-LeCoultre", "Master Ultra Thin Tourbillon", "Q1322410", "Manual Cal. 978", "18k Rose Gold",
+         "Current Production", 85000),
+        ("Jaeger-LeCoultre", "Master Calendar 40mm", "Q1558420", "Automatic Cal. 866AA", "Stainless Steel",
+         "Current Production", 9800),
+        ("Jaeger-LeCoultre", "Master Geographic 39mm", "Q1422521", "Automatic Cal. 939AA/1", "Stainless Steel",
+         "Current Production", 9200),
+        ("Jaeger-LeCoultre", "Master Memovox 40mm", "Q1418471", "Automatic Cal. 956", "Stainless Steel",
+         "Current Production", 10500),
+        ("Jaeger-LeCoultre", "Master Compressor Diving 42mm Navy SEALs", "Q2018770", "Automatic Cal. 899/1", "Titanium",
+         "Limited Edition", 12000),
+        # Polaris — men's
+        ("Jaeger-LeCoultre", "Polaris Automatic 41mm Blue", "Q9008480", "Automatic Cal. 898E/1", "Stainless Steel",
+         "Current Production", 7800),
+        ("Jaeger-LeCoultre", "Polaris Mariner Date 42mm", "Q9068180", "Automatic Cal. 900E/1", "Stainless Steel",
+         "Current Production", 8500),
+        ("Jaeger-LeCoultre", "Polaris Mariner Memovox", "Q9038670", "Automatic Cal. 956", "Stainless Steel",
+         "Current Production", 14000),
+        ("Jaeger-LeCoultre", "Polaris Perpetual Calendar", "Q9087480", "Automatic Cal. 868AA", "Stainless Steel",
+         "Current Production", 24000),
+        # Rendez-Vous — women's
+        ("Jaeger-LeCoultre", "Rendez-Vous Classic Date 34mm", "Q3548490", "Automatic Cal. 967A", "Stainless Steel",
+         "Current Production", 6200),
+        ("Jaeger-LeCoultre", "Rendez-Vous Night & Day 34mm Rose Gold", "Q3442520", "Automatic Cal. 898H/1", "18k Rose Gold",
+         "Current Production", 16000),
+        ("Jaeger-LeCoultre", "Rendez-Vous Moon 36mm", "Q3572430", "Automatic Cal. 935A", "Stainless Steel",
+         "Current Production", 9000),
+        ("Jaeger-LeCoultre", "Rendez-Vous Dazzling Star 36mm", "Q3523570", "Automatic Cal. 735", "18k White Gold",
+         "Limited Edition", 45000),
+        ("Jaeger-LeCoultre", "Rendez-Vous Sonatina 38mm", "Q3592520", "Automatic Cal. 735", "18k Rose Gold",
+         "Current Production", 28000),
+        # Duomètre — men's
+        ("Jaeger-LeCoultre", "Duometre Chronographe Rose Gold", "Q6012521", "Manual Cal. 380", "18k Rose Gold",
+         "Current Production", 35000),
+        # Atmos — desk clock (collectible)
+        ("Jaeger-LeCoultre", "Atmos Classique Phases de Lune", "Q5112202", "Atmos Cal. 528", "Stainless Steel",
+         "Current Production", 7500),
+        # Vintage
+        ("Jaeger-LeCoultre", "Vintage Memovox Polaris 1968", "E859", "Automatic Cal. K825", "Stainless Steel",
+         "Vintage Pre-1970", 25000),
+        ("Jaeger-LeCoultre", "Vintage Reverso Art Deco 1930s", "VR-1930", "Manual Cal. 410", "Stainless Steel",
+         "Vintage Pre-1970", 8000),
+        # Entry price
+        ("Jaeger-LeCoultre", "Master Control Date 40mm Green", "Q4018420G", "Automatic Cal. 899/1", "Stainless Steel",
+         "Current Production", 6800),
+    ]
+
+
+def _vc_variants_watches() -> list[tuple]:
+    """30 Vacheron Constantin variants — Overseas, Patrimony, Traditionnelle, Fiftysix, Historiques, Egérie."""
+    return [
+        # Overseas — men's
+        ("Vacheron Constantin", "Overseas Automatic 41mm Green", "4500V/110A-B483G", "Automatic Cal. 5100", "Stainless Steel",
+         "Current Production", 25000),
+        ("Vacheron Constantin", "Overseas Automatic 41mm Rose Gold Blue", "4500V/000R-B127", "Automatic Cal. 5100", "18k Rose Gold",
+         "Current Production", 42000),
+        ("Vacheron Constantin", "Overseas Chronograph Blue", "5500V/110A-B148", "Automatic Cal. 5200", "Stainless Steel",
+         "Current Production", 33000),
+        ("Vacheron Constantin", "Overseas Ultra-Thin Perpetual Calendar", "4300V/120G-B102", "Automatic Cal. 1120 QP", "18k White Gold",
+         "Current Production", 95000),
+        ("Vacheron Constantin", "Overseas World Time 43.5mm", "7700V/110A-B172", "Automatic Cal. 2460 WT", "Stainless Steel",
+         "Current Production", 38000),
+        ("Vacheron Constantin", "Overseas Tourbillon 42.5mm Rose Gold", "6000V/110R-B544", "Automatic Cal. 2160", "18k Rose Gold",
+         "Current Production", 180000),
+        # Overseas — women's
+        ("Vacheron Constantin", "Overseas Automatic 37mm Diamond Steel", "2305V/100A-B170", "Automatic Cal. 5300", "Stainless Steel",
+         "Current Production", 18000),
+        ("Vacheron Constantin", "Overseas Small Model 36mm Quartz Steel", "1205V/100A-B590", "Quartz Cal. 1088L", "Stainless Steel",
+         "Current Production", 14000),
+        # Patrimony — men's
+        ("Vacheron Constantin", "Patrimony Self-Winding 40mm Rose Gold", "85180/000R-9248", "Automatic Cal. 2450", "18k Rose Gold",
+         "Current Production", 24000),
+        ("Vacheron Constantin", "Patrimony Retrograde Day-Date", "4000U/000R-B516", "Automatic Cal. 2460 R31R7", "18k Rose Gold",
+         "Current Production", 42000),
+        ("Vacheron Constantin", "Patrimony Ultra-Thin Minute Repeater", "30110/000P-9999", "Manual Cal. 1731", "Platinum",
+         "Current Production", 350000),
+        ("Vacheron Constantin", "Patrimony Contemporaine 42mm WG", "85180/000G-9230", "Automatic Cal. 2450", "18k White Gold",
+         "Current Production", 25000),
+        # Patrimony — women's
+        ("Vacheron Constantin", "Patrimony Small 36.5mm Rose Gold", "81530/000R-9682", "Manual Cal. 1400", "18k Rose Gold",
+         "Current Production", 18000),
+        # Traditionnelle — men's
+        ("Vacheron Constantin", "Traditionnelle Complete Calendar 41mm", "4010T/000R-B344", "Automatic Cal. 2460 QCL", "18k Rose Gold",
+         "Current Production", 48000),
+        ("Vacheron Constantin", "Traditionnelle Chronograph 42mm Platinum", "5000T/000P-B048", "Manual Cal. 1141", "Platinum",
+         "Current Production", 65000),
+        ("Vacheron Constantin", "Traditionnelle 14-Day Tourbillon 42mm", "89000/000R-B407", "Manual Cal. 2260", "18k Rose Gold",
+         "Current Production", 220000),
+        ("Vacheron Constantin", "Traditionnelle Manual Wind 38mm Steel", "82172/000G-9383", "Manual Cal. 4400 AS", "Stainless Steel",
+         "Current Production", 16500),
+        # Fiftysix — men's (most accessible line)
+        ("Vacheron Constantin", "Fiftysix Complete Calendar 40mm", "4000E/000A-B548", "Automatic Cal. 2460 QCL", "Stainless Steel",
+         "Current Production", 19500),
+        ("Vacheron Constantin", "Fiftysix Day-Date Rose Gold", "4400E/000R-B436", "Automatic Cal. 2475", "18k Rose Gold",
+         "Current Production", 22000),
+        ("Vacheron Constantin", "Fiftysix Tourbillon Steel", "6000E/000A-B544", "Automatic Cal. 2160", "Stainless Steel",
+         "Limited Edition", 120000),
+        # Egérie — women's
+        ("Vacheron Constantin", "Egérie Self-Winding 35mm Diamond", "4605F/000R-B496", "Automatic Cal. 1088L", "18k Rose Gold",
+         "Current Production", 25000),
+        ("Vacheron Constantin", "Egérie Moon Phase 37mm", "8005F/000R-B498", "Automatic Cal. 1088ML", "18k Rose Gold",
+         "Current Production", 35000),
+        # Historiques — men's
+        ("Vacheron Constantin", "Historiques Triple Calendrier 1942", "3110V/000R-B425", "Automatic Cal. 4400 QC", "18k Rose Gold",
+         "Limited Edition", 55000),
+        ("Vacheron Constantin", "Historiques 222 Steel", "4200H/000A-B978", "Automatic Cal. 2455/2", "Stainless Steel",
+         "Limited Edition", 35000),
+        # Les Cabinotiers (ultra-high)
+        ("Vacheron Constantin", "Les Cabinotiers Celestia Astronomical", "9720C/000G-B281", "Manual Cal. 3600 QGP", "18k White Gold",
+         "Prototype/Unique", 750000),
+        # Vintage
+        ("Vacheron Constantin", "Vintage 6068 Chronometre 1960s", "6068", "Manual Cal. 1003", "18k Yellow Gold",
+         "Vintage Pre-1970", 15000),
+        ("Vacheron Constantin", "Vintage 222 1977 Jumbo", "44018", "Automatic Cal. 1120", "Stainless Steel",
+         "Vintage Pre-1970", 55000),
+        # Entry
+        ("Vacheron Constantin", "Fiftysix Self-Winding 40mm Grey", "4600E/000A-B442", "Automatic Cal. 1326", "Stainless Steel",
+         "Current Production", 11000),
+    ]
+
+
+def _hamilton_variants_watches() -> list[tuple]:
+    """30 Hamilton variants — Khaki, Jazzmaster, Ventura, American Classic, men's & women's."""
+    return [
+        # Khaki Field — men's
+        ("Hamilton", "Khaki Field Auto 42mm Black", "H70605731", "Automatic H-10", "Stainless Steel",
+         "Current Production", 595),
+        ("Hamilton", "Khaki Field Day Date Auto 42mm", "H70535061", "Automatic H-30", "Stainless Steel",
+         "Current Production", 695),
+        ("Hamilton", "Khaki Field Mechanical Bronze 38mm", "H69459530", "Manual H-50", "Bronze",
+         "Limited Edition", 695),
+        ("Hamilton", "Khaki Field Auto Chrono 42mm Green", "H71626735", "Automatic H-21", "Stainless Steel",
+         "Current Production", 1695),
+        # Khaki Aviation — men's
+        ("Hamilton", "Khaki Aviation Pilot Pioneer Meca 36mm", "H76419931", "Manual H-50", "Stainless Steel",
+         "Current Production", 495),
+        ("Hamilton", "Khaki Aviation X-Wind Auto 45mm", "H77755533", "Automatic H-21", "Stainless Steel",
+         "Current Production", 1395),
+        # Khaki Navy — men's
+        ("Hamilton", "Khaki Navy Frogman Auto 46mm", "H77845330", "Automatic H-10", "Titanium",
+         "Current Production", 995),
+        ("Hamilton", "Khaki Navy Pioneer Small Second Auto", "H78465553", "Automatic H-10", "Stainless Steel",
+         "Current Production", 895),
+        ("Hamilton", "Khaki Navy Sub Auto 43mm Blue", "H82505140", "Automatic H-10", "Stainless Steel",
+         "Current Production", 750),
+        # Jazzmaster — men's
+        ("Hamilton", "Jazzmaster Viewmatic Auto 40mm Green", "H32475730", "Automatic H-10", "Stainless Steel",
+         "Current Production", 595),
+        ("Hamilton", "Jazzmaster Power Reserve Auto 42mm", "H32635781", "Automatic H-13", "Stainless Steel",
+         "Current Production", 895),
+        ("Hamilton", "Jazzmaster Maestro Auto Chrono 41mm", "H32766643", "Automatic H-21", "Stainless Steel",
+         "Current Production", 1295),
+        ("Hamilton", "Jazzmaster Skeleton Auto 40mm", "H42535610", "Automatic H-10S", "Stainless Steel",
+         "Current Production", 995),
+        # Jazzmaster — women's
+        ("Hamilton", "Jazzmaster Open Heart Lady Auto 36mm", "H32215890", "Automatic H-10", "Stainless Steel",
+         "Current Production", 795),
+        ("Hamilton", "Jazzmaster Lady Quartz 30mm MOP", "H32261197", "Quartz ETA", "Stainless Steel",
+         "Current Production", 395),
+        # Ventura — men's
+        ("Hamilton", "Ventura Elvis80 Auto 42mm", "H24555331", "Automatic H-10", "Stainless Steel",
+         "Current Production", 895),
+        ("Hamilton", "Ventura Open Heart Auto", "H24515732", "Automatic H-10S", "Stainless Steel",
+         "Current Production", 1045),
+        ("Hamilton", "Ventura XXL Auto Skeleton", "H24625330", "Automatic H-10S", "Stainless Steel",
+         "Current Production", 1195),
+        # Ventura — women's
+        ("Hamilton", "Ventura Quartz Small Gold PVD", "H24101511", "Quartz ETA F06.115", "Stainless Steel",
+         "Current Production", 495),
+        # American Classic — men's
+        ("Hamilton", "American Classic Intra-Matic 68 Auto 40mm", "H38735751", "Automatic H-10", "Stainless Steel",
+         "Current Production", 895),
+        ("Hamilton", "American Classic Boulton Small Second Quartz", "H13431553Q", "Quartz ETA", "Stainless Steel",
+         "Current Production", 395),
+        ("Hamilton", "American Classic Pan Europ Day Date Auto", "H35445733", "Automatic H-30", "Stainless Steel",
+         "Current Production", 1095),
+        ("Hamilton", "American Classic Ardmore Quartz", "H11411553", "Quartz ETA", "Stainless Steel",
+         "Current Production", 345),
+        # American Classic — women's
+        ("Hamilton", "American Classic Lady Hamilton Vintage Quartz", "H31271113", "Quartz ETA", "Stainless Steel",
+         "Current Production", 395),
+        ("Hamilton", "American Classic Ardmore Lady", "H11221514", "Quartz ETA", "Stainless Steel",
+         "Current Production", 345),
+        # Broadway — men's
+        ("Hamilton", "Broadway Day Date Auto 42mm", "H43515135", "Automatic H-40", "Stainless Steel",
+         "Current Production", 695),
+        # Khaki Field Murph variants
+        ("Hamilton", "Khaki Field Murph Auto 42mm", "H70605993", "Automatic H-10", "Stainless Steel",
+         "Current Production", 995),
+        ("Hamilton", "Khaki Field Murph 38mm Green", "H70405860", "Automatic H-10", "Stainless Steel",
+         "Current Production", 895),
+        # PSR
+        ("Hamilton", "American Classic PSR Digital Gold", "H52424130", "Quartz Digital", "Stainless Steel",
+         "Current Production", 895),
+    ]
+
+
+def _rolex_variants_watches() -> list[tuple]:
+    """Rolex dial/size/material variants — men's, women's, vintage."""
+    return [
+        # Datejust 31mm women's
+        ("Rolex", "Datejust 31mm Silver Dial Fluted Jubilee", "278274", "Automatic 2236", "Stainless Steel",
+         "Current Production", 8_200),
+        ("Rolex", "Datejust 31mm Pink Dial Smooth Oyster", "278240", "Automatic 2236", "Stainless Steel",
+         "Current Production", 7_350),
+        ("Rolex", "Datejust 31mm Champagne Dial Two-Tone Jubilee", "278273", "Automatic 2236", "Steel/Yellow Gold",
+         "Current Production", 12_800),
+        # Datejust 36mm unisex
+        ("Rolex", "Datejust 36mm Blue Fluted Dial Oyster", "126200", "Automatic 3235", "Stainless Steel",
+         "Current Production", 7_800),
+        ("Rolex", "Datejust 36mm Wimbledon Dial Jubilee Two-Tone", "126233", "Automatic 3235", "Steel/Yellow Gold",
+         "Current Production", 13_500),
+        # Lady-Datejust 28mm
+        ("Rolex", "Lady-Datejust 28mm Steel Silver Dial", "279160", "Automatic 2236", "Stainless Steel",
+         "Current Production", 7_000),
+        ("Rolex", "Lady-Datejust 28mm Two-Tone Rose MOP Dial", "279171", "Automatic 2236", "Steel/Everose Gold",
+         "Current Production", 12_400),
+        ("Rolex", "Lady-Datejust 28mm Rose Gold Chocolate Dial", "279175", "Automatic 2236", "18K Everose Gold",
+         "Current Production", 26_500),
+        # Oyster Perpetual 31/34/36mm
+        ("Rolex", "Oyster Perpetual 31mm Coral Red Dial", "277200", "Automatic 2232", "Stainless Steel",
+         "Current Production", 5_600),
+        ("Rolex", "Oyster Perpetual 34mm Yellow Dial", "124200", "Automatic 2232", "Stainless Steel",
+         "Current Production", 5_900),
+        # Day-Date 36mm women's/smaller
+        ("Rolex", "Day-Date 36mm Rose Gold Sundust Dial", "128235", "Automatic 3255", "18K Everose Gold",
+         "Current Production", 35_000),
+        # Submariner 41mm
+        # GMT-Master II
+        ("Rolex", "GMT-Master II Rootbeer Rose Gold/Steel", "126711CHNR", "Automatic 3285", "Steel/Everose Gold",
+         "Current Production", 16_800),
+        ("Rolex", "GMT-Master II Coke Red/Black Bezel", "126710BLRO-Coke", "Automatic 3285", "Stainless Steel",
+         "Discontinued Classic", 19_500),
+        # Daytona
+        ("Rolex", "Cosmograph Daytona Steel White Dial", "126500LN", "Automatic 4131", "Stainless Steel",
+         "Current Production", 15_400),
+        ("Rolex", "Cosmograph Daytona Oysterflex Rose Gold Black", "126515LN", "Automatic 4131", "18K Everose Gold",
+         "Current Production", 30_500),
+        ("Rolex", "Cosmograph Daytona Panda Dial Steel", "126500LN-Panda", "Automatic 4131", "Stainless Steel",
+         "Current Production", 17_200),
+        ("Rolex", "Cosmograph Daytona Le Mans Centenary", "126529LN", "Automatic 4131", "Stainless Steel",
+         "Special Edition", 22_000),
+        # Sky-Dweller
+        ("Rolex", "Sky-Dweller Oysterflex Rose Gold Slate Dial", "326235", "Automatic 9001", "18K Everose Gold",
+         "Current Production", 42_000),
+        ("Rolex", "Sky-Dweller Two-Tone Champagne Dial", "326933", "Automatic 9001", "Steel/Yellow Gold",
+         "Current Production", 17_800),
+        # Yacht-Master 37mm women's
+        ("Rolex", "Yacht-Master 37mm Rose Gold/Rubber Oysterflex", "268655", "Automatic 2236", "18K Everose Gold",
+         "Current Production", 22_500),
+        ("Rolex", "Yacht-Master 37mm Steel/Platinum Rhodium Dial", "268622", "Automatic 2236", "Steel/Platinum",
+         "Current Production", 10_500),
+        # Pearlmaster 34mm
+        ("Rolex", "Pearlmaster 34mm Diamond Bezel MOP Dial", "81319", "Automatic 2235", "18K White Gold",
+         "Limited Edition", 42_000),
+        # Cellini
+        ("Rolex", "Cellini Time 39mm Rose Gold White Dial", "50505", "Automatic 3132", "18K Everose Gold",
+         "Current Production", 16_000),
+        ("Rolex", "Cellini Date 39mm White Gold Silver Dial", "50519", "Automatic 3165", "18K White Gold",
+         "Current Production", 18_500),
+        # Explorer
+        ("Rolex", "Explorer I 40mm Black Dial", "224270", "Automatic 3230", "Stainless Steel",
+         "Current Production", 7_850),
+        ("Rolex", "Explorer II 42mm Black Dial", "226570-BK", "Automatic 3285", "Stainless Steel",
+         "Current Production", 9_550),
+        # Deepsea / Sea-Dweller
+        ("Rolex", "Deepsea Challenge 50mm Titanium", "126067", "Automatic 3230", "RLX Titanium",
+         "Current Production", 26_000),
+        # Vintage
+        ("Rolex", "Daytona Paul Newman Tropical Dial Ref.6241", "6241", "Manual Valjoux 722", "14K Yellow Gold",
+         "Vintage Pre-1970", 350_000),
+        # Additional current variants to reach 50
+        ("Rolex", "Datejust 41mm Mint Green Dial Oyster", "126300", "Automatic 3235", "Stainless Steel",
+         "Current Production", 8_600),
+    ]
+
+
+def _omega_variants_watches() -> list[tuple]:
+    """Omega dial/size/material variants — men's, women's, vintage."""
+    return [
+        # Speedmaster Moonwatch women's 38mm
+        ("Omega", "Speedmaster 38mm Co-Axial Cappuccino", "324.23.38.50.02.002", "Co-Axial 3330", "Steel/Sedna Gold",
+         "Current Production", 6_800),
+        ("Omega", "Speedmaster 38mm Co-Axial Blue Orbis", "324.30.38.50.03.002", "Co-Axial 3330", "Stainless Steel",
+         "Current Production", 5_900),
+        ("Omega", "Speedmaster 38mm Co-Axial Grey Dial", "324.30.38.50.06.001", "Co-Axial 3330", "Stainless Steel",
+         "Current Production", 5_900),
+        ("Omega", "Speedmaster 38mm Co-Axial Slate Blue", "324.33.38.50.06.001", "Co-Axial 3330", "Stainless Steel",
+         "Current Production", 6_100),
+        # Constellation 29mm women's
+        ("Omega", "Constellation 29mm MOP Diamond Dial", "131.15.29.20.55.001", "Co-Axial 8700", "Stainless Steel",
+         "Current Production", 7_200),
+        ("Omega", "Constellation 29mm Two-Tone Sedna Gold", "131.20.29.20.52.001", "Co-Axial 8700", "Steel/Sedna Gold",
+         "Current Production", 9_500),
+        ("Omega", "Constellation 29mm Diamond Bezel Steel", "131.15.29.20.53.001", "Co-Axial 8700", "Stainless Steel",
+         "Current Production", 8_400),
+        # Constellation 34mm women's
+        ("Omega", "Constellation 34mm Silver Pie-Pan Dial", "131.10.34.20.02.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 5_500),
+        ("Omega", "Constellation 34mm Two-Tone MOP Dial", "131.20.34.20.55.001", "Co-Axial 8800", "Steel/Sedna Gold",
+         "Current Production", 9_100),
+        # De Ville Ladymatic 34mm
+        ("Omega", "De Ville Ladymatic 34mm White MOP", "425.30.34.20.55.002", "Co-Axial 8520", "Stainless Steel",
+         "Current Production", 6_900),
+        ("Omega", "De Ville Ladymatic 34mm Sedna Gold Diamond", "425.65.34.20.55.005", "Co-Axial 8520", "18K Sedna Gold",
+         "Current Production", 18_500),
+        # De Ville Prestige 27.4mm quartz
+        ("Omega", "De Ville Prestige 27.4mm Quartz Steel MOP", "424.10.27.60.05.001", "Quartz 4061", "Stainless Steel",
+         "Current Production", 2_600),
+        ("Omega", "De Ville Prestige 27.4mm Quartz Two-Tone", "424.20.27.60.08.001", "Quartz 4061", "Steel/Yellow Gold",
+         "Current Production", 3_800),
+        # Seamaster Aqua Terra 34mm women's
+        ("Omega", "Seamaster Aqua Terra 34mm Blue Dial", "220.10.34.20.03.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 5_400),
+        ("Omega", "Seamaster Aqua Terra 34mm MOP Diamond", "220.15.34.20.55.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 7_100),
+        # Aqua Terra Shades
+        ("Omega", "Seamaster Aqua Terra 38mm Lavender Dial", "220.10.38.20.10.003", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 5_800),
+        ("Omega", "Seamaster Aqua Terra 38mm Terracotta Dial", "220.10.38.20.13.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 5_800),
+        ("Omega", "Seamaster Aqua Terra 38mm Sand Dial", "220.10.38.20.09.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 5_800),
+        # Seamaster 300M dial colors
+        ("Omega", "Seamaster 300M Blue Dial 42mm", "210.30.42.20.03.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 5_350),
+        ("Omega", "Seamaster 300M White Dial 42mm", "210.30.42.20.04.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 5_350),
+        ("Omega", "Seamaster 300M Green Dial 42mm", "210.30.42.20.10.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 5_350),
+        ("Omega", "Seamaster 300M Grey Dial 42mm", "210.30.42.20.06.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 5_350),
+        # Speedmaster Moonwatch precious metals
+        ("Omega", "Speedmaster Moonwatch Rose Gold Sedna", "310.63.42.50.01.001", "Manual 3861", "18K Sedna Gold",
+         "Current Production", 28_000),
+        ("Omega", "Speedmaster Moonwatch Canopus White Gold", "310.93.42.50.01.001", "Manual 3861", "18K Canopus Gold",
+         "Current Production", 35_000),
+        # Planet Ocean women's 37.5mm
+        ("Omega", "Seamaster Planet Ocean 37.5mm Orange Bezel", "215.30.40.20.01.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 6_100),
+        ("Omega", "Seamaster Planet Ocean 37.5mm White Dial", "215.30.40.20.04.001", "Co-Axial 8800", "Stainless Steel",
+         "Current Production", 6_100),
+        # Constellation Globemaster Annual Calendar
+        ("Omega", "Constellation Globemaster Annual Calendar 41mm", "130.33.41.22.02.001", "Co-Axial 8922", "Stainless Steel",
+         "Current Production", 8_300),
+        # De Ville Tourbillon
+        ("Omega", "De Ville Tourbillon Co-Axial Numbered Edition", "528.53.44.21.03.001", "Co-Axial 2635", "18K Sedna Gold",
+         "Limited Edition", 125_000),
+        # Speedmaster 38mm colors
+        ("Omega", "Speedmaster 38mm Co-Axial Green Racing", "324.30.38.50.01.004", "Co-Axial 3330", "Stainless Steel",
+         "Current Production", 5_900),
+        ("Omega", "Speedmaster 38mm Co-Axial Reverse Panda", "324.30.38.50.02.001", "Co-Axial 3330", "Stainless Steel",
+         "Current Production", 5_900),
+        # Vintage
+        ("Omega", "Constellation Manhattan C-Case Vintage 1960s", "168.017", "Automatic 564", "Stainless Steel",
+         "Vintage Pre-1970", 3_200),
+        ("Omega", "Constellation Pie-Pan Crosshair Dial 1960s", "14381-61", "Automatic 551", "Stainless Steel",
+         "Vintage Pre-1970", 4_500),
+        ("Omega", "Geneve Chronostop 1960s Orange Hand", "145.009", "Manual 865", "Stainless Steel",
+         "Vintage Pre-1970", 2_800),
+        ("Omega", "Geneve Chronostop Driver's Ref.145.010", "145.010", "Manual 865", "Stainless Steel",
+         "Vintage Pre-1970", 3_500),
+        # Additional to reach 40
+        ("Omega", "Speedmaster Super Racing Chronograph", "329.30.44.51.01.003", "Co-Axial 9920", "Stainless Steel",
+         "Current Production", 9_200),
+    ]
+
+
+def _patek_philippe_variants_watches() -> list[tuple]:
+    """Patek Philippe dial/size/material variants — men's, women's, vintage."""
+    return [
+        # Nautilus 5711
+        ("Patek Philippe", "Nautilus 5711/1A White Dial", "5711/1A-011", "Automatic 26-330 SC", "Stainless Steel",
+         "Discontinued Classic", 150_000),
+        ("Patek Philippe", "Nautilus 5711/1A Olive Green Tiffany", "5711/1A-018", "Automatic 26-330 SC", "Stainless Steel",
+         "Limited Edition", 350_000),
+        ("Patek Philippe", "Nautilus 5711/1R Rose Gold Blue Dial", "5711/1R-001", "Automatic 26-330 SC", "18K Rose Gold",
+         "Discontinued Classic", 185_000),
+        ("Patek Philippe", "Nautilus 5811/1G White Gold Blue Dial", "5811/1G-001", "Automatic 26-330 SC", "18K White Gold",
+         "Current Production", 75_000),
+        # Nautilus 5712 Moon Phase
+        ("Patek Philippe", "Nautilus 5712/1A Moon Phase Steel Blue", "5712/1A-001", "Automatic 240 PS IRM C LU", "Stainless Steel",
+         "Discontinued Classic", 130_000),
+        ("Patek Philippe", "Nautilus 5712R Moon Phase Rose Gold", "5712R-001", "Automatic 240 PS IRM C LU", "18K Rose Gold",
+         "Current Production", 62_000),
+        # Nautilus Chronograph 5980
+        ("Patek Philippe", "Nautilus Chronograph 5980/1R Rose Gold", "5980/1R-001", "Automatic CH 28-520 C", "18K Rose Gold",
+         "Discontinued Classic", 110_000),
+        # Nautilus Travel Time 5990
+        ("Patek Philippe", "Nautilus Travel Time 5990R Rose Gold", "5990/1R-001", "Automatic 26-330 S C FUS", "18K Rose Gold",
+         "Current Production", 78_000),
+        # Nautilus 7118 women's
+        ("Patek Philippe", "Nautilus 7118/1A Women's Steel Blue Dial", "7118/1A-001", "Automatic 324 SC", "Stainless Steel",
+         "Current Production", 45_000),
+        ("Patek Philippe", "Nautilus 7118/1200R Women's Rose Gold White", "7118/1200R-001", "Automatic 324 SC", "18K Rose Gold",
+         "Current Production", 55_000),
+        # Aquanaut 5167
+        ("Patek Philippe", "Aquanaut 5167A Khaki Green Dial", "5167A-010", "Automatic 324 SC", "Stainless Steel",
+         "Discontinued Classic", 38_000),
+        # Aquanaut 5168
+        ("Patek Philippe", "Aquanaut 5168G Rose Gold Green Dial", "5168G-010", "Automatic 324 SC", "18K Rose Gold",
+         "Current Production", 48_000),
+        ("Patek Philippe", "Aquanaut 5168G White Gold Blue Dial", "5168G-001", "Automatic 324 SC", "18K White Gold",
+         "Current Production", 50_000),
+        # Aquanaut Luce 5067 women's
+        ("Patek Philippe", "Aquanaut Luce 5067A Women's Steel", "5067A-011", "Quartz E23 SC", "Stainless Steel",
+         "Current Production", 17_000),
+        ("Patek Philippe", "Aquanaut Luce 5067A Women's Rose Gold", "5067A-024", "Quartz E23 SC", "18K Rose Gold",
+         "Current Production", 32_000),
+        ("Patek Philippe", "Aquanaut Luce 5267/200A Women's Diamond", "5267/200A-010", "Quartz E23 SC", "Stainless Steel",
+         "Current Production", 22_000),
+        # Aquanaut Chronograph 5968
+        ("Patek Philippe", "Aquanaut Chronograph 5968A Steel Orange", "5968A-001", "Automatic CH 28-520 C FUS", "Stainless Steel",
+         "Current Production", 55_000),
+        # Calatrava
+        ("Patek Philippe", "Calatrava 5227R Rose Gold Ivory Dial", "5227R-001", "Automatic 324 SC", "18K Rose Gold",
+         "Current Production", 32_000),
+        ("Patek Philippe", "Calatrava 5227G White Gold Grey Dial", "5227G-010", "Automatic 324 SC", "18K White Gold",
+         "Current Production", 33_000),
+        ("Patek Philippe", "Calatrava 5227J Yellow Gold Silver Dial", "5227J-001", "Automatic 324 SC", "18K Yellow Gold",
+         "Current Production", 31_000),
+        ("Patek Philippe", "Calatrava 5196G Ultra-Thin Manual White Gold", "5196G-001", "Manual 215 PS", "18K White Gold",
+         "Current Production", 22_000),
+        ("Patek Philippe", "Calatrava 7200R Women's Rose Gold", "7200/200R-001", "Automatic 324 SC", "18K Rose Gold",
+         "Current Production", 28_500),
+        # Twenty~4 women's
+        ("Patek Philippe", "Twenty~4 7300/1200A Women's Auto Steel", "7300/1200A-001", "Automatic 324 SC", "Stainless Steel",
+         "Current Production", 18_000),
+        ("Patek Philippe", "Twenty~4 7300/1200R Women's Auto Rose Gold", "7300/1200R-010", "Automatic 324 SC", "18K Rose Gold",
+         "Current Production", 35_000),
+        ("Patek Philippe", "Twenty~4 4910/1200A Quartz Steel Diamond", "4910/1200A-001", "Quartz E15", "Stainless Steel",
+         "Current Production", 14_000),
+        # Complications
+        ("Patek Philippe", "Annual Calendar 5205G White Gold Blue Dial", "5205G-013", "Automatic 324 S QA LU", "18K White Gold",
+         "Current Production", 42_000),
+        ("Patek Philippe", "Annual Calendar 5205R Rose Gold Silver Dial", "5205R-001", "Automatic 324 S QA LU", "18K Rose Gold",
+         "Current Production", 43_000),
+        ("Patek Philippe", "Weekly Calendar 5212A Steel Blue Dial", "5212A-001", "Automatic 26-330 S C J SE", "Stainless Steel",
+         "Current Production", 38_000),
+        ("Patek Philippe", "Chronograph 5172G White Gold Blue Dial", "5172G-001", "Manual CH 29-535 PS", "18K White Gold",
+         "Current Production", 65_000),
+        # World Time
+        ("Patek Philippe", "World Time 5231J Enamel Cloisonné Europe", "5231J-001", "Automatic 240 HU", "18K Yellow Gold",
+         "Current Production", 70_000),
+        # Grand Complications
+        ("Patek Philippe", "Perpetual Calendar 5320G White Gold Cream", "5320G-001", "Automatic 324 S Q", "18K White Gold",
+         "Current Production", 88_000),
+        ("Patek Philippe", "Perpetual Calendar Chrono 5270P Platinum", "5270P-001", "Manual CH 29-535 PS Q", "Platinum",
+         "Current Production", 195_000),
+        ("Patek Philippe", "Minute Repeater 5078G White Gold", "5078G-001", "Automatic R 27 PS", "18K White Gold",
+         "Current Production", 320_000),
+        ("Patek Philippe", "Sky Moon Tourbillon 6002G", "6002G-010", "Manual RTO 27 QR SID LU CL", "18K White Gold",
+         "Current Production", 1_500_000),
+        ("Patek Philippe", "Grandmaster Chime 6300G", "6300G-001", "Manual 300 GS AL 36-750 QIS FUS IRM", "18K White Gold",
+         "Limited Edition", 2_500_000),
+        # Gondolo
+        ("Patek Philippe", "Gondolo 5124G Art Deco White Gold", "5124G-011", "Manual 25-21 REC", "18K White Gold",
+         "Current Production", 25_000),
+        # Vintage
+        ("Patek Philippe", "Vintage Ref.1463 Steel Chronograph 1940s", "1463", "Manual 13-130", "Stainless Steel",
+         "Vintage Pre-1970", 800_000),
+        ("Patek Philippe", "Vintage Ref.2526 Enamel Dial 1950s", "2526", "Automatic 12-600 AT", "18K Yellow Gold",
+         "Vintage Pre-1970", 250_000),
+        ("Patek Philippe", "Nautilus Original Ref.3700/1A 1976", "3700/1A", "Automatic 28-255 C", "Stainless Steel",
+         "Vintage Pre-1970", 120_000),
+    ]
+
+
+def _premium_microbrand_watches() -> list[tuple]:
+    """~70 premium microbrand watches — Halios, Ming, Kurono Tokyo, Unimatic,
+    Baltic, Zelos, Lorier, Brew, Farer, Monta, Christopher Ward, Anordain,
+    Autodromo. These are enthusiast-beloved brands with strong secondary markets."""
+    return [
+        # --- Halios ---
+        ("Halios", "Seaforth IV Dive Black", "SF-IV-DIV-BLK", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 750),
+        ("Halios", "Seaforth IV Abyss Blue", "SF-IV-ABY-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 750),
+        ("Halios", "Universa Slate Grey", "UNI-SLT-GRY", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 650),
+        ("Halios", "Universa Forest Green", "UNI-FOR-GRN", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 650),
+        ("Halios", "Fairwind Black", "FW-SS-BLK", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 735),
+        # --- Ming ---
+        ("Ming", "17.09 Blue", "17.09-BLU", "Automatic Sellita SW330-2", "Stainless Steel",
+         "Limited Edition", 4500),
+        ("Ming", "18.01 H41 Abyss Concept", "18.01-H41", "Automatic ETA 7001 modified", "Stainless Steel",
+         "Limited Edition", 5200),
+        ("Ming", "27.02 Concept World Timer", "27.02-WT", "Automatic AGH 6498 modified", "Titanium",
+         "Limited Edition", 13500),
+        ("Ming", "37.09 Bluefin", "37.09-BLU", "Automatic Schwarz-Etienne ASE 200.00", "Titanium",
+         "Limited Edition", 8500),
+        ("Ming", "22.01 Worldtimer", "22.01-WT", "Automatic ETA 2893-2 modified", "Stainless Steel",
+         "Limited Edition", 3950),
+        # --- Kurono Tokyo ---
+        ("Kurono Tokyo", "Grand Hagane", "KT-GH-001", "Automatic Miyota 90S5", "Stainless Steel",
+         "Limited Edition", 2700),
+        ("Kurono Tokyo", "Shiro II", "KT-SHIRO-II", "Automatic Miyota 90S5", "Stainless Steel",
+         "Limited Edition", 2200),
+        ("Kurono Tokyo", "Toki", "KT-TOKI-001", "Automatic Miyota 90S5", "Stainless Steel",
+         "Limited Edition", 2100),
+        ("Kurono Tokyo", "Chronograph 1 Shiro", "KT-CHR1-SHR", "Automatic Miyota 6S21", "Stainless Steel",
+         "Limited Edition", 3900),
+        ("Kurono Tokyo", "Grand Akane", "KT-GA-001", "Automatic Miyota 90S5", "Stainless Steel",
+         "Limited Edition", 2700),
+        # --- Unimatic ---
+        ("Unimatic", "Modello Uno U1-DZ Blacked Out", "U1-DZ", "Automatic Seiko NH35", "Stainless Steel",
+         "Limited Edition", 800),
+        ("Unimatic", "Modello Uno U1-H Hodinkee", "U1-H", "Automatic Seiko NH35", "Stainless Steel",
+         "Limited Edition", 1200),
+        ("Unimatic", "Modello Due U2-F Classico", "U2-F", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 550),
+        ("Unimatic", "Modello Quattro U4-A 36mm", "U4-A", "Automatic Seiko NH35", "Stainless Steel",
+         "Current Production", 475),
+        ("Unimatic", "Modello Uno U1-SS Edition", "U1-SS", "Automatic Seiko NH35", "Stainless Steel",
+         "Limited Edition", 850),
+        # --- Baltic ---
+        ("Baltic", "Aquascaphe Blue Gilt", "AQ-BLU-GLT", "Automatic Miyota 9039", "Stainless Steel",
+         "Current Production", 650),
+        ("Baltic", "Aquascaphe Dual Crown Black", "AQ-DC-BLK", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 750),
+        ("Baltic", "MR01 Micro-Rotor Salmon", "MR01-SAL", "Automatic Miyota 9122", "Stainless Steel",
+         "Current Production", 610),
+        ("Baltic", "Bicompax 001 Panda", "BC001-PAN", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 530),
+        ("Baltic", "Bicompax 001 Reverse Panda", "BC001-RPAN", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 530),
+        ("Baltic", "HMS 001 Blue", "HMS001-BLU", "Automatic Miyota 9039", "Stainless Steel",
+         "Current Production", 580),
+        ("Baltic", "HMS 002 Silver", "HMS002-SLV", "Automatic Miyota 9039", "Stainless Steel",
+         "Current Production", 620),
+        # --- Zelos ---
+        ("Zelos", "Mako V3 300m Frost", "MAKO-V3-FRS", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 449),
+        ("Zelos", "Horizons V2 GMT Blue", "HOR-V2-BLU", "Automatic Miyota 9075", "Stainless Steel",
+         "Current Production", 499),
+        ("Zelos", "Nova 38mm Teal Ti", "NOV-38-TL-TI", "Automatic Miyota 9015", "Titanium",
+         "Current Production", 549),
+        ("Zelos", "Nova 38mm Black Damascus", "NOV-38-DAM", "Automatic Miyota 9015", "Damascus Steel",
+         "Limited Edition", 750),
+        ("Zelos", "Skyraider 2 Titanium Blue", "SKY2-TI-BLU", "Automatic Miyota 9015", "Titanium",
+         "Current Production", 599),
+        # --- Lorier ---
+        ("Lorier", "Neptune Series V Black", "NEP-V-BLK", "Automatic Miyota 90S5", "Stainless Steel",
+         "Current Production", 549),
+        ("Lorier", "Falcon Series IV Green", "FAL-IV-GRN", "Automatic Miyota 90S5", "Stainless Steel",
+         "Current Production", 549),
+        ("Lorier", "Gemini II Chronograph Panda", "GEM-II-PAN", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 599),
+        ("Lorier", "Hyperion II GMT Black/Blue", "HYP-II-BLK-BLU", "Automatic Miyota 9075", "Stainless Steel",
+         "Current Production", 649),
+        # --- Brew ---
+        ("Brew", "HP-1 Pressed Copper", "HP1-COP", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 395),
+        ("Brew", "HP-1 Pressed Black", "HP1-BLK", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 395),
+        ("Brew", "Metric Retromatic Black", "MET-RET-V2-BLK", "Automatic NH35", "Stainless Steel",
+         "Current Production", 375),
+        ("Brew", "Mastergraph V2 Panda", "MAS-V2-PAN", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 450),
+        # --- Farer ---
+        ("Farer", "Lander IV Automatic Blue", "LND-IV-BLU", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 1195),
+        ("Farer", "Bernina Hand-Wound Chrono", "BRN-HW-BLU", "Manual Sellita SW510 BM", "Stainless Steel",
+         "Current Production", 1595),
+        ("Farer", "Markham II GMT Blue", "MKH-II-BLU", "Automatic Sellita SW330-2", "Stainless Steel",
+         "Current Production", 1395),
+        ("Farer", "Hecla II Diver Black", "HCL-II-BLK", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 1295),
+        ("Farer", "Carnegie Worldtimer", "CRN-WT-BLU", "Automatic Sellita SW330-2", "Stainless Steel",
+         "Current Production", 1595),
+        # --- Monta ---
+        ("Monta", "Oceanking Titanium Black", "OK-TI-BLK", "Automatic Sellita SW300-1", "Titanium",
+         "Current Production", 2250),
+        ("Monta", "Skyquest GMT Blue", "SQ-GMT-BLU", "Automatic Sellita SW330-2", "Stainless Steel",
+         "Current Production", 2090),
+        ("Monta", "Noble Date Silver", "NOB-SLV-DT", "Automatic Sellita SW300-1", "Stainless Steel",
+         "Current Production", 1750),
+        ("Monta", "Triumph Silver", "TRI-SLV", "Automatic Sellita SW300-1", "Stainless Steel",
+         "Current Production", 1650),
+        ("Monta", "Skyquest GMT Black", "SQ-GMT-BLK", "Automatic Sellita SW330-2", "Stainless Steel",
+         "Current Production", 2090),
+        # --- Christopher Ward ---
+        ("Christopher Ward", "C60 Trident Pro 300 Blue", "C60-300-BLU", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 895),
+        ("Christopher Ward", "C60 Trident Pro 300 Black", "C60-300-BLK", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 895),
+        ("Christopher Ward", "C63 Sealander GMT Blue", "C63-GMT-BLU", "Automatic Sellita SW330-2", "Stainless Steel",
+         "Current Production", 1050),
+        ("Christopher Ward", "C63 Sealander Auto 39mm Green", "C63-39-GRN", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 795),
+        ("Christopher Ward", "C65 Super Compressor Black", "C65-SC-BLK", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 995),
+        ("Christopher Ward", "C65 Super Compressor Blue", "C65-SC-BLU", "Automatic Sellita SW200-1", "Stainless Steel",
+         "Current Production", 995),
+        # --- Anordain ---
+        ("anOrdain", "Model 1 Fumé Blue Dial", "M1-FB", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 1850),
+        ("anOrdain", "Model 1 Fumé Green Dial", "M1-FG", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 1850),
+        ("anOrdain", "Model 2 Fumé Iron Blue", "M2-FIB", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 1650),
+        ("anOrdain", "Model 2 Fumé Fired Enamel Salmon", "M2-FES", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 1750),
+        # --- Autodromo ---
+        ("Autodromo", "Group B Series 2 Blue", "GBS2-BLU", "Automatic Miyota 9015", "Stainless Steel",
+         "Current Production", 875),
+        ("Autodromo", "Intereuropa Manual White", "INT-MAN-WHT", "Manual Sellita SW215-1", "Stainless Steel",
+         "Current Production", 950),
+        ("Autodromo", "Prototipo Chronograph Green", "PRT-CHR-GRN", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 625),
+        ("Autodromo", "Prototipo Chronograph Blue", "PRT-CHR-BLU", "Mecaquartz Seiko VK64", "Stainless Steel",
+         "Current Production", 625),
+        ("Autodromo", "Group B Evoluzione Night Stage", "GBE-NGT", "Automatic Miyota 9015", "Stainless Steel",
+         "Limited Edition", 975),
     ]
 
 
@@ -2065,6 +3539,26 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_expanded_batch_premium_brands())
     all_tuples.extend(_expansion_round2_watches())
     all_tuples.extend(_expansion_round3_watches())
+    # Affordable & Microbrand Expansion (2026-03-14)
+    all_tuples.extend(_microbrand_expansion_watches())
+    all_tuples.extend(_chinese_value_watches())
+    all_tuples.extend(_affordable_mainstream_expansion())
+    all_tuples.extend(_value_diver_watches())
+    all_tuples.extend(_affordable_dress_field_watches())
+    all_tuples.extend(_mid_range_enthusiast_watches())
+    all_tuples.extend(_g_shock_affordable_expansion())
+    all_tuples.extend(_accessible_luxury_watches())
+    # Luxury Variants — Men's & Women's (2026-03-14)
+    all_tuples.extend(_cartier_variants_watches())
+    all_tuples.extend(_ap_variants_watches())
+    all_tuples.extend(_jlc_variants_watches())
+    all_tuples.extend(_vc_variants_watches())
+    all_tuples.extend(_hamilton_variants_watches())
+    all_tuples.extend(_rolex_variants_watches())
+    all_tuples.extend(_omega_variants_watches())
+    all_tuples.extend(_patek_philippe_variants_watches())
+    # Premium Microbrands (2026-03-15)
+    all_tuples.extend(_premium_microbrand_watches())
 
     catalog: list[dict] = []
     for brand, model, reference, movement, material, watch_type, price_eur in all_tuples:
@@ -2077,7 +3571,15 @@ def get_curated_catalog() -> list[dict]:
             "watch_type": watch_type,
             "price_eur": price_eur,
         })
-    return catalog
+    # Deduplicate by ('reference',) (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = item["reference"]
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 # ---------------------------------------------------------------------------

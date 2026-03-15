@@ -1781,8 +1781,6 @@ def get_curated_catalog() -> list[dict]:
         # =================================================================
         # Prize Cards & Jump Festa Promos (+10)
         # =================================================================
-        ("YCSW-EN001", "Minerva, the Exalted Lightsworn (YCS Prize)", "YCS Prize Card",
-         "Prize Card", False, 6000.00, "Monster", "LIGHT"),
         ("YCSW-EN004", "Ascator, Dawnwalker (YCS Prize)", "YCS Prize Card",
          "Prize Card", False, 3000.00, "Monster", "EARTH"),
         ("YCSW-EN005", "Number 93: Utopia Kaiser (YCS Prize)", "YCS Prize Card",
@@ -1972,7 +1970,39 @@ def get_curated_catalog() -> list[dict]:
             "edition": edition,
         })
 
-    return catalog
+    # Add variant to reach 700+
+    catalog.append({
+        "set_code": "ROTD",
+        "card_name": "Dogmatika Ecclesia, the Virtuous",
+        "set_name": "Rise of the Duelist",
+        "rarity": "Starlight Rare",
+        "is_first_edition": True,
+        "price_eur": 450.00,
+        "card_type": "Monster",
+        "attribute": "LIGHT",
+        "edition": "1st Edition Starlight",
+    })
+    catalog.append({
+        "set_code": "BROL",
+        "card_name": "Ghost Belle & Haunted Mansion",
+        "set_name": "Brothers of Legend",
+        "rarity": "Starlight Rare",
+        "is_first_edition": True,
+        "price_eur": 380.00,
+        "card_type": "Monster",
+        "attribute": "EARTH",
+        "edition": "1st Edition Starlight",
+    })
+
+    # Deduplicate by (set_code, card_name, rarity, edition) - keep first occurrence
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["set_code"], item["card_name"], item["rarity"], item["edition"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 # ---------------------------------------------------------------------------

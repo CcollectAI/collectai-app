@@ -984,7 +984,16 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+    catalog.extend(_variant_expansion())
+    # Deduplicate by ('agency', 'talent', 'name') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["agency"], item["talent"], item["name"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _expanded_batch_2() -> list[tuple]:
@@ -1051,6 +1060,75 @@ def _expanded_batch_2() -> list[tuple]:
         ("Hololive", "Various", "EXPO Goods", "Hololive EXPO 2024 Trading Card Booster Box", "Concert", "mid", 42),
         ("Nijisanji", "Various", "EXPO Goods", "Nijisanji EXPO 2024 Venue-Limited Acrylic Diorama Set", "Concert", "high", 68),
     ]
+
+
+def _variant_expansion() -> list[dict]:
+    """Limited/anniversary/size/signed variants for VTuber merch. ~50 items."""
+    variants = [
+        # Birthday vs Anniversary vs Graduation merch
+        ("Hololive", "Gawr Gura", "Graduation Set", "Gawr Gura Graduation Memorial Complete Merch Set", "Graduation", "grail", 280),
+        ("Hololive", "Gawr Gura", "Graduation Tapestry", "Gawr Gura Graduation Memorial B2 Tapestry", "Graduation", "high", 120),
+        ("Hololive", "Gawr Gura", "Anniversary Set", "Gawr Gura 4th Anniversary Celebration Set", "Anniversary", "high", 95),
+        ("Hololive", "Mori Calliope", "Anniversary Set", "Mori Calliope 4th Anniversary Complete Set", "Anniversary", "high", 90),
+        ("Hololive", "Mori Calliope", "Graduation Tapestry", "Mori Calliope Graduation Memorial B2 Tapestry", "Graduation", "high", 110),
+        ("Nijisanji", "Pomu Rainpuff", "Graduation Set", "Pomu Rainpuff Graduation Memorial Complete Set", "Graduation", "grail", 200),
+        ("Nijisanji", "Mysta Rias", "Graduation Tapestry", "Mysta Rias Graduation Memorial B2 Tapestry", "Graduation", "high", 100),
+        # Signed vs Unsigned variants
+        ("Hololive", "Gawr Gura", "Signed Tapestry", "Gawr Gura Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 350),
+        ("Hololive", "Usada Pekora", "Signed Tapestry", "Usada Pekora Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 300),
+        ("Hololive", "Houshou Marine", "Signed Tapestry", "Houshou Marine Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 320),
+        ("Hololive", "Hoshimachi Suisei", "Signed Tapestry", "Hoshimachi Suisei Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 280),
+        ("Hololive", "Shirakami Fubuki", "Signed Tapestry", "Shirakami Fubuki Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 260),
+        ("Nijisanji", "Kuzuha", "Signed Tapestry", "Kuzuha Hand-Signed 5th Anniversary B2 Tapestry", "Anniversary", "grail", 250),
+        # Acrylic Stand S/M/L size variants
+        ("Hololive", "Gawr Gura", "Acrylic Stand (L)", "Gawr Gura Large Acrylic Stand (20cm)", "Standard", "mid", 45),
+        ("Hololive", "Gawr Gura", "Acrylic Stand (S)", "Gawr Gura Small Acrylic Stand (8cm)", "Standard", "standard", 15),
+        ("Hololive", "Usada Pekora", "Acrylic Stand (L)", "Usada Pekora Large Acrylic Stand (20cm)", "Standard", "mid", 42),
+        ("Hololive", "Usada Pekora", "Acrylic Stand (S)", "Usada Pekora Small Acrylic Stand (8cm)", "Standard", "standard", 14),
+        ("Hololive", "Houshou Marine", "Acrylic Stand (L)", "Houshou Marine Large Acrylic Stand (20cm)", "Standard", "mid", 44),
+        ("Hololive", "Houshou Marine", "Acrylic Stand (S)", "Houshou Marine Small Acrylic Stand (8cm)", "Standard", "standard", 15),
+        ("Hololive", "Mori Calliope", "Acrylic Stand (L)", "Mori Calliope Large Acrylic Stand (20cm)", "Standard", "mid", 40),
+        ("Hololive", "Mori Calliope", "Acrylic Stand (S)", "Mori Calliope Small Acrylic Stand (8cm)", "Standard", "standard", 14),
+        # Event-exclusive vs General release
+        ("Hololive", "Various", "EXPO Tapestry", "Hololive EXPO 2024 Main Visual B2 Tapestry (Venue Only)", "Concert", "high", 95),
+        ("Hololive", "Various", "EXPO Tapestry", "Hololive EXPO 2024 Main Visual B2 Tapestry (Online)", "Concert", "mid", 55),
+        ("Hololive", "Various", "Concert Tapestry", "Hololive 5th Fes Venue-Limited B1 Tapestry", "Concert", "high", 110),
+        ("Hololive", "Various", "Concert Tapestry", "Hololive 5th Fes Online Store B2 Tapestry", "Concert", "mid", 50),
+        ("Nijisanji", "Various", "EXPO Badge Set", "Nijisanji EXPO 2024 Venue-Limited Random Badge Set (10pc)", "Concert", "high", 80),
+        ("Nijisanji", "Various", "EXPO Badge Set", "Nijisanji EXPO 2024 Online Store Badge Set (5pc)", "Concert", "mid", 35),
+        # Different illustration versions
+        ("Hololive", "Gawr Gura", "Tapestry", "Gawr Gura Birthday 2023 B2 Tapestry (Casual Ver.)", "Birthday", "mid", 40),
+        ("Hololive", "Gawr Gura", "Tapestry", "Gawr Gura Birthday 2023 B2 Tapestry (Idol Ver.)", "Birthday", "mid", 45),
+        ("Hololive", "Usada Pekora", "Tapestry", "Usada Pekora Birthday 2024 B2 Tapestry (War Criminal Ver.)", "Birthday", "mid", 42),
+        ("Hololive", "Usada Pekora", "Tapestry", "Usada Pekora Birthday 2024 B2 Tapestry (Princess Ver.)", "Birthday", "mid", 48),
+        ("Hololive", "Houshou Marine", "Tapestry", "Houshou Marine Birthday 2024 B2 Tapestry (Pirate Ver.)", "Birthday", "mid", 45),
+        ("Hololive", "Houshou Marine", "Tapestry", "Houshou Marine Birthday 2024 B2 Tapestry (Idol Ver.)", "Birthday", "mid", 50),
+        # Collab / Lawson exclusive variants
+        ("Hololive", "Gawr Gura", "Lawson Collab", "Gawr Gura x Lawson Clear File Set (JP Only)", "Collab", "mid", 35),
+        ("Hololive", "Usada Pekora", "Lawson Collab", "Usada Pekora x Lawson Acrylic Stand (JP Only)", "Collab", "mid", 30),
+        ("Hololive", "Houshou Marine", "Lawson Collab", "Houshou Marine x Lawson Rubber Strap (JP Only)", "Collab", "standard", 20),
+        ("Hololive", "Hoshimachi Suisei", "Lawson Collab", "Hoshimachi Suisei x Lawson Clear File Set (JP Only)", "Collab", "mid", 35),
+        # Acrylic diorama sets (premium tier)
+        ("Hololive", "Gawr Gura", "Acrylic Diorama", "Gawr Gura Atlantis Acrylic Diorama Set", "Birthday", "high", 85),
+        ("Hololive", "Mori Calliope", "Acrylic Diorama", "Mori Calliope Underworld Acrylic Diorama Set", "Birthday", "high", 80),
+        ("Hololive", "Hoshimachi Suisei", "Acrylic Diorama", "Hoshimachi Suisei Starry Night Acrylic Diorama Set", "Birthday", "high", 82),
+        # VShojo signed variants
+        ("VShojo", "Ironmouse", "Signed Tapestry", "Ironmouse Hand-Signed Birthday B2 Tapestry", "Birthday", "grail", 200),
+        ("VShojo", "Ironmouse", "Anniversary Set", "Ironmouse 5th Anniversary Complete Merch Set", "Anniversary", "high", 95),
+        ("VShojo", "Zentreya", "Signed Acrylic Stand", "Zentreya Hand-Signed Limited Acrylic Stand", "Anniversary", "high", 80),
+    ]
+    catalog = []
+    for agency, talent, item_type, name, exclusive_type, tier, price in variants:
+        catalog.append({
+            "agency": agency,
+            "talent": talent,
+            "item_type": item_type,
+            "name": name,
+            "exclusive_type": exclusive_type,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

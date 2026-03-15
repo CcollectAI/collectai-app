@@ -799,7 +799,6 @@ def get_curated_catalog() -> list[dict]:
         ("tokidoki Unicorno x Hello Kitty Collab", "tokidoki", "Unicorno x Hello Kitty", "Hello Kitty Collab", "Rare", 65, False, "Sanrio x tokidoki collaboration"),
 
         # ── Sonny Angel Marine / Fruit / Seasonal Extended ───────────────
-        ("Sonny Angel Marine Series Dolphin", "Sonny Angel", "Marine Series", "Dolphin", "Common", 11, False, "Marine series dolphin hat figure"),
         ("Sonny Angel Marine Series Seahorse", "Sonny Angel", "Marine Series", "Seahorse", "Common", 11, False, "Marine series seahorse figure"),
         ("Sonny Angel Marine Series Jellyfish Secret", "Sonny Angel", "Marine Series", "Jellyfish Secret", "Secret", 130, True, "Translucent jellyfish secret figure"),
         ("Sonny Angel Fruit Series Mango", "Sonny Angel", "Fruit Series", "Mango", "Common", 10, False, "Tropical mango hat figure"),
@@ -807,8 +806,6 @@ def get_curated_catalog() -> list[dict]:
         ("Sonny Angel Christmas 2025 Reindeer Secret", "Sonny Angel", "Christmas 2025", "Reindeer Secret", "Secret", 160, True, "Gold reindeer Christmas secret"),
         ("Sonny Angel Halloween 2025 Vampire", "Sonny Angel", "Halloween 2025", "Vampire", "Rare", 42, False, "2025 Halloween vampire edition"),
         ("Sonny Angel Halloween 2025 Pumpkin Secret", "Sonny Angel", "Halloween 2025", "Pumpkin Secret", "Secret", 150, True, "Glow-in-dark pumpkin secret"),
-        ("Sonny Angel Flower Series Sunflower", "Sonny Angel", "Flower Series", "Sunflower", "Common", 12, False, "Flower series sunflower hat"),
-        ("Sonny Angel Sweets Series Macaron", "Sonny Angel", "Sweets Series", "Macaron", "Common", 12, False, "Pastel macaron hat figure"),
 
         # ── Labubu New Releases ──────────────────────────────────────────
         ("Labubu The Monsters Forest Gaze", "Pop Mart", "Labubu", "Forest Gaze Series", "Common", 15, False, "Forest nature themed Labubu series"),
@@ -830,12 +827,10 @@ def get_curated_catalog() -> list[dict]:
         ("Pop Mart Pucky Sleep Babies Series", "Pop Mart", "Pucky", "Sleep Babies Series", "Common", 14, False, "Sleeping baby fairy theme"),
         ("Pop Mart Pucky Sleep Babies Secret Moon", "Pop Mart", "Pucky", "Sleep Babies Secret Moon", "Secret", 150, True, "Crescent moon secret Pucky figure"),
         ("Pop Mart Instinctoy Erosion Molly Sunset", "Pop Mart", "Molly", "Instinctoy Erosion Sunset", "Rare", 190, False, "Sunset colorway erosion Molly"),
-        ("Sonny Angel Vegetable Series Carrot", "Sonny Angel", "Vegetable Series", "Carrot", "Common", 11, False, "Vegetable series carrot hat figure"),
 
         # ── Pop Mart — Dimoo Expansion ─────────────────────────────────────
         ("Dimoo Space Travel Series", "Pop Mart", "Dimoo", "Space Travel", "Common", 14, False, "Space exploration themed Dimoo series"),
         ("Dimoo Space Travel Secret Astronaut", "Pop Mart", "Dimoo", "Space Travel Secret", "Secret", 175, True, "Glow-in-dark astronaut secret Dimoo"),
-        ("Dimoo No Limits Series", "Pop Mart", "Dimoo", "No Limits", "Common", 15, False, "Sports extreme theme Dimoo"),
         ("Dimoo No Limits Secret Skydiver", "Pop Mart", "Dimoo", "No Limits Secret", "Secret", 160, True, "Parachute skydiver secret Dimoo"),
         ("Dimoo Animal Friends Series", "Pop Mart", "Dimoo", "Animal Friends", "Common", 14, False, "Animal costume Dimoo figures"),
         ("Dimoo Animal Friends Secret Unicorn", "Pop Mart", "Dimoo", "Animal Friends Secret", "Secret", 180, True, "Rainbow unicorn secret Dimoo"),
@@ -906,7 +901,6 @@ def get_curated_catalog() -> list[dict]:
         # ── Expansion to 700+ — Pop Mart collabs, Sonny Angel, tokidoki, BE@RBRICK, KAWS, Medicom ──
 
         # Pop Mart — Molly Additional Series (+6)
-        ("Molly My Childhood Series", "Pop Mart", "Molly", "My Childhood", "Common", 15, False, "Nostalgic childhood theme, 12 designs"),
         ("Molly My Childhood Secret Teddy Bear", "Pop Mart", "Molly", "My Childhood Secret", "Secret", 140, True, "Teddy bear chase figure from childhood"),
         ("Space Molly 400% Winter Frost", "Pop Mart", "Molly", "Space Molly 400% Winter Frost", "Ultra Rare", 600, False, "Large format, frosted translucent body"),
         ("Molly x Minions Banana Suit", "Pop Mart", "Molly", "Minions Collab", "Rare", 90, False, "Pop Mart x Illumination collab"),
@@ -914,23 +908,18 @@ def get_curated_catalog() -> list[dict]:
         ("Molly Steampunk Secret Clockwork", "Pop Mart", "Molly", "Steampunk Secret", "Secret", 150, True, "Golden clockwork mechanism chase"),
 
         # Pop Mart — Dimoo Additional Series (+6)
-        ("Dimoo Space Travel Series", "Pop Mart", "Dimoo", "Space Travel", "Common", 14, False, "Galaxy exploration theme"),
         ("Dimoo Space Travel Secret Nebula", "Pop Mart", "Dimoo", "Space Travel Secret", "Secret", 155, True, "Nebula translucent secret figure"),
-        ("Dimoo Animal Kingdom Series", "Pop Mart", "Dimoo", "Animal Kingdom", "Common", 14, False, "Wild animal costume designs"),
-        ("Dimoo Retro Computer Series", "Pop Mart", "Dimoo", "Retro Computer", "Common", 15, False, "90s tech nostalgia theme"),
         ("Dimoo x Jurassic World Collab", "Pop Mart", "Dimoo", "Jurassic World", "Rare", 75, False, "Pop Mart x Universal collab"),
         ("Dimoo Christmas 2024 Snowflake", "Pop Mart", "Dimoo", "Christmas 2024", "Rare", 45, False, "Seasonal holiday edition"),
 
         # Pop Mart — Skullpanda Additional Series (+6)
         ("Skullpanda Midnight Circus Series", "Pop Mart", "Skullpanda", "Midnight Circus", "Common", 15, False, "Dark circus theme with tightrope designs"),
         ("Skullpanda Midnight Circus Secret Ringmaster", "Pop Mart", "Skullpanda", "Midnight Circus Secret", "Secret", 210, True, "Gold ringmaster chase with top hat"),
-        ("Skullpanda The Mare of Animals Series", "Pop Mart", "Skullpanda", "Mare of Animals", "Common", 16, False, "Nightmare animal fusion designs"),
         ("Skullpanda Warmth Series", "Pop Mart", "Skullpanda", "Warmth", "Common", 15, False, "Cozy winter fashion designs"),
         ("Skullpanda Hype Panda x Nike Collab", "Pop Mart", "Skullpanda", "Nike Collab", "Ultra Rare", 450, False, "Nike collaboration limited edition"),
         ("Skullpanda Day Dream Secret", "Pop Mart", "Skullpanda", "Day Dream Secret", "Secret", 190, True, "Surreal daydream chase figure"),
 
         # Pop Mart — Hirono Additional (+5)
-        ("Hirono Reshape Series", "Pop Mart", "Hirono", "Reshape", "Common", 16, False, "Transformation theme blind box"),
         ("Hirono Reshape Secret Chrysalis", "Pop Mart", "Hirono", "Reshape Secret", "Secret", 240, True, "Chrysalis metamorphosis secret figure"),
         ("Hirono x Fragment Design Collab", "Pop Mart", "Hirono", "Fragment Design", "Ultra Rare", 380, False, "Hiroshi Fujiwara collab limited"),
         ("Hirono Birdy Series", "Pop Mart", "Hirono", "Birdy", "Common", 16, False, "Bird-themed designs, 9+1 figures"),
@@ -947,12 +936,7 @@ def get_curated_catalog() -> list[dict]:
         ("Pop Mart x Evangelion Angel Series", "Pop Mart", "Evangelion Collab", "Angel Series", "Rare", 25, False, "EVA unit chibi blind box"),
 
         # Sonny Angel Special/Limited Editions (+8)
-        ("Sonny Angel Valentine 2025 Cupid", "Sonny Angel", "Valentine 2025", "Cupid", "Rare", 40, False, "Seasonal Valentine cupid edition"),
-        ("Sonny Angel Valentine 2025 Heart Secret", "Sonny Angel", "Valentine 2025", "Heart Secret", "Secret", 150, True, "Glittery heart secret chase"),
-        ("Sonny Angel Flower Series Rose", "Sonny Angel", "Flower Series", "Rose", "Common", 11, False, "Flower hat rose edition"),
-        ("Sonny Angel Flower Series Sunflower", "Sonny Angel", "Flower Series", "Sunflower", "Common", 11, False, "Sunflower hat baby figure"),
         ("Sonny Angel Artist Collection Yayoi Kusama", "Sonny Angel", "Artist Collection", "Kusama Polka Dot", "Ultra Rare", 350, False, "Yayoi Kusama dots collaboration"),
-        ("Sonny Angel Vegetable Series Carrot", "Sonny Angel", "Vegetable Series", "Carrot", "Common", 10, False, "Carrot hat baby angel"),
         ("Sonny Angel Vegetable Series Robbie Secret", "Sonny Angel", "Vegetable Series", "Robbie Pumpkin Secret", "Secret", 115, True, "Secret Robbie from vegetable series"),
         ("Sonny Angel Hippers Series 2 Sitting Dog", "Sonny Angel", "Hippers Series 2", "Sitting Dog", "Rare", 48, False, "Hippers sitting pose dog costume"),
 
@@ -965,7 +949,6 @@ def get_curated_catalog() -> list[dict]:
         ("Donutella Series 4 Matcha Glaze", "tokidoki", "Donutella Series 4", "Matcha Glaze", "Common", 12, False, "Matcha-themed donut character"),
 
         # BE@RBRICK Mystery Boxes & Mini Series (+8)
-        ("Bearbrick Series 47 Sealed Case", "Medicom", "Bearbrick Series 47", "Sealed Case", "Common", 100, False, "Latest series, 24-piece sealed case"),
         ("Bearbrick Series 47 Secret Artist", "Medicom", "Bearbrick Series 47", "Secret Artist", "Secret", 180, True, "Secret artist collaboration piece S47"),
         ("Bearbrick Cute Series Sealed Case", "Medicom", "Bearbrick Cute", "Sealed Case", "Common", 85, False, "Cute character theme mini series"),
         ("Bearbrick Horror Series 5 Sealed Case", "Medicom", "Bearbrick Horror 5", "Sealed Case", "Common", 95, False, "Horror movie themed 100% series"),
@@ -1021,7 +1004,6 @@ def get_curated_catalog() -> list[dict]:
         ("Labubu The Monsters Trick or Treat", "Pop Mart", "Labubu", "Trick or Treat Series", "Common", 15, False, "Halloween theme series, 12 designs"),
         ("Dimoo Midnight Circus Series", "Pop Mart", "Dimoo", "Midnight Circus", "Common", 14, False, "Dark circus fantasy theme"),
         ("Dimoo Midnight Circus Secret Ringmaster", "Pop Mart", "Dimoo", "Midnight Circus Secret", "Secret", 160, True, "Metallic ringmaster chase figure"),
-        ("Skullpanda Night City Series", "Pop Mart", "Skullpanda", "Night City", "Common", 15, False, "Cyberpunk neon city theme"),
         ("Molly Steampunk Animal Series", "Pop Mart", "Molly", "Steampunk Animal", "Common", 16, False, "Steampunk animal crossover series"),
         ("Sonny Angel Flower Series (2015)", "Sonny Angel", "Flower Series", "2015 Edition", "Rare", 75, False, "Discontinued 2015 flower theme"),
         ("BE@RBRICK Series 47 Full Case", "Medicom", "Bearbrick Series 47", "2024 Full Case", "Rare", 280, False, "Full sealed case with guaranteed chase"),
@@ -1041,7 +1023,199 @@ def get_curated_catalog() -> list[dict]:
             "is_secret": is_secret,
             "notes": notes,
         })
-    return catalog
+    catalog.extend(_get_individual_pulls())
+    # Deduplicate by ('name', 'brand', 'series') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["name"], item["brand"], item["series"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
+
+
+def _get_individual_pulls() -> list[dict]:
+    """Individual figure pulls from popular blind box series (~100 items).
+
+    Each series typically has 8-12 regular figures + 1-2 secret/chase variants.
+    Secret figures trade at 2-10x regular price; mega-secret/ultra-rare at 20-50x.
+    """
+
+    # (name, brand, series, variant, rarity, price_eur, is_secret, notes)
+    pulls_raw = [
+        # ── Pop Mart Labubu — The Monsters Tasty Life Individual Pulls ────
+        ("Labubu Tasty Life — Eating Ramen", "Pop Mart", "Labubu Tasty Life", "Eating Ramen", "Common", 14, False, "Individual pull: Labubu slurping ramen bowl"),
+        ("Labubu Tasty Life — Eating Watermelon", "Pop Mart", "Labubu Tasty Life", "Eating Watermelon", "Common", 14, False, "Individual pull: Labubu biting watermelon slice"),
+        ("Labubu Tasty Life — Eating Ice Cream", "Pop Mart", "Labubu Tasty Life", "Eating Ice Cream", "Common", 14, False, "Individual pull: Labubu with ice cream cone"),
+        ("Labubu Tasty Life — Eating Pizza", "Pop Mart", "Labubu Tasty Life", "Eating Pizza", "Common", 14, False, "Individual pull: Labubu holding pizza slice"),
+        ("Labubu Tasty Life — Eating Donut", "Pop Mart", "Labubu Tasty Life", "Eating Donut", "Common", 14, False, "Individual pull: Labubu with donut stack"),
+        ("Labubu Tasty Life — Eating Sushi", "Pop Mart", "Labubu Tasty Life", "Eating Sushi", "Common", 14, False, "Individual pull: Labubu with sushi plate"),
+        ("Labubu Tasty Life — Eating Cake", "Pop Mart", "Labubu Tasty Life", "Eating Cake", "Common", 14, False, "Individual pull: Labubu with birthday cake"),
+        ("Labubu Tasty Life — Eating Bao", "Pop Mart", "Labubu Tasty Life", "Eating Bao", "Common", 14, False, "Individual pull: Labubu holding steamed bao bun"),
+        ("Labubu Tasty Life — Secret Sparkle Chef", "Pop Mart", "Labubu Tasty Life", "Secret Sparkle Chef", "Secret", 95, True, "Secret chase: glitter-body chef Labubu, 1/144 odds"),
+        ("Labubu Tasty Life — Mega Secret Golden Feast", "Pop Mart", "Labubu Tasty Life", "Mega Secret Golden Feast", "Ultra Rare", 350, True, "Mega-secret: full gold metallic banquet Labubu, 1/720 odds"),
+
+        # ── Pop Mart Labubu — Have a Seat Individual Pulls ────────────────
+        ("Labubu Have a Seat — Sleeping on Sofa", "Pop Mart", "Labubu Have a Seat", "Sleeping Sofa", "Common", 16, False, "Individual pull: Labubu napping on couch"),
+        ("Labubu Have a Seat — Reading Chair", "Pop Mart", "Labubu Have a Seat", "Reading Chair", "Common", 16, False, "Individual pull: Labubu reading in armchair"),
+        ("Labubu Have a Seat — Gaming Beanbag", "Pop Mart", "Labubu Have a Seat", "Gaming Beanbag", "Common", 16, False, "Individual pull: Labubu with controller on beanbag"),
+        ("Labubu Have a Seat — Swing", "Pop Mart", "Labubu Have a Seat", "Swing", "Common", 16, False, "Individual pull: Labubu on garden swing"),
+        ("Labubu Have a Seat — Secret Crystal Throne", "Pop Mart", "Labubu Have a Seat", "Secret Crystal Throne", "Secret", 110, True, "Secret chase: translucent crystal throne Labubu"),
+
+        # ── Pop Mart Molly — Bug's World Individual Pulls ─────────────────
+        ("Molly Bug's World — Ladybug", "Pop Mart", "Molly Bugs World", "Ladybug", "Common", 15, False, "Individual pull: Molly in ladybug costume"),
+        ("Molly Bug's World — Butterfly", "Pop Mart", "Molly Bugs World", "Butterfly", "Common", 15, False, "Individual pull: Molly with butterfly wings"),
+        ("Molly Bug's World — Dragonfly", "Pop Mart", "Molly Bugs World", "Dragonfly", "Common", 15, False, "Individual pull: Molly with dragonfly wings"),
+        ("Molly Bug's World — Caterpillar", "Pop Mart", "Molly Bugs World", "Caterpillar", "Common", 15, False, "Individual pull: Molly in caterpillar suit"),
+        ("Molly Bug's World — Firefly", "Pop Mart", "Molly Bugs World", "Firefly", "Common", 15, False, "Individual pull: Molly with glow abdomen"),
+        ("Molly Bug's World — Bee", "Pop Mart", "Molly Bugs World", "Bee", "Common", 15, False, "Individual pull: Molly in honeybee outfit"),
+        ("Molly Bug's World — Secret Metallic Mantis", "Pop Mart", "Molly Bugs World", "Secret Metallic Mantis", "Secret", 130, True, "Secret chase: chrome praying mantis Molly"),
+        ("Molly Bug's World — Mega Secret Golden Beetle", "Pop Mart", "Molly Bugs World", "Mega Secret Golden Beetle", "Ultra Rare", 420, True, "Mega-secret: gold chrome scarab beetle Molly, 1/720 odds"),
+
+        # ── Pop Mart Dimoo — World of Dimoo Individual Pulls ──────────────
+        ("Dimoo World — Astronaut Explorer", "Pop Mart", "Dimoo World", "Astronaut Explorer", "Common", 14, False, "Individual pull: Dimoo in spacesuit"),
+        ("Dimoo World — Deep Sea Diver", "Pop Mart", "Dimoo World", "Deep Sea Diver", "Common", 14, False, "Individual pull: Dimoo in diving suit"),
+        ("Dimoo World — Arctic Adventurer", "Pop Mart", "Dimoo World", "Arctic Adventurer", "Common", 14, False, "Individual pull: Dimoo in polar gear"),
+        ("Dimoo World — Safari Guide", "Pop Mart", "Dimoo World", "Safari Guide", "Common", 14, False, "Individual pull: Dimoo with safari hat and binoculars"),
+        ("Dimoo World — Volcano Researcher", "Pop Mart", "Dimoo World", "Volcano Researcher", "Common", 14, False, "Individual pull: Dimoo with thermal suit"),
+        ("Dimoo World — Secret Galactic Captain", "Pop Mart", "Dimoo World", "Secret Galactic Captain", "Secret", 105, True, "Secret chase: holographic space captain Dimoo"),
+
+        # ── Pop Mart Dimoo — Forest Series Individual Pulls ───────────────
+        ("Dimoo Forest — Mushroom Fairy", "Pop Mart", "Dimoo Forest", "Mushroom Fairy", "Common", 14, False, "Individual pull: Dimoo with mushroom cap hat"),
+        ("Dimoo Forest — Deer Fawn", "Pop Mart", "Dimoo Forest", "Deer Fawn", "Common", 14, False, "Individual pull: Dimoo as baby deer"),
+        ("Dimoo Forest — Owl Scholar", "Pop Mart", "Dimoo Forest", "Owl Scholar", "Common", 14, False, "Individual pull: Dimoo in owl professor outfit"),
+        ("Dimoo Forest — Secret Enchanted Tree Spirit", "Pop Mart", "Dimoo Forest", "Secret Enchanted Tree Spirit", "Secret", 115, True, "Secret chase: glow-in-dark tree spirit Dimoo"),
+
+        # ── Pop Mart Skullpanda — Night City Individual Pulls ─────────────
+        ("Skullpanda Night City — Neon Rider", "Pop Mart", "Skullpanda Night City", "Neon Rider", "Common", 14, False, "Individual pull: Skullpanda on neon motorcycle"),
+        ("Skullpanda Night City — Hacker", "Pop Mart", "Skullpanda Night City", "Hacker", "Common", 14, False, "Individual pull: Skullpanda with holographic visor"),
+        ("Skullpanda Night City — Street Samurai", "Pop Mart", "Skullpanda Night City", "Street Samurai", "Common", 14, False, "Individual pull: Skullpanda with katana"),
+        ("Skullpanda Night City — DJ Booth", "Pop Mart", "Skullpanda Night City", "DJ Booth", "Common", 14, False, "Individual pull: Skullpanda behind turntables"),
+        ("Skullpanda Night City — Secret Chrome Cyborg", "Pop Mart", "Skullpanda Night City", "Secret Chrome Cyborg", "Secret", 120, True, "Secret chase: full chrome cyberpunk Skullpanda"),
+
+        # ── Pop Mart Hirono — The Other One Individual Pulls ──────────────
+        ("Hirono The Other One — Shadow Walker", "Pop Mart", "Hirono The Other One", "Shadow Walker", "Common", 16, False, "Individual pull: Hirono cloaked in shadow"),
+        ("Hirono The Other One — Mirror Twin", "Pop Mart", "Hirono The Other One", "Mirror Twin", "Common", 16, False, "Individual pull: Hirono with mirror reflection base"),
+        ("Hirono The Other One — Thorned Rose", "Pop Mart", "Hirono The Other One", "Thorned Rose", "Common", 16, False, "Individual pull: Hirono wrapped in thorny roses"),
+        ("Hirono The Other One — Secret Phantom Eclipse", "Pop Mart", "Hirono The Other One", "Secret Phantom Eclipse", "Secret", 150, True, "Secret chase: translucent dark eclipse Hirono"),
+        ("Hirono The Other One — Mega Secret Void King", "Pop Mart", "Hirono The Other One", "Mega Secret Void King", "Ultra Rare", 480, True, "Mega-secret: cosmic void crown Hirono, 1/720 odds"),
+
+        # ── tokidoki Unicorno Series 12 Individual Pulls ──────────────────
+        ("Unicorno S12 — Starlight", "tokidoki", "Unicorno Series 12", "Starlight Pull", "Common", 12, False, "Individual pull: galaxy-themed Starlight unicorn"),
+        ("Unicorno S12 — Honey Bee", "tokidoki", "Unicorno Series 12", "Honey Bee Pull", "Common", 12, False, "Individual pull: honeycomb pattern unicorn"),
+        ("Unicorno S12 — Cotton Candy", "tokidoki", "Unicorno Series 12", "Cotton Candy Pull", "Common", 12, False, "Individual pull: pastel swirl cotton candy"),
+        ("Unicorno S12 — Thunder Bolt", "tokidoki", "Unicorno Series 12", "Thunder Bolt Pull", "Common", 12, False, "Individual pull: electric blue lightning bolt"),
+        ("Unicorno S12 — Blossom", "tokidoki", "Unicorno Series 12", "Blossom Pull", "Common", 12, False, "Individual pull: cherry blossom floral"),
+        ("Unicorno S12 — Midnight", "tokidoki", "Unicorno Series 12", "Midnight Pull", "Common", 12, False, "Individual pull: deep navy starry pattern"),
+        ("Unicorno S12 — Cosmo Chase", "tokidoki", "Unicorno Series 12", "Cosmo Chase Pull", "Rare", 55, True, "Chase pull: metallic chrome galaxy unicorn"),
+        ("Unicorno S12 — Secret Celestial Gold", "tokidoki", "Unicorno Series 12", "Secret Celestial Gold Pull", "Secret", 120, True, "Secret: full gold celestial pattern, 1/144 odds"),
+
+        # ── Sonny Angel Fruit Series Individual Pulls ─────────────────────
+        ("Sonny Angel Fruit — Strawberry Pull", "Sonny Angel", "Fruit Series", "Strawberry Pull", "Common", 10, False, "Individual pull: strawberry hat angel baby"),
+        ("Sonny Angel Fruit — Watermelon Pull", "Sonny Angel", "Fruit Series", "Watermelon Pull", "Common", 10, False, "Individual pull: watermelon hat angel"),
+        ("Sonny Angel Fruit — Banana Pull", "Sonny Angel", "Fruit Series", "Banana Pull", "Common", 10, False, "Individual pull: banana hat figure"),
+        ("Sonny Angel Fruit — Pineapple Pull", "Sonny Angel", "Fruit Series", "Pineapple Pull", "Common", 10, False, "Individual pull: pineapple hat figure"),
+        ("Sonny Angel Fruit — Cherry Pull", "Sonny Angel", "Fruit Series", "Cherry Pull", "Common", 10, False, "Individual pull: twin cherry hat figure"),
+        ("Sonny Angel Fruit — Kiwi Pull", "Sonny Angel", "Fruit Series", "Kiwi Pull", "Common", 10, False, "Individual pull: kiwi slice hat figure"),
+        ("Sonny Angel Fruit — Orange Pull", "Sonny Angel", "Fruit Series", "Orange Pull", "Common", 10, False, "Individual pull: orange hat figure"),
+        ("Sonny Angel Fruit — Secret Robbie Pineapple", "Sonny Angel", "Fruit Series", "Secret Robbie Pineapple Pull", "Secret", 85, True, "Secret Robbie pull: golden pineapple crown variant"),
+
+        # ── Sonny Angel Animal Series 4 Individual Pulls ──────────────────
+        ("Sonny Angel Animal S4 — Cat Pull", "Sonny Angel", "Animal Series 4", "Cat Pull", "Common", 11, False, "Individual pull: tabby cat costume angel baby"),
+        ("Sonny Angel Animal S4 — Rabbit Pull", "Sonny Angel", "Animal Series 4", "Rabbit Pull", "Common", 11, False, "Individual pull: floppy ear rabbit costume"),
+        ("Sonny Angel Animal S4 — Panda Pull", "Sonny Angel", "Animal Series 4", "Panda Pull", "Common", 11, False, "Individual pull: black & white panda costume"),
+        ("Sonny Angel Animal S4 — Koala Pull", "Sonny Angel", "Animal Series 4", "Koala Pull", "Common", 11, False, "Individual pull: grey koala costume"),
+        ("Sonny Angel Animal S4 — Hedgehog Pull", "Sonny Angel", "Animal Series 4", "Hedgehog Pull", "Common", 11, False, "Individual pull: spiky hedgehog costume"),
+        ("Sonny Angel Animal S4 — Secret Robbie Lion", "Sonny Angel", "Animal Series 4", "Secret Robbie Lion Pull", "Secret", 90, True, "Secret Robbie pull: golden mane lion variant"),
+
+        # ── Sonny Angel Flower Series Individual Pulls ────────────────────
+        ("Sonny Angel Flower — Rose Pull", "Sonny Angel", "Flower Series", "Rose Pull", "Common", 12, False, "Individual pull: red rose hat angel"),
+        ("Sonny Angel Flower — Tulip Pull", "Sonny Angel", "Flower Series", "Tulip Pull", "Common", 12, False, "Individual pull: tulip hat figure"),
+        ("Sonny Angel Flower — Sunflower Pull", "Sonny Angel", "Flower Series", "Sunflower Pull", "Common", 12, False, "Individual pull: sunflower hat figure"),
+        ("Sonny Angel Flower — Daisy Pull", "Sonny Angel", "Flower Series", "Daisy Pull", "Common", 12, False, "Individual pull: daisy hat figure"),
+        ("Sonny Angel Flower — Secret Robbie Orchid", "Sonny Angel", "Flower Series", "Secret Robbie Orchid Pull", "Secret", 95, True, "Secret Robbie pull: purple orchid crown variant"),
+
+        # ── Sonny Angel Marine Series Individual Pulls ────────────────────
+        ("Sonny Angel Marine — Clownfish Pull", "Sonny Angel", "Marine Series", "Clownfish Pull", "Common", 11, False, "Individual pull: clownfish hat angel baby"),
+        ("Sonny Angel Marine — Sea Otter Pull", "Sonny Angel", "Marine Series", "Sea Otter Pull", "Common", 11, False, "Individual pull: otter costume figure"),
+        ("Sonny Angel Marine — Seahorse Pull", "Sonny Angel", "Marine Series", "Seahorse Pull", "Common", 11, False, "Individual pull: seahorse hat figure"),
+        ("Sonny Angel Marine — Starfish Pull", "Sonny Angel", "Marine Series", "Starfish Pull", "Common", 11, False, "Individual pull: starfish hat figure"),
+        ("Sonny Angel Marine — Secret Robbie Pearl Shell", "Sonny Angel", "Marine Series", "Secret Robbie Pearl Shell Pull", "Secret", 100, True, "Secret Robbie pull: iridescent pearl shell variant"),
+
+        # ── BE@RBRICK Series 44 Individual Pulls ─────────────────────────
+        ("Bearbrick S44 — Pattern Pull A", "Medicom", "Bearbrick Series 44", "Pattern A Pull", "Common", 8, False, "Individual pull: geometric pattern design A"),
+        ("Bearbrick S44 — Pattern Pull B", "Medicom", "Bearbrick Series 44", "Pattern B Pull", "Common", 8, False, "Individual pull: abstract art design B"),
+        ("Bearbrick S44 — Basic Pull C", "Medicom", "Bearbrick Series 44", "Basic C Pull", "Common", 8, False, "Individual pull: solid color block design C"),
+        ("Bearbrick S44 — Flag Pull D", "Medicom", "Bearbrick Series 44", "Flag D Pull", "Common", 8, False, "Individual pull: national flag design D"),
+        ("Bearbrick S44 — Artist Chase Pull", "Medicom", "Bearbrick Series 44", "Artist Chase Pull", "Secret", 75, True, "Chase pull: artist collaboration piece, 1/96 odds"),
+        ("Bearbrick S44 — Secret Horror Pull", "Medicom", "Bearbrick Series 44", "Secret Horror Pull", "Secret", 160, True, "Secret pull: glow-in-dark horror figure, 1/192 odds"),
+
+        # ── BE@RBRICK Series 46 Individual Pulls ─────────────────────────
+        ("Bearbrick S46 — Cute Pull A", "Medicom", "Bearbrick Series 46", "Cute A Pull", "Common", 8, False, "Individual pull: cute animal face design"),
+        ("Bearbrick S46 — SF Pull B", "Medicom", "Bearbrick Series 46", "SF B Pull", "Common", 8, False, "Individual pull: science fiction robot design"),
+        ("Bearbrick S46 — Animal Pull C", "Medicom", "Bearbrick Series 46", "Animal C Pull", "Common", 8, False, "Individual pull: realistic animal print design"),
+        ("Bearbrick S46 — Artist Chase Pull", "Medicom", "Bearbrick Series 46", "Artist Chase Pull", "Secret", 80, True, "Chase pull: guest artist piece, 1/96 odds"),
+        ("Bearbrick S46 — Secret KAWS Pull", "Medicom", "Bearbrick Series 46", "Secret KAWS Pull", "Ultra Rare", 250, True, "Secret: KAWS dissected companion design, 1/384 odds"),
+
+        # ── How2Work Farmer Bob Individual Pulls ─────────────────────────
+        ("Farmer Bob Everyday — Morning Coffee", "How2Work", "Farmer Bob Everyday", "Morning Coffee", "Common", 14, False, "Individual pull: Farmer Bob holding coffee mug"),
+        ("Farmer Bob Everyday — Watering Plants", "How2Work", "Farmer Bob Everyday", "Watering Plants", "Common", 14, False, "Individual pull: Farmer Bob with watering can"),
+        ("Farmer Bob Everyday — Napping", "How2Work", "Farmer Bob Everyday", "Napping", "Common", 14, False, "Individual pull: Farmer Bob asleep in chair"),
+        ("Farmer Bob Everyday — Fishing", "How2Work", "Farmer Bob Everyday", "Fishing", "Common", 14, False, "Individual pull: Farmer Bob with fishing rod"),
+        ("Farmer Bob Everyday — Cooking", "How2Work", "Farmer Bob Everyday", "Cooking", "Common", 14, False, "Individual pull: Farmer Bob in apron with spatula"),
+        ("Farmer Bob Everyday — Secret Sunset Gold", "How2Work", "Farmer Bob Everyday", "Secret Sunset Gold", "Secret", 90, True, "Secret chase: golden sunset metallic Farmer Bob"),
+
+        # ── Finding Unicorn Shinwoo Ghost Bear Individual Pulls ───────────
+        ("Shinwoo Ghost Bear — Blushing", "Finding Unicorn", "Shinwoo Ghost Bear Pulls", "Blushing", "Common", 16, False, "Individual pull: pink-cheeked blushing ghost bear"),
+        ("Shinwoo Ghost Bear — Stargazing", "Finding Unicorn", "Shinwoo Ghost Bear Pulls", "Stargazing", "Common", 16, False, "Individual pull: ghost bear looking at night sky"),
+        ("Shinwoo Ghost Bear — Hiding", "Finding Unicorn", "Shinwoo Ghost Bear Pulls", "Hiding", "Common", 16, False, "Individual pull: ghost bear peeking from behind object"),
+        ("Shinwoo Ghost Bear — Sleeping", "Finding Unicorn", "Shinwoo Ghost Bear Pulls", "Sleeping", "Common", 16, False, "Individual pull: ghost bear curled up sleeping"),
+        ("Shinwoo Ghost Bear — Secret Crystal Heart", "Finding Unicorn", "Shinwoo Ghost Bear Pulls", "Secret Crystal Heart", "Secret", 100, True, "Secret chase: translucent crystal heart ghost bear"),
+
+        # ── 52TOYS Panda Roll Individual Pulls ────────────────────────────
+        ("Panda Roll Daily — Rolling Nap", "52TOYS", "Panda Roll Daily Pulls", "Rolling Nap", "Common", 10, False, "Individual pull: panda rolling while napping"),
+        ("Panda Roll Daily — Eating Bamboo", "52TOYS", "Panda Roll Daily Pulls", "Eating Bamboo", "Common", 10, False, "Individual pull: panda munching bamboo stalk"),
+        ("Panda Roll Daily — Belly Slide", "52TOYS", "Panda Roll Daily Pulls", "Belly Slide", "Common", 10, False, "Individual pull: panda sliding on belly"),
+        ("Panda Roll Daily — Stretching", "52TOYS", "Panda Roll Daily Pulls", "Stretching", "Common", 10, False, "Individual pull: panda doing morning stretch"),
+        ("Panda Roll Daily — Secret Gold Panda", "52TOYS", "Panda Roll Daily Pulls", "Secret Gold Panda", "Secret", 65, True, "Secret chase: full gold chrome rolling panda"),
+
+        # ── 52TOYS BEASTBOX Variant Pulls ─────────────────────────────────
+        ("BEASTBOX — T-Rex Stealth Black", "52TOYS", "BEASTBOX Variants", "T-Rex Stealth Black", "Uncommon", 22, False, "Variant pull: matte black T-Rex transform cube"),
+        ("BEASTBOX — Shark Chrome Blue", "52TOYS", "BEASTBOX Variants", "Shark Chrome Blue", "Uncommon", 22, False, "Variant pull: metallic blue shark transform cube"),
+        ("BEASTBOX — Raptor Neon Green", "52TOYS", "BEASTBOX Variants", "Raptor Neon Green", "Uncommon", 22, False, "Variant pull: neon green raptor transform cube"),
+        ("BEASTBOX — Secret Gold Mech Dragon", "52TOYS", "BEASTBOX Variants", "Secret Gold Mech Dragon", "Secret", 110, True, "Secret chase: gold mechanical dragon BEASTBOX"),
+
+        # ── Art Toy Gallery Exclusives ────────────────────────────────────
+        ("Art Toy Gallery — Kasing Lung Zimomo Phantom", "Art Toy Gallery", "ATG Exclusives", "Zimomo Phantom", "Rare", 85, False, "ATG exclusive: dark phantom colorway Zimomo"),
+        ("Art Toy Gallery — Instinctoy Erosion Bear", "Art Toy Gallery", "ATG Exclusives", "Erosion Bear Clear", "Rare", 110, False, "ATG exclusive: clear resin erosion bear figure"),
+        ("Art Toy Gallery — How2Work Farmer Bob Midnight", "Art Toy Gallery", "ATG Exclusives", "Farmer Bob Midnight", "Rare", 75, False, "ATG exclusive: midnight blue Farmer Bob colorway"),
+        ("Art Toy Gallery — Secret Holographic Convention", "Art Toy Gallery", "ATG Exclusives", "Secret Holographic", "Ultra Rare", 250, True, "ATG convention secret: holographic rainbow exclusive"),
+
+        # ── Mega / Space / Mega-Secret Variants Across Series ─────────────
+        ("Space Molly 400% Mega Secret Mirror Chrome", "Pop Mart", "Space Molly 400%", "Mega Secret Mirror Chrome", "Ultra Rare", 480, True, "Mega-secret 400%: full mirror chrome finish, 1/500 odds"),
+        ("Labubu 400% Mega Secret Aurora Borealis", "Pop Mart", "Labubu 400%", "Mega Secret Aurora Borealis", "Ultra Rare", 450, True, "Mega-secret 400%: aurora northern lights colorway"),
+        ("Dimoo Mega Secret Crystal Dragon", "Pop Mart", "Dimoo Mega Secret", "Crystal Dragon", "Ultra Rare", 380, True, "Mega-secret: crystal clear dragon Dimoo, 1/720 odds"),
+        ("Skullpanda Mega Secret Obsidian Emperor", "Pop Mart", "Skullpanda Mega Secret", "Obsidian Emperor", "Ultra Rare", 420, True, "Mega-secret: black obsidian emperor Skullpanda"),
+        ("Hirono Mega Secret Celestial Deity", "Pop Mart", "Hirono Mega Secret", "Celestial Deity", "Ultra Rare", 500, True, "Mega-secret: gold celestial deity Hirono, rarest pull"),
+        ("Unicorno Mega Secret Prismatic Rainbow", "tokidoki", "Unicorno Mega Secret", "Prismatic Rainbow", "Ultra Rare", 280, True, "Mega-secret: prismatic rainbow shift Unicorno"),
+        ("Sonny Angel Mega Secret Crown Diamond", "Sonny Angel", "Mega Secret", "Crown Diamond", "Ultra Rare", 350, True, "Mega-secret: diamond-encrusted crown Robbie Angel"),
+        ("Shinwoo Ghost Bear Mega Secret Ethereal", "Finding Unicorn", "Ghost Bear Mega Secret", "Ethereal Glow", "Ultra Rare", 300, True, "Mega-secret: full glow-in-dark ethereal ghost bear"),
+    ]
+
+    items = []
+    for name, brand, series, variant, rarity, price_eur, is_secret, notes in pulls_raw:
+        items.append({
+            "name": name,
+            "brand": brand,
+            "series": series,
+            "variant": variant,
+            "rarity": rarity,
+            "price_eur": price_eur,
+            "is_secret": is_secret,
+            "notes": notes,
+        })
+    return items
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

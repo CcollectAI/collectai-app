@@ -9,44 +9,59 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatPrice } from '@/lib/format';
 import type { SocialProof, CurrencyCode } from '@/data/types';
-
-const TIFFANY = '#81D8D0';
-const TIFFANY_DARK = '#5FBFB6';
+import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 
 type Props = {
   socialProof: SocialProof;
   currency: CurrencyCode;
 };
 
-export function SocialProofSection({ socialProof, currency }: Props) {
+export const SocialProofSection = React.memo(function SocialProofSection({ socialProof, currency }: Props) {
   const { colors } = useAppTheme();
-  const { collectorCount, isTrending, trendRank, recentSold, scarcity } = socialProof;
 
-  if (collectorCount === 0 && !isTrending && recentSold.length === 0) {
+  if (!socialProof) return null;
+
+  const {
+    collectorCount = 0,
+    isTrending = false,
+    trendRank,
+    recentSold = [],
+    scarcity,
+  } = socialProof;
+
+  const hasScarcity = scarcity != null && scarcity.scarcityScore > 0;
+
+  if (collectorCount === 0 && !isTrending && recentSold.length === 0 && !hasScarcity) {
     return null;
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
-        <Ionicons name="people-outline" size={18} color={TIFFANY_DARK} />
+        <Ionicons name="people-outline" size={18} color={colors.accent} />
         <Text style={[styles.title, { color: colors.text }]}>Market Context</Text>
       </View>
 
       {/* Badges row */}
       <View style={styles.badgesRow}>
         {collectorCount > 0 && (
-          <View style={[styles.badge, { backgroundColor: TIFFANY + '15' }]}>
-            <Ionicons name="people" size={14} color={TIFFANY_DARK} />
-            <Text style={[styles.badgeText, { color: TIFFANY_DARK }]}>
+          <View
+            style={[styles.badge, { backgroundColor: colors.accent + '15' }]}
+            accessibilityLabel={`${collectorCount} collector${collectorCount !== 1 ? 's' : ''} tracking this item`}
+          >
+            <Ionicons name="people" size={14} color={colors.accent} />
+            <Text style={[styles.badgeText, { color: colors.accent }]}>
               {collectorCount} collector{collectorCount !== 1 ? 's' : ''}
             </Text>
           </View>
         )}
         {isTrending && (
-          <View style={[styles.badge, { backgroundColor: '#F59E0B20' }]}>
-            <Ionicons name="trending-up" size={14} color="#F59E0B" />
-            <Text style={[styles.badgeText, { color: '#F59E0B' }]}>
+          <View
+            style={[styles.badge, { backgroundColor: colors.warning + '20' }]}
+            accessibilityLabel={`Trending${trendRank ? ` number ${trendRank}` : ''}`}
+          >
+            <Ionicons name="trending-up" size={14} color={colors.warning} />
+            <Text style={[styles.badgeText, { color: colors.warning }]}>
               Trending{trendRank ? ` #${trendRank}` : ''}
             </Text>
           </View>
@@ -58,8 +73,8 @@ export function SocialProofSection({ socialProof, currency }: Props) {
         <View style={styles.soldSection}>
           <Text style={[styles.subTitle, { color: colors.muted }]}>Recent Sales</Text>
           {recentSold.slice(0, 3).map((sold, idx) => (
-            <View key={idx} style={styles.soldRow}>
-              <View style={[styles.soldDot, { backgroundColor: TIFFANY }]} />
+            <View key={idx} style={styles.soldRow} accessibilityLabel={`Recent sale: ${sold.title ?? 'Unknown'}, ${sold.price != null ? formatPrice(sold.price, currency) : 'price unknown'}`}>
+              <View style={[styles.soldDot, { backgroundColor: colors.accent }]} />
               <Text style={[styles.soldTitle, { color: colors.text }]} numberOfLines={1}>
                 {sold.title ?? 'Unknown'}
               </Text>
@@ -72,7 +87,7 @@ export function SocialProofSection({ socialProof, currency }: Props) {
       )}
 
       {/* Scarcity bar */}
-      {scarcity.scarcityScore > 0 && (
+      {hasScarcity && scarcity != null && (
         <View style={styles.scarcitySection}>
           <View style={styles.scarcityHeader}>
             <Text style={[styles.subTitle, { color: colors.muted }]}>Scarcity</Text>
@@ -90,8 +105,8 @@ export function SocialProofSection({ socialProof, currency }: Props) {
                     scarcity.scarcityScore >= 0.7
                       ? colors.danger
                       : scarcity.scarcityScore >= 0.4
-                        ? '#F59E0B'
-                        : '#22C55E',
+                        ? colors.warning
+                        : colors.success,
                 },
               ]}
             />
@@ -103,14 +118,14 @@ export function SocialProofSection({ socialProof, currency }: Props) {
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
     marginTop: 12,
     marginHorizontal: 16,
     padding: 18,
-    borderRadius: 16,
+    borderRadius: radius.md,
     borderWidth: 1,
   },
   header: {
@@ -120,8 +135,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: textToken.lg,
+    fontWeight: fw.bold,
     letterSpacing: 0.2,
   },
   badgesRow: {
@@ -136,19 +151,19 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: radius.xs,
   },
   badgeText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
   },
   soldSection: {
     marginTop: 4,
     gap: 6,
   },
   subTitle: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -165,12 +180,12 @@ const styles = StyleSheet.create({
   },
   soldTitle: {
     flex: 1,
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: textToken.md,
+    fontWeight: fw.medium,
   },
   soldPrice: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: textToken.md,
+    fontWeight: fw.bold,
   },
   scarcitySection: {
     marginTop: 12,
@@ -182,8 +197,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scarcityLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
   },
   scarcityTrack: {
     height: 6,
@@ -195,8 +210,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   scarcityTrend: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: textToken.sm,
+    fontWeight: fw.medium,
     fontStyle: 'italic',
   },
 });

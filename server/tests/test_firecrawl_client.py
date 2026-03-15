@@ -11,8 +11,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
+from app.cache import InMemoryCache, reset_backend
+
 # Ensure no real API calls are made
 os.environ.pop("FIRECRAWL_API_KEY", None)
+
+
+@pytest.fixture(autouse=True)
+def _fresh_scrape_cache():
+    """Reset scrape cache between tests to prevent cross-test pollution."""
+    reset_backend(InMemoryCache())
+    yield
+    reset_backend(None)
 
 
 class TestConfigured:

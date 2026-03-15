@@ -1473,31 +1473,25 @@ async def process_url_import(
         else:
             result.rationale.append("Unknown marketplace - attempting generic extraction")
 
-        # --- Step 1: Firecrawl extraction ---
+        # --- Step 1: Smart scrape (Crawl4AI first, Firecrawl fallback) ---
         try:
-            from app.lib.firecrawl_client import scrape_url, configured
+            from app.lib.smart_scrape import smart_scrape
 
-            if not configured():
-                result.rationale.append("Firecrawl not configured (no API key) - cannot extract from URL")
-                result.identification_method = "url_import_failed"
-                return result
-
-            # Single call with both formats — avoids double HTTP request
-            scrape_result = await scrape_url(
+            scrape_result = await smart_scrape(
                 url,
                 formats=["markdown", "extract"],
                 extract_schema=COLLECTIBLE_EXTRACT_SCHEMA,
             )
 
             if not scrape_result:
-                result.rationale.append("Failed to scrape URL - no data returned")
+                result.rationale.append("No scraper returned data for URL")
                 result.identification_method = "url_import_failed"
                 return result
 
             # Prefer structured extraction; fall back to markdown metadata
             extracted = scrape_result.get("extract")
             if extracted:
-                result.rationale.append("Successfully extracted structured data via Firecrawl")
+                result.rationale.append("Successfully extracted structured data via scraper")
             else:
                 markdown = scrape_result.get("markdown", "")
                 metadata = scrape_result.get("metadata", {})
@@ -1517,12 +1511,12 @@ async def process_url_import(
                     return result
 
         except ImportError:
-            result.rationale.append("Firecrawl client not available")
+            result.rationale.append("Scraper client not available")
             result.identification_method = "url_import_failed"
             return result
         except Exception as e:
-            logger.error("URL import Firecrawl error: %s", e, exc_info=True)
-            result.rationale.append("Firecrawl extraction failed")
+            logger.error("URL import scrape error: %s", e, exc_info=True)
+            result.rationale.append("Scrape extraction failed")
             result.identification_method = "url_import_failed"
             return result
 

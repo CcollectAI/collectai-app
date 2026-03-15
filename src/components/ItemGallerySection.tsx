@@ -7,7 +7,7 @@
  *
  * Extracted from app/item/[id].tsx to reduce file size.
  */
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { Skeleton } from "@/components/Skeleton";
+import { radius, gap, text as textToken, fontWeight as fw, shadow } from "@/theme/tokens";
 
 // ── Exported types ──────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ interface ItemGallerySectionProps {
     text: string;
     muted: string;
     accent: string;
+    accentText: string;
     border: string;
     background: string;
     card: string;
@@ -102,6 +104,16 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
   onZoomImage,
   onMomentumScrollEnd,
 }: ItemGallerySectionProps) {
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
+
+  const handleImageError = useCallback((imageId: string) => {
+    setFailedImageIds((prev) => {
+      const next = new Set(prev);
+      next.add(imageId);
+      return next;
+    });
+  }, []);
+
   if (galleryLoading) {
     return (
       <View style={s.galleryContainer}>
@@ -156,7 +168,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                   accessibilityRole="button"
                   accessibilityLabel="Add a new photo"
                 >
-                  <View style={[s.galleryAddCard, { backgroundColor: theme.card }]}>
+                  <View style={[s.galleryAddCard, { backgroundColor: theme.card, borderColor: theme.accent }]}>
                     {imageUploading || photoUploading ? (
                       <ActivityIndicator size="large" color={theme.accent} />
                     ) : (
@@ -178,19 +190,27 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                   accessibilityRole="button"
                   accessibilityLabel={`Photo ${index + 1} of ${imageCount}${item.label ? ` (${LABEL_DISPLAY[item.label] || item.label})` : ""}. Tap to zoom`}
                 >
-                  <Image
-                    source={{ uri: item.image_url }}
-                    placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
-                    style={{ width: GALLERY_WIDTH, height: GALLERY_HEIGHT }}
-                    contentFit="cover"
-                    cachePolicy="disk"
-                    transition={200}
-                  />
+                  {failedImageIds.has(item.id) ? (
+                    <View style={[s.galleryFallback, { width: GALLERY_WIDTH, height: GALLERY_HEIGHT, backgroundColor: theme.background }]}>
+                      <Ionicons name="image-outline" size={48} color={theme.muted} />
+                      <Text style={[s.galleryFallbackText, { color: theme.muted }]}>Image unavailable</Text>
+                    </View>
+                  ) : (
+                    <Image
+                      source={{ uri: item.image_url }}
+                      placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+                      style={{ width: GALLERY_WIDTH, height: GALLERY_HEIGHT }}
+                      contentFit="cover"
+                      cachePolicy="disk"
+                      transition={200}
+                      onError={() => handleImageError(item.id)}
+                    />
+                  )}
                 </Pressable>
                 {/* Label badge — bottom-left */}
                 {item.label && (
                   <View style={[s.galleryLabelBadge, { backgroundColor: theme.accent }]}>
-                    <Text style={s.galleryLabelText}>
+                    <Text style={[s.galleryLabelText, { color: theme.accentText }]}>
                       {LABEL_DISPLAY[item.label] || item.label}
                     </Text>
                   </View>
@@ -198,7 +218,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                 {/* Counter badge — bottom-right (only when multiple images) */}
                 {imageCount > 1 && (
                   <View style={s.galleryCounterBadge}>
-                    <Text style={s.galleryCounterText}>
+                    <Text style={[s.galleryCounterText, { color: theme.accentText }]}>
                       {index + 1}/{imageCount}
                     </Text>
                   </View>
@@ -272,7 +292,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
         accessibilityRole="button"
         accessibilityLabel="Tap to zoom image"
       >
-        {displayImageUri ? (
+        {displayImageUri && !failedImageIds.has("__single__") ? (
           <Image
             source={{ uri: displayImageUri }}
             placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
@@ -282,6 +302,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
             transition={200}
             accessibilityRole="image"
             accessibilityLabel={`Photo of ${editableName}`}
+            onError={() => handleImageError("__single__")}
           />
         ) : (
           <Image
@@ -306,16 +327,16 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
         accessibilityLabel={displayImageUri ? "Change photo" : "Add your photo"}
       >
         {photoUploading ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
+          <ActivityIndicator size="small" color={theme.accentText} />
         ) : (
           <>
             <Ionicons
               name={displayImageUri ? "camera" : "camera-outline"}
               size={displayImageUri ? 18 : 28}
-              color="#FFFFFF"
+              color={theme.accentText}
             />
             {!displayImageUri && (
-              <Text style={s.photoUploadOverlayText}>
+              <Text style={[s.photoUploadOverlayText, { color: theme.accentText }]}>
                 Add your photo
               </Text>
             )}
@@ -339,11 +360,11 @@ const s = StyleSheet.create({
   galleryContainer: {
     width: "100%",
     marginBottom: 16,
-    borderRadius: 16,
+    borderRadius: radius.md,
     overflow: "hidden",
   },
   gallerySlide: {
-    borderRadius: 16,
+    borderRadius: radius.md,
     overflow: "hidden",
   },
   galleryAddCard: {
@@ -351,14 +372,14 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    borderRadius: 16,
+    borderRadius: radius.md,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "#81D8D0",
+    borderColor: undefined,
   },
   galleryAddText: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: textToken.lg,
+    fontWeight: fw.semibold,
   },
   galleryLabelBadge: {
     position: "absolute",
@@ -366,12 +387,11 @@ const s = StyleSheet.create({
     left: 10,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: radius.md,
   },
   galleryLabelText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: textToken.sm,
+    fontWeight: fw.bold,
     textTransform: "capitalize",
   },
   galleryDeleteBtn: {
@@ -391,18 +411,17 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.55)",
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: radius.sm,
   },
   galleryCounterText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: textToken.sm,
+    fontWeight: fw.semibold,
   },
   galleryDots: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 6,
+    gap: gap.sm,
     paddingVertical: 10,
   },
   galleryDot: {
@@ -410,10 +429,19 @@ const s = StyleSheet.create({
     height: 7,
     borderRadius: 3.5,
   },
+  galleryFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  galleryFallbackText: {
+    fontSize: textToken.md,
+    fontWeight: fw.medium,
+  },
   imageWrapper: {
     width: "100%",
     height: 260,
-    borderRadius: 16,
+    borderRadius: radius.md,
     borderWidth: 1,
     overflow: "hidden",
     marginBottom: 16,
@@ -427,7 +455,7 @@ const s = StyleSheet.create({
     bottom: 12,
     right: 12,
     backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 20,
+    borderRadius: radius.lg,
     width: 40,
     height: 40,
     alignItems: "center",
@@ -445,9 +473,8 @@ const s = StyleSheet.create({
     gap: 8,
   },
   photoUploadOverlayText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: textToken.lg,
+    fontWeight: fw.semibold,
   },
   photoErrorBanner: {
     position: "absolute",
@@ -460,7 +487,7 @@ const s = StyleSheet.create({
   },
   photoErrorText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: textToken.sm,
     textAlign: "center",
   },
 });

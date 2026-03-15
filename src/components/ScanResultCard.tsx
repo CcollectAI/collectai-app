@@ -28,7 +28,8 @@ import { ConditionGradeSection } from '@/components/ConditionGradeSection';
 import { submitScanFeedback } from '@/api/collectorsApi';
 import type { QuickScanResult, CatalogAlternative, CurrencyCode } from '@/data/types';
 
-const TIFFANY = '#81D8D0'; // fallback for StyleSheet only
+import { BRAND_COLORS } from '@/constants/colors';
+const TIFFANY = BRAND_COLORS.tiffany; // StyleSheet can't use hooks
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Confidence ring SVG constants

@@ -573,6 +573,53 @@ const PLUSH_COLLECTIBLES_FIELDS: CategoryField[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Board Games
+// ---------------------------------------------------------------------------
+
+const OOP_BOARD_GAMES_FIELDS: CategoryField[] = [
+  { key: 'publisher', label: 'Publisher', placeholder: 'e.g. Fantasy Flight, CMON', type: 'text', icon: 'business-outline' },
+  { key: 'designer', label: 'Designer', placeholder: 'e.g. Uwe Rosenberg', type: 'text', icon: 'person-outline' },
+  { key: 'player_count', label: 'Player Count', placeholder: 'e.g. 2-4', type: 'text', icon: 'people-outline' },
+  { key: 'play_time', label: 'Play Time', placeholder: 'e.g. 120min', type: 'text', icon: 'time-outline' },
+  { key: 'edition', label: 'Edition', placeholder: 'e.g. Kickstarter, Retail, Deluxe', type: 'text', icon: 'layers-outline' },
+  { key: 'bgg_rating', label: 'BGG Rating', placeholder: 'e.g. 8.2', type: 'text', icon: 'star-outline' },
+  { key: 'condition', label: 'Condition', type: 'select', icon: 'shield-outline', options: ['Sealed', 'Complete', 'Incomplete', 'Good', 'Fair'] },
+  { key: 'year', label: 'Year', placeholder: 'e.g. 2019', type: 'text', icon: 'calendar-outline' },
+];
+
+// ---------------------------------------------------------------------------
+// City Pop Vinyl
+// ---------------------------------------------------------------------------
+
+const CITY_POP_VINYL_FIELDS: CategoryField[] = [
+  { key: 'artist', label: 'Artist', placeholder: 'e.g. Tatsuro Yamashita, Mariya Takeuchi', type: 'text', icon: 'person-outline' },
+  { key: 'album', label: 'Album', placeholder: 'e.g. For You, Variety', type: 'text', icon: 'disc-outline' },
+  { key: 'label', label: 'Label', placeholder: 'e.g. Air Records, Moon Records', type: 'text', icon: 'business-outline' },
+  { key: 'pressing', label: 'Pressing', type: 'select', icon: 'layers-outline', options: ['OG', 'Reissue', 'Promo', 'Test Pressing', 'Remaster 180g', 'Picture Disc'] },
+  { key: 'color', label: 'Vinyl Color', placeholder: 'e.g. Black, Clear, Red', type: 'text', icon: 'color-palette-outline' },
+  { key: 'format', label: 'Format', type: 'select', icon: 'disc-outline', options: ['LP', '2xLP', '7"', '12"', 'CD'] },
+  { key: 'year', label: 'Year', placeholder: 'e.g. 1982', type: 'text', icon: 'calendar-outline' },
+  { key: 'condition', label: 'Condition', type: 'select', icon: 'shield-outline', options: ['M', 'NM', 'VG+', 'VG', 'G+', 'G'] },
+  { key: 'obi', label: 'Has OBI Strip?', type: 'boolean', icon: 'bookmark-outline' },
+];
+
+// ---------------------------------------------------------------------------
+// Niche Perfumery
+// ---------------------------------------------------------------------------
+
+const NICHE_PERFUMERY_FIELDS: CategoryField[] = [
+  { key: 'house', label: 'House', placeholder: 'e.g. Creed, Tom Ford, Xerjoff', type: 'text', icon: 'business-outline' },
+  { key: 'fragrance_name', label: 'Fragrance Name', placeholder: 'e.g. Aventus, Tobacco Vanille', type: 'text', icon: 'flask-outline' },
+  { key: 'concentration', label: 'Concentration', type: 'select', icon: 'water-outline', options: ['EDT', 'EDP', 'Extrait', 'Parfum'] },
+  { key: 'size_ml', label: 'Size (ml)', placeholder: 'e.g. 50, 100', type: 'text', icon: 'resize-outline' },
+  { key: 'gender', label: 'Gender', type: 'select', icon: 'person-outline', options: ['Masculine', 'Feminine', 'Unisex'] },
+  { key: 'fragrance_family', label: 'Fragrance Family', placeholder: 'e.g. Woody, Oriental, Fresh', type: 'text', icon: 'leaf-outline' },
+  { key: 'fill_level', label: 'Fill Level', type: 'select', icon: 'battery-half-outline', options: ['Full', '90%', '75%', '50%', '25%', 'Empty'] },
+  { key: 'batch_code', label: 'Batch Code', placeholder: 'e.g. A52B01', type: 'text', icon: 'barcode-outline' },
+  { key: 'year', label: 'Year', placeholder: 'e.g. 2023', type: 'text', icon: 'calendar-outline' },
+];
+
+// ---------------------------------------------------------------------------
 // Master lookup
 // ---------------------------------------------------------------------------
 
@@ -661,6 +708,11 @@ export const CATEGORY_FIELDS: Partial<Record<Category, CategoryField[]>> = {
   // Media — Expansion
   comic_books: COMIC_BOOKS_FIELDS,
   vinyl_records: VINYL_RECORDS_FIELDS,
+
+  // New Categories
+  oop_board_games: OOP_BOARD_GAMES_FIELDS,
+  city_pop_vinyl: CITY_POP_VINYL_FIELDS,
+  niche_perfumery: NICHE_PERFUMERY_FIELDS,
 };
 
 /**

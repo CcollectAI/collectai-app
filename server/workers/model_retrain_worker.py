@@ -54,6 +54,7 @@ ALL_CATEGORIES = [
     "vinyl_records", "sneakers", "watches",
     "blind_box", "plush_collectibles", "whiskey", "vintage_cameras", "pens",
     "diecast", "sportscards", "retro_handhelds",
+    "oop_board_games", "city_pop_vinyl", "niche_perfumery",
 ]
 
 # Data directory (relative to server/)

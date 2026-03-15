@@ -19,6 +19,7 @@ import {
   Modal,
   TouchableOpacity,
   Share,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -41,6 +42,7 @@ import { RecentSearchesSection } from '@/components/RecentSearchesSection';
 import type { TrendingCategory } from '@/components/TrendingCategoriesGrid';
 import { SearchResultQuickView } from '@/components/SearchResultQuickView';
 import { SkeletonList } from '@/components/Skeleton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MarketplacePageHeader } from '@/components/marketplace/MarketplacePageHeader';
 import { MarketplaceResultCard, type MarketplaceResultItem } from '@/components/marketplace/MarketplaceResultCard';
 import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmptyState';
@@ -152,21 +154,59 @@ const SearchScreen: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    collectorsApi.getDemandHeat()
-      .then((data) => {
+    const DEMAND_HEAT_CACHE_KEY = '@demand_heat_cache';
+    const REGIONAL_DEMAND_CACHE_KEY = '@regional_demand_cache';
+    const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
+    async function fetchDemandHeat() {
+      try {
+        const cached = await AsyncStorage.getItem(DEMAND_HEAT_CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < CACHE_TTL) {
+            if (!cancelled && Array.isArray(data) && data.length) setDemandHeat(data);
+            return;
+          }
+        }
+      } catch { /* cache miss, proceed to fetch */ }
+      try {
+        const data = await collectorsApi.getDemandHeat();
         if (cancelled) return;
         const resp = data as { items?: Array<{ item_key: string; title: string; category: string; demand_score: number; search_count: number }> } | undefined;
         const items = resp?.items;
-        if (Array.isArray(items) && items.length) setDemandHeat(items.slice(0, 6));
-      })
-      .catch(() => { /* silent */ });
-    collectorsApi.getDemandHeatByRegion()
-      .then((data) => {
+        if (Array.isArray(items) && items.length) {
+          const sliced = items.slice(0, 6);
+          setDemandHeat(sliced);
+          AsyncStorage.setItem(DEMAND_HEAT_CACHE_KEY, JSON.stringify({ data: sliced, ts: Date.now() })).catch(() => {});
+        }
+      } catch (err) { logger.warn('[Marketplace] getDemandHeat error:', err); }
+    }
+
+    async function fetchRegionalDemand() {
+      try {
+        const cached = await AsyncStorage.getItem(REGIONAL_DEMAND_CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < CACHE_TTL) {
+            if (!cancelled && Array.isArray(data)) setRegionalDemand(data);
+            return;
+          }
+        }
+      } catch { /* cache miss, proceed to fetch */ }
+      try {
+        const data = await collectorsApi.getDemandHeatByRegion();
         if (cancelled) return;
         const resp = data as { items?: Array<{ item_key: string; category: string; signal_count: number; region: string }> } | undefined;
-        if (Array.isArray(resp?.items)) setRegionalDemand(resp!.items.slice(0, 5));
-      })
-      .catch(() => { /* silent */ });
+        if (Array.isArray(resp?.items)) {
+          const sliced = resp!.items.slice(0, 5);
+          setRegionalDemand(sliced);
+          AsyncStorage.setItem(REGIONAL_DEMAND_CACHE_KEY, JSON.stringify({ data: sliced, ts: Date.now() })).catch(() => {});
+        }
+      } catch (err) { logger.warn('[Marketplace] getDemandHeatByRegion error:', err); }
+    }
+
+    fetchDemandHeat();
+    fetchRegionalDemand();
     return () => { cancelled = true; };
   }, []);
 
@@ -228,8 +268,8 @@ const SearchScreen: React.FC = () => {
           items.push({ id: t.category, name, meta: pct > 0 ? `+${pct}% this month` : 'Popular' });
         }
         if (items.length >= 3) setTrendingCategories(items.slice(0, 6));
-      } catch {
-        // Keep fallback
+      } catch (err) {
+        logger.warn('[Marketplace] trending categories error:', err);
       }
     })();
     return () => { cancelled = true; };
@@ -373,9 +413,13 @@ const SearchScreen: React.FC = () => {
       value: item.price ?? item.priceBand?.q50 ?? 0,
     }));
 
-    // Notify user if both searches failed
+    // Notify user about search failures
     if (mktResult.status === 'rejected' && colResult.status === 'rejected') {
       showToast({ message: 'Could not reach the marketplace. Check your connection and try again.', type: 'error' });
+    } else if (mktResult.status === 'rejected') {
+      showToast({ message: 'Marketplace search failed — showing collection results only.', type: 'info' });
+    } else if (colResult.status === 'rejected') {
+      showToast({ message: 'Collection search failed — showing marketplace results only.', type: 'info' });
     }
 
     setMarketplaceResults(mktResults);
@@ -422,16 +466,17 @@ const SearchScreen: React.FC = () => {
 
   // Also trigger search when tapping a recent search chip
   const handleChipPress = useCallback((term: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setQuery(term);
     executeSearch(term);
-  }, [executeSearch]);
+  }, [executeSearch, settings.hapticsEnabled]);
 
   const handleOpenResult = useCallback((item: SearchResult) => {
     if (item.domesticOnly) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     if (item.isMarketplace) {
       setQuickViewItem(item);
       openQuickView();
-      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     } else {
       router.push({
         pathname: "/item/[id]",
@@ -460,26 +505,29 @@ const SearchScreen: React.FC = () => {
 
   const handleQuickViewShare = useCallback(async () => {
     if (!quickViewItem) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     try {
       await Share.share({
         message: `${quickViewItem.name} - ${formatPrice(quickViewItem.value)} on ${quickViewItem.source || 'Marketplace'}`,
         url: quickViewItem.externalUrl,
       });
-    } catch {
-      // User cancelled
+    } catch (err) {
+      logger.warn('[Marketplace] share error:', err);
     }
-  }, [quickViewItem]);
+  }, [quickViewItem, settings.hapticsEnabled]);
 
-  const handleOpenCategory = (categoryId: string) => {
+  const handleOpenCategory = useCallback((categoryId: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push(`/categories/${encodeURIComponent(categoryId)}`);
-  };
+  }, [router, settings.hapticsEnabled]);
 
-  const handleOpenCollection = (collectionName: string) => {
+  const handleOpenCollection = useCallback((collectionName: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push({
       pathname: "/(tabs)/items",
       params: { collectionName },
     });
-  };
+  }, [router, settings.hapticsEnabled]);
 
   const hasResults = trimmedQuery && (allResults.length > 0 || searchLoading);
 
@@ -571,14 +619,18 @@ const SearchScreen: React.FC = () => {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Browse by category
               </Text>
-              <View style={styles.categoryGrid}>
-                {BROWSE_CATEGORIES.map((cat, index) => {
-                  // Checkerboard pattern: alternates light/dark per row
+              <FlatList
+                data={BROWSE_CATEGORIES}
+                keyExtractor={(cat) => cat.id}
+                numColumns={2}
+                scrollEnabled={false}
+                columnWrapperStyle={styles.categoryGridRow}
+                renderItem={({ item: cat, index }) => {
                   const row = Math.floor(index / 2);
                   const col = index % 2;
                   const ci = (row + col) % 2 === 0
-                    ? (row % 2 === 0 ? 0 : 1)   // even diagonal: lightest ↔ medium
-                    : (row % 2 === 0 ? 2 : 3);   // odd diagonal: dark ↔ darkest
+                    ? (row % 2 === 0 ? 0 : 1)
+                    : (row % 2 === 0 ? 2 : 3);
                   const darkTileColors = [colors.accent + '70', colors.accent + '90', colors.accent + 'B0', colors.accent + 'D0'];
                   const bg = isDark
                     ? darkTileColors[ci]
@@ -588,7 +640,6 @@ const SearchScreen: React.FC = () => {
                     : ci >= 2 ? colors.accentText : colors.text;
                   return (
                     <AnimatedPressable
-                      key={cat.id}
                       style={[styles.categoryTile, { backgroundColor: bg }]}
                       onPress={() => handleOpenCategory(cat.id)}
                       accessibilityRole="button"
@@ -603,15 +654,18 @@ const SearchScreen: React.FC = () => {
                       </Text>
                     </AnimatedPressable>
                   );
-                })}
-              </View>
+                }}
+                initialNumToRender={10}
+                maxToRenderPerBatch={10}
+                windowSize={3}
+              />
             </View>
 
             {/* Market Pulse — demand heat */}
             {demandHeat.length > 0 && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  <Ionicons name="flame-outline" size={16} color="#F59E0B" /> Hot Right Now
+                  <Ionicons name="flame-outline" size={16} color={colors.warning} /> Hot Right Now
                 </Text>
                 <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>Most searched items across collectors</Text>
                 <View style={{ gap: 6, marginTop: 8 }}>
@@ -627,8 +681,8 @@ const SearchScreen: React.FC = () => {
                       accessibilityRole="button"
                       accessibilityLabel={`Search for ${item.title}`}
                     >
-                      <View style={[styles.demandRank, { backgroundColor: i < 3 ? '#F59E0B' + '20' : colors.border + '40' }]}>
-                        <Text style={[styles.demandRankText, { color: i < 3 ? '#F59E0B' : colors.muted }]}>#{i + 1}</Text>
+                      <View style={[styles.demandRank, { backgroundColor: i < 3 ? colors.warning + '20' : colors.border + '40' }]}>
+                        <Text style={[styles.demandRankText, { color: i < 3 ? colors.warning : colors.muted }]}>#{i + 1}</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.demandTitle, { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
@@ -753,6 +807,7 @@ const SearchScreen: React.FC = () => {
                   autoFocus
                   style={[styles.searchInput, { color: colors.text }]}
                   accessibilityLabel="Search users by name or handle"
+                  returnKeyType="search"
                 />
                 {userSearchQuery.length > 0 && (
                   <TouchableOpacity
@@ -981,7 +1036,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: undefined,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
@@ -1003,6 +1057,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: TILE_GAP,
+  },
+  categoryGridRow: {
+    gap: TILE_GAP,
+    marginBottom: TILE_GAP,
   },
   categoryTile: {
     width: TILE_WIDTH,
@@ -1046,7 +1104,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 8,
-    backgroundColor: undefined,
   },
   collectionTitle: {
     fontSize: 13,

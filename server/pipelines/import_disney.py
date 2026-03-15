@@ -982,7 +982,190 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+
+    # Add variant expansion items, deduplicating by (subcategory, name)
+    existing_keys = {(d["subcategory"], d["name"]) for d in catalog}
+    for item in _variant_expansion():
+        key = (item["subcategory"], item["name"])
+        if key not in existing_keys:
+            existing_keys.add(key)
+            catalog.append(item)
+
+    # Deduplicate by ('name',) (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = item["name"]
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
+
+
+def _variant_expansion() -> list[dict]:
+    """~100 variant items for existing Disney collectibles.
+
+    Variant types covered:
+    - Pin variants: standard vs limited edition, event exclusive, hidden mickey, fantasy
+    - Figure variants: regular vs chase, glow-in-dark, flocked, diamond, metallic
+    - Park exclusive vs general release versions
+    - Size variants: mini, regular, large/jumbo
+    - Color variants & seasonal editions (holiday, anniversary)
+    """
+
+    # (subcategory, name, edition, rarity_tier, price_eur)
+    variants = [
+        # ── Pin Variants — LE vs Standard vs Event Exclusive ─────────────
+        ("pins", "Haunted Mansion 50th Anniversary Standard Pin", "Standard", "standard", 18),
+        ("pins", "Haunted Mansion 50th Anniversary LE 500 Jumbo Pin", "LE 500", "grail", 280),
+        ("pins", "Nightmare Before Christmas 30th Event Exclusive Pin", "Event Exclusive", "grail", 200),
+        ("pins", "Nightmare Before Christmas 30th Standard Pin", "Standard", "standard", 15),
+        ("pins", "Walt Disney Portrait LE 500 Jumbo Pin", "LE 500", "grail", 380),
+        ("pins", "Figment Epcot 40th Anniversary Standard Pin", "Standard", "standard", 18),
+        ("pins", "Figment Epcot 40th Anniversary LE 750 Jumbo Pin", "LE 750", "grail", 250),
+        ("pins", "Disney Villains LE 1000 Jumbo Pin Set", "LE 1000", "grail", 220),
+        ("pins", "Disney Princess LE 5000 Standard Pin", "LE 5000", "mid", 45),
+        ("pins", "Cinderella Castle LE 500 Glow-in-Dark Jumbo Pin", "LE 500", "grail", 350),
+
+        # ── Pin Variants — Hidden Mickey Chasers ─────────────────────────
+        ("pins", "Hidden Mickey Attractions Series Chaser Pin (Silver)", "Park Exclusive", "mid", 50),
+        ("pins", "Hidden Mickey Sidekicks Series Chaser Pin (Gold)", "Park Exclusive", "high", 80),
+        ("pins", "Hidden Mickey Villains Series Gold Chaser Pin", "Park Exclusive", "high", 95),
+        ("pins", "Hidden Mickey Pin (Common Character)", "Park Exclusive", "standard", 10),
+        ("pins", "Hidden Mickey Princesses Series Completer Pin", "Park Exclusive", "mid", 40),
+
+        # ── Pin Variants — Fantasy Pin Sizes ─────────────────────────────
+        ("pins", "Fantasy Pin Maleficent Stained Glass Mini", "Fantasy", "standard", 15),
+        ("pins", "Fantasy Pin Maleficent Stained Glass Jumbo", "Fantasy", "high", 80),
+        ("pins", "Fantasy Pin Ursula Art Nouveau Mini", "Fantasy", "standard", 18),
+        ("pins", "Fantasy Pin Ursula Art Nouveau Jumbo", "Fantasy", "high", 85),
+        ("pins", "Fantasy Pin Sorcerer Mickey Mini", "Fantasy", "standard", 20),
+        ("pins", "Fantasy Pin Figment Rainbow Glitter Jumbo", "Fantasy", "high", 110),
+
+        # ── Pin Variants — Seasonal & Color ──────────────────────────────
+        ("pins", "Stitch Crashes Disney Holiday Edition Pin", "Seasonal LE", "high", 65),
+        ("pins", "Disney Pin Trading Starter Set Holiday Edition", "Seasonal", "standard", 20),
+        ("pins", "Disney Cast Member Exclusive Holiday Pin", "Cast Exclusive", "high", 95),
+        ("pins", "Disney Parks 50th Anniversary LE 50 Silver Pin", "LE 50", "grail", 550),
+        ("pins", "Disney Magical Moments LE 300 Mini Pin (Castle Fireworks)", "LE 300", "grail", 180),
+
+        # ── Figure Variants — Chase & Glow-in-Dark ──────────────────────
+        ("figures", "D23 Exclusive Sorcerer Mickey Figure (Chase Metallic)", "Chase Variant", "grail", 350),
+        ("figures", "D23 Exclusive Sorcerer Mickey Figure (Glow-in-Dark)", "Glow-in-Dark", "grail", 300),
+        ("figures", "Walt Disney Archives Figure (50th) Metallic Edition", "Metallic LE", "high", 120),
+        ("figures", "Walt Disney Archives Figure (50th) Diamond Edition", "Diamond LE", "grail", 200),
+
+        # ── Vinylmation Variants — Chase & Size ─────────────────────────
+        ("vinylmation", "Vinylmation Urban Redux Series Chaser (Metallic)", "Chase Variant", "high", 85),
+        ("vinylmation", "Vinylmation Star Wars Jedi Mickey 9in", "Limited", "high", 80),
+        ("vinylmation", "Vinylmation Star Wars Jedi Mickey 1.5in Mini", "Standard", "standard", 12),
+        ("vinylmation", "Vinylmation Nightmare Before Christmas 3in", "Standard", "mid", 35),
+        ("vinylmation", "Vinylmation Mickey Through the Years Chaser (Gold)", "Chase Variant", "high", 130),
+        ("vinylmation", "Vinylmation Villains Series Maleficent 3in", "Standard", "mid", 40),
+        ("vinylmation", "Vinylmation Park Series 1 Chaser (Glow-in-Dark)", "Chase Variant", "high", 100),
+
+        # ── Disney Infinity — Crystal & Regular ──────────────────────────
+        ("infinity", "Disney Infinity 3.0 Sorcerer Mickey (Standard)", "Standard", "standard", 15),
+        ("infinity", "Disney Infinity 1.0 Sorcerer Mickey (Crystal Variant)", "Crystal Variant", "high", 90),
+        ("infinity", "Disney Infinity 3.0 Star Wars Boba Fett (Crystal)", "Crystal Variant", "high", 85),
+        ("infinity", "Disney Infinity 3.0 Inside Out Joy (Crystal)", "Crystal Variant", "high", 75),
+
+        # ── Kingdom Hearts — Chase & Metallic ────────────────────────────
+        ("kingdom_hearts", "Kingdom Hearts Funko Pop Sora (Brave Form) Standard", "Standard", "mid", 30),
+        ("kingdom_hearts", "Kingdom Hearts Funko Pop Sora (Drive Form) Chase", "Chase Variant", "high", 90),
+        ("kingdom_hearts", "Kingdom Hearts Funko Pop Sora (Glow-in-Dark)", "Glow-in-Dark", "high", 100),
+        ("kingdom_hearts", "Kingdom Hearts Keyblade Replica Mini (6in)", "Standard", "standard", 25),
+        ("kingdom_hearts", "Kingdom Hearts Keyblade Replica Jumbo (48in)", "Premium", "high", 150),
+        ("kingdom_hearts", "Kingdom Hearts Diamond Select Mickey Figure (Metallic)", "Metallic LE", "high", 80),
+
+        # ── Villains — Chase, Diamond & Flocked ──────────────────────────
+        ("villains", "Disney Villains Funko Pop Maleficent (Flames) Diamond", "Diamond LE", "high", 110),
+        ("villains", "Disney Villains Funko Pop Maleficent (Flames) Flocked", "Flocked LE", "high", 95),
+        ("villains", "Disney Villains Funko Pop Maleficent (Flames) Glow-in-Dark", "Glow-in-Dark", "grail", 130),
+        ("villains", "Disney Villains Hades Ember Glow Figurine (Metallic)", "Metallic LE", "high", 140),
+        ("villains", "Disney Villains Cruella De Vil Figurine (Flocked)", "Flocked LE", "high", 80),
+        ("villains", "Disney Villains Chernabog Figurine (Glow-in-Dark)", "Glow-in-Dark", "grail", 180),
+
+        # ── Loungefly — Park Exclusive vs General Release ────────────────
+        ("loungefly", "Loungefly Haunted Mansion Mini Backpack (Park Exclusive Glow)", "Park Exclusive", "high", 110),
+        ("loungefly", "Loungefly Villains AOP Backpack (Glow-in-Dark)", "Glow-in-Dark", "high", 90),
+        ("loungefly", "Loungefly Figment Epcot Backpack (General Release)", "Standard", "mid", 55),
+        ("loungefly", "Loungefly Disney100 Platinum Crossbody", "D100 Exclusive", "high", 85),
+        ("loungefly", "Loungefly Disney Princess Castle Backpack (Metallic)", "Metallic LE", "high", 110),
+
+        # ── Designer Dolls — Size Variants ───────────────────────────────
+        ("designer_dolls", "Disney Designer Collection Ariel Mini Doll (6in)", "Designer LE", "mid", 55),
+        ("designer_dolls", "Disney Designer Collection Belle Mini Doll (6in)", "Designer LE", "mid", 50),
+        ("designer_dolls", "Disney Designer Collection Jasmine Mini Doll (6in)", "Designer LE", "mid", 55),
+        ("designer_dolls", "Disney Designer Collection Rapunzel Jumbo Doll (24in)", "Designer LE", "grail", 280),
+        ("designer_dolls", "Disney Designer Midnight Masquerade Tiana Mini Doll", "Designer LE", "mid", 60),
+
+        # ── Plush — Size Variants ────────────────────────────────────────
+        ("plush", "Disney Store Vintage Winnie the Pooh Mini Plush (1990s)", "Vintage", "standard", 20),
+        ("plush", "Disney Store Vintage Lion King Simba Mini Plush", "Vintage", "standard", 22),
+        ("plush", "Disney Store Limited Sorcerer Mickey Jumbo Plush (D23)", "D23 Exclusive", "high", 140),
+        ("plush", "Disney Store nuiMOs Plush Holiday Complete Set (8pc)", "Seasonal", "high", 85),
+        ("plush", "Disney Store Vintage Stitch Jumbo Plush (2002 Release)", "Vintage", "high", 90),
+
+        # ── Ears — Seasonal & Color Variants ─────────────────────────────
+        ("ears", "50th Anniversary Silver Ears", "LE Park", "mid", 50),
+        ("ears", "50th Anniversary Rose Gold Ears", "LE Park", "mid", 60),
+        ("ears", "Disney Parks Sequin Ears Coral", "Park Exclusive", "mid", 35),
+        ("ears", "Disney Parks Sequin Ears Arendelle Aqua", "Park Exclusive", "mid", 38),
+        ("ears", "Disney Parks Minnie Ears Holiday Wreath (Christmas)", "Seasonal", "mid", 45),
+        ("ears", "Disney Parks Minnie Ears Valentine's Day Hearts", "Seasonal", "mid", 40),
+        ("ears", "Disney Parks Minnie Ears Halloween Orange Sequin", "Seasonal", "mid", 42),
+
+        # ── Ornaments — Seasonal Variants ────────────────────────────────
+        ("ornaments", "Hallmark Disney Castle LE Ornament (Gold Variant)", "LE", "high", 75),
+        ("ornaments", "Swarovski Disney Castle Ornament (Annual 2025)", "Premium", "high", 90),
+        ("ornaments", "Swarovski Disney Castle Ornament (Annual 2024)", "Premium", "high", 85),
+        ("ornaments", "Disney Sketchbook Legacy Ornament Holiday Red Set", "Seasonal", "mid", 50),
+
+        # ── Popcorn Buckets — Size & Color ───────────────────────────────
+        ("popcorn_buckets", "Figment Popcorn Bucket (EPCOT Festival) Purple Variant", "Park Exclusive", "high", 140),
+        ("popcorn_buckets", "Mickey Mouse Balloon Popcorn Bucket (Gold 50th Edition)", "Park Exclusive", "high", 90),
+        ("popcorn_buckets", "Cinderella Carriage Popcorn Bucket (Rose Gold)", "Park Exclusive", "high", 100),
+        ("popcorn_buckets", "Haunted Mansion Doom Buggy Popcorn Bucket (Glow-in-Dark)", "Glow-in-Dark", "high", 130),
+
+        # ── Swarovski — Size Variants ────────────────────────────────────
+        ("swarovski", "Swarovski Crystal Mickey Mouse Mini Figurine", "Premium", "high", 80),
+        ("swarovski", "Swarovski Crystal Mickey Mouse Large Figurine", "Premium", "grail", 450),
+        ("swarovski", "Swarovski Crystal Tinker Bell Mini Figurine", "Premium", "mid", 70),
+        ("swarovski", "Swarovski Crystal Bambi Mini Figurine", "Premium", "high", 100),
+
+        # ── Jim Shore — Size & Seasonal Variants ─────────────────────────
+        ("jim_shore", "Jim Shore Mickey Mouse Statement Figure Mini (4in)", "Standard", "standard", 25),
+        ("jim_shore", "Jim Shore Stitch Ohana Figurine (Large 14in)", "Limited", "high", 110),
+        ("jim_shore", "Jim Shore Stitch Christmas Figurine", "Seasonal", "mid", 55),
+        ("jim_shore", "Jim Shore Mickey Mouse Halloween Figurine", "Seasonal", "mid", 60),
+
+        # ── Galaxy's Edge — Color Variants ───────────────────────────────
+        ("galaxys_edge", "Galaxy's Edge Legacy Lightsaber (Luke Skywalker Green)", "Park Exclusive", "high", 190),
+        ("galaxys_edge", "Galaxy's Edge Kyber Crystal (Red)", "Park Exclusive", "standard", 15),
+        ("galaxys_edge", "Galaxy's Edge Kyber Crystal (Black Obsidian)", "Park Exclusive", "high", 80),
+        ("galaxys_edge", "Galaxy's Edge Droid Depot Custom BB Unit", "Park Exclusive", "high", 110),
+
+        # ── WDCC — Size & Anniversary Variants ───────────────────────────
+        ("wdcc", "WDCC Cinderella 'A Lovely Dress' Mini Figurine", "WDCC", "high", 120),
+        ("wdcc", "WDCC Fantasia Sorcerer Mickey 25th Anniversary Edition", "WDCC", "grail", 380),
+        ("wdcc", "WDCC Bambi 'The Young Prince' Mini Figurine", "WDCC", "mid", 70),
+
+        # ── Lorcana — Foil & Promo Variants ──────────────────────────────
+        ("lorcana", "Lorcana Stitch Rock Star Enchanted (Cold Foil)", "Enchanted Rare", "grail", 250),
+        ("lorcana", "Lorcana Mickey Mouse Brave Little Tailor Promo (Store Championship)", "Promo LE", "high", 95),
+    ]
+
+    result = []
+    for subcategory, name, edition, tier, price in variants:
+        result.append({
+            "subcategory": subcategory,
+            "name": name,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return result
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:
@@ -1029,6 +1212,11 @@ def item_to_price_observation(item: dict) -> PriceObservation:
         "DCL Exclusive": 0.7,
         "D100 LE": 0.85, "LE 500": 0.97,
         "Sealed": 0.7, "Enchanted": 0.95, "Promo LE": 0.6,
+        "Glow-in-Dark": 0.8, "Metallic LE": 0.8, "Diamond LE": 0.85,
+        "Flocked LE": 0.75, "Seasonal LE": 0.65,
+        "shopDisney LE": 0.7, "Hallmark Exclusive": 0.55,
+        "Store Exclusive": 0.6, "Swarovski LE": 0.9, "Funko Exclusive": 0.75,
+        "Disney Traditions": 0.5,
         "Standard": 0.2,
     }
 

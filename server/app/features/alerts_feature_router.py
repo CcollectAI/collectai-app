@@ -205,8 +205,8 @@ async def create_or_update_alert(
             region=region,
             country_code=country,
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Demand signal recording failed (best-effort): %s", e)
 
     return alert
 

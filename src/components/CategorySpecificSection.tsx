@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { CATEGORY_VISUAL } from "@/data/categories";
 import { useAppTheme } from "@/theme/useAppTheme";
+import { useSettings } from "@/lib/settings";
 import logger from "@/utils/logger";
 
 // Sneaker size options (US sizing)
@@ -42,15 +43,6 @@ interface CategorySpecificSectionProps {
   sizeSystem: "us" | "eu" | "uk" | "mm";
   sizeSaving: boolean;
   notes: string;
-  hapticsEnabled: boolean;
-  theme: {
-    text: string;
-    muted: string;
-    accent: string;
-    border: string;
-    background: string;
-    card: string;
-  };
   onSizeChange: (size: string, system: string) => void;
   onSizeSystemChange: (system: "us" | "eu" | "uk") => void;
   onSizeValueChange: (size: string) => void;
@@ -65,14 +57,15 @@ function CategorySpecificSectionInner({
   sizeSystem,
   sizeSaving,
   notes,
-  hapticsEnabled,
-  theme,
   onSizeChange,
   onSizeSystemChange,
   onSizeValueChange,
 }: CategorySpecificSectionProps) {
   const id = itemId;
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
+  const hapticsEnabled = settings.hapticsEnabled;
+  const theme = colors;
   const catVisual = CATEGORY_VISUAL[categorySlug as keyof typeof CATEGORY_VISUAL];
   const catAccent = catVisual?.accentColor ?? theme.accent;
 
@@ -1168,6 +1161,153 @@ function CategorySpecificSectionInner({
               <Text style={[s.vaultedBadgeText, { color: itemAttributes.completeness === "sealed" ? colors.success : colors.warning }]}>
                 {String(itemAttributes.completeness).toUpperCase()}
               </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ── Pattern: OOP Board Games ────────────────── */}
+      {categorySlug === "oop_board_games" && (
+        <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
+          <View style={s.sectionHeaderRow}>
+            <View style={s.sectionHeaderLeft}>
+              <Ionicons name="dice-outline" size={20} color={catAccent} />
+              <Text style={[s.sectionTitle, { color: theme.text }]}>Board Game Details</Text>
+            </View>
+          </View>
+          {!!itemAttributes?.publisher && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="business-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Publisher</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.publisher)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.designer && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="person-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Designer</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.designer)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.player_count && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="people-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Players</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.player_count)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.edition && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="ribbon-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Edition</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.edition)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.bgg_rating && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="star-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>BGG Rating</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.bgg_rating)}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ── Pattern: City Pop Vinyl ────────────────── */}
+      {categorySlug === "city_pop_vinyl" && (
+        <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
+          <View style={s.sectionHeaderRow}>
+            <View style={s.sectionHeaderLeft}>
+              <Ionicons name="musical-note-outline" size={20} color={catAccent} />
+              <Text style={[s.sectionTitle, { color: theme.text }]}>City Pop Vinyl Details</Text>
+            </View>
+          </View>
+          {!!itemAttributes?.artist && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="mic-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Artist</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.artist)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.album && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="disc-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Album</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.album)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.label && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="business-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Label</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.label)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.pressing && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="albums-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Pressing</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.pressing)}</Text>
+            </View>
+          )}
+          {itemAttributes?.obi === true && (
+            <View style={[s.vaultedBadge, { backgroundColor: colors.successBg }]}>
+              <Ionicons name="bookmark" size={16} color={colors.success} />
+              <Text style={[s.vaultedBadgeText, { color: colors.success }]}>OBI Strip Included</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ── Pattern: Niche Perfumery (inventory tracking focus) ────────────────── */}
+      {categorySlug === "niche_perfumery" && (
+        <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
+          <View style={s.sectionHeaderRow}>
+            <View style={s.sectionHeaderLeft}>
+              <Ionicons name="rose-outline" size={20} color={catAccent} />
+              <Text style={[s.sectionTitle, { color: theme.text }]}>Fragrance Details</Text>
+            </View>
+          </View>
+          {!!itemAttributes?.house && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="business-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>House</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.house)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.fragrance_name && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="water-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Fragrance</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.fragrance_name)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.concentration && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="flask-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Concentration</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.concentration)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.size_ml && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="resize-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Size</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.size_ml)}ml</Text>
+            </View>
+          )}
+          {!!itemAttributes?.fragrance_family && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="leaf-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Family</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.fragrance_family)}</Text>
+            </View>
+          )}
+          {!!itemAttributes?.fill_level && (
+            <View style={s.legoDetailRow}>
+              <Ionicons name="beaker-outline" size={16} color={theme.muted} />
+              <Text style={[s.legoDetailLabel, { color: theme.muted }]}>Fill Level</Text>
+              <Text style={[s.legoDetailValue, { color: theme.text }]}>{String(itemAttributes.fill_level)}</Text>
             </View>
           )}
         </View>

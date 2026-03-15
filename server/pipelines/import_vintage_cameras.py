@@ -368,7 +368,6 @@ def _vintage_lenses() -> list[tuple]:
 def _point_and_shoot_cameras() -> list[tuple]:
     """12 cult point-and-shoot and compact cameras."""
     return [
-        ("TC-1", "Minolta", "compact", "1996-2003", 1200, "Excellent", True, "Rare", "Titanium luxury compact, 28mm f/3.5 G-Rokkor"),
         ("Ricoh GR1v", "Nikon", "compact", "1998-2001", 700, "Excellent", True, "Limited Edition", "28mm f/2.8 GR lens, snap focus, titanium"),
         ("Ricoh GR1s", "Nikon", "compact", "1996-1998", 600, "Good", True, "Standard", "Original Ricoh GR, 28mm f/2.8, compact legend"),
         ("Yashica T4 (T5 in EU)", "Yashica", "point-and-shoot", "1990-2001", 500, "Excellent", True, "Limited Edition", "Carl Zeiss T* Tessar 35mm f/3.5, cult compact"),
@@ -1047,7 +1046,6 @@ def _round6_expansion() -> list[tuple]:
         ("Canon A-1 Black", "Canon", "SLR", "1978-1985", 350, "Excellent", False, "Standard", "Five auto modes, LCD viewfinder, Canon flagship"),
         ("Canon F-1n (New F-1)", "Canon", "SLR", "1981-1992", 500, "Excellent", False, "Standard", "Pro modular body, interchangeable finders/screens"),
         ("Canon F-1n 1984 Olympic", "Canon", "SLR", "1984-1984", 800, "Excellent", False, "Rare", "LA Olympics edition, special grip, commemorative"),
-        ("Canon T90", "Canon", "SLR", "1986-1992", 300, "Excellent", False, "Standard", "Last FD-mount, designed by Colani, electronic pioneer"),
 
         # --- Contax T2/T3 (8) ---
         ("Contax T2 Titanium Silver", "Contax", "point and shoot", "1990-1998", 1800, "Excellent", True, "Rare", "Carl Zeiss Sonnar 38mm f/2.8, titanium body, cult classic"),
@@ -1101,13 +1099,174 @@ def _round6_expansion() -> list[tuple]:
         ("Canon Dial 35", "Canon", "point and shoot", "1963-1967", 250, "Good", True, "Rare", "Half-frame with unique dial advance, Selenium meter"),
         ("Voigtlander Bessa R3A", "Voigtlander", "rangefinder", "2004-2010", 800, "Excellent", False, "Standard", "M-mount, 1:1 viewfinder, aperture priority AE"),
         ("Voigtlander Bessa R2A", "Voigtlander", "rangefinder", "2004-2010", 650, "Excellent", False, "Standard", "M-mount, 0.7x viewfinder, compact body"),
-        ("Bronica SQ-Ai", "Bronica", "medium format", "1990-2004", 450, "Good", False, "Standard", "6x6 medium format SLR, electronic shutter, modular"),
-        ("Mamiya 645 Pro TL", "Mamiya", "medium format", "1990-2001", 500, "Good", False, "Standard", "6x4.5 medium format with TTL metering prism"),
-        ("Yashica Electro 35 GSN", "Yashica", "rangefinder", "1973-1975", 180, "Good", True, "Standard", "45mm f/1.7, battery-dependent AE, cult classic"),
         ("Fujica GW690 III", "Fuji", "medium format", "1984-1997", 750, "Good", True, "Standard", "6x9 rangefinder, Texas Leica, 90mm f/3.5"),
         ("Lomo LC-A", "LOMO", "point and shoot", "1984-2005", 200, "Good", True, "Standard", "Minitar-1 32mm f/2.8, Soviet-era cult camera"),
-        ("Nikon FM3A", "Nikon", "SLR", "2001-2006", 900, "Excellent", False, "Rare", "Last manual focus Nikon, hybrid AE/manual shutter"),
         ("Leica CL (Leitz-Minolta)", "Leica", "rangefinder", "1973-1976", 1200, "Good", False, "Rare", "Compact M-mount, Leitz-Minolta collab, 40mm f/2"),
+    ]
+
+
+# === ROUND 7 — Lens variants & body color/material variants ===
+
+
+def _round7_lens_variants() -> list[tuple]:
+    """Round 7: 55 collectible lens variants — Leica M/R, Nikon F, Canon FD,
+    Pentax, Minolta, Carl Zeiss, Voigtlander."""
+    return [
+        # --- Leica M-mount lenses (18) ---
+        ("Summicron 50mm f/2 V1 Collapsible", "Leica", "rangefinder", "1953-1960", 1600, "Good", True, "Rare", "First Summicron, collapsible barrel, radioactive thorium element, M-mount"),
+        ("Summicron 50mm f/2 V2 Rigid (Black)", "Leica", "rangefinder", "1956-1968", 2600, "Excellent", True, "Rare", "Black anodized rigid barrel, 7-element, M-mount"),
+        ("Summicron 50mm f/2 V3 (6-element)", "Leica", "rangefinder", "1969-1979", 2200, "Excellent", True, "Limited Edition", "6-element redesign, improved contrast, M-mount"),
+        ("Summicron 50mm f/2 V5 (Current ASPH)", "Leica", "rangefinder", "2012-present", 3200, "Mint", True, "Limited Edition", "Current production, near-APO performance, M-mount"),
+        ("Summilux 50mm f/1.4 V1 (Black Paint)", "Leica", "rangefinder", "1959-1961", 5500, "Good", True, "Rare", "First Summilux, original black paint, M-mount"),
+        ("Summilux 50mm f/1.4 V2 (Black)", "Leica", "rangefinder", "1962-2004", 2800, "Good", True, "Limited Edition", "Long-production fast 50, M-mount, warm rendering"),
+        ("Summilux 50mm f/1.4 Pre-ASPH (Late)", "Leica", "rangefinder", "1992-2004", 3000, "Excellent", True, "Limited Edition", "Last pre-ASPH version, improved coatings, M-mount"),
+        ("Summilux 50mm f/1.4 ASPH (Black)", "Leica", "rangefinder", "2004-present", 4200, "Mint", True, "Limited Edition", "Modern ASPH design, floating element, razor sharp, M-mount"),
+        ("Summilux 35mm f/1.4 V1 (Steel Rim)", "Leica", "rangefinder", "1961-1966", 4800, "Good", True, "Rare", "Steel rim first version, dreamy rendering, M-mount holy grail"),
+        ("Summilux 35mm f/1.4 ASPH (Black)", "Leica", "rangefinder", "1994-2010", 3600, "Excellent", True, "Limited Edition", "First ASPH version, sharp wide open, M-mount"),
+        ("Summilux 35mm f/1.4 ASPH FLE (Black)", "Leica", "rangefinder", "2010-present", 4500, "Mint", True, "Limited Edition", "Floating Lens Element, current 35 Lux, M-mount"),
+        ("Elmarit 28mm f/2.8 V3 (Pre-ASPH)", "Leica", "rangefinder", "1979-1993", 1800, "Excellent", True, "Standard", "Compact M-mount wide-angle, 9-element, Canadian-made"),
+        ("Noctilux 50mm f/0.95 ASPH (Black)", "Leica", "rangefinder", "2008-present", 12500, "Mint", True, "Rare", "Fastest aspherical production lens, M-mount dream lens"),
+        ("Noctilux 50mm f/1.0 V2 (E60)", "Leica", "rangefinder", "1976-1982", 7000, "Good", True, "Rare", "60mm filter version, non-aspherical, vintage glow, M-mount"),
+        ("Noctilux 50mm f/1.0 V4 (Last)", "Leica", "rangefinder", "1994-2008", 9500, "Excellent", True, "Rare", "Final f/1.0, built-in hood, M-mount, cult following"),
+
+        # --- Leica R-mount lenses (3) ---
+        ("Summicron-R 50mm f/2 (3-cam)", "Leica", "SLR", "1976-2009", 600, "Excellent", True, "Standard", "Sharp R-mount standard, 3-cam bayonet, versatile prime"),
+        ("Summilux-R 50mm f/1.4 (3-cam)", "Leica", "SLR", "1970-2009", 1200, "Good", True, "Limited Edition", "Fast R-mount standard, Mandler design, warm rendering"),
+        ("Elmarit-R 35mm f/2.8 (3-cam)", "Leica", "SLR", "1970-1997", 500, "Good", True, "Standard", "Compact R-mount wide-angle, excellent contrast"),
+
+        # --- Nikon F-mount lenses (7) ---
+
+        # --- Canon FD lenses (5) ---
+        ("Canon FD 50mm f/1.4 S.S.C.", "Canon", "SLR", "1973-1979", 200, "Good", True, "Standard", "Super Spectra Coating, smooth bokeh, breech lock mount"),
+        ("Canon FD 35mm f/2 S.S.C.", "Canon", "SLR", "1973-1979", 300, "Good", True, "Standard", "Compact wide-angle, SSC coated, sharp rendering"),
+        ("Canon FD 24mm f/1.4 L Aspherical", "Canon", "SLR", "1975-1989", 1900, "Good", True, "Rare", "Ultra-fast wide L lens, hand-ground aspherical, museum piece"),
+
+        # --- Pentax lenses (3) ---
+        ("SMC Takumar 50mm f/1.4 (8-element)", "Pentax", "SLR", "1971-1975", 160, "Good", True, "Standard", "8-element SMC coated, sharper than Super-Tak, M42 mount"),
+        ("Super Takumar 55mm f/1.8 (M42)", "Pentax", "SLR", "1964-1971", 80, "Good", True, "Standard", "Iconic budget classic, warm rendering, thorium element"),
+        ("SMC Pentax-FA 77mm f/1.8 Limited", "Pentax", "SLR", "1999-present", 850, "Excellent", True, "Limited Edition", "Aluminium barrel, razor sharp portrait lens, K-mount"),
+
+        # --- Minolta lenses (3) ---
+        ("MC Rokkor-PG 58mm f/1.2", "Minolta", "SLR", "1969-1977", 550, "Good", True, "Rare", "Ultra-fast Rokkor, dreamy wide open, 7-element, SR/MC mount"),
+        ("MC Rokkor-PF 50mm f/1.4", "Minolta", "SLR", "1966-1977", 120, "Good", True, "Standard", "Standard fast normal Rokkor, multi-coated, SR/MC mount"),
+        ("MD Zoom 35-70mm f/3.5 Macro", "Minolta", "SLR", "1981-1988", 80, "Good", True, "Standard", "Versatile MD zoom with macro, compact, sharp for era"),
+
+        # --- Carl Zeiss lenses (3) ---
+        ("Planar 50mm f/1.4 ZF.2 (Nikon F)", "Nikon", "SLR", "2009-present", 700, "Excellent", True, "Standard", "Modern Zeiss for Nikon F-mount, T* coating, CPU-coupled"),
+        ("Distagon 35mm f/1.4 ZM (M-mount)", "Leica", "rangefinder", "2010-present", 1100, "Mint", True, "Standard", "Zeiss for Leica M-mount, ultra-fast wide-angle, floating elements"),
+        ("Sonnar 85mm f/2 ZM (M-mount)", "Leica", "rangefinder", "2005-present", 950, "Mint", True, "Standard", "Compact Zeiss tele for M-mount, classic Sonnar rendering"),
+
+        # --- Voigtlander lenses (3) ---
+        ("Nokton 50mm f/1.5 Aspherical VM", "Voigtlander", "rangefinder", "2008-present", 500, "Excellent", True, "Standard", "M-mount, vintage-style rendering, Cosina-made, compact"),
+        ("Nokton Classic 35mm f/1.4 MC VM", "Voigtlander", "rangefinder", "2006-present", 550, "Excellent", True, "Standard", "Multi-coated M-mount wide, classic look, compact barrel"),
+        ("Nokton 40mm f/1.2 Aspherical VM", "Voigtlander", "rangefinder", "2017-present", 900, "Mint", True, "Standard", "Ultra-fast M-mount, razor thin DOF, bokeh monster"),
+
+        # --- Additional Leica M-mount (3) ---
+        ("Summicron 50mm f/2 V4 (Pre-ASPH, Black)", "Leica", "rangefinder", "1979-1994", 1900, "Excellent", True, "Limited Edition", "4th gen Summicron, 6-element, compact, sharp wide open, M-mount"),
+        ("Summilux 50mm f/1.4 V3 (Silver Chrome)", "Leica", "rangefinder", "1962-2004", 3200, "Good", True, "Rare", "Silver chrome barrel variant, less common than black, M-mount"),
+        ("Elmarit 28mm f/2.8 V4 ASPH", "Leica", "rangefinder", "1993-2000", 2400, "Excellent", True, "Limited Edition", "ASPH element, ultra-compact M-mount wide-angle, 6-bit coded"),
+
+        # --- Additional Nikon F-mount (2) ---
+        ("Micro-Nikkor 55mm f/2.8 AI-S", "Nikon", "SLR", "1981-present", 250, "Excellent", True, "Standard", "1:2 macro, legendary sharpness, flat field, industrial standard"),
+        ("Nikkor 50mm f/2 AI (Pancake-style)", "Nikon", "SLR", "1977-1979", 180, "Good", True, "Standard", "Compact f/2 normal, budget classic, AI coupling, excellent rendering"),
+
+        # --- Additional Canon FD (2) ---
+        ("Canon nFD 50mm f/1.4 (New FD)", "Canon", "SLR", "1979-1989", 180, "Good", True, "Standard", "New FD bayonet mount, improved coatings, compact design"),
+        ("Canon FD 135mm f/2 (Rare)", "Canon", "SLR", "1975-1989", 650, "Good", True, "Rare", "Fast telephoto portrait lens, rare f/2 aperture, excellent bokeh"),
+
+        # --- Additional Pentax (2) ---
+        ("Super Takumar 50mm f/1.4 (7-element)", "Pentax", "SLR", "1964-1971", 130, "Good", True, "Standard", "7-element, radioactive thorium, warm vintage rendering, M42"),
+        ("SMC Pentax-M 50mm f/1.7", "Pentax", "SLR", "1977-1984", 80, "Good", True, "Standard", "Compact K-mount normal, budget classic, sharp stopped down"),
+
+        # --- Additional Minolta (1) ---
+        ("MD Rokkor 50mm f/1.7", "Minolta", "SLR", "1978-1985", 60, "Good", True, "Standard", "Budget MD-mount normal, great starter lens, 7-element"),
+
+        # --- Additional Zeiss/Voigtlander (3) ---
+        ("Planar 50mm f/1.4 ZE (Canon EF)", "Canon", "SLR", "2009-present", 700, "Excellent", True, "Standard", "Zeiss for Canon EF mount, T* coating, manual focus only"),
+        ("Voigtlander Nokton 50mm f/1.1 VM", "Voigtlander", "rangefinder", "2009-present", 1000, "Mint", True, "Standard", "Ultra-fast M-mount, 7-element, f/1.1 dream lens, aspherical"),
+        ("Voigtlander Color-Skopar 21mm f/4 VM", "Voigtlander", "rangefinder", "2001-present", 450, "Excellent", True, "Standard", "Ultra-wide M-mount pancake, compact, sharp, external finder"),
+    ]
+
+
+def _round7_body_variants() -> list[tuple]:
+    """Round 7: 48 camera body color/material/model variants."""
+    return [
+        # --- Leica M6 variants (4) ---
+        ("M6 Classic Silver Chrome", "Leica", "rangefinder", "1984-1998", 3400, "Excellent", False, "Limited Edition", "Silver chrome body, 0.72x finder, built-in meter"),
+        ("M6 TTL 0.72 Silver Chrome", "Leica", "rangefinder", "1998-2002", 3500, "Excellent", False, "Limited Edition", "Silver TTL variant, through-the-lens metering"),
+        ("M6 Classic Black Chrome 0.72", "Leica", "rangefinder", "1984-1998", 3600, "Excellent", False, "Limited Edition", "Standard black chrome, most common M6 variant"),
+        ("M6 Classic Black Chrome 0.58", "Leica", "rangefinder", "1984-1998", 3800, "Excellent", False, "Rare", "Wide-angle 0.58x viewfinder, black chrome, less common"),
+
+        # --- Leica M3 variants (2) ---
+        ("M3 Single Stroke Chrome", "Leica", "rangefinder", "1958-1966", 2600, "Excellent", False, "Limited Edition", "Late production single-stroke advance, chrome body"),
+        ("M3 Double Stroke Chrome (Early)", "Leica", "rangefinder", "1954-1958", 3000, "Good", False, "Rare", "Early production double-stroke, chrome, higher collector value"),
+
+        # --- Leica M4 variants (2) ---
+        ("M4 Black Paint (Original)", "Leica", "rangefinder", "1969-1975", 8000, "Good", False, "Rare", "Factory black paint, brass showing through, photojournalist patina"),
+        ("M4 Chrome (Standard)", "Leica", "rangefinder", "1967-1975", 2600, "Excellent", False, "Limited Edition", "Standard chrome finish, self-timer, rapid-load lever"),
+
+        # --- Leica M2 variants (2) ---
+        ("M2 Black Paint (Original)", "Leica", "rangefinder", "1957-1967", 7500, "Good", False, "Rare", "Factory black paint M2, extremely rare, brassing patina prized"),
+        ("M2 Chrome (Standard)", "Leica", "rangefinder", "1957-1967", 2000, "Good", False, "Standard", "Standard chrome M2, self-timer, 35/50/90mm framelines"),
+
+        # --- Nikon F variants (2) ---
+        ("F Plain Prism Chrome", "Nikon", "SLR", "1959-1974", 500, "Good", False, "Limited Edition", "Eye-level prism finder, mechanical flagship, fully manual"),
+        ("F Photomic FTn Black", "Nikon", "SLR", "1968-1974", 450, "Good", False, "Standard", "Center-weighted metering finder, black body, pro workhorse"),
+
+        # --- Nikon F2 variants (3) ---
+        ("F2 Photomic Chrome", "Nikon", "SLR", "1971-1980", 500, "Good", False, "Standard", "DP-1 metering head, chrome body, mechanical precision"),
+        ("F2AS Black", "Nikon", "SLR", "1977-1980", 650, "Excellent", False, "Limited Edition", "AI-S metering prism, black body, LED meter display"),
+        ("F2 Titan (Uemura Memorial)", "Nikon", "SLR", "1978-1980", 2800, "Excellent", False, "Rare", "Titanium body, Arctic expedition camera, extremely collectible"),
+
+        # --- Nikon FM2 variants (4) ---
+        ("FM2 Black Body", "Nikon", "SLR", "1982-1984", 400, "Good", False, "Standard", "Original FM2, aluminum honeycomb shutter, 1/4000s"),
+        ("FM2 Chrome Body", "Nikon", "SLR", "1982-1984", 380, "Good", False, "Standard", "Chrome variant FM2, aluminum honeycomb shutter"),
+        ("FM2n Black Body", "Nikon", "SLR", "1984-2001", 480, "Excellent", False, "Standard", "Updated titanium shutter, improved flash sync, black"),
+        ("FM2/T Titanium (Champagne)", "Nikon", "SLR", "1993-1995", 1300, "Excellent", False, "Rare", "Full titanium body, champagne finish, limited production"),
+
+        # --- Canon AE-1 variants (4) ---
+        ("AE-1 Black Body", "Canon", "SLR", "1976-1984", 220, "Good", False, "Standard", "Black chrome variant, first microprocessor-controlled SLR"),
+        ("AE-1 Chrome Body", "Canon", "SLR", "1976-1984", 180, "Good", False, "Standard", "Original chrome finish, iconic beginner SLR of the 1970s"),
+        ("AE-1 Program Black Body", "Canon", "SLR", "1981-1987", 260, "Excellent", False, "Standard", "Program AE added, black body, upgraded metering"),
+        ("AE-1 Program Chrome Body", "Canon", "SLR", "1981-1987", 240, "Excellent", False, "Standard", "Chrome program variant, shutter-priority + program AE"),
+
+        # --- Olympus OM-1 variants (4) ---
+        ("OM-1 Black Body", "Olympus", "SLR", "1972-1979", 380, "Excellent", False, "Standard", "Black chrome OM-1, compact mechanical SLR, Maitani design"),
+        ("OM-1 Chrome Body", "Olympus", "SLR", "1972-1979", 320, "Good", False, "Standard", "Silver chrome OM-1, original finish, match-needle meter"),
+        ("OM-1n Black Body", "Olympus", "SLR", "1979-1987", 420, "Excellent", False, "Standard", "Updated OM-1 with flash ready signal, black chrome"),
+        ("OM-1n Chrome Body", "Olympus", "SLR", "1979-1987", 380, "Excellent", False, "Standard", "Chrome OM-1n, improved flash sync, motor drive compatible"),
+
+        # --- Contax G1 vs G2 (2) ---
+        ("G1 (Final Green Label)", "Contax", "rangefinder", "1994-2005", 550, "Good", False, "Standard", "Updated AF firmware, Carl Zeiss T* lenses, titanium body"),
+        ("G2 (Final Production)", "Contax", "rangefinder", "1996-2005", 1400, "Excellent", False, "Limited Edition", "Improved AF speed, 35mm/45mm/90mm Zeiss lenses, titanium"),
+
+        # --- Contax RTS variants (3) ---
+        ("RTS Original", "Contax", "SLR", "1974-1985", 280, "Good", False, "Standard", "First Yashica/Contax SLR, quartz timing, Porsche design"),
+        ("RTS II Quartz", "Contax", "SLR", "1982-1990", 380, "Good", False, "Standard", "Titanium shutter, real-time winder, improved metering"),
+        ("RTS III Professional", "Contax", "SLR", "1990-2000", 750, "Good", False, "Standard", "Vacuum film plane, ceramic pressure plate, ultimate C/Y body"),
+
+        # --- Hasselblad 500 variants (3) ---
+        ("500C Chrome (Original)", "Hasselblad", "medium format", "1957-1970", 1500, "Good", True, "Rare", "First V-system, Compur shutter, interchangeable backs"),
+        ("500C/M Chrome (Standard)", "Hasselblad", "medium format", "1970-1994", 2000, "Excellent", True, "Standard", "Interchangeable screen, user-replaceable, chrome body"),
+        ("503CX Black", "Hasselblad", "medium format", "1988-1994", 2400, "Excellent", True, "Limited Edition", "Gliding mirror, TTL flash, Acute Matte screen, black body"),
+
+        # --- Rolleiflex TLR variants (3) ---
+        ("2.8F Planar (Late White Face)", "Rolleiflex", "TLR", "1960-1981", 2800, "Excellent", True, "Rare", "White face Planar 80mm f/2.8, definitive TLR, EV meter"),
+        ("2.8E Planar (Early)", "Rolleiflex", "TLR", "1956-1959", 1600, "Good", True, "Limited Edition", "Pre-F model, selenium meter, Planar 80mm f/2.8"),
+        ("3.5F Planar (White Face)", "Rolleiflex", "TLR", "1958-1976", 2000, "Excellent", True, "Rare", "White face 75mm Planar f/3.5, lighter body, EV meter"),
+
+        # --- Polaroid SX-70 variants (3) ---
+        ("SX-70 Original Chrome/Tan", "Polaroid", "instant", "1972-1981", 380, "Good", True, "Limited Edition", "Original chrome with tan leather, folding SLR instant icon"),
+        ("SX-70 Alpha 1 (Black/Chrome)", "Polaroid", "instant", "1977-1981", 420, "Excellent", True, "Limited Edition", "Improved SX-70, split-image focus, black body with chrome"),
+        ("SLR 680 SE", "Polaroid", "instant", "1982-1988", 450, "Excellent", True, "Limited Edition", "Sonar AF + built-in flash, upgraded SX-70 successor"),
+
+        # --- Additional FM2/FM body colors (2) ---
+        ("FM2n Chrome Body (Late)", "Nikon", "SLR", "1990-2001", 520, "Excellent", False, "Standard", "Late serial FM2n chrome, improved titanium shutter, sharp viewfinder"),
+        ("FM2/T Titanium Black", "Nikon", "SLR", "1993-1995", 1400, "Excellent", False, "Rare", "Black titanium variant, rarer than champagne, full Ti body"),
+
+        # --- Canon AE-1 Program color variants (2) ---
+        ("AE-1 Program Black with Data Back", "Canon", "SLR", "1981-1987", 300, "Excellent", False, "Standard", "Black program variant with date imprint back, FD mount"),
+        ("AE-1 Chrome with Motor Drive MA", "Canon", "SLR", "1976-1984", 280, "Good", False, "Standard", "Chrome AE-1 with optional Motor Drive MA, 3.5fps continuous"),
     ]
 
 
@@ -1166,6 +1325,9 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_round5_expansion())
     # Round 6 expansion
     all_tuples.extend(_round6_expansion())
+    # Round 7 — lens variants & body color/material variants
+    all_tuples.extend(_round7_lens_variants())
+    all_tuples.extend(_round7_body_variants())
 
     catalog: list[dict] = []
     for name, brand, cam_type, year_range, price_eur, condition, has_lens, rarity, notes in all_tuples:
@@ -1180,7 +1342,15 @@ def get_curated_catalog() -> list[dict]:
             "rarity": rarity,
             "notes": notes,
         })
-    return catalog
+    # Deduplicate by ('name', 'brand', 'type') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["name"], item["brand"], item["type"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 # ---------------------------------------------------------------------------

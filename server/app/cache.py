@@ -78,7 +78,7 @@ class CacheBackend(abc.ABC):
 class InMemoryCache(CacheBackend):
     """Dict-based cache with per-entry TTL (single-process only)."""
 
-    _CLEANUP_INTERVAL: int = 100
+    _CLEANUP_INTERVAL: int = 1000
     MAX_ENTRIES: int = 10_000
 
     def __init__(self) -> None:

@@ -70,6 +70,8 @@ BRAND_TIER: dict[str, float] = {
     "Esterbrook": 0.6,
     "Kaweco": 0.5,
     "Faber-Castell": 0.6,
+    "Cross": 0.7,
+    "Noodler's": 0.4,
 }
 
 # ---------------------------------------------------------------------------
@@ -1417,6 +1419,305 @@ def _additional_brands_round3() -> list[tuple]:
 
 
 # ---------------------------------------------------------------------------
+# VARIANT COVERAGE EXPANSION — ~100 pens focused on nib/color variants
+# ---------------------------------------------------------------------------
+
+
+def _montblanc_nib_variants() -> list[tuple]:
+    """14 Montblanc nib-size and model variants — Meisterstueck 149/146/145, StarWalker, Heritage, Writers Edition."""
+    return [
+        # Meisterstueck 149 nib variants
+        ("Meisterstueck 149 EF Nib", "Montblanc", "Meisterstueck", "18k Gold", "EF",
+         "piston", 950, False, "Standard", "Flagship with extra-fine nib, precise line"),
+        ("Meisterstueck 149 F Nib", "Montblanc", "Meisterstueck", "18k Gold", "F",
+         "piston", 950, False, "Standard", "Flagship with fine nib, everyday writer"),
+        ("Meisterstueck 149 B Nib", "Montblanc", "Meisterstueck", "18k Gold", "B",
+         "piston", 950, False, "Standard", "Flagship with broad nib, expressive line"),
+        ("Meisterstueck 149 BB Nib", "Montblanc", "Meisterstueck", "18k Gold", "BB",
+         "piston", 1000, False, "Standard", "Flagship with double-broad nib, rare width"),
+        ("Meisterstueck 149 OB Nib", "Montblanc", "Meisterstueck", "18k Gold", "OB",
+         "piston", 1050, False, "Standard", "Oblique broad nib, angled for right-handers"),
+        ("Meisterstueck 149 OBB Nib", "Montblanc", "Meisterstueck", "18k Gold", "OBB",
+         "piston", 1100, False, "Standard", "Oblique double-broad, rarest standard nib option"),
+        # Meisterstueck 146 nib variants
+        ("Meisterstueck 146 Le Grand EF Nib", "Montblanc", "Meisterstueck", "14k Gold", "EF",
+         "piston", 750, False, "Standard", "Mid-size classic, extra-fine nib"),
+        ("Meisterstueck 146 Le Grand B Nib", "Montblanc", "Meisterstueck", "14k Gold", "B",
+         "piston", 750, False, "Standard", "Mid-size classic, broad nib"),
+        # Meisterstueck 145 nib variants
+        ("Meisterstueck 145 Classique F Nib", "Montblanc", "Meisterstueck", "14k Gold", "F",
+         "converter", 580, False, "Standard", "Slim profile, fine nib for detail work"),
+        ("Meisterstueck 145 Classique B Nib", "Montblanc", "Meisterstueck", "14k Gold", "B",
+         "converter", 580, False, "Standard", "Slim profile, broad nib for signatures"),
+        # StarWalker / Heritage / Writers Edition variants
+        ("StarWalker Midnight Black", "Montblanc", "StarWalker", "14k Gold", "B",
+         "converter", 680, False, "Standard", "Midnight black resin, floating MB dome"),
+        ("Heritage Rouge et Noir Spider Metamorphosis", "Montblanc", "Heritage", "14k Gold", "F",
+         "piston", 950, True, "Limited Edition", "Spider web pattern, black/red lacquer"),
+        ("Writers Edition Ernest Hemingway", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 3500, True, "Limited Edition", "1992 inaugural LE, orange/brown, most sought after"),
+        ("Writers Edition Homage to Shakespeare", "Montblanc", "Writers Edition", "18k Gold", "F",
+         "piston", 1200, True, "Limited Edition", "2016 LE, feather-cut cap, vermeil accents"),
+    ]
+
+
+def _pelikan_stripe_nib_variants() -> list[tuple]:
+    """14 Pelikan stripe color and nib-size variants — M800/M1000/M400/M600."""
+    return [
+        # M800 stripe colors with different nibs
+        ("Souveraen M800 Green-Black EF Nib", "Pelikan", "Souveraen", "18k Gold", "EF",
+         "piston", 550, False, "Standard", "Classic green stripes, extra-fine nib"),
+        ("Souveraen M800 Green-Black F Nib", "Pelikan", "Souveraen", "18k Gold", "F",
+         "piston", 550, False, "Standard", "Classic green stripes, fine nib"),
+        ("Souveraen M800 Green-Black B Nib", "Pelikan", "Souveraen", "18k Gold", "B",
+         "piston", 550, False, "Standard", "Classic green stripes, broad nib"),
+        ("Souveraen M800 Red-Black F Nib", "Pelikan", "Souveraen", "18k Gold", "F",
+         "piston", 580, False, "Standard", "Red tortoiseshell stripes, fine nib"),
+        ("Souveraen M800 Burnt Orange M Nib", "Pelikan", "Souveraen", "18k Gold", "M",
+         "piston", 680, True, "Limited Edition", "2015 SE, vivid burnt orange stripes, medium nib"),
+        # M1000 nib variants
+        ("Souveraen M1000 EF Nib", "Pelikan", "Souveraen", "18k Gold", "EF",
+         "piston", 750, False, "Standard", "Largest Souveraen with extra-fine nib, rare combo"),
+        ("Souveraen M1000 F Nib", "Pelikan", "Souveraen", "18k Gold", "F",
+         "piston", 750, False, "Standard", "Oversize nib in fine, great line variation"),
+        ("Souveraen M1000 M Nib", "Pelikan", "Souveraen", "18k Gold", "M",
+         "piston", 750, False, "Standard", "Oversize medium nib, buttery smooth writer"),
+        # M400/M600 smaller sizes for smaller hands
+        ("Souveraen M400 Green-Black M Nib", "Pelikan", "Souveraen", "14k Gold", "M",
+         "piston", 350, False, "Standard", "Compact size ideal for smaller hands, green stripes"),
+        ("Souveraen M400 Blue-Black EF Nib", "Pelikan", "Souveraen", "14k Gold", "EF",
+         "piston", 350, False, "Standard", "Blue stripes, compact size, extra-fine nib"),
+        ("Souveraen M600 Black M Nib", "Pelikan", "Souveraen", "14k Gold", "M",
+         "piston", 380, False, "Standard", "Full-size all-black, gold trim, medium nib"),
+        ("Souveraen M600 Green-Black EF Nib", "Pelikan", "Souveraen", "14k Gold", "EF",
+         "piston", 380, False, "Standard", "Classic green stripes, extra-fine nib"),
+        ("Souveraen M600 Red-White F Nib", "Pelikan", "Souveraen", "14k Gold", "F",
+         "piston", 430, True, "Limited Edition", "Red and white SE stripes, fine nib"),
+        ("Souveraen M400 Tortoiseshell Red F Nib", "Pelikan", "Souveraen", "14k Gold", "F",
+         "piston", 360, False, "Standard", "Red tortoiseshell compact, fine nib"),
+    ]
+
+
+def _sailor_nib_specialty_variants() -> list[tuple]:
+    """16 Sailor nib type variants — Pro Gear, KoP, 1911 with specialty and standard nibs."""
+    return [
+        # Pro Gear nib variants
+        ("Pro Gear Black MF Nib", "Sailor", "Pro Gear", "21k Gold", "MF",
+         "converter", 350, False, "Standard", "Flat-top, medium-fine for detailed writing"),
+        ("Pro Gear Black B Nib", "Sailor", "Pro Gear", "21k Gold", "B",
+         "converter", 350, False, "Standard", "Flat-top, broad nib for bold strokes"),
+        ("Pro Gear Music Nib", "Sailor", "Pro Gear", "21k Gold", "Music",
+         "converter", 480, False, "Standard", "Triple-tine music nib, wet line variation"),
+        ("Pro Gear Zoom Nib Black", "Sailor", "Pro Gear", "21k Gold", "Zoom",
+         "converter", 480, False, "Standard", "Zoom nib, line varies with writing speed"),
+        # King of Pen nib variants
+        ("King of Pen Black B Nib", "Sailor", "King of Pen", "21k Gold", "B",
+         "converter", 850, False, "Standard", "Oversized flagship with broad nib"),
+        ("King of Pen Black MF Nib", "Sailor", "King of Pen", "21k Gold", "MF",
+         "converter", 850, False, "Standard", "Oversized with medium-fine nib"),
+        # 1911 nib variants
+        ("1911 Large Black F Nib", "Sailor", "1911", "21k Gold", "F",
+         "converter", 400, False, "Standard", "Classic cigar shape, fine 21k nib"),
+        ("1911 Large Black B Nib", "Sailor", "1911", "21k Gold", "B",
+         "converter", 400, False, "Standard", "Classic cigar shape, broad 21k nib"),
+        # Specialty nib grinds
+        ("1911 Large Cross Point Nib", "Sailor", "1911", "21k Gold", "Cross Point",
+         "converter", 800, False, "Standard", "Dual-direction cross-point nib, writes two line widths"),
+        ("1911 Large Naginata Togi MF", "Sailor", "1911", "21k Gold", "Naginata Togi",
+         "converter", 900, False, "Standard", "Traditional naginata grind, line variation with angle"),
+        ("Pro Gear Naginata Concord", "Sailor", "Pro Gear", "21k Gold", "Naginata Concord",
+         "converter", 1050, False, "Standard", "Specialty Concord nib, dual tipping points"),
+        ("1911 Large Long-Medium Nib", "Sailor", "1911", "21k Gold", "Long-Medium",
+         "converter", 500, False, "Standard", "Extended tipping for smoother, wetter medium line"),
+        ("1911 Large Long-Fine Nib", "Sailor", "1911", "21k Gold", "Long-Fine",
+         "converter", 500, False, "Standard", "Extended tipping for smoother fine writing"),
+        ("Pro Gear Naginata Emperor", "Sailor", "Pro Gear", "21k Gold", "Naginata Emperor",
+         "converter", 1200, False, "Standard", "Premium naginata grind, maximum line variation"),
+        ("Pro Gear King Cobra Cross-Point", "Sailor", "Pro Gear", "21k Gold", "Cross Point",
+         "converter", 550, False, "Standard", "Cross-point specialty, two writing angles"),
+        ("1911 Large Fude Nib", "Sailor", "1911", "21k Gold", "Fude",
+         "converter", 420, False, "Standard", "Bent fude nib for calligraphy and sketching"),
+    ]
+
+
+def _pilot_nib_color_variants() -> list[tuple]:
+    """14 Pilot nib and color variants — Custom 823, Heritage 912, Vanishing Point."""
+    return [
+        # Custom 823 nib variants
+        ("Custom 823 Amber FA Nib", "Pilot", "Custom", "14k Gold (Soft)", "FA",
+         "vacuum", 350, False, "Standard", "Vacuum-fill with falcon soft nib, line variation"),
+        ("Custom 823 Amber B Nib", "Pilot", "Custom", "14k Gold", "B",
+         "vacuum", 320, False, "Standard", "Vacuum-fill with broad nib, smooth writer"),
+        ("Custom 823 Clear EF Nib", "Pilot", "Custom", "14k Gold", "EF",
+         "vacuum", 340, False, "Standard", "Clear demonstrator with extra-fine nib"),
+        # Custom Heritage 912 specialty nibs
+        ("Custom Heritage 912 FA Nib", "Pilot", "Custom Heritage", "14k Gold (Soft)", "FA",
+         "converter", 260, False, "Standard", "Falcon soft nib on 912 body, flexible writing"),
+        ("Custom Heritage 912 PO Nib", "Pilot", "Custom Heritage", "14k Gold", "PO",
+         "converter", 250, False, "Standard", "Posting nib, ultra-fine for accounting"),
+        ("Custom Heritage 912 WA Nib", "Pilot", "Custom Heritage", "14k Gold", "WA",
+         "converter", 250, False, "Standard", "Waverly upturned nib, skip-free starts"),
+        ("Custom Heritage 912 SU Nib", "Pilot", "Custom Heritage", "14k Gold", "SU",
+         "converter", 250, False, "Standard", "Stub nib, italic line variation for calligraphy"),
+        # Vanishing Point color variants
+        ("Vanishing Point Blue Carbonesque", "Pilot", "Vanishing Point", "18k Gold", "F",
+         "converter", 260, False, "Standard", "Blue carbon fiber weave, retractable 18k nib"),
+        ("Vanishing Point Decimo Champagne M", "Pilot", "Vanishing Point", "18k Gold", "M",
+         "converter", 220, False, "Standard", "Slim Decimo in champagne, medium 18k nib"),
+        ("Vanishing Point Decimo Light Blue", "Pilot", "Vanishing Point", "18k Gold", "F",
+         "converter", 220, False, "Standard", "Slim Decimo in light blue, feminine design"),
+        ("Vanishing Point Raden Water Surface", "Pilot", "Vanishing Point", "18k Gold", "M",
+         "converter", 550, True, "Limited Edition", "Raden abalone inlay, water surface pattern"),
+        ("Vanishing Point Raden Stripes", "Pilot", "Vanishing Point", "18k Gold", "F",
+         "converter", 520, True, "Limited Edition", "Raden abalone striped inlay pattern"),
+        ("Vanishing Point Metallic Blue", "Pilot", "Vanishing Point", "18k Gold", "M",
+         "converter", 210, False, "Standard", "Metallic blue lacquer, classic VP design"),
+        ("Vanishing Point Burgundy", "Pilot", "Vanishing Point", "18k Gold", "F",
+         "converter", 200, False, "Standard", "Deep burgundy lacquer, gold accents"),
+    ]
+
+
+def _lamy_safari_alstar_variants() -> list[tuple]:
+    """10 Lamy Safari/Al-Star/2000 annual and color variants."""
+    return [
+        # Safari annual special editions
+        ("Safari Candy Violet", "Lamy", "Safari", "Steel", "M",
+         "converter", 75, True, "Limited Edition", "2020 Candy series, violet translucent"),
+        ("Safari Candy Mango", "Lamy", "Safari", "Steel", "F",
+         "converter", 75, True, "Limited Edition", "2020 Candy series, mango translucent"),
+        ("Safari Terra Red", "Lamy", "Safari", "Steel", "M",
+         "converter", 70, True, "Limited Edition", "2024 annual limited color, earth red"),
+        ("Safari Strawberry", "Lamy", "Safari", "Steel", "F",
+         "converter", 70, True, "Limited Edition", "2022 annual limited color, strawberry pink"),
+        ("Safari Charcoal", "Lamy", "Safari", "Steel", "M",
+         "converter", 30, False, "Standard", "Classic charcoal grey, popular starter pen"),
+        # Al-Star variants
+        ("Al-Star Tourmaline", "Lamy", "Al-Star", "Steel", "F",
+         "converter", 45, True, "Limited Edition", "2020 annual limited, tourmaline green"),
+        ("Al-Star Cosmic", "Lamy", "Al-Star", "Steel", "M",
+         "converter", 50, True, "Limited Edition", "2023 annual limited, cosmic blue-purple"),
+        # 2000 additional nibs
+        ("2000 Makrolon F Nib", "Lamy", "2000", "14k Gold", "F",
+         "piston", 350, False, "Standard", "Bauhaus icon with fine hooded nib"),
+        ("2000 Makrolon B Nib", "Lamy", "2000", "14k Gold", "B",
+         "piston", 350, False, "Standard", "Bauhaus icon with broad hooded nib"),
+        ("2000 Makrolon OB Nib", "Lamy", "2000", "14k Gold", "OB",
+         "piston", 380, False, "Standard", "Oblique broad variant, smoother for angled writing"),
+    ]
+
+
+def _twsbi_kaweco_affordable_variants() -> list[tuple]:
+    """14 TWSBI and Kaweco color variants — hugely popular with new collectors."""
+    return [
+        # TWSBI Eco color variants
+        ("TWSBI Eco Cement Grey", "TWSBI", "Eco", "Steel", "M",
+         "piston", 35, False, "Standard", "Cement grey demonstrator, subtle colorway"),
+        ("TWSBI Eco Coral", "TWSBI", "Eco", "Steel", "F",
+         "piston", 40, True, "Limited Edition", "Coral pink limited demonstrator"),
+        ("TWSBI Eco Turquoise", "TWSBI", "Eco", "Steel", "EF",
+         "piston", 35, False, "Standard", "Turquoise barrel, popular entry pen"),
+        ("TWSBI Eco Pastel Blue", "TWSBI", "Eco", "Steel", "M",
+         "piston", 35, False, "Standard", "Soft pastel blue demonstrator"),
+        # TWSBI Diamond 580 colors
+        ("TWSBI Diamond 580ALR Purple", "TWSBI", "Diamond 580", "Steel", "F",
+         "piston", 70, True, "Limited Edition", "Purple aluminum ring demonstrator"),
+        ("TWSBI Diamond 580 Prussian Blue", "TWSBI", "Diamond 580", "Steel", "M",
+         "piston", 65, True, "Limited Edition", "Deep Prussian blue limited edition"),
+        # TWSBI Vac700R colors
+        ("TWSBI Vac700R Smoke", "TWSBI", "Vac700R", "Steel", "F",
+         "vacuum", 65, False, "Standard", "Smoke-tinted barrel, vacuum fill, large capacity"),
+        ("TWSBI Vac700R Iris", "TWSBI", "Vac700R", "Steel", "EF",
+         "vacuum", 75, True, "Limited Edition", "Rainbow plated trim with extra-fine nib"),
+        # Kaweco Sport color variants
+        ("Kaweco Sport Classic White", "Kaweco", "Sport", "Steel", "F",
+         "converter", 25, False, "Standard", "Clean white octagonal pocket pen"),
+        ("Kaweco Sport Classic Red", "Kaweco", "Sport", "Steel", "M",
+         "converter", 25, False, "Standard", "Bright red classic pocket pen"),
+        ("Kaweco Sport Frosted Pitaya", "Kaweco", "Sport", "Steel", "F",
+         "converter", 30, False, "Standard", "Frosted pink translucent resin"),
+        ("Kaweco Sport Frosted Calligraphy Natural Coconut", "Kaweco", "Sport", "Steel", "Stub",
+         "converter", 30, False, "Standard", "Coconut white frosted with 1.1mm stub nib"),
+        ("Kaweco Classic Sport Green", "Kaweco", "Classic Sport", "Steel", "M",
+         "converter", 30, False, "Standard", "Classic octagonal design, racing green"),
+        ("Kaweco Supra Brass", "Kaweco", "Supra", "Steel", "M",
+         "converter", 120, False, "Standard", "Extendable brass pocket pen, develops patina"),
+    ]
+
+
+def _platinum_color_variants() -> list[tuple]:
+    """8 Platinum #3776 Century color variants."""
+    return [
+        ("Century #3776 Bourgogne B Nib", "Platinum", "#3776 Century", "14k Gold", "B",
+         "converter", 180, False, "Standard", "Deep red resin, broad nib for signatures"),
+        ("Century #3776 Laurel Green F Nib", "Platinum", "#3776 Century", "14k Gold", "F",
+         "converter", 200, True, "Limited Edition", "Dark green translucent, fine nib"),
+        ("Century #3776 Nice Lavande F Nib", "Platinum", "#3776 Century", "14k Gold", "F",
+         "converter", 200, True, "Limited Edition", "Lavender translucent, fine nib"),
+        ("Century #3776 Black Diamond EF Nib", "Platinum", "#3776 Century", "14k Gold", "EF",
+         "converter", 180, False, "Standard", "Flagship black with extra-fine nib"),
+        ("Century #3776 Chartres Blue B Nib", "Platinum", "#3776 Century", "14k Gold", "B",
+         "converter", 180, False, "Standard", "Translucent blue with broad nib"),
+        ("Century #3776 Chartres Blue M Nib", "Platinum", "#3776 Century", "14k Gold", "M",
+         "converter", 180, False, "Standard", "Translucent blue, most popular nib size"),
+        ("Century #3776 Nice Pur Purple", "Platinum", "#3776 Century", "14k Gold", "M",
+         "converter", 200, True, "Limited Edition", "Purple translucent resin, limited release"),
+        ("Century #3776 Shiun Purple Cloud", "Platinum", "#3776 Century", "14k Gold", "MF",
+         "converter", 380, True, "Limited Edition", "Purple cloud maki-e, dealer exclusive, MF nib"),
+    ]
+
+
+def _visconti_van_gogh_homo_sapiens_variants() -> list[tuple]:
+    """8 Visconti Homo Sapiens and Van Gogh series variants."""
+    return [
+        ("Homo Sapiens Bronze Age F Nib", "Visconti", "Homo Sapiens", "Palladium", "F",
+         "vacuum", 750, False, "Standard", "Basaltic lava, fine dreamtouch palladium nib"),
+        ("Homo Sapiens Bronze Age EF Nib", "Visconti", "Homo Sapiens", "Palladium", "EF",
+         "vacuum", 750, False, "Standard", "Basaltic lava, extra-fine dreamtouch nib"),
+        ("Homo Sapiens Dark Age M Nib", "Visconti", "Homo Sapiens", "Palladium", "M",
+         "vacuum", 800, False, "Standard", "Matte black lava, medium dreamtouch nib"),
+        ("Van Gogh Almond Blossoms", "Visconti", "Van Gogh", "Steel", "F",
+         "converter", 290, False, "Standard", "Light blue/white resin, almond branch motif"),
+        ("Van Gogh The Bedroom", "Visconti", "Van Gogh", "Steel", "M",
+         "converter", 290, False, "Standard", "Warm amber/blue resin, bedroom at Arles"),
+        ("Van Gogh Portrait in Blue", "Visconti", "Van Gogh", "Steel", "F",
+         "converter", 290, False, "Standard", "Blue/green resin, self-portrait palette"),
+        ("Van Gogh Red Vineyard", "Visconti", "Van Gogh", "Steel", "M",
+         "converter", 290, False, "Standard", "Red/amber resin, vineyard painting tribute"),
+        ("Homo Sapiens Skylight F Nib", "Visconti", "Homo Sapiens", "Palladium", "F",
+         "vacuum", 820, True, "Limited Edition", "Light blue lava, fine nib variant"),
+    ]
+
+
+def _aurora_parker_waterman_variants() -> list[tuple]:
+    """10 Aurora, Parker, and Waterman variants."""
+    return [
+        # Aurora Optima / 88 variants
+        ("Optima Auroloide Burgundy F Nib", "Aurora", "Optima", "18k Gold", "F",
+         "piston", 550, False, "Standard", "Classic burgundy auroloide, fine nib"),
+        ("Optima Auroloide Green B Nib", "Aurora", "Optima", "18k Gold", "B",
+         "piston", 560, False, "Standard", "Classic green auroloide, broad nib"),
+        ("88 Black Mamba F Nib", "Aurora", "88", "18k Gold", "F",
+         "piston", 600, False, "Standard", "Classic 88 with fine nib, Italian craftmanship"),
+        ("88 Black Mamba B Nib", "Aurora", "88", "18k Gold", "B",
+         "piston", 600, False, "Standard", "Classic 88 with broad nib, wet writer"),
+        # Parker Duofold / Sonnet variants
+        ("Duofold Centennial Blue-Black", "Parker", "Duofold", "18k Gold", "F",
+         "converter", 560, False, "Standard", "Blue and black acrylic, fine 18k nib"),
+        ("Duofold Centennial Ivory-Black", "Parker", "Duofold", "18k Gold", "M",
+         "converter", 570, False, "Standard", "Ivory and black acrylic, classic elegance"),
+        ("Sonnet Matte Black Gold Trim", "Parker", "Sonnet", "18k Gold", "M",
+         "converter", 300, False, "Standard", "Matte black lacquer, premium line"),
+        # Waterman Expert / Carene variants
+        ("Waterman Expert Black Gold Trim", "Waterman", "Expert", "Steel", "F",
+         "converter", 110, False, "Standard", "Black lacquer, gold trim, reliable daily writer"),
+        ("Waterman Carene Vivid Blue", "Waterman", "Carene", "18k Gold", "M",
+         "converter", 370, False, "Standard", "Vivid blue lacquer, boat-hull silhouette"),
+        ("Waterman Carene Gunmetal", "Waterman", "Carene", "18k Gold", "F",
+         "converter", 350, False, "Standard", "Gunmetal grey lacquer, modern elegance"),
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Assemble full catalog
 # ---------------------------------------------------------------------------
 
@@ -1474,6 +1775,16 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_expanded_batch_5())
     # Expansion Batch 6 — 95 more pens to reach 700+
     all_tuples.extend(_expanded_batch_6())
+    # Variant Coverage Expansion — ~108 pens focused on nib/color variants
+    all_tuples.extend(_montblanc_nib_variants())
+    all_tuples.extend(_pelikan_stripe_nib_variants())
+    all_tuples.extend(_sailor_nib_specialty_variants())
+    all_tuples.extend(_pilot_nib_color_variants())
+    all_tuples.extend(_lamy_safari_alstar_variants())
+    all_tuples.extend(_twsbi_kaweco_affordable_variants())
+    all_tuples.extend(_platinum_color_variants())
+    all_tuples.extend(_visconti_van_gogh_homo_sapiens_variants())
+    all_tuples.extend(_aurora_parker_waterman_variants())
 
     catalog: list[dict] = []
     for (name, brand, model_line, nib_material, nib_size,
@@ -1490,7 +1801,15 @@ def get_curated_catalog() -> list[dict]:
             "rarity": rarity,
             "notes": notes,
         })
-    return catalog
+    # Deduplicate by ('brand', 'name', 'nib_size') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["brand"], item["name"], item["nib_size"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _expanded_batch_4() -> list[tuple]:
@@ -1505,38 +1824,26 @@ def _expanded_batch_4() -> list[tuple]:
          "piston", 880, True, "Limited Edition", "2024 LE, smoky grey resin"),
         ("M1000 Raden Sunrise", "Pelikan", "Souveraen", "18k Gold", "B",
          "piston", 1800, True, "Limited Edition", "Raden (mother-of-pearl inlay) sunrise"),
-        ("M1000 Green-Black", "Pelikan", "Souveraen", "18k Gold", "M",
-         "piston", 780, False, "Standard", "Classic green striped, oversized"),
         ("Souveraen M600 Pink", "Pelikan", "Souveraen", "14k Gold", "F",
          "piston", 420, True, "Limited Edition", "Special edition pink stripes"),
-        ("Souveraen M405 Stresemann", "Pelikan", "Souveraen", "14k Gold", "EF",
-         "piston", 320, False, "Standard", "Anthracite grey stripes"),
         ("M800 Art Collection Spirit of 1838", "Pelikan", "Art Collection", "18k Gold", "M",
          "piston", 950, True, "Limited Edition", "Anniversary LE, jade green barrel"),
-        ("M1005 Stresemann Black-Green", "Pelikan", "Souveraen", "18k Gold", "B",
-         "piston", 800, False, "Standard", "Anthracite oversized, 18k nib"),
         ("M800 Art Collection Ocean Swirl", "Pelikan", "Art Collection", "18k Gold", "F",
          "piston", 870, True, "Limited Edition", "2021 LE, deep blue swirl resin"),
 
         # ── Sailor — King of Pen, Pro Gear Realo, 1911 Naginata ──
         ("King of Pen Urushi Crimson", "Sailor", "King of Pen", "21k Gold", "M",
          "converter", 1600, True, "Limited Edition", "Hand-applied crimson urushi lacquer"),
-        ("King of Pen ST (Standard Size)", "Sailor", "King of Pen", "21k Gold", "MF",
-         "converter", 650, False, "Standard", "Slightly smaller KoP, 21k nib"),
         ("Pro Gear Realo Blue Demonstrator", "Sailor", "Realo", "21k Gold", "M",
          "piston", 580, True, "Limited Edition", "Transparent blue piston-fill"),
         ("Pro Gear Realo Maroon", "Sailor", "Realo", "21k Gold", "F",
          "piston", 560, False, "Standard", "Piston-fill Pro Gear, maroon resin"),
-        ("1911 Large Naginata Togi", "Sailor", "1911", "21k Gold", "Naginata Togi",
-         "converter", 950, False, "Standard", "Cross-point naginata grind"),
         ("1911 Large Naginata Concord", "Sailor", "1911", "21k Gold", "Naginata Concord",
          "converter", 1100, False, "Standard", "Dual-point specialty nib"),
         ("Pro Gear Slim Lucky Charm Series Manyo Haha", "Sailor", "Pro Gear Slim", "14k Gold", "MF",
          "converter", 300, True, "Limited Edition", "Botanical color ink-matching pen"),
         ("King of Pen Bespoke Lapis Blue", "Sailor", "Bespoke", "21k Gold", "B",
          "converter", 1800, True, "Limited Edition", "Wancher exclusive, deep lapis urushi"),
-        ("Pro Gear Classic Ivory", "Sailor", "Pro Gear", "21k Gold", "M",
-         "converter", 360, False, "Standard", "Ivory resin, gold trim"),
         ("1911 Standard Night Blue", "Sailor", "1911", "14k Gold", "F",
          "converter", 260, False, "Standard", "Deep navy resin, silver trim"),
 
@@ -1559,22 +1866,12 @@ def _expanded_batch_4() -> list[tuple]:
          "converter", 480, False, "Standard", "Ukiyo-e inspired Hokusai design"),
 
         # ── Visconti — Homo Sapiens, Van Gogh, Opera Master ──
-        ("Homo Sapiens Bronze Age", "Visconti", "Homo Sapiens", "Palladium", "M",
-         "vacuum", 750, False, "Standard", "Basaltic lava barrel, power filler"),
         ("Homo Sapiens Dark Age", "Visconti", "Homo Sapiens", "Palladium", "F",
          "vacuum", 800, False, "Standard", "Black lava, ruthenium trim"),
-        ("Homo Sapiens Crystal Dream", "Visconti", "Homo Sapiens", "Palladium", "M",
-         "vacuum", 950, True, "Limited Edition", "Clear demonstrator lava resin"),
-        ("Van Gogh Starry Night", "Visconti", "Van Gogh", "Steel", "M",
-         "converter", 320, False, "Standard", "Swirling blue resin, painting tribute"),
         ("Van Gogh Orchard in Blossom", "Visconti", "Van Gogh", "Steel", "F",
          "converter", 320, False, "Standard", "Green/white resin, spring palette"),
         ("Van Gogh Sunflowers", "Visconti", "Van Gogh", "Steel", "M",
          "converter", 320, False, "Standard", "Yellow/amber resin, vibrant design"),
-        ("Opera Master Typhoon", "Visconti", "Opera Master", "Palladium", "M",
-         "vacuum", 1200, True, "Limited Edition", "Swirled acrylic, storm blue/grey"),
-        ("Opera Master Crimson Tide", "Visconti", "Opera Master", "Palladium", "B",
-         "vacuum", 1250, True, "Limited Edition", "Deep crimson acrylic, wave pattern"),
         ("Medici Matte Black", "Visconti", "Medici", "18k Gold", "M",
          "converter", 650, False, "Standard", "Matte black resin, 18k gold nib"),
         ("Homo Sapiens Lava Color Blue", "Visconti", "Homo Sapiens", "Palladium", "M",
@@ -1595,8 +1892,6 @@ def _expanded_batch_4() -> list[tuple]:
          "piston", 750, True, "Limited Edition", "Mineral-inspired resin, red/gold"),
         ("88 Minerali Malachite", "Aurora", "88 Minerali", "18k Gold", "M",
          "piston", 750, True, "Limited Edition", "Green mineral resin, gold trim"),
-        ("Optima Demonstrator", "Aurora", "Optima", "18k Gold", "F",
-         "piston", 600, True, "Limited Edition", "Transparent auroloide, visible piston"),
         ("88 Unica Nera", "Aurora", "88", "18k Gold", "M",
          "piston", 580, False, "Standard", "All-black edition, PVD trim"),
         ("Talentum Classic Black", "Aurora", "Talentum", "14k Gold", "M",
@@ -1631,18 +1926,14 @@ def _expanded_batch_5() -> list[tuple]:
          "converter", 180, False, "Standard", "Night blue resin, steel nib, entry Visconti"),
 
         # ── Pelikan Souverän — M800, M1000, special editions (+8) ──
-        ("Souveraen M800 Red-Black", "Pelikan", "Souveraen", "18k Gold", "F",
-         "piston", 560, False, "Standard", "Rare red tortoiseshell striped resin"),
-        ("Souveraen M800 Brown-Black", "Pelikan", "Souveraen", "18k Gold", "M",
-         "piston", 570, False, "Standard", "Brown tortoiseshell striped barrel"),
         ("Souveraen M1000 Blue-Black", "Pelikan", "Souveraen", "18k Gold", "B",
          "piston", 780, False, "Standard", "Blue striped oversized flagship"),
         ("M800 Art Collection Burnt Orange", "Pelikan", "Art Collection", "18k Gold", "M",
          "piston", 900, True, "Limited Edition", "2020 LE, warm burnt orange resin"),
         ("M800 Art Collection Pistachio", "Pelikan", "Art Collection", "18k Gold", "F",
          "piston", 880, True, "Limited Edition", "Pistachio green swirl resin, gold trim"),
-        ("Souveraen M600 Red-White", "Pelikan", "Souveraen", "14k Gold", "M",
-         "piston", 430, True, "Limited Edition", "Red and white striped special edition"),
+        ("Souveraen M600 Red-White", "Pelikan", "Souveraen", "14k Gold", "B",
+         "piston", 430, True, "Limited Edition", "Red and white striped special edition, broad nib variant"),
         ("Souveraen M400 Brown Tortoiseshell", "Pelikan", "Souveraen", "14k Gold", "F",
          "piston", 360, False, "Standard", "Compact brown tortoiseshell resin"),
         ("M200 Classic Gold Marbled", "Pelikan", "Classic", "Steel", "M",
@@ -1657,8 +1948,6 @@ def _expanded_batch_5() -> list[tuple]:
          "converter", 350, True, "Limited Edition", "Ryugu-jo inspired teal and gold"),
         ("Pro Gear Slim Manyo Nadeshiko", "Sailor", "Pro Gear Slim", "14k Gold", "MF",
          "converter", 300, True, "Limited Edition", "Botanical series, pink carnation color"),
-        ("Pro Gear Classic Fire Special Edition", "Sailor", "Pro Gear", "21k Gold", "M",
-         "converter", 420, True, "Limited Edition", "Transparent red and gold, fire-themed"),
         ("Pro Gear Cocktail Series Old-Fashioned", "Sailor", "Pro Gear", "21k Gold", "B",
          "converter", 460, True, "Limited Edition", "Cocktail-inspired amber/brown resin"),
         ("1911 Large Transparent Demonstrator", "Sailor", "1911", "21k Gold", "M",
@@ -1742,14 +2031,14 @@ def _expanded_batch_6() -> list[tuple]:
     vintage Parker Duofold, Cross Townsend specials."""
     return [
         # ── Montblanc Writers Edition (+12) ────────────────────────────
-        ("Writers Edition Leo Tolstoy", "Montblanc", "Writers Edition", "18k Gold", "M",
-         "piston", 1350, True, "Limited Edition", "2015 LE, burgundy celluloid, Cyrillic clip"),
+        ("Writers Edition Leo Tolstoy", "Montblanc", "Writers Edition", "18k Gold", "F",
+         "piston", 1350, True, "Limited Edition", "2015 LE, burgundy celluloid, Cyrillic clip, fine nib variant"),
         ("Writers Edition Rudyard Kipling", "Montblanc", "Writers Edition", "18k Gold", "F",
          "piston", 1250, True, "Limited Edition", "2019 LE, brown lacquer, Indian motifs"),
         ("Writers Edition Victor Hugo", "Montblanc", "Writers Edition", "18k Gold", "B",
          "piston", 1400, True, "Limited Edition", "2020 LE, cathedral-inspired cap design"),
-        ("Writers Edition Jane Austen", "Montblanc", "Writers Edition", "18k Gold", "F",
-         "piston", 1300, True, "Limited Edition", "2023 LE, ivory lacquer, quill-inspired clip"),
+        ("Writers Edition Jane Austen", "Montblanc", "Writers Edition", "18k Gold", "M",
+         "piston", 1300, True, "Limited Edition", "2023 LE, ivory lacquer, quill-inspired clip, medium nib variant"),
         ("Writers Edition Miguel de Cervantes", "Montblanc", "Writers Edition", "18k Gold", "M",
          "piston", 1150, True, "Limited Edition", "2022 LE, Don Quixote windmill engraving"),
         ("Patron of Art Gaius Maecenas 4810", "Montblanc", "Patron of Art", "18k Gold", "M",
@@ -1804,22 +2093,18 @@ def _expanded_batch_6() -> list[tuple]:
          "converter", 520, True, "Limited Edition", "Bungubox collab, emerald green"),
         ("Pro Gear Slim Shikiori Shimoyo", "Sailor", "Pro Gear Slim", "14k Gold", "MF",
          "converter", 300, True, "Limited Edition", "Frost night series, ice blue resin"),
-        ("Pro Gear Realo Demonstrator Blue", "Sailor", "Realo", "21k Gold", "M",
-         "piston", 620, True, "Limited Edition", "Transparent blue piston-fill demonstrator"),
         ("Pro Gear Storm over the Sea", "Sailor", "Pro Gear", "21k Gold", "B",
          "converter", 500, True, "Limited Edition", "PenSachi exclusive, dark storm blue"),
         ("Pro Gear Slim Manyo Sakura", "Sailor", "Pro Gear Slim", "14k Gold", "F",
          "converter", 310, True, "Limited Edition", "Cherry blossom pink botanical series"),
 
         # ── Visconti Art Pens (+8) ─────────────────────────────────────
-        ("Homo Sapiens Magma", "Visconti", "Homo Sapiens", "Palladium", "M",
-         "vacuum", 920, True, "Limited Edition", "Red/black lava swirl, magma colorway"),
+        ("Homo Sapiens Magma", "Visconti", "Homo Sapiens", "Palladium", "B",
+         "vacuum", 920, True, "Limited Edition", "Red/black lava swirl, magma colorway, broad nib variant"),
         ("Opera Master Crimson Tide", "Visconti", "Opera Master", "Palladium", "F",
          "vacuum", 1300, True, "Limited Edition", "Deep crimson acrylic swirl"),
         ("Homo Sapiens Bronze Age", "Visconti", "Homo Sapiens", "Palladium", "B",
          "vacuum", 850, False, "Standard", "Bronze trim, basaltic lava barrel"),
-        ("Medici Dynasty", "Visconti", "Medici", "18k Gold", "M",
-         "vacuum", 1500, True, "Limited Edition", "Renaissance-inspired, Florentine motifs"),
         ("Il Magnifico Marble Green", "Visconti", "Il Magnifico", "18k Gold", "B",
          "piston", 2000, True, "Limited Edition", "Oversized marble green celluloid"),
         ("Rembrandt-S Bordeaux", "Visconti", "Rembrandt", "Steel", "F",
@@ -1830,8 +2115,6 @@ def _expanded_batch_6() -> list[tuple]:
          "vacuum", 1100, True, "Limited Edition", "Clear crystal lava, visible ink chamber"),
 
         # ── Aurora Optima Specials (+8) ─────────────────────────────────
-        ("Optima Auroloide Burgundy", "Aurora", "Optima", "18k Gold", "F",
-         "piston", 580, False, "Standard", "Classic burgundy auroloide celluloid"),
         ("Optima Auroloide Blue", "Aurora", "Optima", "18k Gold", "M",
          "piston", 580, False, "Standard", "Blue auroloide celluloid, gold bands"),
         ("Optima Mare Shimmering Blue", "Aurora", "Optima", "18k Gold", "M",
@@ -1878,8 +2161,8 @@ def _expanded_batch_6() -> list[tuple]:
          "aerometric", 350, False, "Vintage", "1950s classic, black Lucite barrel, lustraloy cap"),
         ("Parker 51 Signet Gold Cap (1950s)", "Parker", "51", "14k Gold", "M",
          "aerometric", 550, False, "Vintage", "1950s, 14k gold-filled cap, forest green barrel"),
-        ("Parker 75 Sterling Silver Cisele", "Parker", "75", "14k Gold", "F",
-         "converter", 400, False, "Vintage", "1960s, sterling silver crosshatch barrel"),
+        ("Parker 75 Sterling Silver Cisele", "Parker", "75", "14k Gold", "M",
+         "converter", 400, False, "Vintage", "1960s, sterling silver crosshatch barrel, medium nib variant"),
         ("Parker 61 Capillary Black (1960s)", "Parker", "61", "14k Gold", "M",
          "capillary", 300, False, "Vintage", "Capillary fill system, black Lucite barrel"),
         ("Duofold Centennial Black (Modern)", "Parker", "Duofold Centennial", "18k Gold", "M",
@@ -1960,8 +2243,8 @@ def _expanded_batch_6() -> list[tuple]:
          "converter", 250, False, "Standard", "Gold-plated chevron guilloche pattern"),
         ("849 Brut Rosé", "Caran d'Ache", "849", "Steel", "M",
          "converter", 35, True, "Limited Edition", "Rosé gold aluminum, annual LE"),
-        ("Varius Rubracer", "Caran d'Ache", "Varius", "18k Gold", "M",
-         "converter", 750, False, "Standard", "Red rubber barrel, silver trim"),
+        ("Varius Rubracer", "Caran d'Ache", "Varius", "18k Gold", "F",
+         "converter", 750, False, "Standard", "Red rubber barrel, silver trim, fine nib variant"),
     ]
 
 

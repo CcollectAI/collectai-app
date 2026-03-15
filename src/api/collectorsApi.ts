@@ -710,6 +710,36 @@ export const collectorsApi = {
   getFollowedCategories: () =>
     get<{ followed_categories: string[] }>("/settings"),
 
+  getAlertPreferences: () =>
+    get<{
+      price_drop_enabled: boolean;
+      price_drop_threshold: number;
+      new_listing_enabled: boolean;
+      milestone_enabled: boolean;
+      price_increase_enabled: boolean;
+      price_increase_threshold: number;
+      frequency: 'immediate' | 'daily' | 'weekly';
+    }>("/settings/alert-preferences"),
+
+  updateAlertPreferences: (prefs: {
+    price_drop_enabled?: boolean;
+    price_drop_threshold?: number;
+    new_listing_enabled?: boolean;
+    milestone_enabled?: boolean;
+    price_increase_enabled?: boolean;
+    price_increase_threshold?: number;
+    frequency?: 'immediate' | 'daily' | 'weekly';
+  }) =>
+    patch<{
+      price_drop_enabled: boolean;
+      price_drop_threshold: number;
+      new_listing_enabled: boolean;
+      milestone_enabled: boolean;
+      price_increase_enabled: boolean;
+      price_increase_threshold: number;
+      frequency: 'immediate' | 'daily' | 'weekly';
+    }>("/settings/alert-preferences", prefs as Record<string, unknown>),
+
   // ── Catalog Browser ────────────────────────────────────────────────────
   browseCatalogItems: (categoryId: string, opts?: {
     q?: string;
@@ -838,6 +868,25 @@ export const collectorsApi = {
       streak_days: number;
       badges: string[];
     }>("/gamification/profile"),
+
+  getPublicGamificationProfile: (userId: string) =>
+    get<{
+      profile: {
+        user_id: string;
+        total_xp: number;
+        level: number;
+        current_streak: number;
+        achievements_unlocked: number;
+        achievements_total: number;
+        recent_achievements: Array<{
+          id: string;
+          title: string;
+          icon: string;
+          tier: string;
+          unlocked_at: string | null;
+        }>;
+      };
+    }>(`/gamification/profile/${encodeURIComponent(userId)}`),
 
   getAchievements: () =>
     get<{
@@ -998,6 +1047,63 @@ export const collectorsApi = {
         blocked_at: string;
       }>;
     }>("/social/blocked"),
+
+  // ── Chat / DM ──────────────────────────────────────────────────────
+
+  getChatThreads: () =>
+    get<
+      Array<{
+        id: string;
+        other_user_id: string;
+        other_user_name: string;
+        other_user_avatar_url: string | null;
+        status: string;
+        last_message_preview: string | null;
+        last_message_at: string | null;
+        unread_count: number;
+      }>
+    >("/chat/threads"),
+
+  getChatMessages: (
+    threadId: string,
+    params?: { limit?: number; offset?: number },
+  ) =>
+    get<
+      Array<{
+        id: string;
+        thread_id: string;
+        author_user_id: string;
+        text: string;
+        created_at: string;
+        read_at: string | null;
+      }>
+    >(
+      `/chat/threads/${threadId}/messages${params ? `?limit=${params.limit ?? 50}&offset=${params.offset ?? 0}` : ""}`,
+    ),
+
+  sendChatMessage: (threadId: string, text: string) =>
+    post<{
+      id: string;
+      thread_id: string;
+      author_user_id: string;
+      text: string;
+      created_at: string;
+    }>(`/chat/threads/${threadId}/messages`, { text }),
+
+  markChatThreadRead: (threadId: string) =>
+    patch<{ success: boolean }>(`/chat/threads/${threadId}/read`, {}),
+
+  deleteChatMessage: (messageId: string) =>
+    del<{ success: boolean }>(`/chat/messages/${messageId}`),
+
+  editChatMessage: (messageId: string, text: string) =>
+    put<{ id: string; text: string; edited_at: string }>(
+      `/chat/messages/${messageId}`,
+      { text },
+    ),
+
+  getChatUnreadCount: () =>
+    get<{ unread_count: number }>("/chat/unread-count"),
 
   // ── Data Moat Analytics ────────────────────────────────────────────
 

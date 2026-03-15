@@ -37,6 +37,9 @@ _upload_limit = per_user_rate_limit(30, window_seconds=3600, scope="item_image_u
 
 VALID_LABELS = {"front", "back", "detail", "box", "certificate", "damage", "other"}
 
+_MAX_IMAGE_EDGE = 1200
+_IMMUTABLE_CACHE_MAX_AGE = 31_536_000
+
 # ---------------------------------------------------------------------------
 # In-memory fallback store
 # ---------------------------------------------------------------------------
@@ -465,7 +468,7 @@ async def _upload_image_file(file: UploadFile, item_id: str, user_id: str) -> st
 
         # Optimize image
         try:
-            optimized_bytes, width, height = optimize_image(raw_bytes, max_edge=1200)
+            optimized_bytes, width, height = optimize_image(raw_bytes, max_edge=_MAX_IMAGE_EDGE)
         except ValueError as e:
             raise error_response(400, str(e), code=ErrorCode.VALIDATION_ERROR)
 
@@ -483,7 +486,7 @@ async def _upload_image_file(file: UploadFile, item_id: str, user_id: str) -> st
                 Key=photo_key,
                 Body=optimized_bytes,
                 ContentType="image/jpeg",
-                CacheControl="public, max-age=31536000, immutable",
+                CacheControl=f"public, max-age={_IMMUTABLE_CACHE_MAX_AGE}, immutable",
             )
 
             if CDN_URL:

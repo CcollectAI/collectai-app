@@ -1,7 +1,7 @@
 """
 Sneaker Import Pipeline — Curated Collectible Sneakers Catalog.
 
-Layer 1 (Catalog):  500+ curated sneakers → category_items
+Layer 1 (Catalog):  850+ curated sneakers → category_items
 Layer 2 (Prices):   Estimated resale prices → train.jsonl
 
 Covers:
@@ -1434,8 +1434,6 @@ def _nb_2002r_jjjjound_collabs() -> list[tuple]:
          "M2002RDC", 270),
         ("New Balance", "2002R", "Protection Pack Sea Salt", "Limited Release",
          "M2002RDG", 250),
-        ("New Balance", "2002R", "JJJJound Grey", "Collaboration",
-         "M2002RJA", 450),
         ("New Balance", "2002R", "JJJJound Navy", "Collaboration",
          "M2002RJB", 420),
         ("New Balance", "2002R", "Salehe Bembury Water Be The Guide", "Collaboration",
@@ -1458,8 +1456,6 @@ def _reebok_question_collabs() -> list[tuple]:
          "FZ4342", 320),
         ("Reebok", "Question Mid", "Eric Emanuel Red", "Collaboration",
          "GX0294", 220),
-        ("Reebok", "Question Mid", "BBC Ice Cream", "Collaboration",
-         "GZ5921", 280),
         ("Reebok", "Question Mid", "Packer Shoes 'Practice'", "Collaboration",
          "FW7548", 300),
         ("Reebok", "Answer IV", "Allen Iverson 'Stepover'", "OG Colorway",
@@ -1522,12 +1518,8 @@ def _nike_dunk_collabs_round4() -> list[tuple]:
          "BV1310-555", 900),
         ("Nike", "Dunk Low", "Social Status Free Lunch Strawberry Milk", "Collaboration",
          "DJ1173-600", 350),
-        ("Nike", "Dunk Low", "Union LA Passport Pack Pistachio", "Collaboration",
-         "DJ9649-400", 280),
         ("Nike", "Dunk Low", "Union LA Passport Pack Court Purple", "Collaboration",
          "DJ9649-500", 300),
-        ("Nike", "Dunk Low", "Jarritos", "Collaboration",
-         "FD0887-001", 380),
         ("Nike", "Dunk Low", "Born x Raised", "Collaboration",
          "FN7733-010", 320),
         ("Nike", "Dunk Low", "Cactus Plant Flea Market Spiral Sage", "Collaboration",
@@ -1544,12 +1536,8 @@ def _new_balance_collabs_round4() -> list[tuple]:
          "M990JJ6", 380),
         ("New Balance", "990v6", "Kith 'United' Navy", "Collaboration",
          "M990KH6", 350),
-        ("New Balance", "1906R", "Protection Pack Silver Metallic", "Limited Release",
-         "M1906REE", 200),
         ("New Balance", "1906R", "ALD 'Green'", "Collaboration",
          "M1906RA1", 320),
-        ("New Balance", "550", "Rich Paul Forever Yours", "Collaboration",
-         "BB550RP1", 280),
         ("New Balance", "550", "STAUD White Gum", "Collaboration",
          "BB550STD", 250),
         ("New Balance", "9060", "JJJJound Beige", "Collaboration",
@@ -1574,8 +1562,6 @@ def _adidas_yeezy_round4() -> list[tuple]:
          "FW4980", 350),
         ("Yeezy", "Yeezy 700 V3", "Fade Carbon", "Limited Release",
          "GW1814", 300),
-        ("Yeezy", "Yeezy 500", "Blush", "OG Colorway",
-         "DB2908", 320),
         ("Yeezy", "Yeezy Foam Runner", "Stone Sage", "Limited Release",
          "GX4472", 160),
     ]
@@ -1584,8 +1570,6 @@ def _adidas_yeezy_round4() -> list[tuple]:
 def _jordan_retro_reissues_round4() -> list[tuple]:
     """Jordan retro reissues — Round 4 expansion."""
     return [
-        ("Jordan", "Air Jordan 1 Low", "Travis Scott Reverse Mocha", "Collaboration",
-         "DM7866-162", 1400),
         ("Jordan", "Air Jordan 3", "A Ma Maniere Raised By Women", "Collaboration",
          "DH3434-110", 500),
         ("Jordan", "Air Jordan 4", "Metallic Purple", "Retro",
@@ -1594,8 +1578,6 @@ def _jordan_retro_reissues_round4() -> list[tuple]:
          "AQ9129-700", 250),
         ("Jordan", "Air Jordan 5", "Olive", "Retro",
          "DD0587-308", 260),
-        ("Jordan", "Air Jordan 6", "UNC", "Retro",
-         "384664-410", 250),
         ("Jordan", "Air Jordan 12", "Taxi 2024 Reimagined", "Retro",
          "CT8013-170", 220),
         ("Jordan", "Air Jordan 1 High", "Lost and Found Chicago", "Retro",
@@ -1608,16 +1590,12 @@ def _asics_collabs_round4() -> list[tuple]:
     return [
         ("ASICS", "Gel-Kayano 14", "JJJJound Silver White", "Collaboration",
          "1201A457-100", 350),
-        ("ASICS", "Gel-Kayano 14", "Cecilie Bahnsen Mary Jane", "Collaboration",
-         "1202A389-100", 420),
         ("ASICS", "Gel-1130", "Hidden NY Cream", "Collaboration",
          "1201A256-750", 300),
         ("ASICS", "Gel-NYC", "Kith Cream", "Collaboration",
          "1201A822-100", 280),
         ("ASICS", "GT-2160", "Joe Freshgoods Below Freezing", "Collaboration",
          "1203A465-020", 320),
-        ("ASICS", "Gel-Lyte V", "Ronnie Fieg Rose Gold", "Collaboration",
-         "H42JK-9999", 500),
         ("ASICS", "Gel-Kayano 14", "Above The Clouds White", "Collaboration",
          "1201A457-200", 380),
     ]
@@ -1666,24 +1644,10 @@ def _puma_collabs_round4() -> list[tuple]:
 def _nike_sb_dunk_2024() -> list[tuple]:
     """Nike SB Dunk Low 2024 releases — Round 5 expansion."""
     return [
-        ("Nike", "SB Dunk Low", "Jarritos", "Collaboration",
-         "FD0860-001", 380),
-        ("Nike", "SB Dunk Low", "Born x Raised", "Collaboration",
-         "FN7819-400", 350),
-        ("Nike", "SB Dunk Low", "Powerpuff Girls Blossom", "Collaboration",
-         "FD2631-600", 280),
-        ("Nike", "SB Dunk Low", "Powerpuff Girls Bubbles", "Collaboration",
-         "FD2631-400", 260),
-        ("Nike", "SB Dunk Low", "Powerpuff Girls Buttercup", "Collaboration",
-         "FD2631-300", 270),
-        ("Nike", "SB Dunk Low", "April Skateboards White", "Collaboration",
-         "FD2562-100", 300),
         ("Nike", "SB Dunk Low", "HUF San Francisco", "Collaboration",
          "FD8775-100", 320),
         ("Nike", "SB Dunk Low", "Why So Sad? Grey", "Collaboration",
          "DX5549-400", 250),
-        ("Nike", "SB Dunk Low", "Concepts Orange Lobster", "Collaboration",
-         "FD8776-800", 500),
         ("Nike", "SB Dunk Low", "Supreme Rammellzee Black", "Collaboration",
          "FD8778-001", 550),
         ("Nike", "SB Dunk Low", "Yuto Horigome Wolf Grey", "Collaboration",
@@ -1694,10 +1658,6 @@ def _nike_sb_dunk_2024() -> list[tuple]:
 def _jordan_1_low_collabs_r5() -> list[tuple]:
     """Air Jordan 1 Low collaborations — Round 5 expansion."""
     return [
-        ("Jordan", "Air Jordan 1 Low", "Travis Scott Black Phantom", "Collaboration",
-         "DM7866-001", 1200),
-        ("Jordan", "Air Jordan 1 Low", "Travis Scott Olive", "Collaboration",
-         "DZ4137-106", 1100),
         ("Jordan", "Air Jordan 1 Low", "Dior Grey", "Collaboration",
          "CN8608-001", 4500),
         ("Jordan", "Air Jordan 1 Low", "Fragment Design White Blue", "Collaboration",
@@ -1726,10 +1686,6 @@ def _jordan_4_retro_r5() -> list[tuple]:
          "FQ8138-103", 260),
         ("Jordan", "Air Jordan 4", "Lightning (2021 Retro)", "Retro",
          "CT8527-700", 300),
-        ("Jordan", "Air Jordan 4", "Red Thunder", "Retro",
-         "CT8527-016", 280),
-        ("Jordan", "Air Jordan 4", "Frozen Moments (W)", "Retro",
-         "AQ9129-001", 320),
         ("Jordan", "Air Jordan 4", "Midnight Navy", "Retro",
          "DH6927-140", 300),
         ("Jordan", "Air Jordan 4", "Craft Olive", "Retro",
@@ -1786,8 +1742,6 @@ def _nb_1906r_collabs_r5() -> list[tuple]:
          "M1906RJF", 400),
         ("New Balance", "1906R", "Kith 10th Anniversary Cyclades", "Collaboration",
          "M1906RKT", 350),
-        ("New Balance", "1906R", "Aime Leon Dore Green", "Collaboration",
-         "M1906RAL", 380),
         ("New Balance", "1906R", "Teddy Santis Sea Salt", "Collaboration",
          "M1906RTS", 250),
         ("New Balance", "1906R", "Cordura Black Orange", "Limited Release",
@@ -1868,8 +1822,6 @@ def _puma_suede_vtg_r5() -> list[tuple]:
          "396478-01", 190),
         ("Puma", "Clyde", "BAPE 1st Camo Olive", "Collaboration",
          "396481-01", 320),
-        ("Puma", "Clyde", "Extra Butter Kings of New York", "Collaboration",
-         "396482-01", 280),
         ("Puma", "Suede VTG", "A.P.C. Khaki Minimal", "Collaboration",
          "396483-01", 200),
     ]
@@ -1882,8 +1834,6 @@ def _nike_am1_anniversary_r5() -> list[tuple]:
          "DO9549-100", 250),
         ("Nike", "Air Max 1", "Anniversary Aqua/Neutral Grey", "OG Colorway",
          "DH1348-004", 220),
-        ("Nike", "Air Max 1", "Concepts Mellow", "Collaboration",
-         "DN1803-300", 400),
         ("Nike", "Air Max 1", "Concepts Heavy", "Collaboration",
          "DN1803-900", 450),
         ("Nike", "Air Max 1", "CLOT K.O.D. Solar Red", "Collaboration",
@@ -1896,10 +1846,432 @@ def _nike_am1_anniversary_r5() -> list[tuple]:
          "DQ8475-800", 300),
         ("Nike", "Air Max 1", "Patta Aqua Noise (5th Anniv)", "Collaboration",
          "DH1348-001", 350),
-        ("Nike", "Air Max 1", "Dirty Denim", "Limited Release",
-         "DV3050-300", 200),
         ("Nike", "Air Max 1", "Obsidian (2024 Retro)", "Retro",
          "FJ4735-400", 180),
+    ]
+
+
+def _aj1_high_colorways_r6() -> list[tuple]:
+    """12 Air Jordan 1 High colorways — Mocha, Obsidian, Shadow 2.0, etc."""
+    return [
+        ("Jordan", "Air Jordan 1 High", "Dark Mocha", "Retro",
+         "555088-105", 350),
+        ("Jordan", "Air Jordan 1 High", "Obsidian UNC", "Retro",
+         "555088-140", 380),
+        ("Jordan", "Air Jordan 1 High", "Shadow 2.0", "Retro",
+         "555088-035", 250),
+        ("Jordan", "Air Jordan 1 High", "Pollen", "Retro",
+         "555088-701", 200),
+        ("Jordan", "Air Jordan 1 High", "Volt Gold", "Retro",
+         "555088-118", 220),
+        ("Jordan", "Air Jordan 1 High", "Chicago Reimagined (Lost & Found)", "Retro",
+         "DZ5485-612R6", 280),
+        ("Jordan", "Air Jordan 1 High", "Taxi (Black Toe Yellow)", "Retro",
+         "555088-711", 230),
+        ("Jordan", "Air Jordan 1 High", "Stage Haze", "Retro",
+         "555088-108", 210),
+        ("Jordan", "Air Jordan 1 High", "Palomino", "Retro",
+         "FD2596-021", 240),
+        ("Jordan", "Air Jordan 1 High", "Washed Pink (W)", "Retro",
+         "FD2596-600", 220),
+        ("Jordan", "Air Jordan 1 High", "True Blue", "Retro",
+         "DZ5485-410", 260),
+        ("Jordan", "Air Jordan 1 High", "Yellow Ochre", "Retro",
+         "555088-109", 200),
+    ]
+
+
+def _aj1_low_mid_r6() -> list[tuple]:
+    """10 Air Jordan 1 Low and Mid variants."""
+    return [
+        ("Jordan", "Air Jordan 1 Low", "UNC", "Retro",
+         "553558-144", 130),
+        ("Jordan", "Air Jordan 1 Low", "Bred Toe", "Retro",
+         "553558-612", 140),
+        ("Jordan", "Air Jordan 1 Low", "Shadow Toe", "Retro",
+         "553558-052", 120),
+        ("Jordan", "Air Jordan 1 Low", "Mocha", "Retro",
+         "553558-032", 150),
+        ("Jordan", "Air Jordan 1 Low", "Wolf Grey", "GR (General Release)",
+         "553558-053", 100),
+        ("Jordan", "Air Jordan 1 Mid", "Chicago Black Toe", "Retro",
+         "554724-069", 130),
+        ("Jordan", "Air Jordan 1 Mid", "Banned", "Retro",
+         "554724-074", 140),
+        ("Jordan", "Air Jordan 1 Mid", "Smoke Grey", "GR (General Release)",
+         "554724-092", 110),
+        ("Jordan", "Air Jordan 1 Mid", "Light Smoke Grey", "GR (General Release)",
+         "554724-078", 100),
+        ("Jordan", "Air Jordan 1 Mid", "Royal Blue 2.0", "Retro",
+         "554724-068", 120),
+    ]
+
+
+def _aj3_5_11_colorways_r6() -> list[tuple]:
+    """10 Air Jordan 3, 5, 11 additional colorways."""
+    return [
+        ("Jordan", "Air Jordan 3", "Pine Green", "Retro",
+         "CT8532-030", 230),
+        ("Jordan", "Air Jordan 3", "Georgetown", "Retro",
+         "CT8532-401", 220),
+        ("Jordan", "Air Jordan 3", "Racer Blue", "Retro",
+         "CT8532-145", 210),
+        ("Jordan", "Air Jordan 5", "Aqua", "Retro",
+         "DD0587-400", 220),
+        ("Jordan", "Air Jordan 5", "Moonlight", "Retro",
+         "CT4838-011", 200),
+        ("Jordan", "Air Jordan 5", "Green Bean", "Retro",
+         "DM9014-003", 230),
+        ("Jordan", "Air Jordan 11", "Midnight Navy", "Retro",
+         "378037-441", 300),
+        ("Jordan", "Air Jordan 11", "Gratitude / Defining Moments", "Retro",
+         "CT8012-170", 280),
+        ("Jordan", "Air Jordan 11", "DMP (2023)", "Retro",
+         "CT8012-170D", 290),
+        ("Jordan", "Air Jordan 11", "72-10", "Retro",
+         "378037-002", 350),
+    ]
+
+
+def _aj4_colorways_r6() -> list[tuple]:
+    """8 Air Jordan 4 colorway variants."""
+    return [
+        ("Jordan", "Air Jordan 4", "Black Cat (2020)", "Retro",
+         "CU1110-010", 500),
+        ("Jordan", "Air Jordan 4", "University Blue", "Retro",
+         "CT8527-400", 350),
+        ("Jordan", "Air Jordan 4", "Shimmer (W)", "Retro",
+         "DJ0675-200", 280),
+        ("Jordan", "Air Jordan 4", "Neon / Air Max 95", "Retro",
+         "CT5342-007", 300),
+        ("Jordan", "Air Jordan 4", "Fire Red (2020)", "Retro",
+         "DC7770-160", 280),
+        ("Jordan", "Air Jordan 4", "Taupe Haze", "Retro",
+         "DB0732-200", 250),
+        ("Jordan", "Air Jordan 4", "Blank Canvas (W)", "Retro",
+         "DJ0675-110", 260),
+        ("Jordan", "Air Jordan 4", "SB Pine Green", "Collaboration",
+         "DR5415-103", 350),
+    ]
+
+
+def _nike_dunk_colorways_r6() -> list[tuple]:
+    """10 Nike Dunk Low colorway variants."""
+    return [
+        ("Nike", "Dunk Low", "Georgetown", "Retro",
+         "DD1391-003", 120),
+        ("Nike", "Dunk Low", "Michigan", "Retro",
+         "DD1391-700", 130),
+        ("Nike", "Dunk Low", "Argon", "Retro",
+         "DD1391-044", 110),
+        ("Nike", "Dunk Low", "Vintage Green", "Retro",
+         "DD1391-101VG", 115),
+        ("Nike", "Dunk Low", "Photon Dust", "GR (General Release)",
+         "DD1391-103PD", 100),
+        ("Nike", "Dunk Low", "Court Purple", "Retro",
+         "DD1391-104", 120),
+        ("Nike", "Dunk Low", "Team Green", "Retro",
+         "DD1391-101TG", 115),
+        ("Nike", "Dunk Low", "Valerian Blue", "Retro",
+         "DD1391-400", 110),
+        ("Nike", "Dunk Low", "Dusty Olive", "Retro",
+         "DH5360-300", 120),
+        ("Nike", "Dunk Low", "Fossil Rose", "Retro",
+         "DH7577-001", 130),
+    ]
+
+
+def _nike_dunk_womens_r6() -> list[tuple]:
+    """6 Nike Dunk Low women's exclusive colorways."""
+    return [
+        ("Nike", "Dunk Low", "Rose Whisper (W) 2024", "GR (General Release)",
+         "DD1503-118-W", 100),
+        ("Nike", "Dunk Low", "Next Nature Pale Coral (W)", "GR (General Release)",
+         "DD1873-100", 95),
+        ("Nike", "Dunk Low", "Cacao Wow (W)", "GR (General Release)",
+         "DD1503-124W", 100),
+        ("Nike", "Dunk Low", "Pink Foam (W)", "GR (General Release)",
+         "DD1503-600", 95),
+        ("Nike", "Dunk Low", "Diffused Taupe (W)", "GR (General Release)",
+         "DD1503-125", 100),
+        ("Nike", "Dunk Low", "Coconut Milk (W)", "GR (General Release)",
+         "DD1503-116", 95),
+    ]
+
+
+def _yeezy_350v2_colorways_r6() -> list[tuple]:
+    """10 Yeezy 350 V2 colorway variants."""
+    return [
+        ("Yeezy", "Yeezy Boost 350 V2", "Blue Tint", "Limited Release",
+         "B37571", 300),
+        ("Yeezy", "Yeezy Boost 350 V2", "Cloud White", "Limited Release",
+         "FW3043", 240),
+        ("Yeezy", "Yeezy Boost 350 V2", "Yecheil", "Limited Release",
+         "FW5190", 260),
+        ("Yeezy", "Yeezy Boost 350 V2", "Desert Sage", "Limited Release",
+         "FX9035", 230),
+        ("Yeezy", "Yeezy Boost 350 V2", "Ash Pearl", "Limited Release",
+         "GY7658", 220),
+        ("Yeezy", "Yeezy Boost 350 V2", "Sesame", "Limited Release",
+         "F99710", 270),
+        ("Yeezy", "Yeezy Boost 350 V2", "Semi Frozen Yellow", "Limited Release",
+         "B37572", 280),
+        ("Yeezy", "Yeezy Boost 350 V2", "Cinder", "Limited Release",
+         "FY2903", 260),
+        ("Yeezy", "Yeezy Boost 350 V2", "Tail Light", "Limited Release",
+         "FX9017", 240),
+        ("Yeezy", "Yeezy Boost 350 V2", "Slate", "Limited Release",
+         "HP7870", 250),
+    ]
+
+
+def _yeezy_500_700_r6() -> list[tuple]:
+    """8 Yeezy 500 and 700 variants."""
+    return [
+        ("Yeezy", "Yeezy 500", "Bone White", "Limited Release",
+         "FV3573", 260),
+        ("Yeezy", "Yeezy 500", "Stone", "Limited Release",
+         "FW4839", 250),
+        ("Yeezy", "Yeezy 500", "Ash Grey", "Limited Release",
+         "GX3607", 240),
+        ("Yeezy", "Yeezy 500", "Taupe Light", "Limited Release",
+         "GX3605", 230),
+        ("Yeezy", "Yeezy Boost 700", "Mauve", "Limited Release",
+         "EE9614", 320),
+        ("Yeezy", "Yeezy Boost 700", "Utility Black", "Limited Release",
+         "FV5304", 350),
+        ("Yeezy", "Yeezy Boost 700", "Inertia", "Limited Release",
+         "EG7597", 300),
+        ("Yeezy", "Yeezy Boost 700 MNVN", "Triple Black", "Limited Release",
+         "FV4440", 280),
+    ]
+
+
+def _nb_550_2002r_990_r6() -> list[tuple]:
+    """10 New Balance 550, 2002R, 990v5/v6 colorway variants."""
+    return [
+        ("New Balance", "NB 550", "White Navy", "Retro",
+         "BB550WA1", 120),
+        ("New Balance", "NB 550", "White Red", "Retro",
+         "BB550SE1", 120),
+        ("New Balance", "NB 550", "Shadow Grey", "Retro",
+         "BB550SL1", 130),
+        ("New Balance", "NB 2002R", "Black Phantom", "Limited Release",
+         "M2002RBK", 220),
+        ("New Balance", "NB 2002R", "Marblehead", "Limited Release",
+         "M2002RXA", 210),
+        ("New Balance", "NB 2002R", "Dark Navy", "Limited Release",
+         "M2002RCA", 200),
+        ("New Balance", "NB 990v5", "Grey (Made in USA)", "OG Colorway",
+         "M990GL5", 200),
+        ("New Balance", "NB 990v5", "Navy (Made in USA)", "OG Colorway",
+         "M990NV5", 200),
+        ("New Balance", "NB 990v6", "Grey (Made in USA)", "OG Colorway",
+         "M990GL6", 210),
+        ("New Balance", "NB 990v6", "Black (Made in USA)", "OG Colorway",
+         "M990BK6", 210),
+    ]
+
+
+def _asics_kayano14_gellyte_r6() -> list[tuple]:
+    """8 ASICS Gel-Kayano 14 and Gel-Lyte III colorways."""
+    return [
+        ("ASICS", "Gel-Kayano 14", "White Midnight (2024)", "Retro",
+         "1201A019-106", 170),
+        ("ASICS", "Gel-Kayano 14", "Pure Silver OG", "Retro",
+         "1201A019-021", 165),
+        ("ASICS", "Gel-Kayano 14", "Earthenware Pack Clay", "Limited Release",
+         "1201A457-500", 220),
+        ("ASICS", "Gel-Kayano 14", "Obsidian Blue", "Retro",
+         "1201A019-400", 175),
+        ("ASICS", "Gel-Lyte III", "White Rock", "OG Colorway",
+         "H7L0L-0101", 120),
+        ("ASICS", "Gel-Lyte III", "Black/Black", "OG Colorway",
+         "H7L0L-9090", 120),
+        ("ASICS", "Gel-Lyte III", "Birch/Ivory", "Retro",
+         "1201A050-200", 130),
+        ("ASICS", "Gel-Lyte III", "Piedmont Grey", "Retro",
+         "1201A050-020", 125),
+    ]
+
+
+def _adidas_samba_gazelle_r6() -> list[tuple]:
+    """10 Adidas Samba and Gazelle colorways (men's and women's)."""
+    return [
+        ("Adidas", "Samba OG", "Black/Gum", "OG Colorway",
+         "B75807", 100),
+        ("Adidas", "Samba OG", "Green/White", "Retro",
+         "IG1024", 100),
+        ("Adidas", "Samba OG", "Navy/Gum", "OG Colorway",
+         "IE3437R6", 100),
+        ("Adidas", "Samba OG", "Wonder Clay (W)", "GR (General Release)",
+         "ID0478", 110),
+        ("Adidas", "Samba OG", "Silver Green (W)", "GR (General Release)",
+         "ID0492", 110),
+        ("Adidas", "Gazelle", "Collegiate Navy", "OG Colorway",
+         "BB5478", 90),
+        ("Adidas", "Gazelle", "Black/White", "OG Colorway",
+         "BB5476", 90),
+        ("Adidas", "Gazelle", "Scarlet Red", "Retro",
+         "BB5486", 90),
+        ("Adidas", "Gazelle Bold", "True Pink (W)", "GR (General Release)",
+         "HQ6893", 100),
+        ("Adidas", "Gazelle Bold", "Green/Cloud White (W)", "GR (General Release)",
+         "HQ6894", 100),
+    ]
+
+
+def _adidas_forum_low_r6() -> list[tuple]:
+    """6 Adidas Forum Low variants."""
+    return [
+        ("Adidas", "Forum Low", "White/Blue", "Retro",
+         "FY7756", 100),
+        ("Adidas", "Forum Low", "White/Green", "Retro",
+         "FY7757", 100),
+        ("Adidas", "Forum Low", "Bad Bunny The Last Campus", "Collaboration",
+         "ID4950", 300),
+        ("Adidas", "Forum Low", "Bad Bunny Egg Shell", "Collaboration",
+         "HQ2154", 270),
+        ("Adidas", "Forum 84 Low", "Bape 30th Anniversary", "Collaboration",
+         "ID4772", 280),
+        ("Adidas", "Forum Low", "Cloud White Gum", "Retro",
+         "GX1072", 95),
+    ]
+
+
+def _nike_af1_variants_r6() -> list[tuple]:
+    """8 Nike Air Force 1 variants beyond triple white."""
+    return [
+        ("Nike", "Air Force 1 Low", "Tiffany & Co. 1837 (Friends & Family)", "F&F (Friends & Family)",
+         "DZ1382-002", 2500),
+        ("Nike", "Air Force 1 Low", "Travis Scott Sail (2019)", "Collaboration",
+         "AQ4211-101R6", 550),
+        ("Nike", "Air Force 1 Low", "Off-White The Ten White", "Collaboration",
+         "AO4606-100", 800),
+        ("Nike", "Air Force 1 Low", "Off-White Black", "Collaboration",
+         "AO4606-001", 850),
+        ("Nike", "Air Force 1 Low", "Supreme Box Logo White", "Collaboration",
+         "CU9225-100", 350),
+        ("Nike", "Air Force 1 Low", "Stussy Fossil", "Collaboration",
+         "CZ9084-200", 300),
+        ("Nike", "Air Force 1 Low", "NOCTA Drake Certified Lover Boy", "Collaboration",
+         "CZ8065-100", 280),
+        ("Nike", "Air Force 1 Low", "Triple Black", "GR (General Release)",
+         "315122-001", 100),
+    ]
+
+
+def _nike_air_max_1_90_97_r6() -> list[tuple]:
+    """10 Nike Air Max 1, 90, 97 colorway variants."""
+    return [
+        ("Nike", "Air Max 1", "Blueprint", "Limited Release",
+         "DQ3989-100R6", 200),
+        ("Nike", "Air Max 1", "Curry (2018)", "Retro",
+         "908366-700", 180),
+        ("Nike", "Air Max 1", "Magma Orange", "Retro",
+         "CW6541-001", 170),
+        ("Nike", "Air Max 90", "Infrared (2020 Retro)", "OG Colorway",
+         "CT1685-100R6", 170),
+        ("Nike", "Air Max 90", "Viotech OG", "Limited Release",
+         "CD0917-600", 200),
+        ("Nike", "Air Max 90", "Sail / Wheat", "Retro",
+         "CZ3950-100", 150),
+        ("Nike", "Air Max 97", "Triple White", "GR (General Release)",
+         "921826-101", 170),
+        ("Nike", "Air Max 97", "Mschf x Lil Nas X Satan Shoes", "Collaboration",
+         "MSCHF-SATAN", 5000),
+        ("Nike", "Air Max 97", "Off-White Menta", "Collaboration",
+         "AJ4585-300", 600),
+        ("Nike", "Air Max 97", "South Beach", "Limited Release",
+         "921826-500", 220),
+    ]
+
+
+def _converse_chuck70_cdg_r6() -> list[tuple]:
+    """8 Converse Chuck 70 and CDG collab variants."""
+    return [
+        ("Converse", "Chuck 70", "CDG Play Multi Heart Black", "Collaboration",
+         "171851C", 180),
+        ("Converse", "Chuck 70", "CDG Play Small Heart White Low", "Collaboration",
+         "150207C", 160),
+        ("Converse", "Chuck 70", "CDG Play Red Sole Black", "Collaboration",
+         "A08796C", 190),
+        ("Converse", "Chuck 70", "Parchment (Classic)", "OG Colorway",
+         "162062C", 80),
+        ("Converse", "Chuck 70", "Black (Classic)", "OG Colorway",
+         "162058C", 80),
+        ("Converse", "Chuck 70", "Rick Owens DRKSHDW Black", "Collaboration",
+         "DC04BX7890", 250),
+        ("Converse", "Chuck 70", "Stussy Pigment Dyed Green", "Collaboration",
+         "A01765C", 200),
+        ("Converse", "Chuck 70", "Kim Jones Black", "Collaboration",
+         "171257C", 220),
+    ]
+
+
+def _puma_suede_rsx_r6() -> list[tuple]:
+    """8 Puma Suede and RS-X variants."""
+    return [
+        ("Puma", "Suede Classic", "Black/White", "OG Colorway",
+         "352634-03", 70),
+        ("Puma", "Suede Classic", "Peacoat Navy", "OG Colorway",
+         "356568-51", 70),
+        ("Puma", "Suede Classic", "Stoney Grey", "OG Colorway",
+         "365347-01", 75),
+        ("Puma", "Suede Classic", "50th Anniversary Red", "Limited Release",
+         "366332-01", 120),
+        ("Puma", "RS-X³", "Puzzle White", "Retro",
+         "371570-04", 100),
+        ("Puma", "RS-X³", "Sonic the Hedgehog", "Collaboration",
+         "373427-01", 180),
+        ("Puma", "RS-X", "Ader Error Grey", "Collaboration",
+         "369538-01", 160),
+        ("Puma", "Speedcat OG", "Sparco Black", "OG Colorway",
+         "398846-02", 110),
+    ]
+
+
+def _womens_specific_r6() -> list[tuple]:
+    """10 women's-specific sneaker releases."""
+    return [
+        ("Jordan", "Air Jordan 1 High", "Satin Snake (W)", "Limited Release",
+         "CD0461-601W", 450),
+        ("Jordan", "Air Jordan 1 High", "Silver Toe (W)", "Limited Release",
+         "CD0461-001", 300),
+        ("Jordan", "Air Jordan 1 High", "Seafoam (W)", "Retro",
+         "CD0461-002", 220),
+        ("Jordan", "Air Jordan 1 High", "Atmosphere (W)", "Retro",
+         "DD7399-100", 200),
+        ("Nike", "Dunk Low", "Harvest Moon (W)", "GR (General Release)",
+         "DD1503-114", 100),
+        ("Nike", "Dunk Low", "Team Red (W)", "GR (General Release)",
+         "DD1503-108", 100),
+        ("Jordan", "Air Jordan 4", "Shimmer (W) 2024", "Retro",
+         "DJ0675-200W", 270),
+        ("Jordan", "Air Jordan 1 Low", "Arctic Pink (W)", "GR (General Release)",
+         "DC0774-600", 120),
+        ("Nike", "Air Force 1 Low", "Particle Beige (W)", "GR (General Release)",
+         "CZ0270-200", 110),
+        ("Adidas", "Samba OG", "Almost Pink (W)", "GR (General Release)",
+         "IE5459", 120),
+    ]
+
+
+def _kids_gs_sizing_r6() -> list[tuple]:
+    """6 kids/GS sizing sneakers with premium resale prices."""
+    return [
+        ("Jordan", "Air Jordan 1 High", "Travis Scott Mocha (GS)", "Collaboration",
+         "CD4487-100-GS", 900),
+        ("Jordan", "Air Jordan 4", "Off-White Sail (GS)", "Collaboration",
+         "CV9388-100-GS", 700),
+        ("Jordan", "Air Jordan 1 Low", "Travis Scott Reverse Mocha (GS)", "Collaboration",
+         "DM7866-162-GS", 600),
+        ("Jordan", "Air Jordan 4", "Black Cat (GS)", "Retro",
+         "CU1110-010-GS", 350),
+        ("Jordan", "Air Jordan 11", "Bred (GS)", "OG Colorway",
+         "378038-061", 250),
+        ("Jordan", "Air Jordan 1 High", "Lost & Found Chicago (GS)", "Retro",
+         "FD1437-612", 200),
     ]
 
 
@@ -1908,7 +2280,7 @@ def _nike_am1_anniversary_r5() -> list[tuple]:
 # ---------------------------------------------------------------------------
 
 def get_curated_catalog() -> list[tuple]:
-    """Return the full curated sneaker catalog (500+ items)."""
+    """Return the full curated sneaker catalog (850+ items)."""
     catalog: list[tuple] = []
     catalog.extend(_air_jordan_1_high())
     catalog.extend(_jordan_1_expansion())
@@ -1980,7 +2352,34 @@ def get_curated_catalog() -> list[tuple]:
     catalog.extend(_salomon_xt6_collabs_r5())
     catalog.extend(_puma_suede_vtg_r5())
     catalog.extend(_nike_am1_anniversary_r5())
-    return catalog
+    # --- Expansion Round 6 (~150 new items) ---
+    catalog.extend(_aj1_high_colorways_r6())
+    catalog.extend(_aj1_low_mid_r6())
+    catalog.extend(_aj3_5_11_colorways_r6())
+    catalog.extend(_aj4_colorways_r6())
+    catalog.extend(_nike_dunk_colorways_r6())
+    catalog.extend(_nike_dunk_womens_r6())
+    catalog.extend(_yeezy_350v2_colorways_r6())
+    catalog.extend(_yeezy_500_700_r6())
+    catalog.extend(_nb_550_2002r_990_r6())
+    catalog.extend(_asics_kayano14_gellyte_r6())
+    catalog.extend(_adidas_samba_gazelle_r6())
+    catalog.extend(_adidas_forum_low_r6())
+    catalog.extend(_nike_af1_variants_r6())
+    catalog.extend(_nike_air_max_1_90_97_r6())
+    catalog.extend(_converse_chuck70_cdg_r6())
+    catalog.extend(_puma_suede_rsx_r6())
+    catalog.extend(_womens_specific_r6())
+    catalog.extend(_kids_gs_sizing_r6())
+    # Deduplicate by indices (0, 1, 2) (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item[0], item[1], item[2])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 # ---------------------------------------------------------------------------

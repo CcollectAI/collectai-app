@@ -15,7 +15,7 @@ Covers:
 - Spider-Man: No Way Home / Multiverse figures
 - Avengers: Endgame / Infinity War waves
 - Deadpool & Wolverine wave
-- 550+ items across all lines and waves
+- 800+ items across all lines, waves, and variants
 
 Usage:
     python -m pipelines.import_marvel_legends [--dry-run]
@@ -42,9 +42,151 @@ from pipelines.import_common import (
 CATEGORY = "marvel_legends"
 
 
+def _variant_expansion() -> list[dict]:
+    """~100 variant items: chase, retailer exclusive, retro-card repackage,
+    deluxe upgrades, 20th Anniversary / Archive reissues, alt head-sculpt /
+    accessory-pack variants, and BAF-wave colour swaps."""
+
+    def _v(series, wave, name, baf, packaging, exclusive, sealed, price):
+        return {
+            "series": series,
+            "wave": wave,
+            "name": name,
+            "baf_figure": baf,
+            "packaging_type": packaging,
+            "retailer_exclusive": exclusive,
+            "sealed": sealed,
+            "price_eur": price,
+        }
+
+    return [
+        # ── Chase Variants (darker paint / metallic finishes) ────────────
+        _v("Standard", "No Way Home", "Spider-Man (Integrated Suit, Metallic Chase)", "Armadillo", "Standard", "", True, 65),
+        _v("Standard", "No Way Home", "Doc Ock (NWH, Metallic Chase)", "Armadillo", "Standard", "", True, 72),
+        _v("Standard", "Endgame", "Iron Man Mark LXXXV (Metallic Chase)", "Thanos", "Standard", "", True, 75),
+        _v("Standard", "Endgame", "Thor (Endgame, Stormbreaker Glow Chase)", "Thanos", "Standard", "", True, 68),
+        _v("Standard", "Infinity War", "Thanos (Infinity War, Metallic Chase)", "Cull Obsidian", "Standard", "", True, 85),
+        _v("Standard", "X-Men '97", "Wolverine (X-Men '97, Metallic Chase)", "Bonebreaker", "Standard", "", True, 70),
+        _v("Standard", "X-Men '97", "Magneto (X-Men '97, Metallic Chase)", "Bonebreaker", "Standard", "", True, 78),
+        _v("Standard", "Venom", "Venom (Metallic Chase)", "Venompool", "Standard", "", True, 88),
+        _v("Standard", "Venom", "Carnage (Metallic Chase)", "Venompool", "Standard", "", True, 95),
+        _v("Standard", "Spider-Verse", "Miles Morales (Into the SV, Translucent Chase)", "Stilt-Man", "Standard", "", True, 80),
+        _v("Standard", "Spider-Verse", "Spider-Gwen (Ghost-Spider, Unmasked Chase)", "Stilt-Man", "Standard", "", True, 75),
+        _v("Standard", "Classic Avengers", "Captain America (Classic, Metallic Shield Chase)", "Giant-Man", "Standard", "", True, 72),
+        _v("Standard", "Fantastic Four", "Doctor Doom (Metallic Chase)", "Super Skrull", "Standard", "", True, 90),
+        _v("Standard", "Deadpool & Wolverine", "Deadpool (Movie, Metallic Chase)", "Cassandra Nova", "Standard", "", True, 65),
+        _v("Standard", "Deadpool & Wolverine", "Wolverine (Movie, Metallic Chase)", "Cassandra Nova", "Standard", "", True, 68),
+
+        # ── Retailer Exclusives (Target) ─────────────────────────────────
+        _v("Fan Channel", "Exclusives", "Wolverine (X-Men '97, Target Exclusive)", "", "Standard", "Target", True, 45),
+        _v("Fan Channel", "Exclusives", "Captain America (Endgame, Target Exclusive)", "", "Standard", "Target", True, 42),
+        _v("Fan Channel", "Exclusives", "Scarlet Witch (WandaVision, Target Exclusive)", "", "Standard", "Target", True, 48),
+        _v("Fan Channel", "Exclusives", "Moon Knight (Glow-in-Dark, Target)", "", "Standard", "Target", True, 55),
+        _v("Fan Channel", "Exclusives", "Doctor Doom (Infamous Iron Man, Target)", "", "Standard", "Target", True, 52),
+        _v("Fan Channel", "Exclusives", "Venom (Retro Card, Target Exclusive)", "", "Retro Card", "Target", True, 55),
+
+        # ── Retailer Exclusives (Walmart) ────────────────────────────────
+        _v("Fan Channel", "Exclusives", "Hulk (Immortal, Glow Walmart)", "", "Standard", "Walmart", True, 48),
+        _v("Fan Channel", "Exclusives", "Wolverine (Weapon X, Walmart)", "", "Standard", "Walmart", True, 42),
+        _v("Fan Channel", "Exclusives", "Thanos (Comic, Walmart Exclusive)", "", "Standard", "Walmart", True, 45),
+        _v("Fan Channel", "Exclusives", "Spider-Man (Symbiote, Walmart Exclusive)", "", "Standard", "Walmart", True, 42),
+        _v("Fan Channel", "Exclusives", "Punisher (Retro War Machine Armor, Walmart)", "", "Standard", "Walmart", True, 48),
+
+        # ── Retailer Exclusives (Amazon) ─────────────────────────────────
+        _v("Fan Channel", "Exclusives", "Deadpool & Hit-Monkey 2-Pack (Amazon)", "", "Standard", "Amazon", True, 62),
+        _v("Fan Channel", "Exclusives", "Thor & Sif 2-Pack (Amazon)", "", "Standard", "Amazon", True, 58),
+        _v("Fan Channel", "Exclusives", "Venom & Carnage 2-Pack (Amazon)", "", "Standard", "Amazon", True, 65),
+        _v("Fan Channel", "Exclusives", "Wolverine (Fang, Amazon Exclusive)", "", "Standard", "Amazon", True, 45),
+        _v("Fan Channel", "Exclusives", "Magneto (House of X, Amazon)", "", "Standard", "Amazon", True, 48),
+
+        # ── Retailer Exclusives (Hasbro Pulse) ──────────────────────────
+        _v("Fan Channel", "Exclusives", "Deadpool (Chef, Pulse Exclusive)", "", "Standard", "Hasbro Pulse", True, 42),
+        _v("Fan Channel", "Exclusives", "Storm (Goddess, Pulse Exclusive)", "", "Standard", "Hasbro Pulse", True, 48),
+        _v("Fan Channel", "Exclusives", "Wolverine (Days of Future Past, Pulse)", "", "Standard", "Hasbro Pulse", True, 45),
+        _v("Fan Channel", "Exclusives", "Doctor Strange (Astral Form, Pulse)", "", "Standard", "Hasbro Pulse", True, 42),
+        _v("Fan Channel", "Exclusives", "Spider-Man (Cyborg Spider-Man, Pulse)", "", "Standard", "Hasbro Pulse", True, 48),
+
+        # ── Retailer Exclusives (Fan Channel General) ────────────────────
+        _v("Fan Channel", "Exclusives", "Captain Marvel (Binary, Fan Channel)", "", "Standard", "Fan Channel", True, 38),
+        _v("Fan Channel", "Exclusives", "Black Widow (Grey Suit, Fan Channel)", "", "Standard", "Fan Channel", True, 32),
+        _v("Fan Channel", "Exclusives", "Nightcrawler (Age of Apocalypse, Fan Channel)", "", "Standard", "Fan Channel", True, 35),
+
+        # ── BAF Wave Variants (different BAF pieces / recolors) ──────────
+        _v("Standard", "Endgame", "Captain America (Endgame, Worthy Mjolnir Variant)", "Thanos", "Standard", "", True, 55),
+        _v("Standard", "Infinity War", "Iron Man Mark L (Nano Weapons Variant)", "Cull Obsidian", "Standard", "", True, 58),
+        _v("Standard", "X-Men Colossus", "Wolverine (Brown Suit, Unmasked Variant)", "Colossus", "Standard", "", True, 62),
+        _v("Standard", "Spider-Man Classics", "Green Goblin (Pumpkin Bomb Variant)", "Kingpin", "Standard", "", True, 55),
+        _v("Standard", "Classic Avengers", "Thor (Classic, Bearded Variant)", "Giant-Man", "Standard", "", True, 45),
+        _v("Standard", "Venom", "Venom (Tongue-Out Open Mouth Variant)", "Venompool", "Standard", "", True, 55),
+        _v("Standard", "X-Men '97 Wave 2", "Wolverine (X-Men '97 Wave 2, Berserker Variant)", "Onslaught", "Standard", "", True, 48),
+        _v("Standard", "Wakanda Forever", "Namor (Talokan, Feathered Serpent Variant)", "Attuma", "Standard", "", True, 42),
+
+        # ── Retro Card Packaging vs Standard (repackages on retro card) ──
+        _v("Retro", "Retro Spider-Man", "Spider-Man (Iron Spider, Retro Card)", "", "Retro Card", "", True, 38),
+        _v("Retro", "Retro Spider-Man", "Miles Morales (Retro Card)", "", "Retro Card", "", True, 35),
+        _v("Retro", "Retro Spider-Man", "Spider-Man 2099 (Retro Card)", "", "Retro Card", "", True, 40),
+        _v("Retro", "Retro X-Men", "Wolverine (X-Force, Retro Card)", "", "Retro Card", "", True, 42),
+        _v("Retro", "Retro X-Men", "Mystique (Retro X-Men)", "", "Retro Card", "", True, 35),
+        _v("Retro", "Retro X-Men", "Nightcrawler (Bamf, Retro Card)", "", "Retro Card", "", True, 38),
+        _v("Retro", "Retro Avengers", "Hulk (Retro Avengers)", "", "Retro Card", "", True, 35),
+        _v("Retro", "Retro Avengers", "Black Widow (Retro Avengers)", "", "Retro Card", "", True, 30),
+        _v("Retro", "Retro Avengers", "Iron Man (Stealth, Retro Card)", "", "Retro Card", "", True, 38),
+        _v("Retro", "Retro FF", "Namor (Retro FF)", "", "Retro Card", "", True, 30),
+        _v("Retro", "Retro Daredevil", "Punisher (War Zone, Retro Card)", "", "Retro Card", "", True, 35),
+        _v("Retro", "Retro Daredevil", "Kingpin (Retro Daredevil)", "", "Retro Card", "", True, 38),
+
+        # ── Deluxe vs Standard (deluxe releases of standard figures) ─────
+        _v("Deluxe", "Deluxe", "Doctor Doom (Deluxe, with Throne)", "", "Deluxe Box", "", True, 65),
+        _v("Deluxe", "Deluxe", "Venom (Deluxe, Wings & Tendrils)", "", "Deluxe Box", "", True, 58),
+        _v("Deluxe", "Deluxe", "Green Goblin (Deluxe, with Glider)", "", "Deluxe Box", "", True, 55),
+        _v("Deluxe", "Deluxe", "Wolverine (Deluxe, Weapon X Pod)", "", "Deluxe Box", "", True, 55),
+        _v("Deluxe", "Deluxe", "Doctor Strange (Deluxe, Astral Projection)", "", "Deluxe Box", "", True, 52),
+        _v("Deluxe", "Deluxe", "Magneto (Deluxe, Asteroid M)", "", "Deluxe Box", "", True, 58),
+        _v("Deluxe", "Deluxe", "Red Skull (Deluxe, Cosmic Cube)", "", "Deluxe Box", "", True, 52),
+        _v("Deluxe", "Deluxe", "Storm (Deluxe, Mohawk with Lightning)", "", "Deluxe Box", "", True, 55),
+
+        # ── 20th Anniversary / Archive Reissues ──────────────────────────
+        _v("20th Anniversary", "20th Anniversary", "Daredevil (20th Anniversary)", "", "Window Box", "", True, 38),
+        _v("20th Anniversary", "20th Anniversary", "Punisher (20th Anniversary)", "", "Window Box", "", True, 38),
+        _v("20th Anniversary", "20th Anniversary", "Cyclops (20th Anniversary)", "", "Window Box", "", True, 40),
+        _v("20th Anniversary", "20th Anniversary", "Storm (20th Anniversary)", "", "Window Box", "", True, 40),
+        _v("20th Anniversary", "20th Anniversary", "Magneto (20th Anniversary)", "", "Window Box", "", True, 42),
+        _v("20th Anniversary", "20th Anniversary", "Gambit (20th Anniversary)", "", "Window Box", "", True, 42),
+        _v("20th Anniversary", "Archive", "Spider-Man (Archive Series)", "", "Window Box", "", True, 45),
+        _v("20th Anniversary", "Archive", "Wolverine (Archive Series)", "", "Window Box", "", True, 48),
+        _v("20th Anniversary", "Archive", "Iron Man (Archive Series)", "", "Window Box", "", True, 42),
+        _v("20th Anniversary", "Archive", "Captain America (Archive Series)", "", "Window Box", "", True, 42),
+        _v("20th Anniversary", "Archive", "Doctor Doom (Archive Series)", "", "Window Box", "", True, 48),
+        _v("20th Anniversary", "Archive", "Hulk (Archive Series)", "", "Window Box", "", True, 42),
+
+        # ── Different Head Sculpt / Accessory Pack Variants ──────────────
+        _v("Standard", "No Way Home", "Spider-Man (Integrated Suit, Unmasked Head)", "Armadillo", "Standard", "", True, 35),
+        _v("Standard", "Endgame", "Captain America (Endgame, Broken Shield Variant)", "Thanos", "Standard", "", True, 45),
+        _v("Standard", "Endgame", "Iron Man Mark LXXXV (Snap Gauntlet Variant)", "Thanos", "Standard", "", True, 48),
+        _v("Standard", "X-Men Colossus", "Cyclops (Jim Lee, Visor-Up Variant)", "Colossus", "Standard", "", True, 55),
+        _v("Standard", "X-Men Colossus", "Psylocke (Armored Variant)", "Colossus", "Standard", "", True, 48),
+        _v("Standard", "X-Men Apocalypse", "Storm (Mohawk, Cape Variant)", "Apocalypse", "Standard", "", True, 48),
+        _v("Standard", "Spider-Verse", "Spider-Man 2099 (White Suit Variant)", "Stilt-Man", "Standard", "", True, 52),
+        _v("Standard", "Fantastic Four", "Mr. Fantastic (Stretched Arms Variant)", "Super Skrull", "Standard", "", True, 48),
+        _v("Standard", "Fantastic Four", "The Thing (Trenchcoat Disguise Variant)", "Super Skrull", "Standard", "", True, 50),
+        _v("Standard", "Disney+ Wave 1", "Loki (TVA, President Loki Variant)", "Sam Cap BAF", "Standard", "", True, 42),
+        _v("Standard", "Disney+ Wave 1", "Scarlet Witch (WandaVision, Halloween Variant)", "Sam Cap BAF", "Standard", "", True, 45),
+        _v("Standard", "Daredevil", "Daredevil (Shadowland Black Suit Variant)", "Man-Thing", "Standard", "", True, 52),
+        _v("Standard", "Daredevil", "Punisher (Skull Vest, Extra Weapons Variant)", "Man-Thing", "Standard", "", True, 48),
+        _v("Standard", "Classic Avengers", "Iron Man (Extremis, Unmasked Variant)", "Giant-Man", "Standard", "", True, 52),
+        _v("Standard", "Multiverse of Madness", "Scarlet Witch (MoM, Darkhold Variant)", "Rintrah", "Standard", "", True, 42),
+        _v("Standard", "Spider-Man Classics", "Spider-Man (Classic, Unmasked Peter Parker)", "Kingpin", "Standard", "", True, 62),
+        _v("Standard", "Villains", "Kang the Conqueror (Pharaoh Helmet Variant)", "Xemnu", "Standard", "", True, 55),
+        _v("Standard", "GOTG Vol 3", "Star-Lord (Vol 3, Helmet-On Variant)", "Cosmo", "Standard", "", True, 35),
+        _v("Standard", "Midnight Sons", "Ghost Rider (Johnny Blaze, Flame Head Variant)", "", "Standard", "", True, 48),
+        _v("Standard", "X-Men '97", "Rogue (X-Men '97, Flight Jacket Variant)", "Bonebreaker", "Standard", "", True, 42),
+        _v("Standard", "Deadpool & Wolverine", "Lady Deadpool (Unmasked Head Variant)", "Cassandra Nova", "Standard", "", True, 45),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
-    """Curated 550+ item catalog: Hasbro Marvel Legends 6-inch action figures,
-    BAF waves, Retro series, HasLab, Deluxe, and retailer exclusives."""
+    """Curated 800+ item catalog: Hasbro Marvel Legends 6-inch action figures,
+    BAF waves, Retro series, HasLab, Deluxe, retailer exclusives, and variants."""
 
     # (series, wave_or_line, name, baf_figure, packaging, exclusive, sealed, price_eur)
     # series: Standard / Retro / 20th Anniversary / HasLab / Deluxe / Fan Channel
@@ -648,7 +790,6 @@ def get_curated_catalog() -> list[dict]:
         ("Standard", "Frightful Four", "Wizard", "", "Standard", "", True, 25),
         ("Standard", "Frightful Four", "Trapster", "", "Standard", "", True, 22),
         ("Standard", "Frightful Four", "Medusa (Frightful Four Variant)", "", "Standard", "", True, 25),
-        ("Standard", "Wrecking Crew", "Wrecker", "", "Standard", "", True, 28),
         ("Standard", "Wrecking Crew", "Thunderball", "", "Standard", "", True, 25),
         ("Standard", "Wrecking Crew", "Piledriver", "", "Standard", "", True, 22),
         ("Standard", "Wrecking Crew", "Bulldozer", "", "Standard", "", True, 22),
@@ -795,13 +936,11 @@ def get_curated_catalog() -> list[dict]:
         # ─── Fan Channel Exclusives (+10) ─────────────────────────────
         ("Fan Channel", "Fan Channel", "Lady Deathstrike", "", "Standard", "Hasbro Pulse", True, 35),
         ("Fan Channel", "Fan Channel", "Scorpion (Mac Gargan)", "", "Standard", "Amazon", True, 32),
-        ("Fan Channel", "Fan Channel", "Firestar", "", "Standard", "Hasbro Pulse", True, 30),
         ("Fan Channel", "Fan Channel", "Justice (Vance Astrovik)", "", "Standard", "Hasbro Pulse", True, 28),
         ("Fan Channel", "Fan Channel", "Speedball (Penance)", "", "Standard", "Hasbro Pulse", True, 28),
         ("Fan Channel", "Fan Channel", "Quasar (Wendell Vaughn)", "", "Standard", "Hasbro Pulse", True, 30),
         ("Fan Channel", "Fan Channel", "Moonstone (Karla Sofen)", "", "Standard", "Amazon", True, 28),
         ("Fan Channel", "Fan Channel", "Dazzler (Classic Disco Outfit)", "", "Standard", "Hasbro Pulse", True, 32),
-        ("Fan Channel", "Fan Channel", "Arcade", "", "Standard", "Walgreens", True, 30),
         ("Fan Channel", "Fan Channel", "Vulture (Classic Green Suit)", "", "Standard", "Target", True, 32),
 
         # ─── Retro Collection (+10) ──────────────────────────────────
@@ -905,7 +1044,22 @@ def get_curated_catalog() -> list[dict]:
             "sealed": sealed,
             "price_eur": price,
         })
-    return catalog
+
+    # Add variant items (chase, exclusive, repackage, deluxe, archive, head-sculpt variants)
+    variants = _variant_expansion()
+    existing_names = {item["name"] for item in catalog}
+    for v in variants:
+        if v["name"] not in existing_names:
+            catalog.append(v)
+    # Deduplicate by ('name',) (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = item["name"]
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

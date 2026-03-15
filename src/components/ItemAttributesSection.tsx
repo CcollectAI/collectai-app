@@ -46,6 +46,25 @@ const KNOWN_LABELS: Record<string, string> = {
   printing: 'Printing',
   scale: 'Scale',
   certification: 'Certification',
+  // Board Games
+  designer: 'Designer',
+  player_count: 'Player Count',
+  play_time: 'Play Time',
+  bgg_rating: 'BGG Rating',
+  // City Pop Vinyl
+  label: 'Label',
+  pressing: 'Pressing',
+  format: 'Format',
+  obi: 'OBI Strip',
+  // Niche Perfumery
+  house: 'House',
+  fragrance_name: 'Fragrance Name',
+  concentration: 'Concentration',
+  size_ml: 'Size (ml)',
+  gender: 'Gender',
+  fragrance_family: 'Fragrance Family',
+  fill_level: 'Fill Level',
+  batch_code: 'Batch Code',
 };
 
 function formatLabel(key: string, catLabels?: Record<string, string>): string {

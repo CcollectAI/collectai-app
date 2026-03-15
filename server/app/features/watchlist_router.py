@@ -142,8 +142,8 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
                         region=region,
                         country_code=country,
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("[watchlist] demand signal recording failed: %s", e)
 
                 return item
         except Exception as e:

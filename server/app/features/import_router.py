@@ -126,8 +126,8 @@ async def import_collection(
     try:
         from app.db import get_pool
         pool = get_pool()
-    except (ImportError, RuntimeError, OSError):
-        pass
+    except (ImportError, RuntimeError, OSError) as e:
+        _logger.debug("[import] DB pool unavailable, using in-memory fallback: %s", e)
 
     for idx, r in enumerate(norm_rows, start=1):
         name = r.get("name") or r.get("title")
@@ -150,8 +150,8 @@ async def import_collection(
         if est_val is not None:
             try:
                 attrs["estimated_value"] = float(str(est_val).replace(",", ".").strip())
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as e:
+                _logger.debug("[import] estimated_value parse failed: %s", e)
         notes = r.get("notes")
         if notes:
             attrs["notes"] = str(notes).strip()

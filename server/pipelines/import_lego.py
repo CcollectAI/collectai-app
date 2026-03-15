@@ -1085,6 +1085,203 @@ def _seed_sets() -> list[tuple]:
     ]
 
 
+def _seed_sets_expansion() -> list[tuple]:
+    """Return ~150 additional LEGO sets: current/recent flagships, retired
+    high-value sets, and popular themes not yet covered in _seed_sets().
+
+    Format matches _seed_sets(): (set_num, name, theme, year, parts, price_eur)
+    """
+    return [
+        # ── Star Wars UCS / Large (missing from _seed_sets) ─────────────
+        ("75355-1", "X-Wing Starfighter UCS", "Star Wars", 2023, 1953, 240.0),
+        ("75397-1", "Jabba's Sail Barge UCS", "Star Wars", 2025, 3942, 500.0),
+        ("75404-2", "Tantive IV", "Star Wars", 2025, 1555, 170.0),
+        ("75375-1", "Millennium Falcon (2024)", "Star Wars", 2024, 921, 100.0),
+        ("75376-1", "Tantive IV (Mid-Scale)", "Star Wars", 2024, 654, 70.0),
+        ("75394-1", "X-Wing Starfighter (2025)", "Star Wars", 2025, 560, 60.0),
+        ("75392-1", "Clone Trooper Mech", "Star Wars", 2025, 156, 15.0),
+        ("75390-1", "Luke Skywalker's X-Wing (2025)", "Star Wars", 2025, 823, 85.0),
+        ("75389-1", "Dark Side Diorama Collection", "Star Wars", 2025, 715, 75.0),
+
+        # ── Star Wars Helmets & Dioramas (not yet in catalog) ───────────
+        ("75391-1", "Captain Rex Y-Wing Microfighter", "Star Wars", 2025, 98, 12.0),
+        ("75398-1", "Mos Eisley Cantina Diorama", "Star Wars", 2025, 820, 90.0),
+        ("75374-1", "AT-TE Walker (2024)", "Star Wars", 2024, 1082, 130.0),
+        ("75373-1", "Ambush on Mandalore Battle Pack", "Star Wars", 2024, 109, 18.0),
+        ("75388-1", "Battle of Hoth Diorama", "Star Wars", 2025, 907, 100.0),
+        ("75370-1", "Stormtrooper Mech", "Star Wars", 2024, 138, 15.0),
+
+        # ── Technic (missing flagships) ─────────────────────────────────
+        ("42107-1", "Ducati Panigale V4 R", "Technic", 2020, 646, 70.0),
+        ("42172-1", "McLaren P1 (Technic)", "Technic", 2024, 3893, 450.0),
+        ("42171-1", "Mercedes-AMG F1 W14 E Performance", "Technic", 2024, 1642, 200.0),
+        ("42174-1", "Volvo EW240 Electric Material Handler", "Technic", 2024, 1116, 130.0),
+        ("42157-1", "John Deere 948L-II Skidder", "Technic", 2023, 1492, 160.0),
+        ("42158-1", "NASA Mars Rover Perseverance", "Technic", 2023, 1132, 110.0),
+        ("42163-1", "Heavy-Duty Bulldozer", "Technic", 2024, 195, 12.0),
+        ("42150-1", "Monster Jam Monster Mutt Dalmatian", "Technic", 2023, 244, 20.0),
+        ("42153-1", "NASCAR Next Gen Chevrolet Camaro ZL1", "Technic", 2023, 672, 50.0),
+        ("42154-1", "2023 Ford GT", "Technic", 2023, 1466, 120.0),
+        ("42130-1", "BMW M 1000 RR", "Technic", 2022, 1920, 200.0),
+        ("42129-1", "4x4 Mercedes-Benz Zetros Trial Truck", "Technic", 2021, 2110, 300.0),
+        ("42126-1", "Ford F-150 Raptor", "Technic", 2021, 1379, 120.0),
+
+        # ── Icons / Creator Expert (recent missing) ─────────────────────
+        ("10313-2", "Wildflower Bouquet (Icons)", "Icons", 2023, 939, 55.0),
+        ("10335-1", "LEGO World Map (Reissue)", "Icons", 2024, 11695, 350.0),
+        ("10281-3", "Bonsai Tree (Refreshed)", "Icons", 2024, 878, 55.0),
+        ("10339-1", "Lion Knights' Castle (Forestmen)", "Icons", 2024, 2500, 230.0),
+        ("10337-1", "Bowser (Super Mario Icons)", "Icons", 2024, 2807, 270.0),
+        ("10338-1", "Optimus Prime (Reissue)", "Icons", 2024, 1508, 180.0),
+
+        # ── Ideas (missing from catalog) ────────────────────────────────
+        ("92177-1", "Ship in a Bottle", "Ideas", 2018, 962, 130.0),
+        ("21325-1", "Medieval Blacksmith", "Ideas", 2021, 2164, 180.0),
+        ("21328-1", "Seinfeld", "Ideas", 2021, 1326, 100.0),
+        ("21347-1", "DeLorean Time Machine (2024)", "Ideas", 2024, 1872, 200.0),
+        ("21346-2", "Family Tree", "Ideas", 2024, 1040, 130.0),
+        ("21351-1", "Naruto Ichiraku Ramen", "Ideas", 2025, 820, 80.0),
+        ("21352-1", "The Nightmare Before Christmas", "Ideas", 2025, 1450, 140.0),
+        ("21353-1", "The Wizard of Oz", "Ideas", 2025, 1210, 130.0),
+
+        # ── Modular Buildings (2024-2025) ───────────────────────────────
+        ("10326-2", "Natural History Museum (Modular)", "Modular Buildings", 2023, 4014, 300.0),
+        ("10350-1", "Spanish Galleon", "Icons", 2025, 3846, 350.0),
+        ("10355-1", "Downtown Diner (Reissue)", "Modular Buildings", 2025, 2480, 250.0),
+
+        # ── Architecture (missing) ──────────────────────────────────────
+        ("21059-1", "Milan Cathedral", "Architecture", 2023, 565, 50.0),
+        ("21028-2", "New York City (Refreshed)", "Architecture", 2023, 598, 65.0),
+        ("21064-1", "Berlin", "Architecture", 2025, 780, 60.0),
+        ("21065-1", "Washington D.C.", "Architecture", 2025, 890, 70.0),
+
+        # ── Harry Potter (2024-2025) ────────────────────────────────────
+        ("76431-1", "Hogwarts Castle: Potions Class", "Harry Potter", 2024, 397, 40.0),
+        ("76432-1", "Forbidden Forest: Magical Creatures (Lg)", "Harry Potter", 2024, 824, 80.0),
+        ("76433-1", "Hogwarts Castle: Astronomy Tower (2024)", "Harry Potter", 2024, 971, 100.0),
+        ("76434-1", "Dobby & Friends Elfin Pack", "Harry Potter", 2024, 265, 30.0),
+        ("76436-1", "Triwizard Tournament: Hungarian Horntail", "Harry Potter", 2024, 671, 60.0),
+        ("76437-1", "Gringotts Wizarding Bank", "Harry Potter", 2024, 1435, 130.0),
+        ("76443-1", "Hogwarts Express (2025 Standard)", "Harry Potter", 2025, 820, 90.0),
+        ("76444-1", "Room of Requirement", "Harry Potter", 2025, 589, 55.0),
+
+        # ── Speed Champions (2024-2025 new models) ──────────────────────
+        ("76923-1", "Lamborghini Lambo V12 Vision GT & Huracan STO", "Speed Champions", 2024, 621, 50.0),
+        ("76925-1", "Ferrari 296 GTS & 812 Competizione", "Speed Champions", 2024, 688, 55.0),
+        ("76926-1", "Porsche 963 Penske Motorsport", "Speed Champions", 2025, 280, 28.0),
+        ("76927-1", "BMW M4 GT3 (2025)", "Speed Champions", 2025, 315, 28.0),
+        ("76928-1", "McLaren W1", "Speed Champions", 2025, 295, 28.0),
+        ("76929-1", "Ferrari SF-24 F1", "Speed Champions", 2025, 342, 28.0),
+        ("76930-1", "Ford Mustang GT (2025)", "Speed Champions", 2025, 328, 28.0),
+        ("76931-1", "Aston Martin Valhalla & Valkyrie", "Speed Champions", 2025, 670, 50.0),
+
+        # ── City (Space, Modular, Deep Sea) ─────────────────────────────
+        ("60433-1", "Modular Space Station", "City", 2024, 1097, 110.0),
+        ("60434-1", "Space Base and Rocket Launchpad", "City", 2024, 1422, 140.0),
+        ("60435-1", "Police Station (2024)", "City", 2024, 688, 70.0),
+        ("60436-1", "Lunar Roving Vehicle", "City", 2024, 312, 30.0),
+        ("60437-1", "Jungle Explorer Helicopter at Base Camp", "City", 2024, 881, 90.0),
+        ("60431-1", "Space Explorer Rover and Alien Life", "City", 2024, 311, 30.0),
+        ("60430-1", "Interstellar Spaceship", "City", 2024, 240, 25.0),
+        ("60432-1", "Command Rover and Crane Loader", "City", 2024, 758, 75.0),
+        ("60439-1", "Fire Station with Fire Truck", "City", 2025, 842, 85.0),
+        ("60440-1", "City Hospital (2025)", "City", 2025, 990, 100.0),
+
+        # ── Marvel Super Heroes (additional) ────────────────────────────
+        ("76266-1", "Endgame Final Battle", "Marvel", 2024, 794, 100.0),
+        ("76267-1", "Avengers Advent Calendar 2024", "Marvel", 2024, 258, 40.0),
+        ("76276-1", "Venom Mech Armor vs Miles Morales", "Marvel", 2024, 302, 30.0),
+        ("76282-1", "Rocket & Baby Groot", "Marvel", 2024, 566, 45.0),
+        ("76283-1", "Ant-Man Construction Figure", "Marvel", 2024, 260, 25.0),
+        ("76284-1", "Green Goblin Construction Figure", "Marvel", 2024, 471, 40.0),
+        ("76285-1", "Spider-Man's Mask", "Marvel", 2024, 543, 50.0),
+        ("76291-1", "The Avengers Quinjet (2025)", "Marvel", 2025, 795, 90.0),
+        ("76295-1", "Iron Man Hulkbuster vs. Thanos", "Marvel", 2025, 1205, 130.0),
+
+        # ── DC Super Heroes (additional) ────────────────────────────────
+        ("76265-1", "Batwing: Batman vs. The Joker", "DC", 2024, 357, 35.0),
+        ("76271-1", "Batman Construction Figure (2024)", "DC", 2024, 275, 30.0),
+        ("76274-1", "Batman with the Batmobile vs Harley Quinn", "DC", 2024, 456, 45.0),
+        ("76264-1", "Batmobile Pursuit: Batman vs The Joker", "DC", 2024, 54, 10.0),
+        ("76293-1", "1989 Batwing (2025)", "DC", 2025, 2363, 250.0),
+        ("76294-1", "Batcave: The Dark Knight Trilogy", "DC", 2025, 4200, 400.0),
+
+        # ── Super Mario (additional) ────────────────────────────────────
+        ("71432-1", "Dorrie's Sunken Shipwreck Adventure", "Super Mario", 2024, 500, 40.0),
+        ("71433-1", "Cat Mario Starter Course", "Super Mario", 2024, 272, 35.0),
+        ("71434-1", "Yoshi's Egg-cellent Forest", "Super Mario", 2024, 107, 28.0),
+        ("71435-1", "Peach vs. Bowser Battle Mech", "Super Mario", 2025, 520, 45.0),
+        ("71422-1", "Picnic at Mario's House Expansion", "Super Mario", 2024, 259, 30.0),
+        ("71426-1", "Piranha Plant", "Super Mario", 2024, 540, 60.0),
+
+        # ── Minecraft (additional) ──────────────────────────────────────
+        ("21250-1", "The Iron Golem Fortress", "Minecraft", 2024, 868, 80.0),
+        ("21251-1", "Steve's Desert Expedition", "Minecraft", 2024, 604, 50.0),
+        ("21252-1", "The Armory", "Minecraft", 2024, 203, 25.0),
+        ("21253-1", "The Animal Sanctuary", "Minecraft", 2024, 206, 25.0),
+        ("21254-1", "The Turtle Beach House", "Minecraft", 2024, 234, 28.0),
+        ("21255-1", "The Nether Portal Ambush", "Minecraft", 2024, 352, 35.0),
+        ("21256-1", "The Frog House", "Minecraft", 2024, 400, 40.0),
+        ("21260-1", "The Cherry Blossom Garden", "Minecraft", 2025, 304, 30.0),
+
+        # ── Disney (additional) ─────────────────────────────────────────
+        ("43224-1", "King Magnifico's Castle", "Disney", 2023, 613, 80.0),
+        ("43231-1", "Asha's Cottage", "Disney", 2023, 509, 40.0),
+        ("43225-1", "The Little Mermaid Royal Clamshell", "Disney", 2023, 1808, 160.0),
+        ("43218-1", "Anna and Elsa's Magical Carousel", "Disney", 2023, 175, 30.0),
+        ("43215-1", "The Enchanted Treehouse", "Disney", 2023, 1016, 90.0),
+        ("43242-1", "Aurora's Castle (2025)", "Disney Princess", 2025, 625, 60.0),
+
+        # ── BrickHeadz (popular characters, 2023-2025) ──────────────────
+        ("40623-1", "Sonic the Hedgehog & Tails BrickHeadz", "BrickHeadz", 2023, 285, 15.0),
+        ("40624-1", "Alex & Steve BrickHeadz (Minecraft)", "BrickHeadz", 2023, 236, 15.0),
+        ("40631-1", "Gandalf the Grey & Balrog BrickHeadz", "BrickHeadz", 2023, 348, 20.0),
+        ("40632-1", "Arwen & Aragorn BrickHeadz", "BrickHeadz", 2023, 261, 15.0),
+        ("40674-1", "Obi-Wan Kenobi & Darth Vader BrickHeadz", "BrickHeadz", 2024, 260, 15.0),
+        ("40676-1", "Stitch BrickHeadz", "BrickHeadz", 2024, 184, 12.0),
+        ("40678-1", "Buzz Lightyear BrickHeadz", "BrickHeadz", 2024, 172, 12.0),
+
+        # ── DREAMZzz (new theme) ────────────────────────────────────────
+        ("71454-1", "The Nightmare Shark Ship", "DREAMZzz", 2023, 1389, 100.0),
+        ("71469-1", "Nightmare Shark Ship (2024)", "DREAMZzz", 2024, 1530, 120.0),
+        ("71461-1", "Fantastical Tree House", "DREAMZzz", 2023, 1257, 100.0),
+        ("71477-1", "The Sandman's Tower", "DREAMZzz", 2024, 723, 60.0),
+
+        # ── Monkie Kid (popular collectible theme) ──────────────────────
+        ("80023-1", "Monkie Kid's Team Dronecopter", "Monkie Kid", 2021, 1462, 120.0),
+        ("80024-1", "The Legendary Flower Fruit Mountain", "Monkie Kid", 2021, 1949, 180.0),
+        ("80028-1", "The Bone Demon", "Monkie Kid", 2022, 1375, 120.0),
+        ("80038-1", "Monkie Kid's Team Van", "Monkie Kid", 2022, 1040, 90.0),
+        ("80039-1", "The Heavenly Realms", "Monkie Kid", 2023, 2433, 200.0),
+        ("80044-1", "Monkie Kid's Team Airship", "Monkie Kid", 2023, 1462, 130.0),
+
+        # ── Retired Sets Now Valuable (secondary market EUR 500-2000+) ──
+        ("10196-3", "Grand Carousel (Ultimate Collector)", "Creator Expert", 2009, 3263, 1400.0),
+        ("10190-2", "Market Street (Modular)", "Modular Buildings", 2007, 1248, 1100.0),
+        ("10193-1", "Medieval Market Village", "Castle", 2009, 1601, 600.0),
+        ("10194-1", "Emerald Night (Steam Train)", "Creator Expert", 2009, 1085, 700.0),
+        ("10195-1", "Republic Dropship with AT-OT", "Star Wars", 2009, 1758, 1200.0),
+        ("10212-1", "Imperial Shuttle UCS", "Star Wars", 2010, 2503, 700.0),
+        ("10227-1", "B-wing Starfighter UCS", "Star Wars", 2012, 1487, 500.0),
+        ("10236-1", "Ewok Village", "Star Wars", 2013, 1990, 500.0),
+        ("10228-1", "Haunted House", "Monster Fighters", 2012, 2064, 600.0),
+        ("10244-1", "Fairground Mixer", "Creator Expert", 2014, 1746, 500.0),
+        ("10247-2", "Ferris Wheel (Collectible)", "Creator Expert", 2015, 2464, 500.0),
+        ("70810-1", "MetalBeard's Sea Cow", "The LEGO Movie", 2014, 2741, 500.0),
+        ("71006-1", "The Simpsons House", "The Simpsons", 2014, 2523, 600.0),
+        ("71016-1", "The Kwik-E-Mart", "The Simpsons", 2015, 2179, 500.0),
+        ("75159-2", "Death Star (2016 Retired)", "Star Wars", 2016, 4016, 800.0),
+        ("75827-1", "Ghostbusters Firehouse Headquarters", "Ghostbusters", 2016, 4634, 800.0),
+        ("21108-1", "Ghostbusters Ecto-1 (Ideas)", "Ideas", 2014, 508, 200.0),
+        ("21103-1", "The DeLorean Time Machine (Ideas Original)", "Ideas", 2013, 401, 180.0),
+        ("21302-1", "The Big Bang Theory", "Ideas", 2015, 484, 150.0),
+        ("21110-1", "Research Institute", "Ideas", 2014, 165, 120.0),
+        ("10253-1", "Big Ben", "Creator Expert", 2016, 4163, 500.0),
+        ("10257-1", "Carousel", "Creator Expert", 2017, 2670, 400.0),
+        ("10260-1", "Downtown Diner", "Creator Expert", 2018, 2480, 500.0),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Return the full curated LEGO catalog as a list of dicts.
 
@@ -1092,7 +1289,11 @@ def get_curated_catalog() -> list[dict]:
     Used by catalog_crawler and model_retrain workers.
     """
     catalog: list[dict] = []
-    for set_num, name, theme, year, parts, price_eur in _seed_sets():
+    seen: set[str] = set()
+    for set_num, name, theme, year, parts, price_eur in _seed_sets() + _seed_sets_expansion():
+        if set_num in seen:
+            continue
+        seen.add(set_num)
         catalog.append({
             "set_number": set_num,
             "name": name,
@@ -1101,7 +1302,15 @@ def get_curated_catalog() -> list[dict]:
             "parts": parts,
             "price_eur": price_eur,
         })
-    return catalog
+    # Deduplicate by ('set_number',) (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = item["set_number"]
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _run_curated_seed(dry_run: bool):
@@ -1118,11 +1327,15 @@ def _run_curated_seed(dry_run: bool):
     Format: (set_num, name, theme, year, parts, price_eur)
     Prices are approximate secondary-market EUR values (2026).
     """
-    seed_sets = _seed_sets()
+    all_seeds = _seed_sets() + _seed_sets_expansion()
+    seen: set[str] = set()
 
     items = []
     observations = []
-    for set_num, name, theme, year, parts, price_eur in seed_sets:
+    for set_num, name, theme, year, parts, price_eur in all_seeds:
+        if set_num in seen:
+            continue
+        seen.add(set_num)
         rarity_label, rarity_val = _curated_rarity(year, parts, theme)
         items.append(CatalogItem(
             category=CATEGORY,

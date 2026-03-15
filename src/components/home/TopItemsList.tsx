@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { radius, text, fontWeight as fw, shadow } from "@/theme/tokens";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -80,7 +81,7 @@ function TopItemsListInner({
             onItemPress(it);
           }}
           accessibilityRole="button"
-          accessibilityLabel={`View ${it.name}`}
+          accessibilityLabel={`${it.name}, ${it.category ?? 'unknown category'}, ${formatPrice(it.value)}, ${formatPct(it.changePct)}`}
         >
           <View style={s.itemLeft}>
             <View style={s.moverLabel}>
@@ -116,7 +117,7 @@ function TopItemsListInner({
               onItemPress(it);
             }}
             accessibilityRole="button"
-            accessibilityLabel={`View ${it.name}`}
+            accessibilityLabel={`${it.name}, ${it.category ?? 'unknown category'}, ${formatPrice(it.value)}, ${formatPct(it.changePct)}`}
           >
             <View style={s.itemLeft}>
               <View style={s.moverLabel}>
@@ -147,13 +148,9 @@ export const TopItemsList = React.memo(TopItemsListInner);
 const s = StyleSheet.create({
   listCard: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radius.md,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadow.card,
     marginBottom: 20,
   },
   itemRow: {
@@ -176,12 +173,12 @@ const s = StyleSheet.create({
     gap: 4,
   },
   itemName: {
-    fontWeight: "700",
-    fontSize: 14,
+    fontWeight: fw.bold,
+    fontSize: text.md,
   },
   itemCategory: {
-    fontWeight: "600",
-    fontSize: 12,
+    fontWeight: fw.semibold,
+    fontSize: text.sm,
     marginTop: 2,
   },
   itemRight: {
@@ -189,12 +186,12 @@ const s = StyleSheet.create({
     minWidth: 90,
   },
   itemValue: {
-    fontWeight: "800",
-    fontSize: 14,
+    fontWeight: fw.extrabold,
+    fontSize: text.md,
   },
   itemPct: {
-    fontWeight: "700",
-    fontSize: 12,
+    fontWeight: fw.bold,
+    fontSize: text.sm,
     marginTop: 2,
   },
 });

@@ -3,6 +3,7 @@ Gamification router — achievements, XP, streaks, challenges, leaderboard.
 
 Endpoints:
 - GET  /gamification/profile              — User's XP, level, streak, achievement count
+- GET  /gamification/profile/{user_id}    — Public gamification profile for any user (no auth)
 - GET  /gamification/achievements         — All achievements with user's unlock status
 - GET  /gamification/achievements/recent  — Recently unlocked achievements
 - GET  /gamification/challenges           — Active challenges with user progress
@@ -16,9 +17,10 @@ import logging
 import math
 from datetime import date, datetime, timezone
 from typing import Any, Optional
+from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Path, Query
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id, require_api_key
@@ -26,7 +28,7 @@ from app.db import db_configured, get_conn
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
-from app.rate_limit import per_user_rate_limit
+from app.rate_limit import per_ip_rate_limit, per_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +37,7 @@ router = APIRouter(prefix="/gamification", tags=["Gamification"])
 # Rate limits
 _leaderboard_limit = per_user_rate_limit(30, window_seconds=60, scope="gamification_leaderboard")
 _profile_limit = per_user_rate_limit(60, window_seconds=60, scope="gamification_profile")
+_public_profile_limit = per_ip_rate_limit(30, window_seconds=60, scope="gamification_public_profile")
 
 # ---------------------------------------------------------------------------
 # XP / levelling helpers
@@ -89,6 +92,17 @@ class GamificationProfile(BaseModel):
     monthly_xp: int = 0
     achievements_unlocked: int = 0
     achievements_total: int = 0
+
+
+class PublicGamificationProfile(BaseModel):
+    """Public-facing gamification profile — no sensitive data."""
+    user_id: str
+    total_xp: int = 0
+    level: int = 1
+    current_streak: int = 0
+    achievements_unlocked: int = 0
+    achievements_total: int = 0
+    recent_achievements: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class AchievementItem(BaseModel):
@@ -207,6 +221,91 @@ async def get_profile(
         return {"profile": profile.model_dump()}
     except asyncpg.PostgresError as e:
         logger.error("[gamification] Error fetching profile: %s", e)
+        raise error_response(500, "Failed to fetch gamification profile", code=ErrorCode.DB_ERROR)
+
+
+# ---------------------------------------------------------------------------
+# GET /gamification/profile/{user_id} — Public profile for any user
+# ---------------------------------------------------------------------------
+
+@router.get("/profile/{user_id}")
+async def get_public_profile(
+    user_id: str = Path(..., min_length=1, max_length=100),
+    _rl: None = Depends(_public_profile_limit),
+) -> dict[str, Any]:
+    """Get a public gamification profile for any user (no auth required)."""
+    # Validate UUID format
+    try:
+        UUID(user_id)
+    except ValueError:
+        raise error_response(400, "Invalid user ID format", code=ErrorCode.VALIDATION_ERROR)
+
+    if not db_configured():
+        return {"profile": PublicGamificationProfile(user_id=user_id).model_dump()}
+
+    try:
+        async with get_conn() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT total_xp, current_streak
+                FROM public.user_gamification
+                WHERE user_id = $1
+                """,
+                user_id,
+            )
+
+            counts = await conn.fetchrow(
+                """
+                SELECT
+                    (SELECT COUNT(*) FROM public.user_achievements WHERE user_id = $1) AS unlocked,
+                    (SELECT COUNT(*) FROM public.achievements) AS total
+                """,
+                user_id,
+            )
+
+            # Fetch up to 5 most recent unlocked achievements (public info only)
+            recent_rows = await conn.fetch(
+                """
+                SELECT a.id, a.title, a.icon, a.tier, ua.unlocked_at
+                FROM public.user_achievements ua
+                JOIN public.achievements a ON a.id = ua.achievement_id
+                WHERE ua.user_id = $1
+                ORDER BY ua.unlocked_at DESC
+                LIMIT 5
+                """,
+                user_id,
+            )
+
+        if row:
+            total_xp = row["total_xp"] or 0
+            level = level_from_xp(total_xp)
+            profile = PublicGamificationProfile(
+                user_id=user_id,
+                total_xp=total_xp,
+                level=level,
+                current_streak=row["current_streak"] or 0,
+                achievements_unlocked=counts["unlocked"] if counts else 0,
+                achievements_total=counts["total"] if counts else 0,
+                recent_achievements=[
+                    {
+                        "id": r["id"],
+                        "title": r["title"],
+                        "icon": r["icon"],
+                        "tier": r["tier"],
+                        "unlocked_at": r["unlocked_at"].isoformat() if r["unlocked_at"] else None,
+                    }
+                    for r in recent_rows
+                ],
+            )
+        else:
+            profile = PublicGamificationProfile(
+                user_id=user_id,
+                achievements_total=counts["total"] if counts else 0,
+            )
+
+        return {"profile": profile.model_dump()}
+    except asyncpg.PostgresError as e:
+        logger.error("[gamification] Error fetching public profile for %s: %s", user_id, e)
         raise error_response(500, "Failed to fetch gamification profile", code=ErrorCode.DB_ERROR)
 
 

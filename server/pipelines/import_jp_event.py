@@ -899,7 +899,15 @@ def get_curated_catalog() -> list[dict]:
     # AnimeJapan, TGS, Treasure Festa, Tamashii Nations event exclusives)
     catalog.extend(_expanded_round8_jp_events())
 
-    return catalog
+    # Deduplicate by ('event', 'name') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["event"], item["name"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _batch_jp_events_2025() -> list[dict]:

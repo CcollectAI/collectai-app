@@ -674,6 +674,8 @@ def get_curated_catalog() -> list[dict]:
     items += _expanded_batch_8()
     # ── Expansion Batch 9 — 55+ more lightsticks ──
     items += _expanded_batch_9()
+    # ── Variant expansion — version/color/BT/concert variants ──
+    items += _variant_expansion()
 
     catalog = []
     for group, name, version, variant, tier, price in items:
@@ -685,7 +687,15 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+    # Deduplicate by ('group', 'name', 'version') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["group"], item["name"], item["version"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _expanded_batch_8() -> list[tuple]:
@@ -955,6 +965,47 @@ def _expanded_batch_9() -> list[tuple]:
         ("TWICE", "TWICE Candybong Z Deco Ring Set (Celebrate Tour)", "deco-celebrate", "Tour Exclusive", "mid", 35),
         ("aespa", "aespa Official Lightstick Deco Cover (Whiplash Neon)", "deco-whiplash", "Fan Meeting", "mid", 30),
         ("ENHYPEN", "ENHYPEN EN-Connect Lightstick Strap (Orange Glow)", "strap-enconnect", "Fan Meeting", "standard", 22),
+    ]
+
+
+def _variant_expansion() -> list[tuple]:
+    """Version upgrades, special edition colors, concert-exclusive & Bluetooth variants.
+
+    Lightstick collectors distinguish between Ver 1/2/3 upgrades, special color
+    releases (anniversary, album-themed), concert-only variants, and Bluetooth
+    vs non-Bluetooth versions.  ~15 items targeting 700+ total.
+    """
+    return [
+        # ── BTS ARMY Bomb Bluetooth variants ──
+        ("BTS", "BTS ARMY Bomb Ver. 3 (Non-Bluetooth)", "v3-no-bt", "Non-Bluetooth", "mid", 40),
+        ("BTS", "BTS ARMY Bomb Ver. 4 (Bluetooth SE)", "v4-bt-se", "Bluetooth Special", "high", 65),
+
+        # ── Blackpink color editions ──
+        ("Blackpink", "Blackpink Lightstick Ver. 2 (Pink Gold Edition)", "v2-pinkgold", "Limited Color", "high", 72),
+        ("Blackpink", "Blackpink Lightstick (Blinks Anniversary Silver)", "v2-silver", "Anniversary Edition", "high", 85),
+
+        # ── TWICE special colors ──
+        ("TWICE", "Candy Bong Z (Rose Gold Anniversary)", "v2-rosegold", "Anniversary Edition", "high", 78),
+        ("TWICE", "Candy Bong Infinity (Crystal Clear Edition)", "infinity-crystal", "Limited Color", "high", 88),
+
+        # ── Stray Kids concert-exclusive ──
+        ("Stray Kids", "Nachimbong Ver. 2 (5-STAR Dome Tour Edition)", "v2-5star", "Tour Exclusive", "high", 90),
+        ("Stray Kids", "Nachimbong (Non-Bluetooth Original)", "v1-no-bt", "Non-Bluetooth", "mid", 35),
+
+        # ── SEVENTEEN color variants ──
+        ("SEVENTEEN", "SEVENTEEN Lightstick Ver. 3 (Rose Quartz Edition)", "v3-rq", "Limited Color", "high", 75),
+        ("SEVENTEEN", "SEVENTEEN Lightstick (Follow Again Tour Pearl)", "v3-pearl", "Tour Exclusive", "high", 85),
+
+        # ── EXO version upgrades ──
+        ("EXO", "EXO Lightstick Ver. 3 (Bluetooth Upgrade Kit)", "v3-bt-kit", "Bluetooth Add-on", "mid", 30),
+        ("EXO", "EXO Lightstick (EXO-L 10th Anniversary Gold)", "v3-gold", "Anniversary Edition", "grail", 120),
+
+        # ── NCT Dream / WayV color editions ──
+        ("NCT Dream", "NCT Dream Lightstick (Candy Pastel Edition)", "v1-pastel", "Limited Color", "high", 70),
+        ("WayV", "WayV Lightstick Ver. 2 (Phantom Jade Edition)", "v2-jade", "Limited Color", "high", 72),
+
+        # ── IVE special edition ──
+        ("IVE", "IVE Lightstick (I AM Cherry Blossom Edition)", "v1-cherry", "Limited Color", "high", 68),
     ]
 
 

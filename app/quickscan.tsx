@@ -33,6 +33,7 @@ import { AnimatedPressable } from '@/motion';
 import type { QuickScanResult, CatalogAlternative, DetectedMultiItem } from '@/data/types';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
+import { radius } from '@/theme/tokens';
 
 import {
   AnalyzingScreen,
@@ -43,6 +44,12 @@ import {
 import type { BatchScannedItem } from '@/components/quickscan';
 
 // TIFFANY removed — use colors.accent from theme instead
+
+const SCAN_LINE_DURATION = 1800;
+const ANALYSIS_STEP_INTERVAL = 1500;
+const EDGE_HINT_THRESHOLD = 0.15;
+const VIEWFINDER_HINT_INTERVAL = 2500;
+const PHOTO_QUALITY = 0.8;
 
 type ScanPhase =
   | 'camera'
@@ -83,6 +90,9 @@ function QuickScanScreen() {
   const [comparisonA, setComparisonA] = useState<{ result: QuickScanResult; uri: string } | null>(null);
   const [comparisonB, setComparisonB] = useState<{ result: QuickScanResult; uri: string } | null>(null);
 
+  // Flash/torch toggle
+  const [torchEnabled, setTorchEnabled] = useState(false);
+
   // Edge classification / viewfinder hint state
   const [edgeHint, setEdgeHint] = useState<EdgeClassification | null>(null);
   const [userCategoryDist, setUserCategoryDist] = useState<Record<string, number> | null>(null);
@@ -117,12 +127,12 @@ function QuickScanScreen() {
       Animated.sequence([
         Animated.timing(scanLineAnim, {
           toValue: 1,
-          duration: 1800,
+          duration: SCAN_LINE_DURATION,
           useNativeDriver: true,
         }),
         Animated.timing(scanLineAnim, {
           toValue: 0,
-          duration: 1800,
+          duration: SCAN_LINE_DURATION,
           useNativeDriver: true,
         }),
       ]),
@@ -138,27 +148,31 @@ function QuickScanScreen() {
       setAnalysisStepIndex((prev) =>
         prev < 2 ? prev + 1 : prev,
       );
-    }, 1500);
+    }, ANALYSIS_STEP_INTERVAL);
     return () => clearInterval(interval);
   }, [phase]);
 
-  // Track when camera permission is first granted
+  // Track when camera permission is first granted (fires once when granted becomes true)
+  const permissionTrackedRef = useRef(false);
   useEffect(() => {
-    if (permission?.granted) {
+    if (permission?.granted && !permissionTrackedRef.current) {
+      permissionTrackedRef.current = true;
       track({ name: 'quickscan_started' });
     }
   }, [permission?.granted]);
 
-  // Load user's category distribution once for edge classification
+  // M9: Load user's category distribution once for edge classification (with cancellation)
   useEffect(() => {
     if (!featureFlags.FEATURE_EDGE_CLASSIFICATION) return;
+    let cancelled = false;
     dataProvider.listItems({ limit: 500, offset: 0 })
       .then((items) => {
-        if (items?.length) {
+        if (!cancelled && items?.length) {
           setUserCategoryDist(buildCategoryDistribution(items));
         }
       })
       .catch(() => {/* best-effort */});
+    return () => { cancelled = true; };
   }, []);
 
   // F5: Live viewfinder hints — periodic frame capture in camera phase
@@ -174,14 +188,14 @@ function QuickScanScreen() {
             { width: frame.width, height: frame.height },
             userCategoryDist,
           );
-          if (hint.confidence >= 0.15) {
+          if (hint.confidence >= EDGE_HINT_THRESHOLD) {
             setEdgeHint(hint);
           }
         }
       } catch {
         // Silent — frame capture may fail during transitions
       }
-    }, 2500);
+    }, VIEWFINDER_HINT_INTERVAL);
 
     return () => clearInterval(interval);
   }, [phase, userCategoryDist]);
@@ -199,7 +213,7 @@ function QuickScanScreen() {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.8,
+        quality: PHOTO_QUALITY,
         base64: true,
       });
 
@@ -294,7 +308,7 @@ function QuickScanScreen() {
 
     try {
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: PHOTO_QUALITY,
       });
 
       if (!photo?.uri) {
@@ -404,7 +418,7 @@ function QuickScanScreen() {
       setPhase('camera');
       setCapturedUri(null);
     }
-  }, [settings.hapticsEnabled, showToast, batchMode]);
+  }, [settings.hapticsEnabled, showToast, batchMode, multiMode, compareMode, comparisonA, userCategoryDist, edgeHint]);
 
   // Handle selecting an alternative from the "Did you mean?" list
   const handleSelectAlternative = useCallback((alt: CatalogAlternative) => {
@@ -691,6 +705,7 @@ function QuickScanScreen() {
         batchOverlayAnim={batchOverlayAnim}
         savingBatchItem={savingBatchItem}
         currency={settings.currency}
+        enableTorch={torchEnabled}
         onCancel={handleCancel}
         onCapture={handleCapture}
         onBatchDone={handleBatchDone}
@@ -702,14 +717,28 @@ function QuickScanScreen() {
         colors={colors}
       />
       {phase === 'camera' && (
-        <AnimatedPressable
-          style={[styles.galleryBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
-          onPress={handleScreenshotScan}
-          accessibilityRole="button"
-          accessibilityLabel="Scan from gallery or screenshot"
-        >
-          <Ionicons name="image-outline" size={22} color="#FFFFFF" />
-        </AnimatedPressable>
+        <>
+          <AnimatedPressable
+            style={[styles.galleryBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+            onPress={handleScreenshotScan}
+            accessibilityRole="button"
+            accessibilityLabel="Scan from gallery or screenshot"
+          >
+            <Ionicons name="image-outline" size={22} color={colors.accentText} />
+          </AnimatedPressable>
+          <AnimatedPressable
+            style={[styles.flashBtn, { backgroundColor: torchEnabled ? colors.accent : 'rgba(0,0,0,0.6)' }]}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setTorchEnabled((prev) => !prev);
+            }}
+            accessibilityRole="switch"
+            accessibilityLabel={`Flash ${torchEnabled ? 'on' : 'off'}`}
+            accessibilityState={{ checked: torchEnabled }}
+          >
+            <Ionicons name={torchEnabled ? 'flash' : 'flash-outline'} size={22} color="#FFFFFF" />
+          </AnimatedPressable>
+        </>
       )}
     </View>
   );
@@ -733,7 +762,20 @@ const styles = StyleSheet.create({
     left: 32,
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: radius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  flashBtn: {
+    position: 'absolute',
+    bottom: 56,
+    right: 32,
+    width: 48,
+    height: 48,
+    borderRadius: radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,

@@ -49,6 +49,146 @@ from pipelines.import_common import (
 CATEGORY = "action_figures"
 
 
+def _variant_expansion() -> list[dict]:
+    """~100 variant items: retailer/convention exclusives, repaints, scale variants,
+    deluxe editions, battle-damaged versions, 2-packs, cel-shaded vs movie-accurate."""
+
+    # (brand, line, name, scale, franchise, packaging, exclusive, price_eur)
+    variants = [
+        # ─── Retailer Exclusives ────────────────────────────────────────
+        ("Hasbro", "Black Series", "Boba Fett (Carbonized, Target Exclusive)", '6"', "Star Wars", "Standard", "Target", 38),
+        ("Hasbro", "Black Series", "Clone Trooper (212th Battalion, Walmart Exclusive)", '6"', "Star Wars", "Standard", "Walmart", 35),
+        ("Hasbro", "Black Series", "Mandalorian Super Commando (Walmart Exclusive)", '6"', "Star Wars", "Standard", "Walmart", 35),
+        ("Hasbro", "Black Series", "Heavy Infantry Mandalorian (Amazon Exclusive)", '6"', "Star Wars", "Deluxe", "Amazon", 45),
+        ("Hasbro", "Black Series", "Darth Maul (Mandalore, Amazon Exclusive)", '6"', "Star Wars", "Standard", "Amazon", 38),
+        ("Hasbro", "Black Series", "Stormtrooper (Carbonized, Target Exclusive)", '6"', "Star Wars", "Standard", "Target", 35),
+        ("Hasbro", "Black Series", "General Grievous (Amazon Exclusive)", '6"', "Star Wars", "Deluxe", "Amazon", 48),
+        ("Hasbro", "Black Series", "Darth Vader (Carbonized, Walmart Exclusive)", '6"', "Star Wars", "Standard", "Walmart", 38),
+        ("Hasbro", "GI Joe Classified", "Crimson Guard (Target Exclusive)", '6"', "GI Joe", "Standard", "Target", 35),
+        ("Hasbro", "GI Joe Classified", "Cobra B.A.T. (Amazon Exclusive, 2-Pack)", '6"', "GI Joe", "Deluxe", "Amazon", 55),
+        ("McFarlane", "DC Multiverse", "Batman (Gold Label, Amazon Exclusive)", '7"', "DC Comics", "Standard", "Amazon", 32),
+        ("McFarlane", "DC Multiverse", "Superman (Gold Label, Target Exclusive)", '7"', "DC Comics", "Standard", "Target", 32),
+        ("McFarlane", "DC Multiverse", "The Flash (Gold Label, Walmart Exclusive)", '7"', "DC Comics", "Standard", "Walmart", 30),
+        ("NECA", "Ultimate", "Predator (100th Figure, BBTS Exclusive)", '7"', "Predator", "Window Box", "BBTS", 45),
+        ("NECA", "Ultimate", "Jason Voorhees (BBTS Exclusive Blood Splatter)", '7"', "Horror", "Window Box", "BBTS", 42),
+        ("Super7", "Ultimates!", "TMNT Raphael (Entertainment Earth Exclusive)", '7"', "TMNT", "Standard", "Entertainment Earth", 58),
+        ("Super7", "Ultimates!", "MOTU Skeletor (Entertainment Earth Exclusive)", '7"', "MOTU", "Standard", "Entertainment Earth", 55),
+
+        # ─── Convention Exclusives ──────────────────────────────────────
+        ("Hasbro", "Black Series", "Clone Trooper (Phase I, SDCC 2023)", '6"', "Star Wars", "Standard", "SDCC", 55),
+        ("Hasbro", "Black Series", "Boba Fett (Prototype Armor, SDCC)", '6"', "Star Wars", "Standard", "SDCC", 60),
+        ("Hasbro", "Black Series", "Luke Skywalker (X-Wing Pilot, SDCC)", '6"', "Star Wars", "Standard", "SDCC", 52),
+        ("Hasbro", "Black Series", "Stormtrooper (Jedha Patrol, NYCC)", '6"', "Star Wars", "Standard", "NYCC", 48),
+        ("Hasbro", "Black Series", "Captain Rex (SDCC 2024)", '6"', "Star Wars", "Standard", "SDCC", 65),
+        ("Hasbro", "GI Joe Classified", "Snake Eyes (SDCC 2022 Translucent)", '6"', "GI Joe", "Standard", "SDCC", 60),
+        ("Hasbro", "GI Joe Classified", "Cobra Commander (NYCC 2023 Chrome)", '6"', "GI Joe", "Standard", "NYCC", 55),
+        ("Hasbro", "GI Joe Classified", "Storm Shadow (Pulse Con 2023)", '6"', "GI Joe", "Standard", "Pulse Con", 50),
+        ("McFarlane", "DC Multiverse", "Batman (SDCC Gold Edition)", '7"', "DC Comics", "Standard", "SDCC", 45),
+        ("McFarlane", "DC Multiverse", "Joker (NYCC Purple Reign)", '7"', "DC Comics", "Standard", "NYCC", 42),
+        ("NECA", "Ultimate", "Teenage Mutant Ninja Turtles 4-Pack (SDCC Exclusive)", '7"', "TMNT", "Deluxe", "SDCC", 120),
+        ("Super7", "Ultimates!", "MOTU He-Man (Filmation, SDCC Glow)", '7"', "MOTU", "Standard", "SDCC", 65),
+        ("Mezco", "ONE:12 Collective", "Gomez (SDCC Midnight Agent)", '6"', "Original", "Deluxe", "SDCC", 110),
+        ("Mezco", "ONE:12 Collective", "Batman (NYCC Dark Detective)", '6"', "DC Comics", "Deluxe", "NYCC", 125),
+
+        # ─── Battle-Damaged / Weathered / Clean Versions ────────────────
+        ("Hasbro", "Black Series", "Boba Fett (Battle-Damaged)", '6"', "Star Wars", "Standard", "", 35),
+        ("Hasbro", "Black Series", "The Mandalorian (Weathered Beskar)", '6"', "Star Wars", "Standard", "", 32),
+        ("Hasbro", "Black Series", "Darth Vader (Battle-Damaged, ROTJ)", '6"', "Star Wars", "Standard", "", 35),
+        ("Hasbro", "Black Series", "Stormtrooper (Battle-Damaged Remnant)", '6"', "Star Wars", "Standard", "", 30),
+        ("Hasbro", "Black Series", "Clone Trooper (Phase II Weathered)", '6"', "Star Wars", "Standard", "", 32),
+        ("McFarlane", "DC Multiverse", "Batman (Battle-Damaged, Dark Knight)", '7"', "DC Comics", "Standard", "", 25),
+        ("McFarlane", "DC Multiverse", "Superman (Battle-Damaged, Doomsday)", '7"', "DC Comics", "Standard", "", 25),
+        ("McFarlane", "Spawn", "Spawn (Burned, Battle-Damaged)", '7"', "Spawn", "Standard", "", 28),
+        ("NECA", "Ultimate", "Predator (Battle-Damaged, Jungle Hunter)", '7"', "Predator", "Window Box", "", 38),
+        ("NECA", "Ultimate", "Alien Warrior (Battle-Damaged)", '7"', "Aliens", "Window Box", "", 38),
+        ("Hasbro", "GI Joe Classified", "Snake Eyes (Weathered, Arashikage)", '6"', "GI Joe", "Standard", "", 35),
+        ("McFarlane", "DC Multiverse", "Joker (Arkham Asylum, Weathered)", '7"', "DC Comics", "Standard", "", 25),
+
+        # ─── Different Scales (Same Character) ─────────────────────────
+        ("Hasbro", "Black Series", "The Mandalorian (12-inch, Beskar)", '12"', "Star Wars", "Deluxe", "", 55),
+        ("Hasbro", "Black Series", "Darth Vader (12-inch)", '12"', "Star Wars", "Deluxe", "", 55),
+        ("Hasbro", "Black Series", "Boba Fett (12-inch)", '12"', "Star Wars", "Deluxe", "", 55),
+        ("Hasbro", "Black Series", "Stormtrooper (12-inch)", '12"', "Star Wars", "Deluxe", "", 48),
+        ("Hasbro", "Vintage Collection", "Darth Vader (3.75-inch, Kenner Retro)", '3.75"', "Star Wars", "Standard", "", 18),
+        ("McFarlane", "DC Multiverse", "Batman (12-inch Mega, Rebirth)", '12"', "DC Comics", "Deluxe", "", 48),
+        ("McFarlane", "DC Multiverse", "Superman (12-inch Mega, Action Comics)", '12"', "DC Comics", "Deluxe", "", 48),
+        ("McFarlane", "DC Multiverse", "Joker (12-inch Mega, Death of the Family)", '12"', "DC Comics", "Deluxe", "", 48),
+        ("NECA", "Quarter Scale", "Predator (Jungle Hunter, 18-inch)", '18"', "Predator", "Deluxe", "", 120),
+        ("NECA", "Quarter Scale", "Alien Big Chap (18-inch)", '18"', "Alien", "Deluxe", "", 125),
+
+        # ─── Repaint / Redeco Variants ──────────────────────────────────
+        ("Hasbro", "Black Series", "Clone Trooper (Coruscant Guard, Red)", '6"', "Star Wars", "Standard", "", 32),
+        ("Hasbro", "Black Series", "Clone Trooper (Shock Trooper, Red)", '6"', "Star Wars", "Standard", "", 35),
+        ("Hasbro", "Black Series", "Clone Trooper (442nd Siege Battalion)", '6"', "Star Wars", "Standard", "", 32),
+        ("Hasbro", "Black Series", "Scout Trooper (Gaming Greats, Green Camo)", '6"', "Star Wars", "Standard", "", 30),
+        ("Hasbro", "GI Joe Classified", "Cobra Viper (Python Patrol Repaint)", '6"', "GI Joe", "Standard", "", 32),
+        ("Hasbro", "GI Joe Classified", "Crimson Guard (Ivory Repaint)", '6"', "GI Joe", "Standard", "", 35),
+        ("McFarlane", "DC Multiverse", "Batman (Earth-2 Blue & Grey)", '7"', "DC Comics", "Standard", "", 22),
+        ("McFarlane", "DC Multiverse", "Batman (Rebirth, Black & Grey Repaint)", '7"', "DC Comics", "Standard", "", 22),
+        ("McFarlane", "Spawn", "Spawn (Blue Variant Repaint)", '7"', "Spawn", "Standard", "", 28),
+        ("McFarlane", "Spawn", "Spawn (Crimson Repaint)", '7"', "Spawn", "Standard", "", 28),
+        ("Super7", "Ultimates!", "TMNT Leonardo (Toon, Metallic Repaint)", '7"', "TMNT", "Standard", "", 55),
+        ("Super7", "Ultimates!", "MOTU He-Man (Gold Repaint, Filmation)", '7"', "MOTU", "Standard", "", 58),
+
+        # ─── 2-Pack vs Single Figure Versions ──────────────────────────
+        ("Hasbro", "Black Series", "Darth Vader & Obi-Wan Kenobi 2-Pack", '6"', "Star Wars", "Deluxe", "", 55),
+        ("Hasbro", "Black Series", "Luke Skywalker & Yoda (Dagobah) 2-Pack", '6"', "Star Wars", "Deluxe", "", 50),
+        ("Hasbro", "Black Series", "Han Solo & Chewbacca 2-Pack", '6"', "Star Wars", "Deluxe", "", 52),
+        ("Hasbro", "Black Series", "Ahsoka & Captain Rex 2-Pack", '6"', "Star Wars", "Deluxe", "Hasbro Pulse", 60),
+        ("Hasbro", "GI Joe Classified", "Snake Eyes & Storm Shadow 2-Pack", '6"', "GI Joe", "Deluxe", "", 52),
+        ("Hasbro", "GI Joe Classified", "Flint & Lady Jaye 2-Pack", '6"', "GI Joe", "Deluxe", "Target", 55),
+        ("McFarlane", "DC Multiverse", "Batman & Superman 2-Pack (Dark Knight Returns)", '7"', "DC Comics", "Deluxe", "", 42),
+        ("McFarlane", "DC Multiverse", "Batman & Joker 2-Pack (Arkham Asylum)", '7"', "DC Comics", "Deluxe", "", 42),
+        ("NECA", "Ultimate", "Dutch & Predator 2-Pack (Predator)", '7"', "Predator", "Deluxe", "", 65),
+        ("NECA", "Ultimate", "Ripley & Alien Queen 2-Pack", '7"', "Aliens", "Deluxe", "", 70),
+
+        # ─── Cel-Shaded / Cartoon-Accurate vs Movie-Accurate ───────────
+        ("McFarlane", "DC Multiverse", "Batman (Animated Series, Cel-Shaded)", '7"', "DC Comics", "Standard", "", 28),
+        ("McFarlane", "DC Multiverse", "Joker (Animated Series, Cel-Shaded)", '7"', "DC Comics", "Standard", "", 28),
+        ("McFarlane", "DC Multiverse", "Harley Quinn (Animated Series, Cel-Shaded)", '7"', "DC Comics", "Standard", "", 28),
+        ("McFarlane", "DC Multiverse", "Superman (Animated Series, Cel-Shaded)", '7"', "DC Comics", "Standard", "", 28),
+        ("McFarlane", "DC Multiverse", "Robin (Animated Series, Cel-Shaded)", '7"', "DC Comics", "Standard", "", 28),
+        ("McFarlane", "DC Multiverse", "Mr. Freeze (Animated Series, Cel-Shaded)", '7"', "DC Comics", "Standard", "", 28),
+        ("Hasbro", "Black Series", "Clone Trooper (Clone Wars, Cartoon-Accurate)", '6"', "Star Wars", "Standard", "", 30),
+        ("Hasbro", "Black Series", "Anakin Skywalker (Clone Wars, Cartoon-Accurate)", '6"', "Star Wars", "Standard", "", 32),
+        ("Hasbro", "Black Series", "Obi-Wan Kenobi (Clone Wars, Cartoon-Accurate)", '6"', "Star Wars", "Standard", "", 32),
+
+        # ─── Deluxe Editions (More Accessories) ─────────────────────────
+        ("Hasbro", "Black Series", "Luke Skywalker (Jedi Knight, Deluxe with Throne)", '6"', "Star Wars", "Deluxe", "", 42),
+        ("Hasbro", "Black Series", "Obi-Wan Kenobi (Padawan, Deluxe)", '6"', "Star Wars", "Deluxe", "", 40),
+        ("Hasbro", "Black Series", "Darth Maul (Deluxe, Sith Speeder)", '6"', "Star Wars", "Deluxe", "", 48),
+        ("Hasbro", "Black Series", "Captain Rex (Deluxe, with Jetpack)", '6"', "Star Wars", "Deluxe", "", 45),
+        ("Hasbro", "GI Joe Classified", "Duke (Deluxe, Tiger Force)", '6"', "GI Joe", "Deluxe", "", 42),
+        ("Hasbro", "GI Joe Classified", "Roadblock (Deluxe, Heavy Weapons)", '6"', "GI Joe", "Deluxe", "", 42),
+        ("McFarlane", "DC Multiverse", "Batman (Deluxe, with Bat-Signal Base)", '7"', "DC Comics", "Deluxe", "", 38),
+        ("McFarlane", "DC Multiverse", "Aquaman (Deluxe, with Trident & Base)", '7"', "DC Comics", "Deluxe", "", 35),
+        ("NECA", "Ultimate", "Freddy Krueger (Deluxe, Dream Sequence)", '7"', "Horror", "Deluxe", "", 42),
+        ("NECA", "Ultimate", "Michael Myers (Deluxe, Halloween 2018)", '7"', "Horror", "Deluxe", "", 42),
+
+        # ─── Additional Scale & Exclusive Variants ──────────────────────
+        ("Bandai", "S.H.Figuarts", "Goku (Ultra Instinct, Event Exclusive Silver)", '6"', "Dragon Ball", "Standard", "SDCC", 85),
+        ("Bandai", "S.H.Figuarts", "Vegeta (Super Saiyan Blue, Repaint)", '6"', "Dragon Ball", "Standard", "", 60),
+        ("Medicom", "MAFEX", "Spider-Man (Cel-Shaded, Comic Ver.)", '6"', "Marvel", "Standard", "", 85),
+        ("Medicom", "MAFEX", "Batman (Animated Series, Cel-Shaded)", '6"', "DC Comics", "Standard", "", 88),
+        ("Good Smile", "Figma", "Link (Twilight Princess, Deluxe with Epona)", '6"', "Zelda", "Deluxe", "", 110),
+        ("Good Smile", "Figma", "Guts (Berserk: Berserker Armor, Repaint)", '6"', "Berserk", "Standard", "", 90),
+    ]
+
+    result = []
+    for brand, line, name, scale, franchise, packaging, exclusive, price in variants:
+        result.append({
+            "brand": brand,
+            "line": line,
+            "name": name,
+            "scale": scale,
+            "franchise": franchise,
+            "packaging_type": packaging,
+            "retailer_exclusive": exclusive,
+            "price_eur": price,
+        })
+    return result
+
+
 def get_curated_catalog() -> list[dict]:
     """Curated 610+ modern action figures catalog: GI Joe Classified, Power Rangers
     Lightning, Star Wars Black Series, NECA, McFarlane, Super7, MOTU Origins, WWE Elite,
@@ -408,7 +548,6 @@ def get_curated_catalog() -> list[dict]:
         ("NECA", "Ultimate", "Chucky (Child's Play)", '7"', "Child's Play", "Window Box", "", 38),
         ("NECA", "Ultimate", "Pennywise (IT 1990)", '7"', "IT", "Window Box", "", 35),
         ("NECA", "Ultimate", "Ghostface (Scream)", '7"', "Scream", "Window Box", "", 35),
-        ("NECA", "Ultimate", "Leatherface (Texas Chainsaw)", '7"', "Texas Chainsaw", "Window Box", "", 38),
         ("NECA", "Ultimate", "Pinhead (Hellraiser)", '7"', "Hellraiser", "Window Box", "", 40),
         ("NECA", "Ultimate", "Ash Williams (Evil Dead 2)", '7"', "Evil Dead", "Window Box", "", 38),
 
@@ -838,12 +977,8 @@ def get_curated_catalog() -> list[dict]:
         ("Medicom", "MAFEX", "Catwoman (Hush)", '6"', "DC Comics", "Standard", "", 78),
 
         # ─── Additional Action Figures (+12) ───────────────────────────────
-        ("Hasbro", "Black Series", "Ahsoka Tano (Rebels)", '6"', "Star Wars", "Standard", "", 32),
-        ("Hasbro", "Black Series", "Clone Trooper (Phase II)", '6"', "Star Wars", "Standard", "", 28),
-        ("Hasbro", "Black Series", "Grand Inquisitor", '6"', "Star Wars", "Standard", "", 30),
         ("Hasbro", "Classified", "Cobra Commander (v2)", '6"', "GI Joe", "Standard", "", 28),
         ("Hasbro", "Classified", "Snake Eyes (Retro Card)", '6"', "GI Joe", "Retro Card", "", 32),
-        ("McFarlane", "DC Multiverse", "Flash (Flashpoint)", '7"', "DC Comics", "Standard", "", 22),
         ("McFarlane", "DC Multiverse", "Swamp Thing Mega Figure", '7"', "DC Comics", "Deluxe", "", 45),
         ("NECA", "Ultimate", "Predator (Jungle Hunter)", '7"', "Predator", "Ultimate Box", "", 38),
         ("NECA", "Ultimate", "Alien Warrior (Blue)", '7"', "Aliens", "Ultimate Box", "", 35),
@@ -864,7 +999,26 @@ def get_curated_catalog() -> list[dict]:
             "retailer_exclusive": exclusive,
             "price_eur": price,
         })
-    return catalog
+
+    # Add variant items (exclusives, repaints, scale variants, 2-packs, etc.)
+    variants = _variant_expansion()
+    # Dedup by (brand, line, name) to avoid collisions with existing items
+    existing_keys = {(d["brand"], d["line"], d["name"]) for d in catalog}
+    for v in variants:
+        key = (v["brand"], v["line"], v["name"])
+        if key not in existing_keys:
+            catalog.append(v)
+            existing_keys.add(key)
+
+    # Deduplicate by ('brand', 'line', 'name') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["brand"], item["line"], item["name"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

@@ -977,6 +977,9 @@ def get_curated_catalog() -> list[dict]:
         ("RIIZE", "photocard", "Sungchan Impossible Fan Sign", "Fan Sign", "high", 120),
     ]
 
+    # ── Variant expansion — album version/format/exclusive variants ──
+    items += _variant_expansion()
+
     catalog = []
     for group, item_type, name, variant, tier, price in items:
         catalog.append({
@@ -987,7 +990,104 @@ def get_curated_catalog() -> list[dict]:
             "rarity_tier": tier,
             "price_eur": price,
         })
-    return catalog
+    # Deduplicate by ('group', 'name', 'variant') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["group"], item["name"], item["variant"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
+
+
+def _variant_expansion() -> list[tuple]:
+    """Album version, format & exclusive variants for existing catalog items.
+
+    K-pop albums typically ship in multiple versions (A/B/C/D) with different
+    photobooks/covers, retailer exclusives (Weverse, Target, Barnes), format
+    variants (jewel case vs digipack vs photobook), sealed/unsealed, and
+    signed editions.  ~55 items targeting 750+ total.
+    """
+    return [
+        # ── BTS album version variants ──
+        ("BTS", "album", "Map of the Soul: 7 (Version 1)", "Version A", "standard", 20),
+        ("BTS", "album", "Map of the Soul: 7 (Version 2)", "Version B", "standard", 20),
+        ("BTS", "album", "Map of the Soul: 7 (Version 3)", "Version C", "standard", 22),
+        ("BTS", "album", "BE Deluxe Edition (Sealed)", "Sealed", "high", 130),
+        ("BTS", "album", "BTS Wings (Version W)", "Version W", "mid", 48),
+        ("BTS", "album", "BTS Wings (Version I)", "Version I", "mid", 48),
+        ("BTS", "album", "BTS Wings (Version N)", "Version N", "mid", 48),
+        ("BTS", "album", "BTS Wings (Version G)", "Version G", "mid", 50),
+
+        # ── Blackpink album version variants ──
+        ("Blackpink", "album", "THE ALBUM Version 1", "Version A (Black)", "standard", 22),
+        ("Blackpink", "album", "THE ALBUM Version 2", "Version B (Pink)", "standard", 22),
+        ("Blackpink", "album", "THE ALBUM Version 3", "Version C (Cream)", "standard", 24),
+        ("Blackpink", "album", "THE ALBUM Version 4", "Version D (White)", "standard", 24),
+        ("Blackpink", "album", "BORN PINK Digipack (Jisoo)", "Digipack Jisoo", "standard", 18),
+        ("Blackpink", "album", "BORN PINK Digipack (Jennie)", "Digipack Jennie", "standard", 18),
+        ("Blackpink", "album", "BORN PINK Digipack (Rosé)", "Digipack Rosé", "standard", 18),
+        ("Blackpink", "album", "BORN PINK Digipack (Lisa)", "Digipack Lisa", "standard", 18),
+        ("Blackpink", "album", "BORN PINK Signed CD (Weverse)", "Signed Weverse", "high", 95),
+
+        # ── Stray Kids format variants ──
+        ("Stray Kids", "album", "MAXIDENT Jewel Case (Bang Chan)", "Jewel Case", "standard", 12),
+        ("Stray Kids", "album", "MAXIDENT Jewel Case (Lee Know)", "Jewel Case", "standard", 12),
+        ("Stray Kids", "album", "MAXIDENT Jewel Case (Changbin)", "Jewel Case", "standard", 12),
+        ("Stray Kids", "album", "5-STAR Target Exclusive", "Target Exclusive", "mid", 35),
+        ("Stray Kids", "album", "5-STAR Barnes & Noble Exclusive", "B&N Exclusive", "mid", 38),
+
+        # ── SEVENTEEN version variants ──
+        ("Seventeen", "album", "FML Version Delusion", "Ver. Delusion", "standard", 20),
+        ("Seventeen", "album", "FML Version Fallen", "Ver. Fallen", "standard", 20),
+        ("Seventeen", "album", "FML Version Path", "Ver. Path", "standard", 20),
+        ("Seventeen", "album", "FML Weverse Albums Ver.", "Weverse Digital", "mid", 30),
+        ("Seventeen", "album", "FML Signed (Weverse POB)", "Signed Weverse", "high", 85),
+
+        # ── NewJeans format variants ──
+        ("NewJeans", "album", "Get Up Weverse Albums Ver.", "Weverse Digital", "mid", 28),
+        ("NewJeans", "album", "Get Up Bag Version (Newjeans)", "Bag Ver. A", "standard", 25),
+        ("NewJeans", "album", "Get Up Bag Version (Bluejeans)", "Bag Ver. B", "standard", 25),
+        ("NewJeans", "album", "How Sweet Weverse Albums Ver.", "Weverse Digital", "mid", 30),
+
+        # ── aespa version variants ──
+        ("aespa", "album", "MY WORLD Poster Ver. (Karina)", "Poster Karina", "standard", 18),
+        ("aespa", "album", "MY WORLD Poster Ver. (Winter)", "Poster Winter", "standard", 18),
+        ("aespa", "album", "MY WORLD Poster Ver. (Giselle)", "Poster Giselle", "standard", 18),
+        ("aespa", "album", "MY WORLD Poster Ver. (Ningning)", "Poster Ningning", "standard", 18),
+        ("aespa", "album", "MY WORLD Digipack (Target)", "Target Exclusive", "mid", 32),
+
+        # ── ATEEZ version variants ──
+        ("ATEEZ", "album", "THE WORLD EP.2 Diary Ver.", "Diary Ver.", "standard", 22),
+        ("ATEEZ", "album", "THE WORLD EP.2 Z Ver.", "Z Ver.", "standard", 22),
+        ("ATEEZ", "album", "THE WORLD EP.2 A Ver.", "A Ver.", "standard", 22),
+        ("ATEEZ", "album", "THE WORLD EP.FIN Signed (Weverse)", "Signed Weverse", "high", 90),
+
+        # ── TXT version variants ──
+        ("TXT", "album", "The Name Chapter: FREEFALL Weverse Ver.", "Weverse Digital", "mid", 28),
+        ("TXT", "album", "The Name Chapter: FREEFALL Gravity Ver.", "Gravity Ver.", "standard", 20),
+        ("TXT", "album", "The Name Chapter: FREEFALL Melancholy Ver.", "Melancholy Ver.", "standard", 20),
+
+        # ── IVE version / sealed variants ──
+        ("IVE", "album", "I've IVE Jewel Case (Yujin)", "Jewel Yujin", "standard", 14),
+        ("IVE", "album", "I've IVE Jewel Case (Wonyoung)", "Jewel Wonyoung", "standard", 14),
+        ("IVE", "album", "I've IVE Photobook Ver. (Sealed)", "Sealed Photobook", "mid", 35),
+
+        # ── LE SSERAFIM format variants ──
+        ("LE SSERAFIM", "album", "UNFORGIVEN Weverse Albums Ver.", "Weverse Digital", "mid", 28),
+        ("LE SSERAFIM", "album", "UNFORGIVEN Target Exclusive", "Target Exclusive", "mid", 35),
+        ("LE SSERAFIM", "album", "UNFORGIVEN Barnes & Noble Exclusive", "B&N Exclusive", "mid", 38),
+
+        # ── ENHYPEN version variants ──
+        ("ENHYPEN", "album", "ORANGE BLOOD Engene Ver.", "Engene Ver.", "standard", 18),
+        ("ENHYPEN", "album", "ORANGE BLOOD Signed (Weverse)", "Signed Weverse", "high", 80),
+
+        # ── TWICE format variants ──
+        ("TWICE", "album", "READY TO BE Digipack (Nayeon)", "Digipack Nayeon", "standard", 15),
+        ("TWICE", "album", "READY TO BE Digipack (Jihyo)", "Digipack Jihyo", "standard", 15),
+        ("TWICE", "album", "READY TO BE Target Exclusive", "Target Exclusive", "mid", 32),
+    ]
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

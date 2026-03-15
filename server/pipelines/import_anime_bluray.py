@@ -572,7 +572,6 @@ def get_curated_catalog() -> list[dict]:
         ("JP Import", "Black Clover Complete", "Blu-ray", "JP BD Complete Box", "grail", 400),
         ("JP Import", "Dr. Stone Complete", "Blu-ray", "JP BD Complete Box", "high", 250),
         ("JP Import", "Fire Force Complete", "Blu-ray", "JP BD Complete Box", "high", 240),
-        ("JP Import", "Mob Psycho 100 Complete", "Blu-ray", "JP BD Complete Box", "high", 260),
         ("JP Import", "Undead Unluck Complete", "Blu-ray", "JP BD Complete Box", "high", 190),
         ("JP Import", "Hell's Paradise", "Blu-ray", "JP BD Box Set", "high", 200),
         ("JP Import", "Mashle: Magic and Muscles", "Blu-ray", "JP BD Box Set", "mid", 95),
@@ -599,7 +598,6 @@ def get_curated_catalog() -> list[dict]:
         ("JP Import", "Galaxy Express 999 Movie", "Blu-ray", "JP BD Limited Edition", "high", 150),
 
         # ── Steelbooks Wave 2 ───────────────────────────────────────────
-        ("GKIDS", "Princess Mononoke", "4K UHD", "GKIDS 4K Steelbook", "mid", 65),
         ("Funimation", "Dragon Ball Super: Broly", "Blu-ray", "Funimation Steelbook", "mid", 50),
         ("Crunchyroll", "One Piece Film Red", "Blu-ray", "Crunchyroll Steelbook", "mid", 55),
         ("Crunchyroll", "Demon Slayer: Mugen Train", "Blu-ray", "Crunchyroll Steelbook", "mid", 55),
@@ -709,7 +707,6 @@ def get_curated_catalog() -> list[dict]:
         # ── Expansion to 700+ — Recent Hits, 4K UHD, JP Import, Aniplex, Collector Editions ──
 
         # Recent Hit Anime — Frieren, Oshi no Ko, Solo Leveling, etc. (+10)
-        ("Crunchyroll", "Frieren: Beyond Journey's End", "Blu-ray", "Crunchyroll LE Box Set", "high", 120),
         ("Crunchyroll", "Frieren: Beyond Journey's End", "Blu-ray", "Crunchyroll Standard", "mid", 55),
         ("Aniplex USA", "Oshi no Ko Season 1", "Blu-ray", "Aniplex LE Box Set", "high", 180),
         ("Crunchyroll", "Oshi no Ko Season 1", "Blu-ray", "Crunchyroll Standard", "mid", 60),
@@ -736,20 +733,15 @@ def get_curated_catalog() -> list[dict]:
         ("Aniplex USA", "Solo Leveling", "Blu-ray", "Aniplex LE", "high", 150),
         ("Aniplex USA", "The Promised Neverland Season 1", "Blu-ray", "Aniplex LE Box Set", "high", 200),
         ("Aniplex USA", "Erased", "Blu-ray", "Aniplex LE Box Set", "high", 190),
-        ("Aniplex USA", "March Comes in Like a Lion", "Blu-ray", "Aniplex LE Complete Box", "high", 240),
         ("Aniplex USA", "Blue Lock Part 1", "Blu-ray", "Aniplex LE", "high", 130),
         ("Aniplex USA", "Oshi no Ko Season 2", "Blu-ray", "Aniplex LE", "high", 140),
         ("Aniplex USA", "Demon Slayer: Hashira Training Arc", "Blu-ray", "Aniplex LE", "high", 120),
-        ("Aniplex USA", "Sword Art Online Progressive: Scherzo of Deep Night", "Blu-ray", "Aniplex LE", "mid", 90),
 
         # JP Import Box Sets — Additional Titles (+10)
         ("JP Import", "Frieren: Beyond Journey's End", "Blu-ray", "JP BD Box Set Vol. 1-4", "high", 280),
         ("JP Import", "Oshi no Ko", "Blu-ray", "JP BD Box Set Complete", "high", 250),
-        ("JP Import", "Solo Leveling", "Blu-ray", "JP BD Box Set", "high", 220),
-        ("JP Import", "Spy x Family Season 2", "Blu-ray", "JP BD Box Set", "high", 200),
         ("JP Import", "Jujutsu Kaisen Season 2 Complete", "Blu-ray", "JP BD Complete Box", "high", 260),
         ("JP Import", "Chainsaw Man Complete", "Blu-ray", "JP BD Complete Box", "high", 240),
-        ("JP Import", "Bocchi the Rock! Complete", "Blu-ray", "JP BD Complete Box", "high", 220),
         ("JP Import", "My Dress-Up Darling Complete", "Blu-ray", "JP BD Complete Box", "high", 200),
         ("JP Import", "Lycoris Recoil Complete", "Blu-ray", "JP BD Complete Box", "high", 210),
         ("JP Import", "86: Eighty-Six Complete", "Blu-ray", "JP BD Complete Box", "high", 230),
@@ -760,7 +752,6 @@ def get_curated_catalog() -> list[dict]:
         ("Funimation", "Black Butler Complete", "Blu-ray", "Funimation Complete Collection", "mid", 85),
         ("Funimation", "Assassination Classroom Complete", "Blu-ray", "Funimation Complete Box Set", "high", 110),
         ("Sentai Filmworks", "Toradora! Complete", "Blu-ray", "Sentai LE Box Set", "high", 120),
-        ("Sentai Filmworks", "K-On! Complete", "Blu-ray", "Sentai LE Box Set", "high", 130),
         ("Sentai Filmworks", "Love, Chunibyo & Other Delusions Complete", "Blu-ray", "Sentai LE Box Set", "mid", 95),
         ("Sentai Filmworks", "Bloom Into You Complete", "Blu-ray", "Sentai LE", "mid", 80),
         ("Viz Media", "Naruto Shippuden Complete", "Blu-ray", "Viz Complete Box Set", "grail", 480),
@@ -773,7 +764,6 @@ def get_curated_catalog() -> list[dict]:
         ("Funimation", "Dragon Ball Super: Super Hero", "Blu-ray", "Funimation Steelbook", "mid", 45),
         ("Funimation", "My Hero Academia: World Heroes Mission", "Blu-ray", "Funimation Steelbook", "mid", 40),
         ("Crunchyroll", "Jujutsu Kaisen 0", "Blu-ray", "Crunchyroll Steelbook", "mid", 50),
-        ("Crunchyroll", "One Piece Film Red", "Blu-ray", "Crunchyroll Steelbook", "mid", 45),
         ("Crunchyroll", "Suzume", "Blu-ray", "Crunchyroll Steelbook", "mid", 55),
 
         # Vintage / OOP Additional (+8)
@@ -787,7 +777,6 @@ def get_curated_catalog() -> list[dict]:
         ("Discotek Media", "Cutey Honey Complete", "Blu-ray", "Discotek LE", "mid", 75),
 
         # Film Blu-rays (+10)
-        ("GKIDS", "The Boy and the Heron", "Blu-ray", "GKIDS Standard", "mid", 35),
         ("GKIDS", "Weathering With You", "Blu-ray", "GKIDS Standard", "standard", 25),
         ("GKIDS", "Suzume", "Blu-ray", "GKIDS Standard", "standard", 28),
         ("Crunchyroll", "Dragon Ball Super: Super Hero", "Blu-ray", "Crunchyroll Standard", "standard", 28),
@@ -841,7 +830,15 @@ def get_curated_catalog() -> list[dict]:
     # Round 8 expansion — 55 items (605+)
     catalog.extend(_expanded_round8_anime_bluray())
 
-    return catalog
+    # Deduplicate by ('publisher', 'title', 'edition') (keep first occurrence)
+    _seen: set = set()
+    _deduped: list = []
+    for item in catalog:
+        _key = (item["publisher"], item["title"], item["edition"])
+        if _key not in _seen:
+            _seen.add(_key)
+            _deduped.append(item)
+    return _deduped
 
 
 def _expanded_round7_anime_bluray() -> list[dict]:

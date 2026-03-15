@@ -78,6 +78,9 @@ TIER_3 = [
     ("jp_event",        "import_jp_event",        "JP Event Exclusives (curated)"),
     ("anime_ost_vinyl", "import_anime_ost_vinyl", "Anime OST Vinyl (VGMdb)"),
     ("loungefly",       "import_loungefly",       "Loungefly (curated)"),
+    ("oop_board_games", "import_oop_board_games", "OOP Board Games (curated)"),
+    ("city_pop_vinyl",  "import_city_pop_vinyl",  "City Pop Vinyl (curated)"),
+    ("niche_perfumery", "import_niche_perfumery", "Niche Perfumery (curated)"),
 ]
 
 ALL_TIERS = {1: TIER_1, 2: TIER_2, 3: TIER_3}

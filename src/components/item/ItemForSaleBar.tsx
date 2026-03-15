@@ -1,14 +1,15 @@
 /**
  * ItemForSaleBar — Shows listed status badge with Offers / Unlist actions.
  */
-import React from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, ActivityIndicator, StyleSheet, Animated as RNAnimated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
+import { radius, text, fontWeight, gap } from '@/theme/tokens';
 
 interface ItemForSaleBarProps {
   askingPriceValue: string;
@@ -21,11 +22,29 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
   const { settings } = useSettings();
   const router = useRouter();
 
+  // Pulsing animation for the active listing dot
+  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
+  useEffect(() => {
+    const animation = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulseAnim, { toValue: 0.3, duration: 1000, useNativeDriver: true }),
+        RNAnimated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [pulseAnim]);
+
   return (
     <View style={styles.forSaleBar}>
-      <View style={[styles.forSaleBadge, { backgroundColor: '#D1FAE5' }]}>
-        <Ionicons name="pricetag" size={14} color="#065F46" />
-        <Text style={[styles.forSaleBadgeText, { color: '#065F46' }]}>
+      <View
+        style={[styles.forSaleBadge, { backgroundColor: theme.successBg }]}
+        accessibilityRole="text"
+        accessibilityLabel={`Item listed for sale${askingPriceValue ? ` at ${formatPrice(parseFloat(askingPriceValue), settings.currency)}` : ''}`}
+      >
+        <RNAnimated.View style={[styles.activeDot, { backgroundColor: theme.success, opacity: pulseAnim }]} />
+        <Ionicons name="pricetag" size={14} color={theme.success} />
+        <Text style={[styles.forSaleBadgeText, { color: theme.success }]}>
           Listed{askingPriceValue ? ` ${formatPrice(parseFloat(askingPriceValue), settings.currency)}` : ''}
         </Text>
       </View>
@@ -60,33 +79,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 8,
+    gap: gap.md,
     marginBottom: 12,
   },
   forSaleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: gap.sm,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: radius.xs,
     flex: 1,
   },
   forSaleBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
+  },
+  activeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   editBarBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: gap.sm,
     paddingVertical: 8,
     paddingHorizontal: 14,
-    borderRadius: 8,
+    borderRadius: radius.xs,
     borderWidth: 1,
   },
   editBarBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
 });

@@ -70,7 +70,8 @@
       "infoPlist": {
         "NSCalendarsUsageDescription": "CollectAI needs access to your calendar to add collection events, drops, and meetups.",
         "NSRemindersUsageDescription": "CollectAI needs access to reminders to notify you about upcoming events.",
-        "NSCameraUsageDescription": "CollectAI needs camera access to scan barcodes and photograph collectibles."
+        "NSCameraUsageDescription": "CollectAI needs camera access to scan barcodes and photograph collectibles.",
+        "NSLocationWhenInUseUsageDescription": "CollectAI needs your location to find nearby collector events and meetups."
       }
     },
     "android": {

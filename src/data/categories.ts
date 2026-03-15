@@ -49,7 +49,10 @@ export type CategoryId =
   | 'plush_collectibles'
   | 'pens'
   | 'watches'
-  | 'sneakers';
+  | 'sneakers'
+  | 'oop_board_games'
+  | 'city_pop_vinyl'
+  | 'niche_perfumery';
 
 export type CategoryCollection = {
   id: string;
@@ -130,6 +133,9 @@ export const CATEGORY_VISUAL: Record<CategoryId, { accentColor: string; iconName
   pens: { accentColor: '#065F46', iconName: 'create' },
   watches: { accentColor: '#92400E', iconName: 'watch' },
   sneakers: { accentColor: '#1D4ED8', iconName: 'footsteps' },
+  oop_board_games: { accentColor: '#6D4C41', iconName: 'dice' },
+  city_pop_vinyl: { accentColor: '#E040FB', iconName: 'musical-note' },
+  niche_perfumery: { accentColor: '#CE93D8', iconName: 'rose' },
 };
 
 export const CATEGORIES: Category[] = [
@@ -1618,6 +1624,99 @@ export const CATEGORIES: Category[] = [
     ],
     relatedCategoryIds: ['sportscards', 'watches', 'designer_toys'],
   },
+  {
+    id: 'oop_board_games',
+    name: 'OOP Board Games & KS Exclusives',
+    tagline: 'Grail-tier Kickstarters, out-of-print euros, and sealed legacy games that only climb in value.',
+    bannerImageUrl:
+      'https://images.pexels.com/photos/776654/pexels-photo-776654.jpeg?auto=compress&cs=tinysrgb&w=400',
+    accentColor: '#6D4C41',
+    iconName: 'dice',
+    collections: [
+      { id: 'bg-kickstarter', name: 'Kickstarter Exclusives', itemCount: 0 },
+      { id: 'bg-oop-euro', name: 'OOP Euro Classics', itemCount: 0 },
+    ],
+    externalMarketplaces: [
+      {
+        id: 'bgg-market',
+        label: 'BGG Market',
+        url: 'https://boardgamegeek.com/market',
+      },
+      {
+        id: 'ebay',
+        label: 'eBay',
+        url: 'https://www.ebay.com',
+      },
+      {
+        id: 'whatnot',
+        label: 'Whatnot',
+        url: 'https://www.whatnot.com',
+      },
+    ],
+    relatedCategoryIds: ['warhammer', 'retro_games', 'lego'],
+  },
+  {
+    id: 'city_pop_vinyl',
+    name: 'City Pop & Future Funk Vinyl',
+    tagline: 'OG Japanese pressings, City Pop reissues, and future funk wax from the neon-lit golden age.',
+    bannerImageUrl:
+      'https://images.pexels.com/photos/1389429/pexels-photo-1389429.jpeg?auto=compress&cs=tinysrgb&w=400',
+    accentColor: '#E040FB',
+    iconName: 'musical-note',
+    collections: [
+      { id: 'cp-og-pressing', name: 'OG Japanese Pressings', itemCount: 0 },
+      { id: 'cp-reissues', name: 'Modern Reissues', itemCount: 0 },
+    ],
+    externalMarketplaces: [
+      {
+        id: 'discogs',
+        label: 'Discogs',
+        url: 'https://www.discogs.com',
+      },
+      {
+        id: 'ebay',
+        label: 'eBay',
+        url: 'https://www.ebay.com',
+      },
+      {
+        id: 'yahoo-auctions',
+        label: 'Yahoo Auctions JP',
+        url: 'https://auctions.yahoo.co.jp',
+      },
+    ],
+    relatedCategoryIds: ['vinyl_records', 'anime_ost_vinyl', 'kpop_merch'],
+  },
+  {
+    id: 'niche_perfumery',
+    name: 'Niche & High-End Perfumery',
+    tagline: 'Track your fragrance collection — MFK, Creed, Tom Ford, and indie houses worth savoring.',
+    bannerImageUrl:
+      'https://images.pexels.com/photos/965989/pexels-photo-965989.jpeg?auto=compress&cs=tinysrgb&w=400',
+    accentColor: '#CE93D8',
+    iconName: 'rose',
+    collections: [
+      { id: 'np-niche-house', name: 'Niche Houses', itemCount: 0 },
+      { id: 'np-designer-private', name: 'Designer Private Lines', itemCount: 0 },
+    ],
+    externalMarketplaces: [
+      {
+        id: 'fragrantica',
+        label: 'Fragrantica',
+        url: 'https://www.fragrantica.com',
+      },
+      {
+        id: 'ebay',
+        label: 'eBay',
+        url: 'https://www.ebay.com',
+      },
+      {
+        id: 'parfumo',
+        label: 'Parfumo',
+        url: 'https://www.parfumo.com',
+      },
+    ],
+    relatedCategoryIds: ['whiskey', 'watches', 'pens'],
+  },
 ];
 
 export function getCategoryById(id: CategoryId | string | null | undefined): Category | undefined {
@@ -1650,7 +1749,7 @@ export const CATEGORY_GROUPS: { label: string; ids: CategoryId[] }[] = [
   { label: 'Trading Card Games', ids: ['pokemon', 'mtg', 'yugioh', 'lorcana', 'digimon', 'one_piece_tcg'] },
   { label: 'Toys & Figures', ids: ['funko', 'designer_toys', 'anime_figures', 'hot_toys', 'action_figures', 'vintage_toys', 'marvel_legends'] },
   { label: 'Building & Models', ids: ['lego', 'gunpla', 'scale_models', 'warhammer'] },
-  { label: 'Gaming', ids: ['retro_games'] },
+  { label: 'Gaming & Board Games', ids: ['retro_games', 'oop_board_games'] },
   { label: 'Media', ids: ['manga', 'comic_books', 'bluray_steelbook', 'anime_bluray', 'anime_soundtrack', 'anime_ost_vinyl'] },
   { label: 'Music & Fandom', ids: ['kpop_merch', 'taylor_swift', 'pop_fandom', 'kpop_lightsticks'] },
   { label: 'Disney & Theme Parks', ids: ['disney', 'theme_park', 'ghibli'] },
@@ -1659,8 +1758,8 @@ export const CATEGORY_GROUPS: { label: string; ids: CategoryId[] }[] = [
   { label: 'IP-Specific', ids: ['one_piece', 'vtuber'] },
   { label: 'Niche', ids: ['keycaps', 'loungefly'] },
   { label: 'Collectibles', ids: ['blind_box', 'plush_collectibles'] },
-  { label: 'Lifestyle', ids: ['vinyl_records', 'sneakers', 'watches'] },
-  { label: 'Spirits & Luxury', ids: ['whiskey', 'vintage_cameras', 'pens'] },
+  { label: 'Lifestyle', ids: ['vinyl_records', 'city_pop_vinyl', 'sneakers', 'watches'] },
+  { label: 'Spirits & Luxury', ids: ['whiskey', 'niche_perfumery', 'vintage_cameras', 'pens'] },
   { label: 'Legacy', ids: ['diecast', 'sportscards', 'retro_handhelds'] },
 ];
 

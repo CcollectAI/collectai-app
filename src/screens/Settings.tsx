@@ -7,7 +7,6 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { supabase } from "@/lib/supabase";
 import { AccessibilitySettings } from '@/components/AccessibilitySettings';
 import { AlertSettings } from '@/components/AlertSettings';
-import { MutationQueuePanel } from '@/components/MutationQueuePanel';
 import { featureFlags } from '@/config/featureFlags';
 import { DEFAULT_ALERT_PREFERENCES, AlertPreferences } from '@/types/insights';
 import { useSettings, REGION_DEFAULTS } from '@/lib/settings';
@@ -17,19 +16,10 @@ import { AnimatedPressable } from '@/motion';
 import { Ionicons } from '@expo/vector-icons';
 import { logger } from '@/lib/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { deleteAccount, collectorsApi } from '@/api/collectorsApi';
 import { API_BASE } from '@/api/config';
 import { useFeatureTour } from '@/lib/featureTour';
-import {
-  getQueuedMutations,
-  getQueueLength,
-  removeMutation,
-  clearQueue,
-  replayQueue,
-  type MutationType,
-  type QueuedMutation,
-} from '@/lib/mutationQueue';
-import { offlineSafeMutation } from '@/data/OfflineDataProvider';
 
 type PrivacySettings = {
   showCollectionValue: boolean;
@@ -206,20 +196,41 @@ export default function Settings() {
     loadPrivacySettings();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const loadAlertPreferences = async () => {
+      try {
+        const data = await collectorsApi.getAlertPreferences();
+        if (cancelled) return;
+        setAlertPrefs({
+          priceDropEnabled: data.price_drop_enabled,
+          priceDropThreshold: data.price_drop_threshold,
+          newListingEnabled: data.new_listing_enabled,
+          milestoneEnabled: data.milestone_enabled,
+          priceIncreaseEnabled: data.price_increase_enabled,
+          priceIncreaseThreshold: data.price_increase_threshold,
+          frequency: data.frequency,
+        });
+      } catch (err) {
+        logger.warn('[Settings] Failed to load alert preferences:', err);
+      }
+    };
+    loadAlertPreferences();
+    return () => { cancelled = true; };
+  }, []);
+
   const handleAlertPrefsUpdate = async (prefs: AlertPreferences) => {
     setAlertPrefs(prefs);
     try {
-      const auth = await supabase.auth.getSession();
-      if (auth.data?.session) {
-        await fetch(`${API_BASE}/settings/alert-preferences`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${auth.data.session.access_token}`,
-          },
-          body: JSON.stringify(prefs),
-        });
-      }
+      await collectorsApi.updateAlertPreferences({
+        price_drop_enabled: prefs.priceDropEnabled,
+        price_drop_threshold: prefs.priceDropThreshold,
+        new_listing_enabled: prefs.newListingEnabled,
+        milestone_enabled: prefs.milestoneEnabled,
+        price_increase_enabled: prefs.priceIncreaseEnabled,
+        price_increase_threshold: prefs.priceIncreaseThreshold,
+        frequency: prefs.frequency,
+      });
     } catch (e) {
       logger.warn('[Settings] Failed to persist alert preferences:', e);
     }
@@ -299,7 +310,7 @@ export default function Settings() {
                 value={privacy.showCollectionValue}
                 onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); updatePrivacy('showCollectionValue', v); }}
                 trackColor={{ false: colors.border, true: colors.accent }}
-                thumbColor="#FFFFFF"
+                thumbColor={colors.accentText}
                 accessibilityLabel="Show collection value"
               />
             </View>
@@ -315,7 +326,7 @@ export default function Settings() {
                 value={privacy.showItemCount}
                 onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); updatePrivacy('showItemCount', v); }}
                 trackColor={{ false: colors.border, true: colors.accent }}
-                thumbColor="#FFFFFF"
+                thumbColor={colors.accentText}
                 accessibilityLabel="Show item count"
               />
             </View>
@@ -331,7 +342,7 @@ export default function Settings() {
                 value={privacy.allowDiscovery}
                 onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); updatePrivacy('allowDiscovery', v); }}
                 trackColor={{ false: colors.border, true: colors.accent }}
-                thumbColor="#FFFFFF"
+                thumbColor={colors.accentText}
                 accessibilityLabel="Allow discovery"
               />
             </View>
@@ -347,7 +358,7 @@ export default function Settings() {
                 value={privacy.showOnlineStatus}
                 onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); updatePrivacy('showOnlineStatus', v); }}
                 trackColor={{ false: colors.border, true: colors.accent }}
-                thumbColor="#FFFFFF"
+                thumbColor={colors.accentText}
                 accessibilityLabel="Show online status"
               />
             </View>
@@ -486,7 +497,7 @@ export default function Settings() {
               updateSettings({ isDark: v });
             }}
             trackColor={{ false: colors.border, true: colors.accent }}
-            thumbColor="#FFFFFF"
+            thumbColor={colors.accentText}
             accessibilityLabel="Dark mode"
           />
         </View>
@@ -505,7 +516,7 @@ export default function Settings() {
               updateSettings({ hapticsEnabled: v });
             }}
             trackColor={{ false: colors.border, true: colors.accent }}
-            thumbColor="#FFFFFF"
+            thumbColor={colors.accentText}
             accessibilityLabel="Haptic feedback"
           />
         </View>
@@ -524,7 +535,7 @@ export default function Settings() {
               updateSettings({ animationsEnabled: v });
             }}
             trackColor={{ false: colors.border, true: colors.accent }}
-            thumbColor="#FFFFFF"
+            thumbColor={colors.accentText}
             accessibilityLabel="Animations"
           />
         </View>
@@ -882,7 +893,7 @@ export default function Settings() {
               {savingProfile ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : (
-                <Text style={[{ fontSize: 16, fontWeight: '600', color: colors.accent }]}>Save</Text>
+                <Text style={[{ fontSize: textToken.lg, fontWeight: fw.semibold, color: colors.accent }]}>Save</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -897,6 +908,7 @@ export default function Settings() {
                 placeholderTextColor={colors.muted}
                 autoCapitalize="none"
                 autoFocus
+                returnKeyType="next"
               />
             </View>
             <View>
@@ -909,6 +921,7 @@ export default function Settings() {
                 placeholderTextColor={colors.muted}
                 multiline
                 maxLength={200}
+                returnKeyType="done"
               />
             </View>
           </View>
@@ -932,7 +945,7 @@ export default function Settings() {
               {savingPassword ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : (
-                <Text style={[{ fontSize: 16, fontWeight: '600', color: colors.accent }]}>Save</Text>
+                <Text style={[{ fontSize: textToken.lg, fontWeight: fw.semibold, color: colors.accent }]}>Save</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -947,6 +960,7 @@ export default function Settings() {
                 placeholderTextColor={colors.muted}
                 secureTextEntry
                 autoFocus
+                returnKeyType="next"
               />
             </View>
             <View>
@@ -958,6 +972,7 @@ export default function Settings() {
                 placeholder="Confirm new password"
                 placeholderTextColor={colors.muted}
                 secureTextEntry
+                returnKeyType="done"
               />
             </View>
           </View>
@@ -978,7 +993,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   section: {
-    borderRadius: 16,
+    borderRadius: radius.md,
     borderWidth: 1,
     padding: 16,
   },
@@ -989,8 +1004,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: textToken.lg,
+    fontWeight: fw.semibold,
   },
   settingRow: {
     flexDirection: 'row',
@@ -1003,11 +1018,11 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   settingLabel: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: textToken.lg,
+    fontWeight: fw.medium,
   },
   settingHint: {
-    fontSize: 12,
+    fontSize: textToken.sm,
     marginTop: 2,
   },
   divider: {
@@ -1022,7 +1037,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: textToken.md,
   },
   signOutBtn: {
     flexDirection: 'row',
@@ -1031,8 +1046,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   signOutText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: textToken.lg,
+    fontWeight: fw.semibold,
   },
   pickerModal: {
     flex: 1,
@@ -1046,8 +1061,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   pickerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: textToken.lg,
+    fontWeight: fw.bold,
   },
   pickerRow: {
     flexDirection: 'row',
@@ -1058,15 +1073,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   pickerRowText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: textToken.lg,
+    fontWeight: fw.medium,
   },
   profileInput: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: textToken.lg,
   },
   profileBioInput: {
     minHeight: 80,

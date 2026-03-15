@@ -3,7 +3,7 @@
  * Shows pending DM requests at top, sent requests, then accepted message threads.
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
@@ -15,9 +15,11 @@ import {
   Alert,
   Animated,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useToast } from '@/components/Toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type DmThread, type DmRequest } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -30,6 +32,9 @@ import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { timeAgoShort } from '@/lib/timeAgo';
 import { MS_PER_WEEK } from '@/constants/time';
+import { radius, text, fontWeight } from '@/theme/tokens';
+import { supabase } from '@/lib/supabase';
+import { trackScreen } from '@/analytics/track';
 
 
 function formatRelativeTime(dateStr: string | null | undefined): string {
@@ -40,7 +45,7 @@ function formatRelativeTime(dateStr: string | null | undefined): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function UserAvatar({
+const UserAvatar = React.memo(function UserAvatar({
   name,
   avatarUrl,
   avatarColor,
@@ -59,6 +64,20 @@ function UserAvatar({
     .toUpperCase()
     .slice(0, 2);
 
+  if (avatarUrl) {
+    return (
+      <Image
+        source={{ uri: avatarUrl }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+        }}
+        accessibilityLabel={`${name} avatar`}
+      />
+    );
+  }
+
   return (
     <View
       style={[
@@ -74,7 +93,7 @@ function UserAvatar({
       <Text style={[styles.avatarText, { fontSize: size * 0.4 }]}>{initials}</Text>
     </View>
   );
-}
+});
 
 function InboxScreen() {
   const router = useRouter();
@@ -111,9 +130,39 @@ function InboxScreen() {
     }
   }, []);
 
+  // Analytics: track screen on mount
+  useEffect(() => {
+    trackScreen('inbox');
+  }, []);
+
+  // Initial load
   useEffect(() => {
     loadInbox();
   }, [loadInbox]);
+
+  // Supabase Realtime: refresh threads on new DM messages
+  useEffect(() => {
+    const channel = supabase.channel('inbox-updates')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'dm_messages',
+      }, () => {
+        loadInbox();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadInbox]);
+
+  // Refresh threads when screen regains focus (e.g. returning from a thread)
+  useFocusEffect(
+    useCallback(() => {
+      loadInbox();
+    }, [loadInbox])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -216,6 +265,9 @@ function InboxScreen() {
 
   const hasContent = requests.length > 0 || threads.length > 0 || sentRequests.length > 0;
 
+  // Total unread count across all threads
+  const totalUnread = threads.reduce((sum, t) => sum + (t.unreadCount ?? 0), 0) + requests.length;
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header */}
@@ -223,7 +275,14 @@ function InboxScreen() {
         <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.back(); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
+        <View style={styles.headerTitleRow}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
+          {totalUnread > 0 && (
+            <View style={[styles.headerUnreadBadge, { backgroundColor: colors.accent }]}>
+              <Text style={styles.headerUnreadText}>{totalUnread > 99 ? '99+' : totalUnread}</Text>
+            </View>
+          )}
+        </View>
         <View style={{ width: 32 }} />
       </View>
 
@@ -253,6 +312,7 @@ function InboxScreen() {
                 <View style={styles.requestHeader}>
                   <UserAvatar
                     name={req.fromUserName}
+                    avatarUrl={req.fromUserAvatarUrl}
                     avatarColor={req.fromUserAvatarColor}
                     size={44}
                   />
@@ -333,6 +393,7 @@ function InboxScreen() {
               >
                 <UserAvatar
                   name={thread.otherUserName}
+                  avatarUrl={thread.otherUserAvatarUrl}
                   avatarColor={thread.otherUserAvatarColor}
                   size={52}
                 />
@@ -356,7 +417,7 @@ function InboxScreen() {
                       style={[
                         styles.threadPreview,
                         { color: colors.muted },
-                        thread.unreadCount > 0 && { color: colors.text, fontWeight: '500' },
+                        thread.unreadCount > 0 && { color: colors.text, fontWeight: fontWeight.medium },
                       ]}
                       numberOfLines={1}
                     >
@@ -390,6 +451,7 @@ function InboxScreen() {
               >
                 <UserAvatar
                   name={thread.otherUserName}
+                  avatarUrl={thread.otherUserAvatarUrl}
                   avatarColor={thread.otherUserAvatarColor}
                   size={52}
                 />
@@ -431,7 +493,6 @@ function InboxScreen() {
   );
 }
 
-// Static styles only — no theme tokens
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -448,8 +509,26 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: text.xl,
+    fontWeight: fontWeight.bold,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerUnreadBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  headerUnreadText: {
+    fontSize: text.xs,
+    fontWeight: fontWeight.bold,
+    color: '#ffffff',
   },
   loadingContainer: {
     flex: 1,
@@ -467,8 +546,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
@@ -478,17 +557,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     marginBottom: 12,
   },
   sectionTitleText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
 
   // Request cards
   requestCard: {
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
@@ -502,15 +581,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   requestName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
   },
   requestHandle: {
-    fontSize: 13,
+    fontSize: text.md,
     marginTop: 1,
   },
   requestTime: {
-    fontSize: 12,
+    fontSize: text.sm,
     marginTop: 2,
   },
   requestMessageWrap: {
@@ -518,11 +597,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginTop: 12,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: radius.sm,
   },
   requestMessage: {
     flex: 1,
-    fontSize: 14,
+    fontSize: text.md,
     lineHeight: 20,
     fontStyle: 'italic',
   },
@@ -536,7 +615,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
@@ -545,27 +624,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   declineBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
   acceptBtn: {
     // backgroundColor applied inline
   },
   acceptBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
     color: '#ffffff',
   },
   blockBtn: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   blockBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fontWeight.semibold,
   },
 
   // Thread rows — cleaner WhatsApp-style
@@ -581,7 +660,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
-    fontWeight: '700',
+    fontWeight: fontWeight.bold,
     color: '#ffffff',
   },
   threadContent: {
@@ -594,14 +673,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   threadName: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: text.lg,
+    fontWeight: fontWeight.medium,
   },
   threadNameUnread: {
-    fontWeight: '700',
+    fontWeight: fontWeight.bold,
   },
   threadTime: {
-    fontSize: 12,
+    fontSize: text.sm,
   },
   threadPreviewRow: {
     flexDirection: 'row',
@@ -610,30 +689,30 @@ const styles = StyleSheet.create({
   },
   threadPreview: {
     flex: 1,
-    fontSize: 14,
+    fontSize: text.md,
   },
   unreadBadge: {
     minWidth: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
     marginLeft: 8,
   },
   unreadBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: text.xs,
+    fontWeight: fontWeight.bold,
     color: '#ffffff',
   },
   pendingBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: radius.sm,
   },
   pendingBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: text.xs,
+    fontWeight: fontWeight.semibold,
   },
 
 });

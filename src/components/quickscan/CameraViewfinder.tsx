@@ -62,6 +62,7 @@ interface CameraViewfinderProps {
   onToggleCompare: () => void;
   onDiscardBatchItem: () => void;
   onSaveBatchItem: () => void;
+  enableTorch?: boolean;
   colors: {
     card: string;
     text: string;
@@ -91,6 +92,7 @@ function CameraViewfinderInner({
   onToggleCompare,
   onDiscardBatchItem,
   onSaveBatchItem,
+  enableTorch,
   colors,
 }: CameraViewfinderProps) {
   return (
@@ -100,6 +102,7 @@ function CameraViewfinderInner({
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
         facing="back"
+        enableTorch={enableTorch}
       >
         {/* Semi-transparent overlay with cutout */}
         <View style={styles.overlay}>

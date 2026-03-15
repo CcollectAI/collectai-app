@@ -1,12 +1,13 @@
 /**
  * ItemQuickActionsRow — Edit / Share / List for Sale buttons shown below image.
  */
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatPrice } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
+import { radius, text, fontWeight as fw, gap } from '@/theme/tokens';
 
 interface ItemQuickActionsRowProps {
   editableName: string;
@@ -26,12 +27,28 @@ const toNum = (value: string | number | undefined | null): number | undefined =>
 export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props: ItemQuickActionsRowProps) {
   const { colors: theme } = useAppTheme();
   const { editableName, editableValue, isForSale, onEdit, onListForSale } = props;
+  const [busy, setBusy] = useState(false);
+
+  const handleShare = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await Share.share({
+        message: `Check out ${editableName}${toNum(editableValue) ? ` - valued at ${formatPrice(toNum(editableValue))}` : ''} on CollectAI`,
+      });
+    } catch {
+      // User cancelled
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, editableName, editableValue]);
 
   return (
     <View style={styles.quickActionsRow}>
       <AnimatedPressable
         onPress={onEdit}
-        style={[styles.quickActionBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+        disabled={busy}
+        style={[styles.quickActionBtn, { backgroundColor: theme.card, borderColor: theme.border }, busy && { opacity: 0.5 }]}
         accessibilityRole="button"
         accessibilityLabel="Edit item details"
       >
@@ -39,16 +56,9 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
         <Text style={[styles.quickActionLabel, { color: theme.text }]}>Edit</Text>
       </AnimatedPressable>
       <AnimatedPressable
-        onPress={async () => {
-          try {
-            await Share.share({
-              message: `Check out ${editableName}${toNum(editableValue) ? ` - valued at ${formatPrice(toNum(editableValue))}` : ''} on CollectAI`,
-            });
-          } catch {
-            // User cancelled
-          }
-        }}
-        style={[styles.quickActionBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+        onPress={handleShare}
+        disabled={busy}
+        style={[styles.quickActionBtn, { backgroundColor: theme.card, borderColor: theme.border }, busy && { opacity: 0.5 }]}
         accessibilityRole="button"
         accessibilityLabel="Share this item"
       >
@@ -58,7 +68,8 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
       {!isForSale ? (
         <AnimatedPressable
           onPress={onListForSale}
-          style={[styles.quickActionBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
+          disabled={busy}
+          style={[styles.quickActionBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }, busy && { opacity: 0.5 }]}
           accessibilityRole="button"
           accessibilityLabel="List this item for sale on marketplaces"
         >
@@ -66,9 +77,13 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
           <Text style={[styles.quickActionLabel, { color: theme.accent }]}>List for Sale</Text>
         </AnimatedPressable>
       ) : (
-        <View style={[styles.quickActionBtn, { backgroundColor: '#D1FAE5', borderColor: '#059669' }]}>
-          <Ionicons name="pricetag" size={18} color="#065F46" />
-          <Text style={[styles.quickActionLabel, { color: '#065F46' }]}>Listed</Text>
+        <View
+          style={[styles.quickActionBtn, { backgroundColor: theme.successBg, borderColor: theme.success }]}
+          accessibilityRole="text"
+          accessibilityLabel="Item is currently listed for sale"
+        >
+          <Ionicons name="pricetag" size={18} color={theme.success} />
+          <Text style={[styles.quickActionLabel, { color: theme.success }]}>Listed</Text>
         </View>
       )}
     </View>
@@ -79,7 +94,7 @@ const styles = StyleSheet.create({
   quickActionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: gap.md,
     marginBottom: 4,
   },
   quickActionBtn: {
@@ -87,15 +102,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: gap.sm,
     minWidth: 70,
     paddingVertical: 12,
     paddingHorizontal: 4,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
   },
   quickActionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: text.md,
+    fontWeight: fw.semibold,
   },
 });

@@ -210,6 +210,8 @@ function MarketplaceFilterPanelInner({
                 { color: theme.text, borderColor: theme.border },
               ]}
               accessibilityLabel="Minimum price"
+              returnKeyType="done"
+              maxLength={10}
             />
             <Text style={[s.filterPriceDash, { color: theme.muted }]}>{"\u2013"}</Text>
             <TextInput
@@ -223,6 +225,8 @@ function MarketplaceFilterPanelInner({
                 { color: theme.text, borderColor: theme.border },
               ]}
               accessibilityLabel="Maximum price"
+              returnKeyType="done"
+              maxLength={10}
             />
           </View>
 

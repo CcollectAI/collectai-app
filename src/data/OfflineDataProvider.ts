@@ -94,6 +94,20 @@ async function executeMutation(type: MutationType, args: unknown[]): Promise<voi
     case 'removeWatchlistItem':
       await dataProvider.removeWatchlistItem(args[0] as string);
       break;
+    case 'createEvent':
+      await dataProvider.createEvent(args[0] as Parameters<typeof dataProvider.createEvent>[0]);
+      break;
+    case 'updateWatchlistItem':
+      await dataProvider.updateWatchlistItem(
+        args[0] as string,
+        args[1] as Parameters<typeof dataProvider.updateWatchlistItem>[1],
+      );
+      break;
+    case 'createBuildPaintProject':
+      await dataProvider.createBuildPaintProject(
+        args[0] as Parameters<typeof dataProvider.createBuildPaintProject>[0],
+      );
+      break;
     default:
       logger.warn(`[OfflineQueue] Unknown mutation type: ${type}`);
   }

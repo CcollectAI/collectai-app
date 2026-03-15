@@ -6,22 +6,12 @@
  *
  * Extracted from app/item/[id].tsx to reduce file size.
  */
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, Pressable, TextInput, ActivityIndicator, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
-
-const STATUS_COLORS_BASE: Record<string, string> = {
-  not_started: "#94A3B8",
-  reading: "#3B82F6",
-  playing: "#3B82F6",
-  completed: "#22C55E",
-  on_hold: "#F59E0B",
-  plan_to_read: "#8B5CF6",
-  plan_to_play: "#8B5CF6",
-  replaying: "#06B6D4",
-  rereading: "#06B6D4",
-};
+import { fireHaptic, HapticIntent } from "@/haptics";
+import { radius, text, fontWeight, gap } from "@/theme/tokens";
 
 const STATUS_DISPLAY: Record<string, string> = {
   not_started: "Not Started",
@@ -57,12 +47,13 @@ interface ItemProgressSectionProps {
     border: string;
     background: string;
   };
+  hapticsEnabled: boolean;
   onStatusChange: (status: string) => void;
   onPctChange: (pct: number) => void;
   onNotesChange: (notes: string) => void;
 }
 
-export function ItemProgressSection({
+export const ItemProgressSection = React.memo(function ItemProgressSection({
   categorySlug,
   progressConfig,
   progressStatus,
@@ -71,12 +62,34 @@ export function ItemProgressSection({
   progressLoading,
   progressSaving,
   theme,
+  hapticsEnabled,
   onStatusChange,
   onPctChange,
   onNotesChange,
 }: ItemProgressSectionProps) {
   const { colors } = useAppTheme();
-  const STATUS_COLORS: Record<string, string> = { ...STATUS_COLORS_BASE, dropped: colors.danger };
+  const STATUS_COLORS: Record<string, string> = useMemo(() => ({
+    not_started: colors.muted,
+    reading: colors.accent,
+    playing: colors.accent,
+    completed: colors.success,
+    on_hold: colors.warning,
+    plan_to_read: colors.info ?? colors.accent,
+    plan_to_play: colors.info ?? colors.accent,
+    replaying: colors.accent,
+    rereading: colors.accent,
+    dropped: colors.danger,
+  }), [colors]);
+
+  const normalizedPct = useMemo(() => progressPct ?? 0, [progressPct]);
+
+  const progressBarColor = useMemo(
+    () => (progressStatus ? STATUS_COLORS[progressStatus] || theme.accent : theme.accent),
+    [progressStatus, STATUS_COLORS, theme.accent],
+  );
+
+  const progressBarWidth = useMemo(() => `${normalizedPct}%` as `${number}%`, [normalizedPct]);
+
   return (
     <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
       <View style={s.sectionHeaderRow}>
@@ -103,7 +116,10 @@ export function ItemProgressSection({
               return (
                 <Pressable
                   key={status}
-                  onPress={() => onStatusChange(status)}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
+                    onStatusChange(status);
+                  }}
                   style={[
                     s.progressStatusPill,
                     {
@@ -125,15 +141,20 @@ export function ItemProgressSection({
 
           {/* Progress bar (percentage) */}
           <View style={s.progressBarSection}>
-            <Text style={[s.progressBarLabel, { color: theme.muted }]}>Progress: {progressPct ?? 0}%</Text>
+            <Text style={[s.progressBarLabel, { color: theme.muted }]}>Progress: {normalizedPct}%</Text>
             <View style={s.progressBarRow}>
-              <View style={[s.progressBarBg, { backgroundColor: theme.border }]}>
+              <View
+                style={[s.progressBarBg, { backgroundColor: theme.border }]}
+                accessibilityRole="progressbar"
+                accessibilityLabel={`${progressConfig.label} progress: ${normalizedPct}%`}
+                accessibilityValue={{ min: 0, max: 100, now: normalizedPct }}
+              >
                 <View
                   style={[
                     s.progressBarFill,
                     {
-                      backgroundColor: progressStatus ? STATUS_COLORS[progressStatus] || theme.accent : theme.accent,
-                      width: `${progressPct ?? 0}%`,
+                      backgroundColor: progressBarColor,
+                      width: progressBarWidth,
                     },
                   ]}
                 />
@@ -143,7 +164,10 @@ export function ItemProgressSection({
               {[0, 25, 50, 75, 100].map((pct) => (
                 <Pressable
                   key={pct}
-                  onPress={() => onPctChange(pct)}
+                  onPress={() => {
+                    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
+                    onPctChange(pct);
+                  }}
                   style={[
                     s.progressPctBtn,
                     {
@@ -182,7 +206,7 @@ export function ItemProgressSection({
       )}
     </View>
   );
-}
+});
 
 const s = StyleSheet.create({
   sectionBlock: { marginTop: 16, paddingTop: 12, borderTopWidth: 1 },
@@ -192,18 +216,18 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     paddingBottom: 4,
   },
-  sectionHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: "700" },
-  progressStatusRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 8, paddingBottom: 12 },
-  progressStatusPill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  progressStatusPillText: { fontSize: 13, fontWeight: "600" },
+  sectionHeaderLeft: { flexDirection: "row", alignItems: "center", gap: gap.md },
+  sectionTitle: { fontSize: text.lg, fontWeight: fontWeight.bold },
+  progressStatusRow: { flexDirection: "row", flexWrap: "wrap", gap: gap.md, paddingTop: 8, paddingBottom: 12 },
+  progressStatusPill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1 },
+  progressStatusPillText: { fontSize: text.md, fontWeight: fontWeight.semibold },
   progressBarSection: { paddingBottom: 10 },
-  progressBarLabel: { fontSize: 12, fontWeight: "500", marginBottom: 6 },
-  progressBarRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  progressBarBg: { flex: 1, height: 8, borderRadius: 4, overflow: "hidden" },
-  progressBarFill: { height: "100%", borderRadius: 4 },
-  progressPctButtons: { flexDirection: "row", gap: 6, marginTop: 8 },
-  progressPctBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
-  progressPctBtnText: { fontSize: 11, fontWeight: "600" },
-  progressNotesInput: { borderWidth: 1, borderRadius: 10, padding: 10, minHeight: 60, fontSize: 13, lineHeight: 18, marginTop: 4 },
+  progressBarLabel: { fontSize: text.sm, fontWeight: fontWeight.medium, marginBottom: 6 },
+  progressBarRow: { flexDirection: "row", alignItems: "center", gap: gap.md },
+  progressBarBg: { flex: 1, height: 8, borderRadius: radius.xs, overflow: "hidden" },
+  progressBarFill: { height: "100%", borderRadius: radius.xs },
+  progressPctButtons: { flexDirection: "row", gap: gap.sm, marginTop: 8 },
+  progressPctBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.md, borderWidth: 1 },
+  progressPctBtnText: { fontSize: text.xs, fontWeight: fontWeight.semibold },
+  progressNotesInput: { borderWidth: 1, borderRadius: radius.sm, padding: 10, minHeight: 60, fontSize: text.md, lineHeight: 18, marginTop: 4 },
 });

@@ -3,7 +3,7 @@
  * Includes ItemAttributesSection and CategorySpecificSection.
  */
 import React from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -11,8 +11,11 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice, getCurrencySymbol } from '@/lib/format';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { CategorySpecificSection } from '@/components/CategorySpecificSection';
+import { Skeleton, SkeletonList } from '@/components/Skeleton';
+import { radius, text, fontWeight } from '@/theme/tokens';
 
 interface ItemDetailsCardProps {
+  loading?: boolean;
   isDraft: boolean;
   isEditing: boolean;
   editableName: string;
@@ -55,6 +58,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
   const router = useRouter();
 
   const {
+    loading,
     isDraft, isEditing,
     editableName, editableCategory, editableCollection, editableCondition, editableValue,
     isGradingEligible, categorySlug, categoryIdMap,
@@ -64,6 +68,15 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
     onShowCategoryPicker, onShowCollectionPicker, onShowConditionPicker,
     onSizeChange, onSizeSystemChange, onSizeValueChange,
   } = props;
+
+  if (loading) {
+    return (
+      <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <Skeleton width="60%" height={24} borderRadius={radius.xs} />
+        <SkeletonList count={4} type="row" />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -75,6 +88,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           onChangeText={onEditableName}
           placeholder="Item name"
           placeholderTextColor={theme.muted ?? '#64748B'}
+          returnKeyType="done"
           accessibilityLabel="Item name"
         />
       ) : (
@@ -82,7 +96,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
       )}
 
       {/* Category row */}
-      <View style={styles.row}>
+      <View style={styles.row} accessibilityLabel={`Category: ${editableCategory}`}>
         <Text style={[styles.label, { color: theme.muted }]}>Category</Text>
         {isDraft || isEditing ? (
           <Pressable
@@ -113,7 +127,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
       </View>
 
       {/* Collection row */}
-      <View style={styles.row}>
+      <View style={styles.row} accessibilityLabel={`Collection: ${editableCollection}`}>
         <Text style={[styles.label, { color: theme.muted }]}>Collection</Text>
         {isDraft || isEditing ? (
           <Pressable
@@ -133,7 +147,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
       </View>
 
       {/* Condition / Grade row */}
-      <View style={styles.row}>
+      <View style={styles.row} accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}`}>
         <Text style={[styles.label, { color: theme.muted }]}>
           {isGradingEligible ? 'Grade' : 'Condition'}
         </Text>
@@ -155,18 +169,19 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
       </View>
 
       {/* Value row */}
-      <View style={styles.row}>
+      <View style={styles.row} accessibilityLabel={`Estimated value: ${formatPrice(toNum(editableValue))}`}>
         <Text style={[styles.label, { color: theme.muted }]}>Estimated value</Text>
         {isDraft || isEditing ? (
           <View style={styles.editableValueRow}>
             <Text style={[styles.currencySymbol, { color: theme.muted }]}>{getCurrencySymbol(settings.currency)}</Text>
             <TextInput
-              style={[styles.editableValueInput, { color: theme.text, borderBottomColor: theme.border, fontWeight: '700' }]}
+              style={[styles.editableValueInput, { color: theme.text, borderBottomColor: theme.border, fontWeight: fontWeight.bold }]}
               value={editableValue}
               onChangeText={onEditableValue}
               placeholder="0"
               placeholderTextColor={theme.muted ?? '#64748B'}
               keyboardType="decimal-pad"
+              returnKeyType="done"
               accessibilityLabel={`Estimated value in ${settings.currency}`}
             />
           </View>
@@ -200,8 +215,6 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
         sizeSystem={sizeSystem}
         sizeSaving={sizeSaving}
         notes={notes}
-        hapticsEnabled={settings.hapticsEnabled}
-        theme={theme}
         onSizeChange={onSizeChange}
         onSizeSystemChange={onSizeSystemChange}
         onSizeValueChange={onSizeValueChange}
@@ -213,18 +226,18 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: radius.md,
     padding: 16,
     gap: 10,
   },
   name: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: text['2xl'],
+    fontWeight: fontWeight.extrabold,
     letterSpacing: -0.3,
   },
   editableNameInputSimple: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: text.xl,
+    fontWeight: fontWeight.bold,
     paddingVertical: 4,
     borderBottomWidth: 1,
   },
@@ -234,15 +247,15 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   label: {
-    fontSize: 13,
+    fontSize: text.md,
   },
   value: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: text.md,
+    fontWeight: fontWeight.medium,
   },
   valueHighlight: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: text.xl,
+    fontWeight: fontWeight.extrabold,
     letterSpacing: -0.2,
   },
   dropdownFieldRow: {
@@ -253,24 +266,24 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   dropdownFieldTextSmall: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: text.md,
+    fontWeight: fontWeight.medium,
   },
   editableValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   editableValueInput: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: text.md,
+    fontWeight: fontWeight.medium,
     paddingVertical: 2,
     borderBottomWidth: 1,
     minWidth: 80,
     textAlign: 'right',
   },
   currencySymbol: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: text.md,
+    fontWeight: fontWeight.medium,
     marginRight: 2,
   },
 });

@@ -6,9 +6,10 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 interface Props {
   children: ReactNode;
   screenName?: string;
+  fallbackMessage?: string;
 }
 
-function ScreenFallback({ screenName, onRetry }: { screenName?: string; onRetry: () => void }) {
+function ScreenFallback({ screenName, fallbackMessage, onRetry }: { screenName?: string; fallbackMessage?: string; onRetry: () => void }) {
   const { colors } = useAppTheme();
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -19,7 +20,7 @@ function ScreenFallback({ screenName, onRetry }: { screenName?: string; onRetry:
         {screenName ? `${screenName} failed to load` : 'Screen failed to load'}
       </Text>
       <Text style={[styles.subtitle, { color: colors.muted }]}>
-        An error occurred. Please try again.
+        {fallbackMessage || 'An error occurred. Please try again.'}
       </Text>
       <Pressable style={styles.retry} onPress={onRetry} accessibilityRole="button">
         <Ionicons name="refresh-outline" size={18} color="#fff" />
@@ -45,6 +46,7 @@ export class ScreenErrorBoundary extends React.Component<Props, { hasError: bool
       return (
         <ScreenFallback
           screenName={this.props.screenName}
+          fallbackMessage={this.props.fallbackMessage}
           onRetry={this.handleRetry}
         />
       );

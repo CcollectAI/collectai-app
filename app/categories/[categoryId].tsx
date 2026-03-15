@@ -2,7 +2,7 @@
  * Category Store — Amazon Brand Store style layout for a category.
  * Shows: header, spotlight carousel, items, events, friends, sponsored slot.
  */
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ import MarketplacePickerSheet from '@/components/MarketplacePickerSheet';
 import { collectorsApi } from '@/api/collectorsApi';
 import { buildItemAffiliateUrl, openAffiliateUrl } from '@/utils/affiliateHelpers';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { radius, text, fontWeight } from '@/theme/tokens';
 import { CatalogBrowseSection, type CatalogItemData } from '@/components/CatalogBrowseSection';
 import {
   CategoryHeaderCard,
@@ -126,6 +127,14 @@ function CategoryStoreScreen() {
 
   // Debounced catalog search
   const catalogSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up catalog search timer on unmount
+  useEffect(() => {
+    return () => {
+      if (catalogSearchTimer.current) clearTimeout(catalogSearchTimer.current);
+    };
+  }, []);
+
   const handleCatalogSearchChange = (text: string) => {
     setCatalogSearch(text);
     if (catalogSearchTimer.current) clearTimeout(catalogSearchTimer.current);
@@ -174,12 +183,12 @@ function CategoryStoreScreen() {
       // Also reload deep dive and build projects
       dataProvider.getCategoryDeepDive(categoryId)
         .then(setDeepDive)
-        .catch(() => setDeepDive(null));
+        .catch((err) => { logger.info('[Category] deep dive fetch error:', err); setDeepDive(null); });
 
       if (isBuildable) {
         dataProvider.listBuildPaintProjectsByCategory(categoryId)
           .then(setBuildProjects)
-          .catch(() => setBuildProjects([]));
+          .catch((err) => { logger.info('[Category] build projects fetch error:', err); setBuildProjects([]); });
       }
     } catch (err: unknown) {
       logger.warn('[CategoryStore] error:', err);
@@ -206,34 +215,11 @@ function CategoryStoreScreen() {
     if (!categoryId) return;
     dataProvider.isFollowingCategory(categoryId)
       .then(setFollowing)
-      .catch(() => {}); // Non-critical
+      .catch((err) => { logger.info('[Category] follow state fetch error:', err); });
   }, [categoryId]);
 
-  // Load build projects for buildable categories
-  useEffect(() => {
-    if (!categoryId || !isBuildable) return;
-    setBuildProjectsLoading(true);
-    dataProvider.listBuildPaintProjectsByCategory(categoryId)
-      .then(setBuildProjects)
-      .catch((err) => {
-        logger.warn('[CategoryStore] build projects fetch failed:', err);
-        setBuildProjects([]);
-      })
-      .finally(() => setBuildProjectsLoading(false));
-  }, [categoryId, isBuildable]);
-
-  // Load market insights (deep dive)
-  useEffect(() => {
-    if (!categoryId) return;
-    setDeepDiveLoading(true);
-    dataProvider.getCategoryDeepDive(categoryId)
-      .then(setDeepDive)
-      .catch((err) => {
-        logger.warn('[CategoryStore] deep dive fetch failed:', err);
-        setDeepDive(null);
-      })
-      .finally(() => setDeepDiveLoading(false));
-  }, [categoryId]);
+  // Deep dive and build projects are already fetched inside loadCategoryData() above.
+  // No separate useEffects needed — they were duplicates.
 
   // Pre-fetch affiliate links for external marketplace section
   useEffect(() => {
@@ -241,7 +227,7 @@ function CategoryStoreScreen() {
     collectorsApi
       .getAffiliateLinks(categoryMeta.name, categoryId, 6, settings.region)
       .then((res) => setAffiliateLinks(res.links ?? []))
-      .catch(() => setAffiliateLinks([]));
+      .catch((err) => { logger.info('[Category] affiliate links fetch error:', err); setAffiliateLinks([]); });
   }, [categoryId, categoryMeta, settings.region]);
 
   // Auto-rotate spotlight carousel
@@ -399,6 +385,47 @@ function CategoryStoreScreen() {
     );
   }
 
+  // M10: Memoize props for heavy child components to prevent unnecessary re-renders
+  const missingItemsProps = useMemo(() => ({
+    missingItems,
+    recentlyOwned,
+    markingOwned,
+    accentColor,
+    onMarkOwned: handleMarkOwned,
+    onShopItem: handleMissingShopItem,
+    onSeeMore: handleMissingSeeMore,
+    colors,
+  }), [missingItems, recentlyOwned, markingOwned, accentColor, handleMarkOwned, handleMissingShopItem, handleMissingSeeMore, colors]);
+
+  const buildProjectsProps = useMemo(() => ({
+    isBuildable,
+    buildProjects,
+    buildProjectsLoading,
+    accentColor,
+    onProjectPress: handleBuildProjectPress,
+    onSeeAll: handleBuildSeeAll,
+    onStartNew: handleBuildStartNew,
+    colors,
+  }), [isBuildable, buildProjects, buildProjectsLoading, accentColor, handleBuildProjectPress, handleBuildSeeAll, handleBuildStartNew, colors]);
+
+  const categoryItemsProps = useMemo(() => ({
+    items: data.items,
+    categoryName: data.categoryName,
+    accentColor,
+    onItemPress: handleItemPress,
+    onItemLongPress: handleItemLongPress,
+    onShopPress: handleItemShopPress,
+    onSeeAll: handleSeeAllItems,
+    colors,
+  }), [data.items, data.categoryName, accentColor, handleItemPress, handleItemLongPress, handleItemShopPress, handleSeeAllItems, colors]);
+
+  const externalMarketplacesProps = useMemo(() => ({
+    marketplaces: categoryMeta?.externalMarketplaces ?? [],
+    affiliateLinks,
+    onPress: handleMarketplaceHaptic,
+    colors,
+  }), [categoryMeta?.externalMarketplaces, affiliateLinks, handleMarketplaceHaptic, colors]);
+
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
@@ -443,14 +470,7 @@ function CategoryStoreScreen() {
 
         {/* 3. Items in this Category */}
         <CategoryItemsList
-          items={data.items}
-          categoryName={data.categoryName}
-          accentColor={accentColor}
-          onItemPress={handleItemPress}
-          onItemLongPress={handleItemLongPress}
-          onShopPress={handleItemShopPress}
-          onSeeAll={handleSeeAllItems}
-          colors={colors}
+          {...categoryItemsProps}
         />
 
         {/* 3.15. Manga Series Progress */}
@@ -541,26 +561,12 @@ function CategoryStoreScreen() {
 
         {/* 4.6. Missing Items Checklist */}
         <MissingItemsChecklist
-          missingItems={missingItems}
-          recentlyOwned={recentlyOwned}
-          markingOwned={markingOwned}
-          accentColor={accentColor}
-          onMarkOwned={handleMarkOwned}
-          onShopItem={handleMissingShopItem}
-          onSeeMore={handleMissingSeeMore}
-          colors={colors}
+          {...missingItemsProps}
         />
 
         {/* 4.6. Build Projects */}
         <BuildProjectsSection
-          isBuildable={isBuildable}
-          buildProjects={buildProjects}
-          buildProjectsLoading={buildProjectsLoading}
-          accentColor={accentColor}
-          onProjectPress={handleBuildProjectPress}
-          onSeeAll={handleBuildSeeAll}
-          onStartNew={handleBuildStartNew}
-          colors={colors}
+          {...buildProjectsProps}
         />
 
         {/* 5. Friends Who Follow */}
@@ -576,10 +582,7 @@ function CategoryStoreScreen() {
         {/* 6. External Marketplace Links */}
         {categoryMeta && (
           <ExternalMarketplacesSection
-            marketplaces={categoryMeta.externalMarketplaces}
-            affiliateLinks={affiliateLinks}
-            onPress={handleMarketplaceHaptic}
-            colors={colors}
+            {...externalMarketplacesProps}
           />
         )}
 
@@ -650,23 +653,23 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     marginTop: 12,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: text.lg,
+    fontWeight: fontWeight.semibold,
   },
   errorSubtitle: {
     marginTop: 4,
-    fontSize: 13,
+    fontSize: text.md,
     textAlign: 'center',
   },
   backButton: {
     marginTop: 16,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: 1,
   },
   backButtonText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: text.md,
+    fontWeight: fontWeight.medium,
   },
 });

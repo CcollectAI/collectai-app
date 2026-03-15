@@ -79,21 +79,13 @@ async def close() -> None:
 # Public API
 # ---------------------------------------------------------------------------
 
-async def scrape_url(
+async def _raw_scrape_url(
     url: str,
     css_selector: Optional[str] = None,
     wait_for: Optional[str] = None,
 ) -> Optional[dict[str, Any]]:
     """
-    Scrape a single URL via Crawl4AI.
-
-    Args:
-        url: The URL to scrape.
-        css_selector: Optional CSS selector to restrict extraction scope.
-        wait_for: Optional CSS selector to wait for before scraping (for JS-heavy pages).
-
-    Returns:
-        Dict with keys 'markdown', 'metadata', 'url', or None on failure.
+    Internal: scrape via Crawl4AI without caching.
     """
     if not configured():
         logger.debug("[Crawl4AI] Not configured (CRAWL4AI_ENABLED is false)")
@@ -128,6 +120,36 @@ async def scrape_url(
         except Exception:
             logger.error("[Crawl4AI] scrape_url failed for %s", url, exc_info=True)
             return None
+
+
+async def scrape_url(
+    url: str,
+    css_selector: Optional[str] = None,
+    wait_for: Optional[str] = None,
+) -> Optional[dict[str, Any]]:
+    """
+    Scrape a single URL via Crawl4AI with global URL dedup cache.
+
+    Args:
+        url: The URL to scrape.
+        css_selector: Optional CSS selector to restrict extraction scope.
+        wait_for: Optional CSS selector to wait for before scraping (for JS-heavy pages).
+
+    Returns:
+        Dict with keys 'markdown', 'metadata', 'url', or None on failure.
+    """
+    from app.lib.scrape_cache import ENRICH_CACHE_TTL, cached_scrape
+
+    # When custom selectors are specified, bypass cache because the result
+    # depends on the selector, not just the URL.
+    if css_selector or wait_for:
+        return await _raw_scrape_url(url, css_selector=css_selector, wait_for=wait_for)
+
+    return await cached_scrape(
+        url,
+        lambda u: _raw_scrape_url(u),
+        ttl=ENRICH_CACHE_TTL,
+    )
 
 
 async def crawl_urls(

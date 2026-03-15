@@ -12,6 +12,8 @@ from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 
 import pytest
 
+from app.cache import InMemoryCache, reset_backend
+
 # Ensure Crawl4AI is disabled by default in tests
 os.environ["CRAWL4AI_ENABLED"] = "false"
 
@@ -21,6 +23,14 @@ _mock_crawl4ai.AsyncWebCrawler = MagicMock
 _mock_crawl4ai.BrowserConfig = MagicMock
 _mock_crawl4ai.CrawlerRunConfig = MagicMock
 sys.modules.setdefault("crawl4ai", _mock_crawl4ai)
+
+
+@pytest.fixture(autouse=True)
+def _fresh_scrape_cache():
+    """Reset scrape cache between tests to prevent cross-test pollution."""
+    reset_backend(InMemoryCache())
+    yield
+    reset_backend(None)
 
 
 class TestConfigured:
