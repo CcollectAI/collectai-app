@@ -33,6 +33,7 @@ import { PresenceIndicator } from '@/components/PresenceIndicator';
 import { useAsync } from '@/hooks/useAsync';
 import useAuth from '@/hooks/useAuth';
 import logger from '@/utils/logger';
+import { track } from '@/analytics/track';
 
 type DmStatusType = 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined';
 
@@ -144,6 +145,12 @@ function UserProfileScreen() {
   );
 
   const profile = profileData ?? null;
+
+  // Track profile view
+  useEffect(() => {
+    if (!userId) return;
+    track({ name: 'profile_viewed', properties: { userId } });
+  }, [userId]);
 
   // Load follow state from AsyncStorage on mount
   useEffect(() => {

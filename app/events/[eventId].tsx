@@ -20,7 +20,7 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type PublicUserProfile } from '@/data';
 import type { CollectorsEvent } from '@/data/events';
@@ -347,11 +347,11 @@ function EventDetailScreen() {
   );
 
   const handleNavigate = useCallback((path: string) => {
-    router.push(path as never);
+    router.push(path as Href);
   }, [router]);
 
   const handleUserPress = useCallback((userId: string) => {
-    router.push(`/users/${encodeURIComponent(userId)}` as never);
+    router.push(`/users/${encodeURIComponent(userId)}` as Href);
   }, [router]);
 
   const handleAskToConnect = useCallback((userId: string) => {
@@ -361,7 +361,7 @@ function EventDetailScreen() {
         toUserId: userId,
         contextEventId: event?.id,
       },
-    } as never);
+    } as Href);
   }, [router, event?.id]);
 
   // Loading state
@@ -426,7 +426,7 @@ function EventDetailScreen() {
         {/* Promote CTA for creators of non-sponsored events */}
         {isCreator && !event.isSponsored && (
           <AnimatedPressable
-            onPress={() => router.push('/sponsor/dashboard' as never)}
+            onPress={() => router.push('/sponsor/dashboard' as Href)}
             style={[styles.promoteCta, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '40' }]}
             accessibilityRole="button"
             accessibilityLabel="Promote this event"
@@ -467,7 +467,7 @@ function EventDetailScreen() {
         {relatedCategory && (
           <EventRelatedCategory
             category={relatedCategory}
-            onPress={() => router.push(`/categories/${encodeURIComponent(relatedCategory.id)}` as never)}
+            onPress={() => router.push(`/categories/${encodeURIComponent(relatedCategory.id)}` as Href)}
           />
         )}
 
@@ -475,7 +475,7 @@ function EventDetailScreen() {
         <EventHostSection
           profile={hostProfile}
           loading={hostProfileLoading}
-          onPress={hostProfile ? () => router.push(`/users/${encodeURIComponent(hostProfile.id)}` as never) : undefined}
+          onPress={hostProfile ? () => router.push(`/users/${encodeURIComponent(hostProfile.id)}` as Href) : undefined}
         />
 
         <EventAttendeesSection

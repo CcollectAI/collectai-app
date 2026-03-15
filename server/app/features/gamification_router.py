@@ -24,6 +24,7 @@ from fastapi import APIRouter, Depends, Path, Query
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id, require_api_key
+from app.cache import cache_get, cache_set
 from app.db import db_configured, get_conn
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
@@ -659,37 +660,63 @@ async def get_leaderboard(
 
     assert xp_column in _XP_COLUMNS.values(), f"Invalid xp_column: {xp_column}"
 
+    # Cache leaderboard page (60s TTL) — keyed by period+limit+offset
+    _LEADERBOARD_CACHE_TTL = 60
+    cache_key = f"leaderboard:{period}:{limit}:{offset}"
+    cached_page = cache_get(cache_key)
+
     try:
+        if cached_page is not None:
+            leaderboard = cached_page["leaderboard"]
+            total_count = cached_page["total_count"]
+        else:
+            async with get_conn() as conn:
+                # Fetch leaderboard page with user profile info
+                rows = await conn.fetch(
+                    f"""
+                    SELECT
+                        ug.user_id,
+                        ug.{xp_column} AS xp,
+                        ug.total_xp,
+                        ug.level,
+                        ug.current_streak,
+                        p.display_name,
+                        p.avatar_url,
+                        p.avatar_color
+                    FROM public.user_gamification ug
+                    LEFT JOIN public.profiles p ON p.id = ug.user_id
+                    WHERE ug.{xp_column} > 0
+                    ORDER BY ug.{xp_column} DESC, ug.user_id
+                    LIMIT $1 OFFSET $2
+                    """,
+                    limit,
+                    offset,
+                )
+
+                # Total count for pagination
+                total_row = await conn.fetchrow(
+                    f"SELECT COUNT(*) AS cnt FROM public.user_gamification WHERE {xp_column} > 0"
+                )
+                total_count = total_row["cnt"] if total_row else 0
+
+            leaderboard = [
+                LeaderboardEntry(
+                    rank=offset + i + 1,
+                    user_id=str(r["user_id"]),
+                    display_name=r["display_name"],
+                    avatar_url=r["avatar_url"],
+                    avatar_color=r.get("avatar_color"),
+                    total_xp=r["total_xp"] or 0,
+                    level=r["level"] or 1,
+                    current_streak=r["current_streak"] or 0,
+                ).model_dump()
+                for i, r in enumerate(rows)
+            ]
+
+            cache_set(cache_key, {"leaderboard": leaderboard, "total_count": total_count}, ttl=_LEADERBOARD_CACHE_TTL)
+
+        # User rank is always fetched fresh (per-user, cheap query)
         async with get_conn() as conn:
-            # Fetch leaderboard page with user profile info
-            rows = await conn.fetch(
-                f"""
-                SELECT
-                    ug.user_id,
-                    ug.{xp_column} AS xp,
-                    ug.total_xp,
-                    ug.level,
-                    ug.current_streak,
-                    p.display_name,
-                    p.avatar_url,
-                    p.avatar_color
-                FROM public.user_gamification ug
-                LEFT JOIN public.profiles p ON p.id = ug.user_id
-                WHERE ug.{xp_column} > 0
-                ORDER BY ug.{xp_column} DESC, ug.user_id
-                LIMIT $1 OFFSET $2
-                """,
-                limit,
-                offset,
-            )
-
-            # Total count for pagination
-            total_row = await conn.fetchrow(
-                f"SELECT COUNT(*) AS cnt FROM public.user_gamification WHERE {xp_column} > 0"
-            )
-            total_count = total_row["cnt"] if total_row else 0
-
-            # Current user's rank
             rank_row = await conn.fetchrow(
                 f"""
                 SELECT COUNT(*) + 1 AS rank
@@ -701,20 +728,6 @@ async def get_leaderboard(
                 user_id,
             )
             user_rank = rank_row["rank"] if rank_row else None
-
-        leaderboard = [
-            LeaderboardEntry(
-                rank=offset + i + 1,
-                user_id=str(r["user_id"]),
-                display_name=r["display_name"],
-                avatar_url=r["avatar_url"],
-                avatar_color=r.get("avatar_color"),
-                total_xp=r["total_xp"] or 0,
-                level=r["level"] or 1,
-                current_streak=r["current_streak"] or 0,
-            ).model_dump()
-            for i, r in enumerate(rows)
-        ]
 
         return {
             "leaderboard": leaderboard,

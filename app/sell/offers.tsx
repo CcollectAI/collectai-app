@@ -84,7 +84,7 @@ const OfferCard = React.memo(function OfferCard({
             source={{ uri: offer.itemImageUrl }}
             style={styles.offerThumbImage}
             contentFit="cover"
-            cachePolicy="disk"
+            cachePolicy="memory-disk"
             transition={150}
           />
         ) : (
@@ -103,7 +103,7 @@ const OfferCard = React.memo(function OfferCard({
               source={{ uri: offer.otherUserAvatarUrl }}
               style={styles.offerAvatar}
               contentFit="cover"
-              cachePolicy="disk"
+              cachePolicy="memory-disk"
             />
           ) : (
             <View style={[styles.offerAvatarPlaceholder, { backgroundColor: colors.accent + '30' }]}>

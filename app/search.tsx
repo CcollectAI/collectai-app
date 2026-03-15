@@ -12,7 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dataProvider } from '@/data';
@@ -320,7 +320,7 @@ function SearchScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">ITEMS</Text>
             {results.items.map((item) => (
-              <ItemSearchResult key={item.id} item={item} colors={colors} onPress={() => router.push(`/item/${item.id}` as never)} />
+              <ItemSearchResult key={item.id} item={item} colors={colors} onPress={() => router.push(`/item/${item.id}` as Href)} />
             ))}
           </View>
         )}
@@ -330,7 +330,7 @@ function SearchScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">CATALOG</Text>
             {results.catalog.map((catItem) => (
-              <CatalogSearchResult key={catItem.id} item={catItem} colors={colors} onPress={() => router.push(`/categories/${catItem.category}` as never)} />
+              <CatalogSearchResult key={catItem.id} item={catItem} colors={colors} onPress={() => router.push(`/categories/${catItem.category}` as Href)} />
             ))}
           </View>
         )}
@@ -340,7 +340,7 @@ function SearchScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">COLLECTORS</Text>
             {results.users.map((user) => (
-              <UserSearchResult key={user.id} user={user} colors={colors} onPress={() => router.push(`/users/${user.id}` as never)} />
+              <UserSearchResult key={user.id} user={user} colors={colors} onPress={() => router.push(`/users/${user.id}` as Href)} />
             ))}
           </View>
         )}
@@ -350,7 +350,7 @@ function SearchScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">EVENTS</Text>
             {results.events.map((event) => (
-              <EventSearchResult key={event.id} event={event} colors={colors} onPress={() => router.push(`/events/${event.id}` as never)} />
+              <EventSearchResult key={event.id} event={event} colors={colors} onPress={() => router.push(`/events/${event.id}` as Href)} />
             ))}
           </View>
         )}
@@ -360,7 +360,7 @@ function SearchScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.muted }]} accessibilityRole="header">CATEGORIES</Text>
             {results.categories.map((cat) => (
-              <CategorySearchResult key={cat.id} cat={cat} colors={colors} onPress={() => router.push(`/categories/${cat.id}` as never)} />
+              <CategorySearchResult key={cat.id} cat={cat} colors={colors} onPress={() => router.push(`/categories/${cat.id}` as Href)} />
             ))}
           </View>
         )}

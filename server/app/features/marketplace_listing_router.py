@@ -40,6 +40,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user_id
+from app.cache import cache_get, cache_set
 from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
@@ -530,12 +531,19 @@ async def list_listings(
 
             where_clause = " AND ".join(conditions)
 
-            # Total count
-            count_row = await conn.fetchrow(
-                f"SELECT count(*) AS cnt FROM marketplace_listings WHERE {where_clause}",
-                *params,
-            )
-            total_count = count_row["cnt"] if count_row else 0
+            # Total count (cached 30s to reduce repeated DB hits on refresh)
+            _LISTING_COUNT_TTL = 30
+            count_cache_key = f"listing_count:{user_id}:{status or ''}:{marketplace_id or ''}"
+            cached_count = cache_get(count_cache_key)
+            if cached_count is not None:
+                total_count = cached_count
+            else:
+                count_row = await conn.fetchrow(
+                    f"SELECT count(*) AS cnt FROM marketplace_listings WHERE {where_clause}",
+                    *params,
+                )
+                total_count = count_row["cnt"] if count_row else 0
+                cache_set(count_cache_key, total_count, ttl=_LISTING_COUNT_TTL)
 
             # Fetch page
             params.append(limit)

@@ -7,7 +7,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
@@ -64,7 +64,7 @@ function CategoryPerformanceSectionInner({
           <AnimatedPressable
             key={cat.category}
             style={[styles.catStatRow, { borderBottomColor: colors.border }]}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push(`/categories/${encodeURIComponent(cat.category)}` as never); }}
+            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push(`/categories/${encodeURIComponent(cat.category)}` as Href); }}
             accessibilityRole="button"
             accessibilityLabel={`${cat.category.replace(/_/g, ' ')}: ${cat.item_count} items, ${formatPrice(cat.total_value, settings.currency ?? 'EUR')}, 7d ${cat.trend}`}
           >

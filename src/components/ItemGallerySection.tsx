@@ -201,7 +201,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                       placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
                       style={{ width: GALLERY_WIDTH, height: GALLERY_HEIGHT }}
                       contentFit="cover"
-                      cachePolicy="disk"
+                      cachePolicy="memory-disk"
                       transition={200}
                       onError={() => handleImageError(item.id)}
                     />
@@ -298,7 +298,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
             placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
             style={s.image}
             contentFit="cover"
-            cachePolicy="disk"
+            cachePolicy="memory-disk"
             transition={200}
             accessibilityRole="image"
             accessibilityLabel={`Photo of ${editableName}`}

@@ -5,7 +5,7 @@
  * catalog alternatives, and action buttons (retake / add to collection).
  */
 
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -14,8 +14,6 @@ import {
   ScrollView,
   StatusBar,
   Dimensions,
-  TextInput,
-  Alert,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,9 +21,9 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { featureFlags } from '@/config/featureFlags';
-import { SocialProofSection } from '@/components/SocialProofSection';
-import { ConditionGradeSection } from '@/components/ConditionGradeSection';
-import { submitScanFeedback } from '@/api/collectorsApi';
+import { ScanFeedbackPanel } from '@/components/quickscan/ScanFeedbackPanel';
+import { ScanSocialProof } from '@/components/quickscan/ScanSocialProof';
+import { ConditionGradeSelector } from '@/components/quickscan/ConditionGradeSelector';
 import type { QuickScanResult, CatalogAlternative, CurrencyCode } from '@/data/types';
 
 import { BRAND_COLORS } from '@/constants/colors';
@@ -135,33 +133,6 @@ function ScanResultCardInner({
 }: ScanResultCardProps) {
   const { colors } = useAppTheme();
 
-  // Scan feedback state (F9)
-  const [editingField, setEditingField] = useState<'name' | 'category' | 'condition' | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const [feedbackSent, setFeedbackSent] = useState(false);
-
-  const handleStartEdit = useCallback((field: 'name' | 'category' | 'condition', current: string) => {
-    if (!featureFlags.FEATURE_SCAN_FEEDBACK || !scanResult.scanSessionId) return;
-    setEditingField(field);
-    setEditValue(current);
-  }, [scanResult.scanSessionId]);
-
-  const handleSubmitFeedback = useCallback(async () => {
-    if (!editingField || !scanResult.scanSessionId) return;
-    try {
-      const feedback: { scanSessionId: string; correctedName?: string; correctedCategory?: string; correctedCondition?: string } = { scanSessionId: scanResult.scanSessionId };
-      if (editingField === 'name') feedback.correctedName = editValue;
-      else if (editingField === 'category') feedback.correctedCategory = editValue;
-      else if (editingField === 'condition') feedback.correctedCondition = editValue;
-      await submitScanFeedback(feedback);
-      setFeedbackSent(true);
-      setEditingField(null);
-      Alert.alert('Thanks!', 'Your correction helps improve future scans.');
-    } catch {
-      Alert.alert('Error', 'Could not submit feedback. Please try again.');
-    }
-  }, [editingField, editValue, scanResult.scanSessionId]);
-
   const fc = scanResult.fieldConfidence;
   const alts = scanResult.alternatives ?? [];
   const priceBandLow = scanResult.prediction.estimatedLow;
@@ -225,121 +196,14 @@ function ScanResultCardInner({
           </AnimatedPressable>
         </View>
 
-        {/* Item identification card -- overlaps hero */}
-        <View style={[styles.idCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {editingField === 'name' ? (
-            <View style={styles.feedbackEditRow}>
-              <TextInput
-                style={[styles.feedbackInput, { color: colors.text, borderColor: colors.brand.base }]}
-                value={editValue}
-                onChangeText={setEditValue}
-                autoFocus
-                returnKeyType="done"
-                onSubmitEditing={handleSubmitFeedback}
-                accessibilityLabel="Edit item name"
-              />
-              <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: colors.brand.base }]} accessibilityRole="button" accessibilityLabel="Submit correction">
-                <Ionicons name="checkmark" size={16} color="#FFF" />
-              </AnimatedPressable>
-              <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
-                <Ionicons name="close" size={16} color={colors.muted} />
-              </AnimatedPressable>
-            </View>
-          ) : (
-            <AnimatedPressable
-              onPress={() => handleStartEdit('name', scanResult.prediction.name || '')}
-              accessibilityRole="button"
-              accessibilityLabel={`Item name: ${scanResult.prediction.name || 'Unknown Item'}. ${featureFlags.FEATURE_SCAN_FEEDBACK ? 'Tap to correct' : ''}`}
-              accessibilityHint={featureFlags.FEATURE_SCAN_FEEDBACK ? 'Tap to correct' : undefined}
-            >
-              <Text style={[styles.idName, { color: colors.text }]} numberOfLines={3}>
-                {scanResult.prediction.name || 'Unknown Item'}
-              </Text>
-            </AnimatedPressable>
-          )}
-          <View style={styles.idMeta}>
-            {editingField === 'category' ? (
-              <View style={styles.feedbackEditRow}>
-                <TextInput
-                  style={[styles.feedbackInput, styles.feedbackInputSmall, { color: colors.text, borderColor: colors.brand.base }]}
-                  value={editValue}
-                  onChangeText={setEditValue}
-                  autoFocus
-                  returnKeyType="done"
-                  onSubmitEditing={handleSubmitFeedback}
-                  accessibilityLabel="Edit category value"
-                />
-                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: colors.brand.base }]} accessibilityRole="button" accessibilityLabel="Submit category correction">
-                  <Ionicons name="checkmark" size={14} color="#FFF" />
-                </AnimatedPressable>
-                <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
-                  <Ionicons name="close" size={14} color={colors.muted} />
-                </AnimatedPressable>
-              </View>
-            ) : (
-              <AnimatedPressable
-                onPress={() => handleStartEdit('category', scanResult.attributes.category)}
-                accessibilityRole="button"
-                accessibilityLabel={`Category: ${scanResult.attributes.category.replace(/_/g, ' ')}`}
-                style={[styles.categoryChip, { backgroundColor: colors.brand.base + '18' }]}
-              >
-                <Ionicons name="pricetag" size={12} color={colors.brand.dark} />
-                <Text style={[styles.categoryChipText, { color: colors.brand.dark }]}>
-                  {scanResult.attributes.category
-                    .replace(/_/g, ' ')
-                    .replace(/\b\w/g, (c) => c.toUpperCase())}
-                </Text>
-                {featureFlags.FEATURE_SCAN_FEEDBACK && <Ionicons name="pencil" size={10} color={colors.brand.dark} style={{ marginLeft: 4 }} />}
-              </AnimatedPressable>
-            )}
-            {!!scanResult.attributes.conditionGuess && editingField !== 'condition' && (
-              <AnimatedPressable
-                onPress={() => handleStartEdit('condition', scanResult.attributes.conditionGuess || '')}
-                style={[styles.conditionChip, { backgroundColor: colors.border + '80' }]}
-                accessibilityRole="button"
-                accessibilityLabel={`Condition: ${scanResult.attributes.conditionGuess?.replace(/_/g, ' ') ?? 'unknown'}`}
-              >
-                <Ionicons name="shield-checkmark" size={12} color={colors.muted} />
-                <Text style={[styles.conditionChipText, { color: colors.text }]}>
-                  {scanResult.attributes.conditionGuess
-                    .replace(/_/g, ' ')
-                    .replace(/\b\w/g, (c) => c.toUpperCase())}
-                </Text>
-                {featureFlags.FEATURE_SCAN_FEEDBACK && <Ionicons name="pencil" size={10} color={colors.muted} style={{ marginLeft: 4 }} />}
-              </AnimatedPressable>
-            )}
-            {editingField === 'condition' && (
-              <View style={styles.feedbackEditRow}>
-                <TextInput
-                  style={[styles.feedbackInput, styles.feedbackInputSmall, { color: colors.text, borderColor: colors.brand.base }]}
-                  value={editValue}
-                  onChangeText={setEditValue}
-                  autoFocus
-                  returnKeyType="done"
-                  onSubmitEditing={handleSubmitFeedback}
-                  accessibilityLabel="Edit condition value"
-                />
-                <AnimatedPressable onPress={handleSubmitFeedback} style={[styles.feedbackSubmitBtn, { backgroundColor: colors.brand.base }]} accessibilityRole="button" accessibilityLabel="Submit condition correction">
-                  <Ionicons name="checkmark" size={14} color="#FFF" />
-                </AnimatedPressable>
-                <AnimatedPressable onPress={() => setEditingField(null)} style={styles.feedbackCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
-                  <Ionicons name="close" size={14} color={colors.muted} />
-                </AnimatedPressable>
-              </View>
-            )}
-          </View>
-          {featureFlags.FEATURE_SCAN_FEEDBACK && !feedbackSent && scanResult.scanSessionId && (
-            <Text style={[styles.feedbackHint, { color: colors.muted }]}>
-              Tap name, category, or condition to correct
-            </Text>
-          )}
-          {feedbackSent && (
-            <View style={styles.feedbackSentBadge}>
-              <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
-              <Text style={{ color: colors.success, fontSize: 11, marginLeft: 4 }}>Correction submitted</Text>
-            </View>
-          )}
-        </View>
+        {/* Item identification card with inline feedback */}
+        <ScanFeedbackPanel
+          name={scanResult.prediction.name || ''}
+          category={scanResult.attributes.category}
+          conditionGuess={scanResult.attributes.conditionGuess}
+          scanSessionId={scanResult.scanSessionId}
+          feedbackEnabled={!!featureFlags.FEATURE_SCAN_FEEDBACK}
+        />
 
         {/* Price band section */}
         {priceBandMid > 0 && (
@@ -403,17 +267,13 @@ function ScanResultCardInner({
         ) : null}
 
         {/* Social proof */}
-        {featureFlags.FEATURE_SOCIAL_PROOF && scanResult.socialProof && (
-          <SocialProofSection socialProof={scanResult.socialProof} currency={currency} />
-        )}
+        <ScanSocialProof socialProof={scanResult.socialProof} currency={currency} />
 
         {/* Condition grading */}
-        {featureFlags.FEATURE_CONDITION_GRADING && (
-          <ConditionGradeSection
-            defects={scanResult.defectAnnotations ?? []}
-            grade={scanResult.suggestedGrade ?? null}
-          />
-        )}
+        <ConditionGradeSelector
+          defects={scanResult.defectAnnotations ?? []}
+          grade={scanResult.suggestedGrade ?? null}
+        />
 
         {/* Confidence rings */}
         {!!fc && (
@@ -597,55 +457,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  // ID Card (below hero)
-  idCard: {
-    marginTop: 12,
-    marginHorizontal: 16,
-    padding: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  idName: {
-    fontSize: 22,
-    fontWeight: '800',
-    lineHeight: 28,
-    letterSpacing: -0.3,
-  },
-  idMeta: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  categoryChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  conditionChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  conditionChipText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   // Section card (reused for price, confidence, details)
   section: {
@@ -867,48 +678,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
-  },
-  // Feedback (F9)
-  feedbackEditRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  feedbackInput: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  feedbackInputSmall: {
-    fontSize: 12,
-    paddingVertical: 4,
-  },
-  feedbackSubmitBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  feedbackCancelBtn: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  feedbackHint: {
-    fontSize: 11,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  feedbackSentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
   },
 });
 

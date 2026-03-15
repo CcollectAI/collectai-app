@@ -18,7 +18,7 @@ import {
   Linking,
   RefreshControl,
 } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter, Stack, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type AlertFeedItem } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -301,7 +301,7 @@ function AlertsScreen() {
             <AnimatedPressable
               onPress={() => {
                 handleMarkRead(item.id);
-                router.push(`/item/${item.itemId}` as never);
+                router.push(`/item/${item.itemId}` as Href);
               }}
               style={[styles.viewListingBtn, { borderColor: colors.accent + '40' }]}
               accessibilityRole="link"

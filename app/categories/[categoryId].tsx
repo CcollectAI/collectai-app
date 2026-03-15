@@ -11,7 +11,7 @@ import {
   FlatList,
   RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type CategoryStoreData, type Item, type CategoryMissingItem, type BuildPaintProject } from '@/data';
 import { getCategoryById, getRelatedCategories } from '@/data/categories';
@@ -546,7 +546,7 @@ function CategoryStoreScreen() {
         {categoryId && (
           <SetProgressSection
             categoryId={categoryId}
-            onSetPress={(setId) => router.push(`/categories/${categoryId}` as never)}
+            onSetPress={(setId) => router.push(`/categories/${categoryId}` as Href)}
           />
         )}
 

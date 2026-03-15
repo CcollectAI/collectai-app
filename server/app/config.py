@@ -36,8 +36,8 @@ if DEV_MODE and ENVIRONMENT == "production":
 
 DB_ENABLED: bool = os.getenv("DB_ENABLED", "false").lower() == "true"
 DB_DSN: str = os.getenv("DB_DSN", "")
-DB_POOL_MIN: int = int(os.getenv("DB_POOL_MIN_SIZE", "1"))
-DB_POOL_MAX: int = int(os.getenv("DB_POOL_MAX_SIZE", "10"))
+DB_POOL_MIN: int = int(os.getenv("DB_POOL_MIN_SIZE", "5"))
+DB_POOL_MAX: int = int(os.getenv("DB_POOL_MAX_SIZE", "20"))
 DB_COMMAND_TIMEOUT: float = float(os.getenv("DB_COMMAND_TIMEOUT", "30"))
 DB_CONNECT_TIMEOUT: float = float(os.getenv("DB_CONNECT_TIMEOUT", "10"))
 DB_IDLE_LIFETIME: float = float(os.getenv("DB_MAX_IDLE_LIFETIME", "300"))

@@ -302,8 +302,11 @@ const SearchScreen: React.FC = () => {
     [marketplaceResults, collectionResults]
   );
 
-  const topResult = allResults[0] ?? null;
-  const otherResults = topResult ? allResults.slice(1) : allResults;
+  const topResult = useMemo(() => allResults[0] ?? null, [allResults]);
+  const otherResults = useMemo(
+    () => (topResult ? allResults.slice(1) : allResults),
+    [allResults, topResult],
+  );
 
   // Unique collections from collection results only
   const uniqueCollections = useMemo(
@@ -531,6 +534,30 @@ const SearchScreen: React.FC = () => {
     });
   }, [router, settings.hapticsEnabled]);
 
+  const handleFilterApply = useCallback(() => {
+    closeFilter();
+    if (trimmedQuery) executeSearch(trimmedQuery);
+  }, [closeFilter, trimmedQuery, executeSearch]);
+
+  const handleFilterReset = useCallback(() => {
+    setFilterSources([]);
+    setFilterConditions([]);
+    setFilterMinPrice("");
+    setFilterMaxPrice("");
+    setFilterSort("relevance");
+  }, []);
+
+  const handleCloseUserSearch = useCallback(() => {
+    closeUserSearch();
+    setUserSearchQuery("");
+    setUserSearchResults([]);
+  }, [closeUserSearch]);
+
+  const handleClearUserSearch = useCallback(() => {
+    setUserSearchQuery("");
+    setUserSearchResults([]);
+  }, []);
+
   const hasResults = trimmedQuery && (allResults.length > 0 || searchLoading);
 
   return (
@@ -660,6 +687,7 @@ const SearchScreen: React.FC = () => {
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
                 windowSize={3}
+                removeClippedSubviews={true}
               />
             </View>
 
@@ -687,18 +715,9 @@ const SearchScreen: React.FC = () => {
           onSetFilterMinPrice={setFilterMinPrice}
           onSetFilterMaxPrice={setFilterMaxPrice}
           onSetFilterSort={setFilterSort}
-          onApply={() => {
-            closeFilter();
-            if (trimmedQuery) executeSearch(trimmedQuery);
-          }}
+          onApply={handleFilterApply}
           onClose={closeFilter}
-          onReset={() => {
-            setFilterSources([]);
-            setFilterConditions([]);
-            setFilterMinPrice("");
-            setFilterMaxPrice("");
-            setFilterSort("relevance");
-          }}
+          onReset={handleFilterReset}
         />
 
         {/* User Search Modal */}
@@ -706,21 +725,13 @@ const SearchScreen: React.FC = () => {
           visible={userSearchVisible}
           animationType="slide"
           presentationStyle="pageSheet"
-          onRequestClose={() => {
-            closeUserSearch();
-            setUserSearchQuery("");
-            setUserSearchResults([]);
-          }}
+          onRequestClose={handleCloseUserSearch}
         >
           <SafeAreaView style={[styles.filterModal, { backgroundColor: colors.background }]}>
             {/* Header */}
             <View style={[styles.filterHeader, { borderBottomColor: colors.border }]}>
               <TouchableOpacity
-                onPress={() => {
-                  closeUserSearch();
-                  setUserSearchQuery("");
-                  setUserSearchResults([]);
-                }}
+                onPress={handleCloseUserSearch}
                 accessibilityRole="button"
                 accessibilityLabel="Close user search"
               >
@@ -746,10 +757,7 @@ const SearchScreen: React.FC = () => {
                 />
                 {userSearchQuery.length > 0 && (
                   <TouchableOpacity
-                    onPress={() => {
-                      setUserSearchQuery("");
-                      setUserSearchResults([]);
-                    }}
+                    onPress={handleClearUserSearch}
                     accessibilityRole="button"
                     accessibilityLabel="Clear search"
                   >

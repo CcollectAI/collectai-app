@@ -11,7 +11,7 @@
  *  - "Cancel Event" destructive button at bottom
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   ScrollView,
@@ -29,34 +29,24 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
-import type { EventKind, CreateEventInput, CollectorsEvent } from '@/data/events';
-import { CATEGORIES } from '@/constants/categories';
+import type { CollectorsEvent, CreateEventInput } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
-import { useFormField, validateAll } from '@/hooks/useFormField';
-import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
+import { useEventForm, validateEventForm, buildEventInput, type EventFormat } from '@/hooks/useEventForm';
 import { useAuthContext } from '@/providers/useAuthContext';
-import CompactSelect from '@/components/CompactSelect';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { EventFormHeader } from '@/components/events/EventFormHeader';
+import { EventDateTimePicker } from '@/components/events/EventDateTimePicker';
+import { EventLocationSection } from '@/components/events/EventLocationSection';
+import { FormField as FormFieldComponent } from '@/components/form';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
 /* -------------------------------------------------------------------------- */
-
-type SaveState = 'idle' | 'saving';
-type EventFormat = 'in_person' | 'online' | 'hybrid';
-
-const EVENT_KINDS: { label: string; value: EventKind }[] = [
-  { label: 'Meetup', value: 'meetup' },
-  { label: 'Drop', value: 'collection_drop' },
-  { label: 'Stream', value: 'stream' },
-  { label: 'Convention', value: 'convention' },
-  { label: 'Release', value: 'release' },
-];
 
 const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ionicons.glyphMap }[] = [
   { label: 'In-Person', value: 'in_person', icon: 'location-outline' },
@@ -82,37 +72,11 @@ const EditEventScreen: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [originalEvent, setOriginalEvent] = useState<CollectorsEvent | null>(null);
 
-  /* ---- form state ---- */
-  const titleField = useFormField(compose(required('Title'), maxLength('Title', 255)));
-  const [kind, setKind] = useState<EventKind>('meetup');
-  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
-  const [format, setFormat] = useState<EventFormat>('in_person');
-  const dateField = useFormField(compose(required('Date'), dateYMD('Date')));
-  const [time, setTime] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [location, setLocation] = useState('');
-  const onlineUrlField = useFormField(url('Online URL'));
-  const imageUrlField = useFormField(url('Image URL'));
-  const descriptionField = useFormField(compose(required('Description'), maxLength('Description', 2000)));
-  const [isPublic, setIsPublic] = useState(true);
+  /* ---- shared form hook ---- */
+  const form = useEventForm({ initialEvent: originalEvent });
 
-  /* ---- geolocation state ---- */
-  const [latitude, setLatitude] = useState<number | undefined>(undefined);
-  const [longitude, setLongitude] = useState<number | undefined>(undefined);
-  const [geoLoading, setGeoLoading] = useState(false);
-
-  const [saveState, setSaveState] = useState<SaveState>('idle');
-
-  /* ---- derived ---- */
-  const showLocation = format === 'in_person' || format === 'hybrid';
-  const showOnlineUrl = format === 'online' || format === 'hybrid';
-
-  const canSubmit =
-    titleField.value.trim().length > 0 &&
-    dateField.value.trim().length > 0 &&
-    descriptionField.value.trim().length > 0 &&
-    !titleField.error && !dateField.error && !descriptionField.error && !onlineUrlField.error && !imageUrlField.error &&
-    saveState !== 'saving';
+  /* ---- saving state ---- */
+  const [saving, setSaving] = useState(false);
 
   /* ---- load existing event ---- */
   useEffect(() => {
@@ -140,22 +104,6 @@ const EditEventScreen: React.FC = () => {
         }
 
         setOriginalEvent(evt);
-
-        // Pre-populate form fields
-        titleField.onChange(evt.title);
-        setKind(evt.kind);
-        setCategoryId(evt.categoryId ?? undefined);
-        setFormat((evt.format as EventFormat) ?? 'in_person');
-        dateField.onChange(evt.date);
-        setTime(evt.time ?? '');
-        setEndDate(evt.endDate ?? '');
-        setLocation(evt.location ?? '');
-        onlineUrlField.onChange(evt.onlineUrl ?? '');
-        imageUrlField.onChange(evt.imageUrl ?? '');
-        descriptionField.onChange(evt.description);
-        setIsPublic(evt.isPublic ?? true);
-        setLatitude(evt.latitude);
-        setLongitude(evt.longitude);
       } catch (err: unknown) {
         logger.warn('[EditEvent] load error:', err);
         setAuthError('Failed to load event.');
@@ -163,70 +111,25 @@ const EditEventScreen: React.FC = () => {
         setInitialLoading(false);
       }
     })();
-  }, [eventId, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ---- geolocation handler ---- */
-  const handleUseMyLocation = useCallback(async () => {
-    setGeoLoading(true);
-    try {
-      const Location = await import('expo-location');
-
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        showToast({ message: 'Location permission is required to use this feature.', type: 'warning' });
-        return;
-      }
-
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setLatitude(pos.coords.latitude);
-      setLongitude(pos.coords.longitude);
-
-      // Reverse geocode to get city name
-      const results = await Location.reverseGeocodeAsync({
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-      });
-
-      if (results.length > 0) {
-        const place = results[0];
-        const parts: string[] = [];
-        if (place.city) parts.push(place.city);
-        if (place.region) parts.push(place.region);
-        if (place.country) parts.push(place.country);
-        const name = parts.join(', ');
-        if (name) setLocation(name);
-      }
-    } catch (err: unknown) {
-      logger.warn('[EditEvent] geolocation error:', err);
-      showToast({ message: 'Could not retrieve your location. Please enter it manually.', type: 'error' });
-    } finally {
-      setGeoLoading(false);
-    }
-  }, []);
+  }, [eventId, user?.id]);
 
   /* ---- submit ---- */
   const handleSubmit = async () => {
-    if (!validateAll(titleField, dateField, descriptionField, onlineUrlField, imageUrlField)) return;
-    if (!canSubmit || !eventId) return;
+    if (!validateEventForm(form)) return;
+    if (!form.canSubmit || !eventId || saving) return;
 
-    setSaveState('saving');
+    setSaving(true);
 
     try {
       const patch: Partial<CreateEventInput> = {
-        title: titleField.value.trim(),
-        kind,
-        date: dateField.value.trim(),
-        description: descriptionField.value.trim(),
-        format,
-        isPublic,
-        ...(categoryId ? { categoryId } : { categoryId: undefined }),
-        ...(time.trim() ? { time: time.trim() } : { time: undefined }),
-        ...(endDate.trim() ? { endDate: endDate.trim() } : { endDate: undefined }),
-        ...(location.trim() ? { location: location.trim() } : { location: undefined }),
-        ...(onlineUrlField.value.trim() ? { onlineUrl: onlineUrlField.value.trim() } : { onlineUrl: undefined }),
-        ...(imageUrlField.value.trim() ? { imageUrl: imageUrlField.value.trim() } : { imageUrl: undefined }),
-        ...(latitude !== undefined ? { latitude } : {}),
-        ...(longitude !== undefined ? { longitude } : {}),
+        ...buildEventInput(form),
+        // For edit, explicitly set undefined for cleared optional fields
+        ...(form.categoryId ? { categoryId: form.categoryId } : { categoryId: undefined }),
+        ...(form.time.trim() ? { time: form.time.trim() } : { time: undefined }),
+        ...(form.endDate.trim() ? { endDate: form.endDate.trim() } : { endDate: undefined }),
+        ...(form.location.trim() ? { location: form.location.trim() } : { location: undefined }),
+        ...(form.onlineUrlField.value.trim() ? { onlineUrl: form.onlineUrlField.value.trim() } : { onlineUrl: undefined }),
+        ...(form.imageUrlField.value.trim() ? { imageUrl: form.imageUrlField.value.trim() } : { imageUrl: undefined }),
       };
 
       await dataProvider.updateEvent(eventId, patch);
@@ -235,7 +138,7 @@ const EditEventScreen: React.FC = () => {
       logger.warn('[EditEvent] error:', err);
       showToast({ message: (err as Error)?.message || 'Failed to update event. Please try again.', type: 'error' });
     } finally {
-      setSaveState('idle');
+      setSaving(false);
     }
   };
 
@@ -320,71 +223,15 @@ const EditEventScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
-          {/* ============================================================== */}
-          {/*  Section: Basic Information                                     */}
-          {/* ============================================================== */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Basic Information</Text>
-            </View>
 
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              {/* Title */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>
-                  Title <Text style={{ color: colors.accent }}>*</Text>
-                </Text>
-                <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={titleField.value}
-                    onChangeText={titleField.onChange}
-                    onBlur={titleField.onBlur}
-                    placeholder="e.g. Rotterdam TCG Meetup"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    accessibilityLabel="Event title"
-                    returnKeyType="next"
-                  />
-                </View>
-                {titleField.touched && titleField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{titleField.error}</Text>}
-              </View>
-
-              {/* Kind dropdown */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>Kind</Text>
-                <CompactSelect
-                  title="Kind"
-                  value={EVENT_KINDS.find((k) => k.value === kind)?.label}
-                  options={EVENT_KINDS.map((k) => k.label)}
-                  onChange={(label) => {
-                    const match = EVENT_KINDS.find((k) => k.label === label);
-                    if (match) setKind(match.value);
-                  }}
-                />
-              </View>
-
-              {/* Category dropdown */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>Category (optional)</Text>
-                <CompactSelect
-                  title="Category"
-                  searchable
-                  value={categoryId ? CATEGORIES.find((c) => c.slug === categoryId)?.name ?? 'None' : 'None'}
-                  options={['None', ...CATEGORIES.map((c) => c.name)]}
-                  onChange={(name) => {
-                    if (name === 'None') {
-                      setCategoryId(undefined);
-                    } else {
-                      const match = CATEGORIES.find((c) => c.name === name);
-                      if (match) setCategoryId(match.slug);
-                    }
-                  }}
-                />
-              </View>
-            </View>
-          </View>
+          {/* Section: Basic Information */}
+          <EventFormHeader
+            titleField={form.titleField}
+            kind={form.kind}
+            onKindChange={form.setKind}
+            categoryId={form.categoryId}
+            onCategoryChange={form.setCategoryId}
+          />
 
           {/* ============================================================== */}
           {/*  Section: Format                                                */}
@@ -398,7 +245,7 @@ const EditEventScreen: React.FC = () => {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.chipRow}>
                 {EVENT_FORMATS.map((opt) => {
-                  const isSelected = format === opt.value;
+                  const isSelected = form.format === opt.value;
                   return (
                     <AnimatedPressable
                       key={opt.value}
@@ -409,7 +256,7 @@ const EditEventScreen: React.FC = () => {
                           borderColor: isSelected ? colors.accent : colors.border,
                         },
                       ]}
-                      onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setFormat(opt.value); }}
+                      onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); form.setFormat(opt.value); }}
                       accessibilityRole="button"
                       accessibilityLabel={`${opt.label} format${isSelected ? ', selected' : ''}`}
                     >
@@ -433,169 +280,32 @@ const EditEventScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* ============================================================== */}
-          {/*  Section: Date & Time                                           */}
-          {/* ============================================================== */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="calendar-outline" size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Date & Time</Text>
-            </View>
+          {/* Section: Date & Time */}
+          <EventDateTimePicker
+            dateField={form.dateField}
+            time={form.time}
+            onTimeChange={form.setTime}
+            endDate={form.endDate}
+            onEndDateChange={form.setEndDate}
+          />
 
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              {/* Date */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>
-                  Date <Text style={{ color: colors.accent }}>*</Text>
-                </Text>
-                <View style={[styles.inputWrap, { borderColor: dateField.touched && dateField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={dateField.value}
-                    onChangeText={dateField.onChange}
-                    onBlur={dateField.onBlur}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    accessibilityLabel="Event date"
-                    returnKeyType="next"
-                  />
-                </View>
-                {dateField.touched && dateField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{dateField.error}</Text>}
-              </View>
-
-              {/* Time */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>Time (optional)</Text>
-                <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="time-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={time}
-                    onChangeText={setTime}
-                    placeholder="19:30 CET"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    accessibilityLabel="Event time"
-                    returnKeyType="next"
-                  />
-                </View>
-              </View>
-
-              {/* End Date */}
-              <View style={styles.fieldBlock}>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>End Date (optional, for multi-day)</Text>
-                <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={endDate}
-                    onChangeText={setEndDate}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    accessibilityLabel="Event end date"
-                    returnKeyType="next"
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* ============================================================== */}
-          {/*  Section: Location / Online URL                                 */}
-          {/* ============================================================== */}
-          {(showLocation || showOnlineUrl) && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name="location-outline" size={16} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  {showLocation && showOnlineUrl ? 'Location & Link' : showLocation ? 'Location' : 'Online Link'}
-                </Text>
-              </View>
-
-              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {/* Physical location */}
-                {showLocation && (
-                  <View style={styles.fieldBlock}>
-                    <Text style={[styles.fieldLabel, { color: colors.text }]}>Location</Text>
-                    <View style={styles.locationRow}>
-                      <View
-                        style={[
-                          styles.inputWrap,
-                          styles.locationInput,
-                          { borderColor: colors.border, backgroundColor: colors.background },
-                        ]}
-                      >
-                        <Ionicons name="location-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                        <TextInput
-                          value={location}
-                          onChangeText={(text) => {
-                            setLocation(text);
-                            // Clear coordinates when user manually edits
-                            if (latitude !== undefined) {
-                              setLatitude(undefined);
-                              setLongitude(undefined);
-                            }
-                          }}
-                          placeholder="e.g. Amsterdam, Netherlands"
-                          placeholderTextColor={colors.muted}
-                          style={[styles.input, { color: colors.text }]}
-                          accessibilityLabel="Event location"
-                          returnKeyType="next"
-                        />
-                      </View>
-                      <AnimatedPressable
-                        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleUseMyLocation(); }}
-                        disabled={geoLoading}
-                        style={[
-                          styles.geoButton,
-                          {
-                            backgroundColor: colors.accent + '15',
-                            borderColor: colors.accent + '40',
-                          },
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel="Use my current location"
-                      >
-                        {geoLoading ? (
-                          <ActivityIndicator size="small" color={colors.accent} />
-                        ) : (
-                          <Ionicons name="navigate-outline" size={18} color={colors.accent} />
-                        )}
-                      </AnimatedPressable>
-                    </View>
-                    {latitude !== undefined && longitude !== undefined && (
-                      <Text style={[styles.geoHint, { color: colors.muted }]}>
-                        Coordinates captured ({latitude.toFixed(4)}, {longitude.toFixed(4)})
-                      </Text>
-                    )}
-                  </View>
-                )}
-
-                {/* Online URL */}
-                {showOnlineUrl && (
-                  <View style={showLocation ? styles.fieldBlock : undefined}>
-                    <Text style={[styles.fieldLabel, { color: colors.text }]}>Online URL</Text>
-                    <View style={[styles.inputWrap, { borderColor: onlineUrlField.touched && onlineUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
-                      <Ionicons name="link-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                      <TextInput
-                        value={onlineUrlField.value}
-                        onChangeText={onlineUrlField.onChange}
-                        onBlur={onlineUrlField.onBlur}
-                        placeholder="https://..."
-                        placeholderTextColor={colors.muted}
-                        style={[styles.input, { color: colors.text }]}
-                        autoCapitalize="none"
-                        keyboardType="url"
-                        accessibilityLabel="Online event URL"
-                        returnKeyType="next"
-                      />
-                    </View>
-                    {onlineUrlField.touched && onlineUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{onlineUrlField.error}</Text>}
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
+          {/* Section: Location / Online URL */}
+          <EventLocationSection
+            showLocation={form.showLocation}
+            showOnlineUrl={form.showOnlineUrl}
+            location={form.location}
+            onLocationChange={(text) => {
+              form.setLocation(text);
+              if (form.latitude !== undefined) {
+                form.clearCoordinates();
+              }
+            }}
+            onUseMyLocation={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); form.handleUseMyLocation(); }}
+            geoLoading={form.geoLoading}
+            latitude={form.latitude}
+            longitude={form.longitude}
+            onlineUrlField={form.onlineUrlField}
+          />
 
           {/* ============================================================== */}
           {/*  Section: Description                                           */}
@@ -611,11 +321,11 @@ const EditEventScreen: React.FC = () => {
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>
                   Description <Text style={{ color: colors.accent }}>*</Text>
                 </Text>
-                <View style={[styles.inputWrapMultiline, { borderColor: descriptionField.touched && descriptionField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.inputWrapMultiline, { borderColor: form.descriptionField.touched && form.descriptionField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                   <TextInput
-                    value={descriptionField.value}
-                    onChangeText={descriptionField.onChange}
-                    onBlur={descriptionField.onBlur}
+                    value={form.descriptionField.value}
+                    onChangeText={form.descriptionField.onChange}
+                    onBlur={form.descriptionField.onBlur}
                     multiline
                     numberOfLines={4}
                     placeholder="What should attendees know about this event?"
@@ -625,7 +335,7 @@ const EditEventScreen: React.FC = () => {
                     accessibilityLabel="Event description"
                   />
                 </View>
-                {descriptionField.touched && descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{descriptionField.error}</Text>}
+                {form.descriptionField.touched && form.descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{form.descriptionField.error}</Text>}
               </View>
             </View>
           </View>
@@ -640,25 +350,17 @@ const EditEventScreen: React.FC = () => {
             </View>
 
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View>
-                <Text style={[styles.fieldLabel, { color: colors.text }]}>Image URL</Text>
-                <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
-                  <Ionicons name="image-outline" size={16} color={colors.muted} style={styles.inputIcon} />
-                  <TextInput
-                    value={imageUrlField.value}
-                    onChangeText={imageUrlField.onChange}
-                    onBlur={imageUrlField.onBlur}
-                    placeholder="https://example.com/event-image.jpg"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.input, { color: colors.text }]}
-                    autoCapitalize="none"
-                    keyboardType="url"
-                    accessibilityLabel="Event image URL"
-                    returnKeyType="done"
-                  />
-                </View>
-                {imageUrlField.touched && imageUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{imageUrlField.error}</Text>}
-              </View>
+              <FormFieldComponent
+                label="Image URL"
+                value={form.imageUrlField.value}
+                onChangeText={form.imageUrlField.onChange}
+                onBlur={form.imageUrlField.onBlur}
+                placeholder="https://example.com/event-image.jpg"
+                error={form.imageUrlField.touched && form.imageUrlField.error ? form.imageUrlField.error : null}
+                autoCapitalize="none"
+                keyboardType="url"
+                returnKeyType="done"
+              />
             </View>
           </View>
 
@@ -675,28 +377,28 @@ const EditEventScreen: React.FC = () => {
               <View style={styles.toggleRow}>
                 <View style={styles.toggleLeft}>
                   <Ionicons
-                    name={isPublic ? 'globe-outline' : 'lock-closed-outline'}
+                    name={form.isPublic ? 'globe-outline' : 'lock-closed-outline'}
                     size={20}
                     color={colors.accent}
                   />
                   <View style={styles.toggleTextBlock}>
                     <Text style={[styles.toggleLabel, { color: colors.text }]}>
-                      {isPublic ? 'Public' : 'Private'}
+                      {form.isPublic ? 'Public' : 'Private'}
                     </Text>
                     <Text style={[styles.toggleHint, { color: colors.muted }]}>
-                      {isPublic
+                      {form.isPublic
                         ? 'Anyone can see and join this event'
                         : 'Only people you invite can see this event'}
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={isPublic}
-                  onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setIsPublic(v); }}
+                  value={form.isPublic}
+                  onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); form.setIsPublic(v); }}
                   trackColor={{ false: colors.border, true: colors.accent + '60' }}
-                  thumbColor={isPublic ? colors.accent : colors.muted}
+                  thumbColor={form.isPublic ? colors.accent : colors.muted}
                   ios_backgroundColor={colors.border}
-                  accessibilityLabel={isPublic ? "Event is public" : "Event is private"}
+                  accessibilityLabel={form.isPublic ? "Event is public" : "Event is private"}
                 />
               </View>
             </View>
@@ -707,17 +409,17 @@ const EditEventScreen: React.FC = () => {
           {/* ============================================================== */}
           <AnimatedPressable
             onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSubmit(); }}
-            disabled={!canSubmit}
+            disabled={!form.canSubmit || saving}
             style={[
               styles.submitButton,
               {
-                backgroundColor: canSubmit ? colors.accent : colors.border,
+                backgroundColor: form.canSubmit && !saving ? colors.accent : colors.border,
               },
             ]}
             accessibilityRole="button"
             accessibilityLabel="Save changes"
           >
-            {saveState === 'saving' ? (
+            {saving ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
@@ -799,21 +501,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
   scroll: {
     flex: 1,
   },
@@ -847,27 +534,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 6,
   },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 44,
-  },
   inputWrapMultiline: {
     borderWidth: 1,
     borderRadius: 10,
     padding: 12,
     minHeight: 100,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    paddingVertical: 0,
   },
   inputMultiline: {
     flex: 1,
@@ -891,29 +562,6 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 13,
     fontWeight: '500',
-  },
-
-  /* Location row with geo button */
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  locationInput: {
-    flex: 1,
-  },
-  geoButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  geoHint: {
-    fontSize: 11,
-    marginTop: 4,
-    marginLeft: 4,
   },
 
   /* Public / Private toggle */

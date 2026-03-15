@@ -177,12 +177,17 @@ function EventsScreen() {
     return result;
   }, [filteredUpcoming, filteredPast]);
 
+  // All filtered events combined (for calendar grid prop and calendar filtering)
+  const allFilteredEvents = useMemo(
+    () => [...filteredUpcoming, ...filteredPast],
+    [filteredUpcoming, filteredPast],
+  );
+
   // Events filtered by selected calendar date (for calendar mode)
   const calendarFilteredEvents = useMemo(() => {
-    const allFiltered = [...filteredUpcoming, ...filteredPast];
-    if (!selectedCalendarDate) return allFiltered;
-    return allFiltered.filter((e) => e.date.slice(0, 10) === selectedCalendarDate);
-  }, [filteredUpcoming, filteredPast, selectedCalendarDate]);
+    if (!selectedCalendarDate) return allFilteredEvents;
+    return allFilteredEvents.filter((e) => e.date.slice(0, 10) === selectedCalendarDate);
+  }, [allFilteredEvents, selectedCalendarDate]);
 
   // Optimistic RSVP: toggles attendance state immediately, reverts on error
   const optimisticRsvp = useOptimisticRsvpList(setEvents, paginatedRefresh);
@@ -244,6 +249,53 @@ function EventsScreen() {
     }
   };
 
+  // Navigation handlers (useCallback to avoid re-creating closures in render)
+  const handleEventPress = useCallback((eventId: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push(`/events/${encodeURIComponent(eventId)}`);
+  }, [router, settings.hapticsEnabled]);
+
+  const handleCreateEvent = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push('/create-event');
+  }, [router, settings.hapticsEnabled]);
+
+  const handleOpenSponsor = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push('/sponsor/dashboard');
+  }, [router, settings.hapticsEnabled]);
+
+  const handleOpenTwitch = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push('/twitch');
+  }, [router, settings.hapticsEnabled]);
+
+  const handleViewModeChange = useCallback((key: 'list' | 'calendar' | 'week' | 'nearby') => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setViewMode(key);
+    if (key !== 'calendar') setSelectedCalendarDate(null);
+  }, [settings.hapticsEnabled]);
+
+  const handleKindFilterAll = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setKindFilter(null);
+  }, [settings.hapticsEnabled]);
+
+  const handleKindFilterToggle = useCallback((kind: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setKindFilter((prev) => prev === kind ? null : kind);
+  }, [settings.hapticsEnabled]);
+
+  const handleRetryNearby = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    loadNearbyEvents();
+  }, [settings.hapticsEnabled, loadNearbyEvents]);
+
+  const handleNearbyEventPress = useCallback((eventId: string) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push(`/events/${eventId}`);
+  }, [router, settings.hapticsEnabled]);
+
   const renderEventCard = (event: CollectorsEvent, showActions = true) => {
     const metaLine = [
       KIND_LABEL[event.kind],
@@ -259,10 +311,7 @@ function EventsScreen() {
     return (
       <AnimatedPressable
         key={event.id}
-        onPress={() => {
-          fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-          router.push(`/events/${encodeURIComponent(event.id)}`);
-        }}
+        onPress={() => handleEventPress(event.id)}
         style={[
           styles.eventCard,
           {
@@ -415,10 +464,7 @@ function EventsScreen() {
       {/* Action Row: Create + Sponsor */}
       <View style={styles.actionRow}>
         <AnimatedPressable
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push('/create-event');
-          }}
+          onPress={handleCreateEvent}
           style={[styles.createEventPill, { backgroundColor: colors.accent }]}
           accessibilityRole="button"
           accessibilityLabel="Create new event"
@@ -428,10 +474,7 @@ function EventsScreen() {
         </AnimatedPressable>
 
         <AnimatedPressable
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push('/sponsor/dashboard');
-          }}
+          onPress={handleOpenSponsor}
           style={[styles.sponsorPill, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
           accessibilityRole="button"
           accessibilityLabel="Sponsor events"
@@ -441,10 +484,7 @@ function EventsScreen() {
         </AnimatedPressable>
 
         <AnimatedPressable
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push('/twitch');
-          }}
+          onPress={handleOpenTwitch}
           style={[styles.sponsorPill, { borderColor: TWITCH_PURPLE, backgroundColor: TWITCH_PURPLE + '10' }]}
           accessibilityRole="button"
           accessibilityLabel="Twitch creators hub"
@@ -487,10 +527,7 @@ function EventsScreen() {
           contentContainerStyle={styles.kindFilterContent}
         >
           <AnimatedPressable
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              setKindFilter(null);
-            }}
+            onPress={handleKindFilterAll}
             style={[
               styles.kindChip,
               {
@@ -509,10 +546,7 @@ function EventsScreen() {
             return (
               <AnimatedPressable
                 key={kind}
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  setKindFilter(active ? null : kind);
-                }}
+                onPress={() => handleKindFilterToggle(kind)}
                 style={[
                   styles.kindChip,
                   {
@@ -545,11 +579,7 @@ function EventsScreen() {
           return (
             <AnimatedPressable
               key={tab.key}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                setViewMode(tab.key);
-                if (tab.key !== 'calendar') setSelectedCalendarDate(null);
-              }}
+              onPress={() => handleViewModeChange(tab.key)}
               style={[
                 styles.viewModeTab,
                 isActive && {
@@ -635,7 +665,7 @@ function EventsScreen() {
     <>
       {headerElement}
       <CalendarGrid
-        events={[...filteredUpcoming, ...filteredPast]}
+        events={allFilteredEvents}
         selectedDate={selectedCalendarDate}
         onSelectDate={setSelectedCalendarDate}
       />
@@ -670,10 +700,7 @@ function EventsScreen() {
               <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>Could not load nearby events</Text>
               <Text style={[styles.emptySubtitle, { color: colors.muted }]}>Check your connection and try again.</Text>
               <AnimatedPressable
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  loadNearbyEvents();
-                }}
+                onPress={handleRetryNearby}
                 style={[styles.retryBtn, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading nearby events"
@@ -693,10 +720,7 @@ function EventsScreen() {
               <AnimatedPressable
                 key={ev.id}
                 style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => {
-                  fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                  router.push(`/events/${ev.id}`);
-                }}
+                onPress={() => handleNearbyEventPress(ev.id)}
                 accessibilityRole="button"
                 accessibilityLabel={`${ev.title}, ${ev.date}${ev.distance_km != null ? `, ${ev.distance_km.toFixed(1)} km away` : ''}`}
               >
@@ -769,6 +793,10 @@ function EventsScreen() {
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           refreshControl={refreshControlElement}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={3}
+          removeClippedSubviews={true}
         />
       )}
     </SafeAreaView>

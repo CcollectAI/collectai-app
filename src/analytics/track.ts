@@ -59,7 +59,15 @@ type QuickScanEnhancementEvent =
   | { name: 'condition_grade_viewed'; properties: { scale?: string; grade?: string } }
   | { name: 'edge_classification_used'; properties: { category?: string; method?: string } }
   | { name: 'multi_item_detected'; properties: { item_count?: number } }
-  | { name: 'comparison_scan_completed'; properties: { categories?: string[] } };
+  | { name: 'comparison_scan_completed'; properties: { categories?: string[] } }
+  | { name: 'scan_condition_selected'; properties: { condition: string } }
+  | { name: 'scan_correction_applied'; properties: { field: string } };
+
+type ProfileEvent =
+  | { name: 'profile_viewed'; properties: { userId: string } };
+
+type FilterEvent =
+  | { name: 'marketplace_filter_applied'; properties: { filterType: string } };
 
 export type AnalyticsEvent =
   | AuthEvent
@@ -71,7 +79,9 @@ export type AnalyticsEvent =
   | DealEvent
   | SubscriptionEvent
   | SponsorEvent
-  | QuickScanEnhancementEvent;
+  | QuickScanEnhancementEvent
+  | ProfileEvent
+  | FilterEvent;
 
 /* ---------- PostHog handle ---------- */
 

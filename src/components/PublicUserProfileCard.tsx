@@ -42,7 +42,7 @@ const Avatar: React.FC<{ name: string; avatarUrl?: string | null; accentColor: s
         source={{ uri: avatarUrl }}
         style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
         contentFit="cover"
-        cachePolicy="disk"
+        cachePolicy="memory-disk"
         transition={150}
       />
     );

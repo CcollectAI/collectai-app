@@ -61,7 +61,7 @@ export function ImageZoomModal({ visible, imageUri, onClose }: ImageZoomModalPro
             source={{ uri: imageUri }}
             style={styles.image}
             contentFit="contain"
-            cachePolicy="disk"
+            cachePolicy="memory-disk"
             transition={150}
           />
         </ScrollView>

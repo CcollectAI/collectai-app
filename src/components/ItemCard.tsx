@@ -33,7 +33,7 @@ function ItemCard({ item }: ItemCardProps) {
         style={{ width: "100%", aspectRatio: 1 }}
         contentFit="cover"
         transition={200}
-        cachePolicy="disk"
+        cachePolicy="memory-disk"
         accessibilityLabel={`Photo of ${item.title ?? "item"}`}
       />
       <View style={{ padding: 10 }}>

@@ -91,7 +91,7 @@ export function ItemGalleryGrid({
                 placeholder={{ blurhash: DEFAULT_BLURHASH }}
                 style={styles.lightboxImage}
                 contentFit="contain"
-                cachePolicy="disk"
+                cachePolicy="memory-disk"
                 transition={200}
               />
             ) : (
@@ -158,7 +158,7 @@ export function ItemGalleryGrid({
                     placeholder={{ blurhash: DEFAULT_BLURHASH }}
                     style={styles.itemImage}
                     contentFit="cover"
-                    cachePolicy="disk"
+                    cachePolicy="memory-disk"
                     transition={200}
                   />
                 ) : (

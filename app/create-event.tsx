@@ -29,15 +29,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
-import type { EventKind, CreateEventInput, EventTemplate } from '@/data/events';
-// CATEGORIES moved to EventFormHeader
+import type { EventKind, EventTemplate } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
-import { useFormField, validateAll } from '@/hooks/useFormField';
-import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
-// CompactSelect moved to EventFormHeader
+import { useEventForm, validateEventForm, buildEventInput, type EventFormat } from '@/hooks/useEventForm';
 import { BottomSheetModal } from '@/components/BottomSheetModal';
 import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
@@ -52,11 +49,6 @@ import { EventTicketingSection } from '@/components/events/EventTicketingSection
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
 /* -------------------------------------------------------------------------- */
-
-type SaveState = 'idle' | 'saving';
-type EventFormat = 'in_person' | 'online' | 'hybrid';
-
-// EVENT_KINDS moved to EventFormHeader component
 
 const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ionicons.glyphMap }[] = [
   { label: 'In-Person', value: 'in_person', icon: 'location-outline' },
@@ -77,30 +69,14 @@ const CreateEventScreen: React.FC = () => {
   const { showToast } = useToast();
   const isSponsored = !!params.sponsorCompanyId;
 
-  /* ---- form state ---- */
-  const titleField = useFormField(compose(required('Title'), maxLength('Title', 255)));
-  const [kind, setKind] = useState<EventKind>('meetup');
-  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
-  const [format, setFormat] = useState<EventFormat>('in_person');
-  const dateField = useFormField(compose(required('Date'), dateYMD('Date')));
-  const [time, setTime] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [location, setLocation] = useState('');
-  const onlineUrlField = useFormField(url('Online URL'));
-  const imageUrlField = useFormField(url('Image URL'));
-  const descriptionField = useFormField(compose(required('Description'), maxLength('Description', 2000)));
-  const [isPublic, setIsPublic] = useState(true);
-  const [ticketPriceCents, setTicketPriceCents] = useState('');
+  /* ---- shared form hook ---- */
+  const form = useEventForm();
 
   /* ---- detail input draft ---- */
   const [detailDraft, setDetailDraft] = useState('');
 
-  /* ---- geolocation state ---- */
-  const [latitude, setLatitude] = useState<number | undefined>(undefined);
-  const [longitude, setLongitude] = useState<number | undefined>(undefined);
-  const [geoLoading, setGeoLoading] = useState(false);
-
-  const [saveState, setSaveState] = useState<SaveState>('idle');
+  /* ---- saving state ---- */
+  const [saving, setSaving] = useState(false);
 
   /* ---- template state ---- */
   const [templates, setTemplates] = useState<EventTemplate[]>([]);
@@ -114,96 +90,33 @@ const CreateEventScreen: React.FC = () => {
 
   const applyTemplate = useCallback((tpl: EventTemplate) => {
     const d = tpl.templateData as Record<string, unknown>;
-    if (d.title) titleField.onChange(d.title as string);
-    if (d.kind) setKind(d.kind as EventKind);
-    if (d.category_id) setCategoryId(d.category_id as string);
-    if (d.format) setFormat(d.format as EventFormat);
-    if (d.location) setLocation(d.location as string);
-    if (d.time) setTime(d.time as string);
-    if (d.description) descriptionField.onChange(d.description as string);
-    if (d.image_url) imageUrlField.onChange(d.image_url as string);
-    if (d.online_url) onlineUrlField.onChange(d.online_url as string);
-    if (d.is_public !== undefined) setIsPublic(d.is_public as boolean);
+    if (d.title) form.titleField.onChange(d.title as string);
+    if (d.kind) form.setKind(d.kind as EventKind);
+    if (d.category_id) form.setCategoryId(d.category_id as string);
+    if (d.format) form.setFormat(d.format as EventFormat);
+    if (d.location) form.setLocation(d.location as string);
+    if (d.time) form.setTime(d.time as string);
+    if (d.description) form.descriptionField.onChange(d.description as string);
+    if (d.image_url) form.imageUrlField.onChange(d.image_url as string);
+    if (d.online_url) form.onlineUrlField.onChange(d.online_url as string);
+    if (d.is_public !== undefined) form.setIsPublic(d.is_public as boolean);
     closeTemplateSheet();
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-  }, [titleField, descriptionField, imageUrlField, onlineUrlField]);
-
-  /* ---- derived ---- */
-  const showLocation = format === 'in_person' || format === 'hybrid';
-  const showOnlineUrl = format === 'online' || format === 'hybrid';
-
-  const canSubmit =
-    titleField.value.trim().length > 0 &&
-    dateField.value.trim().length > 0 &&
-    descriptionField.value.trim().length > 0 &&
-    !titleField.error && !dateField.error && !descriptionField.error && !onlineUrlField.error && !imageUrlField.error &&
-    saveState !== 'saving';
-
-  /* ---- geolocation handler ---- */
-  const handleUseMyLocation = useCallback(async () => {
-    setGeoLoading(true);
-    try {
-      const Location = await import('expo-location');
-
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        showToast({ message: 'Location permission is required to use this feature.', type: 'warning' });
-        return;
-      }
-
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setLatitude(pos.coords.latitude);
-      setLongitude(pos.coords.longitude);
-
-      // Reverse geocode to get city name
-      const results = await Location.reverseGeocodeAsync({
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-      });
-
-      if (results.length > 0) {
-        const place = results[0];
-        const parts: string[] = [];
-        if (place.city) parts.push(place.city);
-        if (place.region) parts.push(place.region);
-        if (place.country) parts.push(place.country);
-        const name = parts.join(', ');
-        if (name) setLocation(name);
-      }
-    } catch (err: unknown) {
-      logger.warn('[CreateEvent] geolocation error:', err);
-      showToast({ message: 'Could not retrieve your location. Please enter it manually.', type: 'error' });
-    } finally {
-      setGeoLoading(false);
-    }
-  }, []);
+  }, [form, closeTemplateSheet]);
 
   /* ---- submit ---- */
   const handleSubmit = async () => {
-    if (!validateAll(titleField, dateField, descriptionField, onlineUrlField, imageUrlField)) return;
-    if (!canSubmit) return;
+    if (!validateEventForm(form)) return;
+    if (!form.canSubmit || saving) return;
 
-    setSaveState('saving');
+    setSaving(true);
 
     try {
-      const input: CreateEventInput = {
-        title: titleField.value.trim(),
-        kind,
-        date: dateField.value.trim(),
-        description: descriptionField.value.trim(),
-        format,
-        isPublic,
-        ...(categoryId ? { categoryId } : {}),
-        ...(time.trim() ? { time: time.trim() } : {}),
-        ...(endDate.trim() ? { endDate: endDate.trim() } : {}),
-        ...(location.trim() ? { location: location.trim() } : {}),
-        ...(onlineUrlField.value.trim() ? { onlineUrl: onlineUrlField.value.trim() } : {}),
-        ...(imageUrlField.value.trim() ? { imageUrl: imageUrlField.value.trim() } : {}),
-        ...(latitude !== undefined ? { latitude } : {}),
-        ...(longitude !== undefined ? { longitude } : {}),
-        ...(ticketPriceCents.trim() ? { ticketPriceCents: Math.round(parseFloat(ticketPriceCents) * 100) } : {}),
-        ...(params.sponsorCompanyId ? { sponsorCompanyId: params.sponsorCompanyId, sponsorTier: 'featured' as const } : {}),
-      };
+      const input = buildEventInput(form, {
+        ...(params.sponsorCompanyId
+          ? { sponsorCompanyId: params.sponsorCompanyId, sponsorTier: 'featured' as const }
+          : {}),
+      });
 
       const created = await dataProvider.createEvent(input);
 
@@ -221,7 +134,7 @@ const CreateEventScreen: React.FC = () => {
       logger.warn('[CreateEvent] error:', err);
       showToast({ message: err?.message || 'Failed to create event. Please try again.', type: 'error' });
     } finally {
-      setSaveState('idle');
+      setSaving(false);
     }
   };
 
@@ -299,11 +212,11 @@ const CreateEventScreen: React.FC = () => {
 
           {/* Section: Basic Information */}
           <EventFormHeader
-            titleField={titleField}
-            kind={kind}
-            onKindChange={setKind}
-            categoryId={categoryId}
-            onCategoryChange={setCategoryId}
+            titleField={form.titleField}
+            kind={form.kind}
+            onKindChange={form.setKind}
+            categoryId={form.categoryId}
+            onCategoryChange={form.setCategoryId}
           />
 
           {/* ============================================================== */}
@@ -318,7 +231,7 @@ const CreateEventScreen: React.FC = () => {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.chipRow}>
                 {EVENT_FORMATS.map((opt) => {
-                  const isSelected = format === opt.value;
+                  const isSelected = form.format === opt.value;
                   return (
                     <AnimatedPressable
                       key={opt.value}
@@ -329,7 +242,7 @@ const CreateEventScreen: React.FC = () => {
                           borderColor: isSelected ? colors.accent : colors.border,
                         },
                       ]}
-                      onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setFormat(opt.value); }}
+                      onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); form.setFormat(opt.value); }}
                       accessibilityRole="button"
                       accessibilityLabel={`${opt.label} format${isSelected ? ', selected' : ''}`}
                     >
@@ -355,30 +268,29 @@ const CreateEventScreen: React.FC = () => {
 
           {/* Section: Date & Time */}
           <EventDateTimePicker
-            dateField={dateField}
-            time={time}
-            onTimeChange={setTime}
-            endDate={endDate}
-            onEndDateChange={setEndDate}
+            dateField={form.dateField}
+            time={form.time}
+            onTimeChange={form.setTime}
+            endDate={form.endDate}
+            onEndDateChange={form.setEndDate}
           />
 
           {/* Section: Location / Online URL */}
           <EventLocationSection
-            showLocation={showLocation}
-            showOnlineUrl={showOnlineUrl}
-            location={location}
+            showLocation={form.showLocation}
+            showOnlineUrl={form.showOnlineUrl}
+            location={form.location}
             onLocationChange={(text) => {
-              setLocation(text);
-              if (latitude !== undefined) {
-                setLatitude(undefined);
-                setLongitude(undefined);
+              form.setLocation(text);
+              if (form.latitude !== undefined) {
+                form.clearCoordinates();
               }
             }}
-            onUseMyLocation={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); handleUseMyLocation(); }}
-            geoLoading={geoLoading}
-            latitude={latitude}
-            longitude={longitude}
-            onlineUrlField={onlineUrlField}
+            onUseMyLocation={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); form.handleUseMyLocation(); }}
+            geoLoading={form.geoLoading}
+            latitude={form.latitude}
+            longitude={form.longitude}
+            onlineUrlField={form.onlineUrlField}
           />
 
           {/* ============================================================== */}
@@ -396,17 +308,17 @@ const CreateEventScreen: React.FC = () => {
                   Description <Text style={{ color: colors.accent }}>*</Text>
                 </Text>
                 {/* Existing description lines as bullet points */}
-                {descriptionField.value.trim().length > 0 && (
+                {form.descriptionField.value.trim().length > 0 && (
                   <View style={styles.bulletList}>
-                    {descriptionField.value.split('\n').filter(Boolean).map((line, idx) => (
+                    {form.descriptionField.value.split('\n').filter(Boolean).map((line, idx) => (
                       <View key={idx} style={styles.bulletRow}>
                         <Text style={[styles.bulletDot, { color: colors.accent }]}>{'\u2022'}</Text>
                         <Text style={[styles.bulletText, { color: colors.text }]}>{line.replace(/^[\u2022\-\*]\s*/, '')}</Text>
                         <AnimatedPressable
                           onPress={() => {
-                            const lines = descriptionField.value.split('\n').filter(Boolean);
+                            const lines = form.descriptionField.value.split('\n').filter(Boolean);
                             lines.splice(idx, 1);
-                            descriptionField.onChange(lines.join('\n'));
+                            form.descriptionField.onChange(lines.join('\n'));
                           }}
                           style={styles.bulletRemove}
                           accessibilityRole="button"
@@ -419,7 +331,7 @@ const CreateEventScreen: React.FC = () => {
                   </View>
                 )}
                 {/* WhatsApp-style add detail input */}
-                <View style={[styles.detailInputRow, { borderColor: descriptionField.touched && descriptionField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
+                <View style={[styles.detailInputRow, { borderColor: form.descriptionField.touched && form.descriptionField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                   <TextInput
                     value={detailDraft}
                     onChangeText={setDetailDraft}
@@ -430,8 +342,8 @@ const CreateEventScreen: React.FC = () => {
                     onSubmitEditing={() => {
                       const draft = detailDraft.trim();
                       if (!draft) return;
-                      const current = descriptionField.value.trim();
-                      descriptionField.onChange(current ? `${current}\n${draft}` : draft);
+                      const current = form.descriptionField.value.trim();
+                      form.descriptionField.onChange(current ? `${current}\n${draft}` : draft);
                       setDetailDraft('');
                     }}
                     accessibilityLabel="Add event detail"
@@ -441,8 +353,8 @@ const CreateEventScreen: React.FC = () => {
                       const draft = detailDraft.trim();
                       if (!draft) return;
                       fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-                      const current = descriptionField.value.trim();
-                      descriptionField.onChange(current ? `${current}\n${draft}` : draft);
+                      const current = form.descriptionField.value.trim();
+                      form.descriptionField.onChange(current ? `${current}\n${draft}` : draft);
                       setDetailDraft('');
                     }}
                     style={[styles.detailSendBtn, { backgroundColor: colors.accent }]}
@@ -452,16 +364,16 @@ const CreateEventScreen: React.FC = () => {
                     <Ionicons name="arrow-up" size={18} color="#fff" />
                   </AnimatedPressable>
                 </View>
-                {descriptionField.touched && descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{descriptionField.error}</Text>}
+                {form.descriptionField.touched && form.descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{form.descriptionField.error}</Text>}
               </View>
             </View>
           </View>
 
           {/* Section: Ticket Price (meetup/convention only) */}
-          {(kind === 'meetup' || kind === 'convention') && (
+          {(form.kind === 'meetup' || form.kind === 'convention') && (
             <EventTicketingSection
-              ticketPriceCents={ticketPriceCents}
-              onTicketPriceChange={setTicketPriceCents}
+              ticketPriceCents={form.ticketPriceCents}
+              onTicketPriceChange={form.setTicketPriceCents}
             />
           )}
 
@@ -477,11 +389,11 @@ const CreateEventScreen: React.FC = () => {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <FormField
                 label="Image URL"
-                value={imageUrlField.value}
-                onChangeText={imageUrlField.onChange}
-                onBlur={imageUrlField.onBlur}
+                value={form.imageUrlField.value}
+                onChangeText={form.imageUrlField.onChange}
+                onBlur={form.imageUrlField.onBlur}
                 placeholder="https://example.com/event-image.jpg"
-                error={imageUrlField.touched && imageUrlField.error ? imageUrlField.error : null}
+                error={form.imageUrlField.touched && form.imageUrlField.error ? form.imageUrlField.error : null}
                 autoCapitalize="none"
                 keyboardType="url"
                 returnKeyType="done"
@@ -502,28 +414,28 @@ const CreateEventScreen: React.FC = () => {
               <View style={styles.toggleRow}>
                 <View style={styles.toggleLeft}>
                   <Ionicons
-                    name={isPublic ? 'globe-outline' : 'lock-closed-outline'}
+                    name={form.isPublic ? 'globe-outline' : 'lock-closed-outline'}
                     size={20}
                     color={colors.accent}
                   />
                   <View style={styles.toggleTextBlock}>
                     <Text style={[styles.toggleLabel, { color: colors.text }]}>
-                      {isPublic ? 'Public' : 'Private'}
+                      {form.isPublic ? 'Public' : 'Private'}
                     </Text>
                     <Text style={[styles.toggleHint, { color: colors.muted }]}>
-                      {isPublic
+                      {form.isPublic
                         ? 'Anyone can see and join this event'
                         : 'Only people you invite can see this event'}
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={isPublic}
-                  onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setIsPublic(v); }}
+                  value={form.isPublic}
+                  onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); form.setIsPublic(v); }}
                   trackColor={{ false: colors.border, true: colors.accent + '60' }}
-                  thumbColor={isPublic ? colors.accent : colors.muted}
+                  thumbColor={form.isPublic ? colors.accent : colors.muted}
                   ios_backgroundColor={colors.border}
-                  accessibilityLabel={isPublic ? "Event is public" : "Event is private"}
+                  accessibilityLabel={form.isPublic ? "Event is public" : "Event is private"}
                 />
               </View>
             </View>
@@ -570,17 +482,17 @@ const CreateEventScreen: React.FC = () => {
           {/* ============================================================== */}
           <AnimatedPressable
             onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSubmit(); }}
-            disabled={!canSubmit}
+            disabled={!form.canSubmit || saving}
             style={[
               styles.submitButton,
               {
-                backgroundColor: canSubmit ? colors.accent : colors.border,
+                backgroundColor: form.canSubmit && !saving ? colors.accent : colors.border,
               },
             ]}
             accessibilityRole="button"
             accessibilityLabel="Create event"
           >
-            {saveState === 'saving' ? (
+            {saving ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
@@ -749,8 +661,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // (locationRow, locationInput, geoButton, geoHint moved to EventLocationSection)
-
   /* Public / Private toggle */
   toggleRow: {
     flexDirection: 'row',
@@ -821,7 +731,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 4,
   },
-  // (fieldHint moved to EventTicketingSection)
 
   /* Bullet-point description */
   bulletList: {

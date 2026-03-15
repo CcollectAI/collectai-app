@@ -382,7 +382,7 @@ function OfferDetailScreen() {
                 source={{ uri: offer.itemImageUrl }}
                 style={styles.itemThumbImage}
                 contentFit="cover"
-                cachePolicy="disk"
+                cachePolicy="memory-disk"
                 transition={150}
               />
             ) : (

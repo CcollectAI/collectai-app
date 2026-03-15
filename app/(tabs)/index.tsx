@@ -349,6 +349,16 @@ function PortfolioScreen() {
     return () => { cancelled = true; };
   }, []);
 
+  // Memoize global stats derived from category breakdown
+  const globalStatsTotalItems = useMemo(
+    () => categoryBreakdown.reduce((sum, c) => sum + c.item_count, 0),
+    [categoryBreakdown],
+  );
+  const globalStatsTotalValue = useMemo(
+    () => categoryBreakdown.reduce((sum, c) => sum + c.total_value, 0),
+    [categoryBreakdown],
+  );
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
@@ -361,8 +371,60 @@ function PortfolioScreen() {
 
   const rangeButtons: RangeKey[] = ["1D", "7D", "30D", "90D", "1Y", "ALL"];
 
+  // Navigation handlers (useCallback to prevent re-renders in child components)
+  const handleOpenNotifications = useCallback(() => {
+    router.push('/notifications');
+  }, [router]);
+
+  const handleOpenSettings = useCallback(() => {
+    router.push('/settings');
+  }, [router]);
+
+  const handleOpenAddMenu = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setAddMenuOpen(true);
+  }, [settings.hapticsEnabled]);
+
+  const handleOpenQuickScan = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push('/quickscan');
+  }, [router, settings.hapticsEnabled]);
+
+  const handleOpenManualAdd = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push('/add-manual');
+  }, [router, settings.hapticsEnabled]);
+
+  const handleCategoryPress = useCallback((catSlug: string) => {
+    router.push({ pathname: '/categories/[categoryId]', params: { categoryId: catSlug } });
+  }, [router]);
+
+  const handleBreakdownCategoryPress = useCallback((catRaw: string) => {
+    const cat = getCategoryById(catRaw) ?? getCategoryByName(catRaw);
+    const categoryId = cat?.id ?? catRaw;
+    router.push({ pathname: '/(tabs)/items', params: { category: categoryId } });
+  }, [router]);
+
+  const handleInsightsCtaPress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push(limits.advanced_analytics ? '/analytics' : '/subscription');
+  }, [router, settings.hapticsEnabled, limits.advanced_analytics]);
+
+  const handleAlertPress = useCallback((alert: { id: string; itemId?: string }) => {
+    markAsRead(alert.id);
+    router.push({
+      pathname: '/(tabs)/wishlist',
+      params: { highlightId: alert.itemId || alert.id },
+    });
+  }, [router, markAsRead]);
+
+  const handleDealAgentPress = useCallback(() => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    router.push(limits.deal_discovery ? "/purchase" : "/subscription");
+  }, [router, settings.hapticsEnabled, limits.deal_discovery]);
+
   // Navigate to item detail
-  const handleItemPress = (item: ItemRow) => {
+  const handleItemPress = useCallback((item: ItemRow) => {
     router.push({
       pathname: "/item/[id]",
       params: {
@@ -372,17 +434,17 @@ function PortfolioScreen() {
         value: String(item.value),
       },
     });
-  };
+  }, [router]);
 
   // Navigate to analytics
-  const handleAnalyticsPress = () => {
+  const handleAnalyticsPress = useCallback(() => {
     router.push("/analytics");
-  };
+  }, [router]);
 
   // Navigate to watchlist tab
-  const handleWatchlistPress = () => {
+  const handleWatchlistPress = useCallback(() => {
     router.push("/(tabs)/wishlist");
-  };
+  }, [router]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
@@ -407,7 +469,7 @@ function PortfolioScreen() {
           </View>
           <View style={styles.headerIcons}>
             <AnimatedPressable
-              onPress={() => router.push('/notifications')}
+              onPress={handleOpenNotifications}
               style={styles.iconBtnRelative}
               accessibilityRole="button"
               accessibilityLabel={`Notifications${unreadNotifCount > 0 ? `, ${unreadNotifCount} unread` : ''}`}
@@ -424,7 +486,7 @@ function PortfolioScreen() {
             <InboxHeaderButton color={colors.text} size={22} />
             <ThemeToggleButton size={22} />
             <AnimatedPressable
-              onPress={() => router.push('/settings')}
+              onPress={handleOpenSettings}
               style={styles.iconBtn}
               accessibilityRole="button"
               accessibilityLabel="Open settings"
@@ -446,10 +508,7 @@ function PortfolioScreen() {
             </Text>
             <AnimatedPressable
               style={[styles.emptyCta, { backgroundColor: colors.accent }]}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                router.push('/quickscan');
-              }}
+              onPress={handleOpenQuickScan}
               accessibilityRole="button"
               accessibilityLabel="Open QuickScan AI to scan your first item"
             >
@@ -458,10 +517,7 @@ function PortfolioScreen() {
             </AnimatedPressable>
             <AnimatedPressable
               style={styles.emptySecondary}
-              onPress={() => {
-                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-                router.push('/add-manual');
-              }}
+              onPress={handleOpenManualAdd}
               accessibilityRole="button"
               accessibilityLabel="Add an item manually"
             >
@@ -525,10 +581,7 @@ function PortfolioScreen() {
 
         {/* Add Item Banner */}
         <AnimatedPressable
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            setAddMenuOpen(true);
-          }}
+          onPress={handleOpenAddMenu}
           style={[styles.addBanner, { backgroundColor: colors.accent + '0D', borderColor: colors.accent + '30' }]}
           accessibilityRole="button"
           accessibilityLabel="Add an item to your collection"
@@ -547,7 +600,7 @@ function PortfolioScreen() {
         <FollowedCategoriesCarousel
           theme={colors}
           categories={followedCategories}
-          onCategoryPress={(catSlug) => router.push({ pathname: '/categories/[categoryId]', params: { categoryId: catSlug } })}
+          onCategoryPress={handleCategoryPress}
           hapticsEnabled={settings.hapticsEnabled}
         />
 
@@ -561,11 +614,7 @@ function PortfolioScreen() {
             const cat = getCategoryById(raw) ?? getCategoryByName(raw);
             return cat?.name ?? raw;
           }}
-          onCategoryPress={(catRaw) => {
-            const cat = getCategoryById(catRaw) ?? getCategoryByName(catRaw);
-            const categoryId = cat?.id ?? catRaw;
-            router.push({ pathname: '/(tabs)/items', params: { category: categoryId } });
-          }}
+          onCategoryPress={handleBreakdownCategoryPress}
         />
 
         {/* Global Collection Stats */}
@@ -578,14 +627,14 @@ function PortfolioScreen() {
             <View style={[styles.globalStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.globalStatItem}>
               <Text style={[styles.globalStatValue, { color: colors.text }]}>
-                {categoryBreakdown.reduce((sum, c) => sum + c.item_count, 0)}
+                {globalStatsTotalItems}
               </Text>
               <Text style={[styles.globalStatLabel, { color: colors.muted }]}>Total Items</Text>
             </View>
             <View style={[styles.globalStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.globalStatItem}>
               <Text style={[styles.globalStatValue, { color: colors.accent }]}>
-                {formatPrice(categoryBreakdown.reduce((sum, c) => sum + c.total_value, 0))}
+                {formatPrice(globalStatsTotalValue)}
               </Text>
               <Text style={[styles.globalStatLabel, { color: colors.muted }]}>Portfolio</Text>
             </View>
@@ -595,10 +644,7 @@ function PortfolioScreen() {
         {/* Extended Portfolio Insights CTA */}
         <AnimatedPressable
           style={[styles.insightsCta, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push(limits.advanced_analytics ? '/analytics' : '/subscription');
-          }}
+          onPress={handleInsightsCtaPress}
           accessibilityRole="button"
           accessibilityLabel={limits.advanced_analytics ? "View extended portfolio insights" : "Upgrade for extended portfolio insights"}
         >
@@ -624,13 +670,7 @@ function PortfolioScreen() {
         {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && (
           <AlertsCard
             alerts={alerts}
-            onAlertPress={(alert) => {
-              markAsRead(alert.id);
-              router.push({
-                pathname: '/(tabs)/wishlist',
-                params: { highlightId: alert.itemId || alert.id },
-              });
-            }}
+            onAlertPress={handleAlertPress}
             onStartWatchlist={handleWatchlistPress}
             showEmptyState={true}
           />
@@ -639,10 +679,7 @@ function PortfolioScreen() {
         {/* Deal Agent Summary Card */}
         <AnimatedPressable
           style={[styles.analyticsBanner, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push(limits.deal_discovery ? "/purchase" : "/subscription");
-          }}
+          onPress={handleDealAgentPress}
           accessibilityRole="button"
           accessibilityLabel={limits.deal_discovery ? "Open Deal Agent" : "Upgrade to unlock Deal Agent"}
         >

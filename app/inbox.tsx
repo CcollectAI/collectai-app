@@ -74,6 +74,7 @@ const UserAvatar = React.memo(function UserAvatar({
           borderRadius: size / 2,
         }}
         accessibilityLabel={`${name} avatar`}
+        cachePolicy="memory-disk"
       />
     );
   }

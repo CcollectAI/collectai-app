@@ -4,3 +4,6 @@ export type { BatchScannedItem } from './BatchSummaryScreen';
 export { BatchResultOverlay } from './BatchResultOverlay';
 export { CameraViewfinder } from './CameraViewfinder';
 export { PermissionScreen } from './PermissionScreen';
+export { ScanFeedbackPanel } from './ScanFeedbackPanel';
+export { ScanSocialProof } from './ScanSocialProof';
+export { ConditionGradeSelector } from './ConditionGradeSelector';

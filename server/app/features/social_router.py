@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 # Per-user: 30 search requests per minute (expensive DB queries)
 _social_search_limit = per_user_rate_limit(30, window_seconds=60, scope="social_search")
+_social_write_limit = per_user_rate_limit(20, window_seconds=60, scope="social_write")
 
 
 # ── Response Models ──────────────────────────────────────────────────────────
@@ -135,6 +136,7 @@ async def search_users(
 async def block_user(
     user_id: str,
     current_user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_social_write_limit),
 ):
     """
     Block a user. Also auto-declines any pending DM threads between the pair.
@@ -193,6 +195,7 @@ async def block_user(
 async def unblock_user(
     user_id: str,
     current_user_id: str = Depends(get_current_user_id),
+    _rl: None = Depends(_social_write_limit),
 ):
     """Unblock a user."""
     try:
