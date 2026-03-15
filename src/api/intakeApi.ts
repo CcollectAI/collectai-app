@@ -92,6 +92,31 @@ export const submitCatalogSuggestion = (payload: {
     matched_existing: boolean;
   }>("/catalog/suggest", payload);
 
+// Catalog Learning — list own suggestions with status
+export interface MySuggestion {
+  id: string;
+  source: string;
+  suggested_name: string;
+  suggested_category: string | null;
+  matched_category: string | null;
+  mapped_item_key: string | null;
+  status: 'pending' | 'mapped' | 'rejected' | 'new_category';
+  created_at: string;
+}
+
+export const getMyCatalogSuggestions = (opts?: { limit?: number; offset?: number }) => {
+  const sp = new URLSearchParams();
+  if (opts?.limit) sp.set('limit', String(opts.limit));
+  if (opts?.offset) sp.set('offset', String(opts.offset));
+  const query = sp.toString();
+  return get<{
+    suggestions: MySuggestion[];
+    total: number;
+    limit: number;
+    offset: number;
+  }>(`/catalog/suggestions/mine${query ? `?${query}` : ''}`);
+};
+
 // Screenshot intelligence
 export const analyzeScreenshot = (payload: { image_base64?: string; screenshot_id?: string; source?: string; note?: string }) =>
   post("/screenshot-intel/analyze", payload as Record<string, unknown>);

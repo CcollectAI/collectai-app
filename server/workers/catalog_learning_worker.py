@@ -17,6 +17,7 @@ import re
 from typing import Any
 
 from app.config import CATALOG_AUTO_MAP_THRESHOLD, CATALOG_NEW_CATEGORY_THRESHOLD
+from app.push import send_push_to_user
 from app.worker_registry import record_run
 
 logger = logging.getLogger(__name__)
@@ -123,6 +124,29 @@ async def run_once() -> dict[str, int]:
                             mapped_count = len(locked_ids)
                             auto_mapped += mapped_count
 
+                            # Notify each user whose suggestion was mapped
+                            user_rows = await conn.fetch(
+                                """
+                                SELECT DISTINCT user_id, suggested_name
+                                FROM catalog_suggestions
+                                WHERE id = ANY($1::uuid[])
+                                """,
+                                locked_ids,
+                            )
+                            for ur in user_rows:
+                                try:
+                                    await send_push_to_user(
+                                        conn,
+                                        str(ur["user_id"]),
+                                        "Suggestion accepted!",
+                                        f"Your suggestion '{ur['suggested_name']}' has been added to the catalog!",
+                                        data={"type": "catalog_mapped", "category": category, "item_key": name},
+                                        notification_type="catalog_mapped",
+                                        deep_link="/my-suggestions",
+                                    )
+                                except Exception as push_exc:
+                                    logger.debug("[catalog-learning-worker] Push failed for user %s: %s", ur["user_id"], push_exc)
+
                 logger.info(
                     "[catalog-learning-worker] Auto-mapped %d suggestions: '%s' -> %s",
                     mapped_count, name, category,
@@ -150,11 +174,21 @@ async def run_once() -> dict[str, int]:
             """
         )
 
+        _ADMIN_THRESHOLDS = (5, 10, 25)
+
         for row in free_text_rows:
             cat_name = row["suggested_category"]
             slug = _slugify(cat_name)
             if not slug:
                 continue
+
+            # Check if this is a NEW candidate (doesn't exist yet)
+            existing_candidate = await pool.fetchrow(
+                "SELECT signal_count FROM category_candidates WHERE proposed_slug = $1",
+                slug,
+            )
+            old_signal_count = existing_candidate["signal_count"] if existing_candidate else 0
+            new_signal_count = row["cnt"]
 
             await pool.execute(
                 """
@@ -171,12 +205,28 @@ async def run_once() -> dict[str, int]:
                 """,
                 cat_name,
                 slug,
-                row["cnt"],
+                new_signal_count,
                 row["unique_users"],
                 row["first_seen"],
                 row["last_seen"],
             )
             candidates_updated += 1
+
+            # Log NEW category demands
+            if existing_candidate is None:
+                logger.info(
+                    "[catalog-learning] NEW category demand: %s (%d users)",
+                    cat_name, row["unique_users"],
+                )
+
+            # Trigger admin notification when signal_count crosses thresholds
+            for threshold in _ADMIN_THRESHOLDS:
+                if old_signal_count < threshold <= new_signal_count:
+                    logger.info(
+                        "[catalog-learning] Category '%s' crossed %d-signal threshold (%d users)",
+                        cat_name, threshold, row["unique_users"],
+                    )
+                    break
 
         # -------------------------------------------------------------------
         # Step 3: Promote candidates — if unique_users >= threshold in 30 days

@@ -7,12 +7,21 @@ appId: com.collectai.app
 - assertVisible:
     text: "Search"
     timeout: 5000
-# Type a search query
+# Tap search input
 - tapOn:
-    id: "marketplace-search-input"
-- inputText: "Charizard"
+    accessibilityLabel: "Search items and collections"
+# Type a search query
+- inputText: "Pokemon"
 - pressKey: Enter
-# Wait for results
+# Wait for results to appear
 - assertVisible:
-    text: "results"
+    text: "Pokemon"
     timeout: 10000
+# Tap the first result
+- tapOn:
+    index: 0
+    id: "marketplace-result"
+# Verify detail/quick-view loads
+- assertVisible:
+    text: "Pokemon"
+    timeout: 5000

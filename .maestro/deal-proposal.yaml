@@ -1,0 +1,32 @@
+appId: com.collectai.app
+---
+- launchApp
+# Navigate to Items tab
+- tapOn:
+    id: "tab-items"
+- assertVisible:
+    text: "Items"
+    timeout: 5000
+# Tap the first item to open detail
+- tapOn:
+    index: 0
+    id: "item-row"
+- assertVisible:
+    text: "List for Sale"
+    timeout: 5000
+# Tap List for Sale
+- tapOn: "List for Sale"
+# Wait for modal
+- assertVisible:
+    text: "Price"
+    timeout: 3000
+# Enter a price
+- tapOn:
+    id: "price-input"
+- inputText: "25.00"
+# Submit the listing
+- tapOn: "List"
+# Verify success feedback
+- assertVisible:
+    text: "listed"
+    timeout: 5000

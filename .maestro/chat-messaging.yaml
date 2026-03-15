@@ -1,0 +1,34 @@
+appId: com.collectai.app
+---
+- launchApp
+# Navigate to inbox via marketplace header
+- tapOn:
+    id: "tab-marketplace"
+- assertVisible:
+    text: "Search"
+    timeout: 5000
+# Tap inbox icon
+- tapOn:
+    id: "inbox-button"
+- assertVisible:
+    text: "Inbox"
+    timeout: 5000
+# Tap the first conversation thread
+- tapOn:
+    index: 0
+    id: "thread-row"
+# Wait for chat thread to load
+- assertVisible:
+    id: "message-input"
+    timeout: 5000
+# Type a message
+- tapOn:
+    id: "message-input"
+- inputText: "Hello from Maestro E2E!"
+# Send the message
+- tapOn:
+    id: "send-button"
+# Verify the message appears in the thread
+- assertVisible:
+    text: "Hello from Maestro E2E!"
+    timeout: 5000

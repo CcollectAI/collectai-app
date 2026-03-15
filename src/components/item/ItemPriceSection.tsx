@@ -137,7 +137,11 @@ export const ItemPriceSection = React.memo(function ItemPriceSection({
 
       {/* Scarcity Badge */}
       {scarcityData && (
-        <View style={[styles.scarcityBadge, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <View
+          style={[styles.scarcityBadge, { backgroundColor: theme.card, borderColor: theme.border }]}
+          accessibilityRole="summary"
+          accessibilityLabel={`Scarcity: ${scarcityData.scarcity_score >= 7 ? 'Rare' : scarcityData.scarcity_score >= 4 ? 'Moderate' : 'Common'}, ${scarcityData.listing_count} listings, supply ${scarcityData.supply_trend}`}
+        >
           <View style={styles.scarcityRow}>
             <Ionicons name="diamond-outline" size={16} color={scarcityData.scarcity_score >= 7 ? theme.error : scarcityData.scarcity_score >= 4 ? theme.warning : theme.success} />
             <Text style={[styles.scarcityLabel, { color: theme.text }]}>
@@ -157,7 +161,11 @@ export const ItemPriceSection = React.memo(function ItemPriceSection({
             <Ionicons name="stats-chart-outline" size={14} color={theme.accent} /> Comparable Sales
           </Text>
           {marketComps.map((comp, i) => (
-            <View key={i} style={[styles.compRow, i > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+            <View
+              key={i}
+              style={[styles.compRow, i > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}
+              accessibilityLabel={`${comp.title} from ${comp.source}, ${formatPrice(comp.price, comp.currency as CurrencyCode)}`}
+            >
               <View style={{ flex: 1 }}>
                 <Text style={[styles.compTitle, { color: theme.text }]} numberOfLines={1}>{comp.title}</Text>
                 <Text style={[styles.compSource, { color: theme.muted }]}>{comp.source}</Text>

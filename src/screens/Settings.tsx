@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, StyleSheet, Linking } from 'react-native';
 import { useToast } from '@/components/Toast';
 import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AccessibilitySettings } from '@/components/AccessibilitySettings';
 import { AlertSettings } from '@/components/AlertSettings';
@@ -108,6 +108,24 @@ export default function Settings() {
             {Constants.expoConfig?.version ?? '1.0.0'}
           </Text>
         </View>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push('/my-suggestions' as Href);
+          }}
+          accessibilityRole="link"
+          accessibilityLabel="My Suggestions"
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>My Suggestions</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>Track items you suggested for the catalog</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 

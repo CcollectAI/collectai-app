@@ -2,6 +2,8 @@
  * Marketplace search, listings, accounts, fees, sales, and affiliate API methods.
  */
 import { get, post, del, patch } from "./httpClient";
+import { MarketplaceSearchResponseSchema, safeParse } from "./schemas";
+import type { MarketplaceSearchResponse } from "./schemas";
 
 // Marketplace search (legacy + aggregation)
 export const marketSearch = (query: string, opts?: {
@@ -14,7 +16,7 @@ export const marketSearch = (query: string, opts?: {
   max_price?: number;
 }) => post("/marketplace/search", { query, ...opts });
 
-export const marketplaceSearch = (query: string, opts?: {
+export const marketplaceSearch = async (query: string, opts?: {
   category?: string;
   limit?: number;
   region?: string;
@@ -23,8 +25,10 @@ export const marketplaceSearch = (query: string, opts?: {
   min_price?: number;
   max_price?: number;
   sort?: string;
-}) =>
-  post("/marketplace/search", { query, ...opts });
+}): Promise<MarketplaceSearchResponse> => {
+  const raw = await post("/marketplace/search", { query, ...opts });
+  return safeParse(MarketplaceSearchResponseSchema, raw, { results: [], hits: [] });
+};
 
 export const marketplaceComps = (itemRef: string, category?: string, region?: string) =>
   post(`/marketplace/comps/${encodeURIComponent(itemRef)}`, { category, region });

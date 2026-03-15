@@ -28,7 +28,7 @@ export const ItemShopSection = React.memo(function ItemShopSection({ affiliateLi
 
   return (
     <View style={[styles.sectionBlock, { borderTopColor: theme.border }]}>
-      <View style={styles.sectionHeaderRow}>
+      <View style={styles.sectionHeaderRow} accessibilityRole="header">
         <View style={styles.sectionHeaderLeft}>
           <Ionicons name="open-outline" size={20} color={theme.accent} />
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Shop this Item</Text>

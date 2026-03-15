@@ -144,7 +144,7 @@ function GradingSectionInner({
           }}
           style={s.sectionHeaderRow}
           accessibilityRole="button"
-          accessibilityLabel="Toggle grading information"
+          accessibilityLabel={`Grading information, ${gradingExpanded ? 'expanded' : 'collapsed'}`}
         >
           <View style={s.sectionHeaderLeft}>
             <Ionicons name="shield-checkmark-outline" size={20} color={theme.accent} />

@@ -59,7 +59,7 @@ export const ProvenanceHistorySection = React.memo(function ProvenanceHistorySec
         onPress={onToggleExpanded}
         style={s.sectionHeaderRow}
         accessibilityRole="button"
-        accessibilityLabel="Toggle item history"
+        accessibilityLabel={`Item history, ${provenanceExpanded ? 'expanded' : 'collapsed'}`}
       >
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="time-outline" size={20} color={theme.accent} />

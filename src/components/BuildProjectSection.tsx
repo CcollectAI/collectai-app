@@ -44,7 +44,7 @@ export const BuildProjectSection = React.memo(function BuildProjectSection({
   const { colors } = useAppTheme();
   return (
     <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
-      <View style={s.sectionHeaderRow}>
+      <View style={s.sectionHeaderRow} accessibilityRole="header">
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="construct-outline" size={20} color={buildAccent ?? theme.accent} />
           <Text style={[s.sectionTitle, { color: theme.text }]}>Build & Paint</Text>

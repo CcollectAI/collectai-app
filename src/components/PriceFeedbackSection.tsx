@@ -48,7 +48,7 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
 }: PriceFeedbackSectionProps) {
   return (
     <View style={[s.feedbackBlock, { borderTopColor: theme.border }]}>
-      <Text style={[s.feedbackHeader, { color: theme.text }]}>
+      <Text style={[s.feedbackHeader, { color: theme.text }]} accessibilityRole="header">
         Help improve our estimates
       </Text>
 

@@ -1,0 +1,42 @@
+appId: com.collectai.app
+---
+- launchApp
+# Navigate to Events tab
+- tapOn:
+    id: "tab-events"
+- assertVisible:
+    text: "Events"
+    timeout: 5000
+# Tap create event button
+- tapOn:
+    accessibilityLabel: "Create new event"
+# Wait for create event form
+- assertVisible:
+    text: "Create"
+    timeout: 5000
+# Fill in the event title
+- tapOn:
+    id: "event-title-input"
+- inputText: "Maestro Test Event"
+# Select event format (In-Person)
+- tapOn: "In-Person"
+# Fill in a description
+- scrollUntilVisible:
+    element:
+      id: "event-description-input"
+    direction: DOWN
+    timeout: 3000
+- tapOn:
+    id: "event-description-input"
+- inputText: "Automated smoke test event."
+# Submit the event
+- scrollUntilVisible:
+    element:
+      text: "Create Event"
+    direction: DOWN
+    timeout: 3000
+- tapOn: "Create Event"
+# Verify we return to events list and the new event is visible
+- assertVisible:
+    text: "Maestro Test Event"
+    timeout: 5000

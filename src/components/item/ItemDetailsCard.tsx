@@ -92,7 +92,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           accessibilityLabel="Item name"
         />
       ) : (
-        <Text style={[styles.name, { color: theme.text }]}>{editableName}</Text>
+        <Text style={[styles.name, { color: theme.text }]} accessibilityRole="header" accessibilityLabel={`Item: ${editableName}`}>{editableName}</Text>
       )}
 
       {/* Category row */}

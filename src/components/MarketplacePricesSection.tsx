@@ -74,7 +74,7 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
         onPress={onToggleExpanded}
         style={s.sectionHeaderRow}
         accessibilityRole="button"
-        accessibilityLabel="Find on market"
+        accessibilityLabel={`Market prices, ${marketExpanded ? 'expanded' : 'collapsed'}`}
       >
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="cart-outline" size={20} color={theme.accent} />

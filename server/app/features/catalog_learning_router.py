@@ -1,8 +1,9 @@
 """
 Catalog Learning Router.
 
-User-facing endpoint:
-  POST /catalog/suggest  — submit a catalog suggestion (authenticated, rate-limited)
+User-facing endpoints:
+  POST /catalog/suggest           — submit a catalog suggestion (authenticated, rate-limited)
+  GET  /catalog/suggestions/mine  — list own suggestions with status (authenticated, paginated)
 
 Admin/ops endpoints:
   GET  /ops/catalog-suggestions            — paginated, filterable list
@@ -27,6 +28,7 @@ from app.auth import get_current_user_id, require_ops_key
 from app.config import CATALOG_LEARNING_ENABLED
 from app.db import get_pool
 from app.errors import error_response
+from app.push import send_push_to_user
 from app.rate_limit import per_user_rate_limit
 
 logger = logging.getLogger(__name__)
@@ -83,6 +85,17 @@ class CandidateListItem(BaseModel):
     last_seen: str
     status: str
     admin_notes: Optional[str] = None
+
+
+class MySuggestionItem(BaseModel):
+    id: str
+    source: str
+    suggested_name: str
+    suggested_category: Optional[str] = None
+    matched_category: Optional[str] = None
+    mapped_item_key: Optional[str] = None
+    status: str
+    created_at: str
 
 
 class CandidateActionRequest(BaseModel):
@@ -196,6 +209,62 @@ async def submit_catalog_suggestion(
                 )
         logger.error("[catalog-learning] Failed to insert suggestion: %s", exc)
         raise error_response(500, "Failed to save suggestion", code="DB_ERROR")
+
+
+# ---------------------------------------------------------------------------
+# User endpoint: GET /catalog/suggestions/mine
+# ---------------------------------------------------------------------------
+
+@router.get("/catalog/suggestions/mine")
+async def list_my_suggestions(
+    user_id: str = Depends(get_current_user_id),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    """Return the authenticated user's own catalog suggestions with status."""
+    pool = get_pool()
+    if pool is None:
+        return {"suggestions": [], "total": 0, "limit": limit, "offset": offset}
+
+    total = await pool.fetchval(
+        "SELECT count(*) FROM catalog_suggestions WHERE user_id = $1::uuid",
+        user_id,
+    ) or 0
+
+    rows = await pool.fetch(
+        """
+        SELECT id, source, suggested_name, suggested_category,
+               matched_category, mapped_item_key, status, created_at
+        FROM catalog_suggestions
+        WHERE user_id = $1::uuid
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
+        """,
+        user_id,
+        limit,
+        offset,
+    )
+
+    suggestions = [
+        MySuggestionItem(
+            id=str(r["id"]),
+            source=r["source"],
+            suggested_name=r["suggested_name"],
+            suggested_category=r["suggested_category"],
+            matched_category=r["matched_category"],
+            mapped_item_key=r.get("mapped_item_key"),
+            status=r["status"],
+            created_at=r["created_at"].isoformat() if r["created_at"] else "",
+        ).model_dump()
+        for r in rows
+    ]
+
+    return {
+        "suggestions": suggestions,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -313,7 +382,7 @@ async def action_catalog_suggestion(
         raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
 
     row = await pool.fetchrow(
-        "SELECT id, status FROM catalog_suggestions WHERE id = $1::uuid",
+        "SELECT id, user_id, suggested_name, status FROM catalog_suggestions WHERE id = $1::uuid",
         suggestion_id,
     )
     if not row:
@@ -340,6 +409,22 @@ async def action_catalog_suggestion(
             req.mapped_category,
             req.mapped_item_key,
         )
+
+    # Notify the user when their suggestion is approved/mapped
+    if req.action in ("approve", "map"):
+        try:
+            async with pool.acquire() as conn:
+                await send_push_to_user(
+                    conn,
+                    str(row["user_id"]),
+                    "Suggestion accepted!",
+                    f"Your suggestion '{row['suggested_name']}' has been added to the catalog!",
+                    data={"type": "catalog_mapped", "suggestion_id": suggestion_id},
+                    notification_type="catalog_mapped",
+                    deep_link="/my-suggestions",
+                )
+        except Exception as push_exc:
+            logger.debug("[catalog-learning] Push notification failed for suggestion %s: %s", suggestion_id, push_exc)
 
     return {"id": suggestion_id, "action": req.action, "ok": True}
 

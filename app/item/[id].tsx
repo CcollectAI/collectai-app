@@ -684,7 +684,7 @@ function ItemDetailScreen() {
             onSizeValueChange={setItemSizeValue}
           />
 
-          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} accessibilityRole="summary" accessibilityLabel="Item valuation and details">
             {/* Price display — PriceCard, legacy bands, confidence, explanation, scarcity, comps */}
             <ItemPriceSection
               priceEstimate={priceEstimate}

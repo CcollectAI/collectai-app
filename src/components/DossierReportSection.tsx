@@ -79,7 +79,7 @@ export const DossierReportSection = React.memo(function DossierReportSection({
         onPress={onToggleExpanded}
         style={s.sectionHeaderRow}
         accessibilityRole="button"
-        accessibilityLabel="View valuation report"
+        accessibilityLabel={`Valuation report, ${dossierExpanded ? 'expanded' : 'collapsed'}`}
       >
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="document-text-outline" size={20} color={theme.accent} />
