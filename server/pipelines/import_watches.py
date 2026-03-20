@@ -233,6 +233,16 @@ BRAND_TIER: dict[str, float] = {
     "Frederique Constant": 0.45,
     "Baume & Mercier": 0.45,
     "Doxa": 0.45,
+    # Luxury expansion (2026-03-20)
+    "TAG Heuer": 0.75,
+    "Hublot": 0.80,
+    "Montblanc": 0.55,
+    "BVLGARI": 0.70,
+    "Hermès": 0.60,
+    "Jaquet Droz": 0.85,
+    "Laurent Ferrier": 0.90,
+    "Moritz Grossmann": 0.85,
+    "Van Cleef & Arpels": 0.90,
 }
 
 # ---------------------------------------------------------------------------
@@ -3481,6 +3491,662 @@ def _premium_microbrand_watches() -> list[tuple]:
 
 
 # ---------------------------------------------------------------------------
+# TAG Heuer — 15 watches
+# ---------------------------------------------------------------------------
+
+def _tag_heuer_watches() -> list[tuple]:
+    """15 TAG Heuer watches — Monaco, Carrera, Aquaracer, Autavia, Link."""
+    return [
+        # --- Monaco ---
+        ("TAG Heuer", "Monaco Calibre Heuer 02", "CBL2111.BA0644",
+         "Automatic Cal. Heuer 02", "Stainless Steel", "Current Production", 6200),
+        ("TAG Heuer", "Monaco Gulf Special Edition", "CBL2115.FC6494",
+         "Automatic Cal. Heuer 02", "Stainless Steel", "Special Edition", 7500),
+        ("TAG Heuer", "Monaco 1969-1979 Limited Edition", "CAW211C.FC6241",
+         "Automatic Cal. Heuer 02", "Stainless Steel", "Limited Edition", 8500),
+        # --- Carrera ---
+        ("TAG Heuer", "Carrera Chronograph 44mm", "CBS2210.BA0706",
+         "Automatic Cal. Heuer 02", "Stainless Steel", "Current Production", 5800),
+        ("TAG Heuer", "Carrera Chronograph Tourbillon", "CAR5A8Y.FC6377",
+         "Automatic Cal. Heuer 02T", "Titanium", "Current Production", 18500),
+        ("TAG Heuer", "Carrera Skipper", "CBS2213.FN6002",
+         "Automatic Cal. Heuer 02", "Stainless Steel", "Special Edition", 6400),
+        ("TAG Heuer", "Carrera Plasma Diamant d'Avant-Garde", "CBN2012.BA0642",
+         "Automatic Cal. Heuer 02", "Stainless Steel", "Limited Edition", 9500),
+        ("TAG Heuer", "Carrera Date 36mm", "WBN2312.BA0001",
+         "Automatic Cal. 5", "Stainless Steel", "Current Production", 2800),
+        # --- Aquaracer ---
+        ("TAG Heuer", "Aquaracer Professional 300", "WBP201B.BA0632",
+         "Automatic Cal. 5", "Stainless Steel", "Current Production", 2600),
+        ("TAG Heuer", "Aquaracer Professional 200 Solargraph", "WBP1112.BA0627",
+         "Solar Quartz TH50-00", "Stainless Steel", "Current Production", 1800),
+        ("TAG Heuer", "Aquaracer Professional 1000 Superdiver", "WBP5A8A.BF0619",
+         "Automatic Cal. TH30-00", "Titanium", "Current Production", 5500),
+        # --- Autavia ---
+        ("TAG Heuer", "Autavia Chronometer Flyback", "WBE5190.FC8268",
+         "Automatic Cal. Heuer 02 COSC", "Stainless Steel", "Current Production", 4800),
+        ("TAG Heuer", "Autavia 60th Anniversary", "CBE2111.BA0687",
+         "Automatic Cal. Heuer 02", "Stainless Steel", "Anniversary Edition", 6800),
+        # --- Link ---
+        ("TAG Heuer", "Link Calibre 17 Chronograph", "CBC2110.BA0603",
+         "Automatic Cal. 17", "Stainless Steel", "Discontinued Classic", 3800),
+        ("TAG Heuer", "Link Calibre 5 Day-Date", "WBC2110.BA0603",
+         "Automatic Cal. 5", "Stainless Steel", "Discontinued Classic", 2200),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Hublot — 12 watches
+# ---------------------------------------------------------------------------
+
+def _hublot_watches() -> list[tuple]:
+    """12 Hublot watches — Big Bang, Classic Fusion, Spirit of Big Bang."""
+    return [
+        # --- Big Bang ---
+        ("Hublot", "Big Bang Unico Titanium 42mm", "441.NX.1171.RX",
+         "Automatic Cal. HUB1280 UNICO", "Titanium", "Current Production", 16500),
+        ("Hublot", "Big Bang Integral Ceramic", "451.CX.1170.CX",
+         "Automatic Cal. HUB1280 UNICO", "Ceramic", "Current Production", 21000),
+        ("Hublot", "Big Bang Unico King Gold", "441.OX.1181.RX",
+         "Automatic Cal. HUB1280 UNICO", "18k Rose Gold", "Current Production", 32000),
+        ("Hublot", "Big Bang Sang Bleu II Titanium", "418.NX.1107.RX.MXM19",
+         "Automatic Cal. HUB1240 UNICO", "Titanium", "Limited Edition", 24000),
+        ("Hublot", "Big Bang Meca-10 King Gold", "414.OI.1123.RX",
+         "Manual Cal. HUB1201", "18k Rose Gold", "Current Production", 35000),
+        # --- Classic Fusion ---
+        ("Hublot", "Classic Fusion Titanium 42mm", "542.NX.7071.LR",
+         "Automatic Cal. HUB1110", "Titanium", "Current Production", 6500),
+        ("Hublot", "Classic Fusion Chronograph Ceramic", "521.CM.1171.RX",
+         "Automatic Cal. HUB1143", "Ceramic", "Current Production", 9800),
+        ("Hublot", "Classic Fusion Aerofusion Moonphase King Gold", "517.OX.0180.LR",
+         "Automatic Cal. HUB1137", "18k Rose Gold", "Current Production", 28000),
+        ("Hublot", "Classic Fusion Orlinski Titanium", "550.NS.1800.RX.ORL19",
+         "Automatic Cal. HUB1100", "Titanium", "Special Edition", 8900),
+        # --- Spirit of Big Bang ---
+        ("Hublot", "Spirit of Big Bang Titanium", "601.NX.0173.LR",
+         "Automatic Cal. HUB4700 UNICO", "Titanium", "Current Production", 18000),
+        ("Hublot", "Spirit of Big Bang Ceramic", "601.CI.0173.RX",
+         "Automatic Cal. HUB4700 UNICO", "Ceramic", "Current Production", 20000),
+        ("Hublot", "Spirit of Big Bang Sapphire", "601.JX.0120.RT",
+         "Automatic Cal. HUB4700 UNICO", "Stainless Steel", "Limited Edition", 42000),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Montblanc — 8 watches
+# ---------------------------------------------------------------------------
+
+def _montblanc_watches() -> list[tuple]:
+    """8 Montblanc watches — 1858, Heritage, Star Legacy, TimeWalker."""
+    return [
+        # --- 1858 ---
+        ("Montblanc", "1858 Geosphere 0 Oxygen", "130982",
+         "Automatic Cal. MB 29.25", "Titanium", "Current Production", 5200),
+        ("Montblanc", "1858 Iced Sea Automatic Date", "129371",
+         "Automatic Cal. MB 24.15", "Stainless Steel", "Current Production", 3200),
+        # --- Heritage ---
+        ("Montblanc", "Heritage Manufacture Perpetual Calendar", "119925",
+         "Automatic Cal. MB 29.22", "18k Rose Gold", "Current Production", 22000),
+        ("Montblanc", "Heritage Chronométrie ExoTourbillon Minute", "112542",
+         "Automatic Cal. MB M16.68", "18k Rose Gold", "Limited Edition", 65000),
+        # --- Star Legacy ---
+        ("Montblanc", "Star Legacy Automatic Date 43mm", "128681",
+         "Automatic Cal. MB 24.00", "Stainless Steel", "Current Production", 2800),
+        ("Montblanc", "Star Legacy Full Calendar 42mm", "128670",
+         "Automatic Cal. MB 29.12", "Stainless Steel", "Current Production", 4200),
+        # --- TimeWalker ---
+        ("Montblanc", "TimeWalker Chronograph Rally Timer", "118491",
+         "Automatic Cal. MB 25.07", "Stainless Steel", "Discontinued Classic", 4500),
+        ("Montblanc", "TimeWalker Manufacture Chronograph", "116098",
+         "Automatic Cal. MB 25.07", "Stainless Steel", "Discontinued Classic", 3800),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Blancpain expansion — 8 watches
+# ---------------------------------------------------------------------------
+
+def _blancpain_expansion_watches() -> list[tuple]:
+    """8 additional Blancpain watches — Fifty Fathoms & Villeret."""
+    return [
+        # --- Fifty Fathoms ---
+        ("Blancpain", "Fifty Fathoms 70th Anniversary Act 1", "5010-1130-B52A",
+         "Automatic Cal. 1315", "Stainless Steel", "Anniversary Edition", 16500),
+        ("Blancpain", "Fifty Fathoms Tourbillon 8 Jours", "5025-3630-52A",
+         "Manual Cal. 25A", "18k Rose Gold", "Current Production", 110000),
+        ("Blancpain", "Fifty Fathoms Automatique Grande Date", "5050-12B30-B52A",
+         "Automatic Cal. 6918B", "Titanium", "Current Production", 17500),
+        ("Blancpain", "Fifty Fathoms No Rad Limited Edition", "5008-1130-B52A",
+         "Automatic Cal. 1315", "Stainless Steel", "Limited Edition", 19000),
+        # --- Villeret ---
+        ("Blancpain", "Villeret Quantième Perpétuel", "6656-1127-55B",
+         "Automatic Cal. 5954", "18k Rose Gold", "Current Production", 38000),
+        ("Blancpain", "Villeret Ultraplate 40mm", "6223-1127-55A",
+         "Automatic Cal. 1150", "18k Rose Gold", "Current Production", 14000),
+        ("Blancpain", "Villeret Grande Date Jour Rétrograde", "6668-3642-55B",
+         "Automatic Cal. 6950", "18k White Gold", "Current Production", 32000),
+        ("Blancpain", "Villeret Moonphase 40mm", "6126-1127-55B",
+         "Automatic Cal. 913", "18k Rose Gold", "Current Production", 18000),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Breguet expansion — 8 watches
+# ---------------------------------------------------------------------------
+
+def _breguet_expansion_watches() -> list[tuple]:
+    """8 additional Breguet watches — Classique, Marine, Tradition, Type XX."""
+    return [
+        # --- Classique ---
+        ("Breguet", "Classique Tourbillon Extra-Plat", "5367PT/2Y/9WU",
+         "Automatic Cal. 581", "Platinum", "Current Production", 135000),
+        ("Breguet", "Classique Phase de Lune 7787", "7787BR/29/9V6",
+         "Automatic Cal. 591DRL", "18k Rose Gold", "Current Production", 28000),
+        # --- Marine ---
+        ("Breguet", "Marine Chronographe 5527", "5527BB/Y2/9WV",
+         "Automatic Cal. 582 QA", "18k White Gold", "Current Production", 32000),
+        ("Breguet", "Marine Alarme Musicale 5547", "5547TI/Y1/9ZU",
+         "Automatic Cal. 519R", "Titanium", "Current Production", 25000),
+        # --- Tradition ---
+        ("Breguet", "Tradition Automatique 7097 Rose Gold", "7097BR/G1/9WU",
+         "Automatic Cal. 505 SR1", "18k Rose Gold", "Current Production", 22000),
+        ("Breguet", "Tradition Chronographe Indépendant 7077", "7077BB/G9/9XV",
+         "Manual Cal. 580 DR", "18k White Gold", "Current Production", 45000),
+        # --- Type XX ---
+        ("Breguet", "Type XXI Flyback Chronograph 3817", "3817ST/X2/3ZU",
+         "Automatic Cal. 584 Q/A", "Stainless Steel", "Current Production", 12500),
+        ("Breguet", "Type 20 Chronograph 2057", "2057ST/92/3WU",
+         "Automatic Cal. 7281", "Stainless Steel", "Current Production", 11000),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Chopard expansion — 6 watches
+# ---------------------------------------------------------------------------
+
+def _chopard_expansion_watches() -> list[tuple]:
+    """6 additional Chopard watches — L.U.C, Alpine Eagle, Happy Sport."""
+    return [
+        # --- L.U.C ---
+        ("Chopard", "L.U.C XPS 1860 Officer", "161242-5001",
+         "Automatic Cal. L.U.C 96.01-L", "18k Rose Gold", "Current Production", 14000),
+        ("Chopard", "L.U.C Full Strike Sapphire", "161947-9001",
+         "Manual Cal. L.U.C 08.01-L", "18k Rose Gold", "Limited Edition", 250000),
+        ("Chopard", "L.U.C Perpetual Twin", "168561-3003",
+         "Automatic Cal. L.U.C 96.26-L", "18k Rose Gold", "Current Production", 42000),
+        # --- Alpine Eagle ---
+        ("Chopard", "Alpine Eagle 36mm Steel", "298601-3001",
+         "Automatic Cal. 09.01-C", "Stainless Steel", "Current Production", 8900),
+        # --- Happy Sport ---
+        ("Chopard", "Happy Sport 36mm", "278559-3003",
+         "Automatic Cal. 09.01-C", "Stainless Steel", "Current Production", 7200),
+        ("Chopard", "Happy Diamonds Planet", "283578-5001",
+         "Quartz", "18k White Gold", "Current Production", 18000),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Girard-Perregaux expansion — 6 watches
+# ---------------------------------------------------------------------------
+
+def _girard_perregaux_expansion_watches() -> list[tuple]:
+    """6 additional Girard-Perregaux watches — Laureato, Free Bridge."""
+    return [
+        # --- Laureato ---
+        ("Girard-Perregaux", "Laureato Chronograph 42mm", "81020-11-431-11A",
+         "Automatic Cal. GP03300", "Stainless Steel", "Current Production", 14500),
+        ("Girard-Perregaux", "Laureato Skeleton 42mm", "81015-11-001-11A",
+         "Automatic Cal. GP01800-0004", "Stainless Steel", "Current Production", 16000),
+        ("Girard-Perregaux", "Laureato Absolute Chronograph", "81060-21-491-FH6A",
+         "Automatic Cal. GP03300", "Titanium", "Current Production", 11000),
+        ("Girard-Perregaux", "Laureato Perpetual Calendar 42mm", "81035-11-431-11A",
+         "Automatic Cal. GP03300-0082", "Stainless Steel", "Current Production", 38000),
+        # --- Free Bridge ---
+        ("Girard-Perregaux", "Free Bridge 44mm", "86000-21-001-FB6A",
+         "Automatic Cal. GP01800-1105", "Titanium", "Current Production", 14000),
+        ("Girard-Perregaux", "Free Bridge Infinity Edition", "86000-21-00B-FB6A",
+         "Automatic Cal. GP01800-1105", "Ceramic", "Limited Edition", 18000),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# BVLGARI — 5 watches
+# ---------------------------------------------------------------------------
+
+def _bvlgari_watches() -> list[tuple]:
+    """5 BVLGARI watches — Octo Finissimo, Serpenti, Aluminium."""
+    return [
+        # --- Octo Finissimo ---
+        ("BVLGARI", "Octo Finissimo Automatic", "103431",
+         "Automatic Cal. BVL 138", "Titanium", "Current Production", 11500),
+        ("BVLGARI", "Octo Finissimo Skeleton", "103610",
+         "Automatic Cal. BVL 128SK", "Titanium", "Current Production", 14000),
+        ("BVLGARI", "Octo Finissimo Perpetual Calendar", "103200",
+         "Automatic Cal. BVL 305", "Titanium", "Current Production", 32000),
+        # --- Serpenti ---
+        ("BVLGARI", "Serpenti Seduttori 33mm", "103143",
+         "Quartz Cal. BVL 191", "Stainless Steel", "Current Production", 4500),
+        # --- Aluminium ---
+        ("BVLGARI", "Aluminium Chronograph 40mm", "103868",
+         "Automatic Cal. B130", "Aluminum", "Current Production", 4100),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Piaget expansion — 4 watches
+# ---------------------------------------------------------------------------
+
+def _piaget_expansion_watches() -> list[tuple]:
+    """4 additional Piaget watches — Altiplano, Polo."""
+    return [
+        # --- Altiplano ---
+        ("Piaget", "Altiplano Ultimate Concept", "G0A45500",
+         "Manual Cal. 900P-UC", "Stainless Steel", "Limited Edition", 400000),
+        ("Piaget", "Altiplano 40mm Rose Gold", "G0A38131",
+         "Automatic Cal. 1200P", "18k Rose Gold", "Current Production", 18000),
+        # --- Polo ---
+        ("Piaget", "Polo Skeleton", "G0A46009",
+         "Automatic Cal. 1200S", "Stainless Steel", "Current Production", 26000),
+        ("Piaget", "Polo Chronograph 42mm Blue", "G0A46024",
+         "Automatic Cal. 1160P", "Stainless Steel", "Current Production", 16000),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Hermès — 4 watches
+# ---------------------------------------------------------------------------
+
+def _hermes_watches() -> list[tuple]:
+    """4 Hermès watches — Arceau, Cape Cod, H08."""
+    return [
+        # --- Arceau ---
+        ("Hermès", "Arceau Automatique 40mm", "W055064WW00",
+         "Automatic Cal. H1928", "Stainless Steel", "Current Production", 5500),
+        ("Hermès", "Arceau L'Heure de la Lune", "W055247WW00",
+         "Automatic Cal. H1837", "18k White Gold", "Limited Edition", 28000),
+        # --- Cape Cod ---
+        ("Hermès", "Cape Cod Automatique 33mm", "W044291WW00",
+         "Automatic Cal. H1912", "Stainless Steel", "Current Production", 4200),
+        # --- H08 ---
+        ("Hermès", "H08 39mm Titanium", "W049430WW00",
+         "Automatic Cal. H1837", "Titanium", "Current Production", 6500),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Jaquet Droz — 3 watches
+# ---------------------------------------------------------------------------
+
+def _jaquet_droz_watches() -> list[tuple]:
+    """3 Jaquet Droz watches — Grande Seconde, Bird Repeater."""
+    return [
+        # --- Grande Seconde ---
+        ("Jaquet Droz", "Grande Seconde Quantième Ivory Enamel", "J007013200",
+         "Automatic Cal. 2660Q2", "18k Rose Gold", "Current Production", 15000),
+        ("Jaquet Droz", "Grande Seconde Off-Centered 39mm", "J006010270",
+         "Automatic Cal. 2663A.S", "Stainless Steel", "Current Production", 9500),
+        # --- Bird Repeater ---
+        ("Jaquet Droz", "Bird Repeater", "J031033202",
+         "Automatic Cal. RMA88", "18k Rose Gold", "Limited Edition", 450000),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Catalog Expansion — 2026-03-20 (underrepresented + missing icons + affordable)
+# ---------------------------------------------------------------------------
+
+
+def _glashutte_original_expansion_watches() -> list[tuple]:
+    """6 Glashutte Original watches — Senator, PanoMaticLunar, SeaQ, Sixties."""
+    return [
+        ("Glashutte Original", "Senator Chronometer 42mm", "1-58-01-05-34-30",
+         "Automatic Cal. 58-01", "Stainless Steel", "Current Production", 8500),
+        ("Glashutte Original", "Senator Excellence Panorama Date Moon Phase", "1-36-04-01-02-30",
+         "Automatic Cal. 36-04", "Stainless Steel", "Current Production", 10500),
+        ("Glashutte Original", "PanoMaticLunar 40mm", "1-90-02-42-32-05",
+         "Automatic Cal. 90-02", "18k Rose Gold", "Current Production", 18000),
+        ("Glashutte Original", "PanoReserve 40mm", "1-65-01-26-12-04",
+         "Manual Cal. 65-01", "Stainless Steel", "Current Production", 8200),
+        ("Glashutte Original", "Sixties Panorama Date 42mm", "2-39-47-04-02-04",
+         "Automatic Cal. 39-47", "Stainless Steel", "Current Production", 7500),
+        ("Glashutte Original", "SeaQ Panorama Date 43.2mm", "1-36-13-02-90-04",
+         "Automatic Cal. 36-13", "Stainless Steel", "Current Production", 9800),
+    ]
+
+
+def _baume_mercier_expansion_watches() -> list[tuple]:
+    """5 Baume & Mercier watches — Clifton, Riviera, Hampton, Classima."""
+    return [
+        ("Baume & Mercier", "Clifton Baumatic 10551", "M0A10551",
+         "Automatic Cal. BM13-1975A", "Stainless Steel", "Current Production", 2800),
+        ("Baume & Mercier", "Clifton Baumatic Perpetual Calendar", "M0A10549",
+         "Automatic Cal. BM13-1975AC2", "Stainless Steel", "Current Production", 5500),
+        ("Baume & Mercier", "Riviera Automatic GMT 43mm", "M0A10659",
+         "Automatic Cal. BM14-1975AGM", "Stainless Steel", "Current Production", 3900),
+        ("Baume & Mercier", "Hampton Rectangular Auto", "M0A10522",
+         "Automatic Cal. ML115", "Stainless Steel", "Current Production", 2600),
+        ("Baume & Mercier", "Classima Open Balance 42mm", "M0A10524",
+         "Automatic Cal. ML166", "Stainless Steel", "Current Production", 2200),
+    ]
+
+
+def _frederique_constant_expansion_watches() -> list[tuple]:
+    """5 Frederique Constant watches — Highlife, Classics, Slimline."""
+    return [
+        ("Frederique Constant", "Highlife Heartbeat Auto 41mm", "FC-310N4NH6B",
+         "Automatic Cal. FC-310", "Stainless Steel", "Current Production", 1800),
+        ("Frederique Constant", "Highlife COSC Chronograph 41mm", "FC-391S4NH6B",
+         "Automatic Cal. FC-391", "Stainless Steel", "Current Production", 3200),
+        ("Frederique Constant", "Classics Worldtimer Manufacture", "FC-718DGWM4H6",
+         "Automatic Cal. FC-718", "Stainless Steel", "Current Production", 3500),
+        ("Frederique Constant", "Slimline Power Reserve Manufacture", "FC-723GR3S6",
+         "Automatic Cal. FC-723", "Stainless Steel", "Current Production", 2100),
+        ("Frederique Constant", "Classics Index Auto 40mm", "FC-303S5B6B",
+         "Automatic Cal. FC-303", "Stainless Steel", "Current Production", 1100),
+    ]
+
+
+def _h_moser_expansion_watches() -> list[tuple]:
+    """5 H. Moser & Cie watches — Endeavour, Pioneer, Streamliner, Swiss Alp."""
+    return [
+        ("H. Moser & Cie", "Endeavour Perpetual Moon", "1801-0300",
+         "Automatic Cal. HMC 801", "18k Rose Gold", "Current Production", 25000),
+        ("H. Moser & Cie", "Endeavour Small Seconds Purity", "1321-0210",
+         "Manual Cal. HMC 321", "Stainless Steel", "Current Production", 12500),
+        ("H. Moser & Cie", "Pioneer Centre Seconds Arctic Blue", "3200-1218",
+         "Automatic Cal. HMC 200", "Stainless Steel", "Current Production", 11800),
+        ("H. Moser & Cie", "Streamliner Centre Seconds Funky Blue", "6200-1208",
+         "Automatic Cal. HMC 200", "Stainless Steel", "Current Production", 15500),
+        ("H. Moser & Cie", "Swiss Alp Watch Final Upgrade", "5324-1206",
+         "Manual Cal. HMC 324", "Stainless Steel", "Limited Edition", 28000),
+    ]
+
+
+def _ulysse_nardin_expansion_watches() -> list[tuple]:
+    """5 Ulysse Nardin watches — Diver, Marine, Freak, Blast."""
+    return [
+        ("Ulysse Nardin", "Diver Chronometer 44mm", "1183-170-3/92",
+         "Automatic Cal. UN-118", "Stainless Steel", "Current Production", 7500),
+        ("Ulysse Nardin", "Marine Torpilleur 42mm", "1183-310-7M/40",
+         "Automatic Cal. UN-118", "Stainless Steel", "Current Production", 6800),
+        ("Ulysse Nardin", "Marine Chronograph Annual Calendar", "1533-150-3/40",
+         "Automatic Cal. UN-153", "Stainless Steel", "Current Production", 11000),
+        ("Ulysse Nardin", "Freak X 43mm Titanium", "2303-270.1/03",
+         "Automatic Cal. UN-230", "Titanium", "Current Production", 16000),
+        ("Ulysse Nardin", "Blast Tourbillon Auto 45mm", "1723-400-3A/00",
+         "Automatic Cal. UN-172", "Titanium", "Current Production", 52000),
+    ]
+
+
+def _raymond_weil_expansion_watches() -> list[tuple]:
+    """4 Raymond Weil watches — Freelancer, Maestro, Tango."""
+    return [
+        ("Raymond Weil", "Freelancer Chronograph 43.5mm", "7741-ST-30021",
+         "Automatic Cal. RW5010", "Stainless Steel", "Current Production", 2500),
+        ("Raymond Weil", "Freelancer Open Heart 42mm", "2780-ST-20001",
+         "Automatic Cal. RW4200", "Stainless Steel", "Current Production", 1800),
+        ("Raymond Weil", "Maestro Moonphase 40mm", "2239-STC-00509",
+         "Automatic Cal. RW4280", "Stainless Steel", "Current Production", 1600),
+        ("Raymond Weil", "Tango Classic Chrono 43mm", "8560-ST-00206",
+         "Quartz Cal. RW5030", "Stainless Steel", "Current Production", 1100),
+    ]
+
+
+def _glycine_expansion_watches() -> list[tuple]:
+    """3 Glycine watches — Airman, Combat Sub."""
+    return [
+        ("Glycine", "Airman Vintage 1953 36mm", "GL0419",
+         "Automatic Cal. GL293", "Stainless Steel", "Current Production", 1200),
+        ("Glycine", "Airman Double Twelve 42mm", "GL0234",
+         "Automatic Cal. GL293", "Stainless Steel", "Current Production", 1400),
+        ("Glycine", "Combat Sub Aquarius 42mm", "GL0325",
+         "Automatic Cal. GL224", "Stainless Steel", "Current Production", 750),
+    ]
+
+
+def _luminox_expansion_watches() -> list[tuple]:
+    """3 Luminox watches — Navy SEAL, Bear Grylls, Master Carbon SEAL."""
+    return [
+        ("Luminox", "Navy SEAL Chronograph 3580 Series", "XS.3581",
+         "Quartz Cal. Ronda 5030D", "Carbon", "Current Production", 650),
+        ("Luminox", "Bear Grylls Survival SEA 3723", "XB.3723",
+         "Quartz Cal. Ronda 515", "Carbon", "Current Production", 400),
+        ("Luminox", "Master Carbon SEAL Automatic 3875", "XS.3875",
+         "Automatic Cal. Miyota 9015", "Carbon", "Current Production", 1200),
+    ]
+
+
+def _omega_expansion2_watches() -> list[tuple]:
+    """10 Omega — Aqua Terra, Planet Ocean, De Ville, Moonwatch LE."""
+    return [
+        ("Omega", "Seamaster Aqua Terra 150M Shades Green 41mm", "220.10.41.21.10.002",
+         "Automatic Cal. 8900", "Stainless Steel", "Current Production", 5400),
+        ("Omega", "Seamaster Aqua Terra Small Seconds 38mm", "220.13.38.20.02.001",
+         "Automatic Cal. 8800", "Stainless Steel", "Current Production", 5200),
+        ("Omega", "Seamaster Aqua Terra 150M Annual Calendar 41mm", "231.10.43.22.01.002",
+         "Automatic Cal. 8601", "Stainless Steel", "Current Production", 7200),
+        ("Omega", "Seamaster Planet Ocean 600M GMT 43.5mm", "215.30.44.22.01.001",
+         "Automatic Cal. 8906", "Stainless Steel", "Current Production", 7800),
+        ("Omega", "Seamaster Planet Ocean 600M Chrono Titanium", "215.90.46.51.99.001",
+         "Automatic Cal. 9900", "Titanium", "Current Production", 9500),
+        ("Omega", "De Ville Prestige Co-Axial 40mm Blue", "424.13.40.20.03.001",
+         "Automatic Cal. 2500", "Stainless Steel", "Current Production", 3800),
+        ("Omega", "De Ville Hour Vision Annual Calendar 41mm", "433.13.41.22.03.001",
+         "Automatic Cal. 8611", "Stainless Steel", "Current Production", 7500),
+        ("Omega", "De Ville Tresor 40mm Manual Sedna Gold", "435.53.40.21.06.001",
+         "Manual Cal. 8929", "18k Rose Gold", "Current Production", 12000),
+        ("Omega", "Speedmaster Moonwatch Apollo 17 50th Anniversary", "311.30.42.30.99.002",
+         "Manual Cal. 3861", "Stainless Steel", "Limited Edition", 9800),
+        ("Omega", "Speedmaster Moonwatch Grey Side of the Moon", "311.93.44.51.99.001",
+         "Automatic Cal. 9300", "Ceramic", "Current Production", 11500),
+    ]
+
+
+def _rolex_expansion2_watches() -> list[tuple]:
+    """8 Rolex — Datejust variants, Explorer II, Yacht-Master, Air-King, Milgauss."""
+    return [
+        ("Rolex", "Datejust 41mm Slate Dial Roman Fluted Jubilee", "126334-Slate",
+         "Automatic Cal. 3235", "Stainless Steel", "Current Production", 10500),
+        ("Rolex", "Datejust 36mm Silver Index Oyster", "126200-Silver",
+         "Automatic Cal. 3235", "Stainless Steel", "Current Production", 7500),
+        ("Rolex", "Datejust 41mm Blue Diamond Dial White Gold Bezel", "126334-BlueDia",
+         "Automatic Cal. 3235", "Steel/Gold", "Current Production", 12000),
+        ("Rolex", "Datejust 36mm Everose Rolesor Chocolate", "126231",
+         "Automatic Cal. 3235", "Steel/Gold", "Current Production", 12500),
+        ("Rolex", "Yacht-Master 42mm Titanium RLX Black", "226627",
+         "Automatic Cal. 3235", "Titanium", "Current Production", 14000),
+        ("Rolex", "Air-King 40mm Green/Black Dial", "126900-2",
+         "Automatic Cal. 3230", "Stainless Steel", "Current Production", 8000),
+        ("Rolex", "Milgauss Black Dial Orange Lightning", "116400",
+         "Automatic Cal. 3131", "Stainless Steel", "Discontinued Classic", 11000),
+        ("Rolex", "Explorer II 42mm White Dial Polar", "226570-White",
+         "Automatic Cal. 3285", "Stainless Steel", "Current Production", 9500),
+    ]
+
+
+def _seiko_expansion2_watches() -> list[tuple]:
+    """8 Seiko — Presage, Astron, King Seiko, 5 Sports LE."""
+    return [
+        ("Seiko", "Presage Craftsmanship Enamel SPB401", "SPB401J1",
+         "Automatic Cal. 6R35", "Stainless Steel", "Limited Edition", 1200),
+        ("Seiko", "Presage Style60s Open Heart SSA455", "SSA455J1",
+         "Automatic Cal. 4R38", "Stainless Steel", "Current Production", 450),
+        ("Seiko", "Astron GPS Solar 5X SSH113", "SSH113J1",
+         "Solar GPS Cal. 5X53", "Titanium", "Current Production", 2200),
+        ("Seiko", "Astron GPS Solar Dual Time SSH063", "SSH063J1",
+         "Solar GPS Cal. 5X53", "Stainless Steel", "Current Production", 1800),
+        ("Seiko", "King Seiko SPB281 Modern Re-Interpretation", "SPB281J1",
+         "Automatic Cal. 6R55", "Stainless Steel", "Current Production", 1400),
+        ("Seiko", "King Seiko SPB283 Ivory Dial", "SPB283J1",
+         "Automatic Cal. 6R55", "Stainless Steel", "Current Production", 1400),
+        ("Seiko", "5 Sports x Rowing Blazers SRPL11", "SRPL11K1",
+         "Automatic Cal. 4R36", "Stainless Steel", "Limited Edition", 380),
+        ("Seiko", "5 Sports 55th Anniversary LE SRPK17", "SRPK17K1",
+         "Automatic Cal. 4R36", "Stainless Steel", "Limited Edition", 420),
+    ]
+
+
+def _cartier_expansion2_watches() -> list[tuple]:
+    """6 Cartier — Ballon Bleu, Drive, Pasha, Cloche."""
+    return [
+        ("Cartier", "Ballon Bleu 36mm Automatic Rose Gold Silver", "WGBB0045",
+         "Automatic Cal. 076", "18k Rose Gold", "Current Production", 14000),
+        ("Cartier", "Ballon Bleu 42mm Chronograph Steel", "WSBB0049",
+         "Automatic Cal. 8101", "Stainless Steel", "Current Production", 9500),
+        ("Cartier", "Drive de Cartier Moon Phases", "WSNM0017",
+         "Automatic Cal. 1904-LU MC", "Stainless Steel", "Current Production", 7200),
+        ("Cartier", "Pasha de Cartier 35mm Automatic", "WSPA0036",
+         "Automatic Cal. 1847 MC", "Stainless Steel", "Current Production", 5500),
+        ("Cartier", "Pasha de Cartier 41mm Skeleton", "WHPA0007",
+         "Manual Cal. 9624 MC", "Stainless Steel", "Current Production", 38000),
+        ("Cartier", "Cloche de Cartier Large Platinum", "WGCC0001",
+         "Manual Cal. 1917 MC", "Platinum", "Limited Edition", 35000),
+    ]
+
+
+def _iwc_expansion2_watches() -> list[tuple]:
+    """6 IWC — Pilot's, Portugieser, Ingenieur, Da Vinci."""
+    return [
+        ("IWC", "Pilot's Watch Mark XX 40mm Green", "IW328205",
+         "Automatic Cal. 32111", "Stainless Steel", "Current Production", 5200),
+        ("IWC", "Pilot's Watch Chronograph 41mm Spitfire Bronze", "IW387902",
+         "Automatic Cal. 69385", "Bronze", "Current Production", 6500),
+        ("IWC", "Portugieser Yacht Club Chronograph 44mm", "IW390701",
+         "Automatic Cal. 89361", "Stainless Steel", "Current Production", 12000),
+        ("IWC", "Portugieser Eternal Calendar 44mm", "IW505703",
+         "Automatic Cal. 52640", "18k Rose Gold", "Current Production", 38000),
+        ("IWC", "Ingenieur Automatic 40mm Titanium", "IW328902",
+         "Automatic Cal. 32111", "Titanium", "Current Production", 8500),
+        ("IWC", "Da Vinci Automatic Moon Phase 36mm", "IW459308",
+         "Automatic Cal. 35800", "Stainless Steel", "Current Production", 6000),
+    ]
+
+
+def _tudor_expansion2_watches() -> list[tuple]:
+    """5 Tudor — Pelagos FXD, Ranger, Royal, 1926."""
+    return [
+        ("Tudor", "Pelagos FXD XF Chrono", "M25807KN-0001",
+         "Automatic Cal. MT5836", "Titanium", "Current Production", 5800),
+        ("Tudor", "Ranger 39mm Green Dial", "M79950-0003",
+         "Automatic Cal. MT5402", "Stainless Steel", "Current Production", 3100),
+        ("Tudor", "Royal 38mm Blue Dial", "M28500-0006",
+         "Automatic Cal. T603", "Stainless Steel", "Current Production", 2300),
+        ("Tudor", "1926 36mm Silver Dial", "M91450-0001",
+         "Automatic Cal. T601", "Stainless Steel", "Current Production", 1800),
+        ("Tudor", "Black Bay 58 Bronze Boutique Edition", "M79012M-0002",
+         "Automatic Cal. MT5400", "Bronze", "Limited Edition", 4800),
+    ]
+
+
+def _hamilton_expansion2_watches() -> list[tuple]:
+    """5 Hamilton — Ventura Elvis80, Khaki Navy, PSR, Jazzmaster Thinline."""
+    return [
+        ("Hamilton", "Ventura Elvis80 Skeleton Auto", "H24555381",
+         "Automatic Cal. H-10", "Stainless Steel", "Current Production", 1300),
+        ("Hamilton", "Khaki Navy BeLOWZERO Auto 46mm", "H78585333",
+         "Automatic Cal. H-10", "Titanium", "Current Production", 1500),
+        ("Hamilton", "PSR Digital Quartz 74 Tribute", "H52414139",
+         "Quartz Hybrid OLED", "Stainless Steel", "Current Production", 750),
+        ("Hamilton", "Jazzmaster Thinline Auto 40mm Silver", "H38525111",
+         "Automatic Cal. H-10", "Stainless Steel", "Current Production", 800),
+        ("Hamilton", "Khaki Navy Sub Auto 41mm Black", "H82515330",
+         "Automatic Cal. H-10", "Stainless Steel", "Current Production", 750),
+    ]
+
+
+def _longines_expansion2_watches() -> list[tuple]:
+    """5 Longines — Legend Diver, HydroConquest, Conquest Heritage."""
+    return [
+        ("Longines", "Legend Diver 42mm Green", "L3.774.4.40.2",
+         "Automatic Cal. L888.5", "Stainless Steel", "Current Production", 2300),
+        ("Longines", "Legend Diver No Date 36mm", "L3.374.4.50.6",
+         "Automatic Cal. L592.5", "Stainless Steel", "Current Production", 2100),
+        ("Longines", "HydroConquest GMT 41mm Sunray Blue", "L3.790.4.96.6",
+         "Automatic Cal. L844.5", "Stainless Steel", "Current Production", 1800),
+        ("Longines", "HydroConquest 39mm Ceramic Green", "L3.780.4.06.9",
+         "Automatic Cal. L888.5", "Stainless Steel", "Current Production", 1600),
+        ("Longines", "Conquest Heritage Central Power Reserve 38.5mm", "L1.648.4.78.2",
+         "Automatic Cal. L896.5", "Stainless Steel", "Current Production", 2200),
+    ]
+
+
+def _tissot_expansion2_watches() -> list[tuple]:
+    """5 Tissot — PRX Powermatic, Gentleman, Seastar, T-Sport."""
+    return [
+        ("Tissot", "PRX Powermatic 80 35mm Green Ladies", "T137.207.11.091.00",
+         "Automatic Cal. Powermatic 80", "Stainless Steel", "Current Production", 550),
+        ("Tissot", "Gentleman Powermatic 80 Open Heart", "T127.407.16.031.01",
+         "Automatic Cal. Powermatic 80", "Stainless Steel", "Current Production", 650),
+        ("Tissot", "Seastar 1000 Powermatic 80 36mm", "T120.207.11.041.01",
+         "Automatic Cal. Powermatic 80", "Stainless Steel", "Current Production", 600),
+        ("Tissot", "T-Sport Supersport Chrono", "T125.617.11.031.00",
+         "Quartz Cal. ETA G10.212", "Stainless Steel", "Current Production", 420),
+        ("Tissot", "PRX Powermatic 80 40mm Waffle Dial Black", "T137.407.11.051.01",
+         "Automatic Cal. Powermatic 80", "Stainless Steel", "Current Production", 600),
+    ]
+
+
+def _grand_seiko_expansion2_watches() -> list[tuple]:
+    """5 Grand Seiko — Snowflake variants, SLGA, Hi-Beat GMT, Kodo."""
+    return [
+        ("Grand Seiko", "Heritage Snowflake Titanium SBGA461", "SBGA461",
+         "Spring Drive Cal. 9R65", "Titanium", "Current Production", 5800),
+        ("Grand Seiko", "Evolution 9 SLGA015 Spring Drive 5 Days", "SLGA015",
+         "Spring Drive Cal. 9RA2", "Stainless Steel", "Current Production", 9200),
+        ("Grand Seiko", "Sport Hi-Beat GMT SBGJ239", "SBGJ239",
+         "Automatic Cal. 9S86", "Stainless Steel", "Current Production", 6500),
+        ("Grand Seiko", "Kodo Constant-Force Tourbillon SLGT003", "SLGT003",
+         "Mechanical Cal. T0", "Platinum", "Limited Edition", 350000),
+        ("Grand Seiko", "Evolution 9 SLGA019 Night Birch", "SLGA019",
+         "Spring Drive Cal. 9RA2", "Stainless Steel", "Current Production", 9200),
+    ]
+
+
+def _casio_expansion2_watches() -> list[tuple]:
+    """5 Casio — Casiotron, Edifice, Oceanus."""
+    return [
+        ("Casio", "Casiotron 50th Anniversary TRN-50-2A", "TRN-50-2AJR",
+         "Quartz Digital Cal. Module 4395", "Resin", "Anniversary Edition", 300),
+        ("Casio", "Edifice EQB-2000 Smartphone Link Solar Chrono", "EQB-2000DB-1AJF",
+         "Solar Quartz Cal. Module 5654", "Stainless Steel", "Current Production", 380),
+        ("Casio", "Edifice ECB-2200 Bluetooth Solar", "ECB-2200DC-1AJF",
+         "Solar Quartz Cal. Module 5688", "Stainless Steel", "Current Production", 280),
+        ("Casio", "Oceanus OCW-T6000 Manta Premium", "OCW-T6000-1AJF",
+         "Solar Quartz Cal. Module 5674", "Titanium", "Current Production", 1800),
+        ("Casio", "Oceanus OCW-S5000 Slim Titanium", "OCW-S5000-1AJF",
+         "Solar Quartz Cal. Module 5673", "Titanium", "Current Production", 1200),
+    ]
+
+
+def _timex_expansion2_watches() -> list[tuple]:
+    """4 Timex — Marlin, Q Timex, M79, Todd Snyder."""
+    return [
+        ("Timex", "Marlin Automatic 40mm California Dial", "TW2W47500",
+         "Automatic Cal. Miyota 8215", "Stainless Steel", "Current Production", 280),
+        ("Timex", "Q Timex GMT 38mm Blue/Red Bezel", "TW2V38000",
+         "Quartz Cal. Miyota", "Stainless Steel", "Current Production", 200),
+        ("Timex", "M79 Automatic 40mm Black/Orange", "TW2U96900",
+         "Automatic Cal. Miyota 8205", "Stainless Steel", "Current Production", 300),
+        ("Timex", "Timex x Todd Snyder Mod Inspired 40mm", "TWG030000",
+         "Quartz", "Stainless Steel", "Special Edition", 160),
+    ]
+
+
+def _citizen_expansion2_watches() -> list[tuple]:
+    """4 Citizen — Series 8, Tsuyosa, Corso, Promaster Navihawk."""
+    return [
+        ("Citizen", "Series 8 880 Mechanical GMT NA1010-84X", "NA1010-84X",
+         "Automatic Cal. 9054", "Stainless Steel", "Current Production", 1500),
+        ("Citizen", "Tsuyosa Automatic 40mm Blue NJ0150-81L", "NJ0150-81L",
+         "Automatic Cal. 8210", "Stainless Steel", "Current Production", 280),
+        ("Citizen", "Eco-Drive Corso BM7490-52E", "BM7490-52E",
+         "Eco-Drive Cal. E111", "Stainless Steel", "Current Production", 300),
+        ("Citizen", "Promaster Navihawk A-T JY8100-80L", "JY8100-80L",
+         "Eco-Drive Cal. U680", "Stainless Steel", "Current Production", 550),
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Assemble full catalog
 # ---------------------------------------------------------------------------
 
@@ -3559,6 +4225,40 @@ def get_curated_catalog() -> list[dict]:
     all_tuples.extend(_patek_philippe_variants_watches())
     # Premium Microbrands (2026-03-15)
     all_tuples.extend(_premium_microbrand_watches())
+    # Luxury Brand Expansion (2026-03-20)
+    all_tuples.extend(_tag_heuer_watches())
+    all_tuples.extend(_hublot_watches())
+    all_tuples.extend(_montblanc_watches())
+    all_tuples.extend(_blancpain_expansion_watches())
+    all_tuples.extend(_breguet_expansion_watches())
+    all_tuples.extend(_chopard_expansion_watches())
+    all_tuples.extend(_girard_perregaux_expansion_watches())
+    all_tuples.extend(_bvlgari_watches())
+    all_tuples.extend(_piaget_expansion_watches())
+    all_tuples.extend(_hermes_watches())
+    all_tuples.extend(_jaquet_droz_watches())
+    # Catalog Expansion — 2026-03-20
+    all_tuples.extend(_glashutte_original_expansion_watches())
+    all_tuples.extend(_baume_mercier_expansion_watches())
+    all_tuples.extend(_frederique_constant_expansion_watches())
+    all_tuples.extend(_h_moser_expansion_watches())
+    all_tuples.extend(_ulysse_nardin_expansion_watches())
+    all_tuples.extend(_raymond_weil_expansion_watches())
+    all_tuples.extend(_glycine_expansion_watches())
+    all_tuples.extend(_luminox_expansion_watches())
+    all_tuples.extend(_omega_expansion2_watches())
+    all_tuples.extend(_rolex_expansion2_watches())
+    all_tuples.extend(_seiko_expansion2_watches())
+    all_tuples.extend(_cartier_expansion2_watches())
+    all_tuples.extend(_iwc_expansion2_watches())
+    all_tuples.extend(_tudor_expansion2_watches())
+    all_tuples.extend(_hamilton_expansion2_watches())
+    all_tuples.extend(_longines_expansion2_watches())
+    all_tuples.extend(_tissot_expansion2_watches())
+    all_tuples.extend(_grand_seiko_expansion2_watches())
+    all_tuples.extend(_casio_expansion2_watches())
+    all_tuples.extend(_timex_expansion2_watches())
+    all_tuples.extend(_citizen_expansion2_watches())
 
     catalog: list[dict] = []
     for brand, model, reference, movement, material, watch_type, price_eur in all_tuples:

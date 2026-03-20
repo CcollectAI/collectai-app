@@ -991,6 +991,13 @@ def get_curated_catalog() -> list[dict]:
             existing_keys.add(key)
             catalog.append(item)
 
+    # Add wave 2 expansion items
+    for item in _wave2_expansion():
+        key = (item["subcategory"], item["name"])
+        if key not in existing_keys:
+            existing_keys.add(key)
+            catalog.append(item)
+
     # Deduplicate by ('name',) (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1154,6 +1161,178 @@ def _variant_expansion() -> list[dict]:
         # ── Lorcana — Foil & Promo Variants ──────────────────────────────
         ("lorcana", "Lorcana Stitch Rock Star Enchanted (Cold Foil)", "Enchanted Rare", "grail", 250),
         ("lorcana", "Lorcana Mickey Mouse Brave Little Tailor Promo (Store Championship)", "Promo LE", "high", 95),
+    ]
+
+    result = []
+    for subcategory, name, edition, tier, price in variants:
+        result.append({
+            "subcategory": subcategory,
+            "name": name,
+            "edition": edition,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return result
+
+
+def _wave2_expansion() -> list[dict]:
+    """Wave 2 — ~115 items: Fantasy pins, Loungefly, figurines, vintage,
+    Swarovski, park exclusives, Villains collection, Pixar collectibles."""
+
+    # (subcategory, name, edition, rarity_tier, price_eur)
+    variants = [
+        # ── Fantasy Pins — New Designs ─────────────────────────────────
+        ("pins", "Fantasy Pin Hades Ember Crown Jumbo", "Fantasy", "high", 85),
+        ("pins", "Fantasy Pin Jafar Serpent Staff Slider", "Fantasy", "mid", 55),
+        ("pins", "Fantasy Pin Evil Queen Magic Mirror Lenticular", "Fantasy", "high", 90),
+        ("pins", "Fantasy Pin Chernabog Night on Bald Mountain Jumbo", "Fantasy", "high", 100),
+        ("pins", "Fantasy Pin Gaston Tavern Scene Diorama", "Fantasy", "mid", 60),
+        ("pins", "Fantasy Pin Mother Gothel Stained Glass", "Fantasy", "mid", 50),
+
+        # ── Pins — Limited Edition New ─────────────────────────────────
+        ("pins", "Pirates of the Caribbean 50th LE 1000 Pin", "LE 1000", "grail", 250),
+        ("pins", "Space Mountain 50th Anniversary LE 2000 Pin", "LE 2000", "high", 130),
+        ("pins", "Tower of Terror Final Drop LE 1500 Pin", "LE 1500", "grail", 200),
+        ("pins", "TRON Lightcycle Run Grand Opening LE 3000 Pin", "LE 3000", "high", 85),
+        ("pins", "Splash Mountain Final Ride LE 500 Jumbo Pin", "LE 500", "grail", 400),
+        ("pins", "Moana Wayfinder LE 2500 Pin", "LE 2500", "high", 95),
+        ("pins", "Encanto Casita LE 3000 Pin", "LE 3000", "high", 80),
+
+        # ── Pins — Hidden Mickey New Series ────────────────────────────
+        ("pins", "Hidden Mickey Princesses Complete Set (6 Pins)", "Park Exclusive", "high", 90),
+        ("pins", "Hidden Mickey Pets Series Pin", "Park Exclusive", "standard", 15),
+        ("pins", "Hidden Mickey Castles of the World Chaser Pin", "Park Exclusive", "mid", 55),
+        ("pins", "Hidden Mickey Snack Foods Series Pin", "Park Exclusive", "standard", 12),
+
+        # ── Loungefly — New Collabs ────────────────────────────────────
+        ("loungefly", "Loungefly Tangled Lantern Festival Mini Backpack", "Standard", "mid", 65),
+        ("loungefly", "Loungefly Coco Marigold Bridge Mini Backpack", "Standard", "mid", 55),
+        ("loungefly", "Loungefly Encanto Casita Mini Backpack", "Standard", "mid", 50),
+        ("loungefly", "Loungefly Lilo & Stitch Pineapple Mini Backpack", "Standard", "mid", 55),
+        ("loungefly", "Loungefly Nightmare Before Christmas Oogie Boogie Glow Backpack", "Glow-in-Dark", "high", 85),
+        ("loungefly", "Loungefly Hocus Pocus Sanderson Sisters Backpack", "Seasonal", "mid", 60),
+        ("loungefly", "Loungefly Sleeping Beauty Maleficent Dragon Backpack", "Standard", "mid", 65),
+        ("loungefly", "Loungefly Moana Tamatoa Sequin Backpack", "Standard", "mid", 55),
+        ("loungefly", "Loungefly Ratatouille Remy Mini Backpack", "Standard", "mid", 50),
+        ("loungefly", "Loungefly Wall-E & Eve Date Night Crossbody", "Standard", "mid", 45),
+
+        # ── Jim Shore — New Figurines ──────────────────────────────────
+        ("jim_shore", "Jim Shore Disney Traditions Cinderella Staircase", "Standard", "mid", 75),
+        ("jim_shore", "Jim Shore Disney Traditions Moana Heihei", "Standard", "mid", 45),
+        ("jim_shore", "Jim Shore Disney Traditions Hades & Pain & Panic", "Standard", "mid", 70),
+        ("jim_shore", "Jim Shore Disney Traditions Ursula Statement Figure (15in)", "Limited", "high", 120),
+        ("jim_shore", "Jim Shore Disney Traditions Maleficent Dragon (Large)", "Limited", "high", 130),
+        ("jim_shore", "Jim Shore Disney Traditions Stitch & Angel Heart", "Standard", "mid", 55),
+
+        # ── Grand Jester Studios ───────────────────────────────────────
+        ("figures", "Grand Jester Studios Elsa Bust (Frozen)", "Limited", "high", 90),
+        ("figures", "Grand Jester Studios Maleficent Bust", "Limited", "high", 110),
+        ("figures", "Grand Jester Studios Ariel Bust", "Limited", "high", 95),
+        ("figures", "Grand Jester Studios Jack Skellington Bust", "Limited", "high", 100),
+
+        # ── WDCC — Walt Disney Classics Collection ─────────────────────
+        ("wdcc", "WDCC Snow White 'The Fairest One of All' Figurine", "WDCC", "high", 180),
+        ("wdcc", "WDCC Peter Pan 'I'm So Happy, I Think I'll Give You a Kiss' Tinker Bell", "WDCC", "high", 200),
+        ("wdcc", "WDCC Sleeping Beauty 'A Spell Shall Be The Gift' Maleficent", "WDCC", "grail", 320),
+        ("wdcc", "WDCC Pinocchio 'Let Your Conscience Be Your Guide' Jiminy Cricket", "WDCC", "high", 150),
+        ("wdcc", "WDCC Alice in Wonderland 'Curiouser and Curiouser' Alice", "WDCC", "high", 140),
+
+        # ── Vintage — Park Maps & Tickets ──────────────────────────────
+        ("vintage", "Vintage Disneyland Park Map 1960s (Folded)", "Vintage", "high", 150),
+        ("vintage", "Vintage Disneyland Park Map 1970s (A-E Tickets Version)", "Vintage", "high", 120),
+        ("vintage", "Vintage Walt Disney World Opening Day Map 1971", "Vintage", "grail", 350),
+        ("vintage", "Vintage Disneyland A-Ticket Book (Complete, Unused)", "Vintage", "grail", 500),
+        ("vintage", "Vintage Disneyland E-Ticket (Single, Used)", "Vintage", "mid", 60),
+        ("vintage", "Vintage EPCOT Center Opening Day Guide 1982", "Vintage", "high", 100),
+
+        # ── Vintage — Attraction Posters ───────────────────────────────
+        ("vintage", "Vintage Attraction Poster Haunted Mansion (Original Print)", "Vintage", "grail", 800),
+        ("vintage", "Vintage Attraction Poster Pirates of the Caribbean", "Vintage", "grail", 600),
+        ("vintage", "Vintage Attraction Poster Space Mountain (1977)", "Vintage", "high", 400),
+        ("vintage", "Vintage Attraction Poster Jungle Cruise", "Vintage", "high", 350),
+        ("vintage", "Attraction Poster Reproduction Set (6 Posters)", "Standard", "mid", 45),
+
+        # ── Swarovski — New ────────────────────────────────────────────
+        ("swarovski", "Swarovski Crystal Ariel Figurine (LE)", "Swarovski LE", "grail", 350),
+        ("swarovski", "Swarovski Crystal Elsa Frozen Figurine", "Premium", "high", 200),
+        ("swarovski", "Swarovski Crystal Stitch Figurine", "Premium", "high", 180),
+        ("swarovski", "Swarovski Crystal Cinderella Castle (Large)", "Swarovski LE", "grail", 600),
+        ("swarovski", "Swarovski Crystal Dumbo Figurine", "Premium", "high", 160),
+
+        # ── 50th Anniversary — WDW Exclusive ──────────────────────────
+        ("parks", "WDW 50th Anniversary Celebration Figure Set (6 Characters)", "LE Park", "high", 150),
+        ("parks", "WDW 50th Anniversary EARidescent Tumbler Set", "LE Park", "mid", 45),
+        ("parks", "WDW 50th Anniversary Gold Statue Cinderella Castle Model", "LE Park", "high", 180),
+        ("parks", "WDW 50th Anniversary Pressed Penny Collection (50 Coins)", "LE Park", "high", 120),
+        ("parks", "WDW 50th Anniversary Dooney & Bourke Tote", "LE Park", "high", 200),
+
+        # ── EPCOT Exclusives ───────────────────────────────────────────
+        ("parks", "EPCOT Figment Dreamfinder Reunion Figure Set", "Park Exclusive", "high", 120),
+        ("parks", "EPCOT Festival of the Arts Figment Figurine 2025", "Park Exclusive", "mid", 55),
+        ("parks", "EPCOT Spaceship Earth Model (Light-up)", "Park Exclusive", "high", 90),
+        ("parks", "EPCOT World Showcase Country Pin Set (11 Pins)", "Park Exclusive", "high", 85),
+
+        # ── Disney Villains Collection ─────────────────────────────────
+        ("villains", "Disney Villains Ursula Poor Unfortunate Souls Figurine", "Standard", "mid", 55),
+        ("villains", "Disney Villains Scar Prepared Figurine", "Standard", "mid", 50),
+        ("villains", "Disney Villains Yzma Figurine (Emperor's New Groove)", "Standard", "mid", 40),
+        ("villains", "Disney Villains Dr. Facilier Shadow Man Figurine", "Standard", "mid", 45),
+        ("villains", "Disney Villains Queen of Hearts Figurine (Croquet)", "Standard", "mid", 40),
+        ("villains", "Disney Villains Captain Hook Figurine (Neverland)", "Standard", "mid", 40),
+        ("villains", "Disney Villains Collectors Plate Set (6 Villains, LE)", "LE 2000", "high", 140),
+
+        # ── Pixar Collectibles ─────────────────────────────────────────
+        ("pixar", "Pixar Lamp Luxo Jr. Desk Lamp Replica", "Standard", "mid", 75),
+        ("pixar", "Pixar Inside Out 2 Anxiety Figurine", "Standard", "standard", 25),
+        ("pixar", "Pixar Cars Lightning McQueen 1:24 Die-Cast", "Standard", "mid", 35),
+        ("pixar", "Pixar Up House & Balloons Light-Up Figurine", "Standard", "mid", 65),
+        ("pixar", "Pixar Wall-E & Eve Music Box", "Limited", "high", 110),
+        ("pixar", "Pixar Ratatouille Remy Kitchen Figurine Set", "Standard", "mid", 45),
+        ("pixar", "Pixar Toy Story Woody & Buzz Signature Collection Set", "Premium", "high", 180),
+        ("pixar", "Pixar Finding Nemo Reef Figurine Set (8 Pieces)", "Standard", "mid", 55),
+        ("pixar", "Pixar Monsters Inc Sulley Door Station Figurine", "Standard", "mid", 50),
+        ("pixar", "Pixar The Incredibles Family Figurine Set", "Standard", "mid", 45),
+
+        # ── Disney Designer Dolls — New ────────────────────────────────
+        ("designer_dolls", "Disney Designer Midnight Masquerade Meg (Hercules)", "Designer LE", "high", 120),
+        ("designer_dolls", "Disney Designer Midnight Masquerade Esmeralda", "Designer LE", "high", 130),
+        ("designer_dolls", "Disney Designer Fairytale Couples Ariel & Eric", "Designer LE", "grail", 250),
+        ("designer_dolls", "Disney Designer Princess Collection Moana", "Designer LE", "high", 100),
+
+        # ── Disney100 Celebration ──────────────────────────────────────
+        ("d100", "Disney100 Platinum Celebration Castle Figurine", "D100 Exclusive", "high", 150),
+        ("d100", "Disney100 Complete Pin Set (10 Pins)", "D100 Exclusive", "high", 180),
+        ("d100", "Disney100 Steamboat Willie Platinum Figure", "D100 Exclusive", "high", 120),
+        ("d100", "Disney100 Wonder of a Century Art Print (LE 500)", "D100 Exclusive", "grail", 200),
+
+        # ── Animation Cels ─────────────────────────────────────────────
+        ("animation_cels", "Original Production Cel The Little Mermaid Ariel", "Vintage", "grail", 2000),
+        ("animation_cels", "Original Production Cel Beauty and the Beast Dance", "Vintage", "grail", 1500),
+        ("animation_cels", "Original Production Cel Snow White Dwarfs", "Vintage", "grail", 3000),
+        ("animation_cels", "Original Production Cel Sleeping Beauty Maleficent", "Vintage", "grail", 2500),
+        ("animation_cels", "Original Production Cel Bambi Forest Scene", "Vintage", "grail", 1800),
+        ("animation_cels", "Sericel Limited Edition Lion King Circle of Life", "LE 5000", "high", 200),
+        ("animation_cels", "Sericel Limited Edition Cinderella Glass Slipper", "LE 2500", "high", 180),
+
+        # ── Shanghai / Tokyo Disney Exclusives ─────────────────────────
+        ("parks", "Shanghai Disney Resort Grand Opening Mickey Figurine", "Park Exclusive", "high", 120),
+        ("parks", "Tokyo DisneySea 20th Anniversary Duffy Plush", "Park Exclusive", "high", 100),
+        ("parks", "Tokyo Disneyland 40th Anniversary Pin Set", "Park Exclusive", "high", 110),
+        ("parks", "Shanghai Disney Resort Tron Lightcycle Pin", "Park Exclusive", "mid", 40),
+        ("parks", "Hong Kong Disneyland Mystic Manor Figure", "Park Exclusive", "high", 85),
+        ("parks", "Tokyo DisneySea Journey to the Center of the Earth Figure", "Park Exclusive", "mid", 55),
+
+        # ── runDisney Medals ───────────────────────────────────────────
+        ("rundisney", "runDisney Walt Disney World Marathon 2024 Medal", "Park Exclusive", "mid", 60),
+        ("rundisney", "runDisney Princess Half Marathon 2024 Medal", "Park Exclusive", "mid", 50),
+        ("rundisney", "runDisney Dopey Challenge Complete Medal Set (4 Medals)", "Park Exclusive", "high", 150),
+        ("rundisney", "runDisney Wine & Dine Half Marathon Medal", "Park Exclusive", "mid", 45),
+        ("rundisney", "runDisney Star Wars Rival Run Medal", "Park Exclusive", "mid", 55),
+
+        # ── Disney Store Vintage ───────────────────────────────────────
+        ("vintage", "Disney Store Opening Key (1990s, Brass)", "Vintage", "high", 150),
+        ("vintage", "Disney Store Exclusive Snow Globe Cinderella Castle", "Vintage", "high", 120),
+        ("vintage", "Disney Store Classic Doll Collection (1990s, Complete Set)", "Vintage", "grail", 300),
     ]
 
     result = []

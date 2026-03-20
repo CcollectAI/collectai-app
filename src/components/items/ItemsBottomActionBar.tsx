@@ -8,6 +8,7 @@ import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { BETA_MODE } from '@/config/featureFlags';
 
 interface ItemsBottomActionBarProps {
   exporting: boolean;
@@ -55,20 +56,22 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
             </Text>
           </AnimatedPressable>
 
-          <AnimatedPressable
-            style={[
-              styles.actionButtonSecondary,
-              { borderColor: colors.accent },
-            ]}
-            onPress={onOpenProjects}
-            accessibilityRole="button"
-            accessibilityLabel="Open build and paint projects"
-          >
-            <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
-            <Text style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
-              Projects
-            </Text>
-          </AnimatedPressable>
+          {!BETA_MODE && (
+            <AnimatedPressable
+              style={[
+                styles.actionButtonSecondary,
+                { borderColor: colors.accent },
+              ]}
+              onPress={onOpenProjects}
+              accessibilityRole="button"
+              accessibilityLabel="Open build and paint projects"
+            >
+              <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
+              <Text style={[styles.actionButtonSecondaryText, { color: colors.accent }]}>
+                Projects
+              </Text>
+            </AnimatedPressable>
+          )}
         </View>
 
         {exportStatus && (

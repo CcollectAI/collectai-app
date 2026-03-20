@@ -4,6 +4,7 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { fireHaptic, HapticIntent } from "@/haptics";
+import { BETA_MODE } from "@/config/featureFlags";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
@@ -91,6 +92,7 @@ export default function TabsLayout() {
           title: "Events",
           tabBarLabel: "Events",
           tabBarAccessibilityLabel: "Events tab — community events and drops",
+          href: BETA_MODE ? null : undefined,
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "calendar" : "calendar-outline"}

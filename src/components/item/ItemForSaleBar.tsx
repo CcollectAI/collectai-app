@@ -10,6 +10,7 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
+import { BETA_MODE } from '@/config/featureFlags';
 
 interface ItemForSaleBarProps {
   askingPriceValue: string;
@@ -48,15 +49,17 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
           Listed{askingPriceValue ? ` ${formatPrice(parseFloat(askingPriceValue), settings.currency)}` : ''}
         </Text>
       </View>
-      <AnimatedPressable
-        onPress={() => router.push('/sell/offers')}
-        style={[styles.editBarBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
-        accessibilityRole="button"
-        accessibilityLabel="View offers"
-      >
-        <Ionicons name="pricetags-outline" size={14} color={theme.accent} />
-        <Text style={[styles.editBarBtnText, { color: theme.accent }]}>Offers</Text>
-      </AnimatedPressable>
+      {!BETA_MODE && (
+        <AnimatedPressable
+          onPress={() => router.push('/sell/offers')}
+          style={[styles.editBarBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
+          accessibilityRole="button"
+          accessibilityLabel="View offers"
+        >
+          <Ionicons name="pricetags-outline" size={14} color={theme.accent} />
+          <Text style={[styles.editBarBtnText, { color: theme.accent }]}>Offers</Text>
+        </AnimatedPressable>
+      )}
       <AnimatedPressable
         onPress={onUnlist}
         disabled={forSaleLoading}

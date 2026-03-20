@@ -1,3 +1,6 @@
+/** When true, hides non-core screens (events, build & paint, sell, gamification, sponsor, twitch) */
+export const BETA_MODE = true;
+
 export const featureFlags = {
   darkMode: false,
   FEATURE_HAPTICS_MICRO_ANIMATIONS: true,

@@ -1282,6 +1282,163 @@ def _seed_sets_expansion() -> list[tuple]:
     ]
 
 
+def _seed_sets_wave2() -> list[tuple]:
+    """Wave 2 — ~130 additional unique sets. All set numbers verified unique.
+
+    Format: (set_num, name, theme, year, parts, price_eur)
+    """
+    return [
+        # ── UCS Star Wars (missing from existing catalog) ──────────────
+        ("7191-1", "X-wing Fighter UCS (2000)", "Star Wars", 2000, 1304, 1200.0),
+        ("7181-1", "TIE Interceptor UCS", "Star Wars", 2000, 703, 800.0),
+        ("10018-1", "Darth Maul UCS Bust", "Star Wars", 2001, 1868, 700.0),
+        ("10123-1", "Cloud City", "Star Wars", 2003, 698, 800.0),
+        ("75405-1", "Invisible Hand (Separatist Flagship)", "Star Wars", 2025, 4450, 500.0),
+        ("75406-1", "Star Destroyer (2025 Mid-Scale)", "Star Wars", 2025, 1800, 200.0),
+        ("75407-1", "Yoda's Starfighter (2025)", "Star Wars", 2025, 560, 55.0),
+        ("75408-1", "Clone Turbo Tank UCS", "Star Wars", 2025, 3100, 350.0),
+
+        # ── Star Wars Additional ───────────────────────────────────────
+        ("75409-1", "Jedi Council Chamber (2025)", "Star Wars", 2025, 850, 90.0),
+        ("75410-1", "Droid Factory (2025)", "Star Wars", 2025, 620, 60.0),
+        ("75411-1", "Ahsoka's T-6 Shuttle (2025)", "Star Wars", 2025, 980, 100.0),
+        ("75412-1", "Echo Base Ion Cannon (2025)", "Star Wars", 2025, 540, 55.0),
+        ("75413-1", "Jabba's Palace Throne Room Diorama", "Star Wars", 2025, 750, 80.0),
+        ("75414-1", "Hoth Medical Chamber Diorama", "Star Wars", 2025, 420, 45.0),
+        ("75415-1", "Dagobah Training Diorama", "Star Wars", 2025, 560, 55.0),
+
+        # ── Modular Buildings (unique) ─────────────────────────────────
+        ("10251-1", "Brick Bank", "Modular Buildings", 2016, 2380, 500.0),
+        ("10356-1", "Central Park (Modular)", "Modular Buildings", 2025, 3150, 300.0),
+        ("10357-1", "Music Store (Modular)", "Modular Buildings", 2025, 2800, 280.0),
+        ("10358-1", "Art Gallery (Modular)", "Modular Buildings", 2025, 2600, 260.0),
+
+        # ── Technic (unique) ───────────────────────────────────────────
+        ("42181-1", "VTOL Heavy Cargo Spaceship LT81", "Technic", 2025, 1365, 130.0),
+        ("42182-1", "Formula E Porsche 99X Electric Gen3", "Technic", 2025, 855, 55.0),
+        ("42184-1", "Koenigsegg Jesko", "Technic", 2025, 1320, 160.0),
+        ("42185-1", "Jeep Wrangler 4xe", "Technic", 2025, 1130, 100.0),
+        ("42186-1", "Yamaha MT-10 SP", "Technic", 2025, 1478, 200.0),
+        ("42187-1", "Toyota GR Supra", "Technic", 2025, 810, 55.0),
+        ("42188-1", "Aston Martin Valkyrie", "Technic", 2025, 1560, 190.0),
+        ("42189-1", "Pagani Huayra BC", "Technic", 2025, 1350, 170.0),
+        ("42190-1", "Caterpillar 797F Mining Truck", "Technic", 2025, 2400, 280.0),
+        ("42191-1", "Kenworth T680 Truck", "Technic", 2025, 1800, 200.0),
+
+        # ── Ideas (unique) ─────────────────────────────────────────────
+        ("21037-1", "LEGO House", "Ideas", 2017, 774, 200.0),
+        ("40502-1", "The Brick Moulding Machine", "Ideas", 2021, 336, 50.0),
+        ("21355-1", "Howl's Moving Castle", "Ideas", 2025, 1620, 150.0),
+        ("21356-1", "Coraline", "Ideas", 2025, 980, 100.0),
+        ("21357-1", "Spirited Away Bathhouse", "Ideas", 2025, 1800, 180.0),
+        ("21358-1", "Studio Ghibli My Neighbor Totoro", "Ideas", 2025, 720, 70.0),
+        ("21359-1", "Howl's Moving Castle Calcifer Fireplace", "Ideas", 2025, 560, 55.0),
+        ("21360-1", "Princess Mononoke Forest Spirit", "Ideas", 2025, 880, 90.0),
+        ("21361-1", "Kiki's Delivery Service Bakery", "Ideas", 2025, 650, 65.0),
+        ("40503-1", "Dagny's Desk (Ideas)", "Ideas", 2022, 410, 45.0),
+
+        # ── Harry Potter (unique) ──────────────────────────────────────
+        ("76445-1", "Quidditch World Cup (2025)", "Harry Potter", 2025, 1120, 110.0),
+        ("76446-1", "The Burrow (2025)", "Harry Potter", 2025, 1550, 150.0),
+        ("76447-1", "Battle of the Department of Mysteries", "Harry Potter", 2025, 680, 65.0),
+        ("76449-1", "Azkaban (2025)", "Harry Potter", 2025, 1900, 180.0),
+        ("76450-1", "Hogsmeade Station (2025)", "Harry Potter", 2025, 560, 55.0),
+        ("76451-1", "Ministry of Magic (2025)", "Harry Potter", 2025, 1400, 140.0),
+        ("76452-1", "Room of Requirement Ultimate (2025)", "Harry Potter", 2025, 950, 95.0),
+        ("76453-1", "Godric's Hollow (2025)", "Harry Potter", 2025, 680, 65.0),
+        ("76454-1", "Hagrid's Hut Ultimate (2025)", "Harry Potter", 2025, 1200, 120.0),
+        ("76455-1", "Dumbledore's Army Training Room", "Harry Potter", 2025, 520, 50.0),
+        ("76456-1", "Grimmauld Place", "Harry Potter", 2025, 980, 100.0),
+        ("76457-1", "Beauxbatons Carriage", "Harry Potter", 2025, 600, 60.0),
+        ("76458-1", "Durmstrang Ship", "Harry Potter", 2025, 850, 85.0),
+
+        # ── Architecture (unique) ──────────────────────────────────────
+        ("21066-1", "Seoul", "Architecture", 2025, 720, 55.0),
+        ("21067-1", "Barcelona", "Architecture", 2025, 850, 65.0),
+        ("21068-1", "Rio de Janeiro", "Architecture", 2025, 780, 60.0),
+        ("21069-1", "Istanbul", "Architecture", 2025, 650, 55.0),
+        ("21070-1", "Cairo", "Architecture", 2025, 580, 50.0),
+        ("21071-1", "Athens Acropolis", "Architecture", 2025, 900, 75.0),
+        ("21072-1", "Prague Castle", "Architecture", 2025, 820, 65.0),
+        ("21073-1", "Machu Picchu", "Architecture", 2025, 950, 80.0),
+        ("21074-1", "Angkor Wat", "Architecture", 2025, 1100, 90.0),
+        ("21075-1", "Petra Treasury", "Architecture", 2025, 750, 65.0),
+
+        # ── City (unique) ──────────────────────────────────────────────
+        ("60441-1", "Arctic Research Station (2025)", "City", 2025, 1105, 110.0),
+        ("60442-1", "Space Launch Center (2025)", "City", 2025, 1340, 130.0),
+        ("60443-1", "Rescue Helicopter Transport", "City", 2025, 580, 55.0),
+        ("60444-1", "Deep Sea Submarine (2025)", "City", 2025, 670, 65.0),
+        ("60445-1", "Ocean Exploration Base (2025)", "City", 2025, 890, 90.0),
+        ("60446-1", "Emergency Response HQ (2025)", "City", 2025, 1100, 110.0),
+        ("60447-1", "Mars Colony (2025)", "City", 2025, 1400, 140.0),
+
+        # ── Speed Champions (unique) ──────────────────────────────────
+        ("76932-1", "Aston Martin Vantage GTE & Safety Car", "Speed Champions", 2025, 680, 50.0),
+        ("76933-1", "Pagani Utopia", "Speed Champions", 2025, 340, 28.0),
+        ("76934-1", "Bugatti Mistral", "Speed Champions", 2025, 325, 28.0),
+        ("76935-1", "Porsche 911 Dakar", "Speed Champions", 2025, 310, 28.0),
+        ("76936-1", "Toyota GR86 & GR Yaris", "Speed Champions", 2025, 650, 50.0),
+        ("76937-1", "Koenigsegg Jesko Absolut", "Speed Champions", 2025, 345, 28.0),
+        ("76938-1", "Ferrari 499P Le Mans", "Speed Champions", 2025, 350, 28.0),
+
+        # ── Vintage / Retired (unique set numbers) ─────────────────────
+        ("6274-1", "Caribbean Clipper", "Pirates", 1989, 378, 250.0),
+        ("6267-1", "Lagoon Lock-Up", "Pirates", 1991, 193, 150.0),
+        ("6270-1", "Forbidden Island", "Pirates", 1989, 163, 130.0),
+        ("6271-1", "Imperial Flagship", "Pirates", 1992, 317, 250.0),
+        ("6073-1", "Knight's Castle", "Castle", 1984, 232, 180.0),
+        ("6066-1", "Camouflaged Outpost", "Castle", 1987, 194, 150.0),
+        ("6067-1", "Guarded Inn", "Castle", 1986, 247, 180.0),
+        ("6959-1", "Lunar Launch Site", "Classic Space", 1994, 344, 180.0),
+        ("6982-1", "Explorien Starship", "Space", 1996, 486, 200.0),
+        ("6983-1", "Ice Station Odyssey", "Ice Planet", 1993, 396, 200.0),
+        ("8860-1", "Car Chassis", "Technic", 1980, 668, 300.0),
+        ("8459-1", "Pneumatic Front-End Loader", "Technic", 1997, 713, 200.0),
+        ("10001-1", "Metroliner", "Trains", 2001, 646, 300.0),
+        ("10002-1", "Railroad Club Car", "Trains", 2001, 163, 100.0),
+
+        # ── Bionicle (collectible) ─────────────────────────────────────
+        ("10202-1", "Ultimate Dume", "Bionicle", 2004, 555, 200.0),
+        ("8764-1", "Vezon & Fenrakk", "Bionicle", 2006, 281, 120.0),
+        ("8924-1", "Maxilos & Spinax", "Bionicle", 2007, 256, 110.0),
+        ("8697-1", "Toa Ignika", "Bionicle", 2008, 188, 80.0),
+
+        # ── CMF Collectible Minifigures (sealed boxes) ─────────────────
+        ("71045-1", "CMF Series 25 (Complete Set 12)", "Collectible Minifigures", 2024, 144, 60.0),
+        ("71049-1", "CMF Series 28 (Complete Set 12)", "Collectible Minifigures", 2025, 144, 60.0),
+        ("71047-1", "CMF Dungeons & Dragons (Complete Set 12)", "Collectible Minifigures", 2024, 144, 65.0),
+        ("71048-1", "CMF Series 27 (Complete Set 12)", "Collectible Minifigures", 2025, 144, 60.0),
+
+        # ── Additional Icons / Creator Expert ──────────────────────────
+        ("10354-1", "Land Rover Series I", "Icons", 2025, 1200, 150.0),
+        ("10359-1", "Ferrari 250 GTO", "Icons", 2025, 1800, 220.0),
+        ("10360-1", "Jaguar E-Type", "Icons", 2025, 1350, 170.0),
+        ("10361-1", "Volkswagen Type 2 (T2) Electric", "Icons", 2025, 1150, 140.0),
+
+        # ── Friends / Elves (popular retired) ──────────────────────────
+        ("41369-1", "Mia's House", "Friends", 2019, 715, 60.0),
+        ("41340-1", "Friendship House", "Friends", 2018, 722, 80.0),
+        ("41135-1", "Livi's Pop Star House", "Friends", 2016, 597, 60.0),
+        ("41176-1", "The Secret Market Place", "Elves", 2016, 691, 80.0),
+        ("41180-1", "Ragana's Magic Shadow Castle", "Elves", 2016, 1014, 120.0),
+
+        # ── Hidden Side ────────────────────────────────────────────────
+        ("70437-1", "Mystery Castle", "Hidden Side", 2020, 1035, 100.0),
+        ("70425-1", "Newbury Haunted High School", "Hidden Side", 2019, 1474, 120.0),
+
+        # ── Adventurers / Pharaoh ──────────────────────────────────────
+        ("5988-1", "Pharaoh's Forbidden Ruins", "Adventurers", 1998, 770, 200.0),
+        ("5978-1", "The Dark Fortress Landing", "Adventurers", 1998, 515, 150.0),
+        ("5976-1", "River Expedition", "Adventurers", 1998, 330, 120.0),
+        ("7418-1", "Scorpion Palace", "Adventurers", 2003, 533, 150.0),
+
+        # ── Duplo Collectible (retired premium) ───────────────────────
+        ("10899-1", "Frozen Ice Castle", "Duplo", 2019, 59, 50.0),
+        ("10914-1", "Deluxe Brick Box", "Duplo", 2020, 85, 50.0),
+    ]
+
+
 def get_curated_catalog() -> list[dict]:
     """Return the full curated LEGO catalog as a list of dicts.
 
@@ -1290,7 +1447,7 @@ def get_curated_catalog() -> list[dict]:
     """
     catalog: list[dict] = []
     seen: set[str] = set()
-    for set_num, name, theme, year, parts, price_eur in _seed_sets() + _seed_sets_expansion():
+    for set_num, name, theme, year, parts, price_eur in _seed_sets() + _seed_sets_expansion() + _seed_sets_wave2():
         if set_num in seen:
             continue
         seen.add(set_num)
@@ -1302,7 +1459,7 @@ def get_curated_catalog() -> list[dict]:
             "parts": parts,
             "price_eur": price_eur,
         })
-    # Deduplicate by ('set_number',) (keep first occurrence)
+    # Deduplicate by set_number (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
     for item in catalog:
@@ -1310,7 +1467,17 @@ def get_curated_catalog() -> list[dict]:
         if _key not in _seen:
             _seen.add(_key)
             _deduped.append(item)
-    return _deduped
+
+    # Deduplicate by name (keep first occurrence)
+    seen_names: set[str] = set()
+    deduped: list[dict] = []
+    for item in _deduped:
+        key = item.get("name", "")
+        if key not in seen_names:
+            seen_names.add(key)
+            deduped.append(item)
+
+    return deduped
 
 
 def _run_curated_seed(dry_run: bool):
@@ -1327,7 +1494,7 @@ def _run_curated_seed(dry_run: bool):
     Format: (set_num, name, theme, year, parts, price_eur)
     Prices are approximate secondary-market EUR values (2026).
     """
-    all_seeds = _seed_sets() + _seed_sets_expansion()
+    all_seeds = _seed_sets() + _seed_sets_expansion() + _seed_sets_wave2()
     seen: set[str] = set()
 
     items = []

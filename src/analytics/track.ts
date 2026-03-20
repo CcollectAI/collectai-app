@@ -61,7 +61,8 @@ type QuickScanEnhancementEvent =
   | { name: 'multi_item_detected'; properties: { item_count?: number } }
   | { name: 'comparison_scan_completed'; properties: { categories?: string[] } }
   | { name: 'scan_condition_selected'; properties: { condition: string } }
-  | { name: 'scan_correction_applied'; properties: { field: string } };
+  | { name: 'scan_correction_applied'; properties: { field: string } }
+  | { name: 'scan_result_shared'; properties: { method: 'image' | 'text'; category?: string } };
 
 type ProfileEvent =
   | { name: 'profile_viewed'; properties: { userId: string } };

@@ -1249,6 +1249,9 @@ def get_curated_catalog() -> list[dict]:
     # ── Batch: Saturn, Neo Geo AES, TG-16, Jaguar, 3DO, CIB variants (55 items) ──
     items += _additional_retro_2025_expansion()
 
+    # ── Wave 2: More sealed, CIB, console variants, handheld, Dreamcast, PS1/PS2 ──
+    items += _wave2_retro_expansion()
+
     # Deduplicate by ('platform', 'name') (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1257,7 +1260,270 @@ def get_curated_catalog() -> list[dict]:
         if _key not in _seen:
             _seen.add(_key)
             _deduped.append(item)
-    return _deduped
+
+    # Deduplicate by name (keep first occurrence)
+    seen_names: set[str] = set()
+    deduped: list[dict] = []
+    for item in _deduped:
+        key = item.get("name", "")
+        if key not in seen_names:
+            seen_names.add(key)
+            deduped.append(item)
+
+    return deduped
+
+
+def _wave2_retro_expansion() -> list[dict]:
+    """Wave 2 — ~125 items: sealed grails, CIB RPGs, console variants,
+    handheld games, Dreamcast, more PS1/PS2, arcade PCBs."""
+    items = []
+
+    # ── N64 Sealed Grails ──────────────────────────────────────────
+    n64_sealed = [
+        ("N64", "Super Mario 64 (Sealed)", 1996, 500, 2000, 15000, "Grail"),
+        ("N64", "The Legend of Zelda: Ocarina of Time (Sealed)", 1998, 400, 1500, 12000, "Grail"),
+        ("N64", "GoldenEye 007 (Sealed)", 1997, 300, 1000, 8000, "Grail"),
+        ("N64", "Mario Kart 64 (Sealed)", 1997, 250, 800, 6000, "Rare"),
+        ("N64", "Super Smash Bros. (Sealed)", 1999, 300, 1000, 7000, "Rare"),
+        ("N64", "Conker's Bad Fur Day (Sealed)", 2001, 500, 1500, 10000, "Grail"),
+        ("N64", "Paper Mario (Sealed)", 2001, 300, 800, 5000, "Rare"),
+        ("N64", "Banjo-Kazooie (Sealed)", 1998, 200, 600, 4000, "Rare"),
+    ]
+
+    # ── SNES Sealed Grails ─────────────────────────────────────────
+    snes_sealed = [
+        ("SNES", "Earthbound (Sealed, Big Box)", 1995, 800, 3000, 20000, "Grail"),
+        ("SNES", "Chrono Trigger (Sealed)", 1995, 600, 2000, 15000, "Grail"),
+        ("SNES", "Final Fantasy III (Sealed)", 1994, 400, 1200, 8000, "Grail"),
+        ("SNES", "Secret of Mana (Sealed)", 1993, 300, 800, 5000, "Rare"),
+        ("SNES", "Mega Man X (Sealed)", 1994, 300, 800, 5000, "Rare"),
+        ("SNES", "Super Metroid (Sealed)", 1994, 400, 1500, 10000, "Grail"),
+        ("SNES", "Contra III: The Alien Wars (Sealed)", 1992, 200, 600, 4000, "Rare"),
+        ("SNES", "Donkey Kong Country 2 (Sealed)", 1995, 150, 400, 3000, "Rare"),
+    ]
+
+    # ── CIB RPG Grails ─────────────────────────────────────────────
+    cib_rpgs = [
+        ("SNES", "Earthbound (CIB with Guide)", 1995, 500, 2000, 0, "Grail"),
+        ("SNES", "Chrono Trigger (CIB)", 1995, 300, 800, 0, "Rare"),
+        ("SNES", "Final Fantasy II (CIB with Map)", 1991, 150, 400, 0, "Uncommon"),
+        ("SNES", "Breath of Fire II (CIB)", 1995, 100, 280, 0, "Uncommon"),
+        ("N64", "The Legend of Zelda: Majora's Mask (CIB Collector's Edition)", 2000, 200, 500, 0, "Rare"),
+        ("N64", "Ogre Battle 64 (CIB)", 2000, 150, 350, 0, "Uncommon"),
+        ("N64", "Harvest Moon 64 (CIB)", 1999, 150, 400, 0, "Uncommon"),
+    ]
+
+    # ── Console Variants ───────────────────────────────────────────
+    console_variants = [
+        ("N64", "Pikachu N64 Console (CIB)", 2000, 300, 600, 1500, "Rare"),
+        ("N64", "Funtastic Ice Blue N64 Console (CIB)", 1999, 200, 450, 1000, "Rare"),
+        ("N64", "Funtastic Grape Purple N64 Console (CIB)", 1999, 200, 400, 900, "Rare"),
+        ("N64", "Funtastic Fire Orange N64 Console (CIB)", 1999, 180, 380, 850, "Uncommon"),
+        ("Xbox", "Halo Edition Xbox Console (CIB)", 2002, 200, 500, 1200, "Rare"),
+        ("Xbox", "Halo 3 Edition Xbox 360 Console (CIB)", 2007, 150, 350, 800, "Uncommon"),
+        ("GameCube", "Panasonic Q Console (CIB)", 2001, 500, 1200, 3000, "Grail"),
+        ("GameCube", "Char's Customized GameCube (CIB, Japan)", 2002, 400, 900, 2000, "Rare"),
+        ("PlayStation", "PSone LCD Screen Bundle (CIB)", 2000, 100, 250, 600, "Uncommon"),
+        ("Game Boy", "Game Boy Light (Silver, CIB, Japan)", 1998, 200, 500, 1200, "Rare"),
+        ("Game Boy", "Game Boy Micro (Famicom Edition, CIB)", 2005, 150, 400, 1000, "Rare"),
+    ]
+
+    # ── Game Boy Color / GBA Games ─────────────────────────────────
+    handheld_games = [
+        ("Game Boy Color", "Pokemon Crystal (CIB)", 2001, 80, 250, 800, "Uncommon"),
+        ("Game Boy Color", "The Legend of Zelda: Oracle of Ages (CIB)", 2001, 60, 150, 500, "Uncommon"),
+        ("Game Boy Color", "The Legend of Zelda: Oracle of Seasons (CIB)", 2001, 60, 150, 500, "Uncommon"),
+        ("Game Boy Color", "Shantae (Loose)", 2002, 400, 1000, 3000, "Grail"),
+        ("Game Boy Color", "Metal Gear Solid (CIB)", 2000, 50, 120, 400, "Uncommon"),
+        ("Game Boy Color", "Dragon Warrior III (CIB)", 2001, 80, 200, 600, "Uncommon"),
+        ("GBA", "Pokemon FireRed (CIB)", 2004, 60, 180, 500, "Uncommon"),
+        ("GBA", "Pokemon Emerald (CIB)", 2005, 100, 300, 800, "Rare"),
+        ("GBA", "The Legend of Zelda: The Minish Cap (CIB)", 2005, 80, 200, 600, "Uncommon"),
+        ("GBA", "Fire Emblem (CIB)", 2003, 80, 200, 600, "Uncommon"),
+        ("GBA", "Fire Emblem: The Sacred Stones (CIB)", 2005, 60, 150, 450, "Uncommon"),
+        ("GBA", "Castlevania: Aria of Sorrow (CIB)", 2003, 80, 250, 700, "Rare"),
+        ("GBA", "Metroid Fusion (CIB)", 2002, 50, 120, 350, "Uncommon"),
+        ("GBA", "Mega Man Zero Collection (CIB)", 2004, 40, 100, 300, "Common"),
+        ("GBA", "Mother 3 (CIB, Japan)", 2006, 60, 150, 400, "Uncommon"),
+    ]
+
+    # ── Dreamcast Games ────────────────────────────────────────────
+    dreamcast_games = [
+        ("Dreamcast", "Shenmue (CIB)", 2000, 30, 60, 200, "Common"),
+        ("Dreamcast", "Shenmue II (CIB)", 2001, 40, 80, 250, "Common"),
+        ("Dreamcast", "Sonic Adventure (CIB)", 1999, 25, 50, 150, "Common"),
+        ("Dreamcast", "Jet Set Radio (CIB)", 2000, 40, 80, 250, "Common"),
+        ("Dreamcast", "Crazy Taxi (CIB)", 2000, 15, 30, 100, "Common"),
+        ("Dreamcast", "Power Stone 2 (CIB)", 2000, 80, 200, 500, "Rare"),
+        ("Dreamcast", "Skies of Arcadia (CIB)", 2000, 100, 250, 600, "Rare"),
+        ("Dreamcast", "Marvel vs Capcom 2 (CIB)", 2000, 150, 350, 800, "Rare"),
+        ("Dreamcast", "Ikaruga (CIB)", 2002, 80, 200, 500, "Rare"),
+        ("Dreamcast", "Giga Wing 2 (CIB)", 2001, 100, 250, 600, "Rare"),
+        ("Dreamcast", "Bangai-O (CIB)", 2000, 120, 280, 700, "Rare"),
+        ("Dreamcast", "Project Justice (CIB)", 2001, 100, 250, 600, "Rare"),
+    ]
+
+    # ── PS1 RPGs ───────────────────────────────────────────────────
+    ps1_games = [
+        ("PS1", "Final Fantasy VII (CIB, Black Label)", 1997, 40, 100, 400, "Uncommon"),
+        ("PS1", "Final Fantasy Tactics (CIB)", 1998, 30, 80, 300, "Common"),
+        ("PS1", "Suikoden II (CIB)", 1999, 200, 500, 1200, "Grail"),
+        ("PS1", "Vagrant Story (CIB)", 2000, 50, 120, 350, "Uncommon"),
+        ("PS1", "Xenogears (CIB)", 1998, 60, 150, 500, "Uncommon"),
+        ("PS1", "Parasite Eve (CIB)", 1998, 40, 100, 300, "Uncommon"),
+        ("PS1", "Legend of Mana (CIB)", 2000, 50, 120, 400, "Uncommon"),
+        ("PS1", "Brave Fencer Musashi (CIB)", 1998, 40, 100, 300, "Uncommon"),
+        ("PS1", "Star Ocean: The Second Story (CIB)", 1999, 40, 100, 300, "Uncommon"),
+        ("PS1", "Tail Concerto (CIB)", 1999, 100, 250, 600, "Rare"),
+    ]
+
+    # ── PS2 RPGs ───────────────────────────────────────────────────
+    ps2_games = [
+        ("PS2", "Persona 3 FES (CIB)", 2008, 40, 80, 200, "Uncommon"),
+        ("PS2", "Persona 4 (CIB)", 2008, 30, 60, 150, "Common"),
+        ("PS2", ".hack//Quarantine (CIB)", 2003, 150, 350, 800, "Rare"),
+        ("PS2", ".hack//Mutation (CIB)", 2003, 30, 60, 150, "Common"),
+        ("PS2", "Xenosaga Episode III (CIB)", 2006, 80, 200, 500, "Rare"),
+        ("PS2", "Rule of Rose (CIB)", 2006, 300, 700, 1500, "Grail"),
+        ("PS2", "Haunting Ground (CIB)", 2005, 150, 400, 900, "Rare"),
+        ("PS2", "Kuon (CIB)", 2004, 200, 500, 1200, "Grail"),
+        ("PS2", "Shadow Hearts: Covenant (CIB)", 2004, 40, 80, 200, "Uncommon"),
+        ("PS2", "Odin Sphere (CIB)", 2007, 25, 50, 120, "Common"),
+    ]
+
+    # ── Arcade PCBs ────────────────────────────────────────────────
+    arcade_pcbs = [
+        ("Arcade", "CPS2 Street Fighter III: 3rd Strike PCB", 1999, 500, 0, 0, "Rare"),
+        ("Arcade", "CPS2 Super Street Fighter II Turbo PCB", 1994, 300, 0, 0, "Uncommon"),
+        ("Arcade", "MVS Metal Slug 3 Cart", 2000, 400, 0, 0, "Rare"),
+        ("Arcade", "MVS Garou: Mark of the Wolves Cart", 1999, 500, 0, 0, "Rare"),
+        ("Arcade", "Naomi Ikaruga GD-ROM", 2002, 300, 0, 0, "Rare"),
+        ("Arcade", "CPS3 JoJo's Bizarre Adventure PCB", 1999, 400, 0, 0, "Rare"),
+        ("Arcade", "Sega ST-V Radiant Silvergun Cart", 1998, 600, 0, 0, "Grail"),
+        ("Arcade", "CPS2 Vampire Savior PCB", 1997, 350, 0, 0, "Uncommon"),
+    ]
+
+    # ── More Neo Geo AES ───────────────────────────────────────────
+    neogeo_extra = [
+        ("Neo Geo AES", "Pulstar", 1995, 600, 1200, 3000, "Grail"),
+        ("Neo Geo AES", "Matrimelee", 2003, 800, 1500, 3500, "Grail"),
+        ("Neo Geo AES", "Rage of the Dragons", 2002, 400, 800, 2000, "Rare"),
+        ("Neo Geo AES", "Shock Troopers 2nd Squad", 1998, 350, 700, 1800, "Rare"),
+        ("Neo Geo AES", "Windjammers", 1994, 300, 600, 1500, "Rare"),
+    ]
+
+    # ── More Saturn ────────────────────────────────────────────────
+    saturn_extra = [
+        ("Saturn", "Albert Odyssey: Legend of Eldean", 1997, 150, 350, 800, "Rare"),
+        ("Saturn", "Magic Knight Rayearth", 1998, 200, 500, 1200, "Rare"),
+        ("Saturn", "Astal", 1995, 60, 140, 400, "Uncommon"),
+        ("Saturn", "Fighters Megamix", 1997, 20, 50, 150, "Common"),
+    ]
+
+    # ── More Dreamcast (additional) ────────────────────────────────
+    dreamcast_extra = [
+        ("Dreamcast", "Street Fighter III: 3rd Strike (CIB)", 2000, 50, 120, 300, "Uncommon"),
+        ("Dreamcast", "Grandia II (CIB)", 2000, 25, 50, 150, "Common"),
+        ("Dreamcast", "Soul Calibur (CIB)", 1999, 15, 30, 100, "Common"),
+        ("Dreamcast", "Rez (CIB)", 2001, 60, 150, 400, "Uncommon"),
+        ("Dreamcast", "Seaman (CIB with Mic)", 2000, 30, 70, 200, "Uncommon"),
+        ("Dreamcast", "Tech Romancer (CIB)", 2000, 80, 200, 500, "Rare"),
+    ]
+
+    # ── More PS1 (additional) ──────────────────────────────────────
+    ps1_extra = [
+        ("PS1", "Castlevania: Symphony of the Night (CIB)", 1997, 60, 150, 500, "Uncommon"),
+        ("PS1", "Mega Man Legends 2 (CIB)", 2000, 80, 200, 600, "Rare"),
+        ("PS1", "Tomba! (CIB)", 1998, 100, 250, 700, "Rare"),
+        ("PS1", "Tomba! 2 (CIB)", 1999, 80, 200, 600, "Rare"),
+        ("PS1", "Klonoa: Door to Phantomile (CIB)", 1998, 150, 400, 1000, "Rare"),
+        ("PS1", "Valkyrie Profile (CIB)", 2000, 80, 200, 600, "Rare"),
+        ("PS1", "Alundra (CIB)", 1998, 40, 100, 300, "Uncommon"),
+        ("PS1", "Wild Arms 2 (CIB)", 2000, 30, 80, 250, "Common"),
+    ]
+
+    # ── More PS2 (additional) ──────────────────────────────────────
+    ps2_extra = [
+        ("PS2", "Ico (CIB)", 2001, 15, 30, 80, "Common"),
+        ("PS2", "Shadow of the Colossus (CIB)", 2005, 15, 30, 80, "Common"),
+        ("PS2", "Suikoden V (CIB)", 2006, 60, 150, 400, "Rare"),
+        ("PS2", "Radiata Stories (CIB)", 2005, 30, 70, 200, "Uncommon"),
+        ("PS2", "Ar Tonelico II (CIB)", 2009, 50, 120, 300, "Rare"),
+        ("PS2", "Gitaroo Man (CIB)", 2002, 60, 150, 400, "Rare"),
+    ]
+
+    # ── Game Boy (original) ────────────────────────────────────────
+    gb_games = [
+        ("Game Boy", "Pokemon Red (CIB)", 1996, 50, 200, 800, "Rare"),
+        ("Game Boy", "Pokemon Blue (CIB)", 1996, 50, 200, 800, "Rare"),
+        ("Game Boy", "Pokemon Yellow (CIB)", 1998, 40, 150, 600, "Uncommon"),
+        ("Game Boy", "The Legend of Zelda: Link's Awakening (CIB)", 1993, 30, 80, 300, "Uncommon"),
+        ("Game Boy", "Tetris (CIB)", 1989, 15, 40, 150, "Common"),
+        ("Game Boy", "Super Mario Land 2 (CIB)", 1992, 20, 50, 200, "Common"),
+        ("Game Boy", "Kirby's Dream Land (CIB)", 1992, 15, 40, 150, "Common"),
+        ("Game Boy", "Metroid II: Return of Samus (CIB)", 1991, 25, 60, 200, "Common"),
+    ]
+
+    # ── NES Additional ──────────────────────────────────────────────
+    nes_extra = [
+        ("NES", "Little Samson (Loose)", 1992, 800, 2000, 5000, "Grail"),
+        ("NES", "Stadium Events (Loose)", 1987, 10000, 30000, 100000, "Grail"),
+        ("NES", "Bonk's Adventure (CIB)", 1994, 300, 700, 1500, "Rare"),
+        ("NES", "Panic Restaurant (Loose)", 1992, 400, 1000, 2500, "Grail"),
+        ("NES", "Snow Brothers (CIB)", 1991, 300, 800, 2000, "Rare"),
+        ("NES", "Flintstones: Surprise at Dinosaur Peak (Loose)", 1994, 600, 1500, 4000, "Grail"),
+    ]
+
+    # ── DS / 3DS Collectible ─────────────────────────────────────
+    ds_games = [
+        ("DS", "Pokemon HeartGold (CIB with Pokewalker)", 2010, 80, 250, 600, "Rare"),
+        ("DS", "Pokemon SoulSilver (CIB with Pokewalker)", 2010, 80, 250, 600, "Rare"),
+        ("DS", "Chrono Trigger DS (CIB)", 2008, 40, 100, 250, "Uncommon"),
+        ("DS", "Dragon Quest IX (CIB)", 2010, 20, 50, 120, "Common"),
+        ("3DS", "Pokemon Ultra Sun (CIB)", 2017, 30, 60, 150, "Common"),
+    ]
+
+    all_games = (n64_sealed + snes_sealed + cib_rpgs + handheld_games
+                 + dreamcast_games + ps1_games + ps2_games + neogeo_extra + saturn_extra
+                 + dreamcast_extra + ps1_extra + ps2_extra + gb_games + nes_extra + ds_games)
+    for platform, title, year, loose, cib, sealed, rarity in all_games:
+        items.append({
+            "type": "game",
+            "platform": platform,
+            "name": title,
+            "year": year,
+            "price_loose": loose,
+            "price_cib": cib,
+            "price_sealed": sealed,
+            "rarity": rarity,
+        })
+
+    for platform, title, year, loose, cib, sealed, rarity in console_variants:
+        items.append({
+            "type": "console",
+            "platform": platform,
+            "maker": platform.split()[0] if platform else "",
+            "name": title,
+            "year": year,
+            "price_loose": loose,
+            "price_cib": cib,
+            "price_sealed": sealed,
+            "rarity": rarity,
+        })
+
+    for platform, title, year, price, _, _, rarity in arcade_pcbs:
+        items.append({
+            "type": "game",
+            "platform": platform,
+            "name": title,
+            "year": year,
+            "price_loose": price,
+            "price_cib": 0,
+            "price_sealed": 0,
+            "rarity": rarity,
+        })
+
+    return items
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

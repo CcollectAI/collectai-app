@@ -1227,6 +1227,205 @@ def _expanded_variant_covers_graded_modern() -> list[dict]:
 
         # ── 95. Invincible #1 Signed ─────────────────────────────────────────
         ("Image", "Invincible", "Invincible #1 Signed by Ryan Ottley CGC SS 9.8", "Signed", "grail", 9000.0),
+
+        # ── 96. ASM Key Issues — Additional ────────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #129 (1st Punisher) CGC 9.4", "CGC 9.4", "grail", 10000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #129 (1st Punisher) CGC 9.0", "CGC 9.0", "grail", 6000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #129 (1st Punisher) CGC 8.0", "CGC 8.0", "grail", 3500.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #129 (1st Punisher) Raw VG", "Bronze Age Key", "grail", 1500.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #252 (1st Black Suit) CGC 9.8", "CGC 9.8", "grail", 3500.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #252 (1st Black Suit) CGC 9.4", "CGC 9.4", "grail", 800.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CGC 9.6", "CGC 9.6", "grail", 4500.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CGC 9.4", "CGC 9.4", "grail", 3000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) CGC 9.0", "CGC 9.0", "grail", 2000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #300 (1st Venom) Newsstand CGC 9.6", "CGC 9.6", "grail", 6000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #238 (1st Hobgoblin) CGC 9.6", "CGC 9.6", "grail", 1500.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #194 (1st Black Cat)", "Bronze Age Key", "grail", 800.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #50 (Spider-Man No More)", "Silver Age Key", "grail", 5000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #14 (1st Green Goblin)", "Silver Age Key", "grail", 15000.0),
+
+        # ── 97. Golden Age Keys — Additional ───────────────────────────────
+        ("DC", "Detective Comics", "Detective Comics #27 (1st Batman) CGC 2.0", "Golden Age Key", "grail", 400000.0),
+        ("DC", "Detective Comics", "Detective Comics #27 (1st Batman) CGC 4.0", "Golden Age Key", "grail", 600000.0),
+        ("DC", "Action Comics", "Action Comics #1 (1st Superman) CGC 1.0", "Golden Age Key", "grail", 500000.0),
+        ("Timely", "Marvel Comics", "Marvel Comics #1 (1939, 1st Human Torch & Namor)", "Golden Age Key", "grail", 400000.0),
+        ("Timely", "Captain America Comics", "Captain America Comics #1 (1941, 1st Cap)", "Golden Age Key", "grail", 300000.0),
+        ("DC", "Sensation Comics", "Sensation Comics #1 (1942, Wonder Woman)", "Golden Age Key", "grail", 80000.0),
+        ("Fawcett", "Whiz Comics", "Whiz Comics #2 (1940, 1st Captain Marvel/Shazam)", "Golden Age Key", "grail", 150000.0),
+
+        # ── 98. Modern Keys — Additional ───────────────────────────────────
+        ("Image", "Walking Dead", "Walking Dead #1 (2003, 1st Rick Grimes) CGC 9.8", "CGC 9.8", "grail", 8000.0),
+        ("Image", "Walking Dead", "Walking Dead #1 (2003, raw) High Grade", "Modern Key", "grail", 2500.0),
+        ("Image", "Walking Dead", "Walking Dead #100 (Negan's Lucille) CGC 9.8", "CGC 9.8", "high", 200.0),
+        ("Image", "Walking Dead", "Walking Dead #2 (1st Lori & Carl) CGC 9.8", "CGC 9.8", "grail", 1500.0),
+        ("Image", "Saga", "Saga #1 (2012, BKV/Fiona Staples, 1st print) CGC 9.8", "CGC 9.8", "grail", 1500.0),
+        ("Image", "Saga", "Saga #1 (2012) Raw NM", "Modern Key", "high", 400.0),
+        ("Image", "Invincible", "Invincible #1 (2003, Kirkman/Walker) CGC 9.8", "CGC 9.8", "grail", 10000.0),
+        ("Image", "Invincible", "Invincible #2 (2003, 1st Atom Eve cameo)", "Modern Key", "high", 200.0),
+        ("Image", "Invincible", "Invincible #7 (2003, 1st Atom Eve full)", "Modern Key", "high", 350.0),
+
+        # ── 99. Variant Covers — Todd McFarlane ────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #316 (1st Venom cover, McFarlane) CGC 9.8", "CGC 9.8", "grail", 2000.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #316 (1st Venom cover) Raw NM", "Modern Key", "high", 400.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #298 (1st McFarlane ASM) CGC 9.8", "CGC 9.8", "high", 400.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #299 (Venom cameo, McFarlane) CGC 9.8", "CGC 9.8", "high", 350.0),
+        ("Marvel", "Spider-Man", "Spider-Man #1 (1990, McFarlane, Gold Edition)", "Variant Cover", "high", 200.0),
+        ("Marvel", "Spider-Man", "Spider-Man #1 (1990, McFarlane, Platinum Edition)", "Variant Cover", "grail", 3000.0),
+        ("Marvel", "Spider-Man", "Spider-Man #1 (1990, McFarlane, Silver Edition)", "Variant Cover", "high", 150.0),
+
+        # ── 100. Variant Covers — Jim Lee ──────────────────────────────────
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee, Cover A Wolverine/Cyclops)", "Variant Cover", "mid", 80.0),
+        ("Marvel", "X-Men", "X-Men #1 (1991, Jim Lee, Gatefold Cover E)", "Variant Cover", "high", 150.0),
+        ("DC", "Batman", "Batman #608 (Hush, Jim Lee) 2nd Print Variant", "Variant Cover", "mid", 50.0),
+        ("DC", "Justice League", "Justice League #1 (2011, Jim Lee, Combo Pack)", "Variant Cover", "mid", 40.0),
+
+        # ── 101. Variant Covers — Artgerm ──────────────────────────────────
+        ("DC", "Action Comics", "Action Comics #1000 (2018, Artgerm Variant)", "Variant Cover", "high", 120.0),
+        ("DC", "Supergirl", "Supergirl #15 (Stanley 'Artgerm' Lau Variant)", "Variant Cover", "mid", 60.0),
+        ("DC", "Catwoman", "Catwoman #1 (2018, Artgerm Variant)", "Variant Cover", "mid", 50.0),
+        ("DC", "Batgirl", "Batgirl #23 (Artgerm Variant)", "Variant Cover", "mid", 40.0),
+        ("Marvel", "Captain Marvel", "Captain Marvel #1 (2019, Artgerm Variant)", "Variant Cover", "mid", 45.0),
+
+        # ── 102. Indie Classics — Bone ─────────────────────────────────────
+        ("Cartoon Books", "Bone", "Bone #1 (1991, Jeff Smith, 1st print) CGC 9.8", "CGC 9.8", "grail", 5000.0),
+        ("Cartoon Books", "Bone", "Bone #1 (1991, Jeff Smith, 1st print) CGC 9.4", "CGC 9.4", "grail", 3000.0),
+        ("Cartoon Books", "Bone", "Bone #1 (1991, Jeff Smith, 1st print) Raw NM", "Modern Key", "grail", 1500.0),
+        ("Scholastic", "Bone", "Bone One Volume Complete Edition", "TPB", "mid", 30.0),
+
+        # ── 103. Indie Classics — Hellboy ──────────────────────────────────
+        ("Dark Horse", "Hellboy", "Hellboy: Seed of Destruction #1 (1994, 1st Hellboy) CGC 9.8", "CGC 9.8", "grail", 2000.0),
+        ("Dark Horse", "Hellboy", "Hellboy: Seed of Destruction #1 (1994, raw NM)", "Modern Key", "grail", 500.0),
+        ("Dark Horse", "Hellboy", "Hellboy Library Edition vol 1 (HC)", "Omnibus", "high", 100.0),
+        ("Dark Horse", "Hellboy", "Hellboy Omnibus vol 1 (Seed of Destruction)", "Omnibus", "mid", 25.0),
+
+        # ── 104. Indie Classics — TMNT (Additional Grades) ─────────────────
+        ("Mirage", "TMNT", "TMNT #1 (1984, 2nd print, white cover)", "First Print", "high", 500.0),
+        ("Mirage", "TMNT", "TMNT #4 (1985, 2nd print, Fugitoid)", "First Print", "high", 150.0),
+        ("Mirage", "TMNT", "TMNT #1 (1984) CGC 9.8 White Pages", "CGC 9.8", "grail", 100000.0),
+        ("Mirage", "TMNT", "TMNT #1 (1984) CGC 9.2", "CGC 9.2", "grail", 25000.0),
+
+        # ── 105. Manga in English — First Prints ──────────────────────────
+        ("VIZ", "Akira", "Akira #1 (1988, English color edition, Epic Comics) CGC 9.8", "CGC 9.8", "grail", 1500.0),
+        ("VIZ", "Akira", "Akira #1 (1988, Epic Comics) Raw NM", "Modern Key", "high", 300.0),
+        ("VIZ", "Dragon Ball Z", "Dragon Ball Z #1 (1998, English, 1st print) CGC 9.8", "CGC 9.8", "high", 400.0),
+        ("VIZ", "Naruto", "Naruto vol 1 (English, 1st print, VIZ) Raw NM", "First Print", "high", 100.0),
+        ("Tokyopop", "Sailor Moon", "Sailor Moon #1 (1998, English, 1st print) CGC 9.8", "CGC 9.8", "grail", 800.0),
+
+        # ── 106. CGC Slabs — Grade Tier Spreads ───────────────────────────
+        ("DC", "Batman", "Batman #1 (1940) CGC 2.0", "CGC 2.0", "grail", 100000.0),
+        ("DC", "Batman", "Batman #1 (1940) CGC 4.0", "CGC 4.0", "grail", 250000.0),
+        ("DC", "Batman", "Batman #1 (1940) CGC 6.0", "CGC 6.0", "grail", 400000.0),
+        ("Marvel", "Amazing Fantasy", "Amazing Fantasy #15 CGC 4.0", "CGC 4.0", "grail", 50000.0),
+        ("Marvel", "Amazing Fantasy", "Amazing Fantasy #15 CGC 6.0", "CGC 6.0", "grail", 100000.0),
+        ("Marvel", "Amazing Fantasy", "Amazing Fantasy #15 CGC 8.0", "CGC 8.0", "grail", 250000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 CGC 9.8", "CGC 9.8", "grail", 50000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 CGC 9.4", "CGC 9.4", "grail", 15000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 CGC 9.0", "CGC 9.0", "grail", 10000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 CGC 6.0", "CGC 6.0", "grail", 4000.0),
+
+        # ── 107. Omnibus & Absolute Editions — Additional ──────────────────
+        ("DC", "Batman", "Batman by Grant Morrison Omnibus vol 1", "Omnibus", "high", 100.0),
+        ("DC", "Batman", "Absolute Dark Knight Returns (30th Anniversary)", "Absolute Edition", "grail", 500.0),
+        ("DC", "Superman", "All-Star Superman Absolute Edition", "Absolute Edition", "high", 150.0),
+        ("DC", "Sandman", "Absolute Sandman vol 1 (Gaiman, HC)", "Absolute Edition", "high", 200.0),
+        ("DC", "Sandman", "Absolute Sandman vol 2", "Absolute Edition", "high", 200.0),
+        ("Marvel", "Uncanny X-Men", "Uncanny X-Men Omnibus vol 1 (Claremont/Byrne)", "Omnibus", "high", 125.0),
+        ("Marvel", "Uncanny X-Men", "Uncanny X-Men Omnibus vol 2 (Claremont/Byrne)", "Omnibus", "high", 125.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man Omnibus vol 1 (Lee/Ditko)", "Omnibus", "high", 150.0),
+        ("Marvel", "Amazing Spider-Man", "Amazing Spider-Man Omnibus vol 3 (Death of Gwen Stacy)", "Omnibus", "high", 125.0),
+        ("Marvel", "Fantastic Four", "Fantastic Four Omnibus vol 1 (Lee/Kirby)", "Omnibus", "high", 125.0),
+        ("Image", "Invincible", "Invincible Compendium 1 (issues 1-47)", "Omnibus", "mid", 50.0),
+        ("Image", "Invincible", "Invincible Compendium 2 (issues 48-96)", "Omnibus", "mid", 50.0),
+        ("Image", "Invincible", "Invincible Compendium 3 (issues 97-144)", "Omnibus", "mid", 50.0),
+
+        # ── 108. Bronze Age Keys — Additional ─────────────────────────────
+        ("Marvel", "Avengers", "Avengers #57 (1st Vision)", "Silver Age Key", "grail", 3000.0),
+        ("Marvel", "Captain America", "Captain America #117 (1st Falcon)", "Silver Age Key", "grail", 2000.0),
+        ("DC", "Batman", "Batman #227 (Neal Adams, classic cover)", "Bronze Age Key", "grail", 2000.0),
+        ("Marvel", "Hero for Hire", "Hero for Hire #1 (1st Luke Cage)", "Bronze Age Key", "grail", 2500.0),
+        ("Marvel", "X-Men", "Uncanny X-Men #94 (New X-Men begin, 1975)", "Bronze Age Key", "grail", 3000.0),
+        ("Marvel", "X-Men", "Uncanny X-Men #101 (1st Phoenix)", "Bronze Age Key", "grail", 2000.0),
+        ("Marvel", "X-Men", "Uncanny X-Men #129 (1st Kitty Pryde & Emma Frost)", "Bronze Age Key", "grail", 1500.0),
+        ("Marvel", "X-Men", "Uncanny X-Men #141 (Days of Future Past pt 1)", "Bronze Age Key", "grail", 1200.0),
+        ("Marvel", "X-Men", "Uncanny X-Men #266 (1st Gambit)", "Modern Key", "grail", 800.0),
+        ("Marvel", "Daredevil", "Daredevil #168 (1st Elektra, Frank Miller)", "Bronze Age Key", "grail", 1500.0),
+
+        # ── 109. Convention Exclusives ─────────────────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #1 (2022, SDCC Exclusive J. Scott Campbell)", "Convention Exclusive", "high", 250.0),
+        ("DC", "Batman", "Batman #1 (2024, SDCC Exclusive Foil Variant)", "Convention Exclusive", "high", 200.0),
+        ("Image", "Spawn", "Spawn #1 (2024, SDCC Gold Foil Edition)", "Convention Exclusive", "high", 200.0),
+        ("Marvel", "X-Men", "X-Men #1 (2024, NYCC Exclusive Virgin Variant)", "Convention Exclusive", "high", 180.0),
+
+        # ── 110. Independent Publishers — Additional ───────────────────────
+        ("Dark Horse", "Sin City", "Sin City: The Hard Goodbye (1991, 1st print) CGC 9.8", "CGC 9.8", "grail", 1000.0),
+        ("Valiant", "Harbinger", "Harbinger #1 (1992, w/ coupon) CGC 9.8", "CGC 9.8", "high", 400.0),
+        ("Valiant", "X-O Manowar", "X-O Manowar #1 (2012, Venditti, 1st print)", "Modern Key", "mid", 30.0),
+        ("BOOM!", "Lumberjanes", "Lumberjanes #1 (2014, 1st print) CGC 9.8", "CGC 9.8", "high", 300.0),
+        ("IDW", "TMNT", "TMNT #1 (2011, IDW, Cover A)", "Modern Key", "mid", 50.0),
+        ("Dark Horse", "Usagi Yojimbo", "Usagi Yojimbo #1 (1987, Fantagraphics) CGC 9.6", "CGC 9.6", "grail", 800.0),
+        ("Vertigo", "Y: The Last Man", "Y: The Last Man Absolute Edition vol 1", "Absolute Edition", "high", 200.0),
+        ("Vertigo", "Preacher", "Preacher Absolute Edition vol 1", "Absolute Edition", "high", 200.0),
+
+        # ── 111. Newsstand vs Direct Edition ───────────────────────────────
+        ("Marvel", "New Mutants", "New Mutants #98 (1st Deadpool) Newsstand Edition", "Variant Cover", "grail", 2000.0),
+        ("Marvel", "Incredible Hulk", "Incredible Hulk #181 Newsstand / Mark Jewelers", "Variant Cover", "grail", 15000.0),
+
+        # ── 112. Copper Age Keys ───────────────────────────────────────────
+        ("DC", "Batman", "Batman: The Dark Knight Returns #1 (1986, Frank Miller) CGC 9.8", "CGC 9.8", "grail", 2000.0),
+        ("DC", "Batman", "Batman: The Dark Knight Returns #1 (1986) Raw NM", "Modern Key", "high", 400.0),
+        ("DC", "Watchmen", "Watchmen #1 (1986, Alan Moore/Dave Gibbons) CGC 9.8", "CGC 9.8", "grail", 1500.0),
+        ("DC", "Watchmen", "Watchmen #1 (1986) Raw NM", "Modern Key", "high", 200.0),
+        ("DC", "Crisis", "Crisis on Infinite Earths #1 (1985, Marv Wolfman/George Perez)", "Modern Key", "high", 150.0),
+        ("Marvel", "Secret Wars", "Marvel Super Heroes Secret Wars #1 (1984) CGC 9.8", "CGC 9.8", "high", 400.0),
+        ("Marvel", "Wolverine", "Wolverine #1 (1982, Frank Miller Limited Series) CGC 9.8", "CGC 9.8", "grail", 2500.0),
+
+        # ── 113. Modern Marvel Keys — Additional ──────────────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #569 (1st Anti-Venom) CGC 9.8", "CGC 9.8", "high", 200.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #648 (Big Time, new suit) CGC 9.8", "CGC 9.8", "mid", 80.0),
+        ("Marvel", "Amazing Spider-Man", "ASM #700 (Death of Spider-Man) CGC 9.8", "CGC 9.8", "high", 200.0),
+        ("Marvel", "Venom", "Venom #1 (2018, Donny Cates, Cover A)", "Modern Key", "mid", 50.0),
+        ("Marvel", "Venom", "Venom: Lethal Protector #1 (1993) CGC 9.8", "CGC 9.8", "high", 350.0),
+        ("Marvel", "Venom", "Venom: Lethal Protector #1 (1993, Gold Edition)", "Variant Cover", "high", 200.0),
+        ("Marvel", "Carnage", "Amazing Spider-Man #362 (1st Carnage cover) CGC 9.8", "CGC 9.8", "grail", 600.0),
+        ("Marvel", "X-Men", "Uncanny X-Men #244 (1st Jubilee)", "Modern Key", "high", 150.0),
+        ("Marvel", "X-Men", "Uncanny X-Men #268 (Jim Lee Captain America cover)", "Modern Key", "high", 200.0),
+        ("Marvel", "Daredevil", "Daredevil #1 (2011, Mark Waid) CGC 9.8", "CGC 9.8", "high", 120.0),
+
+        # ── 114. DC Modern Keys — Additional ──────────────────────────────
+        ("DC", "Batman", "Batman #497 (Bane Breaks Batman, Knightfall)", "Modern Key", "high", 150.0),
+        ("DC", "Batman", "Batman #655 (1st Damian Wayne)", "Modern Key", "high", 200.0),
+        ("DC", "Harley Quinn", "Harley Quinn #1 (2000, ongoing series) CGC 9.8", "CGC 9.8", "high", 400.0),
+        ("DC", "Flash", "Flash #139 (1st Reverse-Flash, Eobard Thawne)", "Silver Age Key", "grail", 5000.0),
+        ("DC", "New Teen Titans", "New Teen Titans #2 (1st Deathstroke)", "Modern Key", "grail", 800.0),
+        ("DC", "Batman", "Batman: No Man's Land #1 (1999, earthquake storyline)", "Modern Key", "mid", 30.0),
+        ("DC", "Superman", "Death of Superman TPB (sealed, 1992)", "TPB", "mid", 50.0),
+        ("DC", "Superman", "Superman #75 (Death of Superman, poly-bagged) CGC 9.8", "CGC 9.8", "high", 150.0),
+
+        # ── 115. Image/Indie — Additional Modern Keys ─────────────────────
+        ("Image", "The Wicked + The Divine", "The Wicked + The Divine #1 (2014) CGC 9.8", "CGC 9.8", "high", 200.0),
+        ("Image", "Chew", "Chew #1 (2009, John Layman/Rob Guillory) CGC 9.8", "CGC 9.8", "grail", 1500.0),
+        ("Image", "East of West", "East of West #1 (2013, Hickman) CGC 9.8", "CGC 9.8", "high", 200.0),
+        ("Dark Horse", "Hellboy", "Hellboy in Hell #1 (2012, Mike Mignola) CGC 9.8", "CGC 9.8", "high", 150.0),
+        ("IDW", "TMNT", "TMNT: The Last Ronin #1 (2020, 1st print) CGC 9.8", "CGC 9.8", "grail", 500.0),
+        ("IDW", "TMNT", "TMNT: The Last Ronin #1 (2020, raw NM)", "Modern Key", "high", 150.0),
+        ("BOOM!", "Power Rangers", "Mighty Morphin Power Rangers #0 (2016) CGC 9.8", "CGC 9.8", "high", 200.0),
+
+        # ── 116. Variant Cover Ratios — Modern Speculation ─────────────────
+        ("Marvel", "Amazing Spider-Man", "ASM #1 (2022, 1:200 Virgin Variant)", "Variant Cover", "grail", 1000.0),
+        ("Marvel", "X-Men", "X-Men #1 (2024, 1:100 Virgin Variant)", "Variant Cover", "grail", 500.0),
+        ("DC", "Batman", "Batman #125 (2022, 1:100 Chip Kidd Virgin)", "Variant Cover", "grail", 800.0),
+        ("Marvel", "Wolverine", "Wolverine #1 (2020, 1:500 Virgin Variant)", "Variant Cover", "grail", 1500.0),
+        ("Marvel", "Thor", "Thor #1 (2020, 1:200 Virgin Variant)", "Variant Cover", "grail", 600.0),
+
+        # ── 117. Additional Affordable Modern Keys ─────────────────────────
+        ("Marvel", "Miles Morales", "Miles Morales: Spider-Man #1 (2018, Ahmed/Garron)", "Modern Key", "mid", 40.0),
+        ("Marvel", "Black Panther", "Black Panther #1 (2016, Ta-Nehisi Coates) CGC 9.8", "CGC 9.8", "high", 150.0),
+        ("Marvel", "X-Men", "X-Men #4 (2020, 1st Horsemen of Apocalypse)", "Modern Key", "mid", 25.0),
+        ("Image", "Nocterra", "Nocterra #1 (2021, Scott Snyder) CGC 9.8", "CGC 9.8", "mid", 80.0),
+        ("Image", "Undiscovered Country", "Undiscovered Country #1 (2019, Snyder/Soule) CGC 9.8", "CGC 9.8", "high", 100.0),
+        ("AfterShock", "Animosity", "Animosity #1 (2016, 1st print) CGC 9.8", "CGC 9.8", "high", 200.0),
+        ("BOOM!", "Once & Future", "Once & Future #1 (2019, Gillen) CGC 9.8", "CGC 9.8", "high", 150.0),
+        ("DC", "Nightwing", "Nightwing #1 (2016, Tim Seeley/Javier Fernandez)", "Modern Key", "mid", 30.0),
     ]
     catalog = []
     for publisher, series, name, issue_type, rarity_tier, price_eur in comics:

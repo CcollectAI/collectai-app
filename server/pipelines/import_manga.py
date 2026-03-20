@@ -936,6 +936,103 @@ def get_curated_oop_manga() -> list[dict]:
         ("Haikyuu!! Box Set 4 (Vols 31-45)", "VIZ", 15, "In Print", 10, 150, "Standard"),
         ("Kaguya-sama: Love Is War Box Set", "VIZ", 28, "In Print", 10, 280, "Standard"),
         ("Jujutsu Kaisen Box Set 1 (Vols 1-8)", "VIZ", 8, "In Print", 10, 80, "Standard"),
+
+        # ── Expansion Round 2 — ~100 new items ─────────────────────────────
+
+        # ── Slam Dunk OOP & Variants ────────────────────────────────────────
+        ("Slam Dunk (Singles) Complete 1-31", "VIZ", 31, "OOP", 22, 680, "High"),
+        ("Slam Dunk (Deluxe Kanzenban JP)", "Shueisha", 24, "In Print", 35, 840, "Mid"),
+        ("Slam Dunk New Edition (JP Shinsoban)", "Shueisha", 20, "In Print", 15, 300, "Standard"),
+
+        # ── Monster OOP Singles ─────────────────────────────────────────────
+        ("Monster (Singles 1st Ed.)", "VIZ", 18, "OOP", 15, 270, "Mid"),
+
+        # ── Vagabond Extended ───────────────────────────────────────────────
+        ("Vagabond (Singles) Vol 37 Final Issue", "VIZ", 1, "OOP", 85, 85, "High"),
+
+        # ── Box Sets — Unique Entries ───────────────────────────────────────
+        ("My Hero Academia Box Set 2 (Vols 21-40)", "VIZ", 20, "In Print", 10, 200, "Standard"),
+        ("Haikyuu!! Complete Box Set (Vols 1-45)", "VIZ", 45, "In Print", 10, 450, "Standard"),
+        ("One Punch Man Box Set (Vols 1-23)", "VIZ", 23, "In Print", 10, 230, "Standard"),
+        ("World Trigger Box Set (Vols 1-23)", "VIZ", 23, "In Print", 10, 230, "Standard"),
+        ("The Quintessential Quintuplets Box Set", "Kodansha", 14, "In Print", 11, 154, "Standard"),
+        ("Black Clover Box Set 2 (Vols 18-35)", "VIZ", 18, "In Print", 10, 180, "Standard"),
+        ("Promised Neverland Complete Box Set", "VIZ", 20, "In Print", 8, 160, "Standard"),
+
+        # ── First Editions / First English Printings ────────────────────────
+        ("Akira vol 1 (1st English Edition, Epic/Marvel)", "Epic/Marvel", 1, "OOP", 80, 80, "High"),
+        ("Dragon Ball vol 1 (1st English Print 2003)", "VIZ", 1, "OOP", 45, 45, "Mid"),
+        ("Naruto vol 1 (1st English Print 2003)", "VIZ", 1, "OOP", 40, 40, "Mid"),
+        ("One Piece vol 1 (1st English Print 2003)", "VIZ", 1, "OOP", 50, 50, "High"),
+        ("Demon Slayer vol 1 (1st English Print)", "VIZ", 1, "OOP", 35, 35, "Mid"),
+
+        # ── Variant Covers & Limited Editions ───────────────────────────────
+        ("Chainsaw Man vol 1 (Viz Exclusive Foil Cover)", "VIZ", 1, "In Print", 40, 40, "Mid"),
+        ("Jujutsu Kaisen vol 0 (Movie Tie-In Cover)", "VIZ", 1, "In Print", 15, 15, "Standard"),
+        ("One Piece Color Walk Compendium: East Blue to Skypiea", "VIZ", 1, "In Print", 35, 35, "Standard"),
+        ("One Piece Color Walk Compendium: Water Seven to Paramount War", "VIZ", 1, "In Print", 35, 35, "Standard"),
+
+        # ── Japanese Tankobon Rarities (Unique Entries) ─────────────────────
+        ("Dragon Ball vol 1 (1st Print JP Tankobon, 1985)", "Shueisha", 1, "OOP", 200, 200, "High"),
+        ("Naruto vol 1 (1st Print JP Tankobon, 1999)", "Shueisha", 1, "OOP", 100, 100, "High"),
+        ("One Piece vol 1 (1st Print JP Tankobon, 1997)", "Shueisha", 1, "OOP", 300, 300, "High"),
+        ("JoJo's Bizarre Adventure Part 1 vol 1 (1st Print JP, 1987)", "Shueisha", 1, "OOP", 120, 120, "High"),
+        ("Yu Yu Hakusho vol 1 (1st Print JP Tankobon)", "Shueisha", 1, "OOP", 80, 80, "Mid"),
+        ("Rurouni Kenshin vol 1 (1st Print JP Tankobon)", "Shueisha", 1, "OOP", 70, 70, "Mid"),
+        ("Slam Dunk vol 31 Final (1st Print JP Tankobon)", "Shueisha", 1, "OOP", 100, 100, "High"),
+        ("Captain Tsubasa vol 1 (1st Print JP Tankobon)", "Shueisha", 1, "OOP", 90, 90, "High"),
+        ("Fist of the North Star vol 1 (1st Print JP Tankobon)", "Shueisha", 1, "OOP", 120, 120, "High"),
+        ("Dr. Slump vol 1 (1st Print JP Tankobon)", "Shueisha", 1, "OOP", 150, 150, "High"),
+
+        # ── Light Novel Collector's Editions ────────────────────────────────
+        ("Sword Art Online (Light Novel) vol 1 1st Print", "Yen Press", 1, "OOP", 20, 20, "Mid"),
+        ("Spice and Wolf Anniversary Collector's Edition", "Yen Press", 1, "OOP", 50, 50, "High"),
+        ("Monogatari Season 1 Box Set (Light Novel)", "Vertical", 6, "In Print", 14, 84, "Standard"),
+        ("Monogatari Season 2 Box Set (Light Novel)", "Vertical", 7, "In Print", 14, 98, "Standard"),
+        ("Monogatari Season 3 Box Set (Light Novel)", "Vertical", 6, "In Print", 14, 84, "Standard"),
+        ("Classroom of the Elite Year 1 Complete Set (LN)", "Seven Seas", 12, "In Print", 14, 168, "Standard"),
+        ("Classroom of the Elite Year 2 Set (LN)", "Seven Seas", 8, "In Print", 14, 112, "Standard"),
+
+        # ── Fullmetal Alchemist Fullmetal Editions (Hardcovers) ─────────────
+        ("FMA Fullmetal Edition Complete Set (vols 1-18)", "VIZ", 18, "In Print", 20, 360, "Standard"),
+        ("FMA Fullmetal Edition vol 10", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("FMA Fullmetal Edition vol 11", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("FMA Fullmetal Edition vol 12", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("FMA Fullmetal Edition vol 13", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("FMA Fullmetal Edition vol 14", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("FMA Fullmetal Edition vol 15", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("FMA Fullmetal Edition vol 16", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("FMA Fullmetal Edition vol 17", "VIZ", 1, "In Print", 20, 20, "Standard"),
+        ("FMA Fullmetal Edition vol 18", "VIZ", 1, "In Print", 20, 20, "Standard"),
+
+        # ── OOP Classics — Unique Entries ───────────────────────────────────
+        ("Yu-Gi-Oh! (3-in-1 Edition)", "VIZ", 13, "In Print", 15, 195, "Standard"),
+        ("Yu-Gi-Oh! (Singles)", "VIZ", 38, "OOP", 8, 304, "Mid"),
+        ("Inuyasha (VizBig Edition)", "VIZ", 18, "In Print", 18, 324, "Standard"),
+        ("Inuyasha (Singles Set)", "VIZ", 56, "OOP", 8, 448, "Mid"),
+
+        # ── Rare Artbooks & Illustration Collections ────────────────────────
+        ("One Piece Color Walk 1 (JP Import Edition)", "Shueisha", 1, "OOP", 40, 40, "Mid"),
+        ("Naruto Illustrations: NARUTO Artbook", "VIZ", 1, "In Print", 35, 35, "Standard"),
+        ("Dragon Ball Super History Book (JP Import Edition)", "Shueisha", 1, "In Print", 30, 30, "Standard"),
+        ("Berserk Official Guidebook (2nd Print)", "Dark Horse", 1, "In Print", 25, 25, "Standard"),
+        ("Slam Dunk Illustrations 2 (JP)", "Shueisha", 1, "OOP", 50, 50, "High"),
+        ("Inoue Takehiko: WATER (Artbook JP)", "Kodansha", 1, "OOP", 70, 70, "High"),
+        ("Tsutomu Nihei: BLAME! and So On", "Kodansha", 1, "OOP", 45, 45, "Mid"),
+        ("Kentaro Miura: Berserk Exhibition Artbook", "Hakusensha", 1, "OOP", 80, 80, "High"),
+        ("Naoki Urasawa: Drawing the Borderline", "VIZ", 1, "In Print", 30, 30, "Standard"),
+        ("Takeshi Obata: Blanc et Noir (Artbook)", "VIZ", 1, "In Print", 30, 30, "Standard"),
+
+        # ── Additional Modern Manga ─────────────────────────────────────────
+        ("Fujimoto Short Stories: Look Back + Goodbye Eri", "VIZ", 2, "In Print", 10, 20, "Standard"),
+        ("Just Listen to the Song of the Wind (Fujimoto)", "VIZ", 1, "In Print", 16, 16, "Standard"),
+        ("Dandadan (Deluxe Edition)", "VIZ", 5, "In Print", 20, 100, "Standard"),
+        ("Zom 100 Complete Set (Vols 1-17)", "VIZ", 17, "In Print", 10, 170, "Standard"),
+        ("Ranger Reject", "Kodansha", 12, "In Print", 11, 132, "Standard"),
+        ("Choujin X", "VIZ", 8, "In Print", 10, 80, "Standard"),
+        ("Rooster Fighter (Complete Set)", "VIZ", 8, "In Print", 10, 80, "Standard"),
+        ("Spy x Family Official Fanbook: Eyes Only", "VIZ", 1, "In Print", 10, 10, "Standard"),
+        ("One Piece Film Red Novel", "VIZ", 1, "In Print", 10, 10, "Standard"),
     ]
 
     items = []

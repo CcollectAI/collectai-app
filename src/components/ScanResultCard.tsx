@@ -5,7 +5,7 @@
  * catalog alternatives, and action buttons (retake / add to collection).
  */
 
-import React from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -14,17 +14,25 @@ import {
   ScrollView,
   StatusBar,
   Dimensions,
+  Share,
+  Alert,
+  Platform,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import ViewShot from 'react-native-view-shot';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { featureFlags } from '@/config/featureFlags';
+import { fireHaptic, HapticIntent } from '@/haptics';
+import { track } from '@/analytics/track';
 import { ScanFeedbackPanel } from '@/components/quickscan/ScanFeedbackPanel';
 import { ScanSocialProof } from '@/components/quickscan/ScanSocialProof';
 import { ConditionGradeSelector } from '@/components/quickscan/ConditionGradeSelector';
+import { ShareCard } from '@/components/quickscan/ShareCard';
 import type { QuickScanResult, CatalogAlternative, CurrencyCode } from '@/data/types';
+import logger from '@/utils/logger';
 
 import { BRAND_COLORS } from '@/constants/colors';
 const TIFFANY = BRAND_COLORS.tiffany; // StyleSheet can't use hooks
@@ -132,6 +140,44 @@ function ScanResultCardInner({
   onConfirm,
 }: ScanResultCardProps) {
   const { colors } = useAppTheme();
+  const shareCardRef = useRef<ViewShot>(null);
+  const [isSharing, setIsSharing] = useState(false);
+
+  const handleShare = useCallback(async () => {
+    if (isSharing) return;
+    setIsSharing(true);
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+
+    try {
+      // Try image share first via ViewShot
+      if (shareCardRef.current?.capture) {
+        const uri = await shareCardRef.current.capture();
+        const Sharing = await import('expo-sharing');
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'image/png',
+            dialogTitle: 'Share scan result',
+            UTI: 'public.png',
+          });
+          track({ name: 'scan_result_shared', properties: { method: 'image', category: scanResult.attributes.category } });
+          setIsSharing(false);
+          return;
+        }
+      }
+      // Fallback: text share
+      const name = scanResult.prediction.name || 'Unknown Item';
+      const price = scanResult.prediction.estimatedMid;
+      const priceStr = price > 0 ? ` — valued at ${formatPrice(price, currency)}` : '';
+      await Share.share({
+        message: `${name}${priceStr}\n\nScanned with CollectAI`,
+      });
+      track({ name: 'scan_result_shared', properties: { method: 'text', category: scanResult.attributes.category } });
+    } catch (e) {
+      logger.warn('Share failed', e);
+    } finally {
+      setIsSharing(false);
+    }
+  }, [isSharing, scanResult, currency]);
 
   const fc = scanResult.fieldConfidence;
   const alts = scanResult.alternatives ?? [];
@@ -185,15 +231,25 @@ function ScanResultCardInner({
             <View style={[styles.heroBadgeDot, { backgroundColor: confBadgeColor }]} />
             <Text style={[styles.heroBadgeText, { color: confBadgeColor }]}>{confLabel} · {overallConf}%</Text>
           </View>
-          {/* Retake button on hero */}
-          <AnimatedPressable
-            style={styles.heroRetake}
-            onPress={onRetake}
-            accessibilityRole="button"
-            accessibilityLabel="Retake photo"
-          >
-            <Ionicons name="camera-reverse-outline" size={22} color="#FFFFFF" />
-          </AnimatedPressable>
+          {/* Action buttons on hero */}
+          <View style={styles.heroActions}>
+            <AnimatedPressable
+              style={styles.heroActionBtn}
+              onPress={handleShare}
+              accessibilityRole="button"
+              accessibilityLabel="Share scan result"
+            >
+              <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.heroActionBtn}
+              onPress={onRetake}
+              accessibilityRole="button"
+              accessibilityLabel="Retake photo"
+            >
+              <Ionicons name="camera-reverse-outline" size={22} color="#FFFFFF" />
+            </AnimatedPressable>
+          </View>
         </View>
 
         {/* Item identification card with inline feedback */}
@@ -386,15 +442,44 @@ function ScanResultCardInner({
       <View
         style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}
       >
-        <AnimatedPressable
-          style={[styles.addBtn, { backgroundColor: colors.brand.base }]}
-          onPress={onConfirm}
-          accessibilityRole="button"
-          accessibilityLabel="Add to collection"
-        >
-          <Ionicons name="add-circle" size={22} color="#FFFFFF" />
-          <Text style={styles.addBtnText}>Add to Collection</Text>
-        </AnimatedPressable>
+        <View style={styles.bottomBarRow}>
+          <AnimatedPressable
+            style={[styles.shareBtn, { borderColor: colors.border }]}
+            onPress={handleShare}
+            accessibilityRole="button"
+            accessibilityLabel="Share scan result"
+          >
+            <Ionicons name="share-outline" size={20} color={colors.brand.dark} />
+          </AnimatedPressable>
+          <AnimatedPressable
+            style={[styles.addBtn, { backgroundColor: colors.brand.base }]}
+            onPress={onConfirm}
+            accessibilityRole="button"
+            accessibilityLabel="Add to collection"
+          >
+            <Ionicons name="add-circle" size={22} color="#FFFFFF" />
+            <Text style={styles.addBtnText}>Add to Collection</Text>
+          </AnimatedPressable>
+        </View>
+      </View>
+
+      {/* Off-screen share card for ViewShot capture */}
+      <View style={styles.offScreen} pointerEvents="none">
+        <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 1 }}>
+          <ShareCard
+            itemName={scanResult.prediction.name || 'Unknown Item'}
+            category={scanResult.attributes.category}
+            condition={scanResult.attributes.conditionGuess ?? ''}
+            priceMid={priceBandMid}
+            priceLow={priceBandLow}
+            priceHigh={priceBandHigh}
+            currency={currency}
+            imageUri={capturedUri}
+            confidence={
+              fc ? (fc.name + fc.category + fc.condition) / 3 : scanResult.prediction.confidence
+            }
+          />
+        </ViewShot>
       </View>
     </View>
   );
@@ -447,10 +532,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
-  heroRetake: {
+  heroActions: {
     position: 'absolute',
     bottom: 14,
     right: 16,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  heroActionBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -660,7 +749,21 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     borderTopWidth: 1,
   },
+  bottomBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  shareBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   addBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -678,6 +781,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  // Off-screen container for share card capture
+  offScreen: {
+    position: 'absolute',
+    left: -9999,
+    top: -9999,
   },
 });
 

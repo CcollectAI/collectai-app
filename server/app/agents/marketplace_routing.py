@@ -118,7 +118,7 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
     "catawiki": {
         "whiskey", "vintage_cameras", "watches", "pens", "designer_toys",
         "comic_books", "vintage_toys", "loungefly", "vinyl_records", "diecast",
-        "oop_board_games", "niche_perfumery",
+        "oop_board_games", "fragrances",
     },
     "whisky_auctioneer": {"whiskey"},
     "mandarake": {

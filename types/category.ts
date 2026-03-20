@@ -47,7 +47,7 @@ export const CategoryList = [
   'diecast','sportscards','retro_handhelds',
 
   // --- New Categories (3) ---
-  'oop_board_games','city_pop_vinyl','niche_perfumery',
+  'oop_board_games','city_pop_vinyl','fragrances',
 ] as const;
 
 export type Category = typeof CategoryList[number];
@@ -578,8 +578,8 @@ export const AttrSchemas: Record<Category, z.ZodObject<any>> = {
     condition: z.string().optional(),       // M, NM, VG+, VG, G+, G (Goldmine)
     obi: z.boolean().optional(),            // Japanese OBI strip included
   }),
-  niche_perfumery: z.object({
-    house: z.string().optional(),           // MFK, Tom Ford, Creed, Xerjoff, etc.
+  fragrances: z.object({
+    house: z.string().optional(),           // MFK, Tom Ford, Creed, Xerjoff, Versace, YSL, etc.
     fragrance_name: z.string().optional(),
     concentration: z.string().optional(),   // EDT, EDP, Extrait, Parfum
     size_ml: z.string().optional(),         // 30, 50, 100, 200
@@ -677,5 +677,5 @@ export const CategoryLabels: Record<Category, string> = {
   // New Categories
   oop_board_games: 'OOP Board Games & KS Exclusives',
   city_pop_vinyl: 'City Pop & Future Funk Vinyl',
-  niche_perfumery: 'Niche & High-End Perfumery',
+  fragrances: 'Fragrances',
 };

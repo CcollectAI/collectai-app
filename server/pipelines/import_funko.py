@@ -921,6 +921,7 @@ def get_curated_catalog() -> list[dict]:
             "price_eur": price,
         })
     catalog.extend(_batch_character_variants_2026())
+    catalog.extend(_batch_expansion_2026_wave2())
     # Deduplicate by ('line', 'number', 'name') (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -929,7 +930,17 @@ def get_curated_catalog() -> list[dict]:
         if _key not in _seen:
             _seen.add(_key)
             _deduped.append(item)
-    return _deduped
+
+    # Deduplicate by name (keep first occurrence)
+    seen_names: set[str] = set()
+    deduped: list[dict] = []
+    for item in _deduped:
+        key = item.get("name", "")
+        if key not in seen_names:
+            seen_names.add(key)
+            deduped.append(item)
+
+    return deduped
 
 
 def _batch_character_variants_2026() -> list[dict]:
@@ -1075,6 +1086,185 @@ def _batch_character_variants_2026() -> list[dict]:
         ("Blacklight", "SE", "Doctor Strange (Blacklight)", "Target", "mid", 48),
         ("Blacklight", "SE", "Captain America (Blacklight)", "Target", "mid", 45),
         ("Blacklight", "SE", "Thor (Blacklight)", "Target", "mid", 45),
+    ]
+
+    catalog = []
+    for line, number, name, exclusive, tier, price in pops:
+        catalog.append({
+            "line": line,
+            "number": number,
+            "name": name,
+            "exclusive": exclusive,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _batch_expansion_2026_wave2() -> list[dict]:
+    """Wave 2 expansion — ~115 items: more Marvel, Star Wars, Anime, Music,
+    TV, Games, Chase variants, and convention exclusives."""
+
+    pops = [
+        # ── Marvel: Deadpool Variants & New ─────────────────────────────
+        ("Marvel", "546", "Deadpool (Thumbs Up)", "", "standard", 15),
+        ("Marvel", "780", "Deadpool (Movie, Swords)", "", "mid", 35),
+        ("Marvel", "543", "Deadpool (Rubber Ducky)", "Hot Topic", "mid", 50),
+        ("Marvel", "786", "Deadpool 3 (Wolverine Suit)", "", "mid", 45),
+        ("Marvel", "SE", "Deadpool (Glow, Headpool)", "Funko-Shop", "high", 160),
+
+        # ── Marvel: Iron Man Expanded ───────────────────────────────────
+        ("Marvel", "616", "Iron Man (MK85, Endgame)", "", "mid", 40),
+        ("Marvel", "467", "Iron Man (MK39, Gemini)", "Funko-Shop", "high", 180),
+        ("Marvel", "338", "Iron Man (MK43, Chrome)", "SDCC 2016", "high", 200),
+        ("Marvel", "962", "Iron Man (Model Prime)", "", "mid", 35),
+
+        # ── Marvel: Black Panther Expanded ──────────────────────────────
+        ("Marvel", "273", "Black Panther", "", "standard", 15),
+        ("Marvel", "274", "Black Panther (Unmasked)", "", "standard", 18),
+        ("Marvel", "612", "Black Panther (Wakanda Forever, Glow)", "Target", "high", 100),
+        ("Marvel", "1113", "Shuri (Black Panther 2)", "", "standard", 14),
+        ("Marvel", "SE", "Black Panther (Purple Glow)", "Entertainment Earth", "high", 130),
+        ("Marvel", "SE", "Killmonger (Gold Jaguar)", "Walmart", "mid", 55),
+
+        # ── Star Wars: Mandalorian Expanded ─────────────────────────────
+        ("Star Wars", "345", "The Mandalorian (Flying)", "GameStop", "mid", 40),
+        ("Star Wars", "584", "Bo-Katan Kryze", "", "standard", 15),
+        ("Star Wars", "664", "Paz Vizsla", "", "mid", 35),
+        ("Star Wars", "SE", "Din Djarin (Darksaber, Glow)", "Funko-Shop", "high", 120),
+        ("Star Wars", "SE", "Moff Gideon (Dark Trooper Suit)", "", "mid", 30),
+
+        # ── Star Wars: Ahsoka Expanded ──────────────────────────────────
+        ("Star Wars", "496", "Ahsoka (Rebels)", "", "mid", 45),
+        ("Star Wars", "1608", "Ahsoka (Live Action, Dual Sabers)", "", "standard", 18),
+        ("Star Wars", "SE", "Ahsoka (Fulcrum, Glow Sabers)", "Funko-Shop", "high", 160),
+        ("Star Wars", "SE", "Baylan Skoll (Lightsaber)", "", "mid", 25),
+        ("Star Wars", "SE", "Sabine Wren (Ahsoka Series)", "", "standard", 18),
+
+        # ── Anime: Dragon Ball Expanded ─────────────────────────────────
+        ("Dragon Ball Z", "1089", "Vegeta (Final Flash)", "", "mid", 35),
+        ("Dragon Ball Z", "SE", "Cell (Perfect Form, Metallic)", "Funko-Shop", "high", 140),
+        ("Dragon Ball Super", "1292", "Goku Black (Rose, Glow)", "Entertainment Earth", "mid", 55),
+        ("Dragon Ball Super", "SE", "Beerus (Metallic)", "SDCC 2016", "high", 250),
+        ("Dragon Ball Z", "SE", "Majin Buu (Chocolate)", "Hot Topic", "mid", 65),
+        ("Dragon Ball Z", "SE", "Piccolo (Metallic)", "NYCC 2019", "high", 180),
+
+        # ── Anime: Naruto Expanded ──────────────────────────────────────
+        ("Naruto", "SE", "Madara Uchiha (Reanimation Glow)", "Funko-Shop", "high", 170),
+        ("Naruto", "1500", "Obito Uchiha", "", "mid", 35),
+        ("Naruto", "SE", "Gaara (Sand Coffin)", "", "mid", 40),
+        ("Naruto", "SE", "Rock Lee (Drunken Fist)", "Hot Topic", "mid", 50),
+        ("Naruto", "SE", "Hinata Hyuga (Twin Lion Fists)", "BoxLunch", "mid", 45),
+
+        # ── Anime: Demon Slayer Expanded ────────────────────────────────
+        ("Demon Slayer", "SE", "Mitsuri Kanroji (Love Breathing)", "", "mid", 30),
+        ("Demon Slayer", "SE", "Shinobu Kocho (Butterfly Dance)", "Hot Topic", "mid", 45),
+        ("Demon Slayer", "SE", "Tengen Uzui (Sound Breathing, Glow)", "Funko-Shop", "high", 120),
+        ("Demon Slayer", "1534", "Zenitsu (Godspeed)", "", "mid", 35),
+        ("Demon Slayer", "SE", "Upper Moon Three Akaza (Battle, Metallic)", "SDCC 2024", "high", 200),
+        ("Demon Slayer", "SE", "Kokushibo (Upper Moon One)", "", "mid", 40),
+
+        # ── Music: BTS ──────────────────────────────────────────────────
+        ("Rocks", "SE", "BTS - RM", "", "mid", 35),
+        ("Rocks", "SE", "BTS - Jin", "", "mid", 35),
+        ("Rocks", "SE", "BTS - Suga", "", "mid", 35),
+        ("Rocks", "SE", "BTS - J-Hope", "", "mid", 35),
+        ("Rocks", "SE", "BTS - Jimin", "", "mid", 40),
+        ("Rocks", "SE", "BTS - V", "", "mid", 40),
+        ("Rocks", "SE", "BTS - Jung Kook", "", "mid", 45),
+
+        # ── Music: Expanded Legends ─────────────────────────────────────
+        ("Rocks", "SE", "Freddie Mercury (Radio Gaga)", "", "mid", 40),
+        ("Rocks", "SE", "Tupac (Thug Life, Metallic)", "Funko-Shop", "high", 120),
+        ("Rocks", "SE", "Post Malone", "", "standard", 15),
+        ("Rocks", "SE", "Billie Eilish (Bad Guy)", "", "standard", 18),
+        ("Rocks", "SE", "Dolly Parton (Diamond)", "Hot Topic", "mid", 45),
+        ("Rocks", "SE", "Ozzy Osbourne (Diary of a Madman)", "", "mid", 35),
+
+        # ── TV: Stranger Things Expanded ────────────────────────────────
+        ("Stranger Things", "SE", "Argyle", "", "standard", 15),
+        ("Stranger Things", "SE", "Will Byers (Upside Down)", "Hot Topic", "mid", 55),
+        ("Stranger Things", "SE", "Eleven (Season 5, Buzzcut)", "", "mid", 30),
+        ("Stranger Things", "SE", "Brenner (Dr. Martin)", "", "standard", 20),
+
+        # ── TV: The Office Expanded ─────────────────────────────────────
+        ("The Office", "SE", "Stanley Hudson (Pretzel Day)", "Hot Topic", "mid", 45),
+        ("The Office", "SE", "Toby Flenderson", "", "standard", 12),
+        ("The Office", "SE", "Ryan Howard (Blonde)", "", "standard", 14),
+        ("The Office", "SE", "Kelly Kapoor", "", "standard", 12),
+
+        # ── TV: Friends Expanded ────────────────────────────────────────
+        ("Friends", "SE", "Rachel (Fashion, Glow)", "BoxLunch", "mid", 40),
+        ("Friends", "SE", "Joey (Porsche)", "Funko-Shop", "mid", 35),
+        ("Friends", "SE", "Ross (Pivot, Couch)", "", "mid", 30),
+        ("Friends", "SE", "Phoebe (Lobster)", "", "mid", 30),
+
+        # ── Games: Fortnite ─────────────────────────────────────────────
+        ("Fortnite", "SE", "Skull Trooper (Purple Glow)", "Walmart", "mid", 50),
+        ("Fortnite", "SE", "Peely", "", "standard", 15),
+        ("Fortnite", "SE", "Raven (Metallic)", "GameStop", "mid", 40),
+        ("Fortnite", "SE", "Midas (Gold, Rex)", "SDCC 2021", "high", 130),
+        ("Fortnite", "SE", "Drift", "", "standard", 18),
+
+        # ── Games: Overwatch Expanded ───────────────────────────────────
+        ("Overwatch", "SE", "Genji (Carbon Fiber)", "ThinkGeek", "mid", 50),
+        ("Overwatch", "SE", "Mercy (Cobalt, Glow)", "Blizzard", "high", 120),
+        ("Overwatch", "SE", "Reaper (Hellfire)", "BoxLunch", "mid", 45),
+        ("Overwatch", "SE", "Sigma", "", "standard", 15),
+
+        # ── Games: FNAF ─────────────────────────────────────────────────
+        ("FNAF", "106", "Foxy the Pirate", "", "mid", 35),
+        ("FNAF", "107", "Bonnie", "", "mid", 30),
+        ("FNAF", "128", "Springtrap (Flocked)", "GameStop", "mid", 55),
+        ("FNAF", "291", "Nightmare Freddy", "", "mid", 30),
+        ("FNAF", "SE", "Golden Freddy (Glow)", "SDCC 2016", "high", 200),
+
+        # ── Convention Exclusives: ECCC ─────────────────────────────────
+        ("Convention Exclusive", "SE", "Deadpool (Mermaid) (ECCC 2016)", "ECCC 2016", "high", 180),
+        ("Convention Exclusive", "SE", "Boba Fett (Vintage, Flocked) (ECCC 2024)", "ECCC 2024", "high", 220),
+        ("Convention Exclusive", "SE", "Goku (Spirit Bomb, Glow) (ECCC 2024)", "ECCC 2024", "high", 250),
+        ("Convention Exclusive", "SE", "Naruto (Rasengan, Metallic) (ECCC 2025)", "ECCC 2025", "high", 200),
+        ("Convention Exclusive", "SE", "Batman (Azrael Suit) (ECCC 2025)", "ECCC 2025", "high", 180),
+
+        # ── Convention Exclusives: SDCC/NYCC Missing ────────────────────
+        ("Convention Exclusive", "SE", "Wolverine (Brown Suit, Flocked) (SDCC 2022)", "SDCC 2022", "high", 200),
+        ("Convention Exclusive", "SE", "Stitch (Hawaiian, Metallic) (SDCC 2022)", "SDCC 2022", "high", 250),
+        ("Convention Exclusive", "SE", "Kakashi (Double Sharingan) (NYCC 2024)", "NYCC 2024", "high", 230),
+        ("Convention Exclusive", "SE", "Toga Himiko (Villain, Glow) (NYCC 2024)", "NYCC 2024", "high", 190),
+
+        # ── Chase Variants: TV & Movies ─────────────────────────────────
+        ("Stranger Things", "SE", "Vecna (Chase, Glow Vines)", "", "high", 120),
+        ("Stranger Things", "SE", "Eddie Munson (Chase, Guitar Solo)", "", "high", 140),
+        ("The Office", "SE", "Prison Mike (Chase, Dementor)", "", "high", 180),
+        ("Friends", "SE", "Monica (Chase, Turkey Head GITD)", "", "high", 100),
+
+        # ── Chase Variants: Anime ───────────────────────────────────────
+        ("Jujutsu Kaisen", "SE", "Sukuna (Chase, Domain Expansion)", "", "high", 180),
+        ("Jujutsu Kaisen", "SE", "Megumi (Mahoraga Summon, Glow)", "Hot Topic", "mid", 50),
+        ("Jujutsu Kaisen", "SE", "Toji Fushiguro", "", "mid", 35),
+        ("One Piece", "SE", "Zoro (Enma Sword, Metallic)", "Funko-Shop", "high", 150),
+        ("One Piece", "SE", "Kaido (Dragon Form, 6-Inch)", "", "mid", 55),
+
+        # ── Anime: Spy x Family ─────────────────────────────────────────
+        ("Spy x Family", "SE", "Yor Forger (Thorn Princess)", "", "mid", 35),
+        ("Spy x Family", "SE", "Anya Forger (School Uniform)", "", "standard", 18),
+        ("Spy x Family", "SE", "Loid Forger (Twilight)", "", "standard", 20),
+
+        # ── Music: BTS Metallic ─────────────────────────────────────────
+        ("Rocks", "SE", "BTS - Butter Complete Set (7-Pack, Metallic)", "Funko-Shop", "grail", 400),
+
+        # ── Disney: Villains Expanded ───────────────────────────────────
+        ("Disney Villains", "SE", "Hades (Glow, Blue Flame)", "Hot Topic", "mid", 55),
+        ("Disney Villains", "SE", "Jafar (Snake Form, Glow)", "BoxLunch", "mid", 45),
+
+        # ── TV: Breaking Bad ────────────────────────────────────────────
+        ("Television", "158", "Walter White (Hazmat Suit, Blue Crystal)", "SDCC 2014", "grail", 1000),
+        ("Television", "SE", "Jesse Pinkman (Cook Suit)", "", "mid", 55),
+
+        # ── Games: Pokemon Expanded ─────────────────────────────────────
+        ("Pokemon", "SE", "Gengar (Glow, Purple)", "Entertainment Earth", "mid", 45),
+        ("Pokemon", "SE", "Gyarados (Metallic)", "Funko-Shop", "high", 130),
+        ("Pokemon", "SE", "Dragonite (Flocked)", "Hot Topic", "mid", 40),
     ]
 
     catalog = []

@@ -20,6 +20,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { isBuildableCategory } from '@/constants/buildStepTemplates';
+import { BETA_MODE } from '@/config/featureFlags';
 import logger from '@/utils/logger';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
@@ -356,6 +357,48 @@ function CategoryStoreScreen() {
     router.push('/build-paint-projects');
   }, [router]);
 
+  // M10: Memoize props for heavy child components to prevent unnecessary re-renders
+  // (must be before early returns to keep hook order stable)
+  const missingItemsProps = useMemo(() => ({
+    missingItems,
+    recentlyOwned,
+    markingOwned,
+    accentColor,
+    onMarkOwned: handleMarkOwned,
+    onShopItem: handleMissingShopItem,
+    onSeeMore: handleMissingSeeMore,
+    colors,
+  }), [missingItems, recentlyOwned, markingOwned, accentColor, handleMarkOwned, handleMissingShopItem, handleMissingSeeMore, colors]);
+
+  const buildProjectsProps = useMemo(() => ({
+    isBuildable,
+    buildProjects,
+    buildProjectsLoading,
+    accentColor,
+    onProjectPress: handleBuildProjectPress,
+    onSeeAll: handleBuildSeeAll,
+    onStartNew: handleBuildStartNew,
+    colors,
+  }), [isBuildable, buildProjects, buildProjectsLoading, accentColor, handleBuildProjectPress, handleBuildSeeAll, handleBuildStartNew, colors]);
+
+  const categoryItemsProps = useMemo(() => ({
+    items: data?.items ?? [],
+    categoryName: data?.categoryName ?? '',
+    accentColor,
+    onItemPress: handleItemPress,
+    onItemLongPress: handleItemLongPress,
+    onShopPress: handleItemShopPress,
+    onSeeAll: handleSeeAllItems,
+    colors,
+  }), [data?.items, data?.categoryName, accentColor, handleItemPress, handleItemLongPress, handleItemShopPress, handleSeeAllItems, colors]);
+
+  const externalMarketplacesProps = useMemo(() => ({
+    marketplaces: categoryMeta?.externalMarketplaces ?? [],
+    affiliateLinks,
+    onPress: handleMarketplaceHaptic,
+    colors,
+  }), [categoryMeta?.externalMarketplaces, affiliateLinks, handleMarketplaceHaptic, colors]);
+
   // Loading state
   if (loading) {
     return (
@@ -384,47 +427,6 @@ function CategoryStoreScreen() {
       </View>
     );
   }
-
-  // M10: Memoize props for heavy child components to prevent unnecessary re-renders
-  const missingItemsProps = useMemo(() => ({
-    missingItems,
-    recentlyOwned,
-    markingOwned,
-    accentColor,
-    onMarkOwned: handleMarkOwned,
-    onShopItem: handleMissingShopItem,
-    onSeeMore: handleMissingSeeMore,
-    colors,
-  }), [missingItems, recentlyOwned, markingOwned, accentColor, handleMarkOwned, handleMissingShopItem, handleMissingSeeMore, colors]);
-
-  const buildProjectsProps = useMemo(() => ({
-    isBuildable,
-    buildProjects,
-    buildProjectsLoading,
-    accentColor,
-    onProjectPress: handleBuildProjectPress,
-    onSeeAll: handleBuildSeeAll,
-    onStartNew: handleBuildStartNew,
-    colors,
-  }), [isBuildable, buildProjects, buildProjectsLoading, accentColor, handleBuildProjectPress, handleBuildSeeAll, handleBuildStartNew, colors]);
-
-  const categoryItemsProps = useMemo(() => ({
-    items: data.items,
-    categoryName: data.categoryName,
-    accentColor,
-    onItemPress: handleItemPress,
-    onItemLongPress: handleItemLongPress,
-    onShopPress: handleItemShopPress,
-    onSeeAll: handleSeeAllItems,
-    colors,
-  }), [data.items, data.categoryName, accentColor, handleItemPress, handleItemLongPress, handleItemShopPress, handleSeeAllItems, colors]);
-
-  const externalMarketplacesProps = useMemo(() => ({
-    marketplaces: categoryMeta?.externalMarketplaces ?? [],
-    affiliateLinks,
-    onPress: handleMarketplaceHaptic,
-    colors,
-  }), [categoryMeta?.externalMarketplaces, affiliateLinks, handleMarketplaceHaptic, colors]);
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -564,10 +566,12 @@ function CategoryStoreScreen() {
           {...missingItemsProps}
         />
 
-        {/* 4.6. Build Projects */}
-        <BuildProjectsSection
-          {...buildProjectsProps}
-        />
+        {/* 4.6. Build Projects (hidden in beta) */}
+        {!BETA_MODE && (
+          <BuildProjectsSection
+            {...buildProjectsProps}
+          />
+        )}
 
         {/* 5. Friends Who Follow */}
         <FriendsFollowSection
@@ -576,8 +580,8 @@ function CategoryStoreScreen() {
           colors={colors}
         />
 
-        {/* 5.5. Category Leaderboard */}
-        {categoryId && <CategoryLeaderboardSection categoryId={categoryId} />}
+        {/* 5.5. Category Leaderboard (hidden in beta) */}
+        {!BETA_MODE && categoryId && <CategoryLeaderboardSection categoryId={categoryId} />}
 
         {/* 6. External Marketplace Links */}
         {categoryMeta && (

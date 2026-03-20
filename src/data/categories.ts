@@ -52,7 +52,7 @@ export type CategoryId =
   | 'sneakers'
   | 'oop_board_games'
   | 'city_pop_vinyl'
-  | 'niche_perfumery';
+  | 'fragrances';
 
 export type CategoryCollection = {
   id: string;
@@ -135,7 +135,7 @@ export const CATEGORY_VISUAL: Record<CategoryId, { accentColor: string; iconName
   sneakers: { accentColor: '#1D4ED8', iconName: 'footsteps' },
   oop_board_games: { accentColor: '#6D4C41', iconName: 'dice' },
   city_pop_vinyl: { accentColor: '#E040FB', iconName: 'musical-note' },
-  niche_perfumery: { accentColor: '#CE93D8', iconName: 'rose' },
+  fragrances: { accentColor: '#CE93D8', iconName: 'rose' },
 };
 
 export const CATEGORIES: Category[] = [
@@ -1687,16 +1687,18 @@ export const CATEGORIES: Category[] = [
     relatedCategoryIds: ['vinyl_records', 'anime_ost_vinyl', 'kpop_merch'],
   },
   {
-    id: 'niche_perfumery',
-    name: 'Niche & High-End Perfumery',
-    tagline: 'Track your fragrance collection — MFK, Creed, Tom Ford, and indie houses worth savoring.',
+    id: 'fragrances',
+    name: 'Fragrances',
+    tagline: 'Track your fragrance collection — from designer classics to niche houses worth savoring.',
     bannerImageUrl:
       'https://images.pexels.com/photos/965989/pexels-photo-965989.jpeg?auto=compress&cs=tinysrgb&w=400',
     accentColor: '#CE93D8',
     iconName: 'rose',
     collections: [
-      { id: 'np-niche-house', name: 'Niche Houses', itemCount: 0 },
-      { id: 'np-designer-private', name: 'Designer Private Lines', itemCount: 0 },
+      { id: 'frag-niche', name: 'Niche Houses', itemCount: 0 },
+      { id: 'frag-designer', name: 'Designer Fragrances', itemCount: 0 },
+      { id: 'frag-indie', name: 'Indie & Artisan', itemCount: 0 },
+      { id: 'frag-extrait', name: 'Extrait & Parfum', itemCount: 0 },
     ],
     externalMarketplaces: [
       {
@@ -1705,14 +1707,24 @@ export const CATEGORIES: Category[] = [
         url: 'https://www.fragrantica.com',
       },
       {
+        id: 'parfumo',
+        label: 'Parfumo',
+        url: 'https://www.parfumo.com',
+      },
+      {
         id: 'ebay',
         label: 'eBay',
         url: 'https://www.ebay.com',
       },
       {
-        id: 'parfumo',
-        label: 'Parfumo',
-        url: 'https://www.parfumo.com',
+        id: 'notino',
+        label: 'Notino',
+        url: 'https://www.notino.com',
+      },
+      {
+        id: 'fragrancenet',
+        label: 'FragranceNet',
+        url: 'https://www.fragrancenet.com',
       },
     ],
     relatedCategoryIds: ['whiskey', 'watches', 'pens'],
@@ -1759,7 +1771,7 @@ export const CATEGORY_GROUPS: { label: string; ids: CategoryId[] }[] = [
   { label: 'Niche', ids: ['keycaps', 'loungefly'] },
   { label: 'Collectibles', ids: ['blind_box', 'plush_collectibles'] },
   { label: 'Lifestyle', ids: ['vinyl_records', 'city_pop_vinyl', 'sneakers', 'watches'] },
-  { label: 'Spirits & Luxury', ids: ['whiskey', 'niche_perfumery', 'vintage_cameras', 'pens'] },
+  { label: 'Spirits & Luxury', ids: ['whiskey', 'fragrances', 'vintage_cameras', 'pens'] },
   { label: 'Legacy', ids: ['diecast', 'sportscards', 'retro_handhelds'] },
 ];
 

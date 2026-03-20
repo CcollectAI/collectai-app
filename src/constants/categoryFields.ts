@@ -604,11 +604,11 @@ const CITY_POP_VINYL_FIELDS: CategoryField[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Niche Perfumery
+// Fragrances
 // ---------------------------------------------------------------------------
 
-const NICHE_PERFUMERY_FIELDS: CategoryField[] = [
-  { key: 'house', label: 'House', placeholder: 'e.g. Creed, Tom Ford, Xerjoff', type: 'text', icon: 'business-outline' },
+const FRAGRANCES_FIELDS: CategoryField[] = [
+  { key: 'house', label: 'House', placeholder: 'e.g. Creed, Tom Ford, Versace, YSL', type: 'text', icon: 'business-outline' },
   { key: 'fragrance_name', label: 'Fragrance Name', placeholder: 'e.g. Aventus, Tobacco Vanille', type: 'text', icon: 'flask-outline' },
   { key: 'concentration', label: 'Concentration', type: 'select', icon: 'water-outline', options: ['EDT', 'EDP', 'Extrait', 'Parfum'] },
   { key: 'size_ml', label: 'Size (ml)', placeholder: 'e.g. 50, 100', type: 'text', icon: 'resize-outline' },
@@ -712,7 +712,7 @@ export const CATEGORY_FIELDS: Partial<Record<Category, CategoryField[]>> = {
   // New Categories
   oop_board_games: OOP_BOARD_GAMES_FIELDS,
   city_pop_vinyl: CITY_POP_VINYL_FIELDS,
-  niche_perfumery: NICHE_PERFUMERY_FIELDS,
+  fragrances: FRAGRANCES_FIELDS,
 };
 
 /**

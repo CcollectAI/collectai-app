@@ -1259,8 +1259,8 @@ function CategorySpecificSectionInner({
         </View>
       )}
 
-      {/* ── Pattern: Niche Perfumery (inventory tracking focus) ────────────────── */}
-      {categorySlug === "niche_perfumery" && (
+      {/* ── Pattern: Fragrances (inventory tracking focus) ────────────────── */}
+      {categorySlug === "fragrances" && (
         <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
           <View style={s.sectionHeaderRow}>
             <View style={s.sectionHeaderLeft}>

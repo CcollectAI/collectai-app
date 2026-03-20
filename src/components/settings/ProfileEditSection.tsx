@@ -28,6 +28,7 @@ import { API_BASE } from '@/api/config';
 import { deleteAccount, collectorsApi } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
+import { BETA_MODE } from '@/config/featureFlags';
 
 function ProfileEditSectionInner() {
   const { colors } = useAppTheme();
@@ -224,20 +225,24 @@ function ProfileEditSectionInner() {
           <Ionicons name="chevron-forward" size={16} color={colors.muted} />
         </AnimatedPressable>
 
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        {!BETA_MODE && (
+          <>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-        <AnimatedPressable
-          style={styles.settingRow}
-          onPress={() => router.push('/sell/offers')}
-          accessibilityRole="link"
-          accessibilityLabel="My Listings and Offers"
-        >
-          <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>My Listings & Offers</Text>
-            <Text style={[styles.settingHint, { color: colors.muted }]}>Manage items for sale and P2P offers</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
-        </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.settingRow}
+              onPress={() => router.push('/sell/offers')}
+              accessibilityRole="link"
+              accessibilityLabel="My Listings and Offers"
+            >
+              <View style={styles.settingInfo}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>My Listings & Offers</Text>
+                <Text style={[styles.settingHint, { color: colors.muted }]}>Manage items for sale and P2P offers</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+            </AnimatedPressable>
+          </>
+        )}
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 

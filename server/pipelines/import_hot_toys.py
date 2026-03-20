@@ -695,6 +695,7 @@ def get_curated_catalog() -> list[dict]:
 
     catalog.extend(_batch_premium_figures_2025())
     catalog.extend(_batch_variant_editions())
+    catalog.extend(_batch_expansion_round2())
     # Deduplicate by ('brand', 'name', 'figure_type') (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1110,6 +1111,175 @@ def _batch_variant_editions() -> list[dict]:
         ("Sideshow", "Star Wars", "Boba Fett Premium Format (Sideshow Exclusive)", "Premium Format", "high", 800),
         ("Sideshow", "Predator", "Predator Maquette (Sideshow Exclusive)", "Maquette", "grail", 1100),
         ("Sideshow", "Alien", "Alien Queen Maquette (Sideshow Exclusive)", "Maquette", "grail", 1900),
+    ]
+
+    catalog = []
+    for brand, franchise, name, figure_type, tier, price in items:
+        catalog.append({
+            "brand": brand,
+            "franchise": franchise,
+            "name": name,
+            "figure_type": figure_type,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
+
+
+def _batch_expansion_round2() -> list[dict]:
+    """Batch 10 — ~105 new items: more Marvel (Spider-Man variants, Thanos,
+    Doctor Strange, Moon Knight), more Star Wars (Obi-Wan, Boba Fett, Ahsoka),
+    more DC (The Batman, Joker), movie icons (John Wick, Indiana Jones,
+    Terminator T-800), more 1/4 scale pieces, DX editions, Cosbaby sets."""
+
+    items = [
+        # ─── Marvel MCU — Spider-Man Variants ────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Upgraded Suit Far From Home)", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Stealth Suit Far From Home)", "1/6 Figure", "mid", 310),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Red & Blue Suit NWH)", "1/6 Figure", "mid", 330),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Friendly Neighborhood NWH)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (New Red & Blue Suit NWH) Deluxe", "1/6 Figure", "mid", 460),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Classic Suit NWH) 1/4 Scale", "1/4 Figure", "grail", 950),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Cyborg Spider-Man Suit)", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "Marvel MCU", "Spider-Man (Velocity Suit PS4)", "1/6 Figure", "mid", 340),
+
+        # ─── Marvel MCU — Thanos Variants ────────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Thanos (Infinity War, Full Gauntlet) 1/4 Scale", "1/4 Figure", "grail", 1500),
+        ("Hot Toys", "Marvel MCU", "Thanos (Endgame, Nano Gauntlet)", "1/6 Figure", "mid", 500),
+        ("Hot Toys", "Marvel MCU", "Thanos (Endgame Throne) Diorama Set", "Diorama", "grail", 1300),
+
+        # ─── Marvel MCU — Doctor Strange Variants ────────────────────────
+        ("Hot Toys", "Marvel MCU", "Doctor Strange (MoM, Third Eye)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Marvel MCU", "Doctor Strange (Endgame Final Battle)", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "Marvel MCU", "Doctor Strange (Battle on Titan IW)", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Marvel MCU", "Defender Strange (MoM)", "1/6 Figure", "mid", 320),
+        ("Hot Toys", "Marvel MCU", "Doctor Strange (MoM) Deluxe w/ Dreamwalker Book", "1/6 Figure", "mid", 460),
+        ("Hot Toys", "Marvel MCU", "Doctor Strange 1/4 Scale (Infinity War)", "1/4 Figure", "high", 900),
+
+        # ─── Marvel MCU — Moon Knight Variants ───────────────────────────
+        ("Hot Toys", "Marvel MCU", "Moon Knight (Ceremonial Armor)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Marvel MCU", "Marc Spector (Moon Knight Show)", "1/6 Figure", "mid", 300),
+        ("Hot Toys", "Marvel MCU", "Scarlet Scarab (Layla El-Faouly)", "1/6 Figure", "mid", 330),
+        ("Hot Toys", "Marvel MCU", "Moon Knight & Scarlet Scarab 2-Pack", "1/6 Figure", "high", 600),
+
+        # ─── Star Wars — Obi-Wan Kenobi Variants ────────────────────────
+        ("Hot Toys", "Star Wars", "Obi-Wan Kenobi (Wandering Jedi)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Obi-Wan Kenobi (Clone Wars Animated)", "1/6 Figure", "mid", 390),
+        ("Hot Toys", "Star Wars", "Obi-Wan Kenobi (AOTC)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Star Wars", "Obi-Wan Kenobi (Battle of Mustafar ROTS)", "1/6 Figure", "mid", 430),
+        ("Hot Toys", "Star Wars", "Obi-Wan Kenobi (Ewan McGregor) DX Edition", "1/6 Figure", "high", 700),
+        ("Hot Toys", "Star Wars", "Obi-Wan Kenobi 1/4 Scale (ROTS)", "1/4 Figure", "grail", 1050),
+
+        # ─── Star Wars — Boba Fett Extended ──────────────────────────────
+        ("Hot Toys", "Star Wars", "Boba Fett (Attack of the Clones, Young)", "1/6 Figure", "mid", 300),
+        ("Hot Toys", "Star Wars", "Boba Fett (Animation Version, Holiday Special)", "1/6 Figure", "high", 550),
+        ("Hot Toys", "Star Wars", "Boba Fett (Retro Color SDCC Exclusive)", "1/6 Figure", "high", 580),
+        ("Hot Toys", "Star Wars", "Boba Fett 1/4 Scale (ESB)", "1/4 Figure", "grail", 1100),
+
+        # ─── Star Wars — Ahsoka Extended ─────────────────────────────────
+        ("Hot Toys", "Star Wars", "Ahsoka Tano (Clone Wars Season 7)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Star Wars", "Ahsoka Tano (Rebels)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Star Wars", "Ahsoka Tano (Ahsoka Show) DX Edition", "1/6 Figure", "high", 650),
+        ("Hot Toys", "Star Wars", "Ahsoka & Sabine Wren 2-Pack (Ahsoka Show)", "1/6 Figure", "high", 750),
+
+        # ─── DC — The Batman Extended ────────────────────────────────────
+        ("Hot Toys", "DC", "Batman (The Batman) with Bat-Signal Diorama", "Diorama", "high", 700),
+        ("Hot Toys", "DC", "Batman (The Batman) Unmask Version DX", "1/6 Figure", "high", 600),
+        ("Hot Toys", "DC", "Selina Kyle (Catwoman The Batman) Deluxe", "1/6 Figure", "mid", 450),
+        ("Hot Toys", "DC", "Batman (The Batman 2022) 1/4 Scale", "1/4 Figure", "grail", 1050),
+        ("Hot Toys", "DC", "Batmobile (The Batman) 1/6 Vehicle", "1/6 Vehicle", "grail", 1800),
+
+        # ─── DC — Joker Extended ─────────────────────────────────────────
+        ("Hot Toys", "DC", "Joker (Jared Leto Suicide Squad)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "DC", "Joker (Jared Leto Purple Coat)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "DC", "Joker (Joaquin Phoenix Folie a Deux)", "1/6 Figure", "mid", 360),
+        ("Hot Toys", "DC", "Joker (Heath Ledger TDK) DX Reissue 2024", "1/6 Figure", "grail", 1300),
+        ("Hot Toys", "DC", "Joker (Heath Ledger) 1/4 Scale Deluxe", "1/4 Figure", "grail", 1400),
+
+        # ─── Movie Icons — John Wick Extended ───────────────────────────
+        ("Hot Toys", "John Wick", "John Wick (Chapter 1) Deluxe w/ Dog", "1/6 Figure", "mid", 500),
+        ("Hot Toys", "John Wick", "John Wick (Chapter 4 Tactical Gear)", "1/6 Figure", "mid", 420),
+        ("Hot Toys", "John Wick", "John Wick 1/4 Scale (Chapter 4)", "1/4 Figure", "grail", 950),
+
+        # ─── Movie Icons — Indiana Jones Extended ────────────────────────
+        ("Hot Toys", "Indiana Jones", "Indiana Jones (Crystal Skull)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Indiana Jones", "Indiana Jones (Raiders) DX Edition", "1/6 Figure", "high", 700),
+        ("Hot Toys", "Indiana Jones", "Indiana Jones 1/4 Scale (Raiders Classic)", "1/4 Figure", "grail", 1100),
+        ("Hot Toys", "Indiana Jones", "Short Round (Temple of Doom)", "1/6 Figure", "mid", 320),
+
+        # ─── Movie Icons — Terminator T-800 Extended ─────────────────────
+        ("Hot Toys", "Terminator", "T-800 (T2, Leather Jacket)", "1/6 Figure", "high", 600),
+        ("Hot Toys", "Terminator", "T-800 Endoskeleton (Die-Cast)", "1/6 Figure", "high", 680),
+        ("Hot Toys", "Terminator", "T-800 (Terminator 2) 1/4 Scale", "1/4 Figure", "grail", 1200),
+        ("Hot Toys", "Terminator", "T-800 (Cyberdyne Showdown T2)", "1/6 Figure", "high", 580),
+        ("Hot Toys", "Terminator", "T-1000 (Liquid Metal) Deluxe", "1/6 Figure", "high", 600),
+
+        # ─── 1/4 Scale Pieces — Additional ───────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Hulk (Endgame Smart Hulk) 1/4 Scale", "1/4 Figure", "grail", 1300),
+        ("Hot Toys", "Marvel MCU", "Black Panther (Civil War) 1/4 Scale", "1/4 Figure", "grail", 950),
+        ("Hot Toys", "Marvel MCU", "Captain America (Endgame) 1/4 Scale", "1/4 Figure", "grail", 1100),
+        ("Hot Toys", "Marvel MCU", "War Machine Mark III 1/4 Scale", "1/4 Figure", "grail", 1050),
+        ("Hot Toys", "DC", "Darkseid 1/4 Scale (Zack Snyder JL)", "1/4 Figure", "grail", 1400),
+        ("Hot Toys", "DC", "Superman (Henry Cavill) 1/4 Scale", "1/4 Figure", "grail", 1100),
+        ("Hot Toys", "Star Wars", "Darth Vader (ESB) 1/4 Scale", "1/4 Figure", "grail", 1200),
+        ("Hot Toys", "Star Wars", "The Mandalorian 1/4 Scale (Beskar)", "1/4 Figure", "grail", 1000),
+        ("Hot Toys", "Star Wars", "Darth Maul (TPM) 1/4 Scale", "1/4 Figure", "grail", 1150),
+
+        # ─── DX Editions — Additional ────────────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Iron Man Mark V (Suitcase Armor) DX", "1/6 Figure", "high", 750),
+        ("Hot Toys", "Marvel MCU", "Captain America (Avengers) DX Edition", "1/6 Figure", "high", 700),
+        ("Hot Toys", "Star Wars", "Darth Vader DX07 (ANH)", "1/6 Figure", "grail", 1600),
+        ("Hot Toys", "Star Wars", "Luke Skywalker DX25 (Crait Deluxe)", "1/6 Figure", "high", 650),
+        ("Hot Toys", "Star Wars", "Emperor Palpatine DX Edition (ROTJ)", "1/6 Figure", "high", 700),
+        ("Hot Toys", "DC", "Batman (Begins) DX Edition", "1/6 Figure", "high", 800),
+        ("Hot Toys", "DC", "Two-Face (Harvey Dent TDK) DX Edition", "1/6 Figure", "high", 700),
+
+        # ─── Cosbaby Sets — Additional ───────────────────────────────────
+        ("Hot Toys", "Marvel MCU", "Guardians of the Galaxy Vol 3 Cosbaby Set", "Cosbaby", "standard", 60),
+        ("Hot Toys", "Marvel MCU", "Doctor Strange MoM Cosbaby Set", "Cosbaby", "standard", 55),
+        ("Hot Toys", "Marvel MCU", "Eternals Cosbaby Full Set", "Cosbaby", "standard", 75),
+        ("Hot Toys", "Marvel MCU", "Shang-Chi Cosbaby Set", "Cosbaby", "standard", 50),
+        ("Hot Toys", "Marvel MCU", "Black Widow Cosbaby Set", "Cosbaby", "standard", 48),
+        ("Hot Toys", "Star Wars", "Ahsoka Series Cosbaby Set (4-Pack)", "Cosbaby", "standard", 55),
+        ("Hot Toys", "Star Wars", "Obi-Wan Kenobi Cosbaby Set", "Cosbaby", "standard", 50),
+        ("Hot Toys", "DC", "The Batman Cosbaby Set (4-Pack)", "Cosbaby", "standard", 55),
+        ("Hot Toys", "DC", "Joker & Harley Quinn Cosbaby Duo", "Cosbaby", "standard", 42),
+        ("Hot Toys", "John Wick", "John Wick Cosbaby (Chapter 4)", "Cosbaby", "standard", 28),
+        ("Hot Toys", "Indiana Jones", "Indiana Jones Cosbaby (Raiders)", "Cosbaby", "standard", 28),
+        ("Hot Toys", "Terminator", "T-800 Cosbaby (Endoskeleton)", "Cosbaby", "standard", 28),
+
+        # ─── XM Studios 1/4 Scale Expansion ──────────────────────────────
+        ("XM Studios", "Marvel", "Spider-Man 1/4 Scale Premium", "1/4 Statue", "grail", 1600),
+        ("XM Studios", "Marvel", "Venom 1/4 Scale Premium", "1/4 Statue", "grail", 1700),
+        ("XM Studios", "Marvel", "Magneto 1/4 Scale Premium", "1/4 Statue", "grail", 1800),
+        ("XM Studios", "DC", "Superman 1/4 Scale Premium", "1/4 Statue", "grail", 1600),
+        ("XM Studios", "DC", "Flash 1/4 Scale Premium", "1/4 Statue", "grail", 1500),
+        ("XM Studios", "DC", "Green Lantern 1/4 Scale Premium", "1/4 Statue", "grail", 1550),
+
+        # ─── Sideshow Legendary Scale ────────────────────────────────────
+        ("Sideshow", "Marvel", "Wolverine Legendary Scale", "Legendary Scale", "grail", 3500),
+        ("Sideshow", "Marvel", "Iron Man Legendary Scale", "Legendary Scale", "grail", 4000),
+        ("Sideshow", "Star Wars", "Darth Vader Legendary Scale", "Legendary Scale", "grail", 4500),
+        ("Sideshow", "Star Wars", "Boba Fett Legendary Scale", "Legendary Scale", "grail", 3800),
+
+        # ─── Gentle Giant Mini Busts Expansion ───────────────────────────
+        ("Gentle Giant", "Star Wars", "Ahsoka Tano Mini Bust", "Mini Bust", "mid", 180),
+        ("Gentle Giant", "Star Wars", "Grand Admiral Thrawn Mini Bust", "Mini Bust", "mid", 200),
+        ("Gentle Giant", "Marvel", "Deadpool & Wolverine Mini Bust Set", "Mini Bust", "mid", 220),
+
+        # ─── Additional Figures to Reach 900+ ────────────────────────────
+        ("Hot Toys", "Star Wars", "Sabine Wren (Ahsoka Show)", "1/6 Figure", "mid", 370),
+        ("Hot Toys", "Star Wars", "Baylan Skoll (Ahsoka Show)", "1/6 Figure", "mid", 400),
+        ("Hot Toys", "Star Wars", "Shin Hati (Ahsoka Show)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "Star Wars", "Yoda (Episode I The Phantom Menace)", "1/6 Figure", "mid", 300),
+        ("Hot Toys", "Star Wars", "R2-D2 (A New Hope)", "1/6 Figure", "standard", 250),
+        ("Hot Toys", "Star Wars", "C-3PO (A New Hope)", "1/6 Figure", "standard", 270),
+        ("Hot Toys", "Marvel MCU", "Nick Fury (The Marvels)", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "Marvel MCU", "Ant-Man (Quantumania) Standard", "1/6 Figure", "mid", 330),
+        ("Hot Toys", "Marvel MCU", "Wasp (Quantumania)", "1/6 Figure", "mid", 340),
+        ("Hot Toys", "DC", "Supergirl (The Flash 2023)", "1/6 Figure", "mid", 350),
+        ("Hot Toys", "DC", "General Zod (Man of Steel)", "1/6 Figure", "mid", 380),
+        ("Hot Toys", "Predator", "Feral Predator (Prey 2022)", "1/6 Figure", "mid", 400),
     ]
 
     catalog = []

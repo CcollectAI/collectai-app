@@ -11,6 +11,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { BETA_MODE } from "@/config/featureFlags";
 
 // ── Props interface ─────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ export const BuildProjectSection = React.memo(function BuildProjectSection({
   categorySlug,
 }: BuildProjectSectionProps) {
   const { colors } = useAppTheme();
+  if (BETA_MODE) return null;
   return (
     <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
       <View style={s.sectionHeaderRow} accessibilityRole="header">

@@ -13,6 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { ScoreExplanationSheet } from '@/components/ScoreExplanationSheet';
 import type { PortfolioTierSummary } from '@/analytics/portfolioMetrics';
+import { BETA_MODE } from '@/config/featureFlags';
 import { radius, text, fontWeight, shadow } from '@/theme/tokens';
 
 const COLORS = {
@@ -60,7 +61,7 @@ function PortfolioTierBadgeInner({ tierSummary }: Props) {
 
         <AnimatedPressable
           style={styles.tierBadgeContainer}
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/leaderboard'); }}
+          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); if (!BETA_MODE) router.push('/leaderboard'); }}
           accessibilityRole="button"
           accessibilityLabel={`${tierSummary.tier} tier — view leaderboard`}
         >

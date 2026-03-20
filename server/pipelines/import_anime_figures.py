@@ -1068,6 +1068,9 @@ def get_curated_catalog() -> list[dict]:
     # Expand with scale/manufacturer/limited variants before dedup
     catalog = _variant_expansion(catalog)
 
+    # Add wave 2 expansion items
+    catalog.extend(_wave2_anime_expansion())
+
     # Deduplicate by ('manufacturer', 'character', 'scale', 'figure_type') (keep first occurrence)
     _seen: set = set()
     _deduped: list = []
@@ -1077,6 +1080,231 @@ def get_curated_catalog() -> list[dict]:
             _seen.add(_key)
             _deduped.append(item)
     return _deduped
+
+
+def _wave2_anime_expansion() -> list[dict]:
+    """Wave 2 — ~155 items: Demon Slayer, Jujutsu Kaisen, Spy x Family,
+    Chainsaw Man, Frieren, One Piece, Evangelion, Fate, Nendoroid & figma
+    expansions, and Prize figures (Banpresto)."""
+
+    figures = [
+        # ── Demon Slayer — Scale Figures ───────────────────────────────
+        ("Aniplex", "Scale", "Rengoku Kyojuro Flame Hashira Ver.", "Demon Slayer", "1/8", "high", 280),
+        ("Alter", "Scale", "Mitsuri Kanroji Love Breathing", "Demon Slayer", "1/7", "high", 260),
+        ("Kotobukiya", "Scale", "Muichiro Tokito Mist Hashira", "Demon Slayer", "1/8", "mid", 180),
+        ("Good Smile Company", "Scale", "Shinobu Kocho Insect Hashira", "Demon Slayer", "1/7", "high", 240),
+        ("Alter", "Scale", "Tengen Uzui Sound Hashira Ver.", "Demon Slayer", "1/7", "high", 280),
+        ("FREEing", "B-style", "Mitsuri Kanroji Bunny Ver.", "Demon Slayer", "1/4", "grail", 450),
+        ("Good Smile Company", "Scale", "Akaza Upper Moon Three", "Demon Slayer", "1/7", "high", 300),
+        ("Aniplex", "Scale", "Zenitsu Agatsuma Thunderclap", "Demon Slayer", "1/8", "high", 220),
+
+        # ── Jujutsu Kaisen — Scale Figures ─────────────────────────────
+        ("Alter", "Scale", "Satoru Gojo Hollow Purple Ver.", "Jujutsu Kaisen", "1/7", "grail", 420),
+        ("FREEing", "B-style", "Nobara Kugisaki Bunny Ver.", "Jujutsu Kaisen", "1/4", "grail", 400),
+        ("Kotobukiya", "Scale", "Yuji Itadori Black Flash", "Jujutsu Kaisen", "1/7", "high", 200),
+        ("Good Smile Company", "Scale", "Megumi Fushiguro Chimera Shadow", "Jujutsu Kaisen", "1/7", "high", 240),
+        ("Aniplex", "Scale", "Sukuna Domain Expansion Ver.", "Jujutsu Kaisen", "1/7", "grail", 380),
+        ("Kotobukiya", "Scale", "Toji Fushiguro Sorcerer Killer", "Jujutsu Kaisen", "1/7", "high", 260),
+        ("Alter", "Scale", "Maki Zenin Playful Mind", "Jujutsu Kaisen", "1/7", "high", 220),
+
+        # ── Spy x Family ───────────────────────────────────────────────
+        ("Good Smile Company", "Scale", "Yor Forger Thorn Princess Ver.", "Spy x Family", "1/7", "high", 280),
+        ("Alter", "Scale", "Yor Forger Elegant Dress Ver.", "Spy x Family", "1/7", "grail", 350),
+        ("FREEing", "B-style", "Yor Forger Bunny Ver.", "Spy x Family", "1/4", "grail", 480),
+        ("Kotobukiya", "Scale", "Loid Forger Twilight Ver.", "Spy x Family", "1/7", "high", 200),
+        ("Good Smile Company", "Scale", "Anya Forger Mission Start Ver.", "Spy x Family", "1/7", "mid", 180),
+        ("Bandai", "S.H.Figuarts", "Loid Forger S.H.Figuarts", "Spy x Family", "Non-scale", "mid", 70),
+
+        # ── Chainsaw Man ───────────────────────────────────────────────
+        ("Good Smile Company", "Scale", "Denji Chainsaw Devil Form", "Chainsaw Man", "1/7", "high", 280),
+        ("Kotobukiya", "Scale", "Makima Control Devil Ver.", "Chainsaw Man", "1/7", "high", 260),
+        ("FREEing", "B-style", "Makima Bunny Ver.", "Chainsaw Man", "1/4", "grail", 500),
+        ("Alter", "Scale", "Power Blood Fiend Ver.", "Chainsaw Man", "1/7", "high", 300),
+        ("Good Smile Company", "Scale", "Pochita Plush Scale Figure", "Chainsaw Man", "1/1", "mid", 120),
+        ("Kotobukiya", "Scale", "Reze Bomb Girl Ver.", "Chainsaw Man", "1/7", "high", 240),
+        ("eStream", "Scale", "Makima eStream Ver.", "Chainsaw Man", "1/7", "grail", 520),
+
+        # ── Frieren: Beyond Journey's End ──────────────────────────────
+        ("Good Smile Company", "Scale", "Frieren Sousou no Frieren Scale", "Frieren: Beyond Journey's End", "1/7", "high", 260),
+        ("Alter", "Scale", "Fern Battle Magic Ver.", "Frieren: Beyond Journey's End", "1/7", "high", 220),
+        ("Kotobukiya", "Scale", "Frieren Staff Raised Ver.", "Frieren: Beyond Journey's End", "1/7", "high", 240),
+        ("Good Smile Company", "Scale", "Himmel Hero Party Ver.", "Frieren: Beyond Journey's End", "1/7", "mid", 180),
+        ("Max Factory", "Scale", "Ubel Killing Magic Ver.", "Frieren: Beyond Journey's End", "1/7", "high", 250),
+
+        # ── One Piece — Portrait of Pirates ────────────────────────────
+        ("MegaHouse", "Portrait of Pirates", "Monkey D. Luffy Gear 5 PoP", "One Piece", "1/8", "grail", 400),
+        ("MegaHouse", "Portrait of Pirates", "Roronoa Zoro King of Hell PoP", "One Piece", "1/8", "high", 300),
+        ("MegaHouse", "Portrait of Pirates", "Nico Robin Flower Flower PoP", "One Piece", "1/8", "high", 280),
+        ("MegaHouse", "Portrait of Pirates", "Nami Zeus PoP", "One Piece", "1/8", "high", 260),
+        ("MegaHouse", "Portrait of Pirates", "Trafalgar Law Room PoP", "One Piece", "1/8", "high", 250),
+        ("MegaHouse", "Portrait of Pirates", "Yamato Thunder PoP", "One Piece", "1/8", "high", 300),
+        ("MegaHouse", "Portrait of Pirates", "Boa Hancock Love PoP", "One Piece", "1/8", "high", 350),
+        ("MegaHouse", "Portrait of Pirates", "Shanks Haki PoP", "One Piece", "1/8", "grail", 400),
+        ("Tsume Art", "HQS", "Kaido Dragon Form HQS", "One Piece", "1/7", "grail", 800),
+        ("Bandai", "Ichiban Kuji", "Luffy Gear 5 Ichiban Kuji Last One", "One Piece", "Non-scale", "mid", 80),
+
+        # ── Evangelion ─────────────────────────────────────────────────
+        ("Kotobukiya", "Scale", "Rei Ayanami Plugsuit 3.0+1.0", "Evangelion", "1/7", "high", 200),
+        ("Alter", "Scale", "Asuka Langley Plugsuit 3.0+1.0", "Evangelion", "1/7", "high", 260),
+        ("Good Smile Company", "Scale", "Mari Makinami Plugsuit Ver.", "Evangelion", "1/7", "high", 220),
+        ("Kotobukiya", "Scale", "Kaworu Nagisa & Shinji Ikari Pair", "Evangelion", "1/7", "high", 280),
+        ("FREEing", "B-style", "Rei Ayanami Bunny 3.0+1.0 Ver.", "Evangelion", "1/4", "grail", 450),
+        ("Bandai", "Metal Build", "EVA Unit-01 Metal Build", "Evangelion", "Non-scale", "grail", 350),
+
+        # ── Fate/Stay Night & Fate/Grand Order ─────────────────────────
+        ("Alter", "Scale", "Saber Alter Shinjuku Ver.", "Fate/Grand Order", "1/7", "grail", 400),
+        ("Good Smile Company", "Scale", "Jeanne d'Arc Ruler Ver.", "Fate/Grand Order", "1/7", "high", 280),
+        ("Max Factory", "Scale", "Scathach Lancer Ver.", "Fate/Grand Order", "1/7", "high", 300),
+        ("Alter", "Scale", "Artoria Pendragon Saber 15th Anniversary", "Fate/Stay Night", "1/7", "grail", 450),
+        ("Kotobukiya", "Scale", "Mash Kyrielight Shielder Ver.", "Fate/Grand Order", "1/7", "high", 220),
+        ("FREEing", "B-style", "Ereshkigal Bunny Ver.", "Fate/Grand Order", "1/4", "grail", 500),
+        ("Aniplex", "Scale", "Ishtar Archer Ver.", "Fate/Grand Order", "1/7", "high", 280),
+
+        # ── Nendoroid Expansions ───────────────────────────────────────
+        ("Good Smile Company", "Nendoroid", "Nendoroid Yor Forger Thorn Princess", "Spy x Family", "Non-scale", "mid", 55),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Denji", "Chainsaw Man", "Non-scale", "mid", 50),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Makima", "Chainsaw Man", "Non-scale", "mid", 55),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Frieren", "Frieren: Beyond Journey's End", "Non-scale", "mid", 55),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Fern", "Frieren: Beyond Journey's End", "Non-scale", "mid", 50),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Gojo Satoru", "Jujutsu Kaisen", "Non-scale", "mid", 60),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Sukuna", "Jujutsu Kaisen", "Non-scale", "mid", 55),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Luffy Gear 5", "One Piece", "Non-scale", "mid", 60),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Rengoku", "Demon Slayer", "Non-scale", "mid", 55),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Power", "Chainsaw Man", "Non-scale", "mid", 50),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Anya Forger", "Spy x Family", "Non-scale", "mid", 45),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Sung Jin-woo", "Solo Leveling", "Non-scale", "mid", 55),
+
+        # ── figma Expansions ───────────────────────────────────────────
+        ("Max Factory", "Figma", "figma Guts Berserker Armor Ver.", "Berserk", "Non-scale", "high", 120),
+        ("Max Factory", "Figma", "figma Denji Chainsaw Man", "Chainsaw Man", "Non-scale", "mid", 70),
+        ("Max Factory", "Figma", "figma Gojo Satoru", "Jujutsu Kaisen", "Non-scale", "mid", 75),
+        ("Max Factory", "Figma", "figma Eren Yeager Attack Titan", "Attack on Titan", "Non-scale", "high", 90),
+        ("Max Factory", "Figma", "figma Yor Forger Thorn Princess", "Spy x Family", "Non-scale", "mid", 70),
+        ("Max Factory", "Figma", "figma Tanjiro Kamado Hinokami", "Demon Slayer", "Non-scale", "mid", 70),
+        ("Max Factory", "Figma", "figma Sung Jin-woo Solo Leveling", "Solo Leveling", "Non-scale", "mid", 75),
+        ("Max Factory", "Figma", "figma Frieren", "Frieren: Beyond Journey's End", "Non-scale", "mid", 70),
+
+        # ── Prize Figures — Banpresto ──────────────────────────────────
+        ("Banpresto", "Grandista", "Vegeta Grandista Manga Dimensions", "Dragon Ball Z", "Non-scale", "mid", 55),
+        ("Banpresto", "Vibration Stars", "Gojo Satoru Vibration Stars", "Jujutsu Kaisen", "Non-scale", "standard", 30),
+        ("Banpresto", "DXF", "Yor Forger DXF Figure", "Spy x Family", "Non-scale", "standard", 25),
+        ("Banpresto", "Grandista", "Zoro Grandista Manga Dimensions", "One Piece", "Non-scale", "mid", 50),
+        ("Banpresto", "Vibration Stars", "Denji Vibration Stars", "Chainsaw Man", "Non-scale", "standard", 28),
+        ("Banpresto", "DXF", "Makima DXF Figure", "Chainsaw Man", "Non-scale", "standard", 30),
+        ("Banpresto", "Grandista", "Tanjiro Kamado Grandista", "Demon Slayer", "Non-scale", "standard", 35),
+        ("Banpresto", "Vibration Stars", "Yuji Itadori Vibration Stars", "Jujutsu Kaisen", "Non-scale", "standard", 28),
+        ("Banpresto", "DXF", "Anya Forger DXF The Movie", "Spy x Family", "Non-scale", "standard", 25),
+        ("Banpresto", "Grandista", "Goku Super Saiyan Blue Grandista", "Dragon Ball Super", "Non-scale", "mid", 50),
+        ("Banpresto", "Vibration Stars", "Luffy Gear 5 Vibration Stars", "One Piece", "Non-scale", "standard", 35),
+
+        # ── Pop Up Parade Expansions ───────────────────────────────────
+        ("Good Smile Company", "Pop Up Parade", "Pop Up Parade Gojo Satoru", "Jujutsu Kaisen", "Non-scale", "standard", 28),
+        ("Good Smile Company", "Pop Up Parade", "Pop Up Parade Yor Forger", "Spy x Family", "Non-scale", "standard", 28),
+        ("Good Smile Company", "Pop Up Parade", "Pop Up Parade Makima", "Chainsaw Man", "Non-scale", "standard", 28),
+        ("Good Smile Company", "Pop Up Parade", "Pop Up Parade Power", "Chainsaw Man", "Non-scale", "standard", 25),
+        ("Good Smile Company", "Pop Up Parade", "Pop Up Parade Frieren", "Frieren: Beyond Journey's End", "Non-scale", "standard", 28),
+        ("Good Smile Company", "Pop Up Parade", "Pop Up Parade Fern", "Frieren: Beyond Journey's End", "Non-scale", "standard", 25),
+        ("Good Smile Company", "Pop Up Parade", "Pop Up Parade Luffy Gear 5", "One Piece", "Non-scale", "standard", 30),
+        ("Good Smile Company", "Pop Up Parade", "Pop Up Parade Tanjiro Water Breathing", "Demon Slayer", "Non-scale", "standard", 28),
+
+        # ── Premium Resin — Prime 1 / Tsume ────────────────────────────
+        ("Prime 1 Studio", "Premium Masterline", "Luffy Gear 5 Premium Masterline", "One Piece", "1/4", "grail", 1500),
+        ("Tsume Art", "HQS+", "Gojo Satoru HQS+ Domain Expansion", "Jujutsu Kaisen", "1/6", "grail", 900),
+        ("Prime 1 Studio", "Premium Masterline", "Naruto Baryon Mode Premium Masterline", "Naruto", "1/4", "grail", 1200),
+        ("Tsume Art", "HQS", "Tanjiro Hinokami Kagura HQS", "Demon Slayer", "1/6", "grail", 700),
+        ("Prime 1 Studio", "Premium Masterline", "Eren Founding Titan Premium Masterline", "Attack on Titan", "1/4", "grail", 1800),
+
+        # ── Misc Popular Series ────────────────────────────────────────
+        ("Myethos", "Scale", "Hu Tao Myethos Ver.", "Genshin Impact", "1/7", "high", 300),
+        ("Kotobukiya", "Bishoujo", "Marin Kitagawa Bishoujo Ver.", "My Dress-Up Darling", "1/7", "high", 240),
+        ("Good Smile Company", "Scale", "Zero Two Idol Ver.", "DARLING in the FRANXX", "1/7", "high", 280),
+        ("Alter", "Scale", "Ai Hoshino Idol Costume", "Oshi no Ko", "1/7", "high", 260),
+        ("Kotobukiya", "Scale", "Isagi Yoichi Blue Lock Ver.", "Blue Lock", "1/7", "mid", 180),
+        ("Bandai", "Ichiban Kuji", "Sung Jin-woo Ichiban Kuji Last One", "Solo Leveling", "Non-scale", "mid", 90),
+
+        # ── More Alter Figures ─────────────────────────────────────────
+        ("Alter", "Scale", "Shinobu Oshino Kiss-Shot Ver.", "Monogatari", "1/7", "grail", 400),
+        ("Alter", "Scale", "Senjougahara Hitagi Haregi Ver.", "Monogatari", "1/7", "high", 300),
+        ("Alter", "Scale", "Takina Inoue Café Ver.", "Lycoris Recoil", "1/7", "high", 240),
+        ("Alter", "Scale", "Chisato Nishikigi Lycoris Ver.", "Lycoris Recoil", "1/7", "high", 260),
+
+        # ── Good Smile Company Additional ──────────────────────────────
+        ("Good Smile Company", "Scale", "Bocchi Hitori Guitar Ver.", "Bocchi the Rock!", "1/7", "high", 220),
+        ("Good Smile Company", "Scale", "Kita Ikuyo Bass Ver.", "Bocchi the Rock!", "1/7", "mid", 180),
+        ("Good Smile Company", "Scale", "Oshi no Ko Ruby Idol Stage", "Oshi no Ko", "1/7", "high", 240),
+        ("Good Smile Company", "Scale", "Aqua Hoshino Dark Side Ver.", "Oshi no Ko", "1/7", "mid", 180),
+
+        # ── Kotobukiya Additional ──────────────────────────────────────
+        ("Kotobukiya", "Bishoujo", "Asuna Yuuki ALO Ver.", "Sword Art Online", "1/7", "high", 200),
+        ("Kotobukiya", "Bishoujo", "Sinon GGO Ver.", "Sword Art Online", "1/7", "mid", 160),
+        ("Kotobukiya", "Scale", "Nezuko Kamado Blood Demon Art", "Demon Slayer", "1/8", "high", 220),
+        ("Kotobukiya", "Scale", "Tanjiro Kamado Water Breathing", "Demon Slayer", "1/8", "high", 200),
+
+        # ── Max Factory Additional ─────────────────────────────────────
+        ("Max Factory", "Scale", "Rem Morning Star Ver.", "Re:Zero", "1/7", "high", 260),
+        ("Max Factory", "Scale", "Ram Oni Ver.", "Re:Zero", "1/7", "high", 240),
+        ("Max Factory", "Scale", "Emilia Crystal Dress Ver.", "Re:Zero", "1/7", "grail", 380),
+
+        # ── FREEing B-style Additional ─────────────────────────────────
+        ("FREEing", "B-style", "Zero Two Bunny Ver. 2nd", "DARLING in the FRANXX", "1/4", "grail", 500),
+        ("FREEing", "B-style", "Yor Forger Bunny Ver.", "Spy x Family", "1/4", "grail", 480),
+        ("FREEing", "B-style", "Makima Bunny Ver. 2nd", "Chainsaw Man", "1/4", "grail", 520),
+        ("FREEing", "B-style", "Frieren Bunny Ver.", "Frieren: Beyond Journey's End", "1/4", "grail", 450),
+
+        # ── Nendoroid Additional ───────────────────────────────────────
+        ("Good Smile Company", "Nendoroid", "Nendoroid Bocchi Hitori", "Bocchi the Rock!", "Non-scale", "mid", 50),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Chisato Nishikigi", "Lycoris Recoil", "Non-scale", "mid", 50),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Takina Inoue", "Lycoris Recoil", "Non-scale", "mid", 45),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Ai Hoshino", "Oshi no Ko", "Non-scale", "mid", 55),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Ruby Hoshino", "Oshi no Ko", "Non-scale", "mid", 50),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Ubel", "Frieren: Beyond Journey's End", "Non-scale", "mid", 50),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Stark", "Frieren: Beyond Journey's End", "Non-scale", "mid", 45),
+        ("Good Smile Company", "Nendoroid", "Nendoroid Toji Fushiguro", "Jujutsu Kaisen", "Non-scale", "mid", 55),
+
+        # ── figma Additional ───────────────────────────────────────────
+        ("Max Factory", "Figma", "figma Makima", "Chainsaw Man", "Non-scale", "mid", 70),
+        ("Max Factory", "Figma", "figma Sukuna", "Jujutsu Kaisen", "Non-scale", "mid", 75),
+        ("Max Factory", "Figma", "figma Link Tears of the Kingdom", "Zelda", "Non-scale", "mid", 65),
+        ("Max Factory", "Figma", "figma Saber Artoria", "Fate/Stay Night", "Non-scale", "mid", 80),
+
+        # ── Robot Spirits / Metal Build ────────────────────────────────
+        ("Bandai", "Metal Build", "Strike Freedom Gundam Metal Build", "Gundam SEED", "Non-scale", "grail", 400),
+        ("Bandai", "Metal Build", "Wing Gundam Zero EW Metal Build", "Gundam Wing", "Non-scale", "grail", 350),
+        ("Bandai", "Robot Spirits", "RX-78-2 Gundam ver. A.N.I.M.E.", "Gundam", "Non-scale", "high", 80),
+        ("Bandai", "Robot Spirits", "Zaku II ver. A.N.I.M.E.", "Gundam", "Non-scale", "mid", 60),
+        ("Bandai", "Robot Spirits", "Nu Gundam ver. A.N.I.M.E.", "Gundam", "Non-scale", "high", 90),
+
+        # ── S.H.Figuarts Expanded ──────────────────────────────────────
+        ("Bandai", "S.H.Figuarts", "Goku Ultra Instinct S.H.Figuarts", "Dragon Ball Super", "Non-scale", "high", 120),
+        ("Bandai", "S.H.Figuarts", "Vegeta SSBE S.H.Figuarts", "Dragon Ball Super", "Non-scale", "high", 100),
+        ("Bandai", "S.H.Figuarts", "Naruto Sage Mode S.H.Figuarts", "Naruto", "Non-scale", "mid", 70),
+        ("Bandai", "S.H.Figuarts", "Tanjiro Kamado S.H.Figuarts", "Demon Slayer", "Non-scale", "mid", 65),
+        ("Bandai", "S.H.Figuarts", "Luffy Gear 5 S.H.Figuarts", "One Piece", "Non-scale", "high", 90),
+
+        # ── Myethos / eStream Additional ───────────────────────────────
+        ("Myethos", "Scale", "Fischl Myethos Prinzessin Ver.", "Genshin Impact", "1/7", "high", 280),
+        ("Myethos", "Scale", "Ganyu Myethos Qilin Ver.", "Genshin Impact", "1/7", "high", 300),
+        ("eStream", "Scale", "Emilia eStream Crystal Dress", "Re:Zero", "1/7", "grail", 500),
+        ("eStream", "Scale", "Ram eStream Neon City", "Re:Zero", "1/7", "grail", 480),
+
+        # ── Bring Arts / Play Arts Kai ─────────────────────────────────
+        ("Square Enix", "Bring Arts", "2B NieR Automata Bring Arts", "NieR Automata", "Non-scale", "high", 120),
+        ("Square Enix", "Bring Arts", "Cloud Strife FF7 Remake Bring Arts", "Final Fantasy VII", "Non-scale", "high", 100),
+        ("Square Enix", "Play Arts Kai", "Sephiroth FF7 Remake Play Arts Kai", "Final Fantasy VII", "Non-scale", "high", 180),
+    ]
+
+    catalog = []
+    for manufacturer, figure_type, character, series, scale, tier, price in figures:
+        catalog.append({
+            "manufacturer": manufacturer,
+            "figure_type": figure_type,
+            "character": character,
+            "series": series,
+            "scale": scale,
+            "rarity_tier": tier,
+            "price_eur": price,
+        })
+    return catalog
 
 
 def item_to_catalog_item(item: dict) -> CatalogItem:

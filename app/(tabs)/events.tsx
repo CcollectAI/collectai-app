@@ -44,6 +44,7 @@ import * as Location from 'expo-location';
 import logger from '@/utils/logger';
 import { radius, spacing, text, fontWeight, gap, shadow } from '@/theme/tokens';
 import { TWITCH_PURPLE } from '@/constants/colors';
+import { BETA_MODE } from '@/config/featureFlags';
 
 const VIEW_MODE_TABS = [
   { key: 'list' as const, icon: 'list-outline' as const, label: 'List' },
@@ -209,7 +210,7 @@ function EventsScreen() {
             title: event.title,
             startDate: eventDate,
             location: event.location,
-            notes: `CollectAI Event: ${KIND_LABEL[event.kind]}`,
+            notes: `Atlantis Event: ${KIND_LABEL[event.kind]}`,
           });
         } catch (calErr) {
           // Calendar add is non-critical; don't fail the RSVP for this
@@ -473,25 +474,29 @@ function EventsScreen() {
           <Text style={[styles.createEventPillText, { color: colors.accentText }]}>Create Event</Text>
         </AnimatedPressable>
 
-        <AnimatedPressable
-          onPress={handleOpenSponsor}
-          style={[styles.sponsorPill, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
-          accessibilityRole="button"
-          accessibilityLabel="Sponsor events"
-        >
-          <Ionicons name="megaphone-outline" size={14} color={colors.accent} />
-          <Text style={[styles.sponsorPillText, { color: colors.accent }]}>Sponsor</Text>
-        </AnimatedPressable>
+        {!BETA_MODE && (
+          <>
+            <AnimatedPressable
+              onPress={handleOpenSponsor}
+              style={[styles.sponsorPill, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Sponsor events"
+            >
+              <Ionicons name="megaphone-outline" size={14} color={colors.accent} />
+              <Text style={[styles.sponsorPillText, { color: colors.accent }]}>Sponsor</Text>
+            </AnimatedPressable>
 
-        <AnimatedPressable
-          onPress={handleOpenTwitch}
-          style={[styles.sponsorPill, { borderColor: TWITCH_PURPLE, backgroundColor: TWITCH_PURPLE + '10' }]}
-          accessibilityRole="button"
-          accessibilityLabel="Twitch creators hub"
-        >
-          <Ionicons name="logo-twitch" size={14} color={TWITCH_PURPLE} />
-          <Text style={[styles.sponsorPillText, { color: TWITCH_PURPLE }]}>Twitch</Text>
-        </AnimatedPressable>
+            <AnimatedPressable
+              onPress={handleOpenTwitch}
+              style={[styles.sponsorPill, { borderColor: TWITCH_PURPLE, backgroundColor: TWITCH_PURPLE + '10' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Twitch creators hub"
+            >
+              <Ionicons name="logo-twitch" size={14} color={TWITCH_PURPLE} />
+              <Text style={[styles.sponsorPillText, { color: TWITCH_PURPLE }]}>Twitch</Text>
+            </AnimatedPressable>
+          </>
+        )}
       </View>
 
       {/* Search Bar */}

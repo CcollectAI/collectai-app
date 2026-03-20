@@ -13,6 +13,7 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import logger from '@/utils/logger';
 import { MEDAL_COLORS, TWITCH_PURPLE } from '@/constants/colors';
+import { BETA_MODE } from '@/config/featureFlags';
 
 const AvatarCircle = React.memo<{ name: string; color: string }>(({ name, color }) => {
   const initials =
@@ -113,19 +114,21 @@ const LeaderboardScreen: React.FC = () => {
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
 
         {/* Twitch Creators link */}
-        <AnimatedPressable
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            router.push('/twitch-leaderboard');
-          }}
-          style={[styles.twitchLink, { backgroundColor: colors.card, borderColor: colors.border }]}
-          accessibilityRole="button"
-          accessibilityLabel="View Twitch creators leaderboard"
-        >
-          <Ionicons name="logo-twitch" size={18} color={TWITCH_PURPLE} />
-          <Text style={[styles.twitchLinkText, { color: colors.text }]}>Twitch Creators</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
-        </AnimatedPressable>
+        {!BETA_MODE && (
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              router.push('/twitch-leaderboard');
+            }}
+            style={[styles.twitchLink, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="View Twitch creators leaderboard"
+          >
+            <Ionicons name="logo-twitch" size={18} color={TWITCH_PURPLE} />
+            <Text style={[styles.twitchLinkText, { color: colors.text }]}>Twitch Creators</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+          </AnimatedPressable>
+        )}
 
         {/* Leaderboard list */}
         {rankedUsers.map((user, index) => {
