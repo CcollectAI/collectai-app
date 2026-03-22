@@ -227,7 +227,22 @@ psql $DATABASE_URL -f supabase/migrations/20260222_build_paint_improvements.sql
 psql $DATABASE_URL -f supabase/migrations/20260223_add_performance_indexes.sql
 psql $DATABASE_URL -f supabase/migrations/20260224_user_privacy_settings.sql
 psql $DATABASE_URL -f supabase/migrations/20260224_add_indexes_v2.sql
+psql $DATABASE_URL -f supabase/migrations/20260322_build_paint_status_pipeline.sql
 ```
+
+### Round 36 Migration Notes (2026-03-22)
+
+**`20260322_build_paint_status_pipeline.sql`** — Category-specific project status pipelines:
+- Migrates existing data: `Active` → `in_progress`, `Backlog` → `wishlist`, `Completed` → `finished`
+- Changes default status from `'Active'` to `'wishlist'`
+- Adds CHECK constraint for 25 valid statuses across all category pipelines
+- Updates RPCs: `rpc_create_build_paint_project_v1`, `rpc_mark_build_paint_project_complete_v1`, `rpc_set_build_paint_progress_v1`
+
+**New worker: `auction_alert_worker`** — Enable with `AUCTION_ALERT_ENABLED=true`. Runs every 5 minutes, scans for eBay/Yahoo/Catawiki auctions ending within 15 minutes that match watchlist items.
+
+**Notification system overhaul** — All workers now route through `app/lib/notify.py` for preference-aware, frequency-capped push delivery. No migration needed; uses existing `notification_history` and `user_push_tokens` tables.
+
+**Catalog expansion** — Run `cd server && python -m pipelines.import_all` on EC2 to populate 46,500+ curated items across 45 pipelines.
 
 ## Beta Landing Page
 
@@ -275,7 +290,7 @@ Rate limited to 5 signups per IP per hour (in-memory).
 
 ## OTA Updates (expo-updates)
 
-CollectAI supports over-the-air updates via `expo-updates`. This allows pushing
+Atlantis supports over-the-air updates via `expo-updates`. This allows pushing
 JavaScript/asset changes without a full store resubmission.
 
 ### Configuration
@@ -395,251 +410,10 @@ GitHub Actions workflows in `.github/workflows/`:
 
 ## App Store Submission
 
-### Step 1: Developer Account Setup
+Full app store submission guide (EAS setup, screenshots, deep links, review prep) has been moved to:
 
-**Apple Developer Program (required for iOS):**
-
-1. Enroll at [developer.apple.com](https://developer.apple.com) — USD 99/year
-2. After enrollment, note your **Team ID** (10 chars) from Membership Details
-3. Go to [App Store Connect](https://appstoreconnect.apple.com) > My Apps > + New App
-   - Platform: iOS
-   - Name: CollectAI
-   - Bundle ID: `com.collectai.app`
-   - SKU: `collectai-ios-1`
-4. Note the numeric **App Store Connect App ID** from the URL or General > App Information
-
-**Google Play Console (required for Android):**
-
-1. Register at [play.google.com/console](https://play.google.com/console) — USD 25 one-time
-2. Create app: set language (English), title (CollectAI), declaration checkboxes
-3. Create a Service Account for API-based submissions:
-   - Google Cloud Console > IAM > Service Accounts > Create
-   - Grant "Service Account User" role
-   - Download JSON key to `./google-play-service-account.json` (gitignored)
-   - In Play Console > API access > link the service account
-
-### Step 2: Fill EAS Credentials
-
-Update `eas.json` submit section with real values:
-
-```json
-"submit": {
-  "production": {
-    "ios": {
-      "appleId": "your@email.com",
-      "ascAppId": "1234567890",
-      "appleTeamId": "ABCDE12345"
-    },
-    "android": {
-      "serviceAccountKeyPath": "./google-play-service-account.json",
-      "track": "internal",
-      "releaseStatus": "draft"
-    }
-  }
-}
-```
-
-For iOS submissions, generate an App-Specific Password:
-- Go to [appleid.apple.com](https://appleid.apple.com) > Security > App-Specific Passwords
-- Set as env var: `EXPO_APPLE_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx`
-
-### Step 3: Initialize EAS Project
-
-```bash
-# Install EAS CLI
-npm install -g eas-cli
-
-# Login to Expo
-eas login
-
-# Initialize project (auto-generates projectId + owner in app.json)
-eas init
-```
-
-This populates `expo.owner` and `expo.extra.eas.projectId` in app.json.
-
-### Step 4: Build for Production
-
-```bash
-# iOS production build
-eas build --platform ios --profile production
-
-# Android production build
-eas build --platform android --profile production
-
-# Build both simultaneously
-eas build --platform all --profile production
-```
-
-EAS will walk through certificate/provisioning setup on first build:
-- **iOS**: Creates Distribution Certificate + Provisioning Profile (let EAS manage)
-- **Android**: Generates upload keystore (EAS stores it securely)
-
-### Step 5: Prepare Store Listings
-
-Store listing text is in `docs/store-description.md`. Key metadata:
-
-**iOS App Store:**
-
-| Field | Value |
-|-------|-------|
-| App Name | CollectAI |
-| Subtitle | Track, Value & Grow Your Hobby |
-| Category | Lifestyle (primary), Shopping (secondary) |
-| Keywords | collectibles,price guide,valuation,pokemon,funko,trading cards,collection,tracker,deals,portfolio |
-| Description | See `docs/store-description.md` |
-| Privacy URL | `https://collectai.app/privacy` |
-| Support URL | `https://collectai.app/support` |
-| Marketing URL | `https://collectai.app` |
-
-**Google Play:**
-
-| Field | Value |
-|-------|-------|
-| App Name | CollectAI - Collectibles Tracker |
-| Short Description | Track, value, and discover collectibles with AI-powered market intelligence |
-| Category | Lifestyle |
-| Content Rating | Everyone |
-| Privacy Policy URL | `https://collectai.app/privacy` |
-
-### Step 6: Screenshots
-
-**iOS Required Sizes:**
-
-| Device | Resolution | Required? |
-|--------|-----------|-----------|
-| iPhone 6.9" (16 Pro Max) | 1320 x 2868 | Yes |
-| iPhone 6.7" (15 Plus / 14 Pro Max) | 1290 x 2796 | Yes |
-| iPhone 6.5" (11 Pro Max / Xs Max) | 1242 x 2688 | Yes (if supporting older) |
-| iPhone 5.5" (8 Plus) | 1242 x 2208 | Only if supporting iPhone 8 |
-| iPad Pro 13" | 2064 x 2752 | Yes (`supportsTablet: true`) |
-| iPad Pro 12.9" | 2048 x 2732 | Yes (if supporting older iPads) |
-
-**Google Play Required Sizes:**
-
-| Device Type | Resolution | Required? |
-|-------------|-----------|-----------|
-| Phone | 1080 x 1920 (min) | Yes (2-8 screenshots) |
-| 7" Tablet | 1200 x 1920 | If targeting tablets |
-| 10" Tablet | 1600 x 2560 | If targeting tablets |
-
-**Recommended screenshot scenes (6-10 per device):**
-
-1. **Collection Overview** — portfolio grid with items and values
-2. **Item Detail** — single item with valuation and provenance
-3. **QuickScan** — camera scanning a barcode or collectible
-4. **Price Intelligence** — price chart or valuation breakdown
-5. **Deal Discovery** — purchase mandates with matched deals
-6. **Events** — collector events calendar
-7. **Categories** — browsing the 36 category taxonomy
-8. **Analytics** — portfolio value trends and insights
-
-**Capturing screenshots:**
-- Use Xcode Simulator for iOS (Cmd+S to save screenshot)
-- Use Android Studio emulator for Google Play
-- Or use a tool like [screenshots.pro](https://screenshots.pro) or Fastlane snapshot
-
-### Step 7: Required Assets
-
-| Asset | Size | Status |
-|-------|------|--------|
-| App icon (iOS) | 1024 x 1024 | Ready (`assets/icon.png`) |
-| Adaptive icon (Android) | 1024 x 1024 | Ready (`assets/adaptive-icon.png`) |
-| Splash screen | 1284 x 2778 | Ready (`assets/splash.png`) |
-| Notification icon | 96 x 96 | Ready (`assets/images/notification-icon.png`) |
-| Feature graphic (Google Play) | 1024 x 500 | **TODO** — create with Tiffany Blue (#81D8D0) background |
-
-### Step 8: Deep Link Verification
-
-Before App Store review, host verification files on `collectai.app`:
-
-**iOS — Apple App Site Association:**
-
-Host at `https://collectai.app/.well-known/apple-app-site-association`:
-
-```json
-{
-  "applinks": {
-    "apps": [],
-    "details": [
-      {
-        "appIDs": ["TEAM_ID.com.collectai.app"],
-        "paths": ["/item/*", "/events/*", "/categories/*", "/purchase/*", "/users/*"]
-      }
-    ]
-  }
-}
-```
-
-**Android — Digital Asset Links:**
-
-Host at `https://collectai.app/.well-known/assetlinks.json`:
-
-```json
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.collectai.app",
-    "sha256_cert_fingerprints": ["YOUR_SHA256_FINGERPRINT"]
-  }
-}]
-```
-
-Get your SHA-256 fingerprint: `eas credentials --platform android`
-
-### Step 9: Submit to Stores
-
-```bash
-# Submit iOS build to App Store Connect
-eas submit --platform ios --profile production
-
-# Submit Android build to Google Play
-eas submit --platform android --profile production
-```
-
-**Important for Android:** The first AAB upload MUST be done manually via Play Console.
-Download the AAB from EAS (`eas build:list`) and upload to the internal testing track.
-Subsequent submissions can use `eas submit`.
-
-### Step 10: App Review Preparation
-
-**iOS App Review Info:**
-- Provide a demo account (email + password) for the review team
-- Fill in "Notes for Reviewer" explaining how to test key features
-- Respond promptly to any reviewer questions (App Store Connect notifications)
-
-**Google Play Data Safety:**
-- Complete the Data Safety questionnaire in Play Console
-- Declare: email collection, photos access, camera usage, analytics (Sentry)
-- Mark data as encrypted in transit (HTTPS)
-
-### App Store Submission Checklist
-
-- [ ] Apple Developer Program enrolled (USD 99/year)
-- [ ] Google Play Console enrolled (USD 25 one-time)
-- [ ] App created in App Store Connect + Play Console
-- [ ] `eas.json` credentials filled (appleId, ascAppId, appleTeamId, service account)
-- [ ] `eas init` run (projectId populated in app.json)
-- [ ] App-specific password generated for iOS submissions
-- [ ] Production builds created via `eas build --profile production`
-- [ ] Store listing text uploaded (from `docs/store-description.md`)
-- [ ] Screenshots captured for all required device sizes
-- [ ] Feature graphic created for Google Play (1024 x 500)
-- [ ] `collectai.app` domain active with HTTPS
-- [ ] `.well-known/apple-app-site-association` hosted
-- [ ] `.well-known/assetlinks.json` hosted
-- [ ] Privacy policy accessible at `https://collectai.app/privacy`
-- [ ] Demo account created for App Review
-- [ ] Data Safety questionnaire completed (Google Play)
-- [ ] Age rating questionnaire completed (both stores)
-- [ ] First Android AAB uploaded manually to Play Console
-- [ ] Backend deployed and healthy (`/healthz` returning OK)
-- [ ] Database migrations applied (all files in `supabase/migrations/`)
-
-For detailed submission steps, see:
-- `docs/APP_STORE_SUBMISSION.md` — EAS build, screenshots, privacy labels, common rejections
-- `docs/APP_REVIEW_NOTES.md` — Demo account, feature walkthrough, affiliate link explanation
+- **[`docs/APP_STORE_SUBMISSION.md`](./APP_STORE_SUBMISSION.md)** — Full 10-step submission guide, EAS credentials, screenshots, deep links, checklist
+- **[`docs/APP_REVIEW_NOTES.md`](./APP_REVIEW_NOTES.md)** — Demo account, feature walkthrough, affiliate link explanation
 
 ## Production Checklist
 

@@ -79,6 +79,7 @@ Apply all SQL migrations in order. Use Supabase SQL Editor or psql:
 [ ] 20260222_events_improvements.sql      (event templates, sponsors, RSVP)
 [ ] 20260222_build_paint_improvements.sql (build & paint projects)
 [ ] 20260223_add_performance_indexes.sql  (performance indexes)
+[ ] 20260322_build_paint_status_pipeline.sql (category-specific status pipelines)
 [ ] 20260224_user_privacy_settings.sql    (privacy settings + RLS)
 [ ] 20260224_add_indexes_v2.sql           (category_follows + events indexes)
 
@@ -88,7 +89,7 @@ Apply all SQL migrations in order. Use Supabase SQL Editor or psql:
 [ ] Set email confirmation to REQUIRED
 [ ] Customize email templates (confirm signup, reset password, magic link)
     - Templates at: Authentication > Email Templates
-    - Use your branding (CollectAI, Tiffany Blue #81D8D0)
+    - Use your branding (Atlantis, Tiffany Blue #81D8D0)
 [ ] Set redirect URLs in Authentication > URL Configuration:
     - Site URL: https://collectai.app (or your domain)
     - Redirect URLs: collectai://reset-password, collectai://subscription
@@ -200,6 +201,7 @@ Generate secrets with: openssl rand -hex 32
 
 [ ] MONITOR_ENABLED=false                   (set true to enable price monitor)
 [ ] DEAL_DISCOVERY_ENABLED=false            (set true to enable deal scanner)
+[ ] AUCTION_ALERT_ENABLED=false             (set true to enable auction end-time alerts)
 
 
 ================================================================================
@@ -209,10 +211,10 @@ Generate secrets with: openssl rand -hex 32
 [ ] Create Stripe account at stripe.com (if not already done)
 [ ] Switch to Live Mode (toggle in Stripe Dashboard top-right)
 [ ] Create Products & Prices:
-    - Product 1: "CollectAI Pro"
+    - Product 1: "Atlantis Pro"
       - Price: EUR 4.99/month, recurring
       - Copy the price_id -> STRIPE_PRICE_ID_PRO
-    - Product 2: "CollectAI Premium"
+    - Product 2: "Atlantis Premium"
       - Price: EUR 9.99/month, recurring
       - Copy the price_id -> STRIPE_PRICE_ID_PREMIUM
 [ ] Set up Webhook endpoint:
@@ -263,7 +265,7 @@ Generate secrets with: openssl rand -hex 32
     - Authentication > Providers > Apple
     - Enter Service ID, Team ID, Key ID, and private key (.p8)
 [ ] Create App Store Connect record:
-    - App name: CollectAI
+    - App name: Atlantis
     - Primary language: English
     - Bundle ID: com.collectai.app
     - SKU: collectai-1
@@ -298,7 +300,7 @@ Generate secrets with: openssl rand -hex 32
 --- Google Play Console ---
 
 [ ] Enroll in Google Play Developer Program ($25 one-time) at play.google.com/console
-[ ] Create app: CollectAI - Collectibles Tracker
+[ ] Create app: Atlantis - Collectibles Tracker
 [ ] Create service account for EAS Submit:
     - Google Cloud Console > IAM > Service Accounts
     - Grant "Service Account User" role
@@ -394,7 +396,7 @@ Replace placeholder assets before submitting to stores:
 
 [ ] Write App Store description (store in docs/store-description.md)
 [ ] Prepare metadata:
-    - App Name: CollectAI
+    - App Name: Atlantis
     - Subtitle: Smart Collectibles Tracker
     - Category: Lifestyle (primary), Shopping (secondary)
     - Keywords: collectibles, valuation, price tracker, collection manager,

@@ -32,10 +32,14 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
     const { data, error } = projectsRes.value;
     if (!error && Array.isArray(data)) {
       for (const row of data) {
-        const status = (row.status || '').toString();
-        if (status === 'Active') activeProjects += 1;
-        else if (status === 'Backlog') backlogProjects += 1;
-        else if (status === 'Completed') completedProjects += 1;
+        const status = (row.status || '').toString().toLowerCase();
+        if (status === 'finished' || status === 'completed' || status === 'displayed') {
+          completedProjects += 1;
+        } else if (status === 'wishlist') {
+          backlogProjects += 1;
+        } else {
+          activeProjects += 1;  // Everything between wishlist and finished is "active"
+        }
       }
     }
   }
@@ -284,7 +288,7 @@ export async function listBuildPaintProjectsByCategory(categoryId: string): Prom
     itemId: (r.item_id as string | null) ?? undefined,
     imageUrl: (r.cover_image_url as string | null) ?? undefined,
     percent: 0,
-    isCompleted: (r.status as string) === 'completed',
+    isCompleted: ['finished', 'completed', 'displayed'].includes(((r.status as string) || '').toLowerCase()),
     paintRecipes: (r.paint_recipes as PaintRecipe[]) ?? [],
     createdAt: (r.created_at as string | null) ?? new Date().toISOString(),
     updatedAt: (r.updated_at as string | null) ?? new Date().toISOString(),
@@ -311,7 +315,7 @@ export async function listBuildPaintProjectsByItem(itemId: string): Promise<Buil
     itemId: (r.item_id as string | null) ?? undefined,
     imageUrl: (r.cover_image_url as string | null) ?? undefined,
     percent: 0,
-    isCompleted: (r.status as string) === 'completed',
+    isCompleted: ['finished', 'completed', 'displayed'].includes(((r.status as string) || '').toLowerCase()),
     paintRecipes: (r.paint_recipes as PaintRecipe[]) ?? [],
     createdAt: (r.created_at as string | null) ?? new Date().toISOString(),
     updatedAt: (r.updated_at as string | null) ?? new Date().toISOString(),

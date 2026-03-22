@@ -59,12 +59,25 @@ async def run_once():
                     logger.warning("[deal_discovery] Invalid deal UUID %r: %s", deal.get("id"), exc)
                     continue
 
+                # Check user preference before sending (P8)
+                try:
+                    from app.lib.notify import should_notify
+                    allowed, reason = await should_notify(conn, deal["user_id"], "deal_alerts")
+                    if not allowed:
+                        logger.debug("Deal push skipped for user %s: %s", deal["user_id"][:8], reason)
+                        continue
+                except Exception:
+                    pass  # Fallback: send anyway if check fails
+
                 try:
                     sent = await send_push_to_user(
                         conn,
                         deal["user_id"],
                         title="Deal Found!",
-                        body=f"{deal['listing_title'][:80]} \u2014 \u20ac{deal['listing_price']:.2f}",
+                        body=(
+                            f"{deal['listing_title'][:60]} \u2014 \u20ac{deal['listing_price']:.2f}"
+                            + (f" ({deal.get('discount_pct', 0):.0f}% below market)" if deal.get('discount_pct') else "")
+                        ),
                         data={
                             "type": "deal_alert",
                             "deal_id": deal["id"],

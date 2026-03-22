@@ -31,9 +31,25 @@ function formatRelativeDate(dateStr: string): string {
 function statusColor(
   status: string | null | undefined,
   isCompleted: boolean,
-  themeColors: { accent: string; muted: string; border: string; success: string },
+  categoryId: string | null | undefined,
+  themeColors: { accent: string; muted: string; border: string; success: string; warning: string },
 ) {
   if (isCompleted) return { bg: themeColors.success + '20', text: themeColors.success };
+
+  const { getStatusDef } = require('@/constants/buildStepTemplates');
+  const def = getStatusDef(categoryId, status || '');
+  if (def) {
+    const colorMap: Record<string, { bg: string; text: string }> = {
+      muted: { bg: themeColors.muted + '15', text: themeColors.muted },
+      info: { bg: '#3B82F620', text: '#3B82F6' },
+      warning: { bg: themeColors.warning + '20', text: themeColors.warning },
+      accent: { bg: themeColors.accent + '20', text: themeColors.accent },
+      success: { bg: themeColors.success + '20', text: themeColors.success },
+    };
+    return colorMap[def.colorHint] ?? colorMap.muted;
+  }
+
+  // Fallback for legacy statuses
   const s = (status || '').toLowerCase();
   if (s === 'active') return { bg: themeColors.accent + '20', text: themeColors.accent };
   return { bg: themeColors.muted + '15', text: themeColors.muted };
@@ -49,7 +65,7 @@ export const ProjectCard = React.memo(function ProjectCard({
   onPress,
 }: ProjectCardProps) {
   const { colors } = useAppTheme();
-  const statusColors = statusColor(project.status, project.isCompleted, colors);
+  const statusColors = statusColor(project.status, project.isCompleted, project.categoryId, colors);
   const accentColor = colors.accent;
 
   return (
@@ -97,7 +113,12 @@ export const ProjectCard = React.memo(function ProjectCard({
           )}
           <View style={[styles.statusPill, { backgroundColor: statusColors.bg }]}>
             <Text style={[styles.statusPillText, { color: statusColors.text }]}>
-              {project.isCompleted ? 'Completed' : project.status || 'Backlog'}
+              {(() => {
+                if (project.isCompleted) return 'Finished';
+                const { getStatusDef } = require('@/constants/buildStepTemplates');
+                const def = getStatusDef(project.categoryId, project.status || '');
+                return def?.label ?? project.status ?? 'Wishlist';
+              })()}
             </Text>
           </View>
         </View>

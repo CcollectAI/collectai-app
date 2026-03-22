@@ -9,6 +9,124 @@ export type BuildStepTemplate = {
   steps: { id: string; label: string; order: number }[];
 };
 
+/**
+ * Category-specific project status pipeline.
+ * Each status has an id (stored in DB), label (displayed), order, and color hint.
+ * The pipeline represents the real-world workflow for each buildable category.
+ */
+export type ProjectStatusDef = {
+  id: string;
+  label: string;
+  order: number;
+  colorHint: 'muted' | 'info' | 'warning' | 'accent' | 'success';
+};
+
+/** Category-specific status pipelines */
+export const PROJECT_STATUS_PIPELINES: Record<string, ProjectStatusDef[]> = {
+  warhammer: [
+    { id: 'wishlist', label: 'Wishlist', order: 0, colorHint: 'muted' },
+    { id: 'purchased', label: 'Purchased', order: 1, colorHint: 'info' },
+    { id: 'unassembled', label: 'Unassembled', order: 2, colorHint: 'info' },
+    { id: 'assembled', label: 'Assembled', order: 3, colorHint: 'warning' },
+    { id: 'primed', label: 'Primed', order: 4, colorHint: 'warning' },
+    { id: 'battle_ready', label: 'Battle Ready', order: 5, colorHint: 'accent' },
+    { id: 'parade_ready', label: 'Parade Ready', order: 6, colorHint: 'accent' },
+    { id: 'finished', label: 'Finished', order: 7, colorHint: 'success' },
+  ],
+  scale_models: [
+    { id: 'wishlist', label: 'Wishlist', order: 0, colorHint: 'muted' },
+    { id: 'purchased', label: 'Purchased', order: 1, colorHint: 'info' },
+    { id: 'unassembled', label: 'Unassembled', order: 2, colorHint: 'info' },
+    { id: 'assembled', label: 'Assembled', order: 3, colorHint: 'warning' },
+    { id: 'primed', label: 'Primed', order: 4, colorHint: 'warning' },
+    { id: 'painted', label: 'Painted', order: 5, colorHint: 'accent' },
+    { id: 'weathered', label: 'Weathered', order: 6, colorHint: 'accent' },
+    { id: 'decaled', label: 'Decaled', order: 7, colorHint: 'accent' },
+    { id: 'finished', label: 'Finished', order: 8, colorHint: 'success' },
+  ],
+  gunpla: [
+    { id: 'wishlist', label: 'Wishlist', order: 0, colorHint: 'muted' },
+    { id: 'purchased', label: 'Purchased', order: 1, colorHint: 'info' },
+    { id: 'unassembled', label: 'On Sprue', order: 2, colorHint: 'info' },
+    { id: 'assembled', label: 'Snap Built', order: 3, colorHint: 'warning' },
+    { id: 'primed', label: 'Primed', order: 4, colorHint: 'warning' },
+    { id: 'painted', label: 'Painted', order: 5, colorHint: 'accent' },
+    { id: 'decaled', label: 'Decaled', order: 6, colorHint: 'accent' },
+    { id: 'top_coated', label: 'Top Coated', order: 7, colorHint: 'accent' },
+    { id: 'finished', label: 'Finished', order: 8, colorHint: 'success' },
+  ],
+  lego: [
+    { id: 'wishlist', label: 'Wishlist', order: 0, colorHint: 'muted' },
+    { id: 'purchased', label: 'Purchased', order: 1, colorHint: 'info' },
+    { id: 'sealed', label: 'Sealed (Investment)', order: 2, colorHint: 'info' },
+    { id: 'in_progress', label: 'Building', order: 3, colorHint: 'warning' },
+    { id: 'built', label: 'Built', order: 4, colorHint: 'accent' },
+    { id: 'modified', label: 'Modified / MOC', order: 5, colorHint: 'accent' },
+    { id: 'displayed', label: 'Displayed', order: 6, colorHint: 'success' },
+  ],
+  keycaps: [
+    { id: 'wishlist', label: 'Wishlist', order: 0, colorHint: 'muted' },
+    { id: 'purchased', label: 'Parts Ordered', order: 1, colorHint: 'info' },
+    { id: 'parts_received', label: 'Parts Received', order: 2, colorHint: 'info' },
+    { id: 'lubing', label: 'Lubing & Modding', order: 3, colorHint: 'warning' },
+    { id: 'assembled', label: 'Assembled', order: 4, colorHint: 'accent' },
+    { id: 'tuned', label: 'Tuned & Sound Tested', order: 5, colorHint: 'accent' },
+    { id: 'finished', label: 'Finished', order: 6, colorHint: 'success' },
+  ],
+  designer_toys: [
+    { id: 'wishlist', label: 'Wishlist', order: 0, colorHint: 'muted' },
+    { id: 'purchased', label: 'Purchased', order: 1, colorHint: 'info' },
+    { id: 'unboxed', label: 'Unboxed', order: 2, colorHint: 'info' },
+    { id: 'customizing', label: 'Customizing', order: 3, colorHint: 'warning' },
+    { id: 'painted', label: 'Painted', order: 4, colorHint: 'accent' },
+    { id: 'sealed', label: 'Sealed & Protected', order: 5, colorHint: 'accent' },
+    { id: 'displayed', label: 'Displayed', order: 6, colorHint: 'success' },
+  ],
+  diecast: [
+    { id: 'wishlist', label: 'Wishlist', order: 0, colorHint: 'muted' },
+    { id: 'purchased', label: 'Purchased', order: 1, colorHint: 'info' },
+    { id: 'stock', label: 'Stock / Unmodified', order: 2, colorHint: 'info' },
+    { id: 'disassembled', label: 'Disassembled', order: 3, colorHint: 'warning' },
+    { id: 'painted', label: 'Repainted', order: 4, colorHint: 'accent' },
+    { id: 'detailed', label: 'Detailed & Weathered', order: 5, colorHint: 'accent' },
+    { id: 'finished', label: 'Finished', order: 6, colorHint: 'success' },
+  ],
+  generic: [
+    { id: 'wishlist', label: 'Wishlist', order: 0, colorHint: 'muted' },
+    { id: 'purchased', label: 'Purchased', order: 1, colorHint: 'info' },
+    { id: 'in_progress', label: 'In Progress', order: 2, colorHint: 'warning' },
+    { id: 'finished', label: 'Finished', order: 3, colorHint: 'success' },
+  ],
+};
+
+/** Get the status pipeline for a category, falling back to generic */
+export function getStatusPipeline(categoryId: string | null | undefined): ProjectStatusDef[] {
+  if (!categoryId) return PROJECT_STATUS_PIPELINES.generic;
+  return PROJECT_STATUS_PIPELINES[categoryId] ?? PROJECT_STATUS_PIPELINES.generic;
+}
+
+/** Get a status definition by id within a category pipeline */
+export function getStatusDef(categoryId: string | null | undefined, statusId: string): ProjectStatusDef | undefined {
+  const pipeline = getStatusPipeline(categoryId);
+  return pipeline.find((s) => s.id === statusId);
+}
+
+/** Check if a status is a terminal/finished state */
+export function isFinishedStatus(categoryId: string | null | undefined, statusId: string): boolean {
+  const pipeline = getStatusPipeline(categoryId);
+  const last = pipeline[pipeline.length - 1];
+  return last?.id === statusId;
+}
+
+/** Compute percent complete based on status position in pipeline */
+export function statusToPercent(categoryId: string | null | undefined, statusId: string): number {
+  const pipeline = getStatusPipeline(categoryId);
+  const idx = pipeline.findIndex((s) => s.id === statusId);
+  if (idx < 0) return 0;
+  if (idx === pipeline.length - 1) return 100;
+  return Math.round((idx / (pipeline.length - 1)) * 100);
+}
+
 /** Categories that support build/paint projects */
 export const BUILDABLE_CATEGORIES = [
   'warhammer',

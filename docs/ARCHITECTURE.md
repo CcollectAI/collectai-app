@@ -2,7 +2,7 @@
 
 ## System Overview
 
-CollectAI is a collectibles tracking and valuation platform with a React Native mobile app backed by a FastAPI server and Supabase/PostgreSQL database.
+Atlantis is a collectibles tracking and valuation platform with a React Native mobile app backed by a FastAPI server and Supabase/PostgreSQL database.
 
 ```
 Mobile App (Expo/React Native)
@@ -82,15 +82,18 @@ server/
     features/            # Feature routers (events, quickscan, taxonomy)
     agents/              # Business logic agents (marketplace, deal, dossier)
     ml/                  # ML model loading, inference, vision
-    lib/                 # Utilities (affiliate, s3_client)
-  workers/               # Background workers
-    price_monitor_worker.py
-    deal_discovery_worker.py
-    catalog_learning_worker.py
-    catalog_learning_scheduler.py
-    vision_ingest_worker.py
-    alerts_worker.py
-    retry.py             # Retry + dead letter infrastructure
+    lib/                 # Utilities (affiliate, s3_client, notify)
+  workers/               # Background workers (17 registered)
+    watchlist_monitor_worker.py   # Watchlist price monitoring (priority tiers: 15min/1hr/6hr)
+    price_monitor_worker.py       # Threshold, anomaly, set completion alerts
+    deal_discovery_worker.py      # Purchase mandate scanning + deal alerts
+    auction_alert_worker.py       # Auction end-time alerts (5min cycle, eBay/Yahoo/Catawiki)
+    value_change_worker.py        # Portfolio value change notifications
+    insights_digest_worker.py     # Weekly collection digest
+    catalog_learning_worker.py    # Auto-map + candidate pipeline
+    vision_ingest_worker.py       # Vision classification queue
+    alerts_worker.py              # Low-value item alerts
+    retry.py                      # Retry + dead letter infrastructure
   pipelines/             # Data ingestion and training pipelines
   tests/                 # pytest test suite (1486+ tests)
 ```
@@ -117,8 +120,10 @@ Key tables in Supabase PostgreSQL:
 | `sponsor_companies` | Sponsor company registrations + Stripe checkout |
 | `event_announcements` | One-way broadcast messages from event hosts to attendees |
 | `event_announcement_reads` | Read receipts for announcements (auto-mark-read) |
-| `build_paint_projects` | Build & paint project tracking (category-aware, item-linked) |
+| `build_paint_projects` | Build & paint project tracking (category-specific status pipelines) |
 | `build_step_templates` | Category-specific build workflow step templates |
+| `notification_history` | Push notification log with read/unread tracking |
+| `user_push_tokens` | Expo push notification tokens per device |
 | `taxonomy_registry` | Category taxonomy versions |
 | `object_pointers` | S3 image references |
 
@@ -138,6 +143,34 @@ Scheduler → Price Monitor Worker → Marketplace Agent → Price Update → Al
 ```
 Scheduler → Deal Discovery Worker → Marketplace Agent → Policy Engine → Score Deals → Notify User
 ```
+
+### Notification System
+```
+Alert Fired (any worker) → app/lib/notify.py
+  ├── Check user preference (notification_preferences JSONB)
+  ├── Check frequency cap (5/day free, 15/day pro, 30/day premium)
+  ├── Send via Expo Push API (all active tokens)
+  └── Persist to notification_history
+```
+
+All workers route through the shared `notify_user()` helper which handles:
+- **Preference-aware routing**: checks user's notification_preferences before sending
+- **Frequency capping**: tier-based daily limits to prevent notification fatigue
+- **Graceful fallback**: never crashes the worker if push fails
+
+### Build & Paint Status Pipelines
+
+Category-specific status pipelines replace the coarse Active/Backlog/Completed system:
+
+| Category | Pipeline |
+|----------|----------|
+| Warhammer | Wishlist → Purchased → Unassembled → Assembled → Primed → Battle Ready → Parade Ready → Finished |
+| Scale Models | Wishlist → Purchased → Unassembled → Assembled → Primed → Painted → Weathered → Decaled → Finished |
+| Gunpla | Wishlist → Purchased → On Sprue → Snap Built → Primed → Painted → Decaled → Top Coated → Finished |
+| LEGO | Wishlist → Purchased → Sealed → Building → Built → Modified/MOC → Displayed |
+| Keycaps | Wishlist → Parts Ordered → Parts Received → Lubing & Modding → Assembled → Tuned → Finished |
+
+Endpoints: `GET /build-paint/status-pipelines` and `GET /build-paint/status-pipelines/{category_id}`
 
 ### Catalog Learning
 ```

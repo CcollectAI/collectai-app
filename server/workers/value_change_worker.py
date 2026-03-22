@@ -283,14 +283,15 @@ async def run_once():
                         message,
                     )
 
-                    # Send push notification
+                    # Send push notification via preference-aware notify_user
                     try:
-                        from app.push import send_push_to_user
-                        await send_push_to_user(
+                        from app.lib.notify import notify_user
+                        await notify_user(
                             conn,
                             str(user_id),
-                            title,
-                            message,
+                            title=title,
+                            body=message,
+                            category="value_changes",
                             data={
                                 "type": "value_change",
                                 "pct_change": round(pct_change, 2),
@@ -356,14 +357,15 @@ async def run_once():
                     message,
                 )
 
-                # Send push notification
+                # Send push notification via preference-aware notify_user
                 try:
-                    from app.push import send_push_to_user
-                    await send_push_to_user(
+                    from app.lib.notify import notify_user
+                    await notify_user(
                         conn,
                         str(user_id),
-                        "Item Value Up",
-                        message,
+                        title="Item Value Up",
+                        body=message,
+                        category="value_changes",
                         data={
                             "type": "item_value_change",
                             "item_id": item_id,

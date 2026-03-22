@@ -84,14 +84,12 @@ async def run_once():
                 VALUES ($1, $2, 'low_value', $3::jsonb, $4)
             """, owner, str(item_id), trigger_value, message)
 
-            # Send push notification to user
+            # Send push notification to user (preference-aware)
             try:
-                from app.push import send_push_to_user
-                await send_push_to_user(
-                    conn,
-                    owner,
-                    "Price Alert",
-                    message,
+                from app.lib.notify import notify_user
+                await notify_user(
+                    conn, owner, "Price Alert", message,
+                    category="price_alerts",
                     data={"type": "price_alert", "item_id": str(item_id)},
                 )
             except Exception as push_err:

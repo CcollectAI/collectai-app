@@ -20,14 +20,44 @@ Displays key metrics about your collection:
 
 ### Smart Alerts
 
-Four types of alerts:
+Seven types of alerts, all routed through `app/lib/notify.py` for preference-aware, frequency-capped push delivery:
 
-| Alert Type | Trigger | Default |
-|------------|---------|---------|
-| Price Drop | Item drops below threshold | Enabled, 10% |
-| Price Increase | Item increases above threshold | Disabled, 20% |
-| New Listing | Matching listing found | Enabled |
-| Milestone | Collection reaches value milestone | Enabled |
+| Alert Type | Trigger | Worker | Push |
+|------------|---------|--------|------|
+| Price Threshold | Item drops below user threshold | price_monitor_worker | Yes |
+| Price Anomaly | Z-score > 2.0 (spike/drop) | price_monitor_worker | Yes |
+| Set Completion | User owns >50% of a set | price_monitor_worker | Yes |
+| Watchlist Target Met | Market price ≤ target price | watchlist_monitor_worker | Yes |
+| Deal Found | Mandate match passes policy engine | deal_discovery_worker | Yes |
+| Auction Ending | Watched auction ending in <15min | auction_alert_worker | Yes (urgent) |
+| Low Value | Item valued below 10 EUR | alerts_worker | Yes |
+
+### Notification Preferences
+
+Users can toggle 8 notification categories in Settings:
+
+| Preference Key | Controls |
+|---------------|----------|
+| `price_alerts` | Threshold, anomaly, set completion, watchlist target, auction ending |
+| `deal_alerts` | Deal discovery notifications |
+| `value_changes` | Portfolio value change summaries |
+| `item_value_changes` | Individual item value changes |
+| `weekly_digest` | Weekly collection digest |
+| `chat_messages` | Chat/DM notifications |
+| `connection_requests` | Social connection requests |
+| `event_announcements` | Event announcements |
+
+### Frequency Capping
+
+Push notifications are capped per tier to prevent notification fatigue:
+
+| Tier | Daily Cap |
+|------|-----------|
+| Free | 5 pushes/day |
+| Pro | 15 pushes/day |
+| Premium | 30 pushes/day |
+
+Urgent alerts (watchlist target met, auction ending) bypass frequency caps but still respect user preferences.
 
 ## Usage
 

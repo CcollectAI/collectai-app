@@ -36,6 +36,28 @@ BATCH_SIZE = int(os.getenv("WATCHLIST_MONITOR_BATCH", "100"))
 # Dedup window for target-met alerts (hours)
 DEDUP_HOURS = int(os.getenv("WATCHLIST_ALERT_DEDUP_HOURS", "24"))
 
+# Priority tier intervals (minutes)
+HIGH_PRIORITY_INTERVAL = 15   # Items within 10% of target
+MEDIUM_PRIORITY_INTERVAL = 60  # Standard watchlist items
+LOW_PRIORITY_INTERVAL = 360    # Items far from target (>50% away)
+
+# Batch sizes per priority
+HIGH_PRIORITY_BATCH = 20
+
+
+def _compute_priority(target_price: float | None, market_price: float | None) -> str:
+    """Compute scan priority based on how close market price is to target."""
+    if target_price is None or market_price is None:
+        return "medium"
+    if market_price <= 0:
+        return "medium"
+    diff_pct = abs(market_price - target_price) / target_price * 100
+    if diff_pct <= 10:
+        return "high"    # Within 10% of target — scan frequently
+    elif diff_pct <= 50:
+        return "medium"  # Moderate distance
+    return "low"          # Far from target — scan less often
+
 
 async def _already_fired(conn, user_id: str, item_key: str) -> bool:
     """Check if a watchlist_target_met alert fired recently for this user+item."""
@@ -87,24 +109,60 @@ async def run_once():
     alerts_fired = 0
 
     try:
-        # Fetch watchlist items due for scan (oldest-checked first, NULLs first)
-        rows = await conn.fetch(
+        # Pass 1: High-priority items (near target, scan every 15min)
+        high_rows = await conn.fetch(
             """
             SELECT id, user_id, title, category,
                    target_price, currency, last_market_price
             FROM public.watchlist_items
+            WHERE target_price IS NOT NULL
+              AND last_market_price IS NOT NULL
+              AND last_market_price > 0
+              AND target_price > 0
+              AND abs(last_market_price - target_price) / target_price <= 0.10
+              AND (last_checked_at IS NULL
+                   OR last_checked_at < now() - interval '15 minutes')
             ORDER BY last_checked_at ASC NULLS FIRST
             LIMIT $1
             """,
-            BATCH_SIZE,
+            HIGH_PRIORITY_BATCH,
         )
+
+        # Pass 2: Standard items (everything else, normal cycle)
+        remaining_budget = BATCH_SIZE - len(high_rows)
+        standard_rows = await conn.fetch(
+            """
+            SELECT id, user_id, title, category,
+                   target_price, currency, last_market_price
+            FROM public.watchlist_items
+            WHERE (last_checked_at IS NULL
+                   OR last_checked_at < now() - interval '1 hour')
+            ORDER BY last_checked_at ASC NULLS FIRST
+            LIMIT $1
+            """,
+            max(remaining_budget, 0),
+        )
+
+        rows = list(high_rows) + list(standard_rows)
+
+        # Deduplicate by id
+        seen_ids = set()
+        deduped_rows = []
+        for r in rows:
+            if r["id"] not in seen_ids:
+                seen_ids.add(r["id"])
+                deduped_rows.append(r)
+        rows = deduped_rows
 
         if not rows:
             logger.info("No watchlist items to scan")
             record_run("watchlist_monitor_worker", "ok")
             return
 
-        logger.info("Scanning %d watchlist items", len(rows))
+        logger.info(
+            "Scanning %d watchlist items (%d high-priority, %d standard)",
+            len(rows), len(high_rows), len(standard_rows),
+        )
 
         for row in rows:
             wl_id = row["id"]  # UUID — keep as-is for asyncpg
@@ -203,6 +261,27 @@ async def run_once():
                             message,
                         )
                         alerts_fired += 1
+
+                        # Send push notification (P0)
+                        try:
+                            from app.lib.notify import notify_user
+                            await notify_user(
+                                conn,
+                                user_id,
+                                title="\ud83c\udfaf Target Price Met!",
+                                body=message,
+                                category="price_alerts",
+                                data={
+                                    "type": "watchlist_target_met",
+                                    "watchlist_id": str(wl_id),
+                                    "current_price": round(current_price, 2),
+                                    "target_price": round(target_price, 2),
+                                },
+                                urgent=True,  # Target met = urgent
+                            )
+                        except Exception as push_err:
+                            logger.debug("Push skipped for watchlist alert: %s", push_err)
+
                         logger.info(
                             "Target met alert: wl=%s price=%.2f target=%.2f",
                             wl_id, current_price, target_price,

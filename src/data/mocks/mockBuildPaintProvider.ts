@@ -19,8 +19,9 @@ import {
 
 export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
   const projects = Array.from(mockBuildPaintProjects.values());
-  const activeProjects = projects.filter((p) => p.status === 'active').length;
-  const backlogProjects = projects.filter((p) => p.status === 'backlog').length;
+  const finishedStatuses = ['finished', 'completed', 'displayed'];
+  const activeProjects = projects.filter((p) => !p.isCompleted && p.status !== 'wishlist' && !finishedStatuses.includes((p.status || '').toLowerCase())).length;
+  const backlogProjects = projects.filter((p) => p.status === 'wishlist').length;
   const completedProjects = projects.filter((p) => p.isCompleted).length;
   const totalBuildMinutes = 1260;
   const totalBuildHours = totalBuildMinutes / 60;
@@ -54,7 +55,7 @@ export async function createBuildPaintProject(input: CreateBuildPaintProjectInpu
     category: input.category || null,
     categoryId: input.categoryId || null,
     itemId: input.itemId || null,
-    status: 'backlog',
+    status: 'wishlist',
     percent: 0,
     isCompleted: false,
     notes: null,
@@ -84,7 +85,7 @@ export async function markBuildPaintProjectComplete(projectId: string, isComplet
   if (!project) return;
 
   project.isCompleted = isCompleted;
-  project.status = isCompleted ? 'completed' : 'active';
+  project.status = isCompleted ? 'finished' : 'in_progress';
   if (isCompleted) project.percent = 100;
   project.updatedAt = new Date().toISOString();
   mockBuildPaintProjects.set(projectId, project);

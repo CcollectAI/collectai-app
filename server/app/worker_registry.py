@@ -42,6 +42,7 @@ SCHEDULES = {
     "catalog_crawler_worker": 24 * 3600, # daily (nightly crawl)
     "model_retrain_worker": 7 * 24 * 3600,  # weekly
     "auto_delist_worker": 900,               # every 15 minutes
+    "auction_alert_worker": 300,              # every 5 minutes
 }
 
 

@@ -302,14 +302,15 @@ async def run_once():
                 message,
             )
 
-            # Send push notification
+            # Send push notification via preference-aware notify_user
             try:
-                from app.push import send_push_to_user
-                await send_push_to_user(
+                from app.lib.notify import notify_user
+                await notify_user(
                     conn,
                     str(user_id),
-                    "Weekly Collection Digest",
-                    message,
+                    title="Weekly Collection Digest",
+                    body=message,
+                    category="weekly_digest",
                     data={
                         "type": "weekly_digest",
                         "pct_change": round(pct_change, 2),

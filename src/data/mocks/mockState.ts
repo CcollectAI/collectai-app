@@ -198,7 +198,7 @@ export const mockBuildPaintProjects: Map<string, BuildPaintProject> = new Map([
     title: 'Warhammer Kill Team squad',
     category: 'Warhammer minis',
     categoryId: 'warhammer',
-    status: 'active',
+    status: 'primed',
     percent: 40,
     isCompleted: false,
     notes: 'Urban camo scheme with some neon accents',
@@ -210,7 +210,7 @@ export const mockBuildPaintProjects: Map<string, BuildPaintProject> = new Map([
     title: 'Gunpla MG RX-78-2 (Ver. 3.0)',
     category: 'Gunpla & model kits',
     categoryId: 'gunpla',
-    status: 'active',
+    status: 'painted',
     percent: 65,
     isCompleted: false,
     notes: 'Panel lining + decals this weekend',
@@ -222,7 +222,7 @@ export const mockBuildPaintProjects: Map<string, BuildPaintProject> = new Map([
     title: 'LEGO UCS Millennium Falcon',
     category: 'Bricks & kits',
     categoryId: 'lego',
-    status: 'completed',
+    status: 'finished',
     percent: 100,
     isCompleted: true,
     notes: 'Display-only; tracking for nostalgia',
@@ -234,7 +234,7 @@ export const mockBuildPaintProjects: Map<string, BuildPaintProject> = new Map([
     title: 'Blood Angels Sanguinary Guard',
     category: 'Warhammer minis',
     categoryId: 'warhammer',
-    status: 'backlog',
+    status: 'wishlist',
     percent: 0,
     isCompleted: false,
     notes: null,
@@ -273,7 +273,7 @@ export const mockBuildPaintNotes: Map<string, BuildPaintNote[]> = new Map([
 export const mockSponsorCompanies: SponsorCompany[] = [
   {
     id: 'sponsor-demo-1',
-    name: 'CollectAI Demo Sponsor',
+    name: 'Atlantis Demo Sponsor',
     logoUrl: undefined,
     websiteUrl: 'https://ccollect.ai',
     contactEmail: 'sponsor@ccollect.ai',
@@ -290,7 +290,7 @@ export let mockListings: import('../types').MarketplaceListing[] = [
   { id: 'ml-2', itemId: 'item-2', marketplaceId: 'collectai', listingTitle: 'LEGO Star Wars UCS AT-AT 75313 (Sealed)', price: 899, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'active', viewsCount: 56, watchersCount: 8, offersCount: 1, estimatedFees: 0, estimatedNet: 899, feePercentage: 0, listedAt: '2026-02-22T14:30:00Z', syncedAt: '2026-02-27T08:00:00Z', createdAt: '2026-02-22T14:30:00Z' },
   { id: 'ml-3', itemId: 'item-3', marketplaceId: 'cardmarket', listingTitle: 'MTG Black Lotus Beta (HP)', price: 18000, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'draft', viewsCount: 0, watchersCount: 0, offersCount: 0, createdAt: '2026-02-25T09:00:00Z' },
   { id: 'ml-4', itemId: 'item-4', marketplaceId: 'mercari', listingTitle: 'Warhammer 40K Leviathan Box Set (NOS)', price: 180, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'sold', viewsCount: 124, watchersCount: 15, offersCount: 2, soldAt: '2026-02-24T16:45:00Z', syncedAt: '2026-02-25T08:00:00Z', createdAt: '2026-02-18T11:00:00Z' },
-  { id: 'ml-5', itemId: 'item-5', marketplaceId: 'ebay', listingTitle: 'Funko Pop Freddy Funko as Batman SDCC 2019', price: 320, currency: 'EUR', format: 'best_offer', quantity: 1, status: 'delisted', viewsCount: 89, watchersCount: 6, offersCount: 0, statusMessage: 'Relisted on CollectAI P2P', createdAt: '2026-02-10T08:00:00Z' },
+  { id: 'ml-5', itemId: 'item-5', marketplaceId: 'ebay', listingTitle: 'Funko Pop Freddy Funko as Batman SDCC 2019', price: 320, currency: 'EUR', format: 'best_offer', quantity: 1, status: 'delisted', viewsCount: 89, watchersCount: 6, offersCount: 0, statusMessage: 'Relisted on Atlantis P2P', createdAt: '2026-02-10T08:00:00Z' },
 ];
 export function setMockListings(listings: import('../types').MarketplaceListing[]): void {
   mockListings = listings;
@@ -303,6 +303,6 @@ export const mockSales: import('../types').MarketplaceSale[] = [
 ];
 
 export const mockAccounts: import('../types').MarketplaceAccount[] = [
-  { id: 'ma-1', marketplaceId: 'ebay', sellerName: 'CollectAI_Pro', isActive: true, connectedAt: '2025-11-01T10:00:00Z', lastSyncAt: '2026-02-27T08:00:00Z' },
+  { id: 'ma-1', marketplaceId: 'ebay', sellerName: 'Atlantis_Pro', isActive: true, connectedAt: '2025-11-01T10:00:00Z', lastSyncAt: '2026-02-27T08:00:00Z' },
   { id: 'ma-2', marketplaceId: 'collectai', sellerName: 'demo_seller', isActive: true, connectedAt: '2026-01-15T14:00:00Z', lastSyncAt: '2026-02-27T08:00:00Z' },
 ];

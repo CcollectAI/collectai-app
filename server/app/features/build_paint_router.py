@@ -100,7 +100,149 @@ STEP_TEMPLATES: Dict[str, Dict[str, Any]] = {
             {"id": "gen-7", "label": "Finishing & sealing", "order": 7},
         ],
     },
+    "keycaps": {
+        "id": "keycaps",
+        "display_name": "Custom Keyboards / Keycaps",
+        "steps": [
+            {"id": "kc-1", "label": "Layout planning & parts inventory", "order": 1},
+            {"id": "kc-2", "label": "PCB & plate assembly", "order": 2},
+            {"id": "kc-3", "label": "Stabilizer tuning & lubing", "order": 3},
+            {"id": "kc-4", "label": "Switch lubing & filming", "order": 4},
+            {"id": "kc-5", "label": "Switch installation", "order": 5},
+            {"id": "kc-6", "label": "Foam & dampening installation", "order": 6},
+            {"id": "kc-7", "label": "Keycap mounting & alignment", "order": 7},
+            {"id": "kc-8", "label": "Sound testing & final tuning", "order": 8},
+        ],
+    },
+    "designer_toys": {
+        "id": "designer_toys",
+        "display_name": "Designer Toys",
+        "steps": [
+            {"id": "dt-1", "label": "Unboxing & inspection", "order": 1},
+            {"id": "dt-2", "label": "Surface cleaning & prep", "order": 2},
+            {"id": "dt-3", "label": "Custom paint planning & masking", "order": 3},
+            {"id": "dt-4", "label": "Base coat application", "order": 4},
+            {"id": "dt-5", "label": "Detail painting & accents", "order": 5},
+            {"id": "dt-6", "label": "Dry brushing & weathering (optional)", "order": 6},
+            {"id": "dt-7", "label": "Sealing & clear coat", "order": 7},
+            {"id": "dt-8", "label": "Display setup & photography", "order": 8},
+        ],
+    },
+    "diecast": {
+        "id": "diecast",
+        "display_name": "Diecast Models",
+        "steps": [
+            {"id": "dc-1", "label": "Inspection & reference gathering", "order": 1},
+            {"id": "dc-2", "label": "Disassembly (body, chassis, interior)", "order": 2},
+            {"id": "dc-3", "label": "Stripping factory paint (if repainting)", "order": 3},
+            {"id": "dc-4", "label": "Custom paint & color coats", "order": 4},
+            {"id": "dc-5", "label": "Detailing & weathering", "order": 5},
+            {"id": "dc-6", "label": "Decal & tampo application", "order": 6},
+            {"id": "dc-7", "label": "Reassembly & final fit", "order": 7},
+            {"id": "dc-8", "label": "Display case setup & photography", "order": 8},
+        ],
+    },
 }
+
+
+# Category-specific project status pipelines
+# Each status has: id (stored in DB), label (displayed), order, color_hint
+STATUS_PIPELINES: Dict[str, List[Dict[str, Any]]] = {
+    "warhammer": [
+        {"id": "wishlist", "label": "Wishlist", "order": 0, "color_hint": "muted"},
+        {"id": "purchased", "label": "Purchased", "order": 1, "color_hint": "info"},
+        {"id": "unassembled", "label": "Unassembled", "order": 2, "color_hint": "info"},
+        {"id": "assembled", "label": "Assembled", "order": 3, "color_hint": "warning"},
+        {"id": "primed", "label": "Primed", "order": 4, "color_hint": "warning"},
+        {"id": "battle_ready", "label": "Battle Ready", "order": 5, "color_hint": "accent"},
+        {"id": "parade_ready", "label": "Parade Ready", "order": 6, "color_hint": "accent"},
+        {"id": "finished", "label": "Finished", "order": 7, "color_hint": "success"},
+    ],
+    "scale_models": [
+        {"id": "wishlist", "label": "Wishlist", "order": 0, "color_hint": "muted"},
+        {"id": "purchased", "label": "Purchased", "order": 1, "color_hint": "info"},
+        {"id": "unassembled", "label": "Unassembled", "order": 2, "color_hint": "info"},
+        {"id": "assembled", "label": "Assembled", "order": 3, "color_hint": "warning"},
+        {"id": "primed", "label": "Primed", "order": 4, "color_hint": "warning"},
+        {"id": "painted", "label": "Painted", "order": 5, "color_hint": "accent"},
+        {"id": "weathered", "label": "Weathered", "order": 6, "color_hint": "accent"},
+        {"id": "decaled", "label": "Decaled", "order": 7, "color_hint": "accent"},
+        {"id": "finished", "label": "Finished", "order": 8, "color_hint": "success"},
+    ],
+    "gunpla": [
+        {"id": "wishlist", "label": "Wishlist", "order": 0, "color_hint": "muted"},
+        {"id": "purchased", "label": "Purchased", "order": 1, "color_hint": "info"},
+        {"id": "unassembled", "label": "On Sprue", "order": 2, "color_hint": "info"},
+        {"id": "assembled", "label": "Snap Built", "order": 3, "color_hint": "warning"},
+        {"id": "primed", "label": "Primed", "order": 4, "color_hint": "warning"},
+        {"id": "painted", "label": "Painted", "order": 5, "color_hint": "accent"},
+        {"id": "decaled", "label": "Decaled", "order": 6, "color_hint": "accent"},
+        {"id": "top_coated", "label": "Top Coated", "order": 7, "color_hint": "accent"},
+        {"id": "finished", "label": "Finished", "order": 8, "color_hint": "success"},
+    ],
+    "lego": [
+        {"id": "wishlist", "label": "Wishlist", "order": 0, "color_hint": "muted"},
+        {"id": "purchased", "label": "Purchased", "order": 1, "color_hint": "info"},
+        {"id": "sealed", "label": "Sealed (Investment)", "order": 2, "color_hint": "info"},
+        {"id": "in_progress", "label": "Building", "order": 3, "color_hint": "warning"},
+        {"id": "built", "label": "Built", "order": 4, "color_hint": "accent"},
+        {"id": "modified", "label": "Modified / MOC", "order": 5, "color_hint": "accent"},
+        {"id": "displayed", "label": "Displayed", "order": 6, "color_hint": "success"},
+    ],
+    "keycaps": [
+        {"id": "wishlist", "label": "Wishlist", "order": 0, "color_hint": "muted"},
+        {"id": "purchased", "label": "Parts Ordered", "order": 1, "color_hint": "info"},
+        {"id": "parts_received", "label": "Parts Received", "order": 2, "color_hint": "info"},
+        {"id": "lubing", "label": "Lubing & Modding", "order": 3, "color_hint": "warning"},
+        {"id": "assembled", "label": "Assembled", "order": 4, "color_hint": "accent"},
+        {"id": "tuned", "label": "Tuned & Sound Tested", "order": 5, "color_hint": "accent"},
+        {"id": "finished", "label": "Finished", "order": 6, "color_hint": "success"},
+    ],
+    "designer_toys": [
+        {"id": "wishlist", "label": "Wishlist", "order": 0, "color_hint": "muted"},
+        {"id": "purchased", "label": "Purchased", "order": 1, "color_hint": "info"},
+        {"id": "unboxed", "label": "Unboxed", "order": 2, "color_hint": "info"},
+        {"id": "customizing", "label": "Customizing", "order": 3, "color_hint": "warning"},
+        {"id": "painted", "label": "Painted", "order": 4, "color_hint": "accent"},
+        {"id": "sealed", "label": "Sealed & Protected", "order": 5, "color_hint": "accent"},
+        {"id": "displayed", "label": "Displayed", "order": 6, "color_hint": "success"},
+    ],
+    "diecast": [
+        {"id": "wishlist", "label": "Wishlist", "order": 0, "color_hint": "muted"},
+        {"id": "purchased", "label": "Purchased", "order": 1, "color_hint": "info"},
+        {"id": "stock", "label": "Stock / Unmodified", "order": 2, "color_hint": "info"},
+        {"id": "disassembled", "label": "Disassembled", "order": 3, "color_hint": "warning"},
+        {"id": "painted", "label": "Repainted", "order": 4, "color_hint": "accent"},
+        {"id": "detailed", "label": "Detailed & Weathered", "order": 5, "color_hint": "accent"},
+        {"id": "finished", "label": "Finished", "order": 6, "color_hint": "success"},
+    ],
+    "generic": [
+        {"id": "wishlist", "label": "Wishlist", "order": 0, "color_hint": "muted"},
+        {"id": "purchased", "label": "Purchased", "order": 1, "color_hint": "info"},
+        {"id": "in_progress", "label": "In Progress", "order": 2, "color_hint": "warning"},
+        {"id": "finished", "label": "Finished", "order": 3, "color_hint": "success"},
+    ],
+}
+
+# Terminal (finished) statuses per category
+FINISHED_STATUSES = {"finished", "completed", "displayed"}
+
+
+@router.get("/status-pipelines")
+async def list_status_pipelines(_rl: None = Depends(_build_paint_limit)) -> Dict[str, Any]:
+    """Return all category-specific status pipelines."""
+    return STATUS_PIPELINES
+
+
+@router.get("/status-pipelines/{category_id}")
+async def get_status_pipeline(category_id: str, _rl: None = Depends(_build_paint_limit)) -> List[Dict[str, Any]]:
+    """Return status pipeline for a specific category. Falls back to generic."""
+    pipeline = STATUS_PIPELINES.get(category_id)
+    if not pipeline:
+        pipeline = STATUS_PIPELINES.get("generic")
+    if not pipeline:
+        raise error_response(404, "Pipeline not found")
+    return pipeline
 
 
 @router.get("/step-templates")

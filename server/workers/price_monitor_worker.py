@@ -184,6 +184,25 @@ async def check_threshold_alerts(conn):
                 alert_id,
             )
 
+            # Send push notification (P0)
+            try:
+                from app.lib.notify import notify_user
+                await notify_user(
+                    conn,
+                    str(user_id),
+                    title="Price Alert",
+                    body=message,
+                    category="price_alerts",
+                    data={
+                        "type": "below_threshold",
+                        "alert_id": str(alert_id),
+                        "item_id": str(item_id),
+                        "price_q50": round(q50, 2),
+                    },
+                )
+            except Exception as push_err:
+                logger.debug("Push skipped for threshold alert: %s", push_err)
+
             fired += 1
             alerts_per_user[str(user_id)] = alerts_per_user.get(str(user_id), 0) + 1
             logger.info(
@@ -358,6 +377,26 @@ async def detect_anomalies(conn):
                 message,
             )
 
+            # Send push notification (P0)
+            try:
+                from app.lib.notify import notify_user
+                await notify_user(
+                    conn,
+                    str(user_id),
+                    title="Price Anomaly Detected",
+                    body=message,
+                    category="price_alerts",
+                    data={
+                        "type": trigger_type,
+                        "item_id": item_id,
+                        "price": round(latest_price, 2),
+                        "z_score": round(z_score, 2),
+                        "pct_change": round(pct_change, 1),
+                    },
+                )
+            except Exception as push_err:
+                logger.debug("Push skipped for anomaly alert: %s", push_err)
+
             fired += 1
             anomaly_alerts_per_user[str(user_id)] = anomaly_alerts_per_user.get(str(user_id), 0) + 1
             logger.info(
@@ -501,6 +540,24 @@ async def check_set_completions(conn):
                 trigger_value,
                 message,
             )
+
+            # Send push notification (P0)
+            try:
+                from app.lib.notify import notify_user
+                await notify_user(
+                    conn,
+                    str(user_id),
+                    title="Complete Your Set!",
+                    body=message,
+                    category="price_alerts",
+                    data={
+                        "type": "set_completion",
+                        "set_id": str(set_id),
+                        "progress": f"{owned_count}/{total_items}",
+                    },
+                )
+            except Exception as push_err:
+                logger.debug("Push skipped for completion alert: %s", push_err)
 
             fired += 1
             logger.info(

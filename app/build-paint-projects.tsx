@@ -106,21 +106,24 @@ function BuildPaintProjectsScreen() {
     showToast({ message: 'Project created!', type: 'success' });
   }, [loadProjects, showToast]);
 
-  // Separate current (not completed) and completed projects
-  const currentProjects = useMemo(() => projects.filter((p) => !p.isCompleted), [projects]);
-  const completedProjects = useMemo(() => projects.filter((p) => p.isCompleted), [projects]);
+  // Separate projects by pipeline status
+  const wishlistProjects = useMemo(() => projects.filter((p) => !p.isCompleted && p.status === 'wishlist'), [projects]);
+  const finishedProjects = useMemo(() => projects.filter((p) => p.isCompleted), [projects]);
+  const inProgressProjects = useMemo(() => projects.filter((p) => !p.isCompleted && p.status !== 'wishlist'), [projects]);
 
   const filteredProjects = useMemo(() => {
-    if (filterStatus === 'active') return currentProjects;
-    if (filterStatus === 'completed') return completedProjects;
+    if (filterStatus === 'in_progress') return inProgressProjects;
+    if (filterStatus === 'finished') return finishedProjects;
+    if (filterStatus === 'wishlist') return wishlistProjects;
     return projects;
-  }, [filterStatus, currentProjects, completedProjects, projects]);
+  }, [filterStatus, inProgressProjects, finishedProjects, wishlistProjects, projects]);
 
   const filterCounts = useMemo(() => ({
     all: projects.length,
-    active: currentProjects.length,
-    completed: completedProjects.length,
-  }), [projects.length, currentProjects.length, completedProjects.length]);
+    in_progress: inProgressProjects.length,
+    finished: finishedProjects.length,
+    wishlist: wishlistProjects.length,
+  }), [projects.length, inProgressProjects.length, finishedProjects.length, wishlistProjects.length]);
 
   if (loading) {
     return (
@@ -191,12 +194,12 @@ function BuildPaintProjectsScreen() {
           {/* Projects list */}
           {filterStatus === 'all' ? (
             <>
-              {currentProjects.length > 0 && (
+              {inProgressProjects.length > 0 && (
                 <View style={styles.section}>
                   <Text style={[styles.sectionTitle, { color: colors.muted }]}>
-                    Current ({currentProjects.length})
+                    In Progress ({inProgressProjects.length})
                   </Text>
-                  {currentProjects.map((project) => (
+                  {inProgressProjects.map((project) => (
                     <ProjectCard
                       key={project.id}
                       project={project}
@@ -205,12 +208,26 @@ function BuildPaintProjectsScreen() {
                   ))}
                 </View>
               )}
-              {completedProjects.length > 0 && (
+              {wishlistProjects.length > 0 && (
                 <View style={styles.section}>
                   <Text style={[styles.sectionTitle, { color: colors.muted }]}>
-                    Completed ({completedProjects.length})
+                    Wishlist ({wishlistProjects.length})
                   </Text>
-                  {completedProjects.map((project) => (
+                  {wishlistProjects.map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      onPress={() => handleProjectPress(project)}
+                    />
+                  ))}
+                </View>
+              )}
+              {finishedProjects.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={[styles.sectionTitle, { color: colors.muted }]}>
+                    Finished ({finishedProjects.length})
+                  </Text>
+                  {finishedProjects.map((project) => (
                     <ProjectCard
                       key={project.id}
                       project={project}

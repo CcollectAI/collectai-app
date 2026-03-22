@@ -10,19 +10,20 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 
-export type ProjectFilterStatus = 'all' | 'active' | 'completed';
+export type ProjectFilterStatus = 'all' | 'in_progress' | 'finished' | 'wishlist';
 
 interface ProjectFiltersProps {
   selected: ProjectFilterStatus;
   onSelect: (status: ProjectFilterStatus) => void;
-  counts: { all: number; active: number; completed: number };
+  counts: { all: number; in_progress: number; finished: number; wishlist: number };
   hapticsEnabled?: boolean;
 }
 
 const FILTERS: { key: ProjectFilterStatus; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'active', label: 'Current' },
-  { key: 'completed', label: 'Completed' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'finished', label: 'Finished' },
+  { key: 'wishlist', label: 'Wishlist' },
 ];
 
 export const ProjectFilters = React.memo(function ProjectFilters({
